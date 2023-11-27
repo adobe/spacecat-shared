@@ -12,7 +12,8 @@
   },
   "mocha": {
     "reporter": "mocha-multi-reporters",
-    "reporter-options": "configFile=.mocha-multi.json"
+    "reporter-options": "configFile=.mocha-multi.json",
+    "spec": "test/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -35,5 +36,8 @@
   "optionalDependencies": {
     "@adobe/helix-universal": "4.4.1"
   },
-  "devDependencies": { }
+  "devDependencies": {
+    "semantic-release": "22.0.8",
+    "semantic-release-monorepo-esm": "1.0.10"
+  }
 }

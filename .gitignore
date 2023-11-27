@@ -124,6 +124,7 @@ dist
 
 # IDEA
 .idea/*
+junit
 
 # yarn v2
 .yarn/cache

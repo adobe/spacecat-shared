@@ -1,3 +1,0 @@
-<testsuite name="Mocha Tests" tests="1" failures="0" errors="0" skipped="0" timestamp="Mon, 27 Nov 2023 08:11:30 GMT" time="0.003">
-<testcase classname="example function" name="should call the passed function and log the correct message" time="0.001"/>
-</testsuite>

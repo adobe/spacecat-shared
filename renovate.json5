@@ -1,0 +1,15 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'local>adobe-rnd/spacecat-shared'
+  ],
+  packageRules: [
+    {
+      // https://github.com/iambumblehead/esmock/issues/260
+      packageNames: [
+        'esmock'
+      ],
+      allowedVersions: '2.5.1'
+    }
+  ]
+}

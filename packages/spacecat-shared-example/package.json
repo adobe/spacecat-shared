@@ -36,8 +36,5 @@
   "optionalDependencies": {
     "@adobe/helix-universal": "4.4.1"
   },
-  "devDependencies": {
-    "semantic-release": "22.0.8",
-    "semantic-release-monorepo-esm": "1.0.10"
-  }
+  "devDependencies": {}
 }

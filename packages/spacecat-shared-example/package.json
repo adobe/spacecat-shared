@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adobe/spacecat-shared.git"
+    "url": "https://github.com/adobe-rnd/spacecat-shared.git"
   },
   "author": "",
   "license": "Apache-2.0",

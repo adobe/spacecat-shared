@@ -30,7 +30,7 @@ export declare interface ExampleOptions {
  *
  * ```js
  * const { wrap } = require('@adobe/helix-shared');
- * const { example } = require('@adobe-rnd/spacecat-shared');
+ * const { example } = require('@adobe/spacecat-shared');
  *
  * async function main(req, context) {
  *   const { enc } = context;

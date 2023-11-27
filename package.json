@@ -1,5 +1,5 @@
 {
-  "name": "@adobe-rnd/spacecat-shared-monorepo",
+  "name": "@adobe/spacecat-shared-monorepo",
   "private": true,
   "version": "1.0.0",
   "description": "Shared modules of the Spacecat Services - monorepo",

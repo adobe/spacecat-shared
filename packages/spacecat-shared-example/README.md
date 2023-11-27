@@ -7,7 +7,7 @@ to print a hello world.
 
 ```js
 import wrap from '@adobe/helix-shared-wrap';
-import example from '@adobe-rnd/spacecat-shared-example';
+import example from '@adobe/spacecat-shared-example';
 
 ...
 

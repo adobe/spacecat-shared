@@ -49,6 +49,6 @@ describe('example function', () => {
     assert(wasCalled, 'Function was not called');
     assert.deepStrictEqual(receivedRequest, request, 'Request object does not match');
     assert.deepStrictEqual(receivedContext, context, 'Context object does not match');
-    assert.strictEqual(loggedMessage, `Hello world, ${opts.name}!`, 'Logged message does not match expected output');
+    assert.strictEqual(loggedMessage, `Hello world, ${opts.name} [36]!`, 'Logged message does not match expected output');
   });
 });

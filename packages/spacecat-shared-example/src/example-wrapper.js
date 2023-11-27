@@ -20,7 +20,8 @@
 export default function example(func, opts = {}) {
   const { name } = opts;
   return async (request, context) => {
-    console.log(`Hello world, ${name}!`);
+    const x = 12 * 3;
+    console.log(`Hello world, ${name} [${x}]!`);
     return func(request, context);
   };
 }

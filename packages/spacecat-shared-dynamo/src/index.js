@@ -13,6 +13,11 @@
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
+import query from './modules/query.js';
+import getItem from './modules/getItem.js';
+import putItem from './modules/putItem.js';
+import removeItem from './modules/removeItem.js';
+
 /**
  * Creates a client object for interacting with DynamoDB.
  *
@@ -26,110 +31,10 @@ const createClient = (
   dbClient = new DynamoDB(),
   docClient = DynamoDBDocumentClient.from(dbClient),
 ) => ({
-  /**
-   * Queries DynamoDB and automatically handles pagination to retrieve all items.
-   *
-   * @param {Object} originalParams - The parameters for the DynamoDB query.
-   * @returns {Promise<Array>} A promise that resolves to an array of items retrieved from DynamoDB.
-   * @throws {Error} Throws an error if the DynamoDB query operation fails.
-   */
-  async query(originalParams) {
-    let items = [];
-    const params = { ...originalParams };
-
-    try {
-      let data;
-      do {
-        /*
-          This is one of the scenarios where it's appropriate to disable
-          the ESLint rule for this specific case.
-          In this case, it's necessary because each query depends on the
-          result of the previous one (to get the LastEvaluatedKey).
-         */
-        // eslint-disable-next-line no-await-in-loop
-        data = await docClient.query(params);
-        items = items.concat(data.Items);
-        params.ExclusiveStartKey = data.LastEvaluatedKey;
-      } while (data.LastEvaluatedKey);
-    } catch (error) {
-      log.error('DB Query Error:', error);
-      throw error;
-    }
-    return items;
-  },
-
-  /**
-   * Retrieves an item from DynamoDB using a table name and key.
-   *
-   * @param {string} tableName - The name of the DynamoDB table.
-   * @param {string} partitionKey - The partition key of the item to retrieve.
-   * @param {string} [sortKey] - The sort key of the item to retrieve, if applicable.
-   * @returns {Promise<Object>} A promise that resolves to the retrieved item.
-   * @throws {Error} Throws an error if the DynamoDB get operation fails.
-   */
-  async getItem(tableName, partitionKey, sortKey) {
-    const key = sortKey ? { partitionKey, sortKey } : { partitionKey };
-    const params = {
-      TableName: tableName,
-      Key: key,
-    };
-
-    try {
-      const data = await docClient.get(params);
-      return data.Item;
-    } catch (error) {
-      log.error('DB Get Item Error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Inserts or updates an item in a DynamoDB table.
-   *
-   * @param {string} tableName - The name of the DynamoDB table.
-   * @param {Object} item - The item to insert or update in the table.
-   * @returns {Promise<Object>} A promise that resolves to a message indicating success.
-   * @throws {Error} Throws an error if the DynamoDB put operation fails.
-   */
-  async putItem(tableName, item) {
-    const params = {
-      TableName: tableName,
-      Item: item,
-    };
-
-    try {
-      await docClient.put(params);
-      return { message: 'Item inserted/updated successfully.' };
-    } catch (error) {
-      log.error('DB Put Item Error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Removes an item from a DynamoDB table.
-   *
-   * @param {string} tableName - The name of the DynamoDB table.
-   * @param {string} partitionKey - The partition key of the item to remove.
-   * @param {string} [sortKey] - The sort key of the item to remove, if applicable.
-   * @returns {Promise<Object>} A promise that resolves to a message indicating successful removal.
-   * @throws {Error} Throws an error if the DynamoDB delete operation fails.
-   */
-  async removeItem(tableName, partitionKey, sortKey) {
-    const key = sortKey ? { partitionKey, sortKey } : { partitionKey };
-    const params = {
-      TableName: tableName,
-      Key: key,
-    };
-
-    try {
-      await docClient.delete(params);
-      return { message: 'Item removed successfully.' };
-    } catch (error) {
-      log.error('DB Remove Item Error:', error);
-      throw error;
-    }
-  },
+  query: (params) => query(docClient, params, log),
+  getItem: (tableName, key) => getItem(docClient, tableName, key, log),
+  putItem: (tableName, item) => putItem(docClient, tableName, item, log),
+  removeItem: (tableName, key) => removeItem(docClient, tableName, key, log),
 });
 
 export { createClient };

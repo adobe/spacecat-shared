@@ -15,13 +15,19 @@ import { DynamoDBDocumentClient, QueryCommandInput } from '@aws-sdk/lib-dynamodb
 
 export declare interface Logger {
   error(message: string, ...args: any[]): void;
-  // Add other logging methods as needed
+  info(message: string, ...args: any[]): void;
+}
+
+export declare interface DynamoDbKey {
+  partitionKey: string;
+  sortKey?: string;
 }
 
 export declare interface DynamoDbClient {
   query(originalParams: QueryCommandInput): Promise<object[]>;
-  getItem(tableName: string, partitionKey: string, sortKey?: string): Promise<object>;
-  putItem(tableName: string, item: object): Promise<void>;
+  getItem(tableName: string, key: DynamoDbKey): Promise<object>;
+  putItem(tableName: string, item: object): Promise<{ message: string }>;
+  removeItem(tableName: string, key: DynamoDbKey): Promise<{ message: string }>;
 }
 
 export function createClient(logger: Logger, dbClient?: DynamoDB, docClient?: DynamoDBDocumentClient): DynamoDbClient;

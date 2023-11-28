@@ -21,7 +21,6 @@ describe('DynamoDB Client', () => {
   let mockDocClient;
 
   beforeEach(() => {
-    // Setup your mock DocumentClient
     mockDocClient = {
       query: async (params) => {
         // Check if LastEvaluatedKey is provided and simulate pagination
@@ -51,13 +50,34 @@ describe('DynamoDB Client', () => {
   });
 
   it('gets an item from the database', async () => {
-    const result = await dynamoDbClient.getItem('TestTable', 'testPartitionKey');
+    const key = { partitionKey: 'testPartitionKey' };
+    const result = await dynamoDbClient.getItem('TestTable', key);
     expect(result).to.be.an('object');
   });
 
   it('gets an item from the database with sort key', async () => {
-    const result = await dynamoDbClient.getItem('TestTable', 'testPartitionKey', 'testSortKey');
+    const key = { partitionKey: 'testPartitionKey', sortKey: 'testSortKey' };
+    const result = await dynamoDbClient.getItem('TestTable', key);
     expect(result).to.be.an('object');
+  });
+
+  it('throws an error for getItem with invalid tableName', async () => {
+    const key = { partitionKey: 'testPartitionKey' };
+    try {
+      await dynamoDbClient.getItem('', key);
+      expect.fail('getItem did not throw with empty tableName');
+    } catch (error) {
+      expect(error.message).to.equal('Invalid tableName: must be a non-empty string.');
+    }
+  });
+
+  it('throws an error for getItem with invalid key', async () => {
+    try {
+      await dynamoDbClient.getItem('TestTable', null);
+      expect.fail('getItem did not throw with invalid key');
+    } catch (error) {
+      expect(error.message).to.equal('Invalid key: must be an object with a partitionKey.');
+    }
   });
 
   it('puts an item into the database', async () => {
@@ -65,14 +85,44 @@ describe('DynamoDB Client', () => {
     expect(result).to.deep.equal({ message: 'Item inserted/updated successfully.' });
   });
 
+  it('throws an error for putItem with invalid tableName', async () => {
+    try {
+      await dynamoDbClient.putItem('', { someKey: 'someValue' });
+      expect.fail('putItem did not throw with empty tableName');
+    } catch (error) {
+      expect(error.message).to.equal('Invalid tableName: must be a non-empty string.');
+    }
+  });
+
   it('removes an item from the database', async () => {
-    const result = await dynamoDbClient.removeItem('TestTable', 'testPartitionKey');
+    const key = { partitionKey: 'testPartitionKey' };
+    const result = await dynamoDbClient.removeItem('TestTable', key);
     expect(result).to.deep.equal({ message: 'Item removed successfully.' });
   });
 
   it('removes an item from the database with sort key', async () => {
-    const result = await dynamoDbClient.removeItem('TestTable', 'testPartitionKey', 'testSortKey');
+    const key = { partitionKey: 'testPartitionKey', sortKey: 'testSortKey' };
+    const result = await dynamoDbClient.removeItem('TestTable', key);
     expect(result).to.deep.equal({ message: 'Item removed successfully.' });
+  });
+
+  it('throws an error for removeItem with invalid tableName', async () => {
+    const key = { partitionKey: 'testPartitionKey' };
+    try {
+      await dynamoDbClient.removeItem('', key);
+      expect.fail('removeItem did not throw with empty tableName');
+    } catch (error) {
+      expect(error.message).to.equal('Invalid tableName: must be a non-empty string.');
+    }
+  });
+
+  it('throws an error for removeItem with invalid key', async () => {
+    try {
+      await dynamoDbClient.removeItem('TestTable', null);
+      expect.fail('removeItem did not throw with invalid key');
+    } catch (error) {
+      expect(error.message).to.equal('Invalid key: must be an object with a partitionKey.');
+    }
   });
 
   it('handles errors in query', async () => {
@@ -94,7 +144,7 @@ describe('DynamoDB Client', () => {
     };
 
     try {
-      await dynamoDbClient.getItem('TestTable', 'testPartitionKey');
+      await dynamoDbClient.getItem('TestTable', { partitionKey: 'testPartitionKey' });
       expect.fail('getItem did not throw as expected');
     } catch (error) {
       expect(error.message).to.equal('Get failed');
@@ -120,7 +170,7 @@ describe('DynamoDB Client', () => {
     };
 
     try {
-      await dynamoDbClient.removeItem('TestTable', 'testPartitionKey');
+      await dynamoDbClient.removeItem('TestTable', { partitionKey: 'testPartitionKey' });
       expect.fail('removeItem did not throw as expected');
     } catch (error) {
       expect(error.message).to.equal('Remove failed');

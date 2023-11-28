@@ -10,6 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
+// Precompile regular expressions
+const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
+const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
+
 /**
  * Determines if the given value is a boolean or a string representation of a boolean.
  *
@@ -89,8 +93,12 @@ function isValidDate(obj) {
  * @returns {boolean} True if the given string validates successfully.
  */
 function isIsoDate(str) {
-  return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str)
-    && new Date(str).toISOString() === str;
+  if (!REGEX_ISO_DATE.test(str)) {
+    return false;
+  }
+
+  const date = new Date(str);
+  return isValidDate(date) && date.toISOString() === str;
 }
 
 /**
@@ -101,7 +109,7 @@ function isIsoDate(str) {
  * @returns {boolean} True if the given string validates successfully.
  */
 function isIsoTimeOffsetsDate(str) {
-  return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/.test(str);
+  return REGEX_TIME_OFFSET_DATE.test(str);
 }
 
 /**

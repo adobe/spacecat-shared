@@ -12,6 +12,8 @@
 
 import { performance } from 'perf_hooks';
 
+import { guardTableName } from '../utils/guards.js';
+
 /**
  * Inserts or updates an item in a DynamoDB table.
  *
@@ -23,9 +25,7 @@ import { performance } from 'perf_hooks';
  * @throws {Error} Throws an error if the DynamoDB put operation fails.
  */
 async function putItem(docClient, tableName, item, log = console) {
-  if (!tableName || typeof tableName !== 'string') {
-    throw new Error('Invalid tableName: must be a non-empty string.');
-  }
+  guardTableName(tableName);
 
   const params = {
     TableName: tableName,

@@ -16,6 +16,14 @@ import { expect } from 'chai';
 import { createClient } from '../../src/index.js';
 
 describe('query', () => {
+  const queryParams = {
+    TableName: 'TestTable',
+    KeyConditionExpression: 'partitionKey = :partitionKey',
+    ExpressionAttributeValues: {
+      ':partitionKey': 'testPartitionKey',
+    },
+  };
+
   let dynamoDbClient;
   let mockDocClient;
 
@@ -35,12 +43,12 @@ describe('query', () => {
   });
 
   it('queries items from the database', async () => {
-    const result = await dynamoDbClient.query({ TableName: 'TestTable' });
+    const result = await dynamoDbClient.query(queryParams);
     expect(result).to.be.an('array');
   });
 
   it('queries items from the database with pagination', async () => {
-    const result = await dynamoDbClient.query({ TableName: 'TestTable' });
+    const result = await dynamoDbClient.query(queryParams);
     expect(result).to.have.lengthOf(3);
     expect(result).to.deep.equal(['item1', 'item2', 'item3']);
   });
@@ -51,7 +59,7 @@ describe('query', () => {
     };
 
     try {
-      await dynamoDbClient.query({ TableName: 'TestTable' });
+      await dynamoDbClient.query(queryParams);
       expect.fail('queryDb did not throw as expected');
     } catch (error) {
       expect(error.message).to.equal('Query failed');

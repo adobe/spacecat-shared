@@ -1,0 +1,263 @@
+/*
+ * Copyright 2023 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/* eslint-env mocha */
+/* eslint-disable no-unused-expressions */
+
+import { expect } from 'chai';
+
+import {
+  hasText,
+  isBoolean,
+  isInteger,
+  isValidDate,
+  isIsoDate,
+  isIsoTimeOffsetsDate,
+  isNumber,
+  isObject,
+  isString,
+  toBoolean,
+  arrayEquals,
+  isValidUrl,
+} from '../src/functions.js';
+
+describe('Shared functions', () => {
+  describe('Commons', () => {
+    it('is iso date', () => {
+      const invalidDates = [
+        '',
+        '2011-10-05',
+        '2011-10-05T14:48:00.000',
+        'Wed Oct 05 2011 16:48:00 GMT+0200 (CEST)',
+        '2011-13-01T14:48:00.000Z',
+        '2011-00-01T14:48:00.000Z',
+      ];
+
+      invalidDates.forEach((date) => expect(isIsoDate(date)).to.be.false);
+
+      expect(isIsoDate('2011-10-05T14:48:00.000Z')).to.be.true;
+    });
+
+    it('is iso date with time offset', () => {
+      const invalidOffsetDates = [
+        '',
+        '2019-11-15',
+        '2019-11-05T14:43:00.000',
+        'Wed Oct 11 2019 14:43:00 GMT+0200 (CEST)',
+      ];
+
+      invalidOffsetDates.forEach((date) => expect(isIsoTimeOffsetsDate(date)).to.be.false);
+
+      expect(isIsoTimeOffsetsDate('2019-11-11T14:43:00.000Z')).to.be.true;
+      expect(isIsoTimeOffsetsDate('2019-11-11T14:43:00.000-00:00')).to.be.true;
+      expect(isIsoTimeOffsetsDate('2019-11-11T14:43:00.000+05:11')).to.be.true;
+    });
+
+    it('has text', () => {
+      const invalidTexts = [
+        null,
+        undefined,
+        123,
+        [],
+        ['dasd'],
+        {},
+        { asd: 'dsa' },
+        '',
+      ];
+
+      invalidTexts.forEach((value) => expect(hasText(value)).to.be.false);
+
+      expect(hasText('a')).to.be.true;
+      expect(hasText('1')).to.be.true;
+      expect(hasText('a12dsamklda')).to.be.true;
+    });
+
+    it('is boolean', () => {
+      const invalidBooleans = [
+        null,
+        undefined,
+        [],
+        ['dasd'],
+        {},
+        { asd: 'dsa' },
+        '',
+        'dasd',
+        NaN,
+        Infinity,
+        -Infinity,
+        123,
+      ];
+
+      invalidBooleans.forEach((value) => expect(isBoolean(value)).to.be.false);
+
+      expect(isBoolean('true')).to.be.true;
+      expect(isBoolean('True')).to.be.true;
+      expect(isBoolean('false')).to.be.true;
+      expect(isBoolean('False')).to.be.true;
+      expect(isBoolean(true)).to.be.true;
+      expect(isBoolean(false)).to.be.true;
+    });
+
+    it('is number', () => {
+      const invalidNumbers = [
+        null,
+        undefined,
+        [],
+        ['dasd'],
+        {},
+        { asd: 'dsa' },
+        '',
+        'dasd',
+        NaN,
+        Infinity,
+        -Infinity,
+      ];
+
+      invalidNumbers.forEach((value) => expect(isNumber(value)).to.be.false);
+
+      expect(isNumber(0)).to.be.true;
+      expect(isNumber(123)).to.be.true;
+      expect(isNumber(-123)).to.be.true;
+      expect(isNumber(12.3)).to.be.true;
+    });
+
+    it('is integer', () => {
+      const invalidIntegers = [
+        null,
+        undefined,
+        [],
+        ['dasd'],
+        {},
+        { asd: 'dsa' },
+        '',
+        'dasd',
+        NaN,
+        Infinity,
+        -Infinity,
+        12.3,
+      ];
+
+      invalidIntegers.forEach((value) => expect(isInteger(value)).to.be.false);
+
+      expect(isInteger(0)).to.be.true;
+      expect(isInteger(123)).to.be.true;
+      expect(isInteger(-123)).to.be.true;
+    });
+
+    it('is object', () => {
+      const invalidObjects = [
+        null,
+        undefined,
+        123,
+        'dasd',
+        [],
+        ['dasd'],
+      ];
+
+      invalidObjects.forEach((value) => expect(isObject(value)).to.be.false);
+
+      expect(isObject({})).to.be.true;
+      expect(isObject({ asd: 'dsa' })).to.be.true;
+    });
+
+    it('is string', () => {
+      const invalidStrings = [
+        null,
+        undefined,
+        123,
+        [],
+        ['dasd'],
+        {},
+        { asd: 'dsa' },
+      ];
+
+      invalidStrings.forEach((value) => expect(isString(value)).to.be.false);
+
+      expect(isString('')).to.be.true;
+      expect(isString('dasd')).to.be.true;
+    });
+
+    it('toBoolean', () => {
+      const invalidBooleans = [
+        undefined,
+        null,
+        [],
+        'foo',
+        {},
+        NaN,
+        Infinity,
+        -Infinity,
+        123,
+      ];
+
+      invalidBooleans.forEach((value) => expect(() => toBoolean(value)).to.throw(Error, 'Not a boolean value'));
+
+      expect(toBoolean('true')).to.be.true;
+      expect(toBoolean('True')).to.be.true;
+      expect(toBoolean('false')).to.be.false;
+      expect(toBoolean('False')).to.be.false;
+      expect(toBoolean(true)).to.be.true;
+      expect(toBoolean(false)).to.be.false;
+    });
+
+    it('array equals', () => {
+      expect(arrayEquals([], 1)).to.be.false;
+      expect(arrayEquals(1, [])).to.be.false;
+      expect(arrayEquals([1], [2, 3])).to.be.false;
+      expect(arrayEquals([1, 4], [2, 3])).to.be.false;
+      expect(arrayEquals([1, 2], [1, 2])).to.be.true;
+    });
+  });
+
+  describe('isValidUrl', () => {
+    it('returns false for invalid Url', async () => {
+      const invalidUrls = [
+        null,
+        undefined,
+        1234,
+        true,
+        'example.com',
+        'www.example.com',
+        '255.255.255.256',
+        'ftp://abc.com',
+      ];
+
+      invalidUrls.forEach((url) => expect(isValidUrl(url)).to.be.false);
+    });
+
+    it('returns true for valid url', async () => {
+      expect(isValidUrl('http://abc.xyz')).to.be.true;
+      expect(isValidUrl('https://abc.xyz')).to.be.true;
+    });
+  });
+
+  describe('isValidDate', () => {
+    it('returns false for invalid date', async () => {
+      const invalidDates = [
+        null,
+        undefined,
+        1234,
+        true,
+        '2019-11-11T14:43:89.000-00:00',
+        'invalid date',
+      ];
+
+      invalidDates.forEach((date) => expect(isValidDate(date)).to.be.false);
+    });
+
+    it('returns true for valid date', async () => {
+      expect(isValidDate(new Date())).to.be.true;
+      expect(isValidDate(new Date('2022-01-01T01:23:45.678-00:00'))).to.be.true;
+      expect(isValidDate(new Date('2022-01-01T01:23:45.678Z'))).to.be.true;
+    });
+  });
+});

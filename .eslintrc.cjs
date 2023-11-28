@@ -13,4 +13,5 @@
 module.exports = {
   root: true,
   extends: '@adobe/helix',
+  plugins: ['import'],
 };

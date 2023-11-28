@@ -13,7 +13,7 @@
   "mocha": {
     "reporter": "mocha-multi-reporters",
     "reporter-options": "configFile=.mocha-multi.json",
-    "spec": "test/*.test.js"
+    "spec": "test/**/*.test.js"
   },
   "repository": {
     "type": "git",

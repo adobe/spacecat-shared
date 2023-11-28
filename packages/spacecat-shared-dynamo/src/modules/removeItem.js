@@ -12,6 +12,8 @@
 
 import { performance } from 'perf_hooks';
 
+import { guardKey, guardTableName } from '../utils/guards.js';
+
 /**
  * Removes an item from a DynamoDB table.
  *
@@ -23,13 +25,8 @@ import { performance } from 'perf_hooks';
  * @throws {Error} Throws an error if the DynamoDB delete operation fails or input validation fails.
  */
 async function removeItem(docClient, tableName, key, log = console) {
-  if (!tableName || typeof tableName !== 'string') {
-    throw new Error('Invalid tableName: must be a non-empty string.');
-  }
-
-  if (!key || typeof key !== 'object' || !key.partitionKey) {
-    throw new Error('Invalid key: must be an object with a partitionKey.');
-  }
+  guardTableName(tableName);
+  guardKey(key);
 
   const params = {
     TableName: tableName,

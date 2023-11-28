@@ -45,7 +45,7 @@ describe('getItem', () => {
       await dynamoDbClient.getItem('', key);
       expect.fail('getItem did not throw with empty tableName');
     } catch (error) {
-      expect(error.message).to.equal('Invalid tableName: must be a non-empty string.');
+      expect(error.message).to.equal('Table name is required.');
     }
   });
 
@@ -54,7 +54,7 @@ describe('getItem', () => {
       await dynamoDbClient.getItem('TestTable', null);
       expect.fail('getItem did not throw with invalid key');
     } catch (error) {
-      expect(error.message).to.equal('Invalid key: must be an object with a partitionKey.');
+      expect(error.message).to.equal('Key must be an object with a partitionKey.');
     }
   });
 

@@ -1,3 +1,10 @@
+# @adobe/spacecat-shared-dynamo-v1.0.0 (2023-11-28)
+
+
+### Features
+
+* add dynamo and utils modules ([#3](https://github.com/adobe-rnd/spacecat-shared/issues/3)) ([5e2e605](https://github.com/adobe-rnd/spacecat-shared/commit/5e2e6059648f4f554168dabeab737f6a09d8a050))
+
 # @adobe/spacecat-shared-example-v1.0.0 (2023-11-27)
 
 

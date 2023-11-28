@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.0.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.0.0...@adobe/spacecat-shared-utils-v1.0.1) (2023-11-28)
+
+
+### Bug Fixes
+
+* add package exports to npm module ([#4](https://github.com/adobe-rnd/spacecat-shared/issues/4)) ([7236d40](https://github.com/adobe-rnd/spacecat-shared/commit/7236d408c560e89a28972b6c695a6919e72854e7))
+
 # @adobe/spacecat-shared-utils-v1.0.0 (2023-11-28)
 
 

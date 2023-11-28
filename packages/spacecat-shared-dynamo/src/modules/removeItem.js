@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { performance } from 'perf_hooks';
+
 /**
  * Removes an item from a DynamoDB table.
  *
@@ -35,7 +37,15 @@ async function removeItem(docClient, tableName, key, log = console) {
   };
 
   try {
+    const startTime = performance.now();
+
     await docClient.delete(params);
+
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    log.info(`RemoveItem execution time: ${duration.toFixed(2)} ms for query: ${JSON.stringify(params)}`);
+
     return { message: 'Item removed successfully.' };
   } catch (error) {
     log.error('DB Remove Item Error:', error);

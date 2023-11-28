@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { performance } from 'perf_hooks';
+
 /**
  * Inserts or updates an item in a DynamoDB table.
  *
@@ -31,7 +33,15 @@ async function putItem(docClient, tableName, item, log = console) {
   };
 
   try {
+    const startTime = performance.now();
+
     await docClient.put(params);
+
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    log.info(`PutItem execution time: ${duration.toFixed(2)} ms for query: ${JSON.stringify(params)}`);
+
     return { message: 'Item inserted/updated successfully.' };
   } catch (error) {
     log.error('DB Put Item Error:', error);

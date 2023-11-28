@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { performance } from 'perf_hooks';
+
 /**
  * Queries DynamoDB and automatically handles pagination to retrieve all items.
  *
@@ -23,11 +25,30 @@ async function query(docClient, originalParams, log = console) {
   let items = [];
   const params = { ...originalParams };
 
+  let totalTime = 0;
+  let paginationCount = 0;
+
   try {
     let data;
     do {
+      const startTime = performance.now();
+
+      /*
+        This is one of the scenarios where it's appropriate to disable
+        the ESLint rule for this specific case.
+        In this case, it's necessary because each query depends on the
+        result of the previous one (to get the LastEvaluatedKey).
+       */
       // eslint-disable-next-line no-await-in-loop
       data = await docClient.query(params);
+
+      const endTime = performance.now(); // End timing
+      const duration = endTime - startTime;
+      totalTime += duration;
+      paginationCount += 1;
+
+      log.info(`Pagination ${paginationCount} query time: ${duration.toFixed(2)} ms`);
+
       items = items.concat(data.Items);
       params.ExclusiveStartKey = data.LastEvaluatedKey;
     } while (data.LastEvaluatedKey);
@@ -35,6 +56,9 @@ async function query(docClient, originalParams, log = console) {
     log.error('DB Query Error:', error);
     throw error;
   }
+
+  log.info(`Total query time: ${totalTime.toFixed(2)} ms with ${paginationCount} paginations for query: ${JSON.stringify(params)}`);
+
   return items;
 }
 

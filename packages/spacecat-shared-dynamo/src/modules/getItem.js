@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { performance } from 'perf_hooks';
+
 /**
  * Retrieves an item from DynamoDB using a table name and key object.
  *
@@ -35,7 +37,15 @@ async function getItem(docClient, tableName, key, log = console) {
   };
 
   try {
+    const startTime = performance.now();
+
     const data = await docClient.get(params);
+
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    log.info(`GetItem execution time: ${duration.toFixed(2)} ms for query: ${JSON.stringify(params)}`);
+
     return data.Item;
   } catch (error) {
     log.error('DB Get Item Error:', error);

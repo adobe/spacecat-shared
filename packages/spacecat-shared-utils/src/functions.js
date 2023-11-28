@@ -15,13 +15,15 @@ const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
 
 /**
- * Determines if the given value is a boolean or a string representation of a boolean.
+ * Determines case-insensitively if the given value is a boolean or a string
+ * representation of a boolean.
  *
  * @param {*} value - The value to check.
  * @returns {boolean} True if the value is a boolean or a string representation of a boolean.
  */
 function isBoolean(value) {
-  return typeof value === 'boolean' || value === 'true' || value === 'false';
+  const lowerCaseValue = String(value).toLowerCase();
+  return typeof value === 'boolean' || lowerCaseValue === 'true' || lowerCaseValue === 'false';
 }
 
 /**
@@ -138,11 +140,11 @@ function toBoolean(value) {
   if (!isBoolean(value)) {
     throw new Error('Not a boolean value');
   }
-  return JSON.parse(value);
+  return JSON.parse(String(value).toLowerCase());
 }
 
 /**
- * Compares two arrays for equality.
+ * Compares two arrays for equality. Supports primitive array item types only.
  *
  * @param {Array} a - The first array to compare.
  * @param {Array} b - The second array to compare.

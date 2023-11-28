@@ -100,7 +100,9 @@ describe('Shared functions', () => {
       invalidBooleans.forEach((value) => expect(isBoolean(value)).to.be.false);
 
       expect(isBoolean('true')).to.be.true;
+      expect(isBoolean('True')).to.be.true;
       expect(isBoolean('false')).to.be.true;
+      expect(isBoolean('False')).to.be.true;
       expect(isBoolean(true)).to.be.true;
       expect(isBoolean(false)).to.be.true;
     });
@@ -200,7 +202,9 @@ describe('Shared functions', () => {
       invalidBooleans.forEach((value) => expect(() => toBoolean(value)).to.throw(Error, 'Not a boolean value'));
 
       expect(toBoolean('true')).to.be.true;
+      expect(toBoolean('True')).to.be.true;
       expect(toBoolean('false')).to.be.false;
+      expect(toBoolean('False')).to.be.false;
       expect(toBoolean(true)).to.be.true;
       expect(toBoolean(false)).to.be.false;
     });

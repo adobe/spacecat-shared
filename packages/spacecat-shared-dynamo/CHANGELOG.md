@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.1.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.1.0...@adobe/spacecat-shared-dynamo-v1.1.1) (2023-11-29)
+
+
+### Bug Fixes
+
+* typo ([9167cf3](https://github.com/adobe-rnd/spacecat-shared/commit/9167cf3ac70a998aa92aaef24e080cd8147a70e9))
+
 # [@adobe/spacecat-shared-dynamo-v1.1.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.0.0...@adobe/spacecat-shared-dynamo-v1.1.0) (2023-11-29)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-dynamo",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Shared modules of the Spacecat Services - DynamoDB client",
   "type": "module",
   "main": "src/index.js",

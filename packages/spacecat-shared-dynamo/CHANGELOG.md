@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.1.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.0.0...@adobe/spacecat-shared-dynamo-v1.1.0) (2023-11-29)
+
+
+### Features
+
+* add guards and use spacecat-shared-utils ([#6](https://github.com/adobe-rnd/spacecat-shared/issues/6)) ([27143cf](https://github.com/adobe-rnd/spacecat-shared/commit/27143cf2d4a439f1b5904e62756e59e501b3f67d))
+
 # @adobe/spacecat-shared-dynamo-v1.0.0 (2023-11-28)
 
 

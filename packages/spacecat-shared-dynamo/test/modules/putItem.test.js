@@ -37,7 +37,7 @@ describe('putItem', () => {
       await dynamoDbClient.putItem('', { someKey: 'someValue' });
       expect.fail('putItem did not throw with empty tableName');
     } catch (error) {
-      expect(error.message).to.equal('Invalid tableName: must be a non-empty string.');
+      expect(error.message).to.equal('Table name is required.');
     }
   });
 

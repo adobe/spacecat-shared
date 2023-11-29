@@ -30,7 +30,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.454.0",
-    "@aws-sdk/lib-dynamodb": "3.454.0"
+    "@aws-sdk/lib-dynamodb": "3.454.0",
+    "@adobe/spacecat-shared-utils": "1.0.1"
   },
   "devDependencies": {
     "chai": "4.3.10"

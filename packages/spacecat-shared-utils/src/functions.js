@@ -49,21 +49,21 @@ function isNumber(value) {
 /**
  * Checks if the given parameter is an object and not an array or null.
  *
- * @param {*} obj - The object to check.
+ * @param {*} value - The value to check.
  * @returns {boolean} True if the parameter is an object, false otherwise.
  */
-function isObject(obj) {
-  return !Array.isArray(obj) && obj !== null && typeof obj === 'object';
+function isObject(value) {
+  return !Array.isArray(value) && value !== null && typeof value === 'object';
 }
 
 /**
  * Determines if the given parameter is a string.
  *
- * @param {*} str - The string to check.
+ * @param {*} value - The value to check.
  * @returns {boolean} True if the parameter is a string, false otherwise.
  */
-function isString(str) {
-  return (!!str || str === '') && typeof str === 'string';
+function isString(value) {
+  return (!!value || value === '') && typeof value === 'string';
 }
 
 /**
@@ -73,17 +73,17 @@ function isString(str) {
  * @returns {boolean} True if the string is not empty, false otherwise.
  */
 function hasText(str) {
-  return !!str && typeof str === 'string';
+  return !!str && isString(str);
 }
 
 /**
  * Checks whether the given object is a valid JavaScript Date.
  *
- * @param {*} obj - The object to check.
+ * @param {*} value - The value to check.
  * @returns {boolean} True if the given object is a valid Date object, false otherwise.
  */
-function isValidDate(obj) {
-  return obj instanceof Date && !Number.isNaN(obj.getTime());
+function isValidDate(value) {
+  return value instanceof Date && !Number.isNaN(value.getTime());
 }
 
 /**

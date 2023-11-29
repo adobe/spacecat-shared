@@ -11,6 +11,7 @@
  */
 
 import { performance } from 'perf_hooks';
+import { guardQueryParameters } from '../utils/guards.js';
 
 /**
  * Queries DynamoDB and automatically handles pagination to retrieve all items.
@@ -22,6 +23,8 @@ import { performance } from 'perf_hooks';
  * @throws {Error} Throws an error if the DynamoDB query operation fails.
  */
 async function query(docClient, originalParams, log = console) {
+  guardQueryParameters(originalParams);
+
   let items = [];
   const params = { ...originalParams };
 

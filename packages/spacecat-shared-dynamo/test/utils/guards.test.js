@@ -16,42 +16,44 @@ import { expect } from 'chai';
 import { guardKey, guardQueryParameters, guardTableName } from '../../src/utils/guards.js';
 
 describe('Query Parameter Guards', () => {
-  // Test guardTableName
   describe('guardTableName', () => {
-    it('should throw an error if tableName is empty', () => {
+    it('throws an error if tableName is empty', () => {
       expect(() => guardTableName('')).to.throw('Table name is required.');
     });
 
-    it('should not throw an error for valid tableName', () => {
+    it('does not throw an error for valid tableName', () => {
       expect(() => guardTableName('validTableName')).to.not.throw();
     });
   });
 
-  // Test guardKey
   describe('guardKey', () => {
-    it('should throw an error if key is not an object', () => {
-      expect(() => guardKey('notAnObject')).to.throw('Key must be an object with a partitionKey.');
+    it('throws an error if key is not an object', () => {
+      expect(() => guardKey('notAnObject')).to.throw('Key must be a non-empty object.');
     });
 
-    it('should throw an error if key does not have partitionKey', () => {
-      expect(() => guardKey({})).to.throw('Key must be an object with a partitionKey.');
+    it('throws an error if key is an empty object', () => {
+      expect(() => guardKey({})).to.throw('Key must be a non-empty object.');
     });
 
-    it('should not throw an error for a valid key', () => {
-      expect(() => guardKey({ partitionKey: 'value' })).to.not.throw();
+    it('does not throw an error for a valid key with one property', () => {
+      expect(() => guardKey({ somePartitionKeyField: 'value' })).to.not.throw();
+    });
+
+    it('does not throw an error for a valid key with two properties', () => {
+      expect(() => guardKey({ somePartitionKeyField: 'value', someOptionalRangeKey: 'anotherValue' })).to.not.throw();
     });
   });
 
   describe('guardQueryParameters', () => {
-    it('should throw an error if params is not an object', () => {
+    it('throws an error if params is not an object', () => {
       expect(() => guardQueryParameters('notAnObject')).to.throw('Query parameters must be an object.');
     });
 
-    it('should throw an error if any required parameter is missing', () => {
+    it('throws an error if any required parameter is missing', () => {
       expect(() => guardQueryParameters({ TableName: 'table' })).to.throw('Query parameters is missing required parameter: KeyConditionExpression');
     });
 
-    it('should not throw an error for valid params', () => {
+    it('does not throw an error for valid params', () => {
       const validParams = {
         TableName: 'table',
         KeyConditionExpression: 'expression',

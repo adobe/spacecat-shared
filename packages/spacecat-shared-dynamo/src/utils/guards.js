@@ -25,14 +25,14 @@ const guardTableName = (tableName) => {
 };
 
 /**
- * Validates that the provided key is an object and contains a partitionKey.
+ * Validates that the provided key is an object and contains at least one property.
  *
  * @param {object} key - The key object to validate.
- * @throws {Error} If the key is not an object or does not contain a partitionKey.
+ * @throws {Error} If the key is not an object or does not contain at least one property.
  */
 const guardKey = (key) => {
-  if (!isObject(key) || !key.partitionKey) {
-    throw new Error('Key must be an object with a partitionKey.');
+  if (!isObject(key) || Object.keys(key).length === 0) {
+    throw new Error('Key must be a non-empty object.');
   }
 };
 

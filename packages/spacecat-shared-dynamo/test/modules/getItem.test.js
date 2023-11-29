@@ -54,7 +54,7 @@ describe('getItem', () => {
       await dynamoDbClient.getItem('TestTable', null);
       expect.fail('getItem did not throw with invalid key');
     } catch (error) {
-      expect(error.message).to.equal('Key must be an object with a partitionKey.');
+      expect(error.message).to.equal('Key must be a non-empty object.');
     }
   });
 

@@ -29,9 +29,12 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.1.0"
+    "@adobe/spacecat-shared-dynamo": "1.1.2",
+    "@adobe/spacecat-shared-utils": "1.1.0",
+    "uuid": "9.0.1"
   },
   "devDependencies": {
-    "chai": "4.3.10"
+    "chai": "4.3.10",
+    "sinon": "17.0.1"
   }
 }

@@ -14,8 +14,8 @@ import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, QueryCommandInput } from '@aws-sdk/lib-dynamodb';
 
 export declare interface Logger {
-  error(message: string, ...args: any[]): void;
-  info(message: string, ...args: any[]): void;
+  error(message: string, ...args: unknown[]): void;
+  info(message: string, ...args: unknown[]): void;
 }
 
 export declare interface DynamoDbKey {
@@ -30,4 +30,8 @@ export declare interface DynamoDbClient {
   removeItem(tableName: string, key: DynamoDbKey): Promise<{ message: string }>;
 }
 
-export function createClient(logger: Logger, dbClient?: DynamoDB, docClient?: DynamoDBDocumentClient): DynamoDbClient;
+export function createClient(
+  logger: Logger,
+  dbClient?: DynamoDB,
+  docClient?: DynamoDBDocumentClient
+): DynamoDbClient;

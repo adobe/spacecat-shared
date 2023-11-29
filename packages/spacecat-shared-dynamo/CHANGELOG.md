@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.1.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.1.1...@adobe/spacecat-shared-dynamo-v1.1.2) (2023-11-29)
+
+
+### Bug Fixes
+
+* key validation ([#7](https://github.com/adobe-rnd/spacecat-shared/issues/7)) ([4283e14](https://github.com/adobe-rnd/spacecat-shared/commit/4283e1418f78b8d610637b90bd504e47ae3bc8ee))
+
 # [@adobe/spacecat-shared-dynamo-v1.1.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.1.0...@adobe/spacecat-shared-dynamo-v1.1.1) (2023-11-29)
 
 

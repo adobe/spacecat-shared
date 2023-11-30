@@ -36,13 +36,13 @@ const Audit = (data = {}) => {
 
     if (self.getAuditType() === AUDIT_TYPE_LHS) {
       const {
-        performance, seo, accessibility, bestPractices,
+        performance, seo, accessibility, 'best-practices': bestPractices,
       } = auditResult;
       return {
         performance,
         seo,
         accessibility,
-        bestPractices,
+        'best-practices': bestPractices,
       };
     }
 

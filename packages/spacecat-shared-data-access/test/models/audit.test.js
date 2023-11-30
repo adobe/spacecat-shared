@@ -15,7 +15,6 @@
 import { expect } from 'chai';
 import { createAudit } from '../../src/models/audit.js';
 
-// Constants for testing
 const validData = {
   siteId: '123',
   auditedAt: new Date().toISOString(),

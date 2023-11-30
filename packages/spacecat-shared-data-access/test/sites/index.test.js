@@ -138,27 +138,27 @@ describe('Site Index Tests', () => {
     it('calls getSiteByBaseURL and returns an array/object', async () => {
       const result = await exportedFunctions.getSiteByBaseURL();
       expect(result).to.be.null;
-      expect(mockDynamoClient.getItem.called).to.be.true;
+      expect(mockDynamoClient.query.called).to.be.true;
     });
 
     it('calls getSiteByBaseURLWithAuditInfo and returns an array/object', async () => {
       const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo();
       expect(result).to.be.null;
-      expect(mockDynamoClient.getItem.called).to.be.true;
+      expect(mockDynamoClient.query.called).to.be.true;
     });
 
     it('calls getSiteByBaseURLWithAuditInfo and returns null when site is undefined', async () => {
-      mockDynamoClient.query.resolves(undefined);
+      mockDynamoClient.query.resolves([]);
 
       const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('baseUrl', 'auditType');
       expect(result).to.be.null;
     });
 
     it('calls getSiteByBaseURLWithAuditInfo and assigns latest audit when latestOnly is true', async () => {
-      const mockSiteData = {
+      const mockSiteData = [{
         id: 'site1',
         baseURL: 'https://example.com',
-      };
+      }];
 
       const mockLatestAuditData = [{
         siteId: 'site1',
@@ -168,8 +168,8 @@ describe('Site Index Tests', () => {
         fullAuditRef: 'https://example.com',
       }];
 
-      mockDynamoClient.getItem.onFirstCall().resolves(mockSiteData);
-      mockDynamoClient.query.onFirstCall().resolves(mockLatestAuditData);
+      mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
+      mockDynamoClient.query.onSecondCall().resolves(mockLatestAuditData);
 
       const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('https://example.com', 'type1', true);
       const audits = result.getAudits();
@@ -185,10 +185,10 @@ describe('Site Index Tests', () => {
     });
 
     it('calls getSiteByBaseURLWithAuditInfo and assigns all audits when latestOnly is false', async () => {
-      const mockSiteData = {
+      const mockSiteData = [{
         id: 'site1',
         baseURL: 'https://example.com',
-      };
+      }];
 
       const mockLatestAuditData = [{
         siteId: 'site1',
@@ -205,8 +205,8 @@ describe('Site Index Tests', () => {
         fullAuditRef: 'https://example2.com',
       }];
 
-      mockDynamoClient.getItem.onFirstCall().resolves(mockSiteData);
-      mockDynamoClient.query.onFirstCall().resolves(mockLatestAuditData);
+      mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
+      mockDynamoClient.query.onSecondCall().resolves(mockLatestAuditData);
 
       const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('baseUrl', 'auditType', false);
       const audits = result.getAudits();
@@ -228,19 +228,19 @@ describe('Site Index Tests', () => {
     it('calls getSiteByBaseURLWithAudits and returns an array/object', async () => {
       const result = await exportedFunctions.getSiteByBaseURLWithAudits();
       expect(result).to.be.null;
-      expect(mockDynamoClient.getItem.called).to.be.true;
+      expect(mockDynamoClient.query.called).to.be.true;
     });
 
     it('calls getSiteByBaseURLWithLatestAudit and returns an array/object', async () => {
       const result = await exportedFunctions.getSiteByBaseURLWithLatestAudit();
       expect(result).to.be.null;
-      expect(mockDynamoClient.getItem.called).to.be.true;
+      expect(mockDynamoClient.query.called).to.be.true;
     });
 
     describe('addSite Tests', () => {
       beforeEach(() => {
         mockDynamoClient = {
-          getItem: sinon.stub().returns(Promise.resolve(null)),
+          query: sinon.stub().returns(Promise.resolve([])),
           putItem: sinon.stub().returns(Promise.resolve()),
         };
         mockLog = { log: sinon.stub() };
@@ -253,12 +253,12 @@ describe('Site Index Tests', () => {
         expect(mockDynamoClient.putItem.calledOnce).to.be.true;
         expect(result.getBaseURL()).to.equal(siteData.baseURL);
         expect(result.getId()).to.be.a('string');
-        expect(result.getAudits()).to.be.an('object').that.is.empty;
+        expect(result.getAudits()).to.be.an('array').that.is.empty;
       });
 
       it('throws an error if site already exists', async () => {
         const siteData = { baseURL: 'https://existingsite.com' };
-        mockDynamoClient.getItem.returns(Promise.resolve(siteData));
+        mockDynamoClient.query.returns(Promise.resolve([siteData]));
 
         await expect(exportedFunctions.addSite(siteData)).to.be.rejectedWith('Site already exists');
       });
@@ -272,7 +272,7 @@ describe('Site Index Tests', () => {
 
     beforeEach(() => {
       mockDynamoClient = {
-        getItem: sinon.stub().returns(Promise.resolve(null)),
+        query: sinon.stub().returns(Promise.resolve([])),
         putItem: sinon.stub().returns(Promise.resolve()),
       };
       mockLog = { log: sinon.stub() };
@@ -281,7 +281,7 @@ describe('Site Index Tests', () => {
 
     it('updates an existing site successfully', async () => {
       const siteData = { baseURL: 'https://existingsite.com' };
-      mockDynamoClient.getItem.returns(Promise.resolve(siteData));
+      mockDynamoClient.query.returns(Promise.resolve([siteData]));
 
       const site = await exportedFunctions.getSiteByBaseURL(siteData.baseURL);
       site.updateBaseURL('https://newsite.com');

@@ -66,7 +66,7 @@ export const createSite = (data) => {
   }
 
   if (!isObject(newState.audits)) {
-    newState.audits = {};
+    newState.audits = [];
   }
 
   return Site(newState);

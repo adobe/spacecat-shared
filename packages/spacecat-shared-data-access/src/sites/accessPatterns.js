@@ -95,25 +95,31 @@ export const getSitesWithLatestAudit = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {Logger} log - The logger.
- * @param {string} baseUrl - The base URL of the site to retrieve.
+ * @param {string} baseURL - The base URL of the site to retrieve.
  * @returns {Promise<Site|null>} A promise that resolves to the site object if found,
  * otherwise null.
  */
 export const getSiteByBaseURL = async (
   dynamoClient,
   log,
-  baseUrl,
+  baseURL,
 ) => {
-  const dynamoItem = await dynamoClient.getItem(TABLE_NAME_SITES, {
-    GSI1PK: PK_ALL_SITES,
-    baseUrl,
+  const dynamoItems = await dynamoClient.query({
+    TableName: TABLE_NAME_SITES,
+    IndexName: INDEX_NAME_ALL_SITES,
+    KeyConditionExpression: 'GSI1PK = :gsi1pk AND baseURL = :baseURL',
+    ExpressionAttributeValues: {
+      ':gsi1pk': PK_ALL_SITES,
+      ':baseURL': baseURL,
+    },
+    Limit: 1,
   });
 
-  if (dynamoItem === null) {
+  if (dynamoItems.length === 0) {
     return null;
   }
 
-  return SiteDto.fromDynamoItem(dynamoItem);
+  return SiteDto.fromDynamoItem(dynamoItems[0]);
 };
 
 /**

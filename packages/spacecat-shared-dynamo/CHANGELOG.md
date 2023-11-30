@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.1.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.1.3...@adobe/spacecat-shared-dynamo-v1.1.4) (2023-11-30)
+
+
+### Bug Fixes
+
+* allow use of index for getItem ([#10](https://github.com/adobe-rnd/spacecat-shared/issues/10)) ([9a984d1](https://github.com/adobe-rnd/spacecat-shared/commit/9a984d176f02444409318a5f4287d75249b2d83a))
+
 # [@adobe/spacecat-shared-dynamo-v1.1.3](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.1.2...@adobe/spacecat-shared-dynamo-v1.1.3) (2023-11-30)
 
 

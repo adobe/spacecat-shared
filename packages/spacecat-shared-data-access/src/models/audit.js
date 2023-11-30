@@ -17,6 +17,31 @@ export const AUDIT_TYPE_LHS = 'lhs';
 
 const EXPIRES_IN_DAYS = 30;
 
+const AUDIT_TYPE_PROPERTIES = {
+  [AUDIT_TYPE_LHS]: ['performance', 'seo', 'accessibility', 'best-practices'],
+};
+
+/**
+ * Validates if the auditResult contains the required properties for the given audit type.
+ * @param {object} auditResult - The audit result to validate.
+ * @param {string} auditType - The type of the audit.
+ * @returns {boolean} - True if valid, false otherwise.
+ */
+const validateAuditResult = (auditResult, auditType) => {
+  const expectedProperties = AUDIT_TYPE_PROPERTIES[auditType];
+  if (!expectedProperties) {
+    throw new Error(`Unknown audit type: ${auditType}`);
+  }
+
+  for (const prop of expectedProperties) {
+    if (!(prop in auditResult)) {
+      throw new Error(`Missing expected property '${prop}' for audit type '${auditType}'`);
+    }
+  }
+
+  return true;
+};
+
 /**
  * Creates a new Audit.
  * @param {object } data - audit data
@@ -31,23 +56,7 @@ const Audit = (data = {}) => {
   self.getAuditType = () => self.state.auditType.toLowerCase();
   self.getExpiresAt = () => self.state.expiresAt;
   self.getFullAuditRef = () => self.state.fullAuditRef;
-  self.getScores = () => {
-    const auditResult = self.getAuditResult();
-
-    if (self.getAuditType() === AUDIT_TYPE_LHS) {
-      const {
-        performance, seo, accessibility, 'best-practices': bestPractices,
-      } = auditResult;
-      return {
-        performance,
-        seo,
-        accessibility,
-        'best-practices': bestPractices,
-      };
-    }
-
-    return auditResult;
-  };
+  self.getScores = () => self.getAuditResult();
 
   return Object.freeze(self);
 };
@@ -76,6 +85,8 @@ export const createAudit = (data) => {
   if (!isObject(newState.auditResult)) {
     throw new Error('Audit result must be an object');
   }
+
+  validateAuditResult(data.auditResult, data.auditType);
 
   if (!hasText(newState.fullAuditRef)) {
     throw new Error('Full audit ref must be provided');

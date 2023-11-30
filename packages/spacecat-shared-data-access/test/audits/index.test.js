@@ -17,7 +17,7 @@ import sinon from 'sinon';
 
 import { auditFunctions } from '../../src/audits/index.js';
 
-describe('Audit Index Tests', () => {
+describe('Audit Access Pattern Tests', () => {
   describe('Audit Functions Export Tests', () => {
     const mockDynamoClient = {};
     const mockLog = {};
@@ -89,9 +89,14 @@ describe('Audit Index Tests', () => {
     it('successfully retrieves an audit for a site', async () => {
       const mockAuditData = [{
         siteId: 'siteId',
-        auditType: 'type1',
+        auditType: 'lhs',
         auditedAt: new Date().toISOString(),
-        auditResult: { score: 1 },
+        auditResult: {
+          performance: 0.9,
+          seo: 0.9,
+          accessibility: 0.9,
+          'best-practices': 0.9,
+        },
         fullAuditRef: 'https://someurl.com',
       }];
       mockDynamoClient.query.returns(Promise.resolve(mockAuditData));
@@ -120,7 +125,12 @@ describe('Audit Index Tests', () => {
       siteId: 'siteId',
       auditType: 'lhs',
       auditedAt: new Date().toISOString(),
-      auditResult: { score: 1 },
+      auditResult: {
+        performance: 0.9,
+        seo: 0.9,
+        accessibility: 0.9,
+        'best-practices': 0.9,
+      },
       fullAuditRef: 'https://someurl.com',
     };
 
@@ -149,6 +159,28 @@ describe('Audit Index Tests', () => {
       mockDynamoClient.query.returns(Promise.resolve([auditData]));
 
       await expect(exportedFunctions.addAudit(auditData)).to.be.rejectedWith('Audit already exists');
+    });
+
+    it('throws an error for unknown audit type', async () => {
+      const invalidAuditData = {
+        ...auditData,
+        auditType: 'unknownType', // An unknown audit type
+      };
+
+      await expect(exportedFunctions.addAudit(invalidAuditData)).to.be.rejectedWith('Unknown audit type');
+    });
+
+    it('throws an error if an expected property is missing in audit results', async () => {
+      const incompleteAuditData = {
+        ...auditData,
+        auditResult: {
+          performance: 0.9,
+          seo: 0.9,
+          // 'accessibility' and 'best-practices' are missing
+        },
+      };
+
+      await expect(exportedFunctions.addAudit(incompleteAuditData)).to.be.rejectedWith('Missing expected property');
     });
   });
 });

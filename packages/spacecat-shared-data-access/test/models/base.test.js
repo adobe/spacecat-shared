@@ -15,7 +15,7 @@
 import { expect } from 'chai';
 import { Base } from '../../src/models/base.js';
 
-describe('Base Entity Tests', () => {
+describe('Base Model Tests', () => {
   describe('Initialization Tests', () => {
     it('should automatically assign a UUID if no id is provided', () => {
       const baseEntity = Base();

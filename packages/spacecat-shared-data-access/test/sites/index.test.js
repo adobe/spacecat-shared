@@ -23,7 +23,7 @@ chai.use(chaiAsPromised);
 
 const { expect } = chai;
 
-describe('Site Index Tests', () => {
+describe('Site Access Pattern Tests', () => {
   describe('Site Functions Export Tests', () => {
     const mockDynamoClient = {};
     const mockLog = {};
@@ -107,16 +107,21 @@ describe('Site Index Tests', () => {
 
       const mockAuditData = [{
         siteId: 'site1',
-        auditType: 'type1',
+        auditType: 'lhs',
         auditedAt: new Date().toISOString(),
-        auditResult: {},
+        auditResult: {
+          performance: 0.9,
+          seo: 0.9,
+          accessibility: 0.9,
+          'best-practices': 0.9,
+        },
         fullAuditRef: 'https://example.com',
       }];
 
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
       mockDynamoClient.query.onSecondCall().resolves(mockAuditData);
 
-      const result = await exportedFunctions.getSitesWithLatestAudit('auditType');
+      const result = await exportedFunctions.getSitesWithLatestAudit('lhs');
       expect(result).to.be.an('array').that.has.lengthOf(1);
     });
 
@@ -162,16 +167,21 @@ describe('Site Index Tests', () => {
 
       const mockLatestAuditData = [{
         siteId: 'site1',
-        auditType: 'type1',
+        auditType: 'lhs',
         auditedAt: new Date().toISOString(),
-        auditResult: {},
+        auditResult: {
+          performance: 0.9,
+          seo: 0.9,
+          accessibility: 0.9,
+          'best-practices': 0.9,
+        },
         fullAuditRef: 'https://example.com',
       }];
 
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
       mockDynamoClient.query.onSecondCall().resolves(mockLatestAuditData);
 
-      const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('https://example.com', 'type1', true);
+      const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('https://example.com', 'lhs', true);
       const audits = result.getAudits();
       expect(audits).to.be.an('array').with.lengthOf(1);
 
@@ -192,23 +202,33 @@ describe('Site Index Tests', () => {
 
       const mockLatestAuditData = [{
         siteId: 'site1',
-        auditType: 'type1',
+        auditType: 'lhs',
         auditedAt: new Date().toISOString(),
-        auditResult: {},
+        auditResult: {
+          performance: 0.9,
+          seo: 0.9,
+          accessibility: 0.9,
+          'best-practices': 0.9,
+        },
         fullAuditRef: 'https://example.com',
       },
       {
         siteId: 'site1',
-        auditType: 'type2',
+        auditType: 'lhs',
         auditedAt: new Date().toISOString(),
-        auditResult: {},
+        auditResult: {
+          performance: 0.9,
+          seo: 0.9,
+          accessibility: 0.9,
+          'best-practices': 0.9,
+        },
         fullAuditRef: 'https://example2.com',
       }];
 
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
       mockDynamoClient.query.onSecondCall().resolves(mockLatestAuditData);
 
-      const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('baseUrl', 'auditType', false);
+      const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('baseUrl', 'lhs', false);
       const audits = result.getAudits();
       expect(audits).to.be.an('array').with.lengthOf(2);
 

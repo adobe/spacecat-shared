@@ -18,12 +18,17 @@ import { createAudit } from '../../src/models/audit.js';
 const validData = {
   siteId: '123',
   auditedAt: new Date().toISOString(),
-  auditType: 'Type',
-  auditResult: {},
+  auditType: 'lhs',
+  auditResult: {
+    performance: 0.9,
+    seo: 0.9,
+    accessibility: 0.9,
+    'best-practices': 0.9,
+  },
   fullAuditRef: 'ref123',
 };
 
-describe('Audit Module Tests', () => {
+describe('Audit Model Tests', () => {
   describe('Validation Tests', () => {
     it('throws an error if siteId is not provided', () => {
       expect(() => createAudit({ ...validData, siteId: '' })).to.throw('Site ID must be provided');

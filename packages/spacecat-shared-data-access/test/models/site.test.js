@@ -21,7 +21,7 @@ const validData = {
   imsOrgId: 'org123',
 };
 
-describe('Site Module Tests', () => {
+describe('Site Model Tests', () => {
   describe('Validation Tests', () => {
     it('throws an error if baseURL is not a valid URL', () => {
       expect(() => createSite({ ...validData, baseURL: 'invalid-url' })).to.throw('Base URL must be a valid URL');

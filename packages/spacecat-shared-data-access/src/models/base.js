@@ -13,6 +13,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import { isString } from '@adobe/spacecat-shared-utils';
 
+/**
+ * Base model.
+ *
+ * @param {object} data data
+ * @returns {Base} base model
+ */
 export const Base = (data = {}) => {
   const self = { state: { ...data } };
 

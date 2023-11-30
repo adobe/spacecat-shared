@@ -10,9 +10,21 @@
  * governing permissions and limitations under the License.
  */
 
-import { getAuditsForSite, getLatestAuditForSite, getLatestAudits } from './accessPatterns.js';
+import {
+  addAudit, getAuditForSite,
+  getAuditsForSite,
+  getLatestAuditForSite,
+  getLatestAudits,
+} from './accessPatterns.js';
 
 export const auditFunctions = (dynamoClient, log) => ({
+  getAuditForSite: (siteId, auditType, auditedAt) => getAuditForSite(
+    dynamoClient,
+    log,
+    siteId,
+    auditType,
+    auditedAt,
+  ),
   getAuditsForSite: (siteId, auditType) => getAuditsForSite(
     dynamoClient,
     log,
@@ -30,5 +42,10 @@ export const auditFunctions = (dynamoClient, log) => ({
     log,
     siteId,
     auditType,
+  ),
+  addAudit: (auditData) => addAudit(
+    dynamoClient,
+    log,
+    auditData,
   ),
 });

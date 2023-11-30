@@ -18,16 +18,11 @@ export declare interface Logger {
   info(message: string, ...args: unknown[]): void;
 }
 
-export declare interface DynamoDbKey {
-  partitionKey: string;
-  sortKey?: string;
-}
-
 export declare interface DynamoDbClient {
   query(originalParams: QueryCommandInput): Promise<object[]>;
-  getItem(tableName: string, key: DynamoDbKey): Promise<object>;
+  getItem(tableName: string, key: object): Promise<object>;
   putItem(tableName: string, item: object): Promise<{ message: string }>;
-  removeItem(tableName: string, key: DynamoDbKey): Promise<{ message: string }>;
+  removeItem(tableName: string, key: object): Promise<{ message: string }>;
 }
 
 export function createClient(

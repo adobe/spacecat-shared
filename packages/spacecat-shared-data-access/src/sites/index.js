@@ -11,20 +11,23 @@
  */
 
 import {
+  addSite,
   getSiteByBaseURL,
   getSiteByBaseURLWithAuditInfo,
   getSiteByBaseURLWithAudits,
-  getSiteByBaseURLWithLatestAudit, getSites, getSitesToAudit, getSitesWithLatestAudit,
+  getSiteByBaseURLWithLatestAudit,
+  getSites,
+  getSitesToAudit,
+  getSitesWithLatestAudit,
+  updateSite,
 } from './accessPatterns.js';
 
 export const siteFunctions = (dynamoClient, log) => ({
   getSites: () => getSites(
     dynamoClient,
-    log,
   ),
   getSitesToAudit: () => getSitesToAudit(
     dynamoClient,
-    log,
   ),
   getSitesWithLatestAudit: (auditType, sortAuditsAscending) => getSitesWithLatestAudit(
     dynamoClient,
@@ -56,4 +59,6 @@ export const siteFunctions = (dynamoClient, log) => ({
     baseUrl,
     auditType,
   ),
+  addSite: (siteData) => addSite(dynamoClient, log, siteData),
+  updateSite: (site) => updateSite(dynamoClient, log, site),
 });

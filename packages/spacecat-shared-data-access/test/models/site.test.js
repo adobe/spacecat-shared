@@ -38,7 +38,6 @@ describe('Site Module Tests', () => {
     let site;
 
     beforeEach(() => {
-      // Reset site object before each test
       site = createSite(validData);
     });
 

@@ -19,7 +19,7 @@ import { guardKey, guardTableName } from '../utils/guards.js';
  *
  * @param {DynamoDBDocumentClient} docClient - The AWS SDK DynamoDB Document client instance.
  * @param {string} tableName - The name of the DynamoDB table.
- * @param {DynamoDbKey} key - The key object containing partitionKey and optionally sortKey.
+ * @param {object} key - The key object containing partitionKey and optionally sortKey.
  * @param {Logger} log - The logging object, defaults to console.
  * @returns {Promise<Object>} A promise that resolves to the retrieved item.
  * @throws {Error} Throws an error if the DynamoDB get operation fails or input validation fails.

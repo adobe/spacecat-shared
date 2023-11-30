@@ -34,5 +34,11 @@ module.exports = {
       files: ['*.js', '*.cjs'],
       rules: {},
     },
+    {
+      files: ["*.test.js"],
+      rules: {
+        "no-unused-expressions": "off"
+      }
+    }
   ],
 };

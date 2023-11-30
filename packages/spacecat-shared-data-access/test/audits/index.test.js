@@ -57,23 +57,98 @@ describe('Audit Index Tests', () => {
     it('calls getAuditsForSite and return an array', async () => {
       const result = await exportedFunctions.getAuditsForSite('siteId', 'auditType');
       expect(result).to.be.an('array');
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
     it('calls getLatestAudits and return an array', async () => {
       const result = await exportedFunctions.getLatestAudits('auditType', true);
       expect(result).to.be.an('array');
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
     it('calls getLatestAuditForSite and return an array', async () => {
       const result = await exportedFunctions.getLatestAuditForSite('siteId', 'auditType');
-      // eslint-disable-next-line no-unused-expressions
       expect(result).to.be.null;
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.query.called).to.be.true;
+    });
+  });
+
+  describe('getAuditForSite Tests', () => {
+    let mockDynamoClient;
+    let mockLog;
+    let exportedFunctions;
+
+    beforeEach(() => {
+      mockDynamoClient = {
+        query: sinon.stub().returns(Promise.resolve([])),
+      };
+      mockLog = { log: sinon.stub() };
+      exportedFunctions = auditFunctions(mockDynamoClient, mockLog);
+    });
+
+    it('successfully retrieves an audit for a site', async () => {
+      const mockAuditData = [{
+        siteId: 'siteId',
+        auditType: 'type1',
+        auditedAt: new Date().toISOString(),
+        auditResult: { score: 1 },
+        fullAuditRef: 'https://someurl.com',
+      }];
+      mockDynamoClient.query.returns(Promise.resolve(mockAuditData));
+
+      const result = await exportedFunctions.getAuditForSite('siteId', 'auditType', 'auditedAt');
+      expect(result).to.not.be.null;
+      expect(result.getScores()).to.be.an('object');
+      expect(mockDynamoClient.query.calledOnce).to.be.true;
+    });
+
+    it('returns null if no audit is found for a site', async () => {
+      mockDynamoClient.query.returns(Promise.resolve([]));
+
+      const result = await exportedFunctions.getAuditForSite('siteId', 'auditType', 'auditedAt');
+      expect(result).to.be.null;
+      expect(mockDynamoClient.query.calledOnce).to.be.true;
+    });
+  });
+
+  describe('addAudit Tests', () => {
+    let mockDynamoClient;
+    let mockLog;
+    let exportedFunctions;
+
+    const auditData = {
+      siteId: 'siteId',
+      auditType: 'lhs',
+      auditedAt: new Date().toISOString(),
+      auditResult: { score: 1 },
+      fullAuditRef: 'https://someurl.com',
+    };
+
+    beforeEach(() => {
+      mockDynamoClient = {
+        query: sinon.stub().returns(Promise.resolve([])),
+        putItem: sinon.stub().returns(Promise.resolve()),
+      };
+      mockLog = { log: sinon.stub() };
+      exportedFunctions = auditFunctions(mockDynamoClient, mockLog);
+    });
+
+    it('successfully adds a new audit', async () => {
+      const result = await exportedFunctions.addAudit(auditData);
+      // Once for 'audits' and once for 'latest_audits'
+      expect(mockDynamoClient.putItem.calledTwice).to.be.true;
+      expect(result.getSiteId()).to.equal(auditData.siteId);
+      expect(result.getAuditType()).to.equal(auditData.auditType);
+      expect(result.getAuditedAt()).to.equal(auditData.auditedAt);
+      expect(result.getAuditResult()).to.deep.equal(auditData.auditResult);
+      expect(result.getFullAuditRef()).to.equal(auditData.fullAuditRef);
+      expect(result.getScores()).to.be.an('object');
+    });
+
+    it('throws an error if audit already exists', async () => {
+      mockDynamoClient.query.returns(Promise.resolve([auditData]));
+
+      await expect(exportedFunctions.addAudit(auditData)).to.be.rejectedWith('Audit already exists');
     });
   });
 });

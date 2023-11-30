@@ -10,12 +10,19 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from './base.js';
 
+/**
+ * Creates a new Site.
+ *
+ * @param {object} data - site data
+ * @returns {Readonly<Site>} site - new site
+ */
 const Site = (data = {}) => {
   const self = Base(data);
 
+  self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
   self.getImsOrgId = () => self.state.imsOrgId;
 
@@ -37,14 +44,29 @@ const Site = (data = {}) => {
     return self;
   };
 
+  self.setAudits = (audits) => {
+    self.state.audits = audits;
+    return self;
+  };
+
   return Object.freeze(self);
 };
 
+/**
+ * Creates a new Site.
+ *
+ * @param {object} data - site data
+ * @returns {Readonly<Site>} site - new site
+ */
 export const createSite = (data) => {
   const newState = { ...data };
 
   if (!isValidUrl(newState.baseURL)) {
     throw new Error('Base URL must be a valid URL');
+  }
+
+  if (!isObject(newState.audits)) {
+    newState.audits = {};
   }
 
   return Site(newState);

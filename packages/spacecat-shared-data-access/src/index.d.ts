@@ -10,23 +10,26 @@
  * governing permissions and limitations under the License.
  */
 
-export interface Site {
-  id: string;
-  baseURL: string;
-  imsOrgId: string;
-  createdAt: string;
-  updatedAt: string;
+export interface Audit {
+  getSiteId: () => string;
+  getAuditedAt: () => string;
+  getAuditResult: () => object;
+  getAuditType: () => object;
+  getExpiresAt: () => Date;
+  getFullAuditRef: () => string;
+  getScores: () => object;
 }
 
-export interface Audit {
-  siteId: string;
-  auditedAt: string;
-  auditResult: object;
-  auditType: string;
-  expiresAt: number;
-  fullAuditRef: string;
-  createdAt: string;
-  updatedAt: string;
+export interface Site {
+  getId: () => string;
+  getBaseURL: () => string;
+  getImsOrgId: () => string;
+  getCreatedAt: () => string;
+  getUpdatedAt: () => string;
+  getAudits: () => Audit[];
+  updateBaseURL: (baseURL: string) => Site;
+  updateImsOrgId: (imsOrgId: string) => Site;
+  setAudits: (audits: Audit[]) => Site;
 }
 
 export interface DataAccess {
@@ -64,6 +67,12 @@ export interface DataAccess {
     baseUrl: string,
     auditType: string,
   ) => Promise<Site | null>;
+  addSite: (
+    siteData: object,
+  ) => Promise<Site>;
+  updateSite: (
+    site: Site,
+  ) => Promise<Site>;
 }
 
 export function createDataAccess(

@@ -13,8 +13,15 @@
 import { hasText, isIsoDate, isObject } from '@adobe/spacecat-shared-utils';
 import { Base } from './base.js';
 
+export const AUDIT_TYPE_LHS = 'lhs';
+
 const EXPIRES_IN_DAYS = 30;
 
+/**
+ * Creates a new Audit.
+ * @param {object } data - audit data
+ * @returns {Readonly<Audit>} audit - new audit
+ */
 const Audit = (data = {}) => {
   const self = Base(data);
 
@@ -24,10 +31,33 @@ const Audit = (data = {}) => {
   self.getAuditType = () => self.state.auditType.toLowerCase();
   self.getExpiresAt = () => self.state.expiresAt;
   self.getFullAuditRef = () => self.state.fullAuditRef;
+  self.getScores = () => {
+    const auditResult = self.getAuditResult();
+
+    if (self.getAuditType() === AUDIT_TYPE_LHS) {
+      const {
+        performance, seo, accessibility, bestPractices,
+      } = auditResult;
+      return {
+        performance,
+        seo,
+        accessibility,
+        bestPractices,
+      };
+    }
+
+    return auditResult;
+  };
 
   return Object.freeze(self);
 };
 
+/**
+ * Creates a new Audit.
+ *
+ * @param {object } data - audit data
+ * @returns {Readonly<Audit>} audit - new audit
+ */
 export const createAudit = (data) => {
   const newState = { ...data };
 

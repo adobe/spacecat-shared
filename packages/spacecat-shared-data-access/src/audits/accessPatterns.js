@@ -10,6 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
+import { isObject } from '@adobe/spacecat-shared-utils';
+
+import { AuditDto } from '../dto/audit.js';
+import { createAudit } from '../models/audit.js';
+
 /**
  * Retrieves audits for a specified site. If an audit type is provided,
  * it returns only audits of that type.
@@ -35,7 +40,39 @@ export const getAuditsForSite = async (dynamoClient, log, siteId, auditType) => 
     queryParams.ExpressionAttributeValues[':auditType'] = `${auditType}#`;
   }
 
-  return dynamoClient.query(queryParams);
+  const dynamoItems = await dynamoClient.query(queryParams);
+
+  return dynamoItems.map((item) => AuditDto.fromDynamoItem(item));
+};
+
+/**
+ * Retrieves a specific audit for a specified site.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {Logger} log - The logger.
+ * @param {string} siteId - The ID of the site for which to retrieve the audit.
+ * @param {string} auditType - The type of audit to retrieve.
+ * @param auditedAt - The ISO 8601 timestamp of the audit.
+ * @returns {Promise<Readonly<Audit>|null>}
+ */
+export const getAuditForSite = async (
+  dynamoClient,
+  log,
+  siteId,
+  auditType,
+  auditedAt,
+) => {
+  const audit = await dynamoClient.query({
+    TableName: 'audits',
+    KeyConditionExpression: 'siteId = :siteId AND SK = :sk',
+    ExpressionAttributeValues: {
+      ':siteId': siteId,
+      ':sk': `${auditType}#${auditedAt}}`,
+    },
+    Limit: 1,
+  });
+
+  return audit.length > 0 ? AuditDto.fromDynamoItem(audit[0]) : null;
 };
 
 /**
@@ -54,16 +91,20 @@ export const getLatestAudits = async (
   log,
   auditType,
   ascending = true,
-) => dynamoClient.query({
-  TableName: 'latest_audits',
-  IndexName: 'all_latest_audit_scores',
-  KeyConditionExpression: 'GSI1PK = :gsi1pk AND begins_with(GSI1SK, :auditType)',
-  ExpressionAttributeValues: {
-    ':gsi1pk': 'ALL_LATEST_AUDITS',
-    ':auditType': `${auditType}#`,
-  },
-  ScanIndexForward: ascending, // Sorts ascending if true, descending if false
-});
+) => {
+  const dynamoItems = await dynamoClient.query({
+    TableName: 'latest_audits',
+    IndexName: 'all_latest_audit_scores',
+    KeyConditionExpression: 'GSI1PK = :gsi1pk AND begins_with(GSI1SK, :auditType)',
+    ExpressionAttributeValues: {
+      ':gsi1pk': 'ALL_LATEST_AUDITS',
+      ':auditType': `${auditType}#`,
+    },
+    ScanIndexForward: ascending, // Sorts ascending if true, descending if false
+  });
+
+  return dynamoItems.map((item) => AuditDto.fromDynamoItem(item));
+};
 
 /**
  * Retrieves the latest audit for a specified site and audit type.
@@ -72,7 +113,7 @@ export const getLatestAudits = async (
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site for which the latest audit is being retrieved.
  * @param {string} auditType - The type of audit to retrieve the latest instance of.
- * @returns {Promise<Object|null>} A promise that resolves to the latest audit of the
+ * @returns {Promise<Audit|null>} A promise that resolves to the latest audit of the
  * specified type for the site, or null if none is found.
  */
 export const getLatestAuditForSite = async (
@@ -91,5 +132,34 @@ export const getLatestAuditForSite = async (
     Limit: 1,
   });
 
-  return latestAudit.length > 0 ? latestAudit[0] : null;
+  return latestAudit.length > 0 ? AuditDto.fromDynamoItem(latestAudit[0]) : null;
+};
+
+/**
+ * Adds an audit.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {Logger} log - The logger.
+ * @param {object} auditData - The audit data.
+ * @returns {Promise<Readonly<Site>>}
+ */
+export const addAudit = async (dynamoClient, log, auditData) => {
+  const audit = createAudit(auditData);
+  const existingAudit = await getAuditForSite(
+    dynamoClient,
+    log,
+    audit.getSiteId(),
+    audit.getAuditType(),
+    audit.getAuditedAt(),
+  );
+
+  if (isObject(existingAudit)) {
+    throw new Error('Audit already exists');
+  }
+
+  // TODO: Add transaction support
+  await dynamoClient.putItem('audits', AuditDto.toDynamoItem(audit));
+  await dynamoClient.putItem('latest_audits', AuditDto.toDynamoItem(audit, true));
+
+  return audit;
 };

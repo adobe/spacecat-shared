@@ -17,11 +17,15 @@ import { createDataAccess } from '../src/index.js';
 
 describe('Data Access Object Tests', () => {
   const auditFunctions = [
+    'addAudit',
+    'getAuditForSite',
     'getAuditsForSite',
     'getLatestAudits',
     'getLatestAuditForSite',
   ];
   const siteFunctions = [
+    'addSite',
+    'updateSite',
     'getSites',
     'getSitesToAudit',
     'getSitesWithLatestAudit',

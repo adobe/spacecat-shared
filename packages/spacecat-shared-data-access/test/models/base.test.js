@@ -38,7 +38,6 @@ describe('Base Entity Tests', () => {
 
     it('should return undefined for createdAt if not provided', () => {
       const baseEntity = Base();
-      // eslint-disable-next-line no-unused-expressions
       expect(baseEntity.getCreatedAt()).to.be.undefined;
     });
 
@@ -50,7 +49,6 @@ describe('Base Entity Tests', () => {
 
     it('should return undefined for updatedAt if not provided', () => {
       const baseEntity = Base();
-      // eslint-disable-next-line no-unused-expressions
       expect(baseEntity.getUpdatedAt()).to.be.undefined;
     });
   });

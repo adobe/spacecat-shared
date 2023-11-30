@@ -12,10 +12,16 @@
 
 /* eslint-env mocha */
 
-import { expect } from 'chai';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
 import { siteFunctions } from '../../src/sites/index.js';
+import { createSite } from '../../src/models/site.js';
+
+chai.use(chaiAsPromised);
+
+const { expect } = chai;
 
 describe('Site Index Tests', () => {
   describe('Site Functions Export Tests', () => {
@@ -78,48 +84,46 @@ describe('Site Index Tests', () => {
     it('calls getSites and returns an array', async () => {
       const result = await exportedFunctions.getSites();
       expect(result).to.be.an('array');
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
     it('calls getSitesToAudit and returns an array', async () => {
       const result = await exportedFunctions.getSitesToAudit();
       expect(result).to.be.an('array');
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
     it('calls getSitesWithLatestAudit and returns an array', async () => {
       const result = await exportedFunctions.getSitesWithLatestAudit();
       expect(result).to.be.an('array');
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
     it('calls getSitesWithLatestAudit and handles latestAudits', async () => {
       const mockSiteData = [{
         id: 'site1',
-        baseUrl: 'https://example.com',
+        baseURL: 'https://example.com',
       }];
 
       const mockAuditData = [{
-        id: 'audit1',
         siteId: 'site1',
         auditType: 'type1',
+        auditedAt: new Date().toISOString(),
+        auditResult: {},
+        fullAuditRef: 'https://example.com',
       }];
 
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
       mockDynamoClient.query.onSecondCall().resolves(mockAuditData);
 
       const result = await exportedFunctions.getSitesWithLatestAudit('auditType');
-      // eslint-disable-next-line no-unused-expressions
       expect(result).to.be.an('array').that.has.lengthOf(1);
     });
 
     it('calls getSitesWithLatestAudit and handles empty latestAudits', async () => {
       const mockSiteData = [{
         id: 'site1',
-        baseUrl: 'https://example.com',
+        baseURL: 'https://example.com',
       }];
 
       const mockAuditData = [];
@@ -128,23 +132,18 @@ describe('Site Index Tests', () => {
       mockDynamoClient.query.onSecondCall().resolves(mockAuditData);
 
       const result = await exportedFunctions.getSitesWithLatestAudit('auditType');
-      // eslint-disable-next-line no-unused-expressions
       expect(result).to.be.an('array').that.is.empty;
     });
 
     it('calls getSiteByBaseURL and returns an array/object', async () => {
       const result = await exportedFunctions.getSiteByBaseURL();
-      // eslint-disable-next-line no-unused-expressions
       expect(result).to.be.null;
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.getItem.called).to.be.true;
     });
 
     it('calls getSiteByBaseURLWithAuditInfo and returns an array/object', async () => {
       const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo();
-      // eslint-disable-next-line no-unused-expressions
       expect(result).to.be.null;
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.getItem.called).to.be.true;
     });
 
@@ -152,63 +151,151 @@ describe('Site Index Tests', () => {
       mockDynamoClient.query.resolves(undefined);
 
       const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('baseUrl', 'auditType');
-      // eslint-disable-next-line no-unused-expressions
       expect(result).to.be.null;
     });
 
     it('calls getSiteByBaseURLWithAuditInfo and assigns latest audit when latestOnly is true', async () => {
       const mockSiteData = {
         id: 'site1',
-        baseUrl: 'https://example.com',
+        baseURL: 'https://example.com',
       };
 
       const mockLatestAuditData = [{
-        id: 'audit1',
         siteId: 'site1',
         auditType: 'type1',
+        auditedAt: new Date().toISOString(),
+        auditResult: {},
+        fullAuditRef: 'https://example.com',
       }];
 
       mockDynamoClient.getItem.onFirstCall().resolves(mockSiteData);
       mockDynamoClient.query.onFirstCall().resolves(mockLatestAuditData);
 
       const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('https://example.com', 'type1', true);
-      expect(result).to.have.property('audits').that.is.an('array').with.lengthOf(1);
-      expect(result.audits[0]).to.deep.equal(mockLatestAuditData[0]);
+      const audits = result.getAudits();
+      expect(audits).to.be.an('array').with.lengthOf(1);
+
+      const audit = audits[0];
+      expect(audit.getId()).to.be.a('string').that.is.not.empty;
+      expect(audit.getSiteId()).to.equal(mockLatestAuditData[0].siteId);
+      expect(audit.getAuditType()).to.equal(mockLatestAuditData[0].auditType);
+      expect(audit.getAuditedAt()).to.equal(mockLatestAuditData[0].auditedAt);
+      expect(audit.getAuditResult()).to.deep.equal(mockLatestAuditData[0].auditResult);
+      expect(audit.getFullAuditRef()).to.equal(mockLatestAuditData[0].fullAuditRef);
     });
 
     it('calls getSiteByBaseURLWithAuditInfo and assigns all audits when latestOnly is false', async () => {
       const mockSiteData = {
         id: 'site1',
-        baseUrl: 'https://example.com',
+        baseURL: 'https://example.com',
       };
 
       const mockLatestAuditData = [{
-        id: 'audit1',
         siteId: 'site1',
         auditType: 'type1',
+        auditedAt: new Date().toISOString(),
+        auditResult: {},
+        fullAuditRef: 'https://example.com',
+      },
+      {
+        siteId: 'site1',
+        auditType: 'type2',
+        auditedAt: new Date().toISOString(),
+        auditResult: {},
+        fullAuditRef: 'https://example2.com',
       }];
 
       mockDynamoClient.getItem.onFirstCall().resolves(mockSiteData);
       mockDynamoClient.query.onFirstCall().resolves(mockLatestAuditData);
 
       const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('baseUrl', 'auditType', false);
-      expect(result).to.have.property('audits').that.is.an('array');
+      const audits = result.getAudits();
+      expect(audits).to.be.an('array').with.lengthOf(2);
+
+      for (let i = 0; i < mockLatestAuditData.length; i += 1) {
+        const mockAudit = mockLatestAuditData[i];
+        const audit = audits[i];
+
+        expect(audit.getId()).to.be.a('string').that.is.not.empty;
+        expect(audit.getSiteId()).to.equal(mockAudit.siteId);
+        expect(audit.getAuditType()).to.equal(mockAudit.auditType);
+        expect(audit.getAuditedAt()).to.equal(mockAudit.auditedAt);
+        expect(audit.getAuditResult()).to.deep.equal(mockAudit.auditResult);
+        expect(audit.getFullAuditRef()).to.equal(mockAudit.fullAuditRef);
+      }
     });
 
     it('calls getSiteByBaseURLWithAudits and returns an array/object', async () => {
       const result = await exportedFunctions.getSiteByBaseURLWithAudits();
-      // eslint-disable-next-line no-unused-expressions
       expect(result).to.be.null;
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.getItem.called).to.be.true;
     });
 
     it('calls getSiteByBaseURLWithLatestAudit and returns an array/object', async () => {
       const result = await exportedFunctions.getSiteByBaseURLWithLatestAudit();
-      // eslint-disable-next-line no-unused-expressions
       expect(result).to.be.null;
-      // eslint-disable-next-line no-unused-expressions
       expect(mockDynamoClient.getItem.called).to.be.true;
+    });
+
+    describe('addSite Tests', () => {
+      beforeEach(() => {
+        mockDynamoClient = {
+          getItem: sinon.stub().returns(Promise.resolve(null)),
+          putItem: sinon.stub().returns(Promise.resolve()),
+        };
+        mockLog = { log: sinon.stub() };
+        exportedFunctions = siteFunctions(mockDynamoClient, mockLog);
+      });
+
+      it('adds a new site successfully', async () => {
+        const siteData = { baseURL: 'https://newsite.com' };
+        const result = await exportedFunctions.addSite(siteData);
+        expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+        expect(result.getBaseURL()).to.equal(siteData.baseURL);
+        expect(result.getId()).to.be.a('string');
+        expect(result.getAudits()).to.be.an('object').that.is.empty;
+      });
+
+      it('throws an error if site already exists', async () => {
+        const siteData = { baseURL: 'https://existingsite.com' };
+        mockDynamoClient.getItem.returns(Promise.resolve(siteData));
+
+        await expect(exportedFunctions.addSite(siteData)).to.be.rejectedWith('Site already exists');
+      });
+    });
+  });
+
+  describe('updateSite Tests', () => {
+    let mockDynamoClient;
+    let mockLog;
+    let exportedFunctions;
+
+    beforeEach(() => {
+      mockDynamoClient = {
+        getItem: sinon.stub().returns(Promise.resolve(null)),
+        putItem: sinon.stub().returns(Promise.resolve()),
+      };
+      mockLog = { log: sinon.stub() };
+      exportedFunctions = siteFunctions(mockDynamoClient, mockLog);
+    });
+
+    it('updates an existing site successfully', async () => {
+      const siteData = { baseURL: 'https://existingsite.com' };
+      mockDynamoClient.getItem.returns(Promise.resolve(siteData));
+
+      const site = await exportedFunctions.getSiteByBaseURL(siteData.baseURL);
+      site.updateBaseURL('https://newsite.com');
+      site.updateImsOrgId('newOrg123');
+
+      const result = await exportedFunctions.updateSite(site);
+      expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+      expect(result.getBaseURL()).to.equal(site.getBaseURL());
+      expect(result.getImsOrgId()).to.equal(site.getImsOrgId());
+    });
+
+    it('throws an error if site does not exist', async () => {
+      const site = createSite({ baseURL: 'https://nonexistingsite.com' });
+      await expect(exportedFunctions.updateSite(site)).to.be.rejectedWith('Site not found');
     });
   });
 });

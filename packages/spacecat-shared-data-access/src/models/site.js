@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from './base.js';
 
 /**
@@ -69,7 +69,7 @@ export const createSite = (data) => {
     throw new Error('Base URL must be a valid URL');
   }
 
-  if (!isObject(newState.audits)) {
+  if (!Array.isArray(newState.audits)) {
     newState.audits = [];
   }
 

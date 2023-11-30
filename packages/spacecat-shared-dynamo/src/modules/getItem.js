@@ -12,6 +12,8 @@
 
 import { performance } from 'perf_hooks';
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
 import { guardKey, guardTableName } from '../utils/guards.js';
 
 /**
@@ -19,18 +21,31 @@ import { guardKey, guardTableName } from '../utils/guards.js';
  *
  * @param {DynamoDBDocumentClient} docClient - The AWS SDK DynamoDB Document client instance.
  * @param {string} tableName - The name of the DynamoDB table.
+ * @param {string} [indexName] - Optional. The name of the DynamoDB index.
  * @param {object} key - The key object containing partitionKey and optionally sortKey.
  * @param {Logger} log - The logging object, defaults to console.
  * @returns {Promise<Object>} A promise that resolves to the retrieved item.
  * @throws {Error} Throws an error if the DynamoDB get operation fails or input validation fails.
  */
-async function getItem(docClient, tableName, key, log = console) {
+async function getItem(
+  docClient,
+  tableName,
+  indexName,
+  key,
+  log = console,
+) {
   guardTableName(tableName);
   guardKey(key);
+
+  const indexProperties = {};
+  if (hasText(indexName)) {
+    indexProperties.IndexName = indexName;
+  }
 
   const params = {
     TableName: tableName,
     Key: key,
+    ...indexProperties,
   };
 
   try {

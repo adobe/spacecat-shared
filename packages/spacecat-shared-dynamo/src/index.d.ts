@@ -20,7 +20,7 @@ export declare interface Logger {
 
 export declare interface DynamoDbClient {
   query(originalParams: QueryCommandInput): Promise<object[]>;
-  getItem(tableName: string, key: object): Promise<object>;
+  getItem(tableName: string, indexName: string, key: object): Promise<object>;
   putItem(tableName: string, item: object): Promise<{ message: string }>;
   removeItem(tableName: string, key: object): Promise<{ message: string }>;
 }

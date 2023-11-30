@@ -17,7 +17,7 @@ import { createAudit } from '../models/audit.js';
  */
 export const AuditDto = {
   /**
-   * Converts a Audit object into a DynamoDB item.
+   * Converts an Audit object into a DynamoDB item.
    * @param {Readonly<Audit>} audit - Audit object.
    * @param {boolean} latestAudit - If true, returns the latest audit flavor.
    * @returns {{siteId, auditedAt, auditResult, auditType, expiresAt, fullAuditRef, SK: string}}
@@ -41,7 +41,7 @@ export const AuditDto = {
   },
 
   /**
-   * Converts a DynamoDB item into a Audit object.
+   * Converts a DynamoDB item into an Audit object.
    * @param {object } dynamoItem - DynamoDB item.
    * @returns {Readonly<Audit>} Audit object.
    */

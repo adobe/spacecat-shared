@@ -18,6 +18,7 @@ import { expect } from 'chai';
 import {
   hasText,
   isBoolean,
+  isArray,
   isInteger,
   isValidDate,
   isIsoDate,
@@ -79,6 +80,24 @@ describe('Shared functions', () => {
       expect(hasText('a')).to.be.true;
       expect(hasText('1')).to.be.true;
       expect(hasText('a12dsamklda')).to.be.true;
+    });
+
+    it('is array', () => {
+      const invalidArrays = [
+        true,
+        {},
+        { asd: 'dsa' },
+        '',
+        'dasd',
+        NaN,
+        Infinity,
+        -Infinity,
+        123,
+      ];
+
+      invalidArrays.forEach((value) => expect(isArray(value)).to.be.false);
+      expect(isArray([])).to.be.true;
+      expect(isArray(['abc'])).to.be.true;
     });
 
     it('is boolean', () => {

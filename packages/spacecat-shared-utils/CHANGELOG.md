@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.2.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.1.0...@adobe/spacecat-shared-utils-v1.2.0) (2023-11-30)
+
+
+### Features
+
+* add isArray function ([eeb45a6](https://github.com/adobe-rnd/spacecat-shared/commit/eeb45a6784c6406403d0a59b65ba873a107c654c))
+
 # [@adobe/spacecat-shared-utils-v1.1.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.0.1...@adobe/spacecat-shared-utils-v1.1.0) (2023-11-29)
 
 

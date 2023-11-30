@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.1.3](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.1.2...@adobe/spacecat-shared-dynamo-v1.1.3) (2023-11-30)
+
+
+### Bug Fixes
+
+* use correct doc client ([#9](https://github.com/adobe-rnd/spacecat-shared/issues/9)) ([d052b16](https://github.com/adobe-rnd/spacecat-shared/commit/d052b16dc6baf65efe83e34fe82d50265f6ae751))
+
 # [@adobe/spacecat-shared-dynamo-v1.1.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.1.1...@adobe/spacecat-shared-dynamo-v1.1.2) (2023-11-29)
 
 

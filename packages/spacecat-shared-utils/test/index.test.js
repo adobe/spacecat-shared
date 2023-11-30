@@ -19,6 +19,7 @@ describe('Index Exports', () => {
   const expectedExports = [
     'arrayEquals',
     'hasText',
+    'isArray',
     'isBoolean',
     'isInteger',
     'isValidDate',

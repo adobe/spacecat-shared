@@ -13,6 +13,7 @@
 export {
   arrayEquals,
   hasText,
+  isArray,
   isBoolean,
   isInteger,
   isValidDate,

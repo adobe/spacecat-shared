@@ -15,6 +15,16 @@ const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
 
 /**
+ * Determines if the given parameter is an array.
+ *
+ * @param {*} value - The value to check.
+ * @returns {boolean} True if the parameter is an array, false otherwise.
+ */
+function isArray(value) {
+  return Array.isArray(value);
+}
+
+/**
  * Determines case-insensitively if the given value is a boolean or a string
  * representation of a boolean.
  *
@@ -158,6 +168,7 @@ const arrayEquals = (a, b) => Array.isArray(a)
 export {
   arrayEquals,
   hasText,
+  isArray,
   isBoolean,
   isInteger,
   isValidDate,

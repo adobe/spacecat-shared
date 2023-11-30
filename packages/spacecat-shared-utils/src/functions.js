@@ -63,7 +63,7 @@ function isNumber(value) {
  * @returns {boolean} True if the parameter is an object, false otherwise.
  */
 function isObject(value) {
-  return !Array.isArray(value) && value !== null && typeof value === 'object';
+  return !isArray(value) && value !== null && typeof value === 'object';
 }
 
 /**
@@ -160,8 +160,8 @@ function toBoolean(value) {
  * @param {Array} b - The second array to compare.
  * @returns {boolean} True if the arrays are equal, false otherwise.
  */
-const arrayEquals = (a, b) => Array.isArray(a)
-  && Array.isArray(b)
+const arrayEquals = (a, b) => isArray(a)
+  && isArray(b)
   && a.length === b.length
   && a.every((val, index) => val === b[index]);
 

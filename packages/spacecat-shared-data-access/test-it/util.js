@@ -9,9 +9,14 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-const randomDate = (start, end) => new Date(
-  start.getTime() + Math.random() * (end.getTime() - start.getTime()),
-);
+const randomDate = (start, end) => {
+  if (start.getTime() >= end.getTime()) {
+    throw new Error('start must be before end');
+  }
+  return new Date(
+    start.getTime() + Math.random() * (end.getTime() - start.getTime()),
+  );
+};
 
 // Generates a random decimal number with given precision
 const getRandomDecimal = (precision) => parseFloat(Math.random().toFixed(precision));

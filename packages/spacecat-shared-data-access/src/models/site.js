@@ -32,6 +32,8 @@ const Site = (data = {}) => {
     }
 
     self.state.baseURL = baseURL;
+    self.touch();
+
     return self;
   };
 
@@ -41,6 +43,8 @@ const Site = (data = {}) => {
     }
 
     self.state.imsOrgId = imsOrgId;
+    self.touch();
+
     return self;
   };
 

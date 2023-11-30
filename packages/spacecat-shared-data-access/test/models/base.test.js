@@ -12,8 +12,11 @@
 
 /* eslint-env mocha */
 
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
+
 import { expect } from 'chai';
 import { Base } from '../../src/models/base.js';
+import { sleep } from '../util.js';
 
 describe('Base Model Tests', () => {
   describe('Initialization Tests', () => {
@@ -30,26 +33,36 @@ describe('Base Model Tests', () => {
   });
 
   describe('Getter Method Tests', () => {
-    it('should correctly return the createdAt date if provided', () => {
+    it('correctly returns the createdAt date if provided', () => {
       const createdAt = new Date().toISOString();
       const baseEntity = Base({ createdAt });
       expect(baseEntity.getCreatedAt()).to.equal(createdAt);
     });
 
-    it('should return undefined for createdAt if not provided', () => {
-      const baseEntity = Base();
-      expect(baseEntity.getCreatedAt()).to.be.undefined;
-    });
-
-    it('should correctly return the updatedAt date if provided', () => {
+    it('correctly returns the updatedAt date if provided', () => {
       const updatedAt = new Date().toISOString();
       const baseEntity = Base({ updatedAt });
       expect(baseEntity.getUpdatedAt()).to.equal(updatedAt);
     });
+  });
 
-    it('should return undefined for updatedAt if not provided', () => {
+  describe('Timestamp Tests', () => {
+    it('should set createdAt and updatedAt for new records', () => {
       const baseEntity = Base();
-      expect(baseEntity.getUpdatedAt()).to.be.undefined;
+      expect(isIsoDate(baseEntity.getCreatedAt())).to.be.true;
+      expect(isIsoDate(baseEntity.getUpdatedAt())).to.be.true;
+      expect(baseEntity.getCreatedAt()).to.equal(baseEntity.getUpdatedAt());
+    });
+
+    it('should update updatedAt using touch method', async () => {
+      const baseEntity = Base();
+      const initialUpdatedAt = baseEntity.getUpdatedAt();
+
+      await sleep(10);
+
+      baseEntity.touch();
+
+      expect(baseEntity.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });
   });
 });

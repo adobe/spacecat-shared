@@ -32,9 +32,9 @@ function generateRandomAudit(siteId, auditType) {
   if (auditType === 'lhs') {
     auditResult = {
       performance: getRandomDecimal(2),
+      seo: getRandomDecimal(2),
       accessibility: getRandomDecimal(2),
       'best-practices': getRandomDecimal(2),
-      SEO: getRandomDecimal(2),
     };
   } else if (auditType === 'cwv') {
     auditResult = {

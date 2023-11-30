@@ -14,6 +14,7 @@
 
 import { expect } from 'chai';
 import { createSite } from '../../src/models/site.js';
+import { sleep } from '../util.js';
 
 // Constants for testing
 const validData = {
@@ -59,6 +60,32 @@ describe('Site Model Tests', () => {
 
     it('throws an error when updating with an empty imsOrgId', () => {
       expect(() => site.updateImsOrgId('')).to.throw('IMS Org ID must be provided');
+    });
+
+    it('sets audits correctly', () => {
+      const audits = [{ id: 'audit1' }, { id: 'audit2' }];
+      site.setAudits(audits);
+      expect(site.getAudits()).to.deep.equal(audits);
+    });
+
+    it('updates updatedAt when base URL is updated', async () => {
+      const initialUpdatedAt = site.getUpdatedAt();
+
+      await sleep(10);
+
+      site.updateBaseURL('https://www.newexample.com');
+
+      expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
+    });
+
+    it('updates updatedAt when imsOrgId is updated', async () => {
+      const initialUpdatedAt = site.getUpdatedAt();
+
+      await sleep(10);
+
+      site.updateImsOrgId('newOrg123');
+
+      expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });
   });
 });

@@ -21,16 +21,22 @@ import { isString } from '@adobe/spacecat-shared-utils';
  */
 export const Base = (data = {}) => {
   const self = { state: { ...data } };
-
   const newRecord = !isString(self.state.id);
+  const nowISO = new Date().toISOString();
 
   if (newRecord) {
     self.state.id = uuidv4();
+    self.state.createdAt = nowISO;
+    self.state.updatedAt = nowISO;
   }
 
   self.getId = () => self.state.id;
   self.getCreatedAt = () => self.state.createdAt;
   self.getUpdatedAt = () => self.state.updatedAt;
+
+  self.touch = () => {
+    self.state.updatedAt = new Date().toISOString();
+  };
 
   return self;
 };

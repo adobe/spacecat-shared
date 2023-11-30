@@ -17,16 +17,11 @@ import { expect } from 'chai';
 import dynamoDbLocal from 'dynamo-db-local';
 import { isValidUrl } from '@adobe/spacecat-shared-utils';
 
+import { sleep } from '../test/util.js';
 import { createDataAccess } from '../src/index.js';
 import { AUDIT_TYPE_LHS } from '../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';
-
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 function checkSite(site) {
   expect(site.getId()).to.be.a('string');

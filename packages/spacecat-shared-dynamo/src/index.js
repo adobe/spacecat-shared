@@ -11,7 +11,7 @@
  */
 
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 
 import query from './modules/query.js';
 import getItem from './modules/getItem.js';
@@ -23,13 +23,13 @@ import removeItem from './modules/removeItem.js';
  *
  * @param {Object} log - The logging object, defaults to console.
  * @param {DynamoDB} dbClient - The AWS SDK DynamoDB client instance.
- * @param {DynamoDBDocumentClient} docClient - The AWS SDK DynamoDB Document client instance.
+ * @param {DynamoDBDocument} docClient - The AWS SDK DynamoDB Document client instance.
  * @returns {Object} A client object with methods to interact with DynamoDB.
  */
 const createClient = (
   log = console,
   dbClient = new DynamoDB(),
-  docClient = DynamoDBDocumentClient.from(dbClient),
+  docClient = DynamoDBDocument.from(dbClient),
 ) => ({
   query: (params) => query(docClient, params, log),
   getItem: (tableName, key) => getItem(docClient, tableName, key, log),

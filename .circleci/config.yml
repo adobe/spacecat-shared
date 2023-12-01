@@ -34,6 +34,9 @@ jobs:
       - run:
           name: Running tests and getting code coverage
           command: cat /tmp/tests-to-run | xargs -I % npm run test -w %
+      - run:
+          name: Running data access integration tests
+          command: npm run test:it -w packages/spacecat-shared-data-access
       - codecov/upload
       - run:
           name: Copy test results

@@ -19,7 +19,7 @@ import { guardKey, guardTableName } from '../utils/guards.js';
  *
  * @param {DynamoDBDocumentClient} docClient - The AWS SDK DynamoDB Document client instance.
  * @param {string} tableName - The name of the DynamoDB table.
- * @param {object} key - The key object containing partitionKey and optionally sortKey.
+ * @param {DynamoDbKey} key - The key object containing partitionKey and optionally sortKey.
  * @param {Logger} log - The logging object, defaults to console.
  * @returns {Promise<Object>} A promise that resolves to a message indicating successful removal.
  * @throws {Error} Throws an error if the DynamoDB delete operation fails or input validation fails.

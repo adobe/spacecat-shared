@@ -1,8 +1,8 @@
 version: 2.1
 executors:
-  node18:
+  node-java:
     docker:
-      - image: cimg/node:18.18
+      - image: cimg/node:18.18-browsers
 
 orbs:
   codecov: codecov/codecov@3.3.0
@@ -20,7 +20,7 @@ commands:
 
 jobs:
   build:
-    executor: node18
+    executor: node-java
     parallelism: 15
 
     steps:

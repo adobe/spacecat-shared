@@ -56,13 +56,13 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
 
   before(async function () {
-    this.timeout(3000);
+    this.timeout(20000);
 
     process.env.AWS_REGION = 'local';
 
     dynamoDbLocalProcess = dynamoDbLocal.spawn({ port: 8000, sharedDb: true });
 
-    await sleep(700); // give db time to start up
+    await sleep(1000); // give db time to start up
 
     await generateSampleData(NUMBER_OF_SITES, NUMBER_OF_AUDITS_PER_TYPE_AND_SITE);
 

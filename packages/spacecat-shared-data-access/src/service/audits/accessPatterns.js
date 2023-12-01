@@ -189,14 +189,12 @@ export const addAudit = async (dynamoClient, log, auditData) => {
   return audit;
 };
 
-async function removeAudits(dynamoClient, audits) {
+async function removeAudits(dynamoClient, audits, latest = false) {
+  const tableName = latest ? TABLE_NAME_LATEST_AUDITS : TABLE_NAME_AUDITS;
   // TODO: use batch-remove (needs dynamo client update)
-  const removeAuditPromises = audits.map((audit) => dynamoClient.removeItem({
-    TableName: TABLE_NAME_AUDITS,
-    Key: {
-      siteId: audit.getSiteId(),
-      auditedAt: audit.getAuditedAt(),
-    },
+  const removeAuditPromises = audits.map((audit) => dynamoClient.removeItem(tableName, {
+    siteId: audit.getSiteId(),
+    SK: `${audit.getAuditType()}#${audit.getAuditedAt()}`,
   }));
 
   await Promise.all(removeAuditPromises);
@@ -216,7 +214,7 @@ export const removeAuditsForSite = async (dynamoClient, log, siteId) => {
     const latestAudits = await getLatestAuditsForSite(dynamoClient, log, siteId);
 
     await removeAudits(dynamoClient, audits);
-    await removeAudits(dynamoClient, latestAudits);
+    await removeAudits(dynamoClient, latestAudits, true);
   } catch (error) {
     log.error(`Error removing audits for site ${siteId}: ${error.message}`);
     throw error;

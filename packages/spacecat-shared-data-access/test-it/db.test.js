@@ -330,4 +330,20 @@ describe('DynamoDB Integration Test', async () => {
     // Try to add the same audit again
     await expect(dataAccess.addAudit(auditData)).to.be.rejectedWith('Audit already exists');
   });
+
+  it('successfully removes a site and its related audits', async () => {
+    const siteToRemove = await dataAccess.getSiteByBaseURL('https://example1.com');
+    const siteId = siteToRemove.getId();
+
+    await expect(dataAccess.removeSite(siteId)).to.eventually.be.fulfilled;
+
+    const siteAfterRemoval = await dataAccess.getSiteByBaseURL('https://example1.com');
+    expect(siteAfterRemoval).to.be.null;
+
+    const auditsAfterRemoval = await dataAccess.getAuditsForSite(siteId);
+    expect(auditsAfterRemoval).to.be.an('array').that.is.empty;
+
+    const latestAuditAfterRemoval = await dataAccess.getLatestAuditForSite(siteId, AUDIT_TYPE_LHS);
+    expect(latestAuditAfterRemoval).to.be.null;
+  });
 });

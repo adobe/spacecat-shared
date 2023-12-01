@@ -254,7 +254,7 @@ export const removeSite = async (dynamoClient, log, siteId) => {
   try {
     await removeAuditsForSite(dynamoClient, log, siteId);
 
-    await dynamoClient.removeItem(TABLE_NAME_SITES, { siteId });
+    await dynamoClient.removeItem(TABLE_NAME_SITES, { id: siteId });
   } catch (error) {
     log.error(`Error removing site: ${error.message}`);
     throw error;

@@ -16,6 +16,10 @@ import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 const dbClient = new DynamoDB({
   endpoint: 'http://127.0.0.1:8000',
   region: 'local',
+  credentials: {
+    accessKeyId: 'dummy',
+    secretAccessKey: 'dummy',
+  },
 });
 const docClient = DynamoDBDocument.from(dbClient);
 

@@ -1,6 +1,6 @@
 # SpaceCat Shared Data Access
 
-This Node.js module, `spacecat-shared-data-access`, is a comprehensive data access layer for managing sites and their audits, leveraging Amazon DynamoDB. It's tailored for the `StarCatalogue` model, ensuring efficient querying and robust data manipulation.
+This Node.js module, `spacecat-shared-data-access`, is a data access layer for managing sites and their audits, leveraging Amazon DynamoDB.
 
 ## Installation
 
@@ -63,6 +63,7 @@ The module provides two main DAOs:
 - `getSiteByBaseURLWithLatestAudit`
 - `addSite`
 - `updateSite`
+- `removeSite`
 
 ### Audit Functions
 - `getAuditsForSite`

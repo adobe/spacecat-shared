@@ -10,35 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-module.exports = {
-  root: true,
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 2020,
-    sourceType: 'module',
-  },
-  extends: [
-    '@adobe/helix',
-    'plugin:@typescript-eslint/recommended',
-  ],
-  plugins: [
-    'import',
-    '@typescript-eslint',
-  ],
-  overrides: [
-    {
-      files: ['*.ts'],
-      rules: {},
-    },
-    {
-      files: ['*.js', '*.cjs'],
-      rules: {},
-    },
-    {
-      files: ["*.test.js"],
-      rules: {
-        "no-unused-expressions": "off"
-      }
-    }
-  ],
-};
+export async function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}

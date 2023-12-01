@@ -10,35 +10,15 @@
  * governing permissions and limitations under the License.
  */
 
-module.exports = {
-  root: true,
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 2020,
-    sourceType: 'module',
-  },
-  extends: [
-    '@adobe/helix',
-    'plugin:@typescript-eslint/recommended',
-  ],
-  plugins: [
-    'import',
-    '@typescript-eslint',
-  ],
-  overrides: [
-    {
-      files: ['*.ts'],
-      rules: {},
-    },
-    {
-      files: ['*.js', '*.cjs'],
-      rules: {},
-    },
-    {
-      files: ["*.test.js"],
-      rules: {
-        "no-unused-expressions": "off"
-      }
+import { createDataAccess } from './service/index.js';
+
+export default function dataAccessWrapper(fn) {
+  return async (request, context) => {
+    if (!context.dataAccess) {
+      const { log } = context;
+      context.dataAccess = createDataAccess(log);
     }
-  ],
-};
+
+    return fn(request, context);
+  };
+}

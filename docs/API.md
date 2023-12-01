@@ -1,11 +1,23 @@
+## Constants
+
+<dl>
+<dt><a href="#createDataAccess">createDataAccess</a> ⇒ <code>object</code></dt>
+<dd><p>Creates a data access object.</p>
+</dd>
+</dl>
+
 ## Functions
 
 <dl>
 <dt><a href="#createClient">createClient(log, dbClient, docClient)</a> ⇒ <code>Object</code></dt>
 <dd><p>Creates a client object for interacting with DynamoDB.</p>
 </dd>
+<dt><a href="#isArray">isArray(value)</a> ⇒ <code>boolean</code></dt>
+<dd><p>Determines if the given parameter is an array.</p>
+</dd>
 <dt><a href="#isBoolean">isBoolean(value)</a> ⇒ <code>boolean</code></dt>
-<dd><p>Determines if the given value is a boolean or a string representation of a boolean.</p>
+<dd><p>Determines case-insensitively if the given value is a boolean or a string
+representation of a boolean.</p>
 </dd>
 <dt><a href="#isInteger">isInteger(value)</a> ⇒ <code>boolean</code></dt>
 <dd><p>Checks if the given value is an integer.</p>
@@ -13,16 +25,16 @@
 <dt><a href="#isNumber">isNumber(value)</a> ⇒ <code>boolean</code></dt>
 <dd><p>Determines if the given value is a number.</p>
 </dd>
-<dt><a href="#isObject">isObject(obj)</a> ⇒ <code>boolean</code></dt>
+<dt><a href="#isObject">isObject(value)</a> ⇒ <code>boolean</code></dt>
 <dd><p>Checks if the given parameter is an object and not an array or null.</p>
 </dd>
-<dt><a href="#isString">isString(str)</a> ⇒ <code>boolean</code></dt>
+<dt><a href="#isString">isString(value)</a> ⇒ <code>boolean</code></dt>
 <dd><p>Determines if the given parameter is a string.</p>
 </dd>
 <dt><a href="#hasText">hasText(str)</a> ⇒ <code>boolean</code></dt>
 <dd><p>Checks if the given string is not empty.</p>
 </dd>
-<dt><a href="#isValidDate">isValidDate(obj)</a> ⇒ <code>boolean</code></dt>
+<dt><a href="#isValidDate">isValidDate(value)</a> ⇒ <code>boolean</code></dt>
 <dd><p>Checks whether the given object is a valid JavaScript Date.</p>
 </dd>
 <dt><a href="#isIsoDate">isIsoDate(str)</a> ⇒ <code>boolean</code></dt>
@@ -41,9 +53,21 @@ following UTC time offsets format.</p>
 <dd><p>Converts a given value to a boolean. Throws an error if the value is not a boolean.</p>
 </dd>
 <dt><a href="#arrayEquals">arrayEquals(a, b)</a> ⇒ <code>boolean</code></dt>
-<dd><p>Compares two arrays for equality.</p>
+<dd><p>Compares two arrays for equality. Supports primitive array item types only.</p>
 </dd>
 </dl>
+
+<a name="createDataAccess"></a>
+
+## createDataAccess ⇒ <code>object</code>
+Creates a data access object.
+
+**Kind**: global constant  
+**Returns**: <code>object</code> - data access object  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| log | <code>Logger</code> | logger |
 
 <a name="createClient"></a>
 
@@ -57,12 +81,25 @@ Creates a client object for interacting with DynamoDB.
 | --- | --- | --- |
 | log | <code>Object</code> | The logging object, defaults to console. |
 | dbClient | <code>DynamoDB</code> | The AWS SDK DynamoDB client instance. |
-| docClient | <code>DynamoDBDocumentClient</code> | The AWS SDK DynamoDB Document client instance. |
+| docClient | <code>DynamoDBDocument</code> | The AWS SDK DynamoDB Document client instance. |
+
+<a name="isArray"></a>
+
+## isArray(value) ⇒ <code>boolean</code>
+Determines if the given parameter is an array.
+
+**Kind**: global function  
+**Returns**: <code>boolean</code> - True if the parameter is an array, false otherwise.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| value | <code>\*</code> | The value to check. |
 
 <a name="isBoolean"></a>
 
 ## isBoolean(value) ⇒ <code>boolean</code>
-Determines if the given value is a boolean or a string representation of a boolean.
+Determines case-insensitively if the given value is a boolean or a string
+representation of a boolean.
 
 **Kind**: global function  
 **Returns**: <code>boolean</code> - True if the value is a boolean or a string representation of a boolean.  
@@ -97,7 +134,7 @@ Determines if the given value is a number.
 
 <a name="isObject"></a>
 
-## isObject(obj) ⇒ <code>boolean</code>
+## isObject(value) ⇒ <code>boolean</code>
 Checks if the given parameter is an object and not an array or null.
 
 **Kind**: global function  
@@ -105,11 +142,11 @@ Checks if the given parameter is an object and not an array or null.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| obj | <code>\*</code> | The object to check. |
+| value | <code>\*</code> | The value to check. |
 
 <a name="isString"></a>
 
-## isString(str) ⇒ <code>boolean</code>
+## isString(value) ⇒ <code>boolean</code>
 Determines if the given parameter is a string.
 
 **Kind**: global function  
@@ -117,7 +154,7 @@ Determines if the given parameter is a string.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| str | <code>\*</code> | The string to check. |
+| value | <code>\*</code> | The value to check. |
 
 <a name="hasText"></a>
 
@@ -133,7 +170,7 @@ Checks if the given string is not empty.
 
 <a name="isValidDate"></a>
 
-## isValidDate(obj) ⇒ <code>boolean</code>
+## isValidDate(value) ⇒ <code>boolean</code>
 Checks whether the given object is a valid JavaScript Date.
 
 **Kind**: global function  
@@ -141,7 +178,7 @@ Checks whether the given object is a valid JavaScript Date.
 
 | Param | Type | Description |
 | --- | --- | --- |
-| obj | <code>\*</code> | The object to check. |
+| value | <code>\*</code> | The value to check. |
 
 <a name="isIsoDate"></a>
 
@@ -201,7 +238,7 @@ Converts a given value to a boolean. Throws an error if the value is not a boole
 <a name="arrayEquals"></a>
 
 ## arrayEquals(a, b) ⇒ <code>boolean</code>
-Compares two arrays for equality.
+Compares two arrays for equality. Supports primitive array item types only.
 
 **Kind**: global function  
 **Returns**: <code>boolean</code> - True if the arrays are equal, false otherwise.  

@@ -10,35 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
-module.exports = {
-  root: true,
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 2020,
-    sourceType: 'module',
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+
+const dbClient = new DynamoDB({
+  endpoint: 'http://127.0.0.1:8000',
+  region: 'local',
+  credentials: {
+    accessKeyId: 'dummy',
+    secretAccessKey: 'dummy',
   },
-  extends: [
-    '@adobe/helix',
-    'plugin:@typescript-eslint/recommended',
-  ],
-  plugins: [
-    'import',
-    '@typescript-eslint',
-  ],
-  overrides: [
-    {
-      files: ['*.ts'],
-      rules: {},
-    },
-    {
-      files: ['*.js', '*.cjs'],
-      rules: {},
-    },
-    {
-      files: ["*.test.js"],
-      rules: {
-        "no-unused-expressions": "off"
-      }
-    }
-  ],
-};
+});
+const docClient = DynamoDBDocument.from(dbClient);
+
+export { dbClient, docClient };

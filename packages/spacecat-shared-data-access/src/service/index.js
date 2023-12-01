@@ -10,35 +10,24 @@
  * governing permissions and limitations under the License.
  */
 
-module.exports = {
-  root: true,
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 2020,
-    sourceType: 'module',
-  },
-  extends: [
-    '@adobe/helix',
-    'plugin:@typescript-eslint/recommended',
-  ],
-  plugins: [
-    'import',
-    '@typescript-eslint',
-  ],
-  overrides: [
-    {
-      files: ['*.ts'],
-      rules: {},
-    },
-    {
-      files: ['*.js', '*.cjs'],
-      rules: {},
-    },
-    {
-      files: ["*.test.js"],
-      rules: {
-        "no-unused-expressions": "off"
-      }
-    }
-  ],
+import { createClient } from '@adobe/spacecat-shared-dynamo';
+import { auditFunctions } from './audits/index.js';
+import { siteFunctions } from './sites/index.js';
+
+/**
+ * Creates a data access object.
+ *
+ * @param {Logger} log logger
+ * @returns {object} data access object
+ */
+export const createDataAccess = (log = console) => {
+  const dynamoClient = createClient(log);
+
+  const auditFuncs = auditFunctions(dynamoClient, log);
+  const siteFuncs = siteFunctions(dynamoClient, log);
+
+  return {
+    ...auditFuncs,
+    ...siteFuncs,
+  };
 };

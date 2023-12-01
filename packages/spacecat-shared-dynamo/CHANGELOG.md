@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.2.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.1.4...@adobe/spacecat-shared-dynamo-v1.2.0) (2023-12-01)
+
+
+### Features
+
+* add data access module ([#11](https://github.com/adobe-rnd/spacecat-shared/issues/11)) ([cdbfff3](https://github.com/adobe-rnd/spacecat-shared/commit/cdbfff3961cbfc5702b832c386e3ccfd8572b439))
+
 # [@adobe/spacecat-shared-dynamo-v1.1.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.1.3...@adobe/spacecat-shared-dynamo-v1.1.4) (2023-11-30)
 
 

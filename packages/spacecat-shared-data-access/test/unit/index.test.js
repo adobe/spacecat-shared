@@ -13,52 +13,39 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { createDataAccess } from '../../src/index.js';
+import sinon from 'sinon';
+import dataAccessWrapper from '../../src/index.js';
 
-describe('Data Access Object Tests', () => {
-  const auditFunctions = [
-    'addAudit',
-    'getAuditForSite',
-    'getAuditsForSite',
-    'getLatestAudits',
-    'getLatestAuditForSite',
-    'removeAuditsForSite',
-  ];
-  const siteFunctions = [
-    'addSite',
-    'updateSite',
-    'removeSite',
-    'getSites',
-    'getSitesToAudit',
-    'getSitesWithLatestAudit',
-    'getSiteByBaseURL',
-    'getSiteByBaseURLWithAuditInfo',
-    'getSiteByBaseURLWithAudits',
-    'getSiteByBaseURLWithLatestAudit',
-  ];
+describe('Data Access Wrapper Tests', () => {
+  let mockFn;
+  let mockContext;
+  let mockRequest;
 
-  let dao;
-
-  before(() => {
-    dao = createDataAccess();
+  beforeEach(() => {
+    mockFn = sinon.stub().resolves('function response');
+    mockContext = { log: sinon.spy() };
+    mockRequest = {};
   });
 
-  it('contains all known audit functions', () => {
-    auditFunctions.forEach((funcName) => {
-      expect(dao).to.have.property(funcName);
-    });
+  afterEach(() => {
+    sinon.restore();
   });
 
-  it('contains all known site functions', () => {
-    siteFunctions.forEach((funcName) => {
-      expect(dao).to.have.property(funcName);
-    });
+  it('adds dataAccess to context and calls the wrapped function', async () => {
+    const wrappedFn = dataAccessWrapper(mockFn);
+
+    const response = await wrappedFn(mockRequest, mockContext);
+
+    expect(mockFn.calledOnceWithExactly(mockRequest, mockContext)).to.be.true;
+    expect(response).to.equal('function response');
   });
 
-  it('does not contain any unexpected functions', () => {
-    const expectedFunctions = new Set([...auditFunctions, ...siteFunctions]);
-    Object.keys(dao).forEach((funcName) => {
-      expect(expectedFunctions).to.include(funcName);
-    });
+  it('does not recreate dataAccess if already present in context', async () => {
+    mockContext.dataAccess = { existingDataAccess: true };
+    const wrappedFn = dataAccessWrapper(mockFn);
+
+    await wrappedFn(mockRequest, mockContext);
+
+    expect(mockContext.dataAccess).to.deep.equal({ existingDataAccess: true });
   });
 });

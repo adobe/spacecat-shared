@@ -71,6 +71,78 @@ The module provides two main DAOs:
 - `getLatestAuditForSite`
 - `addAudit`
 
+
+## Integrating Data Access in AWS Lambda Functions
+
+Our `spacecat-shared-data-access` module includes a wrapper that can be easily integrated into AWS Lambda functions using `@adobe/helix-shared-wrap`. This integration allows your Lambda functions to access and manipulate data seamlessly.
+
+### Steps for Integration
+
+1. **Import the Data Access Wrapper**
+
+   Along with other wrappers and utilities, import the `dataAccessWrapper`.
+
+   ```javascript
+   import dataAccessWrapper from '@adobe/spacecat-shared-data-access/wrapper';
+   ```
+
+2. **Modify Your Lambda Wrapper Script**
+
+   Include `dataAccessWrapper` in the chain of wrappers when defining your Lambda handler.
+
+   ```javascript
+   export const main = wrap(run)
+     .with(sqsEventAdapter)
+     .with(dataAccessWrapper) // Add this line
+     .with(sqs)
+     .with(secrets)
+     .with(helixStatus);
+   ```
+
+3. **Access Data in Your Lambda Function**
+
+   Use the `dataAccess` object from the context to interact with your data layer.
+
+   ```javascript
+   async function run(message, context) {
+     const { dataAccess } = context;
+     
+     // Example: Retrieve all sites
+     const sites = await dataAccess.getSites();
+     // ... more logic ...
+   }
+   ```
+
+### Example
+
+Here's a complete example of a Lambda function utilizing the data access wrapper:
+
+```javascript
+import wrap from '@adobe/helix-shared-wrap';
+import dataAccessWrapper from '@adobe/spacecat-shared-data-access/wrapper';
+import sqsEventAdapter from './sqsEventAdapter';
+import sqs from './sqs';
+import secrets from '@adobe/helix-shared-secrets';
+import helixStatus from '@adobe/helix-status';
+
+async function run(message, context) {
+  const { dataAccess } = context;
+  try {
+    const sites = await dataAccess.getSites();
+    // Function logic here
+  } catch (error) {
+    // Error handling
+  }
+}
+
+export const main = wrap(run)
+  .with(sqsEventAdapter)
+  .with(dataAccessWrapper)
+  .with(sqs)
+  .with(secrets)
+  .with(helixStatus);
+```
+
 ## Contributing
 
 Contributions to `spacecat-shared-data-access` are welcome. Please adhere to the standard Git workflow and submit pull requests for proposed changes.

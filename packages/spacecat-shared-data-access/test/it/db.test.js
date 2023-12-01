@@ -18,7 +18,7 @@ import dynamoDbLocal from 'dynamo-db-local';
 
 import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { sleep } from '../unit/util.js';
-import { createDataAccess } from '../../src/index.js';
+import { createDataAccess } from '../../src/service/index.js';
 import { AUDIT_TYPE_LHS } from '../../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';

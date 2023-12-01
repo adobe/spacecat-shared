@@ -10,15 +10,24 @@
  * governing permissions and limitations under the License.
  */
 
-import { createDataAccess } from './service/index.js';
+import { createClient } from '@adobe/spacecat-shared-dynamo';
+import { auditFunctions } from './audits/index.js';
+import { siteFunctions } from './sites/index.js';
 
-export default function dataAccessWrapper(fn) {
-  return async (request, context) => {
-    if (!context.dataAccess) {
-      const { log } = context;
-      context.dataAccess = createDataAccess(log);
-    }
+/**
+ * Creates a data access object.
+ *
+ * @param {Logger} log logger
+ * @returns {object} data access object
+ */
+export const createDataAccess = (log = console) => {
+  const dynamoClient = createClient(log);
 
-    return fn(request, context);
+  const auditFuncs = auditFunctions(dynamoClient, log);
+  const siteFuncs = siteFunctions(dynamoClient, log);
+
+  return {
+    ...auditFuncs,
+    ...siteFuncs,
   };
-}
+};

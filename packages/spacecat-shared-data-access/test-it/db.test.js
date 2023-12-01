@@ -59,6 +59,9 @@ describe('DynamoDB Integration Test', async () => {
     this.timeout(20000);
 
     process.env.AWS_REGION = 'local';
+    process.env.AWS_DEFAULT_REGION = 'local';
+    process.env.AWS_ACCESS_KEY_ID = 'dummy';
+    process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
 
     dynamoDbLocalProcess = dynamoDbLocal.spawn({ port: 8000, sharedDb: true });
 

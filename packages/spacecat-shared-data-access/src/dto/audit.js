@@ -12,6 +12,15 @@
 
 import { createAudit } from '../models/audit.js';
 
+function parseEpochToDate(epochInSeconds) {
+  const milliseconds = epochInSeconds * 1000;
+  return new Date(milliseconds);
+}
+
+function convertDateToEpochSeconds(date) {
+  return Math.floor(date.getTime() / 1000);
+}
+
 /**
  * Data transfer object for Audit.
  */
@@ -33,7 +42,7 @@ export const AuditDto = {
       auditedAt: audit.getAuditedAt(),
       auditResult: audit.getAuditResult(),
       auditType: audit.getAuditType(),
-      expiresAt: audit.getExpiresAt(),
+      expiresAt: convertDateToEpochSeconds(audit.getExpiresAt()),
       fullAuditRef: audit.getFullAuditRef(),
       SK: `${audit.getAuditType()}#${audit.getAuditedAt()}`,
       ...latestAuditProps,
@@ -51,7 +60,7 @@ export const AuditDto = {
       auditedAt: dynamoItem.auditedAt,
       auditResult: dynamoItem.auditResult,
       auditType: dynamoItem.auditType,
-      expiresAt: dynamoItem.expiresAt,
+      expiresAt: parseEpochToDate(dynamoItem.expiresAt),
       fullAuditRef: dynamoItem.fullAuditRef,
     };
 

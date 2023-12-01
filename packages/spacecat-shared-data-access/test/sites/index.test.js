@@ -304,7 +304,7 @@ describe('Site Access Pattern Tests', () => {
       mockDynamoClient.query.returns(Promise.resolve([siteData]));
 
       const site = await exportedFunctions.getSiteByBaseURL(siteData.baseURL);
-      site.updateBaseURL('https://newsite.com');
+      // site.updateBaseURL('https://newsite.com');
       site.updateImsOrgId('newOrg123');
 
       const result = await exportedFunctions.updateSite(site);

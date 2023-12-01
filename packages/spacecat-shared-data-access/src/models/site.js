@@ -26,7 +26,33 @@ const Site = (data = {}) => {
   self.getBaseURL = () => self.state.baseURL;
   self.getImsOrgId = () => self.state.imsOrgId;
 
-  self.updateBaseURL = (baseURL) => {
+  // TODO: updating the baseURL is not supported yet, it will require a transact write
+  //  on dynamodb (put then delete) since baseURL is part of the primary key, something like:
+  // const updateSiteBaseURL = async (oldBaseURL, updatedSiteData) => {
+  //   const params = {
+  //     TransactItems: [
+  //       {
+  //         Put: {
+  //           TableName: 'YourSiteTableName',
+  //           Item: updatedSiteData,
+  //         },
+  //       },
+  //       {
+  //         Delete: {
+  //           TableName: 'YourSiteTableName',
+  //           Key: {
+  //             baseURL: oldBaseURL,
+  //           },
+  //         },
+  //       },
+  //     ],
+  //   };
+  //
+  //   await dynamoDbClient.transactWrite(params).promise();
+  //
+  //   return createSite(updatedSiteData);
+  // };
+  /*  self.updateBaseURL = (baseURL) => {
     if (!isValidUrl(baseURL)) {
       throw new Error('Base URL must be a valid URL');
     }
@@ -35,7 +61,7 @@ const Site = (data = {}) => {
     self.touch();
 
     return self;
-  };
+  }; */
 
   self.updateImsOrgId = (imsOrgId) => {
     if (!hasText(imsOrgId)) {

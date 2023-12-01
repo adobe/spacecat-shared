@@ -42,7 +42,8 @@ describe('Site Model Tests', () => {
       site = createSite(validData);
     });
 
-    it('updates baseURL correctly', () => {
+    // see TODO in src/models/site.js
+    /*    it('updates baseURL correctly', () => {
       const newURL = 'https://www.newexample.com';
       site.updateBaseURL(newURL);
       expect(site.getBaseURL()).to.equal(newURL);
@@ -51,6 +52,7 @@ describe('Site Model Tests', () => {
     it('throws an error when updating with an invalid baseURL', () => {
       expect(() => site.updateBaseURL('invalid-url')).to.throw('Base URL must be a valid URL');
     });
+    */
 
     it('updates imsOrgId correctly', () => {
       const newImsOrgId = 'newOrg123';
@@ -68,6 +70,8 @@ describe('Site Model Tests', () => {
       expect(site.getAudits()).to.deep.equal(audits);
     });
 
+    // see TODO in src/models/site.js
+    /*
     it('updates updatedAt when base URL is updated', async () => {
       const initialUpdatedAt = site.getUpdatedAt();
 
@@ -76,12 +80,12 @@ describe('Site Model Tests', () => {
       site.updateBaseURL('https://www.newexample.com');
 
       expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
-    });
+    }); */
 
     it('updates updatedAt when imsOrgId is updated', async () => {
       const initialUpdatedAt = site.getUpdatedAt();
 
-      await sleep(10);
+      await sleep(20);
 
       site.updateImsOrgId('newOrg123');
 

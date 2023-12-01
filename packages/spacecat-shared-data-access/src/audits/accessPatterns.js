@@ -67,7 +67,7 @@ export const getAuditForSite = async (
     KeyConditionExpression: 'siteId = :siteId AND SK = :sk',
     ExpressionAttributeValues: {
       ':siteId': siteId,
-      ':sk': `${auditType}#${auditedAt}}`,
+      ':sk': `${auditType}#${auditedAt}`,
     },
     Limit: 1,
   });

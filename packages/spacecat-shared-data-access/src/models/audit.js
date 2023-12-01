@@ -13,11 +13,13 @@
 import { hasText, isIsoDate, isObject } from '@adobe/spacecat-shared-utils';
 import { Base } from './base.js';
 
+export const AUDIT_TYPE_CWV = 'cwv';
 export const AUDIT_TYPE_LHS = 'lhs';
 
 const EXPIRES_IN_DAYS = 30;
 
 const AUDIT_TYPE_PROPERTIES = {
+  [AUDIT_TYPE_CWV]: [],
   [AUDIT_TYPE_LHS]: ['performance', 'seo', 'accessibility', 'best-practices'],
 };
 

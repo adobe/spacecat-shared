@@ -12,16 +12,19 @@
 
 /* eslint-env mocha */
 
-import { expect } from 'chai';
-
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import dynamoDbLocal from 'dynamo-db-local';
-import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 
+import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { sleep } from '../test/util.js';
 import { createDataAccess } from '../src/index.js';
 import { AUDIT_TYPE_LHS } from '../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';
+
+const { expect } = chai;
+chai.use(chaiAsPromised);
 
 function checkSite(site) {
   expect(site).to.be.an('object');
@@ -322,6 +325,6 @@ describe('DynamoDB Integration Test', async () => {
     await dataAccess.addAudit(auditData);
 
     // Try to add the same audit again
-    await expect(dataAccess.addAudit(auditData)).to.eventually.be.rejectedWith('Audit already exists');
+    await expect(dataAccess.addAudit(auditData)).to.be.rejectedWith('Audit already exists');
   });
 });

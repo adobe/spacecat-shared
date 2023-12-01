@@ -6,15 +6,14 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test:it": "mocha test-it/",
-    "test": "c8 mocha test/",
+    "test:it": "mocha --spec \"test-it/**/*.test.js\"",
+    "test": "c8 mocha --spec \"test/**/*.test.js\"",
     "lint": "eslint .",
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
     "reporter": "mocha-multi-reporters",
-    "reporter-options": "configFile=.mocha-multi.json",
-    "spec": "test/**/*.test.js"
+    "reporter-options": "configFile=.mocha-multi.json"
   },
   "repository": {
     "type": "git",

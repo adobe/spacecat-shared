@@ -12,10 +12,15 @@
 
 /* eslint-env mocha */
 
-import { expect } from 'chai';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
 import { auditFunctions } from '../../../src/service/audits/index.js';
+
+chai.use(chaiAsPromised);
+
+const { expect } = chai;
 
 describe('Audit Access Pattern Tests', () => {
   describe('Audit Functions Export Tests', () => {
@@ -48,8 +53,12 @@ describe('Audit Access Pattern Tests', () => {
     beforeEach(() => {
       mockDynamoClient = {
         query: sinon.stub().returns(Promise.resolve([])),
+        removeItem: sinon.stub().resolves(),
       };
-      mockLog = { log: sinon.stub() };
+      mockLog = {
+        log: sinon.stub(),
+        error: sinon.stub(),
+      };
 
       exportedFunctions = auditFunctions(mockDynamoClient, mockLog);
     });
@@ -138,8 +147,12 @@ describe('Audit Access Pattern Tests', () => {
       mockDynamoClient = {
         query: sinon.stub().returns(Promise.resolve([])),
         putItem: sinon.stub().returns(Promise.resolve()),
+        removeItem: sinon.stub().returns(Promise.resolve()),
       };
-      mockLog = { log: sinon.stub() };
+      mockLog = {
+        log: sinon.stub(),
+        error: sinon.stub(),
+      };
       exportedFunctions = auditFunctions(mockDynamoClient, mockLog);
     });
 
@@ -181,6 +194,48 @@ describe('Audit Access Pattern Tests', () => {
       };
 
       await expect(exportedFunctions.addAudit(incompleteAuditData)).to.be.rejectedWith('Missing expected property');
+    });
+
+    it('should remove all audits and latest audits for a site', async () => {
+      const mockAuditData = [{
+        siteId: 'siteId',
+        auditType: 'lhs',
+        auditedAt: new Date().toISOString(),
+        auditResult: {
+          performance: 0.9,
+          seo: 0.9,
+          accessibility: 0.9,
+          'best-practices': 0.9,
+        },
+        fullAuditRef: 'https://someurl.com',
+      }];
+      mockDynamoClient.query.returns(Promise.resolve(mockAuditData));
+
+      await exportedFunctions.removeAuditsForSite('test-id');
+
+      expect(mockDynamoClient.query.calledTwice).to.be.true;
+      expect(mockDynamoClient.removeItem.calledTwice).to.be.true;
+    });
+
+    it('should log an error if the removal fails', async () => {
+      const mockAuditData = [{
+        siteId: 'siteId',
+        auditType: 'lhs',
+        auditedAt: new Date().toISOString(),
+        auditResult: {
+          performance: 0.9,
+          seo: 0.9,
+          accessibility: 0.9,
+          'best-practices': 0.9,
+        },
+        fullAuditRef: 'https://someurl.com',
+      }];
+      mockDynamoClient.query.returns(Promise.resolve(mockAuditData));
+
+      const errorMessage = 'Failed to delete item';
+      mockDynamoClient.removeItem.rejects(new Error(errorMessage));
+
+      await expect(exportedFunctions.removeAuditsForSite('some-id')).to.be.rejectedWith(errorMessage);
     });
   });
 });

@@ -22,10 +22,12 @@ describe('Data Access Object Tests', () => {
     'getAuditsForSite',
     'getLatestAudits',
     'getLatestAuditForSite',
+    'removeAuditsForSite',
   ];
   const siteFunctions = [
     'addSite',
     'updateSite',
+    'removeSite',
     'getSites',
     'getSitesToAudit',
     'getSitesWithLatestAudit',

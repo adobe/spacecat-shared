@@ -15,7 +15,7 @@ import { isObject } from '@adobe/spacecat-shared-utils';
 import {
   getAuditsForSite,
   getLatestAuditForSite,
-  getLatestAudits,
+  getLatestAudits, removeAuditsForSite,
 } from '../audits/accessPatterns.js';
 
 import { createSite } from '../../models/site.js';
@@ -240,4 +240,23 @@ export const updateSite = async (dynamoClient, log, site) => {
   await dynamoClient.putItem(TABLE_NAME_SITES, SiteDto.toDynamoItem(site));
 
   return site;
+};
+
+/**
+ * Removes a site and its related audits.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {Logger} log - The logger.
+ * @param {string} siteId - The ID of the site to remove.
+ * @returns {Promise<void>}
+ */
+export const removeSite = async (dynamoClient, log, siteId) => {
+  try {
+    await removeAuditsForSite(dynamoClient, log, siteId);
+
+    await dynamoClient.removeItem(TABLE_NAME_SITES, { siteId });
+  } catch (error) {
+    log.error(`Error removing site: ${error.message}`);
+    throw error;
+  }
 };

@@ -45,6 +45,9 @@ export interface DataAccess {
     auditType: string,
     ascending?: boolean,
   ) => Promise<Audit[]>;
+  getLatestAuditsForSite: (
+    siteId: string,
+  ) => Promise<Audit[]>;
   getSites: () => Promise<Site[]>;
   getSitesToAudit: () => Promise<string[]>;
   getSitesWithLatestAudit: (
@@ -73,6 +76,9 @@ export interface DataAccess {
   updateSite: (
     site: Site,
   ) => Promise<Site>;
+  removeSite: (
+    siteId: string,
+  ) => Promise<void>;
 }
 
 export function createDataAccess(

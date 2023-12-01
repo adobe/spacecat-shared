@@ -318,4 +318,36 @@ describe('Site Access Pattern Tests', () => {
       await expect(exportedFunctions.updateSite(site)).to.be.rejectedWith('Site not found');
     });
   });
+
+  describe('removeSite Tests', () => {
+    let mockDynamoClient;
+    let mockLog;
+    let exportedFunctions;
+
+    beforeEach(() => {
+      mockDynamoClient = {
+        query: sinon.stub().returns(Promise.resolve([])),
+        removeItem: sinon.stub().returns(Promise.resolve()),
+      };
+      mockLog = {
+        log: sinon.stub(),
+        error: sinon.stub(),
+      };
+      exportedFunctions = siteFunctions(mockDynamoClient, mockLog);
+    });
+
+    it('removes the site and its related audits', async () => {
+      await exportedFunctions.removeSite('some-id');
+
+      expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
+    });
+
+    it('logs an error and reject if the site removal fails', async () => {
+      const errorMessage = 'Failed to delete site';
+      mockDynamoClient.removeItem.rejects(new Error(errorMessage));
+
+      await expect(exportedFunctions.removeSite('some-id')).to.be.rejectedWith(errorMessage);
+      expect(mockLog.error.calledOnce).to.be.true;
+    });
+  });
 });

@@ -15,6 +15,11 @@ import { isObject } from '@adobe/spacecat-shared-utils';
 import { AuditDto } from '../../dto/audit.js';
 import { createAudit } from '../../models/audit.js';
 
+const TABLE_NAME_AUDITS = 'audits';
+const TABLE_NAME_LATEST_AUDITS = 'latest_audits';
+const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'all_latest_audit_scores';
+const PK_ALL_LATEST_AUDITS = 'ALL_LATEST_AUDITS';
+
 /**
  * Retrieves audits for a specified site. If an audit type is provided,
  * it returns only audits of that type.
@@ -26,9 +31,8 @@ import { createAudit } from '../../models/audit.js';
  * @returns {Promise<Array>} A promise that resolves to an array of audits for the specified site.
  */
 export const getAuditsForSite = async (dynamoClient, log, siteId, auditType) => {
-  // Base query parameters
   const queryParams = {
-    TableName: 'audits',
+    TableName: TABLE_NAME_AUDITS,
     KeyConditionExpression: 'siteId = :siteId',
     ExpressionAttributeValues: {
       ':siteId': siteId,
@@ -63,7 +67,7 @@ export const getAuditForSite = async (
   auditedAt,
 ) => {
   const audit = await dynamoClient.query({
-    TableName: 'audits',
+    TableName: TABLE_NAME_AUDITS,
     KeyConditionExpression: 'siteId = :siteId AND SK = :sk',
     ExpressionAttributeValues: {
       ':siteId': siteId,
@@ -93,15 +97,36 @@ export const getLatestAudits = async (
   ascending = true,
 ) => {
   const dynamoItems = await dynamoClient.query({
-    TableName: 'latest_audits',
-    IndexName: 'all_latest_audit_scores',
+    TableName: TABLE_NAME_LATEST_AUDITS,
+    IndexName: INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
     KeyConditionExpression: 'GSI1PK = :gsi1pk AND begins_with(GSI1SK, :auditType)',
     ExpressionAttributeValues: {
-      ':gsi1pk': 'ALL_LATEST_AUDITS',
+      ':gsi1pk': PK_ALL_LATEST_AUDITS,
       ':auditType': `${auditType}#`,
     },
     ScanIndexForward: ascending, // Sorts ascending if true, descending if false
   });
+
+  return dynamoItems.map((item) => AuditDto.fromDynamoItem(item));
+};
+
+/**
+ * Retrieves latest audits for a specified site.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {Logger} log - The logger.
+ * @param {string} siteId - The ID of the site for which audits are being retrieved.
+ * @returns {Promise<Array>} A promise that resolves to an array of latest audits
+ * for the specified site.
+ */
+export const getLatestAuditsForSite = async (dynamoClient, log, siteId) => {
+  const queryParams = {
+    TableName: TABLE_NAME_LATEST_AUDITS,
+    KeyConditionExpression: 'siteId = :siteId',
+    ExpressionAttributeValues: { ':siteId': siteId },
+  };
+
+  const dynamoItems = await dynamoClient.query(queryParams);
 
   return dynamoItems.map((item) => AuditDto.fromDynamoItem(item));
 };
@@ -123,7 +148,7 @@ export const getLatestAuditForSite = async (
   auditType,
 ) => {
   const latestAudit = await dynamoClient.query({
-    TableName: 'latest_audits',
+    TableName: TABLE_NAME_LATEST_AUDITS,
     KeyConditionExpression: 'siteId = :siteId AND begins_with(SK, :auditType)',
     ExpressionAttributeValues: {
       ':siteId': siteId,
@@ -162,4 +187,38 @@ export const addAudit = async (dynamoClient, log, auditData) => {
   await dynamoClient.putItem('latest_audits', AuditDto.toDynamoItem(audit, true));
 
   return audit;
+};
+
+async function removeAudits(dynamoClient, audits) {
+  // TODO: use batch-remove (needs dynamo client update)
+  const removeAuditPromises = audits.map((audit) => dynamoClient.removeItem({
+    TableName: TABLE_NAME_AUDITS,
+    Key: {
+      siteId: audit.getSiteId(),
+      auditedAt: audit.getAuditedAt(),
+    },
+  }));
+
+  await Promise.all(removeAuditPromises);
+}
+
+/**
+ * Removes all audits for a specified site and the latest audit entry.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {Logger} log - The logger.
+ * @param {string} siteId - The ID of the site for which audits are being removed.
+ * @returns {Promise<void>}
+ */
+export const removeAuditsForSite = async (dynamoClient, log, siteId) => {
+  try {
+    const audits = await getAuditsForSite(dynamoClient, log, siteId);
+    const latestAudits = await getLatestAuditsForSite(dynamoClient, log, siteId);
+
+    await removeAudits(dynamoClient, audits);
+    await removeAudits(dynamoClient, latestAudits);
+  } catch (error) {
+    log.error(`Error removing audits for site ${siteId}: ${error.message}`);
+    throw error;
+  }
 };

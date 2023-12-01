@@ -28,7 +28,8 @@ const PK_ALL_LATEST_AUDITS = 'ALL_LATEST_AUDITS';
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site for which audits are being retrieved.
  * @param {string} [auditType] - Optional. The type of audits to retrieve.
- * @returns {Promise<Array>} A promise that resolves to an array of audits for the specified site.
+ * @returns {Promise<Readonly<Audit>[]>} A promise that resolves to an array of audits
+ * for the specified site.
  */
 export const getAuditsForSite = async (dynamoClient, log, siteId, auditType) => {
   const queryParams = {
@@ -87,7 +88,7 @@ export const getAuditForSite = async (
  * @param {string} auditType - The type of audits to retrieve.
  * @param {boolean} ascending - Determines if the audits should be sorted ascending
  * or descending by scores.
- * @returns {Promise<Array>} A promise that resolves to an array of the latest
+ * @returns {Promise<Readonly<Audit>[]>} A promise that resolves to an array of the latest
  * audits of the specified type.
  */
 export const getLatestAudits = async (
@@ -116,7 +117,7 @@ export const getLatestAudits = async (
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site for which audits are being retrieved.
- * @returns {Promise<Array>} A promise that resolves to an array of latest audits
+ * @returns {Promise<Readonly<Audit>[]>} A promise that resolves to an array of latest audits
  * for the specified site.
  */
 export const getLatestAuditsForSite = async (dynamoClient, log, siteId) => {
@@ -166,7 +167,7 @@ export const getLatestAuditForSite = async (
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {Logger} log - The logger.
  * @param {object} auditData - The audit data.
- * @returns {Promise<Readonly<Site>>}
+ * @returns {Promise<Readonly<Audit>>}
  */
 export const addAudit = async (dynamoClient, log, auditData) => {
   const audit = createAudit(auditData);
@@ -189,6 +190,14 @@ export const addAudit = async (dynamoClient, log, auditData) => {
   return audit;
 };
 
+/**
+ * Removes audits from the database.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {Logger} log - The logger.
+ * @param audits
+ * @param latest
+ * @returns {Promise<void>}
+ */
 async function removeAudits(dynamoClient, audits, latest = false) {
   const tableName = latest ? TABLE_NAME_LATEST_AUDITS : TABLE_NAME_AUDITS;
   // TODO: use batch-remove (needs dynamo client update)

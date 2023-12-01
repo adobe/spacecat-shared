@@ -66,7 +66,7 @@ const Audit = (data = {}) => {
 /**
  * Creates a new Audit.
  *
- * @param {object } data - audit data
+ * @param {object} data - audit data
  * @returns {Readonly<Audit>} audit - new audit
  */
 export const createAudit = (data) => {

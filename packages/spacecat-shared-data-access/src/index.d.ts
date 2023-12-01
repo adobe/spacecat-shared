@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+// TODO: introduce AuditType interface or Scores interface
+
 export interface Audit {
   getSiteId: () => string;
   getAuditedAt: () => string;
@@ -27,7 +29,6 @@ export interface Site {
   getCreatedAt: () => string;
   getUpdatedAt: () => string;
   getAudits: () => Audit[];
-  updateBaseURL: (baseURL: string) => Site;
   updateImsOrgId: (imsOrgId: string) => Site;
   setAudits: (audits: Audit[]) => Site;
 }

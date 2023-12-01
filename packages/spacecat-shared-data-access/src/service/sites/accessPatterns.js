@@ -29,7 +29,7 @@ const TABLE_NAME_SITES = 'sites';
  * Retrieves all sites.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
- * @returns {Promise<Array<Site>>} A promise that resolves to an array of all sites.
+ * @returns {Promise<Readonly<Site>[]>} A promise that resolves to an array of all sites.
  */
 export const getSites = async (dynamoClient) => {
   const dynamoItems = await dynamoClient.query({
@@ -64,7 +64,7 @@ export const getSitesToAudit = async (dynamoClient) => {
  * @param {string} auditType - The type of the latest audits to retrieve for each site.
  * @param {boolean} [sortAuditsAscending] - Optional. Determines if the audits
  * should be sorted ascending or descending by scores.
- * @returns {Promise<Array>} A promise that resolves to an array of site objects,
+ * @returns {Promise<Readonly<Site>[]>} A promise that resolves to an array of site objects,
  * each with its latest audit of the specified type.
  */
 export const getSitesWithLatestAudit = async (
@@ -96,7 +96,7 @@ export const getSitesWithLatestAudit = async (
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {Logger} log - The logger.
  * @param {string} baseURL - The base URL of the site to retrieve.
- * @returns {Promise<Site|null>} A promise that resolves to the site object if found,
+ * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object if found,
  * otherwise null.
  */
 export const getSiteByBaseURL = async (
@@ -130,7 +130,7 @@ export const getSiteByBaseURL = async (
  * @param {string} baseUrl - The base URL of the site to retrieve.
  * @param {string} auditType - The type of audits to retrieve for the site.
  * @param {boolean} [latestOnly=false] - Determines if only the latest audit should be retrieved.
- * @returns {Promise<Site|null>} A promise that resolves to the site object with audit
+ * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object with audit
  * data if found, otherwise null.
  */
 export const getSiteByBaseURLWithAuditInfo = async (
@@ -172,7 +172,8 @@ export const getSiteByBaseURLWithAuditInfo = async (
  * @param {Logger} log - The logger.
  * @param {string} baseUrl - The base URL of the site to retrieve.
  * @param {string} auditType - The type of audits to retrieve for the site.
- * @returns {Promise<Site|null>} A promise that resolves to the site object with all its audits.
+ * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object
+ * with all its audits.
  */
 export const getSiteByBaseURLWithAudits = async (
   dynamoClient,
@@ -188,7 +189,8 @@ export const getSiteByBaseURLWithAudits = async (
  * @param {Logger} log - The logger.
  * @param {string} baseUrl - The base URL of the site to retrieve.
  * @param {string} auditType - The type of the latest audit to retrieve for the site.
- * @returns {Promise<Site|null>} A promise that resolves to the site object with its latest audit.
+ * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object
+ * with its latest audit.
  */
 export const getSiteByBaseURLWithLatestAudit = async (
   dynamoClient,
@@ -228,7 +230,7 @@ export const addSite = async (dynamoClient, log, siteData) => {
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {Logger} log - The logger.
  * @param {Site} site - The site.
- * @returns {Promise<Site>} - The updated site.
+ * @returns {Promise<Readonly<Site>>} - The updated site.
  */
 export const updateSite = async (dynamoClient, log, site) => {
   const existingSite = await getSiteByBaseURL(dynamoClient, log, site.getBaseURL());
@@ -252,6 +254,7 @@ export const updateSite = async (dynamoClient, log, site) => {
  */
 export const removeSite = async (dynamoClient, log, siteId) => {
   try {
+    // TODO: Add transaction support
     await removeAuditsForSite(dynamoClient, log, siteId);
 
     await dynamoClient.removeItem(TABLE_NAME_SITES, { id: siteId });

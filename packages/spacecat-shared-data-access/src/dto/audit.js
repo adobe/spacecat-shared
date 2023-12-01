@@ -51,7 +51,7 @@ export const AuditDto = {
 
   /**
    * Converts a DynamoDB item into an Audit object.
-   * @param {object } dynamoItem - DynamoDB item.
+   * @param {object} dynamoItem - DynamoDB item.
    * @returns {Readonly<Audit>} Audit object.
    */
   fromDynamoItem: (dynamoItem) => {

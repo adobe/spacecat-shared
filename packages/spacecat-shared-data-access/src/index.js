@@ -11,8 +11,8 @@
  */
 
 import { createClient } from '@adobe/spacecat-shared-dynamo';
-import { auditFunctions } from './audits/index.js';
-import { siteFunctions } from './sites/index.js';
+import { auditFunctions } from './service/audits/index.js';
+import { siteFunctions } from './service/sites/index.js';
 
 /**
  * Creates a data access object.

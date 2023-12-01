@@ -12,8 +12,8 @@
 
 import { isObject } from '@adobe/spacecat-shared-utils';
 
-import { AuditDto } from '../dto/audit.js';
-import { createAudit } from '../models/audit.js';
+import { AuditDto } from '../../dto/audit.js';
+import { createAudit } from '../../models/audit.js';
 
 /**
  * Retrieves audits for a specified site. If an audit type is provided,

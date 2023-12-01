@@ -18,8 +18,8 @@ import {
   getLatestAudits,
 } from '../audits/accessPatterns.js';
 
-import { createSite } from '../models/site.js';
-import { SiteDto } from '../dto/site.js';
+import { createSite } from '../../models/site.js';
+import { SiteDto } from '../../dto/site.js';
 
 const INDEX_NAME_ALL_SITES = 'all_sites';
 const PK_ALL_SITES = 'ALL_SITES';

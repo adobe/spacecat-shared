@@ -15,7 +15,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { auditFunctions } from '../../src/audits/index.js';
+import { auditFunctions } from '../../../src/service/audits/index.js';
 
 describe('Audit Access Pattern Tests', () => {
   describe('Audit Functions Export Tests', () => {

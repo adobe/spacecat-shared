@@ -16,7 +16,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
-import { auditFunctions } from '../../../src/service/audits/index.js';
+import { auditFunctions } from '../../../../src/service/audits/index.js';
 
 chai.use(chaiAsPromised);
 

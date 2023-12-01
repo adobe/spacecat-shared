@@ -16,7 +16,7 @@ import { dbClient, docClient as client } from './db.js';
 import { generateRandomAudit } from './auditUtils.js';
 import { createTable, deleteTable } from './tableOperations.js';
 
-import schema from '../docs/schema.json' assert { type: 'json' };
+import schema from '../../docs/schema.json' assert { type: 'json' };
 
 /**
  * Creates all tables defined in a schema.

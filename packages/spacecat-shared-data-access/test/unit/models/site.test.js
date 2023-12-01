@@ -13,7 +13,7 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { createSite } from '../../src/models/site.js';
+import { createSite } from '../../../src/models/site.js';
 import { sleep } from '../util.js';
 
 // Constants for testing

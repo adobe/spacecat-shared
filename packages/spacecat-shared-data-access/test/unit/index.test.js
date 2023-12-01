@@ -13,7 +13,7 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { createDataAccess } from '../src/index.js';
+import { createDataAccess } from '../../src/index.js';
 
 describe('Data Access Object Tests', () => {
   const auditFunctions = [

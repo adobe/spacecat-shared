@@ -15,7 +15,7 @@
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import { expect } from 'chai';
-import { Base } from '../../src/models/base.js';
+import { Base } from '../../../src/models/base.js';
 import { sleep } from '../util.js';
 
 describe('Base Model Tests', () => {

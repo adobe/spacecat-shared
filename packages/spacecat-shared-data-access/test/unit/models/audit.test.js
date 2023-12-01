@@ -13,7 +13,7 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { createAudit } from '../../src/models/audit.js';
+import { createAudit } from '../../../src/models/audit.js';
 
 const validData = {
   siteId: '123',

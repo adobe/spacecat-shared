@@ -16,8 +16,8 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
-import { siteFunctions } from '../../../src/service/sites/index.js';
-import { createSite } from '../../../src/models/site.js';
+import { siteFunctions } from '../../../../src/service/sites/index.js';
+import { createSite } from '../../../../src/models/site.js';
 
 chai.use(chaiAsPromised);
 

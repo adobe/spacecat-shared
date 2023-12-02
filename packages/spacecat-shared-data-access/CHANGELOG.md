@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.1.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.0.2...@adobe/spacecat-shared-data-access-v1.1.0) (2023-12-02)
+
+
+### Features
+
+* allow configuration from ctx / add missing fields ([#24](https://github.com/adobe-rnd/spacecat-shared/issues/24)) ([6959f89](https://github.com/adobe-rnd/spacecat-shared/commit/6959f895ed9b167f421b201f856ef871bd2a335c))
+
 # [@adobe/spacecat-shared-data-access-v1.0.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.0.1...@adobe/spacecat-shared-data-access-v1.0.2) (2023-12-02)
 
 

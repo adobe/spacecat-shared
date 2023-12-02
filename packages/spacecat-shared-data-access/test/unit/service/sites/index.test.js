@@ -117,7 +117,7 @@ describe('Site Access Pattern Tests', () => {
 
       const mockAuditData = [{
         siteId: 'site1',
-        auditType: 'lhs',
+        auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
           performance: 0.9,
@@ -131,7 +131,7 @@ describe('Site Access Pattern Tests', () => {
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
       mockDynamoClient.query.onSecondCall().resolves(mockAuditData);
 
-      const result = await exportedFunctions.getSitesWithLatestAudit('lhs');
+      const result = await exportedFunctions.getSitesWithLatestAudit('lhs-mobile');
       expect(result).to.be.an('array').that.has.lengthOf(1);
     });
 
@@ -177,7 +177,7 @@ describe('Site Access Pattern Tests', () => {
 
       const mockLatestAuditData = [{
         siteId: 'site1',
-        auditType: 'lhs',
+        auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
           performance: 0.9,
@@ -191,7 +191,7 @@ describe('Site Access Pattern Tests', () => {
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
       mockDynamoClient.query.onSecondCall().resolves(mockLatestAuditData);
 
-      const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('https://example.com', 'lhs', true);
+      const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('https://example.com', 'lhs-mobile', true);
       const audits = result.getAudits();
       expect(audits).to.be.an('array').with.lengthOf(1);
 
@@ -212,7 +212,7 @@ describe('Site Access Pattern Tests', () => {
 
       const mockLatestAuditData = [{
         siteId: 'site1',
-        auditType: 'lhs',
+        auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
           performance: 0.9,
@@ -224,7 +224,7 @@ describe('Site Access Pattern Tests', () => {
       },
       {
         siteId: 'site1',
-        auditType: 'lhs',
+        auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
           performance: 0.9,
@@ -238,7 +238,7 @@ describe('Site Access Pattern Tests', () => {
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
       mockDynamoClient.query.onSecondCall().resolves(mockLatestAuditData);
 
-      const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('baseUrl', 'lhs', false);
+      const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('baseUrl', 'lhs-mobile', false);
       const audits = result.getAudits();
       expect(audits).to.be.an('array').with.lengthOf(2);
 

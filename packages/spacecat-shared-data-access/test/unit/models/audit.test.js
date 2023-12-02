@@ -18,7 +18,7 @@ import { createAudit } from '../../../src/models/audit.js';
 const validData = {
   siteId: '123',
   auditedAt: new Date().toISOString(),
-  auditType: 'lhs',
+  auditType: 'lhs-mobile',
   auditResult: {
     performance: 0.9,
     seo: 0.9,

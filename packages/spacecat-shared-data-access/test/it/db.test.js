@@ -19,7 +19,7 @@ import dynamoDbLocal from 'dynamo-db-local';
 import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { sleep } from '../unit/util.js';
 import { createDataAccess } from '../../src/service/index.js';
-import { AUDIT_TYPE_LHS } from '../../src/models/audit.js';
+import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';
 
@@ -112,7 +112,7 @@ describe('DynamoDB Integration Test', async () => {
   });
 
   it('gets sites with latest audit', async () => {
-    const sites = await dataAccess.getSitesWithLatestAudit(AUDIT_TYPE_LHS);
+    const sites = await dataAccess.getSitesWithLatestAudit(AUDIT_TYPE_LHS_MOBILE);
 
     // Every tenth site will not have any audits
     expect(sites.length).to.equal(NUMBER_OF_SITES - 1);
@@ -121,7 +121,7 @@ describe('DynamoDB Integration Test', async () => {
       checkSite(site);
       expect(site.getAudits()).to.be.an('array').that.has.lengthOf(1);
       site.getAudits().forEach((audit) => {
-        expect(audit.getAuditType()).to.equal(AUDIT_TYPE_LHS);
+        expect(audit.getAuditType()).to.equal(AUDIT_TYPE_LHS_MOBILE);
         expect(Object.keys(audit.getScores())).to.have.members(
           ['performance', 'seo', 'accessibility', 'best-practices'],
         );
@@ -191,7 +191,7 @@ describe('DynamoDB Integration Test', async () => {
   it('retrieves audits of a specific type for a site', async () => {
     const site = await dataAccess.getSiteByBaseURL('https://example1.com');
     const siteId = site.getId();
-    const auditType = AUDIT_TYPE_LHS;
+    const auditType = AUDIT_TYPE_LHS_MOBILE;
     const audits = await dataAccess.getAuditsForSite(siteId, auditType);
 
     expect(audits).to.be.an('array').that.has.lengthOf(NUMBER_OF_AUDITS_PER_TYPE_AND_SITE);
@@ -206,7 +206,7 @@ describe('DynamoDB Integration Test', async () => {
   it('retrieves a specific audit for a site', async () => {
     const site = await dataAccess.getSiteByBaseURL('https://example1.com');
     const siteId = site.getId();
-    const auditType = AUDIT_TYPE_LHS;
+    const auditType = AUDIT_TYPE_LHS_MOBILE;
     const audits = await dataAccess.getAuditsForSite(site.getId(), auditType);
     const auditedAt = audits[0].getAuditedAt();
 
@@ -231,27 +231,27 @@ describe('DynamoDB Integration Test', async () => {
   });
 
   it('retrieves the latest audits of a specific type', async () => {
-    const audits = await dataAccess.getLatestAudits(AUDIT_TYPE_LHS, true);
+    const audits = await dataAccess.getLatestAudits(AUDIT_TYPE_LHS_MOBILE, true);
 
     // Every tenth site will not have any audits
     expect(audits).to.be.an('array').that.has.lengthOf(NUMBER_OF_SITES - 1);
 
     audits.forEach((audit) => {
       checkAudit(audit);
-      expect(audit.getAuditType()).to.equal(AUDIT_TYPE_LHS);
+      expect(audit.getAuditType()).to.equal(AUDIT_TYPE_LHS_MOBILE);
     });
 
     // verify the sorting order
     let lastScoresString = '';
     audits.forEach((audit) => {
-      const currentScoresString = `${AUDIT_TYPE_LHS}#${Object.keys(audit.getScores()).join('#')}`;
+      const currentScoresString = `${AUDIT_TYPE_LHS_MOBILE}#${Object.keys(audit.getScores()).join('#')}`;
       expect(currentScoresString.localeCompare(lastScoresString)).to.be.at.least(0);
       lastScoresString = currentScoresString;
     });
   });
 
   it('retrieves the latest audits in descending order', async () => {
-    const audits = await dataAccess.getLatestAudits(AUDIT_TYPE_LHS, false);
+    const audits = await dataAccess.getLatestAudits(AUDIT_TYPE_LHS_MOBILE, false);
 
     expect(audits).to.be.an('array').that.has.lengthOf(NUMBER_OF_SITES - 1);
 
@@ -259,7 +259,7 @@ describe('DynamoDB Integration Test', async () => {
     // assuming 'z' will be lexicographically after any realistic score string
     let lastScoresString = 'z';
     audits.forEach((audit) => {
-      const currentScoresString = `${AUDIT_TYPE_LHS}#${Object.keys(audit.getScores()).join('#')}`;
+      const currentScoresString = `${AUDIT_TYPE_LHS_MOBILE}#${Object.keys(audit.getScores()).join('#')}`;
       expect(currentScoresString.localeCompare(lastScoresString)).to.be.at.most(0);
       lastScoresString = currentScoresString;
     });
@@ -269,13 +269,13 @@ describe('DynamoDB Integration Test', async () => {
     const site = await dataAccess.getSiteByBaseURL('https://example1.com');
     const siteId = site.getId();
 
-    const latestAudit = await dataAccess.getLatestAuditForSite(siteId, AUDIT_TYPE_LHS);
+    const latestAudit = await dataAccess.getLatestAuditForSite(siteId, AUDIT_TYPE_LHS_MOBILE);
 
     checkAudit(latestAudit);
     expect(latestAudit.getSiteId()).to.equal(siteId);
-    expect(latestAudit.getAuditType()).to.equal(AUDIT_TYPE_LHS);
+    expect(latestAudit.getAuditType()).to.equal(AUDIT_TYPE_LHS_MOBILE);
 
-    const allAudits = await dataAccess.getAuditsForSite(siteId, AUDIT_TYPE_LHS);
+    const allAudits = await dataAccess.getAuditsForSite(siteId, AUDIT_TYPE_LHS_MOBILE);
     const mostRecentAudit = allAudits.reduce((latest, current) => (
       new Date(latest.getAuditedAt()) > new Date(current.getAuditedAt()) ? latest : current
     ));
@@ -296,7 +296,7 @@ describe('DynamoDB Integration Test', async () => {
   it('successfully adds a new audit', async () => {
     const auditData = {
       siteId: 'https://example1.com',
-      auditType: AUDIT_TYPE_LHS,
+      auditType: AUDIT_TYPE_LHS_MOBILE,
       auditedAt: new Date().toISOString(),
       isLive: true,
       fullAuditRef: 's3://ref',
@@ -331,7 +331,7 @@ describe('DynamoDB Integration Test', async () => {
   it('throws an error when adding a duplicate audit', async () => {
     const auditData = {
       siteId: 'https://example1.com',
-      auditType: AUDIT_TYPE_LHS,
+      auditType: AUDIT_TYPE_LHS_MOBILE,
       auditedAt: new Date().toISOString(),
       fullAuditRef: 's3://ref',
       isLive: true,
@@ -361,7 +361,10 @@ describe('DynamoDB Integration Test', async () => {
     const auditsAfterRemoval = await dataAccess.getAuditsForSite(siteId);
     expect(auditsAfterRemoval).to.be.an('array').that.is.empty;
 
-    const latestAuditAfterRemoval = await dataAccess.getLatestAuditForSite(siteId, AUDIT_TYPE_LHS);
+    const latestAuditAfterRemoval = await dataAccess.getLatestAuditForSite(
+      siteId,
+      AUDIT_TYPE_LHS_MOBILE,
+    );
     expect(latestAuditAfterRemoval).to.be.null;
   });
 });

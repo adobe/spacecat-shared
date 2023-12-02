@@ -29,19 +29,13 @@ describe('getItem', () => {
 
   it('gets an item from the database', async () => {
     const key = { partitionKey: 'testPartitionKey' };
-    const result = await dynamoDbClient.getItem('TestTable', null, key);
+    const result = await dynamoDbClient.getItem('TestTable', key);
     expect(result).to.be.an('object');
   });
 
   it('gets an item from the database with sort key', async () => {
     const key = { partitionKey: 'testPartitionKey', sortKey: 'testSortKey' };
-    const result = await dynamoDbClient.getItem('TestTable', null, key);
-    expect(result).to.be.an('object');
-  });
-
-  it('gets an item from the database with index', async () => {
-    const key = { partitionKey: 'testPartitionKey', sortKey: 'testSortKey' };
-    const result = await dynamoDbClient.getItem('TestTable', 'test-index', key);
+    const result = await dynamoDbClient.getItem('TestTable', key);
     expect(result).to.be.an('object');
   });
 
@@ -57,7 +51,7 @@ describe('getItem', () => {
 
   it('throws an error for getItem with invalid key', async () => {
     try {
-      await dynamoDbClient.getItem('TestTable', null, null);
+      await dynamoDbClient.getItem('TestTable', null);
       expect.fail('getItem did not throw with invalid key');
     } catch (error) {
       expect(error.message).to.equal('Key must be a non-empty object.');
@@ -70,7 +64,7 @@ describe('getItem', () => {
     };
 
     try {
-      await dynamoDbClient.getItem('TestTable', null, { partitionKey: 'testPartitionKey' });
+      await dynamoDbClient.getItem('TestTable', { partitionKey: 'testPartitionKey' });
       expect.fail('getItem did not throw as expected');
     } catch (error) {
       expect(error.message).to.equal('Get failed');

@@ -32,7 +32,7 @@ const createClient = (
   docClient = DynamoDBDocument.from(dbClient),
 ) => ({
   query: (params) => query(docClient, params, log),
-  getItem: (tableName, indexName, key) => getItem(docClient, tableName, indexName, key, log),
+  getItem: (tableName, key) => getItem(docClient, tableName, key, log),
   putItem: (tableName, item) => putItem(docClient, tableName, item, log),
   removeItem: (tableName, key) => removeItem(docClient, tableName, key, log),
 });

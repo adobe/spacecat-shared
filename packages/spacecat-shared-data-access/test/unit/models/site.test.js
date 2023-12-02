@@ -91,5 +91,13 @@ describe('Site Model Tests', () => {
 
       expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });
+
+    it('toggles live status', async () => {
+      expect(site.isLive()).to.be.false;
+
+      site.toggleLive();
+
+      expect(site.isLive()).to.be.true;
+    });
   });
 });

@@ -22,12 +22,22 @@ chai.use(chaiAsPromised);
 
 const { expect } = chai;
 
+const TEST_DA_CONFIG = {
+  tableNameAudits: 'test-audits',
+  tableNameLatestAudits: 'test-latest-audits',
+  tableNameSites: 'test-sites',
+  indexNameAllSites: 'test-index-all-sites',
+  indexNameAllLatestAuditScores: 'test-index-all-latest-audit-scores',
+  pkAllSites: 'test-pk-all-sites',
+  pkAllLatestAudits: 'test-pk-all-latest-audits',
+};
+
 describe('Audit Access Pattern Tests', () => {
   describe('Audit Functions Export Tests', () => {
     const mockDynamoClient = {};
     const mockLog = {};
 
-    const exportedFunctions = auditFunctions(mockDynamoClient, mockLog);
+    const exportedFunctions = auditFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
 
     it('exports getAuditsForSite function', () => {
       expect(exportedFunctions).to.have.property('getAuditsForSite');
@@ -42,6 +52,16 @@ describe('Audit Access Pattern Tests', () => {
     it('exports getLatestAuditForSite function', () => {
       expect(exportedFunctions).to.have.property('getLatestAuditForSite');
       expect(exportedFunctions.getLatestAuditForSite).to.be.a('function');
+    });
+
+    it('exports removeAuditsForSite function', () => {
+      expect(exportedFunctions).to.have.property('removeAuditsForSite');
+      expect(exportedFunctions.removeAuditsForSite).to.be.a('function');
+    });
+
+    it('exports addAudit function', () => {
+      expect(exportedFunctions).to.have.property('addAudit');
+      expect(exportedFunctions.addAudit).to.be.a('function');
     });
   });
 
@@ -60,7 +80,7 @@ describe('Audit Access Pattern Tests', () => {
         error: sinon.stub(),
       };
 
-      exportedFunctions = auditFunctions(mockDynamoClient, mockLog);
+      exportedFunctions = auditFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
     it('calls getAuditsForSite and return an array', async () => {
@@ -92,7 +112,7 @@ describe('Audit Access Pattern Tests', () => {
         query: sinon.stub().returns(Promise.resolve([])),
       };
       mockLog = { log: sinon.stub() };
-      exportedFunctions = auditFunctions(mockDynamoClient, mockLog);
+      exportedFunctions = auditFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
     it('successfully retrieves an audit for a site', async () => {
@@ -153,7 +173,7 @@ describe('Audit Access Pattern Tests', () => {
         log: sinon.stub(),
         error: sinon.stub(),
       };
-      exportedFunctions = auditFunctions(mockDynamoClient, mockLog);
+      exportedFunctions = auditFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
     it('successfully adds a new audit', async () => {

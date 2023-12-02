@@ -12,7 +12,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
-import { randomDate } from './util.js';
+import { getRandomDecimal, getRandomInt, randomDate } from './util.js';
 
 function generateRandomAudit(siteId, auditType) {
   let auditResult = {};
@@ -20,14 +20,6 @@ function generateRandomAudit(siteId, auditType) {
   const expiresAt = new Date(auditedAt);
   expiresAt.setDate(expiresAt.getDate() + 30);
   const fullAuditRef = `s3://audit-results/${uuidv4()}.json`;
-
-  function getRandomDecimal(precision) {
-    return parseFloat(Math.random().toFixed(precision));
-  }
-
-  function getRandomInt(max) {
-    return Math.floor(Math.random() * max);
-  }
 
   if (auditType === 'lhs') {
     auditResult = {
@@ -50,6 +42,7 @@ function generateRandomAudit(siteId, auditType) {
     auditType,
     auditedAt,
     auditResult,
+    isLive: true,
     expiresAt: Math.floor(expiresAt.getTime() / 1000), // AWS expects unix epoch in seconds
     fullAuditRef,
   };

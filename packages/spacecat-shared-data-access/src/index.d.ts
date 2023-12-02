@@ -19,18 +19,22 @@ export interface Audit {
   getAuditType: () => object;
   getExpiresAt: () => Date;
   getFullAuditRef: () => string;
+  isLive: () => boolean;
   getScores: () => object;
 }
 
 export interface Site {
   getId: () => string;
   getBaseURL: () => string;
+  getGitHubURL: () => string;
   getImsOrgId: () => string;
   getCreatedAt: () => string;
   getUpdatedAt: () => string;
   getAudits: () => Audit[];
-  updateImsOrgId: (imsOrgId: string) => Site;
+  isLive: () => boolean;
   setAudits: (audits: Audit[]) => Site;
+  toggleLive: () => Site;
+  updateImsOrgId: (imsOrgId: string) => Site;
 }
 
 export interface DataAccess {
@@ -49,6 +53,12 @@ export interface DataAccess {
   getLatestAuditsForSite: (
     siteId: string,
   ) => Promise<Audit[]>;
+  addAudit: (
+    auditData: object,
+  ) => Promise<Audit>;
+  removeAuditsForSite: (
+    siteId: string,
+  ) => Promise<void>;
   getSites: () => Promise<Site[]>;
   getSitesToAudit: () => Promise<string[]>;
   getSitesWithLatestAudit: (
@@ -82,6 +92,17 @@ export interface DataAccess {
   ) => Promise<void>;
 }
 
+interface DataAccessConfig {
+  tableNameAudits: string;
+  tableNameLatestAudits: string;
+  tableNameSites: string;
+  indexNameAllSites: string;
+  indexNameAllLatestAuditScores: string;
+  pkAllSites: string;
+  pkAllLatestAudits: string;
+}
+
 export function createDataAccess(
+  config: DataAccessConfig,
   logger: object,
 ): DataAccess;

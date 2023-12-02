@@ -58,6 +58,7 @@ const Audit = (data = {}) => {
   self.getAuditType = () => self.state.auditType.toLowerCase();
   self.getExpiresAt = () => self.state.expiresAt;
   self.getFullAuditRef = () => self.state.fullAuditRef;
+  self.isLive = () => self.state.isLive;
   self.getScores = () => self.getAuditResult();
 
   return Object.freeze(self);
@@ -97,6 +98,10 @@ export const createAudit = (data) => {
   if (!newState.expiresAt) {
     newState.expiresAt = new Date(newState.auditedAt);
     newState.expiresAt.setDate(newState.expiresAt.getDate() + EXPIRES_IN_DAYS);
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(newState, 'isLive')) {
+    newState.isLive = false;
   }
 
   return Audit(newState);

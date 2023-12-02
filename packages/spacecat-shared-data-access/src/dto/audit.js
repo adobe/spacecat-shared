@@ -44,6 +44,7 @@ export const AuditDto = {
       auditType: audit.getAuditType(),
       expiresAt: convertDateToEpochSeconds(audit.getExpiresAt()),
       fullAuditRef: audit.getFullAuditRef(),
+      isLive: audit.isLive(),
       SK: `${audit.getAuditType()}#${audit.getAuditedAt()}`,
       ...latestAuditProps,
     };
@@ -62,6 +63,7 @@ export const AuditDto = {
       auditType: dynamoItem.auditType,
       expiresAt: parseEpochToDate(dynamoItem.expiresAt),
       fullAuditRef: dynamoItem.fullAuditRef,
+      isLive: dynamoItem.isLive,
     };
 
     return createAudit(auditData);

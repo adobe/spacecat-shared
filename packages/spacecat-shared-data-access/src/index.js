@@ -12,11 +12,38 @@
 
 import { createDataAccess } from './service/index.js';
 
+const TABLE_NAME_AUDITS = 'spacecat-services-audits';
+const TABLE_NAME_LATEST_AUDITS = 'spacecat-services-latest-audits';
+const TABLE_NAME_SITES = 'spacecat-services-sites';
+
+const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites';
+const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'spacecat-services-all-latest-audit-scores';
+
+const PK_ALL_SITES = 'ALL_SITES';
+const PK_ALL_LATEST_AUDITS = 'ALL_LATEST_AUDITS';
+
 export default function dataAccessWrapper(fn) {
   return async (request, context) => {
     if (!context.dataAccess) {
       const { log } = context;
-      context.dataAccess = createDataAccess(log);
+
+      const {
+        DYNAMO_TABLE_NAME_AUDITS = TABLE_NAME_AUDITS,
+        DYNAMO_TABLE_NAME_LATEST_AUDITS = TABLE_NAME_LATEST_AUDITS,
+        DYNAMO_TABLE_NAME_SITES = TABLE_NAME_SITES,
+        DYNAMO_INDEX_NAME_ALL_SITES = INDEX_NAME_ALL_SITES,
+        DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES = INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
+      } = context.env;
+
+      context.dataAccess = createDataAccess({
+        tableNameAudits: DYNAMO_TABLE_NAME_AUDITS,
+        tableNameLatestAudits: DYNAMO_TABLE_NAME_LATEST_AUDITS,
+        tableNameSites: DYNAMO_TABLE_NAME_SITES,
+        indexNameAllSites: DYNAMO_INDEX_NAME_ALL_SITES,
+        indexNameAllLatestAuditScores: DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
+        pkAllSites: PK_ALL_SITES,
+        pkAllLatestAudits: PK_ALL_LATEST_AUDITS,
+      }, log);
     }
 
     return fn(request, context);

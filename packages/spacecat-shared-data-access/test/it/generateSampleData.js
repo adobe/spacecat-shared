@@ -83,7 +83,7 @@ async function batchWrite(tableName, items) {
  *
  * @example
  * // Example usage
- * const audits = generateAuditData('site123', ['lhs', 'cwv'], 5);
+ * const audits = generateAuditData('site123', ['lhs-mobile', 'cwv'], 5);
  */
 function generateAuditData(
   config,
@@ -110,7 +110,7 @@ function generateAuditData(
   const latestAuditData = Object.values(latestAudits).map((audit) => {
     // Modify the audit data for the latest_audits table
     let GSI1SK = `${audit.auditType}#`;
-    if (audit.auditType === 'lhs') {
+    if (audit.auditType === 'lhs-mobile') {
       GSI1SK += Object.values(audit.auditResult).map((score) => (parseFloat(score) * 100).toFixed(0)).join('#');
     } else {
       GSI1SK += Object.values(audit.auditResult).join('#');
@@ -151,7 +151,7 @@ export default async function generateSampleData(
   ]);
   await createTablesFromSchema();
 
-  const auditTypes = ['lhs', 'cwv'];
+  const auditTypes = ['lhs-mobile', 'cwv'];
   const sites = [];
   const auditItems = [];
   const latestAuditItems = [];

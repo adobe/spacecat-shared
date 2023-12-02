@@ -21,7 +21,7 @@ function generateRandomAudit(siteId, auditType) {
   expiresAt.setDate(expiresAt.getDate() + 30);
   const fullAuditRef = `s3://audit-results/${uuidv4()}.json`;
 
-  if (auditType === 'lhs') {
+  if (auditType === 'lhs-mobile') {
     auditResult = {
       performance: getRandomDecimal(2),
       seo: getRandomDecimal(2),

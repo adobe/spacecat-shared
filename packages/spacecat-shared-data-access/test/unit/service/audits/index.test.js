@@ -118,7 +118,7 @@ describe('Audit Access Pattern Tests', () => {
     it('successfully retrieves an audit for a site', async () => {
       const mockAuditData = [{
         siteId: 'siteId',
-        auditType: 'lhs',
+        auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
           performance: 0.9,
@@ -152,7 +152,7 @@ describe('Audit Access Pattern Tests', () => {
 
     const auditData = {
       siteId: 'siteId',
-      auditType: 'lhs',
+      auditType: 'lhs-mobile',
       auditedAt: new Date().toISOString(),
       auditResult: {
         performance: 0.9,
@@ -219,7 +219,7 @@ describe('Audit Access Pattern Tests', () => {
     it('should remove all audits and latest audits for a site', async () => {
       const mockAuditData = [{
         siteId: 'siteId',
-        auditType: 'lhs',
+        auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
           performance: 0.9,
@@ -240,7 +240,7 @@ describe('Audit Access Pattern Tests', () => {
     it('should log an error if the removal fails', async () => {
       const mockAuditData = [{
         siteId: 'siteId',
-        auditType: 'lhs',
+        auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
           performance: 0.9,

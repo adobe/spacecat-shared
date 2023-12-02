@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.1.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.1.0...@adobe/spacecat-shared-data-access-v1.1.1) (2023-12-02)
+
+
+### Bug Fixes
+
+* distinguish lhs-mobile vs lhs-desktop ([#27](https://github.com/adobe-rnd/spacecat-shared/issues/27)) ([18fd1b1](https://github.com/adobe-rnd/spacecat-shared/commit/18fd1b18ae400c32bbb3a175f7d6a6cde104f4a1))
+
 # [@adobe/spacecat-shared-data-access-v1.1.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.0.2...@adobe/spacecat-shared-data-access-v1.1.0) (2023-12-02)
 
 

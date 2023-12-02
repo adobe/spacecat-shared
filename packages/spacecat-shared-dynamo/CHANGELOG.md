@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.2.3](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.2...@adobe/spacecat-shared-dynamo-v1.2.3) (2023-12-02)
+
+
+### Reverts
+
+* Revert "fix: allow use of index for getItem (#10)" (#15) ([ad03176](https://github.com/adobe-rnd/spacecat-shared/commit/ad0317625074a26a4600d7e464a53c3b6dd78fe4)), closes [#10](https://github.com/adobe-rnd/spacecat-shared/issues/10) [#15](https://github.com/adobe-rnd/spacecat-shared/issues/15)
+
 # [@adobe/spacecat-shared-dynamo-v1.2.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.1...@adobe/spacecat-shared-dynamo-v1.2.2) (2023-12-02)
 
 

@@ -301,10 +301,12 @@ describe('DynamoDB Integration Test', async () => {
       isLive: true,
       fullAuditRef: 's3://ref',
       auditResult: {
-        performance: 0,
-        seo: 0,
-        accessibility: 0,
-        'best-practices': 0,
+        scores: {
+          performance: 0,
+          seo: 0,
+          accessibility: 0,
+          'best-practices': 0,
+        },
       },
     };
 
@@ -336,10 +338,12 @@ describe('DynamoDB Integration Test', async () => {
       fullAuditRef: 's3://ref',
       isLive: true,
       auditResult: {
-        performance: 0,
-        seo: 0,
-        accessibility: 0,
-        'best-practices': 0,
+        scores: {
+          performance: 0,
+          seo: 0,
+          accessibility: 0,
+          'best-practices': 0,
+        },
       },
     };
 

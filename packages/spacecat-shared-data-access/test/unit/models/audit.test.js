@@ -20,10 +20,12 @@ const validData = {
   auditedAt: new Date().toISOString(),
   auditType: 'lhs-mobile',
   auditResult: {
-    performance: 0.9,
-    seo: 0.9,
-    accessibility: 0.9,
-    'best-practices': 0.9,
+    scores: {
+      performance: 0.9,
+      seo: 0.9,
+      accessibility: 0.9,
+      'best-practices': 0.9,
+    },
   },
   fullAuditRef: 'ref123',
 };

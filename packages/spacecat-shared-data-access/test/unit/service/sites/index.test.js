@@ -120,10 +120,12 @@ describe('Site Access Pattern Tests', () => {
         auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
-          performance: 0.9,
-          seo: 0.9,
-          accessibility: 0.9,
-          'best-practices': 0.9,
+          scores: {
+            performance: 0.9,
+            seo: 0.9,
+            accessibility: 0.9,
+            'best-practices': 0.9,
+          },
         },
         fullAuditRef: 'https://example.com',
       }];
@@ -180,10 +182,12 @@ describe('Site Access Pattern Tests', () => {
         auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
-          performance: 0.9,
-          seo: 0.9,
-          accessibility: 0.9,
-          'best-practices': 0.9,
+          scores: {
+            performance: 0.9,
+            seo: 0.9,
+            accessibility: 0.9,
+            'best-practices': 0.9,
+          },
         },
         fullAuditRef: 'https://example.com',
       }];
@@ -215,10 +219,12 @@ describe('Site Access Pattern Tests', () => {
         auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
-          performance: 0.9,
-          seo: 0.9,
-          accessibility: 0.9,
-          'best-practices': 0.9,
+          scores: {
+            performance: 0.9,
+            seo: 0.9,
+            accessibility: 0.9,
+            'best-practices': 0.9,
+          },
         },
         fullAuditRef: 'https://example.com',
       },
@@ -227,10 +233,12 @@ describe('Site Access Pattern Tests', () => {
         auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
         auditResult: {
-          performance: 0.9,
-          seo: 0.9,
-          accessibility: 0.9,
-          'best-practices': 0.9,
+          scores: {
+            performance: 0.9,
+            seo: 0.9,
+            accessibility: 0.9,
+            'best-practices': 0.9,
+          },
         },
         fullAuditRef: 'https://example2.com',
       }];

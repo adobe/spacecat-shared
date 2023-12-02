@@ -23,16 +23,20 @@ function generateRandomAudit(siteId, auditType) {
 
   if (auditType === 'lhs-mobile') {
     auditResult = {
-      performance: getRandomDecimal(2),
-      seo: getRandomDecimal(2),
-      accessibility: getRandomDecimal(2),
-      'best-practices': getRandomDecimal(2),
+      scores: {
+        performance: getRandomDecimal(2),
+        seo: getRandomDecimal(2),
+        accessibility: getRandomDecimal(2),
+        'best-practices': getRandomDecimal(2),
+      },
     };
   } else if (auditType === 'cwv') {
     auditResult = {
-      LCP: getRandomInt(4000), // LCP in milliseconds
-      FID: getRandomInt(100), // FID in milliseconds
-      CLS: getRandomDecimal(2), // CLS score
+      scores: {
+        LCP: getRandomInt(4000), // LCP in milliseconds
+        FID: getRandomInt(100), // FID in milliseconds
+        CLS: getRandomDecimal(2), // CLS score
+      },
     };
   }
 

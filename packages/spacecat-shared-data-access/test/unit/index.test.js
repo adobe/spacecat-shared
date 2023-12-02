@@ -23,7 +23,10 @@ describe('Data Access Wrapper Tests', () => {
 
   beforeEach(() => {
     mockFn = sinon.stub().resolves('function response');
-    mockContext = { log: sinon.spy() };
+    mockContext = {
+      env: {},
+      log: sinon.spy(),
+    };
     mockRequest = {};
   });
 

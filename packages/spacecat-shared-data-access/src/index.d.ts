@@ -82,6 +82,17 @@ export interface DataAccess {
   ) => Promise<void>;
 }
 
+interface DataAccessConfig {
+  tableNameAudits: string;
+  tableNameLatestAudits: string;
+  tableNameSites: string;
+  indexNameAllSites: string;
+  indexNameAllLatestAuditScores: string;
+  pkAllSites: string;
+  pkAllLatestAudits: string;
+}
+
 export function createDataAccess(
+  config: DataAccessConfig,
   logger: object,
 ): DataAccess;

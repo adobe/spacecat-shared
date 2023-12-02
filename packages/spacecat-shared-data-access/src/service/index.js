@@ -17,14 +17,15 @@ import { siteFunctions } from './sites/index.js';
 /**
  * Creates a data access object.
  *
+ * @param {DataAccessConfig} config configuration
  * @param {Logger} log logger
  * @returns {object} data access object
  */
-export const createDataAccess = (log = console) => {
+export const createDataAccess = (config, log = console) => {
   const dynamoClient = createClient(log);
 
-  const auditFuncs = auditFunctions(dynamoClient, log);
-  const siteFuncs = siteFunctions(dynamoClient, log);
+  const auditFuncs = auditFunctions(dynamoClient, config, log);
+  const siteFuncs = siteFunctions(dynamoClient, config, log);
 
   return {
     ...auditFuncs,

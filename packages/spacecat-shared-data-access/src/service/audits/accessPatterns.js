@@ -15,25 +15,21 @@ import { isObject } from '@adobe/spacecat-shared-utils';
 import { AuditDto } from '../../dto/audit.js';
 import { createAudit } from '../../models/audit.js';
 
-const TABLE_NAME_AUDITS = 'audits';
-const TABLE_NAME_LATEST_AUDITS = 'latest_audits';
-const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'all_latest_audit_scores';
-const PK_ALL_LATEST_AUDITS = 'ALL_LATEST_AUDITS';
-
 /**
  * Retrieves audits for a specified site. If an audit type is provided,
  * it returns only audits of that type.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site for which audits are being retrieved.
  * @param {string} [auditType] - Optional. The type of audits to retrieve.
  * @returns {Promise<Readonly<Audit>[]>} A promise that resolves to an array of audits
  * for the specified site.
  */
-export const getAuditsForSite = async (dynamoClient, log, siteId, auditType) => {
+export const getAuditsForSite = async (dynamoClient, config, log, siteId, auditType) => {
   const queryParams = {
-    TableName: TABLE_NAME_AUDITS,
+    TableName: config.tableNameAudits,
     KeyConditionExpression: 'siteId = :siteId',
     ExpressionAttributeValues: {
       ':siteId': siteId,
@@ -54,6 +50,7 @@ export const getAuditsForSite = async (dynamoClient, log, siteId, auditType) => 
  * Retrieves a specific audit for a specified site.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site for which to retrieve the audit.
  * @param {string} auditType - The type of audit to retrieve.
@@ -62,13 +59,14 @@ export const getAuditsForSite = async (dynamoClient, log, siteId, auditType) => 
  */
 export const getAuditForSite = async (
   dynamoClient,
+  config,
   log,
   siteId,
   auditType,
   auditedAt,
 ) => {
   const audit = await dynamoClient.query({
-    TableName: TABLE_NAME_AUDITS,
+    TableName: config.tableNameAudits,
     KeyConditionExpression: 'siteId = :siteId AND SK = :sk',
     ExpressionAttributeValues: {
       ':siteId': siteId,
@@ -84,6 +82,7 @@ export const getAuditForSite = async (
  * Retrieves the latest audits of a specific type across all sites.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} auditType - The type of audits to retrieve.
  * @param {boolean} ascending - Determines if the audits should be sorted ascending
@@ -93,16 +92,17 @@ export const getAuditForSite = async (
  */
 export const getLatestAudits = async (
   dynamoClient,
+  config,
   log,
   auditType,
   ascending = true,
 ) => {
   const dynamoItems = await dynamoClient.query({
-    TableName: TABLE_NAME_LATEST_AUDITS,
-    IndexName: INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
+    TableName: config.tableNameLatestAudits,
+    IndexName: config.indexNameAllLatestAuditScores,
     KeyConditionExpression: 'GSI1PK = :gsi1pk AND begins_with(GSI1SK, :auditType)',
     ExpressionAttributeValues: {
-      ':gsi1pk': PK_ALL_LATEST_AUDITS,
+      ':gsi1pk': config.pkAllLatestAudits,
       ':auditType': `${auditType}#`,
     },
     ScanIndexForward: ascending, // Sorts ascending if true, descending if false
@@ -115,14 +115,20 @@ export const getLatestAudits = async (
  * Retrieves latest audits for a specified site.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site for which audits are being retrieved.
  * @returns {Promise<Readonly<Audit>[]>} A promise that resolves to an array of latest audits
  * for the specified site.
  */
-export const getLatestAuditsForSite = async (dynamoClient, log, siteId) => {
+export const getLatestAuditsForSite = async (
+  dynamoClient,
+  config,
+  log,
+  siteId,
+) => {
   const queryParams = {
-    TableName: TABLE_NAME_LATEST_AUDITS,
+    TableName: config.tableNameLatestAudits,
     KeyConditionExpression: 'siteId = :siteId',
     ExpressionAttributeValues: { ':siteId': siteId },
   };
@@ -136,6 +142,7 @@ export const getLatestAuditsForSite = async (dynamoClient, log, siteId) => {
  * Retrieves the latest audit for a specified site and audit type.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site for which the latest audit is being retrieved.
  * @param {string} auditType - The type of audit to retrieve the latest instance of.
@@ -144,12 +151,13 @@ export const getLatestAuditsForSite = async (dynamoClient, log, siteId) => {
  */
 export const getLatestAuditForSite = async (
   dynamoClient,
+  config,
   log,
   siteId,
   auditType,
 ) => {
   const latestAudit = await dynamoClient.query({
-    TableName: TABLE_NAME_LATEST_AUDITS,
+    TableName: config.tableNameLatestAudits,
     KeyConditionExpression: 'siteId = :siteId AND begins_with(SK, :auditType)',
     ExpressionAttributeValues: {
       ':siteId': siteId,
@@ -165,14 +173,21 @@ export const getLatestAuditForSite = async (
  * Adds an audit.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {object} auditData - The audit data.
  * @returns {Promise<Readonly<Audit>>}
  */
-export const addAudit = async (dynamoClient, log, auditData) => {
+export const addAudit = async (
+  dynamoClient,
+  config,
+  log,
+  auditData,
+) => {
   const audit = createAudit(auditData);
   const existingAudit = await getAuditForSite(
     dynamoClient,
+    config,
     log,
     audit.getSiteId(),
     audit.getAuditType(),
@@ -184,8 +199,8 @@ export const addAudit = async (dynamoClient, log, auditData) => {
   }
 
   // TODO: Add transaction support
-  await dynamoClient.putItem('audits', AuditDto.toDynamoItem(audit));
-  await dynamoClient.putItem('latest_audits', AuditDto.toDynamoItem(audit, true));
+  await dynamoClient.putItem(config.tableNameAudits, AuditDto.toDynamoItem(audit));
+  await dynamoClient.putItem(config.tableNameLatestAudits, AuditDto.toDynamoItem(audit, true));
 
   return audit;
 };
@@ -193,18 +208,26 @@ export const addAudit = async (dynamoClient, log, auditData) => {
 /**
  * Removes audits from the database.
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
- * @param {Logger} log - The logger.
+ * @param {DataAccessConfig} config - The data access config.
  * @param audits
  * @param latest
  * @returns {Promise<void>}
  */
-async function removeAudits(dynamoClient, audits, latest = false) {
-  const tableName = latest ? TABLE_NAME_LATEST_AUDITS : TABLE_NAME_AUDITS;
+async function removeAudits(
+  dynamoClient,
+  config,
+  audits,
+  latest = false,
+) {
+  const tableName = latest ? config.tableNameLatestAudits : config.tableNameAudits;
   // TODO: use batch-remove (needs dynamo client update)
-  const removeAuditPromises = audits.map((audit) => dynamoClient.removeItem(tableName, {
-    siteId: audit.getSiteId(),
-    SK: `${audit.getAuditType()}#${audit.getAuditedAt()}`,
-  }));
+  const removeAuditPromises = audits.map((audit) => dynamoClient.removeItem(
+    tableName,
+    {
+      siteId: audit.getSiteId(),
+      SK: `${audit.getAuditType()}#${audit.getAuditedAt()}`,
+    },
+  ));
 
   await Promise.all(removeAuditPromises);
 }
@@ -213,17 +236,23 @@ async function removeAudits(dynamoClient, audits, latest = false) {
  * Removes all audits for a specified site and the latest audit entry.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site for which audits are being removed.
  * @returns {Promise<void>}
  */
-export const removeAuditsForSite = async (dynamoClient, log, siteId) => {
+export const removeAuditsForSite = async (
+  dynamoClient,
+  config,
+  log,
+  siteId,
+) => {
   try {
-    const audits = await getAuditsForSite(dynamoClient, log, siteId);
-    const latestAudits = await getLatestAuditsForSite(dynamoClient, log, siteId);
+    const audits = await getAuditsForSite(dynamoClient, config, log, siteId);
+    const latestAudits = await getLatestAuditsForSite(dynamoClient, config, log, siteId);
 
-    await removeAudits(dynamoClient, audits);
-    await removeAudits(dynamoClient, latestAudits, true);
+    await removeAudits(dynamoClient, config, audits);
+    await removeAudits(dynamoClient, config, latestAudits, true);
   } catch (error) {
     log.error(`Error removing audits for site ${siteId}: ${error.message}`);
     throw error;

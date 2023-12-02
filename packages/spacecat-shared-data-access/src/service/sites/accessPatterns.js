@@ -21,23 +21,20 @@ import {
 import { createSite } from '../../models/site.js';
 import { SiteDto } from '../../dto/site.js';
 
-const INDEX_NAME_ALL_SITES = 'all_sites';
-const PK_ALL_SITES = 'ALL_SITES';
-const TABLE_NAME_SITES = 'sites';
-
 /**
  * Retrieves all sites.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @returns {Promise<Readonly<Site>[]>} A promise that resolves to an array of all sites.
  */
-export const getSites = async (dynamoClient) => {
+export const getSites = async (dynamoClient, config) => {
   const dynamoItems = await dynamoClient.query({
-    TableName: TABLE_NAME_SITES,
-    IndexName: INDEX_NAME_ALL_SITES, // GSI name
+    TableName: config.tableNameSites,
+    IndexName: config.indexNameAllSites,
     KeyConditionExpression: 'GSI1PK = :gsi1pk',
     ExpressionAttributeValues: {
-      ':gsi1pk': PK_ALL_SITES,
+      ':gsi1pk': config.pkAllSites,
     },
   });
 
@@ -48,10 +45,11 @@ export const getSites = async (dynamoClient) => {
  * Retrieves a list of base URLs for all sites.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @returns {Promise<Array<string>>} A promise that resolves to an array of base URLs for all sites.
  */
-export const getSitesToAudit = async (dynamoClient) => {
-  const sites = await getSites(dynamoClient);
+export const getSitesToAudit = async (dynamoClient, config) => {
+  const sites = await getSites(dynamoClient, config);
 
   return sites.map((site) => site.getBaseURL());
 };
@@ -60,6 +58,7 @@ export const getSitesToAudit = async (dynamoClient) => {
  * Retrieves sites with their latest audit of a specified type.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} auditType - The type of the latest audits to retrieve for each site.
  * @param {boolean} [sortAuditsAscending] - Optional. Determines if the audits
@@ -69,13 +68,14 @@ export const getSitesToAudit = async (dynamoClient) => {
  */
 export const getSitesWithLatestAudit = async (
   dynamoClient,
+  config,
   log,
   auditType,
   sortAuditsAscending = true,
 ) => {
   const [sites, latestAudits] = await Promise.all([
-    getSites(dynamoClient),
-    getLatestAudits(dynamoClient, log, auditType, sortAuditsAscending),
+    getSites(dynamoClient, config),
+    getLatestAudits(dynamoClient, config, log, auditType, sortAuditsAscending),
   ]);
 
   const sitesMap = new Map(sites.map((site) => [site.getId(), site]));
@@ -94,6 +94,7 @@ export const getSitesWithLatestAudit = async (
  * Retrieves a site by its base URL.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} baseURL - The base URL of the site to retrieve.
  * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object if found,
@@ -101,15 +102,16 @@ export const getSitesWithLatestAudit = async (
  */
 export const getSiteByBaseURL = async (
   dynamoClient,
+  config,
   log,
   baseURL,
 ) => {
   const dynamoItems = await dynamoClient.query({
-    TableName: TABLE_NAME_SITES,
-    IndexName: INDEX_NAME_ALL_SITES,
+    TableName: config.tableNameSites,
+    IndexName: config.indexNameAllSites,
     KeyConditionExpression: 'GSI1PK = :gsi1pk AND baseURL = :baseURL',
     ExpressionAttributeValues: {
-      ':gsi1pk': PK_ALL_SITES,
+      ':gsi1pk': config.pkAllSites,
       ':baseURL': baseURL,
     },
     Limit: 1,
@@ -126,6 +128,7 @@ export const getSiteByBaseURL = async (
  * Retrieves a site by its base URL, along with associated audit information.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} baseUrl - The base URL of the site to retrieve.
  * @param {string} auditType - The type of audits to retrieve for the site.
@@ -135,12 +138,13 @@ export const getSiteByBaseURL = async (
  */
 export const getSiteByBaseURLWithAuditInfo = async (
   dynamoClient,
+  config,
   log,
   baseUrl,
   auditType,
   latestOnly = false,
 ) => {
-  const site = await getSiteByBaseURL(dynamoClient, log, baseUrl);
+  const site = await getSiteByBaseURL(dynamoClient, config, log, baseUrl);
 
   if (!isObject(site)) {
     return null;
@@ -149,12 +153,14 @@ export const getSiteByBaseURLWithAuditInfo = async (
   const audits = latestOnly
     ? [await getLatestAuditForSite(
       dynamoClient,
+      config,
       log,
       site.getId(),
       auditType,
     )].filter((audit) => audit != null)
     : await getAuditsForSite(
       dynamoClient,
+      config,
       log,
       site.getId(),
       auditType,
@@ -169,6 +175,7 @@ export const getSiteByBaseURLWithAuditInfo = async (
  * Retrieves a site by its base URL, including all its audits.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} baseUrl - The base URL of the site to retrieve.
  * @param {string} auditType - The type of audits to retrieve for the site.
@@ -177,15 +184,17 @@ export const getSiteByBaseURLWithAuditInfo = async (
  */
 export const getSiteByBaseURLWithAudits = async (
   dynamoClient,
+  config,
   log,
   baseUrl,
   auditType,
-) => getSiteByBaseURLWithAuditInfo(dynamoClient, log, baseUrl, auditType, false);
+) => getSiteByBaseURLWithAuditInfo(dynamoClient, config, log, baseUrl, auditType, false);
 
 /**
  * Retrieves a site by its base URL, including only its latest audit.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} baseUrl - The base URL of the site to retrieve.
  * @param {string} auditType - The type of the latest audit to retrieve for the site.
@@ -194,23 +203,31 @@ export const getSiteByBaseURLWithAudits = async (
  */
 export const getSiteByBaseURLWithLatestAudit = async (
   dynamoClient,
+  config,
   log,
   baseUrl,
   auditType,
-) => getSiteByBaseURLWithAuditInfo(dynamoClient, log, baseUrl, auditType, true);
+) => getSiteByBaseURLWithAuditInfo(dynamoClient, config, log, baseUrl, auditType, true);
 
 /**
  * Adds a site.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {object} siteData - The site data.
  * @returns {Promise<Readonly<Site>>}
  */
-export const addSite = async (dynamoClient, log, siteData) => {
+export const addSite = async (
+  dynamoClient,
+  config,
+  log,
+  siteData,
+) => {
   const site = createSite(siteData);
   const existingSite = await getSiteByBaseURL(
     dynamoClient,
+    config,
     log,
     site.getBaseURL(),
   );
@@ -219,7 +236,7 @@ export const addSite = async (dynamoClient, log, siteData) => {
     throw new Error('Site already exists');
   }
 
-  await dynamoClient.putItem(TABLE_NAME_SITES, SiteDto.toDynamoItem(site));
+  await dynamoClient.putItem(config.tableNameSites, SiteDto.toDynamoItem(site));
 
   return site;
 };
@@ -228,18 +245,24 @@ export const addSite = async (dynamoClient, log, siteData) => {
  * Updates a site.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {Site} site - The site.
  * @returns {Promise<Readonly<Site>>} - The updated site.
  */
-export const updateSite = async (dynamoClient, log, site) => {
-  const existingSite = await getSiteByBaseURL(dynamoClient, log, site.getBaseURL());
+export const updateSite = async (
+  dynamoClient,
+  config,
+  log,
+  site,
+) => {
+  const existingSite = await getSiteByBaseURL(dynamoClient, config, log, site.getBaseURL());
 
   if (!isObject(existingSite)) {
     throw new Error('Site not found');
   }
 
-  await dynamoClient.putItem(TABLE_NAME_SITES, SiteDto.toDynamoItem(site));
+  await dynamoClient.putItem(config.tableNameSites, SiteDto.toDynamoItem(site));
 
   return site;
 };
@@ -248,16 +271,22 @@ export const updateSite = async (dynamoClient, log, site) => {
  * Removes a site and its related audits.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site to remove.
  * @returns {Promise<void>}
  */
-export const removeSite = async (dynamoClient, log, siteId) => {
+export const removeSite = async (
+  dynamoClient,
+  config,
+  log,
+  siteId,
+) => {
   try {
     // TODO: Add transaction support
-    await removeAuditsForSite(dynamoClient, log, siteId);
+    await removeAuditsForSite(dynamoClient, config, log, siteId);
 
-    await dynamoClient.removeItem(TABLE_NAME_SITES, { id: siteId });
+    await dynamoClient.removeItem(config.tableNameSites, { id: siteId });
   } catch (error) {
     log.error(`Error removing site: ${error.message}`);
     throw error;

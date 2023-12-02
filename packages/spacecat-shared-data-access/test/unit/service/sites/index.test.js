@@ -23,12 +23,22 @@ chai.use(chaiAsPromised);
 
 const { expect } = chai;
 
+const TEST_DA_CONFIG = {
+  tableNameAudits: 'test-audits',
+  tableNameLatestAudits: 'test-latest-audits',
+  tableNameSites: 'test-sites',
+  indexNameAllSites: 'test-index-all-sites',
+  indexNameAllLatestAuditScores: 'test-index-all-latest-audit-scores',
+  pkAllSites: 'test-pk-all-sites',
+  pkAllLatestAudits: 'test-pk-all-latest-audits',
+};
+
 describe('Site Access Pattern Tests', () => {
   describe('Site Functions Export Tests', () => {
     const mockDynamoClient = {};
     const mockLog = {};
 
-    const exportedFunctions = siteFunctions(mockDynamoClient, mockLog);
+    const exportedFunctions = siteFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
 
     it('exports getSites function', () => {
       expect(exportedFunctions).to.have.property('getSites');
@@ -78,7 +88,7 @@ describe('Site Access Pattern Tests', () => {
       };
       mockLog = { log: sinon.stub() };
 
-      exportedFunctions = siteFunctions(mockDynamoClient, mockLog);
+      exportedFunctions = siteFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
     it('calls getSites and returns an array', async () => {
@@ -264,7 +274,7 @@ describe('Site Access Pattern Tests', () => {
           putItem: sinon.stub().returns(Promise.resolve()),
         };
         mockLog = { log: sinon.stub() };
-        exportedFunctions = siteFunctions(mockDynamoClient, mockLog);
+        exportedFunctions = siteFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
       });
 
       it('adds a new site successfully', async () => {
@@ -296,7 +306,7 @@ describe('Site Access Pattern Tests', () => {
         putItem: sinon.stub().returns(Promise.resolve()),
       };
       mockLog = { log: sinon.stub() };
-      exportedFunctions = siteFunctions(mockDynamoClient, mockLog);
+      exportedFunctions = siteFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
     it('updates an existing site successfully', async () => {
@@ -333,7 +343,7 @@ describe('Site Access Pattern Tests', () => {
         log: sinon.stub(),
         error: sinon.stub(),
       };
-      exportedFunctions = siteFunctions(mockDynamoClient, mockLog);
+      exportedFunctions = siteFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
     it('removes the site and its related audits', async () => {

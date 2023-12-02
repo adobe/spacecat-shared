@@ -48,6 +48,16 @@ function checkAudit(audit) {
   expect(audit.getFullAuditRef()).to.be.a('string');
 }
 
+const TEST_DA_CONFIG = {
+  tableNameAudits: 'spacecat-services-audits',
+  tableNameLatestAudits: 'spacecat-services-latest-audits',
+  tableNameSites: 'spacecat-services-sites',
+  indexNameAllSites: 'spacecat-services-all-sites',
+  indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
+  pkAllSites: 'ALL_SITES',
+  pkAllLatestAudits: 'ALL_LATEST_AUDITS',
+};
+
 describe('DynamoDB Integration Test', async () => {
   let dynamoDbLocalProcess;
   let dataAccess;
@@ -67,9 +77,9 @@ describe('DynamoDB Integration Test', async () => {
 
     await sleep(1000); // give db time to start up
 
-    await generateSampleData(NUMBER_OF_SITES, NUMBER_OF_AUDITS_PER_TYPE_AND_SITE);
+    await generateSampleData(TEST_DA_CONFIG, NUMBER_OF_SITES, NUMBER_OF_AUDITS_PER_TYPE_AND_SITE);
 
-    dataAccess = createDataAccess(console);
+    dataAccess = createDataAccess(TEST_DA_CONFIG, console);
   });
 
   after(() => {

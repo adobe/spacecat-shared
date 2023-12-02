@@ -37,10 +37,12 @@ async function createTablesFromSchema() {
  * Iterates over a list of table names and deletes each one using the deleteTable function.
  * This is typically used to clean up the database before creating new tables or
  * generating test data.
+ *
+ * @param {Array<string>} tableNames - An array of table names to delete.
+ * @returns {Promise<void>} A promise that resolves when all tables have been deleted.
  */
-async function deleteExistingTables() {
-  const deletionPromises = ['sites', 'audits', 'latest_audits']
-    .map((tableName) => deleteTable(dbClient, tableName));
+async function deleteExistingTables(tableNames) {
+  const deletionPromises = tableNames.map((tableName) => deleteTable(dbClient, tableName));
   await Promise.all(deletionPromises);
 }
 
@@ -73,6 +75,7 @@ async function batchWrite(tableName, items) {
 /**
  * Generates audit data for a specific site.
  *
+ * @param {DataAccessConfig} config - The data access config.
  * @param {string} siteId - The ID of the site for which to generate audit data.
  * @param {Array<string>} auditTypes - An array of audit types to generate data for.
  * @param {number} numberOfAuditsPerType - The number of audits to generate for each type.
@@ -82,7 +85,12 @@ async function batchWrite(tableName, items) {
  * // Example usage
  * const audits = generateAuditData('site123', ['lhs', 'cwv'], 5);
  */
-function generateAuditData(siteId, auditTypes, numberOfAuditsPerType) {
+function generateAuditData(
+  config,
+  siteId,
+  auditTypes,
+  numberOfAuditsPerType,
+) {
   const latestAudits = {};
   const auditData = [];
 
@@ -110,7 +118,7 @@ function generateAuditData(siteId, auditTypes, numberOfAuditsPerType) {
 
     return {
       ...audit,
-      GSI1PK: 'ALL_LATEST_AUDITS',
+      GSI1PK: config.pkAllLatestAudits,
       GSI1SK,
     };
   });
@@ -121,6 +129,7 @@ function generateAuditData(siteId, auditTypes, numberOfAuditsPerType) {
 /**
  * Generates sample data for testing purposes.
  *
+ * @param {DataAccessConfig} config - The data access config.
  * @param {number} [numberOfSites=10] - The number of sites to generate.
  * @param {number} [numberOfAuditsPerType=5] - The number of audits per type to generate
  * for each site.
@@ -129,9 +138,17 @@ function generateAuditData(siteId, auditTypes, numberOfAuditsPerType) {
  * // Example usage
  * generateSampleData(20, 10); // Generates 20 sites with 10 audits per type for each site
  */
-export default async function generateSampleData(numberOfSites = 10, numberOfAuditsPerType = 5) {
+export default async function generateSampleData(
+  config,
+  numberOfSites = 10,
+  numberOfAuditsPerType = 5,
+) {
   console.time('Sample data generated in');
-  await deleteExistingTables();
+  await deleteExistingTables([
+    config.tableNameSites,
+    config.tableNameAudits,
+    config.tableNameLatestAudits,
+  ]);
   await createTablesFromSchema();
 
   const auditTypes = ['lhs', 'cwv'];
@@ -147,21 +164,26 @@ export default async function generateSampleData(numberOfSites = 10, numberOfAud
       id: siteId,
       baseURL: `https://example${i}.com`,
       imsOrgId: `${i}-1234@AdobeOrg`,
-      GSI1PK: 'ALL_SITES',
+      GSI1PK: config.pkAllSites,
       createdAt: nowIso,
       updatedAt: nowIso,
     });
 
     if (i % 10 !== 0) { // Every tenth site will not have any audits
-      const latestAudits = generateAuditData(siteId, auditTypes, numberOfAuditsPerType);
+      const latestAudits = generateAuditData(
+        config,
+        siteId,
+        auditTypes,
+        numberOfAuditsPerType,
+      );
       auditItems.push(...latestAudits.auditData);
       latestAuditItems.push(...latestAudits.latestAuditData);
     }
   }
 
-  await batchWrite('sites', sites);
-  await batchWrite('audits', auditItems);
-  await batchWrite('latest_audits', latestAuditItems);
+  await batchWrite(config.tableNameSites, sites);
+  await batchWrite(config.tableNameAudits, auditItems);
+  await batchWrite(config.tableNameLatestAudits, latestAuditItems);
 
   console.log(`Generated ${numberOfSites} sites with ${numberOfAuditsPerType} audits per type for each site`);
   console.timeEnd('Sample data generated in');

@@ -22,26 +22,31 @@ import {
   updateSite,
 } from './accessPatterns.js';
 
-export const siteFunctions = (dynamoClient, log) => ({
+export const siteFunctions = (dynamoClient, config, log) => ({
   getSites: () => getSites(
     dynamoClient,
+    config,
   ),
   getSitesToAudit: () => getSitesToAudit(
     dynamoClient,
+    config,
   ),
   getSitesWithLatestAudit: (auditType, sortAuditsAscending) => getSitesWithLatestAudit(
     dynamoClient,
+    config,
     log,
     auditType,
     sortAuditsAscending,
   ),
   getSiteByBaseURL: (baseUrl) => getSiteByBaseURL(
     dynamoClient,
+    config,
     log,
     baseUrl,
   ),
   getSiteByBaseURLWithAuditInfo: (baseUrl, auditType, latestOnly) => getSiteByBaseURLWithAuditInfo(
     dynamoClient,
+    config,
     log,
     baseUrl,
     auditType,
@@ -49,17 +54,19 @@ export const siteFunctions = (dynamoClient, log) => ({
   ),
   getSiteByBaseURLWithAudits: (baseUrl, auditType) => getSiteByBaseURLWithAudits(
     dynamoClient,
+    config,
     log,
     baseUrl,
     auditType,
   ),
   getSiteByBaseURLWithLatestAudit: (baseUrl, auditType) => getSiteByBaseURLWithLatestAudit(
     dynamoClient,
+    config,
     log,
     baseUrl,
     auditType,
   ),
-  addSite: (siteData) => addSite(dynamoClient, log, siteData),
-  updateSite: (site) => updateSite(dynamoClient, log, site),
-  removeSite: (siteId) => removeSite(dynamoClient, log, siteId),
+  addSite: (siteData) => addSite(dynamoClient, config, log, siteData),
+  updateSite: (site) => updateSite(dynamoClient, config, log, site),
+  removeSite: (siteId) => removeSite(dynamoClient, config, log, siteId),
 });

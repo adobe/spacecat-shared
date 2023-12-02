@@ -10,7 +10,7 @@
   },
   "DataModel": [
     {
-      "TableName": "sites",
+      "TableName": "spacecat-services-sites",
       "KeyAttributes": {
         "PartitionKey": {
           "AttributeName": "id",
@@ -41,7 +41,7 @@
       ],
       "GlobalSecondaryIndexes": [
         {
-          "IndexName": "all_sites",
+          "IndexName": "spacecat-services-all-sites",
           "KeyAttributes": {
             "PartitionKey": {
               "AttributeName": "GSI1PK",
@@ -103,7 +103,7 @@
       }
     },
     {
-      "TableName": "audits",
+      "TableName": "spacecat-services-audits",
       "KeyAttributes": {
         "PartitionKey": {
           "AttributeName": "siteId",
@@ -182,7 +182,7 @@
       }
     },
     {
-      "TableName": "latest_audits",
+      "TableName": "spacecat-services-latest-audits",
       "KeyAttributes": {
         "PartitionKey": {
           "AttributeName": "siteId",
@@ -225,7 +225,7 @@
       ],
       "GlobalSecondaryIndexes": [
         {
-          "IndexName": "all_latest_audit_scores",
+          "IndexName": "spacecat-services-all-latest-audit-scores",
           "KeyAttributes": {
             "PartitionKey": {
               "AttributeName": "GSI1PK",

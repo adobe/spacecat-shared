@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.2.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.1...@adobe/spacecat-shared-dynamo-v1.2.2) (2023-12-02)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-js-v3 monorepo to v3.465.0 ([#19](https://github.com/adobe-rnd/spacecat-shared/issues/19)) ([612c257](https://github.com/adobe-rnd/spacecat-shared/commit/612c257870dc171d32c4ca5f8c2e48f9f77f8198))
+
 # [@adobe/spacecat-shared-dynamo-v1.2.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.0...@adobe/spacecat-shared-dynamo-v1.2.1) (2023-12-01)
 
 

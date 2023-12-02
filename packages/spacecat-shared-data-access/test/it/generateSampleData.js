@@ -163,7 +163,9 @@ export default async function generateSampleData(
     sites.push({
       id: siteId,
       baseURL: `https://example${i}.com`,
+      gitHubURL: `https://github.com/org-${i}/test-repo`,
       imsOrgId: `${i}-1234@AdobeOrg`,
+      isLive: true,
       GSI1PK: config.pkAllSites,
       createdAt: nowIso,
       updatedAt: nowIso,

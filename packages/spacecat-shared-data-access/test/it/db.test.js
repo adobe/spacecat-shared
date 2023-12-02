@@ -30,10 +30,12 @@ function checkSite(site) {
   expect(site).to.be.an('object');
   expect(site.getId()).to.be.a('string');
   expect(site.getBaseURL()).to.be.a('string');
+  expect(site.getGitHubURL()).to.be.a('string');
   expect(site.getImsOrgId()).to.be.a('string');
   expect(isIsoDate(site.getCreatedAt())).to.be.true;
   expect(isIsoDate(site.getUpdatedAt())).to.be.true;
   expect(site.getAudits()).to.be.an('array');
+  expect(site.isLive()).to.be.a('boolean');
 }
 
 function checkAudit(audit) {
@@ -46,6 +48,7 @@ function checkAudit(audit) {
   expect(audit.getAuditResult()).to.be.an('object');
   expect(audit.getScores()).to.be.an('object');
   expect(audit.getFullAuditRef()).to.be.a('string');
+  expect(audit.isLive()).to.be.a('boolean');
 }
 
 const TEST_DA_CONFIG = {
@@ -137,6 +140,7 @@ describe('DynamoDB Integration Test', async () => {
   it('adds a new site', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',
+      gitHubURL: 'https://github.com/some-org/test-repo',
       imsOrgId: 'newOrg123',
       audits: [],
     };
@@ -151,6 +155,7 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(newSite.getId()).to.to.be.a('string');
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
+    expect(newSite.getGitHubURL()).to.equal(newSiteData.gitHubURL);
     expect(newSite.getImsOrgId()).to.equal(newSiteData.imsOrgId);
     expect(newSite.getAudits()).to.be.an('array').that.is.empty;
   });
@@ -293,6 +298,7 @@ describe('DynamoDB Integration Test', async () => {
       siteId: 'https://example1.com',
       auditType: AUDIT_TYPE_LHS,
       auditedAt: new Date().toISOString(),
+      isLive: true,
       fullAuditRef: 's3://ref',
       auditResult: {
         performance: 0,
@@ -308,6 +314,7 @@ describe('DynamoDB Integration Test', async () => {
     expect(newAudit.getSiteId()).to.equal(auditData.siteId);
     expect(newAudit.getAuditType()).to.equal(auditData.auditType);
     expect(newAudit.getAuditedAt()).to.equal(auditData.auditedAt);
+    expect(newAudit.isLive()).to.be.a('boolean').that.is.true;
 
     // Retrieve the latest audit for the site from the latest_audits table
     const latestAudit = await dataAccess.getLatestAuditForSite(
@@ -327,6 +334,7 @@ describe('DynamoDB Integration Test', async () => {
       auditType: AUDIT_TYPE_LHS,
       auditedAt: new Date().toISOString(),
       fullAuditRef: 's3://ref',
+      isLive: true,
       auditResult: {
         performance: 0,
         seo: 0,

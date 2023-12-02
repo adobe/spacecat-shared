@@ -19,18 +19,22 @@ export interface Audit {
   getAuditType: () => object;
   getExpiresAt: () => Date;
   getFullAuditRef: () => string;
+  isLive: () => boolean;
   getScores: () => object;
 }
 
 export interface Site {
   getId: () => string;
   getBaseURL: () => string;
+  getGitHubURL: () => string;
   getImsOrgId: () => string;
   getCreatedAt: () => string;
   getUpdatedAt: () => string;
   getAudits: () => Audit[];
-  updateImsOrgId: (imsOrgId: string) => Site;
+  isLive: () => boolean;
   setAudits: (audits: Audit[]) => Site;
+  toggleLive: () => Site;
+  updateImsOrgId: (imsOrgId: string) => Site;
 }
 
 export interface DataAccess {

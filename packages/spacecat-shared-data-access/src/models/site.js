@@ -24,7 +24,9 @@ const Site = (data = {}) => {
 
   self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
+  self.getGitHubURL = () => self.state.gitHubURL;
   self.getImsOrgId = () => self.state.imsOrgId;
+  self.isLive = () => self.state.isLive;
 
   // TODO: updating the baseURL is not supported yet, it will require a transact write
   //  on dynamodb (put then delete) since baseURL is part of the primary key, something like:
@@ -79,6 +81,11 @@ const Site = (data = {}) => {
     return self;
   };
 
+  self.toggleLive = () => {
+    self.state.isLive = !self.state.isLive;
+    return self;
+  };
+
   return Object.freeze(self);
 };
 
@@ -93,6 +100,10 @@ export const createSite = (data) => {
 
   if (!isValidUrl(newState.baseURL)) {
     throw new Error('Base URL must be a valid URL');
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(newState, 'isLive')) {
+    newState.isLive = false;
   }
 
   if (!Array.isArray(newState.audits)) {

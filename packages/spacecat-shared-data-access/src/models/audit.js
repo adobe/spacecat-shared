@@ -31,14 +31,14 @@ const AUDIT_TYPE_PROPERTIES = {
  * @param {string} auditType - The type of the audit.
  * @returns {boolean} - True if valid, false otherwise.
  */
-const validateAuditResult = (auditResult, auditType) => {
+const validateScores = (auditResult, auditType) => {
   const expectedProperties = AUDIT_TYPE_PROPERTIES[auditType];
   if (!expectedProperties) {
     throw new Error(`Unknown audit type: ${auditType}`);
   }
 
   for (const prop of expectedProperties) {
-    if (!(prop in auditResult)) {
+    if (!(prop in auditResult.scores)) {
       throw new Error(`Missing expected property '${prop}' for audit type '${auditType}'`);
     }
   }
@@ -61,7 +61,7 @@ const Audit = (data = {}) => {
   self.getExpiresAt = () => self.state.expiresAt;
   self.getFullAuditRef = () => self.state.fullAuditRef;
   self.isLive = () => self.state.isLive;
-  self.getScores = () => self.getAuditResult();
+  self.getScores = () => self.getAuditResult().scores;
 
   return Object.freeze(self);
 };
@@ -91,7 +91,7 @@ export const createAudit = (data) => {
     throw new Error('Audit result must be an object');
   }
 
-  validateAuditResult(data.auditResult, data.auditType);
+  validateScores(data.auditResult, data.auditType);
 
   if (!hasText(newState.fullAuditRef)) {
     throw new Error('Full audit ref must be provided');

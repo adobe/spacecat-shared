@@ -53,6 +53,16 @@ describe('Audit Access Pattern Tests', () => {
       expect(exportedFunctions).to.have.property('getLatestAuditForSite');
       expect(exportedFunctions.getLatestAuditForSite).to.be.a('function');
     });
+
+    it('exports removeAuditsForSite function', () => {
+      expect(exportedFunctions).to.have.property('removeAuditsForSite');
+      expect(exportedFunctions.removeAuditsForSite).to.be.a('function');
+    });
+
+    it('exports addAudit function', () => {
+      expect(exportedFunctions).to.have.property('addAudit');
+      expect(exportedFunctions.addAudit).to.be.a('function');
+    });
   });
 
   describe('Audit Functions Tests', () => {

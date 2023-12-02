@@ -49,6 +49,12 @@ export interface DataAccess {
   getLatestAuditsForSite: (
     siteId: string,
   ) => Promise<Audit[]>;
+  addAudit: (
+    auditData: object,
+  ) => Promise<Audit>;
+  removeAuditsForSite: (
+    siteId: string,
+  ) => Promise<void>;
   getSites: () => Promise<Site[]>;
   getSitesToAudit: () => Promise<string[]>;
   getSitesWithLatestAudit: (

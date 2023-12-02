@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.1.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.1.1...@adobe/spacecat-shared-data-access-v1.1.2) (2023-12-02)
+
+
+### Bug Fixes
+
+* wrap scores ([#28](https://github.com/adobe-rnd/spacecat-shared/issues/28)) ([4733a93](https://github.com/adobe-rnd/spacecat-shared/commit/4733a93d2db087dd57f94955a2101e5a4bb74ce2))
+
 # [@adobe/spacecat-shared-data-access-v1.1.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.1.0...@adobe/spacecat-shared-data-access-v1.1.1) (2023-12-02)
 
 

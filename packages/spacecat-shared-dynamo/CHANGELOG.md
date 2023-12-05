@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.2.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.3...@adobe/spacecat-shared-dynamo-v1.2.4) (2023-12-05)
+
+
+### Bug Fixes
+
+* reduce log output of putitem ([#31](https://github.com/adobe-rnd/spacecat-shared/issues/31)) ([29d1496](https://github.com/adobe-rnd/spacecat-shared/commit/29d149661c56f2cef0c7d02d39bc8aad89475afa))
+
 # [@adobe/spacecat-shared-dynamo-v1.2.3](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.2...@adobe/spacecat-shared-dynamo-v1.2.3) (2023-12-02)
 
 

@@ -177,7 +177,7 @@ describe('Site Access Pattern Tests', () => {
         baseURL: 'https://example.com',
       }];
 
-      const mockLatestAuditData = [{
+      const mockLatestAuditData = {
         siteId: 'site1',
         auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
@@ -190,10 +190,10 @@ describe('Site Access Pattern Tests', () => {
           },
         },
         fullAuditRef: 'https://example.com',
-      }];
+      };
 
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
-      mockDynamoClient.query.onSecondCall().resolves(mockLatestAuditData);
+      mockDynamoClient.getItem.onFirstCall().resolves(mockLatestAuditData);
 
       const result = await exportedFunctions.getSiteByBaseURLWithAuditInfo('https://example.com', 'lhs-mobile', true);
       const audits = result.getAudits();
@@ -201,11 +201,11 @@ describe('Site Access Pattern Tests', () => {
 
       const audit = audits[0];
       expect(audit.getId()).to.be.a('string').that.is.not.empty;
-      expect(audit.getSiteId()).to.equal(mockLatestAuditData[0].siteId);
-      expect(audit.getAuditType()).to.equal(mockLatestAuditData[0].auditType);
-      expect(audit.getAuditedAt()).to.equal(mockLatestAuditData[0].auditedAt);
-      expect(audit.getAuditResult()).to.deep.equal(mockLatestAuditData[0].auditResult);
-      expect(audit.getFullAuditRef()).to.equal(mockLatestAuditData[0].fullAuditRef);
+      expect(audit.getSiteId()).to.equal(mockLatestAuditData.siteId);
+      expect(audit.getAuditType()).to.equal(mockLatestAuditData.auditType);
+      expect(audit.getAuditedAt()).to.equal(mockLatestAuditData.auditedAt);
+      expect(audit.getAuditResult()).to.deep.equal(mockLatestAuditData.auditResult);
+      expect(audit.getFullAuditRef()).to.equal(mockLatestAuditData.fullAuditRef);
     });
 
     it('calls getSiteByBaseURLWithAuditInfo and assigns all audits when latestOnly is false', async () => {

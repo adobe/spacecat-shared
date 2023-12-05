@@ -151,17 +151,12 @@ export const getLatestAuditForSite = async (
   siteId,
   auditType,
 ) => {
-  const latestAudit = await dynamoClient.query({
-    TableName: config.tableNameLatestAudits,
-    KeyConditionExpression: 'siteId = :siteId AND auditType = :auditType',
-    ExpressionAttributeValues: {
-      ':siteId': siteId,
-      ':auditType': `${auditType}`,
-    },
-    Limit: 1,
+  const latestAudit = await dynamoClient.getItem(config.tableNameLatestAudits, {
+    siteId,
+    auditType,
   });
 
-  return latestAudit.length > 0 ? AuditDto.fromDynamoItem(latestAudit[0]) : null;
+  return latestAudit ? AuditDto.fromDynamoItem(latestAudit) : null;
 };
 
 /**

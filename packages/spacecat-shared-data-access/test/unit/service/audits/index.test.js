@@ -73,6 +73,7 @@ describe('Audit Access Pattern Tests', () => {
     beforeEach(() => {
       mockDynamoClient = {
         query: sinon.stub().returns(Promise.resolve([])),
+        getItem: sinon.stub().resolves(),
         removeItem: sinon.stub().resolves(),
       };
       mockLog = {
@@ -89,16 +90,16 @@ describe('Audit Access Pattern Tests', () => {
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
-    it('calls getLatestAudits and return an array', async () => {
+    it('calls getLatestAudits and returns an array', async () => {
       const result = await exportedFunctions.getLatestAudits('auditType', true);
       expect(result).to.be.an('array');
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
-    it('calls getLatestAuditForSite and return an array', async () => {
+    it('calls getLatestAuditForSite and returns null', async () => {
       const result = await exportedFunctions.getLatestAuditForSite('siteId', 'auditType');
       expect(result).to.be.null;
-      expect(mockDynamoClient.query.called).to.be.true;
+      expect(mockDynamoClient.getItem.called).to.be.true;
     });
   });
 

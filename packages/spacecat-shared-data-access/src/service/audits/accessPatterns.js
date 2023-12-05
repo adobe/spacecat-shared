@@ -153,7 +153,7 @@ export const getLatestAuditForSite = async (
 ) => {
   const latestAudit = await dynamoClient.query({
     TableName: config.tableNameLatestAudits,
-    KeyConditionExpression: 'siteId = :siteId AND begins_with(auditType, :auditType)',
+    KeyConditionExpression: 'siteId = :siteId AND auditType = :auditType',
     ExpressionAttributeValues: {
       ':siteId': siteId,
       ':auditType': `${auditType}`,

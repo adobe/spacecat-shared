@@ -12,12 +12,12 @@
 
 import { createDataAccess } from './service/index.js';
 
-const TABLE_NAME_AUDITS = 'spacecat-services-audits';
-const TABLE_NAME_LATEST_AUDITS = 'spacecat-services-latest-audits';
-const TABLE_NAME_SITES = 'spacecat-services-sites';
+const TABLE_NAME_AUDITS = 'spacecat-services-audits-dev';
+const TABLE_NAME_LATEST_AUDITS = 'spacecat-services-latest-audits-dev';
+const TABLE_NAME_SITES = 'spacecat-services-sites-dev';
 
-const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites';
-const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'spacecat-services-all-latest-audit-scores';
+const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites-dev';
+const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'spacecat-services-all-latest-audit-scores-dev';
 
 const PK_ALL_SITES = 'ALL_SITES';
 const PK_ALL_LATEST_AUDITS = 'ALL_LATEST_AUDITS';

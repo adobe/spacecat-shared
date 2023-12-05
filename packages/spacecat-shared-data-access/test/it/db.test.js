@@ -16,7 +16,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import dynamoDbLocal from 'dynamo-db-local';
 
-import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { sleep } from '../unit/util.js';
 import { createDataAccess } from '../../src/service/index.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
@@ -105,9 +105,8 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(sites.length).to.equal(NUMBER_OF_SITES);
 
-    sites.forEach((baseURL) => {
-      expect(baseURL).to.be.a('string');
-      expect(isValidUrl(baseURL)).to.equal(true);
+    sites.forEach((siteId) => {
+      expect(siteId).to.be.a('string');
     });
   });
 
@@ -135,6 +134,16 @@ describe('DynamoDB Integration Test', async () => {
     expect(site).to.be.an('object');
 
     checkSite(site);
+  });
+
+  it('gets site by ID', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+    const site = await dataAccess.getSiteByID(siteId);
+
+    expect(site).to.be.an('object');
+
+    checkSite(site);
+    expect(site.getId()).to.equal(siteId);
   });
 
   it('adds a new site', async () => {

@@ -16,6 +16,7 @@ import {
   getSiteByBaseURLWithAuditInfo,
   getSiteByBaseURLWithAudits,
   getSiteByBaseURLWithLatestAudit,
+  getSiteByID,
   getSites,
   getSitesToAudit,
   getSitesWithLatestAudit, removeSite,
@@ -43,6 +44,12 @@ export const siteFunctions = (dynamoClient, config, log) => ({
     config,
     log,
     baseUrl,
+  ),
+  getSiteByID: (siteId) => getSiteByID(
+    dynamoClient,
+    config,
+    log,
+    siteId,
   ),
   getSiteByBaseURLWithAuditInfo: (baseUrl, auditType, latestOnly) => getSiteByBaseURLWithAuditInfo(
     dynamoClient,

@@ -111,7 +111,7 @@ function generateAuditData(
     // Modify the audit data for the latest_audits table
     let GSI1SK = `${audit.auditType}#`;
     if (audit.auditType === 'lhs-mobile') {
-      GSI1SK += Object.values(audit.auditResult).map((score) => (parseFloat(score) * 100).toFixed(0)).join('#');
+      GSI1SK += Object.values(audit.auditResult.scores).map((score) => (parseFloat(score) * 100).toFixed(0)).join('#');
     } else {
       GSI1SK += Object.values(audit.auditResult).join('#');
     }

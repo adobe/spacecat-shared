@@ -158,10 +158,10 @@ export const getLatestAuditForSite = async (
 ) => {
   const latestAudit = await dynamoClient.query({
     TableName: config.tableNameLatestAudits,
-    KeyConditionExpression: 'siteId = :siteId AND begins_with(SK, :auditType)',
+    KeyConditionExpression: 'siteId = :siteId AND begins_with(auditType, :auditType)',
     ExpressionAttributeValues: {
       ':siteId': siteId,
-      ':auditType': `${auditType}#`,
+      ':auditType': `${auditType}`,
     },
     Limit: 1,
   });
@@ -221,13 +221,18 @@ async function removeAudits(
 ) {
   const tableName = latest ? config.tableNameLatestAudits : config.tableNameAudits;
   // TODO: use batch-remove (needs dynamo client update)
-  const removeAuditPromises = audits.map((audit) => dynamoClient.removeItem(
-    tableName,
-    {
-      siteId: audit.getSiteId(),
-      SK: `${audit.getAuditType()}#${audit.getAuditedAt()}`,
-    },
-  ));
+  const removeAuditPromises = audits.map((audit) => {
+    const sortKey = latest
+      ? { auditType: `${audit.getAuditType()}` }
+      : { SK: `${audit.getAuditType()}#${audit.getAuditedAt()}` };
+    return dynamoClient.removeItem(
+      tableName,
+      {
+        siteId: audit.getSiteId(),
+        ...sortKey,
+      },
+    );
+  });
 
   await Promise.all(removeAuditPromises);
 }

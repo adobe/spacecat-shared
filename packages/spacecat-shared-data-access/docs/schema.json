@@ -201,7 +201,7 @@
           "AttributeType": "S"
         },
         "SortKey": {
-          "AttributeName": "SK",
+          "AttributeName": "auditType",
           "AttributeType": "S"
         }
       },
@@ -213,10 +213,6 @@
         {
           "AttributeName": "auditResult",
           "AttributeType": "M"
-        },
-        {
-          "AttributeName": "auditType",
-          "AttributeType": "S"
         },
         {
           "AttributeName": "expiresAt",

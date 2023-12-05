@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.1.6](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.1.5...@adobe/spacecat-shared-data-access-v1.1.6) (2023-12-05)
+
+
+### Bug Fixes
+
+* use getItem for latest audit ([#35](https://github.com/adobe-rnd/spacecat-shared/issues/35)) ([6e4a87e](https://github.com/adobe-rnd/spacecat-shared/commit/6e4a87ea2d515f632b34278a8cc1ffd51d692a16))
+
 # [@adobe/spacecat-shared-data-access-v1.1.5](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.1.4...@adobe/spacecat-shared-data-access-v1.1.5) (2023-12-05)
 
 

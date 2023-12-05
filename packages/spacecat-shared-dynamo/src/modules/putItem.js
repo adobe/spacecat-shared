@@ -40,7 +40,8 @@ async function putItem(docClient, tableName, item, log = console) {
     const endTime = performance.now();
     const duration = endTime - startTime;
 
-    log.info(`PutItem execution time: ${duration.toFixed(2)} ms for query: ${JSON.stringify(params)}`);
+    log.trace(`PutItem Query: ${JSON.stringify(params)}`);
+    log.info(`PutItem execution time: ${duration.toFixed(2)} for ${tableName}`);
 
     return { message: 'Item inserted/updated successfully.' };
   } catch (error) {

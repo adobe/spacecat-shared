@@ -42,16 +42,16 @@ export const getSites = async (dynamoClient, config) => {
 };
 
 /**
- * Retrieves a list of base URLs for all sites.
+ * Retrieves a list of site IDs of all sites.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @returns {Promise<Array<string>>} A promise that resolves to an array of base URLs for all sites.
+ * @returns {Promise<Array<string>>} A promise that resolves to an array of site IDs of all sites.
  */
 export const getSitesToAudit = async (dynamoClient, config) => {
   const sites = await getSites(dynamoClient, config);
 
-  return sites.map((site) => site.getBaseURL());
+  return sites.map((site) => site.getId());
 };
 
 /**
@@ -117,11 +117,7 @@ export const getSiteByBaseURL = async (
     Limit: 1,
   });
 
-  if (dynamoItems.length === 0) {
-    return null;
-  }
-
-  return SiteDto.fromDynamoItem(dynamoItems[0]);
+  return dynamoItems.length > 0 ? SiteDto.fromDynamoItem(dynamoItems[0]) : null;
 };
 
 /**
@@ -208,6 +204,27 @@ export const getSiteByBaseURLWithLatestAudit = async (
   baseUrl,
   auditType,
 ) => getSiteByBaseURLWithAuditInfo(dynamoClient, config, log, baseUrl, auditType, true);
+
+/**
+ * Retrieves a site by its ID.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The logger.
+ * @param {string} siteId - The ID of the site to retrieve.
+ * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object if found,
+ * otherwise null.
+ */
+export const getSiteByID = async (
+  dynamoClient,
+  config,
+  log,
+  siteId,
+) => {
+  const dynamoItem = await dynamoClient.getItem(config.tableNameSites, { id: siteId });
+
+  return isObject(dynamoItem) ? SiteDto.fromDynamoItem(dynamoItem) : null;
+};
 
 /**
  * Adds a site.

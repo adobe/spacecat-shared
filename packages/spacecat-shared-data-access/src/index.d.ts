@@ -81,6 +81,9 @@ export interface DataAccess {
     baseUrl: string,
     auditType: string,
   ) => Promise<Site | null>;
+  getSiteByID: (
+    siteId: string,
+  ) => Promise<Site | null>;
   addSite: (
     siteData: object,
   ) => Promise<Site>;

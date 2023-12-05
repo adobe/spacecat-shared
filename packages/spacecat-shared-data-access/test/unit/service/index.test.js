@@ -35,6 +35,7 @@ describe('Data Access Object Tests', () => {
     'getSiteByBaseURLWithAuditInfo',
     'getSiteByBaseURLWithAudits',
     'getSiteByBaseURLWithLatestAudit',
+    'getSiteByID',
   ];
 
   let dao;

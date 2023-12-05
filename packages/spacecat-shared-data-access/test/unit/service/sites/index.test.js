@@ -152,10 +152,32 @@ describe('Site Access Pattern Tests', () => {
       expect(result).to.be.an('array').that.is.empty;
     });
 
-    it('calls getSiteByBaseURL and returns an array/object', async () => {
+    it('calls getSiteByBaseURL and returns null', async () => {
       const result = await exportedFunctions.getSiteByBaseURL();
       expect(result).to.be.null;
       expect(mockDynamoClient.query.called).to.be.true;
+    });
+
+    it('calls getSiteByID and returns null', async () => {
+      const result = await exportedFunctions.getSiteByID();
+      expect(result).to.be.null;
+      expect(mockDynamoClient.getItem.called).to.be.true;
+    });
+
+    it('calls getSiteByID and returns site', async () => {
+      const mockSiteData = {
+        id: 'site1',
+        baseURL: 'https://example.com',
+      };
+
+      mockDynamoClient.getItem.onFirstCall().resolves(mockSiteData);
+
+      const result = await exportedFunctions.getSiteByID();
+
+      expect(result).to.be.an('object');
+      expect(result.getId()).to.equal(mockSiteData.id);
+      expect(result.getBaseURL()).to.equal(mockSiteData.baseURL);
+      expect(mockDynamoClient.getItem.called).to.be.true;
     });
 
     it('calls getSiteByBaseURLWithAuditInfo and returns an array/object', async () => {

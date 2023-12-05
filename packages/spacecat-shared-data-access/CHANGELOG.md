@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.1.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.1.3...@adobe/spacecat-shared-data-access-v1.1.4) (2023-12-05)
+
+
+### Bug Fixes
+
+* latest-audits sort key ([#33](https://github.com/adobe-rnd/spacecat-shared/issues/33)) ([21dc14e](https://github.com/adobe-rnd/spacecat-shared/commit/21dc14e75e8aad641f1c99330243a3102e8de465))
+
 # [@adobe/spacecat-shared-data-access-v1.1.3](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.1.2...@adobe/spacecat-shared-data-access-v1.1.3) (2023-12-05)
 
 

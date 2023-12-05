@@ -110,13 +110,14 @@ describe('Audit Access Pattern Tests', () => {
     beforeEach(() => {
       mockDynamoClient = {
         query: sinon.stub().returns(Promise.resolve([])),
+        getItem: sinon.stub().resolves(),
       };
       mockLog = { log: sinon.stub() };
       exportedFunctions = auditFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
     it('successfully retrieves an audit for a site', async () => {
-      const mockAuditData = [{
+      const mockAuditData = {
         siteId: 'siteId',
         auditType: 'lhs-mobile',
         auditedAt: new Date().toISOString(),
@@ -129,21 +130,21 @@ describe('Audit Access Pattern Tests', () => {
           },
         },
         fullAuditRef: 'https://someurl.com',
-      }];
-      mockDynamoClient.query.returns(Promise.resolve(mockAuditData));
+      };
+      mockDynamoClient.getItem.resolves(mockAuditData);
 
       const result = await exportedFunctions.getAuditForSite('siteId', 'auditType', 'auditedAt');
       expect(result).to.not.be.null;
       expect(result.getScores()).to.be.an('object');
-      expect(mockDynamoClient.query.calledOnce).to.be.true;
+      expect(mockDynamoClient.getItem.calledOnce).to.be.true;
     });
 
     it('returns null if no audit is found for a site', async () => {
-      mockDynamoClient.query.returns(Promise.resolve([]));
+      mockDynamoClient.getItem.resolves(undefined);
 
       const result = await exportedFunctions.getAuditForSite('siteId', 'auditType', 'auditedAt');
       expect(result).to.be.null;
-      expect(mockDynamoClient.query.calledOnce).to.be.true;
+      expect(mockDynamoClient.getItem.calledOnce).to.be.true;
     });
   });
 
@@ -170,6 +171,7 @@ describe('Audit Access Pattern Tests', () => {
     beforeEach(() => {
       mockDynamoClient = {
         query: sinon.stub().returns(Promise.resolve([])),
+        getItem: sinon.stub().returns(Promise.resolve()),
         putItem: sinon.stub().returns(Promise.resolve()),
         removeItem: sinon.stub().returns(Promise.resolve()),
       };
@@ -193,7 +195,7 @@ describe('Audit Access Pattern Tests', () => {
     });
 
     it('throws an error if audit already exists', async () => {
-      mockDynamoClient.query.returns(Promise.resolve([auditData]));
+      mockDynamoClient.getItem.resolves(auditData);
 
       await expect(exportedFunctions.addAudit(auditData)).to.be.rejectedWith('Audit already exists');
     });

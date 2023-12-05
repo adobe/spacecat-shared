@@ -65,17 +65,12 @@ export const getAuditForSite = async (
   auditType,
   auditedAt,
 ) => {
-  const audit = await dynamoClient.query({
-    TableName: config.tableNameAudits,
-    KeyConditionExpression: 'siteId = :siteId AND SK = :sk',
-    ExpressionAttributeValues: {
-      ':siteId': siteId,
-      ':sk': `${auditType}#${auditedAt}`,
-    },
-    Limit: 1,
+  const audit = await dynamoClient.getItem(config.tableNameAudits, {
+    siteId,
+    SK: `${auditType}#${auditedAt}`,
   });
 
-  return audit.length > 0 ? AuditDto.fromDynamoItem(audit[0]) : null;
+  return audit ? AuditDto.fromDynamoItem(audit) : null;
 };
 
 /**
@@ -158,7 +153,7 @@ export const getLatestAuditForSite = async (
 ) => {
   const latestAudit = await dynamoClient.query({
     TableName: config.tableNameLatestAudits,
-    KeyConditionExpression: 'siteId = :siteId AND begins_with(auditType, :auditType)',
+    KeyConditionExpression: 'siteId = :siteId AND auditType = :auditType',
     ExpressionAttributeValues: {
       ':siteId': siteId,
       ':auditType': `${auditType}`,

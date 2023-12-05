@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.2.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.1.6...@adobe/spacecat-shared-data-access-v1.2.0) (2023-12-05)
+
+
+### Features
+
+* introduce getSiteByID ([#36](https://github.com/adobe-rnd/spacecat-shared/issues/36)) ([5677f76](https://github.com/adobe-rnd/spacecat-shared/commit/5677f76d11d97f2a2afd878e0ada7cad22fd1f03))
+
 # [@adobe/spacecat-shared-data-access-v1.1.6](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.1.5...@adobe/spacecat-shared-data-access-v1.1.6) (2023-12-05)
 
 

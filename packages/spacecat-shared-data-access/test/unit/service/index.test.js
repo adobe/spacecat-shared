@@ -22,6 +22,7 @@ describe('Data Access Object Tests', () => {
     'getAuditsForSite',
     'getLatestAudits',
     'getLatestAuditForSite',
+    'getLatestAuditsForSite',
     'removeAuditsForSite',
   ];
   const siteFunctions = [

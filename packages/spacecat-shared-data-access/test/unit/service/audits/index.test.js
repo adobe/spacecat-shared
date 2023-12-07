@@ -54,6 +54,11 @@ describe('Audit Access Pattern Tests', () => {
       expect(exportedFunctions.getLatestAuditForSite).to.be.a('function');
     });
 
+    it('exports getLatestAuditsForSite function', () => {
+      expect(exportedFunctions).to.have.property('getLatestAuditsForSite');
+      expect(exportedFunctions.getLatestAuditsForSite).to.be.a('function');
+    });
+
     it('exports removeAuditsForSite function', () => {
       expect(exportedFunctions).to.have.property('removeAuditsForSite');
       expect(exportedFunctions.removeAuditsForSite).to.be.a('function');
@@ -100,6 +105,12 @@ describe('Audit Access Pattern Tests', () => {
       const result = await exportedFunctions.getLatestAuditForSite('siteId', 'auditType');
       expect(result).to.be.null;
       expect(mockDynamoClient.getItem.called).to.be.true;
+    });
+
+    it('calls getLatestAuditsForSite and returns null', async () => {
+      const result = await exportedFunctions.getLatestAuditsForSite('siteId');
+      expect(result).to.be.an('array').that.is.empty;
+      expect(mockDynamoClient.query.called).to.be.true;
     });
   });
 

@@ -11,10 +11,12 @@
  */
 
 import {
-  addAudit, getAuditForSite,
+  addAudit,
+  getAuditForSite,
   getAuditsForSite,
   getLatestAuditForSite,
   getLatestAudits,
+  getLatestAuditsForSite,
   removeAuditsForSite,
 } from './accessPatterns.js';
 
@@ -47,6 +49,12 @@ export const auditFunctions = (dynamoClient, config, log) => ({
     log,
     siteId,
     auditType,
+  ),
+  getLatestAuditsForSite: (siteId) => getLatestAuditsForSite(
+    dynamoClient,
+    config,
+    log,
+    siteId,
   ),
   addAudit: (auditData) => addAudit(
     dynamoClient,

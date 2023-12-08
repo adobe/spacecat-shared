@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.2.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.2.1...@adobe/spacecat-shared-data-access-v1.2.2) (2023-12-08)
+
+
+### Bug Fixes
+
+* allow update of github URL ([#40](https://github.com/adobe-rnd/spacecat-shared/issues/40)) ([21da989](https://github.com/adobe-rnd/spacecat-shared/commit/21da9893fcb9c971c1c6a4e1271133188351c155))
+
 # [@adobe/spacecat-shared-data-access-v1.2.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.2.0...@adobe/spacecat-shared-data-access-v1.2.1) (2023-12-07)
 
 

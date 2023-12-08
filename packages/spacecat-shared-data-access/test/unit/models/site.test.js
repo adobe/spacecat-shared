@@ -60,8 +60,18 @@ describe('Site Model Tests', () => {
       expect(site.getImsOrgId()).to.equal(newImsOrgId);
     });
 
+    it('updates gitHubURL correctly', () => {
+      const newGitHubURL = 'https://gibhub.com/example/example';
+      site.updateGitHubURL(newGitHubURL);
+      expect(site.getGitHubURL()).to.equal(newGitHubURL);
+    });
+
     it('throws an error when updating with an empty imsOrgId', () => {
       expect(() => site.updateImsOrgId('')).to.throw('IMS Org ID must be provided');
+    });
+
+    it('throws an error when updating with an invalid github URL', () => {
+      expect(() => site.updateGitHubURL('')).to.throw('GitHub URL must be a valid URL');
     });
 
     it('sets audits correctly', () => {
@@ -88,6 +98,16 @@ describe('Site Model Tests', () => {
       await sleep(20);
 
       site.updateImsOrgId('newOrg123');
+
+      expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
+    });
+
+    it('updates updatedAt when gitHubURL is updated', async () => {
+      const initialUpdatedAt = site.getUpdatedAt();
+
+      await sleep(20);
+
+      site.updateGitHubURL('https://gibhub.com/example/example');
 
       expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });

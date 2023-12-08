@@ -65,6 +65,27 @@ const Site = (data = {}) => {
     return self;
   }; */
 
+  /**
+   * Updates the GitHub URL belonging to the site.
+   * @param {string} gitHubURL - The GitHub URL.
+   * @return {Base} The updated site.
+   */
+  self.updateGitHubURL = (gitHubURL) => {
+    if (!isValidUrl(gitHubURL)) {
+      throw new Error('GitHub URL must be a valid URL');
+    }
+
+    self.state.gitHubURL = gitHubURL;
+    self.touch();
+
+    return self;
+  };
+
+  /**
+   * Updates the IMS Org ID belonging to the site.
+   * @param {string} imsOrgId - The IMS Org ID.
+   * @return {Base} The updated site.
+   */
   self.updateImsOrgId = (imsOrgId) => {
     if (!hasText(imsOrgId)) {
       throw new Error('IMS Org ID must be provided');
@@ -81,6 +102,10 @@ const Site = (data = {}) => {
     return self;
   };
 
+  /**
+   * Sets whether the site is live.
+   * @return {Base} The updated site.
+   */
   self.toggleLive = () => {
     self.state.isLive = !self.state.isLive;
     return self;

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.2.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.2.3...@adobe/spacecat-shared-data-access-v1.2.4) (2023-12-10)
+
+
+### Bug Fixes
+
+* pass ascending param ([#42](https://github.com/adobe-rnd/spacecat-shared/issues/42)) ([930ae6b](https://github.com/adobe-rnd/spacecat-shared/commit/930ae6b09825cf37de90db0a4331eebe5f58a70e))
+
 # [@adobe/spacecat-shared-data-access-v1.2.3](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.2.2...@adobe/spacecat-shared-data-access-v1.2.3) (2023-12-10)
 
 

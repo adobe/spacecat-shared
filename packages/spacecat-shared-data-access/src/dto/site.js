@@ -24,8 +24,8 @@ export const SiteDto = {
   toDynamoItem: (site) => ({
     id: site.getId(),
     baseURL: site.getBaseURL(),
-    gitHubURL: site.getGitHubURL(),
-    imsOrgId: site.getImsOrgId(),
+    gitHubURL: site.getGitHubURL() || '',
+    imsOrgId: site.getImsOrgId() || '',
     isLive: site.isLive(),
     createdAt: site.getCreatedAt(),
     updatedAt: site.getUpdatedAt(),

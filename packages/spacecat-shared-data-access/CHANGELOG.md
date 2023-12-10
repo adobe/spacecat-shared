@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.2.5](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.2.4...@adobe/spacecat-shared-data-access-v1.2.5) (2023-12-10)
+
+
+### Bug Fixes
+
+* no undefined for putItem ([#43](https://github.com/adobe-rnd/spacecat-shared/issues/43)) ([283f229](https://github.com/adobe-rnd/spacecat-shared/commit/283f2299956c53ea77206a973210c3ecc9475180))
+
 # [@adobe/spacecat-shared-data-access-v1.2.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.2.3...@adobe/spacecat-shared-data-access-v1.2.4) (2023-12-10)
 
 

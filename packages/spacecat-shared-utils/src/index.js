@@ -25,3 +25,5 @@ export {
   toBoolean,
   isValidUrl,
 } from './functions.js';
+
+export { resolveSecretsName } from './helpers.js';

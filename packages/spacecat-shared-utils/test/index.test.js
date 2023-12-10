@@ -30,6 +30,7 @@ describe('Index Exports', () => {
     'isString',
     'toBoolean',
     'isValidUrl',
+    'resolveSecretsName',
   ];
 
   it('exports all expected functions', () => {

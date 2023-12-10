@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.3.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.2.0...@adobe/spacecat-shared-utils-v1.3.0) (2023-12-10)
+
+
+### Features
+
+* resolve secrets name ([#44](https://github.com/adobe-rnd/spacecat-shared/issues/44)) ([8c7604d](https://github.com/adobe-rnd/spacecat-shared/commit/8c7604da6b36f450a9054fa93c6c469c1f47319b))
+
 # [@adobe/spacecat-shared-utils-v1.2.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.1.0...@adobe/spacecat-shared-utils-v1.2.0) (2023-11-30)
 
 

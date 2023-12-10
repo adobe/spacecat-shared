@@ -29,12 +29,13 @@ export const auditFunctions = (dynamoClient, config, log) => ({
     auditType,
     auditedAt,
   ),
-  getAuditsForSite: (siteId, auditType) => getAuditsForSite(
+  getAuditsForSite: (siteId, auditType, ascending) => getAuditsForSite(
     dynamoClient,
     config,
     log,
     siteId,
     auditType,
+    ascending,
   ),
   getLatestAudits: (auditType, ascending) => getLatestAudits(
     dynamoClient,

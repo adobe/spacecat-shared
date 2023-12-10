@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isObject } from '@adobe/spacecat-shared-utils';
 
 import { AuditDto } from '../../dto/audit.js';
 import { createAudit } from '../../models/audit.js';
@@ -24,19 +24,29 @@ import { createAudit } from '../../models/audit.js';
  * @param {Logger} log - The logger.
  * @param {string} siteId - The ID of the site for which audits are being retrieved.
  * @param {string} [auditType] - Optional. The type of audits to retrieve.
+ * @param {boolean} [ascending] - Optional. Determines if the audits should be sorted
+ * ascending. Default is true.
  * @returns {Promise<Readonly<Audit>[]>} A promise that resolves to an array of audits
  * for the specified site.
  */
-export const getAuditsForSite = async (dynamoClient, config, log, siteId, auditType) => {
+export const getAuditsForSite = async (
+  dynamoClient,
+  config,
+  log,
+  siteId,
+  auditType,
+  ascending = true,
+) => {
   const queryParams = {
     TableName: config.tableNameAudits,
     KeyConditionExpression: 'siteId = :siteId',
     ExpressionAttributeValues: {
       ':siteId': siteId,
     },
+    ScanIndexForward: ascending, // Sorts ascending if true, descending if false
   };
 
-  if (auditType !== undefined) {
+  if (hasText(auditType)) {
     queryParams.KeyConditionExpression += ' AND begins_with(SK, :auditType)';
     queryParams.ExpressionAttributeValues[':auditType'] = `${auditType}#`;
   }

@@ -34,13 +34,15 @@ export interface Site {
   isLive: () => boolean;
   setAudits: (audits: Audit[]) => Site;
   toggleLive: () => Site;
+  updateGitHubURL: (gitHubURL: string) => Site;
   updateImsOrgId: (imsOrgId: string) => Site;
 }
 
 export interface DataAccess {
   getAuditsForSite: (
     siteId: string,
-    auditType?: string
+    auditType?: string,
+    ascending?: boolean,
   ) => Promise<Audit[]>;
   getLatestAuditForSite: (
     siteId: string,

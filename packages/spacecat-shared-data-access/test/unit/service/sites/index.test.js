@@ -149,7 +149,8 @@ describe('Site Access Pattern Tests', () => {
       mockDynamoClient.query.onSecondCall().resolves(mockAuditData);
 
       const result = await exportedFunctions.getSitesWithLatestAudit('auditType');
-      expect(result).to.be.an('array').that.is.empty;
+      expect(result).to.be.an('array').that.has.lengthOf(1);
+      expect(result[0].getAudits()).to.be.an('array').that.is.empty;
     });
 
     it('calls getSiteByBaseURL and returns null', async () => {

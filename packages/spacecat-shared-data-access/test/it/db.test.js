@@ -113,12 +113,17 @@ describe('DynamoDB Integration Test', async () => {
   it('gets sites with latest audit', async () => {
     const sites = await dataAccess.getSitesWithLatestAudit(AUDIT_TYPE_LHS_MOBILE);
 
-    // Every tenth site will not have any audits
-    expect(sites.length).to.equal(NUMBER_OF_SITES - 1);
+    expect(sites.length).to.equal(NUMBER_OF_SITES);
 
-    sites.forEach((site) => {
+    sites.forEach((site, index) => {
       checkSite(site);
-      expect(site.getAudits()).to.be.an('array').that.has.lengthOf(1);
+      expect(site.getAudits()).to.be.an('array');
+
+      // Every tenth site will not have any audits
+      if (index % 10 === 0) {
+        expect(site.getAudits()).to.be.an('array').that.is.empty;
+      }
+
       site.getAudits().forEach((audit) => {
         expect(audit.getAuditType()).to.equal(AUDIT_TYPE_LHS_MOBILE);
         expect(Object.keys(audit.getScores())).to.have.members(

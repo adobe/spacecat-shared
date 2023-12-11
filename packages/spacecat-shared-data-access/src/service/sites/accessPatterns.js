@@ -55,7 +55,10 @@ export const getSitesToAudit = async (dynamoClient, config) => {
 };
 
 /**
- * Retrieves sites with their latest audit of a specified type.
+ * Retrieves sites with their latest audit of a specified type. If there is
+ * no audit of the specified type for a site, the site will be returned with
+ * an empty audits array.
+ * The audits are sorted ascending or descending by scores.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
@@ -78,16 +81,17 @@ export const getSitesWithLatestAudit = async (
     getLatestAudits(dynamoClient, config, log, auditType, sortAuditsAscending),
   ]);
 
-  const sitesMap = new Map(sites.map((site) => [site.getId(), site]));
+  const auditsMap = new Map(latestAudits.map((audit) => [audit.getSiteId(), audit]));
 
-  return latestAudits.reduce((result, audit) => {
-    const site = sitesMap.get(audit.getSiteId());
-    if (site) {
+  return sites.map((site) => {
+    const audit = auditsMap.get(site.getId());
+    if (audit) {
       site.setAudits([audit]);
-      result.push(site);
+    } else {
+      site.setAudits([]);
     }
-    return result;
-  }, []);
+    return site;
+  });
 };
 
 /**

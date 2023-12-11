@@ -55,19 +55,18 @@ export const getSitesToAudit = async (dynamoClient, config) => {
 };
 
 /**
- * Retrieves sites with their latest audit of a specified type. If there is
- * no audit of the specified type for a site, the site will be returned with
- * an empty audits array.
- * The audits are sorted ascending or descending by scores.
- *
+ * Retrieves all sites with their latest audit. Sites without a latest audit will be included
+ * in the result, but will have an empty audits array. The sites are sorted by their latest
+ * audit scores in ascending order by default. The sortAuditsAscending parameter can be used
+ * to change the sort order. If a site has no latest audit, it will be sorted at the end of
+ * the list.
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
  * @param {Logger} log - The logger.
- * @param {string} auditType - The type of the latest audits to retrieve for each site.
- * @param {boolean} [sortAuditsAscending] - Optional. Determines if the audits
- * should be sorted ascending or descending by scores.
- * @returns {Promise<Readonly<Site>[]>} A promise that resolves to an array of site objects,
- * each with its latest audit of the specified type.
+ * @param {string} auditType - The type of audits to retrieve for the sites.
+ * @param {boolean} [sortAuditsAscending=true] - Determines if the audits should be sorted in
+ * @return {Promise<Readonly<Site>[]>} A promise that resolves to an array of sites with their
+ * latest audit.
  */
 export const getSitesWithLatestAudit = async (
   dynamoClient,
@@ -81,17 +80,26 @@ export const getSitesWithLatestAudit = async (
     getLatestAudits(dynamoClient, config, log, auditType, sortAuditsAscending),
   ]);
 
-  const auditsMap = new Map(latestAudits.map((audit) => [audit.getSiteId(), audit]));
+  const sitesMap = new Map(sites.map((site) => [site.getId(), site]));
+  const orderedSites = [];
 
-  return sites.map((site) => {
-    const audit = auditsMap.get(site.getId());
-    if (audit) {
+  // First, append sites with a latest audit in the sorted order
+  latestAudits.forEach((audit) => {
+    const site = sitesMap.get(audit.getSiteId());
+    if (site) {
       site.setAudits([audit]);
-    } else {
-      site.setAudits([]);
+      orderedSites.push(site);
+      sitesMap.delete(site.getId()); // Remove the site from the map to avoid adding it again
     }
-    return site;
   });
+
+  // Then, append the remaining sites (without a latest audit)
+  sitesMap.forEach((site) => {
+    site.setAudits([]);
+    orderedSites.push(site);
+  });
+
+  return orderedSites;
 };
 
 /**

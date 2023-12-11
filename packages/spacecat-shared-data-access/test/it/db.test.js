@@ -115,14 +115,9 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(sites.length).to.equal(NUMBER_OF_SITES);
 
-    sites.forEach((site, index) => {
+    sites.forEach((site) => {
       checkSite(site);
       expect(site.getAudits()).to.be.an('array');
-
-      // Every tenth site will not have any audits
-      if (index % 10 === 0) {
-        expect(site.getAudits()).to.be.an('array').that.is.empty;
-      }
 
       site.getAudits().forEach((audit) => {
         expect(audit.getAuditType()).to.equal(AUDIT_TYPE_LHS_MOBILE);

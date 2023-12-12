@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.4.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.3.0...@adobe/spacecat-shared-utils-v1.4.0) (2023-12-12)
+
+
+### Features
+
+* rum api client ([#48](https://github.com/adobe-rnd/spacecat-shared/issues/48)) ([ccfa187](https://github.com/adobe-rnd/spacecat-shared/commit/ccfa187a45f35e57085ac241ff156c0b9418592d))
+
 # [@adobe/spacecat-shared-utils-v1.3.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.2.0...@adobe/spacecat-shared-utils-v1.3.0) (2023-12-10)
 
 

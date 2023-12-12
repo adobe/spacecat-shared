@@ -10,21 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-export {
-  arrayEquals,
-  hasText,
-  isArray,
-  isBoolean,
-  isInteger,
-  isValidDate,
-  isIsoDate,
-  isIsoTimeOffsetsDate,
-  isNumber,
-  isObject,
-  isString,
-  toBoolean,
-  isValidUrl,
-  dateAfterDays,
-} from './functions.js';
+import { context as h2, h1 } from '@adobe/fetch';
 
-export { resolveSecretsName } from './helpers.js';
+/* c8 ignore next 3 */
+export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
+  ? h1()
+  : h2();

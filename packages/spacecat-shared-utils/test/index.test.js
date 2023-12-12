@@ -31,6 +31,7 @@ describe('Index Exports', () => {
     'toBoolean',
     'isValidUrl',
     'resolveSecretsName',
+    'dateAfterDays',
   ];
 
   it('exports all expected functions', () => {

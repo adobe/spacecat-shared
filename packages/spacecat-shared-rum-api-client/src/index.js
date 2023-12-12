@@ -10,8 +10,10 @@
  * governing permissions and limitations under the License.
  */
 import { createUrl } from '@adobe/fetch';
-import { hasText, isArray, isInteger } from '@adobe/spacecat-shared-utils';
-import { dateAfterDays, fetch } from './utils.js';
+import {
+  hasText, isArray, isInteger, isObject, dateAfterDays,
+} from '@adobe/spacecat-shared-utils';
+import { fetch } from './utils.js';
 
 const APIS = {
   ROTATE_DOMAINKEYS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rotate-domainkeys',
@@ -21,8 +23,7 @@ const APIS = {
 export async function sendRequest(url, opts) {
   let respJson;
   try {
-    const resp = await fetch(url, opts);
-    // const resp = await (isObject(opts) ? fetch(url, opts) : fetch(url));
+    const resp = await (isObject(opts) ? fetch(url, opts) : fetch(url));
     respJson = await resp.json();
   } catch (e) {
     throw new Error(`Error during rum api call: ${e.message}`);

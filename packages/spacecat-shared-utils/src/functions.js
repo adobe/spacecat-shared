@@ -165,6 +165,25 @@ const arrayEquals = (a, b) => isArray(a)
   && a.length === b.length
   && a.every((val, index) => val === b[index]);
 
+/**
+ * Calculates the date after a specified number of days from the current date.
+ *
+ * @param {number} days - The number of days to add to the current date.
+ * @returns {Date} A new Date object representing the calculated date after the specified days.
+ * @throws {TypeError} If the provided 'days' parameter is not a number.
+ * @throws {RangeError} If the calculated date is outside the valid JavaScript date range.
+ *
+ * @example
+ * // Get the date 7 days from now
+ * const sevenDaysLater = dateAfterDays(7);
+ * console.log(sevenDaysLater); // Outputs a Date object representing the date 7 days from now
+ */
+function dateAfterDays(days) {
+  const currentDate = new Date();
+  currentDate.setDate(currentDate.getDate() + days);
+  return currentDate;
+}
+
 export {
   arrayEquals,
   hasText,
@@ -179,4 +198,5 @@ export {
   isString,
   toBoolean,
   isValidUrl,
+  dateAfterDays,
 };

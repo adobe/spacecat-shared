@@ -24,6 +24,7 @@ export {
   isString,
   toBoolean,
   isValidUrl,
+  dateAfterDays,
 } from './functions.js';
 
 export { resolveSecretsName } from './helpers.js';

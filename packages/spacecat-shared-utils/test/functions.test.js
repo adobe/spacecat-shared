@@ -14,6 +14,7 @@
 /* eslint-disable no-unused-expressions */
 
 import { expect } from 'chai';
+import sinon from 'sinon';
 
 import {
   hasText,
@@ -29,6 +30,7 @@ import {
   toBoolean,
   arrayEquals,
   isValidUrl,
+  dateAfterDays,
 } from '../src/functions.js';
 
 describe('Shared functions', () => {
@@ -277,6 +279,28 @@ describe('Shared functions', () => {
       expect(isValidDate(new Date())).to.be.true;
       expect(isValidDate(new Date('2022-01-01T01:23:45.678-00:00'))).to.be.true;
       expect(isValidDate(new Date('2022-01-01T01:23:45.678Z'))).to.be.true;
+    });
+  });
+
+  describe('daysAfter', () => {
+    const sandbox = sinon.createSandbox();
+
+    const mockDate = '2023-11-27T12:30:01.124Z';
+    const sevenDaysLaterExpected = '2023-12-04T12:30:01.124Z';
+
+    before('setup', function () {
+      this.clock = sandbox.useFakeTimers({
+        now: new Date(mockDate).getTime(),
+      });
+    });
+
+    after('clean', () => {
+      sandbox.restore();
+    });
+
+    it('returns days after now', async () => {
+      const sevenDaysLater = dateAfterDays(7);
+      expect(sevenDaysLater.toISOString()).to.equal(sevenDaysLaterExpected);
     });
   });
 });

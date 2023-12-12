@@ -43,6 +43,7 @@ The library includes the following utility functions:
 - `arrayEquals(a, b)`: Compares two arrays for equality.
 - `isValidUrl(urlString)`: Validates whether the given string is a valid URL with http or https protocol.
 - `hasText(str)`: Checks if the given string is not empty.
+- `dateAfterDays(number)`: Calculates the date after a specified number of days from the current date.
 
 ## Testing
 

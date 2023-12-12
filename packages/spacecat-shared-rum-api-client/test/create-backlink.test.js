@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 /* eslint-env mocha */
-/* eslint-disable no-unused-expressions */ // expect statements
 
 import sinon from 'sinon';
 import chai from 'chai';

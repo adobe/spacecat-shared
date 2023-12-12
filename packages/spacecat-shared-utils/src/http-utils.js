@@ -10,28 +10,30 @@
  * governing permissions and limitations under the License.
  */
 
-export {
-  arrayEquals,
-  hasText,
-  isArray,
-  isBoolean,
-  isInteger,
-  isValidDate,
-  isIsoDate,
-  isIsoTimeOffsetsDate,
-  isNumber,
-  isObject,
-  isString,
-  toBoolean,
-  isValidUrl,
-  dateAfterDays,
-} from './functions.js';
+import { Response } from '@adobe/fetch';
 
-export {
-  ok,
-  badRequest,
-  notFound,
-  internalServerError,
-} from './http-utils.js';
+function createResponse(body, status = 200) {
+  return new Response(
+    JSON.stringify(body),
+    {
+      headers: { 'content-type': 'application/json' },
+      status,
+    },
+  );
+}
 
-export { resolveSecretsName } from './helpers.js';
+export function ok(body) {
+  return createResponse(body, 200);
+}
+
+export function badRequest(message) {
+  return createResponse({ message }, 400);
+}
+
+export function notFound(message) {
+  return createResponse({ message }, 404);
+}
+
+export function internalServerError(message) {
+  return createResponse({ message }, 500);
+}

@@ -45,6 +45,13 @@ The library includes the following utility functions:
 - `hasText(str)`: Checks if the given string is not empty.
 - `dateAfterDays(number)`: Calculates the date after a specified number of days from the current date.
 
+The library includes the following http utility functions to create `Response` objects:
+
+- `ok(body)`: Creates a 200 response with a JSON body.
+- `badRequest(message)`: Creates a 400 response with a JSON body.
+- `notFound(message)`: Creates a 404 response with a JSON body.
+- `internalServerError(message)`: Creates a 500 response with a JSON body.
+
 ## Testing
 
 This library includes a comprehensive test suite to ensure the reliability of the utility functions. To run the tests, use the following command:

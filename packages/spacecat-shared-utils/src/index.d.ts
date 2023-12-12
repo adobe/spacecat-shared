@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+/** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
 
 export function hasText(str: string): boolean;
@@ -35,3 +36,33 @@ export function toBoolean(value: unknown): boolean;
 export function isValidUrl(urlString: string): boolean;
 
 export function dateAfterDays(days: string): Date;
+
+/** HTTP UTILS */
+
+/**
+ * Creates a 200 response with a JSON body.
+ * @param {object} body - JSON body.
+ * @return {Response} Response.
+ */
+export function ok(body: object): Response;
+
+/**
+ * Creates a 400 response with a JSON body.
+ * @param {string} message - Error message.
+ * @return {Response} Response.
+ */
+export function badRequest(message: string): Response;
+
+/**
+ * Creates a 404 response with a JSON body.
+ * @param {string} message - Error message.
+ * @return {Response} Response.
+ */
+export function notFound(message: string): Response;
+
+/**
+ * Creates a 500 response with a JSON body.
+ * @param {string} message - Error message.
+ * @return {Response} Response.
+ */
+export function internalServerError(message: string): Response;

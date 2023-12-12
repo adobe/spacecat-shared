@@ -31,5 +31,8 @@
   "devDependencies": {
     "chai": "4.3.10",
     "sinon": "17.0.1"
+  },
+  "dependencies": {
+    "@adobe/fetch": "4.1.1"
   }
 }

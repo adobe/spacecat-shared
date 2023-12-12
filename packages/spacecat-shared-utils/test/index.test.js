@@ -32,6 +32,10 @@ describe('Index Exports', () => {
     'isValidUrl',
     'resolveSecretsName',
     'dateAfterDays',
+    'ok',
+    'badRequest',
+    'notFound',
+    'internalServerError',
   ];
 
   it('exports all expected functions', () => {

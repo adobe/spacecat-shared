@@ -65,12 +65,6 @@ async function generateDomainKey(domainkey, url, expiry) {
   return data[0].key;
 }
 
-/**
- *
- * @param context
- * @returns RUMAPIClient
- * @constructor
- */
 export default class RUMAPIClient {
   static createFrom(context) {
     if (context.rumApiClient) return context.rumApiClient;

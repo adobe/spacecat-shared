@@ -59,4 +59,28 @@ describe('rum api client', () => {
     await expect(sendRequest('https://space.cat/dummy-page'))
       .to.be.rejectedWith('Unexpected response from rum api. $.results.data is not array');
   });
+
+  it('returns data when getRUMDashboard api is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/rum-dashboard')
+      .query({
+        domainkey: 'hebele',
+      })
+      .reply(200, JSON.stringify({ results: { data: [] } }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    await expect(rumApiClient.getRUMDashboard())
+      .to.be.fulfilled;
+  });
+
+  it('returns data when get404Checkpoints api is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/rum-checkpoint-urls')
+      .query({
+        domainkey: 'hebele',
+      })
+      .reply(200, JSON.stringify({ results: { data: [] } }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    await expect(rumApiClient.get404Checkpoints())
+      .to.be.fulfilled;
+  });
 });

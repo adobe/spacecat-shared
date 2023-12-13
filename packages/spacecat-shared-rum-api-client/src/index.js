@@ -18,6 +18,8 @@ import { fetch } from './utils.js';
 const APIS = {
   ROTATE_DOMAINKEYS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rotate-domainkeys',
   RUM_DASHBOARD: 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard',
+  DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
+  NOT_FOUND_CHECKPOINTS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-checkpoint-urls',
 };
 
 export async function sendRequest(url, opts) {
@@ -83,6 +85,20 @@ export default class RUMAPIClient {
     }
 
     this.domainkey = domainkey;
+  }
+
+  async getRUMDashboard(params) {
+    return sendRequest(createUrl(
+      APIS.DOMAIN_LIST,
+      { domainkey: this.domainkey, ...params },
+    ));
+  }
+
+  async get404Checkpoints(params) {
+    return sendRequest(createUrl(
+      APIS.NOT_FOUND_CHECKPOINTS,
+      { domainkey: this.domainkey, ...params },
+    ));
   }
 
   async createBacklink(url, expiry) {

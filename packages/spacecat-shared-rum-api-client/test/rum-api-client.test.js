@@ -131,9 +131,14 @@ describe('rum api client', () => {
         offset: 0,
         limit: 100000,
       })
-      .reply(200, JSON.stringify({ results: { data: [{ hostname: 'spacecat.com' }] } }));
+      .reply(200, JSON.stringify({
+        results: {
+          data: [
+            { hostname: 'spacecat.com' },
+            { hostname: 'spacekatze.com' }],
+        },
+      }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
-    await expect(rumApiClient.getDomainList({}, 'spacecat.com'))
-      .to.eventually.eql(['spacecat.com']);
+    await expect(rumApiClient.getDomainList()).to.eventually.eql(['spacecat.com', 'spacekatze.com']);
   });
 });

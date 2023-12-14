@@ -35,8 +35,6 @@ export const RUM_DEFAULT_PARAMS = {
   limit: 101,
 };
 
-const isAllDomains = (url) => url.toUpperCase() === 'ALL';
-
 export async function sendRequest(url, opts) {
   let respJson;
   try {
@@ -102,14 +100,14 @@ export default class RUMAPIClient {
     this.domainkey = domainkey;
   }
 
-  async getRUMDashboard(params) {
+  async getRUMDashboard(params = {}) {
     return sendRequest(createUrl(
       APIS.RUM_DASHBOARD,
       { domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params },
     ));
   }
 
-  async get404Sources(params) {
+  async get404Sources(params = {}) {
     return sendRequest(createUrl(
       APIS.RUM_SOURCES,
       {
@@ -118,14 +116,13 @@ export default class RUMAPIClient {
     ));
   }
 
-  async getDomainList(params, url) {
+  async getDomainList(params = {}) {
     const data = await sendRequest(createUrl(
       APIS.DOMAIN_LIST,
       { domainkey: this.domainkey, ...DOMAIN_LIST_DEFAULT_PARAMS, ...params },
     ));
 
-    const urls = data.map((row) => row.hostname);
-    return isAllDomains(url) ? urls : urls.filter((row) => url === row);
+    return data.map((row) => row.hostname);
   }
 
   async createBacklink(url, expiry) {

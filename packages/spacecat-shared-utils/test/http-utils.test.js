@@ -12,7 +12,7 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import {
-  ok, badRequest, notFound, internalServerError,
+  ok, badRequest, notFound, internalServerError, noContent,
 } from '../src/http-utils.js';
 
 describe('http-utils', () => {
@@ -23,6 +23,16 @@ describe('http-utils', () => {
     expect(response.headers.get('content-type')).to.equal('application/json; charset=utf-8');
     const respJson = await response.json();
     expect(respJson).to.eql(body);
+  });
+
+  it('ok should return a 204 response with JSON body', async () => {
+    const headers = { key: 'value' };
+    const response = noContent(headers);
+    expect(response.status).to.equal(204);
+    expect(response.headers.get('content-type')).to.equal('application/json; charset=utf-8');
+    expect(response.headers.get('key')).to.equal('value');
+    const respJson = await response.json();
+    expect(respJson).to.eql('');
   });
 
   it('badRequest should return a 400 response with JSON body', async () => {

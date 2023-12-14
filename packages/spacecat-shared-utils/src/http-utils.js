@@ -32,8 +32,8 @@ export function ok(body) {
   return createResponse(body, 200);
 }
 
-export function noContent(body) {
-  return createResponse(body, 204);
+export function noContent(headers) {
+  return createResponse('', 204, headers);
 }
 
 export function badRequest(message) {

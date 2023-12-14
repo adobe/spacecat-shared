@@ -77,10 +77,35 @@ describe('rum api client', () => {
       .get('/run-query@v3/rum-checkpoint-urls')
       .query({
         domainkey: 'hebele',
+        checkpoint: 404,
       })
       .reply(200, JSON.stringify({ results: { data: [] } }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
     await expect(rumApiClient.get404Checkpoints())
+      .to.be.fulfilled;
+  });
+
+  it('returns data when getDomainList api is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/dash/domain-list')
+      .query({
+        domainkey: 'hebele',
+      })
+      .reply(200, JSON.stringify({ results: { data: [] } }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    await expect(rumApiClient.getDomainList({}, 'all'))
+      .to.be.fulfilled;
+  });
+
+  it('returns data when getDomainList api is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/dash/domain-list')
+      .query({
+        domainkey: 'hebele',
+      })
+      .reply(200, JSON.stringify({ results: { data: ['spacecat.com'] } }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    await expect(rumApiClient.getDomainList({}, 'spaceacat.com'))
       .to.be.fulfilled;
   });
 });

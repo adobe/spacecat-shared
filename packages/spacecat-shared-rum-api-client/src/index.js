@@ -17,10 +17,13 @@ import { fetch } from './utils.js';
 
 const APIS = {
   ROTATE_DOMAINKEYS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rotate-domainkeys',
-  RUM_DASHBOARD: 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard',
-  DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
+  RUM_DASHBOARD_UI: 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard',
+  RUM_DASHBOARD: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
+  DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/dash/domain-list',
   NOT_FOUND_CHECKPOINTS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-checkpoint-urls',
 };
+
+export const isAuditForAll = (url) => url.toUpperCase() === 'ALL';
 
 export async function sendRequest(url, opts) {
   let respJson;
@@ -89,7 +92,7 @@ export default class RUMAPIClient {
 
   async getRUMDashboard(params) {
     return sendRequest(createUrl(
-      APIS.DOMAIN_LIST,
+      APIS.RUM_DASHBOARD,
       { domainkey: this.domainkey, ...params },
     ));
   }
@@ -97,12 +100,22 @@ export default class RUMAPIClient {
   async get404Checkpoints(params) {
     return sendRequest(createUrl(
       APIS.NOT_FOUND_CHECKPOINTS,
+      { domainkey: this.domainkey, checkpoint: 404, ...params },
+    ));
+  }
+
+  async getDomainList(params, url) {
+    const data = await sendRequest(createUrl(
+      APIS.DOMAIN_LIST,
       { domainkey: this.domainkey, ...params },
     ));
+
+    const urls = data.map((row) => row.hostname);
+    return isAuditForAll(url) ? urls : urls.filter((row) => url === row);
   }
 
   async createBacklink(url, expiry) {
     const scopedDomainKey = await generateDomainKey(this.domainkey, url, expiry);
-    return `${APIS.RUM_DASHBOARD}?interval=${expiry}&offset=0&limit=100&url=${url}&domainkey=${scopedDomainKey}`;
+    return `${APIS.RUM_DASHBOARD_UI}?interval=${expiry}&offset=0&limit=100&url=${url}&domainkey=${scopedDomainKey}`;
   }
 }

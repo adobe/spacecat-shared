@@ -40,4 +40,32 @@ export declare class RUMAPIClient {
    *   to view their reports and monitor real user activities.
    */
   createBacklink(url: string, expiry: number): Promise<string>;
+
+  /**
+   * Asynchronous method to return the RUM dashboard API call response data.
+   * @param {object} params - An object representing the parameters to be included
+   *  for the RUM Dashboard API call.
+   * @returns A Promise resolving to the RUM dashboard response data.
+   */
+  getRUMDashboard(params: object): Promise<Array<object>>;
+
+  /**
+   * Asynchronous method to return the 404 checkpoints API call response data.
+   * @param {object} params - An object representing the parameters to be included
+   *  for the 404 Checkpoints API call.
+   * @returns A Promise resolving to the 404 checkpoints response data.
+   */
+  get404Checkpoints(params: object): Promise<Array<object>>;
+
+  /**
+   * Asynchronous method to return an array with the domain for a specific url
+   *  or an array of all domain urls
+   * @param {object} params - An object representing the parameters to be included
+   * for the domain list call.
+   * @param {string} url - An string representing the url to be filtered
+   *  from the domain list call or all(representing all domains).
+   * @returns A Promise resolving to an array of the domain for a specific url
+   *  or an array of all domain urls .
+   */
+  getDomainList(params:object, url:string): Promise<Array<string>>;
 }

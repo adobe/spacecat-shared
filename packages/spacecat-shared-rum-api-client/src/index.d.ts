@@ -18,7 +18,7 @@ export interface RUMAPIOptions {
   limit: number;
 }
 
-export declare class RUMAPIClient {
+export default class RUMAPIClient {
   /**
    * Static factory method to create an instance of RUMAPIClient.
    * @param {UniversalContext} context - An object containing the AWS Lambda context information

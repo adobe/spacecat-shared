@@ -23,7 +23,7 @@ const APIS = {
   RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',
 };
 
-export const isAuditForAll = (url) => url.toUpperCase() === 'ALL';
+const isAllDomains = (url) => url.toUpperCase() === 'ALL';
 
 export async function sendRequest(url, opts) {
   let respJson;
@@ -111,7 +111,7 @@ export default class RUMAPIClient {
     ));
 
     const urls = data.map((row) => row.hostname);
-    return isAuditForAll(url) ? urls : urls.filter((row) => url === row);
+    return isAllDomains(url) ? urls : urls.filter((row) => url === row);
   }
 
   async createBacklink(url, expiry) {

@@ -27,4 +27,12 @@ export {
   dateAfterDays,
 } from './functions.js';
 
+export {
+  ok,
+  noContent,
+  badRequest,
+  notFound,
+  internalServerError,
+} from './http-utils.js';
+
 export { resolveSecretsName } from './helpers.js';

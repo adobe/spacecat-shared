@@ -16,6 +16,7 @@ export interface RUMAPIOptions {
   interval: number;
   offset: number;
   limit: number;
+  url: string;
 }
 
 export default class RUMAPIClient {

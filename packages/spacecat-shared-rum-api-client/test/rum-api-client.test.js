@@ -79,10 +79,10 @@ describe('rum api client', () => {
         domainkey: 'hebele',
         checkpoint: 404,
       })
-      .reply(200, JSON.stringify({ results: { data: [] } }));
+      .reply(200, JSON.stringify({ results: { data: [{ url: 'http://spacecar.com', views: 100 }] } }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
     await expect(rumApiClient.get404Checkpoints())
-      .to.be.fulfilled;
+      .to.eventually.eql([{ url: 'http://spacecar.com', views: 100 }]);
   });
 
   it('returns data when getDomainList api is successful for all', async () => {

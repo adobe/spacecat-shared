@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Adobe. All rights reserved.
+ * Copyright 2021 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -9,22 +9,14 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import { Response } from '@adobe/fetch';
 
-export {
-  arrayEquals,
-  hasText,
-  isArray,
-  isBoolean,
-  isInteger,
-  isValidDate,
-  isIsoDate,
-  isIsoTimeOffsetsDate,
-  isNumber,
-  isObject,
-  isString,
-  toBoolean,
-  isValidUrl,
-  dateAfterDays,
-} from './functions.js';
+export declare function ok(body?: string): Response;
 
-export { resolveSecretsName } from './helpers.js';
+export declare function noContent(headers?: object): Response;
+
+export declare function badRequest(message?: string, headers?: object): Response;
+
+export declare function notFound(message?: string, headers?: object): Response;
+
+export declare function internalServerError(message?: string, headers?: object): Response;

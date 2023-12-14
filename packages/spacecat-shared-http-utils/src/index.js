@@ -21,31 +21,38 @@ import { Response } from '@adobe/fetch';
  */
 export function createResponse(body, status = 200, headers = {}) {
   return new Response(
-    JSON.stringify(body),
+    body === '' ? '' : JSON.stringify(body),
     {
       headers: { 'content-type': 'application/json; charset=utf-8', ...headers },
       status,
     },
   );
 }
-export function ok(body) {
+export function ok(body = '') {
   return createResponse(body, 200);
 }
 
-export function noContent(headers) {
+export function noContent(headers = {}) {
   return createResponse('', 204, headers);
 }
 
-export function badRequest(message) {
-  return createResponse({ message }, 400);
+export function badRequest(message = 'bad request', headers = {}) {
+  return createResponse({ message }, 400, {
+    'x-error': message,
+    ...headers,
+  });
 }
 
-export function notFound(message) {
-  return createResponse({ message }, 404);
+export function notFound(message = 'not found', headers = {}) {
+  return createResponse({ message }, 404, {
+    'x-error': message,
+    ...headers,
+  });
 }
 
-export function internalServerError(message) {
+export function internalServerError(message = 'internal server error', headers = {}) {
   return createResponse({ message }, 500, {
-    'x-error': `internal server error: ${message}`,
+    'x-error': message,
+    ...headers,
   });
 }

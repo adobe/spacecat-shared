@@ -85,7 +85,7 @@ export default class RUMAPIClient {
   static createFrom(context) {
     if (context.rumApiClient) return context.rumApiClient;
 
-    const { RUM_API_KEY: domainkey } = context.env;
+    const { RUM_DOMAIN_KEY: domainkey } = context.env;
 
     const client = new RUMAPIClient(domainkey);
     context.rumApiClient = client;

@@ -12,18 +12,28 @@
 
 import { Response } from '@adobe/fetch';
 
-function createResponse(body, status = 200) {
+/**
+ * Creates a response with a JSON body. Defaults to 200 status.
+ * @param {object} body - JSON body.
+ * @param {number} status - Optional status code.
+ * @param {object} headers - Optional headers.
+ * @return {Response} Response.
+ */
+export function createResponse(body, status = 200, headers = {}) {
   return new Response(
     JSON.stringify(body),
     {
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json; charset=utf-8', ...headers },
       status,
     },
   );
 }
-
 export function ok(body) {
   return createResponse(body, 200);
+}
+
+export function noContent(body) {
+  return createResponse(body, 204);
 }
 
 export function badRequest(message) {
@@ -35,5 +45,7 @@ export function notFound(message) {
 }
 
 export function internalServerError(message) {
-  return createResponse({ message }, 500);
+  return createResponse({ message }, 500, {
+    'x-error': `internal server error: ${message}`,
+  });
 }

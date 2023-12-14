@@ -20,7 +20,7 @@ describe('http-utils', () => {
     const body = { key: 'value' };
     const response = ok(body);
     expect(response.status).to.equal(200);
-    expect(response.headers.get('content-type')).to.equal('application/json');
+    expect(response.headers.get('content-type')).to.equal('application/json; charset=utf-8');
     const respJson = await response.json();
     expect(respJson).to.eql(body);
   });
@@ -28,7 +28,7 @@ describe('http-utils', () => {
   it('badRequest should return a 400 response with JSON body', async () => {
     const response = badRequest('Bad Request');
     expect(response.status).to.equal(400);
-    expect(response.headers.get('content-type')).to.equal('application/json');
+    expect(response.headers.get('content-type')).to.equal('application/json; charset=utf-8');
     const respJson = await response.json();
     expect(respJson).to.eql({ message: 'Bad Request' });
   });
@@ -36,16 +36,17 @@ describe('http-utils', () => {
   it('notFound return a 404 response with JSON body', async () => {
     const response = notFound('Not Found');
     expect(response.status).to.equal(404);
-    expect(response.headers.get('content-type')).to.equal('application/json');
+    expect(response.headers.get('content-type')).to.equal('application/json; charset=utf-8');
     const respJson = await response.json();
     expect(respJson).to.eql({ message: 'Not Found' });
   });
 
   it('internalServerError should return a 500 response with JSON body', async () => {
-    const response = internalServerError('Internal Server Error');
+    const response = internalServerError('uh oh');
     expect(response.status).to.equal(500);
-    expect(response.headers.get('content-type')).to.equal('application/json');
+    expect(response.headers.get('content-type')).to.equal('application/json; charset=utf-8');
+    expect(response.headers.get('x-error')).to.equal('internal server error: uh oh');
     const respJson = await response.json();
-    expect(respJson).to.eql({ message: 'Internal Server Error' });
+    expect(respJson).to.eql({ message: 'uh oh' });
   });
 });

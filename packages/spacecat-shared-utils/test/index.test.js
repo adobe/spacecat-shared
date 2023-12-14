@@ -33,6 +33,7 @@ describe('Index Exports', () => {
     'resolveSecretsName',
     'dateAfterDays',
     'ok',
+    'noContent',
     'badRequest',
     'notFound',
     'internalServerError',

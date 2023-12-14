@@ -29,6 +29,7 @@ export {
 
 export {
   ok,
+  noContent,
   badRequest,
   notFound,
   internalServerError,

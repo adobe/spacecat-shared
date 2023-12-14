@@ -85,7 +85,7 @@ describe('rum api client', () => {
       .to.be.fulfilled;
   });
 
-  it('returns data when getDomainList api is successful', async () => {
+  it('returns data when getDomainList api is successful for all', async () => {
     nock('https://helix-pages.anywhere.run/helix-services')
       .get('/run-query@v3/dash/domain-list')
       .query({
@@ -97,15 +97,15 @@ describe('rum api client', () => {
       .to.be.fulfilled;
   });
 
-  it('returns data when getDomainList api is successful', async () => {
+  it('returns data when getDomainList api is successful for a domain', async () => {
     nock('https://helix-pages.anywhere.run/helix-services')
       .get('/run-query@v3/dash/domain-list')
       .query({
         domainkey: 'hebele',
       })
-      .reply(200, JSON.stringify({ results: { data: ['spacecat.com'] } }));
+      .reply(200, JSON.stringify({ results: { data: [{ hostname: 'spacecat.com' }] } }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
-    await expect(rumApiClient.getDomainList({}, 'spaceacat.com'))
-      .to.be.fulfilled;
+    await expect(rumApiClient.getDomainList({}, 'spacecat.com'))
+      .to.eventually.eql(['spacecat.com']);
   });
 });

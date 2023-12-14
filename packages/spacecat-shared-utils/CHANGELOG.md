@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.5.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.4.0...@adobe/spacecat-shared-utils-v1.5.0) (2023-12-14)
+
+
+### Features
+
+* http-utils functions ([#49](https://github.com/adobe-rnd/spacecat-shared/issues/49)) ([20e98fa](https://github.com/adobe-rnd/spacecat-shared/commit/20e98faa75d2f439ea5e671937f78bea706ec5d7))
+
 # [@adobe/spacecat-shared-utils-v1.4.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.3.0...@adobe/spacecat-shared-utils-v1.4.0) (2023-12-12)
 
 

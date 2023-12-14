@@ -80,7 +80,7 @@ describe('rum api client', () => {
           }],
         },
       }));
-    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.getRUMDashboard())
       .to.eventually.eql([{
         url: 'http://spacecar.com',
@@ -102,7 +102,7 @@ describe('rum api client', () => {
         checkpoint: 404,
       })
       .reply(200, JSON.stringify({ results: { data: [{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }] } }));
-    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.get404Sources())
       .to.eventually.eql([{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }]);
   });
@@ -117,7 +117,7 @@ describe('rum api client', () => {
         limit: 100000,
       })
       .reply(200, JSON.stringify({ results: { data: [] } }));
-    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.getDomainList({}, 'all'))
       .to.be.fulfilled;
   });
@@ -138,7 +138,7 @@ describe('rum api client', () => {
             { hostname: 'spacekatze.com' }],
         },
       }));
-    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.getDomainList()).to.eventually.eql(['spacecat.com', 'spacekatze.com']);
   });
 });

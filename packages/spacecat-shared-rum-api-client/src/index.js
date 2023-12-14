@@ -23,6 +23,18 @@ const APIS = {
   RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',
 };
 
+const DOMAIN_LIST_DEFAULT_PARAMS = {
+  interval: 30,
+  offset: 0,
+  limit: 100000,
+};
+
+export const RUM_DEFAULT_PARAMS = {
+  interval: 7,
+  offset: 0,
+  limit: 101,
+};
+
 const isAllDomains = (url) => url.toUpperCase() === 'ALL';
 
 export async function sendRequest(url, opts) {
@@ -93,21 +105,23 @@ export default class RUMAPIClient {
   async getRUMDashboard(params) {
     return sendRequest(createUrl(
       APIS.RUM_DASHBOARD,
-      { domainkey: this.domainkey, ...params },
+      { domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params },
     ));
   }
 
   async get404Sources(params) {
     return sendRequest(createUrl(
       APIS.RUM_SOURCES,
-      { domainkey: this.domainkey, checkpoint: 404, ...params },
+      {
+        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, checkpoint: 404, ...params,
+      },
     ));
   }
 
   async getDomainList(params, url) {
     const data = await sendRequest(createUrl(
       APIS.DOMAIN_LIST,
-      { domainkey: this.domainkey, ...params },
+      { domainkey: this.domainkey, ...DOMAIN_LIST_DEFAULT_PARAMS, ...params },
     ));
 
     const urls = data.map((row) => row.hostname);

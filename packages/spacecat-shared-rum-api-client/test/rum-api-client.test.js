@@ -65,6 +65,9 @@ describe('rum api client', () => {
       .get('/run-query@v3/rum-dashboard')
       .query({
         domainkey: 'hebele',
+        interval: 7,
+        offset: 0,
+        limit: 101,
       })
       .reply(200, JSON.stringify({
         results: {
@@ -93,6 +96,9 @@ describe('rum api client', () => {
       .get('/run-query@v3/rum-sources')
       .query({
         domainkey: 'hebele',
+        interval: 7,
+        offset: 0,
+        limit: 101,
         checkpoint: 404,
       })
       .reply(200, JSON.stringify({ results: { data: [{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }] } }));
@@ -106,6 +112,9 @@ describe('rum api client', () => {
       .get('/run-query@v3/dash/domain-list')
       .query({
         domainkey: 'hebele',
+        interval: 30,
+        offset: 0,
+        limit: 100000,
       })
       .reply(200, JSON.stringify({ results: { data: [] } }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
@@ -118,6 +127,9 @@ describe('rum api client', () => {
       .get('/run-query@v3/dash/domain-list')
       .query({
         domainkey: 'hebele',
+        interval: 30,
+        offset: 0,
+        limit: 100000,
       })
       .reply(200, JSON.stringify({ results: { data: [{ hostname: 'spacecat.com' }] } }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });

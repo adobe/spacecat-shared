@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.1.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.1...@adobe/spacecat-shared-rum-api-client-v1.1.2) (2023-12-14)
+
+
+### Bug Fixes
+
+* rum domain key env var ([b52ead5](https://github.com/adobe-rnd/spacecat-shared/commit/b52ead5217f20cb48f2026bf86d04d72671f81c5))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.1.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.0...@adobe/spacecat-shared-rum-api-client-v1.1.1) (2023-12-14)
 
 

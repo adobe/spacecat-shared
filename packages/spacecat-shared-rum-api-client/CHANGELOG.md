@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.1.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.0.0...@adobe/spacecat-shared-rum-api-client-v1.1.0) (2023-12-14)
+
+
+### Features
+
+* add rum api calls to shared ([56cccd0](https://github.com/adobe-rnd/spacecat-shared/commit/56cccd0f498eaca6a4bb35a6b64d5f0dbe68a096))
+
 # @adobe/spacecat-shared-rum-api-client-v1.0.0 (2023-12-12)
 
 

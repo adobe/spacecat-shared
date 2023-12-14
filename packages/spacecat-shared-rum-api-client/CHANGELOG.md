@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.1.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.0...@adobe/spacecat-shared-rum-api-client-v1.1.1) (2023-12-14)
+
+
+### Bug Fixes
+
+* export rumapiclient as default ([#52](https://github.com/adobe-rnd/spacecat-shared/issues/52)) ([7c5d2f5](https://github.com/adobe-rnd/spacecat-shared/commit/7c5d2f56a5822ed93d63c894ded766924905c797))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.1.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.0.0...@adobe/spacecat-shared-rum-api-client-v1.1.0) (2023-12-14)
+
+
+### Features
+
+* add rum api calls to shared ([56cccd0](https://github.com/adobe-rnd/spacecat-shared/commit/56cccd0f498eaca6a4bb35a6b64d5f0dbe68a096))
+
 # @adobe/spacecat-shared-rum-api-client-v1.0.0 (2023-12-12)
 
 

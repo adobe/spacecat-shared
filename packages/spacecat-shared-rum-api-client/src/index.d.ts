@@ -12,6 +12,12 @@
 
 import { UniversalContext } from '@adobe/helix-universal';
 
+export interface RUMAPIOptions {
+  interval: number;
+  offset: number;
+  limit: number;
+}
+
 export declare class RUMAPIClient {
   /**
    * Static factory method to create an instance of RUMAPIClient.
@@ -40,4 +46,30 @@ export declare class RUMAPIClient {
    *   to view their reports and monitor real user activities.
    */
   createBacklink(url: string, expiry: number): Promise<string>;
+
+  /**
+   * Asynchronous method to return the RUM dashboard API call response data.
+   * @param {RUMAPIOptions} params - An object representing the parameters to be included
+   *  for the RUM Dashboard API call.
+   * @returns A Promise resolving to the RUM dashboard response data.
+   */
+  getRUMDashboard(params?: RUMAPIOptions): Promise<Array<object>>;
+
+  /**
+   * Asynchronous method to return the 404 sources API call response data.
+   * @param {RUMAPIOptions} params - An object representing the parameters to be included
+   *  for the 404 sources API call.
+   * @returns A Promise resolving to the 404 sources response data.
+   */
+  get404Sources(params?: RUMAPIOptions): Promise<Array<object>>;
+
+  /**
+   * Asynchronous method to return an array with the domain for a specific url
+   *  or an array of all domain urls
+   * @param {RUMAPIOptions} params - An object representing the parameters to be included
+   * for the domain list call.
+   * @returns A Promise resolving to an array of the domain for a specific url
+   *  or an array of all domain urls .
+   */
+  getDomainList(params?: RUMAPIOptions): Promise<Array<string>>;
 }

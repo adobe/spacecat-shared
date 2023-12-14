@@ -17,7 +17,22 @@ import { fetch } from './utils.js';
 
 const APIS = {
   ROTATE_DOMAINKEYS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rotate-domainkeys',
-  RUM_DASHBOARD: 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard',
+  RUM_DASHBOARD_UI: 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard',
+  RUM_DASHBOARD: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
+  DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/dash/domain-list',
+  RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',
+};
+
+const DOMAIN_LIST_DEFAULT_PARAMS = {
+  interval: 30,
+  offset: 0,
+  limit: 100000,
+};
+
+export const RUM_DEFAULT_PARAMS = {
+  interval: 7,
+  offset: 0,
+  limit: 101,
 };
 
 export async function sendRequest(url, opts) {
@@ -85,8 +100,33 @@ export default class RUMAPIClient {
     this.domainkey = domainkey;
   }
 
+  async getRUMDashboard(params = {}) {
+    return sendRequest(createUrl(
+      APIS.RUM_DASHBOARD,
+      { domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params },
+    ));
+  }
+
+  async get404Sources(params = {}) {
+    return sendRequest(createUrl(
+      APIS.RUM_SOURCES,
+      {
+        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, checkpoint: 404, ...params,
+      },
+    ));
+  }
+
+  async getDomainList(params = {}) {
+    const data = await sendRequest(createUrl(
+      APIS.DOMAIN_LIST,
+      { domainkey: this.domainkey, ...DOMAIN_LIST_DEFAULT_PARAMS, ...params },
+    ));
+
+    return data.map((row) => row.hostname);
+  }
+
   async createBacklink(url, expiry) {
     const scopedDomainKey = await generateDomainKey(this.domainkey, url, expiry);
-    return `${APIS.RUM_DASHBOARD}?interval=${expiry}&offset=0&limit=100&url=${url}&domainkey=${scopedDomainKey}`;
+    return `${APIS.RUM_DASHBOARD_UI}?interval=${expiry}&offset=0&limit=100&url=${url}&domainkey=${scopedDomainKey}`;
   }
 }

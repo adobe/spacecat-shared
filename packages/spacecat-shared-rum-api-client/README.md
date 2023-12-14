@@ -39,6 +39,33 @@ const backlink = await rumApiClient.createBacklink(url, expiry);
 console.log(`Backlink created: ${backlink}`)
 ```
 
+### Getting RUM Dashboard Data
+
+```js
+const url = "example.com";
+
+const rumData = await rumApiClient.getRUMDashboard({ url });
+console.log(`RUM data: ${rumData}`)
+```
+
+### Getting 404 checkpoints
+
+```js
+const url = "example.com";
+
+const backlink = await rumApiClient.get404Sources({ url });
+console.log(`404 Checkpoints: ${backlink}`)
+```
+
+### Getting Edge Delivery Services Domains
+
+```js
+const url = "all";
+
+const domains = await rumApiClient.getDomainList({}, url);
+console.log(`Backlink created: ${backlink}`)
+```
+
 ## Testing
 Run the included tests with the following command:
 ```

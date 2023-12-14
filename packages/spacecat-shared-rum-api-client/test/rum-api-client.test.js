@@ -59,4 +59,86 @@ describe('rum api client', () => {
     await expect(sendRequest('https://space.cat/dummy-page'))
       .to.be.rejectedWith('Unexpected response from rum api. $.results.data is not array');
   });
+
+  it('returns data when getRUMDashboard api is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/rum-dashboard')
+      .query({
+        domainkey: 'hebele',
+        interval: 7,
+        offset: 0,
+        limit: 101,
+      })
+      .reply(200, JSON.stringify({
+        results: {
+          data: [{
+            url: 'http://spacecar.com',
+            pageviews: 11000,
+            avgcls: 0.148,
+            avginp: 65,
+            avglcp: 5239,
+          }],
+        },
+      }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    await expect(rumApiClient.getRUMDashboard())
+      .to.eventually.eql([{
+        url: 'http://spacecar.com',
+        pageviews: 11000,
+        avgcls: 0.148,
+        avginp: 65,
+        avglcp: 5239,
+      }]);
+  });
+
+  it('returns data when get404Sources api is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/rum-sources')
+      .query({
+        domainkey: 'hebele',
+        interval: 7,
+        offset: 0,
+        limit: 101,
+        checkpoint: 404,
+      })
+      .reply(200, JSON.stringify({ results: { data: [{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }] } }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    await expect(rumApiClient.get404Sources())
+      .to.eventually.eql([{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }]);
+  });
+
+  it('returns data when getDomainList api is successful for all', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/dash/domain-list')
+      .query({
+        domainkey: 'hebele',
+        interval: 30,
+        offset: 0,
+        limit: 100000,
+      })
+      .reply(200, JSON.stringify({ results: { data: [] } }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    await expect(rumApiClient.getDomainList({}, 'all'))
+      .to.be.fulfilled;
+  });
+
+  it('returns data when getDomainList api is successful for a domain', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/dash/domain-list')
+      .query({
+        domainkey: 'hebele',
+        interval: 30,
+        offset: 0,
+        limit: 100000,
+      })
+      .reply(200, JSON.stringify({
+        results: {
+          data: [
+            { hostname: 'spacecat.com' },
+            { hostname: 'spacekatze.com' }],
+        },
+      }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
+    await expect(rumApiClient.getDomainList()).to.eventually.eql(['spacecat.com', 'spacekatze.com']);
+  });
 });

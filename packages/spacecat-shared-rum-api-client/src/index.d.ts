@@ -62,7 +62,7 @@ export declare class RUMAPIClient {
    *  or an array of all domain urls
    * @param {object} params - An object representing the parameters to be included
    * for the domain list call.
-   * @param {string} url - An string representing the url to be filtered
+   * @param {string} url - A string representing the url to be filtered
    *  from the domain list call or all(representing all domains).
    * @returns A Promise resolving to an array of the domain for a specific url
    *  or an array of all domain urls .

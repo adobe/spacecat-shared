@@ -66,10 +66,26 @@ describe('rum api client', () => {
       .query({
         domainkey: 'hebele',
       })
-      .reply(200, JSON.stringify({ results: { data: [] } }));
+      .reply(200, JSON.stringify({
+        results: {
+          data: [{
+            url: 'http://spacecar.com',
+            pageviews: 11000,
+            avgcls: 0.148,
+            avginp: 65,
+            avglcp: 5239,
+          }],
+        },
+      }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
     await expect(rumApiClient.getRUMDashboard())
-      .to.be.fulfilled;
+      .to.eventually.eql([{
+        url: 'http://spacecar.com',
+        pageviews: 11000,
+        avgcls: 0.148,
+        avginp: 65,
+        avglcp: 5239,
+      }]);
   });
 
   it('returns data when get404Checkpoints api is successful', async () => {

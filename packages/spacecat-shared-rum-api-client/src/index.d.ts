@@ -50,12 +50,12 @@ export declare class RUMAPIClient {
   getRUMDashboard(params: object): Promise<Array<object>>;
 
   /**
-   * Asynchronous method to return the 404 checkpoints API call response data.
+   * Asynchronous method to return the 404 sources API call response data.
    * @param {object} params - An object representing the parameters to be included
-   *  for the 404 Checkpoints API call.
-   * @returns A Promise resolving to the 404 checkpoints response data.
+   *  for the 404 sources API call.
+   * @returns A Promise resolving to the 404 sources response data.
    */
-  get404Checkpoints(params: object): Promise<Array<object>>;
+  get404Sources(params: object): Promise<Array<object>>;
 
   /**
    * Asynchronous method to return an array with the domain for a specific url

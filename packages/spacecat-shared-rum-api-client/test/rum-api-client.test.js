@@ -88,17 +88,17 @@ describe('rum api client', () => {
       }]);
   });
 
-  it('returns data when get404Checkpoints api is successful', async () => {
+  it('returns data when get404Sources api is successful', async () => {
     nock('https://helix-pages.anywhere.run/helix-services')
-      .get('/run-query@v3/rum-checkpoint-urls')
+      .get('/run-query@v3/rum-sources')
       .query({
         domainkey: 'hebele',
         checkpoint: 404,
       })
-      .reply(200, JSON.stringify({ results: { data: [{ url: 'http://spacecar.com', views: 100 }] } }));
+      .reply(200, JSON.stringify({ results: { data: [{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }] } }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_API_KEY: 'hebele' } });
-    await expect(rumApiClient.get404Checkpoints())
-      .to.eventually.eql([{ url: 'http://spacecar.com', views: 100 }]);
+    await expect(rumApiClient.get404Sources())
+      .to.eventually.eql([{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }]);
   });
 
   it('returns data when getDomainList api is successful for all', async () => {

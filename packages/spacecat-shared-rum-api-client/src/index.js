@@ -20,7 +20,7 @@ const APIS = {
   RUM_DASHBOARD_UI: 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard',
   RUM_DASHBOARD: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
   DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/dash/domain-list',
-  NOT_FOUND_CHECKPOINTS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-checkpoint-urls',
+  RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',
 };
 
 export const isAuditForAll = (url) => url.toUpperCase() === 'ALL';
@@ -97,9 +97,9 @@ export default class RUMAPIClient {
     ));
   }
 
-  async get404Checkpoints(params) {
+  async get404Sources(params) {
     return sendRequest(createUrl(
-      APIS.NOT_FOUND_CHECKPOINTS,
+      APIS.RUM_SOURCES,
       { domainkey: this.domainkey, checkpoint: 404, ...params },
     ));
   }

@@ -33,9 +33,9 @@ const rumApiClient = new RUMAPIClient(domainKey);
 
 ```js
 const url = "https://example.com";
-const expiry = 7; // in days
+const expiryInDays = 7;
 
-const backlink = await rumApiClient.createRUMBacklink(url, expiry);
+const backlink = await rumApiClient.createRUMBacklink(url, expiryInDays);
 console.log(`Backlink created: ${backlink}`)
 ```
 
@@ -43,9 +43,9 @@ console.log(`Backlink created: ${backlink}`)
 
 ```js
 const url = "https://example.com";
-const expiry = 7; // in days
+const expiryInDays = 7;
 
-const backlink = await rumApiClient.create404Backlink(url, expiry);
+const backlink = await rumApiClient.create404Backlink(url, expiryInDays);
 console.log(`Backlink created: ${backlink}`)
 ```
 

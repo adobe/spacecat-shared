@@ -13,10 +13,10 @@
 import { UniversalContext } from '@adobe/helix-universal';
 
 export interface RUMAPIOptions {
-  interval: number;
-  offset: number;
-  limit: number;
-  url: string;
+  interval?: number;
+  offset?: number;
+  limit?: number;
+  url?: string;
 }
 
 export default class RUMAPIClient {

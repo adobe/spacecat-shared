@@ -20,7 +20,19 @@ export interface Audit {
   getExpiresAt: () => Date;
   getFullAuditRef: () => string;
   isLive: () => boolean;
+  isError: () => boolean;
   getScores: () => object;
+}
+
+// AuditConfigType defines the structure for specific audit type configurations
+export interface AuditConfigType {
+  disabled(): boolean;
+}
+
+// AuditConfig defines the structure for the overall audit configuration of a site
+export interface AuditConfig {
+  auditsDisabled: boolean;
+  auditTypeConfigs: Record<string, AuditConfigType>;
 }
 
 export interface Site {
@@ -30,6 +42,7 @@ export interface Site {
   getImsOrgId: () => string;
   getCreatedAt: () => string;
   getUpdatedAt: () => string;
+  getAuditConfig: () => AuditConfig;
   getAudits: () => Audit[];
   isLive: () => boolean;
   setAudits: (audits: Audit[]) => Site;

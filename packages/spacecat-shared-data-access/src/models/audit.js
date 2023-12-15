@@ -61,6 +61,7 @@ const Audit = (data = {}) => {
   self.getExpiresAt = () => self.state.expiresAt;
   self.getFullAuditRef = () => self.state.fullAuditRef;
   self.isLive = () => self.state.isLive;
+  self.isError = () => hasText(self.getAuditResult().runtimeError?.code);
   self.getScores = () => self.getAuditResult().scores;
 
   return Object.freeze(self);

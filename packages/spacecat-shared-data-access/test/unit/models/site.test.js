@@ -33,6 +33,27 @@ describe('Site Model Tests', () => {
       expect(site).to.be.an('object');
       expect(site.getBaseURL()).to.equal(validData.baseURL);
     });
+
+    it('creates a site with default auditConfig when none provided', () => {
+      const site = createSite({ ...validData });
+      expect(site.getAuditConfig()).to.be.an('object');
+      expect(site.getAuditConfig()).to.deep.equal({
+        auditsDisabled: false,
+        auditTypeConfigs: {},
+      });
+    });
+
+    it('creates a site with provided auditConfig', () => {
+      const auditConfig = {
+        auditsDisabled: true,
+        auditTypeConfigs: {
+          type1: { /* some config */ },
+          type2: { /* some config */ },
+        },
+      };
+      const site = createSite({ ...validData, auditConfig });
+      expect(site.getAuditConfig()).to.deep.equal(auditConfig);
+    });
   });
 
   describe('Site Object Functionality', () => {
@@ -118,6 +139,13 @@ describe('Site Model Tests', () => {
       site.toggleLive();
 
       expect(site.isLive()).to.be.true;
+    });
+
+    it('retrieves auditConfig correctly', () => {
+      const auditConfig = site.getAuditConfig();
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig).to.have.property('auditsDisabled').that.is.a('boolean');
+      expect(auditConfig).to.have.property('auditTypeConfigs').that.is.an('object');
     });
   });
 });

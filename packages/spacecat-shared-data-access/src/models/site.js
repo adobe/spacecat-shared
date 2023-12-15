@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from './base.js';
 
 /**
@@ -22,6 +22,7 @@ import { Base } from './base.js';
 const Site = (data = {}) => {
   const self = Base(data);
 
+  self.getAuditConfig = () => self.state.auditConfig;
   self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
   self.getGitHubURL = () => self.state.gitHubURL;
@@ -133,6 +134,13 @@ export const createSite = (data) => {
 
   if (!Array.isArray(newState.audits)) {
     newState.audits = [];
+  }
+
+  if (!isObject(newState.auditConfig)) {
+    newState.auditConfig = {
+      auditsDisabled: false,
+      auditTypeConfigs: {},
+    };
   }
 
   return Site(newState);

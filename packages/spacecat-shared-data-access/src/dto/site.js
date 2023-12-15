@@ -30,6 +30,7 @@ export const SiteDto = {
     createdAt: site.getCreatedAt(),
     updatedAt: site.getUpdatedAt(),
     GSI1PK: 'ALL_SITES',
+    auditConfig: site.getAuditConfig(),
   }),
 
   /**
@@ -46,6 +47,7 @@ export const SiteDto = {
       isLive: dynamoItem.isLive,
       createdAt: dynamoItem.createdAt,
       updatedAt: dynamoItem.updatedAt,
+      auditConfig: dynamoItem.auditConfig,
     };
 
     return createSite(siteData);

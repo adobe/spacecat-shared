@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.2.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.2...@adobe/spacecat-shared-rum-api-client-v1.2.0) (2023-12-15)
+
+
+### Features
+
+* add support for 404 report backlink ([0d622de](https://github.com/adobe-rnd/spacecat-shared/commit/0d622de241b51f0df625679591dd5168b5b070a7))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.1.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.1...@adobe/spacecat-shared-rum-api-client-v1.1.2) (2023-12-14)
 
 

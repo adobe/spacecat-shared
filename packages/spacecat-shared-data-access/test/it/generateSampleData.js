@@ -169,6 +169,13 @@ export default async function generateSampleData(
       GSI1PK: config.pkAllSites,
       createdAt: nowIso,
       updatedAt: nowIso,
+      auditConfig: {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          'lhs-mobile': { disabled: false },
+          cwv: { disabled: true },
+        },
+      },
     });
 
     if (i % 10 !== 0) { // Every tenth site will not have any audits

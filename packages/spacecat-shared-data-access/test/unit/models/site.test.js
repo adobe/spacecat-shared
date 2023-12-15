@@ -16,10 +16,16 @@ import { expect } from 'chai';
 import { createSite } from '../../../src/models/site.js';
 import { sleep } from '../util.js';
 
-// Constants for testing
 const validData = {
   baseURL: 'https://www.example.com',
   imsOrgId: 'org123',
+  auditConfig: {
+    auditsDisabled: false,
+    auditTypeConfigs: {
+      type1: { /* some config */ },
+      type2: { /* some config */ },
+    },
+  },
 };
 
 describe('Site Model Tests', () => {
@@ -36,23 +42,30 @@ describe('Site Model Tests', () => {
 
     it('creates a site with default auditConfig when none provided', () => {
       const site = createSite({ ...validData });
-      expect(site.getAuditConfig()).to.be.an('object');
-      expect(site.getAuditConfig()).to.deep.equal({
-        auditsDisabled: false,
-        auditTypeConfigs: {},
-      });
+      const auditConfig = site.getAuditConfig();
+
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig.auditsDisabled()).be.false;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
     });
 
     it('creates a site with provided auditConfig', () => {
-      const auditConfig = {
+      const newAuditConfig = {
         auditsDisabled: true,
         auditTypeConfigs: {
           type1: { /* some config */ },
           type2: { /* some config */ },
         },
       };
-      const site = createSite({ ...validData, auditConfig });
-      expect(site.getAuditConfig()).to.deep.equal(auditConfig);
+      const site = createSite({ ...validData, auditConfig: newAuditConfig });
+      const auditConfig = site.getAuditConfig();
+
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig.auditsDisabled()).to.be.true;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
+      expect(auditConfig.getAuditTypeConfig('type2')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.true;
     });
   });
 
@@ -141,11 +154,21 @@ describe('Site Model Tests', () => {
       expect(site.isLive()).to.be.true;
     });
 
-    it('retrieves auditConfig correctly', () => {
-      const auditConfig = site.getAuditConfig();
+    it('handles AuditConfig and AuditConfigType correctly', () => {
+      const auditConfigData = {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          type1: { /* some config */ },
+          type2: { /* some config */ },
+        },
+      };
+      const newSite = createSite({ ...validData, auditConfig: auditConfigData });
+      const auditConfig = newSite.getAuditConfig();
+
       expect(auditConfig).to.be.an('object');
-      expect(auditConfig).to.have.property('auditsDisabled').that.is.a('boolean');
-      expect(auditConfig).to.have.property('auditTypeConfigs').that.is.an('object');
+      expect(auditConfig.auditsDisabled()).to.be.false;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
     });
   });
 });

@@ -11,7 +11,9 @@
  */
 
 import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+
 import { Base } from './base.js';
+import AuditConfig from './site/audit-config.js';
 
 /**
  * Creates a new Site.
@@ -142,6 +144,8 @@ export const createSite = (data) => {
       auditTypeConfigs: {},
     };
   }
+
+  newState.auditConfig = AuditConfig(newState.auditConfig);
 
   return Site(newState);
 };

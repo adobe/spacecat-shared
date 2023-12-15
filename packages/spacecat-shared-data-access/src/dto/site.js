@@ -11,6 +11,7 @@
  */
 
 import { createSite } from '../models/site.js';
+import AuditConfig from '../models/site/audit-config.js';
 
 /**
  * Data transfer object for Site.
@@ -30,7 +31,7 @@ export const SiteDto = {
     createdAt: site.getCreatedAt(),
     updatedAt: site.getUpdatedAt(),
     GSI1PK: 'ALL_SITES',
-    auditConfig: site.getAuditConfig(),
+    auditConfig: AuditConfig.toDynamoItem(site.getAuditConfig()),
   }),
 
   /**

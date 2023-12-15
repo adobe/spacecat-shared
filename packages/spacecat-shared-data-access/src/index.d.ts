@@ -31,8 +31,8 @@ export interface AuditConfigType {
 
 // AuditConfig defines the structure for the overall audit configuration of a site
 export interface AuditConfig {
-  auditsDisabled: boolean;
-  auditTypeConfigs: Record<string, AuditConfigType>;
+  auditsDisabled: () => boolean;
+  getAuditConfigForType: (auditType: string) => AuditConfigType;
 }
 
 export interface Site {

@@ -29,13 +29,23 @@ const domainKey = "your-domain-key";
 const rumApiClient = new RUMAPIClient(domainKey);
 ```
 
-### Creating a Backlink
+### Creating a RUM Backlink
 
 ```js
 const url = "https://example.com";
 const expiry = 7; // in days
 
-const backlink = await rumApiClient.createBacklink(url, expiry);
+const backlink = await rumApiClient.createRUMBacklink(url, expiry);
+console.log(`Backlink created: ${backlink}`)
+```
+
+### Creating a 404 Report Backlink
+
+```js
+const url = "https://example.com";
+const expiry = 7; // in days
+
+const backlink = await rumApiClient.create404Backlink(url, expiry);
 console.log(`Backlink created: ${backlink}`)
 ```
 

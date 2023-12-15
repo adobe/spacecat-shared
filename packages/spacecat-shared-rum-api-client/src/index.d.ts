@@ -39,14 +39,24 @@ export default class RUMAPIClient {
   constructor(domainkey: string);
 
   /**
-   * Asynchronous method to create a backlink.
+   * Asynchronous method to create a RUM backlink.
    * @param {string} url - A string representing the URL for the backlink.
    * @param {number} expiry - An integer representing the expiry value for the backlink.
    * @returns A Promise resolving to a string representing url of the created backlink.
    * @remarks This method creates a backlink to the RUM dashboard, allowing users
    *   to view their reports and monitor real user activities.
    */
-  createBacklink(url: string, expiry: number): Promise<string>;
+  createRUMBacklink(url: string, expiry: number): Promise<string>;
+
+  /**
+   * Asynchronous method to create a 404 backlink.
+   * @param {string} url - A string representing the URL for the backlink.
+   * @param {number} expiry - An integer representing the expiry value for the backlink.
+   * @returns A Promise resolving to a string representing url of the created backlink.
+   * @remarks This method creates a backlink to the 404 report, allowing users
+   *   to view their 404 pages.
+   */
+  create404Backlink(url: string, expiry: number): Promise<string>;
 
   /**
    * Asynchronous method to return the RUM dashboard API call response data.

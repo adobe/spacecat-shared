@@ -18,6 +18,7 @@ import { fetch } from './utils.js';
 const APIS = {
   ROTATE_DOMAINKEYS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rotate-domainkeys',
   RUM_DASHBOARD_UI: 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard',
+  NOT_FOUND_DASHBOARD_UI: 'https://main--franklin-dashboard--adobe.hlx.live/views/404-report',
   RUM_DASHBOARD: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
   DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/dash/domain-list',
   RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',
@@ -81,6 +82,11 @@ async function generateDomainKey(domainkey, url, expiry) {
   return data[0].key;
 }
 
+async function createBacklink(dashboardUrl, domainKey, domainUrl, expiry) {
+  const scopedDomainKey = await generateDomainKey(domainKey, domainUrl, expiry);
+  return `${dashboardUrl}?interval=${expiry}&offset=0&limit=100&url=${domainUrl}&domainkey=${scopedDomainKey}`;
+}
+
 export default class RUMAPIClient {
   static createFrom(context) {
     if (context.rumApiClient) return context.rumApiClient;
@@ -125,8 +131,11 @@ export default class RUMAPIClient {
     return data.map((row) => row.hostname);
   }
 
-  async createBacklink(url, expiry) {
-    const scopedDomainKey = await generateDomainKey(this.domainkey, url, expiry);
-    return `${APIS.RUM_DASHBOARD_UI}?interval=${expiry}&offset=0&limit=100&url=${url}&domainkey=${scopedDomainKey}`;
+  async createRUMBacklink(url, expiry) {
+    return createBacklink(APIS.RUM_DASHBOARD_UI, this.domainkey, url, expiry);
+  }
+
+  async create404Backlink(url, expiry) {
+    return createBacklink(APIS.NOT_FOUND_DASHBOARD_UI, this.domainkey, url, expiry);
   }
 }

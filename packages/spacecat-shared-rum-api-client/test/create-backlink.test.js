@@ -58,9 +58,9 @@ describe('backlink creation', () => {
   it('rejects when required params not provided', async () => {
     const client = RUMAPIClient.createFrom(context);
 
-    await expect(client.createBacklink())
+    await expect(client.createRUMBacklink())
       .to.be.rejectedWith('Invalid input: url and expiry date parameters are required');
-    await expect(client.createBacklink('url'))
+    await expect(client.createRUMBacklink('url'))
       .to.be.rejectedWith('Invalid input: url and expiry date parameters are required');
   });
 
@@ -72,7 +72,7 @@ describe('backlink creation', () => {
       .query(params)
       .reply(200, emptyResponse);
 
-    await expect(client.createBacklink(finalUrl, 7))
+    await expect(client.createRUMBacklink(finalUrl, 7))
       .to.be.rejectedWith('Unexpected response: Rum api returned empty result');
   });
 
@@ -84,7 +84,7 @@ describe('backlink creation', () => {
       .query(params)
       .reply(200, wrongKeyResponse);
 
-    await expect(client.createBacklink(finalUrl, 7))
+    await expect(client.createRUMBacklink(finalUrl, 7))
       .to.be.rejectedWith('Unexpected response: Response was not successful');
   });
 
@@ -96,11 +96,11 @@ describe('backlink creation', () => {
       .query(params)
       .reply(200, nullKeyResponse);
 
-    await expect(client.createBacklink(finalUrl, 7))
+    await expect(client.createRUMBacklink(finalUrl, 7))
       .to.be.rejectedWith('Rum api returned null domain key');
   });
 
-  it('returns scoped domain key when successful', async () => {
+  it('returns rum backlink when successful', async () => {
     const client = RUMAPIClient.createFrom(context);
     const expectedBacklink = 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard?interval=7&offset=0&limit=100&url=www.space.cat&domainkey=scoped-domain-key';
 
@@ -109,7 +109,20 @@ describe('backlink creation', () => {
       .query(params)
       .reply(200, successKeyResponse);
 
-    const backlink = await client.createBacklink(finalUrl, 7);
+    const backlink = await client.createRUMBacklink(finalUrl, 7);
+    expect(backlink).to.equal(expectedBacklink);
+  });
+
+  it('returns 404 report backlink when successful', async () => {
+    const client = RUMAPIClient.createFrom(context);
+    const expectedBacklink = 'https://main--franklin-dashboard--adobe.hlx.live/views/404-report?interval=7&offset=0&limit=100&url=www.space.cat&domainkey=scoped-domain-key';
+
+    nock('https://helix-pages.anywhere.run')
+      .post('/helix-services/run-query@v3/rotate-domainkeys')
+      .query(params)
+      .reply(200, successKeyResponse);
+
+    const backlink = await client.create404Backlink(finalUrl, 7);
     expect(backlink).to.equal(expectedBacklink);
   });
 });

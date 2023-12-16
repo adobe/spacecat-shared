@@ -403,7 +403,7 @@ describe('DynamoDB Integration Test', async () => {
   });
 
   it('updates audit configurations for a site', async () => {
-    const siteToUpdate = await dataAccess.getSiteByBaseURL('https://example1.com');
+    const siteToUpdate = await dataAccess.getSiteByBaseURL('https://example2.com');
 
     // Update all audits to be disabled
     siteToUpdate.setAllAuditsDisabled(true);

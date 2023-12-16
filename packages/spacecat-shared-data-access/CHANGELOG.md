@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.3.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.3.1...@adobe/spacecat-shared-data-access-v1.3.2) (2023-12-16)
+
+
+### Bug Fixes
+
+* GSI sort key when error ([#62](https://github.com/adobe-rnd/spacecat-shared/issues/62)) ([dbb6a91](https://github.com/adobe-rnd/spacecat-shared/commit/dbb6a91f75fa9492a621de7b258cbebe38fe3ac7))
+
 # [@adobe/spacecat-shared-data-access-v1.3.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.3.0...@adobe/spacecat-shared-data-access-v1.3.1) (2023-12-16)
 
 

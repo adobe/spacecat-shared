@@ -10,9 +10,21 @@
  * governing permissions and limitations under the License.
  */
 
-const AuditConfigType = (data = {}, allAuditsDisabled = false) => ({
-  disabled: () => allAuditsDisabled || data.disabled || false,
-});
+const AuditConfigType = (data = {}) => {
+  const state = {
+    disabled: data.disabled || false,
+  };
+
+  const self = {
+    disabled: () => state.disabled,
+
+    updateDisabled: (newValue) => {
+      state.disabled = newValue;
+    },
+  };
+
+  return Object.freeze(self);
+};
 
 AuditConfigType.fromDynamoItem = (dynamoItem) => {
   const auditConfigTypeData = {

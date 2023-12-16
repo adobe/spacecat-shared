@@ -68,6 +68,18 @@ const Site = (data = {}) => {
     return self;
   }; */
 
+  self.setAllAuditsDisabled = (disabled) => {
+    self.state.auditConfig.updateAuditsDisabled(disabled);
+    self.touch();
+    return self;
+  };
+
+  self.updateAuditTypeConfig = (type, config) => {
+    self.state.auditConfig.updateAuditTypeConfig(type, config);
+    self.touch();
+    return self;
+  };
+
   /**
    * Updates the GitHub URL belonging to the site.
    * @param {string} gitHubURL - The GitHub URL.

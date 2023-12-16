@@ -9,14 +9,9 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 import AuditConfigType from './audit-config-type.js';
 
-/**
- * Initializes the audit type configs. If auditsDisabled is true, all audit types will be disabled.
- * @param {object} auditTypeConfigs - Object containing audit type configs.
- * @param {boolean} auditsDisabled - Flag indicating if all audits are disabled.
- * @return {object} Object containing audit type configs.
- */
 function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
   return Object.entries(auditTypeConfigs || {}).reduce((acc, [key, value]) => {
     acc[key] = AuditConfigType(value, auditsDisabled);
@@ -25,12 +20,24 @@ function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
 }
 
 const AuditConfig = (data = {}) => {
-  const auditTypeConfigs = getAuditTypeConfigs(data.auditTypeConfigs, data.auditsDisabled);
-  return {
-    auditsDisabled: () => data.auditsDisabled || false,
-    getAuditTypeConfigs: () => auditTypeConfigs,
-    getAuditTypeConfig: (type) => auditTypeConfigs[type],
+  const state = {
+    auditsDisabled: data.auditsDisabled || false,
+    auditTypeConfigs: getAuditTypeConfigs(data.auditTypeConfigs, data.auditsDisabled),
   };
+
+  const self = {
+    auditsDisabled: () => state.auditsDisabled,
+    getAuditTypeConfigs: () => state.auditTypeConfigs,
+    getAuditTypeConfig: (type) => state.auditTypeConfigs[type],
+    updateAuditsDisabled: (newValue) => {
+      state.auditsDisabled = newValue;
+    },
+    updateAuditTypeConfig: (type, config) => {
+      state.auditTypeConfigs[type] = AuditConfigType(config);
+    },
+  };
+
+  return Object.freeze(self);
 };
 
 AuditConfig.fromDynamoItem = (dynamoItem) => AuditConfig(dynamoItem);

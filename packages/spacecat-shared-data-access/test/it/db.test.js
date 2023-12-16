@@ -401,4 +401,22 @@ describe('DynamoDB Integration Test', async () => {
     );
     expect(latestAuditAfterRemoval).to.be.null;
   });
+
+  it('updates audit configurations for a site', async () => {
+    const siteToUpdate = await dataAccess.getSiteByBaseURL('https://example2.com');
+
+    // Update all audits to be disabled
+    siteToUpdate.setAllAuditsDisabled(true);
+    await dataAccess.updateSite(siteToUpdate);
+
+    let updatedSite = await dataAccess.getSiteByID(siteToUpdate.getId());
+    expect(updatedSite.getAuditConfig().auditsDisabled()).to.be.true;
+
+    // Update a specific audit type configuration
+    siteToUpdate.updateAuditTypeConfig('type1', { disabled: false });
+    await dataAccess.updateSite(siteToUpdate);
+
+    updatedSite = await dataAccess.getSiteByID(siteToUpdate.getId());
+    expect(updatedSite.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.false;
+  });
 });

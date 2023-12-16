@@ -63,9 +63,9 @@ describe('Site Model Tests', () => {
       expect(auditConfig).to.be.an('object');
       expect(auditConfig.auditsDisabled()).to.be.true;
       expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
       expect(auditConfig.getAuditTypeConfig('type2')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.true;
+      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.false;
     });
   });
 
@@ -153,6 +153,14 @@ describe('Site Model Tests', () => {
 
       expect(site.isLive()).to.be.true;
     });
+  });
+
+  describe('AuditConfig Integration', () => {
+    let site;
+
+    beforeEach(() => {
+      site = createSite(validData);
+    });
 
     it('handles AuditConfig and AuditConfigType correctly', () => {
       const auditConfigData = {
@@ -169,6 +177,21 @@ describe('Site Model Tests', () => {
       expect(auditConfig.auditsDisabled()).to.be.false;
       expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
       expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
+    });
+
+    it('sets all audits disabled correctly', () => {
+      site.setAllAuditsDisabled(true);
+      expect(site.getAuditConfig().auditsDisabled()).to.be.true;
+    });
+
+    it('updates a specific audit type configuration', () => {
+      site.updateAuditTypeConfig('type1', { disabled: true });
+      expect(site.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.true;
+    });
+
+    it('adds a new audit type configuration if it does not exist', () => {
+      site.updateAuditTypeConfig('type3', { disabled: true });
+      expect(site.getAuditConfig().getAuditTypeConfig('type3').disabled()).to.be.true;
     });
   });
 });

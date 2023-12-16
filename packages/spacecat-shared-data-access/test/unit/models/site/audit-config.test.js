@@ -35,7 +35,7 @@ describe('AuditConfig Tests', () => {
       const auditConfig = AuditConfig(data);
       expect(auditConfig.auditsDisabled()).to.be.true;
       expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
-      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.true;
+      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.false;
     });
   });
 
@@ -83,6 +83,69 @@ describe('AuditConfig Tests', () => {
       const auditConfig = AuditConfig(data);
       const typeConfigs = auditConfig.getAuditTypeConfigs();
       expect(typeConfigs).to.be.an('object').that.is.empty;
+    });
+  });
+
+  describe('updateAuditsDisabled Method', () => {
+    it('updates the auditsDisabled state to true', () => {
+      const auditConfig = AuditConfig({ auditsDisabled: false });
+      auditConfig.updateAuditsDisabled(true);
+      expect(auditConfig.auditsDisabled()).to.be.true;
+    });
+
+    it('updates the auditsDisabled state to false', () => {
+      const auditConfig = AuditConfig({ auditsDisabled: true });
+      auditConfig.updateAuditsDisabled(false);
+      expect(auditConfig.auditsDisabled()).to.be.false;
+    });
+
+    it('updates auditTypeConfigs when auditsDisabled changes', () => {
+      const data = {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          type1: { disabled: true },
+          type2: { disabled: false },
+        },
+      };
+      const auditConfig = AuditConfig(data);
+
+      auditConfig.updateAuditsDisabled(true);
+
+      expect(auditConfig.auditsDisabled()).to.be.true;
+    });
+  });
+
+  describe('updateAuditTypeConfig Method', () => {
+    it('updates a specific audit type configuration', () => {
+      const data = {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          type1: { disabled: false },
+          type2: { disabled: false },
+        },
+      };
+      const auditConfig = AuditConfig(data);
+
+      // Update the configuration for type1
+      auditConfig.updateAuditTypeConfig('type1', { disabled: true });
+
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
+      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.false;
+    });
+
+    it('adds a new audit type configuration if it does not exist', () => {
+      const data = {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          type1: { disabled: false },
+        },
+      };
+      const auditConfig = AuditConfig(data);
+
+      // Add a new configuration for type2
+      auditConfig.updateAuditTypeConfig('type2', { disabled: true });
+
+      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.true;
     });
   });
 

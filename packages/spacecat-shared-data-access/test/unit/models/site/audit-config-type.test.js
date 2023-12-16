@@ -30,7 +30,7 @@ describe('AuditConfigType Tests', () => {
 
     it('considers allAuditsDisabled flag', () => {
       const auditConfigType = AuditConfigType({}, true);
-      expect(auditConfigType.disabled()).to.be.true;
+      expect(auditConfigType.disabled()).to.be.false;
     });
   });
 
@@ -45,17 +45,39 @@ describe('AuditConfigType Tests', () => {
       expect(auditConfigType.disabled()).to.be.false;
     });
 
-    it('returns true if allAuditsDisabled is true regardless of data.disabled', () => {
+    it('returns false if allAuditsDisabled is true regardless', () => {
       const auditConfigType = AuditConfigType({ disabled: false }, true);
+      expect(auditConfigType.disabled()).to.be.false;
+    });
+  });
+
+  describe('updateDisabled Method', () => {
+    it('updates the disabled status of the audit type', () => {
+      const auditConfigType = AuditConfigType({ disabled: false });
+
+      // Update the disabled status
+      auditConfigType.updateDisabled(true);
+
       expect(auditConfigType.disabled()).to.be.true;
+    });
+
+    it('updates the disabled status independently of allAuditsDisabled flag', () => {
+      // The allAuditsDisabled flag is set to true initially
+      const auditConfigType = AuditConfigType({ disabled: false }, true);
+
+      // Update the disabled status
+      auditConfigType.updateDisabled(false);
+
+      // The updateDisabled method should update the state regardless of allAuditsDisabled flag
+      expect(auditConfigType.disabled()).to.be.false;
     });
   });
 
   describe('fromDynamoItem Static Method', () => {
     it('correctly converts from DynamoDB item', () => {
       const dynamoItem = { disabled: true };
-      const auditConfigType = AuditConfigType.fromDynamoItem(dynamoItem);
-      expect(auditConfigType.disabled()).to.be.true;
+      const typeConfig = AuditConfigType.fromDynamoItem(dynamoItem);
+      expect(typeConfig.disabled()).to.be.true;
     });
   });
 

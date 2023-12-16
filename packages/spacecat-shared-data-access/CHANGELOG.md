@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.3.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.2.7...@adobe/spacecat-shared-data-access-v1.3.0) (2023-12-16)
+
+
+### Features
+
+* add audit config ([#59](https://github.com/adobe-rnd/spacecat-shared/issues/59)) ([f851862](https://github.com/adobe-rnd/spacecat-shared/commit/f8518623a8b8e4e337b3c44a16b65724a953596a))
+
 # [@adobe/spacecat-shared-data-access-v1.2.7](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.2.6...@adobe/spacecat-shared-data-access-v1.2.7) (2023-12-11)
 
 

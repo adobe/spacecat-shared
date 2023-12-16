@@ -32,6 +32,10 @@ const AUDIT_TYPE_PROPERTIES = {
  * @returns {boolean} - True if valid, false otherwise.
  */
 const validateScores = (auditResult, auditType) => {
+  if (isObject(auditResult.runtimeError)) {
+    return true;
+  }
+
   const expectedProperties = AUDIT_TYPE_PROPERTIES[auditType];
   if (!expectedProperties) {
     throw new Error(`Unknown audit type: ${auditType}`);

@@ -32,10 +32,16 @@ export const AuditDto = {
    * @returns {{siteId, auditedAt, auditResult, auditType, expiresAt, fullAuditRef, SK: string}}
    */
   toDynamoItem: (audit, latestAudit = false) => {
-    const latestAuditProps = latestAudit ? {
-      GSI1PK: 'ALL_LATEST_AUDITS',
-      GSI1SK: `${audit.getAuditType()}#${Object.values(audit.getScores()).join('#')}`,
-    } : {};
+    const GSI1PK = 'ALL_LATEST_AUDITS';
+    let GSI1SK;
+
+    if (audit.isError()) {
+      GSI1SK = `${audit.getAuditType()}#error`;
+    } else {
+      GSI1SK = `${audit.getAuditType()}#${Object.values(audit.getScores()).join('#')}`;
+    }
+
+    const latestAuditProps = latestAudit ? { GSI1PK, GSI1SK } : {};
 
     return {
       siteId: audit.getSiteId(),

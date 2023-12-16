@@ -206,6 +206,30 @@ describe('Audit Access Pattern Tests', () => {
       expect(result.getScores()).to.be.an('object');
     });
 
+    it('successfully adds an error audit', async () => {
+      const auditResult = {
+        ...auditData.auditResult,
+        runtimeError: {
+          code: 'NO_FCP',
+          message: 'No FCP found',
+        },
+      };
+      const result = await exportedFunctions.addAudit({
+        ...auditData,
+        auditResult,
+      });
+
+      // Once for 'audits' and once for 'latest_audits'
+      expect(mockDynamoClient.putItem.calledTwice).to.be.true;
+      expect(result.getSiteId()).to.equal(auditData.siteId);
+      expect(result.getAuditType()).to.equal(auditData.auditType);
+      expect(result.getAuditedAt()).to.equal(auditData.auditedAt);
+      expect(result.getAuditResult()).to.deep.equal(auditResult);
+      expect(result.getFullAuditRef()).to.equal(auditData.fullAuditRef);
+      expect(result.isError()).to.be.true;
+      expect(result.getScores()).to.be.an('object');
+    });
+
     it('throws an error if audit already exists', async () => {
       mockDynamoClient.getItem.resolves(auditData);
 

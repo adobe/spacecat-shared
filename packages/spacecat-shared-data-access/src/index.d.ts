@@ -24,15 +24,39 @@ export interface Audit {
   getScores: () => object;
 }
 
-// AuditConfigType defines the structure for specific audit type configurations
+/**
+ * AuditConfigType defines the structure for specific audit type configurations
+ */
 export interface AuditConfigType {
+  /**
+   * Returns true if the audit type is disabled for the site. If an audit type is disabled, no
+   * audits of that type will be scheduled for the site.
+   * @returns True if the audit type is disabled for the site
+   */
   disabled(): boolean;
 }
 
-// AuditConfig defines the structure for the overall audit configuration of a site
+/**
+ * AuditConfig defines the structure for the overall audit configuration of a site
+ */
 export interface AuditConfig {
+  /**
+   * Returns true if audits are disabled for the site. If audits are disabled, no audits will be
+   * scheduled for the site. Overrides any audit type specific configurations.
+   * @returns True if audits are disabled for the site
+   */
   auditsDisabled: () => boolean;
-  getAuditConfigForType: (auditType: string) => AuditConfigType;
+  /**
+   * Returns the audit config for a specific audit type. The audit type is the key.
+   * @param auditType The audit type to get the config for
+   * @returns The audit config for the audit type
+   */
+  getAuditTypeConfig: (auditType: string) => AuditConfigType;
+  /**
+   * Returns the audit configs for all audit types. The keys are the audit types.
+   * @returns The audit configs for all audit types
+   */
+  getAuditTypeConfigs: () => object;
 }
 
 export interface Site {

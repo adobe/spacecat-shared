@@ -39,6 +39,10 @@
           "AttributeType": "S"
         },
         {
+          "AttributeName": "auditConfig",
+          "AttributeType": "M"
+        },
+        {
           "AttributeName": "createdAt",
           "AttributeType": "S"
         },

@@ -16,10 +16,16 @@ import { expect } from 'chai';
 import { createSite } from '../../../src/models/site.js';
 import { sleep } from '../util.js';
 
-// Constants for testing
 const validData = {
   baseURL: 'https://www.example.com',
   imsOrgId: 'org123',
+  auditConfig: {
+    auditsDisabled: false,
+    auditTypeConfigs: {
+      type1: { /* some config */ },
+      type2: { /* some config */ },
+    },
+  },
 };
 
 describe('Site Model Tests', () => {
@@ -32,6 +38,34 @@ describe('Site Model Tests', () => {
       const site = createSite({ ...validData });
       expect(site).to.be.an('object');
       expect(site.getBaseURL()).to.equal(validData.baseURL);
+    });
+
+    it('creates a site with default auditConfig when none provided', () => {
+      const site = createSite({ ...validData });
+      const auditConfig = site.getAuditConfig();
+
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig.auditsDisabled()).be.false;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
+    });
+
+    it('creates a site with provided auditConfig', () => {
+      const newAuditConfig = {
+        auditsDisabled: true,
+        auditTypeConfigs: {
+          type1: { /* some config */ },
+          type2: { /* some config */ },
+        },
+      };
+      const site = createSite({ ...validData, auditConfig: newAuditConfig });
+      const auditConfig = site.getAuditConfig();
+
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig.auditsDisabled()).to.be.true;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
+      expect(auditConfig.getAuditTypeConfig('type2')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.true;
     });
   });
 
@@ -118,6 +152,23 @@ describe('Site Model Tests', () => {
       site.toggleLive();
 
       expect(site.isLive()).to.be.true;
+    });
+
+    it('handles AuditConfig and AuditConfigType correctly', () => {
+      const auditConfigData = {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          type1: { /* some config */ },
+          type2: { /* some config */ },
+        },
+      };
+      const newSite = createSite({ ...validData, auditConfig: auditConfigData });
+      const auditConfig = newSite.getAuditConfig();
+
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig.auditsDisabled()).to.be.false;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
     });
   });
 });

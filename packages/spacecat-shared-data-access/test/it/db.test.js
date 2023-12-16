@@ -36,6 +36,15 @@ function checkSite(site) {
   expect(isIsoDate(site.getUpdatedAt())).to.be.true;
   expect(site.getAudits()).to.be.an('array');
   expect(site.isLive()).to.be.a('boolean');
+
+  const auditConfig = site.getAuditConfig();
+  expect(auditConfig).to.be.an('object');
+  expect(auditConfig.auditsDisabled()).to.be.a('boolean').which.is.false;
+  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE)).to.be.an('object');
+  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).disabled()).to.be.a('boolean').which.is.false;
+  expect(auditConfig.getAuditTypeConfig('non-existing-type')).to.be.undefined;
+  expect(auditConfig.getAuditTypeConfig('cwv')).to.be.an('object');
+  expect(auditConfig.getAuditTypeConfig('cwv').disabled()).to.be.a('boolean').which.is.true;
 }
 
 function checkAudit(audit) {
@@ -152,6 +161,13 @@ describe('DynamoDB Integration Test', async () => {
       gitHubURL: 'https://github.com/some-org/test-repo',
       imsOrgId: 'newOrg123',
       audits: [],
+      auditConfig: {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          'lhs-mobile': { disabled: false },
+          cwv: { disabled: true },
+        },
+      },
     };
 
     const addedSite = await dataAccess.addSite(newSiteData);

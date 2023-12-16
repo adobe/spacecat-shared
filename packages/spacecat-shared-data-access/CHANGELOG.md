@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.3.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.3.0...@adobe/spacecat-shared-data-access-v1.3.1) (2023-12-16)
+
+
+### Bug Fixes
+
+* type def / jsdoc ([#61](https://github.com/adobe-rnd/spacecat-shared/issues/61)) ([078f9e6](https://github.com/adobe-rnd/spacecat-shared/commit/078f9e6855d3f475f3a746561758aaefb5cb3c79))
+
 # [@adobe/spacecat-shared-data-access-v1.3.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.2.7...@adobe/spacecat-shared-data-access-v1.3.0) (2023-12-16)
 
 

@@ -11,6 +11,12 @@
  */
 import AuditConfigType from './audit-config-type.js';
 
+/**
+ * Initializes the audit type configs. If auditsDisabled is true, all audit types will be disabled.
+ * @param {object} auditTypeConfigs - Object containing audit type configs.
+ * @param {boolean} auditsDisabled - Flag indicating if all audits are disabled.
+ * @return {object} Object containing audit type configs.
+ */
 function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
   return Object.entries(auditTypeConfigs || {}).reduce((acc, [key, value]) => {
     acc[key] = AuditConfigType(value, auditsDisabled);

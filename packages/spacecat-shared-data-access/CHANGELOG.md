@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.4.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.4.0...@adobe/spacecat-shared-data-access-v1.4.1) (2023-12-18)
+
+
+### Bug Fixes
+
+* update dynamo client ([#65](https://github.com/adobe-rnd/spacecat-shared/issues/65)) ([cc09041](https://github.com/adobe-rnd/spacecat-shared/commit/cc09041200dfe23c0a83c384fc9695ac972564e9))
+
 # [@adobe/spacecat-shared-data-access-v1.4.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.3.2...@adobe/spacecat-shared-data-access-v1.4.0) (2023-12-16)
 
 

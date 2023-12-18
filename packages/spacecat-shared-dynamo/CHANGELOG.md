@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.2.5](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.4...@adobe/spacecat-shared-dynamo-v1.2.5) (2023-12-18)
+
+
+### Bug Fixes
+
+* auto-remove undefined values ([#64](https://github.com/adobe-rnd/spacecat-shared/issues/64)) ([ce9abac](https://github.com/adobe-rnd/spacecat-shared/commit/ce9abac0f99471616bd2fb971e18953791e364c3))
+
 # [@adobe/spacecat-shared-dynamo-v1.2.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.3...@adobe/spacecat-shared-dynamo-v1.2.4) (2023-12-05)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.4.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.4.1...@adobe/spacecat-shared-data-access-v1.4.2) (2023-12-20)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-js-v3 monorepo to v3.477.0 ([#68](https://github.com/adobe-rnd/spacecat-shared/issues/68)) ([492913f](https://github.com/adobe-rnd/spacecat-shared/commit/492913f0011d557b7c91ba631c13ced171bc2ce9))
+
 # [@adobe/spacecat-shared-data-access-v1.4.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.4.0...@adobe/spacecat-shared-data-access-v1.4.1) (2023-12-18)
 
 

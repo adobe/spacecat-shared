@@ -31,8 +31,8 @@
   "dependencies": {
     "@adobe/spacecat-shared-dynamo": "1.2.5",
     "@adobe/spacecat-shared-utils": "1.2.0",
-    "@aws-sdk/client-dynamodb": "3.477.0",
-    "@aws-sdk/lib-dynamodb": "3.477.0",
+    "@aws-sdk/client-dynamodb": "3.478.0",
+    "@aws-sdk/lib-dynamodb": "3.478.0",
     "uuid": "9.0.1"
   },
   "devDependencies": {

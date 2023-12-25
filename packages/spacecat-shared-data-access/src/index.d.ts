@@ -195,6 +195,11 @@ export interface Site {
 }
 
 export interface DataAccess {
+  getAuditForSite: (
+    sitedId: string,
+    auditType: string,
+    auditedAt: string,
+  ) => Promise<Audit | null>;
   getAuditsForSite: (
     siteId: string,
     auditType?: string,

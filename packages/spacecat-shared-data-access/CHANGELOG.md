@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.4.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.4.3...@adobe/spacecat-shared-data-access-v1.4.4) (2023-12-25)
+
+
+### Bug Fixes
+
+* add missing pattern to interface ([#72](https://github.com/adobe-rnd/spacecat-shared/issues/72)) ([0eacbff](https://github.com/adobe-rnd/spacecat-shared/commit/0eacbff39dbc12d604e40ae94285533f7804ca0a))
+
 # [@adobe/spacecat-shared-data-access-v1.4.3](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.4.2...@adobe/spacecat-shared-data-access-v1.4.3) (2023-12-23)
 
 

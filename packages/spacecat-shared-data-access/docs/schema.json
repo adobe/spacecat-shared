@@ -219,6 +219,10 @@
           "AttributeType": "M"
         },
         {
+          "AttributeName": "previousAuditResult",
+          "AttributeType": "M"
+        },
+        {
           "AttributeName": "expiresAt",
           "AttributeType": "N"
         },

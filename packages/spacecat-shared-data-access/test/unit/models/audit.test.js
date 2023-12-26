@@ -48,6 +48,21 @@ describe('Audit Model Tests', () => {
       expect(() => createAudit({ ...validData, auditResult: 'not-an-object' })).to.throw('Audit result must be an object');
     });
 
+    it('throws an error if previous audit result is not an object', () => {
+      expect(() => createAudit({ ...validData, previousAuditResult: 'not-an-object' }))
+        .to.throw('Previous audit result must be an object');
+    });
+
+    it('throws an error if previous audit result is missing scores property', () => {
+      expect(() => createAudit({ ...validData, previousAuditResult: {} }))
+        .to.throw('Missing scores property for audit type \'lhs-mobile\'');
+    });
+
+    it('throws an error if previous audit result is invalid', () => {
+      expect(() => createAudit({ ...validData, previousAuditResult: { scores: {} } }))
+        .to.throw('Missing expected property \'performance\' for audit type \'lhs-mobile\'');
+    });
+
     it('throws an error if fullAuditRef is not provided', () => {
       expect(() => createAudit({ ...validData, fullAuditRef: '' })).to.throw('Full audit ref must be provided');
     });
@@ -62,6 +77,13 @@ describe('Audit Model Tests', () => {
       expect(audit.getAuditType()).to.equal(validData.auditType.toLowerCase());
       expect(audit.getAuditResult()).to.deep.equal(validData.auditResult);
       expect(audit.getFullAuditRef()).to.equal(validData.fullAuditRef);
+      expect(audit.getPreviousAuditResult()).to.be.undefined;
+    });
+
+    it('throws an error when updating with invalid previous audit', () => {
+      const audit = createAudit(validData);
+
+      expect(() => audit.setPreviousAuditResult({})).to.throw('Missing scores property for audit type \'lhs-mobile\'');
     });
 
     it('automatically sets expiresAt if not provided', () => {

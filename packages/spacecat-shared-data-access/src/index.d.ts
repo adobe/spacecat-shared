@@ -35,6 +35,19 @@ export interface Audit {
   getAuditResult: () => object;
 
   /**
+   * Retrieves the result of the previous audit.
+   * This serves for comparison purposes.
+   * @returns {object|null} The parsed audit result.
+   */
+  getPreviousAuditResult: () => object | null;
+
+/**
+ * Sets the result of the previous audit.
+ * @param {object} result The parsed audit result.
+ */
+  setPreviousAuditResult: (result: object) => void;
+
+  /**
    * Retrieves the type of the audit.
    * @returns {object} The audit type.
    */

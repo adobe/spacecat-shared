@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { isObject } from '@adobe/spacecat-shared-utils';
+
 import { createAudit } from '../models/audit.js';
 
 function parseEpochToDate(epochInSeconds) {
@@ -28,10 +30,10 @@ export const AuditDto = {
   /**
    * Converts an Audit object into a DynamoDB item.
    * @param {Readonly<Audit>} audit - Audit object.
-   * @param {boolean} latestAudit - If true, returns the latest audit flavor.
+   * @param {boolean} isLatestAudit - If true, returns the latest audit flavor.
    * @returns {{siteId, auditedAt, auditResult, auditType, expiresAt, fullAuditRef, SK: string}}
    */
-  toDynamoItem: (audit, latestAudit = false) => {
+  toDynamoItem: (audit, isLatestAudit = false) => {
     const GSI1PK = 'ALL_LATEST_AUDITS';
     let GSI1SK;
 
@@ -41,7 +43,12 @@ export const AuditDto = {
       GSI1SK = `${audit.getAuditType()}#${Object.values(audit.getScores()).join('#')}`;
     }
 
-    const latestAuditProps = latestAudit ? { GSI1PK, GSI1SK } : {};
+    const latestAuditProps = isLatestAudit ? {
+      GSI1PK,
+      GSI1SK,
+      ...(isObject(audit.getPreviousAuditResult())
+          && { previousAuditResult: audit.getPreviousAuditResult() }),
+    } : {};
 
     return {
       siteId: audit.getSiteId(),
@@ -70,6 +77,8 @@ export const AuditDto = {
       expiresAt: parseEpochToDate(dynamoItem.expiresAt),
       fullAuditRef: dynamoItem.fullAuditRef,
       isLive: dynamoItem.isLive,
+      ...(isObject(dynamoItem.previousAuditResult)
+          && { previousAuditResult: dynamoItem.previousAuditResult }),
     };
 
     return createAudit(auditData);

@@ -1,16 +1,11 @@
-## Constants
-
-<dl>
-<dt><a href="#createDataAccess">createDataAccess</a> ⇒ <code>object</code></dt>
-<dd><p>Creates a data access object.</p>
-</dd>
-</dl>
-
 ## Functions
 
 <dl>
 <dt><a href="#createClient">createClient(log, dbClient, docClient)</a> ⇒ <code>Object</code></dt>
 <dd><p>Creates a client object for interacting with DynamoDB.</p>
+</dd>
+<dt><a href="#createResponse">createResponse(body, status, headers)</a> ⇒ <code>Response</code></dt>
+<dd><p>Creates a response with a JSON body. Defaults to 200 status.</p>
 </dd>
 <dt><a href="#isArray">isArray(value)</a> ⇒ <code>boolean</code></dt>
 <dd><p>Determines if the given parameter is an array.</p>
@@ -55,19 +50,13 @@ following UTC time offsets format.</p>
 <dt><a href="#arrayEquals">arrayEquals(a, b)</a> ⇒ <code>boolean</code></dt>
 <dd><p>Compares two arrays for equality. Supports primitive array item types only.</p>
 </dd>
+<dt><a href="#dateAfterDays">dateAfterDays(days)</a> ⇒ <code>Date</code></dt>
+<dd><p>Calculates the date after a specified number of days from the current date.</p>
+</dd>
+<dt><a href="#resolveSecretsName">resolveSecretsName(opts, ctx, defaultPath)</a> ⇒ <code>string</code></dt>
+<dd><p>Resolves the name of the secret based on the function version.</p>
+</dd>
 </dl>
-
-<a name="createDataAccess"></a>
-
-## createDataAccess ⇒ <code>object</code>
-Creates a data access object.
-
-**Kind**: global constant  
-**Returns**: <code>object</code> - data access object  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| log | <code>Logger</code> | logger |
 
 <a name="createClient"></a>
 
@@ -82,6 +71,20 @@ Creates a client object for interacting with DynamoDB.
 | log | <code>Object</code> | The logging object, defaults to console. |
 | dbClient | <code>DynamoDB</code> | The AWS SDK DynamoDB client instance. |
 | docClient | <code>DynamoDBDocument</code> | The AWS SDK DynamoDB Document client instance. |
+
+<a name="createResponse"></a>
+
+## createResponse(body, status, headers) ⇒ <code>Response</code>
+Creates a response with a JSON body. Defaults to 200 status.
+
+**Kind**: global function  
+**Returns**: <code>Response</code> - Response.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| body | <code>object</code> | JSON body. |
+| status | <code>number</code> | Optional status code. |
+| headers | <code>object</code> | Optional headers. |
 
 <a name="isArray"></a>
 
@@ -247,4 +250,41 @@ Compares two arrays for equality. Supports primitive array item types only.
 | --- | --- | --- |
 | a | <code>Array</code> | The first array to compare. |
 | b | <code>Array</code> | The second array to compare. |
+
+<a name="dateAfterDays"></a>
+
+## dateAfterDays(days) ⇒ <code>Date</code>
+Calculates the date after a specified number of days from the current date.
+
+**Kind**: global function  
+**Returns**: <code>Date</code> - A new Date object representing the calculated date after the specified days.  
+**Throws**:
+
+- <code>TypeError</code> If the provided 'days' parameter is not a number.
+- <code>RangeError</code> If the calculated date is outside the valid JavaScript date range.
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| days | <code>number</code> | The number of days to add to the current date. |
+
+**Example**  
+```js
+// Get the date 7 days from now
+const sevenDaysLater = dateAfterDays(7);
+console.log(sevenDaysLater); // Outputs a Date object representing the date 7 days from now
+```
+<a name="resolveSecretsName"></a>
+
+## resolveSecretsName(opts, ctx, defaultPath) ⇒ <code>string</code>
+Resolves the name of the secret based on the function version.
+
+**Kind**: global function  
+**Returns**: <code>string</code> - - The resolved secret name.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| opts | <code>Object</code> | The options object, not used in this implementation. |
+| ctx | <code>Object</code> | The context object containing the function version. |
+| defaultPath | <code>string</code> | The default path for the secret. |
 

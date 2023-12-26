@@ -43,7 +43,12 @@ export const AuditDto = {
       GSI1SK = `${audit.getAuditType()}#${Object.values(audit.getScores()).join('#')}`;
     }
 
-    const latestAuditProps = isLatestAudit ? { GSI1PK, GSI1SK } : {};
+    const latestAuditProps = isLatestAudit ? {
+      GSI1PK,
+      GSI1SK,
+      ...(isObject(audit.getPreviousAuditResult())
+          && { previousAuditResult: audit.getPreviousAuditResult() }),
+    } : {};
 
     return {
       siteId: audit.getSiteId(),
@@ -55,8 +60,6 @@ export const AuditDto = {
       isLive: audit.isLive(),
       SK: `${audit.getAuditType()}#${audit.getAuditedAt()}`,
       ...latestAuditProps,
-      ...(isLatestAudit && isObject(audit.getPreviousAuditResult())
-          && { previousAuditResult: audit.getPreviousAuditResult() }),
     };
   },
 

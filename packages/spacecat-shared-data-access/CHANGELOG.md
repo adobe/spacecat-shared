@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.5.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.4.4...@adobe/spacecat-shared-data-access-v1.5.0) (2023-12-26)
+
+
+### Features
+
+* store previous latest audit result ([#74](https://github.com/adobe-rnd/spacecat-shared/issues/74)) ([4663c43](https://github.com/adobe-rnd/spacecat-shared/commit/4663c4344e260f85c4e64691e0685260d36629e5))
+
 # [@adobe/spacecat-shared-data-access-v1.4.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.4.3...@adobe/spacecat-shared-data-access-v1.4.4) (2023-12-25)
 
 

@@ -184,25 +184,40 @@ export const addAudit = async (
   log,
   auditData,
 ) => {
-  const audit = createAudit(auditData);
+  const newAudit = createAudit(auditData);
   const existingAudit = await getAuditForSite(
     dynamoClient,
     config,
     log,
-    audit.getSiteId(),
-    audit.getAuditType(),
-    audit.getAuditedAt(),
+    newAudit.getSiteId(),
+    newAudit.getAuditType(),
+    newAudit.getAuditedAt(),
   );
 
   if (isObject(existingAudit)) {
     throw new Error('Audit already exists');
   }
 
-  // TODO: Add transaction support
-  await dynamoClient.putItem(config.tableNameAudits, AuditDto.toDynamoItem(audit));
-  await dynamoClient.putItem(config.tableNameLatestAudits, AuditDto.toDynamoItem(audit, true));
+  const latestAudit = await getLatestAuditForSite(
+    dynamoClient,
+    config,
+    log,
+    newAudit.getSiteId(),
+    newAudit.getAuditType(),
+  );
 
-  return audit;
+  if (isObject(latestAudit)) {
+    newAudit.setPreviousAuditResult(latestAudit.getAuditResult());
+  }
+
+  // TODO: Add transaction support
+  await dynamoClient.putItem(config.tableNameAudits, AuditDto.toDynamoItem(newAudit));
+  await dynamoClient.putItem(
+    config.tableNameLatestAudits,
+    AuditDto.toDynamoItem(newAudit, true),
+  );
+
+  return newAudit;
 };
 
 /**

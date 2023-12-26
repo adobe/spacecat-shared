@@ -358,6 +358,27 @@ describe('DynamoDB Integration Test', async () => {
     expect(latestAudit.getSiteId()).to.equal(auditData.siteId);
     expect(latestAudit.getAuditType()).to.equal(auditData.auditType);
     expect(latestAudit.getAuditedAt()).to.equal(auditData.auditedAt);
+
+    const additionalAuditData = {
+      siteId: 'https://example1.com',
+      auditType: AUDIT_TYPE_LHS_MOBILE,
+      auditedAt: new Date().toISOString(),
+      isLive: true,
+      fullAuditRef: 's3://ref',
+      auditResult: {
+        scores: {
+          performance: 1,
+          seo: 1,
+          accessibility: 1,
+          'best-practices': 1,
+        },
+      },
+    };
+
+    const anotherAudit = await dataAccess.addAudit(additionalAuditData);
+
+    checkAudit(anotherAudit);
+    expect(anotherAudit.getPreviousAuditResult()).to.deep.equal(newAudit.getAuditResult());
   });
 
   it('throws an error when adding a duplicate audit', async () => {

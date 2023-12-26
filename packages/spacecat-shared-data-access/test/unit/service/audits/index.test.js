@@ -166,7 +166,7 @@ describe('Audit Access Pattern Tests', () => {
     let exportedFunctions;
 
     const auditData = {
-      siteId: 'siteId',
+      siteId: 'site1',
       auditType: 'lhs-mobile',
       auditedAt: new Date().toISOString(),
       auditResult: {
@@ -204,6 +204,40 @@ describe('Audit Access Pattern Tests', () => {
       expect(result.getAuditResult()).to.deep.equal(auditData.auditResult);
       expect(result.getFullAuditRef()).to.equal(auditData.fullAuditRef);
       expect(result.getScores()).to.be.an('object');
+      expect(result.getPreviousAuditResult()).to.be.undefined;
+    });
+
+    it('successfully adds a new audit with a previous audit result', async () => {
+      const auditResult = {
+        scores: {
+          performance: 0.2,
+          seo: 0.3,
+          accessibility: 0.4,
+          'best-practices': 0.5,
+        },
+      };
+      mockDynamoClient.getItem.withArgs(TEST_DA_CONFIG.tableNameLatestAudits, {
+        siteId: 'site1',
+        auditType: 'lhs-mobile',
+      }).resolves({ ...auditData, auditResult });
+
+      const result = await exportedFunctions.addAudit(auditData);
+
+      // Once for 'audits' and once for 'latest_audits'
+      expect(mockDynamoClient.putItem.calledTwice).to.be.true;
+      // Once for 'audits' and once for 'latest_audits'
+      expect(mockDynamoClient.getItem.calledTwice).to.be.true;
+      expect(result.getSiteId()).to.equal(auditData.siteId);
+      expect(result.getAuditType()).to.equal(auditData.auditType);
+      expect(result.getAuditedAt()).to.equal(auditData.auditedAt);
+      expect(result.getAuditResult()).to.deep.equal(auditData.auditResult);
+      expect(result.getFullAuditRef()).to.equal(auditData.fullAuditRef);
+      expect(result.getScores()).to.be.an('object');
+      expect(result.getPreviousAuditResult()).to.be.an('object');
+      expect(result.getPreviousAuditResult().scores.performance).to.equal(0.2);
+      expect(result.getPreviousAuditResult().scores.seo).to.equal(0.3);
+      expect(result.getPreviousAuditResult().scores.accessibility).to.equal(0.4);
+      expect(result.getPreviousAuditResult().scores['best-practices']).to.equal(0.5);
     });
 
     it('successfully adds an error audit', async () => {

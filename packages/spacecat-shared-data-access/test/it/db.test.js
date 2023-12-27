@@ -378,7 +378,11 @@ describe('DynamoDB Integration Test', async () => {
     const anotherAudit = await dataAccess.addAudit(additionalAuditData);
 
     checkAudit(anotherAudit);
-    expect(anotherAudit.getPreviousAuditResult()).to.deep.equal(newAudit.getAuditResult());
+    expect(anotherAudit.getPreviousAuditResult()).to.deep.equal({
+      ...newAudit.getAuditResult(),
+      auditedAt: newAudit.getAuditedAt(),
+      fullAuditRef: newAudit.getFullAuditRef(),
+    });
   });
 
   it('throws an error when adding a duplicate audit', async () => {

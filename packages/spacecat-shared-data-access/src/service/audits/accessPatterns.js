@@ -207,7 +207,11 @@ export const addAudit = async (
   );
 
   if (isObject(latestAudit)) {
-    newAudit.setPreviousAuditResult(latestAudit.getAuditResult());
+    newAudit.setPreviousAuditResult({
+      ...latestAudit.getAuditResult(),
+      auditedAt: latestAudit.getAuditedAt(),
+      fullAuditRef: latestAudit.getFullAuditRef(),
+    });
   }
 
   // TODO: Add transaction support

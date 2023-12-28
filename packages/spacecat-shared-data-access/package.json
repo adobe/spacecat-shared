@@ -36,9 +36,9 @@
     "uuid": "9.0.1"
   },
   "devDependencies": {
-    "chai": "4.3.10",
+    "chai": "5.0.0",
     "chai-as-promised": "7.1.1",
-    "dynamo-db-local": "6.1.0",
+    "dynamo-db-local": "7.2.0",
     "sinon": "17.0.1"
   }
 }

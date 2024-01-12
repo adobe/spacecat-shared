@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.6.2...@adobe/spacecat-shared-data-access-v1.6.3) (2024-01-12)
+
+
+### Bug Fixes
+
+* get latest audits with delivery type ([#80](https://github.com/adobe/spacecat-shared/issues/80)) ([d823773](https://github.com/adobe/spacecat-shared/commit/d823773d738ebddf2790356750827ae74e66b052))
+
 # [@adobe/spacecat-shared-data-access-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.6.1...@adobe/spacecat-shared-data-access-v1.6.2) (2024-01-12)
 
 

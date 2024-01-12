@@ -17,8 +17,8 @@ import { fetch } from './utils.js';
 
 const APIS = {
   ROTATE_DOMAINKEYS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rotate-domainkeys',
-  RUM_DASHBOARD_UI: 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard',
-  NOT_FOUND_DASHBOARD_UI: 'https://main--franklin-dashboard--adobe.hlx.live/views/404-report',
+  RUM_DASHBOARD_UI: 'https://data.aem.live/rum-dashboard',
+  NOT_FOUND_DASHBOARD_UI: 'https://data.aem.live/404-reports',
   RUM_DASHBOARD: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
   DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/dash/domain-list',
   RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',

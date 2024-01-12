@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-example",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Shared modules of the Spacecat Services - example",
   "type": "module",
   "main": "src/example-wrapper.js",

@@ -25,6 +25,7 @@ export const SiteDto = {
   toDynamoItem: (site) => ({
     id: site.getId(),
     baseURL: site.getBaseURL(),
+    deliveryType: site.getDeliveryType(),
     gitHubURL: site.getGitHubURL() || '',
     imsOrgId: site.getImsOrgId() || '',
     isLive: site.isLive(),
@@ -43,6 +44,7 @@ export const SiteDto = {
     const siteData = {
       id: dynamoItem.id,
       baseURL: dynamoItem.baseURL,
+      deliveryType: dynamoItem.deliveryType,
       gitHubURL: dynamoItem.gitHubURL,
       imsOrgId: dynamoItem.imsOrgId,
       isLive: dynamoItem.isLive,

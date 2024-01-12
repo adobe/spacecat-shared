@@ -242,6 +242,7 @@ export interface DataAccess {
     siteId: string,
   ) => Promise<void>;
   getSites: () => Promise<Site[]>;
+  getSitesByDeliveryType: () => Promise<Site[]>;
   getSitesToAudit: () => Promise<string[]>;
   getSitesWithLatestAudit: (
     auditType: string,
@@ -282,6 +283,7 @@ interface DataAccessConfig {
   tableNameLatestAudits: string;
   tableNameSites: string;
   indexNameAllSites: string;
+  indexNameAllSitesByDeliveryType: string;
   indexNameAllLatestAuditScores: string;
   pkAllSites: string;
   pkAllLatestAudits: string;

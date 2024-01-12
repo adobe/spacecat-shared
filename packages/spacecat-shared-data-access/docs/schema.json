@@ -73,7 +73,7 @@
           }
         },
         {
-          "IndexName": "spacecat-services-all-sites-by-type",
+          "IndexName": "spacecat-services-all-sites-by-delivery-type",
           "KeyAttributes": {
             "PartitionKey": {
               "AttributeName": "GSI1PK",

@@ -17,6 +17,7 @@ const TABLE_NAME_LATEST_AUDITS = 'spacecat-services-latest-audits-dev';
 const TABLE_NAME_SITES = 'spacecat-services-sites-dev';
 
 const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites-dev';
+const INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = 'spacecat-services-all-sites-by-delivery-type-dev';
 const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'spacecat-services-all-latest-audit-scores-dev';
 
 const PK_ALL_SITES = 'ALL_SITES';
@@ -32,6 +33,7 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_TABLE_NAME_LATEST_AUDITS = TABLE_NAME_LATEST_AUDITS,
         DYNAMO_TABLE_NAME_SITES = TABLE_NAME_SITES,
         DYNAMO_INDEX_NAME_ALL_SITES = INDEX_NAME_ALL_SITES,
+        DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES = INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
       } = context.env;
 
@@ -40,6 +42,7 @@ export default function dataAccessWrapper(fn) {
         tableNameLatestAudits: DYNAMO_TABLE_NAME_LATEST_AUDITS,
         tableNameSites: DYNAMO_TABLE_NAME_SITES,
         indexNameAllSites: DYNAMO_INDEX_NAME_ALL_SITES,
+        indexNameAllSitesByDeliveryType: DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         indexNameAllLatestAuditScores: DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         pkAllSites: PK_ALL_SITES,
         pkAllLatestAudits: PK_ALL_LATEST_AUDITS,

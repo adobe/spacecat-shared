@@ -66,6 +66,7 @@ const TEST_DA_CONFIG = {
   tableNameLatestAudits: 'spacecat-services-latest-audits',
   tableNameSites: 'spacecat-services-sites',
   indexNameAllSites: 'spacecat-services-all-sites',
+  indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
   pkAllSites: 'ALL_SITES',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
@@ -103,6 +104,17 @@ describe('DynamoDB Integration Test', async () => {
     const sites = await dataAccess.getSites();
 
     expect(sites.length).to.equal(NUMBER_OF_SITES);
+
+    sites.forEach((site) => {
+      checkSite(site);
+      expect(site.getAudits()).to.be.an('array').that.has.lengthOf(0);
+    });
+  });
+
+  it('gets sites by delivery type', async () => {
+    const sites = await dataAccess.getSitesByDeliveryType('aem_cs');
+
+    expect(sites.length).to.equal(NUMBER_OF_SITES / 2);
 
     sites.forEach((site) => {
       checkSite(site);

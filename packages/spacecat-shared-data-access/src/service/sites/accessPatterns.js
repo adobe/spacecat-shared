@@ -42,6 +42,28 @@ export const getSites = async (dynamoClient, config) => {
 };
 
 /**
+ * Retrieves all sites of a specific delivery type.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {string} deliveryType - The delivery type.
+ * @return {Promise<Readonly<Site>[]>} A promise that resolves to an array of all sites of the
+ * specified delivery type.
+ */
+export const getSitesByDeliveryType = async (dynamoClient, config, deliveryType) => {
+  const dynamoItems = await dynamoClient.query({
+    TableName: config.tableNameSites,
+    IndexName: config.indexNameAllSitesByDeliveryType,
+    KeyConditionExpression: 'GSI1PK = :gsi1pk AND deliveryType = :deliveryType',
+    ExpressionAttributeValues: {
+      ':gsi1pk': config.pkAllSites,
+      ':deliveryType': deliveryType,
+    },
+  });
+
+  return dynamoItems.map((dynamoItem) => SiteDto.fromDynamoItem(dynamoItem));
+};
+
+/**
  * Retrieves a list of site IDs of all sites.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.

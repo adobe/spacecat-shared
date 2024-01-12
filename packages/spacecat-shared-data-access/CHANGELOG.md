@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.6.1...@adobe/spacecat-shared-data-access-v1.6.2) (2024-01-12)
+
+
+### Bug Fixes
+
+* getSitesByDeliveryType signature ([#78](https://github.com/adobe/spacecat-shared/issues/78)) ([2b6c0fd](https://github.com/adobe/spacecat-shared/commit/2b6c0fd3e603eb3c688a45ae9ab78baf88a508ef))
+
 # [@adobe/spacecat-shared-data-access-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.6.0...@adobe/spacecat-shared-data-access-v1.6.1) (2024-01-12)
 
 

@@ -102,7 +102,7 @@ describe('backlink creation', () => {
 
   it('returns rum backlink when successful', async () => {
     const client = RUMAPIClient.createFrom(context);
-    const expectedBacklink = 'https://main--franklin-dashboard--adobe.hlx.live/views/rum-dashboard?interval=7&offset=0&limit=100&url=www.space.cat&domainkey=scoped-domain-key';
+    const expectedBacklink = 'https://data.aem.live/rum-dashboard?interval=7&offset=0&limit=100&url=www.space.cat&domainkey=scoped-domain-key';
 
     nock('https://helix-pages.anywhere.run')
       .post('/helix-services/run-query@v3/rotate-domainkeys')
@@ -115,7 +115,7 @@ describe('backlink creation', () => {
 
   it('returns 404 report backlink when successful', async () => {
     const client = RUMAPIClient.createFrom(context);
-    const expectedBacklink = 'https://main--franklin-dashboard--adobe.hlx.live/views/404-report?interval=7&offset=0&limit=100&url=www.space.cat&domainkey=scoped-domain-key';
+    const expectedBacklink = 'https://data.aem.live/404-reports?interval=7&offset=0&limit=100&url=www.space.cat&domainkey=scoped-domain-key';
 
     nock('https://helix-pages.anywhere.run')
       .post('/helix-services/run-query@v3/rotate-domainkeys')

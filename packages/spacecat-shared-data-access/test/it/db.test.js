@@ -30,6 +30,7 @@ function checkSite(site) {
   expect(site).to.be.an('object');
   expect(site.getId()).to.be.a('string');
   expect(site.getBaseURL()).to.be.a('string');
+  expect(site.getDeliveryType()).to.be.a('string');
   expect(site.getGitHubURL()).to.be.a('string');
   expect(site.getImsOrgId()).to.be.a('string');
   expect(isIsoDate(site.getCreatedAt())).to.be.true;
@@ -188,17 +189,20 @@ describe('DynamoDB Integration Test', async () => {
   it('updates an existing site', async () => {
     const siteToUpdate = await dataAccess.getSiteByBaseURL('https://example1.com');
     const originalUpdatedAt = siteToUpdate.getUpdatedAt();
+    const newDeliveryType = 'aem_cs';
     const newGitHubURL = 'https://github.com/newOrg/some-repo';
     const newImsOrgId = 'updatedOrg123';
 
     await sleep(10); // Make sure updatedAt is different
 
+    siteToUpdate.updateDeliveryType(newDeliveryType);
     siteToUpdate.updateGitHubURL(newGitHubURL);
     siteToUpdate.updateImsOrgId(newImsOrgId);
     siteToUpdate.toggleLive();
 
     const updatedSite = await dataAccess.updateSite(siteToUpdate);
 
+    expect(updatedSite.getDeliveryType()).to.equal(newDeliveryType);
     expect(updatedSite.getGitHubURL()).to.equal(newGitHubURL);
     expect(updatedSite.getImsOrgId()).to.equal(newImsOrgId);
     expect(updatedSite.isLive()).to.be.false;

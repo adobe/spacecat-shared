@@ -163,6 +163,7 @@ export default async function generateSampleData(
     sites.push({
       id: siteId,
       baseURL: `https://example${i}.com`,
+      deliveryType: 'aem_edge',
       gitHubURL: `https://github.com/org-${i}/test-repo`,
       imsOrgId: `${i}-1234@AdobeOrg`,
       isLive: true,

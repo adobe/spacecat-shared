@@ -35,6 +35,10 @@
           "AttributeType": "B"
         },
         {
+          "AttributeName": "deliveryType",
+          "AttributeType": "S"
+        },
+        {
           "AttributeName": "GSI1PK",
           "AttributeType": "S"
         },
@@ -61,6 +65,22 @@
             },
             "SortKey": {
               "AttributeName": "baseURL",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-services-all-sites-by-type",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "GSI1PK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "deliveryType",
               "AttributeType": "S"
             }
           },

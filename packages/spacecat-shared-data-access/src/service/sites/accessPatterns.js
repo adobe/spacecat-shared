@@ -50,6 +50,10 @@ export const getSites = async (dynamoClient, config) => {
  * specified delivery type.
  */
 export const getSitesByDeliveryType = async (dynamoClient, config, deliveryType) => {
+  if (deliveryType === 'all') {
+    return getSites(dynamoClient, config);
+  }
+
   const dynamoItems = await dynamoClient.query({
     TableName: config.tableNameSites,
     IndexName: config.indexNameAllSitesByDeliveryType,
@@ -87,6 +91,9 @@ export const getSitesToAudit = async (dynamoClient, config) => {
  * @param {Logger} log - The logger.
  * @param {string} auditType - The type of audits to retrieve for the sites.
  * @param {boolean} [sortAuditsAscending=true] - Determines if the audits should be sorted in
+ * ascending order.
+ * @param {string} [deliveryType=DEFAULT_DELIVERY_TYPE] - The delivery type of the sites
+ * to retrieve.
  * @return {Promise<Readonly<Site>[]>} A promise that resolves to an array of sites with their
  * latest audit.
  */
@@ -96,9 +103,10 @@ export const getSitesWithLatestAudit = async (
   log,
   auditType,
   sortAuditsAscending = true,
+  deliveryType = 'all',
 ) => {
   const [sites, latestAudits] = await Promise.all([
-    getSites(dynamoClient, config),
+    getSitesByDeliveryType(dynamoClient, config, deliveryType),
     getLatestAudits(dynamoClient, config, log, auditType, sortAuditsAscending),
   ]);
 

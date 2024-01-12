@@ -37,12 +37,17 @@ export const siteFunctions = (dynamoClient, config, log) => ({
     dynamoClient,
     config,
   ),
-  getSitesWithLatestAudit: (auditType, sortAuditsAscending) => getSitesWithLatestAudit(
+  getSitesWithLatestAudit: (
+    auditType,
+    sortAuditsAscending,
+    deliveryType,
+  ) => getSitesWithLatestAudit(
     dynamoClient,
     config,
     log,
     auditType,
     sortAuditsAscending,
+    deliveryType,
   ),
   getSiteByBaseURL: (baseUrl) => getSiteByBaseURL(
     dynamoClient,

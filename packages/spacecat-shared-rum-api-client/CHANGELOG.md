@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.3.0...@adobe/spacecat-shared-rum-api-client-v1.3.1) (2024-01-12)
+
+
+### Bug Fixes
+
+* use new aem datadesk ui for the backlinks ([#79](https://github.com/adobe/spacecat-shared/issues/79)) ([526b69c](https://github.com/adobe/spacecat-shared/commit/526b69cc8067f883f2ce0ab10c712b8ca094c81d))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.2.1...@adobe/spacecat-shared-rum-api-client-v1.3.0) (2024-01-12)
 
 

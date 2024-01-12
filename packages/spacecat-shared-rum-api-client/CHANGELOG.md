@@ -1,51 +1,51 @@
-# [@adobe/spacecat-shared-rum-api-client-v1.2.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.2.0...@adobe/spacecat-shared-rum-api-client-v1.2.1) (2023-12-15)
+# [@adobe/spacecat-shared-rum-api-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.2.0...@adobe/spacecat-shared-rum-api-client-v1.2.1) (2023-12-15)
 
 
 ### Bug Fixes
 
-* make RUMOptions optional ([6c2825b](https://github.com/adobe-rnd/spacecat-shared/commit/6c2825b49977ce50bc998258e9f23c73cc822b22))
+* make RUMOptions optional ([6c2825b](https://github.com/adobe/spacecat-shared/commit/6c2825b49977ce50bc998258e9f23c73cc822b22))
 
-# [@adobe/spacecat-shared-rum-api-client-v1.2.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.2...@adobe/spacecat-shared-rum-api-client-v1.2.0) (2023-12-15)
+# [@adobe/spacecat-shared-rum-api-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.2...@adobe/spacecat-shared-rum-api-client-v1.2.0) (2023-12-15)
 
 
 ### Features
 
-* add support for 404 report backlink ([0d622de](https://github.com/adobe-rnd/spacecat-shared/commit/0d622de241b51f0df625679591dd5168b5b070a7))
+* add support for 404 report backlink ([0d622de](https://github.com/adobe/spacecat-shared/commit/0d622de241b51f0df625679591dd5168b5b070a7))
 
-# [@adobe/spacecat-shared-rum-api-client-v1.1.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.1...@adobe/spacecat-shared-rum-api-client-v1.1.2) (2023-12-14)
-
-
-### Bug Fixes
-
-* rum domain key env var ([b52ead5](https://github.com/adobe-rnd/spacecat-shared/commit/b52ead5217f20cb48f2026bf86d04d72671f81c5))
-
-# [@adobe/spacecat-shared-rum-api-client-v1.1.1](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.0...@adobe/spacecat-shared-rum-api-client-v1.1.1) (2023-12-14)
+# [@adobe/spacecat-shared-rum-api-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.1...@adobe/spacecat-shared-rum-api-client-v1.1.2) (2023-12-14)
 
 
 ### Bug Fixes
 
-* export rumapiclient as default ([#52](https://github.com/adobe-rnd/spacecat-shared/issues/52)) ([7c5d2f5](https://github.com/adobe-rnd/spacecat-shared/commit/7c5d2f56a5822ed93d63c894ded766924905c797))
+* rum domain key env var ([b52ead5](https://github.com/adobe/spacecat-shared/commit/b52ead5217f20cb48f2026bf86d04d72671f81c5))
 
-# [@adobe/spacecat-shared-rum-api-client-v1.1.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.0.0...@adobe/spacecat-shared-rum-api-client-v1.1.0) (2023-12-14)
+# [@adobe/spacecat-shared-rum-api-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.1.0...@adobe/spacecat-shared-rum-api-client-v1.1.1) (2023-12-14)
+
+
+### Bug Fixes
+
+* export rumapiclient as default ([#52](https://github.com/adobe/spacecat-shared/issues/52)) ([7c5d2f5](https://github.com/adobe/spacecat-shared/commit/7c5d2f56a5822ed93d63c894ded766924905c797))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.0.0...@adobe/spacecat-shared-rum-api-client-v1.1.0) (2023-12-14)
 
 
 ### Features
 
-* add rum api calls to shared ([56cccd0](https://github.com/adobe-rnd/spacecat-shared/commit/56cccd0f498eaca6a4bb35a6b64d5f0dbe68a096))
+* add rum api calls to shared ([56cccd0](https://github.com/adobe/spacecat-shared/commit/56cccd0f498eaca6a4bb35a6b64d5f0dbe68a096))
 
 # @adobe/spacecat-shared-rum-api-client-v1.0.0 (2023-12-12)
 
 
 ### Features
 
-* rum api client ([#48](https://github.com/adobe-rnd/spacecat-shared/issues/48)) ([ccfa187](https://github.com/adobe-rnd/spacecat-shared/commit/ccfa187a45f35e57085ac241ff156c0b9418592d))
+* rum api client ([#48](https://github.com/adobe/spacecat-shared/issues/48)) ([ccfa187](https://github.com/adobe/spacecat-shared/commit/ccfa187a45f35e57085ac241ff156c0b9418592d))
 
-# [@adobe/spacecat-shared-example-v1.1.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.0.0...@adobe/spacecat-shared-example-v1.1.0) (2023-11-29)
+# [@adobe/spacecat-shared-example-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.0.0...@adobe/spacecat-shared-example-v1.1.0) (2023-11-29)
 
 
 ### Features
 
-* add guards and use spacecat-shared-utils ([#6](https://github.com/adobe-rnd/spacecat-shared/issues/6)) ([27143cf](https://github.com/adobe-rnd/spacecat-shared/commit/27143cf2d4a439f1b5904e62756e59e501b3f67d))
+* add guards and use spacecat-shared-utils ([#6](https://github.com/adobe/spacecat-shared/issues/6)) ([27143cf](https://github.com/adobe-rnd/spacecat-shared/commit/27143cf2d4a439f1b5904e62756e59e501b3f67d))
 
 # @adobe/spacecat-shared-example-v1.0.0 (2023-11-27)
 

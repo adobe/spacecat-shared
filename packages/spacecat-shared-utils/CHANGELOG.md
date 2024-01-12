@@ -1,25 +1,25 @@
-# [@adobe/spacecat-shared-utils-v1.6.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.5.0...@adobe/spacecat-shared-utils-v1.6.0) (2023-12-14)
+# [@adobe/spacecat-shared-utils-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.5.0...@adobe/spacecat-shared-utils-v1.6.0) (2023-12-14)
 
 
 ### Features
 
-* http utils package ([#51](https://github.com/adobe-rnd/spacecat-shared/issues/51)) ([84cd91a](https://github.com/adobe-rnd/spacecat-shared/commit/84cd91ae4225455327116169f5b040cc9adc1c2e))
+* http utils package ([#51](https://github.com/adobe/spacecat-shared/issues/51)) ([84cd91a](https://github.com/adobe/spacecat-shared/commit/84cd91ae4225455327116169f5b040cc9adc1c2e))
 
-# [@adobe/spacecat-shared-utils-v1.5.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.4.0...@adobe/spacecat-shared-utils-v1.5.0) (2023-12-14)
-
-
-### Features
-
-* http-utils functions ([#49](https://github.com/adobe-rnd/spacecat-shared/issues/49)) ([20e98fa](https://github.com/adobe-rnd/spacecat-shared/commit/20e98faa75d2f439ea5e671937f78bea706ec5d7))
-
-# [@adobe/spacecat-shared-utils-v1.4.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.3.0...@adobe/spacecat-shared-utils-v1.4.0) (2023-12-12)
+# [@adobe/spacecat-shared-utils-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.4.0...@adobe/spacecat-shared-utils-v1.5.0) (2023-12-14)
 
 
 ### Features
 
-* rum api client ([#48](https://github.com/adobe-rnd/spacecat-shared/issues/48)) ([ccfa187](https://github.com/adobe-rnd/spacecat-shared/commit/ccfa187a45f35e57085ac241ff156c0b9418592d))
+* http-utils functions ([#49](https://github.com/adobe/spacecat-shared/issues/49)) ([20e98fa](https://github.com/adobe/spacecat-shared/commit/20e98faa75d2f439ea5e671937f78bea706ec5d7))
 
-# [@adobe/spacecat-shared-utils-v1.3.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.2.0...@adobe/spacecat-shared-utils-v1.3.0) (2023-12-10)
+# [@adobe/spacecat-shared-utils-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.3.0...@adobe/spacecat-shared-utils-v1.4.0) (2023-12-12)
+
+
+### Features
+
+* rum api client ([#48](https://github.com/adobe/spacecat-shared/issues/48)) ([ccfa187](https://github.com/adobe/spacecat-shared/commit/ccfa187a45f35e57085ac241ff156c0b9418592d))
+
+# [@adobe/spacecat-shared-utils-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.2.0...@adobe/spacecat-shared-utils-v1.3.0) (2023-12-10)
 
 
 ### Features

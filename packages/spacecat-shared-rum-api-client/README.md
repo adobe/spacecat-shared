@@ -95,10 +95,10 @@ npm run clean
 ```
 
 ## Repository
-Find the source code and contribute [here](https://github.com/adobe-rnd/spacecat-shared.git).
+Find the source code and contribute [here](https://github.com/adobe/spacecat-shared.git).
 
 ## Issues
-Report issues or bugs [here](https://github.com/adobe-rnd/spacecat-shared/issues).
+Report issues or bugs [here](https://github.com/adobe/spacecat-shared/issues).
 
 ## License
 This project is licensed under the Apache-2.0 License.

@@ -121,6 +121,12 @@ describe('Site Access Pattern Tests', () => {
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
+    it('calls getSitesWithLatestAudit of delivery type and returns an array', async () => {
+      const result = await exportedFunctions.getSitesWithLatestAudit('lhs-mobile', true, 'aem_edge');
+      expect(result).to.be.an('array');
+      expect(mockDynamoClient.query.called).to.be.true;
+    });
+
     it('calls getSitesWithLatestAudit and handles latestAudits', async () => {
       const mockSiteData = [{
         id: 'site1',

@@ -150,6 +150,25 @@ describe('DynamoDB Integration Test', async () => {
     });
   });
 
+  it('gets sites with latest audit of delivery type', async () => {
+    const sites = await dataAccess.getSitesWithLatestAudit(AUDIT_TYPE_LHS_MOBILE, true, 'aem_cs');
+
+    expect(sites.length).to.equal(NUMBER_OF_SITES / 2);
+
+    sites.forEach((site) => {
+      checkSite(site);
+      expect(site.getDeliveryType()).to.equal('aem_cs');
+      expect(site.getAudits()).to.be.an('array');
+
+      site.getAudits().forEach((audit) => {
+        expect(audit.getAuditType()).to.equal(AUDIT_TYPE_LHS_MOBILE);
+        expect(Object.keys(audit.getScores())).to.have.members(
+          ['performance', 'seo', 'accessibility', 'best-practices'],
+        );
+      });
+    });
+  });
+
   it('gets site by baseURL', async () => {
     const site = await dataAccess.getSiteByBaseURL('https://example1.com');
 

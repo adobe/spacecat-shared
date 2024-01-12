@@ -249,6 +249,7 @@ export interface DataAccess {
   getSitesWithLatestAudit: (
     auditType: string,
     sortAuditsAscending?: boolean,
+    deliveryType?: string,
   ) => Promise<Site[]>;
   getSiteByBaseURL: (
     baseUrl: string,

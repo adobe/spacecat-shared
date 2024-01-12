@@ -242,7 +242,9 @@ export interface DataAccess {
     siteId: string,
   ) => Promise<void>;
   getSites: () => Promise<Site[]>;
-  getSitesByDeliveryType: () => Promise<Site[]>;
+  getSitesByDeliveryType: (
+    deliveryType: string,
+  ) => Promise<Site[]>;
   getSitesToAudit: () => Promise<string[]>;
   getSitesWithLatestAudit: (
     auditType: string,

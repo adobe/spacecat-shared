@@ -29,11 +29,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.484.0",
-    "@aws-sdk/lib-dynamodb": "3.484.0",
+    "@aws-sdk/client-dynamodb": "3.490.0",
+    "@aws-sdk/lib-dynamodb": "3.490.0",
     "@adobe/spacecat-shared-utils": "1.1.0"
   },
   "devDependencies": {
-    "chai": "4.3.10"
+    "chai": "4.4.1"
   }
 }

@@ -29,7 +29,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "chai": "4.3.10",
+    "chai": "4.4.1",
     "sinon": "17.0.1"
   },
   "dependencies": {

@@ -48,8 +48,5 @@
   },
   "lint-staged": {
     "*.js": "eslint"
-  },
-  "dependencies": {
-    "joi": "^17.11.0"
   }
 }

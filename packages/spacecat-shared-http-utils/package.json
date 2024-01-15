@@ -1,7 +1,7 @@
 {
-  "name": "@adobe/spacecat-shared-dynamo",
-  "version": "1.2.8",
-  "description": "Shared modules of the Spacecat Services - DynamoDB client",
+  "name": "@adobe/spacecat-shared-http-utils",
+  "version": "1.0.0",
+  "description": "Shared modules of the Spacecat Services - HTTP Utils",
   "type": "module",
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -13,7 +13,7 @@
   "mocha": {
     "reporter": "mocha-multi-reporters",
     "reporter-options": "configFile=.mocha-multi.json",
-    "spec": "test/**/*.test.js"
+    "spec": "test/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -29,9 +29,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.484.0",
-    "@aws-sdk/lib-dynamodb": "3.484.0",
-    "@adobe/spacecat-shared-utils": "1.1.0"
+    "@adobe/fetch": "4.1.1"
   },
   "devDependencies": {
     "chai": "4.3.10"

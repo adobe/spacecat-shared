@@ -10,8 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+
 import { Base } from './base.js';
+import AuditConfig from './site/audit-config.js';
+import Config from './site/config.js';
 
 /**
  * Creates a new Site.
@@ -22,10 +25,11 @@ import { Base } from './base.js';
 const Site = (data = {}) => {
   const self = Base(data);
 
+  self.getAuditConfig = () => self.state.auditConfig;
   self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
   self.getGitHubURL = () => self.state.gitHubURL;
-  self.getImsOrgId = () => self.state.imsOrgId;
+  self.getOrganizationId = () => self.state.organizationId;
   self.isLive = () => self.state.isLive;
 
   // TODO: updating the baseURL is not supported yet, it will require a transact write
@@ -65,6 +69,18 @@ const Site = (data = {}) => {
     return self;
   }; */
 
+  self.setAllAuditsDisabled = (disabled) => {
+    self.state.auditConfig.updateAuditsDisabled(disabled);
+    self.touch();
+    return self;
+  };
+
+  self.updateAuditTypeConfig = (type, config) => {
+    self.state.auditConfig.updateAuditTypeConfig(type, config);
+    self.touch();
+    return self;
+  };
+
   /**
    * Updates the GitHub URL belonging to the site.
    * @param {string} gitHubURL - The GitHub URL.
@@ -82,16 +98,12 @@ const Site = (data = {}) => {
   };
 
   /**
-   * Updates the IMS Org ID belonging to the site.
-   * @param {string} imsOrgId - The IMS Org ID.
-   * @return {Base} The updated site.
+   * Updates the organizationId the site belongs to.
+   * @param {string} organizationId - The Org ID.
+   * @return {Base} The organization site.
    */
-  self.updateImsOrgId = (imsOrgId) => {
-    if (!hasText(imsOrgId)) {
-      throw new Error('IMS Org ID must be provided');
-    }
-
-    self.state.imsOrgId = imsOrgId;
+  self.updateOrganizationId = (organizationId) => {
+    self.state.organizationId = organizationId;
     self.touch();
 
     return self;
@@ -134,6 +146,26 @@ export const createSite = (data) => {
   if (!Array.isArray(newState.audits)) {
     newState.audits = [];
   }
+
+  if (!isObject(newState.auditConfig)) {
+    newState.auditConfig = {
+      auditsDisabled: false,
+      auditTypeConfigs: {},
+    };
+  }
+
+  newState.auditConfig = AuditConfig(newState.auditConfig);
+
+  if (!isObject(newState.config)) {
+    newState.config = {
+      slack: {
+      },
+      alerts: {
+      },
+    };
+  }
+
+  newState.config = Config(newState.config);
 
   return Site(newState);
 };

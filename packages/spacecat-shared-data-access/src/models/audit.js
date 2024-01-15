@@ -32,6 +32,14 @@ const AUDIT_TYPE_PROPERTIES = {
  * @returns {boolean} - True if valid, false otherwise.
  */
 const validateScores = (auditResult, auditType) => {
+  if (isObject(auditResult.runtimeError)) {
+    return true;
+  }
+
+  if (!isObject(auditResult.scores)) {
+    throw new Error(`Missing scores property for audit type '${auditType}'`);
+  }
+
   const expectedProperties = AUDIT_TYPE_PROPERTIES[auditType];
   if (!expectedProperties) {
     throw new Error(`Unknown audit type: ${auditType}`);
@@ -61,6 +69,12 @@ const Audit = (data = {}) => {
   self.getExpiresAt = () => self.state.expiresAt;
   self.getFullAuditRef = () => self.state.fullAuditRef;
   self.isLive = () => self.state.isLive;
+  self.isError = () => hasText(self.getAuditResult().runtimeError?.code);
+  self.getPreviousAuditResult = () => self.state.previousAuditResult;
+  self.setPreviousAuditResult = (previousAuditResult) => {
+    validateScores(previousAuditResult, self.getAuditType());
+    self.state.previousAuditResult = previousAuditResult;
+  };
   self.getScores = () => self.getAuditResult().scores;
 
   return Object.freeze(self);
@@ -92,6 +106,14 @@ export const createAudit = (data) => {
   }
 
   validateScores(data.auditResult, data.auditType);
+
+  if (data.previousAuditResult && !isObject(data.previousAuditResult)) {
+    throw new Error('Previous audit result must be an object');
+  }
+
+  if (data.previousAuditResult) {
+    validateScores(data.previousAuditResult, data.auditType);
+  }
 
   if (!hasText(newState.fullAuditRef)) {
     throw new Error('Full audit ref must be provided');

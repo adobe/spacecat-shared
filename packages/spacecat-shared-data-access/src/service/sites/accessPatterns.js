@@ -217,6 +217,25 @@ export const getSiteByBaseURLWithLatestAudit = async (
   auditType,
 ) => getSiteByBaseURLWithAuditInfo(dynamoClient, config, log, baseUrl, auditType, true);
 
+export const getSitesByOrganizationId = async (
+  dynamoClient,
+  config,
+  log,
+  organizationId,
+) => {
+  const dynamoItems = await dynamoClient.query({
+    TableName: config.tableNameSites,
+    IndexName: config.indexNameAllSitesOrganizations,
+    KeyConditionExpression: 'organizationId = :organizationId',
+    ExpressionAttributeValues: {
+      ':organizationId': organizationId,
+    },
+    Limit: 1,
+  });
+
+  return dynamoItems.length > 0 ? SiteDto.fromDynamoItem(dynamoItems[0]) : null;
+};
+
 /**
  * Retrieves a site by its ID.
  *

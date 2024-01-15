@@ -29,13 +29,50 @@ const domainKey = "your-domain-key";
 const rumApiClient = new RUMAPIClient(domainKey);
 ```
 
-### Creating a Backlink
+### Creating a RUM Backlink
 
 ```js
 const url = "https://example.com";
-const expiry = 7; // in days
+const expiryInDays = 7;
 
-const backlink = await rumApiClient.createBacklink(url, expiry);
+const backlink = await rumApiClient.createRUMBacklink(url, expiryInDays);
+console.log(`Backlink created: ${backlink}`)
+```
+
+### Creating a 404 Report Backlink
+
+```js
+const url = "https://example.com";
+const expiryInDays = 7;
+
+const backlink = await rumApiClient.create404Backlink(url, expiryInDays);
+console.log(`Backlink created: ${backlink}`)
+```
+
+### Getting RUM Dashboard Data
+
+```js
+const url = "example.com";
+
+const rumData = await rumApiClient.getRUMDashboard({ url });
+console.log(`RUM data: ${rumData}`)
+```
+
+### Getting 404 checkpoints
+
+```js
+const url = "example.com";
+
+const backlink = await rumApiClient.get404Sources({ url });
+console.log(`404 Checkpoints: ${backlink}`)
+```
+
+### Getting Edge Delivery Services Domains
+
+```js
+const url = "all";
+
+const domains = await rumApiClient.getDomainList({}, url);
 console.log(`Backlink created: ${backlink}`)
 ```
 

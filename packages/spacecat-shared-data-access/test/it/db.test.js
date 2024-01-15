@@ -15,6 +15,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import dynamoDbLocal from 'dynamo-db-local';
+import * as Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { sleep } from '../unit/util.js';
@@ -31,11 +32,39 @@ function checkSite(site) {
   expect(site.getId()).to.be.a('string');
   expect(site.getBaseURL()).to.be.a('string');
   expect(site.getGitHubURL()).to.be.a('string');
-  expect(site.getImsOrgId()).to.be.a('string');
+  expect(site.getOrganizationId()).to.be.a('string');
   expect(isIsoDate(site.getCreatedAt())).to.be.true;
   expect(isIsoDate(site.getUpdatedAt())).to.be.true;
   expect(site.getAudits()).to.be.an('array');
   expect(site.isLive()).to.be.a('boolean');
+
+  const auditConfig = site.getAuditConfig();
+  expect(auditConfig).to.be.an('object');
+  expect(auditConfig.auditsDisabled()).to.be.a('boolean').which.is.false;
+  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE)).to.be.an('object');
+  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).disabled()).to.be.a('boolean').which.is.false;
+  expect(auditConfig.getAuditTypeConfig('non-existing-type')).to.be.undefined;
+  expect(auditConfig.getAuditTypeConfig('cwv')).to.be.an('object');
+  expect(auditConfig.getAuditTypeConfig('cwv').disabled()).to.be.a('boolean').which.is.true;
+}
+
+function checkOrganization(organization) {
+  const schema = Joi.object({
+    id: Joi.string(),
+    name: Joi.string(),
+    imsOrgId: Joi.string(),
+    config: Joi.object({
+      slack: Joi.object({
+        workspace: Joi.string(),
+        channel: Joi.string(),
+      }),
+      alerts: Joi.array().items(Joi.object({
+        type: Joi.string(),
+        mentions: Joi.array().items(Joi.object({ slack: Joi.string() })),
+      })),
+    }),
+  });
+  schema.validate(organization);
 }
 
 function checkAudit(audit) {
@@ -54,10 +83,14 @@ function checkAudit(audit) {
 const TEST_DA_CONFIG = {
   tableNameAudits: 'spacecat-services-audits',
   tableNameLatestAudits: 'spacecat-services-latest-audits',
+  tableNameOrganizations: 'spacecat-services-organizations',
   tableNameSites: 'spacecat-services-sites',
   indexNameAllSites: 'spacecat-services-all-sites',
+  indexNameAllSitesOrganizations: 'spacecat-all-sites-organizations',
+  indexNameAllOrganizations: 'spacecat-services-all-organizations',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
   pkAllSites: 'ALL_SITES',
+  pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
 };
 
@@ -66,6 +99,7 @@ describe('DynamoDB Integration Test', async () => {
   let dataAccess;
 
   const NUMBER_OF_SITES = 10;
+  const NUMBER_OF_ORGANIZATIONS = 3;
   const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
 
   before(async function () {
@@ -80,13 +114,28 @@ describe('DynamoDB Integration Test', async () => {
 
     await sleep(1000); // give db time to start up
 
-    await generateSampleData(TEST_DA_CONFIG, NUMBER_OF_SITES, NUMBER_OF_AUDITS_PER_TYPE_AND_SITE);
+    await generateSampleData(
+      TEST_DA_CONFIG,
+      NUMBER_OF_ORGANIZATIONS,
+      NUMBER_OF_SITES,
+      NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
+    );
 
     dataAccess = createDataAccess(TEST_DA_CONFIG, console);
   });
 
   after(() => {
     dynamoDbLocalProcess.kill();
+  });
+
+  it('gets organizations', async () => {
+    const organizations = await dataAccess.getOrganizations();
+
+    expect(organizations.length).to.equal(NUMBER_OF_ORGANIZATIONS);
+
+    organizations.forEach((organization) => {
+      checkOrganization(organization);
+    });
   });
 
   it('gets sites', async () => {
@@ -152,6 +201,13 @@ describe('DynamoDB Integration Test', async () => {
       gitHubURL: 'https://github.com/some-org/test-repo',
       imsOrgId: 'newOrg123',
       audits: [],
+      auditConfig: {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          'lhs-mobile': { disabled: false },
+          cwv: { disabled: true },
+        },
+      },
     };
 
     const addedSite = await dataAccess.addSite(newSiteData);
@@ -342,6 +398,31 @@ describe('DynamoDB Integration Test', async () => {
     expect(latestAudit.getSiteId()).to.equal(auditData.siteId);
     expect(latestAudit.getAuditType()).to.equal(auditData.auditType);
     expect(latestAudit.getAuditedAt()).to.equal(auditData.auditedAt);
+
+    const additionalAuditData = {
+      siteId: 'https://example1.com',
+      auditType: AUDIT_TYPE_LHS_MOBILE,
+      auditedAt: new Date().toISOString(),
+      isLive: true,
+      fullAuditRef: 's3://ref',
+      auditResult: {
+        scores: {
+          performance: 1,
+          seo: 1,
+          accessibility: 1,
+          'best-practices': 1,
+        },
+      },
+    };
+
+    const anotherAudit = await dataAccess.addAudit(additionalAuditData);
+
+    checkAudit(anotherAudit);
+    expect(anotherAudit.getPreviousAuditResult()).to.deep.equal({
+      ...newAudit.getAuditResult(),
+      auditedAt: newAudit.getAuditedAt(),
+      fullAuditRef: newAudit.getFullAuditRef(),
+    });
   });
 
   it('throws an error when adding a duplicate audit', async () => {
@@ -384,5 +465,23 @@ describe('DynamoDB Integration Test', async () => {
       AUDIT_TYPE_LHS_MOBILE,
     );
     expect(latestAuditAfterRemoval).to.be.null;
+  });
+
+  it('updates audit configurations for a site', async () => {
+    const siteToUpdate = await dataAccess.getSiteByBaseURL('https://example2.com');
+
+    // Update all audits to be disabled
+    siteToUpdate.setAllAuditsDisabled(true);
+    await dataAccess.updateSite(siteToUpdate);
+
+    let updatedSite = await dataAccess.getSiteByID(siteToUpdate.getId());
+    expect(updatedSite.getAuditConfig().auditsDisabled()).to.be.true;
+
+    // Update a specific audit type configuration
+    siteToUpdate.updateAuditTypeConfig('type1', { disabled: false });
+    await dataAccess.updateSite(siteToUpdate);
+
+    updatedSite = await dataAccess.getSiteByID(siteToUpdate.getId());
+    expect(updatedSite.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.false;
   });
 });

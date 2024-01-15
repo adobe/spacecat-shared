@@ -29,7 +29,12 @@ import removeItem from './modules/removeItem.js';
 const createClient = (
   log = console,
   dbClient = new DynamoDB(),
-  docClient = DynamoDBDocument.from(dbClient),
+  docClient = DynamoDBDocument.from(dbClient, {
+    marshallOptions: {
+      convertEmptyValues: true,
+      removeUndefinedValues: true,
+    },
+  }),
 ) => ({
   query: (params) => query(docClient, params, log),
   getItem: (tableName, key) => getItem(docClient, tableName, key, log),

@@ -41,10 +41,10 @@ export interface Audit {
    */
   getPreviousAuditResult: () => object | null;
 
-/**
- * Sets the result of the previous audit.
- * @param {object} result The parsed audit result.
- */
+  /**
+   * Sets the result of the previous audit.
+   * @param {object} result The parsed audit result.
+   */
   setPreviousAuditResult: (result: object) => void;
 
   /**
@@ -140,6 +140,12 @@ export interface Site {
    * @returns {string} The base URL.
    */
   getBaseURL: () => string;
+
+  /**
+   * Retrieves the delivery type of the site.
+   * @returns {string} The delivery type.
+   */
+  getDeliveryType: () => string;
 
   /**
    * Retrieves the GitHub URL associated with the site.
@@ -284,10 +290,14 @@ export interface DataAccess {
     siteId: string,
   ) => Promise<void>;
   getSites: () => Promise<Site[]>;
+  getSitesByDeliveryType: (
+    deliveryType: string,
+  ) => Promise<Site[]>;
   getSitesToAudit: () => Promise<string[]>;
   getSitesWithLatestAudit: (
     auditType: string,
     sortAuditsAscending?: boolean,
+    deliveryType?: string,
   ) => Promise<Site[]>;
   getSitesByOrganizationId: (
       organizationId: string,
@@ -343,6 +353,7 @@ interface DataAccessConfig {
   tableNameSites: string;
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,
+  indexNameAllSitesByDeliveryType: string;
   indexNameAllLatestAuditScores: string;
   indexNameAllOrganizations: string,
   pkAllSites: string;

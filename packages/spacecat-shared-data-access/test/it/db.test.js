@@ -31,6 +31,7 @@ function checkSite(site) {
   expect(site).to.be.an('object');
   expect(site.getId()).to.be.a('string');
   expect(site.getBaseURL()).to.be.a('string');
+  expect(site.getDeliveryType()).to.be.a('string');
   expect(site.getGitHubURL()).to.be.a('string');
   expect(site.getOrganizationId()).to.be.a('string');
   expect(isIsoDate(site.getCreatedAt())).to.be.true;
@@ -88,6 +89,7 @@ const TEST_DA_CONFIG = {
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllSitesOrganizations: 'spacecat-all-sites-organizations',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
+  indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
   pkAllSites: 'ALL_SITES',
   pkAllOrganizations: 'ALL_ORGANIZATIONS',
@@ -149,6 +151,17 @@ describe('DynamoDB Integration Test', async () => {
     });
   });
 
+  it('gets sites by delivery type', async () => {
+    const sites = await dataAccess.getSitesByDeliveryType('aem_cs');
+
+    expect(sites.length).to.equal(NUMBER_OF_SITES / 2);
+
+    sites.forEach((site) => {
+      checkSite(site);
+      expect(site.getAudits()).to.be.an('array').that.has.lengthOf(0);
+    });
+  });
+
   it('gets sites to audit', async () => {
     const sites = await dataAccess.getSitesToAudit();
 
@@ -166,6 +179,25 @@ describe('DynamoDB Integration Test', async () => {
 
     sites.forEach((site) => {
       checkSite(site);
+      expect(site.getAudits()).to.be.an('array');
+
+      site.getAudits().forEach((audit) => {
+        expect(audit.getAuditType()).to.equal(AUDIT_TYPE_LHS_MOBILE);
+        expect(Object.keys(audit.getScores())).to.have.members(
+          ['performance', 'seo', 'accessibility', 'best-practices'],
+        );
+      });
+    });
+  });
+
+  it('gets sites with latest audit of delivery type', async () => {
+    const sites = await dataAccess.getSitesWithLatestAudit(AUDIT_TYPE_LHS_MOBILE, true, 'aem_cs');
+
+    expect(sites.length).to.equal(NUMBER_OF_SITES / 2);
+
+    sites.forEach((site) => {
+      checkSite(site);
+      expect(site.getDeliveryType()).to.equal('aem_cs');
       expect(site.getAudits()).to.be.an('array');
 
       site.getAudits().forEach((audit) => {
@@ -228,17 +260,20 @@ describe('DynamoDB Integration Test', async () => {
   it('updates an existing site', async () => {
     const siteToUpdate = await dataAccess.getSiteByBaseURL('https://example1.com');
     const originalUpdatedAt = siteToUpdate.getUpdatedAt();
+    const newDeliveryType = 'aem_cs';
     const newGitHubURL = 'https://github.com/newOrg/some-repo';
     const newImsOrgId = 'updatedOrg123';
 
     await sleep(10); // Make sure updatedAt is different
 
+    siteToUpdate.updateDeliveryType(newDeliveryType);
     siteToUpdate.updateGitHubURL(newGitHubURL);
     siteToUpdate.updateImsOrgId(newImsOrgId);
     siteToUpdate.toggleLive();
 
     const updatedSite = await dataAccess.updateSite(siteToUpdate);
 
+    expect(updatedSite.getDeliveryType()).to.equal(newDeliveryType);
     expect(updatedSite.getGitHubURL()).to.equal(newGitHubURL);
     expect(updatedSite.getImsOrgId()).to.equal(newImsOrgId);
     expect(updatedSite.isLive()).to.be.false;

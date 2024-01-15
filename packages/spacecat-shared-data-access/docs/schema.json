@@ -35,6 +35,10 @@
           "AttributeType": "B"
         },
         {
+          "AttributeName": "deliveryType",
+          "AttributeType": "S"
+        },
+        {
           "AttributeName": "GSI1PK",
           "AttributeType": "S"
         },
@@ -76,7 +80,22 @@
           "IndexName": "spacecat-services-all-sites-organizations",
           "KeyAttributes": {
             "PartitionKey": {
-              "AttributeName": "organizationId",
+              "AttributeName": "organizationId"
+            },
+            "Projection": {
+              "ProjectionType": "ALL"
+            }
+          }
+        },
+        {
+          "IndexName": "spacecat-services-all-sites-by-delivery-type",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "GSI1PK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "deliveryType",
               "AttributeType": "S"
             }
           },

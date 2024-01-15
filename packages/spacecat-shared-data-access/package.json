@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "1.5.2",
+  "version": "1.6.4",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "main": "src/index.js",
@@ -17,26 +17,26 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adobe-rnd/spacecat-shared.git"
+    "url": "https://github.com/adobe/spacecat-shared.git"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/adobe-rnd/spacecat-shared/issues"
+    "url": "https://github.com/adobe/spacecat-shared/issues"
   },
-  "homepage": "https://github.com/adobe-rnd/spacecat-shared#readme",
+  "homepage": "https://github.com/adobe/spacecat-shared#readme",
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
     "@adobe/spacecat-shared-dynamo": "1.2.5",
     "@adobe/spacecat-shared-utils": "1.2.0",
-    "@aws-sdk/client-dynamodb": "3.484.0",
-    "@aws-sdk/lib-dynamodb": "3.484.0",
+    "@aws-sdk/client-dynamodb": "3.490.0",
+    "@aws-sdk/lib-dynamodb": "3.490.0",
     "uuid": "9.0.1"
   },
   "devDependencies": {
-    "chai": "4.3.10",
+    "chai": "4.4.1",
     "chai-as-promised": "7.1.1",
     "dynamo-db-local": "6.1.0",
     "joi": "17.11.0",

@@ -1,37 +1,56 @@
-# [@adobe/spacecat-shared-dynamo-v1.2.8](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.7...@adobe/spacecat-shared-dynamo-v1.2.8) (2023-12-30)
+# [@adobe/spacecat-shared-dynamo-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.0...@adobe/spacecat-shared-dynamo-v1.3.1) (2024-01-13)
 
 
 ### Bug Fixes
 
-* **deps:** update external fixes ([#76](https://github.com/adobe-rnd/spacecat-shared/issues/76)) ([5b74623](https://github.com/adobe-rnd/spacecat-shared/commit/5b74623a4accfb601b607170f9bd67fb380f5c84))
+* **deps:** update external fixes ([#81](https://github.com/adobe/spacecat-shared/issues/81)) ([67cf21c](https://github.com/adobe/spacecat-shared/commit/67cf21c548d036de45221e118ff3bc0e7b26a692))
 
-# [@adobe/spacecat-shared-dynamo-v1.2.7](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.6...@adobe/spacecat-shared-dynamo-v1.2.7) (2023-12-23)
-
-
-### Bug Fixes
-
-* **deps:** update external fixes ([#71](https://github.com/adobe-rnd/spacecat-shared/issues/71)) ([b9a6679](https://github.com/adobe-rnd/spacecat-shared/commit/b9a667966e7b0f013f46c62f6cc4a85f80623c61))
-
-# [@adobe/spacecat-shared-dynamo-v1.2.6](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.5...@adobe/spacecat-shared-dynamo-v1.2.6) (2023-12-20)
+# [@adobe/spacecat-shared-dynamo-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.8...@adobe/spacecat-shared-dynamo-v1.3.0) (2024-01-12)
 
 
 ### Bug Fixes
 
-* **deps:** update aws-sdk-js-v3 monorepo to v3.477.0 ([#68](https://github.com/adobe-rnd/spacecat-shared/issues/68)) ([492913f](https://github.com/adobe-rnd/spacecat-shared/commit/492913f0011d557b7c91ba631c13ced171bc2ce9))
-
-# [@adobe/spacecat-shared-dynamo-v1.2.5](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.4...@adobe/spacecat-shared-dynamo-v1.2.5) (2023-12-18)
+* github org ([02f86c3](https://github.com/adobe/spacecat-shared/commit/02f86c351b2b1ab99ce5aca7fd5e6af2246c0efd))
 
 
-### Bug Fixes
+### Features
 
-* auto-remove undefined values ([#64](https://github.com/adobe-rnd/spacecat-shared/issues/64)) ([ce9abac](https://github.com/adobe-rnd/spacecat-shared/commit/ce9abac0f99471616bd2fb971e18953791e364c3))
+* site delivery type ([#77](https://github.com/adobe/spacecat-shared/issues/77)) ([005bc38](https://github.com/adobe/spacecat-shared/commit/005bc388ed6ab0f82c8b0f562d4c1f4c0d1e2894))
 
-# [@adobe/spacecat-shared-dynamo-v1.2.4](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.3...@adobe/spacecat-shared-dynamo-v1.2.4) (2023-12-05)
+# [@adobe/spacecat-shared-dynamo-v1.2.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.7...@adobe/spacecat-shared-dynamo-v1.2.8) (2023-12-30)
 
 
 ### Bug Fixes
 
-* reduce log output of putitem ([#31](https://github.com/adobe-rnd/spacecat-shared/issues/31)) ([29d1496](https://github.com/adobe-rnd/spacecat-shared/commit/29d149661c56f2cef0c7d02d39bc8aad89475afa))
+* **deps:** update external fixes ([#76](https://github.com/adobe/spacecat-shared/issues/76)) ([5b74623](https://github.com/adobe/spacecat-shared/commit/5b74623a4accfb601b607170f9bd67fb380f5c84))
+
+# [@adobe/spacecat-shared-dynamo-v1.2.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.6...@adobe/spacecat-shared-dynamo-v1.2.7) (2023-12-23)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#71](https://github.com/adobe/spacecat-shared/issues/71)) ([b9a6679](https://github.com/adobe/spacecat-shared/commit/b9a667966e7b0f013f46c62f6cc4a85f80623c61))
+
+# [@adobe/spacecat-shared-dynamo-v1.2.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.5...@adobe/spacecat-shared-dynamo-v1.2.6) (2023-12-20)
+
+
+### Bug Fixes
+
+* **deps:** update aws-sdk-js-v3 monorepo to v3.477.0 ([#68](https://github.com/adobe/spacecat-shared/issues/68)) ([492913f](https://github.com/adobe/spacecat-shared/commit/492913f0011d557b7c91ba631c13ced171bc2ce9))
+
+# [@adobe/spacecat-shared-dynamo-v1.2.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.4...@adobe/spacecat-shared-dynamo-v1.2.5) (2023-12-18)
+
+
+### Bug Fixes
+
+* auto-remove undefined values ([#64](https://github.com/adobe/spacecat-shared/issues/64)) ([ce9abac](https://github.com/adobe/spacecat-shared/commit/ce9abac0f99471616bd2fb971e18953791e364c3))
+
+# [@adobe/spacecat-shared-dynamo-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.3...@adobe/spacecat-shared-dynamo-v1.2.4) (2023-12-05)
+
+
+### Bug Fixes
+
+* reduce log output of putitem ([#31](https://github.com/adobe/spacecat-shared/issues/31)) ([29d1496](https://github.com/adobe-rnd/spacecat-shared/commit/29d149661c56f2cef0c7d02d39bc8aad89475afa))
 
 # [@adobe/spacecat-shared-dynamo-v1.2.3](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.2.2...@adobe/spacecat-shared-dynamo-v1.2.3) (2023-12-02)
 

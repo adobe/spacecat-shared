@@ -18,6 +18,7 @@ import { sleep } from '../util.js';
 
 const validData = {
   baseURL: 'https://www.example.com',
+  deliveryType: 'aem_edge',
   imsOrgId: 'org123',
   auditConfig: {
     auditsDisabled: false,
@@ -32,6 +33,10 @@ describe('Site Model Tests', () => {
   describe('Validation Tests', () => {
     it('throws an error if baseURL is not a valid URL', () => {
       expect(() => createSite({ ...validData, baseURL: 'invalid-url' })).to.throw('Base URL must be a valid URL');
+    });
+
+    it('throws an error if deliveryType is invalid', () => {
+      expect(() => createSite({ ...validData, deliveryType: 'invalid' })).to.throw('Invalid delivery type: invalid');
     });
 
     it('creates a site object with valid baseURL', () => {
@@ -88,6 +93,12 @@ describe('Site Model Tests', () => {
     });
     */
 
+    it('updates deliveryType correctly', () => {
+      const newDeliveryType = 'aem_cs';
+      site.updateDeliveryType(newDeliveryType);
+      expect(site.getDeliveryType()).to.equal(newDeliveryType);
+    });
+
     it('updates imsOrgId correctly', () => {
       const newImsOrgId = 'newOrg123';
       site.updateImsOrgId(newImsOrgId);
@@ -98,6 +109,10 @@ describe('Site Model Tests', () => {
       const newGitHubURL = 'https://gibhub.com/example/example';
       site.updateGitHubURL(newGitHubURL);
       expect(site.getGitHubURL()).to.equal(newGitHubURL);
+    });
+
+    it('throws an error when updating with an invalid deliveryType', () => {
+      expect(() => site.updateDeliveryType('invalid')).to.throw('Invalid delivery type: invalid');
     });
 
     it('throws an error when updating with an empty imsOrgId', () => {

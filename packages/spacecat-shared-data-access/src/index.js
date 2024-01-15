@@ -19,6 +19,7 @@ const TABLE_NAME_ORGANIZATIONS = 'spacecat-services-organizations-dev';
 
 const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites-dev';
 const INDEX_NAME_ALL_ORGANIZATIONS = 'spacecat-services-all-organizations-dev';
+const INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = 'spacecat-services-all-sites-by-delivery-type-dev';
 const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'spacecat-services-all-latest-audit-scores-dev';
 const INDEX_NAME_ALL_SITES_ORGANIZATIONS = 'spacecat-services-all-sites-organizations-dev';
 
@@ -37,6 +38,7 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_TABLE_NAME_SITES = TABLE_NAME_SITES,
         DYNAMO_TABLE_NAME_ORGANIZATIONS = TABLE_NAME_ORGANIZATIONS,
         DYNAMO_INDEX_NAME_ALL_SITES = INDEX_NAME_ALL_SITES,
+        DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES = INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS = INDEX_NAME_ALL_ORGANIZATIONS,
         DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS = INDEX_NAME_ALL_SITES_ORGANIZATIONS,
@@ -49,6 +51,7 @@ export default function dataAccessWrapper(fn) {
         tableNameSites: DYNAMO_TABLE_NAME_SITES,
         indexNameAllSites: DYNAMO_INDEX_NAME_ALL_SITES,
         indexNameOrganizations: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS,
+        indexNameAllSitesByDeliveryType: DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         indexNameAllLatestAuditScores: DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         indexNameAllSitesOrganizations: DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS,
         pkAllSites: PK_ALL_SITES,

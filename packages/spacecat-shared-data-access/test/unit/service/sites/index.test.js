@@ -28,6 +28,7 @@ const TEST_DA_CONFIG = {
   tableNameLatestAudits: 'test-latest-audits',
   tableNameSites: 'test-sites',
   indexNameAllSites: 'test-index-all-sites',
+  indexNameAllSitesByDeliveryType: 'test-index-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'test-index-all-latest-audit-scores',
   pkAllSites: 'test-pk-all-sites',
   pkAllLatestAudits: 'test-pk-all-latest-audits',
@@ -43,6 +44,11 @@ describe('Site Access Pattern Tests', () => {
     it('exports getSites function', () => {
       expect(exportedFunctions).to.have.property('getSites');
       expect(exportedFunctions.getSites).to.be.a('function');
+    });
+
+    it('exports getSitesByDeliveryType function', () => {
+      expect(exportedFunctions).to.have.property('getSitesByDeliveryType');
+      expect(exportedFunctions.getSitesByDeliveryType).to.be.a('function');
     });
 
     it('exports getSitesToAudit function', () => {
@@ -97,6 +103,12 @@ describe('Site Access Pattern Tests', () => {
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
+    it('calls getSitesByDeliveryType and returns an array', async () => {
+      const result = await exportedFunctions.getSitesByDeliveryType('aem_edge');
+      expect(result).to.be.an('array');
+      expect(mockDynamoClient.query.called).to.be.true;
+    });
+
     it('calls getSitesToAudit and returns an array', async () => {
       const result = await exportedFunctions.getSitesToAudit();
       expect(result).to.be.an('array');
@@ -105,6 +117,12 @@ describe('Site Access Pattern Tests', () => {
 
     it('calls getSitesWithLatestAudit and returns an array', async () => {
       const result = await exportedFunctions.getSitesWithLatestAudit();
+      expect(result).to.be.an('array');
+      expect(mockDynamoClient.query.called).to.be.true;
+    });
+
+    it('calls getSitesWithLatestAudit of delivery type and returns an array', async () => {
+      const result = await exportedFunctions.getSitesWithLatestAudit('lhs-mobile', true, 'aem_edge');
       expect(result).to.be.an('array');
       expect(mockDynamoClient.query.called).to.be.true;
     });

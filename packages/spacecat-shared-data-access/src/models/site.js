@@ -16,6 +16,14 @@ import { Base } from './base.js';
 import AuditConfig from './site/audit-config.js';
 import Config from './site/config.js';
 
+export const DELIVERY_TYPES = {
+  AEM_CS: 'aem_cs',
+  AEM_EDGE: 'aem_edge',
+  OTHER: 'other',
+};
+
+export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
+
 /**
  * Creates a new Site.
  *
@@ -28,6 +36,7 @@ const Site = (data = {}) => {
   self.getAuditConfig = () => self.state.auditConfig;
   self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
+  self.getDeliveryType = () => self.state.deliveryType;
   self.getGitHubURL = () => self.state.gitHubURL;
   self.getOrganizationId = () => self.state.organizationId;
   self.isLive = () => self.state.isLive;
@@ -78,6 +87,17 @@ const Site = (data = {}) => {
   self.updateAuditTypeConfig = (type, config) => {
     self.state.auditConfig.updateAuditTypeConfig(type, config);
     self.touch();
+    return self;
+  };
+
+  self.updateDeliveryType = (deliveryType) => {
+    if (!Object.values(DELIVERY_TYPES).includes(deliveryType)) {
+      throw new Error(`Invalid delivery type: ${deliveryType}`);
+    }
+
+    self.state.deliveryType = deliveryType;
+    self.touch();
+
     return self;
   };
 
@@ -139,6 +159,11 @@ export const createSite = (data) => {
     throw new Error('Base URL must be a valid URL');
   }
 
+  newState.deliveryType = newState.deliveryType || DEFAULT_DELIVERY_TYPE;
+  if (!Object.values(DELIVERY_TYPES).includes(newState.deliveryType)) {
+    throw new Error(`Invalid delivery type: ${newState.deliveryType}`);
+  }
+
   if (!Object.prototype.hasOwnProperty.call(newState, 'isLive')) {
     newState.isLive = false;
   }
@@ -160,8 +185,8 @@ export const createSite = (data) => {
     newState.config = {
       slack: {
       },
-      alerts: {
-      },
+      alerts: [{
+      }],
     };
   }
 

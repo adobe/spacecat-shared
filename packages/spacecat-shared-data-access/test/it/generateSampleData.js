@@ -188,6 +188,7 @@ export default async function generateSampleData(
     sites.push({
       id: siteId,
       baseURL: `https://example${i}.com`,
+      deliveryType: i % 2 === 0 ? 'aem_edge' : 'aem_cs',
       gitHubURL: `https://github.com/org-${i}/test-repo`,
       organizationId: organizations[i % 3].id,
       isLive: true,

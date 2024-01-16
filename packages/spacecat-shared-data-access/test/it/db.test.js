@@ -232,7 +232,7 @@ describe('DynamoDB Integration Test', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',
       gitHubURL: 'https://github.com/some-org/test-repo',
-      imsOrgId: 'newOrg123',
+      organizationId: '1234',
       audits: [],
       auditConfig: {
         auditsDisabled: false,
@@ -254,7 +254,7 @@ describe('DynamoDB Integration Test', async () => {
     expect(newSite.getId()).to.to.be.a('string');
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
     expect(newSite.getGitHubURL()).to.equal(newSiteData.gitHubURL);
-    expect(newSite.getImsOrgId()).to.equal(newSiteData.imsOrgId);
+    expect(newSite.getOrganizationId()).to.equal(newSiteData.organizationId);
     expect(newSite.getAudits()).to.be.an('array').that.is.empty;
   });
 

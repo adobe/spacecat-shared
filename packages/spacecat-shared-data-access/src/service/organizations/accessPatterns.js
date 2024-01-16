@@ -39,7 +39,6 @@ export const getOrganizations = async (dynamoClient, config) => {
 export const getOrganizationByID = async (
   dynamoClient,
   config,
-  log,
   organizationId,
 ) => {
   const dynamoItem = await dynamoClient.getItem(
@@ -51,7 +50,7 @@ export const getOrganizationByID = async (
 };
 
 /**
- * Adds a organization.
+ * Adds an organization.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
@@ -93,8 +92,7 @@ export const updateOrganization = async (
   const existingOrganization = await getOrganizationByID(
     dynamoClient,
     config,
-    log,
-    organization.id,
+    organization.getId(),
   );
 
   if (!isObject(existingOrganization)) {

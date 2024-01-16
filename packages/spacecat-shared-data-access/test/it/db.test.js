@@ -18,6 +18,7 @@ import dynamoDbLocal from 'dynamo-db-local';
 import Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
+import { v4 as uuidv4 } from 'uuid';
 import { sleep } from '../unit/util.js';
 import { createDataAccess } from '../../src/service/index.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
@@ -140,6 +141,55 @@ describe('DynamoDB Integration Test', async () => {
     organizations.forEach((organization) => {
       checkOrganization(organization);
     });
+  });
+
+  it('gets organization by ID', async () => {
+    const orgId = (await dataAccess.getOrganizations())[0].getId();
+    const organization = await dataAccess.getOrganizationByID(orgId);
+
+    expect(organization).to.be.an('object');
+
+    checkOrganization(organization);
+    expect(organization.getId()).to.equal(orgId);
+  });
+
+  it('adds a new organization', async () => {
+    const organizationId = uuidv4();
+    const newOrgData = {
+      id: organizationId,
+      imsOrgId: '1234@AdobeOrg',
+      name: 'Org1',
+    };
+
+    const addedOrg = await dataAccess.addOrganization(newOrgData);
+
+    expect(addedOrg).to.be.an('object');
+
+    const newOrg = await dataAccess.getOrganizationByID(organizationId);
+
+    checkOrganization(newOrg);
+
+    expect(newOrg.getName()).to.equal(newOrgData.name);
+    expect(newOrg.getImsOrgId()).to.equal(newOrgData.imsOrgId);
+    expect(newOrg.getConfig()).to.be.an('object').that.is.empty;
+  });
+
+  it('updates an existing org', async () => {
+    const orgToUpdate = (await dataAccess.getOrganizations())[0];
+    const originalUpdatedAt = orgToUpdate.getUpdatedAt();
+    const newName = 'updatedName123';
+    const newImsOrgId = 'updatedOrg123';
+
+    await sleep(10); // Make sure updatedAt is different
+
+    orgToUpdate.updateImsOrgId(newImsOrgId);
+    orgToUpdate.updateName(newName);
+
+    const updatedOrg = await dataAccess.updateOrganization(orgToUpdate);
+
+    expect(updatedOrg.getImsOrgId()).to.equal(newImsOrgId);
+    expect(updatedOrg.getName()).to.equal(newName);
+    expect(updatedOrg.getUpdatedAt()).to.not.equal(originalUpdatedAt);
   });
 
   it('gets sites', async () => {

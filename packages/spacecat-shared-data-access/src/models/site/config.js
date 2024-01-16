@@ -10,6 +10,19 @@
  * governing permissions and limitations under the License.
  */
 
+import Joi from 'joi';
+
+const configSchema = Joi.object({
+  slack: Joi.object({
+    workspace: Joi.string(),
+    channel: Joi.string(),
+  }),
+  alerts: Joi.array().items(Joi.object({
+    type: Joi.string(),
+    byOrg: Joi.boolean(),
+    mentions: Joi.array().items(Joi.object({ slack: Joi.array().items(Joi.string()) })),
+  })),
+});
 const Config = (data = {}) => {
   const state = {
     slack: {
@@ -27,14 +40,25 @@ const Config = (data = {}) => {
   return Object.freeze(self);
 };
 
+// Function to validate incoming configuration
+function validateConfiguration(config) {
+  const { error, value } = configSchema.validate(config);
+
+  if (error) {
+    throw new Error(`Configuration validation error: ${error.message}`);
+  }
+
+  return value; // Validated and sanitized configuration
+}
+
 Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 
-Config.toDynamoItem = (config) => ({
-  slack: {
-    channel: config?.slack?.channel,
-    workspace: config?.slack?.workspace,
-  },
-  alerts: config.alerts,
-});
+Config.toDynamoItem = (config) => {
+  try {
+    return validateConfiguration(config);
+  } catch (e) {
+    throw new Error(`Error validating config ${e.message}`);
+  }
+};
 
 export default Config;

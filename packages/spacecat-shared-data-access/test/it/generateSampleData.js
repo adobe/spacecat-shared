@@ -167,6 +167,7 @@ export default async function generateSampleData(
     organizations.push({
       id: organizationId,
       imsOrgId: `${i}-1234@AdobeOrg`,
+      name: `${i}-1234Name`,
       GSI1PK: config.pkAllOrganizations,
       createdAt: nowIso,
       updatedAt: nowIso,
@@ -177,7 +178,8 @@ export default async function generateSampleData(
         },
         alerts: [{
           type: '404',
-          mentions: [{ slack: `${i}-slackId` }],
+          byOrg: true,
+          mentions: [{ slack: [`${i}-slackId`] }],
         }],
       },
     });
@@ -203,7 +205,7 @@ export default async function generateSampleData(
         alerts: [{
           type: '404',
           byOrg: true,
-          mentions: [{ slack: `${i}-slackId` }],
+          mentions: [{ slack: [`${i}-slackId`] }],
         }],
       },
       auditConfig: {

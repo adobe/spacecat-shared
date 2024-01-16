@@ -95,6 +95,9 @@ export const createOrganization = (data) => {
       },
     };
   }
+  if (!hasText(newState.name)) {
+    throw new Error('Org name must be provided');
+  }
 
   newState.config = Config(newState.config);
 

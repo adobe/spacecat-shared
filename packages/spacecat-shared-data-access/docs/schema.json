@@ -116,7 +116,7 @@
           "identifiers",
           "URL"
         ],
-        "imsOrgId": [
+        "organizationId": [
           "identifiers",
           "UUID"
         ]

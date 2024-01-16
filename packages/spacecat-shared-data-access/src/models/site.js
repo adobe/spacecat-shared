@@ -36,6 +36,7 @@ const Site = (data = {}) => {
   self.getAuditConfig = () => self.state.auditConfig;
   self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
+  self.getConfig = () => self.state.config;
   self.getDeliveryType = () => self.state.deliveryType;
   self.getGitHubURL = () => self.state.gitHubURL;
   self.getOrganizationId = () => self.state.organizationId;

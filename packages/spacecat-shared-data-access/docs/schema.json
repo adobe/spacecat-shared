@@ -80,11 +80,12 @@
           "IndexName": "spacecat-services-all-sites-organizations",
           "KeyAttributes": {
             "PartitionKey": {
-              "AttributeName": "organizationId"
-            },
-            "Projection": {
-              "ProjectionType": "ALL"
+              "AttributeName": "organizationId",
+              "AttributeType": "S"
             }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
           }
         },
         {

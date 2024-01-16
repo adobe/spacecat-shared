@@ -41,7 +41,7 @@ export const OrganizationDto = {
     const organizationData = {
       id: dynamoItem.id,
       name: dynamoItem.name,
-      imsOrgId: dynamoItem.getImsOrgId(),
+      imsOrgId: dynamoItem.imsOrgId,
       createdAt: dynamoItem.createdAt,
       updatedAt: dynamoItem.updatedAt,
       config: dynamoItem.config,

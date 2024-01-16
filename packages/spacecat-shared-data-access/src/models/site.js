@@ -121,7 +121,7 @@ const Site = (data = {}) => {
   /**
    * Updates the organizationId the site belongs to.
    * @param {string} organizationId - The Org ID.
-   * @return {Base} The organization site.
+   * @return {Base} The updated site.
    */
   self.updateOrganizationId = (organizationId) => {
     self.state.organizationId = organizationId;

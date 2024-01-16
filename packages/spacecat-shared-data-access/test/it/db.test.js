@@ -15,7 +15,7 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import dynamoDbLocal from 'dynamo-db-local';
-import * as Joi from 'joi';
+import Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { sleep } from '../unit/util.js';
@@ -108,6 +108,7 @@ describe('DynamoDB Integration Test', async () => {
     this.timeout(20000);
 
     process.env.AWS_REGION = 'local';
+    process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
     process.env.AWS_DEFAULT_REGION = 'local';
     process.env.AWS_ACCESS_KEY_ID = 'dummy';
     process.env.AWS_SECRET_ACCESS_KEY = 'dummy';

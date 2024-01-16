@@ -262,20 +262,20 @@ describe('DynamoDB Integration Test', async () => {
     const originalUpdatedAt = siteToUpdate.getUpdatedAt();
     const newDeliveryType = 'aem_cs';
     const newGitHubURL = 'https://github.com/newOrg/some-repo';
-    const newImsOrgId = 'updatedOrg123';
+    const newOrgId = 'updatedOrg123';
 
     await sleep(10); // Make sure updatedAt is different
 
     siteToUpdate.updateDeliveryType(newDeliveryType);
     siteToUpdate.updateGitHubURL(newGitHubURL);
-    siteToUpdate.updateImsOrgId(newImsOrgId);
+    siteToUpdate.updateOrganizationId(newOrgId);
     siteToUpdate.toggleLive();
 
     const updatedSite = await dataAccess.updateSite(siteToUpdate);
 
     expect(updatedSite.getDeliveryType()).to.equal(newDeliveryType);
     expect(updatedSite.getGitHubURL()).to.equal(newGitHubURL);
-    expect(updatedSite.getImsOrgId()).to.equal(newImsOrgId);
+    expect(updatedSite.getOrganizationId()).to.equal(newOrgId);
     expect(updatedSite.isLive()).to.be.false;
     expect(updatedSite.getUpdatedAt()).to.not.equal(originalUpdatedAt);
   });

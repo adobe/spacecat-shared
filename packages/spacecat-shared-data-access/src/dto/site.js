@@ -21,7 +21,7 @@ export const SiteDto = {
   /**
    * Converts a Site object into a DynamoDB item.
    * @param {Readonly<Site>} site - Site object.
-   * @returns {{createdAt, baseURL, GSI1PK: string, id, imsOrgId, updatedAt}}
+   * @returns {{createdAt, baseURL, GSI1PK: string, id, organizationId, updatedAt}}
    */
   toDynamoItem: (site) => ({
     id: site.getId(),

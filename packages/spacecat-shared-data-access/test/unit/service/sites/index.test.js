@@ -364,12 +364,12 @@ describe('Site Access Pattern Tests', () => {
 
       const site = await exportedFunctions.getSiteByBaseURL(siteData.baseURL);
       // site.updateBaseURL('https://newsite.com');
-      site.updateImsOrgId('newOrg123');
+      site.updateOrganizationId('newOrg123');
 
       const result = await exportedFunctions.updateSite(site);
       expect(mockDynamoClient.putItem.calledOnce).to.be.true;
       expect(result.getBaseURL()).to.equal(site.getBaseURL());
-      expect(result.getImsOrgId()).to.equal(site.getImsOrgId());
+      expect(result.getOrganizationId()).to.equal(site.getOrganizationId());
     });
 
     it('throws an error if site does not exist', async () => {

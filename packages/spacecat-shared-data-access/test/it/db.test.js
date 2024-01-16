@@ -87,7 +87,7 @@ const TEST_DA_CONFIG = {
   tableNameOrganizations: 'spacecat-services-organizations',
   tableNameSites: 'spacecat-services-sites',
   indexNameAllSites: 'spacecat-services-all-sites',
-  indexNameAllSitesOrganizations: 'spacecat-all-sites-organizations',
+  indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
   indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
@@ -160,6 +160,19 @@ describe('DynamoDB Integration Test', async () => {
     sites.forEach((site) => {
       checkSite(site);
       expect(site.getAudits()).to.be.an('array').that.has.lengthOf(0);
+    });
+  });
+
+  it('gets sites by organizationId', async () => {
+    const organizations = await dataAccess.getOrganizations();
+    const sites = await dataAccess.getSitesByOrganizationId(organizations[0].getId());
+
+    expect(sites.length).to.be.lessThanOrEqual(Math.trunc(NUMBER_OF_SITES / NUMBER_OF_ORGANIZATIONS)
+        + (NUMBER_OF_SITES % NUMBER_OF_ORGANIZATIONS));
+
+    sites.forEach((site) => {
+      checkSite(site);
+      expect(site.getOrganizationId()).to.be.equal(organizations[0].getId());
     });
   });
 

@@ -250,7 +250,6 @@ export const getSiteByBaseURLWithLatestAudit = async (
 export const getSitesByOrganizationId = async (
   dynamoClient,
   config,
-  log,
   organizationId,
 ) => {
   const dynamoItems = await dynamoClient.query({
@@ -263,7 +262,7 @@ export const getSitesByOrganizationId = async (
     Limit: 1,
   });
 
-  return dynamoItems.length > 0 ? SiteDto.fromDynamoItem(dynamoItems[0]) : null;
+  return dynamoItems.map((dynamoItem) => SiteDto.fromDynamoItem(dynamoItem));
 };
 
 /**

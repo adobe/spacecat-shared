@@ -202,6 +202,7 @@ export default async function generateSampleData(
         },
         alerts: [{
           type: '404',
+          byOrg: true,
           mentions: [{ slack: `${i}-slackId` }],
         }],
       },

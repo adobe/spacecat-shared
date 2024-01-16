@@ -61,6 +61,7 @@ function checkOrganization(organization) {
       }),
       alerts: Joi.array().items(Joi.object({
         type: Joi.string(),
+        byOrg: Joi.boolean(),
         mentions: Joi.array().items(Joi.object({ slack: Joi.string() })),
       })),
     }),

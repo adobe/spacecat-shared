@@ -51,7 +51,7 @@ const Organization = (data = {}) => {
  */
   self.updateName = (name) => {
     if (!hasText(name)) {
-      throw new Error('Name must be provided');
+      throw new Error('Org name must be provided');
     }
 
     self.state.name = name;

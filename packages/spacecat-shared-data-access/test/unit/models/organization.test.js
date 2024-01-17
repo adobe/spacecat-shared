@@ -13,6 +13,7 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import { createOrganization } from '../../../src/models/organization.js';
+import { sleep } from '../util.js';
 
 const validData = {
   id: '1111111',
@@ -60,29 +61,90 @@ describe('Organization Model Tests', () => {
       expect(config.alerts).to.be.an('array');
       expect(config.slack.workspace).to.equal('workspace');
       expect(config.slack.channel).to.equal('channel');
+      expect(config.alerts[0].mentions[0].slack[0]).to.equal('slackId');
     });
   });
 
   describe('Organization Object Functionality', () => {
+    let organization;
+
     beforeEach(() => {
+      organization = createOrganization(validData);
     });
 
     it('updates name correctly', () => {
+      const name = 'newOrgName123';
+      organization.updateName(name);
+      expect(organization.getName()).to.equal(name);
     });
 
     it('updates imsOrgId correctly', () => {
+      const imsOrgId = 'newImsOrg123';
+      organization.updateImsOrgId(imsOrgId);
+      expect(organization.getImsOrgId()).to.equal(imsOrgId);
     });
 
     it('updates config correctly', () => {
+      const conf = {
+        slack: {
+          workspace: 'workspace',
+          channel: 'channel',
+        },
+        alerts: [{
+          type: '404',
+          byOrg: false,
+          mentions: [{ slack: ['slackId'] }],
+        }],
+      };
+      organization.updateConfig(conf);
+      const updatedConf = organization.getConfig();
+      expect(updatedConf.slack).to.be.an('object');
+      expect(updatedConf.alerts).to.be.an('array');
+      expect(updatedConf.slack.workspace).to.equal('workspace');
+      expect(updatedConf.slack.channel).to.equal('channel');
+      expect(updatedConf.alerts[0].mentions[0].slack[0]).to.equal('slackId');
     });
 
-    it('throws an error when updating with an invalid name', () => {
+    it('throws an error when updating with an empty name', () => {
+      expect(() => organization.updateName('')).to.throw('Org name must be provided');
+    });
+
+    it('throws an error when updating with an empty imsOrgId', () => {
+      expect(() => organization.updateImsOrgId('')).to.throw('IMS Org ID must be provided');
+    });
+
+    it('throws an error when updating with an invalid config', () => {
+      expect(() => organization.updateConfig('abcd')).to.throw('Config must be provided');
     });
 
     it('updates updatedAt when imsOrgId is updated', async () => {
+      const initialUpdatedAt = organization.getUpdatedAt();
+
+      await sleep(20);
+
+      organization.updateName('Name123');
+
+      expect(organization.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });
 
     it('updates updatedAt when name is updated', async () => {
+      const initialUpdatedAt = organization.getUpdatedAt();
+
+      await sleep(20);
+
+      organization.updateImsOrgId('imsOrg123');
+
+      expect(organization.getUpdatedAt()).to.not.equal(initialUpdatedAt);
+    });
+
+    it('updates updatedAt when config is updated', async () => {
+      const initialUpdatedAt = organization.getUpdatedAt();
+
+      await sleep(20);
+
+      organization.updateName('Name123');
+
+      expect(organization.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });
   });
 });

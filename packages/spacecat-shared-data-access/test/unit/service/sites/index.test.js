@@ -29,6 +29,7 @@ const TEST_DA_CONFIG = {
   tableNameSites: 'test-sites',
   indexNameAllSites: 'test-index-all-sites',
   indexNameAllSitesByDeliveryType: 'test-index-all-sites-by-delivery-type',
+  indexNameAllSitesOrganizations: 'test-index-all-sites-organizations',
   indexNameAllLatestAuditScores: 'test-index-all-latest-audit-scores',
   pkAllSites: 'test-pk-all-sites',
   pkAllLatestAudits: 'test-pk-all-latest-audits',
@@ -49,6 +50,11 @@ describe('Site Access Pattern Tests', () => {
     it('exports getSitesByDeliveryType function', () => {
       expect(exportedFunctions).to.have.property('getSitesByDeliveryType');
       expect(exportedFunctions.getSitesByDeliveryType).to.be.a('function');
+    });
+
+    it('exports getSitesByOrganizationId function', () => {
+      expect(exportedFunctions).to.have.property('getSitesByOrganizationId');
+      expect(exportedFunctions.getSitesByOrganizationId).to.be.a('function');
     });
 
     it('exports getSitesToAudit function', () => {

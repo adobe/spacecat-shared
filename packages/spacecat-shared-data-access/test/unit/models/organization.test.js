@@ -37,7 +37,7 @@ describe('Organization Model Tests', () => {
       const config = org.getConfig();
 
       expect(config).to.be.an('object');
-      expect(config.alerts).to.be.an('object');
+      expect(config.alerts).to.be.an('array');
       expect(config.slack).to.be.an('object');
     });
 
@@ -50,18 +50,16 @@ describe('Organization Model Tests', () => {
         alerts: [{
           type: '404',
           byOrg: false,
-          mentions: [{ slack: 'slackId' }],
+          mentions: [{ slack: ['slackId'] }],
         }],
       };
-      const org = createOrganization({ ...validData, conf });
+      const org = createOrganization({ ...validData, config: conf });
       const config = org.getConfig();
 
       expect(config.slack).to.be.an('object');
-      expect(config.alerts).to.be.an('object');
+      expect(config.alerts).to.be.an('array');
       expect(config.slack.workspace).to.equal('workspace');
       expect(config.slack.channel).to.equal('channel');
-
-      expect(config.alerts).to.be.an('object');
     });
   });
 

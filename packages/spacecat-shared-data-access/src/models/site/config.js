@@ -12,7 +12,7 @@
 
 import Joi from 'joi';
 
-const configSchema = Joi.object({
+export const configSchema = Joi.object({
   slack: Joi.object({
     workspace: Joi.string(),
     channel: Joi.string(),
@@ -23,7 +23,14 @@ const configSchema = Joi.object({
     mentions: Joi.array().items(Joi.object({ slack: Joi.array().items(Joi.string()) })),
   })),
 });
-const Config = (data = {}) => {
+
+export const defaultConfig = {
+  slack: {
+  },
+  alerts: [],
+};
+
+export const Config = (data = {}) => {
   const state = {
     slack: {
       channel: data?.slack?.channel,
@@ -33,8 +40,8 @@ const Config = (data = {}) => {
   };
 
   const self = {
-    alerts: () => state.alerts,
-    slack: () => state.slack,
+    alerts: state.alerts,
+    slack: state.slack,
   };
 
   return Object.freeze(self);
@@ -60,5 +67,3 @@ Config.toDynamoItem = (config) => {
     throw new Error(`Error validating config ${e.message}`);
   }
 };
-
-export default Config;

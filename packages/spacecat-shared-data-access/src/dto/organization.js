@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import Config from '../models/site/config.js';
+import { Config } from '../models/site/config.js';
 import { createOrganization } from '../models/organization.js';
 
 /**

@@ -21,6 +21,7 @@ import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { v4 as uuidv4 } from 'uuid';
 import { sleep } from '../unit/util.js';
 import { createDataAccess } from '../../src/service/index.js';
+import { configSchema } from '../../src/models/site/config.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';
@@ -55,17 +56,7 @@ function checkOrganization(organization) {
     id: Joi.string(),
     name: Joi.string(),
     imsOrgId: Joi.string(),
-    config: Joi.object({
-      slack: Joi.object({
-        workspace: Joi.string(),
-        channel: Joi.string(),
-      }),
-      alerts: Joi.array().items(Joi.object({
-        type: Joi.string(),
-        byOrg: Joi.boolean(),
-        mentions: Joi.array().items(Joi.object({ slack: Joi.string() })),
-      })),
-    }),
+    config: configSchema,
   });
   schema.validate(organization);
 }
@@ -171,7 +162,7 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(newOrg.getName()).to.equal(newOrgData.name);
     expect(newOrg.getImsOrgId()).to.equal(newOrgData.imsOrgId);
-    expect(newOrg.getConfig()).to.be.an('object').that.is.empty;
+    expect(newOrg.getConfig()).to.be.an('object');
   });
 
   it('updates an existing org', async () => {

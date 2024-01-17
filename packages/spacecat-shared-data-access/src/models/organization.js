@@ -13,7 +13,7 @@
 import { hasText, isObject } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
-import Config from './site/config.js';
+import { Config, defaultConfig } from './site/config.js';
 
 /**
  * Creates a new Organization.
@@ -88,12 +88,7 @@ export const createOrganization = (data) => {
   const newState = { ...data };
 
   if (!isObject(newState.config)) {
-    newState.config = {
-      slack: {
-      },
-      alerts: {
-      },
-    };
+    newState.config = { ...defaultConfig };
   }
   if (!hasText(newState.name)) {
     throw new Error('Org name must be provided');

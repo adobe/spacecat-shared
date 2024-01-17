@@ -12,7 +12,7 @@
 
 import { createSite } from '../models/site.js';
 import AuditConfig from '../models/site/audit-config.js';
-import Config from '../models/site/config.js';
+import { Config } from '../models/site/config.js';
 
 /**
  * Data transfer object for Site.

@@ -30,23 +30,6 @@ export const defaultConfig = {
   alerts: [],
 };
 
-export const Config = (data = {}) => {
-  const state = {
-    slack: {
-      channel: data?.slack?.channel,
-      workspace: data?.slack?.workspace,
-    },
-    alerts: data.alerts,
-  };
-
-  const self = {
-    alerts: state.alerts,
-    slack: state.slack,
-  };
-
-  return Object.freeze(self);
-};
-
 // Function to validate incoming configuration
 function validateConfiguration(config) {
   const { error, value } = configSchema.validate(config);
@@ -58,12 +41,24 @@ function validateConfiguration(config) {
   return value; // Validated and sanitized configuration
 }
 
+export const Config = (data = {}) => {
+  const validConfig = validateConfiguration(data);
+  const state = {
+    slack: {
+      ...(validConfig?.slack?.channel ? { channel: validConfig?.slack?.channel } : {}),
+      ...(validConfig?.slack?.workspace ? { workspace: validConfig?.slack?.workspace } : {}),
+    },
+    alerts: validConfig.alerts || [],
+  };
+
+  const self = {
+    alerts: state.alerts,
+    slack: state.slack,
+  };
+
+  return Object.freeze(self);
+};
+
 Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 
-Config.toDynamoItem = (config) => {
-  try {
-    return validateConfiguration(config);
-  } catch (e) {
-    throw new Error(`Error validating config ${e.message}`);
-  }
-};
+Config.toDynamoItem = (config) => validateConfiguration(config);

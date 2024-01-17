@@ -115,6 +115,12 @@ describe('Site Access Pattern Tests', () => {
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
+    it('calls getSitesByOrganizationId and returns an array', async () => {
+      const result = await exportedFunctions.getSitesByOrganizationId('OrgId1');
+      expect(result).to.be.an('array');
+      expect(mockDynamoClient.query.called).to.be.true;
+    });
+
     it('calls getSitesToAudit and returns an array', async () => {
       const result = await exportedFunctions.getSitesToAudit();
       expect(result).to.be.an('array');

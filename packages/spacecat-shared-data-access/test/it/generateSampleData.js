@@ -167,6 +167,7 @@ export default async function generateSampleData(
       gitHubURL: `https://github.com/org-${i}/test-repo`,
       imsOrgId: `${i}-1234@AdobeOrg`,
       isLive: true,
+      isLiveToggledAt: nowIso,
       GSI1PK: config.pkAllSites,
       createdAt: nowIso,
       updatedAt: nowIso,

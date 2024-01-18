@@ -39,6 +39,7 @@ const Site = (data = {}) => {
   self.getGitHubURL = () => self.state.gitHubURL;
   self.getImsOrgId = () => self.state.imsOrgId;
   self.isLive = () => self.state.isLive;
+  self.getIsLiveToggledAt = () => self.state.isLiveToggledAt;
 
   // TODO: updating the baseURL is not supported yet, it will require a transact write
   //  on dynamodb (put then delete) since baseURL is part of the primary key, something like:
@@ -143,6 +144,7 @@ const Site = (data = {}) => {
    */
   self.toggleLive = () => {
     self.state.isLive = !self.state.isLive;
+    self.state.isLiveToggledAt = new Date().toISOString();
     return self;
   };
 

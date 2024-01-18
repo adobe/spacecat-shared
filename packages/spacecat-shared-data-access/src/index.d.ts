@@ -186,6 +186,12 @@ export interface Site {
   isLive: () => boolean;
 
   /**
+   * The timestamp when the site was last toggled to live or non-live.
+   * @returns {string} The timestamp when the site was last toggled to live or non-live.
+   */
+  getIsLiveToggledAt: () => string;
+
+  /**
    * Updates the list of audits for the site.
    * @param {Audit[]} audits The new list of audits.
    * @returns {Site} The updated site instance.

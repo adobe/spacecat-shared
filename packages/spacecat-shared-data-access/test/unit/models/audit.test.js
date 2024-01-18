@@ -80,6 +80,25 @@ describe('Audit Model Tests', () => {
       expect(audit.getPreviousAuditResult()).to.be.undefined;
     });
 
+    it('automatically initializes scores with empty object if not provided', () => {
+      const noScoresAuditResult = {
+        siteId: '123',
+        auditedAt: new Date().toISOString(),
+        auditType: 'broken-backlinks',
+        auditResult: {
+          brokenBacklinks: [],
+        },
+        fullAuditRef: 'ref123',
+      };
+
+      const audit = createAudit(noScoresAuditResult);
+      expect(audit).to.be.an('object');
+      expect(audit.getAuditResult()).to.deep.equal({
+        ...noScoresAuditResult.auditResult,
+        scores: {},
+      });
+    });
+
     it('throws an error when updating with invalid previous audit', () => {
       const audit = createAudit(validData);
 

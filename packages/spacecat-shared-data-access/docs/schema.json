@@ -35,6 +35,10 @@
           "AttributeType": "B"
         },
         {
+          "AttributeName": "isLiveToggledAt",
+          "AttributeType": "S"
+        },
+        {
           "AttributeName": "deliveryType",
           "AttributeType": "S"
         },

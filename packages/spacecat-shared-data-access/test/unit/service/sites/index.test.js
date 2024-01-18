@@ -29,6 +29,7 @@ const TEST_DA_CONFIG = {
   tableNameSites: 'test-sites',
   indexNameAllSites: 'test-index-all-sites',
   indexNameAllSitesByDeliveryType: 'test-index-all-sites-by-delivery-type',
+  indexNameAllSitesOrganizations: 'test-index-all-sites-organizations',
   indexNameAllLatestAuditScores: 'test-index-all-latest-audit-scores',
   pkAllSites: 'test-pk-all-sites',
   pkAllLatestAudits: 'test-pk-all-latest-audits',
@@ -49,6 +50,11 @@ describe('Site Access Pattern Tests', () => {
     it('exports getSitesByDeliveryType function', () => {
       expect(exportedFunctions).to.have.property('getSitesByDeliveryType');
       expect(exportedFunctions.getSitesByDeliveryType).to.be.a('function');
+    });
+
+    it('exports getSitesByOrganizationID function', () => {
+      expect(exportedFunctions).to.have.property('getSitesByOrganizationID');
+      expect(exportedFunctions.getSitesByOrganizationID).to.be.a('function');
     });
 
     it('exports getSitesToAudit function', () => {
@@ -105,6 +111,12 @@ describe('Site Access Pattern Tests', () => {
 
     it('calls getSitesByDeliveryType and returns an array', async () => {
       const result = await exportedFunctions.getSitesByDeliveryType('aem_edge');
+      expect(result).to.be.an('array');
+      expect(mockDynamoClient.query.called).to.be.true;
+    });
+
+    it('calls getSitesByOrganizationID and returns an array', async () => {
+      const result = await exportedFunctions.getSitesByOrganizationID('OrgId1');
       expect(result).to.be.an('array');
       expect(mockDynamoClient.query.called).to.be.true;
     });
@@ -364,12 +376,12 @@ describe('Site Access Pattern Tests', () => {
 
       const site = await exportedFunctions.getSiteByBaseURL(siteData.baseURL);
       // site.updateBaseURL('https://newsite.com');
-      site.updateImsOrgId('newOrg123');
+      site.updateOrganizationId('newOrg123');
 
       const result = await exportedFunctions.updateSite(site);
       expect(mockDynamoClient.putItem.calledOnce).to.be.true;
       expect(result.getBaseURL()).to.equal(site.getBaseURL());
-      expect(result.getImsOrgId()).to.equal(site.getImsOrgId());
+      expect(result.getOrganizationId()).to.equal(site.getOrganizationId());
     });
 
     it('throws an error if site does not exist', async () => {

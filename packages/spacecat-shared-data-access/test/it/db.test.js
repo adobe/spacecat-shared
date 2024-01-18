@@ -15,10 +15,13 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import dynamoDbLocal from 'dynamo-db-local';
+import Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
+import { v4 as uuidv4 } from 'uuid';
 import { sleep } from '../unit/util.js';
 import { createDataAccess } from '../../src/service/index.js';
+import { configSchema } from '../../src/models/site/config.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';
@@ -32,7 +35,7 @@ function checkSite(site) {
   expect(site.getBaseURL()).to.be.a('string');
   expect(site.getDeliveryType()).to.be.a('string');
   expect(site.getGitHubURL()).to.be.a('string');
-  expect(site.getImsOrgId()).to.be.a('string');
+  expect(site.getOrganizationId()).to.be.a('string');
   expect(isIsoDate(site.getCreatedAt())).to.be.true;
   expect(isIsoDate(site.getUpdatedAt())).to.be.true;
   expect(site.getAudits()).to.be.an('array');
@@ -47,6 +50,16 @@ function checkSite(site) {
   expect(auditConfig.getAuditTypeConfig('non-existing-type')).to.be.undefined;
   expect(auditConfig.getAuditTypeConfig('cwv')).to.be.an('object');
   expect(auditConfig.getAuditTypeConfig('cwv').disabled()).to.be.a('boolean').which.is.true;
+}
+
+function checkOrganization(organization) {
+  const schema = Joi.object({
+    id: Joi.string(),
+    name: Joi.string(),
+    imsOrgId: Joi.string(),
+    config: configSchema,
+  });
+  schema.validate(organization);
 }
 
 function checkAudit(audit) {
@@ -65,11 +78,15 @@ function checkAudit(audit) {
 const TEST_DA_CONFIG = {
   tableNameAudits: 'spacecat-services-audits',
   tableNameLatestAudits: 'spacecat-services-latest-audits',
+  tableNameOrganizations: 'spacecat-services-organizations',
   tableNameSites: 'spacecat-services-sites',
   indexNameAllSites: 'spacecat-services-all-sites',
+  indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
+  indexNameAllOrganizations: 'spacecat-services-all-organizations',
   indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
   pkAllSites: 'ALL_SITES',
+  pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
 };
 
@@ -78,12 +95,14 @@ describe('DynamoDB Integration Test', async () => {
   let dataAccess;
 
   const NUMBER_OF_SITES = 10;
+  const NUMBER_OF_ORGANIZATIONS = 3;
   const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
 
   before(async function () {
     this.timeout(20000);
 
     process.env.AWS_REGION = 'local';
+    process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
     process.env.AWS_DEFAULT_REGION = 'local';
     process.env.AWS_ACCESS_KEY_ID = 'dummy';
     process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
@@ -92,13 +111,77 @@ describe('DynamoDB Integration Test', async () => {
 
     await sleep(1000); // give db time to start up
 
-    await generateSampleData(TEST_DA_CONFIG, NUMBER_OF_SITES, NUMBER_OF_AUDITS_PER_TYPE_AND_SITE);
+    await generateSampleData(
+      TEST_DA_CONFIG,
+      NUMBER_OF_ORGANIZATIONS,
+      NUMBER_OF_SITES,
+      NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
+    );
 
     dataAccess = createDataAccess(TEST_DA_CONFIG, console);
   });
 
   after(() => {
     dynamoDbLocalProcess.kill();
+  });
+
+  it('gets organizations', async () => {
+    const organizations = await dataAccess.getOrganizations();
+
+    expect(organizations.length).to.equal(NUMBER_OF_ORGANIZATIONS);
+
+    organizations.forEach((organization) => {
+      checkOrganization(organization);
+    });
+  });
+
+  it('gets organization by ID', async () => {
+    const orgId = (await dataAccess.getOrganizations())[0].getId();
+    const organization = await dataAccess.getOrganizationByID(orgId);
+
+    expect(organization).to.be.an('object');
+
+    checkOrganization(organization);
+    expect(organization.getId()).to.equal(orgId);
+  });
+
+  it('adds a new organization', async () => {
+    const organizationId = uuidv4();
+    const newOrgData = {
+      id: organizationId,
+      imsOrgId: '1234@AdobeOrg',
+      name: 'Org1',
+    };
+
+    const addedOrg = await dataAccess.addOrganization(newOrgData);
+
+    expect(addedOrg).to.be.an('object');
+
+    const newOrg = await dataAccess.getOrganizationByID(organizationId);
+
+    checkOrganization(newOrg);
+
+    expect(newOrg.getName()).to.equal(newOrgData.name);
+    expect(newOrg.getImsOrgId()).to.equal(newOrgData.imsOrgId);
+    expect(newOrg.getConfig()).to.be.an('object');
+  });
+
+  it('updates an existing org', async () => {
+    const orgToUpdate = (await dataAccess.getOrganizations())[0];
+    const originalUpdatedAt = orgToUpdate.getUpdatedAt();
+    const newName = 'updatedName123';
+    const newImsOrgId = 'updatedOrg123';
+
+    await sleep(10); // Make sure updatedAt is different
+
+    orgToUpdate.updateImsOrgId(newImsOrgId);
+    orgToUpdate.updateName(newName);
+
+    const updatedOrg = await dataAccess.updateOrganization(orgToUpdate);
+
+    expect(updatedOrg.getImsOrgId()).to.equal(newImsOrgId);
+    expect(updatedOrg.getName()).to.equal(newName);
+    expect(updatedOrg.getUpdatedAt()).to.not.equal(originalUpdatedAt);
   });
 
   it('gets sites', async () => {
@@ -120,6 +203,19 @@ describe('DynamoDB Integration Test', async () => {
     sites.forEach((site) => {
       checkSite(site);
       expect(site.getAudits()).to.be.an('array').that.has.lengthOf(0);
+    });
+  });
+
+  it('gets sites by organizationId', async () => {
+    const organizations = await dataAccess.getOrganizations();
+    const sites = await dataAccess.getSitesByOrganizationID(organizations[0].getId());
+
+    expect(sites.length).to.be.lessThanOrEqual(Math.trunc(NUMBER_OF_SITES / NUMBER_OF_ORGANIZATIONS)
+        + (NUMBER_OF_SITES % NUMBER_OF_ORGANIZATIONS));
+
+    sites.forEach((site) => {
+      checkSite(site);
+      expect(site.getOrganizationId()).to.be.equal(organizations[0].getId());
     });
   });
 
@@ -192,7 +288,7 @@ describe('DynamoDB Integration Test', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',
       gitHubURL: 'https://github.com/some-org/test-repo',
-      imsOrgId: 'newOrg123',
+      organizationId: '1234',
       isLive: true,
       isLiveToggledAt: new Date().toISOString(),
       audits: [],
@@ -216,7 +312,7 @@ describe('DynamoDB Integration Test', async () => {
     expect(newSite.getId()).to.to.be.a('string');
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
     expect(newSite.getGitHubURL()).to.equal(newSiteData.gitHubURL);
-    expect(newSite.getImsOrgId()).to.equal(newSiteData.imsOrgId);
+    expect(newSite.getOrganizationId()).to.equal(newSiteData.organizationId);
     expect(newSite.getAudits()).to.be.an('array').that.is.empty;
   });
 
@@ -225,20 +321,20 @@ describe('DynamoDB Integration Test', async () => {
     const originalUpdatedAt = siteToUpdate.getUpdatedAt();
     const newDeliveryType = 'aem_cs';
     const newGitHubURL = 'https://github.com/newOrg/some-repo';
-    const newImsOrgId = 'updatedOrg123';
+    const newOrgId = 'updatedOrg123';
 
     await sleep(10); // Make sure updatedAt is different
 
     siteToUpdate.updateDeliveryType(newDeliveryType);
     siteToUpdate.updateGitHubURL(newGitHubURL);
-    siteToUpdate.updateImsOrgId(newImsOrgId);
+    siteToUpdate.updateOrganizationId(newOrgId);
     siteToUpdate.toggleLive();
 
     const updatedSite = await dataAccess.updateSite(siteToUpdate);
 
     expect(updatedSite.getDeliveryType()).to.equal(newDeliveryType);
     expect(updatedSite.getGitHubURL()).to.equal(newGitHubURL);
-    expect(updatedSite.getImsOrgId()).to.equal(newImsOrgId);
+    expect(updatedSite.getOrganizationId()).to.equal(newOrgId);
     expect(updatedSite.isLive()).to.be.false;
     expect(updatedSite.getUpdatedAt()).to.not.equal(originalUpdatedAt);
   });

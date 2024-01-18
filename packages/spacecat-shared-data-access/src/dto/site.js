@@ -12,6 +12,7 @@
 
 import { createSite } from '../models/site.js';
 import AuditConfig from '../models/site/audit-config.js';
+import { Config } from '../models/site/config.js';
 
 /**
  * Data transfer object for Site.
@@ -20,20 +21,21 @@ export const SiteDto = {
   /**
    * Converts a Site object into a DynamoDB item.
    * @param {Readonly<Site>} site - Site object.
-   * @returns {{createdAt, baseURL, GSI1PK: string, id, imsOrgId, updatedAt}}
+   * @returns {{createdAt, baseURL, GSI1PK: string, id, organizationId, updatedAt}}
    */
   toDynamoItem: (site) => ({
     id: site.getId(),
     baseURL: site.getBaseURL(),
     deliveryType: site.getDeliveryType(),
     gitHubURL: site.getGitHubURL() || '',
-    imsOrgId: site.getImsOrgId() || '',
+    organizationId: site.getOrganizationId() || '',
     isLive: site.isLive(),
     isLiveToggledAt: site.getIsLiveToggledAt(),
     createdAt: site.getCreatedAt(),
     updatedAt: site.getUpdatedAt(),
     GSI1PK: 'ALL_SITES',
     auditConfig: AuditConfig.toDynamoItem(site.getAuditConfig()),
+    config: Config.toDynamoItem(site.getConfig()),
   }),
 
   /**
@@ -47,12 +49,13 @@ export const SiteDto = {
       baseURL: dynamoItem.baseURL,
       deliveryType: dynamoItem.deliveryType,
       gitHubURL: dynamoItem.gitHubURL,
-      imsOrgId: dynamoItem.imsOrgId,
+      organizationId: dynamoItem.organizationId,
       isLive: dynamoItem.isLive,
       isLiveToggledAt: dynamoItem.isLiveToggledAt,
       createdAt: dynamoItem.createdAt,
       updatedAt: dynamoItem.updatedAt,
       auditConfig: dynamoItem.auditConfig,
+      config: dynamoItem.config,
     };
 
     return createSite(siteData);

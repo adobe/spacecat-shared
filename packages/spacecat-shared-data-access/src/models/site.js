@@ -10,10 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
 import AuditConfig from './site/audit-config.js';
+import { Config, DEFAULT_CONFIG } from './site/config.js';
 
 export const DELIVERY_TYPES = {
   AEM_CS: 'aem_cs',
@@ -35,9 +36,10 @@ const Site = (data = {}) => {
   self.getAuditConfig = () => self.state.auditConfig;
   self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
+  self.getConfig = () => self.state.config;
   self.getDeliveryType = () => self.state.deliveryType;
   self.getGitHubURL = () => self.state.gitHubURL;
-  self.getImsOrgId = () => self.state.imsOrgId;
+  self.getOrganizationId = () => self.state.organizationId;
   self.isLive = () => self.state.isLive;
   self.getIsLiveToggledAt = () => self.state.isLiveToggledAt;
 
@@ -118,16 +120,12 @@ const Site = (data = {}) => {
   };
 
   /**
-   * Updates the IMS Org ID belonging to the site.
-   * @param {string} imsOrgId - The IMS Org ID.
+   * Updates the organizationId the site belongs to.
+   * @param {string} organizationId - The Org ID.
    * @return {Base} The updated site.
    */
-  self.updateImsOrgId = (imsOrgId) => {
-    if (!hasText(imsOrgId)) {
-      throw new Error('IMS Org ID must be provided');
-    }
-
-    self.state.imsOrgId = imsOrgId;
+  self.updateOrganizationId = (organizationId) => {
+    self.state.organizationId = organizationId;
     self.touch();
 
     return self;
@@ -185,6 +183,12 @@ export const createSite = (data) => {
   }
 
   newState.auditConfig = AuditConfig(newState.auditConfig);
+
+  if (!isObject(newState.config)) {
+    newState.config = { ...DEFAULT_CONFIG };
+  }
+
+  newState.config = Config(newState.config);
 
   return Site(newState);
 };

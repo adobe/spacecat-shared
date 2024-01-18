@@ -20,7 +20,7 @@ import { sleep } from '../util.js';
 const validData = {
   baseURL: 'https://www.example.com',
   deliveryType: 'aem_edge',
-  imsOrgId: 'org123',
+  organizationId: 'org123',
   auditConfig: {
     auditsDisabled: false,
     auditTypeConfigs: {
@@ -100,10 +100,10 @@ describe('Site Model Tests', () => {
       expect(site.getDeliveryType()).to.equal(newDeliveryType);
     });
 
-    it('updates imsOrgId correctly', () => {
-      const newImsOrgId = 'newOrg123';
-      site.updateImsOrgId(newImsOrgId);
-      expect(site.getImsOrgId()).to.equal(newImsOrgId);
+    it('updates organizationId correctly', () => {
+      const organizationId = 'newOrg123';
+      site.updateOrganizationId(organizationId);
+      expect(site.getOrganizationId()).to.equal(organizationId);
     });
 
     it('updates gitHubURL correctly', () => {
@@ -114,10 +114,6 @@ describe('Site Model Tests', () => {
 
     it('throws an error when updating with an invalid deliveryType', () => {
       expect(() => site.updateDeliveryType('invalid')).to.throw('Invalid delivery type: invalid');
-    });
-
-    it('throws an error when updating with an empty imsOrgId', () => {
-      expect(() => site.updateImsOrgId('')).to.throw('IMS Org ID must be provided');
     });
 
     it('throws an error when updating with an invalid github URL', () => {
@@ -142,12 +138,12 @@ describe('Site Model Tests', () => {
       expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     }); */
 
-    it('updates updatedAt when imsOrgId is updated', async () => {
+    it('updates updatedAt when organizationId is updated', async () => {
       const initialUpdatedAt = site.getUpdatedAt();
 
       await sleep(20);
 
-      site.updateImsOrgId('newOrg123');
+      site.updateOrganizationId('newOrg123');
 
       expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });

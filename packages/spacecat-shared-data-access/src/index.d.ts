@@ -96,6 +96,10 @@ export interface AuditConfigType {
   disabled: () => boolean;
 }
 
+export interface Config {
+
+}
+
 /**
  * AuditConfig defines the structure for the overall audit configuration of a site.
  */
@@ -150,10 +154,10 @@ export interface Site {
   getGitHubURL: () => string;
 
   /**
-   * Retrieves the IMS Organization ID associated with the site.
-   * @returns {string} The IMS Org ID.
+   * Retrieves the Organization ID associated with the site.
+   * @returns {string} The Org ID.
    */
-  getImsOrgId: () => string;
+  getOrganizationId: () => string;
 
   /**
    * Retrieves the creation timestamp of the site.
@@ -172,6 +176,12 @@ export interface Site {
    * @returns {AuditConfig} The current audit configuration.
    */
   getAuditConfig: () => AuditConfig;
+
+  /**
+   * Retrieves the current configuration for the site.
+   * @returns {Config} The current configuration.
+   */
+  getConfig: () => Config;
 
   /**
    * Retrieves the audits associated with the site.
@@ -213,10 +223,48 @@ export interface Site {
 
   /**
    * Updates the IMS Org ID of the site.
-   * @param {string} imsOrgId The new IMS Org ID.
+   * @param {string} organizationId The new Org ID.
    * @returns {Site} The updated site instance.
    */
-  updateImsOrgId: (imsOrgId: string) => Site;
+  updateOrganizationId: (organizationId: string) => Site;
+}
+
+export interface Organization {
+  /**
+   * Retrieves the ID of the site.
+   * @returns {string} The site ID.
+   */
+  getId: () => string;
+
+  /**
+   * Retrieves the base URL of the site.
+   * @returns {string} The base URL.
+   */
+  getName: () => string;
+
+  /**
+   * Retrieves the IMS Organization ID associated with the site.
+   * @returns {string} The IMS Org ID.
+   */
+  getImsOrgId: () => string;
+
+  /**
+   * Retrieves the creation timestamp of the site.
+   * @returns {string} The creation timestamp.
+   */
+  getCreatedAt: () => string;
+
+  /**
+   * Retrieves the last update timestamp of the site.
+   * @returns {string} The last update timestamp.
+   */
+  getUpdatedAt: () => string;
+
+  /**
+   * Retrieves the current audit configuration for the site.
+   * @returns {Config} The current audit configuration.
+   */
+  getConfig: () => Config;
 }
 
 export interface DataAccess {
@@ -257,6 +305,9 @@ export interface DataAccess {
     sortAuditsAscending?: boolean,
     deliveryType?: string,
   ) => Promise<Site[]>;
+  getSitesByOrganizationID: (
+      organizationId: string,
+  ) => Promise<Organization[]>
   getSiteByBaseURL: (
     baseUrl: string,
   ) => Promise<Site | null>;
@@ -285,17 +336,35 @@ export interface DataAccess {
   removeSite: (
     siteId: string,
   ) => Promise<void>;
+  getOrganizations:
+      () => Promise<Organization[]>;
+  getOrganizationByID: (
+      organizationID: string,
+  ) => Promise<Organization | null>;
+  addOrganization: (
+      organizationData: object,
+  ) => Promise<Organization>;
+  updateOrganization: (
+      organization: Organization,
+  ) => Promise<Organization>;
+  removeRemoveOrganization: (
+      organizationId: string,
+  ) => Promise<void>;
 }
 
 interface DataAccessConfig {
   tableNameAudits: string;
   tableNameLatestAudits: string;
+  tableNameOrganizations: string,
   tableNameSites: string;
   indexNameAllSites: string;
+  indexNameAllSitesOrganizations: string,
   indexNameAllSitesByDeliveryType: string;
   indexNameAllLatestAuditScores: string;
+  indexNameAllOrganizations: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
+  pkAllOrganizations: string;
 }
 
 export function createDataAccess(

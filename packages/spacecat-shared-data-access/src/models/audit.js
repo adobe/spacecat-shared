@@ -107,6 +107,9 @@ export const createAudit = (data) => {
     throw new Error('Audit result must be an object');
   }
 
+  if (!newState.scores) {
+    newState.scores = {};
+  }
   validateScores(data.auditResult, data.auditType);
 
   if (data.previousAuditResult && !isObject(data.previousAuditResult)) {

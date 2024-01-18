@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.7.0...@adobe/spacecat-shared-data-access-v1.8.0) (2024-01-18)
+
+
+### Features
+
+* add broken-backlinks audit type (SITES-18417) ([#86](https://github.com/adobe/spacecat-shared/issues/86)) ([b16c366](https://github.com/adobe/spacecat-shared/commit/b16c3667808221958ff4a526512cb89c3cd0bbcb))
+
 # [@adobe/spacecat-shared-data-access-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.6.4...@adobe/spacecat-shared-data-access-v1.7.0) (2024-01-18)
 
 

@@ -247,7 +247,7 @@ export const getSiteByBaseURLWithLatestAudit = async (
   auditType,
 ) => getSiteByBaseURLWithAuditInfo(dynamoClient, config, log, baseUrl, auditType, true);
 
-export const getSitesByOrganizationId = async (
+export const getSitesByOrganizationID = async (
   dynamoClient,
   config,
   organizationId,

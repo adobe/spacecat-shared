@@ -17,7 +17,7 @@ import {
   getSiteByBaseURLWithAudits,
   getSiteByBaseURLWithLatestAudit,
   getSiteByID,
-  getSites, getSitesByDeliveryType, getSitesByOrganizationId,
+  getSites, getSitesByDeliveryType, getSitesByOrganizationID,
   getSitesToAudit,
   getSitesWithLatestAudit, removeSite,
   updateSite,
@@ -33,7 +33,7 @@ export const siteFunctions = (dynamoClient, config, log) => ({
     config,
     deliveryType,
   ),
-  getSitesByOrganizationId: (organizationId) => getSitesByOrganizationId(
+  getSitesByOrganizationID: (organizationId) => getSitesByOrganizationID(
     dynamoClient,
     config,
     organizationId,

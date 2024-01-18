@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Adobe. All rights reserved.
+ * Copyright 2024 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -13,7 +13,7 @@
 import { hasText, isObject } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
-import { Config, defaultConfig } from './site/config.js';
+import { Config, DEFAULT_CONFIG } from './site/config.js';
 
 /**
  * Creates a new Organization.
@@ -88,7 +88,7 @@ export const createOrganization = (data) => {
   const newState = { ...data };
 
   if (!isObject(newState.config)) {
-    newState.config = { ...defaultConfig };
+    newState.config = { ...DEFAULT_CONFIG };
   }
   if (!hasText(newState.name)) {
     throw new Error('Org name must be provided');

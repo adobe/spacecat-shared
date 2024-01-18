@@ -208,7 +208,7 @@ describe('DynamoDB Integration Test', async () => {
 
   it('gets sites by organizationId', async () => {
     const organizations = await dataAccess.getOrganizations();
-    const sites = await dataAccess.getSitesByOrganizationId(organizations[0].getId());
+    const sites = await dataAccess.getSitesByOrganizationID(organizations[0].getId());
 
     expect(sites.length).to.be.lessThanOrEqual(Math.trunc(NUMBER_OF_SITES / NUMBER_OF_ORGANIZATIONS)
         + (NUMBER_OF_SITES % NUMBER_OF_ORGANIZATIONS));

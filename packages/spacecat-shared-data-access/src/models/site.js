@@ -14,7 +14,7 @@ import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
 import AuditConfig from './site/audit-config.js';
-import { Config, defaultConfig } from './site/config.js';
+import { Config, DEFAULT_CONFIG } from './site/config.js';
 
 export const DELIVERY_TYPES = {
   AEM_CS: 'aem_cs',
@@ -185,7 +185,7 @@ export const createSite = (data) => {
   newState.auditConfig = AuditConfig(newState.auditConfig);
 
   if (!isObject(newState.config)) {
-    newState.config = { ...defaultConfig };
+    newState.config = { ...DEFAULT_CONFIG };
   }
 
   newState.config = Config(newState.config);

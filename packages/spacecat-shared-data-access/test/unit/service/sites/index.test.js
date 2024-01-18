@@ -52,9 +52,9 @@ describe('Site Access Pattern Tests', () => {
       expect(exportedFunctions.getSitesByDeliveryType).to.be.a('function');
     });
 
-    it('exports getSitesByOrganizationId function', () => {
-      expect(exportedFunctions).to.have.property('getSitesByOrganizationId');
-      expect(exportedFunctions.getSitesByOrganizationId).to.be.a('function');
+    it('exports getSitesByOrganizationID function', () => {
+      expect(exportedFunctions).to.have.property('getSitesByOrganizationID');
+      expect(exportedFunctions.getSitesByOrganizationID).to.be.a('function');
     });
 
     it('exports getSitesToAudit function', () => {
@@ -115,8 +115,8 @@ describe('Site Access Pattern Tests', () => {
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
-    it('calls getSitesByOrganizationId and returns an array', async () => {
-      const result = await exportedFunctions.getSitesByOrganizationId('OrgId1');
+    it('calls getSitesByOrganizationID and returns an array', async () => {
+      const result = await exportedFunctions.getSitesByOrganizationID('OrgId1');
       expect(result).to.be.an('array');
       expect(mockDynamoClient.query.called).to.be.true;
     });

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.9.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.0...@adobe/spacecat-shared-data-access-v1.9.1) (2024-01-18)
+
+
+### Bug Fixes
+
+* initialize scores as an empty object (SITES-18417) ([#87](https://github.com/adobe/spacecat-shared/issues/87)) ([eb38e32](https://github.com/adobe/spacecat-shared/commit/eb38e3298228edb1d996fa633bff4af4dcbf69db))
+
 # [@adobe/spacecat-shared-data-access-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.8.0...@adobe/spacecat-shared-data-access-v1.9.0) (2024-01-18)
 
 

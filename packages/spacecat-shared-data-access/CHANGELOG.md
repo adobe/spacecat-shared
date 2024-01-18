@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.6.4...@adobe/spacecat-shared-data-access-v1.7.0) (2024-01-18)
+
+
+### Features
+
+* set isLiveToggledAt ([#85](https://github.com/adobe/spacecat-shared/issues/85)) ([cefc093](https://github.com/adobe/spacecat-shared/commit/cefc0938385b9fa079d24c24f03b21651a0999cc))
+
 # [@adobe/spacecat-shared-data-access-v1.6.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.6.3...@adobe/spacecat-shared-data-access-v1.6.4) (2024-01-13)
 
 

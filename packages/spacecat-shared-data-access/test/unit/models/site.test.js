@@ -12,6 +12,7 @@
 
 /* eslint-env mocha */
 
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { expect } from 'chai';
 import { createSite } from '../../../src/models/site.js';
 import { sleep } from '../util.js';
@@ -163,6 +164,7 @@ describe('Site Model Tests', () => {
       site.toggleLive();
 
       expect(site.isLive()).to.be.true;
+      expect(isIsoDate(site.getIsLiveToggledAt())).to.be.true;
     });
   });
 

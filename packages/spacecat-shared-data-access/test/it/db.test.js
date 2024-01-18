@@ -40,6 +40,7 @@ function checkSite(site) {
   expect(isIsoDate(site.getUpdatedAt())).to.be.true;
   expect(site.getAudits()).to.be.an('array');
   expect(site.isLive()).to.be.a('boolean');
+  expect(isIsoDate(site.getIsLiveToggledAt())).to.be.true;
 
   const auditConfig = site.getAuditConfig();
   expect(auditConfig).to.be.an('object');
@@ -288,6 +289,8 @@ describe('DynamoDB Integration Test', async () => {
       baseURL: 'https://newexample.com',
       gitHubURL: 'https://github.com/some-org/test-repo',
       organizationId: '1234',
+      isLive: true,
+      isLiveToggledAt: new Date().toISOString(),
       audits: [],
       auditConfig: {
         auditsDisabled: false,

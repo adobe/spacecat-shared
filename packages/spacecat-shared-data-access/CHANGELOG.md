@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.8.0...@adobe/spacecat-shared-data-access-v1.9.0) (2024-01-18)
+
+
+### Features
+
+* data model for organizations ([944be83](https://github.com/adobe/spacecat-shared/commit/944be83c9f19e3acee9bb17352b3058fe6578a69))
+
 # [@adobe/spacecat-shared-data-access-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.7.0...@adobe/spacecat-shared-data-access-v1.8.0) (2024-01-18)
 
 

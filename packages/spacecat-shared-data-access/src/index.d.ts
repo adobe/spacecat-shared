@@ -305,7 +305,7 @@ export interface DataAccess {
     sortAuditsAscending?: boolean,
     deliveryType?: string,
   ) => Promise<Site[]>;
-  getSitesByOrganizationId: (
+  getSitesByOrganizationID: (
       organizationId: string,
   ) => Promise<Organization[]>
   getSiteByBaseURL: (

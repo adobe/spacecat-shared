@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.2...@adobe/spacecat-shared-data-access-v1.9.3) (2024-01-19)
+
+
+### Bug Fixes
+
+* audit result scores init, test ([#89](https://github.com/adobe/spacecat-shared/issues/89)) ([96f829c](https://github.com/adobe/spacecat-shared/commit/96f829c908e38b2e5f303eee83da2488f8076a0b))
+
 # [@adobe/spacecat-shared-data-access-v1.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.1...@adobe/spacecat-shared-data-access-v1.9.2) (2024-01-19)
 
 

@@ -106,7 +106,7 @@ export default class RUMAPIClient {
     this.domainkey = domainkey;
   }
 
-  async getRUMDashboard(params) {
+  async getRUMDashboard(params = {}) {
     return sendRequest(createUrl(
       APIS.RUM_DASHBOARD,
       { domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params },

@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/adobe/spacecat-shared/compare/v1.0.0...v1.0.1) (2024-01-22)
+
+
+### Bug Fixes
+
+* update readme (test release ([#93](https://github.com/adobe/spacecat-shared/issues/93)) ([d5142d0](https://github.com/adobe/spacecat-shared/commit/d5142d06b912beb6cba01c27aa6cafb04ab0baf7))
+
 # 1.0.0 (2024-01-22)
 
 

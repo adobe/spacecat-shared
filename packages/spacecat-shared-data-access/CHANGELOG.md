@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/adobe/spacecat-shared/compare/v1.0.1...v1.0.2) (2024-01-22)
+
+
+### Bug Fixes
+
+* set latest version for semantic ([#94](https://github.com/adobe/spacecat-shared/issues/94)) ([932e11f](https://github.com/adobe/spacecat-shared/commit/932e11fa4128013a13dcdbd32b378ce448d449f6))
+
 ## [1.0.1](https://github.com/adobe/spacecat-shared/compare/v1.0.0...v1.0.1) (2024-01-22)
 
 

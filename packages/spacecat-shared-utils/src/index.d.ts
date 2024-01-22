@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+/** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
 
 export function hasText(str: string): boolean;

@@ -10,8 +10,20 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+
 import { Base } from './base.js';
+import AuditConfig from './site/audit-config.js';
+import { Config, DEFAULT_CONFIG } from './site/config.js';
+import { DEFAULT_ORGANIZATION_ID } from './organization.js';
+
+export const DELIVERY_TYPES = {
+  AEM_CS: 'aem_cs',
+  AEM_EDGE: 'aem_edge',
+  OTHER: 'other',
+};
+
+export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
 
 /**
  * Creates a new Site.
@@ -22,11 +34,15 @@ import { Base } from './base.js';
 const Site = (data = {}) => {
   const self = Base(data);
 
+  self.getAuditConfig = () => self.state.auditConfig;
   self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
+  self.getConfig = () => self.state.config;
+  self.getDeliveryType = () => self.state.deliveryType;
   self.getGitHubURL = () => self.state.gitHubURL;
-  self.getImsOrgId = () => self.state.imsOrgId;
+  self.getOrganizationId = () => self.state.organizationId;
   self.isLive = () => self.state.isLive;
+  self.getIsLiveToggledAt = () => self.state.isLiveToggledAt;
 
   // TODO: updating the baseURL is not supported yet, it will require a transact write
   //  on dynamodb (put then delete) since baseURL is part of the primary key, something like:
@@ -65,6 +81,29 @@ const Site = (data = {}) => {
     return self;
   }; */
 
+  self.setAllAuditsDisabled = (disabled) => {
+    self.state.auditConfig.updateAuditsDisabled(disabled);
+    self.touch();
+    return self;
+  };
+
+  self.updateAuditTypeConfig = (type, config) => {
+    self.state.auditConfig.updateAuditTypeConfig(type, config);
+    self.touch();
+    return self;
+  };
+
+  self.updateDeliveryType = (deliveryType) => {
+    if (!Object.values(DELIVERY_TYPES).includes(deliveryType)) {
+      throw new Error(`Invalid delivery type: ${deliveryType}`);
+    }
+
+    self.state.deliveryType = deliveryType;
+    self.touch();
+
+    return self;
+  };
+
   /**
    * Updates the GitHub URL belonging to the site.
    * @param {string} gitHubURL - The GitHub URL.
@@ -82,16 +121,12 @@ const Site = (data = {}) => {
   };
 
   /**
-   * Updates the IMS Org ID belonging to the site.
-   * @param {string} imsOrgId - The IMS Org ID.
+   * Updates the organizationId the site belongs to.
+   * @param {string} organizationId - The Org ID.
    * @return {Base} The updated site.
    */
-  self.updateImsOrgId = (imsOrgId) => {
-    if (!hasText(imsOrgId)) {
-      throw new Error('IMS Org ID must be provided');
-    }
-
-    self.state.imsOrgId = imsOrgId;
+  self.updateOrganizationId = (organizationId) => {
+    self.state.organizationId = organizationId;
     self.touch();
 
     return self;
@@ -108,6 +143,7 @@ const Site = (data = {}) => {
    */
   self.toggleLive = () => {
     self.state.isLive = !self.state.isLive;
+    self.state.isLiveToggledAt = new Date().toISOString();
     return self;
   };
 
@@ -127,6 +163,15 @@ export const createSite = (data) => {
     throw new Error('Base URL must be a valid URL');
   }
 
+  if (!hasText(newState.organizationId)) {
+    newState.organizationId = DEFAULT_ORGANIZATION_ID;
+  }
+
+  newState.deliveryType = newState.deliveryType || DEFAULT_DELIVERY_TYPE;
+  if (!Object.values(DELIVERY_TYPES).includes(newState.deliveryType)) {
+    throw new Error(`Invalid delivery type: ${newState.deliveryType}`);
+  }
+
   if (!Object.prototype.hasOwnProperty.call(newState, 'isLive')) {
     newState.isLive = false;
   }
@@ -134,6 +179,21 @@ export const createSite = (data) => {
   if (!Array.isArray(newState.audits)) {
     newState.audits = [];
   }
+
+  if (!isObject(newState.auditConfig)) {
+    newState.auditConfig = {
+      auditsDisabled: false,
+      auditTypeConfigs: {},
+    };
+  }
+
+  newState.auditConfig = AuditConfig(newState.auditConfig);
+
+  if (!isObject(newState.config)) {
+    newState.config = { ...DEFAULT_CONFIG };
+  }
+
+  newState.config = Config(newState.config);
 
   return Site(newState);
 };

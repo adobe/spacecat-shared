@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-dynamo",
-  "version": "1.2.4",
+  "version": "1.3.2",
   "description": "Shared modules of the Spacecat Services - DynamoDB client",
   "type": "module",
   "main": "src/index.js",
@@ -17,23 +17,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adobe-rnd/spacecat-shared.git"
+    "url": "https://github.com/adobe/spacecat-shared.git"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/adobe-rnd/spacecat-shared/issues"
+    "url": "https://github.com/adobe/spacecat-shared/issues"
   },
-  "homepage": "https://github.com/adobe-rnd/spacecat-shared#readme",
+  "homepage": "https://github.com/adobe/spacecat-shared#readme",
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.465.0",
-    "@aws-sdk/lib-dynamodb": "3.465.0",
+    "@aws-sdk/client-dynamodb": "3.496.0",
+    "@aws-sdk/lib-dynamodb": "3.496.0",
     "@adobe/spacecat-shared-utils": "1.1.0"
   },
   "devDependencies": {
-    "chai": "4.3.10"
+    "chai": "4.4.1"
   }
 }

@@ -9,20 +9,21 @@
     "docs": "npm run docs:api",
     "test": "npm test -ws",
     "lint": "npm run lint -ws",
-    "semantic-release": "npx --no-install -ws semantic-release -e semantic-release-monorepo",
+    "semantic-release": "npx --no -ws semantic-release",
+    "semantic-release-dry": "npx --no -ws semantic-release --dry-run --branches $CI_BRANCH",
     "prepare": "husky install",
     "clean": "rm -rf package-lock.json node_modules"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adobe-rnd/spacecat-shared.git"
+    "url": "https://github.com/adobe/spacecat-shared.git"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/adobe-rnd/spacecat-shared/issues"
+    "url": "https://github.com/adobe/spacecat-shared/issues"
   },
-  "homepage": "https://github.com/adobe-rnd/spacecat-shared#readme",
+  "homepage": "https://github.com/adobe/spacecat-shared#readme",
   "workspaces": [
     "./packages/*"
   ],
@@ -30,21 +31,21 @@
     "@adobe/eslint-config-helix": "2.0.5",
     "@semantic-release/changelog": "6.0.3",
     "@semantic-release/git": "10.0.1",
-    "@semantic-release/npm": "9.0.2",
-    "@typescript-eslint/eslint-plugin": "6.13.2",
-    "@typescript-eslint/parser": "6.13.2",
+    "@semantic-release/npm": "11.0.2",
+    "@typescript-eslint/eslint-plugin": "6.19.0",
+    "@typescript-eslint/parser": "6.19.0",
     "ajv": "8.12.0",
-    "c8": "8.0.1",
-    "eslint": "8.55.0",
+    "c8": "9.1.0",
+    "eslint": "8.56.0",
     "husky": "8.0.3",
     "jsdoc-to-markdown": "8.0.0",
     "lint-staged": "15.2.0",
     "mocha": "10.2.0",
     "mocha-multi-reporters": "1.5.1",
-    "nock": "13.4.0",
-    "semantic-release": "19.0.5",
-    "semantic-release-monorepo": "7.0.5",
-    "typescript": "5.3.2"
+    "nock": "13.5.0",
+    "semantic-release": "23.0.0",
+    "semantic-release-monorepo": "8.0.0",
+    "typescript": "5.3.3"
   },
   "lint-staged": {
     "*.js": "eslint"

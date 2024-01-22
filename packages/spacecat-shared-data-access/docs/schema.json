@@ -27,7 +27,7 @@
           "AttributeType": "S"
         },
         {
-          "AttributeName": "imsOrgId",
+          "AttributeName": "organizationId",
           "AttributeType": "S"
         },
         {
@@ -35,8 +35,24 @@
           "AttributeType": "B"
         },
         {
+          "AttributeName": "isLiveToggledAt",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "deliveryType",
+          "AttributeType": "S"
+        },
+        {
           "AttributeName": "GSI1PK",
           "AttributeType": "S"
+        },
+        {
+          "AttributeName": "auditConfig",
+          "AttributeType": "M"
+        },
+        {
+          "AttributeName": "config",
+          "AttributeType": "M"
         },
         {
           "AttributeName": "createdAt",
@@ -63,6 +79,34 @@
           "Projection": {
             "ProjectionType": "ALL"
           }
+        },
+        {
+          "IndexName": "spacecat-services-all-sites-organizations",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "organizationId",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-services-all-sites-by-delivery-type",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "GSI1PK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "deliveryType",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
         }
       ],
       "DataAccess": {
@@ -77,7 +121,92 @@
           "identifiers",
           "URL"
         ],
-        "imsOrgId": [
+        "organizationId": [
+          "identifiers",
+          "UUID"
+        ]
+      },
+      "BillingMode": "PROVISIONED",
+      "ProvisionedCapacitySettings": {
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 5,
+          "WriteCapacityUnits": 5
+        },
+        "AutoScalingRead": {
+          "ScalableTargetRequest": {
+            "MinCapacity": 1,
+            "MaxCapacity": 10,
+            "ServiceRole": "AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+          },
+          "ScalingPolicyConfiguration": {
+            "TargetValue": 70
+          }
+        },
+        "AutoScalingWrite": {
+          "ScalableTargetRequest": {
+            "MinCapacity": 1,
+            "MaxCapacity": 10,
+            "ServiceRole": "AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+          },
+          "ScalingPolicyConfiguration": {
+            "TargetValue": 70
+          }
+        }
+      }
+    },
+    {
+      "TableName": "spacecat-services-organizations",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "id",
+          "AttributeType": "S"
+        }
+      },
+      "NonKeyAttributes": [
+        {
+          "AttributeName": "name",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "GSI1PK",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "auditConfig",
+          "AttributeType": "M"
+        },
+        {
+          "AttributeName": "config",
+          "AttributeType": "M"
+        },
+        {
+          "AttributeName": "createdAt",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "updatedAt",
+          "AttributeType": "S"
+        }
+      ],
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "spacecat-services-all-organizations",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "GSI1PK",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        }
+      ],
+      "DataAccess": {
+        "MySql": {}
+      },
+      "SampleDataFormats": {
+        "id": [
           "identifiers",
           "UUID"
         ]
@@ -212,6 +341,10 @@
         },
         {
           "AttributeName": "auditResult",
+          "AttributeType": "M"
+        },
+        {
+          "AttributeName": "previousAuditResult",
           "AttributeType": "M"
         },
         {

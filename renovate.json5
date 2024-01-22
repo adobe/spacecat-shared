@@ -5,6 +5,24 @@
   ],
   packageRules: [
     {
+      packageNames: [
+        'semantic-release'
+      ],
+      allowedVersions: '>=23.0'
+    },
+    {
+      packageNames: [
+        'chai'
+      ],
+      allowedVersions: '<5.0.0'
+    },
+    {
+      packageNames: [
+        'dynamo-db-local'
+      ],
+      allowedVersions: '<7.0.0'
+    },
+    {
       // https://github.com/iambumblehead/esmock/issues/260
       packageNames: [
         'esmock'

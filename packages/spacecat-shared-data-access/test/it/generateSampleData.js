@@ -130,6 +130,7 @@ function generateAuditData(
  * Generates sample data for testing purposes.
  *
  * @param {DataAccessConfig} config - The data access config.
+ * @param {number} [numberOfOrganizations=3] - The number of organizations to generate.
  * @param {number} [numberOfSites=10] - The number of sites to generate.
  * @param {number} [numberOfAuditsPerType=5] - The number of audits per type to generate
  * for each site.
@@ -140,6 +141,7 @@ function generateAuditData(
  */
 export default async function generateSampleData(
   config,
+  numberOfOrganizations = 3,
   numberOfSites = 10,
   numberOfAuditsPerType = 5,
 ) {
@@ -148,27 +150,72 @@ export default async function generateSampleData(
     config.tableNameSites,
     config.tableNameAudits,
     config.tableNameLatestAudits,
+    config.tableNameOrganizations,
   ]);
   await createTablesFromSchema();
 
   const auditTypes = ['lhs-mobile', 'cwv'];
   const sites = [];
+  const organizations = [];
   const auditItems = [];
   const latestAuditItems = [];
   const nowIso = new Date().toISOString();
 
+  // Generate organization data
+  for (let i = 0; i < numberOfOrganizations; i += 1) {
+    const organizationId = uuidv4();
+    organizations.push({
+      id: organizationId,
+      imsOrgId: `${i}-1234@AdobeOrg`,
+      name: `${i}-1234Name`,
+      GSI1PK: config.pkAllOrganizations,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      config: {
+        slack: {
+          workspace: `${i}-workspace`,
+          channel: `${i}-channel`,
+        },
+        alerts: [{
+          type: '404',
+          byOrg: true,
+          mentions: [{ slack: [`${i}-slackId`] }],
+        }],
+      },
+    });
+  }
   // Generate site data
   for (let i = 0; i < numberOfSites; i += 1) {
     const siteId = uuidv4();
     sites.push({
       id: siteId,
       baseURL: `https://example${i}.com`,
+      deliveryType: i % 2 === 0 ? 'aem_edge' : 'aem_cs',
       gitHubURL: `https://github.com/org-${i}/test-repo`,
-      imsOrgId: `${i}-1234@AdobeOrg`,
+      organizationId: organizations[i % 3].id,
       isLive: true,
+      isLiveToggledAt: nowIso,
       GSI1PK: config.pkAllSites,
       createdAt: nowIso,
       updatedAt: nowIso,
+      config: {
+        slack: {
+          workspace: `${i}-workspace`,
+          channel: `${i}-channel`,
+        },
+        alerts: [{
+          type: '404',
+          byOrg: true,
+          mentions: [{ slack: [`${i}-slackId`] }],
+        }],
+      },
+      auditConfig: {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          'lhs-mobile': { disabled: false },
+          cwv: { disabled: true },
+        },
+      },
     });
 
     if (i % 10 !== 0) { // Every tenth site will not have any audits
@@ -184,9 +231,11 @@ export default async function generateSampleData(
   }
 
   await batchWrite(config.tableNameSites, sites);
+  await batchWrite(config.tableNameOrganizations, organizations);
   await batchWrite(config.tableNameAudits, auditItems);
   await batchWrite(config.tableNameLatestAudits, latestAuditItems);
 
+  console.log(`Generated ${numberOfOrganizations} organizations`);
   console.log(`Generated ${numberOfSites} sites with ${numberOfAuditsPerType} audits per type for each site`);
   console.timeEnd('Sample data generated in');
 }

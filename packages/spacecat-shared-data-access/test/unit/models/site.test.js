@@ -12,14 +12,22 @@
 
 /* eslint-env mocha */
 
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { expect } from 'chai';
 import { createSite } from '../../../src/models/site.js';
 import { sleep } from '../util.js';
 
-// Constants for testing
 const validData = {
   baseURL: 'https://www.example.com',
-  imsOrgId: 'org123',
+  deliveryType: 'aem_edge',
+  organizationId: 'org123',
+  auditConfig: {
+    auditsDisabled: false,
+    auditTypeConfigs: {
+      type1: { /* some config */ },
+      type2: { /* some config */ },
+    },
+  },
 };
 
 describe('Site Model Tests', () => {
@@ -28,10 +36,47 @@ describe('Site Model Tests', () => {
       expect(() => createSite({ ...validData, baseURL: 'invalid-url' })).to.throw('Base URL must be a valid URL');
     });
 
+    it('throws an error if deliveryType is invalid', () => {
+      expect(() => createSite({ ...validData, deliveryType: 'invalid' })).to.throw('Invalid delivery type: invalid');
+    });
+
     it('creates a site object with valid baseURL', () => {
       const site = createSite({ ...validData });
       expect(site).to.be.an('object');
       expect(site.getBaseURL()).to.equal(validData.baseURL);
+    });
+
+    it('creates a site with default organization id', () => {
+      const site = createSite({ ...validData, organizationId: undefined });
+      expect(site.getOrganizationId()).to.equal('default');
+    });
+
+    it('creates a site with default auditConfig when none provided', () => {
+      const site = createSite({ ...validData });
+      const auditConfig = site.getAuditConfig();
+
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig.auditsDisabled()).be.false;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
+    });
+
+    it('creates a site with provided auditConfig', () => {
+      const newAuditConfig = {
+        auditsDisabled: true,
+        auditTypeConfigs: {
+          type1: { /* some config */ },
+          type2: { /* some config */ },
+        },
+      };
+      const site = createSite({ ...validData, auditConfig: newAuditConfig });
+      const auditConfig = site.getAuditConfig();
+
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig.auditsDisabled()).to.be.true;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
+      expect(auditConfig.getAuditTypeConfig('type2')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.false;
     });
   });
 
@@ -54,10 +99,16 @@ describe('Site Model Tests', () => {
     });
     */
 
-    it('updates imsOrgId correctly', () => {
-      const newImsOrgId = 'newOrg123';
-      site.updateImsOrgId(newImsOrgId);
-      expect(site.getImsOrgId()).to.equal(newImsOrgId);
+    it('updates deliveryType correctly', () => {
+      const newDeliveryType = 'aem_cs';
+      site.updateDeliveryType(newDeliveryType);
+      expect(site.getDeliveryType()).to.equal(newDeliveryType);
+    });
+
+    it('updates organizationId correctly', () => {
+      const organizationId = 'newOrg123';
+      site.updateOrganizationId(organizationId);
+      expect(site.getOrganizationId()).to.equal(organizationId);
     });
 
     it('updates gitHubURL correctly', () => {
@@ -66,8 +117,8 @@ describe('Site Model Tests', () => {
       expect(site.getGitHubURL()).to.equal(newGitHubURL);
     });
 
-    it('throws an error when updating with an empty imsOrgId', () => {
-      expect(() => site.updateImsOrgId('')).to.throw('IMS Org ID must be provided');
+    it('throws an error when updating with an invalid deliveryType', () => {
+      expect(() => site.updateDeliveryType('invalid')).to.throw('Invalid delivery type: invalid');
     });
 
     it('throws an error when updating with an invalid github URL', () => {
@@ -92,12 +143,12 @@ describe('Site Model Tests', () => {
       expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     }); */
 
-    it('updates updatedAt when imsOrgId is updated', async () => {
+    it('updates updatedAt when organizationId is updated', async () => {
       const initialUpdatedAt = site.getUpdatedAt();
 
       await sleep(20);
 
-      site.updateImsOrgId('newOrg123');
+      site.updateOrganizationId('newOrg123');
 
       expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });
@@ -118,6 +169,47 @@ describe('Site Model Tests', () => {
       site.toggleLive();
 
       expect(site.isLive()).to.be.true;
+      expect(isIsoDate(site.getIsLiveToggledAt())).to.be.true;
+    });
+  });
+
+  describe('AuditConfig Integration', () => {
+    let site;
+
+    beforeEach(() => {
+      site = createSite(validData);
+    });
+
+    it('handles AuditConfig and AuditConfigType correctly', () => {
+      const auditConfigData = {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          type1: { /* some config */ },
+          type2: { /* some config */ },
+        },
+      };
+      const newSite = createSite({ ...validData, auditConfig: auditConfigData });
+      const auditConfig = newSite.getAuditConfig();
+
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig.auditsDisabled()).to.be.false;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
+    });
+
+    it('sets all audits disabled correctly', () => {
+      site.setAllAuditsDisabled(true);
+      expect(site.getAuditConfig().auditsDisabled()).to.be.true;
+    });
+
+    it('updates a specific audit type configuration', () => {
+      site.updateAuditTypeConfig('type1', { disabled: true });
+      expect(site.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.true;
+    });
+
+    it('adds a new audit type configuration if it does not exist', () => {
+      site.updateAuditTypeConfig('type3', { disabled: true });
+      expect(site.getAuditConfig().getAuditTypeConfig('type3').disabled()).to.be.true;
     });
   });
 });

@@ -30,6 +30,8 @@ describe('Data Access Object Tests', () => {
     'updateSite',
     'removeSite',
     'getSites',
+    'getSitesByDeliveryType',
+    'getSitesByOrganizationID',
     'getSitesToAudit',
     'getSitesWithLatestAudit',
     'getSiteByBaseURL',
@@ -37,6 +39,14 @@ describe('Data Access Object Tests', () => {
     'getSiteByBaseURLWithAudits',
     'getSiteByBaseURLWithLatestAudit',
     'getSiteByID',
+  ];
+
+  const organizationFunctions = [
+    'getOrganizations',
+    'getOrganizationByID',
+    'addOrganization',
+    'updateOrganization',
+    'removeOrganization',
   ];
 
   let dao;
@@ -58,7 +68,8 @@ describe('Data Access Object Tests', () => {
   });
 
   it('does not contain any unexpected functions', () => {
-    const expectedFunctions = new Set([...auditFunctions, ...siteFunctions]);
+    const expectedFunctions = new Set([...auditFunctions,
+      ...siteFunctions, ...organizationFunctions]);
     Object.keys(dao).forEach((funcName) => {
       expect(expectedFunctions).to.include(funcName);
     });

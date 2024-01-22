@@ -35,7 +35,7 @@ describe('Base Model Tests', () => {
   describe('Getter Method Tests', () => {
     it('correctly returns the createdAt date if provided', () => {
       const createdAt = new Date().toISOString();
-      const baseEntity = Base({ createdAt });
+      const baseEntity = Base({ id: 'test-id', createdAt });
       expect(baseEntity.getCreatedAt()).to.equal(createdAt);
     });
 

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.4.0",
+  "version": "1.7.1",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "main": "src/index.js",
@@ -17,19 +17,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adobe-rnd/spacecat-shared.git"
+    "url": "https://github.com/adobe/spacecat-shared.git"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/adobe-rnd/spacecat-shared/issues"
+    "url": "https://github.com/adobe/spacecat-shared/issues"
   },
-  "homepage": "https://github.com/adobe-rnd/spacecat-shared#readme",
+  "homepage": "https://github.com/adobe/spacecat-shared#readme",
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
-    "chai": "4.3.10",
+    "chai": "4.4.1",
     "sinon": "17.0.1"
+  },
+  "dependencies": {
+    "@adobe/fetch": "4.1.1"
   }
 }

@@ -10,11 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
 import AuditConfig from './site/audit-config.js';
 import { Config, DEFAULT_CONFIG } from './site/config.js';
+import { DEFAULT_ORGANIZATION_ID } from './organization.js';
 
 export const DELIVERY_TYPES = {
   AEM_CS: 'aem_cs',
@@ -160,6 +161,10 @@ export const createSite = (data) => {
 
   if (!isValidUrl(newState.baseURL)) {
     throw new Error('Base URL must be a valid URL');
+  }
+
+  if (!hasText(newState.organizationId)) {
+    newState.organizationId = DEFAULT_ORGANIZATION_ID;
   }
 
   newState.deliveryType = newState.deliveryType || DEFAULT_DELIVERY_TYPE;

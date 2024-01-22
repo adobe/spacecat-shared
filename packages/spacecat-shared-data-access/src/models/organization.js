@@ -15,6 +15,8 @@ import { hasText, isObject } from '@adobe/spacecat-shared-utils';
 import { Base } from './base.js';
 import { Config, DEFAULT_CONFIG } from './site/config.js';
 
+export const DEFAULT_ORGANIZATION_ID = 'default';
+
 /**
  * Creates a new Organization.
  *

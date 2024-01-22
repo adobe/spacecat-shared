@@ -46,6 +46,11 @@ describe('Site Model Tests', () => {
       expect(site.getBaseURL()).to.equal(validData.baseURL);
     });
 
+    it('creates a site with default organization id', () => {
+      const site = createSite({ ...validData, organizationId: undefined });
+      expect(site.getOrganizationId()).to.equal('default');
+    });
+
     it('creates a site with default auditConfig when none provided', () => {
       const site = createSite({ ...validData });
       const auditConfig = site.getAuditConfig();

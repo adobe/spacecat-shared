@@ -47,7 +47,7 @@ describe('rum api client', () => {
       .query(true)
       .reply(200, 'invalid-json');
 
-    await expect(sendRequest('https://space.cat/dummy-page')).to.be.rejectedWith('Error during rum api call: Unexpected token i in JSON at position 0');
+    await expect(sendRequest('https://space.cat/dummy-page')).to.be.rejectedWith('Error during rum api call: Unexpected token \'i\', "invalid-json" is not valid JSON');
   });
 
   it('rejects when rum api returns unexpected format', async () => {

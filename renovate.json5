@@ -8,13 +8,19 @@
       packageNames: [
         'semantic-release'
       ],
-      allowedVersions: '<20.0'
+      allowedVersions: '>=23.0'
     },
     {
       packageNames: [
-        '@semantic-release/npm'
+        'chai'
       ],
-      allowedVersions: '<10.0'
+      allowedVersions: '<5.0.0'
+    },
+    {
+      packageNames: [
+        'dynamo-db-local'
+      ],
+      allowedVersions: '<7.0.0'
     },
     {
       // https://github.com/iambumblehead/esmock/issues/260

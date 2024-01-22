@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.9.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.4...@adobe/spacecat-shared-data-access-v1.9.5) (2024-01-22)
+
+
+### Bug Fixes
+
+* set default organization ([#92](https://github.com/adobe/spacecat-shared/issues/92)) ([ac7e70c](https://github.com/adobe/spacecat-shared/commit/ac7e70c65f643c2f52730c3d5da4a0c4be282632))
+
 # [@adobe/spacecat-shared-data-access-v1.9.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.3...@adobe/spacecat-shared-data-access-v1.9.4) (2024-01-20)
 
 

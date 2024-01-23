@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.6...@adobe/spacecat-shared-data-access-v1.10.0) (2024-01-23)
+
+
+### Features
+
+* add 404 as valid audit type ([62e0dec](https://github.com/adobe/spacecat-shared/commit/62e0dec832cdccfc9c3d8fbda61a81d756a5a08a))
+
 # [@adobe/spacecat-shared-data-access-v1.9.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.5...@adobe/spacecat-shared-data-access-v1.9.6) (2024-01-23)
 
 

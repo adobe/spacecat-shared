@@ -109,7 +109,7 @@ describe('DynamoDB Integration Test', async () => {
 
     dynamoDbLocalProcess = dynamoDbLocal.spawn({ port: 8000, sharedDb: true });
 
-    await sleep(1000); // give db time to start up
+    await sleep(3000); // give db time to start up
 
     await generateSampleData(
       TEST_DA_CONFIG,

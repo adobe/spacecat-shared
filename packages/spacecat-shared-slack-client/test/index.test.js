@@ -16,7 +16,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import { Message, Blocks, Elements } from 'slack-block-builder';
-import SlackClient from '../src/index.js';
+import { SlackClient } from '../src/index.js';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;

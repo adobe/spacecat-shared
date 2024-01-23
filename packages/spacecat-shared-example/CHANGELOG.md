@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-example-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.1...@adobe/spacecat-shared-example-v1.2.2) (2024-01-23)
+
+
+### Bug Fixes
+
+* use released official version of monorepo after fix ([#101](https://github.com/adobe/spacecat-shared/issues/101)) ([39297be](https://github.com/adobe/spacecat-shared/commit/39297be9f7e335925a8ace1b1a19efad01ba3628))
+
 # [@adobe/spacecat-shared-example-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.0...@adobe/spacecat-shared-example-v1.2.1) (2024-01-23)
 
 

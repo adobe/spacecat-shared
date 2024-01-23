@@ -1,5 +1,5 @@
 module.exports = {
-  extends: "semantic-release-monorepo",
+  extends: "@solaris007/semantic-release-monorepo",
   plugins: [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",

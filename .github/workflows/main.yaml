@@ -41,7 +41,8 @@ jobs:
         with:
           node-version: '20.x'
       - run: npm ci
-      - run: npm run semantic-release
+      - name: Semantic Release
+        run: npm run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}

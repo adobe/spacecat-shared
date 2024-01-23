@@ -1,3 +1,12 @@
+# [@adobe/spacecat-shared-data-access-v1.9.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.5...@adobe/spacecat-shared-data-access-v1.9.6) (2024-01-23)
+
+
+### Bug Fixes
+
+* missing module releaserc ([0ec70ba](https://github.com/adobe/spacecat-shared/commit/0ec70ba171edd66f4aa4e3770cc9b2a3e29d752c))
+* monorepo extends overwrites config ([#99](https://github.com/adobe/spacecat-shared/issues/99)) ([fea357f](https://github.com/adobe/spacecat-shared/commit/fea357f105d96e3d9dbf87687c26bc34b21f8b5d))
+* set latest version for semantic ([#94](https://github.com/adobe/spacecat-shared/issues/94)) ([932e11f](https://github.com/adobe/spacecat-shared/commit/932e11fa4128013a13dcdbd32b378ce448d449f6))
+
 # 1.0.0 (2024-01-22)
 
 

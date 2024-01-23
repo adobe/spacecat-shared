@@ -40,7 +40,10 @@ const validateScores = (auditResult, auditType) => {
     return true;
   }
 
-  if (auditType !== AUDIT_TYPE_BROKEN_BACKLINKS && !isObject(auditResult.scores)) {
+  if ((auditType === AUDIT_TYPE_LHS_DESKTOP
+      || auditType === AUDIT_TYPE_LHS_MOBILE
+      || auditType === AUDIT_TYPE_CWV)
+      && !isObject(auditResult.scores)) {
     throw new Error(`Missing scores property for audit type '${auditType}'`);
   }
 

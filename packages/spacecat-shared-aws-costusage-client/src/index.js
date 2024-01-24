@@ -43,7 +43,17 @@ export default class AWSCostApiClient {
    * @param {GetCostAndUsageRequest} input 
    * @returns {GetCostAndUsageResponse}
    */
-  async getUsageCost(input) {
+  async getCostUsageData(startDate, endDate, granularity, metrics, groupBy, filter) {
+    const input = {
+      "TimePeriod": {
+        "End": endDate,
+        "Start": startDate
+      },
+      "Granularity": granularity,
+      "Filter": filter,
+      "Metrics": metrics,
+      "GroupBy": groupBy
+    };
     const command = new GetCostAndUsageCommand(input);
     return await client.send(command);    
   }

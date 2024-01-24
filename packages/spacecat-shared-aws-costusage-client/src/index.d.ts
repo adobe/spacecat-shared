@@ -10,41 +10,27 @@
  * governing permissions and limitations under the License.
  */
 
-import { UniversalFunction } from '@adobe/helix-universal';
+import { AWSCostApiClient } from '@adobe/spacecat-shared-aws-costusage-client ';
 
 /**
  * Options for the wrap function
  */
-export declare interface ExampleOptions {
+export declare class AWSCostApiClient {
+
+  static createFrom(context: UniversalContext): AWSCostApiClient;
+
+  constructor(context: UniversalContext);
 
   /**
-   * Your name.
-   * @default 'SomeBody'
+   * Get the cost usage data for the given account id and time range
+   * @param accountId
+   * @param startDate
+   * @param endDate
+   * @param granularity
+   * @param metrics
+   * @param groupBy
+   * @param filter
    */
-  name?:string;
+  getCostUsageData(startDate: string, endDate: string, granularity: string, metrics: string[], groupBy: Object[], filter: {}): Promise<any>;
 }
 
-/**
- * Example middleware prints hello world to the console.
- * @example <caption></caption>
- *
- * ```js
- * const { wrap } = require('@adobe/helix-shared');
- * const { example } = require('@adobe/spacecat-shared');
- *
- * async function main(req, context) {
- *   const { enc } = context;
- *
- *   //…my action cod using 'env'…
- * }
- *
- * module.exports.main = wrap(main)
- *   .with(example);
- * ```
- *
- * @function bodyData
- * @param {UniversalFunction} fn - original universal function
- * @param {ExampleOptions} [opts] - optional options.
- * @returns {UniversalFunction} a new function that wraps the original one.
- */
-export declare function example(fn: UniversalFunction, opts: SecretsOptions): UniversalFunction;

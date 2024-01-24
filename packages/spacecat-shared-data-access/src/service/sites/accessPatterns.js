@@ -15,7 +15,8 @@ import { isObject } from '@adobe/spacecat-shared-utils';
 import {
   getAuditsForSite,
   getLatestAuditForSite,
-  getLatestAudits, removeAuditsForSite,
+  getLatestAudits,
+  removeAuditsForSite,
 } from '../audits/accessPatterns.js';
 
 import { createSite } from '../../models/site.js';
@@ -366,6 +367,52 @@ export const removeSite = async (
     await dynamoClient.removeItem(config.tableNameSites, { id: siteId });
   } catch (error) {
     log.error(`Error removing site: ${error.message}`);
+    throw error;
+  }
+};
+
+/**
+ * Removes all given sites.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Array<Site>} sites - The sites to remove.
+ * @return {Promise<void>} A promise that resolves when all sites have been removed.
+ */
+async function removeSites(
+  dynamoClient,
+  config,
+  sites,
+) {
+  const tableName = config.tableNameSites;
+  // TODO: use batch-remove (needs dynamo client update)
+  const removeSitePromises = sites.map((site) => dynamoClient.removeItem(
+    tableName,
+    { id: site.getId() },
+  ));
+
+  await Promise.all(removeSitePromises);
+}
+
+/**
+ * Removes all sites for an organization.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The logger.
+ * @param {string} organizationId - The ID of the organization to remove the sites for.
+ * @return {Promise<void>} A promise that resolves when all sites for the organization have been
+ * removed.
+ */
+export const removeSitesForOrganization = async (
+  dynamoClient,
+  config,
+  log,
+  organizationId,
+) => {
+  try {
+    const sites = await getSitesByOrganizationID(dynamoClient, config, organizationId);
+    await removeSites(dynamoClient, config, sites);
+  } catch (error) {
+    log.error(`Error removing sites for organization ${organizationId}: ${error.message}`);
     throw error;
   }
 };

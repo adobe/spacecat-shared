@@ -420,5 +420,33 @@ describe('Site Access Pattern Tests', () => {
       await expect(exportedFunctions.removeSite('some-id')).to.be.rejectedWith(errorMessage);
       expect(mockLog.error.calledOnce).to.be.true;
     });
+
+    it('removes sites for a given organization', async () => {
+      const mockSiteData = [{
+        id: 'site1',
+        baseURL: 'https://example.com',
+      }];
+
+      mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
+
+      await exportedFunctions.removeSitesForOrganization('org1');
+
+      expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
+    });
+
+    it('logs an error and reject if the sites remove for organization fails', async () => {
+      const errorMessage = 'Failed to delete site';
+      const mockSiteData = [{
+        id: 'site1',
+        baseURL: 'https://example.com',
+      }];
+
+      mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
+
+      mockDynamoClient.removeItem.rejects(new Error(errorMessage));
+
+      await expect(exportedFunctions.removeSitesForOrganization('org1')).to.be.rejectedWith(errorMessage);
+      expect(mockLog.error.calledOnce).to.be.true;
+    });
   });
 });

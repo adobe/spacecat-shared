@@ -29,7 +29,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@aws-sdk/client-cost-explorer": "3.496.0",
-    "husky": "^8.0.3"
+    "@aws-sdk/client-cost-explorer": "3.496.0"
   }
 }

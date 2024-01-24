@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.3.6...@adobe/spacecat-shared-rum-api-client-v1.4.0) (2024-01-24)
+
+
+### Features
+
+* add create404Url method to RUMAPIClient ([9282a2d](https://github.com/adobe/spacecat-shared/commit/9282a2d97cf5f42868dcee16a40cbf26109a37fc))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.3.5...@adobe/spacecat-shared-rum-api-client-v1.3.6) (2024-01-24)
 
 

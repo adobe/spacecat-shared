@@ -66,7 +66,7 @@ await slackClient.postMessage(ADOBE_INTERNAL, {
 });
 ```
 
-#### Posting a message using Slack Block Builder (recommended)
+#### Posting a simple text message using Slack Block Builder (recommended)
 
 ```js
 import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
@@ -82,7 +82,33 @@ const slackClient = SlackClient.createFrom(context);
 
 // build the message to be sent to Slack
 const message = Message()
-  .channel(channel)
+  .text('Alas, my friend.')
+  .channel(channelId)
+  .threadTs(threadId) //optional
+  .buildToObject();
+
+await slackClient.postMessage(ADOBE_INTERNAL, message);
+
+```
+
+#### Posting a non-trivial message using Slack Block Builder (recommended)
+
+```js
+import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+import { Message, Blocks, Elements } from 'slack-block-builder';
+
+const { ADOBE_INTERNAL } = SLACK_TARGETS;
+ 
+const channelId = 'channel-id'; // channel to send the message to
+const threadId = 'thread-id'; // thread id to send the message under (optional)
+
+// Create a SlackClient instance from a helix universal context object
+const slackClient = SlackClient.createFrom(context);
+
+// build the message to be sent to Slack
+const message = Message()
+  .channel(channelId)
+  .threadTs(threadId) //optional
   .text('Alas, my friend.')
   .blocks(
     Blocks.Section()

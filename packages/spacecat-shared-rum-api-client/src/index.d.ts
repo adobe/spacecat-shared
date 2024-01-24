@@ -75,6 +75,14 @@ export default class RUMAPIClient {
   get404Sources(params?: RUMAPIOptions): Promise<Array<object>>;
 
   /**
+   * Method to return the url composed of params that the 404 sources API is called with.
+   * @param {RUMAPIOptions} params - An object representing the parameters to be included
+   *  for the 404 sources API call.
+   * @returns A string returning to the 404 sources url including query parameters.
+   */
+  create404URL(params?: RUMAPIOptions): string;
+
+  /**
    * Asynchronous method to return an array with the domain for a specific url
    *  or an array of all domain urls
    * @param {RUMAPIOptions} params - An object representing the parameters to be included

@@ -17,9 +17,13 @@ import {
   getSiteByBaseURLWithAudits,
   getSiteByBaseURLWithLatestAudit,
   getSiteByID,
-  getSites, getSitesByDeliveryType, getSitesByOrganizationID,
+  getSites,
+  getSitesByDeliveryType,
+  getSitesByOrganizationID,
   getSitesToAudit,
-  getSitesWithLatestAudit, removeSite,
+  getSitesWithLatestAudit,
+  removeSite,
+  removeSitesForOrganization,
   updateSite,
 } from './accessPatterns.js';
 
@@ -91,4 +95,10 @@ export const siteFunctions = (dynamoClient, config, log) => ({
   addSite: (siteData) => addSite(dynamoClient, config, log, siteData),
   updateSite: (site) => updateSite(dynamoClient, config, log, site),
   removeSite: (siteId) => removeSite(dynamoClient, config, log, siteId),
+  removeSitesForOrganization: (organizationId) => removeSitesForOrganization(
+    dynamoClient,
+    config,
+    log,
+    organizationId,
+  ),
 });

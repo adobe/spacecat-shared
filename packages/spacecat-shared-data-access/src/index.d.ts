@@ -336,6 +336,9 @@ export interface DataAccess {
   removeSite: (
     siteId: string,
   ) => Promise<void>;
+  removeSitesForOrganization: (
+    organizationId: string,
+  ) => Promise<void>;
   getOrganizations:
       () => Promise<Organization[]>;
   getOrganizationByID: (
@@ -347,7 +350,7 @@ export interface DataAccess {
   updateOrganization: (
       organization: Organization,
   ) => Promise<Organization>;
-  removeRemoveOrganization: (
+  removeOrganization: (
       organizationId: string,
   ) => Promise<void>;
 }

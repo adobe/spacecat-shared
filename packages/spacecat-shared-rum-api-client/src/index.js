@@ -124,9 +124,7 @@ export default class RUMAPIClient {
 
   async get404Sources(params = {}) {
     return sendRequest(this.create404URL(
-      {
-        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, checkpoint: 404, ...params,
-      },
+      params,
     ));
   }
 

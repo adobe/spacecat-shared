@@ -50,7 +50,7 @@ export default function dataAccessWrapper(fn) {
         tableNameOrganizations: DYNAMO_TABLE_NAME_ORGANIZATIONS,
         tableNameSites: DYNAMO_TABLE_NAME_SITES,
         indexNameAllSites: DYNAMO_INDEX_NAME_ALL_SITES,
-        indexNameOrganizations: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS,
+        indexNameAllOrganizations: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS,
         indexNameAllSitesByDeliveryType: DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         indexNameAllLatestAuditScores: DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         indexNameAllSitesOrganizations: DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS,

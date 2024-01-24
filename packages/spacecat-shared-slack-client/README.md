@@ -68,7 +68,7 @@ await slackClient.postMessage(ADOBE_INTERNAL, {
 
 #### Posting a message using Slack Block Builder (recommended)
 
-```
+```js
 import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 import { Message, Blocks, Elements } from 'slack-block-builder';
 

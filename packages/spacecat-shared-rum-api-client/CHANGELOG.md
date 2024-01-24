@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.3.5...@adobe/spacecat-shared-rum-api-client-v1.3.6) (2024-01-24)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-shared-wrap to v2.0.1 ([#103](https://github.com/adobe/spacecat-shared/issues/103)) ([54286e8](https://github.com/adobe/spacecat-shared/commit/54286e8e3f99a4fdf82d029c475cad0bad602497))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.3.4...@adobe/spacecat-shared-rum-api-client-v1.3.5) (2024-01-23)
 
 

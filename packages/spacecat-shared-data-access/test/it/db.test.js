@@ -109,7 +109,7 @@ describe('DynamoDB Integration Test', async () => {
 
     dynamoDbLocalProcess = dynamoDbLocal.spawn({ port: 8000, sharedDb: true });
 
-    await sleep(3000); // give db time to start up
+    await sleep(5000); // give db time to start up
 
     await generateSampleData(
       TEST_DA_CONFIG,
@@ -211,7 +211,7 @@ describe('DynamoDB Integration Test', async () => {
     const sites = await dataAccess.getSitesByOrganizationID(organizations[0].getId());
 
     expect(sites.length).to.be.lessThanOrEqual(Math.trunc(NUMBER_OF_SITES / NUMBER_OF_ORGANIZATIONS)
-        + (NUMBER_OF_SITES % NUMBER_OF_ORGANIZATIONS));
+      + (NUMBER_OF_SITES % NUMBER_OF_ORGANIZATIONS));
 
     sites.forEach((site) => {
       checkSite(site);
@@ -577,5 +577,13 @@ describe('DynamoDB Integration Test', async () => {
 
     updatedSite = await dataAccess.getSiteByID(siteToUpdate.getId());
     expect(updatedSite.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.false;
+  });
+
+  it('removes organization', async () => {
+    const organizations = await dataAccess.getOrganizations();
+    const organization = organizations[0];
+    await expect(dataAccess.removeOrganization(organization.getId())).to.eventually.be.fulfilled;
+    const organizationAfterRemoval = await dataAccess.getOrganizationByID(organization.getId());
+    expect(organizationAfterRemoval).to.be.null;
   });
 });

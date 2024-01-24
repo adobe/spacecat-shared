@@ -14,6 +14,7 @@ import { isObject } from '@adobe/spacecat-shared-utils';
 
 import { createOrganization } from '../../models/organization.js';
 import { OrganizationDto } from '../../dto/organization.js';
+import { removeSitesForOrganization } from '../sites/accessPatterns.js';
 
 /**
  * Retrieves all organizations.
@@ -123,6 +124,8 @@ export const removeOrganization = async (
   organizationId,
 ) => {
   try {
+    await removeSitesForOrganization(dynamoClient, config, log, organizationId);
+
     await dynamoClient.removeItem(config.tableNameOrganizations, { id: organizationId });
   } catch (error) {
     log.error(`Error removing organization: ${error.message}`);

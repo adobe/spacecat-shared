@@ -64,7 +64,7 @@ describe('Slack Client', () => {
       },
     });
     await expect(slackClient.postMessage('unknown-target', {}))
-      .to.be.rejectedWith('Environment variable \'SLACK_TOKEN_unknown-target\' does not exist. Slack Client could not initialized.');
+      .to.be.rejectedWith('Environment variable \'SLACK_TOKEN_unknown-target\' does not exist. Slack Client could not be initialized.');
   });
 
   it('returns channel-id and thread-id when message posted', async () => {

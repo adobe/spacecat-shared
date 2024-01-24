@@ -23,11 +23,16 @@ const DEFAULT_PARAMS = {
   unfurl_media: false,
 };
 
+function getEnvironmentVariableNameForTarget(target) {
+  return `${ENV_PREFIX}${target}`;
+}
+
 export class SlackClient {
   static createFrom(context) {
     if (context.slackClient) return context.slackClient;
 
-    const expected = Object.values(SLACK_TARGETS).map((target) => `${ENV_PREFIX}${target}`);
+    const expected = Object.values(SLACK_TARGETS)
+      .map((target) => getEnvironmentVariableNameForTarget(target));
 
     const targetTokenPairs = Object.keys(context.env)
       .filter((variable) => expected.includes(variable))
@@ -51,8 +56,8 @@ export class SlackClient {
     }
 
     this.clients = targetTokenPairs
-      .reduce((acc, pair) => {
-        acc[pair.target] = new WebClient(pair.token);
+      .reduce((acc, { target, token }) => {
+        acc[target] = new WebClient(token);
         return acc;
       }, {});
     this.log = log;
@@ -60,7 +65,7 @@ export class SlackClient {
 
   #getClient(target) {
     if (!this.clients[target]) {
-      throw new Error(`Environment variable '${ENV_PREFIX}${target}' does not exist. Slack Client could not initialized.`);
+      throw new Error(`Environment variable '${getEnvironmentVariableNameForTarget(target)}' does not exist. Slack Client could not be initialized.`);
     }
     return this.clients[target];
   }
@@ -78,7 +83,7 @@ export class SlackClient {
         threadId: result.ts,
       };
     } catch (error) {
-      this.log.error(`Slack message failed to send to ${target}`);
+      this.log.error(`Slack message failed to send to ${target}`, error);
       throw error;
     }
   }

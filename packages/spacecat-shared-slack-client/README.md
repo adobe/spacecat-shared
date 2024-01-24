@@ -5,7 +5,7 @@ A library utility to manage to interact with different Slack organizations.
 ## Installation
 
 ```
-npm install my-slack-client
+npm install @adobe/spacecat-shared-slack-client
 ```
 
 ## Usage
@@ -60,6 +60,7 @@ const threadId = 'thread-id'; // thread id to send the message under (optional)
 // initializations...
 
 await slackClient.postMessage(ADOBE_INTERNAL, {
+  text: 'HELLO WORLD!',
   channel: 'channel-id',
   thread_ts: threadId, // (optional)
 });

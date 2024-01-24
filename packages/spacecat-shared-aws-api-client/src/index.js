@@ -56,6 +56,31 @@ const input = {
   ]
 };
 
+const parseYearDate = (str) => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const date = new Date(str);
+  return `${months[date.getMonth()]}-${date.getFullYear().toString().substring(2)}`;
+};
+
+const serviceMap = (service) => {
+  switch (service) {
+    case 'AWS Lambda':
+      return 'LAMBDA';
+    case 'AWS Secrets Manager':
+      return 'SECRETS MANAGER';
+    case 'Amazon DynamoDB':
+      return 'DYNAMODB';
+    case 'Amazon Simple Storage Service':
+      return 'S3';
+    case 'Amazon Simple Queue Service':
+      return 'SQS';
+    case 'AmazonCloudWatch':
+      return 'CLOUDWATCH';
+    default:
+      return service;
+  }
+};
+
 export default class AWSCostApiClient {
   static createFrom(context) {
     if(context.cogsApiClient) return context.cogsApiClient;
@@ -69,6 +94,28 @@ export default class AWSCostApiClient {
   }
   async getUsageCost() {
     const command = new GetCostAndUsageCommand(input);
-    return await client.send(command);
+    let response;
+    try {
+      response = await client.send(command);
+    } catch (err) {
+      throw new Error(`Error in getting COGs usage cost: ${err}`);
+    }
+    if (response && response.ResultsByTime && response.ResultsByTime.length > 0) {
+      let result;
+      response.ResultsByTime.forEach((result) => {
+        if (result.Groups && result.Groups.length > 0) {
+          let granularity;
+          result.Groups.forEach((group) => {
+            const key = group.Keys[0];
+            if (group.Metrics && group.Metrics.UnblendedCost) {
+              granularity[serviceMap(key)] = parseFloat(group.Metrics.UnblendedCost.Amount).toFixed(2);
+            }
+          });
+          result[parseYearDate(result.TimePeriod.Start)] = granularity;
+        }
+      });
+      return result;
+    }
+    return {};
   }
 }

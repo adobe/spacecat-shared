@@ -1,3 +1,18 @@
+# [@adobe/spacecat-shared-dynamo-v1.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.3...@adobe/spacecat-shared-dynamo-v1.3.4) (2024-01-23)
+
+
+### Bug Fixes
+
+* use released official version of monorepo after fix ([#101](https://github.com/adobe/spacecat-shared/issues/101)) ([39297be](https://github.com/adobe/spacecat-shared/commit/39297be9f7e335925a8ace1b1a19efad01ba3628))
+
+# [@adobe/spacecat-shared-dynamo-v1.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.2...@adobe/spacecat-shared-dynamo-v1.3.3) (2024-01-23)
+
+
+### Bug Fixes
+
+* missing module releaserc ([0ec70ba](https://github.com/adobe/spacecat-shared/commit/0ec70ba171edd66f4aa4e3770cc9b2a3e29d752c))
+* monorepo extends overwrites config ([#99](https://github.com/adobe/spacecat-shared/issues/99)) ([fea357f](https://github.com/adobe/spacecat-shared/commit/fea357f105d96e3d9dbf87687c26bc34b21f8b5d))
+
 # [@adobe/spacecat-shared-dynamo-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.1...@adobe/spacecat-shared-dynamo-v1.3.2) (2024-01-20)
 
 

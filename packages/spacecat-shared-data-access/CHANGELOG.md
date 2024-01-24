@@ -1,3 +1,26 @@
+# [@adobe/spacecat-shared-data-access-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.10.0...@adobe/spacecat-shared-data-access-v1.10.1) (2024-01-23)
+
+
+### Bug Fixes
+
+* use released official version of monorepo after fix ([#101](https://github.com/adobe/spacecat-shared/issues/101)) ([39297be](https://github.com/adobe/spacecat-shared/commit/39297be9f7e335925a8ace1b1a19efad01ba3628))
+
+# [@adobe/spacecat-shared-data-access-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.6...@adobe/spacecat-shared-data-access-v1.10.0) (2024-01-23)
+
+
+### Features
+
+* add 404 as valid audit type ([62e0dec](https://github.com/adobe/spacecat-shared/commit/62e0dec832cdccfc9c3d8fbda61a81d756a5a08a))
+
+# [@adobe/spacecat-shared-data-access-v1.9.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.9.5...@adobe/spacecat-shared-data-access-v1.9.6) (2024-01-23)
+
+
+### Bug Fixes
+
+* missing module releaserc ([0ec70ba](https://github.com/adobe/spacecat-shared/commit/0ec70ba171edd66f4aa4e3770cc9b2a3e29d752c))
+* monorepo extends overwrites config ([#99](https://github.com/adobe/spacecat-shared/issues/99)) ([fea357f](https://github.com/adobe/spacecat-shared/commit/fea357f105d96e3d9dbf87687c26bc34b21f8b5d))
+* set latest version for semantic ([#94](https://github.com/adobe/spacecat-shared/issues/94)) ([932e11f](https://github.com/adobe/spacecat-shared/commit/932e11fa4128013a13dcdbd32b378ce448d449f6))
+
 # 1.0.0 (2024-01-22)
 
 

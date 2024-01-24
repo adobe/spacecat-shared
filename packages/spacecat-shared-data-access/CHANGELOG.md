@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.10.1...@adobe/spacecat-shared-data-access-v1.10.2) (2024-01-24)
+
+
+### Bug Fixes
+
+* add missing org data layer methods ([#107](https://github.com/adobe/spacecat-shared/issues/107)) ([0504d8e](https://github.com/adobe/spacecat-shared/commit/0504d8e8f0486d1f1a00f44a18c42948ddfd93c7))
+
 # [@adobe/spacecat-shared-data-access-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.10.0...@adobe/spacecat-shared-data-access-v1.10.1) (2024-01-23)
 
 

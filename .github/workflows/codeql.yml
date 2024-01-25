@@ -4,11 +4,11 @@ on:
   push:
     branches: [ "main" ]
     paths-ignore:
-      - '**/*test.js'
+      - '**/*.test.js'
   pull_request:
     branches: [ "main" ]
     paths-ignore:
-      - '**/*test.js'
+      - '**/*.test.js'
 
   schedule:
     - cron: "52 9 * * 3"

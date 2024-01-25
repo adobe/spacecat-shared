@@ -38,11 +38,18 @@ export default class AWSCostApiClient {
       }
     });
   }
+
   /**
    * 
-   * @param {GetCostAndUsageRequest} input 
+   * @param {string} startDate like 2021-01-01
+   * @param {string} endDate like 2021-01-31
+   * @param {string} granularity like MONTHLY
+   * @param {string[]} metrics like UnblendedCost
+   * @param {Object[]} groupBy like [{Key: "SERVICE", Type: "DIMENSION"}, {Key: "Environment", Type: "TAG"}]
+   * @param {Object} filter like {Tags: {Key: 'Adobe.ArchPath', Values: ['EC.SpaceCat.Services'], MatchOptions: ['EQUALS']}} 
    * @returns {GetCostAndUsageResponse}
    */
+
   async getCostUsageData(startDate, endDate, granularity, metrics, groupBy, filter) {
     const input = {
       "TimePeriod": {
@@ -54,7 +61,17 @@ export default class AWSCostApiClient {
       "Metrics": metrics,
       "GroupBy": groupBy
     };
+    return this.getCostUsageData(input);
+  }
+
+  /**
+   * 
+   * @param {GetCostAndUsageRequest} input 
+   * @returns {GetCostAndUsageResponse}
+   */
+
+  async getCostUsageData(input) {
     const command = new GetCostAndUsageCommand(input);
-    return await client.send(command);    
+    return await client.send(command); 
   }
 }

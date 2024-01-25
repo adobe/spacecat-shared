@@ -32,5 +32,11 @@ export declare class AWSCostApiClient {
    * @param filter
    */
   getCostUsageData(startDate: string, endDate: string, granularity: string, metrics: string[], groupBy: Object[], filter: {}): Promise<any>;
+
+  /**
+   * 
+   */
+
+  getCostUsageData(input: GetCostUsageDataInput): Promise<any>;
 }
 

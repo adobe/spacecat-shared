@@ -13,7 +13,8 @@ npm install @adobe/spacecat-shared-slack-client
 
 ```js
 const context = {}; // Your Helix UniversalContext object
-const slackClient = SlackClient.createFrom(context);
+const target = 'ADOBE_INTERNAL';
+const slackClient = SlackClient.createFrom(context, target);
 ```
 
 **Required env variables in Helix UniversalContext**
@@ -25,24 +26,15 @@ SLACK_TOKEN_ADOBE_INTERNAL="slack bot token for the adobe internal org"
 SLACK_TOKEN_ADOBE_EXTERNAL="slack bot token for the adobe external org"
 ```
 
-**Note**: if Helix UniversalContext object already contains a `slackClient` field, then `createFrom` factory method returns the previously created instance instead of creating a new one.
+**Note**: if Helix UniversalContext object already contains a `slackClients` field, then `createFrom` factory method returns the previously created instance instead of creating a new one.
 
 ### Constructor
 
-`SlackClient` class needs array target-token pairs:
+`SlackClient` class needs a slack bot token and a logger object:
 
 ```js
-const targetTokenPairs = [
-  {
-    "target": "target-1",
-    "token": "token-1"
-  },
-  {
-    "target": "target-2",
-    "token": "token-2"
-  }
-]
-const slackClient = new SlackClient(targetTokenPairs);
+const token = 'slack bot token';
+const slackClient = new SlackClient(token, console);
 ```
 
 ### Posting a message
@@ -52,14 +44,12 @@ const slackClient = new SlackClient(targetTokenPairs);
 ```js
 import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 
-const { ADOBE_INTERNAL } = SLACK_TARGETS;
-
 const channelId = 'channel-id'; // channel to send the message to
 const threadId = 'thread-id'; // thread id to send the message under (optional)
 
-// initializations...
+const internalSlackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
 
-await slackClient.postMessage(ADOBE_INTERNAL, {
+await internalSlackClient.postMessage({
   text: 'HELLO WORLD!',
   channel: 'channel-id',
   thread_ts: threadId, // (optional)
@@ -72,13 +62,11 @@ await slackClient.postMessage(ADOBE_INTERNAL, {
 import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 import { Message, Blocks, Elements } from 'slack-block-builder';
 
-const { ADOBE_INTERNAL } = SLACK_TARGETS;
- 
 const channelId = 'channel-id'; // channel to send the message to
 const threadId = 'thread-id'; // thread id to send the message under (optional)
 
 // Create a SlackClient instance from a helix universal context object
-const slackClient = SlackClient.createFrom(context);
+const internalSlackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
 
 // build the message to be sent to Slack
 const message = Message()
@@ -87,7 +75,7 @@ const message = Message()
   .threadTs(threadId) //optional
   .buildToObject();
 
-await slackClient.postMessage(ADOBE_INTERNAL, message);
+await internalSlackClient.postMessage(message);
 
 ```
 
@@ -97,13 +85,11 @@ await slackClient.postMessage(ADOBE_INTERNAL, message);
 import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 import { Message, Blocks, Elements } from 'slack-block-builder';
 
-const { ADOBE_INTERNAL } = SLACK_TARGETS;
- 
 const channelId = 'channel-id'; // channel to send the message to
 const threadId = 'thread-id'; // thread id to send the message under (optional)
 
 // Create a SlackClient instance from a helix universal context object
-const slackClient = SlackClient.createFrom(context);
+const internalSlackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
 
 // build the message to be sent to Slack
 const message = Message()
@@ -129,8 +115,27 @@ const message = Message()
   .asUser()
   .buildToObject();
 
-await slackClient.postMessage(ADOBE_INTERNAL, message);
+await internalSlackClient.postMessage(message);
 
+```
+
+### Uploading a file
+
+```js
+import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+
+const channelId = 'channel-id'; // channel to send the message to
+const threadId = 'thread-id'; // thread id to send the message under (optional)
+
+const internalSlackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
+
+await internalSlackClient.fileUpload({
+  file: './path/to/logo.png',  // also accepts Buffer or ReadStream
+  filename: 'logo.png',
+  initial_comment: 'Here is the new company logo',
+  channel_id: channelId,
+  thread_ts: threadId, // (optional)
+});
 ```
 
 ## Testing

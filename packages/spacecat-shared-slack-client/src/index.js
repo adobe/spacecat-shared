@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 import { WebClient } from '@slack/web-api';
+import { hasText, isObject } from '@adobe/spacecat-shared-utils';
 
 const ENV_PREFIX = 'SLACK_TOKEN_';
 
@@ -18,73 +19,67 @@ export const SLACK_TARGETS = {
   ADOBE_EXTERNAL: 'ADOBE_EXTERNAL',
 };
 
-const DEFAULT_PARAMS = {
-  unfurl_links: false,
-  unfurl_media: false,
-};
-
 function getEnvironmentVariableNameForTarget(target) {
   return `${ENV_PREFIX}${target}`;
 }
 
 export class SlackClient {
-  static createFrom(context) {
-    if (context.slackClient) return context.slackClient;
+  static createFrom(context, target) {
+    const { log } = context;
 
-    const expected = Object.values(SLACK_TARGETS)
-      .map((target) => getEnvironmentVariableNameForTarget(target));
+    if (!hasText(target)) {
+      throw new Error('Missing target for the Slack Client');
+    }
 
-    const targetTokenPairs = Object.keys(context.env)
-      .filter((variable) => expected.includes(variable))
-      .map((variable) => ({
-        target: variable.slice(ENV_PREFIX.length),
-        token: context.env[variable],
-      }));
+    if (!isObject(context.slackClients)) {
+      context.slackClients = {};
+    }
 
-    const slackClient = new SlackClient(targetTokenPairs, context.log);
-    context.slackClient = slackClient;
-    return slackClient;
+    if (context.slackClients[target]) {
+      return context.slackClients[target];
+    }
+
+    const token = context.env[getEnvironmentVariableNameForTarget(target)];
+    if (!hasText(token)) {
+      throw new Error(`No slack token set for ${target}`);
+    }
+
+    context.slackClients[target] = new SlackClient(token, log);
+    return context.slackClients[target];
   }
 
-  constructor(targetTokenPairs, log) {
-    if (!Array.isArray(targetTokenPairs)) {
-      throw Error('targetTokenPairs parameter should be an array');
-    }
-
-    if (targetTokenPairs.length === 0) {
-      throw Error('No environment variable containing a slack token found');
-    }
-
-    this.clients = targetTokenPairs
-      .reduce((acc, { target, token }) => {
-        acc[target] = new WebClient(token);
-        return acc;
-      }, {});
+  constructor(token, log) {
+    this.client = new WebClient(token);
     this.log = log;
   }
 
-  #getClient(target) {
-    if (!this.clients[target]) {
-      throw new Error(`Environment variable '${getEnvironmentVariableNameForTarget(target)}' does not exist. Slack Client could not be initialized.`);
+  async #apiCall(method, message) {
+    try {
+      return await this.client.apiCall(method, message);
+    } catch (e) {
+      this.log.error(`Failed to perform slack api call: ${method}`, e);
+      throw e;
     }
-    return this.clients[target];
   }
 
-  async postMessage(target, opts) {
-    const client = this.#getClient(target);
-    try {
-      const result = await client.chat.postMessage({
-        ...DEFAULT_PARAMS,
-        ...opts,
-      });
+  async postMessage(message) {
+    const result = await this.#apiCall('chat.postMessage', message);
+    return {
+      channelId: result.channel,
+      threadId: result.ts,
+    };
+  }
 
-      return {
-        channelId: result.channel,
-        threadId: result.ts,
-      };
-    } catch (error) {
-      this.log.error(`Slack message failed to send to ${target}`, error);
-      throw error;
+  async fileUpload(file) {
+    const result = await this.#apiCall('files.uploadV2', file);
+
+    if (result.files.length === 0) {
+      throw new Error(`File upload was unsuccessful. Filename was "${file.filename}"`);
     }
+
+    return {
+      fileUrl: result.files[0].url_private,
+      channels: result.files[0].channels,
+    };
   }
 }

@@ -13,62 +13,66 @@
 /* eslint-env mocha */
 
 import chai from 'chai';
+import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import { Message, Blocks, Elements } from 'slack-block-builder';
-import { SlackClient } from '../src/index.js';
+import { SlackClient, SLACK_TARGETS } from '../src/index.js';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
 describe('Slack Client', () => {
-  const context = {
-    log: console,
-    env: {
-      SLACK_TOKEN_ADOBE_INTERNAL: 'token-internal',
-      SLACK_TOKEN_ADOBE_EXTERNAL: 'token-external',
-    },
-  };
+  let context;
   const text = 'some-text';
   const blocks = [{ type: 'section', text: { type: 'plain_text', text: 'Hello world' } }];
 
   it('does not create a new instance if previously initialized', async () => {
-    const slackClient = SlackClient.createFrom({ slackClient: 'hebele', env: {} });
+    const target = 'corp-internal';
+    context = {
+      log: console,
+      slackClients: {
+        [target]: 'hebele',
+      },
+    };
+    const slackClient = SlackClient.createFrom(context, target);
     expect(slackClient).to.equal('hebele');
   });
 
-  it('does not create a new instance without proper params', async () => {
-    expect(() => new SlackClient('asd'))
-      .to.throw('targetTokenPairs parameter should be an array');
+  it('does not create a new instance without a proper env variables', async () => {
+    context = { log: console, env: {} };
+    expect(() => SlackClient.createFrom(context, 'unknown-target'))
+      .to.throw('No slack token set for unknown-target');
   });
 
-  it('does not create a new instance without a proper env variables', async () => {
-    expect(() => SlackClient.createFrom({ env: {} }))
-      .to.throw('No environment variable containing a slack token found');
+  it('does not create a new instance without a target', async () => {
+    context = { log: console, env: {} };
+    expect(() => SlackClient.createFrom(context))
+      .to.throw('Missing target for the Slack Client');
   });
 
   it('creates a new instance if previously not initialized', async () => {
-    const slackClient = SlackClient.createFrom({
+    context = {
       env: {
         SLACK_TOKEN_ADOBE_INTERNAL: 'token-internal',
         SLACK_TOKEN_ADOBE_EXTERNAL: 'token-external',
       },
-    });
-    expect(Object.keys(slackClient.clients).length).to.equal(2);
-  });
-
-  it('returns an error for an unknown target', async () => {
-    const slackClient = SlackClient.createFrom({
-      env: {
-        SLACK_TOKEN_ADOBE_INTERNAL: 'token-internal',
-      },
-    });
-    await expect(slackClient.postMessage('unknown-target', {}))
-      .to.be.rejectedWith('Environment variable \'SLACK_TOKEN_unknown-target\' does not exist. Slack Client could not be initialized.');
+    };
+    const slackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_EXTERNAL);
+    expect(slackClient).to.be.a('object');
+    expect(SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_EXTERNAL)).to.equal(slackClient);
   });
 
   it('returns channel-id and thread-id when message posted', async () => {
-    const slackClient = SlackClient.createFrom(context);
+    context = {
+      log: console,
+      env: {
+        SLACK_TOKEN_ADOBE_INTERNAL: 'token-internal',
+        SLACK_TOKEN_ADOBE_EXTERNAL: 'token-external',
+      },
+    };
+
+    const slackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
 
     nock('https://slack.com', {
       reqheaders: {
@@ -76,57 +80,69 @@ describe('Slack Client', () => {
       },
     })
       .post('/api/chat.postMessage', {
-        unfurl_links: false,
-        unfurl_media: false,
         channel: 'channel-id',
         blocks: JSON.stringify(blocks),
         text,
-        ts: 'thread-id',
+        thread_ts: 'thread-id',
       })
       .reply(200, '{ "ok": true, "channel": "channel-id", "ts": "thread-id" }');
 
-    const resp = await slackClient.postMessage('ADOBE_INTERNAL', {
+    const resp = await slackClient.postMessage({
       channel: 'channel-id',
       blocks,
       text,
-      ts: 'thread-id',
+      thread_ts: 'thread-id',
     });
     expect(resp.channelId).to.equal('channel-id');
     expect(resp.threadId).to.equal('thread-id');
   });
 
   it('returns an error message when api returns unsuccessful', async () => {
-    const slackClient = SlackClient.createFrom(context);
+    context = {
+      log: console,
+      env: {
+        SLACK_TOKEN_ADOBE_INTERNAL: 'token-internal',
+        SLACK_TOKEN_ADOBE_EXTERNAL: 'token-external',
+      },
+    };
+
+    const slackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
     nock('https://slack.com', {
       reqheaders: {
         authorization: `Bearer ${context.env.SLACK_TOKEN_ADOBE_INTERNAL}`,
       },
     })
       .post('/api/chat.postMessage', {
-        unfurl_links: false,
-        unfurl_media: false,
         channel: 'channel-id',
         blocks: JSON.stringify(blocks),
         text,
-        ts: 'thread-id',
+        thread_ts: 'thread-id',
       })
       .reply(200, '{ "ok": false, "error": "meh" }');
 
-    await expect(slackClient.postMessage('ADOBE_INTERNAL', {
+    await expect(slackClient.postMessage({
       channel: 'channel-id',
       blocks,
       text,
-      ts: 'thread-id',
+      thread_ts: 'thread-id',
     })).to.be.rejectedWith('An API error occurred: meh');
   });
 
   it('test using slack block builder', async () => {
-    const slackClient = SlackClient.createFrom(context);
+    context = {
+      log: console,
+      env: {
+        SLACK_TOKEN_ADOBE_INTERNAL: 'token-internal',
+        SLACK_TOKEN_ADOBE_EXTERNAL: 'token-external',
+      },
+    };
+
+    const slackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
 
     const channel = 'channel-id';
     const thread = 'thread-id';
 
-    const opts = Message()
+    const message = Message()
       .channel(channel)
       .threadTs(thread)
       .text('Alas, my friend.')
@@ -156,15 +172,72 @@ describe('Slack Client', () => {
       },
     })
       .post('/api/chat.postMessage', {
-        unfurl_links: false,
-        unfurl_media: false,
-        ...opts,
-        blocks: JSON.stringify(opts.blocks),
+        ...message,
+        blocks: JSON.stringify(message.blocks),
       })
       .reply(200, '{ "ok": true, "channel": "channel-id", "ts": "thread-id" }');
 
-    const resp = await slackClient.postMessage('ADOBE_INTERNAL', opts);
+    const resp = await slackClient.postMessage(message);
     expect(resp.channelId).to.equal('channel-id');
     expect(resp.threadId).to.equal('thread-id');
+  });
+
+  it('returns file url and channels when file is uploaded', async () => {
+    context = {
+      log: console,
+      env: {
+        SLACK_TOKEN_ADOBE_INTERNAL: 'xoxb-6470950466-5380965741217-BeC9scT1Y76IJgT327HnnSl0',
+        SLACK_TOKEN_ADOBE_EXTERNAL: 'token-external',
+      },
+    };
+
+    const slackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
+
+    slackClient.client = {
+      apiCall: sinon.stub().resolves({
+        files: [{ id: 'F06FKAFEL05', url_private: '//big-picture.jpeg', channels: ['channel-id'] }],
+      }),
+    };
+
+    const resp = await slackClient.fileUpload({
+      file: Buffer.from('hebele', 'utf8'),
+      channels: 'channel-id',
+      initial_comment: 'here is your file',
+      filename: 'big-picture.jpeg',
+      thread_ts: 'thread-id',
+    });
+    expect(resp.channels).to.eql(['channel-id']);
+    expect(resp.fileUrl).to.equal('//big-picture.jpeg');
+
+    sinon.restore();
+  });
+
+  it('throws error when file upload fails', async () => {
+    context = {
+      log: console,
+      env: {
+        SLACK_TOKEN_ADOBE_INTERNAL: 'token0internal',
+        SLACK_TOKEN_ADOBE_EXTERNAL: 'token-external',
+      },
+    };
+
+    const slackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
+
+    slackClient.client = {
+      apiCall: sinon.stub().resolves({ files: [] }),
+    };
+
+    const message = {
+      file: Buffer.from('hebele', 'utf8'),
+      channels: 'channel-id',
+      initial_comment: 'here is your file',
+      filename: 'big-picture.jpeg',
+      thread_ts: 'thread-id',
+    };
+
+    await expect(slackClient.fileUpload(message))
+      .to.be.rejectedWith('File upload was unsuccessful. Filename was "big-picture.jpeg"');
+
+    sinon.restore();
   });
 });

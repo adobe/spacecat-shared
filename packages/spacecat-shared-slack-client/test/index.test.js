@@ -186,7 +186,7 @@ describe('Slack Client', () => {
     context = {
       log: console,
       env: {
-        SLACK_TOKEN_ADOBE_INTERNAL: 'xoxb-6470950466-5380965741217-BeC9scT1Y76IJgT327HnnSl0',
+        SLACK_TOKEN_ADOBE_INTERNAL: 'token-internal',
         SLACK_TOKEN_ADOBE_EXTERNAL: 'token-external',
       },
     };

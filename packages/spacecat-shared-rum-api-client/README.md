@@ -12,18 +12,6 @@ npm install @adobe/spacecat-shared-rum-api-client
 
 ## Usage
 
-### Configuring Tokens
-
-To configure tokens for your application, follow these steps:
-
-1. Visit the main page of your Slack app at [https://api.slack.com/apps](https://api.slack.com/apps).
-
-2. Navigate to the "OAuth & Permissions" page and locate the "Scope" section. Here, you can add scopes to your Slack app based on the specific methods you intend to use from the Slack API. For example, if your app requires file upload functionality, ensure you add the `files:read` and `files:write` scopes.
-
-3. Locate your Slack bot token under the "Bot User OAuth Token" section on the same page. You will need to provide this token to the `SlackClient` in your application.
-
-4. For information on the scopes needed for each Slack API method, refer to the [documentation](https://api.slack.com/methods). The required scopes for each API method are listed in the "Bot tokens" row. As an example, to use the `postMessage` API method, the required scope is `chat:write`, as documented in [https://api.slack.com/methods/chat.postMessage](https://api.slack.com/methods/chat.postMessage).
-
 ### Creating and instance from Helix UniversalContext
 
 ```js

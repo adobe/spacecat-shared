@@ -32,13 +32,13 @@ describe('AuditConfig Tests', () => {
         auditsDisabled: true,
         auditTypeConfigs: {
           type1: { disabled: true },
-          type2: { disabled: false },
+          [AUDIT_TYPE_BROKEN_BACKLINKS]: { disabled: false },
         },
       };
       const auditConfig = AuditConfig(data);
       expect(auditConfig.auditsDisabled()).to.be.true;
       expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
-      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.false;
+      expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_BROKEN_BACKLINKS).disabled()).to.be.false;
     });
   });
 

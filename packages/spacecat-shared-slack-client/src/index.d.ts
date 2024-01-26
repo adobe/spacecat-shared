@@ -12,7 +12,12 @@
 
 import { UniversalContext } from '@adobe/helix-universal';
 
-export default class SlackClient {
+export declare const SLACK_TARGETS: {
+  ADOBE_INTERNAL: string;
+  ADOBE_EXTERNAL: string;
+};
+
+export class SlackClient {
   /**
    * Static factory method to create an instance of SlackClient.
    * @param {UniversalContext} context - An object containing the AWS Lambda context information

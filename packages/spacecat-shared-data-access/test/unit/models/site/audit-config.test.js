@@ -15,13 +15,16 @@
 import { expect } from 'chai';
 
 import AuditConfig from '../../../../src/models/site/audit-config.js';
+import { AUDIT_TYPE_BROKEN_BACKLINKS } from '../../../../src/models/audit.js';
 
 describe('AuditConfig Tests', () => {
   describe('AuditConfig Creation', () => {
     it('creates an AuditConfig with defaults when no data is provided', () => {
       const auditConfig = AuditConfig();
       expect(auditConfig.auditsDisabled()).to.be.false;
-      expect(auditConfig.getAuditTypeConfigs()).to.be.empty;
+      const auditTypeConfigs = auditConfig.getAuditTypeConfigs();
+      expect(auditTypeConfigs[AUDIT_TYPE_BROKEN_BACKLINKS]).to.be.an('object');
+      expect(auditTypeConfigs[AUDIT_TYPE_BROKEN_BACKLINKS].disabled()).to.be.true;
     });
 
     it('creates an AuditConfig with provided data', () => {
@@ -74,15 +77,6 @@ describe('AuditConfig Tests', () => {
       const auditConfig = AuditConfig(data);
       const typeConfigs = auditConfig.getAuditTypeConfigs();
       expect(typeConfigs).to.have.keys(['type1', 'type2']);
-    });
-
-    it('returns no audit type configurations', () => {
-      const data = {
-        auditTypeConfigs: {},
-      };
-      const auditConfig = AuditConfig(data);
-      const typeConfigs = auditConfig.getAuditTypeConfigs();
-      expect(typeConfigs).to.be.an('object').that.is.empty;
     });
   });
 

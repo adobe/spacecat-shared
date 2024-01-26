@@ -18,6 +18,11 @@ const AUDIT_TYPE_DISABLED_DEFAULTS = {
 };
 
 function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
+  if (!auditTypeConfigs || Object.keys(auditTypeConfigs).length === 0) {
+    return {
+      [AUDIT_TYPE_BROKEN_BACKLINKS]: AuditConfigType({ disabled: true }),
+    };
+  }
   return Object.entries(auditTypeConfigs || {}).reduce((acc, [key, value]) => {
     const disabled = value.disabled !== undefined
       ? value.disabled : (AUDIT_TYPE_DISABLED_DEFAULTS[key] || auditsDisabled || false);

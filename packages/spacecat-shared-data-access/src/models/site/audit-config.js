@@ -11,10 +11,20 @@
  */
 
 import AuditConfigType from './audit-config-type.js';
+import { AUDIT_TYPE_BROKEN_BACKLINKS } from '../audit.js';
+
+const AUDIT_TYPE_DISABLED_DEFAULTS = {
+  [AUDIT_TYPE_BROKEN_BACKLINKS]: true,
+};
 
 function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
   return Object.entries(auditTypeConfigs || {}).reduce((acc, [key, value]) => {
-    acc[key] = AuditConfigType(value, auditsDisabled);
+    acc[key] = AuditConfigType(
+      {
+        ...value,
+        disabled: AUDIT_TYPE_DISABLED_DEFAULTS[key] || auditsDisabled,
+      },
+    );
     return acc;
   }, {});
 }

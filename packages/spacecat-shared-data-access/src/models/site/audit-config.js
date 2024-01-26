@@ -19,10 +19,12 @@ const AUDIT_TYPE_DISABLED_DEFAULTS = {
 
 function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
   return Object.entries(auditTypeConfigs || {}).reduce((acc, [key, value]) => {
+    const disabled = value.disabled !== undefined
+      ? value.disabled : (AUDIT_TYPE_DISABLED_DEFAULTS[key] || auditsDisabled || false);
     acc[key] = AuditConfigType(
       {
         ...value,
-        disabled: AUDIT_TYPE_DISABLED_DEFAULTS[key] || auditsDisabled,
+        disabled,
       },
     );
     return acc;

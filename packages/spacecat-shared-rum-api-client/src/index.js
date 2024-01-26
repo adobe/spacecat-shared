@@ -106,6 +106,15 @@ export default class RUMAPIClient {
     this.domainkey = domainkey;
   }
 
+  create404URL(params = {}) {
+    return createUrl(
+      APIS.RUM_SOURCES,
+      {
+        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, checkpoint: 404, ...params,
+      },
+    );
+  }
+
   async getRUMDashboard(params = {}) {
     return sendRequest(createUrl(
       APIS.RUM_DASHBOARD,
@@ -114,11 +123,8 @@ export default class RUMAPIClient {
   }
 
   async get404Sources(params = {}) {
-    return sendRequest(createUrl(
-      APIS.RUM_SOURCES,
-      {
-        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, checkpoint: 404, ...params,
-      },
+    return sendRequest(this.create404URL(
+      params,
     ));
   }
 

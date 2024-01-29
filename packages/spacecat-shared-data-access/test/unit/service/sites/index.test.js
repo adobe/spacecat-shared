@@ -67,6 +67,11 @@ describe('Site Access Pattern Tests', () => {
       expect(exportedFunctions.getSitesWithLatestAudit).to.be.a('function');
     });
 
+    it('exports getSitesByOrganizationIDWithLatestAudits function', () => {
+      expect(exportedFunctions).to.have.property('getSitesByOrganizationIDWithLatestAudits');
+      expect(exportedFunctions.getSitesByOrganizationIDWithLatestAudits).to.be.a('function');
+    });
+
     it('exports getSiteByBaseURL function', () => {
       expect(exportedFunctions).to.have.property('getSiteByBaseURL');
       expect(exportedFunctions.getSiteByBaseURL).to.be.a('function');
@@ -164,6 +169,34 @@ describe('Site Access Pattern Tests', () => {
       mockDynamoClient.query.onSecondCall().resolves(mockAuditData);
 
       const result = await exportedFunctions.getSitesWithLatestAudit('lhs-mobile');
+      expect(result).to.be.an('array').that.has.lengthOf(1);
+    });
+
+    it('calls getSitesByOrganizationIDWithLatestAudit and handles latestAudits', async () => {
+      const mockSiteData = [{
+        id: 'site1',
+        organizationId: 'org1',
+        baseURL: 'https://example.com',
+      }];
+
+      const mockAuditData = [{
+        siteId: 'site1',
+        auditType: '404',
+        auditedAt: new Date().toISOString(),
+        auditResult: {
+          result: {
+            views: 1000,
+            source: 'https://abc.com',
+            target: 'https://abc.com/pay',
+          },
+        },
+        fullAuditRef: 'https://example.com',
+      }];
+
+      mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
+      mockDynamoClient.query.onSecondCall().resolves(mockAuditData);
+
+      const result = await exportedFunctions.getSitesByOrganizationIDWithLatestAudits('404');
       expect(result).to.be.an('array').that.has.lengthOf(1);
     });
 

@@ -267,6 +267,51 @@ export const getSitesByOrganizationID = async (
 };
 
 /**
+ * Retrieves sites by organizationId with their latest audit. Sites without a latest
+ * audit will not be included in the result.
+ * The sites are sorted by their latest audit scores in ascending order by default.
+ * The sortAuditsAscending parameter can be used to change the sort order.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The logger.
+ * @param {string} auditType - The type of audits to retrieve for the sites.
+ * @param {string} organizationId - The organizationId to retrieve the sites.
+ * @param {boolean} [sortAuditsAscending=true] - Determines if the audits should be sorted in
+ * ascending order.
+ * to retrieve.
+ * @return {Promise<Readonly<Site>[]>} A promise that resolves to an array of sites with their
+ * latest audit.
+ */
+export const getSitesByOrganizationIDWithLatestAudits = async (
+  dynamoClient,
+  config,
+  log,
+  organizationId,
+  auditType,
+  sortAuditsAscending = true,
+) => {
+  const [sites, latestAudits] = await Promise.all([
+    getSitesByOrganizationID(dynamoClient, config, organizationId),
+    getLatestAudits(dynamoClient, config, log, auditType, sortAuditsAscending),
+  ]);
+
+  const sitesMap = new Map(sites.map((site) => [site.getId(), site]));
+  const orderedSites = [];
+
+  // First, append sites with a latest audit in the sorted order
+  latestAudits.forEach((audit) => {
+    const site = sitesMap.get(audit.getSiteId());
+    if (site) {
+      site.setAudits([audit]);
+      orderedSites.push(site);
+      sitesMap.delete(site.getId()); // Remove the site from the map to avoid adding it again
+    }
+  });
+
+  return orderedSites;
+};
+
+/**
  * Retrieves a site by its ID.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.

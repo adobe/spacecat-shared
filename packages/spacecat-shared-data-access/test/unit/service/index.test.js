@@ -35,6 +35,7 @@ describe('Data Access Object Tests', () => {
     'getSitesByOrganizationID',
     'getSitesToAudit',
     'getSitesWithLatestAudit',
+    'getSitesByOrganizationIDWithLatestAudits',
     'getSiteByBaseURL',
     'getSiteByBaseURLWithAuditInfo',
     'getSiteByBaseURLWithAudits',

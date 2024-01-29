@@ -11,6 +11,7 @@
  */
 
 /* eslint-env mocha */
+/* eslint-disable no-underscore-dangle */
 
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
@@ -121,6 +122,35 @@ describe('BaseSlackClient', () => {
       } catch (e) {
         expect(mockLog.error.called).to.be.true;
       }
+    });
+  });
+
+  describe('BaseSlackClient with Enterprise Features', () => {
+    let enterpriseClient;
+
+    before(() => {
+      enterpriseClient = new BaseSlackClient(mockToken, mockLog, true);
+      nockScope = nock('https://slack.com');
+    });
+
+    describe('Enterprise-aware API Calls', () => {
+      it('uses the enterprise version of the method when isEnterprise is true', async () => {
+        const enterpriseMethod = 'conversations.create';
+        const expectedMethod = `admin.${enterpriseMethod}`;
+        nockScope.post(`/api/${expectedMethod}`).reply(200, { ok: true });
+
+        await enterpriseClient._apiCall(enterpriseMethod, {});
+        expect(nockScope.isDone()).to.be.true;
+      });
+
+      it('uses the standard method when isEnterprise is false', async () => {
+        const standardClient = new BaseSlackClient(mockToken, mockLog, false);
+        const standardMethod = 'conversations.create';
+        nockScope.post(`/api/${standardMethod}`).reply(200, { ok: true });
+
+        await standardClient._apiCall(standardMethod, {});
+        expect(nockScope.isDone()).to.be.true;
+      });
     });
   });
 

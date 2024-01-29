@@ -12,15 +12,33 @@
 
 import { WebClient } from '@slack/web-api';
 
+/**
+ * List of standard slack web api methods that have a different name for enterprise workspaces.
+ * @type {string[]}
+ */
+const WEB_API_METHODS_ENTERPRISE = [
+  'conversations.create',
+  'conversations.invite',
+];
+
+function getEnterpriseAwareApiMethodName(method, isEnterprise) {
+  if (isEnterprise && WEB_API_METHODS_ENTERPRISE.includes(method)) {
+    return `admin.${method}`;
+  }
+  return method;
+}
+
 export default class BaseSlackClient {
-  constructor(token, log) {
+  constructor(token, log, isEnterprise = false) {
     this.client = new WebClient(token);
     this.log = log;
+    this.isEnterprise = isEnterprise;
   }
 
-  async #apiCall(method, message) {
+  async _apiCall(method, message) {
+    const apiMethodName = getEnterpriseAwareApiMethodName(method, this.isEnterprise);
     try {
-      return await this.client.apiCall(method, message);
+      return await this.client.apiCall(apiMethodName, message);
     } catch (e) {
       this.log.error(`Failed to perform slack api call: ${method}`, e);
       throw e;
@@ -28,7 +46,7 @@ export default class BaseSlackClient {
   }
 
   async postMessage(message) {
-    const result = await this.#apiCall('chat.postMessage', message);
+    const result = await this._apiCall('chat.postMessage', message);
     return {
       channelId: result.channel,
       threadId: result.ts,
@@ -36,7 +54,7 @@ export default class BaseSlackClient {
   }
 
   async fileUpload(file) {
-    const result = await this.#apiCall('files.uploadV2', file);
+    const result = await this._apiCall('files.uploadV2', file);
 
     if (result.files.length === 0) {
       throw new Error(`File upload was unsuccessful. Filename was "${file.filename}"`);

@@ -10,11 +10,49 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
 import BaseSlackClient from './base-slack-client.js';
 
 export default class ElevatedSlackClient extends BaseSlackClient {
   constructor(token, log) {
     super(token, log);
     this.log = log;
+  }
+
+  /**
+   * Retrieves the team information for the workspace.
+   * Required scopes: team:read
+   * @private This method is private and should not be called directly.
+   * @return {Promise<Object>} The team information.
+   */
+  async #getTeam() {
+    try {
+      const response = await this._apiCall('team.info');
+      return response.team;
+    } catch (e) {
+      this.log.error('Failed to retrieve workspace information', e);
+      throw e;
+    }
+  }
+
+  /**
+   * Initializes the Slack client. This method must be called before any other method.
+   * @private This method is private and should not be called directly.
+   * @return {Promise<void>} A promise that resolves when the client is initialized.
+   */
+  async #initialize() {
+    if (this.isInitialized) {
+      return;
+    }
+
+    try {
+      this.team = await this.#getTeam();
+      this.isEnterprise = hasText(this.team.enterprise_id);
+      this.isInitialized = true;
+    } catch (e) {
+      this.log.error('Failed to initialize Slack client', e);
+      throw e;
+    }
   }
 }

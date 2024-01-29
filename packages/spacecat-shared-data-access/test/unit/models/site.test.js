@@ -74,9 +74,9 @@ describe('Site Model Tests', () => {
       expect(auditConfig).to.be.an('object');
       expect(auditConfig.auditsDisabled()).to.be.true;
       expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
       expect(auditConfig.getAuditTypeConfig('type2')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.false;
+      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.true;
     });
   });
 

@@ -14,7 +14,7 @@
 
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import dynamoDbLocal from 'dynamo-db-local';
+import DynamoDbLocal from 'dynamo-db-local';
 import Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
@@ -107,7 +107,10 @@ describe('DynamoDB Integration Test', async () => {
     process.env.AWS_ACCESS_KEY_ID = 'dummy';
     process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
 
-    dynamoDbLocalProcess = dynamoDbLocal.spawn({ port: 8000, sharedDb: true });
+    dynamoDbLocalProcess = DynamoDbLocal.spawn({
+      port: 8000,
+      sharedDb: true,
+    });
 
     await sleep(5000); // give db time to start up
 

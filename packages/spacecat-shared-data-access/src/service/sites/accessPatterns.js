@@ -298,7 +298,7 @@ export const getSitesByOrganizationIDWithLatestAudits = async (
   const sitesMap = new Map(sites.map((site) => [site.getId(), site]));
   const orderedSites = [];
 
-  // First, append sites with a latest audit in the sorted order
+  // Append just sites with a latest audit in the sorted order
   latestAudits.forEach((audit) => {
     const site = sitesMap.get(audit.getSiteId());
     if (site) {

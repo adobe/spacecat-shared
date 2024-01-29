@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.11.0...@adobe/spacecat-shared-data-access-v1.12.0) (2024-01-29)
+
+
+### Features
+
+* add getSitesByOrganizationIDWithLatestAudits query ([d3a8f8c](https://github.com/adobe/spacecat-shared/commit/d3a8f8cc2148229aecec3df277e298a3f0746865))
+
 # [@adobe/spacecat-shared-data-access-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.10.5...@adobe/spacecat-shared-data-access-v1.11.0) (2024-01-29)
 
 

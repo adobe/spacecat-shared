@@ -36,6 +36,13 @@ export const RUM_DEFAULT_PARAMS = {
   limit: 101,
 };
 
+export const NOT_FOUND_DEFAULT_PARAMS = {
+  interval: 1,
+  offset: 0,
+  limit: 101,
+  checkpoint: 404,
+};
+
 export async function sendRequest(url, opts) {
   let respJson;
   try {
@@ -110,7 +117,7 @@ export default class RUMAPIClient {
     return createUrl(
       APIS.RUM_SOURCES,
       {
-        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, checkpoint: 404, ...params,
+        domainkey: this.domainkey, ...NOT_FOUND_DEFAULT_PARAMS, ...params,
       },
     );
   }

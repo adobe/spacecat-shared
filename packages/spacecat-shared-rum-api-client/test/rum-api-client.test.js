@@ -94,7 +94,7 @@ describe('rum api client', () => {
   it('returns the URL to call the get404Sources', () => {
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     expect(rumApiClient.create404URL({ url: 'http://spacecar.com' }))
-      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources?domainkey=hebele&interval=7&offset=0&limit=101&checkpoint=404&url=http%3A%2F%2Fspacecar.com');
+      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources?domainkey=hebele&interval=1&offset=0&limit=101&checkpoint=404&url=http%3A%2F%2Fspacecar.com');
   });
 
   it('returns data when get404Sources api is successful', async () => {
@@ -102,7 +102,7 @@ describe('rum api client', () => {
       .get('/run-query@v3/rum-sources')
       .query({
         domainkey: 'hebele',
-        interval: 7,
+        interval: 1,
         offset: 0,
         limit: 101,
         checkpoint: 404,

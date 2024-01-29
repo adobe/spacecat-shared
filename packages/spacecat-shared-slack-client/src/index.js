@@ -9,8 +9,10 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { WebClient } from '@slack/web-api';
 import { hasText, isObject } from '@adobe/spacecat-shared-utils';
+
+import BaseSlackClient from './clients/base-slack-client.js';
+import ElevatedSlackClient from './clients/elevated-slack-client.js';
 
 const ENV_PREFIX = 'SLACK_TOKEN_';
 
@@ -19,67 +21,38 @@ export const SLACK_TARGETS = {
   ADOBE_EXTERNAL: 'ADOBE_EXTERNAL',
 };
 
-function getEnvironmentVariableNameForTarget(target) {
-  return `${ENV_PREFIX}${target}`;
+function getEnvironmentVariableNameForTarget(target, isElevated = false) {
+  return `${ENV_PREFIX}${target}${isElevated ? '_ELEVATED' : ''}`;
 }
 
-export class SlackClient {
-  static createFrom(context, target) {
-    const { log } = context;
-
-    if (!hasText(target)) {
-      throw new Error('Missing target for the Slack Client');
-    }
-
-    if (!isObject(context.slackClients)) {
-      context.slackClients = {};
-    }
-
-    if (context.slackClients[target]) {
-      return context.slackClients[target];
-    }
-
-    const token = context.env[getEnvironmentVariableNameForTarget(target)];
-    if (!hasText(token)) {
-      throw new Error(`No slack token set for ${target}`);
-    }
-
-    context.slackClients[target] = new SlackClient(token, log);
-    return context.slackClients[target];
+function getToken(context, target, isElevated) {
+  const token = context.env[getEnvironmentVariableNameForTarget(target, isElevated)];
+  if (!hasText(token)) {
+    throw new Error(`No Slack token set for ${target}${isElevated ? ' with elevated privileges' : ''}`);
   }
-
-  constructor(token, log) {
-    this.client = new WebClient(token);
-    this.log = log;
-  }
-
-  async #apiCall(method, message) {
-    try {
-      return await this.client.apiCall(method, message);
-    } catch (e) {
-      this.log.error(`Failed to perform slack api call: ${method}`, e);
-      throw e;
-    }
-  }
-
-  async postMessage(message) {
-    const result = await this.#apiCall('chat.postMessage', message);
-    return {
-      channelId: result.channel,
-      threadId: result.ts,
-    };
-  }
-
-  async fileUpload(file) {
-    const result = await this.#apiCall('files.uploadV2', file);
-
-    if (result.files.length === 0) {
-      throw new Error(`File upload was unsuccessful. Filename was "${file.filename}"`);
-    }
-
-    return {
-      fileUrl: result.files[0].url_private,
-      channels: result.files[0].channels,
-    };
-  }
+  return token;
 }
+
+const createFrom = (context, target, isElevated = false) => {
+  const { log } = context;
+
+  if (!hasText(target)) {
+    throw new Error('Missing target for the Slack Client');
+  }
+
+  if (!isObject(context.slackClients)) {
+    context.slackClients = {};
+  }
+
+  const clientKey = `${target}_${isElevated ? 'ELEVATED' : 'STANDARD'}`;
+
+  if (!context.slackClients[clientKey]) {
+    const token = getToken(context, target, isElevated);
+    const ClientClass = isElevated ? ElevatedSlackClient : BaseSlackClient;
+    context.slackClients[clientKey] = new ClientClass(token, log);
+  }
+
+  return context.slackClients[clientKey];
+};
+
+export default createFrom;

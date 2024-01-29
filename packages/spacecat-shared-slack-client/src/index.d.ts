@@ -17,27 +17,7 @@ export declare const SLACK_TARGETS: {
   ADOBE_EXTERNAL: string;
 };
 
-export class SlackClient {
-  /**
-   * Static factory method to create an instance of SlackClient.
-   * @param {UniversalContext} context - An object containing the AWS Lambda context information
-   * @param {string} target - A string representing the target slack workspace/org
-   * @returns An instance of SlackClient.
-   * @remarks This method is designed to create a new instance from an AWS Lambda context.
-   *   The created instance is stored in the Lambda context, and subsequent calls to
-   *   this method will return the singleton instance if previously created.
-   */
-  static createFrom(context: UniversalContext, target: string): SlackClient;
-
-  /**
-   * Constructor for creating an instance of SlackClient.
-   * @param {string} token - slack bot token
-   * @param {object} log - a logger object
-   * used to create slack api clients for each target.
-   * @remarks token is specific to the Slack API.
-   */
-  constructor(token: string, log: object);
-
+export declare interface BaseSlackClient {
   /**
    * Asynchronous method to create a RUM backlink.
 
@@ -53,4 +33,23 @@ export class SlackClient {
    * @returns A Promise resolving to an object containing the data returned by Slack API
    */
   fileUpload(file: object): Promise<object>;
+}
+
+export declare interface ElevatedSlackClient extends BaseSlackClient {
+
+}
+
+export class SlackClient {
+  /**
+   * Static factory method to create an instance of BaseSlackClient when isElevated is false, or
+   * an instance of ElevatedSlackClient when isElevated is true.
+   * @param {UniversalContext} context - An object containing the AWS Lambda context information
+   * @param {string} target - A string representing the target slack workspace/org
+   * @param {boolean} isElevated - A boolean representing whether the client should be elevated
+   * @returns {BaseSlackClient | ElevatedSlackClient} An instance of SlackClient
+   * @remarks This method is designed to create a new instance from an AWS Lambda context.
+   *   The created instance is stored in the Lambda context, and subsequent calls to
+   *   this method will return the singleton instance if previously created.
+   */
+  static createFrom(context: UniversalContext, target: string, isElevated: boolean): SlackClient;
 }

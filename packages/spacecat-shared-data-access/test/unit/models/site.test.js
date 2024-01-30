@@ -111,6 +111,27 @@ describe('Site Model Tests', () => {
       expect(site.getOrganizationId()).to.equal(organizationId);
     });
 
+    it('updates config correctly', () => {
+      const conf = {
+        slack: {
+          workspace: 'workspace',
+          channel: 'channel',
+        },
+        alerts: [{
+          type: '404',
+          byOrg: false,
+          mentions: [{ slack: ['slackId'] }],
+        }],
+      };
+      site.updateConfig(conf);
+      const updatedConf = site.getConfig();
+      expect(updatedConf.slack).to.be.an('object');
+      expect(updatedConf.alerts).to.be.an('array');
+      expect(updatedConf.slack.workspace).to.equal('workspace');
+      expect(updatedConf.slack.channel).to.equal('channel');
+      expect(updatedConf.alerts[0].mentions[0].slack[0]).to.equal('slackId');
+    });
+
     it('updates gitHubURL correctly', () => {
       const newGitHubURL = 'https://gibhub.com/example/example';
       site.updateGitHubURL(newGitHubURL);
@@ -123,6 +144,10 @@ describe('Site Model Tests', () => {
 
     it('throws an error when updating with an invalid github URL', () => {
       expect(() => site.updateGitHubURL('')).to.throw('GitHub URL must be a valid URL');
+    });
+
+    it('throws an error when updating with an invalid config', () => {
+      expect(() => site.updateConfig('abcd')).to.throw('Config must be provided');
     });
 
     it('sets audits correctly', () => {
@@ -149,6 +174,16 @@ describe('Site Model Tests', () => {
       await sleep(20);
 
       site.updateOrganizationId('newOrg123');
+
+      expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
+    });
+
+    it('updates updatedAt when config is updated', async () => {
+      const initialUpdatedAt = site.getUpdatedAt();
+
+      await sleep(20);
+
+      site.updateConfig({});
 
       expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });

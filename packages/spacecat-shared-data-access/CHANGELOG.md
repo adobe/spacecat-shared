@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.13.1...@adobe/spacecat-shared-data-access-v1.13.2) (2024-01-30)
+
+
+### Bug Fixes
+
+* config validation ([edc1276](https://github.com/adobe/spacecat-shared/commit/edc127681e26c3283e5ecc94cde7c5fec78529dd))
+
 # [@adobe/spacecat-shared-data-access-v1.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.13.0...@adobe/spacecat-shared-data-access-v1.13.1) (2024-01-30)
 
 

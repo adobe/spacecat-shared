@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.12.0...@adobe/spacecat-shared-data-access-v1.13.0) (2024-01-30)
+
+
+### Features
+
+* introduce default config for organic-keywords report (SITES-19317) ([#118](https://github.com/adobe/spacecat-shared/issues/118)) ([4301556](https://github.com/adobe/spacecat-shared/commit/430155645e1452760bf2818d70a0faae2fb8db12))
+
 # [@adobe/spacecat-shared-data-access-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.11.0...@adobe/spacecat-shared-data-access-v1.12.0) (2024-01-29)
 
 

@@ -41,7 +41,7 @@ describe('Base Model Tests', () => {
 
     it('correctly returns the updatedAt date if provided', () => {
       const updatedAt = new Date().toISOString();
-      const baseEntity = Base({ updatedAt });
+      const baseEntity = Base({ id: 'test-id', updatedAt });
       expect(baseEntity.getUpdatedAt()).to.equal(updatedAt);
     });
   });

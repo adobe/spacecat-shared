@@ -142,7 +142,7 @@ describe('Organization Model Tests', () => {
 
       await sleep(20);
 
-      organization.updateName('Name123');
+      organization.updateConfig({});
 
       expect(organization.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });

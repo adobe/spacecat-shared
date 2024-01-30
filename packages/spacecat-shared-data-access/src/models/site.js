@@ -93,6 +93,22 @@ const Site = (data = {}) => {
     return self;
   };
 
+  /**
+   * Updates the site config.
+   * @param {string} config - The Site config.
+   * @return {Base} The updated site.
+   */
+  self.updateConfig = (config) => {
+    if (!isObject(config)) {
+      throw new Error('Config must be provided');
+    }
+
+    self.state.config = Config.toDynamoItem(config);
+    self.touch();
+
+    return self;
+  };
+
   self.updateDeliveryType = (deliveryType) => {
     if (!Object.values(DELIVERY_TYPES).includes(deliveryType)) {
       throw new Error(`Invalid delivery type: ${deliveryType}`);

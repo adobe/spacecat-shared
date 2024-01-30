@@ -18,10 +18,10 @@ export const configSchema = Joi.object({
     channel: Joi.string(),
   }),
   alerts: Joi.array().items(Joi.object({
-    type: Joi.string(),
+    type: Joi.string().required(),
     byOrg: Joi.boolean(),
     mentions: Joi.array().items(Joi.object({ slack: Joi.array().items(Joi.string()) })),
-  })),
+  }).unknown(true)),
 });
 
 export const DEFAULT_CONFIG = {

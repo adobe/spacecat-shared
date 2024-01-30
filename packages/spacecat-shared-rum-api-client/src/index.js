@@ -37,9 +37,7 @@ export const RUM_DEFAULT_PARAMS = {
 };
 
 export const NOT_FOUND_DEFAULT_PARAMS = {
-  interval: 1,
-  offset: 0,
-  limit: 101,
+  ...RUM_DEFAULT_PARAMS,
   checkpoint: 404,
 };
 

@@ -180,6 +180,10 @@ export default async function generateSampleData(
           type: '404',
           byOrg: true,
           mentions: [{ slack: [`${i}-slackId`] }],
+        },
+        {
+          type: 'organic-keywords',
+          country: 'RO',
         }],
       },
     });

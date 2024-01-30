@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.4.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.4.2...@adobe/spacecat-shared-rum-api-client-v1.4.3) (2024-01-30)
+
+
+### Bug Fixes
+
+* run 404 rum sources query with interval 7 ([ace5978](https://github.com/adobe/spacecat-shared/commit/ace59781e963c2269d01161be1883589d5d78802))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.4.1...@adobe/spacecat-shared-rum-api-client-v1.4.2) (2024-01-29)
 
 

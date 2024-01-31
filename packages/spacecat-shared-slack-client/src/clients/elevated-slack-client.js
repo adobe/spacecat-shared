@@ -73,6 +73,7 @@ export default class ElevatedSlackClient extends BaseSlackClient {
     super(token, opsConfig, log);
     this.isInitialized = false;
     this.team = null;
+    this.threadId = null;
   }
 
   /**
@@ -269,7 +270,7 @@ export default class ElevatedSlackClient extends BaseSlackClient {
     // Handle users already in channel
     await this.#handleUserStatusNotification(
       results,
-      SLACK_STATUSES.USER_ALREADY_IN_CHANNEL,
+      SLACK_STATUSES.USER_ALREADY_IN_ANOTHER_CHANNEL,
       'The following users need upgrade to multichannel user',
     );
 
@@ -321,10 +322,15 @@ export default class ElevatedSlackClient extends BaseSlackClient {
     }
 
     try {
-      await this.postMessage({
+      const result = await this.postMessage({
         channel: this.opsConfig.opsChannelId,
         text: message,
+        thread_ts: this.threadId || '',
       });
+
+      if (!hasText(this.threadId)) {
+        this.threadId = `${result.threadId}`;
+      }
     } catch (e) {
       this.log.error('Failed to post message to ops channel', e);
     }

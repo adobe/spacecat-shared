@@ -28,7 +28,7 @@ export declare interface BaseSlackClient {
   postMessage(message: object): Promise<object>;
 
   /**
-   * Asynchronous method to create a RUM backlink.
+   * Asynchronous method to upload a file to Slack.
 
    * @param {object} file - An object containing file payload and metadata to be sent to Slack API. see https://slack.dev/node-slack-sdk/web-api#new-way
    * @returns {Promise<fileUrl: string, channels: string[]>} A Promise resolving to
@@ -40,14 +40,14 @@ export declare interface BaseSlackClient {
 /**
  * Represents a Slack client with elevated privileges, capable of performing
  * advanced operations such as user lookups by email and channel management.
- * This client is suitable for both enterprise grid workspaces and standard workspaces.
  */
 export declare interface ElevatedSlackClient extends BaseSlackClient {
 
   /**
-   * Creates a new channel in the Slack workspace. The method adapts to the workspace type,
-   * using 'conversations.create' for standard workspaces and 'admin.conversations.create'
-   * for enterprise workspaces.
+   * Creates a new Slack channel. The channel can be public or private.
+   * Optional parameters include the topic and description of the channel.
+   * The creation of the channel is announced in the ops channel. Also, configured
+   * admins are invited to the channel.
    *
    * @param {string} name The name of the channel to create. Must start with '#'.
    * @param {string} [topic] Optional. The topic of the channel.
@@ -64,7 +64,16 @@ export declare interface ElevatedSlackClient extends BaseSlackClient {
 
   /**
    * Invites a list of users to a channel based on their email addresses,
-   * and optionally includes their real names.
+   * and optionally includes their real names. Users not yet members of the
+   * workspace are announced in the ops channel for manual invitation. Single-channel
+   * guest users are not invited and announced in the ops channel for manual upgrade
+   * to multichannel guest. This is done due to the fact that programmatic upgrade
+   * and workspace invite is only available to enterprise grid workspaces, for which
+   * this application is not intended.
+   *
+   * Only users that are not already
+   * members of the channel are invited. The list of users is returned with
+   * their email addresses and status.
    *
    * @param {string} channelId The ID of the channel.
    * @param {Array<{email: string, realName?: string}>} users The list of users to invite,

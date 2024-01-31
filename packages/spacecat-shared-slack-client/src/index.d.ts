@@ -39,7 +39,7 @@ export class SlackClient {
   constructor(token: string, log: object);
 
   /**
-   * Asynchronous method to create a RUM backlink.
+   * Asynchronous method to send a message to Slack.
 
    * @param {object} message - Message payload to be sent to Slack API. see https://api.slack.com/methods/chat.postMessage
    * @returns A Promise resolving to an object containing the data returned by Slack API
@@ -47,7 +47,7 @@ export class SlackClient {
   postMessage(message: object): Promise<object>;
 
   /**
-   * Asynchronous method to create a RUM backlink.
+   * Asynchronous method to upload a file to Slack.
 
    * @param {object} file - An object containing file payload and metadata to be sent to Slack API. see https://slack.dev/node-slack-sdk/web-api#new-way
    * @returns A Promise resolving to an object containing the data returned by Slack API

@@ -25,6 +25,19 @@ function getEnvironmentVariableNameForTarget(target, isElevated = false) {
   return `${ENV_PREFIX}${target}${isElevated ? '_ELEVATED' : ''}`;
 }
 
+function getOpsConfig(context, target) {
+  const opsChannelId = context.env[`SLACK_OPS_CHANNEL_${target}`];
+  const admins = (context.env[`SLACK_OPS_ADMINS_${target}`] || '')
+    .split(',')
+    .filter((admin) => hasText(admin));
+
+  if (!hasText(opsChannelId)) {
+    throw new Error(`No Ops Channel ID set for ${target}`);
+  }
+
+  return { opsChannelId, admins };
+}
+
 function getToken(context, target, isElevated) {
   const token = context.env[getEnvironmentVariableNameForTarget(target, isElevated)];
   if (!hasText(token)) {
@@ -48,8 +61,9 @@ const createFrom = (context, target, isElevated = false) => {
 
   if (!context.slackClients[clientKey]) {
     const token = getToken(context, target, isElevated);
+    const opsConfig = getOpsConfig(context, target, isElevated);
     const ClientClass = isElevated ? ElevatedSlackClient : BaseSlackClient;
-    context.slackClients[clientKey] = new ClientClass(token, log);
+    context.slackClients[clientKey] = new ClientClass(token, opsConfig, log);
   }
 
   return context.slackClients[clientKey];

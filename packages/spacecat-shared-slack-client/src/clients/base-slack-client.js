@@ -12,37 +12,35 @@
 
 import { WebClient } from '@slack/web-api';
 
-/**
- * List of standard slack web api methods that have a different name for enterprise workspaces.
- * @type {string[]}
- */
-const WEB_API_METHODS_ENTERPRISE = [
-  'conversations.create',
-  'conversations.invite',
-];
-
-function getEnterpriseAwareApiMethodName(method, isEnterprise) {
-  if (isEnterprise && WEB_API_METHODS_ENTERPRISE.includes(method)) {
-    return `admin.${method}`;
-  }
-  return method;
-}
-
 export default class BaseSlackClient {
-  constructor(token, log, isEnterprise = false) {
+  /**
+   * Creates a new Slack client
+   *
+   * @param {string} token - Slack token
+   * @param {object} opsConfig The ops configuration.
+   * @param {string} opsConfig.opsChannelId The ID of the ops channel.
+   * @param {string[]} opsConfig.admins The list of admin user IDs.
+   * @param {object} log - logger
+   */
+  constructor(token, opsConfig, log) {
     this.client = new WebClient(token);
     this.log = log;
-    this.isEnterprise = isEnterprise;
+    this.opsConfig = opsConfig;
+  }
+
+  _logDuration(message, startTime) {
+    const endTime = process.hrtime.bigint();
+    const duration = (endTime - startTime) / BigInt(1e6);
+    this.log.debug(`${message}: took ${duration}ms`);
   }
 
   async _apiCall(method, message) {
-    const apiMethodName = getEnterpriseAwareApiMethodName(method, this.isEnterprise);
-    try {
-      return await this.client.apiCall(apiMethodName, message);
-    } catch (e) {
-      this.log.error(`Failed to perform slack api call: ${method}`, e);
-      throw e;
-    }
+    const startTime = process.hrtime.bigint();
+    const result = await this.client.apiCall(method, message);
+
+    this._logDuration(`API call ${method}`, startTime);
+
+    return result;
   }
 
   async postMessage(message) {

@@ -10,46 +10,36 @@
  * governing permissions and limitations under the License.
  */
 
-import { UniversalContext } from '@adobe/helix-universal';
+import type { UniversalContext } from '@adobe/helix-universal';
+
+import type { BaseSlackClient, ElevatedSlackClient } from './clients';
+import type { SlackChannel, SlackUser } from './models';
 
 export declare const SLACK_TARGETS: {
   ADOBE_INTERNAL: string;
   ADOBE_EXTERNAL: string;
 };
 
-export declare interface BaseSlackClient {
-  /**
-   * Asynchronous method to create a RUM backlink.
+/**
+ * Creates a slack client from the given context and for the given target.
+ * A client can be designated as elevated, which allows it to perform advanced
+ * operations such as user lookups by email and channel management.
+ *
+ * @param {UniversalContext} context The context to use to create the client.
+ * @param {string} target The target to create the client for. See {@link SLACK_TARGETS}.
+ * @param {boolean} [isElevated] Optional. Whether the client should be elevated. Default is false.
+ */
+export declare function createFrom(
+  context: UniversalContext,
+  target: string,
+  isElevated?: boolean
+): BaseSlackClient | ElevatedSlackClient;
 
-   * @param {object} message - Message payload to be sent to Slack API. see https://api.slack.com/methods/chat.postMessage
-   * @returns A Promise resolving to an object containing the data returned by Slack API
-   */
-  postMessage(message: object): Promise<object>;
+export default createFrom;
 
-  /**
-   * Asynchronous method to create a RUM backlink.
-
-   * @param {object} file - An object containing file payload and metadata to be sent to Slack API. see https://slack.dev/node-slack-sdk/web-api#new-way
-   * @returns A Promise resolving to an object containing the data returned by Slack API
-   */
-  fileUpload(file: object): Promise<object>;
-}
-
-export declare interface ElevatedSlackClient extends BaseSlackClient {
-
-}
-
-export class SlackClient {
-  /**
-   * Static factory method to create an instance of BaseSlackClient when isElevated is false, or
-   * an instance of ElevatedSlackClient when isElevated is true.
-   * @param {UniversalContext} context - An object containing the AWS Lambda context information
-   * @param {string} target - A string representing the target slack workspace/org
-   * @param {boolean} isElevated - A boolean representing whether the client should be elevated
-   * @returns {BaseSlackClient | ElevatedSlackClient} An instance of SlackClient
-   * @remarks This method is designed to create a new instance from an AWS Lambda context.
-   *   The created instance is stored in the Lambda context, and subsequent calls to
-   *   this method will return the singleton instance if previously created.
-   */
-  static createFrom(context: UniversalContext, target: string, isElevated: boolean): SlackClient;
-}
+export {
+  BaseSlackClient,
+  ElevatedSlackClient,
+  SlackChannel,
+  SlackUser,
+};

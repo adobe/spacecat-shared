@@ -96,6 +96,7 @@ describe('DynamoDB Integration Test', async () => {
   let dataAccess;
 
   const NUMBER_OF_SITES = 10;
+  const NUMBER_OF_SITES_CANDIDATES = 100;
   const NUMBER_OF_ORGANIZATIONS = 3;
   const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
 
@@ -119,6 +120,7 @@ describe('DynamoDB Integration Test', async () => {
       TEST_DA_CONFIG,
       NUMBER_OF_ORGANIZATIONS,
       NUMBER_OF_SITES,
+      NUMBER_OF_SITES_CANDIDATES,
       NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
     );
 

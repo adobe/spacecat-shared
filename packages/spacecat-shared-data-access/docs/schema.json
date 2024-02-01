@@ -435,7 +435,7 @@
       "TableName": "spacecat-services-site-candidates",
       "KeyAttributes": {
         "PartitionKey": {
-          "AttributeName": "baseUrl",
+          "AttributeName": "baseURL",
           "AttributeType": "S"
         }
       },

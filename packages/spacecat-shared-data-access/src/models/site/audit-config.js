@@ -11,10 +11,32 @@
  */
 
 import AuditConfigType from './audit-config-type.js';
+import {
+  AUDIT_TYPE_BROKEN_BACKLINKS,
+  AUDIT_TYPE_ORGANIC_KEYWORDS,
+} from '../audit.js';
+
+const AUDIT_TYPE_DISABLED_DEFAULTS = {
+  [AUDIT_TYPE_BROKEN_BACKLINKS]: true,
+  [AUDIT_TYPE_ORGANIC_KEYWORDS]: true,
+};
 
 function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
+  if (!auditTypeConfigs || Object.keys(auditTypeConfigs).length === 0) {
+    return {
+      [AUDIT_TYPE_BROKEN_BACKLINKS]: AuditConfigType({ disabled: true }),
+      [AUDIT_TYPE_ORGANIC_KEYWORDS]: AuditConfigType({ disabled: true }),
+    };
+  }
   return Object.entries(auditTypeConfigs || {}).reduce((acc, [key, value]) => {
-    acc[key] = AuditConfigType(value, auditsDisabled);
+    const disabled = value.disabled !== undefined
+      ? value.disabled : (AUDIT_TYPE_DISABLED_DEFAULTS[key] || auditsDisabled || false);
+    acc[key] = AuditConfigType(
+      {
+        ...value,
+        disabled,
+      },
+    );
     return acc;
   }, {});
 }

@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-data-access-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.13.1...@adobe/spacecat-shared-data-access-v1.13.2) (2024-01-30)
+
+
+### Bug Fixes
+
+* config validation ([edc1276](https://github.com/adobe/spacecat-shared/commit/edc127681e26c3283e5ecc94cde7c5fec78529dd))
+
+# [@adobe/spacecat-shared-data-access-v1.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.13.0...@adobe/spacecat-shared-data-access-v1.13.1) (2024-01-30)
+
+
+### Bug Fixes
+
+* allow update config for site ([ad9e677](https://github.com/adobe/spacecat-shared/commit/ad9e677c7c721aa70e37b97373a4b9545f2f21fd))
+
+# [@adobe/spacecat-shared-data-access-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.12.0...@adobe/spacecat-shared-data-access-v1.13.0) (2024-01-30)
+
+
+### Features
+
+* introduce default config for organic-keywords report (SITES-19317) ([#118](https://github.com/adobe/spacecat-shared/issues/118)) ([4301556](https://github.com/adobe/spacecat-shared/commit/430155645e1452760bf2818d70a0faae2fb8db12))
+
+# [@adobe/spacecat-shared-data-access-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.11.0...@adobe/spacecat-shared-data-access-v1.12.0) (2024-01-29)
+
+
+### Features
+
+* add getSitesByOrganizationIDWithLatestAudits query ([d3a8f8c](https://github.com/adobe/spacecat-shared/commit/d3a8f8cc2148229aecec3df277e298a3f0746865))
+
+# [@adobe/spacecat-shared-data-access-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.10.5...@adobe/spacecat-shared-data-access-v1.11.0) (2024-01-29)
+
+
+### Features
+
+* default value for disabled property of audit config ([#114](https://github.com/adobe/spacecat-shared/issues/114)) ([daf9b80](https://github.com/adobe/spacecat-shared/commit/daf9b8039a6fe567e283dc07eef156bfd13edc4f))
+
 # [@adobe/spacecat-shared-data-access-v1.10.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.10.4...@adobe/spacecat-shared-data-access-v1.10.5) (2024-01-27)
 
 

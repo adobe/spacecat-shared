@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.7.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.7.3...@adobe/spacecat-shared-utils-v1.7.4) (2024-02-01)
+
+
+### Bug Fixes
+
+* secrets resolve ci versions properly ([#66](https://github.com/adobe/spacecat-shared/issues/66)) ([2ddebdd](https://github.com/adobe/spacecat-shared/commit/2ddebddb6c76d633f6be0a5bca3ee3bd150ef474))
+
 # [@adobe/spacecat-shared-utils-v1.7.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.7.2...@adobe/spacecat-shared-utils-v1.7.3) (2024-01-23)
 
 

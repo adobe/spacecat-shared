@@ -133,6 +133,7 @@ function generateAuditData(
  * @param {DataAccessConfig} config - The data access config.
  * @param {number} [numberOfOrganizations=3] - The number of organizations to generate.
  * @param {number} [numberOfSites=10] - The number of sites to generate.
+ * @param {number} [numberOfSiteCandidates=10] - The number of sites candidates to generate.
  * @param {number} [numberOfAuditsPerType=5] - The number of audits per type to generate
  * for each site.
  *
@@ -144,7 +145,7 @@ export default async function generateSampleData(
   config,
   numberOfOrganizations = 3,
   numberOfSites = 10,
-  numberOfSiteCandidates = 100,
+  numberOfSiteCandidates = 10,
   numberOfAuditsPerType = 5,
 ) {
   console.time('Sample data generated in');
@@ -241,7 +242,7 @@ export default async function generateSampleData(
   for (let i = 0; i < numberOfSiteCandidates; i += 1) {
     siteCandidates.push({
       baseURL: `https://example${i}.com`,
-      status: Object.values(SITE_CANDIDATE_STATUS).at(i % 4),
+      status: SITE_CANDIDATE_STATUS.PENDING,
     });
   }
 

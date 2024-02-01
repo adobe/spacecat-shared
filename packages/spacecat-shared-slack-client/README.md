@@ -78,11 +78,13 @@ users:read.email (to lookup users by their emails)
 Create a Slack client instance:
 
 ```javascript
-import createFrom, { SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+import { BaseSlackClient, ElevatedSlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 
 const context = {}; // Your context object
 const target = SLACK_TARGETS.ADOBE_INTERNAL; // or ADOBE_EXTERNAL
-const slackClient = createFrom(context, target);
+const slackClient = BaseSlackClient.createFrom(context, target);
+// elevated client:
+const elevatedclient = ElevatedSlackClient.createFrom(context, target);
 ```
 
 ### Posting a Message

@@ -11,8 +11,67 @@
  */
 
 import { WebClient } from '@slack/web-api';
+import { hasText, isObject } from '@adobe/spacecat-shared-utils';
+
+const ENV_PREFIX = 'SLACK_TOKEN_';
+
+function getEnvironmentVariableNameForTarget(target, isElevated = false) {
+  return `${ENV_PREFIX}${target}${isElevated ? '_ELEVATED' : ''}`;
+}
+
+function getOpsConfig(context, target) {
+  const opsChannelId = context.env[`SLACK_OPS_CHANNEL_${target}`];
+  const admins = (context.env[`SLACK_OPS_ADMINS_${target}`] || '')
+    .split(',')
+    .filter((admin) => hasText(admin));
+
+  if (!hasText(opsChannelId)) {
+    throw new Error(`No Ops Channel ID set for ${target}`);
+  }
+
+  return { opsChannelId, admins };
+}
+
+function getToken(context, target, isElevated) {
+  const token = context.env[getEnvironmentVariableNameForTarget(target, isElevated)];
+  if (!hasText(token)) {
+    throw new Error(`No Slack token set for ${target}${isElevated ? ' with elevated privileges' : ''}`);
+  }
+  return token;
+}
 
 export default class BaseSlackClient {
+  static createFrom(context, target) {
+    return this._internalCreateFrom(context, BaseSlackClient, target);
+  }
+
+  static _internalCreateFrom(
+    context,
+    ClientClass,
+    target,
+    isElevated = false,
+  ) {
+    const { log } = context;
+
+    if (!hasText(target)) {
+      throw new Error('Missing target for the Slack Client');
+    }
+
+    if (!isObject(context.slackClients)) {
+      context.slackClients = {};
+    }
+
+    const clientKey = `${target}_${isElevated ? 'ELEVATED' : 'STANDARD'}`;
+
+    if (!context.slackClients[clientKey]) {
+      const token = getToken(context, target, isElevated);
+      const opsConfig = getOpsConfig(context, target);
+      context.slackClients[clientKey] = new ClientClass(token, opsConfig, log);
+    }
+
+    return context.slackClients[clientKey];
+  }
+
   /**
    * Creates a new Slack client
    *

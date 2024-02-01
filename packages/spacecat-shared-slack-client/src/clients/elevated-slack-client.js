@@ -58,6 +58,10 @@ function createErrorWithCode(message, code) {
  * and channels. It can also be used to create channels.
  */
 export default class ElevatedSlackClient extends BaseSlackClient {
+  static createFrom(context, target) {
+    return this._internalCreateFrom(context, ElevatedSlackClient, target, true);
+  }
+
   /**
    * Creates a new Slack client with elevated privileges.
    *

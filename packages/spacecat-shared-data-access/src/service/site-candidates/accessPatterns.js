@@ -22,6 +22,9 @@ import { SiteCandidateDto } from '../../dto/site-candidate.js';
  */
 export const exists = async (dynamoClient, config, baseURL) => {
   const dynamoItem = await dynamoClient.getItem(config.tableNameSiteCandidates, { baseURL });
+
+  // eslint-disable-next-line
+  console.log(`result of exists: ${JSON.stringify(dynamoItem)}`);
   return dynamoItem !== null;
 };
 

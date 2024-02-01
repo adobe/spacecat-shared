@@ -619,7 +619,7 @@ describe('DynamoDB Integration Test', async () => {
     expect(exists).to.be.true;
   });
 
-  it('verify a previously added site candidate does not exist', async () => {
+  it('verify a previously non-added site candidate does not exist', async () => {
     const exists = await dataAccess.siteCandidateExists('https://non-existing-site.com');
     expect(exists).to.be.false;
   });

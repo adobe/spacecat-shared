@@ -118,7 +118,7 @@ describe('Site Candidate Access Pattern Tests', () => {
 
     it('updates an existing site candidate successfully', async () => {
       const siteCandidateData = { baseURL: 'https://existingsite.com', status: SITE_CANDIDATE_STATUS.DISCOVERED };
-      mockDynamoClient.getItem.returns(Promise.resolve([siteCandidateData]));
+      mockDynamoClient.getItem.returns(Promise.resolve(siteCandidateData));
 
       const siteCandidate = createSiteCandidate({ baseURL: 'https://existingsite.com' });
       siteCandidate.setStatus(SITE_CANDIDATE_STATUS.PENDING);

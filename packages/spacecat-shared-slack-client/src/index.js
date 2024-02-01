@@ -61,7 +61,7 @@ const createFrom = (context, target, isElevated = false) => {
 
   if (!context.slackClients[clientKey]) {
     const token = getToken(context, target, isElevated);
-    const opsConfig = getOpsConfig(context, target, isElevated);
+    const opsConfig = getOpsConfig(context, target);
     const ClientClass = isElevated ? ElevatedSlackClient : BaseSlackClient;
     context.slackClients[clientKey] = new ClientClass(token, opsConfig, log);
   }

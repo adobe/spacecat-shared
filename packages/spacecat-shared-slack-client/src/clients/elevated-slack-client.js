@@ -120,7 +120,7 @@ export default class ElevatedSlackClient extends BaseSlackClient {
       const response = await this._apiCall('team.info');
       return SlackTeam.create(response.team);
     } catch (e) {
-      this.log.error('Failed to retrieve workspace information', e);
+      this.log.error('Failed to retrieve team information', e);
       throw e;
     }
   }
@@ -133,7 +133,6 @@ export default class ElevatedSlackClient extends BaseSlackClient {
    */
   async #initialize() {
     if (this.isInitialized) {
-      this.log.debug('Slack client already initialized');
       return;
     }
 
@@ -183,12 +182,6 @@ export default class ElevatedSlackClient extends BaseSlackClient {
    * or null if no user with the specified email address was found.
    */
   async #findUserByEmail(email) {
-    if (!hasText(email)) {
-      throw new Error('Email is required');
-    }
-
-    await this.#initialize();
-
     try {
       const response = await this._apiCall('users.lookupByEmail', { email });
       return SlackUser.create(response.user);
@@ -210,12 +203,6 @@ export default class ElevatedSlackClient extends BaseSlackClient {
    * @returns {Promise<Array<SlackChannel>>} A promise resolving to an array of Channel objects.
    */
   async #getUserChannels(userId) {
-    if (!hasText(userId)) {
-      throw new Error('User ID is required');
-    }
-
-    await this.#initialize();
-
     let channels = [];
     let cursor = '';
     do {
@@ -253,7 +240,7 @@ export default class ElevatedSlackClient extends BaseSlackClient {
       .then((status) => ({ email: user.email, status }))
       .catch((error) => ({
         email: user.email,
-        status: 'Failed to invite',
+        status: SLACK_STATUSES.GENERAL_ERROR,
         error,
       })));
 
@@ -316,11 +303,6 @@ export default class ElevatedSlackClient extends BaseSlackClient {
    * @return {Promise<void>} A promise that resolves when the message is posted.
    */
   async #postMessageToOpsChannel(message) {
-    if (!hasText(this.opsConfig.opsChannelId)) {
-      this.log.warn('No ops channel configured, cannot post message');
-      return;
-    }
-
     try {
       const result = await this.postMessage({
         channel: this.opsConfig.opsChannelId,

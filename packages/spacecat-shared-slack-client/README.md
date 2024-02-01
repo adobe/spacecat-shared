@@ -22,13 +22,38 @@ To configure tokens for your application, follow these steps:
 
 4. For information on the scopes needed for each Slack API method, refer to the [documentation](https://api.slack.com/methods). The required scopes for each API method are listed in the "Bot tokens" row. As an example, to use the `postMessage` API method, the required scope is `chat:write`, as documented in [https://api.slack.com/methods/chat.postMessage](https://api.slack.com/methods/chat.postMessage).
 
+### Scopes required for the current implementation
+All Bot Tokens:
+```
+chat:write
+files:read
+files:write
+team:read
+```
+
+Scopes needed for elevated Bot:
+```
+channels:manage (for public channels)
+channels:read (check if user is in a channel or a channel exists)
+channels:write.invites
+channels:write.topic
+groups:read (check if user is in a channel or a channel exists)
+groups:write (for private channels)
+groups:write.invites
+groups:write.topic
+users:read (to lookup users, required by users:read.email)
+users:read.email (to lookup users by their emails)
+```
 
 ### Creating and instance from Helix UniversalContext
 
 ```js
+import createFrom from '@adobe/spacecat-shared-slack-client';
+
 const context = {}; // Your Helix UniversalContext object
 const target = 'ADOBE_INTERNAL';
-const slackClient = SlackClient.createFrom(context, target);
+const isElevated = false; // optional, defaults to false
+const slackClient = createFrom(context, target, isElevated);
 ```
 
 **Required env variables in Helix UniversalContext**
@@ -40,15 +65,65 @@ SLACK_TOKEN_ADOBE_INTERNAL="slack bot token for the adobe internal org"
 SLACK_TOKEN_ADOBE_EXTERNAL="slack bot token for the adobe external org"
 ```
 
+Additionally, when using the elevated slack client, the following environment variables are required:
+
+```
+SLACK_TOKEN_ADOBE_INTERNAL_ELEVATED="slack bot token for the adobe internal org"
+SLACK_TOKEN_ADOBE_EXTERNAL_ELEVATED="slack bot token for the adobe external org"
+SLACK_OPS_CHANNEL_ADOBE_INTERNAL="slack channel id for the ops channel to which status and action required messages are sent"
+SLACK_OPS_CHANNEL_ADOBE_EXTERNAL="slack channel id for the ops channel to which status and action required messages are sent"
+SLACK_OPS_ADMINS_ADOBE_INTERNAL="comma separated list of slack user ids who are invited to created channels"
+SLACK_OPS_ADMINS_ADOBE_EXTERNAL="comma separated list of slack user ids who are invited to created channels"
+```
+
 **Note**: if Helix UniversalContext object already contains a `slackClients` field, then `createFrom` factory method returns the previously created instance instead of creating a new one.
 
 ### Constructor
 
-`SlackClient` class needs a slack bot token and a logger object:
+`ElevatedSlackClient` or `BaseSlackClient` need a slack bot token, an ops config and a logger object:
 
 ```js
 const token = 'slack bot token';
-const slackClient = new SlackClient(token, console);
+const opsConfig = {
+  channel: 'mandatory slack channel id for the ops channel to which status and action required messages are sent',
+  admins: 'optional comma separated list of slack user ids who are invited to created channels',
+};
+const slackClient = new SlackClient(token, opsConfig, console);
+```
+
+### Channel Creation && Invitation
+
+#### Creating a channel
+
+```js
+import createFrom, { SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+
+const elevatedClient = createFrom(context, SLACK_TARGETS.ADOBE_EXTERNAL, true);
+const channel = await elevatedClient.createChannel(
+  channelName,
+  'This is a test topic',
+  'This is a test description',
+  false, // public vs private channel
+);
+```
+
+#### Inviting a user to a channel
+
+```js
+import createFrom, { SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+
+const elevatedClient = createFrom(context, SLACK_TARGETS.ADOBE_EXTERNAL, true);
+
+const result = await elevatedClient.inviteUsersByEmail(channel.getId(), [
+  {
+    email: 'user1@email.com',
+    realName: 'User 1',
+  },
+  {
+    email: 'user3@acme.com',
+    realName: 'User 2',
+  },
+]);
 ```
 
 ### Posting a message
@@ -56,12 +131,12 @@ const slackClient = new SlackClient(token, console);
 #### Posting a text message
 
 ```js
-import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+import createFrom, { SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 
 const channelId = 'channel-id'; // channel to send the message to
 const threadId = 'thread-id'; // thread id to send the message under (optional)
 
-const internalSlackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
+const internalSlackClient = createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
 
 await internalSlackClient.postMessage({
   text: 'HELLO WORLD!',
@@ -73,7 +148,7 @@ await internalSlackClient.postMessage({
 #### Posting a simple text message using Slack Block Builder (recommended)
 
 ```js
-import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+import createFrom, { SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 import { Message, Blocks, Elements } from 'slack-block-builder';
 
 const channelId = 'channel-id'; // channel to send the message to
@@ -96,7 +171,7 @@ await internalSlackClient.postMessage(message);
 #### Posting a non-trivial message using Slack Block Builder (recommended)
 
 ```js
-import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+import createFrom, { SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 import { Message, Blocks, Elements } from 'slack-block-builder';
 
 const channelId = 'channel-id'; // channel to send the message to
@@ -136,7 +211,7 @@ await internalSlackClient.postMessage(message);
 ### Uploading a file
 
 ```js
-import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+import createFrom, { SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 
 const channelId = 'channel-id'; // channel to send the message to
 const threadId = 'thread-id'; // thread id to send the message under (optional)

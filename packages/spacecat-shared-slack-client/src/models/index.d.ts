@@ -27,18 +27,6 @@ export interface SlackChannel {
    * @returns {string} The channel's name.
    */
   getName(): string,
-
-  /**
-   * Checks if the channel is public.
-   * @returns {boolean} True if the channel is public, false otherwise.
-   */
-  isPublic(): boolean,
-
-  /**
-   * Checks if the channel is archived.
-   * @returns {boolean} True if the channel is archived, false otherwise.
-   */
-  isArchived(): boolean,
 }
 
 export interface SlackTeam {
@@ -53,23 +41,6 @@ export interface SlackTeam {
    * @returns {string} The team's name.
    */
   getName(): string,
-
-  /**
-   * Retrieves the URL of the team.
-   * @returns {string} The team's URL.
-   */
-  getURL(): string,
-
-  /**
-   * Retrieves the domain of the team.
-   * @returns {string} The team's domain.
-   */
-  getDomain(): string,
-
-  /**
-   * Indicates whether the team is an enterprise grid.
-   */
-  isEnterprise(): boolean,
 }
 
 /**

@@ -20,15 +20,11 @@ export default class SlackChannel {
    * @param {object} channelData - channel data
    * @param {string} channelData.id - channel id
    * @param {string} channelData.name - channel name
-   * @param {boolean} channelData.is_private - is channel private
-   * @param {boolean} channelData.is_archived - is channel archived
    * @constructor
    */
   constructor(channelData) {
     this.id = channelData.id;
     this.name = channelData.name;
-    this.is_private = channelData.is_private;
-    this.is_archived = channelData.is_archived;
   }
 
   static create(channelData) {
@@ -41,13 +37,5 @@ export default class SlackChannel {
 
   getName() {
     return this.name;
-  }
-
-  isPublic() {
-    return !this.is_private;
-  }
-
-  isArchived() {
-    return this.is_archived;
   }
 }

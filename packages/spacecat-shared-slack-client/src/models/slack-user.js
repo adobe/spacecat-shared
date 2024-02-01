@@ -34,13 +34,8 @@ export default class SlackUser {
    */
   constructor(userData) {
     this.id = userData.id;
-    this.teamId = userData.team_id;
     this.name = userData.name;
-    this.realName = userData.profile?.real_name;
     this.email = userData.profile?.email;
-    this.isAdmin = userData.is_admin;
-    this.isOwner = userData.is_owner;
-    this.isBot = userData.is_bot;
     this.isRestricted = userData.is_restricted;
     this.isUltraRestricted = userData.is_ultra_restricted;
   }
@@ -53,36 +48,8 @@ export default class SlackUser {
     return this.id;
   }
 
-  getTeamId() {
-    return this.teamId;
-  }
-
-  getHandle() {
-    return this.name;
-  }
-
-  getRealName() {
-    return this.realName;
-  }
-
   getEmail() {
     return this.email;
-  }
-
-  isAdminUser() {
-    return this.isAdmin;
-  }
-
-  isOwnerUser() {
-    return this.isOwner;
-  }
-
-  isBotUser() {
-    return this.isBot;
-  }
-
-  isMultiChannelGuestUser() {
-    return this.isRestricted && !this.isUltraRestricted;
   }
 
   isSingleChannelGuestUser() {

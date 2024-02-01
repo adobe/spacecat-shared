@@ -11,12 +11,11 @@
  */
 
 /* eslint-env mocha */
-/* eslint-disable no-underscore-dangle */
 
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import sinon from 'sinon';
 import nock from 'nock';
+import sinon from 'sinon';
 
 import BaseSlackClient from '../../src/clients/base-slack-client.js';
 
@@ -26,13 +25,20 @@ const { expect } = chai;
 
 describe('BaseSlackClient', () => {
   const mockToken = 'mock-token';
-  const mockLog = { error: sinon.spy() };
+  const mockOpsConfig = {
+    opsChannelId: 'ops123',
+    admins: ['admin1', 'admin2'],
+  };
+  const mockLog = {
+    debug: sinon.spy(),
+    error: sinon.spy(),
+  };
   let client;
-  let nockScope;
+  let mockApi;
 
-  before(() => {
-    client = new BaseSlackClient(mockToken, mockLog);
-    nockScope = nock('https://slack.com');
+  beforeEach(() => {
+    client = new BaseSlackClient(mockToken, mockOpsConfig, mockLog);
+    mockApi = nock('https://slack.com');
   });
 
   afterEach(() => {
@@ -45,26 +51,16 @@ describe('BaseSlackClient', () => {
     const response = { ok: true, channel: 'C123456', ts: '1234567890.12345' };
 
     it('sends a message successfully', async () => {
-      nockScope.post('/api/chat.postMessage').reply(200, response);
+      mockApi.post('/api/chat.postMessage').reply(200, response);
 
       const result = await client.postMessage(message);
       expect(result).to.deep.equal({ channelId: response.channel, threadId: response.ts });
     });
 
     it('throws an error on Slack API failure', () => {
-      nockScope.post('/api/chat.postMessage').reply(500);
+      mockApi.post('/api/chat.postMessage').reply(500);
 
       expect(client.postMessage(message)).to.eventually.be.rejectedWith(Error);
-    });
-
-    it('logs an error on Slack API failure', async () => {
-      nockScope.post('/api/chat.postMessage').reply(200, { ok: false });
-
-      try {
-        await client.postMessage(message);
-      } catch (e) {
-        expect(mockLog.error.called).to.be.true;
-      }
     });
   });
 
@@ -101,21 +97,21 @@ describe('BaseSlackClient', () => {
           files: [],
         }),
       };
-      nockScope.post('/api/files.uploadV2').reply(200, { ok: true, files: [] });
+      mockApi.post('/api/files.uploadV2').reply(200, { ok: true, files: [] });
 
       expect(client.fileUpload(file)).to.eventually.be.rejectedWith(Error);
     });
 
     it('throws an error on Slack API failure', () => {
       client.client = webApiClient;
-      nockScope.post('/api/files.uploadV2').reply(500);
+      mockApi.post('/api/files.uploadV2').reply(500);
 
       expect(client.fileUpload(file)).to.eventually.be.rejectedWith(Error);
     });
 
     it('logs an error on Slack API failure', async () => {
       client.client = webApiClient;
-      nockScope.post('/api/files.uploadV2').reply(500);
+      mockApi.post('/api/files.uploadV2').reply(500);
 
       try {
         await client.fileUpload(file);
@@ -123,38 +119,5 @@ describe('BaseSlackClient', () => {
         expect(mockLog.error.called).to.be.true;
       }
     });
-  });
-
-  describe('BaseSlackClient with Enterprise Features', () => {
-    let enterpriseClient;
-
-    before(() => {
-      enterpriseClient = new BaseSlackClient(mockToken, mockLog, true);
-      nockScope = nock('https://slack.com');
-    });
-
-    describe('Enterprise-aware API Calls', () => {
-      it('uses the enterprise version of the method when isEnterprise is true', async () => {
-        const enterpriseMethod = 'conversations.create';
-        const expectedMethod = `admin.${enterpriseMethod}`;
-        nockScope.post(`/api/${expectedMethod}`).reply(200, { ok: true });
-
-        await enterpriseClient._apiCall(enterpriseMethod, {});
-        expect(nockScope.isDone()).to.be.true;
-      });
-
-      it('uses the standard method when isEnterprise is false', async () => {
-        const standardClient = new BaseSlackClient(mockToken, mockLog, false);
-        const standardMethod = 'conversations.create';
-        nockScope.post(`/api/${standardMethod}`).reply(200, { ok: true });
-
-        await standardClient._apiCall(standardMethod, {});
-        expect(nockScope.isDone()).to.be.true;
-      });
-    });
-  });
-
-  after(() => {
-    nock.restore();
   });
 });

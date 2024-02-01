@@ -17,7 +17,7 @@ import createFrom, { SLACK_TARGETS } from '../src/index.js';
 import BaseSlackClient from '../src/clients/base-slack-client.js';
 import ElevatedSlackClient from '../src/clients/elevated-slack-client.js';
 
-describe('createFrom', () => {
+describe('Factory', () => {
   let context;
   const mockToken = 'mock-token';
   const mockLog = { info: () => {} };
@@ -29,6 +29,10 @@ describe('createFrom', () => {
         SLACK_TOKEN_ADOBE_EXTERNAL: mockToken,
         SLACK_TOKEN_ADOBE_INTERNAL_ELEVATED: mockToken,
         SLACK_TOKEN_ADOBE_EXTERNAL_ELEVATED: mockToken,
+        SLACK_OPS_CHANNEL_ADOBE_INTERNAL: 'mock-channel',
+        SLACK_OPS_CHANNEL_ADOBE_EXTERNAL: 'mock-channel',
+        SLACK_OPS_ADMINS_ADOBE_INTERNAL: 'mock-admin',
+        SLACK_OPS_ADMINS_ADOBE_EXTERNAL: 'mock-admin',
       },
       slackClients: {},
       log: mockLog,
@@ -59,6 +63,13 @@ describe('createFrom', () => {
     context.env = {};
     expect(() => createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL, false)).to.throw('No Slack token set for ADOBE_INTERNAL');
     expect(() => createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL, true)).to.throw('No Slack token set for ADOBE_INTERNAL with elevated privileges');
+  });
+
+  it('throws an error if Ops Channel ID is not set', () => {
+    context.env.SLACK_OPS_CHANNEL_ADOBE_INTERNAL = '';
+    context.env.SLACK_OPS_ADMINS_ADOBE_INTERNAL = undefined;
+    expect(() => createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL, false)).to.throw('No Ops Channel ID set for ADOBE_INTERNAL');
+    expect(() => createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL, true)).to.throw('No Ops Channel ID set for ADOBE_INTERNAL');
   });
 
   it('reuses existing client instances for the same target', () => {

@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
 /**
  * Represents a Slack team
  */
@@ -22,9 +20,6 @@ export default class SlackTeam {
    * @param {object} teamData - team data
    * @param {string} teamData.id - team id
    * @param {string} teamData.name - team name
-   * @param {string} teamData.url - team url
-   * @param {string} teamData.domain - team domain
-   * @param {string} teamData.enterprise_id - team enterprise id
    * @constructor
    */
   constructor(teamData) {
@@ -45,17 +40,5 @@ export default class SlackTeam {
 
   getName() {
     return this.name;
-  }
-
-  getURL() {
-    return this.url;
-  }
-
-  getDomain() {
-    return this.domain;
-  }
-
-  isEnterprise() {
-    return hasText(this.enterpriseId);
   }
 }

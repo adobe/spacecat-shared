@@ -229,6 +229,41 @@ export interface Site {
   updateOrganizationId: (organizationId: string) => Site;
 }
 
+/**
+ * Represents a site candidate.
+ */
+export interface SiteCandidate {
+  /**
+   * Retrieves the base URL of the site candidate.
+   * @returns {string} The base URL.
+   */
+  getBaseURL: () => string;
+
+  /**
+   * Retrieves the status of the site candidate.
+   * @returns {string} The delivery type.
+   */
+  getStatus: () => string;
+
+  /**
+   * Retrieves the creation timestamp of the site candidate.
+   * @returns {string} The creation timestamp.
+   */
+  getCreatedAt: () => string;
+
+  /**
+   * Retrieves the last update timestamp of the site candidate.
+   * @returns {string} The last update timestamp.
+   */
+  getUpdatedAt: () => string;
+
+  /**
+   * Retrieves the slack id of the person who last updated the site candidate.
+   * @returns {string} The last update timestamp.
+   */
+  getUpdatedBy: () => string;
+}
+
 export interface Organization {
   /**
    * Retrieves the ID of the site.
@@ -360,6 +395,7 @@ interface DataAccessConfig {
   tableNameLatestAudits: string;
   tableNameOrganizations: string,
   tableNameSites: string;
+  tableNameSiteCandidates: string;
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,
   indexNameAllSitesByDeliveryType: string;

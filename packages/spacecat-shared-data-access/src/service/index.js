@@ -13,6 +13,7 @@
 import { createClient } from '@adobe/spacecat-shared-dynamo';
 import { auditFunctions } from './audits/index.js';
 import { siteFunctions } from './sites/index.js';
+import { siteCandidateFunctions } from './site-candidates/index.js';
 import { organizationFunctions } from './organizations/index.js';
 
 /**
@@ -30,11 +31,13 @@ export const createDataAccess = (config, log = console) => {
 
   const auditFuncs = auditFunctions(dynamoClient, config, log);
   const siteFuncs = siteFunctions(dynamoClient, config, log);
+  const siteCandidateFuncs = siteCandidateFunctions(dynamoClient, config);
   const organizationFuncs = organizationFunctions(dynamoClient, config, log);
 
   return {
     ...auditFuncs,
     ...siteFuncs,
+    ...siteCandidateFuncs,
     ...organizationFuncs,
   };
 };

@@ -12,6 +12,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
+import { SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
 import { dbClient, docClient as client } from './db.js';
 import { generateRandomAudit } from './auditUtils.js';
 import { createTable, deleteTable } from './tableOperations.js';
@@ -143,6 +144,7 @@ export default async function generateSampleData(
   config,
   numberOfOrganizations = 3,
   numberOfSites = 10,
+  numberOfSiteCandidates = 100,
   numberOfAuditsPerType = 5,
 ) {
   console.time('Sample data generated in');
@@ -156,6 +158,7 @@ export default async function generateSampleData(
 
   const auditTypes = ['lhs-mobile', 'cwv'];
   const sites = [];
+  const siteCandidates = [];
   const organizations = [];
   const auditItems = [];
   const latestAuditItems = [];
@@ -234,7 +237,16 @@ export default async function generateSampleData(
     }
   }
 
+  // Generate site candidate data
+  for (let i = 0; i < numberOfSiteCandidates; i += 1) {
+    siteCandidates.push({
+      baseURL: `https://example${i}.com`,
+      status: Object.values(SITE_CANDIDATE_STATUS).at(i % 4),
+    });
+  }
+
   await batchWrite(config.tableNameSites, sites);
+  await batchWrite(config.tableNameSiteCandidates, siteCandidates);
   await batchWrite(config.tableNameOrganizations, organizations);
   await batchWrite(config.tableNameAudits, auditItems);
   await batchWrite(config.tableNameLatestAudits, latestAuditItems);

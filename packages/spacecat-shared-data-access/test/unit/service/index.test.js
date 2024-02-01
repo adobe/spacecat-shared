@@ -43,6 +43,12 @@ describe('Data Access Object Tests', () => {
     'getSiteByID',
   ];
 
+  const siteCandidateFunctions = [
+    'addSiteCandidate',
+    'siteCandidateExists',
+    'updateSiteCandidate',
+  ];
+
   const organizationFunctions = [
     'getOrganizations',
     'getOrganizationByID',
@@ -69,9 +75,18 @@ describe('Data Access Object Tests', () => {
     });
   });
 
+  it('contains all known site candidate functions', () => {
+    siteCandidateFunctions.forEach((funcName) => {
+      expect(dao).to.have.property(funcName);
+    });
+  });
+
   it('does not contain any unexpected functions', () => {
-    const expectedFunctions = new Set([...auditFunctions,
-      ...siteFunctions, ...organizationFunctions]);
+    const expectedFunctions = new Set([
+      ...auditFunctions,
+      ...siteFunctions,
+      ...siteCandidateFunctions,
+      ...organizationFunctions]);
     Object.keys(dao).forEach((funcName) => {
       expect(expectedFunctions).to.include(funcName);
     });

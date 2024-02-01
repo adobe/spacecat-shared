@@ -80,6 +80,7 @@ const TEST_DA_CONFIG = {
   tableNameLatestAudits: 'spacecat-services-latest-audits',
   tableNameOrganizations: 'spacecat-services-organizations',
   tableNameSites: 'spacecat-services-sites',
+  tableNameSiteCandidates: 'spacecat-services-site-candidates',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
@@ -608,5 +609,11 @@ describe('DynamoDB Integration Test', async () => {
     await expect(dataAccess.removeOrganization(organization.getId())).to.eventually.be.fulfilled;
     const organizationAfterRemoval = await dataAccess.getOrganizationByID(organization.getId());
     expect(organizationAfterRemoval).to.be.null;
+  });
+
+  it('checks if a site candidate exists', async () => {
+    const exists = await dataAccess.siteCandidateExists('https://example0.com');
+
+    expect(exists).to.be.true;
   });
 });

@@ -18,18 +18,6 @@ import SlackUser from '../models/slack-user.js';
 
 import BaseSlackClient from './base-slack-client.js';
 
-/**
- * The possible statuses for a user invites and channel creations.
- *
- * @type {{
- * USER_ALREADY_IN_CHANNEL: string,
- * GENERAL_ERROR: string,
- * USER_ALREADY_IN_ANOTHER_CHANNEL: string,
- * USER_INVITED_TO_CHANNEL: string,
- * USER_NEEDS_INVITATION_TO_WORKSPACE: string,
- * CHANNEL_ALREADY_EXISTS: string
- * }}
- */
 export const SLACK_STATUSES = {
   USER_ALREADY_IN_CHANNEL: 'user_already_in_channel',
   USER_ALREADY_IN_ANOTHER_CHANNEL: 'user_already_in_another_channel',

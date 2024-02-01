@@ -18,6 +18,18 @@ export declare const SLACK_TARGETS: {
   ADOBE_EXTERNAL: string;
 };
 
+/**
+ * The possible statuses for a user invites and channel creations.
+ */
+export declare const SLACK_STATUSES : {
+  USER_ALREADY_IN_CHANNEL: string;
+  GENERAL_ERROR: string;
+  USER_ALREADY_IN_ANOTHER_CHANNEL: string;
+  USER_INVITED_TO_CHANNEL: string;
+  USER_NEEDS_INVITATION_TO_WORKSPACE: string;
+  CHANNEL_ALREADY_EXISTS: string;
+};
+
 export {
   BaseSlackClient,
   ElevatedSlackClient,

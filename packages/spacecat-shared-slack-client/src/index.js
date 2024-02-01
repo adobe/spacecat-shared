@@ -11,7 +11,7 @@
  */
 
 import BaseSlackClient from './clients/base-slack-client.js';
-import ElevatedSlackClient from './clients/elevated-slack-client.js';
+import ElevatedSlackClient, { SLACK_STATUSES } from './clients/elevated-slack-client.js';
 
 const SLACK_TARGETS = {
   ADOBE_INTERNAL: 'ADOBE_INTERNAL',
@@ -19,6 +19,7 @@ const SLACK_TARGETS = {
 };
 
 export {
+  SLACK_STATUSES,
   SLACK_TARGETS,
   BaseSlackClient,
   ElevatedSlackClient,

@@ -14,6 +14,7 @@
 
 import { expect } from 'chai';
 import {
+  SLACK_STATUSES,
   SLACK_TARGETS,
   BaseSlackClient,
   ElevatedSlackClient,
@@ -22,6 +23,17 @@ import {
 describe('SLACK_TARGETS Object', () => {
   it('should have ADOBE_INTERNAL and ADOBE_EXTERNAL properties', () => {
     expect(SLACK_TARGETS).to.be.an('object').that.includes.all.keys('ADOBE_INTERNAL', 'ADOBE_EXTERNAL');
+  });
+
+  it('SLACK_STATUSES must have required properties', () => {
+    expect(SLACK_STATUSES).to.be.an('object').that.includes.all.keys(
+      'USER_ALREADY_IN_CHANNEL',
+      'GENERAL_ERROR',
+      'USER_ALREADY_IN_ANOTHER_CHANNEL',
+      'USER_INVITED_TO_CHANNEL',
+      'USER_NEEDS_INVITATION_TO_WORKSPACE',
+      'CHANNEL_ALREADY_EXISTS',
+    );
   });
 
   it('should have correct values for properties', () => {

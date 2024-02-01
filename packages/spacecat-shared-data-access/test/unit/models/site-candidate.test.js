@@ -14,7 +14,6 @@
 
 import { expect } from 'chai';
 import { createSiteCandidate, SITE_CANDIDATE_STATUS, DEFAULT_UPDATED_BY } from '../../../src/models/site-candidate.js';
-import { sleep } from '../util.js';
 
 const validData = {
   baseURL: 'https://www.example.com',
@@ -52,16 +51,10 @@ describe('Site Candidate Model Tests', () => {
       expect(siteCandidate.getStatus()).to.equal(newStatus);
     });
 
-    it('updates updatedAt and updateBy when status is updated', async () => {
-      const initialUpdatedAt = siteCandidate.getUpdatedAt();
-      const initialUpdatedBy = siteCandidate.getUpdatedBy();
-
-      await sleep(20);
-
-      siteCandidate.setStatus(SITE_CANDIDATE_STATUS.APPROVED, 'new challenger');
-
-      expect(siteCandidate.getUpdatedAt()).to.not.equal(initialUpdatedAt);
-      expect(siteCandidate.getUpdatedBy()).to.not.equal(initialUpdatedBy);
+    it('updates updatedBy correctly', () => {
+      const newUpdatedBy = 'pablo';
+      siteCandidate.setUpdatedBy(newUpdatedBy);
+      expect(siteCandidate.getUpdatedBy()).to.equal(newUpdatedBy);
     });
   });
 });

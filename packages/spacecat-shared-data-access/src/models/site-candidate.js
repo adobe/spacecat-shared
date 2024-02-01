@@ -30,15 +30,23 @@ export const SITE_CANDIDATE_STATUS = {
  * @returns {Readonly<SiteCandidate>} new site candidate
  */
 const SiteCandidate = (data = {}) => {
-  const self = Base(data);
+  const self = Base({
+    updatedBy: DEFAULT_UPDATED_BY,
+    ...data,
+  });
   delete self.id; // no id property used in SiteCandidate modal
 
   self.getBaseURL = () => self.state.baseURL;
   self.getStatus = () => self.state.status;
   self.getUpdatedBy = () => self.state.updatedBy;
 
-  self.setStatus = (status, updatedBy = DEFAULT_UPDATED_BY) => {
+  self.setStatus = (status) => {
     self.state.status = status;
+    self.touch();
+    return self;
+  };
+
+  self.setUpdatedBy = (updatedBy) => {
     self.state.updatedBy = updatedBy;
     self.touch();
     return self;

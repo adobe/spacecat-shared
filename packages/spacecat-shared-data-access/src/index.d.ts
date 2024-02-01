@@ -388,6 +388,11 @@ export interface DataAccess {
   removeOrganization: (
       organizationId: string,
   ) => Promise<void>;
+
+  // site candidate functions
+  addSiteCandidate: (siteCandidateDate: object) => Promise<SiteCandidate>;
+  siteCandidateExists: (baseURL: string) => Promise<boolean>;
+  updateSiteCandidate: (siteCandidate: SiteCandidate) => Promise<SiteCandidate>;
 }
 
 interface DataAccessConfig {

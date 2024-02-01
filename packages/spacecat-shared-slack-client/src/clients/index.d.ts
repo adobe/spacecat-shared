@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+// eslint-disable-next-line max-classes-per-file
 import type { SlackChannel } from '../models';
 
 /**
@@ -17,7 +18,7 @@ import type { SlackChannel } from '../models';
  * It can be used to post messages to a channel, or upload files.
  * @interface
  */
-export declare interface BaseSlackClient {
+export class BaseSlackClient {
   /**
    * Asynchronous method to create a RUM backlink.
 
@@ -41,8 +42,7 @@ export declare interface BaseSlackClient {
  * Represents a Slack client with elevated privileges, capable of performing
  * advanced operations such as user lookups by email and channel management.
  */
-export declare interface ElevatedSlackClient extends BaseSlackClient {
-
+export class ElevatedSlackClient extends BaseSlackClient {
   /**
    * Creates a new Slack channel. The channel can be public or private.
    * Optional parameters include the topic and description of the channel.

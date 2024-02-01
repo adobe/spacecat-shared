@@ -14,40 +14,40 @@
  * Represents a Slack channel with detailed information. Provides methods to access
  * channel data such as ID, name, and privacy status.
  */
-export interface SlackChannel {
-
+// eslint-disable-next-line max-classes-per-file
+export class SlackChannel {
   /**
    * Retrieves the unique identifier of the channel.
    * @returns {string} The channel's ID.
    */
-  getId(): string,
+  getId(): string;
 
   /**
    * Retrieves the name of the channel.
    * @returns {string} The channel's name.
    */
-  getName(): string,
+  getName(): string;
 }
 
-export interface SlackTeam {
+export class SlackTeam {
   /**
    * Retrieves the unique identifier of the team.
    * @returns {string} The team's ID.
    */
-  getId(): string,
+  getId(): string;
 
   /**
    * Retrieves the name of the team.
    * @returns {string} The team's name.
    */
-  getName(): string,
+  getName(): string;
 }
 
 /**
  * Represents a Slack user with detailed information. Provides methods to access
  * user data such as ID, team ID, name, real name, email, and user roles/status.
  */
-export interface SlackUser {
+export class SlackUser {
   /**
    * Retrieves the unique identifier of the user.
    * @returns The user's ID.
@@ -55,52 +55,10 @@ export interface SlackUser {
   getId(): string;
 
   /**
-   * Retrieves the team ID to which the user belongs.
-   * @returns The team ID of the user.
-   */
-  getTeamId(): string;
-
-  /**
-   * Retrieves the username or handle of the user.
-   * @returns The user's handle or username.
-   */
-  getHandle(): string;
-
-  /**
-   * Retrieves the real name of the user.
-   * @returns The real name of the user.
-   */
-  getRealName(): string;
-
-  /**
    * Retrieves the email address of the user.
    * @returns The email address of the user.
    */
   getEmail(): string;
-
-  /**
-   * Checks if the user is an admin.
-   * @returns True if the user is an admin, false otherwise.
-   */
-  isAdminUser(): boolean;
-
-  /**
-   * Checks if the user is an owner of the workspace.
-   * @returns True if the user is an owner, false otherwise.
-   */
-  isOwnerUser(): boolean;
-
-  /**
-   * Checks if the user is a bot.
-   * @returns True if the user is a bot, false otherwise.
-   */
-  isBotUser(): boolean;
-
-  /**
-   * Determines if the user is a multichannel guest in the workspace.
-   * @returns True if the user is a multichannel guest, false otherwise.
-   */
-  isMultiChannelGuestUser(): boolean;
 
   /**
    * Determines if the user is a single-channel guest in the workspace.

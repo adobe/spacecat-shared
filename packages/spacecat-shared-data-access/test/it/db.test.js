@@ -25,7 +25,7 @@ import { configSchema } from '../../src/models/site/config.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';
-import { createSiteCandidate, SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
+import { createSiteCandidate, SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
@@ -644,6 +644,7 @@ describe('DynamoDB Integration Test', async () => {
       baseURL: 'https://example0.com',
       status: SITE_CANDIDATE_STATUS.APPROVED,
       siteId: 'some-site-id',
+      source: SITE_CANDIDATE_SOURCES.CDN,
     };
 
     const updatedSiteCandidate = await dataAccess.updateSiteCandidate(
@@ -652,6 +653,7 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(updatedSiteCandidate.getBaseURL()).to.equal(siteCandidateData.baseURL);
     expect(updatedSiteCandidate.getSiteId()).to.equal(siteCandidateData.siteId);
+    expect(updatedSiteCandidate.getSource()).to.equal(siteCandidateData.source);
     expect(updatedSiteCandidate.getStatus()).to.equal(siteCandidateData.status);
   });
 });

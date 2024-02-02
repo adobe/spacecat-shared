@@ -13,7 +13,12 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { createSiteCandidate, SITE_CANDIDATE_STATUS, DEFAULT_UPDATED_BY } from '../../../src/models/site-candidate.js';
+import {
+  createSiteCandidate,
+  SITE_CANDIDATE_STATUS,
+  DEFAULT_UPDATED_BY,
+  SITE_CANDIDATE_SOURCES,
+} from '../../../src/models/site-candidate.js';
 
 const validData = {
   baseURL: 'https://www.example.com',
@@ -43,6 +48,18 @@ describe('Site Candidate Model Tests', () => {
 
     beforeEach(() => {
       siteCandidate = createSiteCandidate(validData);
+    });
+
+    it('updates site id correctly', () => {
+      const newSiteId = 'some-site-id';
+      siteCandidate.setSiteId(newSiteId);
+      expect(siteCandidate.getSiteId()).to.equal(newSiteId);
+    });
+
+    it('updates source correctly', () => {
+      const newSource = SITE_CANDIDATE_SOURCES.RUM;
+      siteCandidate.setSource(newSource);
+      expect(siteCandidate.getSource()).to.equal(newSource);
     });
 
     it('updates status correctly', () => {

@@ -16,6 +16,12 @@ import { Base } from './base.js';
 
 export const DEFAULT_UPDATED_BY = 'spacecat';
 
+export const SITE_CANDIDATE_SOURCES = {
+  SPACECAT_SLACK_BOT: 'SPACECAT_SLACK_BOT',
+  RUM: 'RUM',
+  CDN: 'CDN',
+};
+
 export const SITE_CANDIDATE_STATUS = {
   PENDING: 'PENDING', // site candidate notification sent and waiting for human input
   IGNORED: 'IGNORED', // site candidate discarded: not to be added to star catalogue
@@ -38,11 +44,18 @@ const SiteCandidate = (data = {}) => {
 
   self.getBaseURL = () => self.state.baseURL;
   self.getSiteId = () => self.state.siteId;
+  self.getSource = () => self.state.source;
   self.getStatus = () => self.state.status;
   self.getUpdatedBy = () => self.state.updatedBy;
 
   self.setSiteId = (siteId) => {
     self.state.siteId = siteId;
+    self.touch();
+    return self;
+  };
+
+  self.setSource = (source) => {
+    self.state.source = source;
     self.touch();
     return self;
   };

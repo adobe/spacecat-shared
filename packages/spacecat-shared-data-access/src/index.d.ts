@@ -242,13 +242,19 @@ export interface SiteCandidate {
   /**
    * Retrieves the site id of the site candidate.
    * Only set after APPROVED state
-   * @returns {string} The delivery type.
+   * @returns {string} site id
    */
   getSiteId: () => string;
 
   /**
+   * Retrieves the source of the site candidate.
+   * @returns {string} The source
+   */
+  getSource: () => string;
+
+  /**
    * Retrieves the status of the site candidate.
-   * @returns {string} The delivery type.
+   * @returns {string} The status
    */
   getStatus: () => string;
 

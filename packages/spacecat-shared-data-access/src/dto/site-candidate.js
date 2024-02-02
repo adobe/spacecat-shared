@@ -17,12 +17,13 @@ export const SiteCandidateDto = {
   /**
    * Converts a Site Candidate object into a DynamoDB item.
    * @param {Readonly<SiteCandidate>} siteCandidate - Site Candidate object.
-   * @returns {{baseURL, status, siteId, createdAt, updatedAt, updatedBy}}
+   * @returns {{baseURL, siteId, source, status, createdAt, updatedAt, updatedBy}}
    */
   toDynamoItem: (siteCandidate) => ({
     baseURL: siteCandidate.getBaseURL(),
-    status: siteCandidate.getStatus(),
     siteId: siteCandidate.getSiteId(),
+    source: siteCandidate.getSource(),
+    status: siteCandidate.getStatus(),
     createdAt: siteCandidate.getCreatedAt(),
     updatedAt: siteCandidate.getUpdatedAt(),
     updatedBy: siteCandidate.getUpdatedBy(),

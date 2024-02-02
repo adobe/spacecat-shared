@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-slack-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.0.1...@adobe/spacecat-shared-slack-client-v1.1.0) (2024-02-02)
+
+
+### Features
+
+* slack channel management ([#124](https://github.com/adobe/spacecat-shared/issues/124)) ([37aa44c](https://github.com/adobe/spacecat-shared/commit/37aa44cd36e28895766c16021eb76fe1b4d7f071))
+
 # [@adobe/spacecat-shared-slack-client-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.0.0...@adobe/spacecat-shared-slack-client-v1.0.1) (2024-01-26)
 
 

@@ -10,24 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseSlackClient, ElevatedSlackClient } from './clients';
-import type { SlackChannel, SlackUser } from './models';
-
-/**
- * The possible statuses for a user invites and channel creations.
- */
-export declare const SLACK_STATUSES : {
-  USER_ALREADY_IN_CHANNEL: string;
-  GENERAL_ERROR: string;
-  USER_ALREADY_IN_ANOTHER_CHANNEL: string;
-  USER_INVITED_TO_CHANNEL: string;
-  USER_NEEDS_INVITATION_TO_WORKSPACE: string;
-  CHANNEL_ALREADY_EXISTS: string;
-};
-
-export {
-  BaseSlackClient,
-  ElevatedSlackClient,
-  SlackChannel,
-  SlackUser,
+export const SLACK_TARGETS = {
+  WORKSPACE_INTERNAL: 'WORKSPACE_INTERNAL',
+  WORKSPACE_EXTERNAL: 'WORKSPACE_EXTERNAL',
 };

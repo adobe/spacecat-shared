@@ -12,11 +12,7 @@
 
 import BaseSlackClient from './clients/base-slack-client.js';
 import ElevatedSlackClient, { SLACK_STATUSES } from './clients/elevated-slack-client.js';
-
-const SLACK_TARGETS = {
-  WORKSPACE_INTERNAL: 'WORKSPACE_INTERNAL',
-  WORKSPACE_EXTERNAL: 'WORKSPACE_EXTERNAL',
-};
+import { SLACK_TARGETS } from './constants.js';
 
 export {
   SLACK_STATUSES,

@@ -15,6 +15,7 @@ import { createDataAccess } from './service/index.js';
 const TABLE_NAME_AUDITS = 'spacecat-services-audits-dev';
 const TABLE_NAME_LATEST_AUDITS = 'spacecat-services-latest-audits-dev';
 const TABLE_NAME_SITES = 'spacecat-services-sites-dev';
+const TABLE_NAME_SITE_CANDIDATES = 'spacecat-services-site-candidates-dev';
 const TABLE_NAME_ORGANIZATIONS = 'spacecat-services-organizations-dev';
 
 const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites-dev';
@@ -36,6 +37,7 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_TABLE_NAME_AUDITS = TABLE_NAME_AUDITS,
         DYNAMO_TABLE_NAME_LATEST_AUDITS = TABLE_NAME_LATEST_AUDITS,
         DYNAMO_TABLE_NAME_SITES = TABLE_NAME_SITES,
+        DYNAMO_TABLE_NAME_SITE_CANDIDATES = TABLE_NAME_SITE_CANDIDATES,
         DYNAMO_TABLE_NAME_ORGANIZATIONS = TABLE_NAME_ORGANIZATIONS,
         DYNAMO_INDEX_NAME_ALL_SITES = INDEX_NAME_ALL_SITES,
         DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
@@ -49,6 +51,7 @@ export default function dataAccessWrapper(fn) {
         tableNameLatestAudits: DYNAMO_TABLE_NAME_LATEST_AUDITS,
         tableNameOrganizations: DYNAMO_TABLE_NAME_ORGANIZATIONS,
         tableNameSites: DYNAMO_TABLE_NAME_SITES,
+        tableNameSiteCandidates: DYNAMO_TABLE_NAME_SITE_CANDIDATES,
         indexNameAllSites: DYNAMO_INDEX_NAME_ALL_SITES,
         indexNameAllOrganizations: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS,
         indexNameAllSitesByDeliveryType: DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,

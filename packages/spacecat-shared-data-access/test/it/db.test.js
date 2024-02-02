@@ -25,6 +25,7 @@ import { configSchema } from '../../src/models/site/config.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';
+import { createSiteCandidate, SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
@@ -80,6 +81,7 @@ const TEST_DA_CONFIG = {
   tableNameLatestAudits: 'spacecat-services-latest-audits',
   tableNameOrganizations: 'spacecat-services-organizations',
   tableNameSites: 'spacecat-services-sites',
+  tableNameSiteCandidates: 'spacecat-services-site-candidates',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
@@ -95,6 +97,7 @@ describe('DynamoDB Integration Test', async () => {
   let dataAccess;
 
   const NUMBER_OF_SITES = 10;
+  const NUMBER_OF_SITES_CANDIDATES = 10;
   const NUMBER_OF_ORGANIZATIONS = 3;
   const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
 
@@ -118,6 +121,7 @@ describe('DynamoDB Integration Test', async () => {
       TEST_DA_CONFIG,
       NUMBER_OF_ORGANIZATIONS,
       NUMBER_OF_SITES,
+      NUMBER_OF_SITES_CANDIDATES,
       NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
     );
 
@@ -608,5 +612,48 @@ describe('DynamoDB Integration Test', async () => {
     await expect(dataAccess.removeOrganization(organization.getId())).to.eventually.be.fulfilled;
     const organizationAfterRemoval = await dataAccess.getOrganizationByID(organization.getId());
     expect(organizationAfterRemoval).to.be.null;
+  });
+
+  it('verify a previously added site candidate exists', async () => {
+    const exists = await dataAccess.siteCandidateExists('https://example0.com');
+    expect(exists).to.be.true;
+  });
+
+  it('verify a previously non-added site candidate does not exist', async () => {
+    const exists = await dataAccess.siteCandidateExists('https://non-existing-site.com');
+    expect(exists).to.be.false;
+  });
+
+  it('verify the upsert site candidate flow', async () => {
+    const siteCandidateData = {
+      baseURL: 'https://some-base-url.com',
+      status: SITE_CANDIDATE_STATUS.IGNORED,
+    };
+
+    const siteCandidate = await dataAccess.upsertSiteCandidate(siteCandidateData);
+
+    const exists = await dataAccess.siteCandidateExists('https://some-base-url.com');
+    expect(exists).to.be.true;
+
+    expect(siteCandidate.getBaseURL()).to.equal(siteCandidateData.baseURL);
+    expect(siteCandidate.getStatus()).to.equal(SITE_CANDIDATE_STATUS.IGNORED);
+  });
+
+  it('verify the update site candidate flow', async () => {
+    const siteCandidateData = {
+      baseURL: 'https://example0.com',
+      status: SITE_CANDIDATE_STATUS.APPROVED,
+      siteId: 'some-site-id',
+      source: SITE_CANDIDATE_SOURCES.CDN,
+    };
+
+    const updatedSiteCandidate = await dataAccess.updateSiteCandidate(
+      createSiteCandidate(siteCandidateData),
+    );
+
+    expect(updatedSiteCandidate.getBaseURL()).to.equal(siteCandidateData.baseURL);
+    expect(updatedSiteCandidate.getSiteId()).to.equal(siteCandidateData.siteId);
+    expect(updatedSiteCandidate.getSource()).to.equal(siteCandidateData.source);
+    expect(updatedSiteCandidate.getStatus()).to.equal(siteCandidateData.status);
   });
 });

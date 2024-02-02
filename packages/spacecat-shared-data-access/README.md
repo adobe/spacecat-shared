@@ -18,6 +18,13 @@ npm install @adobe/spacecat-shared-data-access
 - **updatedAt** (String): Timestamp of the last update.
 - **GSI1PK** (String): Partition key for the Global Secondary Index.
 
+### SiteCandidates
+- **baseURL** (String): Base URL of the site candidate.
+- **status** (String): Status of the site candidate (PENDING, IGNORED, APPROVED, ERROR)
+- **createdAt** (String): Timestamp of creation.
+- **updatedAt** (String): Timestamp of the last update.
+- **updatedBy** (String): Slack id of the last person updated the site candidate.
+
 ### Audits
 - **siteId** (String): Identifier of the site being audited.
 - **SK** (String): Sort key, typically a composite of audit type and timestamp.
@@ -64,6 +71,11 @@ The module provides two main DAOs:
 - `addSite`
 - `updateSite`
 - `removeSite`
+
+### Site Candidate Functions
+- `upsertSiteCandidate`
+- `siteCandidateExists`
+- `updateSiteCandidate`
 
 ### Audit Functions
 - `getAuditsForSite`

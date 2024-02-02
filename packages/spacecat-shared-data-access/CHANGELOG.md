@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.13.2...@adobe/spacecat-shared-data-access-v1.14.0) (2024-02-02)
+
+
+### Features
+
+* site candidate data model ([#126](https://github.com/adobe/spacecat-shared/issues/126)) ([c457645](https://github.com/adobe/spacecat-shared/commit/c4576455b514675e7f3ce1efa53ecc1372fe491a))
+
 # [@adobe/spacecat-shared-data-access-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.13.1...@adobe/spacecat-shared-data-access-v1.13.2) (2024-01-30)
 
 

@@ -23,6 +23,12 @@ describe('resolveSecretsName', () => {
     expect(resolveSecretsName({}, ctx, defaultPath)).to.equal('secretPath/1.0.0');
   });
 
+  it('resolves name correctly with valid ci inputs', () => {
+    const ctx = { func: { version: 'ci123' } };
+    const defaultPath = 'secretPath';
+    expect(resolveSecretsName({}, ctx, defaultPath)).to.equal('secretPath/ci');
+  });
+
   it('throws error when ctx is undefined', () => {
     expect(() => resolveSecretsName({}, undefined, 'defaultPath')).to.throw('Invalid context: func.version is required and must be a string');
   });

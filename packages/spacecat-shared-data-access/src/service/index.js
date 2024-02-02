@@ -31,7 +31,7 @@ export const createDataAccess = (config, log = console) => {
 
   const auditFuncs = auditFunctions(dynamoClient, config, log);
   const siteFuncs = siteFunctions(dynamoClient, config, log);
-  const siteCandidateFuncs = siteCandidateFunctions(dynamoClient, config);
+  const siteCandidateFuncs = siteCandidateFunctions(dynamoClient, config, log);
   const organizationFuncs = organizationFunctions(dynamoClient, config, log);
 
   return {

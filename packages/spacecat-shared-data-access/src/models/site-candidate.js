@@ -17,10 +17,10 @@ import { Base } from './base.js';
 export const DEFAULT_UPDATED_BY = 'spacecat';
 
 export const SITE_CANDIDATE_STATUS = {
-  DISCOVERED: 'DISCOVERED', // site candidate is discovered
   PENDING: 'PENDING', // site candidate notification sent and waiting for human input
   IGNORED: 'IGNORED', // site candidate discarded: not to be added to star catalogue
   APPROVED: 'APPROVED', // site candidate is added to star catalogue
+  ERROR: 'ERROR', // site candidate is discovered
 };
 
 /**
@@ -37,8 +37,15 @@ const SiteCandidate = (data = {}) => {
   delete self.id; // no id property used in SiteCandidate modal
 
   self.getBaseURL = () => self.state.baseURL;
+  self.getSiteId = () => self.state.siteId;
   self.getStatus = () => self.state.status;
   self.getUpdatedBy = () => self.state.updatedBy;
+
+  self.setSiteId = (siteId) => {
+    self.state.siteId = siteId;
+    self.touch();
+    return self;
+  };
 
   self.setStatus = (status) => {
     self.state.status = status;

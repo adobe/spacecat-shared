@@ -11,15 +11,16 @@
  */
 
 import {
-  addSiteCandidate,
+  upsertSiteCandidate,
   exists,
   updateSiteCandidate,
 } from './accessPatterns.js';
 
-export const siteCandidateFunctions = (dynamoClient, config) => ({
-  addSiteCandidate: (siteCandidateData) => addSiteCandidate(
+export const siteCandidateFunctions = (dynamoClient, config, log) => ({
+  upsertSiteCandidate: (siteCandidateData) => upsertSiteCandidate(
     dynamoClient,
     config,
+    log,
     siteCandidateData,
   ),
   siteCandidateExists: (baseUrl) => exists(

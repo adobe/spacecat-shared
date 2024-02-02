@@ -20,7 +20,7 @@ npm install @adobe/spacecat-shared-data-access
 
 ### SiteCandidates
 - **baseURL** (String): Base URL of the site candidate.
-- **status** (String): Status of the site candidate (DISCOVERED, PENDING, IGNORED, APPROVED)
+- **status** (String): Status of the site candidate (PENDING, IGNORED, APPROVED, ERROR)
 - **createdAt** (String): Timestamp of creation.
 - **updatedAt** (String): Timestamp of the last update.
 - **updatedBy** (String): Slack id of the last person updated the site candidate.
@@ -73,7 +73,7 @@ The module provides two main DAOs:
 - `removeSite`
 
 ### Site Candidate Functions
-- `addSiteCandidate`
+- `upsertSiteCandidate`
 - `siteCandidateExists`
 - `updateSiteCandidate`
 

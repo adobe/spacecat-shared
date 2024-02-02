@@ -28,23 +28,26 @@ export const exists = async (dynamoClient, config, baseURL) => {
 };
 
 /**
- * Adds a site candidate.
+ * Upserts a site candidate.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
+ * @param {object} log - the logger object
  * @param {object} siteCandidateData - The site candidate data.
- * @returns {Promise<Readonly<SiteCandidate>>} newly created site candidate
+ * @returns {Promise<Readonly<SiteCandidate>>} newly created site candidate if hadn't created before
  */
-export const addSiteCandidate = async (
+export const upsertSiteCandidate = async (
   dynamoClient,
   config,
+  log,
   siteCandidateData,
 ) => {
   const siteCandidate = createSiteCandidate(siteCandidateData);
   const siteCandidateExists = await exists(dynamoClient, config, siteCandidate.getBaseURL());
 
   if (siteCandidateExists) {
-    throw new Error(`Site candidate with base url ${siteCandidate.getBaseURL()} already exists`);
+    log.info(`Ignoring the site candidate with base url ${siteCandidate.getBaseURL()} because it already exists`);
+    return siteCandidate;
   }
 
   await dynamoClient.putItem(

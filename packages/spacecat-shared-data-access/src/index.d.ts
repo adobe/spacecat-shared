@@ -240,6 +240,13 @@ export interface SiteCandidate {
   getBaseURL: () => string;
 
   /**
+   * Retrieves the site id of the site candidate.
+   * Only set after APPROVED state
+   * @returns {string} The delivery type.
+   */
+  getSiteId: () => string;
+
+  /**
    * Retrieves the status of the site candidate.
    * @returns {string} The delivery type.
    */
@@ -390,7 +397,7 @@ export interface DataAccess {
   ) => Promise<void>;
 
   // site candidate functions
-  addSiteCandidate: (siteCandidateDate: object) => Promise<SiteCandidate>;
+  upsertSiteCandidate: (siteCandidateDate: object) => Promise<SiteCandidate>;
   siteCandidateExists: (baseURL: string) => Promise<boolean>;
   updateSiteCandidate: (siteCandidate: SiteCandidate) => Promise<SiteCandidate>;
 }

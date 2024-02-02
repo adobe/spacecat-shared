@@ -3,7 +3,7 @@
   "ModelMetadata": {
     "Author": "Dominique Jäggi",
     "DateCreated": "Nov 23, 2023, 07:00 AM",
-    "DateLastModified": "Feb 01, 2024, 03:27 PM",
+    "DateLastModified": "Feb 02, 2024, 10:39 AM",
     "Description": "",
     "AWSService": "Amazon DynamoDB",
     "Version": "3.0"
@@ -455,6 +455,10 @@
         {
           "AttributeName": "updatedBy",
           "AttributeType": "S"
+        },
+        {
+          "AttributeName": "siteId",
+          "AttributeType": "S"
         }
       ],
       "DataAccess": {
@@ -484,6 +488,10 @@
         "baseUrl": [
           "identifiers",
           "URL"
+        ],
+        "siteId": [
+          "identifiers",
+          "UUID"
         ]
       },
       "BillingMode": "PROVISIONED",

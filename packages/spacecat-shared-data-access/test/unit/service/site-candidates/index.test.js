@@ -15,11 +15,13 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 
 import { siteCandidateFunctions } from '../../../../src/service/site-candidates/index.js';
 import { createSiteCandidate, SITE_CANDIDATE_STATUS } from '../../../../src/models/site-candidate.js';
 
 chai.use(chaiAsPromised);
+chai.use(sinonChai);
 
 const { expect } = chai;
 
@@ -39,12 +41,13 @@ const TEST_DA_CONFIG = {
 describe('Site Candidate Access Pattern Tests', () => {
   describe('Site Candidate Functions Export Tests', () => {
     const mockDynamoClient = {};
+    const mockLog = {};
 
-    const exportedFunctions = siteCandidateFunctions(mockDynamoClient, TEST_DA_CONFIG);
+    const exportedFunctions = siteCandidateFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
 
-    it('exports addSiteCandidate function', () => {
-      expect(exportedFunctions).to.have.property('addSiteCandidate');
-      expect(exportedFunctions.addSiteCandidate).to.be.a('function');
+    it('exports upsertSiteCandidate function', () => {
+      expect(exportedFunctions).to.have.property('upsertSiteCandidate');
+      expect(exportedFunctions.upsertSiteCandidate).to.be.a('function');
     });
 
     it('exports siteCandidateExists function', () => {
@@ -60,6 +63,7 @@ describe('Site Candidate Access Pattern Tests', () => {
 
   describe('Site Candidate Functions Tests', () => {
     let mockDynamoClient;
+    let mockLog = {};
     let exportedFunctions;
 
     beforeEach(() => {
@@ -68,7 +72,11 @@ describe('Site Candidate Access Pattern Tests', () => {
         putItem: sinon.stub().returns(Promise.resolve()),
       };
 
-      exportedFunctions = siteCandidateFunctions(mockDynamoClient, TEST_DA_CONFIG);
+      mockLog = {
+        info: sinon.stub().resolves(),
+      };
+
+      exportedFunctions = siteCandidateFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
     it('siteCandidateExists returns false when no site candidate exists', async () => {
@@ -87,24 +95,25 @@ describe('Site Candidate Access Pattern Tests', () => {
       expect(mockDynamoClient.getItem.called).to.be.true;
     });
 
-    it('adds a new site candidate successfully', async () => {
+    it('upserts a new site candidate successfully', async () => {
       const siteCandidateData = { baseURL: 'https://newsite.com' };
 
-      const result = await exportedFunctions.addSiteCandidate(siteCandidateData);
+      const result = await exportedFunctions.upsertSiteCandidate(siteCandidateData);
 
       expect(mockDynamoClient.getItem.calledOnce).to.be.true;
       expect(mockDynamoClient.putItem.calledOnce).to.be.true;
       expect(result.getBaseURL()).to.equal(siteCandidateData.baseURL);
     });
 
-    it('doesnt add a new site candidate if already exists before', async () => {
+    it('doesnt add and ignores a new site candidate if already exists before', async () => {
       const siteCandidateData = { baseURL: 'https://newsite.com' };
       mockDynamoClient.getItem.returns(Promise.resolve(siteCandidateData));
 
-      await expect(exportedFunctions.addSiteCandidate(siteCandidateData))
-        .to.be.rejectedWith('Site candidate with base url https://newsite.com already exists');
+      const siteCandidate = await exportedFunctions.upsertSiteCandidate(siteCandidateData);
+      expect(siteCandidate.getBaseURL()).to.equal(siteCandidateData.baseURL);
       expect(mockDynamoClient.getItem.calledOnce).to.be.true;
       expect(mockDynamoClient.putItem.notCalled).to.be.true;
+      expect(mockLog.info).to.have.been.calledWith('Ignoring the site candidate with base url https://newsite.com because it already exists');
     });
 
     it('update site candidate throws an error if site candidate exists', async () => {
@@ -117,15 +126,17 @@ describe('Site Candidate Access Pattern Tests', () => {
     });
 
     it('updates an existing site candidate successfully', async () => {
-      const siteCandidateData = { baseURL: 'https://existingsite.com', status: SITE_CANDIDATE_STATUS.DISCOVERED };
+      const siteCandidateData = { baseURL: 'https://existingsite.com', status: SITE_CANDIDATE_STATUS.PENDING };
       mockDynamoClient.getItem.returns(Promise.resolve(siteCandidateData));
 
       const siteCandidate = createSiteCandidate({ baseURL: 'https://existingsite.com' });
-      siteCandidate.setStatus(SITE_CANDIDATE_STATUS.PENDING);
+      siteCandidate.setStatus(SITE_CANDIDATE_STATUS.APPROVED);
+      siteCandidate.setSiteId('some-site-id');
 
       const result = await exportedFunctions.updateSiteCandidate(siteCandidate);
       expect(mockDynamoClient.putItem.calledOnce).to.be.true;
       expect(result.getBaseURL()).to.equal(siteCandidate.getBaseURL());
+      expect(result.getSiteId()).to.equal(siteCandidate.getSiteId());
       expect(result.getStatus()).to.equal(siteCandidate.getStatus());
       expect(mockDynamoClient.getItem.calledOnce).to.be.true;
       expect(mockDynamoClient.putItem.calledOnce).to.be.true;

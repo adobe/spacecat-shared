@@ -624,13 +624,13 @@ describe('DynamoDB Integration Test', async () => {
     expect(exists).to.be.false;
   });
 
-  it('verify the add site candidate flow', async () => {
+  it('verify the upsert site candidate flow', async () => {
     const siteCandidateData = {
       baseURL: 'https://some-base-url.com',
       status: SITE_CANDIDATE_STATUS.IGNORED,
     };
 
-    const siteCandidate = await dataAccess.addSiteCandidate(siteCandidateData);
+    const siteCandidate = await dataAccess.upsertSiteCandidate(siteCandidateData);
 
     const exists = await dataAccess.siteCandidateExists('https://some-base-url.com');
     expect(exists).to.be.true;
@@ -643,6 +643,7 @@ describe('DynamoDB Integration Test', async () => {
     const siteCandidateData = {
       baseURL: 'https://example0.com',
       status: SITE_CANDIDATE_STATUS.APPROVED,
+      siteId: 'some-site-id',
     };
 
     const updatedSiteCandidate = await dataAccess.updateSiteCandidate(
@@ -650,6 +651,7 @@ describe('DynamoDB Integration Test', async () => {
     );
 
     expect(updatedSiteCandidate.getBaseURL()).to.equal(siteCandidateData.baseURL);
+    expect(updatedSiteCandidate.getSiteId()).to.equal(siteCandidateData.siteId);
     expect(updatedSiteCandidate.getStatus()).to.equal(siteCandidateData.status);
   });
 });

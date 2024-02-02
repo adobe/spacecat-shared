@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-slack-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.1.0...@adobe/spacecat-shared-slack-client-v1.1.1) (2024-02-02)
+
+
+### Bug Fixes
+
+* add slack targets type ([#127](https://github.com/adobe/spacecat-shared/issues/127)) ([537c01b](https://github.com/adobe/spacecat-shared/commit/537c01be6d8bca992bf21d68abc7f8e2930ab169))
+
 # [@adobe/spacecat-shared-slack-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.0.1...@adobe/spacecat-shared-slack-client-v1.1.0) (2024-02-02)
 
 

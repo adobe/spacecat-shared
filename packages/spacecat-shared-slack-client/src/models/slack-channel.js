@@ -10,17 +10,32 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseSlackClient from './clients/base-slack-client.js';
-import ElevatedSlackClient, { SLACK_STATUSES } from './clients/elevated-slack-client.js';
+/**
+ * Represents a Slack channel
+ */
+export default class SlackChannel {
+  /**
+   * Creates a new Slack channel
+   *
+   * @param {object} channelData - channel data
+   * @param {string} channelData.id - channel id
+   * @param {string} channelData.name - channel name
+   * @constructor
+   */
+  constructor(channelData) {
+    this.id = channelData.id;
+    this.name = channelData.name;
+  }
 
-const SLACK_TARGETS = {
-  WORKSPACE_INTERNAL: 'WORKSPACE_INTERNAL',
-  WORKSPACE_EXTERNAL: 'WORKSPACE_EXTERNAL',
-};
+  static create(channelData) {
+    return new SlackChannel(channelData);
+  }
 
-export {
-  SLACK_STATUSES,
-  SLACK_TARGETS,
-  BaseSlackClient,
-  ElevatedSlackClient,
-};
+  getId() {
+    return this.id;
+  }
+
+  getName() {
+    return this.name;
+  }
+}

@@ -1,14 +1,26 @@
 # Spacecat Shared - Slack Client
 
-A library utility to manage to interact with different Slack organizations.
+This package provides a set of tools for interacting with Slack workspaces, specifically designed to cater to different organizational needs. It facilitates message posting, channel management, user invitations, and file uploads, with support for both standard and elevated privileges.
 
 ## Installation
 
-```
+Install the package using npm:
+
+```bash
 npm install @adobe/spacecat-shared-slack-client
 ```
 
-## Usage
+## Features
+
+- **Client Creation**: Utilize a factory method to create Slack clients for different targets, with or without elevated privileges.
+- **Message Posting**: Send messages to channels or threads, including advanced formatting with Slack Block Builder.
+- **Channel Management**: Create Slack channels and manage their details.
+- **User Invitations**: Invite users to channels via email.
+- **File Uploading**: Upload files to Slack channels.
+
+## Configuration
+
+The package uses environment variables for configuration. Set the following variables in your environment:
 
 ### Configuring Tokens
 
@@ -22,159 +34,116 @@ To configure tokens for your application, follow these steps:
 
 4. For information on the scopes needed for each Slack API method, refer to the [documentation](https://api.slack.com/methods). The required scopes for each API method are listed in the "Bot tokens" row. As an example, to use the `postMessage` API method, the required scope is `chat:write`, as documented in [https://api.slack.com/methods/chat.postMessage](https://api.slack.com/methods/chat.postMessage).
 
-
-### Creating and instance from Helix UniversalContext
-
-```js
-const context = {}; // Your Helix UniversalContext object
-const target = 'ADOBE_INTERNAL';
-const slackClient = SlackClient.createFrom(context, target);
+### Scopes required for the current implementation
+All Bot Tokens:
+```
+chat:write
+files:read
+files:write
+team:read
 ```
 
-**Required env variables in Helix UniversalContext**
-
-At least one of the following environment variables should exist in Helix UniversalContext
-
+Scopes needed for elevated Bot:
 ```
-SLACK_TOKEN_ADOBE_INTERNAL="slack bot token for the adobe internal org"
-SLACK_TOKEN_ADOBE_EXTERNAL="slack bot token for the adobe external org"
-```
-
-**Note**: if Helix UniversalContext object already contains a `slackClients` field, then `createFrom` factory method returns the previously created instance instead of creating a new one.
-
-### Constructor
-
-`SlackClient` class needs a slack bot token and a logger object:
-
-```js
-const token = 'slack bot token';
-const slackClient = new SlackClient(token, console);
+channels:manage (for public channels)
+channels:read (check if user is in a channel or a channel exists)
+channels:write.invites
+channels:write.topic
+groups:read (check if user is in a channel or a channel exists)
+groups:write (for private channels)
+groups:write.invites
+groups:write.topic
+users:read (to lookup users, required by users:read.email)
+users:read.email (to lookup users by their emails)
 ```
 
-### Posting a message
+### Standard Client
 
-#### Posting a text message
+- `SLACK_TOKEN_WORKSPACE_INTERNAL`
+- `SLACK_TOKEN_WORKSPACE_EXTERNAL`
 
-```js
-import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+### Elevated Client
 
-const channelId = 'channel-id'; // channel to send the message to
-const threadId = 'thread-id'; // thread id to send the message under (optional)
+- `SLACK_TOKEN_WORKSPACE_INTERNAL_ELEVATED`
+- `SLACK_TOKEN_WORKSPACE_EXTERNAL_ELEVATED`
+- `SLACK_OPS_CHANNEL_WORKSPACE_INTERNAL`
+- `SLACK_OPS_CHANNEL_WORKSPACE_EXTERNAL`
+- `SLACK_OPS_ADMINS_WORKSPACE_INTERNAL`
+- `SLACK_OPS_ADMINS_WORKSPACE_EXTERNAL`
 
-const internalSlackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
+## Usage
 
-await internalSlackClient.postMessage({
-  text: 'HELLO WORLD!',
+### Client Creation
+
+Create a Slack client instance:
+
+```javascript
+import { BaseSlackClient, ElevatedSlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+
+const context = {}; // Your context object
+const target = SLACK_TARGETS.WORKSPACE_INTERNAL; // or WORKSPACE_EXTERNAL
+const slackClient = BaseSlackClient.createFrom(context, target);
+// elevated client:
+const elevatedclient = ElevatedSlackClient.createFrom(context, target);
+```
+
+### Posting a Message
+
+```javascript
+await slackClient.postMessage({
   channel: 'channel-id',
-  thread_ts: threadId, // (optional)
+  text: 'Hello, world!',
 });
 ```
 
-#### Posting a simple text message using Slack Block Builder (recommended)
+### Creating a Channel
 
-```js
-import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
-import { Message, Blocks, Elements } from 'slack-block-builder';
-
-const channelId = 'channel-id'; // channel to send the message to
-const threadId = 'thread-id'; // thread id to send the message under (optional)
-
-// Create a SlackClient instance from a helix universal context object
-const internalSlackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
-
-// build the message to be sent to Slack
-const message = Message()
-  .text('Alas, my friend.')
-  .channel(channelId)
-  .threadTs(threadId) //optional
-  .buildToObject();
-
-await internalSlackClient.postMessage(message);
-
+```javascript
+const channel = await slackClient.createChannel('channel-name', 'Topic', 'Description', true);
 ```
 
-#### Posting a non-trivial message using Slack Block Builder (recommended)
+### Inviting Users
 
-```js
-import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
-import { Message, Blocks, Elements } from 'slack-block-builder';
-
-const channelId = 'channel-id'; // channel to send the message to
-const threadId = 'thread-id'; // thread id to send the message under (optional)
-
-// Create a SlackClient instance from a helix universal context object
-const internalSlackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
-
-// build the message to be sent to Slack
-const message = Message()
-  .channel(channelId)
-  .threadTs(threadId) //optional
-  .text('Alas, my friend.')
-  .blocks(
-    Blocks.Section()
-      .text('One does not simply walk into Slack and click a button.'),
-    Blocks.Section()
-      .text('At least that\'s what my friend Slackomir said :crossed_swords:'),
-    Blocks.Divider(),
-    Blocks.Actions()
-      .elements(
-        Elements.Button()
-          .text('Sure One Does')
-          .actionId('gotClicked')
-          .danger(dangerLevel > 42), // Optional argument, defaults to 'true'
-        Elements.Button()
-          .text('One Does Not')
-          .actionId('scaredyCat')
-          .primary()))
-  .asUser()
-  .buildToObject();
-
-await internalSlackClient.postMessage(message);
-
+```javascript
+await slackClient.inviteUsersByEmail('channel-id', [{ email: 'user@example.com' }]);
 ```
 
-### Uploading a file
+### Uploading a File
 
-```js
-import { SlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
-
-const channelId = 'channel-id'; // channel to send the message to
-const threadId = 'thread-id'; // thread id to send the message under (optional)
-
-const internalSlackClient = SlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
-
-await internalSlackClient.fileUpload({
-  file: './path/to/logo.png',  // also accepts Buffer or ReadStream
-  filename: 'logo.png',
-  initial_comment: 'Here is the new company logo',
-  channel_id: channelId,
-  thread_ts: threadId, // (optional)
+```javascript
+await slackClient.fileUpload({
+  file: 'path/to/file.png',
+  filename: 'file.png',
+  channel_id: 'channel-id',
 });
 ```
 
 ## Testing
-Run the included tests with the following command:
-```
+
+To run tests:
+
+```bash
 npm test
 ```
 
 ## Linting
-Lint the codebase using:
-```
+
+Lint your code:
+
+```bash
 npm run lint
 ```
 
 ## Cleaning
-To clean the package (remove `node_modules` and `package-lock.json`):
-```
+
+To remove `node_modules` and `package-lock.json`:
+
+```bash
 npm run clean
 ```
 
-## Repository
-Find the source code and contribute [here](https://github.com/adobe/spacecat-shared.git).
+## Additional Information
 
-## Issues
-Report issues or bugs [here](https://github.com/adobe/spacecat-shared/issues).
-
-## License
-This project is licensed under the Apache-2.0 License.
+- **Repository**: [GitHub](https://github.com/adobe/spacecat-shared.git)
+- **Issue Tracking**: [GitHub Issues](https://github.com/adobe/spacecat-shared/issues)
+- **License**: Apache-2.0

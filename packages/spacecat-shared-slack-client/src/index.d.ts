@@ -10,47 +10,29 @@
  * governing permissions and limitations under the License.
  */
 
-import { UniversalContext } from '@adobe/helix-universal';
+import type { BaseSlackClient, ElevatedSlackClient } from './clients';
+import type { SlackChannel, SlackUser } from './models';
 
 export declare const SLACK_TARGETS: {
-  ADOBE_INTERNAL: string;
-  ADOBE_EXTERNAL: string;
+  WORKSPACE_INTERNAL: string;
+  WORKSPACE_EXTERNAL: string;
 };
 
-export class SlackClient {
-  /**
-   * Static factory method to create an instance of SlackClient.
-   * @param {UniversalContext} context - An object containing the AWS Lambda context information
-   * @param {string} target - A string representing the target slack workspace/org
-   * @returns An instance of SlackClient.
-   * @remarks This method is designed to create a new instance from an AWS Lambda context.
-   *   The created instance is stored in the Lambda context, and subsequent calls to
-   *   this method will return the singleton instance if previously created.
-   */
-  static createFrom(context: UniversalContext, target: string): SlackClient;
+/**
+ * The possible statuses for a user invites and channel creations.
+ */
+export declare const SLACK_STATUSES : {
+  USER_ALREADY_IN_CHANNEL: string;
+  GENERAL_ERROR: string;
+  USER_ALREADY_IN_ANOTHER_CHANNEL: string;
+  USER_INVITED_TO_CHANNEL: string;
+  USER_NEEDS_INVITATION_TO_WORKSPACE: string;
+  CHANNEL_ALREADY_EXISTS: string;
+};
 
-  /**
-   * Constructor for creating an instance of SlackClient.
-   * @param {string} token - slack bot token
-   * @param {object} log - a logger object
-   * used to create slack api clients for each target.
-   * @remarks token is specific to the Slack API.
-   */
-  constructor(token: string, log: object);
-
-  /**
-   * Asynchronous method to send a message to Slack.
-
-   * @param {object} message - Message payload to be sent to Slack API. see https://api.slack.com/methods/chat.postMessage
-   * @returns A Promise resolving to an object containing the data returned by Slack API
-   */
-  postMessage(message: object): Promise<object>;
-
-  /**
-   * Asynchronous method to upload a file to Slack.
-
-   * @param {object} file - An object containing file payload and metadata to be sent to Slack API. see https://slack.dev/node-slack-sdk/web-api#new-way
-   * @returns A Promise resolving to an object containing the data returned by Slack API
-   */
-  fileUpload(file: object): Promise<object>;
-}
+export {
+  BaseSlackClient,
+  ElevatedSlackClient,
+  SlackChannel,
+  SlackUser,
+};

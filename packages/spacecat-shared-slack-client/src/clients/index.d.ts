@@ -26,8 +26,21 @@ export class BaseSlackClient {
    * Use ElevatedSlackClient for that.
    *
    * @param {UniversalContext} context - The context object.
-   * @param {string} target - The target for the Slack client.
-   * @return {BaseSlackClient} The Slack client.
+   * @param {object} context.env - The environment object.
+   * @param {string} context.env.SLACK_TOKEN_INTERNAL - The Slack bot token for internal
+   * workspace access.
+   * @param {string} context.env.SLACK_TOKEN_EXTERNAL - The Slack bot token for external
+   * workspace access.
+   * @param {string} context.env.SLACK_OPS_CHANNEL_WORKSPACE_INTERNAL - The Slack ID (e.g. C1234)
+   * of the ops channel for internal workspace access.
+   * @param {string} context.env.SLACK_OPS_CHANNEL_WORKSPACE_EXTERNAL - The Slack ID (e.g. C1234)
+   * of the ops channel for external workspace access.
+   * @param {string} context.env.SLACK_OPS_ADMINS_WORKSPACE_INTERNAL - The Slack IDs
+   * (e.g. U1234,U5678) of the admins for internal workspace access.
+   * @param {string} context.env.SLACK_OPS_ADMINS_WORKSPACE_EXTERNAL - The Slack IDs
+   * (e.g. U1234,U5678) of the admins for external workspace access.
+   * @param {string} target - The target for the Slack client, see {@link SLACK_TARGETS}.
+   * @return {BaseSlackClient} The basic Slack client.
    */
   static createFrom(context: UniversalContext, target: string): BaseSlackClient;
 
@@ -60,8 +73,21 @@ export class ElevatedSlackClient extends BaseSlackClient {
    * Use BaseSlackClient for basic operations.
    *
    * @param {UniversalContext} context - The context object.
-   * @param {string} target - The target for the Slack client.
-   * @return {BaseSlackClient} The Slack client.
+   * @param {object} context.env - The environment object.
+   * @param {string} context.env.SLACK_TOKEN_INTERNAL_ELEVATED - The Slack bot token for internal
+   * workspace access.
+   * @param {string} context.env.SLACK_TOKEN_EXTERNAL_ELEVATED - The Slack bot token for external
+   * workspace access.
+   * @param {string} context.env.SLACK_OPS_CHANNEL_WORKSPACE_INTERNAL - The Slack ID (e.g. C1234)
+   * of the ops channel for internal workspace access.
+   * @param {string} context.env.SLACK_OPS_CHANNEL_WORKSPACE_EXTERNAL - The Slack ID (e.g. C1234)
+   * of the ops channel for external workspace access.
+   * @param {string} context.env.SLACK_OPS_ADMINS_WORKSPACE_INTERNAL - The Slack IDs
+   * (e.g. U1234,U5678) of the admins for internal workspace access.
+   * @param {string} context.env.SLACK_OPS_ADMINS_WORKSPACE_EXTERNAL - The Slack IDs
+   * (e.g. U1234,U5678) of the admins for external workspace access.
+   * @param {string} target - The target for the Slack client, see {@link SLACK_TARGETS}.
+   * @return {ElevatedSlackClient<BaseSlackClient>} The elevated Slack client.
    */
   static createFrom(context: UniversalContext, target: string): ElevatedSlackClient;
 

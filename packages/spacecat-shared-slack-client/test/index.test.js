@@ -21,8 +21,8 @@ import {
 } from '../src/index.js';
 
 describe('SLACK_TARGETS Object', () => {
-  it('should have ADOBE_INTERNAL and ADOBE_EXTERNAL properties', () => {
-    expect(SLACK_TARGETS).to.be.an('object').that.includes.all.keys('ADOBE_INTERNAL', 'ADOBE_EXTERNAL');
+  it('should have WORKSPACE_INTERNAL and WORKSPACE_EXTERNAL properties', () => {
+    expect(SLACK_TARGETS).to.be.an('object').that.includes.all.keys('WORKSPACE_INTERNAL', 'WORKSPACE_EXTERNAL');
   });
 
   it('SLACK_STATUSES must have required properties', () => {
@@ -37,8 +37,8 @@ describe('SLACK_TARGETS Object', () => {
   });
 
   it('should have correct values for properties', () => {
-    expect(SLACK_TARGETS.ADOBE_INTERNAL).to.equal('ADOBE_INTERNAL');
-    expect(SLACK_TARGETS.ADOBE_EXTERNAL).to.equal('ADOBE_EXTERNAL');
+    expect(SLACK_TARGETS.WORKSPACE_INTERNAL).to.equal('WORKSPACE_INTERNAL');
+    expect(SLACK_TARGETS.WORKSPACE_EXTERNAL).to.equal('WORKSPACE_EXTERNAL');
   });
 });
 

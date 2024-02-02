@@ -279,7 +279,7 @@ export default class ElevatedSlackClient extends BaseSlackClient {
    * Invites a user to the given channel.
    *
    * @private This method is private and should not be called directly.
-   * @param {string} userId The ID of the user to invite. {@link SlackUser#getId
+   * @param {string} userId The ID of the user to invite. {@link SlackUser#getId}
    * @param {string} channelId The ID of the channel to invite the user to.
    * @return {Promise<WebAPICallResult>} A promise that resolves to the status of the invite.
    */
@@ -315,7 +315,7 @@ export default class ElevatedSlackClient extends BaseSlackClient {
    *
    * @private This method is private and should not be called directly.
    * @param {SlackUser} user The user to invite.
-   * @param {string} channelId The ID of the channel to invite the user to.
+   * @param {string} channelId The Slack ID (e.g. C124455) of the channel to invite the user to.
    * @return {Promise<string>} A promise that resolves to the status of the invite.
    */
   async #processUserInvite(user, channelId) {
@@ -331,13 +331,13 @@ export default class ElevatedSlackClient extends BaseSlackClient {
       const userChannels = await this.#getUserChannels(foundUser.getId());
 
       if (userChannels.length > 0 && foundUser.isSingleChannelGuestUser()) {
-        this.log.warn(`User <@${foundUser.getId()}> is already in another channel (Single-Channel Guest), cannot invite to channel ${channelId}`);
+        this.log.warn(`User ${foundUser.getId()} is already in another channel (Single-Channel Guest), cannot invite to channel ${channelId}`);
         return SLACK_STATUSES.USER_ALREADY_IN_ANOTHER_CHANNEL;
       }
 
       const userInChannel = userChannels.some((channel) => channel.getId() === channelId);
       if (userInChannel) {
-        this.log.warn(`User <@${foundUser.getId()}> is already in channel <#${channelId}>`);
+        this.log.warn(`User ${foundUser.getId()} is already in channel ${channelId}`);
         await this.#postMessageToOpsChannel(`User <@${foundUser.getId()}> [${foundUser.getEmail()} / ${foundUser.getId()}] is already in channel <#${channelId}>`);
         return SLACK_STATUSES.USER_ALREADY_IN_CHANNEL;
       }

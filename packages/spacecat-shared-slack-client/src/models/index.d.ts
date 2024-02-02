@@ -45,7 +45,7 @@ export class SlackTeam {
 
 /**
  * Represents a Slack user with detailed information. Provides methods to access
- * user data such as ID, team ID, name, real name, email, and user roles/status.
+ * user data such as ID, email, and single-channel guest status.
  */
 export class SlackUser {
   /**

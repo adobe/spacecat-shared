@@ -58,14 +58,14 @@ describe('ElevatedSlackClient', () => {
     beforeEach(() => {
       context = {
         env: {
-          SLACK_TOKEN_ADOBE_INTERNAL: mockToken,
-          SLACK_TOKEN_ADOBE_EXTERNAL: mockToken,
-          SLACK_TOKEN_ADOBE_INTERNAL_ELEVATED: mockToken,
-          SLACK_TOKEN_ADOBE_EXTERNAL_ELEVATED: mockToken,
-          SLACK_OPS_CHANNEL_ADOBE_INTERNAL: 'mock-channel',
-          SLACK_OPS_CHANNEL_ADOBE_EXTERNAL: 'mock-channel',
-          SLACK_OPS_ADMINS_ADOBE_INTERNAL: 'mock-admin',
-          SLACK_OPS_ADMINS_ADOBE_EXTERNAL: 'mock-admin',
+          SLACK_TOKEN_WORKSPACE_INTERNAL: mockToken,
+          SLACK_TOKEN_WORKSPACE_EXTERNAL: mockToken,
+          SLACK_TOKEN_WORKSPACE_INTERNAL_ELEVATED: mockToken,
+          SLACK_TOKEN_WORKSPACE_EXTERNAL_ELEVATED: mockToken,
+          SLACK_OPS_CHANNEL_WORKSPACE_INTERNAL: 'mock-channel',
+          SLACK_OPS_CHANNEL_WORKSPACE_EXTERNAL: 'mock-channel',
+          SLACK_OPS_ADMINS_WORKSPACE_INTERNAL: 'mock-admin',
+          SLACK_OPS_ADMINS_WORKSPACE_EXTERNAL: 'mock-admin',
         },
         slackClients: {},
         log: mockLog,
@@ -73,13 +73,13 @@ describe('ElevatedSlackClient', () => {
     });
 
     it('creates a BaseSlackClient for non-elevated targets', () => {
-      const slackClient = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
+      const slackClient = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.WORKSPACE_INTERNAL);
       expect(slackClient).to.be.instanceOf(BaseSlackClient);
     });
 
     it('creates a client if context.slackClients is undefined', () => {
       delete context.slackClients;
-      const slackClient = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
+      const slackClient = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.WORKSPACE_INTERNAL);
       expect(slackClient).to.be.instanceOf(BaseSlackClient);
     });
 
@@ -89,24 +89,24 @@ describe('ElevatedSlackClient', () => {
 
     it('throws an error if Slack token is not set', () => {
       context.env = {};
-      expect(() => ElevatedSlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL)).to.throw('No Slack token set for ADOBE_INTERNAL');
+      expect(() => ElevatedSlackClient.createFrom(context, SLACK_TARGETS.WORKSPACE_INTERNAL)).to.throw('No Slack token set for WORKSPACE_INTERNAL');
     });
 
     it('throws an error if Ops Channel ID is not set', () => {
-      context.env.SLACK_OPS_CHANNEL_ADOBE_INTERNAL = '';
-      context.env.SLACK_OPS_ADMINS_ADOBE_INTERNAL = undefined;
-      expect(() => ElevatedSlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL)).to.throw('No Ops Channel ID set for ADOBE_INTERNAL');
+      context.env.SLACK_OPS_CHANNEL_WORKSPACE_INTERNAL = '';
+      context.env.SLACK_OPS_ADMINS_WORKSPACE_INTERNAL = undefined;
+      expect(() => ElevatedSlackClient.createFrom(context, SLACK_TARGETS.WORKSPACE_INTERNAL)).to.throw('No Ops Channel ID set for WORKSPACE_INTERNAL');
     });
 
     it('reuses existing client instances for the same target', () => {
-      const client1 = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
-      const client2 = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
+      const client1 = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.WORKSPACE_INTERNAL);
+      const client2 = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.WORKSPACE_INTERNAL);
       expect(client1).to.equal(client2);
     });
 
     it('does not reuse client instances for different targets', () => {
-      const client1 = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.ADOBE_INTERNAL);
-      const client2 = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.ADOBE_EXTERNAL);
+      const client1 = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.WORKSPACE_INTERNAL);
+      const client2 = ElevatedSlackClient.createFrom(context, SLACK_TARGETS.WORKSPACE_EXTERNAL);
       expect(client1).to.not.equal(client2);
     });
   });

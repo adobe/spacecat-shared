@@ -59,17 +59,17 @@ users:read.email (to lookup users by their emails)
 
 ### Standard Client
 
-- `SLACK_TOKEN_ADOBE_INTERNAL`
-- `SLACK_TOKEN_ADOBE_EXTERNAL`
+- `SLACK_TOKEN_WORKSPACE_INTERNAL`
+- `SLACK_TOKEN_WORKSPACE_EXTERNAL`
 
 ### Elevated Client
 
-- `SLACK_TOKEN_ADOBE_INTERNAL_ELEVATED`
-- `SLACK_TOKEN_ADOBE_EXTERNAL_ELEVATED`
-- `SLACK_OPS_CHANNEL_ADOBE_INTERNAL`
-- `SLACK_OPS_CHANNEL_ADOBE_EXTERNAL`
-- `SLACK_OPS_ADMINS_ADOBE_INTERNAL`
-- `SLACK_OPS_ADMINS_ADOBE_EXTERNAL`
+- `SLACK_TOKEN_WORKSPACE_INTERNAL_ELEVATED`
+- `SLACK_TOKEN_WORKSPACE_EXTERNAL_ELEVATED`
+- `SLACK_OPS_CHANNEL_WORKSPACE_INTERNAL`
+- `SLACK_OPS_CHANNEL_WORKSPACE_EXTERNAL`
+- `SLACK_OPS_ADMINS_WORKSPACE_INTERNAL`
+- `SLACK_OPS_ADMINS_WORKSPACE_EXTERNAL`
 
 ## Usage
 
@@ -81,7 +81,7 @@ Create a Slack client instance:
 import { BaseSlackClient, ElevatedSlackClient, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
 
 const context = {}; // Your context object
-const target = SLACK_TARGETS.ADOBE_INTERNAL; // or ADOBE_EXTERNAL
+const target = SLACK_TARGETS.WORKSPACE_INTERNAL; // or WORKSPACE_EXTERNAL
 const slackClient = BaseSlackClient.createFrom(context, target);
 // elevated client:
 const elevatedclient = ElevatedSlackClient.createFrom(context, target);
@@ -147,7 +147,3 @@ npm run clean
 - **Repository**: [GitHub](https://github.com/adobe/spacecat-shared.git)
 - **Issue Tracking**: [GitHub Issues](https://github.com/adobe/spacecat-shared/issues)
 - **License**: Apache-2.0
-
----
-
-This revised README provides a structured and straightforward guide to the package, ensuring users can quickly understand its capabilities and how to use them effectively.

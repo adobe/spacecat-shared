@@ -14,8 +14,8 @@ import type { BaseSlackClient, ElevatedSlackClient } from './clients';
 import type { SlackChannel, SlackUser } from './models';
 
 export declare const SLACK_TARGETS: {
-  ADOBE_INTERNAL: string;
-  ADOBE_EXTERNAL: string;
+  WORKSPACE_INTERNAL: string;
+  WORKSPACE_EXTERNAL: string;
 };
 
 /**

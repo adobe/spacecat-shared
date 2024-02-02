@@ -14,8 +14,8 @@ import BaseSlackClient from './clients/base-slack-client.js';
 import ElevatedSlackClient, { SLACK_STATUSES } from './clients/elevated-slack-client.js';
 
 const SLACK_TARGETS = {
-  ADOBE_INTERNAL: 'ADOBE_INTERNAL',
-  ADOBE_EXTERNAL: 'ADOBE_EXTERNAL',
+  WORKSPACE_INTERNAL: 'WORKSPACE_INTERNAL',
+  WORKSPACE_EXTERNAL: 'WORKSPACE_EXTERNAL',
 };
 
 export {

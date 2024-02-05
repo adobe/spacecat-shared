@@ -1,3 +1,11 @@
+# [@adobe/spacecat-shared-slack-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.1.1...@adobe/spacecat-shared-slack-client-v1.1.2) (2024-02-05)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#129](https://github.com/adobe/spacecat-shared/issues/129)) ([22b6c90](https://github.com/adobe/spacecat-shared/commit/22b6c90aea25783116165fa1dacb08c631c792bc))
+* **revert:** remove slack targets type ([dbd64d4](https://github.com/adobe/spacecat-shared/commit/dbd64d46ec64d6936558e83d60756cddb2fce446))
+
 # [@adobe/spacecat-shared-slack-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.1.0...@adobe/spacecat-shared-slack-client-v1.1.1) (2024-02-02)
 
 

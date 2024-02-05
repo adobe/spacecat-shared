@@ -13,6 +13,11 @@
 import type { BaseSlackClient, ElevatedSlackClient } from './clients';
 import type { SlackChannel, SlackUser } from './models';
 
+export declare const SLACK_TARGETS: {
+  WORKSPACE_INTERNAL: string;
+  WORKSPACE_EXTERNAL: string;
+};
+
 /**
  * The possible statuses for a user invites and channel creations.
  */

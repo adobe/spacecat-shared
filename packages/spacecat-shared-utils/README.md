@@ -44,7 +44,23 @@ The library includes the following utility functions:
 - `isValidUrl(urlString)`: Validates whether the given string is a valid URL with http or https protocol.
 - `hasText(str)`: Checks if the given string is not empty.
 - `dateAfterDays(number)`: Calculates the date after a specified number of days from the current date.
-- `sqsEventAdapter(function)`: Wrapper function to turn an SQS record into a function param.
+
+## SQS Event Adapter
+
+The library also includes an SQS event adapter to convert an SQS record into a function parameter. This is useful when working with AWS Lambda functions that are triggered by an SQS event. Usage:
+
+```javascript
+import { sqsEventAdapter } from '@adobe/spacecat-shared-utils';
+
+// ...
+
+export const main = wrap(run)
+  .with(dataAccess)
+  .with(sqsEventAdapter) // Add this line
+  .with(sqs)
+  .with(secrets)
+  .with(helixStatus);
+````
 
 ## Testing
 

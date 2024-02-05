@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.7.4...@adobe/spacecat-shared-utils-v1.8.0) (2024-02-05)
+
+
+### Features
+
+* centralize sqsEventAdapter in spacecat-shared-utils ([#128](https://github.com/adobe/spacecat-shared/issues/128)) ([52ec442](https://github.com/adobe/spacecat-shared/commit/52ec4427d8d2c989b369521d30699e90ee8a83cc))
+
 # [@adobe/spacecat-shared-utils-v1.7.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.7.3...@adobe/spacecat-shared-utils-v1.7.4) (2024-02-01)
 
 

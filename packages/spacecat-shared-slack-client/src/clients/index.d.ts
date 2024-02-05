@@ -12,10 +12,8 @@
 
 // eslint-disable-next-line max-classes-per-file
 import type { UniversalContext } from '@adobe/helix-universal';
-import type { SlackChannel } from '../models';
-import { SLACK_TARGETS } from '../constants.js';
 
-type SLACK_TARGET = typeof SLACK_TARGETS[keyof typeof SLACK_TARGETS];
+import type { SlackChannel } from '../models';
 
 /**
  * Represents a Slack client that can be used to interact with the Slack API.
@@ -44,7 +42,7 @@ export class BaseSlackClient {
    * @param {string} target - The target for the Slack client, see {@link SLACK_TARGETS}.
    * @return {BaseSlackClient} The basic Slack client.
    */
-  static createFrom(context: UniversalContext, target: SLACK_TARGET): BaseSlackClient;
+  static createFrom(context: UniversalContext, target: string): BaseSlackClient;
 
   /**
    * Asynchronous method to create a RUM backlink.
@@ -91,7 +89,7 @@ export class ElevatedSlackClient extends BaseSlackClient {
    * @param {string} target - The target for the Slack client, see {@link SLACK_TARGETS}.
    * @return {ElevatedSlackClient<BaseSlackClient>} The elevated Slack client.
    */
-  static createFrom(context: UniversalContext, target: SLACK_TARGET): ElevatedSlackClient;
+  static createFrom(context: UniversalContext, target: string): ElevatedSlackClient;
 
   /**
    * Creates a new Slack channel. The channel can be public or private.

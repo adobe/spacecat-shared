@@ -28,3 +28,5 @@ export {
 } from './functions.js';
 
 export { resolveSecretsName } from './helpers.js';
+
+export { sqsEventAdapter } from './sqs.js';

@@ -32,6 +32,7 @@ describe('Index Exports', () => {
     'isValidUrl',
     'resolveSecretsName',
     'dateAfterDays',
+    'sqsEventAdapter',
   ];
 
   it('exports all expected functions', () => {

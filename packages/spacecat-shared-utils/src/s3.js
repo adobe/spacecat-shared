@@ -17,9 +17,11 @@ export function s3Bucket(fn) {
     if (!context.s3) {
       const {
         AWS_REGION: region,
+        S3_BUCKET_NAME: bucket,
       } = context.env;
 
       context.s3 = new S3Client({ region });
+      context.s3Bucket = bucket;
     }
     return fn(req, context);
   };

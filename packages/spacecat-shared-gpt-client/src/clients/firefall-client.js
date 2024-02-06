@@ -15,6 +15,13 @@ import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { fetch as httpFetch } from '../utils.js';
 
+const LLM_CONFIG = {
+  max_tokens: 4000,
+  llm_type: 'azure_chat_openai',
+  model_name: 'gpt-4-32k',
+  temperature: 0.5,
+};
+
 function validateFirefallResponse(response) {
   if (!isObject(response) || !Array.isArray(response.insights)) {
     return false;
@@ -85,15 +92,8 @@ export default class FirefallClient {
 
   async #apiCall(prompt) {
     const body = JSON.stringify({
-      dialogue: {
-        question: prompt,
-      },
-      llm_metadata: {
-        max_tokens: 4000,
-        llm_type: 'azure_chat_openai',
-        model_name: 'gpt-4',
-        temperature: 0.5,
-      },
+      dialogue: { question: prompt },
+      llm_metadata: LLM_CONFIG,
     });
     return httpFetch(
       createUrl(this.config.apiEndpoint),

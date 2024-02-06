@@ -288,7 +288,7 @@ describe('Shared functions', () => {
     const mockDate = '2023-11-27T12:30:01.124Z';
     const sevenDaysLaterExpected = '2023-12-04T12:30:01.124Z';
 
-    before('setup', () => {
+    before('setup', function () {
       this.clock = sandbox.useFakeTimers({
         now: new Date(mockDate).getTime(),
       });

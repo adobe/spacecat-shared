@@ -120,17 +120,21 @@ export default class RUMAPIClient {
     );
   }
 
-  async getRUMDashboard(params = {}) {
-    return sendRequest(createUrl(
+  createRUMURL(params = {}) {
+    return createUrl(
       APIS.RUM_DASHBOARD,
-      { domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params },
-    ));
+      {
+        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params,
+      },
+    );
+  }
+
+  async getRUMDashboard(params = {}) {
+    return sendRequest(this.createRUMURL(params));
   }
 
   async get404Sources(params = {}) {
-    return sendRequest(this.create404URL(
-      params,
-    ));
+    return sendRequest(this.create404URL(params));
   }
 
   async getDomainList(params = {}) {

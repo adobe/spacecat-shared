@@ -15,7 +15,9 @@
 import { expect } from 'chai';
 
 import AuditConfig from '../../../../src/models/site/audit-config.js';
-import { AUDIT_TYPE_BROKEN_BACKLINKS } from '../../../../src/models/audit.js';
+import {
+  AUDIT_TYPE_BROKEN_BACKLINKS, AUDIT_TYPE_ORGANIC_KEYWORDS, AUDIT_TYPE_ORGANIC_TRAFFIC,
+} from '../../../../src/models/audit.js';
 
 describe('AuditConfig Tests', () => {
   describe('AuditConfig Creation', () => {
@@ -25,6 +27,10 @@ describe('AuditConfig Tests', () => {
       const auditTypeConfigs = auditConfig.getAuditTypeConfigs();
       expect(auditTypeConfigs[AUDIT_TYPE_BROKEN_BACKLINKS]).to.be.an('object');
       expect(auditTypeConfigs[AUDIT_TYPE_BROKEN_BACKLINKS].disabled()).to.be.true;
+      expect(auditTypeConfigs[AUDIT_TYPE_ORGANIC_KEYWORDS]).to.be.an('object');
+      expect(auditTypeConfigs[AUDIT_TYPE_ORGANIC_KEYWORDS].disabled()).to.be.true;
+      expect(auditTypeConfigs[AUDIT_TYPE_ORGANIC_TRAFFIC]).to.be.an('object');
+      expect(auditTypeConfigs[AUDIT_TYPE_ORGANIC_TRAFFIC].disabled()).to.be.true;
     });
 
     it('creates an AuditConfig with provided data', () => {

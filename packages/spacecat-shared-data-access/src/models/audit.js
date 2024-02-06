@@ -16,6 +16,7 @@ import { Base } from './base.js';
 export const AUDIT_TYPE_404 = '404';
 export const AUDIT_TYPE_BROKEN_BACKLINKS = 'broken-backlinks';
 export const AUDIT_TYPE_ORGANIC_KEYWORDS = 'organic-keywords';
+export const AUDIT_TYPE_ORGANIC_TRAFFIC = 'organic-traffic';
 export const AUDIT_TYPE_CWV = 'cwv';
 export const AUDIT_TYPE_LHS_DESKTOP = 'lhs-desktop';
 export const AUDIT_TYPE_LHS_MOBILE = 'lhs-mobile';
@@ -26,6 +27,7 @@ const AUDIT_TYPE_PROPERTIES = {
   [AUDIT_TYPE_404]: [],
   [AUDIT_TYPE_BROKEN_BACKLINKS]: [],
   [AUDIT_TYPE_ORGANIC_KEYWORDS]: [],
+  [AUDIT_TYPE_ORGANIC_TRAFFIC]: [],
   [AUDIT_TYPE_CWV]: [],
   [AUDIT_TYPE_LHS_DESKTOP]: ['performance', 'seo', 'accessibility', 'best-practices'],
   [AUDIT_TYPE_LHS_MOBILE]: ['performance', 'seo', 'accessibility', 'best-practices'],

@@ -121,11 +121,17 @@ export default class RUMAPIClient {
     );
   }
 
-  getExperimentationURL(params = {}) {
+  createExperimentationURL(params = {}) {
     return createUrl(
       APIS.RUM_EXPERIMENTS,
-      { domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params },
+      {
+        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params,
+      },
     );
+  }
+
+  async getExperimentationData(params = {}) {
+    return sendRequest(this.createExperimentationURL(params));
   }
 
   async getRUMDashboard(params = {}) {

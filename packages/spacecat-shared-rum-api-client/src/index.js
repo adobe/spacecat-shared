@@ -121,12 +121,10 @@ export default class RUMAPIClient {
     );
   }
 
-  createExperimentationURL(params = {}) {
+  getExperimentationURL(params = {}) {
     return createUrl(
       APIS.RUM_EXPERIMENTS,
-      {
-        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params,
-      },
+      { domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params },
     );
   }
 

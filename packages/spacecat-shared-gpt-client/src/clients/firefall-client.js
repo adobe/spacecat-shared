@@ -10,7 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
+import { createUrl } from '@adobe/fetch';
 import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+
+import { fetch as httpFetch } from '../utils.js';
 
 function validateFirefallResponse(response) {
   if (!isObject(response) || !Array.isArray(response.insights)) {
@@ -92,16 +95,19 @@ export default class FirefallClient {
         temperature: 0.5,
       },
     });
-    return fetch(this.config.apiEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.config.apiAuth}`,
-        'x-api-key': this.config.apiKey,
-        'x-gw-ims-org-id': this.config.imsOrg,
+    return httpFetch(
+      createUrl(this.config.apiEndpoint),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.apiAuth}`,
+          'x-api-key': this.config.apiKey,
+          'x-gw-ims-org-id': this.config.imsOrg,
+        },
+        body,
       },
-      body,
-    });
+    );
   }
 
   async fetch(prompt) {
@@ -111,7 +117,7 @@ export default class FirefallClient {
 
     try {
       const startTime = process.hrtime.bigint();
-      const response = await this.#apiCall();
+      const response = await this.#apiCall(prompt);
       this.#logDuration('Firefall API call', startTime);
 
       if (!response.ok) {

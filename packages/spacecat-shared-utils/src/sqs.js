@@ -25,7 +25,7 @@ export function sqsEventAdapter(fn) {
     try {
       // currently not publishing batch messages
       const records = context.invocation?.event?.Records;
-      log.info(`Received ${records.length} many records. ID of the first message in the batch: ${records[0]?.messageId}`);
+      log.info(`Received ${records?.length} many records. ID of the first message in the batch: ${records[0]?.messageId}`);
       message = JSON.parse(records[0]?.body);
       log.info(`Received message with id: ${context.invocation?.event?.Records.length}`);
     } catch (e) {

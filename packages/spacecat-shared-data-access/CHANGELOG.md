@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-data-access-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.14.1...@adobe/spacecat-shared-data-access-v1.15.0) (2024-02-06)
+
+
+### Features
+
+* add organic traffic audit type (SITES-18661) ([#132](https://github.com/adobe/spacecat-shared/issues/132)) ([ae63081](https://github.com/adobe/spacecat-shared/commit/ae6308174534ae702c8074a47cbda9a59c6b7f6c))
+
+# [@adobe/spacecat-shared-data-access-v1.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.14.0...@adobe/spacecat-shared-data-access-v1.14.1) (2024-02-05)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#129](https://github.com/adobe/spacecat-shared/issues/129)) ([22b6c90](https://github.com/adobe/spacecat-shared/commit/22b6c90aea25783116165fa1dacb08c631c792bc))
+
+# [@adobe/spacecat-shared-data-access-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.13.2...@adobe/spacecat-shared-data-access-v1.14.0) (2024-02-02)
+
+
+### Features
+
+* site candidate data model ([#126](https://github.com/adobe/spacecat-shared/issues/126)) ([c457645](https://github.com/adobe/spacecat-shared/commit/c4576455b514675e7f3ce1efa53ecc1372fe491a))
+
+# [@adobe/spacecat-shared-data-access-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.13.1...@adobe/spacecat-shared-data-access-v1.13.2) (2024-01-30)
+
+
+### Bug Fixes
+
+* config validation ([edc1276](https://github.com/adobe/spacecat-shared/commit/edc127681e26c3283e5ecc94cde7c5fec78529dd))
+
+# [@adobe/spacecat-shared-data-access-v1.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.13.0...@adobe/spacecat-shared-data-access-v1.13.1) (2024-01-30)
+
+
+### Bug Fixes
+
+* allow update config for site ([ad9e677](https://github.com/adobe/spacecat-shared/commit/ad9e677c7c721aa70e37b97373a4b9545f2f21fd))
+
 # [@adobe/spacecat-shared-data-access-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.12.0...@adobe/spacecat-shared-data-access-v1.13.0) (2024-01-30)
 
 

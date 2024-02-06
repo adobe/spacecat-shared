@@ -20,7 +20,7 @@ import { isString } from './functions.js';
  * @returns {string} - The resolved secret name.
  */
 const resolveSecretsName = (opts, ctx, defaultPath) => {
-  const funcVersion = ctx?.func?.version;
+  let funcVersion = ctx?.func?.version;
 
   if (!isString(funcVersion)) {
     throw new Error('Invalid context: func.version is required and must be a string');
@@ -28,6 +28,9 @@ const resolveSecretsName = (opts, ctx, defaultPath) => {
   if (!isString(defaultPath)) {
     throw new Error('Invalid defaultPath: must be a string');
   }
+
+  // if funcVersion is something like ci123, then use ci directly
+  funcVersion = /^ci\d+$/i.test(funcVersion) ? 'ci' : funcVersion;
 
   return `${defaultPath}/${funcVersion}`;
 };

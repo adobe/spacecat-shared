@@ -36,3 +36,6 @@ export function toBoolean(value: unknown): boolean;
 export function isValidUrl(urlString: string): boolean;
 
 export function dateAfterDays(days: string): Date;
+
+export function sqsEventAdapter(fn: (message: object, context: object) => Promise<Response>):
+  (request: object, context: object) => Promise<Response>;

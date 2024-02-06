@@ -12,6 +12,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
+import { SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
 import { dbClient, docClient as client } from './db.js';
 import { generateRandomAudit } from './auditUtils.js';
 import { createTable, deleteTable } from './tableOperations.js';
@@ -132,6 +133,7 @@ function generateAuditData(
  * @param {DataAccessConfig} config - The data access config.
  * @param {number} [numberOfOrganizations=3] - The number of organizations to generate.
  * @param {number} [numberOfSites=10] - The number of sites to generate.
+ * @param {number} [numberOfSiteCandidates=10] - The number of sites candidates to generate.
  * @param {number} [numberOfAuditsPerType=5] - The number of audits per type to generate
  * for each site.
  *
@@ -143,6 +145,7 @@ export default async function generateSampleData(
   config,
   numberOfOrganizations = 3,
   numberOfSites = 10,
+  numberOfSiteCandidates = 10,
   numberOfAuditsPerType = 5,
 ) {
   console.time('Sample data generated in');
@@ -156,6 +159,7 @@ export default async function generateSampleData(
 
   const auditTypes = ['lhs-mobile', 'cwv'];
   const sites = [];
+  const siteCandidates = [];
   const organizations = [];
   const auditItems = [];
   const latestAuditItems = [];
@@ -180,6 +184,10 @@ export default async function generateSampleData(
           type: '404',
           byOrg: true,
           mentions: [{ slack: [`${i}-slackId`] }],
+        },
+        {
+          type: 'organic-keywords',
+          country: 'RO',
         }],
       },
     });
@@ -230,7 +238,16 @@ export default async function generateSampleData(
     }
   }
 
+  // Generate site candidate data
+  for (let i = 0; i < numberOfSiteCandidates; i += 1) {
+    siteCandidates.push({
+      baseURL: `https://example${i}.com`,
+      status: SITE_CANDIDATE_STATUS.PENDING,
+    });
+  }
+
   await batchWrite(config.tableNameSites, sites);
+  await batchWrite(config.tableNameSiteCandidates, siteCandidates);
   await batchWrite(config.tableNameOrganizations, organizations);
   await batchWrite(config.tableNameAudits, auditItems);
   await batchWrite(config.tableNameLatestAudits, latestAuditItems);

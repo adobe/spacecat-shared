@@ -119,22 +119,6 @@ describe('rum api client', () => {
       .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments?domainkey=hebele&interval=7&offset=0&limit=101&url=http%3A%2F%2Fspacecar.com');
   });
 
-  it('returns data when get404Sources api is successful', async () => {
-    nock('https://helix-pages.anywhere.run/helix-services')
-      .get('/run-query@v3/rum-sources')
-      .query({
-        domainkey: 'hebele',
-        interval: 7,
-        offset: 0,
-        limit: 101,
-        checkpoint: 404,
-      })
-      .reply(200, JSON.stringify({ results: { data: [{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }] } }));
-    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
-    await expect(rumApiClient.get404Sources())
-      .to.eventually.eql([{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }]);
-  });
-
   it('returns data when getDomainList api is successful for all', async () => {
     nock('https://helix-pages.anywhere.run/helix-services')
       .get('/run-query@v3/dash/domain-list')

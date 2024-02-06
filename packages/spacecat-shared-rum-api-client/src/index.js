@@ -22,7 +22,7 @@ const APIS = {
   RUM_DASHBOARD: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
   DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/dash/domain-list',
   RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',
-  RUM_EXPERIMENTS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments'
+  RUM_EXPERIMENTS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments',
 };
 
 const DOMAIN_LIST_DEFAULT_PARAMS = {
@@ -40,11 +40,6 @@ export const RUM_DEFAULT_PARAMS = {
 export const NOT_FOUND_DEFAULT_PARAMS = {
   ...RUM_DEFAULT_PARAMS,
   checkpoint: 404,
-};
-
-export const EXPERIMENTATION_DEFAULT_PARAMS = {
-  ...RUM_DEFAULT_PARAMS,
-  checkpoint: experiment,
 };
 
 export async function sendRequest(url, opts) {
@@ -130,7 +125,7 @@ export default class RUMAPIClient {
     return createUrl(
       APIS.RUM_EXPERIMENTS,
       {
-        domainkey: this.domainkey, ...NOT_FOUND_DEFAULT_PARAMS, ...params,
+        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params,
       },
     );
   }

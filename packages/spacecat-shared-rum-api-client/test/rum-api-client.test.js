@@ -113,6 +113,12 @@ describe('rum api client', () => {
       .to.eventually.eql([{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }]);
   });
 
+  it('returns the URL to call the createExperimentationURL', () => {
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
+    expect(rumApiClient.createExperimentationURL({ url: 'http://spacecar.com' }))
+      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments?domainkey=hebele&interval=7&offset=0&limit=101&url=http%3A%2F%2Fspacecar.com');
+  });
+
   it('returns data when getDomainList api is successful for all', async () => {
     nock('https://helix-pages.anywhere.run/helix-services')
       .get('/run-query@v3/dash/domain-list')

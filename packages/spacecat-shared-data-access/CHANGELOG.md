@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.14.1...@adobe/spacecat-shared-data-access-v1.15.0) (2024-02-06)
+
+
+### Features
+
+* add organic traffic audit type (SITES-18661) ([#132](https://github.com/adobe/spacecat-shared/issues/132)) ([ae63081](https://github.com/adobe/spacecat-shared/commit/ae6308174534ae702c8074a47cbda9a59c6b7f6c))
+
 # [@adobe/spacecat-shared-data-access-v1.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.14.0...@adobe/spacecat-shared-data-access-v1.14.1) (2024-02-05)
 
 

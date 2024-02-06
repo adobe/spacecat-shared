@@ -14,11 +14,13 @@ import AuditConfigType from './audit-config-type.js';
 import {
   AUDIT_TYPE_BROKEN_BACKLINKS,
   AUDIT_TYPE_ORGANIC_KEYWORDS,
+  AUDIT_TYPE_ORGANIC_TRAFFIC,
 } from '../audit.js';
 
 const AUDIT_TYPE_DISABLED_DEFAULTS = {
   [AUDIT_TYPE_BROKEN_BACKLINKS]: true,
   [AUDIT_TYPE_ORGANIC_KEYWORDS]: true,
+  [AUDIT_TYPE_ORGANIC_TRAFFIC]: true,
 };
 
 function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
@@ -26,6 +28,7 @@ function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
     return {
       [AUDIT_TYPE_BROKEN_BACKLINKS]: AuditConfigType({ disabled: true }),
       [AUDIT_TYPE_ORGANIC_KEYWORDS]: AuditConfigType({ disabled: true }),
+      [AUDIT_TYPE_ORGANIC_TRAFFIC]: AuditConfigType({ disabled: true }),
     };
   }
   return Object.entries(auditTypeConfigs || {}).reduce((acc, [key, value]) => {

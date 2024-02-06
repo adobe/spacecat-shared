@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.8.0...@adobe/spacecat-shared-utils-v1.9.0) (2024-02-06)
+
+
+### Features
+
+* introduce AWS S3 wrapper ([#135](https://github.com/adobe/spacecat-shared/issues/135)) ([4ad1bb6](https://github.com/adobe/spacecat-shared/commit/4ad1bb64414086af5d399317697debb6aff0fb74))
+
 # [@adobe/spacecat-shared-utils-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.7.4...@adobe/spacecat-shared-utils-v1.8.0) (2024-02-05)
 
 

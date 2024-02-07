@@ -30,3 +30,12 @@ export {
 export { resolveSecretsName } from './helpers.js';
 
 export { sqsEventAdapter } from './sqs.js';
+
+export {
+  composeBaseURL,
+  prependSchema,
+  stripPort,
+  stripTrailingDot,
+  stripTrailingSlash,
+  stripWWW,
+} from './url-helpers.js';

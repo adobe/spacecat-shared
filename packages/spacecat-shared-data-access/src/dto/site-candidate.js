@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { createSiteCandidate } from '../models/site-candidate.js';
+
 /**
  * Data transfer object for Site Candidate.
  */
@@ -28,4 +30,23 @@ export const SiteCandidateDto = {
     updatedAt: siteCandidate.getUpdatedAt(),
     updatedBy: siteCandidate.getUpdatedBy(),
   }),
+
+  /**
+   * Converts a DynamoDB item into Site Candidate object;
+   * @param {object } dynamoItem - DynamoDB item.
+   * @returns {Readonly<SiteCandidate>} SiteCandidate object.
+   */
+  fromDynamoItem: (dynamoItem) => {
+    const siteCandidateData = {
+      baseURL: dynamoItem.baseURL,
+      siteId: dynamoItem.siteId,
+      source: dynamoItem.source,
+      status: dynamoItem.status,
+      createdAt: dynamoItem.createdAt,
+      updatedAt: dynamoItem.updatedAt,
+      updatedBy: dynamoItem.updatedBy,
+    };
+
+    return createSiteCandidate(siteCandidateData);
+  },
 };

@@ -27,6 +27,17 @@ export const exists = async (dynamoClient, config, baseURL) => {
   return isObject(dynamoItem);
 };
 
+export const getSiteCandidateByBaseURL = async (
+  dynamoClient,
+  config,
+  log,
+  baseURL,
+) => {
+  const dynamoItem = await dynamoClient.getItem(config.tableNameSiteCandidates, { baseURL });
+
+  return isObject(dynamoItem) ? SiteCandidateDto.fromDynamoItem(dynamoItem) : null;
+};
+
 /**
  * Upserts a site candidate.
  *

@@ -403,6 +403,7 @@ export interface DataAccess {
   ) => Promise<void>;
 
   // site candidate functions
+  getSiteCandidateByBaseURL: (baseURL: string) => Promise<SiteCandidate>;
   upsertSiteCandidate: (siteCandidateDate: object) => Promise<SiteCandidate>;
   siteCandidateExists: (baseURL: string) => Promise<boolean>;
   updateSiteCandidate: (siteCandidate: SiteCandidate) => Promise<SiteCandidate>;

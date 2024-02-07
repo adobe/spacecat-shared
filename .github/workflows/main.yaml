@@ -17,6 +17,8 @@ jobs:
           node-version: '20.x'
       - name: Install Dependencies
         run: npm ci
+      - name: publish
+        run: npm publish
       - name: Linting
         run: npm run lint
       - name: Unit Tests

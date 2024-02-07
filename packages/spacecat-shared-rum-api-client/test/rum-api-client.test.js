@@ -97,6 +97,12 @@ describe('rum api client', () => {
       .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources?domainkey=hebele&interval=7&offset=0&limit=101&checkpoint=404&url=http%3A%2F%2Fspacecar.com');
   });
 
+  it('returns the URL to call the getRUMDashboard', () => {
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
+    expect(rumApiClient.createRUMURL({ url: 'http://spacecar.com' }))
+      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard?domainkey=hebele&interval=7&offset=0&limit=101&url=http%3A%2F%2Fspacecar.com');
+  });
+
   it('returns data when get404Sources api is successful', async () => {
     nock('https://helix-pages.anywhere.run/helix-services')
       .get('/run-query@v3/rum-sources')

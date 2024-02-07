@@ -67,6 +67,22 @@ export default class RUMAPIClient {
   getRUMDashboard(params?: RUMAPIOptions): Promise<Array<object>>;
 
   /**
+   * Asynchronous method to return the Experimentation API call response data.
+   * @param {RUMAPIOptions} params - An object representing the parameters to be included
+   *  for the Experimentation data API call.
+   * @returns A Promise resolving to the Experimentation response data.
+   */
+  getExperimentationData(params?: RUMAPIOptions): Promise<Array<object>>;
+
+  /**
+   * Method to return the url composed of params that the Experimentation API is called with.
+   * @param {RUMAPIOptions} params - An object representing the parameters to be included
+   *  for the Experimentation API call.
+   * @returns A string returning the Experimentation url including query parameters.
+   */
+  createExperimentationURL(params?: RUMAPIOptions): string;
+
+  /**
    * Asynchronous method to return the 404 sources API call response data.
    * @param {RUMAPIOptions} params - An object representing the parameters to be included
    *  for the 404 sources API call.

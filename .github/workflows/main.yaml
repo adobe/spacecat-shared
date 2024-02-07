@@ -18,8 +18,8 @@ jobs:
       - name: Install Dependencies
         run: npm ci
       - name: publish
+        working-directory: packages/spacecat-shared-aa-api-client
         run: |
-          cd packages/spacecat-shared-aa-api-client
           npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
           npm publish
         env:

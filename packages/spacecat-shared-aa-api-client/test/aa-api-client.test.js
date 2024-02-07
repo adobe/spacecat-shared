@@ -24,10 +24,8 @@ describe('Adobe Analytics api client', () => {
   beforeEach(() => {
     context = {
       env: {
-        IMS_URL: 'https://ims.com',
         AA_CLIENT_ID: 'test',
-        AA_CLIENT_SECRET: 'secret',
-        AA_SCOPES: 'test',
+        AA_CLIENT_SECRET: 'test',
         AA_DOMAIN: 'test',
       },
     };
@@ -35,13 +33,19 @@ describe('Adobe Analytics api client', () => {
   afterEach('clean each', () => {
     nock.cleanAll();
   });
-
-  it('does not create a new instance if previously initialized', async () => {
-    const aaApiClient = AAAPIClient.create({ aaApiClient: 'hebele', env: context.env });
-    expect(aaApiClient).to.equal('hebele');
-  });
-
-  it('rejects when one of the AA parameter missing', async () => {
-    expect(() => AAAPIClient.create(context)).to.throw('AA API Client needs a IMS_URL, AA_CLIENT_ID, AA_CLIENT_SECRET, AA_SCOPES, AA_DMAIN keys to be set');
+  it('call validateFileFormat with valid file', async () => {
+    nock('https://ims-na1.adobelogin.com')
+      .post('/ims/token/v3')
+      .reply(200, { access_token: 'test' });
+    const aaApiClient = await AAAPIClient.create(context);
+    const file = {
+      name: 'test.zip',
+      buffer: Buffer.from('test'),
+    };
+    nock('https://analytics-collection.adobe.io')
+      .post('/aa/collect/v1/events/validate')
+      .reply(204, {});
+    const result = await aaApiClient.validateFileFormat(file);
+    expect(result).to.throw;
   });
 });

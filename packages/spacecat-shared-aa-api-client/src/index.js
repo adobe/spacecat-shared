@@ -12,6 +12,9 @@
 import { fetch } from './utils.js';
 import { stringToUint8Array } from './helpers.js';
 
+const AA_SCOPE = 'openid,AdobeID,additional_info.projectedProductContext';
+const IMS_URL = 'https://ims-na1.adobelogin.com/ims/token/v3';
+const AA_URL = 'https://analytics-collection.adobe.io/aa/collect/v1';
 function createBoundary() {
   return `----WebKitFormBoundary${Math.random().toString(36).substring(2)}`;
 }
@@ -41,7 +44,7 @@ export default class AAAPIClient {
   #domain;
 
   constructor(config) {
-    ['IMS_URL', 'AA_CLIENT_ID', 'AA_CLIENT_SECRET', 'AA_SCOPES', 'AA_DOMAIN'].forEach((key) => {
+    ['AA_CLIENT_ID', 'AA_CLIENT_SECRET', 'AA_DOMAIN'].forEach((key) => {
       if (!config[key]) {
         throw new Error(`Missing required config: ${key}`);
       }
@@ -51,12 +54,12 @@ export default class AAAPIClient {
     this.#domain = config.AA_DOMAIN;
   }
 
-  static create(context) {
+  static async create(context) {
     if (context.aaApiClient) {
       return context.aaApiClient;
     }
     context.aaApiClient = new AAAPIClient({ ...context.env });
-    context.aaApiClient.#getIMSAccessToken();
+    await context.aaApiClient.#getIMSAccessToken();
     return context.aaApiClient;
   }
 
@@ -79,8 +82,9 @@ export default class AAAPIClient {
 
   async #getIMSAccessToken() {
     const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
-    const body = `client_id=${this.#config.AA_CLIENT_ID}&client_secret=${this.#config.AA_CLIENT_SECRET}&grant_type=client_credentials&scope=${this.#config.AA_SCOPES}`;
-    this.#token = await this.#post(this.#config.IMS_URL, headers, body);
+    const body = `client_id=${this.#config.AA_CLIENT_ID}&client_secret=${this.#config.AA_CLIENT_SECRET}&grant_type=client_credentials&scope=${AA_SCOPE}`;
+    const token = await this.#post(IMS_URL, headers, body);
+    this.#token = token.access_token;
     return this.#token;
   }
 
@@ -95,7 +99,7 @@ export default class AAAPIClient {
     };
     const multipartBody = createMultipartBody(archiveBuffer, zipPath, boundary);
 
-    return this.#post(`${this.#config.AA_URL}/events/validate`, headers, multipartBody);
+    return this.#post(`${AA_URL}/events/validate`, headers, multipartBody);
   }
 
   async ingestEvents(archiveBuffer, zipPath) {
@@ -108,6 +112,6 @@ export default class AAAPIClient {
       'Content-Type': `multipart/form-data; boundary=${boundary}`,
     };
     const multipartBody = createMultipartBody(archiveBuffer, zipPath, boundary);
-    return this.#post(`${this.#config.AA_URL}/events`, headers, multipartBody);
+    return this.#post(`${AA_URL}/events`, headers, multipartBody);
   }
 }

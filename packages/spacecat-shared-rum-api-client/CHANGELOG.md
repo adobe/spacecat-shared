@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.5.0...@adobe/spacecat-shared-rum-api-client-v1.6.0) (2024-02-07)
+
+
+### Features
+
+* experimentation RUM API method ([#133](https://github.com/adobe/spacecat-shared/issues/133)) ([f95eded](https://github.com/adobe/spacecat-shared/commit/f95ededcc5ba373717a90a577f20e75e1fad80d4))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.4.4...@adobe/spacecat-shared-rum-api-client-v1.5.0) (2024-02-06)
 
 

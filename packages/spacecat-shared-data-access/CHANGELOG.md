@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.1...@adobe/spacecat-shared-data-access-v1.15.2) (2024-02-07)
+
+
+### Bug Fixes
+
+* increase it test timeout ([70d92a2](https://github.com/adobe/spacecat-shared/commit/70d92a25b1571b5de2c22be4c71e3142dff360ad))
+
 # [@adobe/spacecat-shared-data-access-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.0...@adobe/spacecat-shared-data-access-v1.15.1) (2024-02-07)
 
 

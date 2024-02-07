@@ -102,7 +102,7 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
 
   before(async function () {
-    this.timeout(20000);
+    this.timeout(30000);
 
     process.env.AWS_REGION = 'local';
     process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
@@ -115,7 +115,7 @@ describe('DynamoDB Integration Test', async () => {
       sharedDb: true,
     });
 
-    await sleep(5000); // give db time to start up
+    await sleep(10000); // give db time to start up
 
     await generateSampleData(
       TEST_DA_CONFIG,

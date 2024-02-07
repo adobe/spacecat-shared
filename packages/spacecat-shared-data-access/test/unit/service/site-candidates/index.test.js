@@ -79,6 +79,24 @@ describe('Site Candidate Access Pattern Tests', () => {
       exportedFunctions = siteCandidateFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
+    it('returns the site candidate by base url', async () => {
+      const siteCandidateData = { baseURL: 'https://existingsite.com', status: SITE_CANDIDATE_STATUS.PENDING };
+      mockDynamoClient.getItem.returns(Promise.resolve(siteCandidateData));
+
+      const result = await exportedFunctions.getSiteCandidateByBaseURL('test-url');
+
+      expect(result.getBaseURL()).to.equal(siteCandidateData.baseURL);
+      expect(result.getStatus()).to.equal(siteCandidateData.status);
+    });
+
+    it('returns null if the site candidate does not exist', async () => {
+      mockDynamoClient.getItem.returns(Promise.resolve(undefined));
+
+      const result = await exportedFunctions.getSiteCandidateByBaseURL('test-url');
+
+      expect(result).to.equal(null);
+    });
+
     it('siteCandidateExists returns false when no site candidate exists', async () => {
       const result = await exportedFunctions.siteCandidateExists('test-url');
 

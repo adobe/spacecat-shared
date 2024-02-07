@@ -656,4 +656,13 @@ describe('DynamoDB Integration Test', async () => {
     expect(updatedSiteCandidate.getSource()).to.equal(siteCandidateData.source);
     expect(updatedSiteCandidate.getStatus()).to.equal(siteCandidateData.status);
   });
+
+  it('verify the get site candidate by base url flow', async () => {
+    const siteCandidate = await dataAccess.getSiteCandidateByBaseURL('https://example2.com');
+
+    expect(siteCandidate.getBaseURL()).to.equal('https://example2.com');
+    expect(siteCandidate.getStatus()).to.equal(SITE_CANDIDATE_STATUS.PENDING);
+    expect(siteCandidate.getSource()).to.be.undefined;
+    expect(siteCandidate.getSiteId()).to.be.undefined;
+  });
 });

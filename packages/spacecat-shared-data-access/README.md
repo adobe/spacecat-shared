@@ -73,6 +73,7 @@ The module provides two main DAOs:
 - `removeSite`
 
 ### Site Candidate Functions
+- `getSiteCandidateByBaseURL`
 - `upsertSiteCandidate`
 - `siteCandidateExists`
 - `updateSiteCandidate`

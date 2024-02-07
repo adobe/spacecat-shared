@@ -33,6 +33,12 @@ describe('Index Exports', () => {
     'resolveSecretsName',
     'dateAfterDays',
     'sqsEventAdapter',
+    'composeBaseURL',
+    'prependSchema',
+    'stripPort',
+    'stripTrailingDot',
+    'stripTrailingSlash',
+    'stripWWW',
   ];
 
   it('exports all expected functions', () => {

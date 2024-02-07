@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.9.0...@adobe/spacecat-shared-utils-v1.10.0) (2024-02-07)
+
+
+### Features
+
+* move sqs wrapper to scpacecat-shared ([#136](https://github.com/adobe/spacecat-shared/issues/136)) ([b9f6d75](https://github.com/adobe/spacecat-shared/commit/b9f6d75d755cdd3d093f1bc016e643de6ef0abcd))
+
 # [@adobe/spacecat-shared-utils-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.8.0...@adobe/spacecat-shared-utils-v1.9.0) (2024-02-06)
 
 

@@ -13,10 +13,9 @@
 /* eslint-env mocha */
 
 import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import sinon from 'sinon';
-import chaiAsPromised from 'chai-as-promised';
-
 import FirefallClient from '../../src/clients/firefall-client.js';
 
 chai.use(chaiAsPromised);
@@ -24,39 +23,37 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 describe('FirefallClient', () => {
+  let mockLog;
   let sandbox;
   let mockContext;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
+    mockLog = sinon.mock(console);
     mockContext = {
-      log: {
-        debug: sandbox.spy(),
-        error: sandbox.spy(),
-      },
+      log: mockLog.object,
       env: {
         FIREFALL_API_ENDPOINT: 'https://api.firefall.example.com',
         FIREFALL_IMS_ORG: 'exampleOrg',
         FIREFALL_API_KEY: 'apiKeyExample',
         FIREFALL_API_AUTH: 'apiAuthExample',
+        FIREFALL_API_POLL_INTERVAL: 100,
       },
     };
   });
 
   afterEach(() => {
+    nock.cleanAll();
     sandbox.restore();
   });
 
-  describe('createFrom', () => {
-    it('creates a new FirefallClient with the correct configuration', () => {
-      const client = FirefallClient.createFrom(mockContext);
-      expect(client).to.be.an.instanceof(FirefallClient);
-      expect(client.config).to.deep.equal({
-        apiEndpoint: 'https://api.firefall.example.com',
-        imsOrg: 'exampleOrg',
-        apiKey: 'apiKeyExample',
-        apiAuth: 'apiAuthExample',
-      });
+  describe('constructor and createFrom', () => {
+    it('throws errors for missing configuration using createFrom', () => {
+      const incompleteContext = {
+        env: {},
+        log: console,
+      };
+      expect(() => FirefallClient.createFrom(incompleteContext)).to.throw('Missing Firefall API endpoint');
     });
 
     it('throws an error if the API endpoint is invalid', () => {
@@ -80,94 +77,104 @@ describe('FirefallClient', () => {
     });
   });
 
-  describe('fetch', () => {
-    const apiEndpoint = 'https://api.firefall.example.com';
-    const prompt = 'What is Firefall?';
-    const responseBody = {
-      generations: [[{ text: '{"insights":[{"insight":"test","recommendation":"use chai","code":"success"}]}' }]],
-    };
-    const mockLog = {
-      debug: sinon.spy(),
-      error: sinon.spy(),
-    };
-
+  describe('fetch', function () {
+    this.timeout(3000);
     let client;
-    let mockApi;
 
     beforeEach(() => {
-      mockApi = nock(apiEndpoint);
-      client = new FirefallClient({
-        apiEndpoint,
-        imsOrg: 'exampleOrg',
-        apiKey: 'apiKeyExample',
-        apiAuth: 'apiAuthExample',
-      }, mockLog);
+      client = FirefallClient.createFrom(mockContext);
     });
 
-    afterEach(() => {
-      nock.cleanAll();
+    it('should throw an error for invalid prompt', async () => {
+      await expect(client.fetch('')).to.be.rejectedWith('Invalid prompt received');
     });
 
-    it('successfully fetches data from the Firefall API', async () => {
-      mockApi.post('/').reply(200, responseBody);
+    it('should successfully fetch data', async () => {
+      const mockJobId = '12345';
+      const mockResponse = {
+        generations: [[{ text: 'Test response' }]],
+      };
 
-      const result = await client.fetch(prompt);
-      expect(result).to.deep.equal(JSON.parse(responseBody.generations[0][0].text));
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post('/v2/capability_execution/job')
+        .reply(200, { job_id: mockJobId });
+
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .get(`/v2/capability_execution/job/${mockJobId}`)
+        .reply(200, { status: 'SUCCEEDED', output: { capability_response: mockResponse } });
+
+      const result = await client.fetch('Test prompt');
+      expect(result).to.equal('Test response');
     });
 
-    it('handles API response with status code other than 200', async () => {
-      mockApi.post('/').reply(404);
+    it('should log and throw an error if the job submission fails', async () => {
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post('/v2/capability_execution/job')
+        .reply(400);
 
-      await expect(client.fetch(prompt)).to.be.rejectedWith('Firefall API returned status code 404');
+      mockLog.expects('error').once();
+      await expect(client.fetch('Test prompt')).to.be.rejected;
+      mockLog.verify();
     });
 
-    it('throws an error if the prompt is invalid', () => {
-      expect(client.fetch('')).to.be.rejectedWith('Invalid prompt received');
+    it('logs and throws an error if the job status polling fails', async () => {
+      const mockJobId = '12345';
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post('/v2/capability_execution/job')
+        .reply(200, { job_id: mockJobId });
+
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .get(`/v2/capability_execution/job/${mockJobId}`)
+        .reply(400);
+
+      mockLog.expects('error').once();
+      await expect(client.fetch('Test prompt')).to.be.rejected;
+      mockLog.verify();
     });
 
-    it('logs duration of the API call', async () => {
-      nock(apiEndpoint)
-        .post('/')
-        .reply(200, responseBody);
+    it('throws an error if the job status is not SUCCEEDED', async () => {
+      const mockJobId = 'job-failure';
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post('/v2/capability_execution/job')
+        .reply(200, { job_id: mockJobId });
 
-      await client.fetch(prompt);
-      expect(mockLog.debug.called).to.be.true;
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .get(`/v2/capability_execution/job/${mockJobId}`)
+        .reply(200, { status: 'FAILED' });
+
+      mockLog.expects('error').once();
+      await expect(client.fetch('Test prompt')).to.be.rejectedWith('Job did not succeed, status: FAILED');
+      mockLog.verify();
     });
 
-    it('throws an error when response is not valid JSON', async () => {
-      const invalidResponseBody = { generations: [[{ text: 'someValue.' }]] };
-      nock(apiEndpoint)
-        .post('/')
-        .reply(200, invalidResponseBody);
+    it('throws an error if the job completed but no output was found', async () => {
+      const mockJobId = 'no-output';
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post('/v2/capability_execution/job')
+        .reply(200, { job_id: mockJobId });
 
-      await expect(client.fetch(prompt)).to.be.rejectedWith('Returned Data from Firefall is not a JSON object.');
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .get(`/v2/capability_execution/job/${mockJobId}`)
+        .reply(200, { status: 'SUCCEEDED' }); // Reply without output
+
+      await expect(client.fetch('Test prompt')).to.be.rejectedWith('Job completed but no output was found');
     });
 
-    it('throws an error when response is not an object', async () => {
-      const invalidResponseBody = { generations: [[{ text: '[]' }]] };
-      nock(apiEndpoint)
-        .post('/')
-        .reply(200, invalidResponseBody);
+    it('logs and throws an error for invalid response format', async () => {
+      const mockJobId = 'invalid-format';
+      const invalidResponse = {
+        generations: [{}], // Invalid response format
+      };
 
-      await expect(client.fetch(prompt)).to.be.rejectedWith('Invalid response format.');
-    });
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post('/v2/capability_execution/job')
+        .reply(200, { job_id: mockJobId });
 
-    it('throws an error when response is not an array', async () => {
-      const invalidResponseBody = { generations: [[{ text: '{ "insights": "" }' }]] };
-      nock(apiEndpoint)
-        .post('/')
-        .reply(200, invalidResponseBody);
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .get(`/v2/capability_execution/job/${mockJobId}`)
+        .reply(200, { status: 'SUCCEEDED', output: { capability_response: invalidResponse } });
 
-      await expect(client.fetch(prompt)).to.be.rejectedWith('Invalid response format.');
-    });
-
-    it('throws an error when generations object is missing', async () => {
-      const invalidResponseBody = { generations: [] }; // Missing inner array
-      nock(apiEndpoint)
-        .post('/')
-        .reply(200, invalidResponseBody);
-
-      await expect(client.fetch(prompt)).to.be.rejectedWith('Generations object is missing.');
+      await expect(client.fetch('Test prompt')).to.be.rejectedWith('Invalid response format.');
     });
   });
 });

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.2...@adobe/spacecat-shared-data-access-v1.15.3) (2024-02-08)
+
+
+### Bug Fixes
+
+* site-candidate should not have id ([#144](https://github.com/adobe/spacecat-shared/issues/144)) ([9d0ebe8](https://github.com/adobe/spacecat-shared/commit/9d0ebe85c993ea428a845ce417b1e9c727b13b52))
+
 # [@adobe/spacecat-shared-data-access-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.1...@adobe/spacecat-shared-data-access-v1.15.2) (2024-02-07)
 
 

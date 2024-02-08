@@ -17,6 +17,13 @@ jobs:
           node-version: '20.x'
       - name: Install Dependencies
         run: npm ci
+      - name: publish
+        run: |
+         npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+         npm publish -w packages/spacecat-shared-data-access
+        env:
+         GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
+         NPM_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}
       - name: Linting
         run: npm run lint
       - name: Unit Tests

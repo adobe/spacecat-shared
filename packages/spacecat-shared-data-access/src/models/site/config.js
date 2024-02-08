@@ -43,18 +43,9 @@ function validateConfiguration(config) {
 
 export const Config = (data = {}) => {
   const validConfig = validateConfiguration(data);
-  const state = {
-    slack: {
-      ...(validConfig?.slack?.channel ? { channel: validConfig?.slack?.channel } : {}),
-      ...(validConfig?.slack?.workspace ? { workspace: validConfig?.slack?.workspace } : {}),
-    },
-    alerts: validConfig.alerts || [],
-  };
+  const state = { ...validConfig };
 
-  const self = {
-    alerts: state.alerts,
-    slack: state.slack,
-  };
+  const self = { ...state };
 
   return Object.freeze(self);
 };

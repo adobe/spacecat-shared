@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.11.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.11.0...@adobe/spacecat-shared-utils-v1.11.1) (2024-02-08)
+
+
+### Bug Fixes
+
+* sqsWrapper not properly exported ([#146](https://github.com/adobe/spacecat-shared/issues/146)) ([5c2f401](https://github.com/adobe/spacecat-shared/commit/5c2f401db37c4a51288b3783b82a3aab9122d6e4))
+
 # [@adobe/spacecat-shared-utils-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.10.0...@adobe/spacecat-shared-utils-v1.11.0) (2024-02-07)
 
 

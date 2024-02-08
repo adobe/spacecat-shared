@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-aa-api-client",
-  "version": "1.0.0-test",
+  "version": "1.0.0-test.2",
   "description": "Shared modules of the Spacecat Services - Adobe Ananlytics API client",
   "type": "module",
   "main": "src/index.js",

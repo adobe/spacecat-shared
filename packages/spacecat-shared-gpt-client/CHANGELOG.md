@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.0...@adobe/spacecat-shared-gpt-client-v1.1.1) (2024-02-08)
+
+
+### Bug Fixes
+
+* waiting job status ([#145](https://github.com/adobe/spacecat-shared/issues/145)) ([9fc9b6c](https://github.com/adobe/spacecat-shared/commit/9fc9b6c356f7438c52044cdc114279777f4af7ae))
+
 # [@adobe/spacecat-shared-gpt-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.0.0...@adobe/spacecat-shared-gpt-client-v1.1.0) (2024-02-08)
 
 

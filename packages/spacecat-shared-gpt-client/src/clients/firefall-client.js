@@ -136,7 +136,7 @@ export default class FirefallClient {
       }
 
       jobStatusResponse = await response.json();
-    } while (jobStatusResponse.status === 'PROCESSING');
+    } while (jobStatusResponse.status === 'PROCESSING' || jobStatusResponse.status === 'WAITING');
 
     if (jobStatusResponse.status !== 'SUCCEEDED') {
       throw new Error(`Job did not succeed, status: ${jobStatusResponse.status}`);

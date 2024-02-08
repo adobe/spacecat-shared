@@ -9,33 +9,13 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { fetch } from './utils.js';
-import { stringToUint8Array } from './helpers.js';
+
+import fetch from 'node-fetch';
 
 const AA_SCOPE = 'openid,AdobeID,additional_info.projectedProductContext';
 const IMS_URL = 'https://ims-na1.adobelogin.com/ims/token/v3';
 const AA_URL = 'https://analytics-collection.adobe.io/aa/collect/v1';
-function createBoundary() {
-  return `----WebKitFormBoundary${Math.random().toString(36).substring(2)}`;
-}
 
-function createMultipartBody(archiveBuffer, zipPath, boundary) {
-  const uint8ArrayGzipData = new Uint8Array(archiveBuffer);
-  const contentDisposition = `Content-Disposition: form-data; name="file"; filename="${zipPath}"`;
-  const preData = `--${boundary}\r\n${contentDisposition}\r\nContent-Type: application/gzip\r\n\r\n`;
-  const postData = `\r\n--${boundary}--`;
-
-  const preDataArray = stringToUint8Array(preData);
-  const postDataArray = stringToUint8Array(postData);
-
-  const body = new Uint8Array(preDataArray.length + uint8ArrayGzipData.length
-      + postDataArray.length);
-  body.set(preDataArray);
-  body.set(uint8ArrayGzipData, preDataArray.length);
-  body.set(postDataArray, preDataArray.length + uint8ArrayGzipData.length);
-
-  return body;
-}
 export default class AAAPIClient {
   #config;
 
@@ -88,30 +68,24 @@ export default class AAAPIClient {
     return this.#token;
   }
 
-  async validateFileFormat(archiveBuffer, zipPath) {
-    const boundary = createBoundary();
+  async validateFileFormat(formData) {
     const headers = {
       accept: 'application/json',
       Authorization: `Bearer ${this.#token}`,
       'x-api-key': this.#config.AA_CLIENT_ID,
       'x-adobe-vgid': `rum2aa_${this.#domain}`,
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
     };
-    const multipartBody = createMultipartBody(archiveBuffer, zipPath, boundary);
 
-    return this.#post(`${AA_URL}/events/validate`, headers, multipartBody);
+    return this.#post(`${AA_URL}/events/validate`, headers, formData);
   }
 
-  async ingestEvents(archiveBuffer, zipPath) {
-    const boundary = createBoundary();
+  async ingestEvents(formData) {
     const headers = {
       accept: 'application/json',
       Authorization: `Bearer ${this.#token}`,
       'x-api-key': this.#config.AA_CLIENT_ID,
       'x-adobe-vgid': `rum2aa_${this.#domain}`,
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
     };
-    const multipartBody = createMultipartBody(archiveBuffer, zipPath, boundary);
-    return this.#post(`${AA_URL}/events`, headers, multipartBody);
+    return this.#post(`${AA_URL}/events`, headers, formData);
   }
 }

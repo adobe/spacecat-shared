@@ -34,7 +34,8 @@
     "@adobe/helix-shared-wrap": "2.0.1",
     "@adobe/helix-universal": "4.4.1",
     "@adobe/spacecat-shared-utils": "1.4.0",
-    "aws4": "1.12.0"
+    "aws4": "1.12.0",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "chai": "4.4.1",

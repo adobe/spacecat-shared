@@ -50,6 +50,10 @@ describe('Site Candidate Model Tests', () => {
       siteCandidate = createSiteCandidate(validData);
     });
 
+    it('does not have an id', () => {
+      expect(siteCandidate.getId()).to.be.undefined;
+    });
+
     it('updates site id correctly', () => {
       const newSiteId = 'some-site-id';
       siteCandidate.setSiteId(newSiteId);

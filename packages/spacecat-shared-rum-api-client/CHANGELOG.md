@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.0...@adobe/spacecat-shared-rum-api-client-v1.6.1) (2024-02-07)
+
+
+### Bug Fixes
+
+* Experimentation RUM API call ([#141](https://github.com/adobe/spacecat-shared/issues/141)) ([2f1e657](https://github.com/adobe/spacecat-shared/commit/2f1e657d747c06a5728740e6687b1add77df9d70))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.5.0...@adobe/spacecat-shared-rum-api-client-v1.6.0) (2024-02-07)
+
+
+### Features
+
+* experimentation RUM API method ([#133](https://github.com/adobe/spacecat-shared/issues/133)) ([f95eded](https://github.com/adobe/spacecat-shared/commit/f95ededcc5ba373717a90a577f20e75e1fad80d4))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.4.4...@adobe/spacecat-shared-rum-api-client-v1.5.0) (2024-02-06)
+
+
+### Features
+
+* rum client createRUMURL function ([0c68dcc](https://github.com/adobe/spacecat-shared/commit/0c68dccdf494c89a938cdfe2a841d2965813b0eb))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.4.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.4.3...@adobe/spacecat-shared-rum-api-client-v1.4.4) (2024-02-05)
 
 

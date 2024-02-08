@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.1...@adobe/spacecat-shared-data-access-v1.15.2) (2024-02-07)
+
+
+### Bug Fixes
+
+* increase it test timeout ([70d92a2](https://github.com/adobe/spacecat-shared/commit/70d92a25b1571b5de2c22be4c71e3142dff360ad))
+
+# [@adobe/spacecat-shared-data-access-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.0...@adobe/spacecat-shared-data-access-v1.15.1) (2024-02-07)
+
+
+### Bug Fixes
+
+* retrieve site candidate by base url ([#140](https://github.com/adobe/spacecat-shared/issues/140)) ([b37cb0b](https://github.com/adobe/spacecat-shared/commit/b37cb0b1948f87e0e791cfec1e2b1fef9c0abb07))
+
 # [@adobe/spacecat-shared-data-access-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.14.1...@adobe/spacecat-shared-data-access-v1.15.0) (2024-02-06)
 
 

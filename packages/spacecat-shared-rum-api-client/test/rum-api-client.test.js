@@ -97,6 +97,12 @@ describe('rum api client', () => {
       .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources?domainkey=hebele&interval=7&offset=0&limit=101&checkpoint=404&url=http%3A%2F%2Fspacecar.com');
   });
 
+  it('returns the URL to call the getRUMDashboard', () => {
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
+    expect(rumApiClient.createRUMURL({ url: 'http://spacecar.com' }))
+      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard?domainkey=hebele&interval=7&offset=0&limit=101&url=http%3A%2F%2Fspacecar.com');
+  });
+
   it('returns data when get404Sources api is successful', async () => {
     nock('https://helix-pages.anywhere.run/helix-services')
       .get('/run-query@v3/rum-sources')
@@ -111,6 +117,76 @@ describe('rum api client', () => {
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.get404Sources())
       .to.eventually.eql([{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }]);
+  });
+
+  it('returns the URL to get the Experimentation data', () => {
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
+    expect(rumApiClient.createExperimentationURL({ url: 'http://spacecat.com' }))
+      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments?domainkey=hebele&interval=7&offset=0&limit=101&url=http%3A%2F%2Fspacecat.com');
+  });
+
+  it('returns data when getExperimentationData api is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/rum-experiments')
+      .query({
+        domainkey: 'hebele',
+        interval: 7,
+        offset: 0,
+        limit: 101,
+        url: 'http://spacecat.com',
+      })
+      .reply(200, JSON.stringify({
+        results: {
+          data: [{
+            experiment: '2-21-free-trial-cp-delay-load',
+            variant: 'challenger-2',
+            tdiff: 6,
+            variant_experimentation_events: 24,
+            control_experimentation_events: 21,
+            variant_conversion_events: 14,
+            control_conversion_events: 12,
+            variant_experimentations: '2400',
+            control_experimentations: '2100',
+            variant_conversions: '1400',
+            control_conversions: '1200',
+            variant_conversion_rate: '0.583333333',
+            control_conversion_rate: '0.571428571',
+            topurl: 'http://spacecat.com',
+            time95: '2024-02-05 16:00:55+00',
+            time5: '2024-01-30 00:00:45+00',
+            pooled_sample_proportion: 0.5777777777777777,
+            pooled_standard_error: 0.75992086289346,
+            test: 0.015665791770305738,
+            p_value: 0.4937504754112301,
+            remaining_runtime: 57,
+          }],
+        },
+      }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
+    await expect(rumApiClient.getExperimentationData({ url: 'http://spacecat.com' }))
+      .to.eventually.eql([{
+        experiment: '2-21-free-trial-cp-delay-load',
+        variant: 'challenger-2',
+        tdiff: 6,
+        variant_experimentation_events: 24,
+        control_experimentation_events: 21,
+        variant_conversion_events: 14,
+        control_conversion_events: 12,
+        variant_experimentations: '2400',
+        control_experimentations: '2100',
+        variant_conversions: '1400',
+        control_conversions: '1200',
+        variant_conversion_rate: '0.583333333',
+        control_conversion_rate: '0.571428571',
+        topurl: 'http://spacecat.com',
+        time95: '2024-02-05 16:00:55+00',
+        time5: '2024-01-30 00:00:45+00',
+        pooled_sample_proportion: 0.5777777777777777,
+        pooled_standard_error: 0.75992086289346,
+        test: 0.015665791770305738,
+        p_value: 0.4937504754112301,
+        remaining_runtime: 57,
+      }]);
   });
 
   it('returns data when getDomainList api is successful for all', async () => {

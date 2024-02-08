@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.9.0",
+  "version": "1.11.0",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "main": "src/index.js",
@@ -11,6 +11,7 @@
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
+    "require": "test/setup-env.js",
     "reporter": "mocha-multi-reporters",
     "reporter-options": "configFile=.mocha-multi.json",
     "spec": "test/*.test.js"
@@ -29,11 +30,17 @@
     "access": "public"
   },
   "devDependencies": {
+    "@adobe/helix-shared-wrap": "2.0.1",
     "chai": "4.4.1",
-    "sinon": "17.0.1"
+    "chai-as-promised": "7.1.1",
+    "husky": "9.0.6",
+    "nock": "13.5.1",
+    "sinon": "17.0.1",
+    "sinon-chai": "3.7.0"
   },
   "dependencies": {
     "@adobe/fetch": "4.1.1",
-    "@aws-sdk/client-s3": "3.507.0"
+    "@aws-sdk/client-s3": "3.507.0",
+    "@aws-sdk/client-sqs": "3.507.0"
   }
 }

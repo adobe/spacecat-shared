@@ -22,6 +22,7 @@ const APIS = {
   RUM_DASHBOARD: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
   DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/dash/domain-list',
   RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',
+  RUM_EXPERIMENTS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments',
 };
 
 const DOMAIN_LIST_DEFAULT_PARAMS = {
@@ -120,17 +121,34 @@ export default class RUMAPIClient {
     );
   }
 
-  async getRUMDashboard(params = {}) {
-    return sendRequest(createUrl(
+  createRUMURL(params = {}) {
+    return createUrl(
       APIS.RUM_DASHBOARD,
-      { domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params },
-    ));
+      {
+        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params,
+      },
+    );
+  }
+
+  async getRUMDashboard(params = {}) {
+    return sendRequest(this.createRUMURL(params));
+  }
+
+  createExperimentationURL(params = {}) {
+    return createUrl(
+      APIS.RUM_EXPERIMENTS,
+      {
+        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params,
+      },
+    );
+  }
+
+  async getExperimentationData(params = {}) {
+    return sendRequest(this.createExperimentationURL(params));
   }
 
   async get404Sources(params = {}) {
-    return sendRequest(this.create404URL(
-      params,
-    ));
+    return sendRequest(this.create404URL(params));
   }
 
   async getDomainList(params = {}) {

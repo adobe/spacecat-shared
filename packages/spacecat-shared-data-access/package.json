@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "1.15.0-test",
+  "version": "1.15.2-test",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "main": "src/index.js",
@@ -40,7 +40,7 @@
   "devDependencies": {
     "chai": "4.4.1",
     "chai-as-promised": "7.1.1",
-    "dynamo-db-local": "7.3.0",
+    "dynamo-db-local": "8.0.0",
     "sinon": "17.0.1",
     "sinon-chai": "3.7.0"
   }

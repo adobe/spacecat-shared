@@ -33,6 +33,7 @@ export default class FirefallClient {
       FIREFALL_API_KEY: apiKey,
       FIREFALL_API_AUTH: apiAuth,
       FIREFALL_API_POLL_INTERVAL: pollInterval = 2000,
+      FIREFALL_API_CAPABILITY_NAME: capabilityName = 'gpt4_32k_completions_capability',
     } = context.env;
 
     if (!isValidUrl(apiEndpoint)) {
@@ -52,10 +53,11 @@ export default class FirefallClient {
     }
 
     return new FirefallClient({
-      apiEndpoint,
-      imsOrg,
-      apiKey,
       apiAuth,
+      apiEndpoint,
+      apiKey,
+      capabilityName,
+      imsOrg,
       pollInterval,
     }, log);
   }
@@ -64,10 +66,11 @@ export default class FirefallClient {
    * Creates a new Firefall client
    *
    * @param {Object} config - The configuration object.
-   * @param {string} config.apiEndpoint - The API endpoint for Firefall.
-   * @param {string} config.imsOrg - The IMS Org for Firefall.
-   * @param {string} config.apiKey - The API Key for Firefall.
    * @param {string} config.apiAuth - The Bearer authorization token for Firefall.
+   * @param {string} config.apiEndpoint - The API endpoint for Firefall.
+   * @param {string} config.apiKey - The API Key for Firefall.
+   * @param {string} config.capabilityName - The capability name for Firefall.
+   * @param {string} config.imsOrg - The IMS Org for Firefall.
    * @param {number} config.pollInterval - The interval to poll for job status.
    * @param {Object} log - The Logger.
    * @returns {FirefallClient} - the Firefall client.
@@ -86,7 +89,7 @@ export default class FirefallClient {
   async #submitJob(prompt) {
     const body = JSON.stringify({
       input: prompt,
-      capability_name: 'gpt4_32k_completions_capability',
+      capability_name: this.config.capabilityName,
     });
 
     const url = createUrl(`${this.config.apiEndpoint}/v2/capability_execution/job`);

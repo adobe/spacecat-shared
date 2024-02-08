@@ -38,6 +38,7 @@ describe('FirefallClient', () => {
         FIREFALL_API_KEY: 'apiKeyExample',
         FIREFALL_API_AUTH: 'apiAuthExample',
         FIREFALL_API_POLL_INTERVAL: 100,
+        FIREFALL_API_CAPABILITY_NAME: 'gpt4_32k_completions_capability',
       },
     };
   });

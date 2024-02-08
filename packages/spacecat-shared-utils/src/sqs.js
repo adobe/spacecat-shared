@@ -45,7 +45,7 @@ class SQS {
   }
 }
 
-export default function sqsWrapper(fn) {
+export function sqsWrapper(fn) {
   return async (request, context) => {
     if (!context.sqs) {
       const { log } = context;

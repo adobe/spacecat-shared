@@ -19,7 +19,7 @@ import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import crypto from 'crypto';
-import sqsWrapper, { sqsEventAdapter } from '../src/sqs.js';
+import { sqsEventAdapter, sqsWrapper } from '../src/sqs.js';
 
 chai.use(sinonChai);
 chai.use(chaiAsPromised);

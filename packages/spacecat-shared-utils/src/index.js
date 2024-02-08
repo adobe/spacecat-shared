@@ -29,6 +29,7 @@ export {
 
 export { resolveSecretsName } from './helpers.js';
 
+export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';
 
 export {

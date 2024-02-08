@@ -32,6 +32,7 @@ describe('Index Exports', () => {
     'isValidUrl',
     'resolveSecretsName',
     'dateAfterDays',
+    'sqsWrapper',
     'sqsEventAdapter',
     'composeBaseURL',
     'prependSchema',

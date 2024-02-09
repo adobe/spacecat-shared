@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.15.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.3...@adobe/spacecat-shared-data-access-v1.15.4) (2024-02-09)
+
+
+### Bug Fixes
+
+* add experimentation type audit ([#147](https://github.com/adobe/spacecat-shared/issues/147)) ([221fa29](https://github.com/adobe/spacecat-shared/commit/221fa296799a9004c991a9f3656e735d4babd612))
+
 # [@adobe/spacecat-shared-data-access-v1.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.2...@adobe/spacecat-shared-data-access-v1.15.3) (2024-02-08)
 
 

@@ -15,6 +15,7 @@ import { Base } from './base.js';
 
 export const AUDIT_TYPE_404 = '404';
 export const AUDIT_TYPE_BROKEN_BACKLINKS = 'broken-backlinks';
+export const AUDIT_TYPE_EXPERIMENTATION = 'experimentation';
 export const AUDIT_TYPE_ORGANIC_KEYWORDS = 'organic-keywords';
 export const AUDIT_TYPE_ORGANIC_TRAFFIC = 'organic-traffic';
 export const AUDIT_TYPE_CWV = 'cwv';
@@ -26,6 +27,7 @@ const EXPIRES_IN_DAYS = 30;
 const AUDIT_TYPE_PROPERTIES = {
   [AUDIT_TYPE_404]: [],
   [AUDIT_TYPE_BROKEN_BACKLINKS]: [],
+  [AUDIT_TYPE_EXPERIMENTATION]: [],
   [AUDIT_TYPE_ORGANIC_KEYWORDS]: [],
   [AUDIT_TYPE_ORGANIC_TRAFFIC]: [],
   [AUDIT_TYPE_CWV]: [],

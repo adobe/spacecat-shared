@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-data-access-v1.15.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.4...@adobe/spacecat-shared-data-access-v1.15.5) (2024-02-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#148](https://github.com/adobe/spacecat-shared/issues/148)) ([a32b5ce](https://github.com/adobe/spacecat-shared/commit/a32b5ce7c57e06d9b27250a8e59b666198945f72))
+
+# [@adobe/spacecat-shared-data-access-v1.15.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.3...@adobe/spacecat-shared-data-access-v1.15.4) (2024-02-09)
+
+
+### Bug Fixes
+
+* add experimentation type audit ([#147](https://github.com/adobe/spacecat-shared/issues/147)) ([221fa29](https://github.com/adobe/spacecat-shared/commit/221fa296799a9004c991a9f3656e735d4babd612))
+
+# [@adobe/spacecat-shared-data-access-v1.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.2...@adobe/spacecat-shared-data-access-v1.15.3) (2024-02-08)
+
+
+### Bug Fixes
+
+* site-candidate should not have id ([#144](https://github.com/adobe/spacecat-shared/issues/144)) ([9d0ebe8](https://github.com/adobe/spacecat-shared/commit/9d0ebe85c993ea428a845ce417b1e9c727b13b52))
+
+# [@adobe/spacecat-shared-data-access-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.1...@adobe/spacecat-shared-data-access-v1.15.2) (2024-02-07)
+
+
+### Bug Fixes
+
+* increase it test timeout ([70d92a2](https://github.com/adobe/spacecat-shared/commit/70d92a25b1571b5de2c22be4c71e3142dff360ad))
+
+# [@adobe/spacecat-shared-data-access-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.0...@adobe/spacecat-shared-data-access-v1.15.1) (2024-02-07)
+
+
+### Bug Fixes
+
+* retrieve site candidate by base url ([#140](https://github.com/adobe/spacecat-shared/issues/140)) ([b37cb0b](https://github.com/adobe/spacecat-shared/commit/b37cb0b1948f87e0e791cfec1e2b1fef9c0abb07))
+
 # [@adobe/spacecat-shared-data-access-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.14.1...@adobe/spacecat-shared-data-access-v1.15.0) (2024-02-06)
 
 

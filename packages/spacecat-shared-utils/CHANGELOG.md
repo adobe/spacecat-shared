@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.11.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.11.1...@adobe/spacecat-shared-utils-v1.11.2) (2024-02-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#148](https://github.com/adobe/spacecat-shared/issues/148)) ([a32b5ce](https://github.com/adobe/spacecat-shared/commit/a32b5ce7c57e06d9b27250a8e59b666198945f72))
+
+# [@adobe/spacecat-shared-utils-v1.11.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.11.0...@adobe/spacecat-shared-utils-v1.11.1) (2024-02-08)
+
+
+### Bug Fixes
+
+* sqsWrapper not properly exported ([#146](https://github.com/adobe/spacecat-shared/issues/146)) ([5c2f401](https://github.com/adobe/spacecat-shared/commit/5c2f401db37c4a51288b3783b82a3aab9122d6e4))
+
+# [@adobe/spacecat-shared-utils-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.10.0...@adobe/spacecat-shared-utils-v1.11.0) (2024-02-07)
+
+
+### Features
+
+* url helpers in utils ([#139](https://github.com/adobe/spacecat-shared/issues/139)) ([0a90c1b](https://github.com/adobe/spacecat-shared/commit/0a90c1b80a1fd7fb0cd267b7f7fca45fb1186c48))
+
+# [@adobe/spacecat-shared-utils-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.9.0...@adobe/spacecat-shared-utils-v1.10.0) (2024-02-07)
+
+
+### Features
+
+* move sqs wrapper to scpacecat-shared ([#136](https://github.com/adobe/spacecat-shared/issues/136)) ([b9f6d75](https://github.com/adobe/spacecat-shared/commit/b9f6d75d755cdd3d093f1bc016e643de6ef0abcd))
+
 # [@adobe/spacecat-shared-utils-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.8.0...@adobe/spacecat-shared-utils-v1.9.0) (2024-02-06)
 
 

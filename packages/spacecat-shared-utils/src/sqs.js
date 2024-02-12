@@ -10,6 +10,53 @@
  * governing permissions and limitations under the License.
  */
 
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
+
+/**
+ * @class SQS utility to send messages to SQS
+ * @param {string} region - AWS region
+ * @param {object} log - log object
+ */
+class SQS {
+  constructor(region, log) {
+    this.sqsClient = new SQSClient({ region });
+    this.log = log;
+  }
+
+  async sendMessage(queueUrl, message) {
+    const body = {
+      ...message,
+      timestamp: new Date().toISOString(),
+    };
+
+    const msgCommand = new SendMessageCommand({
+      MessageBody: JSON.stringify(body),
+      QueueUrl: queueUrl,
+    });
+
+    try {
+      const data = await this.sqsClient.send(msgCommand);
+      this.log.info(`Success, message sent. MessageID:  ${data.MessageId}`);
+    } catch (e) {
+      const { type, code, message: msg } = e;
+      this.log.error(`Message sent failed. Type: ${type}, Code: ${code}, Message: ${msg}`);
+      throw e;
+    }
+  }
+}
+
+export function sqsWrapper(fn) {
+  return async (request, context) => {
+    if (!context.sqs) {
+      const { log } = context;
+      const { region } = context.runtime;
+      context.sqs = new SQS(region, log);
+    }
+
+    return fn(request, context);
+  };
+}
+
 /**
  * Wrapper to turn an SQS record into a function param
  * Inspired by https://github.com/adobe/helix-admin/blob/main/src/index.js#L108-L133

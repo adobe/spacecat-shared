@@ -37,5 +37,50 @@ export function isValidUrl(urlString: string): boolean;
 
 export function dateAfterDays(days: string): Date;
 
+export function sqsWrapper(fn: (message: object, context: object) => Promise<Response>):
+  (request: object, context: object) => Promise<Response>;
+
 export function sqsEventAdapter(fn: (message: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;
+
+/**
+ * Prepends 'https://' schema to the URL if it's not already present.
+ * @param url - The URL to modify.
+ * @returns The URL with 'https://' schema prepended.
+ */
+declare function prependSchema(url: string): string;
+
+/**
+ * Strips the port number from the end of the URL.
+ * @param url - The URL to modify.
+ * @returns The URL with the port removed.
+ */
+declare function stripPort(url: string): string;
+
+/**
+ * Strips the trailing dot from the end of the URL.
+ * @param url - The URL to modify.
+ * @returns The URL with the trailing dot removed.
+ */
+declare function stripTrailingDot(url: string): string;
+
+/**
+ * Strips the trailing slash from the end of the URL.
+ * @param url - The URL to modify.
+ * @returns The URL with the trailing slash removed.
+ */
+declare function stripTrailingSlash(url: string): string;
+
+/**
+ * Strips 'www.' from the beginning of the URL if present.
+ * @param url - The URL to modify.
+ * @returns The URL with 'www.' removed.
+ */
+declare function stripWWW(url: string): string;
+
+/**
+ * Composes a base URL by applying a series of transformations to the given domain.
+ * @param domain - The domain to compose the base URL from.
+ * @returns The composed base URL.
+ */
+declare function composeBaseURL(domain: string): string;

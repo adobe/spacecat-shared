@@ -32,7 +32,14 @@ describe('Index Exports', () => {
     'isValidUrl',
     'resolveSecretsName',
     'dateAfterDays',
+    'sqsWrapper',
     'sqsEventAdapter',
+    'composeBaseURL',
+    'prependSchema',
+    'stripPort',
+    'stripTrailingDot',
+    'stripTrailingSlash',
+    'stripWWW',
   ];
 
   it('exports all expected functions', () => {

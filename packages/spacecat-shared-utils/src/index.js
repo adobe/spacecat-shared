@@ -22,6 +22,7 @@ export {
   isNumber,
   isObject,
   isString,
+  isEmpty,
   toBoolean,
   isValidUrl,
   dateAfterDays,

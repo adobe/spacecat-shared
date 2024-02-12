@@ -123,6 +123,24 @@ function isIsoDate(str) {
 function isIsoTimeOffsetsDate(str) {
   return REGEX_TIME_OFFSET_DATE.test(str);
 }
+/**
+ * Checks whether the given parameter is empty.
+ *
+ * @param {*} value - The value to check.
+ * @returns {boolean} True if the given object is a valid Date object, false otherwise.
+ */
+function isEmpty(value) {
+  if (isArray(value)) {
+    return value.length === 0;
+  }
+  if (isObject(value)) {
+    return Object.keys(value).length === 0;
+  }
+  if (isString(value)) {
+    return !hasText(value);
+  }
+  return !value;
+}
 
 /**
  * Validates whether the given string is a valid URL with http or https protocol.
@@ -196,6 +214,7 @@ export {
   isNumber,
   isObject,
   isString,
+  isEmpty,
   toBoolean,
   isValidUrl,
   dateAfterDays,

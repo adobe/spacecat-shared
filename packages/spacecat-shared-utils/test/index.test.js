@@ -28,6 +28,7 @@ describe('Index Exports', () => {
     'isNumber',
     'isObject',
     'isString',
+    'isEmpty',
     'toBoolean',
     'isValidUrl',
     'resolveSecretsName',

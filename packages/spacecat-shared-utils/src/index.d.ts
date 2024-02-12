@@ -31,6 +31,8 @@ export function isObject(value: unknown): boolean;
 
 export function isString(value: unknown): boolean;
 
+export function isEmpty(value: unknown): boolean;
+
 export function toBoolean(value: unknown): boolean;
 
 export function isValidUrl(urlString: string): boolean;

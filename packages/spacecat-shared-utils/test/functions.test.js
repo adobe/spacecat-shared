@@ -32,6 +32,7 @@ import {
   isValidUrl,
   dateAfterDays,
 } from '../src/functions.js';
+import { isEmpty } from '../src/index.js';
 
 describe('Shared functions', () => {
   describe('Commons', () => {
@@ -205,6 +206,24 @@ describe('Shared functions', () => {
 
       expect(isString('')).to.be.true;
       expect(isString('dasd')).to.be.true;
+    });
+
+    it('is empty', () => {
+      const emptyValues = [
+        null,
+        undefined,
+        '',
+        [],
+        {},
+      ];
+      const nonEmptyValues = [
+        'abc',
+        3,
+        ['1'],
+        { foo: 'bar' },
+      ];
+      emptyValues.forEach((value) => expect(isEmpty(value)).to.be.true);
+      nonEmptyValues.forEach((value) => expect(isEmpty(value)).to.be.false);
     });
 
     it('toBoolean', () => {

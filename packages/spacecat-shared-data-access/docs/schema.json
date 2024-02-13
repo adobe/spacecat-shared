@@ -530,6 +530,10 @@
       "TableName": "spacecat-services-configurations",
       "KeyAttributes": {
         "PartitionKey": {
+          "AttributeName": "GSI1PK",
+          "AttributeType": "S"
+        },
+        "SortKey": {
           "AttributeName": "version",
           "AttributeType": "S"
         }
@@ -542,28 +546,6 @@
         {
           "AttributeName": "jobs",
           "AttributeType": "S"
-        },
-        {
-          "AttributeName": "GSI1PK",
-          "AttributeType": "S"
-        }
-      ],
-      "GlobalSecondaryIndexes": [
-        {
-          "IndexName": "spacecat-services-all-configurations",
-          "KeyAttributes": {
-            "PartitionKey": {
-              "AttributeName": "GSI1PK",
-              "AttributeType": "S"
-            },
-            "SortKey": {
-              "AttributeName": "version",
-              "AttributeType": "S"
-            }
-          },
-          "Projection": {
-            "ProjectionType": "ALL"
-          }
         }
       ],
       "DataAccess": {

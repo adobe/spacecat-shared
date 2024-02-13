@@ -446,7 +446,6 @@ interface DataAccessConfig {
   indexNameAllSitesByDeliveryType: string;
   indexNameAllLatestAuditScores: string;
   indexNameAllOrganizations: string,
-  indexNameAllConfigurations: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;

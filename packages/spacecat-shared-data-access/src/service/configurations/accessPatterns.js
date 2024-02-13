@@ -28,7 +28,6 @@ export const getConfiguration = async (
 ) => {
   const dynamoItems = await dynamoClient.query({
     TableName: config.tableNameConfigurations,
-    IndexName: config.indexNameAllConfigurations,
     KeyConditionExpression: 'GSI1PK = :gsi1pk',
     ExpressionAttributeValues: {
       ':gsi1pk': config.pkAllConfigurations,
@@ -55,10 +54,10 @@ export const getConfigurationByVersion = async (
   config,
   version,
 ) => {
-  const dynamoItem = await dynamoClient.getItem(
-    config.tableNameConfigurations,
-    { version },
-  );
+  const dynamoItem = await dynamoClient.getItem(config.tableNameConfigurations, {
+    GSI1PK: config.pkAllConfigurations,
+    version,
+  });
 
   return isObject(dynamoItem) ? ConfigurationDto.fromDynamoItem(dynamoItem) : null;
 };

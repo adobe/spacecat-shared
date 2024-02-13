@@ -13,11 +13,11 @@
 import { createConfiguration } from '../models/configuration.js';
 
 /**
- * Data transfer object for Organization.
+ * Data transfer object for Configuration.
  */
 export const ConfigurationDto = {
   /**
-     * Converts an Organization object into a DynamoDB item.
+     * Converts a Configuration object into a DynamoDB item.
      * @param {Readonly<Configuration>} configuration - Configuration object.
      * @returns {{createdAt, id, configMap, updatedAt}}
      */

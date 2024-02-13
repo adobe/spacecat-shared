@@ -63,6 +63,15 @@ function checkOrganization(organization) {
   schema.validate(organization);
 }
 
+function checkConfiguration(configuration) {
+  const schema = Joi.object({
+    version: Joi.string(),
+    queues: Joi.object(),
+    jobs: Joi.array(),
+  });
+  schema.validate(configuration);
+}
+
 function checkAudit(audit) {
   expect(audit).to.be.an('object');
   expect(audit.getId()).to.be.a('string');
@@ -82,14 +91,17 @@ const TEST_DA_CONFIG = {
   tableNameOrganizations: 'spacecat-services-organizations',
   tableNameSites: 'spacecat-services-sites',
   tableNameSiteCandidates: 'spacecat-services-site-candidates',
+  tableNameConfigurations: 'spacecat-services-configurations',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
+  indexNameAllConfigurations: 'spacecat-services-all-configurations',
   indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
   pkAllSites: 'ALL_SITES',
   pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
+  pkAllConfigurations: 'ALL_CONFIGURATIONS',
 };
 
 describe('DynamoDB Integration Test', async () => {
@@ -130,6 +142,24 @@ describe('DynamoDB Integration Test', async () => {
 
   after(() => {
     dynamoDbLocalProcess.kill();
+  });
+
+  it('gets configuration by Version', async () => {
+    const configuration = await dataAccess.getConfigurationByVersion('v1');
+
+    expect(configuration).to.be.an('object');
+
+    checkConfiguration(configuration);
+    expect(configuration.getVersion()).to.equal('v1');
+  });
+
+  it('gets configuration', async () => {
+    const configuration = await dataAccess.getConfiguration();
+
+    expect(configuration).to.be.an('object');
+
+    checkConfiguration(configuration);
+    expect(configuration.getVersion()).to.equal('v2');
   });
 
   it('gets organizations', async () => {

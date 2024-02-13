@@ -56,6 +56,7 @@ describe('Data Access Object Tests', () => {
     'addOrganization',
     'updateOrganization',
     'removeOrganization',
+    'getOrganizationByImsOrgID',
   ];
 
   let dao;

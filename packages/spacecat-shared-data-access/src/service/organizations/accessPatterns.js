@@ -51,6 +51,27 @@ export const getOrganizationByID = async (
 };
 
 /**
+ * Retrieves an organization by its IMS org ID.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {string} imsOrgId - Organization identifier on IMS, in the format of {id}@AdobeOrg
+ * @returns {Promise<Readonly<Organization>>} A promise that resolves to an organization, if found.
+ */
+export const getOrganizationByImsOrgID = async (
+  dynamoClient,
+  config,
+  imsOrgId,
+) => {
+  const dynamoItem = await dynamoClient.getItem(
+    config.tableNameOrganizations,
+    { imsOrgId },
+  );
+
+  return isObject(dynamoItem) ? OrganizationDto.fromDynamoItem(dynamoItem) : null;
+};
+
+/**
  * Adds an organization.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.

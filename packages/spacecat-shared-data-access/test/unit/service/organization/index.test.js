@@ -52,6 +52,12 @@ describe('Organization Access Pattern Tests', () => {
     let mockLog;
     let exportedFunctions;
 
+    const mockOrgData = {
+      id: 'organization1',
+      name: 'Organization1',
+      imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
+    };
+
     beforeEach(() => {
       mockDynamoClient = {
         query: sinon.stub().returns(Promise.resolve([])),
@@ -75,11 +81,6 @@ describe('Organization Access Pattern Tests', () => {
     });
 
     it('calls getOrganizationByID and returns site', async () => {
-      const mockOrgData = {
-        id: 'organization1',
-        name: 'Organization1',
-      };
-
       mockDynamoClient.getItem.onFirstCall().resolves(mockOrgData);
 
       const result = await exportedFunctions.getOrganizationByID();
@@ -87,6 +88,26 @@ describe('Organization Access Pattern Tests', () => {
       expect(result).to.be.an('object');
       expect(result.getId()).to.equal(mockOrgData.id);
       expect(result.getName()).to.equal(mockOrgData.name);
+      expect(mockDynamoClient.getItem.called).to.be.true;
+    });
+
+    it('should return null when an organization is not found by IMS org ID', async () => {
+      mockDynamoClient.getItem.onFirstCall().resolves(null);
+
+      const result = await exportedFunctions.getOrganizationByImsOrgID('notfoundorg123@AdobeOrg');
+
+      expect(result).to.be.null;
+      expect(mockDynamoClient.getItem.called).to.be.true;
+    });
+
+    it('should return an organization by IMS org ID', async () => {
+      mockDynamoClient.getItem.onFirstCall().resolves(mockOrgData);
+
+      const result = await exportedFunctions.getOrganizationByImsOrgID('1234567890ABCDEF12345678@AdobeOrg');
+
+      expect(result).to.be.an('object');
+      expect(result.getId()).to.equal(mockOrgData.id);
+      expect(result.getImsOrgId()).to.equal(mockOrgData.imsOrgId);
       expect(mockDynamoClient.getItem.called).to.be.true;
     });
 

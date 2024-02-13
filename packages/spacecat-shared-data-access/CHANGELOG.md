@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.15.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.5...@adobe/spacecat-shared-data-access-v1.15.6) (2024-02-12)
+
+
+### Bug Fixes
+
+* return empty sites for getSitesByOrganizationIDWithLatestAudit ([1caaa39](https://github.com/adobe/spacecat-shared/commit/1caaa39f20d2c73b9a195d43c57d320fb009fba7))
+
 # [@adobe/spacecat-shared-data-access-v1.15.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.4...@adobe/spacecat-shared-data-access-v1.15.5) (2024-02-12)
 
 

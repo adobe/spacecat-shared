@@ -176,7 +176,11 @@ describe('Site Access Pattern Tests', () => {
       const mockSiteData = [{
         id: 'site1',
         organizationId: 'org1',
-        baseURL: 'https://example.com',
+        baseURL: 'https://example1.com',
+      }, {
+        id: 'site2',
+        organizationId: 'org2',
+        baseURL: 'https://example2.com',
       }];
 
       const mockAuditData = [{
@@ -197,7 +201,7 @@ describe('Site Access Pattern Tests', () => {
       mockDynamoClient.query.onSecondCall().resolves(mockAuditData);
 
       const result = await exportedFunctions.getSitesByOrganizationIDWithLatestAudits('404');
-      expect(result).to.be.an('array').that.has.lengthOf(1);
+      expect(result).to.be.an('array').that.has.lengthOf(2);
     });
 
     it('calls getSitesWithLatestAudit and handles empty latestAudits', async () => {

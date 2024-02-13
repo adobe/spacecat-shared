@@ -570,9 +570,8 @@
         "MySql": {}
       },
       "SampleDataFormats": {
-        "id": [
-          "identifiers",
-          "UUID"
+        "version": [
+          "identifiers"
         ]
       },
       "BillingMode": "PROVISIONED",

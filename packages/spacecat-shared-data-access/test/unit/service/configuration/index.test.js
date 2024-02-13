@@ -29,9 +29,8 @@ const TEST_DA_CONFIG = {
 describe('Configuration Access Pattern Tests', () => {
   describe('Configuration Functions Export Tests', () => {
     const mockDynamoClient = {};
-    const mockLog = {};
 
-    const exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
+    const exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG);
 
     it('exports getConfiguration function', () => {
       expect(exportedFunctions).to.have.property('getConfiguration');
@@ -46,7 +45,6 @@ describe('Configuration Access Pattern Tests', () => {
 
   describe('Configuration Functions Tests', () => {
     let mockDynamoClient;
-    let mockLog;
     let exportedFunctions;
 
     beforeEach(() => {
@@ -54,9 +52,8 @@ describe('Configuration Access Pattern Tests', () => {
         query: sinon.stub().returns(Promise.resolve([])),
         getItem: sinon.stub().returns(Promise.resolve(null)),
       };
-      mockLog = { log: sinon.stub() };
 
-      exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
+      exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG);
     });
 
     it('calls getConfiguration and returns null', async () => {

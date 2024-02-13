@@ -58,6 +58,13 @@ describe('Data Access Object Tests', () => {
     'removeOrganization',
   ];
 
+  const configurationFunctions = [
+    'getConfigurationByID',
+    'addConfiguration',
+    'updateConfiguration',
+    'removeConfiguration',
+  ];
+
   let dao;
 
   before(() => {
@@ -87,7 +94,8 @@ describe('Data Access Object Tests', () => {
       ...auditFunctions,
       ...siteFunctions,
       ...siteCandidateFunctions,
-      ...organizationFunctions]);
+      ...organizationFunctions,
+      ...configurationFunctions]);
     Object.keys(dao).forEach((funcName) => {
       expect(expectedFunctions).to.include(funcName);
     });

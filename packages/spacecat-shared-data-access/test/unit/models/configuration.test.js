@@ -48,10 +48,14 @@ const validData = {
 
 describe('Configuration Model Tests', () => {
   it('creates a configuration', () => {
-    const configuration = createConfiguration({ ...validData });
+    const configuration = createConfiguration(validData);
     expect(configuration).to.be.an('object');
     expect(configuration.getVersion()).to.equal(validData.version);
     expect(configuration.getQueues()).to.deep.equal(validData.queues);
     expect(configuration.getJobs()).to.deep.equal(validData.jobs);
+  });
+
+  it('does not create a configuration when is invalid', () => {
+    expect(() => createConfiguration({})).to.throw('Configuration validation error: "version" is required');
   });
 });

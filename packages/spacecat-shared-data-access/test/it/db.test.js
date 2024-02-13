@@ -63,15 +63,6 @@ function checkOrganization(organization) {
   schema.validate(organization);
 }
 
-function checkConfiguration(configuration) {
-  const schema = Joi.object({
-    version: Joi.string(),
-    queues: Joi.object(),
-    jobs: Joi.array(),
-  });
-  schema.validate(configuration);
-}
-
 function checkAudit(audit) {
   expect(audit).to.be.an('object');
   expect(audit.getId()).to.be.a('string');
@@ -148,7 +139,6 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(configuration).to.be.an('object');
 
-    checkConfiguration(configuration);
     expect(configuration.getVersion()).to.equal('v1');
   });
 
@@ -157,7 +147,6 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(configuration).to.be.an('object');
 
-    checkConfiguration(configuration);
     expect(configuration.getVersion()).to.equal('v2');
   });
 

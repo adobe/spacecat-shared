@@ -21,11 +21,13 @@ const TABLE_NAME_CONFIGURATIONS = 'spacecat-services-configurations-dev';
 
 const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites-dev';
 const INDEX_NAME_ALL_ORGANIZATIONS = 'spacecat-services-all-organizations-dev';
+const INDEX_NAME_ALL_CONFIGURATIONS = 'spacecat-services-all-configurations-dev';
 const INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = 'spacecat-services-all-sites-by-delivery-type-dev';
 const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'spacecat-services-all-latest-audit-scores-dev';
 const INDEX_NAME_ALL_SITES_ORGANIZATIONS = 'spacecat-services-all-sites-organizations-dev';
 
 const PK_ALL_SITES = 'ALL_SITES';
+const PK_ALL_CONFIGURATIONS = 'ALL_CONFIGURATIONS';
 const PK_ALL_ORGANIZATIONS = 'ALL_ORGANIZATIONS';
 const PK_ALL_LATEST_AUDITS = 'ALL_LATEST_AUDITS';
 
@@ -45,6 +47,7 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES = INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS = INDEX_NAME_ALL_ORGANIZATIONS,
+        DYNAMO_INDEX_NAME_ALL_CONFIGURATIONS = INDEX_NAME_ALL_CONFIGURATIONS,
         DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS = INDEX_NAME_ALL_SITES_ORGANIZATIONS,
       } = context.env;
 
@@ -60,9 +63,11 @@ export default function dataAccessWrapper(fn) {
         indexNameAllSitesByDeliveryType: DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         indexNameAllLatestAuditScores: DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         indexNameAllSitesOrganizations: DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS,
+        indexNameAllConfigurations: DYNAMO_INDEX_NAME_ALL_CONFIGURATIONS,
         pkAllSites: PK_ALL_SITES,
         pkAllOrganizations: PK_ALL_ORGANIZATIONS,
         pkAllLatestAudits: PK_ALL_LATEST_AUDITS,
+        pkAllConfigurations: PK_ALL_CONFIGURATIONS,
       }, log);
     }
 

@@ -17,7 +17,6 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
 import { configurationFunctions } from '../../../../src/service/configurations/index.js';
-import { createConfiguration } from '../../../../src/models/configuration.js';
 
 chai.use(chaiAsPromised);
 
@@ -34,9 +33,14 @@ describe('Configuration Access Pattern Tests', () => {
 
     const exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
 
-    it('exports getConfigurationByID function', () => {
-      expect(exportedFunctions).to.have.property('getConfigurationByID');
-      expect(exportedFunctions.getConfigurationByID).to.be.a('function');
+    it('exports getConfiguration function', () => {
+      expect(exportedFunctions).to.have.property('getConfiguration');
+      expect(exportedFunctions.getConfiguration).to.be.a('function');
+    });
+
+    it('exports getConfigurationByVersion function', () => {
+      expect(exportedFunctions).to.have.property('getConfigurationByVersion');
+      expect(exportedFunctions.getConfigurationByVersion).to.be.a('function');
     });
   });
 
@@ -55,122 +59,73 @@ describe('Configuration Access Pattern Tests', () => {
       exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
-    it('calls getConfigurationByID and returns null', async () => {
-      const result = await exportedFunctions.getConfigurationByID();
+    it('calls getConfiguration and returns null', async () => {
+      const result = await exportedFunctions.getConfiguration();
       expect(result).to.be.null;
-      expect(mockDynamoClient.getItem.called).to.be.true;
+      expect(mockDynamoClient.query.called).to.be.true;
     });
 
-    it('calls getConfigurationByID and returns config', async () => {
+    it('calls getConfiguration and returns configuration', async () => {
       const mockConfigurationData = {
-        id: 'configuration1',
-        configMap: {},
+        version: 'v1',
+        jobs: [
+          {
+            group: 'audits',
+            type: 'lhs-mobile',
+            interval: 'daily',
+          }, {
+            group: 'reports',
+            type: '404-external-digest',
+            interval: 'weekly',
+          },
+        ],
+        queues: {
+          audits: 'sqs://.../spacecat-services-audit-jobs',
+          imports: 'sqs://.../spacecat-services-import-jobs',
+          reports: 'sqs://.../spacecat-services-report-jobs',
+        },
+      };
+
+      mockDynamoClient.query.onFirstCall().resolves([mockConfigurationData]);
+
+      const result = await exportedFunctions.getConfiguration();
+
+      expect(result).to.be.an('object');
+      expect(result.getVersion()).to.equal(mockConfigurationData.version);
+      expect(result.getQueues()).to.deep.equal(mockConfigurationData.queues);
+      expect(result.getJobs()).to.deep.equal(mockConfigurationData.jobs);
+      expect(mockDynamoClient.query.called).to.be.true;
+    });
+    it('calls getConfigurationByVersion and returns configuration', async () => {
+      const mockConfigurationData = {
+        version: 'v1',
+        jobs: [
+          {
+            group: 'audits',
+            type: 'lhs-mobile',
+            interval: 'daily',
+          }, {
+            group: 'reports',
+            type: '404-external-digest',
+            interval: 'weekly',
+          },
+        ],
+        queues: {
+          audits: 'sqs://.../spacecat-services-audit-jobs',
+          imports: 'sqs://.../spacecat-services-import-jobs',
+          reports: 'sqs://.../spacecat-services-report-jobs',
+        },
       };
 
       mockDynamoClient.getItem.onFirstCall().resolves(mockConfigurationData);
 
-      const result = await exportedFunctions.getConfigurationByID();
+      const result = await exportedFunctions.getConfigurationByVersion('v1');
 
       expect(result).to.be.an('object');
-      expect(result.getId()).to.equal(mockConfigurationData.id);
-      expect(result.getConfigMap()).to.deep.equal(mockConfigurationData.configMap);
+      expect(result.getVersion()).to.equal(mockConfigurationData.version);
+      expect(result.getQueues()).to.deep.equal(mockConfigurationData.queues);
+      expect(result.getJobs()).to.deep.equal(mockConfigurationData.jobs);
       expect(mockDynamoClient.getItem.called).to.be.true;
-    });
-
-    describe('addConfiguration Tests', () => {
-      beforeEach(() => {
-        mockDynamoClient = {
-          query: sinon.stub().returns(Promise.resolve([])),
-          putItem: sinon.stub().returns(Promise.resolve()),
-        };
-        mockLog = { log: sinon.stub() };
-        exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
-      });
-
-      it('adds a new configuration successfully', async () => {
-        const configurationData = {
-          id: 'jobs',
-          configMap: {
-            daily: [
-              { group: 'audits', type: 'lhs-mobile' },
-              { group: 'audits', type: '404' },
-              { group: 'imports', type: 'rum-ingest' },
-            ],
-            weekly: [
-              { group: 'reports', type: '404-external-digest' },
-              { group: 'audits', type: 'apex' },
-            ],
-          },
-        };
-        const result = await exportedFunctions.addConfiguration(configurationData);
-        expect(mockDynamoClient.putItem.calledOnce).to.be.true;
-        expect(result.getId()).to.equal(configurationData.id);
-      });
-    });
-  });
-
-  describe('updateConfiguration Tests', () => {
-    let mockDynamoClient;
-    let mockLog;
-    let exportedFunctions;
-
-    beforeEach(() => {
-      mockDynamoClient = {
-        getItem: sinon.stub().returns(Promise.resolve()),
-        putItem: sinon.stub().returns(Promise.resolve()),
-      };
-      mockLog = { log: sinon.stub() };
-      exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
-    });
-
-    it('updates an existing configuration successfully', async () => {
-      const configurationData = { id: 'id1', configMap: {} };
-      mockDynamoClient.getItem.resolves(Promise.resolve(configurationData));
-
-      const configuration = await exportedFunctions.getConfigurationByID('id1');
-      configuration.updateConfigMap({ daily: [] });
-
-      const result = await exportedFunctions.updateConfiguration(configuration);
-      expect(mockDynamoClient.putItem.calledOnce).to.be.true;
-      expect(result.getId()).to.equal(configurationData.id);
-      expect(result.getConfigMap()).to.deep.equal({ daily: [] });
-    });
-
-    it('throws an error if configuration does not exist', async () => {
-      const configuration = createConfiguration({ id: 'id1', configMap: {} });
-      await expect(exportedFunctions.updateConfiguration(configuration)).to.be.rejectedWith('Configuration not found');
-    });
-  });
-
-  describe('removeConfiguration Tests', () => {
-    let mockDynamoClient;
-    let mockLog;
-    let exportedFunctions;
-
-    beforeEach(() => {
-      mockDynamoClient = {
-        query: sinon.stub().returns(Promise.resolve([])),
-        removeItem: sinon.stub().returns(Promise.resolve()),
-      };
-      mockLog = {
-        log: sinon.stub(),
-        error: sinon.stub(),
-      };
-      exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
-    });
-
-    it('removes the configuration', async () => {
-      await exportedFunctions.removeConfiguration('some-id');
-
-      expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
-    });
-
-    it('logs an error and reject if the configuration removal fails', async () => {
-      const errorMessage = 'Failed to delete org';
-      mockDynamoClient.removeItem.rejects(new Error(errorMessage));
-
-      await expect(exportedFunctions.removeConfiguration('some-id')).to.be.rejectedWith(errorMessage);
-      expect(mockLog.error.calledOnce).to.be.true;
     });
   });
 });

@@ -13,65 +13,45 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import { createConfiguration } from '../../../src/models/configuration.js';
-import { sleep } from '../util.js';
 
 const validData = {
-  id: 'jobs',
-  configMap: {
-    daily: [
-      { group: 'audits', type: 'lhs-mobile' },
-      { group: 'audits', type: '404' },
-      { group: 'imports', type: 'rum-ingest' },
-    ],
-    weekly: [
-      { group: 'reports', type: '404-external-digest' },
-      { group: 'audits', type: 'apex' },
-    ],
+  jobs: [
+    {
+      group: 'audits',
+      type: 'lhs-mobile',
+      interval: 'daily',
+    }, {
+      group: 'audits',
+      type: '404',
+      interval: 'daily',
+    }, {
+      group: 'imports',
+      type: 'rum-ingest',
+      interval: 'daily',
+    }, {
+      group: 'reports',
+      type: '404-external-digest',
+      interval: 'weekly',
+    }, {
+      group: 'audits',
+      type: 'apex',
+      interval: 'weekly',
+    },
+  ],
+  queues: {
+    audits: 'sqs://.../spacecat-services-audit-jobs',
+    imports: 'sqs://.../spacecat-services-import-jobs',
+    reports: 'sqs://.../spacecat-services-report-jobs',
   },
+  version: 'v1',
 };
 
 describe('Configuration Model Tests', () => {
-  describe('Validation Tests', () => {
-    it('throws an error if id is empty', () => {
-      expect(() => createConfiguration({ ...validData, id: '' })).to.throw('Configuration ID must be provided');
-    });
-    it('throws an error if configMap is empty', () => {
-      expect(() => createConfiguration({ ...validData, configMap: '' })).to.throw('Configuration Map must be provided');
-    });
-
-    it('creates a configuration', () => {
-      const configuration = createConfiguration({ ...validData });
-      expect(configuration).to.be.an('object');
-      expect(configuration.getId()).to.equal(validData.id);
-      expect(configuration.getConfigMap()).to.deep.equal(validData.configMap);
-    });
-  });
-
-  describe('Configuration Object Functionality', () => {
-    let configuration;
-
-    beforeEach(() => {
-      configuration = createConfiguration(validData);
-    });
-
-    it('updates configMap correctly', () => {
-      const configMap = { ...validData, configMap: { weekly: validData.configMap.weekly.push({ group: 'audits', type: 'organicKeywords' }) } };
-      configuration.updateConfigMap(configMap);
-      expect(configuration.getConfigMap()).to.deep.equal(configMap);
-    });
-
-    it('throws an error when updating with an empty configMap', () => {
-      expect(() => configuration.updateConfigMap('')).to.throw('Configuration Map must be an object');
-    });
-
-    it('updates updatedAt when config is updated', async () => {
-      const initialUpdatedAt = configuration.getUpdatedAt();
-
-      await sleep(20);
-
-      configuration.updateConfigMap({});
-
-      expect(configuration.getUpdatedAt()).to.not.equal(initialUpdatedAt);
-    });
+  it('creates a configuration', () => {
+    const configuration = createConfiguration({ ...validData });
+    expect(configuration).to.be.an('object');
+    expect(configuration.getVersion()).to.equal(validData.version);
+    expect(configuration.getQueues()).to.deep.equal(validData.queues);
+    expect(configuration.getJobs()).to.deep.equal(validData.jobs);
   });
 });

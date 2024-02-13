@@ -12,99 +12,53 @@
 
 import { isObject } from '@adobe/spacecat-shared-utils';
 
-import { createConfiguration } from '../../models/configuration.js';
 import { ConfigurationDto } from '../../dto/configuration.js';
 
-export const getConfigurationByID = async (
+/**
+ * Retrieves configuration with latest version.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @returns {Promise<Readonly<Configuration>>} A promise that resolves to the configuration
+ * object if found, otherwise null.
+ */
+export const getConfiguration = async (
   dynamoClient,
   config,
-  configurationId,
+) => {
+  const dynamoItems = await dynamoClient.query({
+    TableName: config.tableNameConfigurations,
+    IndexName: config.indexNameAllConfigurations,
+    KeyConditionExpression: 'GSI1PK = :gsi1pk',
+    ExpressionAttributeValues: {
+      ':gsi1pk': config.pkAllConfigurations,
+    },
+    Limit: 1,
+    ScanIndexForward: false, // Sorts ascending if true, descending if false
+  });
+
+  if (dynamoItems.length === 0) return null;
+  return ConfigurationDto.fromDynamoItem(dynamoItems[0]);
+};
+
+/**
+ * Retrieves a site by its version.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {string} version - The version of the configuration to retrieve.
+ * @returns {Promise<Readonly<Configuration>|null>} A promise that resolves to the configuration
+ * object if found, otherwise null.
+ */
+export const getConfigurationByVersion = async (
+  dynamoClient,
+  config,
+  version,
 ) => {
   const dynamoItem = await dynamoClient.getItem(
     config.tableNameConfigurations,
-    { id: configurationId },
+    { version },
   );
 
   return isObject(dynamoItem) ? ConfigurationDto.fromDynamoItem(dynamoItem) : null;
-};
-
-/**
- * Adds a configuration.
- *
- * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
- * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
- * @param {object} configurationData - The configuration data.
- * @returns {Promise<Readonly<Configuration>>}
- */
-export const addConfiguration = async (
-  dynamoClient,
-  config,
-  log,
-  configurationData,
-) => {
-  const configuration = createConfiguration(configurationData);
-
-  await dynamoClient.putItem(
-    config.tableNameConfigurations,
-    ConfigurationDto.toDynamoItem(configuration),
-  );
-
-  return configuration;
-};
-
-/**
- * Updates a configuration.
- *
- * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
- * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
- * @param {Configuration} configuration - The configuration.
- * @returns {Promise<Readonly<Configuration>>} - The updated configuration.
- */
-export const updateConfiguration = async (
-  dynamoClient,
-  config,
-  log,
-  configuration,
-) => {
-  const existingConfiguration = await getConfigurationByID(
-    dynamoClient,
-    config,
-    configuration.getId(),
-  );
-
-  if (!isObject(existingConfiguration)) {
-    throw new Error('Configuration not found');
-  }
-
-  await dynamoClient.putItem(
-    config.tableNameConfigurations,
-    ConfigurationDto.toDynamoItem(configuration),
-  );
-
-  return configuration;
-};
-
-/**
- * Removes an configuration.
- *
- * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
- * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
- * @param {string} configurationId - The ID of the configuration to remove.
- * @returns {Promise<void>}
- */
-export const removeConfiguration = async (
-  dynamoClient,
-  config,
-  log,
-  configurationId,
-) => {
-  try {
-    await dynamoClient.removeItem(config.tableNameConfigurations, { id: configurationId });
-  } catch (error) {
-    log.error(`Error removing configuration: ${error.message}`);
-    throw error;
-  }
 };

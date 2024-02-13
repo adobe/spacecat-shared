@@ -17,24 +17,15 @@ import { createConfiguration } from '../models/configuration.js';
  */
 export const ConfigurationDto = {
   /**
-     * Converts a Configuration object into a DynamoDB item.
-     * @param {Readonly<Configuration>} configuration - Configuration object.
-     * @returns {{createdAt, id, configMap, updatedAt}}
-     */
-  toDynamoItem: (configuration) => ({
-    id: configuration.getId(),
-    configMap: configuration.getConfigMap(),
-  }),
-
-  /**
      * Converts a DynamoDB item into a Configuration object.
      * @param {object } dynamoItem - DynamoDB item.
      * @returns {Readonly<Configuration>} Configuration object.
      */
   fromDynamoItem: (dynamoItem) => {
     const configurationData = {
-      id: dynamoItem.id,
-      configMap: dynamoItem.configMap,
+      version: dynamoItem.version,
+      queues: dynamoItem.queues,
+      jobs: dynamoItem.jobs,
     };
 
     return createConfiguration(configurationData);

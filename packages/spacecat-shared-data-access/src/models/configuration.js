@@ -9,28 +9,13 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { hasText, isObject } from '@adobe/spacecat-shared-utils';
-import { Base } from './base.js';
 
 const Configuration = (data = {}) => {
-  const self = Base(data);
-  self.getConfigMap = () => self.state.configMap;
+  const self = { ...data };
+  self.getJobs = () => self.jobs;
+  self.getVersion = () => self.version;
+  self.getQueues = () => self.queues;
 
-  /**
-     * Updates the Config map belonging to the Configuration.
-     * @param {object} configMap - The IMS Org ID.
-     * @return {Base} The updated configuration.
-     */
-  self.updateConfigMap = (configMap) => {
-    if (!isObject(configMap)) {
-      throw new Error('Configuration Map must be an object');
-    }
-
-    self.state.configMap = { ...configMap };
-    self.touch();
-
-    return self;
-  };
   return Object.freeze(self);
 };
 
@@ -42,13 +27,5 @@ const Configuration = (data = {}) => {
  */
 export const createConfiguration = (data) => {
   const newState = { ...data };
-
-  if (!hasText(newState.id)) {
-    throw new Error('Configuration ID must be provided');
-  }
-  if (!isObject(newState.configMap)) {
-    throw new Error('Configuration Map must be provided');
-  }
-
   return Configuration(newState);
 };

@@ -74,7 +74,7 @@ describe('Organization Access Pattern Tests', () => {
       expect(mockDynamoClient.getItem.called).to.be.true;
     });
 
-    it('calls getOrganizationByID and returns site', async () => {
+    it('calls getOrganizationByID and returns organization', async () => {
       const mockOrgData = {
         id: 'organization1',
         name: 'Organization1',

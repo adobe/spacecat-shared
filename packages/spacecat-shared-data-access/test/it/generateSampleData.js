@@ -154,6 +154,7 @@ export default async function generateSampleData(
     config.tableNameAudits,
     config.tableNameLatestAudits,
     config.tableNameOrganizations,
+    config.tableNameConfigurations,
   ]);
   await createTablesFromSchema();
 
@@ -164,6 +165,58 @@ export default async function generateSampleData(
   const auditItems = [];
   const latestAuditItems = [];
   const nowIso = new Date().toISOString();
+  const configurations = [{
+    jobs: [
+      {
+        group: 'audits',
+        type: 'lhs-mobile',
+        interval: 'daily',
+      }, {
+        group: 'audits',
+        type: '404',
+        interval: 'daily',
+      }, {
+        group: 'imports',
+        type: 'rum-ingest',
+        interval: 'daily',
+      }, {
+        group: 'reports',
+        type: '404-external-digest',
+        interval: 'weekly',
+      }, {
+        group: 'audits',
+        type: 'apex',
+        interval: 'weekly',
+      },
+    ],
+    queues: {
+      audits: 'sqs://.../spacecat-services-audit-jobs',
+      imports: 'sqs://.../spacecat-services-import-jobs',
+      reports: 'sqs://.../spacecat-services-report-jobs',
+    },
+    version: 'v2',
+    PK: config.pkAllConfigurations,
+  },
+  {
+    jobs: [
+      {
+        group: 'audits',
+        type: 'lhs-mobile',
+        interval: 'daily',
+      },
+      {
+        group: 'reports',
+        type: '404-external-digest',
+        interval: 'weekly',
+      },
+    ],
+    queues: {
+      audits: 'sqs://.../spacecat-services-audit-jobs',
+      reports: 'sqs://.../spacecat-services-report-jobs',
+    },
+    version: 'v1',
+    PK: config.pkAllConfigurations,
+  }];
 
   // Generate organization data
   for (let i = 0; i < numberOfOrganizations; i += 1) {
@@ -251,6 +304,7 @@ export default async function generateSampleData(
   await batchWrite(config.tableNameOrganizations, organizations);
   await batchWrite(config.tableNameAudits, auditItems);
   await batchWrite(config.tableNameLatestAudits, latestAuditItems);
+  await batchWrite(config.tableNameConfigurations, configurations);
 
   console.log(`Generated ${numberOfOrganizations} organizations`);
   console.log(`Generated ${numberOfSites} sites with ${numberOfAuditsPerType} audits per type for each site`);

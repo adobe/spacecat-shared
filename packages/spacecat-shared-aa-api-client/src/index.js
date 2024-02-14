@@ -21,8 +21,6 @@ export default class AAAPIClient {
 
   #token;
 
-  #domain;
-
   constructor(config) {
     ['AA_CLIENT_ID', 'AA_CLIENT_SECRET', 'AA_DOMAIN'].forEach((key) => {
       if (!config[key]) {
@@ -31,7 +29,6 @@ export default class AAAPIClient {
     });
     this.#config = config;
     this.#token = null;
-    this.#domain = config.AA_DOMAIN;
   }
 
   static async create(context) {
@@ -73,7 +70,7 @@ export default class AAAPIClient {
       accept: 'application/json',
       Authorization: `Bearer ${this.#token}`,
       'x-api-key': this.#config.AA_CLIENT_ID,
-      'x-adobe-vgid': `rum2aa_${this.#domain}`,
+      'x-adobe-vgid': `rum2aa_${this.#config.AA_DOMAIN}`,
     };
 
     return this.#post(`${AA_URL}/events/validate`, headers, formData);
@@ -84,7 +81,7 @@ export default class AAAPIClient {
       accept: 'application/json',
       Authorization: `Bearer ${this.#token}`,
       'x-api-key': this.#config.AA_CLIENT_ID,
-      'x-adobe-vgid': `rum2aa_${this.#domain}`,
+      'x-adobe-vgid': `rum2aa_${this.#config.AA_DOMAIN}`,
     };
     return this.#post(`${AA_URL}/events`, headers, formData);
   }

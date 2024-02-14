@@ -24,14 +24,32 @@ describe('Adobe Analytics api client', () => {
   beforeEach(() => {
     context = {
       env: {
-        AA_CLIENT_ID: 'test',
-        AA_CLIENT_SECRET: 'test',
+        AA_CLIENT_ID: process.env.AA_CLIENT_ID || 'test',
+        AA_CLIENT_SECRET: process.env.AA_CLIENT_SECRET || 'test',
         AA_DOMAIN: 'test',
       },
     };
   });
   afterEach('clean each', () => {
     nock.cleanAll();
+  });
+  it('should fail with missing required config', async () => {
+    context.env.AA_CLIENT_ID = '';
+    expect(await AAAPIClient.create(context)).should.fail();
+  });
+  it('should fail in case wrong clientid/secret on create AAAPIClient', async () => {
+    nock('https://ims-na1.adobelogin.com')
+      .post('/ims/token/v3')
+      .reply(400, { error: 'Bad Request' });
+    expect(await AAAPIClient.create(context)).to.throw(new Error('Error during POST request: POST request failed with status 400'));
+  });
+  it('should fail in case calling static creation and not returning same object', async () => {
+    nock('https://ims-na1.adobelogin.com')
+      .post('/ims/token/v3')
+      .reply(200, { access_token: 'test' });
+    const aaApiClient = AAAPIClient.create(context);
+    const aaApiClient2 = AAAPIClient.create(context);
+    expect(aaApiClient2).to.eql(aaApiClient);
   });
   it('call validateFileFormat with valid file', async () => {
     nock('https://ims-na1.adobelogin.com')
@@ -46,6 +64,21 @@ describe('Adobe Analytics api client', () => {
       .post('/aa/collect/v1/events/validate')
       .reply(204, {});
     const result = await aaApiClient.validateFileFormat(file);
+    expect(result).to.throw;
+  });
+  it('call ingestEvents with valid file', async () => {
+    nock('https://ims-na1.adobelogin.com')
+      .post('/ims/token/v3')
+      .reply(200, { access_token: 'test' });
+    const aaApiClient = await AAAPIClient.create(context);
+    const file = {
+      name: 'test.zip',
+      buffer: Buffer.from('test'),
+    };
+    nock('https://analytics-collection.adobe.io')
+      .post('/aa/collect/v1/events')
+      .reply(204, {});
+    const result = await aaApiClient.ingestEvents(file);
     expect(result).to.throw;
   });
 });

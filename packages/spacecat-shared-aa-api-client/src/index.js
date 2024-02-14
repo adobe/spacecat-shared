@@ -42,19 +42,15 @@ export default class AAAPIClient {
 
   // eslint-disable-next-line class-methods-use-this
   async #post(url, headers, body) {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body,
-      });
-      if (!response.ok) {
-        throw new Error(`POST request failed with status ${response.status}: ${response.statusText}`);
-      }
-      return await response.json();
-    } catch (err) {
-      throw new Error(`Error during POST request: ${err.message}`);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    });
+    if (!response.ok) {
+      throw new Error(`POST request failed with status ${response.status}: ${response.statusText}`);
     }
+    return response.json();
   }
 
   async #getIMSAccessToken() {

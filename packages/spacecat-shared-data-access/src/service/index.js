@@ -15,6 +15,7 @@ import { auditFunctions } from './audits/index.js';
 import { siteFunctions } from './sites/index.js';
 import { siteCandidateFunctions } from './site-candidates/index.js';
 import { organizationFunctions } from './organizations/index.js';
+import { configurationFunctions } from './configurations/index.js';
 
 /**
  * Creates a data access object.
@@ -33,11 +34,13 @@ export const createDataAccess = (config, log = console) => {
   const siteFuncs = siteFunctions(dynamoClient, config, log);
   const siteCandidateFuncs = siteCandidateFunctions(dynamoClient, config, log);
   const organizationFuncs = organizationFunctions(dynamoClient, config, log);
+  const configurationFuncs = configurationFunctions(dynamoClient, config);
 
   return {
     ...auditFuncs,
     ...siteFuncs,
     ...siteCandidateFuncs,
     ...organizationFuncs,
+    ...configurationFuncs,
   };
 };

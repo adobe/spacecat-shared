@@ -82,6 +82,7 @@ const TEST_DA_CONFIG = {
   tableNameOrganizations: 'spacecat-services-organizations',
   tableNameSites: 'spacecat-services-sites',
   tableNameSiteCandidates: 'spacecat-services-site-candidates',
+  tableNameConfigurations: 'spacecat-services-configurations',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
@@ -90,6 +91,7 @@ const TEST_DA_CONFIG = {
   pkAllSites: 'ALL_SITES',
   pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
+  pkAllConfigurations: 'ALL_CONFIGURATIONS',
 };
 
 describe('DynamoDB Integration Test', async () => {
@@ -130,6 +132,22 @@ describe('DynamoDB Integration Test', async () => {
 
   after(() => {
     dynamoDbLocalProcess.kill();
+  });
+
+  it('gets configuration by Version', async () => {
+    const configuration = await dataAccess.getConfigurationByVersion('v1');
+
+    expect(configuration).to.be.an('object');
+
+    expect(configuration.getVersion()).to.equal('v1');
+  });
+
+  it('gets configuration', async () => {
+    const configuration = await dataAccess.getConfiguration();
+
+    expect(configuration).to.be.an('object');
+
+    expect(configuration.getVersion()).to.equal('v2');
   });
 
   it('gets organizations', async () => {

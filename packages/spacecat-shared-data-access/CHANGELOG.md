@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.6...@adobe/spacecat-shared-data-access-v1.16.0) (2024-02-14)
+
+
+### Features
+
+* add configurations data access ([65bdc25](https://github.com/adobe/spacecat-shared/commit/65bdc2581e150cb32eb51d4d2bf03c8172ec2247))
+
 # [@adobe/spacecat-shared-data-access-v1.15.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.5...@adobe/spacecat-shared-data-access-v1.15.6) (2024-02-12)
 
 

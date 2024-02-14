@@ -16,7 +16,7 @@ npm install @adobe/spacecat-shared-aa-api-client
 
 ```js
 const context = {}; // Your AWS Lambda context object
-const aaApiClient = AAAPIClient.createFrom(context);
+const aaApiClient = AAAPIClient.create(context);
 
 ```
 

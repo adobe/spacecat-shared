@@ -86,6 +86,7 @@ const TEST_DA_CONFIG = {
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
+  indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id',
   indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
   pkAllSites: 'ALL_SITES',
@@ -168,6 +169,16 @@ describe('DynamoDB Integration Test', async () => {
 
     checkOrganization(organization);
     expect(organization.getId()).to.equal(orgId);
+  });
+
+  it('gets organization by IMS Org ID', async () => {
+    const imsOrgId = (await dataAccess.getOrganizations())[0].getImsOrgId();
+    const organization = await dataAccess.getOrganizationByImsOrgID(imsOrgId);
+
+    expect(organization).to.be.an('object');
+
+    checkOrganization(organization);
+    expect(organization.getImsOrgId()).to.equal(imsOrgId);
   });
 
   it('adds a new organization', async () => {

@@ -80,6 +80,12 @@ describe('Organization Access Pattern Tests', () => {
       expect(mockDynamoClient.getItem.called).to.be.true;
     });
 
+    it('calls getOrganizationByImsOrgID and returns null', async () => {
+      const result = await exportedFunctions.getOrganizationByImsOrgID();
+      expect(result).to.be.null;
+      expect(mockDynamoClient.query.called).to.be.true;
+    });
+
     it('calls getOrganizationByID and returns site', async () => {
       mockDynamoClient.getItem.onFirstCall().resolves(mockOrgData);
 
@@ -91,24 +97,24 @@ describe('Organization Access Pattern Tests', () => {
       expect(mockDynamoClient.getItem.called).to.be.true;
     });
 
+    it('calls getOrganizationByImsOrgID and returns site', async () => {
+      mockDynamoClient.query.onFirstCall().resolves([mockOrgData]);
+
+      const result = await exportedFunctions.getOrganizationByImsOrgID();
+
+      expect(result).to.be.an('object');
+      expect(result.getId()).to.equal(mockOrgData.id);
+      expect(result.getName()).to.equal(mockOrgData.name);
+      expect(mockDynamoClient.query.called).to.be.true;
+    });
+
     it('should return null when an organization is not found by IMS org ID', async () => {
-      mockDynamoClient.getItem.onFirstCall().resolves(null);
+      mockDynamoClient.query.onFirstCall().resolves([]);
 
       const result = await exportedFunctions.getOrganizationByImsOrgID('notfoundorg123@AdobeOrg');
 
       expect(result).to.be.null;
-      expect(mockDynamoClient.getItem.called).to.be.true;
-    });
-
-    it('should return an organization by IMS org ID', async () => {
-      mockDynamoClient.getItem.onFirstCall().resolves(mockOrgData);
-
-      const result = await exportedFunctions.getOrganizationByImsOrgID('1234567890ABCDEF12345678@AdobeOrg');
-
-      expect(result).to.be.an('object');
-      expect(result.getId()).to.equal(mockOrgData.id);
-      expect(result.getImsOrgId()).to.equal(mockOrgData.imsOrgId);
-      expect(mockDynamoClient.getItem.called).to.be.true;
+      expect(mockDynamoClient.query.called).to.be.true;
     });
 
     describe('addOrganization Tests', () => {

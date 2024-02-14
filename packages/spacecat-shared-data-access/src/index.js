@@ -21,6 +21,7 @@ const TABLE_NAME_CONFIGURATIONS = 'spacecat-services-configurations-dev';
 
 const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites-dev';
 const INDEX_NAME_ALL_ORGANIZATIONS = 'spacecat-services-all-organizations-dev';
+const INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID = 'spacecat-services-all-organizations-by-ims-org-id-dev';
 const INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = 'spacecat-services-all-sites-by-delivery-type-dev';
 const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'spacecat-services-all-latest-audit-scores-dev';
 const INDEX_NAME_ALL_SITES_ORGANIZATIONS = 'spacecat-services-all-sites-organizations-dev';
@@ -46,6 +47,8 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES = INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS = INDEX_NAME_ALL_ORGANIZATIONS,
+        // eslint-disable-next-line max-len
+        DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID = INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID,
         DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS = INDEX_NAME_ALL_SITES_ORGANIZATIONS,
       } = context.env;
 
@@ -58,6 +61,7 @@ export default function dataAccessWrapper(fn) {
         tableNameConfigurations: DYNAMO_TABLE_NAME_CONFIGURATIONS,
         indexNameAllSites: DYNAMO_INDEX_NAME_ALL_SITES,
         indexNameAllOrganizations: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS,
+        indexNameAllOrganizationsByImsOrgId: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID,
         indexNameAllSitesByDeliveryType: DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         indexNameAllLatestAuditScores: DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         indexNameAllSitesOrganizations: DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS,

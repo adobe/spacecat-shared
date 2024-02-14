@@ -413,6 +413,9 @@ export interface DataAccess {
   getOrganizationByID: (
       organizationID: string,
   ) => Promise<Organization | null>;
+  getOrganizationByImsOrgID: (
+      imsOrgID: string,
+  ) => Promise<Organization | null>;
   addOrganization: (
       organizationData: object,
   ) => Promise<Organization>;
@@ -446,6 +449,7 @@ interface DataAccessConfig {
   indexNameAllSitesByDeliveryType: string;
   indexNameAllLatestAuditScores: string;
   indexNameAllOrganizations: string,
+  indexNameAllOrganizationsByImsOrgId: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;

@@ -63,12 +63,17 @@ export const getOrganizationByImsOrgID = async (
   config,
   imsOrgId,
 ) => {
-  const dynamoItem = await dynamoClient.getItem(
-    config.tableNameOrganizations,
-    { imsOrgId },
-  );
+  const dynamoItems = await dynamoClient.query({
+    TableName: config.tableNameOrganizations,
+    IndexName: config.indexNameAllOrganizationsByImsOrgId,
+    KeyConditionExpression: 'imsOrgId = :imsOrgId',
+    ExpressionAttributeValues: {
+      ':imsOrgId': imsOrgId,
+    },
+    Limit: 1,
+  });
 
-  return isObject(dynamoItem) ? OrganizationDto.fromDynamoItem(dynamoItem) : null;
+  return dynamoItems.length > 0 ? OrganizationDto.fromDynamoItem(dynamoItems[0]) : null;
 };
 
 /**

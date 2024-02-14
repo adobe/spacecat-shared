@@ -23,7 +23,8 @@ import { configurationFunctions } from './configurations/index.js';
  * @param {{pkAllSites: string, pkAllLatestAudits: string, indexNameAllLatestAuditScores: string,
  * tableNameAudits: string,tableNameLatestAudits: string, indexNameAllSitesOrganizations: string,
  * tableNameSites: string, tableNameOrganizations: string, indexNameAllSites: string,
- * indexNameAllOrganizations: string, pkAllOrganizations: string}} config configuration
+ * indexNameAllOrganizations: string, indexNameAllOrganizationsByImsOrgId: string,
+ * pkAllOrganizations: string}} config configuration
  * @param {Logger} log logger
  * @returns {object} data access object
  */

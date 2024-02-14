@@ -168,6 +168,10 @@
           "AttributeType": "S"
         },
         {
+          "AttributeName": "imsOrgId",
+          "AttributeType": "S"
+        },
+        {
           "AttributeName": "GSI1PK",
           "AttributeType": "S"
         },
@@ -194,6 +198,18 @@
           "KeyAttributes": {
             "PartitionKey": {
               "AttributeName": "GSI1PK",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-services-all-organizations-by-ims-org-id",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "imsOrgId",
               "AttributeType": "S"
             }
           },

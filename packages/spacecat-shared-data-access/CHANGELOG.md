@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.16.0...@adobe/spacecat-shared-data-access-v1.17.0) (2024-02-14)
+
+
+### Features
+
+* get organization by IMS org ID ([#153](https://github.com/adobe/spacecat-shared/issues/153)) ([541e7e7](https://github.com/adobe/spacecat-shared/commit/541e7e721cb21e977b59b19cf53dfb7ba460905f))
+
 # [@adobe/spacecat-shared-data-access-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.6...@adobe/spacecat-shared-data-access-v1.16.0) (2024-02-14)
 
 

@@ -25,55 +25,50 @@ const aaApiClient = AAAPIClient.create(context);
 `AAAPIClient` class needs AA API domain key to be instantiated:
 
 ```js
-const domainKey = "your-domain-key";
-const aaApiClient = new AAAPIClient(domainKey);
+const config = {'AA_CLIENT_ID': 'client id',
+    'AA_CLIENT_SECRET': 'client secret',
+    'AA_DOMAIN': 'domain name'};
+const aaApiClient = new AAAPIClient(config);
 ```
 
-### Creating a AA Backlink
+### Validate Adobe analytics Ingest Data before sending to Adobe Analytics
 
 ```js
-const url = "https://example.com";
-const expiryInDays = 7;
+const formData = {
+    "reportDescription": {
+        "reportSuiteID": "example",
+        "dateFrom": "2021-01-01",
+        "dateTo": "2021-01-02",
+        "metrics": [
+            {
+                "id": "pageviews"
+            }
+        ]
+    }
+};
 
-const backlink = await aaApiClient.createRUMBacklink(url, expiryInDays);
-console.log(`Backlink created: ${backlink}`)
+const isValid = await aaApiClient.validateFileFormat(formData);
+console.log(`Adobe Analytics verified: ${isValid}`)
 ```
 
-### Creating a 404 Report Backlink
+### Ingest data to Adobe Analytics
 
 ```js
-const url = "https://example.com";
-const expiryInDays = 7;
+const formData = {
+    "reportDescription": {
+        "reportSuiteID": "example",
+        "dateFrom": "2021-01-01",
+        "dateTo": "2021-01-02",
+        "metrics": [
+            {
+                "id": "pageviews"
+            }
+        ]
+    }
+};
 
-const backlink = await aaApiClient.create404Backlink(url, expiryInDays);
-console.log(`Backlink created: ${backlink}`)
-```
-
-### Getting RUM Dashboard Data
-
-```js
-const url = "example.com";
-
-const rumData = await rumApiClient.getRUMDashboard({ url });
-console.log(`RUM data: ${rumData}`)
-```
-
-### Getting 404 checkpoints
-
-```js
-const url = "example.com";
-
-const backlink = await rumApiClient.get404Sources({ url });
-console.log(`404 Checkpoints: ${backlink}`)
-```
-
-### Getting Edge Delivery Services Domains
-
-```js
-const url = "all";
-
-const domains = await rumApiClient.getDomainList({}, url);
-console.log(`Backlink created: ${backlink}`)
+const ingestResponse = await aaApiClient.ingestEvents(formData);
+console.log(`Ingest response: ${ingestResponse}`)
 ```
 
 ## Testing

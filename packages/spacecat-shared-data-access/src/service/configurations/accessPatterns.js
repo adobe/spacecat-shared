@@ -28,9 +28,9 @@ export const getConfiguration = async (
 ) => {
   const dynamoItems = await dynamoClient.query({
     TableName: config.tableNameConfigurations,
-    KeyConditionExpression: 'GSI1PK = :gsi1pk',
+    KeyConditionExpression: 'PK = :pk',
     ExpressionAttributeValues: {
-      ':gsi1pk': config.pkAllConfigurations,
+      ':pk': config.pkAllConfigurations,
     },
     Limit: 1,
     ScanIndexForward: false, // Sorts ascending if true, descending if false
@@ -55,7 +55,7 @@ export const getConfigurationByVersion = async (
   version,
 ) => {
   const dynamoItem = await dynamoClient.getItem(config.tableNameConfigurations, {
-    GSI1PK: config.pkAllConfigurations,
+    PK: config.pkAllConfigurations,
     version,
   });
 

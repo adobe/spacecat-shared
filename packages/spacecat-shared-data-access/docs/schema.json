@@ -530,7 +530,7 @@
       "TableName": "spacecat-services-configurations",
       "KeyAttributes": {
         "PartitionKey": {
-          "AttributeName": "GSI1PK",
+          "AttributeName": "PK",
           "AttributeType": "S"
         },
         "SortKey": {

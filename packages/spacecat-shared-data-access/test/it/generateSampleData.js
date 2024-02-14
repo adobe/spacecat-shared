@@ -195,7 +195,7 @@ export default async function generateSampleData(
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
     version: 'v2',
-    GSI1PK: config.pkAllConfigurations,
+    PK: config.pkAllConfigurations,
   },
   {
     jobs: [
@@ -215,7 +215,7 @@ export default async function generateSampleData(
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
     version: 'v1',
-    GSI1PK: config.pkAllConfigurations,
+    PK: config.pkAllConfigurations,
   }];
 
   // Generate organization data

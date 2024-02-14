@@ -541,11 +541,11 @@
       "NonKeyAttributes": [
         {
           "AttributeName": "queues",
-          "AttributeType": "S"
+          "AttributeType": "M"
         },
         {
           "AttributeName": "jobs",
-          "AttributeType": "S"
+          "AttributeType": "L"
         }
       ],
       "DataAccess": {

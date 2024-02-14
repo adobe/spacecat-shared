@@ -31,6 +31,7 @@ describe('Organization Model Tests', () => {
       const org = createOrganization({ ...validData });
       expect(org).to.be.an('object');
       expect(org.getName()).to.equal(validData.name);
+      expect(org.getImsOrgId()).to.equal('1234@AdobeOrg');
     });
 
     it('creates an organization with default config when none provided', () => {

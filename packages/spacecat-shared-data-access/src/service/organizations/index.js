@@ -15,6 +15,7 @@ import {
   addOrganization,
   updateOrganization,
   removeOrganization,
+  getOrganizationByImsOrgID,
 } from './accessPatterns.js';
 
 export const organizationFunctions = (dynamoClient, config, log) => ({
@@ -23,6 +24,11 @@ export const organizationFunctions = (dynamoClient, config, log) => ({
     dynamoClient,
     config,
     organizationId,
+  ),
+  getOrganizationByImsOrgID: (imsOrgId) => getOrganizationByImsOrgID(
+    dynamoClient,
+    config,
+    imsOrgId,
   ),
   addOrganization: (organizationData) => addOrganization(
     dynamoClient,

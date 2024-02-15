@@ -15,33 +15,25 @@ import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { fetch as httpFetch } from '../utils.js';
 
-const LLM_CONFIG = {
-  max_tokens: 4000,
-  llm_type: 'azure_chat_openai',
-  model_name: 'gpt-4-32k',
-  temperature: 0.5,
-};
-
 function validateFirefallResponse(response) {
-  if (!isObject(response) || !Array.isArray(response.insights)) {
-    return false;
-  }
-
-  return response.insights.every((item) => item
-    && typeof item === 'object'
-    && typeof item.insight === 'string'
-    && typeof item.recommendation === 'string'
-    && typeof item.code === 'string');
+  return !(!isObject(response)
+    || !Array.isArray(response.generations)
+    || response.generations.length === 0
+    || !Array.isArray(response.generations[0])
+    || !isObject(response.generations[0][0])
+    || !hasText(response.generations[0][0].text));
 }
 
 export default class FirefallClient {
   static createFrom(context) {
-    const { log } = context;
+    const { log = console } = context;
     const {
       FIREFALL_API_ENDPOINT: apiEndpoint,
       FIREFALL_IMS_ORG: imsOrg,
       FIREFALL_API_KEY: apiKey,
       FIREFALL_API_AUTH: apiAuth,
+      FIREFALL_API_POLL_INTERVAL: pollInterval = 2000,
+      FIREFALL_API_CAPABILITY_NAME: capabilityName = 'gpt4_32k_completions_capability',
     } = context.env;
 
     if (!isValidUrl(apiEndpoint)) {
@@ -61,10 +53,12 @@ export default class FirefallClient {
     }
 
     return new FirefallClient({
-      apiEndpoint,
-      imsOrg,
-      apiKey,
       apiAuth,
+      apiEndpoint,
+      apiKey,
+      capabilityName,
+      imsOrg,
+      pollInterval,
     }, log);
   }
 
@@ -72,10 +66,12 @@ export default class FirefallClient {
    * Creates a new Firefall client
    *
    * @param {Object} config - The configuration object.
-   * @param {string} config.apiEndpoint - The API endpoint for Firefall.
-   * @param {string} config.imsOrg - The IMS Org for Firefall.
-   * @param {string} config.apiKey - The API Key for Firefall.
    * @param {string} config.apiAuth - The Bearer authorization token for Firefall.
+   * @param {string} config.apiEndpoint - The API endpoint for Firefall.
+   * @param {string} config.apiKey - The API Key for Firefall.
+   * @param {string} config.capabilityName - The capability name for Firefall.
+   * @param {string} config.imsOrg - The IMS Org for Firefall.
+   * @param {number} config.pollInterval - The interval to poll for job status.
    * @param {Object} log - The Logger.
    * @returns {FirefallClient} - the Firefall client.
    */
@@ -90,24 +86,63 @@ export default class FirefallClient {
     this.log.debug(`${message}: took ${duration}ms`);
   }
 
-  async #apiCall(prompt) {
+  async #submitJob(prompt) {
     const body = JSON.stringify({
-      dialogue: { question: prompt },
-      llm_metadata: LLM_CONFIG,
+      input: prompt,
+      capability_name: this.config.capabilityName,
     });
-    return httpFetch(
-      createUrl(this.config.apiEndpoint),
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.config.apiAuth}`,
-          'x-api-key': this.config.apiKey,
-          'x-gw-ims-org-id': this.config.imsOrg,
-        },
-        body,
+
+    const url = createUrl(`${this.config.apiEndpoint}/v2/capability_execution/job`);
+    const response = await httpFetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.config.apiAuth}`,
+        'x-api-key': this.config.apiKey,
+        'x-gw-ims-org-id': this.config.imsOrg,
       },
-    );
+      body,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Job submission failed with status code ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  /* eslint-disable no-await-in-loop */
+  async #pollJobStatus(jobId) {
+    let jobStatusResponse;
+    do {
+      await new Promise(
+        (resolve) => { setTimeout(resolve, this.config.pollInterval); },
+      ); // Wait for 2 seconds before polling
+
+      const response = await httpFetch(
+        createUrl(`${this.config.apiEndpoint}/v2/capability_execution/job/${jobId}`),
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${this.config.apiAuth}`,
+            'x-api-key': this.config.apiKey,
+            'x-gw-ims-org-id': this.config.imsOrg,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Job polling failed with status code ${response.status}`);
+      }
+
+      jobStatusResponse = await response.json();
+    } while (jobStatusResponse.status === 'PROCESSING' || jobStatusResponse.status === 'WAITING');
+
+    if (jobStatusResponse.status !== 'SUCCEEDED') {
+      throw new Error(`Job did not succeed, status: ${jobStatusResponse.status}`);
+    }
+
+    return jobStatusResponse;
   }
 
   async fetch(prompt) {
@@ -117,33 +152,26 @@ export default class FirefallClient {
 
     try {
       const startTime = process.hrtime.bigint();
-      const response = await this.#apiCall(prompt);
+      const jobSubmissionResponse = await this.#submitJob(prompt);
+      const jobStatusResponse = await this.#pollJobStatus(jobSubmissionResponse.job_id);
       this.#logDuration('Firefall API call', startTime);
 
-      if (!response.ok) {
-        this.log.error(`Firefall API returned status code ${response.status}`);
-        throw new Error(`Firefall API returned status code ${response.status}`);
+      const { output } = jobStatusResponse;
+      if (!output || !output.capability_response) {
+        throw new Error('Job completed but no output was found');
       }
 
-      const responseData = await response.json();
-      if (!responseData.generations?.[0]?.[0]) {
-        this.log.error('Could not obtain data from Firefall: Generations object is missing.');
-        throw new Error('Generations object is missing.');
-      }
-
-      let parsedResponse;
-      try {
-        parsedResponse = JSON.parse(responseData.generations[0][0].text);
-      } catch (e) {
-        this.log.error('Returned Data from Firefall is not a JSON object.');
-        throw new Error('Returned Data from Firefall is not a JSON object.');
-      }
-
-      if (!validateFirefallResponse(parsedResponse)) {
+      if (!validateFirefallResponse(output.capability_response)) {
         this.log.error('Could not obtain data from Firefall: Invalid response format.');
         throw new Error('Invalid response format.');
       }
-      return parsedResponse;
+
+      const result = output.capability_response.generations[0][0];
+
+      this.log.info(`Generation Info: ${JSON.stringify(result.generation_info)}`);
+      this.log.info(`LLM Info: ${JSON.stringify(output.capability_response.llm_output)}`);
+
+      return result.text;
     } catch (error) {
       this.log.error('Error while fetching data from Firefall API: ', error.message);
       throw error;

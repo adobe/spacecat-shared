@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-data-access-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.16.0...@adobe/spacecat-shared-data-access-v1.17.0) (2024-02-14)
+
+
+### Features
+
+* get organization by IMS org ID ([#153](https://github.com/adobe/spacecat-shared/issues/153)) ([541e7e7](https://github.com/adobe/spacecat-shared/commit/541e7e721cb21e977b59b19cf53dfb7ba460905f))
+
+# [@adobe/spacecat-shared-data-access-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.6...@adobe/spacecat-shared-data-access-v1.16.0) (2024-02-14)
+
+
+### Features
+
+* add configurations data access ([65bdc25](https://github.com/adobe/spacecat-shared/commit/65bdc2581e150cb32eb51d4d2bf03c8172ec2247))
+
+# [@adobe/spacecat-shared-data-access-v1.15.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.5...@adobe/spacecat-shared-data-access-v1.15.6) (2024-02-12)
+
+
+### Bug Fixes
+
+* return empty sites for getSitesByOrganizationIDWithLatestAudit ([1caaa39](https://github.com/adobe/spacecat-shared/commit/1caaa39f20d2c73b9a195d43c57d320fb009fba7))
+
+# [@adobe/spacecat-shared-data-access-v1.15.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.4...@adobe/spacecat-shared-data-access-v1.15.5) (2024-02-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#148](https://github.com/adobe/spacecat-shared/issues/148)) ([a32b5ce](https://github.com/adobe/spacecat-shared/commit/a32b5ce7c57e06d9b27250a8e59b666198945f72))
+
+# [@adobe/spacecat-shared-data-access-v1.15.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.3...@adobe/spacecat-shared-data-access-v1.15.4) (2024-02-09)
+
+
+### Bug Fixes
+
+* add experimentation type audit ([#147](https://github.com/adobe/spacecat-shared/issues/147)) ([221fa29](https://github.com/adobe/spacecat-shared/commit/221fa296799a9004c991a9f3656e735d4babd612))
+
+# [@adobe/spacecat-shared-data-access-v1.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.2...@adobe/spacecat-shared-data-access-v1.15.3) (2024-02-08)
+
+
+### Bug Fixes
+
+* site-candidate should not have id ([#144](https://github.com/adobe/spacecat-shared/issues/144)) ([9d0ebe8](https://github.com/adobe/spacecat-shared/commit/9d0ebe85c993ea428a845ce417b1e9c727b13b52))
+
 # [@adobe/spacecat-shared-data-access-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.1...@adobe/spacecat-shared-data-access-v1.15.2) (2024-02-07)
 
 

@@ -315,6 +315,27 @@ export interface Organization {
   getConfig: () => Config;
 }
 
+export interface Configuration {
+  /**
+   * Retrieves the configuration version.
+   * @returns {string} The configuration version.
+   */
+  getVersion: () => string;
+
+  /**
+   * Retrieves the queues configuration.
+   * @returns {object} The queues configuration.
+   */
+  getQueues: () => object;
+
+  /**
+   * Retrieves the jobs configuration.
+   * @returns {Array} The jobs configurations.
+   */
+  getJobs: () => Array<object>;
+
+}
+
 export interface DataAccess {
   getAuditForSite: (
     sitedId: string,
@@ -392,6 +413,9 @@ export interface DataAccess {
   getOrganizationByID: (
       organizationID: string,
   ) => Promise<Organization | null>;
+  getOrganizationByImsOrgID: (
+      imsOrgID: string,
+  ) => Promise<Organization | null>;
   addOrganization: (
       organizationData: object,
   ) => Promise<Organization>;
@@ -407,6 +431,10 @@ export interface DataAccess {
   upsertSiteCandidate: (siteCandidateDate: object) => Promise<SiteCandidate>;
   siteCandidateExists: (baseURL: string) => Promise<boolean>;
   updateSiteCandidate: (siteCandidate: SiteCandidate) => Promise<SiteCandidate>;
+
+  // configuration functions
+  getConfiguration: () => Promise<Configuration>
+  getConfigurationByVersion: (version: string) => Promise<Configuration>
 }
 
 interface DataAccessConfig {
@@ -415,14 +443,17 @@ interface DataAccessConfig {
   tableNameOrganizations: string,
   tableNameSites: string;
   tableNameSiteCandidates: string;
+  tableNameConfigurations: string;
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,
   indexNameAllSitesByDeliveryType: string;
   indexNameAllLatestAuditScores: string;
   indexNameAllOrganizations: string,
+  indexNameAllOrganizationsByImsOrgId: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;
+  pkAllConfigurations: string;
 }
 
 export function createDataAccess(

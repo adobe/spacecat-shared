@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.11.0",
+  "version": "1.11.2",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "main": "src/index.js",
@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.1.1",
-    "@aws-sdk/client-s3": "3.507.0",
-    "@aws-sdk/client-sqs": "3.507.0"
+    "@aws-sdk/client-s3": "3.511.0",
+    "@aws-sdk/client-sqs": "3.511.0"
   }
 }

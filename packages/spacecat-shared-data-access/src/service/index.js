@@ -15,6 +15,7 @@ import { auditFunctions } from './audits/index.js';
 import { siteFunctions } from './sites/index.js';
 import { siteCandidateFunctions } from './site-candidates/index.js';
 import { organizationFunctions } from './organizations/index.js';
+import { configurationFunctions } from './configurations/index.js';
 
 /**
  * Creates a data access object.
@@ -22,7 +23,8 @@ import { organizationFunctions } from './organizations/index.js';
  * @param {{pkAllSites: string, pkAllLatestAudits: string, indexNameAllLatestAuditScores: string,
  * tableNameAudits: string,tableNameLatestAudits: string, indexNameAllSitesOrganizations: string,
  * tableNameSites: string, tableNameOrganizations: string, indexNameAllSites: string,
- * indexNameAllOrganizations: string, pkAllOrganizations: string}} config configuration
+ * indexNameAllOrganizations: string, indexNameAllOrganizationsByImsOrgId: string,
+ * pkAllOrganizations: string}} config configuration
  * @param {Logger} log logger
  * @returns {object} data access object
  */
@@ -33,11 +35,13 @@ export const createDataAccess = (config, log = console) => {
   const siteFuncs = siteFunctions(dynamoClient, config, log);
   const siteCandidateFuncs = siteCandidateFunctions(dynamoClient, config, log);
   const organizationFuncs = organizationFunctions(dynamoClient, config, log);
+  const configurationFuncs = configurationFunctions(dynamoClient, config);
 
   return {
     ...auditFuncs,
     ...siteFuncs,
     ...siteCandidateFuncs,
     ...organizationFuncs,
+    ...configurationFuncs,
   };
 };

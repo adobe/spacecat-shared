@@ -40,7 +40,7 @@ const SiteCandidate = (data = {}) => {
     updatedBy: DEFAULT_UPDATED_BY,
     ...data,
   });
-  delete self.id; // no id property used in SiteCandidate modal
+  delete self.state.id; // no id property used in SiteCandidate modal
 
   self.getBaseURL = () => self.state.baseURL;
   self.getSiteId = () => self.state.siteId;

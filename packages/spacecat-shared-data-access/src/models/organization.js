@@ -92,8 +92,13 @@ export const createOrganization = (data) => {
   if (!isObject(newState.config)) {
     newState.config = { ...DEFAULT_CONFIG };
   }
+
   if (!hasText(newState.name)) {
     throw new Error('Org name must be provided');
+  }
+
+  if (!hasText(newState.imsOrgId)) {
+    newState.imsOrgId = DEFAULT_ORGANIZATION_ID;
   }
 
   newState.config = Config(newState.config);

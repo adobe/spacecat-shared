@@ -56,6 +56,12 @@ describe('Data Access Object Tests', () => {
     'addOrganization',
     'updateOrganization',
     'removeOrganization',
+    'getOrganizationByImsOrgID',
+  ];
+
+  const configurationFunctions = [
+    'getConfigurationByVersion',
+    'getConfiguration',
   ];
 
   let dao;
@@ -87,7 +93,8 @@ describe('Data Access Object Tests', () => {
       ...auditFunctions,
       ...siteFunctions,
       ...siteCandidateFunctions,
-      ...organizationFunctions]);
+      ...organizationFunctions,
+      ...configurationFunctions]);
     Object.keys(dao).forEach((funcName) => {
       expect(expectedFunctions).to.include(funcName);
     });

@@ -20,8 +20,7 @@ describe('Config Tests', () => {
   describe('Config Creation', () => {
     it('creates an Config with defaults when no data is provided', () => {
       const config = Config();
-      expect(config.slack).to.be.empty;
-      expect(config.alerts).to.deep.equal([]);
+      expect(config).to.deep.equal({});
     });
 
     it('creates an Config with provided data when data is valid', () => {

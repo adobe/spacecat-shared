@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.17.0...@adobe/spacecat-shared-data-access-v1.17.1) (2024-02-15)
+
+
+### Bug Fixes
+
+* generify site and organization config ([0ec8ee1](https://github.com/adobe/spacecat-shared/commit/0ec8ee1445e389c47d6ece436853e5b4c105ca93))
+
 # [@adobe/spacecat-shared-data-access-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.16.0...@adobe/spacecat-shared-data-access-v1.17.0) (2024-02-14)
 
 

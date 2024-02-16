@@ -21,7 +21,7 @@ export class ImsClient {
   static createFrom(context: UniversalContext): ImsClient;
 
   /**
-   * Returns the access token for the given scope.
+   * Returns an access token for the scopes associated with the IMS client ID.
    * @returns {Promise<{ access_token: string }>} The access token.
    */
   getServiceAccessToken(): Promise<string>;

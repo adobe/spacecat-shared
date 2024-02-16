@@ -51,7 +51,7 @@ export const getImsOrgsApiPath = (imsOrgId) => `${IMS_ORGANIZATIONS_ENDPOINT}/${
 /**
  * Extracts the orgId and authSource from the IMS Org ID.
  * @param {string} imsOrgId - The IMS Org ID.
- * @return {{authSource: *, orgId: *}} - The orgId and authSource.
+ * @return {{authSource: string, orgId: string}} - The orgId and authSource.
  */
 export const extractIdAndAuthSource = (imsOrgId) => {
   const [orgId, authSource] = imsOrgId.split('@');

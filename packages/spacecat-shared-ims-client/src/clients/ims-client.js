@@ -210,11 +210,13 @@ export default class ImsClient {
       /* eslint-disable camelcase */
       const { access_token, token_type, expires_in } = await tokenResponse.json();
 
-      return {
+      this.serviceAccessToken = {
         access_token,
         expires_in,
         token_type,
       };
+
+      return this.serviceAccessToken;
     } catch (error) {
       this.log.error('Error while fetching data from Ims API: ', error.message);
       throw error;

@@ -1,7 +1,5 @@
 # Spacecat Shared - IMS Client
 
-# README for ImsClient Library
-
 ## Overview
 
 The ImsClient library is designed to interact with the IMS (Identity Management System) API, facilitating the retrieval of organization details, user information, and service access tokens. This document outlines the necessary steps for setting up the environment and provides usage examples for integrating the ImsClient into your projects.
@@ -10,7 +8,7 @@ The ImsClient library is designed to interact with the IMS (Identity Management 
 
 Before using the ImsClient, ensure your environment is correctly configured with the necessary credentials and endpoints. The following environment variables are required:
 
-- `IMS_HOST`: The host URL of the IMS API.
+- `IMS_HOST`: The hostname of the IMS API.
 - `IMS_CLIENT_ID`: Your IMS client ID.
 - `IMS_CLIENT_CODE`: Your IMS client code, used for authentication.
 - `IMS_CLIENT_SECRET`: Your IMS client secret, used for authentication.
@@ -32,7 +30,7 @@ To create an instance of the ImsClient, you need to provide a context object con
 ```javascript
 const context = {
   env: {
-    IMS_HOST: 'https://ims.example.com',
+    IMS_HOST: 'ims.example.com',
     IMS_CLIENT_ID: 'yourClientId',
     IMS_CLIENT_CODE: 'yourClientCode',
     IMS_CLIENT_SECRET: 'yourClientSecret',

@@ -238,7 +238,7 @@ export default class ImsClient {
 
     this.log.debug(`IMS Org ID ${imsOrgId} has tenantId: ${tenantId}, name: "${orgName}"`);
 
-    // Request users from all the known IMS groups for this Org
+    // Fetch a list of all users in the Administrators group
     const admins = await this.#getUsersInAdminGroup(imsOrgId, orgDetails?.groups);
     this.log.debug(`IMS Org ID ${imsOrgId} has ${admins.length} known admin users.`);
 

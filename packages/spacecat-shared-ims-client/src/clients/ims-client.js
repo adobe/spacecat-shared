@@ -78,7 +78,7 @@ export default class ImsClient {
   async #imsApiCall(
     endpoint,
     queryString = {},
-    body = {},
+    body = null,
     noContentType = false,
   ) {
     const headers = await this.#prepareImsRequestHeaders(noContentType);
@@ -181,7 +181,7 @@ export default class ImsClient {
   }
 
   async getServiceAccessToken() {
-    if (hasText(this.serviceAccessToken)) {
+    if (hasText(this.serviceAccessToken?.access_token)) {
       return this.serviceAccessToken;
     }
 

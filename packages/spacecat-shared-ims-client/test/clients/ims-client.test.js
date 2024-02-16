@@ -24,6 +24,8 @@ import {
   GROUP_2_ID,
   IMS_FETCH_GROUP_1_MEMBERS_RESPONSE,
   IMS_FETCH_GROUP_2_MEMBERS_RESPONSE,
+  IMS_FETCH_ORG_DETAILS_NO_GROUPS_RESPONSE,
+  IMS_FETCH_ORG_DETAILS_ONE_GROUP_RESPONSE,
   IMS_FETCH_ORG_DETAILS_RESPONSE,
   IMS_FETCH_PC_BY_ORG_RESPONSE,
 } from './ims-sample-responses.js';
@@ -97,6 +99,7 @@ describe('ImsClient', () => {
 
   describe('getImsOrganizationDetails', () => {
     const testOrgId = '1234567890ABCDEF12345678@AdobeOrg';
+    const testOrgId2 = '5674567890ABCDEF12345678@AdobeOrg';
     let client;
 
     beforeEach(() => {
@@ -115,15 +118,15 @@ describe('ImsClient', () => {
         .reply(200, IMS_FETCH_PC_BY_ORG_RESPONSE)
         // Mock the request for the organization's details
         .get(`/ims/organizations/${testOrgId}/v2`)
-        .query(true)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
         .reply(200, IMS_FETCH_ORG_DETAILS_RESPONSE)
         // Mock the request for group members in 123456789
         .get(`/ims/organizations/${testOrgId}/groups/${GROUP_1_ID}/members`)
-        .query(true)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
         .reply(200, IMS_FETCH_GROUP_1_MEMBERS_RESPONSE)
         // Mock the request for group members in 222223333
         .get(`/ims/organizations/${testOrgId}/groups/${GROUP_2_ID}/members`)
-        .query(true)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
         .reply(200, IMS_FETCH_GROUP_2_MEMBERS_RESPONSE);
 
       const orgDetails = await client.getImsOrganizationDetails(testOrgId);
@@ -138,6 +141,101 @@ describe('ImsClient', () => {
       expect(orgDetails.admins).to.have.length(2);
       expect(orgDetails.admins[0].email).to.equal('test-user-1@example.com');
       expect(orgDetails.admins[1].email).to.equal('test-user-2@example.com');
+    });
+
+    it('should handle IMS service token request failures', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        // Mock the token request, with a 500 server error response
+        .post('/ims/token/v4')
+        .query(true)
+        .reply(500);
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg')).to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 500');
+    });
+
+    it('should handle IMS product context request failures', async () => {
+      mockImsTokenResponse()
+        .post('/ims/fetch_pc_by_org/v1')
+        .reply(404);
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg')).to.be.rejectedWith('IMS getProductContextsByImsOrgId request failed with status: 404');
+    });
+
+    it('should handle unknown IMS org IDs', async () => {
+      mockImsTokenResponse()
+        .post('/ims/fetch_pc_by_org/v1')
+        .reply(400);
+
+      await expect(client.getImsOrganizationDetails('unknown@AdobeOrg')).to.be.rejectedWith('IMS getProductContextsByImsOrgId request failed with status: 400');
+    });
+
+    it('should handle IMS organization details request failures', async () => {
+      mockImsTokenResponse()
+        // Mock the request for the organization's product context
+        .post('/ims/fetch_pc_by_org/v1')
+        .reply(200, IMS_FETCH_PC_BY_ORG_RESPONSE)
+        // Mock the request for the organization's details
+        .get(`/ims/organizations/${testOrgId2}/v2`)
+        .query(true)
+        .reply(401);
+
+      await expect(client.getImsOrganizationDetails(testOrgId2)).to.be.rejectedWith('IMS getImsOrgDetails request failed with status: 401');
+    });
+
+    it('should handle IMS group member request failures', async () => {
+      mockImsTokenResponse()
+        // Mock the request for the organization's product context
+        .post('/ims/fetch_pc_by_org/v1')
+        .reply(200, IMS_FETCH_PC_BY_ORG_RESPONSE)
+        // Mock the request for the organization's details
+        .get(`/ims/organizations/${testOrgId}/v2`)
+        .query(true)
+        .reply(200, IMS_FETCH_ORG_DETAILS_RESPONSE)
+        // Mock the request for group members in 123456789
+        .get(`/ims/organizations/${testOrgId}/groups/${GROUP_1_ID}/members`)
+        .query(true)
+        .reply(500);
+
+      await expect(client.getImsOrganizationDetails(testOrgId)).to.be.rejectedWith('IMS getUsersByImsGroupId request failed with status: 500');
+    });
+
+    it('should handle IMS organizations with no groups', async () => {
+      mockImsTokenResponse()
+        // Mock the request for the organization's product context
+        .post('/ims/fetch_pc_by_org/v1')
+        .reply(200, IMS_FETCH_PC_BY_ORG_RESPONSE)
+        // Mock the request for the organization's details
+        .get(`/ims/organizations/${testOrgId2}/v2`)
+        .query(true)
+        .reply(200, IMS_FETCH_ORG_DETAILS_NO_GROUPS_RESPONSE);
+
+      const orgDetails = await client.getImsOrganizationDetails(testOrgId2);
+      expect(orgDetails.admins).to.be.an('array');
+      expect(orgDetails.admins).to.have.length(0);
+    });
+
+    it('should handle IMS organizations with no users in a group', async () => {
+      mockImsTokenResponse()
+        // Mock the request for the organization's product context
+        .post('/ims/fetch_pc_by_org/v1')
+        .reply(200, IMS_FETCH_PC_BY_ORG_RESPONSE)
+        // Mock the request for the organization's details
+        .get(`/ims/organizations/${testOrgId}/v2`)
+        .query(true)
+        .reply(200, IMS_FETCH_ORG_DETAILS_ONE_GROUP_RESPONSE)
+        // Mock the request for group members in 123456789
+        .get(`/ims/organizations/${testOrgId}/groups/${GROUP_1_ID}/members`)
+        .query(true)
+        .reply(200, {
+          orgName: 'Example Org 2 Human Readable Name',
+          orgType: 'Enterprise',
+          countryCode: 'CA',
+          // no groups property
+        });
+
+      const orgDetails = await client.getImsOrganizationDetails(testOrgId);
+      expect(orgDetails.admins).to.be.an('array');
+      expect(orgDetails.admins).to.have.length(0);
     });
   });
 });

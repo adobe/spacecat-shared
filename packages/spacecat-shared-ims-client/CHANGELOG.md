@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.1.0...@adobe/spacecat-shared-ims-client-v1.1.1) (2024-02-16)
+
+
+### Bug Fixes
+
+* export ims client wrapper ([#156](https://github.com/adobe/spacecat-shared/issues/156)) ([e3472e2](https://github.com/adobe/spacecat-shared/commit/e3472e2edbfa98b1c68d0588b876e62cd5c3b250))
+
 # [@adobe/spacecat-shared-ims-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.0.0...@adobe/spacecat-shared-ims-client-v1.1.0) (2024-02-16)
 
 

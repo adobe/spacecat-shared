@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.0.0...@adobe/spacecat-shared-ims-client-v1.1.0) (2024-02-16)
+
+
+### Features
+
+* IMS Client Wrapper ([#155](https://github.com/adobe/spacecat-shared/issues/155)) ([a6b01a8](https://github.com/adobe/spacecat-shared/commit/a6b01a86043d9de1160af5f2b1849d7cd081a003))
+
 # @adobe/spacecat-shared-ims-client-v1.0.0 (2024-02-16)
 
 

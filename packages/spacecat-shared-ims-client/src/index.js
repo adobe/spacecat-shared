@@ -11,7 +11,9 @@
  */
 
 import ImsClient from './clients/ims-client.js';
+import { imsClientWrapper } from './clients/ims-client-wrapper.js';
 
 export {
   ImsClient,
+  imsClientWrapper,
 };

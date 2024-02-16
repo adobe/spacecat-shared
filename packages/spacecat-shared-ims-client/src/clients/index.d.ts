@@ -19,4 +19,28 @@ export class ImsClient {
    * @returns {ImsClient} The ImsClient instance.
    */
   static createFrom(context: UniversalContext): ImsClient;
+
+  /**
+   * Returns the access token for the given scope.
+   * @returns {Promise<{ access_token: string }>} The access token.
+   */
+  getServiceAccessToken(): Promise<string>;
+
+  /**
+   * Returns the organization details for the given IMS organization ID.
+   * @param {string} imsOrgId The IMS organization ID.
+   * @returns {Promise<{
+   *       imsOrgId: string,
+   *       tenantId: string,
+   *       orgName: string,
+   *       orgType: string,
+   *       countryCode: string,
+   *       admins: {
+   *               email: string,
+   *               firstName: string,
+   *               lastName: string,
+   *             }[],
+   *     }>} The organization details.
+   */
+  getImsOrganizationDetails(imsOrgId: string): Promise<object>;
 }

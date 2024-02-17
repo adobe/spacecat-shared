@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.17.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.17.1...@adobe/spacecat-shared-data-access-v1.17.2) (2024-02-17)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#157](https://github.com/adobe/spacecat-shared/issues/157)) ([015d12d](https://github.com/adobe/spacecat-shared/commit/015d12d34d3fded8d214df7147869d8905feb88a))
+
 # [@adobe/spacecat-shared-data-access-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.17.0...@adobe/spacecat-shared-data-access-v1.17.1) (2024-02-15)
 
 

@@ -30,6 +30,7 @@ export const OrganizationDto = {
     updatedAt: organization.getUpdatedAt(),
     GSI1PK: 'ALL_ORGANIZATIONS',
     config: Config.toDynamoItem(organization.getConfig()),
+    fulfillableItems: organization.getFulfillableItems(),
   }),
 
   /**
@@ -45,6 +46,7 @@ export const OrganizationDto = {
       createdAt: dynamoItem.createdAt,
       updatedAt: dynamoItem.updatedAt,
       config: dynamoItem.config,
+      fulfillableItems: dynamoItem.fulfillableItems,
     };
 
     return createOrganization(organizationData);

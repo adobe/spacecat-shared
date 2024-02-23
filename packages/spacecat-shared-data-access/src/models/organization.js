@@ -29,6 +29,7 @@ const Organization = (data = {}) => {
   self.getConfig = () => self.state.config;
   self.getName = () => self.state.name;
   self.getImsOrgId = () => self.state.imsOrgId;
+  self.getFulfillableItems = () => self.state.fulfillableItems;
 
   /**
      * Updates the IMS Org ID belonging to the organization.
@@ -77,6 +78,18 @@ const Organization = (data = {}) => {
 
     return self;
   };
+
+  self.updateFulfillableItems = (fulfillableItems) => {
+    if (!isObject(fulfillableItems)) {
+      throw new Error('Fulfillable items object must be provided');
+    }
+
+    self.state.fulfillableItems = fulfillableItems;
+    self.touch();
+
+    return self;
+  };
+
   return Object.freeze(self);
 };
 

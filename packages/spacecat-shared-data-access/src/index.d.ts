@@ -100,6 +100,10 @@ export interface Config {
 
 }
 
+export interface FulfillableItems {
+  items: string[];
+}
+
 /**
  * AuditConfig defines the structure for the overall audit configuration of a site.
  */
@@ -313,6 +317,12 @@ export interface Organization {
    * @returns {Config} The current audit configuration.
    */
   getConfig: () => Config;
+
+  /**
+   * Retrieves the fulfillable items object for the org.
+   * @returns {FulfillableItems} The current fulfillable items object.
+   */
+  getFulfillableItems: () => FulfillableItems;
 }
 
 export interface Configuration {

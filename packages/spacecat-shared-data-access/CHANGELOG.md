@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.17.2...@adobe/spacecat-shared-data-access-v1.18.0) (2024-02-23)
+
+
+### Features
+
+* fulfillable items support on Organization ([#160](https://github.com/adobe/spacecat-shared/issues/160)) ([7bc5bfc](https://github.com/adobe/spacecat-shared/commit/7bc5bfc596171f6007eb759c282681b29b138672))
+
 # [@adobe/spacecat-shared-data-access-v1.17.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.17.1...@adobe/spacecat-shared-data-access-v1.17.2) (2024-02-17)
 
 

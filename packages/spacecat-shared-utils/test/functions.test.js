@@ -305,8 +305,8 @@ describe('Shared functions', () => {
     });
 
     it('returns days before now', async () => {
-      const sevenDaysLater = dateAfterDays(-7);
-      expect(sevenDaysLater.toISOString()).to.equal(sevenDaysEarlierExpected);
+      const sevenDaysEarlier = dateAfterDays(-7);
+      expect(sevenDaysEarlier.toISOString()).to.equal(sevenDaysEarlierExpected);
     });
   });
 });

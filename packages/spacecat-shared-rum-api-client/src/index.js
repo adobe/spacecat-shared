@@ -88,9 +88,15 @@ async function generateDomainKey(domainkey, url, expiry) {
   return data[0].key;
 }
 
-async function createBacklink(dashboardUrl, domainKey, domainUrl, expiry) {
+async function createBacklink(dashboardUrl, domainKey, domainUrl, expiry, params) {
   const scopedDomainKey = await generateDomainKey(domainKey, domainUrl, expiry);
-  return `${dashboardUrl}?interval=${expiry}&offset=0&limit=100&url=${domainUrl}&domainkey=${scopedDomainKey}`;
+  return createUrl(dashboardUrl, {
+    offset: 0,
+    limit: 100,
+    url: domainUrl,
+    domainkey: scopedDomainKey,
+    ...{ interval: expiry, ...params },
+  });
 }
 
 export default class RUMAPIClient {
@@ -160,11 +166,23 @@ export default class RUMAPIClient {
     return data.map((row) => row.hostname);
   }
 
-  async createRUMBacklink(url, expiry) {
-    return createBacklink(APIS.RUM_DASHBOARD_UI, this.domainkey, url, expiry);
+  async createRUMBacklink(url, expiry, params) {
+    return createBacklink(
+      APIS.RUM_DASHBOARD_UI,
+      this.domainkey,
+      url,
+      expiry,
+      params,
+    );
   }
 
-  async create404Backlink(url, expiry) {
-    return createBacklink(APIS.NOT_FOUND_DASHBOARD_UI, this.domainkey, url, expiry);
+  async create404Backlink(url, expiry, params) {
+    return createBacklink(
+      APIS.NOT_FOUND_DASHBOARD_UI,
+      this.domainkey,
+      url,
+      expiry,
+      params,
+    );
   }
 }

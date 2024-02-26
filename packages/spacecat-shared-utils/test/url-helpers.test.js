@@ -94,6 +94,9 @@ describe('URL Utility Functions', () => {
       expect(composeBaseURL('https://example.com/')).to.equal('https://example.com');
       expect(composeBaseURL('http://example.com/')).to.equal('http://example.com');
       expect(composeBaseURL('example.com/')).to.equal('https://example.com');
+      expect(composeBaseURL('example.com.:123')).to.equal('https://example.com');
+      expect(composeBaseURL('WWW.example.com')).to.equal('https://example.com');
+      expect(composeBaseURL('WWW.example.com.:342')).to.equal('https://example.com');
     });
   });
 });

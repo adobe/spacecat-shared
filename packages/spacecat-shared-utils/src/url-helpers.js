@@ -63,8 +63,9 @@ function stripWWW(url) {
  * @returns {string} - The composed base URL.
  */
 function composeBaseURL(domain) {
-  let baseURL = stripTrailingDot(domain);
+  let baseURL = domain.toLowerCase();
   baseURL = stripPort(baseURL);
+  baseURL = stripTrailingDot(baseURL);
   baseURL = stripTrailingSlash(baseURL);
   baseURL = stripWWW(baseURL);
   baseURL = prependSchema(baseURL);

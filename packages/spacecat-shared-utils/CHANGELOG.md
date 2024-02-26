@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.11.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.11.4...@adobe/spacecat-shared-utils-v1.11.5) (2024-02-26)
+
+
+### Bug Fixes
+
+* baseurl composition fixes ([#162](https://github.com/adobe/spacecat-shared/issues/162)) ([7446a7d](https://github.com/adobe/spacecat-shared/commit/7446a7df02c586bb5a77b473bb4e678f0ab68240))
+
 # [@adobe/spacecat-shared-utils-v1.11.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.11.3...@adobe/spacecat-shared-utils-v1.11.4) (2024-02-24)
 
 

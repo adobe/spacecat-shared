@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-data-access-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.18.0...@adobe/spacecat-shared-data-access-v1.18.1) (2024-02-24)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#161](https://github.com/adobe/spacecat-shared/issues/161)) ([532976a](https://github.com/adobe/spacecat-shared/commit/532976adecead566dac4659be916cd26f2350ba0))
+
+# [@adobe/spacecat-shared-data-access-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.17.2...@adobe/spacecat-shared-data-access-v1.18.0) (2024-02-23)
+
+
+### Features
+
+* fulfillable items support on Organization ([#160](https://github.com/adobe/spacecat-shared/issues/160)) ([7bc5bfc](https://github.com/adobe/spacecat-shared/commit/7bc5bfc596171f6007eb759c282681b29b138672))
+
+# [@adobe/spacecat-shared-data-access-v1.17.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.17.1...@adobe/spacecat-shared-data-access-v1.17.2) (2024-02-17)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#157](https://github.com/adobe/spacecat-shared/issues/157)) ([015d12d](https://github.com/adobe/spacecat-shared/commit/015d12d34d3fded8d214df7147869d8905feb88a))
+
+# [@adobe/spacecat-shared-data-access-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.17.0...@adobe/spacecat-shared-data-access-v1.17.1) (2024-02-15)
+
+
+### Bug Fixes
+
+* generify site and organization config ([0ec8ee1](https://github.com/adobe/spacecat-shared/commit/0ec8ee1445e389c47d6ece436853e5b4c105ca93))
+
+# [@adobe/spacecat-shared-data-access-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.16.0...@adobe/spacecat-shared-data-access-v1.17.0) (2024-02-14)
+
+
+### Features
+
+* get organization by IMS org ID ([#153](https://github.com/adobe/spacecat-shared/issues/153)) ([541e7e7](https://github.com/adobe/spacecat-shared/commit/541e7e721cb21e977b59b19cf53dfb7ba460905f))
+
+# [@adobe/spacecat-shared-data-access-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.6...@adobe/spacecat-shared-data-access-v1.16.0) (2024-02-14)
+
+
+### Features
+
+* add configurations data access ([65bdc25](https://github.com/adobe/spacecat-shared/commit/65bdc2581e150cb32eb51d4d2bf03c8172ec2247))
+
 # [@adobe/spacecat-shared-data-access-v1.15.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.15.5...@adobe/spacecat-shared-data-access-v1.15.6) (2024-02-12)
 
 

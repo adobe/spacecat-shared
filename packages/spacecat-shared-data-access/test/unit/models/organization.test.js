@@ -31,6 +31,7 @@ describe('Organization Model Tests', () => {
       const org = createOrganization({ ...validData });
       expect(org).to.be.an('object');
       expect(org.getName()).to.equal(validData.name);
+      expect(org.getImsOrgId()).to.equal('1234@AdobeOrg');
     });
 
     it('creates an organization with default config when none provided', () => {
@@ -145,6 +146,42 @@ describe('Organization Model Tests', () => {
       organization.updateConfig({});
 
       expect(organization.getUpdatedAt()).to.not.equal(initialUpdatedAt);
+    });
+
+    it('updates fulfillable items correctly', () => {
+      let fulfillableItemsData = {
+        items: [
+          'dx_example_solution',
+          'dx_aem_another_solution',
+        ],
+      };
+      organization.updateFulfillableItems(fulfillableItemsData);
+      let updatedFIs = organization.getFulfillableItems();
+      expect(updatedFIs).to.be.an('object');
+      expect(updatedFIs.items).to.be.an('array');
+      expect(updatedFIs.items[0]).to.equal('dx_example_solution');
+      expect(updatedFIs.items[1]).to.equal('dx_aem_another_solution');
+
+      // Next, clear out items
+      fulfillableItemsData = {
+        items: [],
+      };
+      organization.updateFulfillableItems(fulfillableItemsData);
+      updatedFIs = organization.getFulfillableItems();
+      expect(updatedFIs).to.be.an('object');
+      expect(updatedFIs.items).to.be.an('array');
+      expect(updatedFIs.items.length).to.equal(0);
+    });
+
+    it('should handle invalid fulfillable items', () => {
+      let fulfillableItemsData = 'not-correct';
+      expect(() => organization.updateFulfillableItems(fulfillableItemsData)).to.throw('Fulfillable items object must be provided');
+
+      fulfillableItemsData = null;
+      expect(() => organization.updateFulfillableItems(fulfillableItemsData)).to.throw('Fulfillable items object must be provided');
+
+      fulfillableItemsData = ['thing_one'];
+      expect(() => organization.updateFulfillableItems(fulfillableItemsData)).to.throw('Fulfillable items object must be provided');
     });
   });
 });

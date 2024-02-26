@@ -282,11 +282,12 @@ describe('Shared functions', () => {
     });
   });
 
-  describe('daysAfter', () => {
+  describe('dateAfterDays', () => {
     const sandbox = sinon.createSandbox();
 
     const mockDate = '2023-11-27T12:30:01.124Z';
     const sevenDaysLaterExpected = '2023-12-04T12:30:01.124Z';
+    const sevenDaysEarlierExpected = '2023-11-20T12:30:01.124Z';
 
     before('setup', function () {
       this.clock = sandbox.useFakeTimers({
@@ -301,6 +302,11 @@ describe('Shared functions', () => {
     it('returns days after now', async () => {
       const sevenDaysLater = dateAfterDays(7);
       expect(sevenDaysLater.toISOString()).to.equal(sevenDaysLaterExpected);
+    });
+
+    it('returns days before now', async () => {
+      const sevenDaysLater = dateAfterDays(-7);
+      expect(sevenDaysLater.toISOString()).to.equal(sevenDaysEarlierExpected);
     });
   });
 });

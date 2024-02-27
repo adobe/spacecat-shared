@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.11.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.11.5...@adobe/spacecat-shared-utils-v1.11.6) (2024-02-26)
+
+
+### Bug Fixes
+
+* docs for dateAfterDays ([86c39de](https://github.com/adobe/spacecat-shared/commit/86c39dec9d6ce937b37a4a74fefe4973cd51aef6))
+
 # [@adobe/spacecat-shared-utils-v1.11.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.11.4...@adobe/spacecat-shared-utils-v1.11.5) (2024-02-26)
 
 

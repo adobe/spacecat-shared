@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.2...@adobe/spacecat-shared-rum-api-client-v1.6.3) (2024-02-27)
+
+
+### Bug Fixes
+
+* add backlink params ([cbf715d](https://github.com/adobe/spacecat-shared/commit/cbf715d2e04762a8e8fb40bb7daca7f6f9df193a))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.1...@adobe/spacecat-shared-rum-api-client-v1.6.2) (2024-02-21)
 
 

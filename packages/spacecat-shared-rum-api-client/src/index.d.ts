@@ -14,8 +14,20 @@ import { UniversalContext } from '@adobe/helix-universal';
 
 export interface RUMAPIOptions {
   interval?: number;
+  startdate?: string,
+  enddate?: string,
   offset?: number;
   limit?: number;
+  url?: string;
+}
+
+export interface RUMDashboardOptions {
+  interval?: number;
+  startdate?: string,
+  enddate?: string,
+  offset?: number;
+  limit?: number;
+  domainkey?: string,
   url?: string;
 }
 
@@ -42,21 +54,23 @@ export default class RUMAPIClient {
    * Asynchronous method to create a RUM backlink.
    * @param {string} url - A string representing the URL for the backlink.
    * @param {number} expiry - An integer representing the expiry value for the backlink.
+   * @param {RUMDashboardOptions} params - An object representing the parameters to be included
    * @returns A Promise resolving to a string representing url of the created backlink.
    * @remarks This method creates a backlink to the RUM dashboard, allowing users
    *   to view their reports and monitor real user activities.
    */
-  createRUMBacklink(url: string, expiry: number): Promise<string>;
+  createRUMBacklink(url: string, expiry: number, params?: RUMDashboardOptions): Promise<string>;
 
   /**
    * Asynchronous method to create a 404 backlink.
    * @param {string} url - A string representing the URL for the backlink.
    * @param {number} expiry - An integer representing the expiry value for the backlink.
+   * @param {RUMDashboardOptions} params - An object representing the parameters to be included
    * @returns A Promise resolving to a string representing url of the created backlink.
    * @remarks This method creates a backlink to the 404 report, allowing users
    *   to view their 404 pages.
    */
-  create404Backlink(url: string, expiry: number): Promise<string>;
+  create404Backlink(url: string, expiry: number, params?: RUMDashboardOptions): Promise<string>;
 
   /**
    * Asynchronous method to return the RUM dashboard API call response data.

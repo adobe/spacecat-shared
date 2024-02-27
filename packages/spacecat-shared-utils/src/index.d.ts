@@ -88,6 +88,6 @@ declare function composeBaseURL(domain: string): string;
 /**
  * Composes an audit URL by applying a series of transformations to the given url.
  * @param url - The url to compose the audit URL from.
- * @returns The composed audit URL.
+ * @returns a promise that resolves the composed audit URL.
  */
-declare async function composeAuditURL(url: string): string;
+declare function composeAuditURL(url: string): Promise<string>;

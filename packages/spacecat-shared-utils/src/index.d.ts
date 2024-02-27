@@ -84,3 +84,10 @@ declare function stripWWW(url: string): string;
  * @returns The composed base URL.
  */
 declare function composeBaseURL(domain: string): string;
+
+/**
+ * Composes an audit URL by applying a series of transformations to the given url.
+ * @param url - The url to compose the audit URL from.
+ * @returns The composed audit URL.
+ */
+declare async function composeAuditURL(url: string): string;

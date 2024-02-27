@@ -34,6 +34,7 @@ describe('Index Exports', () => {
     'dateAfterDays',
     'sqsWrapper',
     'sqsEventAdapter',
+    'composeAuditURL',
     'composeBaseURL',
     'prependSchema',
     'stripPort',

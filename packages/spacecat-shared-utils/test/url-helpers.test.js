@@ -13,7 +13,9 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
+import nock from 'nock';
 import {
+  composeAuditURL,
   composeBaseURL,
   prependSchema,
   stripPort,
@@ -97,6 +99,30 @@ describe('URL Utility Functions', () => {
       expect(composeBaseURL('example.com.:123')).to.equal('https://example.com');
       expect(composeBaseURL('WWW.example.com')).to.equal('https://example.com');
       expect(composeBaseURL('WWW.example.com.:342')).to.equal('https://example.com');
+    });
+  });
+
+  describe('composeAuditURL', () => {
+    afterEach(() => {
+      nock.cleanAll();
+    });
+    it('should compose audit URL', async () => {
+      nock('https://abc.com')
+        .get('/')
+        .reply(200);
+      await expect(composeAuditURL('https://abc.com')).to.eventually.equal('abc.com');
+    });
+    it('should follow redirect when composing audit URL', async () => {
+      nock('https://abc.com')
+        .get('/')
+        .reply(301, undefined, { Location: 'https://www.abc.com/' });
+
+      nock('https://www.abc.com')
+        .get('/')
+        .reply(200, 'Success');
+
+      const inputUrl = 'abc.com';
+      await expect(composeAuditURL(inputUrl)).to.eventually.equal('www.abc.com');
     });
   });
 });

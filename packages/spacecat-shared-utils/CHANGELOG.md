@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.12.0...@adobe/spacecat-shared-utils-v1.12.1) (2024-02-27)
+
+
+### Bug Fixes
+
+* composeAuditUrl docs ([e0b8db0](https://github.com/adobe/spacecat-shared/commit/e0b8db0b147f997e4a424c344474d0ddbf64fa14))
+
+# [@adobe/spacecat-shared-utils-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.11.6...@adobe/spacecat-shared-utils-v1.12.0) (2024-02-27)
+
+
+### Features
+
+* add composeAuditURL to helpers ([b7d4244](https://github.com/adobe/spacecat-shared/commit/b7d42447380915204a702e9fb1dfc4ecd4e5795c))
+
 # [@adobe/spacecat-shared-utils-v1.11.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.11.5...@adobe/spacecat-shared-utils-v1.11.6) (2024-02-26)
 
 

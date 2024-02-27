@@ -304,6 +304,13 @@ describe('Shared functions', () => {
       expect(sevenDaysLater.toISOString()).to.equal(sevenDaysLaterExpected);
     });
 
+    it('returns days after a fix date', async () => {
+      const dateString = '2023-11-15T12:30:01.124Z';
+      const expectedDateString = '2023-11-17T12:30:01.124Z';
+      const sevenDaysLater = dateAfterDays(2, dateString);
+      expect(sevenDaysLater.toISOString()).to.equal(expectedDateString);
+    });
+
     it('returns days before now', async () => {
       const sevenDaysEarlier = dateAfterDays(-7);
       expect(sevenDaysEarlier.toISOString()).to.equal(sevenDaysEarlierExpected);

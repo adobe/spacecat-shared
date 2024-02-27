@@ -14,6 +14,7 @@
 import { expect } from 'chai';
 import { createOrganization } from '../../../src/models/organization.js';
 import { sleep } from '../util.js';
+import { Config } from '../../../src/models/site/config.js';
 
 const validData = {
   id: '1111111',
@@ -86,7 +87,7 @@ describe('Organization Model Tests', () => {
     });
 
     it('updates config correctly', () => {
-      const conf = {
+      const conf = Config({
         slack: {
           workspace: 'workspace',
           channel: 'channel',
@@ -96,7 +97,8 @@ describe('Organization Model Tests', () => {
           byOrg: false,
           mentions: [{ slack: ['slackId'] }],
         }],
-      };
+        audits: {},
+      });
       organization.updateConfig(conf);
       const updatedConf = organization.getConfig();
       expect(updatedConf.slack).to.be.an('object');
@@ -143,7 +145,7 @@ describe('Organization Model Tests', () => {
 
       await sleep(20);
 
-      organization.updateConfig({});
+      organization.updateConfig(Config({}));
 
       expect(organization.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });
@@ -187,27 +189,31 @@ describe('Organization Model Tests', () => {
 
   describe('AuditConfig Integration', () => {
     let organization;
+    const auditConfigData = {
+      auditsDisabled: false,
+      auditTypeConfigs: {
+        type1: { disabled: true },
+        type2: { /* some other config */ },
+      },
+    };
 
     beforeEach(() => {
-      organization = createOrganization(validData);
+      organization = createOrganization({
+        ...validData,
+        config: {
+          ...validData.config,
+          audits: auditConfigData,
+        },
+      });
     });
 
     it('handles AuditConfig and AuditConfigType correctly', () => {
-      const auditConfigData = {
-        auditsDisabled: false,
-        auditTypeConfigs: {
-          type1: { /* some config */ },
-          type2: { /* some config */ },
-        },
-      };
-
-      const org = createOrganization({ ...validData, auditConfig: auditConfigData });
-      const auditConfig = org.getAuditConfig();
+      const auditConfig = organization.getAuditConfig();
 
       expect(auditConfig).to.be.an('object');
       expect(auditConfig.auditsDisabled()).to.be.false;
       expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
     });
 
     it('sets all audits disabled correctly', () => {

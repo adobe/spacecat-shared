@@ -14,6 +14,7 @@ import { hasText, isObject } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
 import { Config, DEFAULT_CONFIG } from './site/config.js';
+import AuditConfig from './site/audit-config.js';
 
 export const DEFAULT_ORGANIZATION_ID = 'default';
 
@@ -26,10 +27,23 @@ export const DEFAULT_ORGANIZATION_ID = 'default';
 const Organization = (data = {}) => {
   const self = Base(data);
 
+  self.getAuditConfig = () => self.state.auditConfig;
   self.getConfig = () => self.state.config;
   self.getName = () => self.state.name;
   self.getImsOrgId = () => self.state.imsOrgId;
   self.getFulfillableItems = () => self.state.fulfillableItems;
+
+  self.setAllAuditsDisabled = (disabled) => {
+    self.state.auditConfig.updateAuditsDisabled(disabled);
+    self.touch();
+    return self;
+  };
+
+  self.updateAuditTypeConfig = (type, config) => {
+    self.state.auditConfig.updateAuditTypeConfig(type, config);
+    self.touch();
+    return self;
+  };
 
   /**
      * Updates the IMS Org ID belonging to the organization.
@@ -115,6 +129,15 @@ export const createOrganization = (data) => {
   }
 
   newState.config = Config(newState.config);
+
+  if (!isObject(newState.auditConfig)) {
+    newState.auditConfig = {
+      auditsDisabled: false,
+      auditTypeConfigs: {},
+    };
+  }
+
+  newState.auditConfig = AuditConfig(newState.auditConfig);
 
   return Organization(newState);
 };

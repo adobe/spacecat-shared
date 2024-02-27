@@ -184,4 +184,45 @@ describe('Organization Model Tests', () => {
       expect(() => organization.updateFulfillableItems(fulfillableItemsData)).to.throw('Fulfillable items object must be provided');
     });
   });
+
+  describe('AuditConfig Integration', () => {
+    let organization;
+
+    beforeEach(() => {
+      organization = createOrganization(validData);
+    });
+
+    it('handles AuditConfig and AuditConfigType correctly', () => {
+      const auditConfigData = {
+        auditsDisabled: false,
+        auditTypeConfigs: {
+          type1: { /* some config */ },
+          type2: { /* some config */ },
+        },
+      };
+
+      const org = createOrganization({ ...validData, auditConfig: auditConfigData });
+      const auditConfig = org.getAuditConfig();
+
+      expect(auditConfig).to.be.an('object');
+      expect(auditConfig.auditsDisabled()).to.be.false;
+      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
+      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
+    });
+
+    it('sets all audits disabled correctly', () => {
+      organization.setAllAuditsDisabled(true);
+      expect(organization.getAuditConfig().auditsDisabled()).to.be.true;
+    });
+
+    it('updates a specific audit type configuration', () => {
+      organization.updateAuditTypeConfig('type1', { disabled: true });
+      expect(organization.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.true;
+    });
+
+    it('adds a new audit type configuration if it does not exist', () => {
+      organization.updateAuditTypeConfig('type3', { disabled: true });
+      expect(organization.getAuditConfig().getAuditTypeConfig('type3').disabled()).to.be.true;
+    });
+  });
 });

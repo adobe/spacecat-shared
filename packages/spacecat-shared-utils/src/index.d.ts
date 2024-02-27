@@ -90,4 +90,4 @@ declare function composeBaseURL(domain: string): string;
  * @param url - The url to compose the audit URL from.
  * @returns The composed audit URL.
  */
-declare function composeAuditURL(url: string): string;
+declare async function composeAuditURL(url: string): string;

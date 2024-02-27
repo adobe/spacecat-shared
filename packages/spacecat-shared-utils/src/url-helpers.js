@@ -10,6 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
+import { context as h2, h1 } from '@adobe/fetch';
+
+/* c8 ignore next 3 */
+export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
+  ? h1()
+  : h2();
 /**
  * Prepends 'https://' schema to the URL if it's not already present.
  * @param {string} url - The URL to modify.

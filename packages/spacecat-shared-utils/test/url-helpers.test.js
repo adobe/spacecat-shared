@@ -110,7 +110,19 @@ describe('URL Utility Functions', () => {
       nock('https://abc.com')
         .get('/')
         .reply(200);
-      expect(composeAuditURL('https://abc.com')).to.eventually.equal('abc.com');
+      await expect(composeAuditURL('https://abc.com')).to.eventually.equal('abc.com');
+    });
+    it('should follow redirect when composing audit URL', async () => {
+      nock('https://abc.com')
+        .get('/')
+        .reply(301, undefined, { Location: 'https://www.abc.com/' });
+
+      nock('https://www.abc.com')
+        .get('/')
+        .reply(200, 'Success');
+
+      const inputUrl = 'abc.com';
+      await expect(composeAuditURL(inputUrl)).to.eventually.equal('www.abc.com');
     });
   });
 });

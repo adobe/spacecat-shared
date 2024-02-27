@@ -192,7 +192,7 @@ describe('DynamoDB Integration Test', async () => {
     await dataAccess.updateOrganization(organization);
 
     const organizationUpdated = await dataAccess.getOrganizationByID(orgId);
-    expect(organizationUpdated.getAuditConfig().getAuditTypeConfig('hebele').disabled).to.equal(true);
+    expect(organizationUpdated.getAuditConfig().getAuditTypeConfig('hebele').disabled()).to.equal(true);
   });
 
   it('gets organization by IMS Org ID', async () => {

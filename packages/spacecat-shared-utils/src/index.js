@@ -34,6 +34,7 @@ export { sqsEventAdapter } from './sqs.js';
 
 export {
   composeBaseURL,
+  composeAuditURL,
   prependSchema,
   stripPort,
   stripTrailingDot,

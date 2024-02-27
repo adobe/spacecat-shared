@@ -242,6 +242,13 @@ export default async function generateSampleData(
           type: 'organic-keywords',
           country: 'RO',
         }],
+        audits: {
+          auditsDisabled: false,
+          auditTypeConfigs: {
+            'lhs-mobile': { disabled: false },
+            cwv: { disabled: true },
+          },
+        },
       },
     });
   }

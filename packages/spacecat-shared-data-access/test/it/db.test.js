@@ -171,6 +171,30 @@ describe('DynamoDB Integration Test', async () => {
     expect(organization.getId()).to.equal(orgId);
   });
 
+  it('sets all audits disabled for an organization', async () => {
+    const orgId = (await dataAccess.getOrganizations())[0].getId();
+    const organization = await dataAccess.getOrganizationByID(orgId);
+
+    // set all audits to disabled & persist
+    await organization.setAllAuditsDisabled(true);
+    await dataAccess.updateOrganization(organization);
+
+    const organizationUpdated = await dataAccess.getOrganizationByID(orgId);
+    expect(organizationUpdated.getAuditConfig().auditsDisabled()).to.equal(true);
+  });
+
+  it('sets a single audit disabled for an organization', async () => {
+    const orgId = (await dataAccess.getOrganizations())[1].getId();
+    const organization = await dataAccess.getOrganizationByID(orgId);
+
+    // set all audits to disabled & persist
+    await organization.updateAuditTypeConfig('hebele', { disabled: true });
+    await dataAccess.updateOrganization(organization);
+
+    const organizationUpdated = await dataAccess.getOrganizationByID(orgId);
+    expect(organizationUpdated.getAuditConfig().getAuditTypeConfig('hebele').disabled).to.equal(true);
+  });
+
   it('gets organization by IMS Org ID', async () => {
     const imsOrgId = (await dataAccess.getOrganizations())[0].getImsOrgId();
     const organization = await dataAccess.getOrganizationByImsOrgID(imsOrgId);

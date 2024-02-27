@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.6.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.3...@adobe/spacecat-shared-rum-api-client-v1.6.4) (2024-02-27)
+
+
+### Bug Fixes
+
+* create404Backlink and createRUMBacklink documentation  ([#165](https://github.com/adobe/spacecat-shared/issues/165)) ([418ec68](https://github.com/adobe/spacecat-shared/commit/418ec68a1cabf22054688342438dcf2ea60acf38))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.2...@adobe/spacecat-shared-rum-api-client-v1.6.3) (2024-02-27)
 
 

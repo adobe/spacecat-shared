@@ -95,7 +95,8 @@ async function createBacklink(dashboardUrl, domainKey, domainUrl, expiry, params
     limit: 100,
     url: domainUrl,
     domainkey: scopedDomainKey,
-    ...{ interval: expiry, ...params },
+    interval: expiry,
+    ...params,
   });
 }
 

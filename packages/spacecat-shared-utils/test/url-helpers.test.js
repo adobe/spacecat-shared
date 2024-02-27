@@ -13,7 +13,9 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
+import nock from 'nock';
 import {
+  composeAuditURL,
   composeBaseURL,
   prependSchema,
   stripPort,
@@ -97,6 +99,18 @@ describe('URL Utility Functions', () => {
       expect(composeBaseURL('example.com.:123')).to.equal('https://example.com');
       expect(composeBaseURL('WWW.example.com')).to.equal('https://example.com');
       expect(composeBaseURL('WWW.example.com.:342')).to.equal('https://example.com');
+    });
+  });
+
+  describe('composeAuditURL', () => {
+    afterEach(() => {
+      nock.cleanAll();
+    });
+    it('should compose audit URL', async () => {
+      nock('https://abc.com')
+        .get('/')
+        .reply(200);
+      expect(composeAuditURL('https://abc.com')).to.eventually.equal('abc.com');
     });
   });
 });

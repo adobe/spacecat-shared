@@ -72,8 +72,16 @@ function composeBaseURL(domain) {
   return baseURL;
 }
 
+async function composeAuditURL(url) {
+  const urlWithScheme = prependSchema(url);
+  const resp = await fetch(urlWithScheme);
+  const finalUrl = resp.url.split('://')[1];
+  return stripTrailingSlash(finalUrl);
+}
+
 export {
   composeBaseURL,
+  composeAuditURL,
   prependSchema,
   stripPort,
   stripTrailingDot,

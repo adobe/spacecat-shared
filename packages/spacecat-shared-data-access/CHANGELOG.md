@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.19.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.19.1...@adobe/spacecat-shared-data-access-v1.19.2) (2024-02-28)
+
+
+### Bug Fixes
+
+* update config packaging for site ([#172](https://github.com/adobe/spacecat-shared/issues/172)) ([c07f100](https://github.com/adobe/spacecat-shared/commit/c07f1007fd90fbf2cb211200cf9fd01e1db13fc6))
+
 # [@adobe/spacecat-shared-data-access-v1.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.19.0...@adobe/spacecat-shared-data-access-v1.19.1) (2024-02-28)
 
 

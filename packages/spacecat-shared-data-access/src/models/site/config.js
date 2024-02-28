@@ -11,6 +11,7 @@
  */
 
 import Joi from 'joi';
+import AuditConfig from './audit-config.js';
 
 export const configSchema = Joi.object({
   slack: Joi.object({
@@ -22,12 +23,21 @@ export const configSchema = Joi.object({
     byOrg: Joi.boolean(),
     mentions: Joi.array().items(Joi.object({ slack: Joi.array().items(Joi.string()) })),
   }).unknown(true)),
+  audits: Joi.object({
+    auditsDisabled: Joi.boolean().optional(),
+    auditTypeConfigs: Joi.object().pattern(
+      Joi.string(),
+      Joi.object({
+        disabled: Joi.boolean().optional(),
+      }).unknown(true),
+    ).unknown(true),
+  }).unknown(true),
 }).unknown(true);
 
 export const DEFAULT_CONFIG = {
-  slack: {
-  },
+  slack: {},
   alerts: [],
+  audits: {},
 };
 
 // Function to validate incoming configuration
@@ -43,6 +53,8 @@ function validateConfiguration(config) {
 
 export const Config = (data = {}) => {
   const validConfig = validateConfiguration(data);
+  validConfig.audits = AuditConfig(validConfig.audits);
+
   const state = { ...validConfig };
 
   const self = { ...state };
@@ -52,4 +64,7 @@ export const Config = (data = {}) => {
 
 Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 
-Config.toDynamoItem = (config) => validateConfiguration(config);
+Config.toDynamoItem = (config) => ({
+  ...config,
+  audits: AuditConfig.toDynamoItem(config.audits),
+});

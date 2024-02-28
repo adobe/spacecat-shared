@@ -35,7 +35,7 @@ export function toBoolean(value: unknown): boolean;
 
 export function isValidUrl(urlString: string): boolean;
 
-export function dateAfterDays(days: number): Date;
+export function dateAfterDays(days: number, dateString: string): Date;
 
 export function sqsWrapper(fn: (message: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;
@@ -88,6 +88,6 @@ declare function composeBaseURL(domain: string): string;
 /**
  * Composes an audit URL by applying a series of transformations to the given url.
  * @param url - The url to compose the audit URL from.
- * @returns The composed audit URL.
+ * @returns a promise that resolves the composed audit URL.
  */
-declare async function composeAuditURL(url: string): string;
+declare function composeAuditURL(url: string): Promise<string>;

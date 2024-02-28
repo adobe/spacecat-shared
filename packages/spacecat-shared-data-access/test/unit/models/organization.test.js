@@ -14,7 +14,6 @@
 import { expect } from 'chai';
 import { createOrganization } from '../../../src/models/organization.js';
 import { sleep } from '../util.js';
-import { Config } from '../../../src/models/site/config.js';
 
 const validData = {
   id: '1111111',
@@ -87,7 +86,7 @@ describe('Organization Model Tests', () => {
     });
 
     it('updates config correctly', () => {
-      const conf = Config({
+      const conf = {
         slack: {
           workspace: 'workspace',
           channel: 'channel',
@@ -98,7 +97,7 @@ describe('Organization Model Tests', () => {
           mentions: [{ slack: ['slackId'] }],
         }],
         audits: {},
-      });
+      };
       organization.updateConfig(conf);
       const updatedConf = organization.getConfig();
       expect(updatedConf.slack).to.be.an('object');
@@ -145,7 +144,7 @@ describe('Organization Model Tests', () => {
 
       await sleep(20);
 
-      organization.updateConfig(Config({}));
+      organization.updateConfig({});
 
       expect(organization.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });

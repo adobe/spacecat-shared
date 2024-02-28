@@ -16,7 +16,6 @@ import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { expect } from 'chai';
 import { createSite } from '../../../src/models/site.js';
 import { sleep } from '../util.js';
-import { Config } from '../../../src/models/site/config.js';
 
 const validData = {
   baseURL: 'https://www.example.com',
@@ -113,7 +112,7 @@ describe('Site Model Tests', () => {
     });
 
     it('updates config correctly', () => {
-      const conf = Config({
+      const conf = {
         slack: {
           workspace: 'workspace',
           channel: 'channel',
@@ -123,7 +122,7 @@ describe('Site Model Tests', () => {
           byOrg: false,
           mentions: [{ slack: ['slackId'] }],
         }],
-      });
+      };
       site.updateConfig(conf);
       const updatedConf = site.getConfig();
       expect(updatedConf.slack).to.be.an('object');
@@ -184,7 +183,7 @@ describe('Site Model Tests', () => {
 
       await sleep(20);
 
-      site.updateConfig(Config({}));
+      site.updateConfig({});
 
       expect(site.getUpdatedAt()).to.not.equal(initialUpdatedAt);
     });

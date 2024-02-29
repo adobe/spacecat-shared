@@ -38,10 +38,10 @@ export function isValidUrl(urlString: string): boolean;
 export function dateAfterDays(days: number, dateString: string): Date;
 
 export function sqsWrapper(fn: (message: object, context: object) => Promise<Response>):
-  (request: object, context: object) => Promise<Response>;
+    (request: object, context: object) => Promise<Response>;
 
 export function sqsEventAdapter(fn: (message: object, context: object) => Promise<Response>):
-  (request: object, context: object) => Promise<Response>;
+    (request: object, context: object) => Promise<Response>;
 
 /**
  * Prepends 'https://' schema to the URL if it's not already present.
@@ -91,3 +91,20 @@ declare function composeBaseURL(domain: string): string;
  * @returns a promise that resolves the composed audit URL.
  */
 declare function composeAuditURL(url: string): Promise<string>;
+
+/**
+ * Checks whether audits are disabled for a given site by inspecting the audit configurations
+ * in the respective organization and site models.
+ *
+ * If the optional parameter `auditType` is NOT provided, only the root-level "auditsDisabled" flag
+ * in the site and organization is checked.
+ *
+ * If the optional parameter `auditType` is provided, then the specific audit configuration for the
+ * specified type is also checked.
+ *
+ * @param {object} site - The site object.
+ * @param {object} organization - The organization object.
+ * @param {string} [auditType] - The type of audit.
+ * @returns {boolean} - True if the audit(s) are disabled, otherwise false.
+ */
+declare function isAuditsDisabled(site: object, organization: object, auditType?: string): boolean

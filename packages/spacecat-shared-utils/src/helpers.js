@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isString } from './functions.js';
+import { hasText, isString } from './functions.js';
 
 /**
  * Resolves the name of the secret based on the function version.
@@ -19,7 +19,7 @@ import { isString } from './functions.js';
  * @param {string} defaultPath - The default path for the secret.
  * @returns {string} - The resolved secret name.
  */
-const resolveSecretsName = (opts, ctx, defaultPath) => {
+export function resolveSecretsName(opts, ctx, defaultPath) {
   let funcVersion = ctx?.func?.version;
 
   if (!isString(funcVersion)) {
@@ -33,8 +33,25 @@ const resolveSecretsName = (opts, ctx, defaultPath) => {
   funcVersion = /^ci\d+$/i.test(funcVersion) ? 'ci' : funcVersion;
 
   return `${defaultPath}/${funcVersion}`;
-};
+}
 
-export {
-  resolveSecretsName,
-};
+export function isAuditsDisabled(site, organization, auditType) {
+  // return early if all audits are disabled for the organization
+  if (organization.getAuditConfig().auditsDisabled()) {
+    return true;
+  }
+
+  // return early if all audits are disabled for the site
+  if (site.getAuditConfig().auditsDisabled()) {
+    return true;
+  }
+
+  if (hasText(auditType)) {
+    const disabledAtOrg = organization.getAuditConfig().getAuditTypeConfig(auditType)?.disabled();
+    const disabledAtSite = site.getAuditConfig().getAuditTypeConfig(auditType)?.disabled();
+
+    return !!disabledAtOrg || !!disabledAtSite;
+  }
+
+  return false;
+}

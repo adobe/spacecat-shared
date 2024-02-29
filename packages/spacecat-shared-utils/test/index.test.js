@@ -30,6 +30,7 @@ describe('Index Exports', () => {
     'isString',
     'toBoolean',
     'isValidUrl',
+    'isAuditsDisabled',
     'resolveSecretsName',
     'dateAfterDays',
     'sqsWrapper',

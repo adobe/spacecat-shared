@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.12.3...@adobe/spacecat-shared-utils-v1.13.0) (2024-02-29)
+
+
+### Features
+
+* helper to detect audits are disabled ([#173](https://github.com/adobe/spacecat-shared/issues/173)) ([e698a76](https://github.com/adobe/spacecat-shared/commit/e698a76899399a7155175527b47c0fe5528b123a))
+
 # [@adobe/spacecat-shared-utils-v1.12.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.12.2...@adobe/spacecat-shared-utils-v1.12.3) (2024-02-28)
 
 

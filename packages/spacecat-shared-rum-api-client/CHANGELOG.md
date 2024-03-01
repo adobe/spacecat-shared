@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.6.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.4...@adobe/spacecat-shared-rum-api-client-v1.6.5) (2024-03-01)
+
+
+### Bug Fixes
+
+* fix data desk params ([bb0c231](https://github.com/adobe/spacecat-shared/commit/bb0c23153ac8da510644b96da489135f0209d3c2))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.6.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.3...@adobe/spacecat-shared-rum-api-client-v1.6.4) (2024-02-27)
 
 

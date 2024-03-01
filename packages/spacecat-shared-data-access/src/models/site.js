@@ -103,7 +103,7 @@ const Site = (data = {}) => {
       throw new Error('Config must be provided');
     }
 
-    self.state.config = Config.toDynamoItem(config);
+    self.state.config = Config(config);
     self.touch();
 
     return self;

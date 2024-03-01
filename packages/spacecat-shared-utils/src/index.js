@@ -27,7 +27,10 @@ export {
   dateAfterDays,
 } from './functions.js';
 
-export { resolveSecretsName } from './helpers.js';
+export {
+  isAuditsDisabled,
+  resolveSecretsName,
+} from './helpers.js';
 
 export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';

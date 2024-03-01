@@ -135,7 +135,7 @@ describe('backlink creation', () => {
       .query(params)
       .reply(200, successKeyResponse);
 
-    const backlink = await client.create404Backlink(finalUrl, 7, { startdate: '2/18/2024', enddate: '2/25/2024' });
+    const backlink = await client.create404Backlink(finalUrl, 7, { startdate: '2/18/2024', enddate: '2/25/2024', interval: -1 });
     expect(backlink).to.equal(expectedBacklink);
   });
 });

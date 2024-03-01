@@ -90,13 +90,17 @@ async function generateDomainKey(domainkey, url, expiry) {
 
 async function createBacklink(dashboardUrl, domainKey, domainUrl, expiry, params = {}) {
   const scopedDomainKey = await generateDomainKey(domainKey, domainUrl, expiry);
+  const dataDeskParams = { ...params };
+  if (dataDeskParams.startdate) {
+    delete dataDeskParams.interval;
+  }
   return createUrl(dashboardUrl, {
     offset: 0,
     limit: 100,
     url: domainUrl,
     domainkey: scopedDomainKey,
-    ...(params?.startdate ? {} : { interval: expiry }),
-    ...params,
+    ...(dataDeskParams?.startdate ? {} : { interval: expiry }),
+    ...dataDeskParams,
   });
 }
 

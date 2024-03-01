@@ -193,7 +193,7 @@ describe('ImsClient', () => {
         .query(true)
         .reply(500);
 
-      await expect(client.getServiceAccessTokenV3()).to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 500');
+      await expect(client.getServiceAccessTokenV3()).to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 500');
     });
 
     it('should handle IMS product context request failures', async () => {

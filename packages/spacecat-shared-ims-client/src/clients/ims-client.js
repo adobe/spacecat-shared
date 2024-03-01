@@ -247,10 +247,10 @@ export default class ImsClient {
         },
       );
 
-      this.#logDuration('IMS getServiceAccessToken request', startTime);
+      this.#logDuration('IMS getServiceAccessTokenV3 request', startTime);
 
       if (!tokenResponse.ok) {
-        throw new Error(`IMS getServiceAccessToken request failed with status: ${tokenResponse.status}`);
+        throw new Error(`IMS getServiceAccessTokenV3 request failed with status: ${tokenResponse.status}`);
       }
 
       /* eslint-disable camelcase */

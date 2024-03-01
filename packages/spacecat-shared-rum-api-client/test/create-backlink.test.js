@@ -128,14 +128,14 @@ describe('backlink creation', () => {
 
   it('returns 404 report backlink when successful with correct params', async () => {
     const client = RUMAPIClient.createFrom(context);
-    const expectedBacklink = 'https://data.aem.live/404-reports?offset=0&limit=100&url=www.space.cat&domainkey=scoped-domain-key&interval=-1&startDate=2%2F18%2F2024&endDate=2%2F25%2F2024';
+    const expectedBacklink = 'https://data.aem.live/404-reports?offset=0&limit=100&url=www.space.cat&domainkey=scoped-domain-key&startdate=2%2F18%2F2024&enddate=2%2F25%2F2024';
 
     nock('https://helix-pages.anywhere.run')
       .post('/helix-services/run-query@v3/rotate-domainkeys')
       .query(params)
       .reply(200, successKeyResponse);
 
-    const backlink = await client.create404Backlink(finalUrl, 7, { interval: -1, startDate: '2/18/2024', endDate: '2/25/2024' });
+    const backlink = await client.create404Backlink(finalUrl, 7, { startdate: '2/18/2024', enddate: '2/25/2024', interval: -1 });
     expect(backlink).to.equal(expectedBacklink);
   });
 });

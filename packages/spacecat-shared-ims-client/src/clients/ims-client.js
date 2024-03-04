@@ -18,7 +18,7 @@ import {
   extractIdAndAuthSource,
   fetch as httpFetch, getGroupMembersEndpoint,
   getImsOrgsApiPath,
-  IMS_PRODUCT_CONTEXT_BY_ORG_ENDPOINT, IMS_TOKEN_ENDPOINT,
+  IMS_PRODUCT_CONTEXT_BY_ORG_ENDPOINT, IMS_TOKEN_ENDPOINT, IMS_TOKEN_ENDPOINT_V3,
 } from '../utils.js';
 
 export default class ImsClient {
@@ -29,6 +29,7 @@ export default class ImsClient {
       IMS_CLIENT_ID: clientId,
       IMS_CLIENT_CODE: clientCode,
       IMS_CLIENT_SECRET: clientSecret,
+      IMS_SCOPE: scope,
     } = context.env;
 
     if (!hasText(imsHost) || !hasText(clientId) || !hasText(clientCode) || !hasText(clientSecret)) {
@@ -41,6 +42,7 @@ export default class ImsClient {
       clientId,
       clientCode,
       clientSecret,
+      scope,
     }, log);
   }
 
@@ -59,6 +61,7 @@ export default class ImsClient {
     this.config = config;
     this.log = log;
     this.serviceAccessToken = null;
+    this.serviceAccessTokenV3 = null;
   }
 
   #logDuration(message, startTime) {
@@ -217,6 +220,49 @@ export default class ImsClient {
       };
 
       return this.serviceAccessToken;
+    } catch (error) {
+      this.log.error('Error while fetching data from Ims API: ', error.message);
+      throw error;
+    }
+  }
+
+  async getServiceAccessTokenV3() {
+    if (hasText(this.serviceAccessTokenV3?.access_token)) {
+      return this.serviceAccessTokenV3;
+    }
+
+    try {
+      const startTime = process.hrtime.bigint();
+
+      const tokenResponse = await httpFetch(
+        `https://${this.config.imsHost}${IMS_TOKEN_ENDPOINT_V3}`,
+        {
+          method: 'POST',
+          body: createFormData({
+            client_id: this.config.clientId,
+            client_secret: this.config.clientSecret,
+            scope: this.config.scope,
+            grant_type: 'client_credentials',
+          }),
+        },
+      );
+
+      this.#logDuration('IMS getServiceAccessTokenV3 request', startTime);
+
+      if (!tokenResponse.ok) {
+        throw new Error(`IMS getServiceAccessTokenV3 request failed with status: ${tokenResponse.status}`);
+      }
+
+      /* eslint-disable camelcase */
+      const { access_token, token_type, expires_in } = await tokenResponse.json();
+
+      this.serviceAccessTokenV3 = {
+        access_token,
+        expires_in,
+        token_type,
+      };
+
+      return this.serviceAccessTokenV3;
     } catch (error) {
       this.log.error('Error while fetching data from Ims API: ', error.message);
       throw error;

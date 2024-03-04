@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.1.3...@adobe/spacecat-shared-ims-client-v1.2.0) (2024-03-04)
+
+
+### Features
+
+* ims client gets service token from v3 endpoint ([e59fad9](https://github.com/adobe/spacecat-shared/commit/e59fad9be123ebf19f4a665aabcf9f021fe233c8))
+
 # [@adobe/spacecat-shared-ims-client-v1.1.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.1.2...@adobe/spacecat-shared-ims-client-v1.1.3) (2024-03-02)
 
 

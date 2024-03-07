@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.19.3...@adobe/spacecat-shared-data-access-v1.20.0) (2024-03-07)
+
+
+### Features
+
+* get and update configurations ([#178](https://github.com/adobe/spacecat-shared/issues/178)) ([163e27a](https://github.com/adobe/spacecat-shared/commit/163e27ad1cf704608a3fba8087d5103c8cb4226d)), closes [#183](https://github.com/adobe/spacecat-shared/issues/183) [/github.com/adobe/spacecat-api-service/issues/183#issuecomment-1973345923](https://github.com//github.com/adobe/spacecat-api-service/issues/183/issues/issuecomment-1973345923)
+
 # [@adobe/spacecat-shared-data-access-v1.19.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.19.2...@adobe/spacecat-shared-data-access-v1.19.3) (2024-03-02)
 
 

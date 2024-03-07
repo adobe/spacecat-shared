@@ -10,9 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject } from '@adobe/spacecat-shared-utils';
+import {
+  hasText,
+  isObject,
+} from '@adobe/spacecat-shared-utils';
 
 import { ConfigurationDto } from '../../dto/configuration.js';
+import { createConfiguration } from '../../models/configuration.js';
 
 /**
  * Retrieves configuration with latest version.
@@ -41,6 +45,27 @@ export const getConfiguration = async (
 };
 
 /**
+ * Retrieves all configurations.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @return {Promise<Readonly<Configuration>[]>} A promise that resolves to the configurations.
+ */
+export const getConfigurations = async (
+  dynamoClient,
+  config,
+) => {
+  const dynamoItems = await dynamoClient.query({
+    TableName: config.tableNameConfigurations,
+    KeyConditionExpression: 'PK = :pk',
+    ExpressionAttributeValues: {
+      ':pk': config.pkAllConfigurations,
+    },
+  });
+
+  return dynamoItems.map(ConfigurationDto.fromDynamoItem);
+};
+
+/**
  * Retrieves a site by its version.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
@@ -60,4 +85,40 @@ export const getConfigurationByVersion = async (
   });
 
   return isObject(dynamoItem) ? ConfigurationDto.fromDynamoItem(dynamoItem) : null;
+};
+
+function incrementVersion(version) {
+  if (!hasText(version)) return 'v1';
+
+  const versionNumber = parseInt(version.substring(1), 10);
+  return `v${versionNumber + 1}`;
+}
+
+/**
+ * Updates the configuration. Updating the configuration will create a new version of the
+ * configuration. The version is a string of the format "v<version-number>", for example "v1".
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+  * @param {Configuration} configurationData - The configuration data.
+ * @return {Promise<void>} A promise that resolves when the configuration is updated.
+ */
+export const updateConfiguration = async (
+  dynamoClient,
+  config,
+  configurationData,
+) => {
+  const newConfigurationData = { ...configurationData };
+  const latestConfiguration = await getConfiguration(dynamoClient, config);
+
+  newConfigurationData.version = incrementVersion(latestConfiguration?.version);
+  newConfigurationData.PK = config.pkAllConfigurations;
+
+  const newConfiguration = createConfiguration(newConfigurationData);
+
+  await dynamoClient.putItem(
+    config.tableNameConfigurations,
+    ConfigurationDto.toDynamoItem(newConfiguration),
+  );
+
+  return newConfiguration;
 };

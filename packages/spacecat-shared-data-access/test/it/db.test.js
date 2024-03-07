@@ -151,6 +151,28 @@ describe('DynamoDB Integration Test', async () => {
     expect(configuration.getVersion()).to.equal('v2');
   });
 
+  it('updates a configuration', async () => {
+    const configurationData = {
+      version: 'v2',
+      queues: {
+        audits: 'audits-queue',
+        imports: 'imports-queue',
+        reports: 'reports-queue',
+      },
+      jobs: [
+        { group: 'audits', interval: 'daily', type: 'some-audit' },
+        { group: 'reports', interval: 'daily', type: 'some-report' },
+      ],
+    };
+    const configuration = await dataAccess.updateConfiguration(configurationData);
+
+    expect(configuration).to.be.an('object');
+
+    expect(configuration.getVersion()).to.equal('v3');
+    expect(configuration.getQueues()).to.deep.equal(configurationData.queues);
+    expect(configuration.getJobs()).to.deep.equal(configurationData.jobs);
+  });
+
   it('gets organizations', async () => {
     const organizations = await dataAccess.getOrganizations();
 

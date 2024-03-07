@@ -17,6 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
 import { configurationFunctions } from '../../../../src/service/configurations/index.js';
+import { ConfigurationDto } from '../../../../src/dto/configuration.js';
 
 chai.use(chaiAsPromised);
 
@@ -44,16 +45,53 @@ describe('Configuration Access Pattern Tests', () => {
   });
 
   describe('Configuration Functions Tests', () => {
+    const mockConfig = {
+      version: 'v1',
+      jobs: [
+        {
+          group: 'audits',
+          type: 'lhs-mobile',
+          interval: 'daily',
+        }, {
+          group: 'reports',
+          type: '404-external-digest',
+          interval: 'weekly',
+        },
+      ],
+      queues: {
+        audits: 'sqs://.../spacecat-services-audit-jobs',
+        imports: 'sqs://.../spacecat-services-import-jobs',
+        reports: 'sqs://.../spacecat-services-report-jobs',
+      },
+    };
+
     let mockDynamoClient;
     let exportedFunctions;
 
     beforeEach(() => {
       mockDynamoClient = {
-        query: sinon.stub().returns(Promise.resolve([])),
-        getItem: sinon.stub().returns(Promise.resolve(null)),
+        query: sinon.stub().resolves([]),
+        getItem: sinon.stub().resolves(null),
+        putItem: sinon.stub().resolves(null),
       };
 
       exportedFunctions = configurationFunctions(mockDynamoClient, TEST_DA_CONFIG);
+    });
+
+    it('calls getConfigurations and returns configurations', async () => {
+      const mockConfigurationData = mockConfig;
+
+      mockDynamoClient.query.onFirstCall().resolves([mockConfigurationData]);
+
+      const result = await exportedFunctions.getConfigurations();
+
+      expect(result).to.be.an('array').with.lengthOf(1);
+
+      const config = result[0];
+      expect(config.getVersion()).to.equal(mockConfigurationData.version);
+      expect(config.getQueues()).to.deep.equal(mockConfigurationData.queues);
+      expect(config.getJobs()).to.deep.equal(mockConfigurationData.jobs);
+      expect(mockDynamoClient.query.called).to.be.true;
     });
 
     it('calls getConfiguration and returns null', async () => {
@@ -63,25 +101,7 @@ describe('Configuration Access Pattern Tests', () => {
     });
 
     it('calls getConfiguration and returns configuration', async () => {
-      const mockConfigurationData = {
-        version: 'v1',
-        jobs: [
-          {
-            group: 'audits',
-            type: 'lhs-mobile',
-            interval: 'daily',
-          }, {
-            group: 'reports',
-            type: '404-external-digest',
-            interval: 'weekly',
-          },
-        ],
-        queues: {
-          audits: 'sqs://.../spacecat-services-audit-jobs',
-          imports: 'sqs://.../spacecat-services-import-jobs',
-          reports: 'sqs://.../spacecat-services-report-jobs',
-        },
-      };
+      const mockConfigurationData = mockConfig;
 
       mockDynamoClient.query.onFirstCall().resolves([mockConfigurationData]);
 
@@ -93,6 +113,7 @@ describe('Configuration Access Pattern Tests', () => {
       expect(result.getJobs()).to.deep.equal(mockConfigurationData.jobs);
       expect(mockDynamoClient.query.called).to.be.true;
     });
+
     it('calls getConfigurationByVersion and returns configuration', async () => {
       const mockConfigurationData = {
         version: 'v1',
@@ -123,6 +144,78 @@ describe('Configuration Access Pattern Tests', () => {
       expect(result.getQueues()).to.deep.equal(mockConfigurationData.queues);
       expect(result.getJobs()).to.deep.equal(mockConfigurationData.jobs);
       expect(mockDynamoClient.getItem.called).to.be.true;
+    });
+
+    it('calls getConfigurationByVersion and returns null', async () => {
+      const result = await exportedFunctions.getConfigurationByVersion('v4');
+      expect(result).to.be.null;
+      expect(mockDynamoClient.getItem.called).to.be.true;
+    });
+
+    it('calls updateConfiguration and returns configuration', async () => {
+      const configurationData = {
+        version: 'v1',
+        jobs: [
+          {
+            group: 'audits',
+            type: 'lhs-mobile',
+            interval: 'daily',
+          }, {
+            group: 'reports',
+            type: '404-external-digest',
+            interval: 'weekly',
+          },
+        ],
+        queues: {
+          audits: 'sqs://.../spacecat-services-audit-jobs',
+          imports: 'sqs://.../spacecat-services-import-jobs',
+          reports: 'sqs://.../spacecat-services-report-jobs',
+        },
+      };
+
+      mockDynamoClient.query.onFirstCall().resolves(
+        [ConfigurationDto.fromDynamoItem(configurationData)],
+      );
+
+      const result = await exportedFunctions.updateConfiguration(configurationData);
+
+      expect(result).to.be.an('object');
+
+      expect(result.getVersion()).to.equal('v2');
+      expect(result.getQueues()).to.deep.equal(configurationData.queues);
+      expect(result.getJobs()).to.deep.equal(configurationData.jobs);
+      expect(mockDynamoClient.putItem.called).to.be.true;
+    });
+
+    it('calls updateConfiguration and returns configuration with no base version', async () => {
+      const configurationData = {
+        version: '0',
+        jobs: [
+          {
+            group: 'audits',
+            type: 'lhs-mobile',
+            interval: 'daily',
+          }, {
+            group: 'reports',
+            type: '404-external-digest',
+            interval: 'weekly',
+          },
+        ],
+        queues: {
+          audits: 'sqs://.../spacecat-services-audit-jobs',
+          imports: 'sqs://.../spacecat-services-import-jobs',
+          reports: 'sqs://.../spacecat-services-report-jobs',
+        },
+      };
+
+      const result = await exportedFunctions.updateConfiguration(configurationData);
+
+      expect(result).to.be.an('object');
+
+      expect(result.getVersion()).to.equal('v1');
+      expect(result.getQueues()).to.deep.equal(configurationData.queues);
+      expect(result.getJobs()).to.deep.equal(configurationData.jobs);
+      expect(mockDynamoClient.putItem.called).to.be.true;
     });
   });
 });

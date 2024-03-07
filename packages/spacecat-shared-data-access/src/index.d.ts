@@ -443,8 +443,10 @@ export interface DataAccess {
   updateSiteCandidate: (siteCandidate: SiteCandidate) => Promise<SiteCandidate>;
 
   // configuration functions
-  getConfiguration: () => Promise<Configuration>
-  getConfigurationByVersion: (version: string) => Promise<Configuration>
+  getConfiguration: () => Promise<Readonly<Configuration>>
+  getConfigurations: () => Promise<Readonly<Configuration>[]>
+  getConfigurationByVersion: (version: string) => Promise<Readonly<Configuration>>
+  updateConfiguration: (configurationData: object) => Promise<Readonly<Configuration>>
 }
 
 interface DataAccessConfig {

@@ -60,8 +60,10 @@ describe('Data Access Object Tests', () => {
   ];
 
   const configurationFunctions = [
-    'getConfigurationByVersion',
     'getConfiguration',
+    'getConfigurations',
+    'getConfigurationByVersion',
+    'updateConfiguration',
   ];
 
   let dao;

@@ -176,7 +176,7 @@ export const createSite = (data) => {
   const newState = { ...data };
 
   if (!isValidUrl(newState.baseURL)) {
-    throw new Error('Base URL must be a valid URL');
+    throw new Error(`Base URL must be a valid URL: ${newState.baseURL}`);
   }
 
   if (!hasText(newState.organizationId)) {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.20.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.1...@adobe/spacecat-shared-data-access-v1.20.2) (2024-03-11)
+
+
+### Bug Fixes
+
+* include invalid base url in error message ([#180](https://github.com/adobe/spacecat-shared/issues/180)) ([4254305](https://github.com/adobe/spacecat-shared/commit/4254305402e5764a00388cc3904dc667eae1d602))
+
 # [@adobe/spacecat-shared-data-access-v1.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.0...@adobe/spacecat-shared-data-access-v1.20.1) (2024-03-09)
 
 

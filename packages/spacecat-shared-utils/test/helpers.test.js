@@ -17,7 +17,7 @@ import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.j
 import { createOrganization } from '@adobe/spacecat-shared-data-access/src/models/organization.js';
 import { AUDIT_TYPE_BROKEN_BACKLINKS } from '@adobe/spacecat-shared-data-access/src/models/audit.js';
 
-import { isAuditsDisabled, resolveSecretsName } from '../src/helpers.js';
+import { generateCSVFile, isAuditsDisabled, resolveSecretsName } from '../src/helpers.js';
 
 describe('resolveSecretsName', () => {
   it('resolves name correctly with valid inputs', () => {
@@ -192,5 +192,53 @@ describe('isAuditsDisabled', () => {
     });
 
     expect(isAuditsDisabled(site, org, AUDIT_TYPE_BROKEN_BACKLINKS)).to.be.true;
+  });
+});
+
+describe('generateCSVFile', () => {
+  it('should convert the JSON data to CSV', () => {
+    const data = [
+      {
+        'Base URL': 'https://site-0.com',
+        'Delivery Type': '',
+        'Go Live Date': '2024-03-18',
+        'Performance Score': '---',
+        Error: 'Lighthouse Error: No First Contentful Paint [NO_FCP]',
+      },
+      {
+        'Base URL': 'https://site-1.com',
+        'Delivery Type': 'aem_cs',
+        'Go Live Date': '2024-03-18',
+        'Performance Score': '90',
+        Error: '',
+      },
+    ];
+    const expectedCSV = '"Base URL","Delivery Type","Go Live Date","Performance Score","Error"\n'
+      + '"https://site-0.com","","2024-03-18","---","Lighthouse Error: No First Contentful Paint [NO_FCP]"\n'
+      + '"https://site-1.com","aem_cs","2024-03-18","90",""';
+    const csv = generateCSVFile(data);
+    expect(csv).to.be.an.instanceof(Buffer);
+    expect(csv.toString('utf-8')).to.equal(expectedCSV);
+  });
+
+  it('should handle various data types in JSON objects', () => {
+    // Sample data with various types
+    const data = [
+      {
+        string: 'text',
+        number: 42,
+        boolean: true,
+        nullValue: null,
+        array: [1, 2, 3],
+        object: { key: 'value' },
+      },
+    ];
+    const expectedCsv = '"string","number","boolean","nullValue","array","object"\n'
+      + '"text",42,true,,"[1,2,3]","{""key"":""value""}"';
+
+    const csvFile = generateCSVFile(data);
+    const csvString = csvFile.toString('utf-8');
+
+    expect(csvString).to.equal(expectedCsv);
   });
 });

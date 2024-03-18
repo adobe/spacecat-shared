@@ -108,3 +108,10 @@ declare function composeAuditURL(url: string): Promise<string>;
  * @returns {boolean} - True if the audit(s) are disabled, otherwise false.
  */
 declare function isAuditsDisabled(site: object, organization: object, auditType?: string): boolean
+
+/**
+ * Generates a CSV file from the provided json data.
+ * @param {Array} data - Array of JSON objects to be converted to CSV.
+ * @returns {Buffer} - The CSV formatted data as a buffer.
+ */
+declare function generateCSVFile(data: Array<object>): Buffer;

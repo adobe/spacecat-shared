@@ -30,6 +30,7 @@ export {
 export {
   isAuditsDisabled,
   resolveSecretsName,
+  generateCSVFile,
 } from './helpers.js';
 
 export { sqsWrapper } from './sqs.js';

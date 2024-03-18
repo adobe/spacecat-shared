@@ -220,4 +220,25 @@ describe('generateCSVFile', () => {
     expect(csv).to.be.an.instanceof(Buffer);
     expect(csv.toString('utf-8')).to.equal(expectedCSV);
   });
+
+  it('should handle various data types in JSON objects', () => {
+    // Sample data with various types
+    const data = [
+      {
+        string: 'text',
+        number: 42,
+        boolean: true,
+        nullValue: null,
+        array: [1, 2, 3],
+        object: { key: 'value' },
+      },
+    ];
+    const expectedCsv = '"string","number","boolean","nullValue","array","object"\n'
+      + '"text",42,true,,"[1,2,3]","{""key"":""value""}"';
+
+    const csvFile = generateCSVFile(data);
+    const csvString = csvFile.toString('utf-8');
+
+    expect(csvString).to.equal(expectedCsv);
+  });
 });

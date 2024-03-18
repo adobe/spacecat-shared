@@ -1,3 +1,15 @@
+# [@adobe/spacecat-shared-utils-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.13.2...@adobe/spacecat-shared-utils-v1.14.0) (2024-03-18)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#183](https://github.com/adobe/spacecat-shared/issues/183)) ([0c292e5](https://github.com/adobe/spacecat-shared/commit/0c292e5cff5647e1947f4095ff8f28b3a0155ed6))
+
+
+### Features
+
+* add json to csv helper function ([#185](https://github.com/adobe/spacecat-shared/issues/185)) ([ebeab43](https://github.com/adobe/spacecat-shared/commit/ebeab436d1964af4daa3d048e3821c30c732b714))
+
 # [@adobe/spacecat-shared-utils-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.13.1...@adobe/spacecat-shared-utils-v1.13.2) (2024-03-09)
 
 

@@ -123,11 +123,12 @@ export default class RUMAPIClient {
     this.domainkey = domainkey;
   }
 
-  create404URL(params = {}) {
+  async create404URL(params = {}) {
+    const scopedDomainKey = await generateDomainKey(this.domainkey, params?.url, 7);
     return createUrl(
       APIS.RUM_SOURCES,
       {
-        domainkey: this.domainkey, ...NOT_FOUND_DEFAULT_PARAMS, ...params,
+        domainkey: scopedDomainKey, ...NOT_FOUND_DEFAULT_PARAMS, ...params,
       },
     );
   }
@@ -159,7 +160,8 @@ export default class RUMAPIClient {
   }
 
   async get404Sources(params = {}) {
-    return sendRequest(this.create404URL(params));
+    const notFoundURL = await this.create404URL(params);
+    return sendRequest(notFoundURL);
   }
 
   async getDomainList(params = {}) {

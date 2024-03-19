@@ -15,6 +15,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import RUMAPIClient, { sendRequest } from '../src/index.js';
+import { successKeyResponse } from './rumapi-data.js';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -91,10 +92,14 @@ describe('rum api client', () => {
       }]);
   });
 
-  it('returns the URL to call the get404Sources', () => {
+  it('returns the URL to call the get404Sources', async () => {
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
-    expect(rumApiClient.create404URL({ url: 'http://spacecar.com' }))
-      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources?domainkey=hebele&interval=7&offset=0&limit=101&checkpoint=404&url=http%3A%2F%2Fspacecar.com');
+    nock('https://helix-pages.anywhere.run')
+      .post('/helix-services/run-query@v3/rotate-domainkeys')
+      .query(true)
+      .reply(200, successKeyResponse);
+    await expect(rumApiClient.create404URL({ url: 'http://spacecar.com' }))
+      .to.eventually.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources?domainkey=scoped-domain-key&interval=7&offset=0&limit=101&checkpoint=404&url=http%3A%2F%2Fspacecar.com');
   });
 
   it('returns the URL to call the getRUMDashboard', () => {
@@ -104,10 +109,15 @@ describe('rum api client', () => {
   });
 
   it('returns data when get404Sources api is successful', async () => {
+    nock('https://helix-pages.anywhere.run')
+      .post('/helix-services/run-query@v3/rotate-domainkeys')
+      .query(true)
+      .reply(200, successKeyResponse);
     nock('https://helix-pages.anywhere.run/helix-services')
       .get('/run-query@v3/rum-sources')
       .query({
-        domainkey: 'hebele',
+        domainkey: 'scoped-domain-key',
+        url: 'spacecar.com',
         interval: 7,
         offset: 0,
         limit: 101,
@@ -115,7 +125,7 @@ describe('rum api client', () => {
       })
       .reply(200, JSON.stringify({ results: { data: [{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }] } }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
-    await expect(rumApiClient.get404Sources())
+    await expect(rumApiClient.get404Sources({ url: 'spacecar.com' }))
       .to.eventually.eql([{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }]);
   });
 

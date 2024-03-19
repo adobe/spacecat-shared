@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { Parser } from '@json2csv/plainjs';
 import { hasText, isString } from './functions.js';
 
 /**
@@ -54,4 +55,19 @@ export function isAuditsDisabled(site, organization, auditType) {
   }
 
   return false;
+}
+
+/**
+* Generates a CSV file from the provided JSON data.
+*
+* Each key-value pair in the JSON objects
+* corresponds to a column and its value in the CSV. The output is a UTF-8
+* encoded Buffer that represents the CSV file content.
+*
+* @param {Object[]} data - An array of JSON objects to be converted into CSV format.
+* @returns {Buffer} A Buffer containing the CSV formatted data, encoded in UTF-8.
+*/
+export function generateCSVFile(data) {
+  const json2csvParser = new Parser();
+  return Buffer.from(json2csvParser.parse(data), 'utf-8');
 }

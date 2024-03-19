@@ -1,3 +1,36 @@
+# [@adobe/spacecat-shared-utils-v1.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.14.0...@adobe/spacecat-shared-utils-v1.14.1) (2024-03-19)
+
+
+### Bug Fixes
+
+* jsdoc for generateCSVFile and release ([#187](https://github.com/adobe/spacecat-shared/issues/187)) ([e8e30ed](https://github.com/adobe/spacecat-shared/commit/e8e30eddb0609370898e022d1f986cbc5db83e36))
+
+# [@adobe/spacecat-shared-utils-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.13.2...@adobe/spacecat-shared-utils-v1.14.0) (2024-03-18)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#183](https://github.com/adobe/spacecat-shared/issues/183)) ([0c292e5](https://github.com/adobe/spacecat-shared/commit/0c292e5cff5647e1947f4095ff8f28b3a0155ed6))
+
+
+### Features
+
+* add json to csv helper function ([#185](https://github.com/adobe/spacecat-shared/issues/185)) ([ebeab43](https://github.com/adobe/spacecat-shared/commit/ebeab436d1964af4daa3d048e3821c30c732b714))
+
+# [@adobe/spacecat-shared-utils-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.13.1...@adobe/spacecat-shared-utils-v1.13.2) (2024-03-09)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#179](https://github.com/adobe/spacecat-shared/issues/179)) ([9d0aa97](https://github.com/adobe/spacecat-shared/commit/9d0aa97df6a67bb66c5f098c74aebdebbd0d5f01))
+
+# [@adobe/spacecat-shared-utils-v1.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.13.0...@adobe/spacecat-shared-utils-v1.13.1) (2024-03-02)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#177](https://github.com/adobe/spacecat-shared/issues/177)) ([dbe3b90](https://github.com/adobe/spacecat-shared/commit/dbe3b9051f682ca2c1a6677eea9d1fcdf021dbdb))
+
 # [@adobe/spacecat-shared-utils-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.12.3...@adobe/spacecat-shared-utils-v1.13.0) (2024-02-29)
 
 

@@ -18,6 +18,7 @@ import * as allExports from '../src/index.js';
 describe('Index Exports', () => {
   const expectedExports = [
     'arrayEquals',
+    'generateCSVFile',
     'hasText',
     'isArray',
     'isBoolean',

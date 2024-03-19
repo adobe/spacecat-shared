@@ -105,6 +105,14 @@ export default class RUMAPIClient {
   get404Sources(params?: RUMAPIOptions): Promise<Array<object>>;
 
   /**
+   * Method to return the url composed of params that the RUM Dashboard API is called with.
+   * @param {RUMAPIOptions} params - An object representing the parameters to be included
+   *  for the RUM Dashboard API call.
+   * @returns A string returning to the RUM Dashboard url including query parameters.
+   */
+  createRUMURL(params?: RUMAPIOptions): string;
+
+  /**
    * Method to return the url composed of params that the 404 sources API is called with.
    * @param {RUMAPIOptions} params - An object representing the parameters to be included
    *  for the 404 sources API call.

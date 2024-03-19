@@ -9,10 +9,19 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { getConfiguration, getConfigurationByVersion } from './accessPatterns.js';
+import {
+  getConfiguration,
+  getConfigurationByVersion,
+  getConfigurations,
+  updateConfiguration,
+} from './accessPatterns.js';
 
 export const configurationFunctions = (dynamoClient, config) => ({
   getConfiguration: () => getConfiguration(
+    dynamoClient,
+    config,
+  ),
+  getConfigurations: () => getConfigurations(
     dynamoClient,
     config,
   ),
@@ -20,5 +29,10 @@ export const configurationFunctions = (dynamoClient, config) => ({
     dynamoClient,
     config,
     version,
+  ),
+  updateConfiguration: (configurationData) => updateConfiguration(
+    dynamoClient,
+    config,
+    configurationData,
   ),
 });

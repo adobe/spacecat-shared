@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-data-access-v1.20.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.3...@adobe/spacecat-shared-data-access-v1.20.4) (2024-03-19)
+
+
+### Bug Fixes
+
+* audit result can be an array ([#189](https://github.com/adobe/spacecat-shared/issues/189)) ([6982907](https://github.com/adobe/spacecat-shared/commit/698290744cf15758f0d27c900484ac4949d42224))
+
+# [@adobe/spacecat-shared-data-access-v1.20.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.2...@adobe/spacecat-shared-data-access-v1.20.3) (2024-03-18)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#183](https://github.com/adobe/spacecat-shared/issues/183)) ([0c292e5](https://github.com/adobe/spacecat-shared/commit/0c292e5cff5647e1947f4095ff8f28b3a0155ed6))
+
+# [@adobe/spacecat-shared-data-access-v1.20.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.1...@adobe/spacecat-shared-data-access-v1.20.2) (2024-03-11)
+
+
+### Bug Fixes
+
+* include invalid base url in error message ([#180](https://github.com/adobe/spacecat-shared/issues/180)) ([4254305](https://github.com/adobe/spacecat-shared/commit/4254305402e5764a00388cc3904dc667eae1d602))
+
+# [@adobe/spacecat-shared-data-access-v1.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.0...@adobe/spacecat-shared-data-access-v1.20.1) (2024-03-09)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#179](https://github.com/adobe/spacecat-shared/issues/179)) ([9d0aa97](https://github.com/adobe/spacecat-shared/commit/9d0aa97df6a67bb66c5f098c74aebdebbd0d5f01))
+
+# [@adobe/spacecat-shared-data-access-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.19.3...@adobe/spacecat-shared-data-access-v1.20.0) (2024-03-07)
+
+
+### Features
+
+* get and update configurations ([#178](https://github.com/adobe/spacecat-shared/issues/178)) ([163e27a](https://github.com/adobe/spacecat-shared/commit/163e27ad1cf704608a3fba8087d5103c8cb4226d)), closes [#183](https://github.com/adobe/spacecat-shared/issues/183) [/github.com/adobe/spacecat-api-service/issues/183#issuecomment-1973345923](https://github.com//github.com/adobe/spacecat-api-service/issues/183/issues/issuecomment-1973345923)
+
+# [@adobe/spacecat-shared-data-access-v1.19.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.19.2...@adobe/spacecat-shared-data-access-v1.19.3) (2024-03-02)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#177](https://github.com/adobe/spacecat-shared/issues/177)) ([dbe3b90](https://github.com/adobe/spacecat-shared/commit/dbe3b9051f682ca2c1a6677eea9d1fcdf021dbdb))
+
 # [@adobe/spacecat-shared-data-access-v1.19.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.19.1...@adobe/spacecat-shared-data-access-v1.19.2) (2024-02-28)
 
 

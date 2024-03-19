@@ -50,6 +50,7 @@ describe('ImsClient', () => {
         IMS_CLIENT_ID: 'clientIdExample',
         IMS_CLIENT_CODE: 'clientCodeExample',
         IMS_CLIENT_SECRET: 'clientSecretExample',
+        IMS_SCOPE: 'scope',
       },
     };
   });
@@ -151,6 +152,48 @@ describe('ImsClient', () => {
         .reply(500);
 
       await expect(client.getImsOrganizationDetails('123456@AdobeOrg')).to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 500');
+    });
+
+    it('should handle IMS service token request v3', async () => {
+      nock(`https://${DUMMY_HOST}`)
+      // Mock the token request, with a 500 server error response
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(200, {
+          access_token: '1234',
+          expires_in: 1,
+          token_type: 'abc',
+        });
+
+      await expect(client.getServiceAccessTokenV3()).to.be.eventually.deep.equal({
+        access_token: '1234',
+        expires_in: 1,
+        token_type: 'abc',
+      });
+    });
+
+    it('should not call api if service token present handle IMS service token request v3', async () => {
+      client.serviceAccessTokenV3 = {
+        access_token: '1234',
+        expires_in: 1,
+        token_type: 'abc',
+      };
+      await expect(client.getServiceAccessTokenV3()).to.be.eventually.deep.equal({
+        access_token: '1234',
+        expires_in: 1,
+        token_type: 'abc',
+      });
+      delete client.serviceAccessTokenV3;
+    });
+
+    it('should handle IMS service token v3 request failures', async () => {
+      nock(`https://${DUMMY_HOST}`)
+      // Mock the token request, with a 500 server error response
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(500);
+
+      await expect(client.getServiceAccessTokenV3()).to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 500');
     });
 
     it('should handle IMS product context request failures', async () => {

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "1.19.2",
+  "version": "1.20.4",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "main": "src/index.js",
@@ -31,8 +31,8 @@
   "dependencies": {
     "@adobe/spacecat-shared-dynamo": "1.2.5",
     "@adobe/spacecat-shared-utils": "1.2.0",
-    "@aws-sdk/client-dynamodb": "3.521.0",
-    "@aws-sdk/lib-dynamodb": "3.521.0",
+    "@aws-sdk/client-dynamodb": "3.535.0",
+    "@aws-sdk/lib-dynamodb": "3.535.0",
     "@types/joi": "17.2.3",
     "joi": "17.12.2",
     "uuid": "9.0.1"

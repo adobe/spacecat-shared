@@ -30,4 +30,16 @@ export const ConfigurationDto = {
 
     return createConfiguration(configurationData);
   },
+
+  /**
+     * Converts a Configuration object into a DynamoDB item.
+     * @param {Readonly<Configuration>} configuration - Configuration object.
+     * @returns {object} DynamoDB item.
+     */
+  toDynamoItem: (configuration) => ({
+    PK: 'ALL_CONFIGURATIONS',
+    version: configuration.getVersion(),
+    queues: configuration.getQueues(),
+    jobs: configuration.getJobs(),
+  }),
 };

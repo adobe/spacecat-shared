@@ -27,6 +27,12 @@ export class ImsClient {
   getServiceAccessToken(): Promise<string>;
 
   /**
+   * Returns an access token for the scopes associated with the IMS client ID using the v3 APIs.
+   * @returns {Promise<{ access_token: string }>} The access token.
+   */
+  getServiceAccessTokenV3(): Promise<string>;
+
+  /**
    * Returns the organization details for the given IMS organization ID.
    * @param {string} imsOrgId The IMS organization ID.
    * @returns {Promise<{

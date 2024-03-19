@@ -45,12 +45,12 @@ describe('Audit Model Tests', () => {
     });
 
     it('throws an error if auditResult is not an object', () => {
-      expect(() => createAudit({ ...validData, auditResult: 'not-an-object' })).to.throw('Audit result must be an object');
+      expect(() => createAudit({ ...validData, auditResult: 'not-an-object' })).to.throw('Audit result must be an object or an array');
     });
 
     it('throws an error if previous audit result is not an object', () => {
       expect(() => createAudit({ ...validData, previousAuditResult: 'not-an-object' }))
-        .to.throw('Previous audit result must be an object');
+        .to.throw('Previous audit result must be an object or an array');
     });
 
     it('throws an error if previous audit result is missing scores property', () => {

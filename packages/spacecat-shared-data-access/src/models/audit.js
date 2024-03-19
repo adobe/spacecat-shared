@@ -46,9 +46,7 @@ const validateScores = (auditResult, auditType) => {
     return true;
   }
 
-  if ((auditType === AUDIT_TYPE_LHS_DESKTOP
-      || auditType === AUDIT_TYPE_LHS_MOBILE
-      || auditType === AUDIT_TYPE_CWV)
+  if ((auditType === AUDIT_TYPE_LHS_DESKTOP || auditType === AUDIT_TYPE_LHS_MOBILE)
       && !isObject(auditResult.scores)) {
     throw new Error(`Missing scores property for audit type '${auditType}'`);
   }
@@ -93,6 +91,10 @@ const Audit = (data = {}) => {
   return Object.freeze(self);
 };
 
+function isValidAuditResult(auditResult) {
+  return isObject(auditResult) || Array.isArray(auditResult);
+}
+
 /**
  * Creates a new Audit.
  *
@@ -114,8 +116,8 @@ export const createAudit = (data) => {
     throw new Error('Audit type must be provided');
   }
 
-  if (!isObject(newState.auditResult)) {
-    throw new Error('Audit result must be an object');
+  if (!isValidAuditResult(newState.auditResult)) {
+    throw new Error('Audit result must be an object or an array');
   }
 
   if (!newState.auditResult.scores) {
@@ -123,8 +125,8 @@ export const createAudit = (data) => {
   }
   validateScores(data.auditResult, data.auditType);
 
-  if (data.previousAuditResult && !isObject(data.previousAuditResult)) {
-    throw new Error('Previous audit result must be an object');
+  if (data.previousAuditResult && !isValidAuditResult(data.previousAuditResult)) {
+    throw new Error('Previous audit result must be an object or an array');
   }
 
   if (data.previousAuditResult) {

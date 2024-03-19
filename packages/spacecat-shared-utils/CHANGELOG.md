@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.14.0...@adobe/spacecat-shared-utils-v1.14.1) (2024-03-19)
+
+
+### Bug Fixes
+
+* jsdoc for generateCSVFile and release ([#187](https://github.com/adobe/spacecat-shared/issues/187)) ([e8e30ed](https://github.com/adobe/spacecat-shared/commit/e8e30eddb0609370898e022d1f986cbc5db83e36))
+
 # [@adobe/spacecat-shared-utils-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.13.2...@adobe/spacecat-shared-utils-v1.14.0) (2024-03-18)
 
 

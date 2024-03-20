@@ -281,4 +281,22 @@ describe('ImsClient', () => {
       expect(orgDetails.admins).to.have.length(0);
     });
   });
+
+  describe('getImsUserProfile', () => {
+    let client;
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+    });
+
+    it('should fail for edge cases: no token', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/profile/v1')
+        .reply(401, {
+          error: 'invalid_token',
+          error_description: 'Invalid or expired token.',
+        });
+      await expect(client.getImsUserProfile(null)).to.be.rejectedWith('IMS getImsUserProfile request failed with status: 401');
+    });
+  });
 });

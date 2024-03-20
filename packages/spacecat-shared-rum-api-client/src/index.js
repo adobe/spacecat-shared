@@ -42,6 +42,27 @@ export const NOT_FOUND_DEFAULT_PARAMS = {
   checkpoint: 404,
 };
 
+export const create404URL = (params = {}) => createUrl(
+  APIS.RUM_SOURCES,
+  {
+    ...NOT_FOUND_DEFAULT_PARAMS, ...params,
+  },
+);
+
+export const createRUMURL = (params = {}) => createUrl(
+  APIS.RUM_DASHBOARD,
+  {
+    ...RUM_DEFAULT_PARAMS, ...params,
+  },
+);
+
+export const createExperimentationURL = (params = {}) => createUrl(
+  APIS.RUM_EXPERIMENTS,
+  {
+    ...RUM_DEFAULT_PARAMS, ...params,
+  },
+);
+
 export async function sendRequest(url, opts) {
   let respJson;
   try {
@@ -123,43 +144,16 @@ export default class RUMAPIClient {
     this.domainkey = domainkey;
   }
 
-  create404URL(params = {}) {
-    return createUrl(
-      APIS.RUM_SOURCES,
-      {
-        domainkey: this.domainkey, ...NOT_FOUND_DEFAULT_PARAMS, ...params,
-      },
-    );
-  }
-
-  createRUMURL(params = {}) {
-    return createUrl(
-      APIS.RUM_DASHBOARD,
-      {
-        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params,
-      },
-    );
-  }
-
   async getRUMDashboard(params = {}) {
-    return sendRequest(this.createRUMURL(params));
-  }
-
-  createExperimentationURL(params = {}) {
-    return createUrl(
-      APIS.RUM_EXPERIMENTS,
-      {
-        domainkey: this.domainkey, ...RUM_DEFAULT_PARAMS, ...params,
-      },
-    );
+    return sendRequest(createRUMURL({ ...params, domainkey: this.domainkey }));
   }
 
   async getExperimentationData(params = {}) {
-    return sendRequest(this.createExperimentationURL(params));
+    return sendRequest(createExperimentationURL({ ...params, domainkey: this.domainkey }));
   }
 
   async get404Sources(params = {}) {
-    return sendRequest(this.create404URL(params));
+    return sendRequest(create404URL({ ...params, domainkey: this.domainkey }));
   }
 
   async getDomainList(params = {}) {

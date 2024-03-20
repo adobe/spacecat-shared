@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.6.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.8...@adobe/spacecat-shared-rum-api-client-v1.6.9) (2024-03-20)
+
+
+### Bug Fixes
+
+* don t expose rum domain key ([3930026](https://github.com/adobe/spacecat-shared/commit/39300265e14f2598cc0963f7ea74a6c8d964d446))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.6.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.7...@adobe/spacecat-shared-rum-api-client-v1.6.8) (2024-03-19)
 
 

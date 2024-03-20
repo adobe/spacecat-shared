@@ -257,6 +257,31 @@ export default class ElevatedSlackClient extends BaseSlackClient {
   }
 
   /**
+   * Sort an array of email addresses by their domain.
+   * @param {Array<string>} emails The email addresses to sort.
+   * @returns {Array<string>} New array with the sorted email addresses.
+   */
+  static #sortEmailAddressesByDomain(emails) {
+    const domainMap = {};
+    emails.forEach((email) => {
+      const domain = email.split('@')[1];
+      if (!domainMap[domain]) {
+        domainMap[domain] = [];
+      }
+      domainMap[domain].push(email);
+    });
+
+    const sortedEmails = [];
+    Object.keys(domainMap).sort().forEach((domain) => {
+      // Sort emails for the current domain
+      const emailsForDomain = domainMap[domain].sort();
+      sortedEmails.push(...emailsForDomain);
+    });
+
+    return sortedEmails;
+  }
+
+  /**
    * Handles user status notifications.
    *
    * @private This method is private and should not be called directly.
@@ -269,9 +294,10 @@ export default class ElevatedSlackClient extends BaseSlackClient {
     const filteredUsers = results.filter((result) => result.status === status);
 
     if (filteredUsers.length > 0) {
-      const emails = filteredUsers.map((result) => `${result.email}`).join(', ');
-      this.log.warn(`${messagePrefix}: ${emails}`);
-      await this.#postMessageToOpsChannel(`${messagePrefix}: ${emails}`);
+      const emails = filteredUsers.map((result) => result.email);
+      const emailsSortedByDomain = ElevatedSlackClient.#sortEmailAddressesByDomain(emails).join('\n');
+      this.log.warn(`${messagePrefix}: ${emailsSortedByDomain}`);
+      await this.#postMessageToOpsChannel(`${messagePrefix}: ${emailsSortedByDomain}`);
     }
   }
 

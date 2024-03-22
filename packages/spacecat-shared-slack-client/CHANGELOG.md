@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-slack-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.1.6...@adobe/spacecat-shared-slack-client-v1.2.0) (2024-03-21)
+
+
+### Features
+
+* Group email addresses by domain in the Slack ops invitation messages [#182](https://github.com/adobe/spacecat-shared/issues/182) ([#192](https://github.com/adobe/spacecat-shared/issues/192)) ([30bf4fa](https://github.com/adobe/spacecat-shared/commit/30bf4fa7f90ffb4f57715ac49418ce2abfc106c9))
+
 # [@adobe/spacecat-shared-slack-client-v1.1.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.1.5...@adobe/spacecat-shared-slack-client-v1.1.6) (2024-03-09)
 
 

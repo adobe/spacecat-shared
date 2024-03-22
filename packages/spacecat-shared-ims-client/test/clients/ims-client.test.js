@@ -283,20 +283,57 @@ describe('ImsClient', () => {
   });
 
   describe('getImsUserProfile', () => {
+    const testAccessToken = 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjEyMzQ1IiwidHlwZSI6ImFjY2Vzc190b2tlbiIsImNsaWVudF9pZCI6ImV4YW1wbGVfYXBwIiwidXNlcl9pZCI6Ijk4NzY1NDc4OTBBQkNERUYxMjM0NTY3OEBhYmNkZWYxMjM0NTY3ODkuZSIsImFzIjoiaW1zLW5hMSIsImFhX2lkIjoiMTIzNDU2Nzg5MEFCQ0RFRjEyMzQ1Njc4QGFkb2JlLmNvbSIsImNyZWF0ZWRfYXQiOiIxNzEwMjQ3MDAwMDAwIn0.MRDpxgxSHDj4DmA182hPnjMAnKkly-VUJ_bXpQ-J8EQ';
     let client;
 
     beforeEach(() => {
       client = ImsClient.createFrom(mockContext);
-    });
 
-    it('should fail for edge cases: no token', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/profile/v1')
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(200, {
+          preferred_languages: ['en-us'],
+          displayName: 'Example User',
+          roles: [
+            {
+              organization: '1234567890ABCDEF12345678@AdobeOrg',
+              named_role: 'user_admin_grp',
+            },
+            {
+              organization: '1234567890ABCDEF12345678@AdobeOrg',
+              named_role: 'PRODUCT_ADMIN',
+            },
+          ],
+          userId: '9876547890ABCDEF12345678@abcdef123456789.e',
+          countryCode: 'CA',
+          email: 'example-user@example.com',
+        });
+
+      // Fallback
       nock(`https://${DUMMY_HOST}`)
         .get('/ims/profile/v1')
         .reply(401, {
           error: 'invalid_token',
           error_description: 'Invalid or expired token.',
         });
+    });
+
+    it('should fail for edge cases: no token', async () => {
       await expect(client.getImsUserProfile(null)).to.be.rejectedWith('IMS getImsUserProfile request failed with status: 401');
+    });
+
+    it('should fail for edge cases: invalid token', async () => {
+      await expect(client.getImsUserProfile('eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjEyMzQ1IiwidHlwZSI6')).to.be.rejectedWith('IMS getImsUserProfile request failed with status: 401');
+    });
+
+    it('should succeed for a valid token', async () => {
+      const result = await client.getImsUserProfile(testAccessToken);
+      await expect(result).to.deep.equal({
+        email: 'example-user@example.com',
+        userId: '9876547890ABCDEF12345678@abcdef123456789.e',
+        organizations: ['1234567890ABCDEF12345678@AdobeOrg'],
+      });
     });
   });
 });

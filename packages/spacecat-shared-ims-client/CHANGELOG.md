@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.2.2...@adobe/spacecat-shared-ims-client-v1.3.0) (2024-03-25)
+
+
+### Features
+
+* Enable retrieval of a user's email address from IMS given an access token [#193](https://github.com/adobe/spacecat-shared/issues/193) ([#194](https://github.com/adobe/spacecat-shared/issues/194)) ([da7735a](https://github.com/adobe/spacecat-shared/commit/da7735a9bf40a3c21d777a49d76ec564a08e07b6))
+
 # [@adobe/spacecat-shared-ims-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.2.1...@adobe/spacecat-shared-ims-client-v1.2.2) (2024-03-23)
 
 

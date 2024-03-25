@@ -87,6 +87,18 @@ const slackClient = BaseSlackClient.createFrom(context, target);
 const elevatedclient = ElevatedSlackClient.createFrom(context, target);
 ```
 
+Or, for an ElevatedSlackClient, use the `elevatedSlackClientWrapper`:
+
+```javascript
+import { elevatedSlackClientWrapper, SLACK_TARGETS } from '@adobe/spacecat-shared-slack-client';
+
+// .. Define `run` function ..
+
+export const main = wrap(run)
+  .with(elevatedSlackClientWrapper, { slackTarget: SLACK_TARGETS.WORKSPACE_EXTERNAL })
+  .with(secrets, { name: resolveSecretsName });
+```
+
 ### Posting a Message
 
 ```javascript

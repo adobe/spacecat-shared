@@ -12,6 +12,7 @@
 
 import BaseSlackClient from './clients/base-slack-client.js';
 import ElevatedSlackClient, { SLACK_STATUSES } from './clients/elevated-slack-client.js';
+import { elevatedSlackClientWrapper } from './wrappers/elevated-client-wrapper.js';
 
 const SLACK_TARGETS = {
   WORKSPACE_INTERNAL: 'WORKSPACE_INTERNAL',
@@ -23,4 +24,5 @@ export {
   SLACK_TARGETS,
   BaseSlackClient,
   ElevatedSlackClient,
+  elevatedSlackClientWrapper,
 };

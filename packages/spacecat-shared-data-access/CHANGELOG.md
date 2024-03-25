@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.5...@adobe/spacecat-shared-data-access-v1.21.0) (2024-03-25)
+
+
+### Features
+
+* Track number of users invited to Slack [#195](https://github.com/adobe/spacecat-shared/issues/195) ([#196](https://github.com/adobe/spacecat-shared/issues/196)) ([e808a42](https://github.com/adobe/spacecat-shared/commit/e808a4249ea470f8da3bfd659093d2ab134630a5))
+
 # [@adobe/spacecat-shared-data-access-v1.20.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.4...@adobe/spacecat-shared-data-access-v1.20.5) (2024-03-23)
 
 

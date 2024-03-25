@@ -330,14 +330,14 @@ export default class ImsClient {
         throw new Error(`IMS getImsUserProfile request failed with status: ${profileResponse.status}`);
       }
 
-      const profile = await profileResponse.json();
+      const { userId, email, roles } = await profileResponse.json();
 
       this.#logDuration('IMS getImsUserProfile request', startTime);
 
       return {
-        userId: profile.userId,
-        email: profile.email,
-        organizations: getOrganizationList(profile.roles),
+        userId,
+        email,
+        organizations: getOrganizationList(roles),
       };
     } catch (error) {
       this.log.error('Error fetching user profile data from IMS: ', error.message);

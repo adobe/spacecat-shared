@@ -14,11 +14,16 @@ import { createUrl } from '@adobe/fetch';
 import { hasText, isObject } from '@adobe/spacecat-shared-utils';
 
 import {
-  createFormData, emailAddressIsAllowed,
+  createFormData,
+  emailAddressIsAllowed,
   extractIdAndAuthSource,
-  fetch as httpFetch, getGroupMembersEndpoint,
+  fetch as httpFetch,
+  getGroupMembersEndpoint,
   getImsOrgsApiPath,
-  IMS_PRODUCT_CONTEXT_BY_ORG_ENDPOINT, IMS_TOKEN_ENDPOINT, IMS_TOKEN_ENDPOINT_V3,
+  IMS_PRODUCT_CONTEXT_BY_ORG_ENDPOINT,
+  IMS_PROFILE_ENDPOINT,
+  IMS_TOKEN_ENDPOINT,
+  IMS_TOKEN_ENDPOINT_V3,
 } from '../utils.js';
 
 export default class ImsClient {
@@ -296,5 +301,47 @@ export default class ImsClient {
       countryCode: orgDetails?.countryCode,
       admins,
     };
+  }
+
+  /**
+   * Fetch a subset of properties from a user's IMS profile, given their access token.
+   * @param {string} imsAccessToken A valid IMS user access token
+   * @returns {Promise<{userId, email, organizations: string[]}>} Fields from the user's profile
+   */
+  async getImsUserProfile(imsAccessToken) {
+    // Helper to pull the unique organization ID values from an array of role entries
+    function getOrganizationList(roles) {
+      return [...new Set(roles.map((roleEntry) => roleEntry.organization))];
+    }
+
+    try {
+      const startTime = process.hrtime.bigint();
+
+      const profileResponse = await httpFetch(
+        `https://${this.config.imsHost}${IMS_PROFILE_ENDPOINT}`,
+        {
+          headers: {
+            Authorization: `Bearer ${imsAccessToken}`,
+          },
+        },
+      );
+
+      if (!profileResponse.ok) {
+        throw new Error(`IMS getImsUserProfile request failed with status: ${profileResponse.status}`);
+      }
+
+      const { userId, email, roles } = await profileResponse.json();
+
+      this.#logDuration('IMS getImsUserProfile request', startTime);
+
+      return {
+        userId,
+        email,
+        organizations: getOrganizationList(roles),
+      };
+    } catch (error) {
+      this.log.error('Error fetching user profile data from IMS: ', error.message);
+      throw error;
+    }
   }
 }

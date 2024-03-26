@@ -14,7 +14,8 @@ import ElevatedSlackClient from '../clients/elevated-slack-client.js';
 
 /**
  * Wrapper function to include an Elevated Slack client on the context object. Client will be
- * available at `context.slack.elevatedClient`.
+ * available at `context.slack.elevatedClient`. This wrapper can be used to create a client
+ * targeting an internal or external workspace via the `slackTarget` option.
  *
  * @param {UniversalAction} fn
  * @param {object} opts Options object. Must contain `slackTarget` indicating the target workspace

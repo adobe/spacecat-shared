@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-slack-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.2.1...@adobe/spacecat-shared-slack-client-v1.3.0) (2024-03-26)
+
+
+### Features
+
+* trigger a release of the spacecat-shared-ims-client package ([#200](https://github.com/adobe/spacecat-shared/issues/200)) ([8f50109](https://github.com/adobe/spacecat-shared/commit/8f5010991aa5032a7e7001b841c39bb8dc6c63a4))
+
 # [@adobe/spacecat-shared-slack-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.2.0...@adobe/spacecat-shared-slack-client-v1.2.1) (2024-03-23)
 
 

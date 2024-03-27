@@ -1,0 +1,41 @@
+{
+  "name": "spacecat-sdk",
+  "version": "1.0.0-pre-initial-version.0",
+  "description": "SpaceCat SDK for Node.js",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "lint": "eslint src --fix",
+    "clean": "rm -rf package-lock.json node_modules",
+    "test": "echo \"Error: no tests\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adobe/spacecat-sdk.git"
+  },
+  "author": "Adobe Inc.",
+  "license": "Apache-2.0",
+  "keywords": [
+    "aem",
+    "sdk"
+  ],
+  "bugs": {
+    "url": "https://github.com/adobe/spacecat-sdk/issues"
+  },
+  "homepage": "https://github.com/adobe/spacecat-sdk#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@adobe/fetch": "4.1.1",
+    "base-64": "1.0.0"
+  },
+  "devDependencies": {
+    "chai": "4.4.1",
+    "chai-as-promised": "7.1.1",
+    "husky": "9.0.11",
+    "nock": "13.5.4",
+    "sinon": "17.0.1",
+    "sinon-chai": "3.7.0"
+  }
+}

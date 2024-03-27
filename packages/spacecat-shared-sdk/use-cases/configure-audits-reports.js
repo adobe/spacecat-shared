@@ -99,4 +99,5 @@ async function readConfig(configFilePath) {
       }
     }
   }));
+  process.exit(0);
 })();

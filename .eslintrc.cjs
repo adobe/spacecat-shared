@@ -35,10 +35,10 @@ module.exports = {
       rules: {},
     },
     {
-      files: ["*.test.js"],
+      files: ['*.test.js'],
       rules: {
-        "no-unused-expressions": "off"
-      }
-    }
+        'no-unused-expressions': 'off',
+      },
+    },
   ],
 };

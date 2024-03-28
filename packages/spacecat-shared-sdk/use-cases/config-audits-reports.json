@@ -1,0 +1,16 @@
+{
+  "imsOrgId": "IMSORGID@AdobeOrg",
+  "orgName": "Organization name as it appears in IMS",
+  "orgId": "organizationId--from-SpaceCat",
+  "siteBaseUrls": ["https://example.com"],
+  "channelId": "C-slack-channel-id",
+  "userIds": ["U-slack-user-id"],
+  "auditTypes": ["404", "broken-backlinks"],
+  "configureAudits": true,
+  "enableAudits": true,
+  "auditsByOrg": false,
+  "configureReports": true,
+  "reportsByOrg": false,
+  "apiBaseUrl": "https://spacecat.experiencecloud.live/api/v1",
+  "apiKey": "admin-api-key"
+}

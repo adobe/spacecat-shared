@@ -270,15 +270,6 @@ describe('Audit Access Pattern Tests', () => {
       await expect(exportedFunctions.addAudit(auditData)).to.be.rejectedWith('Audit already exists');
     });
 
-    it('throws an error for unknown audit type', async () => {
-      const invalidAuditData = {
-        ...auditData,
-        auditType: 'unknownType', // An unknown audit type
-      };
-
-      await expect(exportedFunctions.addAudit(invalidAuditData)).to.be.rejectedWith('Unknown audit type');
-    });
-
     it('throws an error if an expected property is missing in audit results', async () => {
       const incompleteAuditData = {
         ...auditData,

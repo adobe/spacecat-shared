@@ -13,6 +13,7 @@
 import { hasText, isIsoDate, isObject } from '@adobe/spacecat-shared-utils';
 import { Base } from './base.js';
 
+// some of these unused exports are being imported from other projects. Handle with care.
 export const AUDIT_TYPE_404 = '404';
 export const AUDIT_TYPE_BROKEN_BACKLINKS = 'broken-backlinks';
 export const AUDIT_TYPE_EXPERIMENTATION = 'experimentation';
@@ -25,12 +26,6 @@ export const AUDIT_TYPE_LHS_MOBILE = 'lhs-mobile';
 const EXPIRES_IN_DAYS = 30;
 
 const AUDIT_TYPE_PROPERTIES = {
-  [AUDIT_TYPE_404]: [],
-  [AUDIT_TYPE_BROKEN_BACKLINKS]: [],
-  [AUDIT_TYPE_EXPERIMENTATION]: [],
-  [AUDIT_TYPE_ORGANIC_KEYWORDS]: [],
-  [AUDIT_TYPE_ORGANIC_TRAFFIC]: [],
-  [AUDIT_TYPE_CWV]: [],
   [AUDIT_TYPE_LHS_DESKTOP]: ['performance', 'seo', 'accessibility', 'best-practices'],
   [AUDIT_TYPE_LHS_MOBILE]: ['performance', 'seo', 'accessibility', 'best-practices'],
 };
@@ -52,13 +47,12 @@ const validateScores = (auditResult, auditType) => {
   }
 
   const expectedProperties = AUDIT_TYPE_PROPERTIES[auditType];
-  if (!expectedProperties) {
-    throw new Error(`Unknown audit type: ${auditType}`);
-  }
 
-  for (const prop of expectedProperties) {
-    if (!(prop in auditResult.scores)) {
-      throw new Error(`Missing expected property '${prop}' for audit type '${auditType}'`);
+  if (expectedProperties) {
+    for (const prop of expectedProperties) {
+      if (!(prop in auditResult.scores)) {
+        throw new Error(`Missing expected property '${prop}' for audit type '${auditType}'`);
+      }
     }
   }
 

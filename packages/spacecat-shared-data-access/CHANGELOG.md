@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.0...@adobe/spacecat-shared-data-access-v1.21.1) (2024-04-01)
+
+
+### Bug Fixes
+
+* validate scores only needed ([#203](https://github.com/adobe/spacecat-shared/issues/203)) ([e2e4d14](https://github.com/adobe/spacecat-shared/commit/e2e4d14fa7d28bf2606b933c6c8f6f329c1ff33a))
+
 # [@adobe/spacecat-shared-data-access-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.5...@adobe/spacecat-shared-data-access-v1.21.0) (2024-03-25)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.1.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.5...@adobe/spacecat-shared-gpt-client-v1.1.6) (2024-04-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.2 ([#206](https://github.com/adobe/spacecat-shared/issues/206)) ([1f5a638](https://github.com/adobe/spacecat-shared/commit/1f5a638b8ded5a7511ecf8a8f3589cfebe7ce29e))
+
 # [@adobe/spacecat-shared-gpt-client-v1.1.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.4...@adobe/spacecat-shared-gpt-client-v1.1.5) (2024-03-23)
 
 

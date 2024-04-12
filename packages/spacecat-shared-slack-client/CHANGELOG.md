@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-slack-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.3.0...@adobe/spacecat-shared-slack-client-v1.3.1) (2024-04-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v4.5.1 ([#207](https://github.com/adobe/spacecat-shared/issues/207)) ([985cdba](https://github.com/adobe/spacecat-shared/commit/985cdbaf6c2c354d73f91e94d38244b6eda055ab))
+
 # [@adobe/spacecat-shared-slack-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.2.1...@adobe/spacecat-shared-slack-client-v1.3.0) (2024-03-26)
 
 

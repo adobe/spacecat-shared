@@ -225,7 +225,7 @@ describe('rum api client', () => {
             target: null,
             ids: 56,
             pages: 3,
-            topurl: 'https://www.bamboohr.com/g2/',
+            topurl: 'https://www.spacecat.com/g2/',
             user_agents: 2,
             top_user_agent: 'desktop',
             views: '1482',
@@ -237,7 +237,7 @@ describe('rum api client', () => {
             target: null,
             ids: 8,
             pages: 3,
-            topurl: 'https://www.bamboohr.com/g2/',
+            topurl: 'https://www.spacecat.com/g2/',
             user_agents: 2,
             top_user_agent: 'desktop',
             views: '480',
@@ -253,7 +253,7 @@ describe('rum api client', () => {
         target: null,
         ids: 56,
         pages: 3,
-        topurl: 'https://www.bamboohr.com/g2/',
+        topurl: 'https://www.spacecat.com/g2/',
         user_agents: 2,
         top_user_agent: 'desktop',
         views: '1482',
@@ -265,7 +265,7 @@ describe('rum api client', () => {
         target: null,
         ids: 8,
         pages: 3,
-        topurl: 'https://www.bamboohr.com/g2/',
+        topurl: 'https://www.spacecat.com/g2/',
         user_agents: 2,
         top_user_agent: 'desktop',
         views: '480',
@@ -287,7 +287,7 @@ describe('rum api client', () => {
       .reply(200, JSON.stringify({
         results: {
           data: [{
-            url: 'https://www.bamboohr.com/pl/onboarding-checklist',
+            url: 'https://www.spacecat.com/pl/onboarding-checklist',
             views: '4400',
             avglcp: 2172,
             avgcls: 0.148,
@@ -296,7 +296,7 @@ describe('rum api client', () => {
             submissions: '500',
           },
           {
-            url: 'https://www.bamboohr.com/pl-pages/human-resources',
+            url: 'https://www.spacecat.com/pl-pages/human-resources',
             views: '4300',
             avglcp: 5802,
             avgcls: 0.065,
@@ -309,7 +309,7 @@ describe('rum api client', () => {
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.getRUMFormsDashboard({ url: 'http://spacecat.com' }))
       .to.eventually.eql([{
-        url: 'https://www.bamboohr.com/pl/onboarding-checklist',
+        url: 'https://www.spacecat.com/pl/onboarding-checklist',
         views: '4400',
         avglcp: 2172,
         avgcls: 0.148,
@@ -318,7 +318,7 @@ describe('rum api client', () => {
         submissions: '500',
       },
       {
-        url: 'https://www.bamboohr.com/pl-pages/human-resources',
+        url: 'https://www.spacecat.com/pl-pages/human-resources',
         views: '4300',
         avglcp: 5802,
         avgcls: 0.065,

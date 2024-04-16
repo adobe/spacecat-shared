@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.12...@adobe/spacecat-shared-rum-api-client-v1.7.0) (2024-04-16)
+
+
+### Features
+
+* API call for getting conversion data. ([#208](https://github.com/adobe/spacecat-shared/issues/208)) ([8df8327](https://github.com/adobe/spacecat-shared/commit/8df832793df3806c20be000bff10b93810aff02c))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.6.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.11...@adobe/spacecat-shared-rum-api-client-v1.6.12) (2024-04-12)
 
 

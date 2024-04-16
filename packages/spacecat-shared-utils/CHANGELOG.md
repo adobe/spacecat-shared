@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.14.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.14.3...@adobe/spacecat-shared-utils-v1.14.4) (2024-04-16)
+
+
+### Bug Fixes
+
+* strip slash only for / path ([#209](https://github.com/adobe/spacecat-shared/issues/209)) ([4c009ea](https://github.com/adobe/spacecat-shared/commit/4c009ea35e85ee160ee025f53aaa3918f32aa0b1))
+
 # [@adobe/spacecat-shared-utils-v1.14.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.14.2...@adobe/spacecat-shared-utils-v1.14.3) (2024-04-10)
 
 

@@ -44,12 +44,17 @@ function stripTrailingDot(url) {
 }
 
 /**
- * Strips the trailing slash from the end of the URL.
+ * Strips the trailing slash from the end of the URL if the path is '/'.
  * @param {string} url - The URL to modify.
  * @returns {string} - The URL with the trailing slash removed.
  */
 function stripTrailingSlash(url) {
-  return url.endsWith('/') ? url.slice(0, -1) : url;
+  // remove the scheme (if any) to simplify the slash check
+  const schemelessUrl = url.split('://')[1] || url;
+
+  return schemelessUrl.endsWith('/') && schemelessUrl.split('/').length === 2
+    ? url.slice(0, -1)
+    : url;
 }
 
 /**

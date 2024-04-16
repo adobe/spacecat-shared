@@ -14,7 +14,9 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
-import { create404URL, createRUMURL, createExperimentationURL } from '../src/index.js';
+import {
+  create404URL, createRUMURL, createExperimentationURL, createConversionURL, createRUMFormsURL,
+} from '../src/index.js';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -37,5 +39,15 @@ describe('create urls tests', () => {
   it('returns the URL to get the Experimentation data', () => {
     expect(createExperimentationURL({ url: 'http://spacecat.com' }))
       .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments?interval=7&offset=0&limit=101&url=http%3A%2F%2Fspacecat.com');
+  });
+
+  it('returns the URL to get the conversion data', () => {
+    expect(createConversionURL({ url: 'http://spacecat.com' }))
+      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources-targets?interval=7&offset=0&limit=101&checkpoint=convert&url=http%3A%2F%2Fspacecat.com');
+  });
+
+  it('returns the URL to get the Experimentation data', () => {
+    expect(createRUMFormsURL({ url: 'http://spacecat.com' }))
+      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-forms-dashboard?interval=7&offset=0&limit=101&checkpoint=convert&url=http%3A%2F%2Fspacecat.com');
   });
 });

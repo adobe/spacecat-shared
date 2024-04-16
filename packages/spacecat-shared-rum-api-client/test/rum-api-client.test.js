@@ -205,4 +205,126 @@ describe('rum api client', () => {
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.getDomainList()).to.eventually.eql(['spacecat.com', 'spacekatze.com']);
   });
+
+  it('returns data when getConversionData api is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/rum-sources-targets')
+      .query({
+        domainkey: 'hebele',
+        interval: 7,
+        offset: 0,
+        limit: 101,
+        checkpoint: 'convert',
+        url: 'http://spacecat.com',
+      })
+      .reply(200, JSON.stringify({
+        results: {
+          data: [{
+            checkpoint: 'convert',
+            source: 'get-a-demo',
+            target: null,
+            ids: 56,
+            pages: 3,
+            topurl: 'https://www.spacecat.com/g2/',
+            user_agents: 2,
+            top_user_agent: 'desktop',
+            views: '1482',
+            actions: '1482',
+          },
+          {
+            checkpoint: 'convert',
+            source: 'start-free-trial',
+            target: null,
+            ids: 8,
+            pages: 3,
+            topurl: 'https://www.spacecat.com/g2/',
+            user_agents: 2,
+            top_user_agent: 'desktop',
+            views: '480',
+            actions: '480',
+          }],
+        },
+      }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
+    await expect(rumApiClient.getConversionData({ url: 'http://spacecat.com' }))
+      .to.eventually.eql([{
+        checkpoint: 'convert',
+        source: 'get-a-demo',
+        target: null,
+        ids: 56,
+        pages: 3,
+        topurl: 'https://www.spacecat.com/g2/',
+        user_agents: 2,
+        top_user_agent: 'desktop',
+        views: '1482',
+        actions: '1482',
+      },
+      {
+        checkpoint: 'convert',
+        source: 'start-free-trial',
+        target: null,
+        ids: 8,
+        pages: 3,
+        topurl: 'https://www.spacecat.com/g2/',
+        user_agents: 2,
+        top_user_agent: 'desktop',
+        views: '480',
+        actions: '480',
+      }]);
+  });
+
+  it('returns data when getRUMFormsDashboard api is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/rum-forms-dashboard')
+      .query({
+        domainkey: 'hebele',
+        interval: 7,
+        offset: 0,
+        limit: 101,
+        checkpoint: 'convert',
+        url: 'http://spacecat.com',
+      })
+      .reply(200, JSON.stringify({
+        results: {
+          data: [{
+            url: 'https://www.spacecat.com/pl/onboarding-checklist',
+            views: '4400',
+            avglcp: 2172,
+            avgcls: 0.148,
+            avginp: 96,
+            avgfid: 8,
+            submissions: '500',
+          },
+          {
+            url: 'https://www.spacecat.com/pl-pages/human-resources',
+            views: '4300',
+            avglcp: 5802,
+            avgcls: 0.065,
+            avginp: 72,
+            avgfid: 13,
+            submissions: '0',
+          }],
+        },
+      }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
+    await expect(rumApiClient.getRUMFormsDashboard({ url: 'http://spacecat.com' }))
+      .to.eventually.eql([{
+        url: 'https://www.spacecat.com/pl/onboarding-checklist',
+        views: '4400',
+        avglcp: 2172,
+        avgcls: 0.148,
+        avginp: 96,
+        avgfid: 8,
+        submissions: '500',
+      },
+      {
+        url: 'https://www.spacecat.com/pl-pages/human-resources',
+        views: '4300',
+        avglcp: 5802,
+        avgcls: 0.065,
+        avginp: 72,
+        avgfid: 13,
+        submissions: '0',
+      }]);
+  });
 });

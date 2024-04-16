@@ -97,6 +97,38 @@ export default class RUMAPIClient {
   createExperimentationURL(params?: RUMAPIOptions): string;
 
   /**
+  * Asynchronous method to return the conversion API call response data.
+  * @param {RUMAPIOptions} params - An object representing the parameters to be included
+  *  for the conversion data API call.
+  * @returns A Promise resolving to the conversion response data.
+  */
+  getConversionData(params?: RUMAPIOptions): Promise<Array<object>>;
+
+  /**
+  * Method to return the url composed of params that the conversion API is called with.
+  * @param {RUMAPIOptions} params - An object representing the parameters to be included
+  *  for the conversion API call.
+  * @returns A string returning the conversion url including query parameters.
+  */
+  createConversionURL(params?: RUMAPIOptions): string;
+
+  /**
+   * Asynchronous method to return the conversion API call response data.
+   * @param {RUMAPIOptions} params - An object representing the parameters to be included
+   *  for the conversion data API call.
+   * @returns A Promise resolving to the conversion response data.
+   */
+  getRUMFormsDashboard(params?: RUMAPIOptions): Promise<Array<object>>;
+
+  /**
+  * Method to return the url composed of params that the conversion API is called with.
+  * @param {RUMAPIOptions} params - An object representing the parameters to be included
+  *  for the conversion API call.
+  * @returns A string returning the conversion url including query parameters.
+  */
+  createRUMFormsURL(params?: RUMAPIOptions): string;
+
+  /**
    * Asynchronous method to return the 404 sources API call response data.
    * @param {RUMAPIOptions} params - An object representing the parameters to be included
    *  for the 404 sources API call.

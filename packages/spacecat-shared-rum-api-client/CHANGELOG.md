@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.7.1...@adobe/spacecat-shared-rum-api-client-v1.7.2) (2024-04-17)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v4.5.2 ([#211](https://github.com/adobe/spacecat-shared/issues/211)) ([e261e67](https://github.com/adobe/spacecat-shared/commit/e261e677558a6ee165cf0d560625cf665276e144))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.7.0...@adobe/spacecat-shared-rum-api-client-v1.7.1) (2024-04-16)
 
 

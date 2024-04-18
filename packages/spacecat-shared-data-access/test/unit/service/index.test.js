@@ -66,6 +66,11 @@ describe('Data Access Object Tests', () => {
     'updateConfiguration',
   ];
 
+  const siteTopPagesFunctions = [
+    'getTopPagesForSite',
+    'addSiteTopPage',
+  ];
+
   let dao;
 
   before(() => {
@@ -90,13 +95,20 @@ describe('Data Access Object Tests', () => {
     });
   });
 
+  it('contains all known site top pages functions', () => {
+    siteTopPagesFunctions.forEach((funcName) => {
+      expect(dao).to.have.property(funcName);
+    });
+  });
+
   it('does not contain any unexpected functions', () => {
     const expectedFunctions = new Set([
       ...auditFunctions,
       ...siteFunctions,
       ...siteCandidateFunctions,
       ...organizationFunctions,
-      ...configurationFunctions]);
+      ...configurationFunctions,
+      ...siteTopPagesFunctions]);
     Object.keys(dao).forEach((funcName) => {
       expect(expectedFunctions).to.include(funcName);
     });

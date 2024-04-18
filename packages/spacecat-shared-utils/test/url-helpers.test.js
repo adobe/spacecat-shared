@@ -60,11 +60,13 @@ describe('URL Utility Functions', () => {
   });
 
   describe('stripTrailingSlash', () => {
-    it('should remove trailing slash from the end of the URL', () => {
+    it('should remove trailing slash from the end of the URL if path = /', () => {
       expect(stripTrailingSlash('example.com/')).to.equal('example.com');
-      expect(stripTrailingSlash('example.com//')).to.equal('example.com/');
-      expect(stripTrailingSlash('/example.com/')).to.equal('/example.com');
-      expect(stripTrailingSlash('example.com/abc/')).to.equal('example.com/abc');
+      expect(stripTrailingSlash('https://example.com/')).to.equal('https://example.com');
+      expect(stripTrailingSlash('example.com//')).to.equal('example.com//');
+      expect(stripTrailingSlash('/example.com/')).to.equal('/example.com/');
+      expect(stripTrailingSlash('example.com/abc/')).to.equal('example.com/abc/');
+      expect(stripTrailingSlash('https://example.com/abc/')).to.equal('https://example.com/abc/');
     });
 
     it('should not modify the URL if no trailing slash present', () => {
@@ -110,7 +112,11 @@ describe('URL Utility Functions', () => {
       nock('https://abc.com')
         .get('/')
         .reply(200);
+      nock('https://abc.com')
+        .get('/us/en/')
+        .reply(200);
       await expect(composeAuditURL('https://abc.com')).to.eventually.equal('abc.com');
+      await expect(composeAuditURL('https://abc.com/us/en/')).to.eventually.equal('abc.com/us/en/');
     });
     it('should follow redirect when composing audit URL', async () => {
       nock('https://abc.com')

@@ -21,7 +21,7 @@ export const getTopPagesForSite = async (
   log,
   siteId,
   source,
-  country,
+  geo,
 ) => {
   const queryParams = {
     TableName: config.tableNameSiteTopPages,
@@ -31,9 +31,9 @@ export const getTopPagesForSite = async (
   };
 
   if (hasText(source)) {
-    if (hasText(country)) {
-      queryParams.KeyConditionExpression += ' AND begins_with(SK, :sourceCountry)';
-      queryParams.ExpressionAttributeValues[':sourceCountry'] = `${source}#${country}`;
+    if (hasText(geo)) {
+      queryParams.KeyConditionExpression += ' AND begins_with(SK, :sourceGeo)';
+      queryParams.ExpressionAttributeValues[':sourceGeo'] = `${source}#${geo}`;
     } else {
       queryParams.KeyConditionExpression += ' AND begins_with(SK, :source)';
       queryParams.ExpressionAttributeValues[':source'] = `${source}#`;

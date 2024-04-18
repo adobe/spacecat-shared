@@ -626,7 +626,7 @@
           "AttributeType": "S"
         },
         {
-          "AttributeName": "country",
+          "AttributeName": "geo",
           "AttributeType": "S"
         },
         {

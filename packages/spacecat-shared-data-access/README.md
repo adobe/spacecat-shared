@@ -39,7 +39,7 @@ npm install @adobe/spacecat-shared-data-access
 - **url** (String): URL of the top page.
 - **traffic** (Number): Traffic of the top page.
 - **source** (String): Source of the data.
-- **country** (String): Country of the top page.
+- **geo** (String): Geo of the top page.
 - **importedAt** (String): Timestamp of the import.
 
 ## DynamoDB Data Model

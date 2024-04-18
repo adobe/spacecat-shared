@@ -16,14 +16,13 @@ import {
 } from './accessPatterns.js';
 
 export const siteTopPagesFunctions = (dynamoClient, config, log) => ({
-  getTopPagesForSite: (siteId, source, geo, ascending) => getTopPagesForSite(
+  getTopPagesForSite: (siteId, source, geo) => getTopPagesForSite(
     dynamoClient,
     config,
     log,
     siteId,
     source,
     geo,
-    ascending,
   ),
   addSiteTopPage: (siteTopPageData) => addSiteTopPage(
     dynamoClient,

@@ -16,7 +16,7 @@ npm install @adobe/spacecat-shared-ahrefs-client
 ### Constructor
 
 ```js
-import AhrefsAPIClient, { fetch } from '../src/index.js';
+import AhrefsAPIClient, { fetch } from '@adobe/spacecat-shared-ahrefs-client';
 
 const config = {
   apiKey: '<API_KEY>',

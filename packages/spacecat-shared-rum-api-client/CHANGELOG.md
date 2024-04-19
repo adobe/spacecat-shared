@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.7.2...@adobe/spacecat-shared-rum-api-client-v1.8.0) (2024-04-19)
+
+
+### Features
+
+* calculate conversion for customer domains ([#214](https://github.com/adobe/spacecat-shared/issues/214)) ([0ce20fc](https://github.com/adobe/spacecat-shared/commit/0ce20fce05ac96273d23248c990b7e7eed93be1e))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.7.1...@adobe/spacecat-shared-rum-api-client-v1.7.2) (2024-04-17)
 
 

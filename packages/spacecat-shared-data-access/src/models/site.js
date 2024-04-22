@@ -43,6 +43,7 @@ const Site = (data = {}) => {
   self.getOrganizationId = () => self.state.organizationId;
   self.isLive = () => self.state.isLive;
   self.getIsLiveToggledAt = () => self.state.isLiveToggledAt;
+  self.getAuthConfig = () => self.state.auth;
 
   // TODO: updating the baseURL is not supported yet, it will require a transact write
   //  on dynamodb (put then delete) since baseURL is part of the primary key, something like:

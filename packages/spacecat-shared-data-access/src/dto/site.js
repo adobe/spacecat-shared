@@ -13,6 +13,7 @@
 import { createSite } from '../models/site.js';
 import AuditConfig from '../models/site/audit-config.js';
 import { Config } from '../models/site/config.js';
+import AuthConfig from '../models/site/auth-config.js';
 
 /**
  * Data transfer object for Site.
@@ -36,6 +37,7 @@ export const SiteDto = {
     GSI1PK: 'ALL_SITES',
     auditConfig: AuditConfig.toDynamoItem(site.getAuditConfig()),
     config: Config.toDynamoItem(site.getConfig()),
+    authConfig: AuthConfig.toDynamoItem(site.getAuthConfig()),
   }),
 
   /**

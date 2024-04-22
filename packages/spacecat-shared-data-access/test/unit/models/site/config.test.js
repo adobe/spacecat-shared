@@ -52,6 +52,13 @@ describe('Config Tests', () => {
             },
           },
         },
+        auth: {
+          google: {
+            client_id: 'client_id',
+            client_secret: 'client_secret',
+            redirect_uri: 'redirect_uri',
+          },
+        },
       };
       const config = Config(data);
       expect(config.slack.channel).to.equal('channel1');
@@ -62,6 +69,7 @@ describe('Config Tests', () => {
       expect(config.audits.auditsDisabled()).to.be.false;
       expect(config.audits.getAuditTypeConfig('404').disabled()).to.be.true;
       expect(config.audits.getAuditTypeConfig('cwv').disabled()).to.be.true;
+      expect(config.auth.google.client_id).to.equal('client_id');
     });
 
     it('accepts empty audit config', () => {

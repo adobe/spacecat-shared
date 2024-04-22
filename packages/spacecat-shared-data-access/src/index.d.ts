@@ -129,6 +129,34 @@ export interface AuditConfig {
   getAuditTypeConfigs: () => object;
 }
 
+export interface GoogleAuthConfig {
+  /**
+   * Retrieves the Google Auth client ID associated with the site.
+   * @returns {string} The Google Auth client ID.
+   */
+  getClientId: () => string;
+
+  /**
+   * Retrieves the encrypted Google Auth client secret associated with the site.
+   * @returns {string} The encrypted Google Auth client secret, base64 encoded.
+   */
+  getClientSecret: () => string;
+
+  /**
+   * Retrieves the Google Auth redirect URI associated with the site.
+   * @returns {string} The Google Auth redirect URI.
+   */
+  getRedirectURI: () => string;
+}
+
+export interface AuthConfig {
+  /**
+   * Retrieves the Google Auth configuration associated with the site.
+   * @returns {GoogleAuthConfig} The Google Auth configuration.
+   */
+  getGoogleAuthConfig: () => GoogleAuthConfig;
+}
+
 /**
  * Represents a site with associated audit and configuration data.
  */
@@ -180,6 +208,12 @@ export interface Site {
    * @returns {AuditConfig} The current audit configuration.
    */
   getAuditConfig: () => AuditConfig;
+
+  /**
+   * Retrieves the current auth configuration for the site.
+   * @returns {AuthConfig} The current auth configuration.
+   */
+  getAuthConfig: () => AuthConfig;
 
   /**
    * Retrieves the current configuration for the site.

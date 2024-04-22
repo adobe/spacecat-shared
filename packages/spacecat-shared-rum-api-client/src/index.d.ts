@@ -137,4 +137,12 @@ export default class RUMAPIClient {
    *  or an array of all domain urls .
    */
   getDomainList(params?: RUMAPIOptions): Promise<Array<string>>;
+
+  /**
+  * Asynchronous method to return the rum-sources API call response data.
+  * @param {RUMAPIOptions} params - An object representing the parameters to be included
+  *  for the rum-sources data API call.
+  * @returns A Promise resolving to the conversion response data.
+  */
+  getConversionData(params?: RUMAPIOptions): Promise<Array<string>>;
 }

@@ -23,8 +23,6 @@ const APIS = {
   DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/dash/domain-list',
   RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',
   RUM_EXPERIMENTS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments',
-  RUM_SOURCES_TARGETS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources-targets',
-  RUM_FROMS_DASHBOARD: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-forms-dashboard',
 };
 
 const DOMAIN_LIST_DEFAULT_PARAMS = {
@@ -47,6 +45,7 @@ export const NOT_FOUND_DEFAULT_PARAMS = {
 export const CONVERSION_DEFAULT_PARAMS = {
   ...RUM_DEFAULT_PARAMS,
   checkpoint: 'convert',
+  aggregate: false,
 };
 
 export const create404URL = (params = {}) => createUrl(
@@ -71,14 +70,7 @@ export const createExperimentationURL = (params = {}) => createUrl(
 );
 
 export const createConversionURL = (params = {}) => createUrl(
-  APIS.RUM_SOURCES_TARGETS,
-  {
-    ...CONVERSION_DEFAULT_PARAMS, ...params,
-  },
-);
-
-export const createRUMFormsURL = (params = {}) => createUrl(
-  APIS.RUM_FROMS_DASHBOARD,
+  APIS.RUM_SOURCES,
   {
     ...CONVERSION_DEFAULT_PARAMS, ...params,
   },
@@ -173,6 +165,10 @@ export default class RUMAPIClient {
     return sendRequest(createExperimentationURL({ ...params, domainkey: this.domainkey }));
   }
 
+  async getConversionData(params = {}) {
+    return sendRequest(createConversionURL({ ...params, domainkey: this.domainkey }));
+  }
+
   async get404Sources(params = {}) {
     return sendRequest(create404URL({ ...params, domainkey: this.domainkey }));
   }
@@ -204,13 +200,5 @@ export default class RUMAPIClient {
       expiry,
       params,
     );
-  }
-
-  async getConversionData(params = {}) {
-    return sendRequest(createConversionURL({ ...params, domainkey: this.domainkey }));
-  }
-
-  async getRUMFormsDashboard(params = {}) {
-    return sendRequest(createRUMFormsURL({ ...params, domainkey: this.domainkey }));
   }
 }

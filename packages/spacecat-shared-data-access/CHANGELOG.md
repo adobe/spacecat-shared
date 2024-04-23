@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v1.21.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.1...@adobe/spacecat-shared-data-access-v1.21.2) (2024-04-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#202](https://github.com/adobe/spacecat-shared/issues/202)) ([d5d20a8](https://github.com/adobe/spacecat-shared/commit/d5d20a8d606c7589fb794d6c6e3319541a3e6439))
+
+# [@adobe/spacecat-shared-data-access-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.0...@adobe/spacecat-shared-data-access-v1.21.1) (2024-04-01)
+
+
+### Bug Fixes
+
+* validate scores only needed ([#203](https://github.com/adobe/spacecat-shared/issues/203)) ([e2e4d14](https://github.com/adobe/spacecat-shared/commit/e2e4d14fa7d28bf2606b933c6c8f6f329c1ff33a))
+
+# [@adobe/spacecat-shared-data-access-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.5...@adobe/spacecat-shared-data-access-v1.21.0) (2024-03-25)
+
+
+### Features
+
+* Track number of users invited to Slack [#195](https://github.com/adobe/spacecat-shared/issues/195) ([#196](https://github.com/adobe/spacecat-shared/issues/196)) ([e808a42](https://github.com/adobe/spacecat-shared/commit/e808a4249ea470f8da3bfd659093d2ab134630a5))
+
+# [@adobe/spacecat-shared-data-access-v1.20.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.4...@adobe/spacecat-shared-data-access-v1.20.5) (2024-03-23)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#197](https://github.com/adobe/spacecat-shared/issues/197)) ([776c657](https://github.com/adobe/spacecat-shared/commit/776c657b3ebb2d5b2cd2379aed82d3b9a85ded51))
+
 # [@adobe/spacecat-shared-data-access-v1.20.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.3...@adobe/spacecat-shared-data-access-v1.20.4) (2024-03-19)
 
 

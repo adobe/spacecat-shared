@@ -34,6 +34,7 @@ describe('Config Tests', () => {
         slack: {
           channel: 'channel1',
           workspace: 'workspace1',
+          invitedUserCount: 3,
         },
         alerts: [{
           type: '404',
@@ -55,6 +56,7 @@ describe('Config Tests', () => {
       const config = Config(data);
       expect(config.slack.channel).to.equal('channel1');
       expect(config.slack.workspace).to.equal('workspace1');
+      expect(config.slack.invitedUserCount).to.equal(3);
       expect(config.alerts[0].mentions[0].slack[0]).to.equal('id1');
       expect(config.alerts[0].byOrg).to.be.true;
       expect(config.audits.auditsDisabled()).to.be.false;
@@ -67,6 +69,7 @@ describe('Config Tests', () => {
         slack: {
           channel: 'channel1',
           workspace: 'workspace1',
+          invitedUserCount: 19,
         },
         alerts: [{
           type: '404',
@@ -78,6 +81,7 @@ describe('Config Tests', () => {
       const config = Config(data);
       expect(config.slack.channel).to.equal('channel1');
       expect(config.slack.workspace).to.equal('workspace1');
+      expect(config.slack.invitedUserCount).to.equal(19);
       expect(config.alerts[0].mentions[0].slack[0]).to.equal('id1');
       expect(config.alerts[0].byOrg).to.be.true;
       expect(config.audits.auditsDisabled()).to.be.false;
@@ -96,6 +100,17 @@ describe('Config Tests', () => {
         }],
       };
       expect(() => Config(data)).to.throw('Configuration validation error: "alerts[0].type" must be a string');
+    });
+
+    it('throws an error when invitedUserCount is invalid', () => {
+      const data = {
+        slack: {
+          channel: 'channel1',
+          workspace: 'workspace1',
+          invitedUserCount: -12,
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "slack.invitedUserCount" must be greater than or equal to 0');
     });
   });
 

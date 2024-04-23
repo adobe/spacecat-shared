@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-slack-client-v1.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.3.2...@adobe/spacecat-shared-slack-client-v1.3.3) (2024-04-17)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v4.5.2 ([#211](https://github.com/adobe/spacecat-shared/issues/211)) ([e261e67](https://github.com/adobe/spacecat-shared/commit/e261e677558a6ee165cf0d560625cf665276e144))
+
+# [@adobe/spacecat-shared-slack-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.3.1...@adobe/spacecat-shared-slack-client-v1.3.2) (2024-04-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#202](https://github.com/adobe/spacecat-shared/issues/202)) ([d5d20a8](https://github.com/adobe/spacecat-shared/commit/d5d20a8d606c7589fb794d6c6e3319541a3e6439))
+
+# [@adobe/spacecat-shared-slack-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.3.0...@adobe/spacecat-shared-slack-client-v1.3.1) (2024-04-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v4.5.1 ([#207](https://github.com/adobe/spacecat-shared/issues/207)) ([985cdba](https://github.com/adobe/spacecat-shared/commit/985cdbaf6c2c354d73f91e94d38244b6eda055ab))
+
+# [@adobe/spacecat-shared-slack-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.2.1...@adobe/spacecat-shared-slack-client-v1.3.0) (2024-03-26)
+
+
+### Features
+
+* trigger a release of the spacecat-shared-ims-client package ([#200](https://github.com/adobe/spacecat-shared/issues/200)) ([8f50109](https://github.com/adobe/spacecat-shared/commit/8f5010991aa5032a7e7001b841c39bb8dc6c63a4))
+
+# [@adobe/spacecat-shared-slack-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.2.0...@adobe/spacecat-shared-slack-client-v1.2.1) (2024-03-23)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#197](https://github.com/adobe/spacecat-shared/issues/197)) ([776c657](https://github.com/adobe/spacecat-shared/commit/776c657b3ebb2d5b2cd2379aed82d3b9a85ded51))
+
+# [@adobe/spacecat-shared-slack-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.1.6...@adobe/spacecat-shared-slack-client-v1.2.0) (2024-03-21)
+
+
+### Features
+
+* Group email addresses by domain in the Slack ops invitation messages [#182](https://github.com/adobe/spacecat-shared/issues/182) ([#192](https://github.com/adobe/spacecat-shared/issues/192)) ([30bf4fa](https://github.com/adobe/spacecat-shared/commit/30bf4fa7f90ffb4f57715ac49418ce2abfc106c9))
+
 # [@adobe/spacecat-shared-slack-client-v1.1.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.1.5...@adobe/spacecat-shared-slack-client-v1.1.6) (2024-03-09)
 
 

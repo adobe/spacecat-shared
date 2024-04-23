@@ -244,11 +244,32 @@ describe('ElevatedSlackClient', () => {
       });
 
       it('handles user not found error', async () => {
-        mockApi.post('/users.lookupByEmail').reply(200, { ok: false, error: 'users_not_found' });
+        // Remove existing API mocks so we can assert on the params passed to postMessage
+        let verifiedOpsMessage = false;
+        nock.cleanAll();
+        mockApi.post('/auth.test').reply(200, { ok: true, user_id: 'U123456' });
+        mockApi.post('/team.info').reply(200, { ok: true, team: { id: 'T123456', name: 'test-team' } });
+        mockApi.post('/chat.postMessage', (body) => {
+          // Verify that the email addresses are ordered by domain
+          expect(body.text).to.equal('The following users need to be invited to the workspace: '
+            + 'b@different.example.com\n'
+            + 'a@domain1.example.com\n'
+            + 'c@domain1.example.com');
+          verifiedOpsMessage = true;
+          return true;
+        })
+          .reply(200, { ok: true, channel: 'C123456', ts: '1234567890.12345' });
+        mockApi.post('/users.lookupByEmail').thrice().reply(200, { ok: false, error: 'users_not_found' });
 
-        const results = await client.inviteUsersByEmail('C123456', [{ email: 'nonexistent@example.com' }]);
+        const results = await client.inviteUsersByEmail('C123456', [
+          { email: 'a@domain1.example.com' },
+          { email: 'b@different.example.com' },
+          { email: 'c@domain1.example.com' },
+        ]);
         expect(results).to.be.an('array').that.is.not.empty;
-        expect(results[0]).to.deep.equal({ email: 'nonexistent@example.com', status: 'user_needs_invitation_to_workspace' });
+        expect(results[0]).to.deep.equal({ email: 'a@domain1.example.com', status: 'user_needs_invitation_to_workspace' });
+
+        expect(verifiedOpsMessage).to.be.true;
       });
 
       it('throws error when channel id is missing', async () => {

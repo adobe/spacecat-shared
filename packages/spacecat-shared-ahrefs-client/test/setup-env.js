@@ -9,20 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-
-import BaseSlackClient from './clients/base-slack-client.js';
-import ElevatedSlackClient, { SLACK_STATUSES } from './clients/elevated-slack-client.js';
-import { elevatedSlackClientWrapper } from './wrappers/elevated-client-wrapper.js';
-
-const SLACK_TARGETS = {
-  WORKSPACE_INTERNAL: 'WORKSPACE_INTERNAL',
-  WORKSPACE_EXTERNAL: 'WORKSPACE_EXTERNAL',
-};
-
-export {
-  SLACK_STATUSES,
-  SLACK_TARGETS,
-  BaseSlackClient,
-  ElevatedSlackClient,
-  elevatedSlackClientWrapper,
-};
+// eslint-disable-next-line no-console
+console.log('Forcing HTTP/1.1 for Adobe Fetch');
+process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';

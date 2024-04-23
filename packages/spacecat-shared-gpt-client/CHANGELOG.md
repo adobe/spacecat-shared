@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-gpt-client-v1.1.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.8...@adobe/spacecat-shared-gpt-client-v1.1.9) (2024-04-17)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v4.5.2 ([#211](https://github.com/adobe/spacecat-shared/issues/211)) ([e261e67](https://github.com/adobe/spacecat-shared/commit/e261e677558a6ee165cf0d560625cf665276e144))
+
+# [@adobe/spacecat-shared-gpt-client-v1.1.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.7...@adobe/spacecat-shared-gpt-client-v1.1.8) (2024-04-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#202](https://github.com/adobe/spacecat-shared/issues/202)) ([d5d20a8](https://github.com/adobe/spacecat-shared/commit/d5d20a8d606c7589fb794d6c6e3319541a3e6439))
+
+# [@adobe/spacecat-shared-gpt-client-v1.1.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.6...@adobe/spacecat-shared-gpt-client-v1.1.7) (2024-04-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v4.5.1 ([#207](https://github.com/adobe/spacecat-shared/issues/207)) ([985cdba](https://github.com/adobe/spacecat-shared/commit/985cdbaf6c2c354d73f91e94d38244b6eda055ab))
+
+# [@adobe/spacecat-shared-gpt-client-v1.1.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.5...@adobe/spacecat-shared-gpt-client-v1.1.6) (2024-04-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.2 ([#206](https://github.com/adobe/spacecat-shared/issues/206)) ([1f5a638](https://github.com/adobe/spacecat-shared/commit/1f5a638b8ded5a7511ecf8a8f3589cfebe7ce29e))
+
+# [@adobe/spacecat-shared-gpt-client-v1.1.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.4...@adobe/spacecat-shared-gpt-client-v1.1.5) (2024-03-23)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#197](https://github.com/adobe/spacecat-shared/issues/197)) ([776c657](https://github.com/adobe/spacecat-shared/commit/776c657b3ebb2d5b2cd2379aed82d3b9a85ded51))
+
 # [@adobe/spacecat-shared-gpt-client-v1.1.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.3...@adobe/spacecat-shared-gpt-client-v1.1.4) (2024-03-09)
 
 

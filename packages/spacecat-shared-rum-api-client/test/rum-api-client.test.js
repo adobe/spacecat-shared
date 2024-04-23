@@ -91,18 +91,6 @@ describe('rum api client', () => {
       }]);
   });
 
-  it('returns the URL to call the get404Sources', () => {
-    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
-    expect(rumApiClient.create404URL({ url: 'http://spacecar.com' }))
-      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources?domainkey=hebele&interval=7&offset=0&limit=101&checkpoint=404&url=http%3A%2F%2Fspacecar.com');
-  });
-
-  it('returns the URL to call the getRUMDashboard', () => {
-    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
-    expect(rumApiClient.createRUMURL({ url: 'http://spacecar.com' }))
-      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard?domainkey=hebele&interval=7&offset=0&limit=101&url=http%3A%2F%2Fspacecar.com');
-  });
-
   it('returns data when get404Sources api is successful', async () => {
     nock('https://helix-pages.anywhere.run/helix-services')
       .get('/run-query@v3/rum-sources')
@@ -117,12 +105,6 @@ describe('rum api client', () => {
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.get404Sources())
       .to.eventually.eql([{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }]);
-  });
-
-  it('returns the URL to get the Experimentation data', () => {
-    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
-    expect(rumApiClient.createExperimentationURL({ url: 'http://spacecat.com' }))
-      .to.eql('https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments?domainkey=hebele&interval=7&offset=0&limit=101&url=http%3A%2F%2Fspacecat.com');
   });
 
   it('returns data when getExperimentationData api is successful', async () => {
@@ -222,5 +204,69 @@ describe('rum api client', () => {
       }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.getDomainList()).to.eventually.eql(['spacecat.com', 'spacekatze.com']);
+  });
+
+  it('returns data when getConversionData api call is successful', async () => {
+    nock('https://helix-pages.anywhere.run/helix-services')
+      .get('/run-query@v3/rum-sources')
+      .query({
+        domainkey: 'hebele',
+        interval: 7,
+        offset: 0,
+        limit: 101,
+        checkpoint: 'convert',
+        aggregate: false,
+        url: 'http://spacecat.com',
+      })
+      .reply(200, JSON.stringify({
+        results: {
+          data: [{
+            checkpoint: 'convert',
+            source: 'Home Page click through',
+            ids: 372,
+            pages: 1,
+            url: '',
+            topurl: 'https://www.spacecat.com/',
+            views: '37200',
+            actions: '37200',
+            actions_per_view: '1',
+          },
+          {
+            checkpoint: 'convert',
+            source: 'Bons Plans click through',
+            ids: 25,
+            pages: 1,
+            url: '',
+            topurl: 'https://www.spacecat.com/bons-plans',
+            views: '2500',
+            actions: '2500',
+            actions_per_view: '1',
+          }],
+        },
+      }));
+    const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
+    await expect(rumApiClient.getConversionData({ url: 'http://spacecat.com' }))
+      .to.eventually.eql([{
+        checkpoint: 'convert',
+        source: 'Home Page click through',
+        ids: 372,
+        pages: 1,
+        url: '',
+        topurl: 'https://www.spacecat.com/',
+        views: '37200',
+        actions: '37200',
+        actions_per_view: '1',
+      },
+      {
+        checkpoint: 'convert',
+        source: 'Bons Plans click through',
+        ids: 25,
+        pages: 1,
+        url: '',
+        topurl: 'https://www.spacecat.com/bons-plans',
+        views: '2500',
+        actions: '2500',
+        actions_per_view: '1',
+      }]);
   });
 });

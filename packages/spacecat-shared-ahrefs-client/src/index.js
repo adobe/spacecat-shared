@@ -120,7 +120,7 @@ export default class AhrefsAPIClient {
         'url',
         'sum_traffic',
       ].join(','),
-      order_by: 'sum_traffic_merged',
+      order_by: 'sum_traffic',
       date: new Date().toISOString().split('T')[0],
       target: url,
       limit: getLimit(limit, 2000),

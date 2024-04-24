@@ -17,7 +17,7 @@ import sinon from 'sinon';
 import crypto from 'crypto';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
-import GoogleClient from '../src/index.js';
+import { GoogleClient } from '../src/index.js';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;

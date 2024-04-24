@@ -76,6 +76,16 @@ function checkAudit(audit) {
   expect(audit.isLive()).to.be.a('boolean');
 }
 
+function checkSiteTopPage(siteTopPage) {
+  expect(siteTopPage).to.be.an('object');
+  expect(siteTopPage.getSiteId()).to.be.a('string');
+  expect(siteTopPage.getURL()).to.be.a('string');
+  expect(siteTopPage.getTraffic()).to.be.a('number');
+  expect(siteTopPage.getSource()).to.be.a('string');
+  expect(siteTopPage.getGeo()).to.be.a('string');
+  expect(isIsoDate(siteTopPage.getImportedAt())).to.be.true;
+}
+
 const TEST_DA_CONFIG = {
   tableNameAudits: 'spacecat-services-audits',
   tableNameLatestAudits: 'spacecat-services-latest-audits',
@@ -83,6 +93,7 @@ const TEST_DA_CONFIG = {
   tableNameSites: 'spacecat-services-sites',
   tableNameSiteCandidates: 'spacecat-services-site-candidates',
   tableNameConfigurations: 'spacecat-services-configurations',
+  tableNameSiteTopPages: 'spacecat-services-site-top-pages',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
@@ -103,6 +114,7 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_SITES_CANDIDATES = 10;
   const NUMBER_OF_ORGANIZATIONS = 3;
   const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
+  const NUMBER_OF_TOP_PAGES_FOR_SITE = NUMBER_OF_SITES * 2;
 
   before(async function () {
     this.timeout(30000);
@@ -126,6 +138,7 @@ describe('DynamoDB Integration Test', async () => {
       NUMBER_OF_SITES,
       NUMBER_OF_SITES_CANDIDATES,
       NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
+      NUMBER_OF_TOP_PAGES_FOR_SITE,
     );
 
     dataAccess = createDataAccess(TEST_DA_CONFIG, console);
@@ -739,5 +752,56 @@ describe('DynamoDB Integration Test', async () => {
     expect(siteCandidate.getStatus()).to.equal(SITE_CANDIDATE_STATUS.PENDING);
     expect(siteCandidate.getSource()).to.be.undefined;
     expect(siteCandidate.getSiteId()).to.be.undefined;
+  });
+
+  it('successfully adds a new top page', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    const siteTopPageData = {
+      siteId,
+      url: 'https://example12345.com/page-12345',
+      traffic: 360420000,
+      source: 'rum',
+      geo: 'au',
+      importedAt: new Date().toISOString(),
+    };
+
+    const newSiteTopPage = await dataAccess.addSiteTopPage(siteTopPageData);
+
+    checkSiteTopPage(newSiteTopPage);
+    expect(newSiteTopPage.getSiteId()).to.equal(siteTopPageData.siteId);
+    expect(newSiteTopPage.getTraffic()).to.equal(siteTopPageData.traffic);
+    expect(newSiteTopPage.getSource()).to.equal(siteTopPageData.source);
+    expect(newSiteTopPage.getGeo()).to.equal(siteTopPageData.geo);
+    expect(newSiteTopPage.getImportedAt()).to.equal(siteTopPageData.importedAt);
+
+    const topPages = await dataAccess.getTopPagesForSite(
+      siteTopPageData.siteId,
+      siteTopPageData.source,
+      siteTopPageData.geo,
+    );
+
+    expect(topPages).to.be.an('array').that.has.lengthOf(1);
+    const topPage = topPages[0];
+    checkSiteTopPage(topPage);
+    expect(topPage.getSiteId()).to.equal(siteTopPageData.siteId);
+    expect(topPage.getTraffic()).to.equal(siteTopPageData.traffic);
+    expect(topPage.getSource()).to.equal(siteTopPageData.source);
+    expect(topPage.getGeo()).to.equal(siteTopPageData.geo);
+    expect(topPage.getImportedAt()).to.equal(siteTopPageData.importedAt);
+  });
+
+  it('retrieves top pages for a site from a specific source and geo in descending traffic order', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    const siteTopPages = await dataAccess.getTopPagesForSite(siteId, 'ahrefs', 'global');
+
+    expect(siteTopPages.length).to.equal(2);
+
+    siteTopPages.forEach((topPage) => {
+      checkSiteTopPage(topPage);
+    });
+
+    expect(siteTopPages[0].getTraffic()).to.be.at.least(siteTopPages[1].getTraffic());
   });
 });

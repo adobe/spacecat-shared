@@ -136,6 +136,7 @@ function generateAuditData(
  * @param {number} [numberOfSiteCandidates=10] - The number of sites candidates to generate.
  * @param {number} [numberOfAuditsPerType=5] - The number of audits per type to generate
  * for each site.
+ * @param {number} [numberOfSiteTopPages=5] - The number of site top pages to generate
  *
  * @example
  * // Example usage
@@ -147,6 +148,7 @@ export default async function generateSampleData(
   numberOfSites = 10,
   numberOfSiteCandidates = 10,
   numberOfAuditsPerType = 5,
+  numberOfSiteTopPages = 50,
 ) {
   console.time('Sample data generated in');
   await deleteExistingTables([
@@ -155,12 +157,14 @@ export default async function generateSampleData(
     config.tableNameLatestAudits,
     config.tableNameOrganizations,
     config.tableNameConfigurations,
+    config.tableNameSiteTopPages,
   ]);
   await createTablesFromSchema();
 
   const auditTypes = ['lhs-mobile', 'cwv'];
   const sites = [];
   const siteCandidates = [];
+  const siteTopPages = [];
   const organizations = [];
   const auditItems = [];
   const latestAuditItems = [];
@@ -306,12 +310,26 @@ export default async function generateSampleData(
     });
   }
 
+  // Generate site top pages  data
+  for (let i = 0; i < numberOfSiteTopPages; i += 1) {
+    siteTopPages.push({
+      siteId: sites[i % numberOfSites].id,
+      SK: `ahrefs#global#${i * 10000}`,
+      url: `${sites[i % numberOfSites].baseURL}/page-${i}`,
+      traffic: i * 10000,
+      source: 'ahrefs',
+      geo: 'global',
+      importedAt: nowIso,
+    });
+  }
+
   await batchWrite(config.tableNameSites, sites);
   await batchWrite(config.tableNameSiteCandidates, siteCandidates);
   await batchWrite(config.tableNameOrganizations, organizations);
   await batchWrite(config.tableNameAudits, auditItems);
   await batchWrite(config.tableNameLatestAudits, latestAuditItems);
   await batchWrite(config.tableNameConfigurations, configurations);
+  await batchWrite(config.tableNameSiteTopPages, siteTopPages);
 
   console.log(`Generated ${numberOfOrganizations} organizations`);
   console.log(`Generated ${numberOfSites} sites with ${numberOfAuditsPerType} audits per type for each site`);

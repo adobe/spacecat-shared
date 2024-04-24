@@ -21,6 +21,7 @@ const APIS = {
   NOT_FOUND_DASHBOARD_UI: 'https://data.aem.live/404-reports',
   RUM_DASHBOARD: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-dashboard',
   DOMAIN_LIST: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/dash/domain-list',
+  RUM_404: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-404',
   RUM_SOURCES: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-sources',
   RUM_EXPERIMENTS: 'https://helix-pages.anywhere.run/helix-services/run-query@v3/rum-experiments',
 };
@@ -37,11 +38,6 @@ export const RUM_DEFAULT_PARAMS = {
   limit: 101,
 };
 
-export const NOT_FOUND_DEFAULT_PARAMS = {
-  ...RUM_DEFAULT_PARAMS,
-  checkpoint: 404,
-};
-
 export const CONVERSION_DEFAULT_PARAMS = {
   ...RUM_DEFAULT_PARAMS,
   checkpoint: 'convert',
@@ -49,9 +45,9 @@ export const CONVERSION_DEFAULT_PARAMS = {
 };
 
 export const create404URL = (params = {}) => createUrl(
-  APIS.RUM_SOURCES,
+  APIS.RUM_404,
   {
-    ...NOT_FOUND_DEFAULT_PARAMS, ...params,
+    ...RUM_DEFAULT_PARAMS, ...params,
   },
 );
 

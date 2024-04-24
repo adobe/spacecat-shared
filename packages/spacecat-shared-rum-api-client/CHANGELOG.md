@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.8.0...@adobe/spacecat-shared-rum-api-client-v1.8.1) (2024-04-24)
+
+
+### Bug Fixes
+
+* use 404 new endpoint ([23ec007](https://github.com/adobe/spacecat-shared/commit/23ec0073540eabf3d460f4705ba4dd40f27f46a0))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.7.2...@adobe/spacecat-shared-rum-api-client-v1.8.0) (2024-04-19)
 
 

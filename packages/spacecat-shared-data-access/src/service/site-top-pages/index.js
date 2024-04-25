@@ -13,6 +13,7 @@
 import {
   addSiteTopPage,
   getTopPagesForSite,
+  removeSiteTopPages,
 } from './accessPatterns.js';
 
 export const siteTopPagesFunctions = (dynamoClient, config, log) => ({
@@ -29,5 +30,13 @@ export const siteTopPagesFunctions = (dynamoClient, config, log) => ({
     config,
     log,
     siteTopPageData,
+  ),
+  removeSiteTopPages: (siteId, source, geo) => removeSiteTopPages(
+    dynamoClient,
+    config,
+    log,
+    siteId,
+    source,
+    geo,
   ),
 });

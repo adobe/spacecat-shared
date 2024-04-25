@@ -12,7 +12,7 @@
 
 import { createSiteTopPage } from '../models/site-top-page.js';
 
-function padWithZeros(number) {
+export function padWithZeros(number) {
   return String(number).padStart(12, '0');
 }
 

@@ -484,6 +484,7 @@ export interface DataAccess {
   getTopPagesForSite: (siteId: string, source: string, geo: string)
       => Promise<Readonly<SiteTopPage>[]>;
   addSiteTopPage: (siteTopPageData: object) => Promise<SiteTopPage>;
+  removeSiteTopPages: (siteId: string, source: string, geo: string) => Promise<void>;
 
   // configuration functions
   getConfiguration: () => Promise<Readonly<Configuration>>

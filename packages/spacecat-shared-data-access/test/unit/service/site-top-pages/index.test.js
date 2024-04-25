@@ -42,6 +42,11 @@ describe('Site Top Pages Access Pattern Tests', () => {
       expect(exportedFunctions).to.have.property('addSiteTopPage');
       expect(exportedFunctions.addSiteTopPage).to.be.a('function');
     });
+
+    it('exports removeSiteTopPages function', () => {
+      expect(exportedFunctions).to.have.property('removeSiteTopPages');
+      expect(exportedFunctions.removeSiteTopPages).to.be.a('function');
+    });
   });
 
   describe('Site Top Pages Functions Tests', () => {
@@ -53,7 +58,7 @@ describe('Site Top Pages Access Pattern Tests', () => {
       mockDynamoClient = {
         getItem: sinon.stub().returns(Promise.resolve(null)),
         putItem: sinon.stub().returns(Promise.resolve()),
-        deleteItem: sinon.stub().returns(Promise.resolve()),
+        removeItem: sinon.stub().returns(Promise.resolve()),
         query: sinon.stub().returns(Promise.resolve([])),
       };
 
@@ -77,6 +82,14 @@ describe('Site Top Pages Access Pattern Tests', () => {
 
       const result = await exportedFunctions.getTopPagesForSite('site123', 'gsc', 'au');
 
+      expect(mockDynamoClient.query.calledOnce).to.be.true;
+      expect(mockDynamoClient.query.calledWith({
+        TableName: TEST_DA_CONFIG.tableNameSiteTopPages,
+        KeyConditionExpression: 'siteId = :siteId',
+        ExpressionAttributeValues: { ':siteId': 'site123', ':sourceGeo': 'gsc#au#' },
+        ScanIndexForward: false,
+      }));
+
       expect(result[0].getSiteId()).to.equal(siteTopPageData.siteId);
       expect(result[0].getURL()).to.equal(siteTopPageData.url);
       expect(result[0].getTraffic()).to.equal(siteTopPageData.traffic);
@@ -98,6 +111,14 @@ describe('Site Top Pages Access Pattern Tests', () => {
 
       const result = await exportedFunctions.getTopPagesForSite('site123', 'gsc');
 
+      expect(mockDynamoClient.query.calledOnce).to.be.true;
+      expect(mockDynamoClient.query.calledWith({
+        TableName: TEST_DA_CONFIG.tableNameSiteTopPages,
+        KeyConditionExpression: 'siteId = :siteId',
+        ExpressionAttributeValues: { ':siteId': 'site123', ':source': 'gsc#' },
+        ScanIndexForward: false,
+      }));
+
       expect(result[0].getSiteId()).to.equal(siteTopPageData.siteId);
       expect(result[0].getURL()).to.equal(siteTopPageData.url);
       expect(result[0].getTraffic()).to.equal(siteTopPageData.traffic);
@@ -111,6 +132,13 @@ describe('Site Top Pages Access Pattern Tests', () => {
 
       const result = await exportedFunctions.getTopPagesForSite('site123');
 
+      expect(mockDynamoClient.query.calledOnce).to.be.true;
+      expect(mockDynamoClient.query.calledWith({
+        TableName: TEST_DA_CONFIG.tableNameSiteTopPages,
+        KeyConditionExpression: 'siteId = :siteId',
+        ExpressionAttributeValues: { ':siteId': 'site123' },
+        ScanIndexForward: false,
+      }));
       expect(result).to.be.an('array').that.is.empty;
     });
 
@@ -127,12 +155,37 @@ describe('Site Top Pages Access Pattern Tests', () => {
       const result = await exportedFunctions.addSiteTopPage(siteTopPageData);
 
       expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+      expect(mockDynamoClient.putItem.calledWith(TEST_DA_CONFIG.tableNameSiteTopPages, {
+        ...siteTopPageData,
+        SK: 'rum#us#000000001000',
+      }));
       expect(result.getSiteId()).to.equal(siteTopPageData.siteId);
       expect(result.getURL()).to.equal(siteTopPageData.url);
       expect(result.getTraffic()).to.equal(siteTopPageData.traffic);
       expect(result.getSource()).to.equal(siteTopPageData.source);
       expect(result.getGeo()).to.equal(siteTopPageData.geo);
       expect(result.getImportedAt()).to.equal(siteTopPageData.importedAt);
+    });
+
+    it('removes site top pages successfully', async () => {
+      const siteTopPageData = {
+        siteId: 'site123',
+        url: 'https://www.example.com',
+        traffic: 1000,
+        source: 'rum',
+        geo: 'us',
+        importedAt: new Date().toISOString(),
+      };
+
+      mockDynamoClient.query.returns(Promise.resolve([siteTopPageData]));
+
+      await exportedFunctions.removeSiteTopPages('site123', 'rum', 'us');
+
+      expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
+      expect(mockDynamoClient.removeItem.calledWith(TEST_DA_CONFIG.tableNameSiteTopPages, {
+        siteId: 'site123',
+        SK: 'rum#us#000000001000',
+      }));
     });
   });
 });

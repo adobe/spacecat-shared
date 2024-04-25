@@ -807,4 +807,13 @@ describe('DynamoDB Integration Test', async () => {
       expect(siteTopPages[i - 1].getTraffic()).to.be.at.least(siteTopPages[i].getTraffic());
     }
   });
+
+  it('removes top pages for a site', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    await expect(dataAccess.removeSiteTopPages(siteId, 'ahrefs', 'global')).to.eventually.be.fulfilled;
+
+    const topPagesAfterRemoval = await dataAccess.getTopPagesForSite(siteId, 'ahrefs', 'global');
+    expect(topPagesAfterRemoval).to.be.an('array').that.is.empty;
+  });
 });

@@ -69,6 +69,7 @@ describe('Data Access Object Tests', () => {
   const siteTopPagesFunctions = [
     'getTopPagesForSite',
     'addSiteTopPage',
+    'removeSiteTopPages',
   ];
 
   let dao;

@@ -13,7 +13,7 @@
 import { hasText } from '@adobe/spacecat-shared-utils';
 
 import { createSiteTopPage } from '../../models/site-top-page.js';
-import { SiteTopPageDto } from '../../dto/site-top-page.js';
+import { padWithZeros, SiteTopPageDto } from '../../dto/site-top-page.js';
 
 export const getTopPagesForSite = async (
   dynamoClient,
@@ -33,7 +33,7 @@ export const getTopPagesForSite = async (
   if (hasText(source)) {
     if (hasText(geo)) {
       queryParams.KeyConditionExpression += ' AND begins_with(SK, :sourceGeo)';
-      queryParams.ExpressionAttributeValues[':sourceGeo'] = `${source}#${geo}`;
+      queryParams.ExpressionAttributeValues[':sourceGeo'] = `${source}#${geo}#`;
     } else {
       queryParams.KeyConditionExpression += ' AND begins_with(SK, :source)';
       queryParams.ExpressionAttributeValues[':source'] = `${source}#`;
@@ -59,4 +59,25 @@ export const addSiteTopPage = async (
   );
 
   return newSiteTopPage;
+};
+
+export const removeSiteTopPages = async (
+  dynamoClient,
+  config,
+  log,
+  siteId,
+  source,
+  geo,
+) => {
+  const siteTopPages = await getTopPagesForSite(dynamoClient, config, log, siteId, source, geo);
+
+  const removePromises = siteTopPages.map((siteTopPage) => dynamoClient.removeItem(
+    config.tableNameSiteTopPages,
+    {
+      siteId: siteTopPage.getSiteId(),
+      SK: `${siteTopPage.getSource()}#${siteTopPage.getGeo()}#${padWithZeros(siteTopPage.getTraffic())}`,
+    },
+  ));
+
+  await Promise.all(removePromises);
 };

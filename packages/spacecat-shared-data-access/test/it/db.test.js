@@ -114,7 +114,8 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_SITES_CANDIDATES = 10;
   const NUMBER_OF_ORGANIZATIONS = 3;
   const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
-  const NUMBER_OF_TOP_PAGES_FOR_SITE = NUMBER_OF_SITES * 2;
+  const NUMBER_OF_TOP_PAGES_PER_SITE = 5;
+  const NUMBER_OF_TOP_PAGES_FOR_SITE = NUMBER_OF_SITES * NUMBER_OF_TOP_PAGES_PER_SITE;
 
   before(async function () {
     this.timeout(30000);
@@ -796,12 +797,14 @@ describe('DynamoDB Integration Test', async () => {
 
     const siteTopPages = await dataAccess.getTopPagesForSite(siteId, 'ahrefs', 'global');
 
-    expect(siteTopPages.length).to.equal(2);
+    expect(siteTopPages.length).to.equal(NUMBER_OF_TOP_PAGES_PER_SITE);
 
     siteTopPages.forEach((topPage) => {
       checkSiteTopPage(topPage);
     });
 
-    expect(siteTopPages[0].getTraffic()).to.be.at.least(siteTopPages[1].getTraffic());
+    for (let i = 1; i < siteTopPages.length; i += 1) {
+      expect(siteTopPages[i - 1].getTraffic()).to.be.at.least(siteTopPages[i].getTraffic());
+    }
   });
 });

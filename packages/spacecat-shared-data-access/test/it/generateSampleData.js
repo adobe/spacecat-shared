@@ -312,11 +312,12 @@ export default async function generateSampleData(
 
   // Generate site top pages  data
   for (let i = 0; i < numberOfSiteTopPages; i += 1) {
+    const traffic = (i + 1) * 12345;
     siteTopPages.push({
       siteId: sites[i % numberOfSites].id,
-      SK: `ahrefs#global#${i * 10000}`,
+      SK: `ahrefs#global#${String(traffic).padStart(12, '0')}`,
       url: `${sites[i % numberOfSites].baseURL}/page-${i}`,
-      traffic: i * 10000,
+      traffic,
       source: 'ahrefs',
       geo: 'global',
       importedAt: nowIso,

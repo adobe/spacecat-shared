@@ -12,6 +12,10 @@
 
 import { createSiteTopPage } from '../models/site-top-page.js';
 
+function padWithZeros(number) {
+  return String(number).padStart(12, '0');
+}
+
 export const SiteTopPageDto = {
 /**
    * Converts a SiteTopPage object into a DynamoDB item.
@@ -25,7 +29,7 @@ export const SiteTopPageDto = {
     source: siteTopPage.getSource(),
     geo: siteTopPage.getGeo(),
     importedAt: siteTopPage.getImportedAt(),
-    SK: `${siteTopPage.getSource()}#${siteTopPage.getGeo()}#${siteTopPage.getTraffic()}`,
+    SK: `${siteTopPage.getSource()}#${siteTopPage.getGeo()}#${padWithZeros(siteTopPage.getTraffic())}`,
   }),
 
   /**

@@ -93,18 +93,37 @@ describe('rum api client', () => {
 
   it('returns data when get404Sources api is successful', async () => {
     nock('https://helix-pages.anywhere.run/helix-services')
-      .get('/run-query@v3/rum-sources')
+      .get('/run-query@v3/rum-404')
       .query({
         domainkey: 'hebele',
         interval: 7,
         offset: 0,
         limit: 101,
-        checkpoint: 404,
       })
-      .reply(200, JSON.stringify({ results: { data: [{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }] } }));
+      .reply(200, JSON.stringify({
+        results: {
+          data: [{
+            url: 'http://spacecar.com',
+            views: 100,
+            top_source: 'www.google.com',
+            all_sources: ['https://wikipedia.org/',
+              'https://helpx.adobe.com/',
+              'https://www.google.com/'],
+            source_count: 3,
+          }],
+        },
+      }));
     const rumApiClient = RUMAPIClient.createFrom({ env: { RUM_DOMAIN_KEY: 'hebele' } });
     await expect(rumApiClient.get404Sources())
-      .to.eventually.eql([{ url: 'http://spacecar.com', views: 100, sources: 'www.google.com' }]);
+      .to.eventually.eql([{
+        url: 'http://spacecar.com',
+        views: 100,
+        top_source: 'www.google.com',
+        all_sources: ['https://wikipedia.org/',
+          'https://helpx.adobe.com/',
+          'https://www.google.com/'],
+        source_count: 3,
+      }]);
   });
 
   it('returns data when getExperimentationData api is successful', async () => {

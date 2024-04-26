@@ -47,16 +47,18 @@ describe('AhrefsAPIClient', () => {
     ],
   };
 
-  const topPagesResponse = [
-    {
-      url: 'page-url-1',
-      sum_traffic: 100,
-    },
-    {
-      url: 'page-url-2',
-      sum_traffic: 300,
-    },
-  ];
+  const topPagesResponse = {
+    pages: [
+      {
+        url: 'page-url-1',
+        sum_traffic: 100,
+      },
+      {
+        url: 'page-url-2',
+        sum_traffic: 300,
+      },
+    ],
+  };
 
   before('setup', function () {
     this.clock = sandbox.useFakeTimers({

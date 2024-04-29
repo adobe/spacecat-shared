@@ -281,6 +281,44 @@ export interface SiteCandidate {
   getUpdatedBy: () => string;
 }
 
+export interface SiteTopPage {
+  /**
+   * Retrieves the site ID of the site top page.
+   * @returns {string} The site ID.
+   */
+  getSiteId: () => string;
+
+  /**
+   * Retrieves the URL of the site top page.
+   * @returns {string} The URL.
+   */
+  getURL: () => string;
+
+  /**
+   * Retrieves the traffic of the site top page.
+   * @returns {number} The traffic.
+   */
+  getTraffic: () => number;
+
+  /**
+   * Retrieves the source of the site top page.
+   * @returns {string} The source.
+   */
+  getSource: () => string;
+
+  /**
+   * Retrieves the geo of the site top page.
+   * @returns {string} The geo.
+   */
+  getGeo: () => string;
+
+  /**
+   * Retrieves the timestamp when the import was performed.
+   * @returns {string} The import timestamp.
+   */
+  getImportedAt: () => string;
+}
+
 export interface Organization {
   /**
    * Retrieves the ID of the site.
@@ -442,6 +480,12 @@ export interface DataAccess {
   siteCandidateExists: (baseURL: string) => Promise<boolean>;
   updateSiteCandidate: (siteCandidate: SiteCandidate) => Promise<SiteCandidate>;
 
+  // site top pages functions
+  getTopPagesForSite: (siteId: string, source: string, geo: string)
+      => Promise<Readonly<SiteTopPage>[]>;
+  addSiteTopPage: (siteTopPageData: object) => Promise<SiteTopPage>;
+  removeSiteTopPages: (siteId: string, source: string, geo: string) => Promise<void>;
+
   // configuration functions
   getConfiguration: () => Promise<Readonly<Configuration>>
   getConfigurations: () => Promise<Readonly<Configuration>[]>
@@ -456,6 +500,7 @@ interface DataAccessConfig {
   tableNameSites: string;
   tableNameSiteCandidates: string;
   tableNameConfigurations: string;
+  tableNameSiteTopPages: string;
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,
   indexNameAllSitesByDeliveryType: string;

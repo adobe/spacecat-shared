@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.3...@adobe/spacecat-shared-data-access-v1.22.0) (2024-04-29)
+
+
+### Features
+
+* add site top pages data access (SITES-21274) ([#213](https://github.com/adobe/spacecat-shared/issues/213)) ([b892e7c](https://github.com/adobe/spacecat-shared/commit/b892e7cb056824a4f5917fa2cf8a89c7dd077f7f))
+
 # [@adobe/spacecat-shared-data-access-v1.21.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.2...@adobe/spacecat-shared-data-access-v1.21.3) (2024-04-25)
 
 

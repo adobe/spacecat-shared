@@ -25,7 +25,7 @@ describe('GoogleClient', () => {
       GOOGLE_REDIRECT_URI: 'testRedirectUri',
       ACCESS_TOKEN: 'testAccessToken',
       REFRESH_TOKEN: 'testRefreshToken',
-      EXPIRATION: 'testExpiration',
+      EXPIRATION: Date.now() - 1000,
     },
     log: console,
   };
@@ -51,16 +51,11 @@ describe('GoogleClient', () => {
   });
 
   describe('createFrom', () => {
-    it('should create a new GoogleClient instance with the provided context', () => {
-      const googleClient = GoogleClient.createFrom(context);
+    it('should create a new GoogleClient instance with the provided context', async () => {
+      const googleClient = await GoogleClient.createFrom(context);
 
       expect(googleClient).to.be.instanceOf(GoogleClient);
-      expect(googleClient.GOOGLE_CLIENT_ID).to.equal(context.env.GOOGLE_CLIENT_ID);
-      expect(googleClient.GOOGLE_CLIENT_SECRET).to.equal(context.env.GOOGLE_CLIENT_SECRET);
-      expect(googleClient.GOOGLE_REDIRECT_URI).to.equal(context.env.GOOGLE_REDIRECT_URI);
-      expect(googleClient.ACCESS_TOKEN).to.equal(context.env.ACCESS_TOKEN);
-      expect(googleClient.REFRESH_TOKEN).to.equal(context.env.REFRESH_TOKEN);
-      expect(googleClient.EXPIRATION).to.equal(context.env.EXPIRATION);
+      expect(googleClient.authClient).to.be.instanceOf(OAuth2Client);
       expect(googleClient.log).to.equal(context.log);
     });
   });
@@ -74,14 +69,7 @@ describe('GoogleClient', () => {
         },
       });
 
-      const googleClient = new GoogleClient({
-        GOOGLE_CLIENT_ID: 'testClientId',
-        GOOGLE_CLIENT_SECRET: 'testClientSecret',
-        GOOGLE_REDIRECT_URI: 'testRedirectUri',
-        ACCESS_TOKEN: 'testAccessToken',
-        REFRESH_TOKEN: 'testRefreshToken',
-        EXPIRATION: Date.now() - 1000,
-      });
+      const googleClient = await GoogleClient.createFrom(context);
 
       const result = await googleClient.getOrganicSearchData(baseURL, startDate, endDate);
       const response = await result.json();
@@ -97,14 +85,7 @@ describe('GoogleClient', () => {
         },
       });
 
-      const googleClient = new GoogleClient({
-        GOOGLE_CLIENT_ID: 'testClientId',
-        GOOGLE_CLIENT_SECRET: 'testClientSecret',
-        GOOGLE_REDIRECT_URI: 'testRedirectUri',
-        ACCESS_TOKEN: 'testAccessToken',
-        REFRESH_TOKEN: 'testRefreshToken',
-        EXPIRATION: Date.now() - 1000, // Set expiration to a past date to trigger token refresh
-      });
+      const googleClient = await GoogleClient.createFrom(context);
 
       const result = await googleClient.getOrganicSearchData(baseURL, startDate, endDate);
       const response = await result.json();

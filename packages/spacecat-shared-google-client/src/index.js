@@ -15,17 +15,29 @@ import { ok, internalServerError } from '@adobe/spacecat-shared-http-utils';
 import { OAuth2Client } from 'google-auth-library';
 
 export default class GoogleClient {
-  static createFrom(context) {
-    return new GoogleClient(context.env, context.log);
+  static async createFrom(context) {
+    const authClient = new OAuth2Client(
+      context.env.GOOGLE_CLIENT_ID,
+      context.env.GOOGLE_CLIENT_SECRET,
+      context.env.GOOGLE_REDIRECT_URI,
+    );
+
+    authClient.setCredentials({
+      access_token: context.env.ACCESS_TOKEN,
+      refresh_token: context.env.REFRESH_TOKEN,
+    });
+
+    if (context.env.EXPIRATION < Date.now()) {
+      const { tokens } = await authClient.refreshAccessToken();
+      authClient.setCredentials({
+        access_token: tokens.access_token,
+      });
+    }
+    return new GoogleClient(authClient, context.log);
   }
 
-  constructor(config, log = console) {
-    this.GOOGLE_CLIENT_ID = config.GOOGLE_CLIENT_ID;
-    this.GOOGLE_CLIENT_SECRET = config.GOOGLE_CLIENT_SECRET;
-    this.GOOGLE_REDIRECT_URI = config.GOOGLE_REDIRECT_URI;
-    this.ACCESS_TOKEN = config.ACCESS_TOKEN;
-    this.REFRESH_TOKEN = config.REFRESH_TOKEN;
-    this.EXPIRATION = config.EXPIRATION;
+  constructor(authClient, log = console) {
+    this.authClient = authClient;
     this.log = log;
   }
 
@@ -37,27 +49,9 @@ export default class GoogleClient {
    * @returns {Promise<Response>}
    */
   async getOrganicSearchData(baseURL, startDate, endDate) {
-    const authClient = new OAuth2Client(
-      this.GOOGLE_CLIENT_ID,
-      this.GOOGLE_CLIENT_SECRET,
-      this.GOOGLE_REDIRECT_URI,
-    );
-
-    authClient.setCredentials({
-      access_token: this.ACCESS_TOKEN,
-      refresh_token: this.REFRESH_TOKEN,
-    });
-
-    if (this.EXPIRATION < Date.now()) {
-      const { tokens } = await authClient.refreshAccessToken();
-      authClient.setCredentials({
-        access_token: tokens.access_token,
-      });
-    }
-
     const webmasters = google.webmasters({
       version: 'v3',
-      auth: authClient,
+      auth: this.authClient,
     });
     try {
       const result = await webmasters.searchanalytics.query({

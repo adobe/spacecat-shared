@@ -10,10 +10,68 @@
  * governing permissions and limitations under the License.
  */
 
-import GoogleClient from './clients/GoogleClient.js';
-import CustomerSecrets from './clients/CustomerSecrets.js';
+import { google } from 'googleapis';
+import { ok, internalServerError } from '@adobe/spacecat-shared-http-utils';
+import { OAuth2Client } from 'google-auth-library';
 
-export {
-  GoogleClient,
-  CustomerSecrets,
-};
+export default class GoogleClient {
+  static createFrom(context) {
+    return new GoogleClient(context.env, context.log);
+  }
+
+  constructor(config, log = console) {
+    this.GOOGLE_CLIENT_ID = config.GOOGLE_CLIENT_ID;
+    this.GOOGLE_CLIENT_SECRET = config.GOOGLE_CLIENT_SECRET;
+    this.GOOGLE_REDIRECT_URI = config.GOOGLE_REDIRECT_URI;
+    this.ACCESS_TOKEN = config.ACCESS_TOKEN;
+    this.REFRESH_TOKEN = config.REFRESH_TOKEN;
+    this.EXPIRATION = config.EXPIRATION;
+    this.log = log;
+  }
+
+  /**
+   *
+   * @param baseURL
+   * @param startDate
+   * @param endDate
+   * @returns {Promise<Response>}
+   */
+  async getOrganicSearchData(baseURL, startDate, endDate) {
+    const authClient = new OAuth2Client(
+      this.GOOGLE_CLIENT_ID,
+      this.GOOGLE_CLIENT_SECRET,
+      this.GOOGLE_REDIRECT_URI,
+    );
+
+    authClient.setCredentials({
+      access_token: this.ACCESS_TOKEN,
+      refresh_token: this.REFRESH_TOKEN,
+    });
+
+    if (this.EXPIRATION < Date.now()) {
+      const { tokens } = await authClient.refreshAccessToken();
+      authClient.setCredentials({
+        access_token: tokens.access_token,
+      });
+    }
+
+    const webmasters = google.webmasters({
+      version: 'v3',
+      auth: authClient,
+    });
+    try {
+      const result = await webmasters.searchanalytics.query({
+        siteUrl: baseURL,
+        requestBody: {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+          rowLimit: 10,
+        },
+      });
+      return ok(result.data);
+    } catch (error) {
+      this.log.error('Error:', error.message);
+      return internalServerError(error.message);
+    }
+  }
+}

@@ -11,243 +11,105 @@
  */
 /* eslint-env mocha */
 
-import chai from 'chai';
-import chaiAsPromised from 'chai-as-promised';
+import { expect } from 'chai';
 import sinon from 'sinon';
-import crypto from 'crypto';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
-import { GoogleClient } from '../src/index.js';
-
-chai.use(chaiAsPromised);
-const { expect } = chai;
-const sandbox = sinon.createSandbox();
+import GoogleClient from '../src/index.js';
 
 describe('GoogleClient', () => {
-  let googleClient;
+  const context = {
+    env: {
+      GOOGLE_CLIENT_ID: 'testClientId',
+      GOOGLE_CLIENT_SECRET: 'testClientSecret',
+      GOOGLE_REDIRECT_URI: 'testRedirectUri',
+      ACCESS_TOKEN: 'testAccessToken',
+      REFRESH_TOKEN: 'testRefreshToken',
+      EXPIRATION: 'testExpiration',
+    },
+    log: console,
+  };
 
-  // AES-256 key, base64 encoded
-  const key = crypto.randomBytes(32).toString('base64');
-  // AES block size in CBC mode, base64 encoded
-  const iv = crypto.randomBytes(16).toString('base64');
+  const baseURL = 'https://www.example.com';
+  const startDate = new Date('2024-01-01');
+  const endDate = new Date('2024-12-31');
 
-  let siteConfig;
-  let site;
-  let authClient;
+  let authClientStub;
 
   beforeEach(() => {
-    googleClient = new GoogleClient({
-      siteId: 'testSiteId',
-      dataAccess: {},
-      GOOGLE_ENCRYPTION_KEY: key,
-      GOOGLE_ENCRYPTION_IV: iv,
-    });
-
-    authClient = new OAuth2Client();
-
-    site = {
-      getConfig: () => siteConfig,
-      getBaseURL: () => 'https://www.example.com',
-      updateConfig: sandbox.stub().resolves(),
-    };
-
-    googleClient.dataAccess.getSiteByID = sandbox.stub().resolves(site);
-    googleClient.dataAccess.updateSite = sandbox.stub().resolves();
-
-    siteConfig = {
-      auth: {
-        google: {
-          client_id: 'testClientId',
-          client_secret: googleClient.encryptSecret('testClientSecret'),
-          redirect_uri: 'testRedirectUri',
-          access_token: googleClient.encryptSecret('testToken'),
-          refresh_token: googleClient.encryptSecret('testRefreshToken'),
-          expiration: Date.now() + 10000,
-        },
+    authClientStub = sinon.stub(OAuth2Client.prototype);
+    authClientStub.setCredentials.returns();
+    authClientStub.refreshAccessToken.resolves({
+      tokens: {
+        test_token: 'testToken',
       },
-    };
+    });
   });
 
   afterEach(() => {
-    sandbox.restore();
+    sinon.restore();
   });
 
   describe('createFrom', () => {
-    it('should create a new GoogleClient instance with the provided context and siteId', () => {
-      const context = {
-        dataAccess: {},
-        env: {
-          GOOGLE_ENCRYPTION_KEY: key,
-          GOOGLE_ENCRYPTION_IV: iv,
-        },
-      };
-      const siteId = 'testSiteId';
+    it('should create a new GoogleClient instance with the provided context', () => {
+      const googleClient = GoogleClient.createFrom(context);
 
-      const client = GoogleClient.createFrom(context, siteId);
-
-      expect(client).to.be.instanceOf(GoogleClient);
-      expect(client.siteId).to.equal(siteId);
-      expect(client.dataAccess).to.equal(context.dataAccess);
-      expect(client.GOOGLE_ENCRYPTION_KEY).to.equal(context.env.GOOGLE_ENCRYPTION_KEY);
-      expect(client.GOOGLE_ENCRYPTION_IV).to.equal(context.env.GOOGLE_ENCRYPTION_IV);
-    });
-  });
-
-  describe('decryptSecret', () => {
-    it('should return the decrypted secret when given an encrypted secret', () => {
-      const secret = 'testSecret';
-      const encryptedSecret = googleClient.encryptSecret(secret);
-      const decryptedSecret = googleClient.decryptSecret(encryptedSecret);
-
-      expect(decryptedSecret).to.equal(secret);
-    });
-  });
-
-  describe('encryptSecret', () => {
-    it('should return the encrypted secret when given a secret', () => {
-      const secret = 'testSecret';
-      const encryptedSecret = googleClient.encryptSecret(secret);
-      const decryptedSecret = googleClient.decryptSecret(encryptedSecret);
-
-      expect(decryptedSecret).to.equal(secret);
-    });
-  });
-
-  describe('generateAuthClient', () => {
-    it('should return an instance of OAuth2Client with the correct parameters', async () => {
-      const googleAuthClient = await googleClient.generateAuthClient();
-
-      expect(googleAuthClient).to.be.instanceOf(OAuth2Client);
-      // eslint-disable-next-line no-underscore-dangle
-      expect(googleAuthClient._clientId).to.equal(siteConfig.auth.google.client_id);
-      // eslint-disable-next-line no-underscore-dangle
-      expect(googleAuthClient._clientSecret).to.equal('testClientSecret');
-      expect(googleAuthClient.redirectUri).to.equal(siteConfig.auth.google.redirect_uri);
+      expect(googleClient).to.be.instanceOf(GoogleClient);
+      expect(googleClient.GOOGLE_CLIENT_ID).to.equal(context.env.GOOGLE_CLIENT_ID);
+      expect(googleClient.GOOGLE_CLIENT_SECRET).to.equal(context.env.GOOGLE_CLIENT_SECRET);
+      expect(googleClient.GOOGLE_REDIRECT_URI).to.equal(context.env.GOOGLE_REDIRECT_URI);
+      expect(googleClient.ACCESS_TOKEN).to.equal(context.env.ACCESS_TOKEN);
+      expect(googleClient.REFRESH_TOKEN).to.equal(context.env.REFRESH_TOKEN);
+      expect(googleClient.EXPIRATION).to.equal(context.env.EXPIRATION);
+      expect(googleClient.log).to.equal(context.log);
     });
   });
 
   describe('getOrganicSearchData', () => {
-    it('should return the organic search data for the given date range', async () => {
-      const startDate = new Date('2024-01-01');
-      const endDate = new Date('2024-12-31');
-
-      const testData = {
-        rows: [
-          {
-            keys: [
-              'testKey1',
-              'testKey2',
-            ],
-            clicks: 100,
-            impressions: 1000,
-            ctr: 5.5,
-            position: 1.5,
-          },
-        ],
-        responseAggregationType: 'byPage',
-      };
-
-      const webmastersStub = sandbox.stub().resolves({
-        data: testData,
-      });
-
-      sandbox.stub(google, 'webmasters').returns({
+    it('should return organic search data for the provided baseURL, startDate, and endDate', async () => {
+      const webmastersStub = sinon.stub().resolves({ data: 'testData' });
+      sinon.stub(google, 'webmasters').returns({
         searchanalytics: {
           query: webmastersStub,
         },
       });
 
-      const result = await googleClient.getOrganicSearchData(startDate, endDate);
-      const response = await result.text();
+      const googleClient = new GoogleClient({
+        GOOGLE_CLIENT_ID: 'testClientId',
+        GOOGLE_CLIENT_SECRET: 'testClientSecret',
+        GOOGLE_REDIRECT_URI: 'testRedirectUri',
+        ACCESS_TOKEN: 'testAccessToken',
+        REFRESH_TOKEN: 'testRefreshToken',
+        EXPIRATION: Date.now() - 1000,
+      });
 
+      const result = await googleClient.getOrganicSearchData(baseURL, startDate, endDate);
+      const response = await result.json();
       expect(result.status).to.equal(200);
-      expect(JSON.parse(response)).to.deep.equal(testData);
+      expect(response).to.equal('testData');
       expect(webmastersStub.calledOnce).to.be.true;
     });
 
-    it('should return a bad request response if there is no token or refreshToken', async () => {
-      const startDate = new Date('2024-01-01');
-      const endDate = new Date('2024-12-31');
-      siteConfig.auth.google.access_token = null;
-      siteConfig.auth.google.refresh_token = null;
-
-      const result = await googleClient.getOrganicSearchData(startDate, endDate);
-      const response = await result.json();
-
-      expect(result.status).to.equal(400);
-      expect(response.message).to.equal('Google token or refresh token not found');
-    });
-  });
-
-  it('should refresh the token if it has expired and then proceed with the request', async () => {
-    const startDate = new Date('2024-01-01');
-    const endDate = new Date('2024-12-31');
-    siteConfig.auth.google.expiration = Date.now() - 10000; // token has expired
-
-    const testData = {
-      rows: [
-        {
-          keys: [
-            'testKey1',
-            'testKey2',
-          ],
-          clicks: 100,
-          impressions: 1000,
-          ctr: 5.5,
-          position: 1.5,
+    it('should handle errors when the Google API call fails', async () => {
+      sinon.stub(google, 'webmasters').returns({
+        searchanalytics: {
+          query: sinon.stub().rejects(new Error('Google API call failed')),
         },
-      ],
-      responseAggregationType: 'byPage',
-    };
+      });
 
-    const webmastersStub = sandbox.stub().resolves({
-      data: testData,
+      const googleClient = new GoogleClient({
+        GOOGLE_CLIENT_ID: 'testClientId',
+        GOOGLE_CLIENT_SECRET: 'testClientSecret',
+        GOOGLE_REDIRECT_URI: 'testRedirectUri',
+        ACCESS_TOKEN: 'testAccessToken',
+        REFRESH_TOKEN: 'testRefreshToken',
+        EXPIRATION: Date.now() - 1000, // Set expiration to a past date to trigger token refresh
+      });
+
+      const result = await googleClient.getOrganicSearchData(baseURL, startDate, endDate);
+      const response = await result.json();
+      expect(result.status).to.equal(500);
+      expect(response.message).to.equal('Google API call failed');
     });
-
-    const refreshAccessTokenStub = sandbox.stub(authClient, 'refreshAccessToken').resolves({
-      tokens: {
-        access_token: 'newAccessToken',
-        expiry_date: Date.now() + 10000,
-      },
-    });
-
-    sandbox.stub(google, 'webmasters').returns({
-      searchanalytics: {
-        query: webmastersStub,
-      },
-    });
-
-    const generateAuthClientStub = sandbox.stub(googleClient, 'generateAuthClient').resolves(authClient);
-
-    const result = await googleClient.getOrganicSearchData(startDate, endDate);
-    const response = await result.json();
-
-    expect(result.status).to.equal(200);
-    expect(response).to.deep.equal(testData);
-    expect(webmastersStub.calledOnce).to.be.true;
-    expect(refreshAccessTokenStub.calledOnce).to.be.true;
-    expect(generateAuthClientStub.calledOnce).to.be.true;
-  });
-
-  it('should return an internal server error response if an error occurs', async () => {
-    const startDate = new Date('2024-01-01');
-    const endDate = new Date('2024-12-31');
-
-    const webmastersStub = sandbox.stub().rejects(new Error('Test error'));
-    sandbox.stub(google, 'webmasters').returns({
-      searchanalytics: {
-        query: webmastersStub,
-      },
-    });
-
-    const generateAuthClientStub = sandbox.stub(googleClient, 'generateAuthClient').resolves(authClient);
-
-    const result = await googleClient.getOrganicSearchData(startDate, endDate);
-    const response = await result.json();
-
-    expect(result.status).to.equal(500);
-    expect(response.message).to.equal('Test error');
-    expect(webmastersStub.calledOnce).to.be.true;
-    expect(generateAuthClientStub.calledOnce).to.be.true;
   });
 });

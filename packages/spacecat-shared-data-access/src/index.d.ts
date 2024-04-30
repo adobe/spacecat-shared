@@ -128,6 +128,7 @@ export interface AuditConfig {
    */
   getAuditTypeConfigs: () => object;
 }
+
 /**
  * Represents a site with associated audit and configuration data.
  */

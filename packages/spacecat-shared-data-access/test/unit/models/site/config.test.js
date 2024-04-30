@@ -52,13 +52,6 @@ describe('Config Tests', () => {
             },
           },
         },
-        auth: {
-          google: {
-            client_id: 'client_id',
-            client_secret: 'client_secret',
-            redirect_uri: 'redirect_uri',
-          },
-        },
       };
       const config = Config(data);
       expect(config.slack.channel).to.equal('channel1');

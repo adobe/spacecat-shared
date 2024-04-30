@@ -33,13 +33,6 @@ export const configSchema = Joi.object({
       }).unknown(true),
     ).unknown(true),
   }).unknown(true),
-  auth: Joi.object({
-    google: Joi.object({
-      client_id: Joi.string(),
-      client_secret: Joi.string(),
-      redirect_uri: Joi.string(),
-    }).unknown(true),
-  }).unknown(true),
 }).unknown(true);
 
 export const DEFAULT_CONFIG = {

@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.22.0...@adobe/spacecat-shared-data-access-v1.22.1) (2024-04-30)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#221](https://github.com/adobe/spacecat-shared/issues/221)) ([13e72c3](https://github.com/adobe/spacecat-shared/commit/13e72c36433dd62058275475acb46a03bd307f91))
+
+# [@adobe/spacecat-shared-data-access-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.3...@adobe/spacecat-shared-data-access-v1.22.0) (2024-04-29)
+
+
+### Features
+
+* add site top pages data access (SITES-21274) ([#213](https://github.com/adobe/spacecat-shared/issues/213)) ([b892e7c](https://github.com/adobe/spacecat-shared/commit/b892e7cb056824a4f5917fa2cf8a89c7dd077f7f))
+
+# [@adobe/spacecat-shared-data-access-v1.21.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.2...@adobe/spacecat-shared-data-access-v1.21.3) (2024-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#215](https://github.com/adobe/spacecat-shared/issues/215)) ([4227263](https://github.com/adobe/spacecat-shared/commit/4227263b6bc917982d361cd621c7001c4ee1fa56))
+
 # [@adobe/spacecat-shared-data-access-v1.21.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.1...@adobe/spacecat-shared-data-access-v1.21.2) (2024-04-16)
 
 

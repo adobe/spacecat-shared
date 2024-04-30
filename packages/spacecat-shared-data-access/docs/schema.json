@@ -599,6 +599,85 @@
           }
         }
       }
+    },
+    {
+      "TableName": "spacecat-services-site-top-pages",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "siteId",
+          "AttributeType": "S"
+        },
+        "SortKey": {
+          "AttributeName": "SK",
+          "AttributeType": "S"
+        }
+      },
+      "NonKeyAttributes": [
+        {
+          "AttributeName": "url",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "traffic",
+          "AttributeType": "N"
+        },
+        {
+          "AttributeName": "source",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "geo",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "importedAt",
+          "AttributeType": "S"
+        }
+      ],
+      "DataAccess": {
+        "MySql": {}
+      },
+      "SampleDataFormats": {
+        "siteId": [
+          "identifiers",
+          "UUID"
+        ],
+        "importedAt": [
+          "date",
+          "ISO 8601 date and time"
+        ],
+        "url": [
+          "identifiers",
+          "URL"
+        ]
+      },
+      "BillingMode": "PROVISIONED",
+      "ProvisionedCapacitySettings": {
+        "ProvisionedThroughput": {
+          "ReadCapacityUnits": 5,
+          "WriteCapacityUnits": 5
+        },
+        "AutoScalingRead": {
+          "ScalableTargetRequest": {
+            "MinCapacity": 1,
+            "MaxCapacity": 10,
+            "ServiceRole": "AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+          },
+          "ScalingPolicyConfiguration": {
+            "TargetValue": 70
+          }
+        },
+        "AutoScalingWrite": {
+          "ScalableTargetRequest": {
+            "MinCapacity": 1,
+            "MaxCapacity": 10,
+            "ServiceRole": "AWSServiceRoleForApplicationAutoScaling_DynamoDBTable"
+          },
+          "ScalingPolicyConfiguration": {
+            "TargetValue": 70
+          }
+        }
+      }
     }
   ]
 }

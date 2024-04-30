@@ -41,13 +41,6 @@ export default class GoogleClient {
     this.log = log;
   }
 
-  /**
-   *
-   * @param baseURL
-   * @param startDate
-   * @param endDate
-   * @returns {Promise<Response>}
-   */
   async getOrganicSearchData(baseURL, startDate, endDate) {
     const webmasters = google.webmasters({
       version: 'v3',

@@ -13,8 +13,16 @@ npm install @adobe/spacecat-shared-google-client
 
 ## Usage
 
-### Constructor
-TBD
+```
+import GoogleClient from '@adobe/spacecat-shared-google-client';
+
+...
+
+const googleClient = await GoogleClient.createFrom(context);
+const data = await googleClient.getOrganicTrafficData(baseURL);
+
+...
+```
 
 ## Testing
 

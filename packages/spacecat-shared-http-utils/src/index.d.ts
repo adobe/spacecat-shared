@@ -20,3 +20,5 @@ export declare function badRequest(message?: string, headers?: object): Response
 export declare function notFound(message?: string, headers?: object): Response;
 
 export declare function internalServerError(message?: string, headers?: object): Response;
+
+export declare function found(location: string): Response;

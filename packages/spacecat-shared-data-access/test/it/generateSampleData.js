@@ -332,7 +332,7 @@ export default async function generateSampleData(
   sites.forEach((site) => {
     for (let i = 0; i < numberOfKeyEvents; i += 1) {
       keyEvents.push({
-        siteId: site.getId(),
+        siteId: site.id,
         name: `key-event-#${i}`,
         type: Object.values(KEY_EVENT_TYPES).at(i),
       });

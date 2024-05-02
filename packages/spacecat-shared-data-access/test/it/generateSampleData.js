@@ -18,7 +18,8 @@ import { generateRandomAudit } from './auditUtils.js';
 import { createTable, deleteTable } from './tableOperations.js';
 
 import schema from '../../docs/schema.json' assert { type: 'json' };
-import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
+import { createKeyEvent, KEY_EVENT_TYPES } from '../../src/models/key-event.js';
+import { KeyEventDto } from '../../src/dto/key-event.js';
 
 /**
  * Creates all tables defined in a schema.
@@ -331,11 +332,13 @@ export default async function generateSampleData(
 
   sites.forEach((site) => {
     for (let i = 0; i < numberOfKeyEvents; i += 1) {
-      keyEvents.push({
+      const keyEvent = createKeyEvent({
         siteId: site.id,
         name: `key-event-#${i}`,
-        type: Object.values(KEY_EVENT_TYPES).at(i),
+        type: Object.values(KEY_EVENT_TYPES).at(i % Object.keys(KEY_EVENT_TYPES).length),
       });
+
+      keyEvents.push(KeyEventDto.toDynamoItem(keyEvent));
     }
   });
 

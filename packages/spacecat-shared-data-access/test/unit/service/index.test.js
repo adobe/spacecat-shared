@@ -72,6 +72,12 @@ describe('Data Access Object Tests', () => {
     'removeSiteTopPages',
   ];
 
+  const keyEventsFunctions = [
+    'createKeyEvent',
+    'getKeyEventsForSite',
+    'removeKeyEvent',
+  ];
+
   let dao;
 
   before(() => {
@@ -102,9 +108,16 @@ describe('Data Access Object Tests', () => {
     });
   });
 
+  it('contains all known key events functions', () => {
+    keyEventsFunctions.forEach((funcName) => {
+      expect(dao).to.have.property(funcName);
+    });
+  });
+
   it('does not contain any unexpected functions', () => {
     const expectedFunctions = new Set([
       ...auditFunctions,
+      ...keyEventsFunctions,
       ...siteFunctions,
       ...siteCandidateFunctions,
       ...organizationFunctions,

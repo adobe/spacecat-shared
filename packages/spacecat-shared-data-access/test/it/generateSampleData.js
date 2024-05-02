@@ -18,6 +18,7 @@ import { generateRandomAudit } from './auditUtils.js';
 import { createTable, deleteTable } from './tableOperations.js';
 
 import schema from '../../docs/schema.json' assert { type: 'json' };
+import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 
 /**
  * Creates all tables defined in a schema.
@@ -137,6 +138,7 @@ function generateAuditData(
  * @param {number} [numberOfAuditsPerType=5] - The number of audits per type to generate
  * for each site.
  * @param {number} [numberOfSiteTopPages=5] - The number of site top pages to generate
+ * @param {number} [numberOfKeyEvents=5] - The number of key events to generate
  *
  * @example
  * // Example usage
@@ -149,6 +151,7 @@ export default async function generateSampleData(
   numberOfSiteCandidates = 10,
   numberOfAuditsPerType = 5,
   numberOfSiteTopPages = 50,
+  numberOfKeyEvents = 10,
 ) {
   console.time('Sample data generated in');
   await deleteExistingTables([
@@ -158,6 +161,7 @@ export default async function generateSampleData(
     config.tableNameOrganizations,
     config.tableNameConfigurations,
     config.tableNameSiteTopPages,
+    config.tableNameKeyEvents,
   ]);
   await createTablesFromSchema();
 
@@ -168,6 +172,7 @@ export default async function generateSampleData(
   const organizations = [];
   const auditItems = [];
   const latestAuditItems = [];
+  const keyEvents = [];
   const nowIso = new Date().toISOString();
   const configurations = [{
     jobs: [
@@ -324,6 +329,16 @@ export default async function generateSampleData(
     });
   }
 
+  sites.forEach((site) => {
+    for (let i = 0; i < numberOfKeyEvents; i += 1) {
+      keyEvents.push({
+        siteId: site.getId(),
+        name: `key-event-#${i}`,
+        type: Object.values(KEY_EVENT_TYPES).at(i),
+      });
+    }
+  });
+
   await batchWrite(config.tableNameSites, sites);
   await batchWrite(config.tableNameSiteCandidates, siteCandidates);
   await batchWrite(config.tableNameOrganizations, organizations);
@@ -331,6 +346,7 @@ export default async function generateSampleData(
   await batchWrite(config.tableNameLatestAudits, latestAuditItems);
   await batchWrite(config.tableNameConfigurations, configurations);
   await batchWrite(config.tableNameSiteTopPages, siteTopPages);
+  await batchWrite(config.tableNameKeyEvents, keyEvents);
 
   console.log(`Generated ${numberOfOrganizations} organizations`);
   console.log(`Generated ${numberOfSites} sites with ${numberOfAuditsPerType} audits per type for each site`);

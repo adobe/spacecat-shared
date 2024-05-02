@@ -12,7 +12,7 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import {
-  ok, badRequest, notFound, internalServerError, noContent,
+  ok, badRequest, notFound, internalServerError, noContent, found,
 } from '../src/index.js';
 
 describe('HTTP Response Functions', () => {
@@ -43,6 +43,14 @@ describe('HTTP Response Functions', () => {
     expect(response.status).to.equal(204);
     const responseBody = await response.text();
     expect(responseBody).to.equal('');
+  });
+
+  it('found should return a 302 Found response with correct location and body', async () => {
+    const location = 'https://www.example.com';
+    const response = await found(location);
+
+    expect(response.status).to.equal(302);
+    expect(response.headers.get('Location')).to.equal(location);
   });
 
   it('badRequest should return a 400 Bad Request response with default message and headers', async () => {

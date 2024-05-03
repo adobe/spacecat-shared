@@ -158,6 +158,12 @@ export interface KeyEvent {
   getType: () => string;
 
   /**
+   * Retrieves the time of the key event.
+   * @returns {string} The time
+   */
+  getTime: () => string;
+
+  /**
    * Retrieves the creation timestamp of the key event.
    * @returns {string} The creation timestamp.
    */

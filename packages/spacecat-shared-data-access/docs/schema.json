@@ -3,7 +3,7 @@
   "ModelMetadata": {
     "Author": "Dominique Jäggi",
     "DateCreated": "Nov 23, 2023, 07:00 AM",
-    "DateLastModified": "Apr 30, 2024, 01:00 PM",
+    "DateLastModified": "May 03, 2024, 02:18 PM",
     "Description": "",
     "AWSService": "Amazon DynamoDB",
     "Version": "3.0"
@@ -693,7 +693,7 @@
           "AttributeType": "S"
         },
         {
-          "AttributeName": "createdAt",
+          "AttributeName": "time",
           "AttributeType": "S"
         },
         {
@@ -702,6 +702,10 @@
         },
         {
           "AttributeName": "type",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "createdAt",
           "AttributeType": "S"
         },
         {
@@ -718,7 +722,7 @@
               "AttributeType": "S"
             },
             "SortKey": {
-              "AttributeName": "createdAt",
+              "AttributeName": "time",
               "AttributeType": "S"
             }
           },
@@ -739,7 +743,7 @@
           "identifiers",
           "UUID"
         ],
-        "createdAt": [
+        "time": [
           "date",
           "ISO 8601 date and time"
         ],
@@ -750,6 +754,10 @@
         "type": [
           "dataTypes",
           "String"
+        ],
+        "createdAt": [
+          "date",
+          "ISO 8601 date and time"
         ],
         "updatedAt": [
           "date",

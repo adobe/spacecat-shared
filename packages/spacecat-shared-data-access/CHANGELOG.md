@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.22.1...@adobe/spacecat-shared-data-access-v1.23.0) (2024-05-03)
+
+
+### Features
+
+* key events data access layer ([#223](https://github.com/adobe/spacecat-shared/issues/223)) ([83228cc](https://github.com/adobe/spacecat-shared/commit/83228ccb3011868da54460b7fb2788e27ee33454))
+
 # [@adobe/spacecat-shared-data-access-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.22.0...@adobe/spacecat-shared-data-access-v1.22.1) (2024-04-30)
 
 

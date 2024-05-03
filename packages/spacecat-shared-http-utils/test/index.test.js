@@ -12,22 +12,31 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import {
-  ok, badRequest, notFound, internalServerError, noContent,
+  ok, badRequest, notFound, internalServerError, noContent, created,
 } from '../src/index.js';
+
+async function testMethod(response, expectedCode, expectedBody) {
+  expect(response.status).to.equal(expectedCode);
+  const responseBody = await (typeof expectedBody === 'string' ? response.text() : response.json());
+  expect(responseBody).to.deep.equal(expectedBody);
+}
 
 describe('HTTP Response Functions', () => {
   it('ok should return a 200 OK response with default body', async () => {
     const response = await ok();
-    expect(response.status).to.equal(200);
-    const responseBody = await response.text();
-    expect(responseBody).to.equal('');
+    await testMethod(response, 200, '');
   });
 
   it('ok should return a 200 OK response with custom body', async () => {
-    const response = await ok({ success: true });
-    expect(response.status).to.equal(200);
-    const responseBody = await response.json();
-    expect(responseBody).to.deep.equal({ success: true });
+    const body = { success: true };
+    const response = await ok(body);
+    await testMethod(response, 200, body);
+  });
+
+  it('created should return a 201 CREATED response with custom body', async () => {
+    const body = { success: true };
+    const response = await created(body);
+    await testMethod(response, 201, body);
   });
 
   it('noContent should return a 204 No Content response with default headers', async () => {

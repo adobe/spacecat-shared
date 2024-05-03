@@ -336,6 +336,7 @@ export default async function generateSampleData(
         siteId: site.id,
         name: `key-event-#${i}`,
         type: Object.values(KEY_EVENT_TYPES).at(i % Object.keys(KEY_EVENT_TYPES).length),
+        time: new Date().toISOString(),
       });
 
       keyEvents.push(KeyEventDto.toDynamoItem(keyEvent));

@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
 
@@ -36,6 +36,7 @@ const KeyEvent = (data = {}) => {
   self.getName = () => self.state.name;
   self.getSiteId = () => self.state.siteId;
   self.getType = () => self.state.type;
+  self.getTime = () => self.state.time;
 
   // no set functions since all values are required at creation time
 
@@ -65,6 +66,14 @@ export const createKeyEvent = (data) => {
 
   if (!Object.values(KEY_EVENT_TYPES).includes(newState.type.toUpperCase())) {
     throw new Error(`Unknown value for "type": ${newState.type}`);
+  }
+
+  if (hasText(newState.time) && !isIsoDate(newState.time)) {
+    throw new Error('"Time" should be a valid ISO string');
+  }
+
+  if (!hasText(newState.time)) {
+    newState.time = new Date().toISOString();
   }
 
   return KeyEvent(newState);

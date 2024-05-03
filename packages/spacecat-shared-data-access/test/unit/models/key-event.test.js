@@ -13,6 +13,7 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import {
   createKeyEvent,
   KEY_EVENT_TYPES,
@@ -35,9 +36,24 @@ describe('Key Event Model Tests', () => {
     expect(() => createKeyEvent({ name: 'some name', siteId: 'some site id', type: 'hebele' })).to.throw('Unknown value for "type": hebele');
   });
 
+  it('throws an error when an invalid time field is submitted', () => {
+    expect(() => createKeyEvent({
+      name: 'some name', siteId: 'some site id', type: KEY_EVENT_TYPES.NETWORK, time: 'invalid-time',
+    })).to.throw('"Time" should be a valid ISO string');
+  });
+
   it('creates a key event when all fields are as expected', () => {
-    const keyEvent = createKeyEvent({ name: 'some name', siteId: 'some site id', type: KEY_EVENT_TYPES.SEO });
+    const keyEvent = createKeyEvent({
+      name: 'some name', siteId: 'some site id', type: KEY_EVENT_TYPES.SEO, time: new Date().toISOString(),
+    });
     expect(keyEvent.getId()).not.to.be.empty;
+  });
+
+  it('creates a key event when time was omitted', () => {
+    const keyEvent = createKeyEvent({
+      name: 'some name', siteId: 'some site id', type: KEY_EVENT_TYPES.SEO,
+    });
+    expect(isIsoDate(keyEvent.getTime())).to.be.true;
   });
 
   it('creates a key event when all fields are as expected - type field case insensitive', () => {

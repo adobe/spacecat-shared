@@ -27,6 +27,7 @@ export const KeyEventDto = {
       siteId: dynamoItem.siteId,
       name: dynamoItem.name,
       type: dynamoItem.type,
+      time: dynamoItem.time,
       createdAt: dynamoItem.createdAt,
       updatedAt: dynamoItem.updatedAt,
     };
@@ -44,6 +45,7 @@ export const KeyEventDto = {
     siteId: keyEvent.getSiteId(),
     name: keyEvent.getName(),
     type: keyEvent.getType(),
+    time: keyEvent.getTime(),
     createdAt: keyEvent.getCreatedAt(),
     updatedAt: keyEvent.getUpdatedAt(),
   }),

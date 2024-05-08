@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.9...@adobe/spacecat-shared-gpt-client-v1.2.0) (2024-05-08)
+
+
+### Features
+
+* use ims-client for auth ([#226](https://github.com/adobe/spacecat-shared/issues/226)) ([2813ecc](https://github.com/adobe/spacecat-shared/commit/2813ecc7b4e7ca5de8b7c7770d6ff3ee772db1b8))
+
 # [@adobe/spacecat-shared-gpt-client-v1.1.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.8...@adobe/spacecat-shared-gpt-client-v1.1.9) (2024-04-17)
 
 

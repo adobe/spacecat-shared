@@ -11,6 +11,7 @@
  */
 
 import { createUrl } from '@adobe/fetch';
+import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { fetch as httpFetch } from '../utils.js';
@@ -27,11 +28,12 @@ function validateFirefallResponse(response) {
 export default class FirefallClient {
   static createFrom(context) {
     const { log = console } = context;
+    const imsClient = ImsClient.createFrom(context);
+
     const {
       FIREFALL_API_ENDPOINT: apiEndpoint,
-      FIREFALL_IMS_ORG: imsOrg,
+      IMS_CLIENT_ID: imsOrg,
       FIREFALL_API_KEY: apiKey,
-      FIREFALL_API_AUTH: apiAuth,
       FIREFALL_API_POLL_INTERVAL: pollInterval = 2000,
       FIREFALL_API_CAPABILITY_NAME: capabilityName = 'gpt4_32k_completions_capability',
     } = context.env;
@@ -40,23 +42,15 @@ export default class FirefallClient {
       throw new Error('Missing Firefall API endpoint');
     }
 
-    if (!hasText(imsOrg)) {
-      throw new Error('Missing Firefall IMS Org');
-    }
-
     if (!hasText(apiKey)) {
       throw new Error('Missing Firefall API key');
     }
 
-    if (!hasText(apiAuth)) {
-      throw new Error('Missing Firefall API auth');
-    }
-
     return new FirefallClient({
-      apiAuth,
       apiEndpoint,
       apiKey,
       capabilityName,
+      imsClient,
       imsOrg,
       pollInterval,
     }, log);
@@ -66,10 +60,10 @@ export default class FirefallClient {
    * Creates a new Firefall client
    *
    * @param {Object} config - The configuration object.
-   * @param {string} config.apiAuth - The Bearer authorization token for Firefall.
    * @param {string} config.apiEndpoint - The API endpoint for Firefall.
    * @param {string} config.apiKey - The API Key for Firefall.
    * @param {string} config.capabilityName - The capability name for Firefall.
+   * @param {ImsClient} config.imsClient - The IMS Client.
    * @param {string} config.imsOrg - The IMS Org for Firefall.
    * @param {number} config.pollInterval - The interval to poll for job status.
    * @param {Object} log - The Logger.
@@ -78,6 +72,15 @@ export default class FirefallClient {
   constructor(config, log) {
     this.config = config;
     this.log = log;
+    this.imsClient = config.imsClient;
+    this.apiAuth = null;
+  }
+
+  async #getApiAuth() {
+    if (!this.apiAuth) {
+      this.apiAuth = await this.imsClient.getServiceAccessToken();
+    }
+    return this.apiAuth;
   }
 
   #logDuration(message, startTime) {
@@ -87,6 +90,8 @@ export default class FirefallClient {
   }
 
   async #submitJob(prompt) {
+    const apiAuth = await this.#getApiAuth();
+
     const body = JSON.stringify({
       input: prompt,
       capability_name: this.config.capabilityName,
@@ -97,7 +102,7 @@ export default class FirefallClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.config.apiAuth}`,
+        Authorization: `Bearer ${apiAuth}`,
         'x-api-key': this.config.apiKey,
         'x-gw-ims-org-id': this.config.imsOrg,
       },
@@ -113,6 +118,8 @@ export default class FirefallClient {
 
   /* eslint-disable no-await-in-loop */
   async #pollJobStatus(jobId) {
+    const apiAuth = await this.#getApiAuth();
+
     let jobStatusResponse;
     do {
       await new Promise(
@@ -124,7 +131,7 @@ export default class FirefallClient {
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${this.config.apiAuth}`,
+            Authorization: `Bearer ${apiAuth}`,
             'x-api-key': this.config.apiKey,
             'x-gw-ims-org-id': this.config.imsOrg,
           },

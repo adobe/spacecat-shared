@@ -159,4 +159,18 @@ export default class AhrefsAPIClient {
 
     return this.sendRequest('/site-explorer/all-backlinks', queryParams);
   }
+
+  async getOrganicTraffic(url, startDate, endDate) {
+    const queryParams = {
+      target: url,
+      date_from: startDate,
+      date_to: endDate,
+      history_grouping: 'weekly',
+      volume_mode: 'average',
+      mode: 'prefix',
+      output: 'json',
+    };
+
+    return this.sendRequest('/site-explorer/metrics-history', queryParams);
+  }
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.1.0...@adobe/spacecat-shared-ahrefs-client-v1.2.0) (2024-05-08)
+
+
+### Features
+
+* **ahrefs-client:** get organic traffic ([#227](https://github.com/adobe/spacecat-shared/issues/227)) ([ba4e0a3](https://github.com/adobe/spacecat-shared/commit/ba4e0a37240df7334fde23d6e4cfa2d5df0bdb07))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.0.1...@adobe/spacecat-shared-ahrefs-client-v1.1.0) (2024-04-29)
 
 

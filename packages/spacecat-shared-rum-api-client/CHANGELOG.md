@@ -1,3 +1,59 @@
+# [@adobe/spacecat-shared-rum-api-client-v1.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.8.1...@adobe/spacecat-shared-rum-api-client-v1.8.2) (2024-05-11)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#228](https://github.com/adobe/spacecat-shared/issues/228)) ([ef2ab41](https://github.com/adobe/spacecat-shared/commit/ef2ab41a9175ec5ba8ec7e2830898e9db01fb2b6))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.8.0...@adobe/spacecat-shared-rum-api-client-v1.8.1) (2024-04-24)
+
+
+### Bug Fixes
+
+* use 404 new endpoint ([23ec007](https://github.com/adobe/spacecat-shared/commit/23ec0073540eabf3d460f4705ba4dd40f27f46a0))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.7.2...@adobe/spacecat-shared-rum-api-client-v1.8.0) (2024-04-19)
+
+
+### Features
+
+* calculate conversion for customer domains ([#214](https://github.com/adobe/spacecat-shared/issues/214)) ([0ce20fc](https://github.com/adobe/spacecat-shared/commit/0ce20fce05ac96273d23248c990b7e7eed93be1e))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.7.1...@adobe/spacecat-shared-rum-api-client-v1.7.2) (2024-04-17)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v4.5.2 ([#211](https://github.com/adobe/spacecat-shared/issues/211)) ([e261e67](https://github.com/adobe/spacecat-shared/commit/e261e677558a6ee165cf0d560625cf665276e144))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.7.0...@adobe/spacecat-shared-rum-api-client-v1.7.1) (2024-04-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#202](https://github.com/adobe/spacecat-shared/issues/202)) ([d5d20a8](https://github.com/adobe/spacecat-shared/commit/d5d20a8d606c7589fb794d6c6e3319541a3e6439))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.12...@adobe/spacecat-shared-rum-api-client-v1.7.0) (2024-04-16)
+
+
+### Features
+
+* API call for getting conversion data. ([#208](https://github.com/adobe/spacecat-shared/issues/208)) ([8df8327](https://github.com/adobe/spacecat-shared/commit/8df832793df3806c20be000bff10b93810aff02c))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.6.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.11...@adobe/spacecat-shared-rum-api-client-v1.6.12) (2024-04-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v4.5.1 ([#207](https://github.com/adobe/spacecat-shared/issues/207)) ([985cdba](https://github.com/adobe/spacecat-shared/commit/985cdbaf6c2c354d73f91e94d38244b6eda055ab))
+
+# [@adobe/spacecat-shared-rum-api-client-v1.6.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.10...@adobe/spacecat-shared-rum-api-client-v1.6.11) (2024-04-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.2 ([#206](https://github.com/adobe/spacecat-shared/issues/206)) ([1f5a638](https://github.com/adobe/spacecat-shared/commit/1f5a638b8ded5a7511ecf8a8f3589cfebe7ce29e))
+
 # [@adobe/spacecat-shared-rum-api-client-v1.6.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.6.9...@adobe/spacecat-shared-rum-api-client-v1.6.10) (2024-03-23)
 
 

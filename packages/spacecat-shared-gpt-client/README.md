@@ -7,11 +7,17 @@ The `FirefallClient` library offers a streamlined way to interact with the Firef
 To use the `FirefallClient`, you need to configure it with the following parameters:
 
 - `FIREFALL_API_ENDPOINT`: The endpoint URL for the Firefall API.
-- `FIREFALL_IMS_ORG`: Your IMS organization ID for Firefall.
 - `FIREFALL_API_KEY`: Your API key for accessing the Firefall API.
-- `FIREFALL_API_AUTH`: Your Bearer authorization token for the Firefall API.
+- `FIREFALL_API_CAPABILITY_NAME`: The capability name for the Firefall API.
 
 These parameters can be set through environment variables or passed directly to the `FirefallClient.createFrom` method.
+
+Additionally, the configuration for the `@adobe/spacecat-shared-ims-client` library is required to fetch the service access token from the IMS API:
+
+- `IMS_HOST`: The hostname of the IMS API.
+- `IMS_CLIENT_ID`: Your IMS client ID.
+- `IMS_CLIENT_CODE`: Your IMS client code, used for authentication.
+- `IMS_CLIENT_SECRET`: Your IMS client secret, used for authentication.
 
 ## Usage Examples
 
@@ -42,9 +48,12 @@ async function fetchInsights(prompt) {
     const client = FirefallClient.createFrom({
       env: {
         FIREFALL_API_ENDPOINT: 'https://api.firefall.example.com',
-        FIREFALL_IMS_ORG: 'yourImsOrgId',
         FIREFALL_API_KEY: 'yourApiKey',
-        FIREFALL_API_AUTH: 'yourApiAuth',
+        FIREFALL_API_CAPABILITY_NAME: 'yourCapabilityName',
+        IMS_HOST: 'ims.example.com',
+        IMS_CLIENT_ID: 'yourClientId',
+        IMS_CLIENT_CODE: 'yourClientCode',
+        IMS_CLIENT_SECRET: 'yourClientSecret',
       },
       log: console,
     });

@@ -1,3 +1,59 @@
+# [@adobe/spacecat-shared-data-access-v1.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.1...@adobe/spacecat-shared-data-access-v1.23.2) (2024-05-11)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#228](https://github.com/adobe/spacecat-shared/issues/228)) ([ef2ab41](https://github.com/adobe/spacecat-shared/commit/ef2ab41a9175ec5ba8ec7e2830898e9db01fb2b6))
+
+# [@adobe/spacecat-shared-data-access-v1.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.0...@adobe/spacecat-shared-data-access-v1.23.1) (2024-05-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#225](https://github.com/adobe/spacecat-shared/issues/225)) ([ffb3e3d](https://github.com/adobe/spacecat-shared/commit/ffb3e3d216dd05bafaa7ab26f83ae1c3f0c4d391))
+
+# [@adobe/spacecat-shared-data-access-v1.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.22.1...@adobe/spacecat-shared-data-access-v1.23.0) (2024-05-03)
+
+
+### Features
+
+* key events data access layer ([#223](https://github.com/adobe/spacecat-shared/issues/223)) ([83228cc](https://github.com/adobe/spacecat-shared/commit/83228ccb3011868da54460b7fb2788e27ee33454))
+
+# [@adobe/spacecat-shared-data-access-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.22.0...@adobe/spacecat-shared-data-access-v1.22.1) (2024-04-30)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#221](https://github.com/adobe/spacecat-shared/issues/221)) ([13e72c3](https://github.com/adobe/spacecat-shared/commit/13e72c36433dd62058275475acb46a03bd307f91))
+
+# [@adobe/spacecat-shared-data-access-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.3...@adobe/spacecat-shared-data-access-v1.22.0) (2024-04-29)
+
+
+### Features
+
+* add site top pages data access (SITES-21274) ([#213](https://github.com/adobe/spacecat-shared/issues/213)) ([b892e7c](https://github.com/adobe/spacecat-shared/commit/b892e7cb056824a4f5917fa2cf8a89c7dd077f7f))
+
+# [@adobe/spacecat-shared-data-access-v1.21.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.2...@adobe/spacecat-shared-data-access-v1.21.3) (2024-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#215](https://github.com/adobe/spacecat-shared/issues/215)) ([4227263](https://github.com/adobe/spacecat-shared/commit/4227263b6bc917982d361cd621c7001c4ee1fa56))
+
+# [@adobe/spacecat-shared-data-access-v1.21.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.1...@adobe/spacecat-shared-data-access-v1.21.2) (2024-04-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#202](https://github.com/adobe/spacecat-shared/issues/202)) ([d5d20a8](https://github.com/adobe/spacecat-shared/commit/d5d20a8d606c7589fb794d6c6e3319541a3e6439))
+
+# [@adobe/spacecat-shared-data-access-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.21.0...@adobe/spacecat-shared-data-access-v1.21.1) (2024-04-01)
+
+
+### Bug Fixes
+
+* validate scores only needed ([#203](https://github.com/adobe/spacecat-shared/issues/203)) ([e2e4d14](https://github.com/adobe/spacecat-shared/commit/e2e4d14fa7d28bf2606b933c6c8f6f329c1ff33a))
+
 # [@adobe/spacecat-shared-data-access-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.20.5...@adobe/spacecat-shared-data-access-v1.21.0) (2024-03-25)
 
 

@@ -34,6 +34,14 @@ npm install @adobe/spacecat-shared-data-access
 - **expiresAt** (Number): Expiry timestamp of the audit.
 - **fullAuditRef** (String): Reference to the full audit details.
 
+### SiteTopPages
+- **siteId** (String): Identifier of the site.
+- **url** (String): URL of the top page.
+- **traffic** (Number): Traffic of the top page.
+- **source** (String): Source of the data.
+- **geo** (String): Geo of the top page.
+- **importedAt** (String): Timestamp of the import.
+
 ## DynamoDB Data Model
 
 The module is designed to work with the following DynamoDB tables:
@@ -41,6 +49,8 @@ The module is designed to work with the following DynamoDB tables:
 1. **Sites Table**: Manages site records.
 2. **Audits Table**: Stores audit information for each site.
 3. **Latest Audits Table**: Holds only the latest audit for each site for quick access.
+4. **Site Candidates Table**: Manages site candidates.
+5. **Site Top Pages Table**: Stores top pages for each site.
 
 Each table is designed with scalability and efficient querying in mind, utilizing both key and non-key attributes effectively.
 
@@ -58,7 +68,7 @@ These tests create the schema, generate sample data, and test the data access pa
 
 ## Data Access API
 
-The module provides two main DAOs:
+The module provides the following DAOs:
 
 ### Site Functions
 - `getSites`
@@ -85,10 +95,14 @@ The module provides two main DAOs:
 - `getLatestAuditForSite`
 - `addAudit`
 
+### Site Top Pages Functions
+- `getTopPagesForSite`
+- `addSiteTopPage`
 
 ## Integrating Data Access in AWS Lambda Functions
 
-Our `spacecat-shared-data-access` module includes a wrapper that can be easily integrated into AWS Lambda functions using `@adobe/helix-shared-wrap`. This integration allows your Lambda functions to access and manipulate data seamlessly.
+Our `spacecat-shared-data-access` module includes a wrapper that can be easily integrated into AWS Lambda functions using `@adobe/helix-shared-wrap`.
+This integration allows your Lambda functions to access and manipulate data seamlessly.
 
 ### Steps for Integration
 

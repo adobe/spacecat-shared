@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-http-utils-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.2.0...@adobe/spacecat-shared-http-utils-v1.2.1) (2024-05-03)
+
+
+### Bug Fixes
+
+* index.d.ts entry for created ([9bc2988](https://github.com/adobe/spacecat-shared/commit/9bc29889c0d706b7c42a01b504ef5f0be9ba7384))
+
+# [@adobe/spacecat-shared-http-utils-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.1.4...@adobe/spacecat-shared-http-utils-v1.2.0) (2024-05-03)
+
+
+### Features
+
+* http created method ([#224](https://github.com/adobe/spacecat-shared/issues/224)) ([d540e40](https://github.com/adobe/spacecat-shared/commit/d540e40d3df79e4092698945e0d631b1171a35a7))
+
+# [@adobe/spacecat-shared-http-utils-v1.1.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.1.3...@adobe/spacecat-shared-http-utils-v1.1.4) (2024-04-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.2 ([#206](https://github.com/adobe/spacecat-shared/issues/206)) ([1f5a638](https://github.com/adobe/spacecat-shared/commit/1f5a638b8ded5a7511ecf8a8f3589cfebe7ce29e))
+
 # [@adobe/spacecat-shared-http-utils-v1.1.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.1.2...@adobe/spacecat-shared-http-utils-v1.1.3) (2024-01-23)
 
 

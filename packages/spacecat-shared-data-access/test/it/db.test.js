@@ -26,6 +26,7 @@ import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';
 import { createSiteCandidate, SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
+import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
@@ -76,14 +77,27 @@ function checkAudit(audit) {
   expect(audit.isLive()).to.be.a('boolean');
 }
 
+function checkSiteTopPage(siteTopPage) {
+  expect(siteTopPage).to.be.an('object');
+  expect(siteTopPage.getSiteId()).to.be.a('string');
+  expect(siteTopPage.getURL()).to.be.a('string');
+  expect(siteTopPage.getTraffic()).to.be.a('number');
+  expect(siteTopPage.getSource()).to.be.a('string');
+  expect(siteTopPage.getGeo()).to.be.a('string');
+  expect(isIsoDate(siteTopPage.getImportedAt())).to.be.true;
+}
+
 const TEST_DA_CONFIG = {
   tableNameAudits: 'spacecat-services-audits',
+  tableNameKeyEvents: 'spacecat-services-key-events',
   tableNameLatestAudits: 'spacecat-services-latest-audits',
   tableNameOrganizations: 'spacecat-services-organizations',
   tableNameSites: 'spacecat-services-sites',
   tableNameSiteCandidates: 'spacecat-services-site-candidates',
   tableNameConfigurations: 'spacecat-services-configurations',
+  tableNameSiteTopPages: 'spacecat-services-site-top-pages',
   indexNameAllSites: 'spacecat-services-all-sites',
+  indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
   indexNameAllOrganizations: 'spacecat-services-all-organizations',
   indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id',
@@ -103,6 +117,9 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_SITES_CANDIDATES = 10;
   const NUMBER_OF_ORGANIZATIONS = 3;
   const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
+  const NUMBER_OF_TOP_PAGES_PER_SITE = 5;
+  const NUMBER_OF_TOP_PAGES_FOR_SITE = NUMBER_OF_SITES * NUMBER_OF_TOP_PAGES_PER_SITE;
+  const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
 
   before(async function () {
     this.timeout(30000);
@@ -126,6 +143,8 @@ describe('DynamoDB Integration Test', async () => {
       NUMBER_OF_SITES,
       NUMBER_OF_SITES_CANDIDATES,
       NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
+      NUMBER_OF_TOP_PAGES_FOR_SITE,
+      NUMBER_OF_KEY_EVENTS_PER_SITE,
     );
 
     dataAccess = createDataAccess(TEST_DA_CONFIG, console);
@@ -739,5 +758,108 @@ describe('DynamoDB Integration Test', async () => {
     expect(siteCandidate.getStatus()).to.equal(SITE_CANDIDATE_STATUS.PENDING);
     expect(siteCandidate.getSource()).to.be.undefined;
     expect(siteCandidate.getSiteId()).to.be.undefined;
+  });
+
+  it('successfully adds a new top page', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    const siteTopPageData = {
+      siteId,
+      url: 'https://example12345.com/page-12345',
+      traffic: 360420000,
+      source: 'rum',
+      geo: 'au',
+      importedAt: new Date().toISOString(),
+    };
+
+    const newSiteTopPage = await dataAccess.addSiteTopPage(siteTopPageData);
+
+    checkSiteTopPage(newSiteTopPage);
+    expect(newSiteTopPage.getSiteId()).to.equal(siteTopPageData.siteId);
+    expect(newSiteTopPage.getTraffic()).to.equal(siteTopPageData.traffic);
+    expect(newSiteTopPage.getSource()).to.equal(siteTopPageData.source);
+    expect(newSiteTopPage.getGeo()).to.equal(siteTopPageData.geo);
+    expect(newSiteTopPage.getImportedAt()).to.equal(siteTopPageData.importedAt);
+
+    const topPages = await dataAccess.getTopPagesForSite(
+      siteTopPageData.siteId,
+      siteTopPageData.source,
+      siteTopPageData.geo,
+    );
+
+    expect(topPages).to.be.an('array').that.has.lengthOf(1);
+    const topPage = topPages[0];
+    checkSiteTopPage(topPage);
+    expect(topPage.getSiteId()).to.equal(siteTopPageData.siteId);
+    expect(topPage.getTraffic()).to.equal(siteTopPageData.traffic);
+    expect(topPage.getSource()).to.equal(siteTopPageData.source);
+    expect(topPage.getGeo()).to.equal(siteTopPageData.geo);
+    expect(topPage.getImportedAt()).to.equal(siteTopPageData.importedAt);
+  });
+
+  it('retrieves top pages for a site from a specific source and geo in descending traffic order', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    const siteTopPages = await dataAccess.getTopPagesForSite(siteId, 'ahrefs', 'global');
+
+    expect(siteTopPages.length).to.equal(NUMBER_OF_TOP_PAGES_PER_SITE);
+
+    siteTopPages.forEach((topPage) => {
+      checkSiteTopPage(topPage);
+    });
+
+    for (let i = 1; i < siteTopPages.length; i += 1) {
+      expect(siteTopPages[i - 1].getTraffic()).to.be.at.least(siteTopPages[i].getTraffic());
+    }
+  });
+
+  it('removes top pages for a site', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    await expect(dataAccess.removeSiteTopPages(siteId, 'ahrefs', 'global')).to.eventually.be.fulfilled;
+
+    const topPagesAfterRemoval = await dataAccess.getTopPagesForSite(siteId, 'ahrefs', 'global');
+    expect(topPagesAfterRemoval).to.be.an('array').that.is.empty;
+  });
+
+  it('get all key events for a site', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+
+    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
+    expect(keyEvents[0].getSiteId()).to.equal(siteId);
+
+    // check if the key events are returned in descending order
+    for (let i = 1; i < keyEvents.length; i += 1) {
+      const prev = keyEvents[i - 1];
+      const next = keyEvents[i];
+      const desc = prev.getCreatedAt() >= next.getCreatedAt();
+      expect(desc).to.be.true;
+    }
+  });
+
+  it('add a new key event for a site', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    await dataAccess.createKeyEvent({
+      siteId,
+      name: 'new-key-event',
+      type: KEY_EVENT_TYPES.CONTENT,
+    });
+
+    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+
+    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE + 1);
+  });
+
+  it('remove a key event', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+
+    await dataAccess.removeKeyEvent(keyEvents[0].getId());
+
+    const keyEventsAfter = await dataAccess.getKeyEventsForSite(siteId);
+    expect(keyEventsAfter.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
   });
 });

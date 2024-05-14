@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-http-utils-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.2.0...@adobe/spacecat-shared-http-utils-v1.2.1) (2024-05-03)
+
+
+### Bug Fixes
+
+* index.d.ts entry for created ([9bc2988](https://github.com/adobe/spacecat-shared/commit/9bc29889c0d706b7c42a01b504ef5f0be9ba7384))
+
+# [@adobe/spacecat-shared-http-utils-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.1.4...@adobe/spacecat-shared-http-utils-v1.2.0) (2024-05-03)
+
+
+### Features
+
+* http created method ([#224](https://github.com/adobe/spacecat-shared/issues/224)) ([d540e40](https://github.com/adobe/spacecat-shared/commit/d540e40d3df79e4092698945e0d631b1171a35a7))
+
 # [@adobe/spacecat-shared-http-utils-v1.1.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.1.3...@adobe/spacecat-shared-http-utils-v1.1.4) (2024-04-10)
 
 

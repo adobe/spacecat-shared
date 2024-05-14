@@ -32,6 +32,10 @@ export function ok(body = '') {
   return createResponse(body, 200);
 }
 
+export function created(body) {
+  return createResponse(body, 201);
+}
+
 export function noContent(headers = {}) {
   return createResponse('', 204, headers);
 }

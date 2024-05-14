@@ -12,6 +12,7 @@
 
 import { createClient } from '@adobe/spacecat-shared-dynamo';
 import { auditFunctions } from './audits/index.js';
+import { keyEventFunctions } from './key-events/index.js';
 import { siteFunctions } from './sites/index.js';
 import { siteCandidateFunctions } from './site-candidates/index.js';
 import { organizationFunctions } from './organizations/index.js';
@@ -33,6 +34,7 @@ export const createDataAccess = (config, log = console) => {
   const dynamoClient = createClient(log);
 
   const auditFuncs = auditFunctions(dynamoClient, config, log);
+  const keyEventFuncs = keyEventFunctions(dynamoClient, config, log);
   const siteFuncs = siteFunctions(dynamoClient, config, log);
   const siteCandidateFuncs = siteCandidateFunctions(dynamoClient, config, log);
   const organizationFuncs = organizationFunctions(dynamoClient, config, log);
@@ -41,6 +43,7 @@ export const createDataAccess = (config, log = console) => {
 
   return {
     ...auditFuncs,
+    ...keyEventFuncs,
     ...siteFuncs,
     ...siteCandidateFuncs,
     ...organizationFuncs,

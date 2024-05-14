@@ -30,6 +30,7 @@ export {
 export {
   isAuditsDisabled,
   resolveSecretsName,
+  resolveCustomerSecretsName,
   generateCSVFile,
 } from './helpers.js';
 

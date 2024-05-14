@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
+    "@adobe/spacecat-shared-data-access": "file:../spacecat-shared-data-access",
     "chai": "4.4.1",
     "chai-as-promised": "7.1.2",
     "husky": "9.0.11",
@@ -40,7 +41,6 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.1.2",
-    "@adobe/spacecat-shared-data-access": "^1.2",
     "@aws-sdk/client-s3": "3.574.0",
     "@aws-sdk/client-sqs": "3.574.0",
     "@json2csv/plainjs": "7.0.6"

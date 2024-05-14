@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.0...@adobe/spacecat-shared-utils-v1.15.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* use local dependency instead of external dependency for data-access ([#230](https://github.com/adobe/spacecat-shared/issues/230)) ([cf10f33](https://github.com/adobe/spacecat-shared/commit/cf10f33a619acc5c05a0b93beee5691d34006e03))
+
 # [@adobe/spacecat-shared-utils-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.14.6...@adobe/spacecat-shared-utils-v1.15.0) (2024-05-14)
 
 

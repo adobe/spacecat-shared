@@ -36,6 +36,23 @@ export function resolveSecretsName(opts, ctx, defaultPath) {
   return `${defaultPath}/${funcVersion}`;
 }
 
+/**
+ * Resolves the name of the customer secrets based on the baseURL.
+ * @param {string} baseURL - The base URL to resolve the customer secrets name from.
+ * @param {Object} ctx - The context object containing the function version.
+ * @returns {string} - The resolved secret name.
+ */
+export function resolveCustomerSecretsName(baseURL, ctx) {
+  const basePath = '/helix-deploy/spacecat-services/customer-secrets';
+  let customer;
+  try {
+    customer = new URL(baseURL).host.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  } catch (e) {
+    throw new Error('Invalid baseURL: must be a valid URL');
+  }
+  return resolveSecretsName({}, ctx, `${basePath}/${customer}`);
+}
+
 export function isAuditsDisabled(site, organization, auditType) {
   // return early if all audits are disabled for the organization
   if (organization.getAuditConfig().auditsDisabled()) {
@@ -58,15 +75,15 @@ export function isAuditsDisabled(site, organization, auditType) {
 }
 
 /**
-* Generates a CSV file from the provided JSON data.
-*
-* Each key-value pair in the JSON objects
-* corresponds to a column and its value in the CSV. The output is a UTF-8
-* encoded Buffer that represents the CSV file content.
-*
-* @param {Object[]} data - An array of JSON objects to be converted into CSV format.
-* @returns {Buffer} A Buffer containing the CSV formatted data, encoded in UTF-8.
-*/
+ * Generates a CSV file from the provided JSON data.
+ *
+ * Each key-value pair in the JSON objects
+ * corresponds to a column and its value in the CSV. The output is a UTF-8
+ * encoded Buffer that represents the CSV file content.
+ *
+ * @param {Object[]} data - An array of JSON objects to be converted into CSV format.
+ * @returns {Buffer} A Buffer containing the CSV formatted data, encoded in UTF-8.
+ */
 export function generateCSVFile(data) {
   const json2csvParser = new Parser();
   return Buffer.from(json2csvParser.parse(data), 'utf-8');

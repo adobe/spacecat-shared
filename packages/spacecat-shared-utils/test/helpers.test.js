@@ -17,7 +17,12 @@ import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.j
 import { createOrganization } from '@adobe/spacecat-shared-data-access/src/models/organization.js';
 import { AUDIT_TYPE_BROKEN_BACKLINKS } from '@adobe/spacecat-shared-data-access/src/models/audit.js';
 
-import { generateCSVFile, isAuditsDisabled, resolveSecretsName } from '../src/helpers.js';
+import {
+  generateCSVFile,
+  isAuditsDisabled,
+  resolveSecretsName,
+  resolveCustomerSecretsName,
+} from '../src/helpers.js';
 
 describe('resolveSecretsName', () => {
   it('resolves name correctly with valid inputs', () => {
@@ -49,6 +54,37 @@ describe('resolveSecretsName', () => {
   it('throws error when defaultPath is not a string', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(() => resolveSecretsName({}, ctx, null)).to.throw('Invalid defaultPath: must be a string');
+  });
+});
+
+describe('resolveCustomerSecretsName', () => {
+  const baseURL = 'https://site-1.com';
+  it('resolves the customer secrets name correctly with valid inputs', () => {
+    const ctx = { func: { version: '1.0.0' } };
+
+    const expectedSecretsName = '/helix-deploy/spacecat-services/customer-secrets/site_1_com/1.0.0';
+    const actualSecretsName = resolveCustomerSecretsName(baseURL, ctx);
+
+    expect(actualSecretsName).to.equal(expectedSecretsName);
+  });
+
+  it('throws error when ctx is undefined', () => {
+    expect(() => resolveCustomerSecretsName(baseURL, undefined)).to.throw('Invalid context: func.version is required and must be a string');
+  });
+
+  it('throws error when ctx.func is undefined', () => {
+    const ctx = {};
+    expect(() => resolveCustomerSecretsName(baseURL, ctx)).to.throw('Invalid context: func.version is required and must be a string');
+  });
+
+  it('throws error when ctx.func.version is not a string', () => {
+    const ctx = { func: { version: null } };
+    expect(() => resolveCustomerSecretsName(baseURL, ctx)).to.throw('Invalid context: func.version is required and must be a string');
+  });
+
+  it('throws error when baseURL is not a valid url', () => {
+    const ctx = { func: { version: '1.0.0' } };
+    expect(() => resolveCustomerSecretsName('not a valid url', ctx)).to.throw('Invalid baseURL: must be a valid URL');
   });
 });
 

@@ -110,6 +110,23 @@ declare function composeAuditURL(url: string): Promise<string>;
 declare function isAuditsDisabled(site: object, organization: object, auditType?: string): boolean
 
 /**
+ * Resolves the name of the secret based on the function version.
+ * @param {Object} opts - The options object, not used in this implementation.
+ * @param {Object} ctx - The context object containing the function version.
+ * @param {string} defaultPath - The default path for the secret.
+ * @returns {string} - The resolved secret name.
+ */
+declare function resolveSecretsName(opts: object, ctx: object, defaultPath: string): string;
+
+/**
+ * Resolves the name of the customer secrets based on the baseURL.
+ * @param {string} baseURL - The base URL to resolve the customer secrets name from.
+ * @param {Object} ctx - The context object containing the function version.
+ * @returns {string} - The resolved secret name.
+ */
+declare function resolveCustomerSecretsName(baseURL: string, ctx: object): string;
+
+/**
  * Generates a CSV file from the provided JSON data.
  *
  * Each key-value pair in the JSON objects

@@ -33,6 +33,7 @@ describe('Index Exports', () => {
     'isValidUrl',
     'isAuditsDisabled',
     'resolveSecretsName',
+    'resolveCustomerSecretsName',
     'dateAfterDays',
     'sqsWrapper',
     'sqsEventAdapter',

@@ -98,14 +98,18 @@ export default class FirefallClient {
     });
 
     const url = createUrl(`${this.config.apiEndpoint}/v2/capability_execution/job`);
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiAuth}`,
+      'x-api-key': this.config.apiKey,
+      'x-gw-ims-org-id': this.config.imsOrg,
+    };
+
+    this.log.info(`URL: ${url}, Headers: ${JSON.stringify(headers)}`);
+
     const response = await httpFetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiAuth}`,
-        'x-api-key': this.config.apiKey,
-        'x-gw-ims-org-id': this.config.imsOrg,
-      },
+      headers,
       body,
     });
 
@@ -126,15 +130,20 @@ export default class FirefallClient {
         (resolve) => { setTimeout(resolve, this.config.pollInterval); },
       ); // Wait for 2 seconds before polling
 
+      const url = `${this.config.apiEndpoint}/v2/capability_execution/job/${jobId}`;
+      const headers = {
+        Authorization: `Bearer ${apiAuth}`,
+        'x-api-key': this.config.apiKey,
+        'x-gw-ims-org-id': this.config.imsOrg,
+      };
+
+      this.log.info(`URL: ${url}, Headers: ${JSON.stringify(headers)}`);
+
       const response = await httpFetch(
-        createUrl(`${this.config.apiEndpoint}/v2/capability_execution/job/${jobId}`),
+        createUrl(url),
         {
           method: 'GET',
-          headers: {
-            Authorization: `Bearer ${apiAuth}`,
-            'x-api-key': this.config.apiKey,
-            'x-gw-ims-org-id': this.config.imsOrg,
-          },
+          headers,
         },
       );
 

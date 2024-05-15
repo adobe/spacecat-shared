@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.2...@adobe/spacecat-shared-gpt-client-v1.2.3) (2024-05-15)
+
+
+### Bug Fixes
+
+* get access_token ([#232](https://github.com/adobe/spacecat-shared/issues/232)) ([a4bd344](https://github.com/adobe/spacecat-shared/commit/a4bd344d0ab06dbcf4a1a2d310fc8a42ca3318b8))
+
 # [@adobe/spacecat-shared-gpt-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.1...@adobe/spacecat-shared-gpt-client-v1.2.2) (2024-05-15)
 
 

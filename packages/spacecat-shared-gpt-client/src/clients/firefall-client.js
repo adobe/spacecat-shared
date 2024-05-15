@@ -78,7 +78,7 @@ export default class FirefallClient {
 
   async #getApiAuth() {
     if (!this.apiAuth) {
-      this.apiAuth = await this.imsClient.getServiceAccessToken().access_token;
+      this.apiAuth = (await this.imsClient.getServiceAccessToken()).access_token;
     }
     return this.apiAuth;
   }

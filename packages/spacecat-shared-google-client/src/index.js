@@ -13,35 +13,66 @@
 import { google } from 'googleapis';
 import { ok, internalServerError } from '@adobe/spacecat-shared-http-utils';
 import { OAuth2Client } from 'google-auth-library';
+import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import { resolveCustomerSecretsName } from '@adobe/spacecat-shared-utils';
 
 export default class GoogleClient {
-  static async createFrom(context) {
-    const authClient = new OAuth2Client(
-      context.env.GOOGLE_CLIENT_ID,
-      context.env.GOOGLE_CLIENT_SECRET,
-      context.env.GOOGLE_REDIRECT_URI,
-    );
-
-    authClient.setCredentials({
-      access_token: context.env.ACCESS_TOKEN,
-      refresh_token: context.env.REFRESH_TOKEN,
-    });
-
-    if (context.env.EXPIRATION < Date.now()) {
-      const { tokens } = await authClient.refreshAccessToken();
-      authClient.setCredentials({
-        access_token: tokens.access_token,
+  static async createFrom(context, baseURL) {
+    try {
+      const customerSecret = resolveCustomerSecretsName(baseURL, context);
+      const client = new SecretsManagerClient({});
+      const command = new GetSecretValueCommand({
+        SecretId: customerSecret,
       });
+      const response = await client.send(command);
+      const secrets = JSON.parse(response.SecretString);
+      const config = {
+        accessToken: secrets.access_token,
+        refreshToken: secrets.refresh_token,
+        tokenType: secrets.token_type,
+        expiryDate: secrets.expiry_date,
+        clientId: context.env.GOOGLE_CLIENT_ID,
+        clientSecret: context.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: context.env.GOOGLE_REDIRECT_URI,
+      };
+      return new GoogleClient(config, context.log);
+    } catch (error) {
+      throw new Error(`Error creating GoogleClient: ${error.message}`);
     }
-    return new GoogleClient(authClient, context.log);
   }
 
-  constructor(authClient, log = console) {
+  constructor(config, log = console) {
+    const authClient = new OAuth2Client(
+      config.clientId,
+      config.clientSecret,
+      config.redirectUri,
+    );
+
+    if (!config.accessToken) {
+      throw new Error('Missing access token in secret');
+    }
+
+    if (!config.refreshToken) {
+      throw new Error('Missing refresh token in secret');
+    }
+
+    authClient.setCredentials({
+      access_token: config.accessToken,
+      refresh_token: config.refreshToken,
+      token_type: config.tokenType,
+    });
     this.authClient = authClient;
+    this.expiryDate = config.expiryDate;
     this.log = log;
   }
 
-  async getOrganicSearchData(baseURL, startDate, endDate) {
+  async getOrganicSearchData(baseURL, startDate, endDate, dimensions = ['date'], rowLimit = 10, startRow = 0) {
+    if (new Date(this.expiryDate).getTime() < Date.now()) {
+      const { tokens } = await this.authClient.refreshAccessToken();
+      this.authClient.setCredentials({
+        access_token: tokens.access_token,
+      });
+    }
     const webmasters = google.webmasters({
       version: 'v3',
       auth: this.authClient,
@@ -52,12 +83,28 @@ export default class GoogleClient {
         requestBody: {
           startDate: startDate.toISOString().split('T')[0],
           endDate: endDate.toISOString().split('T')[0],
-          rowLimit: 10,
+          dimensions,
+          startRow,
+          rowLimit,
         },
       });
-      return ok(result.data);
+      return ok(result);
     } catch (error) {
-      this.log.error('Error:', error.message);
+      this.log.error('Error retrieving organic search data:', error.message);
+      return internalServerError(error.message);
+    }
+  }
+
+  async listSites() {
+    const webmasters = google.webmasters({
+      version: 'v3',
+      auth: this.authClient,
+    });
+    try {
+      const result = await webmasters.sites.list();
+      return ok(result);
+    } catch (error) {
+      this.log.error('Error retrieving sites:', error.message);
       return internalServerError(error.message);
     }
   }

@@ -39,8 +39,9 @@ export default class GoogleClient {
    * @param baseURL - The base URL of the site to be audited.
    * @param startDate - The start date of the date range.
    * @param endDate - The end date of the date range.
-   * @param rowLimit - The maximum number of rows to return.
-   * @param startRow - The row number to start from.
+   * @param dimensions - The dimensions to be included in the report.
+   * this parameter is optional and defaults to ['date'],
+   * which means that the report will be grouped by date.
    * @returns {Promise<Response>} The Google Search Console data.
    * Format: {
    *   "rows": [
@@ -57,7 +58,28 @@ export default class GoogleClient {
    *   "responseAggregationType": string
    * }
    */
-  getOrganicSearchData(baseURL: string, startDate: Date, endDate: Date): Promise<Response>;
+  getOrganicSearchData(
+    baseURL: string,
+    startDate: Date,
+    endDate: Date,
+    dimensions: string[]
+  ): Promise<Response>;
 
-  listSites(googleClient: OAuth2Client): Promise<Response>;
+  /**
+   * Lists all sites available to the authenticated user in Google Search Console.
+   *
+   * @returns {Promise<Response>} A promise that resolves to the result of the list sites operation.
+   * @throws {Error} If an error occurs while retrieving the sites.
+   * Format: {
+   *  "data": {
+   *    "siteEntry": [
+   *      {
+   *       "siteUrl": string,
+   *       "permissionLevel": string
+   *      }
+   *    ]
+   *  }
+   *}
+   * */
+  listSites(): Promise<Response>;
 }

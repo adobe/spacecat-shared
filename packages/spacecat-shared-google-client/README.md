@@ -1,7 +1,7 @@
 # Spacecat Shared - Google Client
 
-A JavaScript client for the Google API, part of the SpaceCat Shared library.
-It allows you to query the Google API for organic traffic data.
+The GoogleClient library provides an easy-to-use interface for interacting with Google Search Console APIs.
+It allows for secure retrieval of organic search data and site listings using OAuth2 authentication, with credentials managed via AWS Secrets Manager.
 
 ## Installation
 
@@ -17,10 +17,13 @@ npm install @adobe/spacecat-shared-google-client
 import GoogleClient from '@adobe/spacecat-shared-google-client';
 
 ...
-
-const googleClient = await GoogleClient.createFrom(context);
-const data = await googleClient.getOrganicTrafficData(baseURL);
-
+ try {
+    const googleClient = await GoogleClient.createFrom(context, baseURL);
+    const response = await googleClient.getOrganicTrafficData(baseURL, startDate, endDate);
+    const data = await response.json();
+  } catch (error) {
+    // handle error
+  }
 ...
 ```
 

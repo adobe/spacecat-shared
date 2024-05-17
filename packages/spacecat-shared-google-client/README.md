@@ -11,6 +11,13 @@ Install the package using npm:
 npm install @adobe/spacecat-shared-google-client
 ```
 
+## Environment Variables
+- `GOOGLE_CLIENT_ID`: Google OAuth2 client ID
+- `GOOGLE_CLIENT_SECRET`: Google OAuth2 client secret
+- `GOOGLE_REDIRECT_URI`: Google OAuth2 redirect URI: 
+  - For dev environment: https://spacecat.experiencecloud.live/api/ci/auth/google
+  - For prod environment: https://spacecat.experiencecloud.live/api/v1/auth/google
+
 ## Usage
 
 ```

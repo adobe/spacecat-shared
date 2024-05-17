@@ -44,6 +44,7 @@ describe('GoogleClient', () => {
       access_token: 'testAccessToken',
       refresh_token: 'testRefreshToken',
       token_type: 'Bearer',
+      site_url: baseURL,
       expiration_date: Date.now() + 3600 * 1000,
     };
     authClientStub = sinon.stub(OAuth2Client.prototype);
@@ -87,7 +88,7 @@ describe('GoogleClient', () => {
 
       const googleClient = await GoogleClient.createFrom(context, baseURL);
 
-      const result = await googleClient.getOrganicSearchData(baseURL, startDate, endDate);
+      const result = await googleClient.getOrganicSearchData(startDate, endDate);
       const response = await result.json();
       expect(result.status).to.equal(200);
       expect(response).to.eql(testResult);
@@ -106,7 +107,7 @@ describe('GoogleClient', () => {
 
       const googleClient = await GoogleClient.createFrom(context, baseURL);
 
-      const result = await googleClient.getOrganicSearchData(baseURL, startDate, endDate);
+      const result = await googleClient.getOrganicSearchData(startDate, endDate);
       const response = await result.json();
       expect(result.status).to.equal(500);
       expect(response.message).to.equal('Google API call failed');
@@ -153,7 +154,7 @@ describe('GoogleClient', () => {
         },
       });
       const googleClient = await GoogleClient.createFrom(context, baseURL);
-      const result = await googleClient.getOrganicSearchData(baseURL, startDate, endDate);
+      const result = await googleClient.getOrganicSearchData(startDate, endDate);
       const response = await result.json();
       expect(result.status).to.equal(200);
       expect(response).to.eql(testResult);

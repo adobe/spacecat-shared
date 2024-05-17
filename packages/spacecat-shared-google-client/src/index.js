@@ -31,6 +31,7 @@ export default class GoogleClient {
         refreshToken: secrets.refresh_token,
         tokenType: secrets.token_type,
         expiryDate: secrets.expiry_date,
+        siteUrl: secrets.site_url,
         clientId: context.env.GOOGLE_CLIENT_ID,
         clientSecret: context.env.GOOGLE_CLIENT_SECRET,
         redirectUri: context.env.GOOGLE_REDIRECT_URI,
@@ -63,10 +64,11 @@ export default class GoogleClient {
     });
     this.authClient = authClient;
     this.expiryDate = config.expiryDate;
+    this.siteUrl = config.siteUrl;
     this.log = log;
   }
 
-  async getOrganicSearchData(baseURL, startDate, endDate, dimensions = ['date'], rowLimit = 10, startRow = 0) {
+  async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 10, startRow = 0) {
     if (new Date(this.expiryDate).getTime() < Date.now()) {
       const { tokens } = await this.authClient.refreshAccessToken();
       this.authClient.setCredentials({
@@ -79,7 +81,7 @@ export default class GoogleClient {
     });
     try {
       const result = await webmasters.searchanalytics.query({
-        siteUrl: baseURL,
+        siteUrl: this.siteUrl,
         requestBody: {
           startDate: startDate.toISOString().split('T')[0],
           endDate: endDate.toISOString().split('T')[0],

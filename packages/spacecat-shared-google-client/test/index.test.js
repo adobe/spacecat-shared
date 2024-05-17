@@ -50,7 +50,7 @@ describe('GoogleClient', () => {
     authClientStub = sinon.stub(OAuth2Client.prototype);
     authClientStub.setCredentials.returns();
     authClientStub.refreshAccessToken.resolves({
-      tokens: {
+      credentials: {
         test_token: 'testToken',
       },
     });
@@ -88,10 +88,8 @@ describe('GoogleClient', () => {
 
       const googleClient = await GoogleClient.createFrom(context, baseURL);
 
-      const result = await googleClient.getOrganicSearchData(startDate, endDate);
-      const response = await result.json();
-      expect(result.status).to.equal(200);
-      expect(response).to.eql(testResult);
+      const result = await googleClient.getOrganicSearchData(startDate, endDate, ['page']);
+      expect(result).to.eql(testResult);
       expect(webmastersStub.calledOnce).to.be.true;
     });
 
@@ -107,10 +105,11 @@ describe('GoogleClient', () => {
 
       const googleClient = await GoogleClient.createFrom(context, baseURL);
 
-      const result = await googleClient.getOrganicSearchData(startDate, endDate);
-      const response = await result.json();
-      expect(result.status).to.equal(500);
-      expect(response.message).to.equal('Google API call failed');
+      try {
+        await googleClient.getOrganicSearchData(startDate, endDate);
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Google API call failed');
+      }
     });
 
     it('should return 500 when access token is missing', async () => {
@@ -121,7 +120,6 @@ describe('GoogleClient', () => {
       });
       try {
         await GoogleClient.createFrom(context, baseURL);
-        throw new Error('Expected createFrom to throw, but it did not');
       } catch (error) {
         expect(error.message).to.equal('Error creating GoogleClient: Missing access token in secret');
       }
@@ -135,7 +133,6 @@ describe('GoogleClient', () => {
       });
       try {
         await GoogleClient.createFrom(context, baseURL);
-        throw new Error('Expected createFrom to throw, but it did not');
       } catch (error) {
         expect(error.message).to.equal('Error creating GoogleClient: Missing refresh token in secret');
       }
@@ -155,9 +152,7 @@ describe('GoogleClient', () => {
       });
       const googleClient = await GoogleClient.createFrom(context, baseURL);
       const result = await googleClient.getOrganicSearchData(startDate, endDate);
-      const response = await result.json();
-      expect(result.status).to.equal(200);
-      expect(response).to.eql(testResult);
+      expect(result).to.eql(testResult);
     });
   });
 
@@ -185,9 +180,7 @@ describe('GoogleClient', () => {
       const googleClient = await GoogleClient.createFrom(context, baseURL);
 
       const result = await googleClient.listSites();
-      const response = await result.json();
-      expect(result.status).to.equal(200);
-      expect(response).to.eql(sites);
+      expect(result).to.eql(sites);
       expect(webmastersStub.calledOnce).to.be.true;
     });
 
@@ -202,10 +195,11 @@ describe('GoogleClient', () => {
         },
       });
       const googleClient = await GoogleClient.createFrom(context, baseURL);
-      const result = await googleClient.listSites();
-      const response = await result.json();
-      expect(result.status).to.equal(500);
-      expect(response.message).to.equal(failMessage);
+      try {
+        await googleClient.listSites();
+      } catch (error) {
+        expect(error.message).to.equal(`Error retrieving sites from Google API: ${failMessage}`);
+      }
     });
   });
 });

@@ -11,7 +11,6 @@
  */
 
 import { google } from 'googleapis';
-import { ok, internalServerError } from '@adobe/spacecat-shared-http-utils';
 import { OAuth2Client } from 'google-auth-library';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { resolveCustomerSecretsName } from '@adobe/spacecat-shared-utils';
@@ -70,9 +69,9 @@ export default class GoogleClient {
 
   async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 10, startRow = 0) {
     if (new Date(this.expiryDate).getTime() < Date.now()) {
-      const { tokens } = await this.authClient.refreshAccessToken();
+      const { credentials } = await this.authClient.refreshAccessToken();
       this.authClient.setCredentials({
-        access_token: tokens.access_token,
+        access_token: credentials.access_token,
       });
     }
     const webmasters = google.webmasters({
@@ -80,20 +79,21 @@ export default class GoogleClient {
       auth: this.authClient,
     });
     try {
-      const result = await webmasters.searchanalytics.query({
+      return await webmasters.searchanalytics.query({
         siteUrl: this.siteUrl,
         requestBody: {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0],
+          startDate: startDate.toISOString()
+            .split('T')[0],
+          endDate: endDate.toISOString()
+            .split('T')[0],
           dimensions,
           startRow,
           rowLimit,
         },
       });
-      return ok(result);
     } catch (error) {
       this.log.error('Error retrieving organic search data:', error.message);
-      return internalServerError(error.message);
+      throw new Error(`Error retrieving organic search data from Google API: ${error.message}`);
     }
   }
 
@@ -103,11 +103,10 @@ export default class GoogleClient {
       auth: this.authClient,
     });
     try {
-      const result = await webmasters.sites.list();
-      return ok(result);
+      return await webmasters.sites.list();
     } catch (error) {
       this.log.error('Error retrieving sites:', error.message);
-      return internalServerError(error.message);
+      throw new Error(`Error retrieving sites from Google API: ${error.message}`);
     }
   }
 }

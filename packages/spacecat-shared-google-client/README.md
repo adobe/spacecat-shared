@@ -26,8 +26,7 @@ import GoogleClient from '@adobe/spacecat-shared-google-client';
 ...
  try {
     const googleClient = await GoogleClient.createFrom(context, baseURL);
-    const response = await googleClient.getOrganicTrafficData(baseURL, startDate, endDate);
-    const data = await response.json();
+    const result = await googleClient.getOrganicTrafficData(startDate, endDate);
   } catch (error) {
     // handle error
   }

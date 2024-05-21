@@ -17,15 +17,10 @@ export default class GoogleClient {
   /**
    * Static factory method to create an instance of GoogleClient.
    * @param {UniversalContext} context - An object containing the AWS Lambda context information
-   * @param {object} config - The configuration object:
-   * {
-   *   ACCESS_TOKEN: string,
-   *   REFRESH_TOKEN: string,
-   *   EXPIRATION: number,
-   * }
+   * @param {string} url - The URL of the site to be audited.
    * @returns An instance of GoogleClient.
    */
-  static createFrom(context: UniversalContext, config: object): GoogleClient;
+  static createFrom(context: UniversalContext, url: string): GoogleClient;
 
   /**
    * Constructor for creating an instance of GoogleClient.
@@ -42,7 +37,7 @@ export default class GoogleClient {
    * @param dimensions - The dimensions to be included in the report.
    * this parameter is optional and defaults to ['date'],
    * which means that the report will be grouped by date.
-   * @returns {Promise<Response>} The Google Search Console data.
+   * @returns {Promise<JSON>} The Google Search Console data.
    * Format: {
    *   "rows": [
    *     {
@@ -63,12 +58,12 @@ export default class GoogleClient {
     startDate: Date,
     endDate: Date,
     dimensions: string[]
-  ): Promise<Response>;
+  ): Promise<JSON>;
 
   /**
    * Lists all sites available to the authenticated user in Google Search Console.
    *
-   * @returns {Promise<Response>} A promise that resolves to the result of the list sites operation.
+   * @returns {Promise<JSON>} A promise that resolves to the result of the list sites operation.
    * @throws {Error} If an error occurs while retrieving the sites.
    * Format: {
    *  "data": {
@@ -81,5 +76,5 @@ export default class GoogleClient {
    *  }
    *}
    * */
-  listSites(): Promise<Response>;
+  listSites(): Promise<JSON>;
 }

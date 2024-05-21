@@ -10,18 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
-import { UniversalContext } from '@adobe/helix-universal';
 import { OAuth2Client } from 'google-auth-library';
 
 export default class GoogleClient {
   /**
    * Static factory method to create an instance of GoogleClient.
    *
-   * @param {UniversalContext} context - An object containing the AWS Lambda context information
+   * @param {object} context - An object containing the AWS Lambda context information
    * @param {string} url - The URL of the site to be audited.
    * @returns An instance of GoogleClient.
    */
-  static createFrom(context: UniversalContext, url: string): GoogleClient;
+  static createFrom(context: object, url: string): GoogleClient;
 
   /**
    * Constructor for creating an instance of GoogleClient.
@@ -33,12 +32,13 @@ export default class GoogleClient {
   /**
    * Retrieves the Google Search Console data for the specified date range.
    *
-   * @param baseURL - The base URL of the site to be audited.
-   * @param startDate - The start date of the date range.
-   * @param endDate - The end date of the date range.
-   * @param dimensions - The dimensions to be included in the report.
+   * @param {Date} startDate - The start date of the date range.
+   * @param {Date} endDate - The end date of the date range.
+   * @param {Array} dimensions - The dimensions to be included in the report.
    * this parameter is optional and defaults to ['date'],
    * which means that the report will be grouped by date.
+   * @param {Number} rowLimit - The maximum number of rows to return, defaults to 1000.
+   * @param {Number} startRow - The row number to start from, defaults to 0.
    * @returns {Promise<JSON>} The Google Search Console data.
    * Format: {
    *   "rows": [
@@ -56,10 +56,11 @@ export default class GoogleClient {
    * }
    */
   getOrganicSearchData(
-    baseURL: string,
     startDate: Date,
     endDate: Date,
-    dimensions: string[]
+    dimensions?: string[],
+    rowLimit?: number,
+    startRow?: number
   ): Promise<JSON>;
 
   /**

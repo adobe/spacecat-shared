@@ -40,6 +40,12 @@ export function noContent(headers = {}) {
   return createResponse('', 204, headers);
 }
 
+export function found(location, body = '') {
+  return createResponse(body, 302, {
+    Location: location,
+  });
+}
+
 export function badRequest(message = 'bad request', headers = {}) {
   return createResponse({ message }, 400, {
     'x-error': message,

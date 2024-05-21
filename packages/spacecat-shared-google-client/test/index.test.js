@@ -186,7 +186,7 @@ describe('GoogleClient', () => {
       try {
         await googleClient.getOrganicSearchData(startDate, endDate, ['page'], '1000');
       } catch (error) {
-        expect(error.message).to.equal('Error retrieving organic search data from Google API: Invalid row limit format');
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Invalid row limit or start row format');
       }
     });
 

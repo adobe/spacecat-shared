@@ -28,14 +28,19 @@ describe('GoogleClient', () => {
     func: {
       version: 'v1',
     },
-    log: console,
+    log: {
+      info: sinon.stub(),
+      error: sinon.stub(),
+    },
   };
 
   let defaultConfig;
 
   const baseURL = 'https://www.example.com';
-  const startDate = new Date('2024-01-01');
-  const endDate = new Date('2024-05-14');
+  const startDateString = '2024-01-01';
+  const startDate = new Date(startDateString);
+  const endDateString = '2024-01-31';
+  const endDate = new Date(endDateString);
 
   let authClientStub;
 
@@ -99,8 +104,18 @@ describe('GoogleClient', () => {
       });
 
       const googleClient = await GoogleClient.createFrom(context, baseURL);
-
+      const expectedRequest = {
+        siteUrl: baseURL,
+        requestBody: {
+          startDate: startDateString,
+          endDate: endDateString,
+          dimensions: ['page'],
+          startRow: 0,
+          rowLimit: 1000,
+        },
+      };
       const result = await googleClient.getOrganicSearchData(startDate, endDate, ['page']);
+      expect(context.log.info.calledWith(`Retrieving organic search data: ${JSON.stringify(expectedRequest)}`)).to.be.true;
       expect(result).to.eql(testResult);
       expect(webmastersStub.calledOnce).to.be.true;
     });

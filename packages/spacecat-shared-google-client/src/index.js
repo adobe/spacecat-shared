@@ -105,7 +105,7 @@ export default class GoogleClient {
       auth: this.authClient,
     });
     try {
-      return await webmasters.searchanalytics.query({
+      const params = {
         siteUrl: this.siteUrl,
         requestBody: {
           startDate: startDate.toISOString()
@@ -116,7 +116,9 @@ export default class GoogleClient {
           startRow,
           rowLimit,
         },
-      });
+      };
+      this.log.info(`Retrieving organic search data: ${JSON.stringify(params)}`);
+      return await webmasters.searchanalytics.query(params);
     } catch (error) {
       this.log.error('Error retrieving organic search data:', error.message);
       throw new Error(`Error retrieving organic search data from Google API: ${error.message}`);

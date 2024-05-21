@@ -13,7 +13,7 @@
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
-import { resolveCustomerSecretsName } from '@adobe/spacecat-shared-utils';
+import { isValidDate, resolveCustomerSecretsName } from '@adobe/spacecat-shared-utils';
 
 export default class GoogleClient {
   static async createFrom(context, baseURL) {
@@ -67,13 +67,22 @@ export default class GoogleClient {
     this.log = log;
   }
 
-  async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 10, startRow = 0) {
+  async #refreshTokenIfExpired() {
     if (new Date(this.expiryDate).getTime() < Date.now()) {
       const { credentials } = await this.authClient.refreshAccessToken();
       this.authClient.setCredentials({
         access_token: credentials.access_token,
       });
     }
+  }
+
+  async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 10, startRow = 0) {
+    if (!isValidDate(startDate) || !isValidDate(endDate)) {
+      throw new Error('Error retrieving organic search data from Google API: Invalid date format');
+    }
+
+    await this.#refreshTokenIfExpired();
+
     const webmasters = google.webmasters({
       version: 'v3',
       auth: this.authClient,
@@ -98,6 +107,8 @@ export default class GoogleClient {
   }
 
   async listSites() {
+    await this.#refreshTokenIfExpired();
+
     const webmasters = google.webmasters({
       version: 'v3',
       auth: this.authClient,

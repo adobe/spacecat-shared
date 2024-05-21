@@ -13,7 +13,12 @@
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
-import { isValidDate, resolveCustomerSecretsName } from '@adobe/spacecat-shared-utils';
+import {
+  isArray,
+  isNumber,
+  isValidDate,
+  resolveCustomerSecretsName,
+} from '@adobe/spacecat-shared-utils';
 
 export default class GoogleClient {
   static async createFrom(context, baseURL) {
@@ -76,9 +81,21 @@ export default class GoogleClient {
     }
   }
 
-  async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 10, startRow = 0) {
+  async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 1000, startRow = 0) {
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
       throw new Error('Error retrieving organic search data from Google API: Invalid date format');
+    }
+    if (!isArray(dimensions)) {
+      throw new Error('Error retrieving organic search data from Google API: Invalid dimensions format');
+    }
+    if (!isNumber(rowLimit) || !isNumber(startRow)) {
+      throw new Error('Error retrieving organic search data from Google API: Invalid row limit format');
+    }
+    if (rowLimit > 1000 || rowLimit < 1) {
+      throw new Error('Error retrieving organic search data from Google API: Row limit must be between 1 and 1000');
+    }
+    if (startRow < 0) {
+      throw new Error('Error retrieving organic search data from Google API: Start row must be greater than or equal to 0');
     }
 
     await this.#refreshTokenIfExpired();

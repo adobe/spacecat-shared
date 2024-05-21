@@ -31,7 +31,7 @@ describe('GoogleClient', () => {
     log: console,
   };
 
-  let config;
+  let defaultConfig;
 
   const baseURL = 'https://www.example.com';
   const startDate = new Date('2024-01-01');
@@ -39,8 +39,14 @@ describe('GoogleClient', () => {
 
   let authClientStub;
 
+  const stubSecretManager = (config) => {
+    sinon.stub(SecretsManagerClient.prototype, 'send').resolves({
+      SecretString: JSON.stringify(config),
+    });
+  };
+
   beforeEach(() => {
-    config = {
+    defaultConfig = {
       access_token: 'testAccessToken',
       refresh_token: 'testRefreshToken',
       token_type: 'Bearer',
@@ -54,9 +60,6 @@ describe('GoogleClient', () => {
         test_token: 'testToken',
       },
     });
-    sinon.stub(SecretsManagerClient.prototype, 'send').resolves({
-      SecretString: JSON.stringify(config),
-    });
   });
 
   afterEach(() => {
@@ -65,16 +68,28 @@ describe('GoogleClient', () => {
 
   describe('createFrom', () => {
     it('should create a new GoogleClient instance with the provided context', async () => {
+      stubSecretManager(defaultConfig);
+
       const googleClient = await GoogleClient.createFrom(context, baseURL);
 
       expect(googleClient).to.be.instanceOf(GoogleClient);
       expect(googleClient.authClient).to.be.instanceOf(OAuth2Client);
       expect(googleClient.log).to.equal(context.log);
     });
+
+    it('should throw an error if the google client cannot be created', async () => {
+      sinon.stub(SecretsManagerClient.prototype, 'send').rejects(new Error('Secrets Manager error'));
+      try {
+        await GoogleClient.createFrom(context, baseURL);
+      } catch (error) {
+        expect(error.message).to.equal('Error creating GoogleClient: Secrets Manager error');
+      }
+    });
   });
 
   describe('getOrganicSearchData', () => {
     it('should return organic search data for the provided baseURL, startDate, and endDate', async () => {
+      stubSecretManager(defaultConfig);
       const testResult = { data: 'testData' };
       const webmastersStub = sinon.stub().resolves(testResult);
       sinon.stub(google, 'webmasters').returns({
@@ -91,6 +106,7 @@ describe('GoogleClient', () => {
     });
 
     it('should handle errors when the Google API call fails', async () => {
+      stubSecretManager(defaultConfig);
       sinon.stub(google, 'webmasters').returns({
         searchanalytics: {
           query: sinon.stub().rejects(new Error('Google API call failed')),
@@ -107,7 +123,8 @@ describe('GoogleClient', () => {
     });
 
     it('should return 500 when access token is missing', async () => {
-      delete config.access_token;
+      delete defaultConfig.access_token;
+      stubSecretManager(defaultConfig);
 
       try {
         await GoogleClient.createFrom(context, baseURL);
@@ -117,7 +134,8 @@ describe('GoogleClient', () => {
     });
 
     it('should return 500 when refresh token is missing', async () => {
-      delete config.refresh_token;
+      delete defaultConfig.refresh_token;
+      stubSecretManager(defaultConfig);
 
       try {
         await GoogleClient.createFrom(context, baseURL);
@@ -127,7 +145,9 @@ describe('GoogleClient', () => {
     });
 
     it('should refresh access token when it is expired', async () => {
-      config.expiry_date = Date.now() - 1000;
+      defaultConfig.expiry_date = Date.now() - 1000;
+      stubSecretManager(defaultConfig);
+
       const testResult = { data: 'testData' };
       const webmastersStub = sinon.stub().resolves(testResult);
       sinon.stub(google, 'webmasters').returns({
@@ -141,11 +161,52 @@ describe('GoogleClient', () => {
     });
 
     it('should throw an error if the date format is invalid', async () => {
+      stubSecretManager(defaultConfig);
       const googleClient = await GoogleClient.createFrom(context, baseURL);
       try {
         await googleClient.getOrganicSearchData('2024-01-01', '2024-05-14');
       } catch (error) {
         expect(error.message).to.equal('Error retrieving organic search data from Google API: Invalid date format');
+      }
+    });
+
+    it('should throw an error if the dimensions format is invalid', async () => {
+      stubSecretManager(defaultConfig);
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getOrganicSearchData(startDate, endDate, 'page');
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Invalid dimensions format');
+      }
+    });
+
+    it('should throw an error if the row limit format is invalid', async () => {
+      stubSecretManager(defaultConfig);
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getOrganicSearchData(startDate, endDate, ['page'], '1000');
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Invalid row limit format');
+      }
+    });
+
+    it('should throw an error if the row limit is greater than 1000', async () => {
+      stubSecretManager(defaultConfig);
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getOrganicSearchData(startDate, endDate, ['page'], 1001);
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Row limit must be between 1 and 1000');
+      }
+    });
+
+    it('should throw an error if the start row is less than 0', async () => {
+      stubSecretManager(defaultConfig);
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getOrganicSearchData(startDate, endDate, ['page'], 1000, -1);
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Start row must be greater than or equal to 0');
       }
     });
   });
@@ -161,6 +222,7 @@ describe('GoogleClient', () => {
     };
 
     it('should return a list of sites', async () => {
+      stubSecretManager(defaultConfig);
       const webmastersStub = sinon.stub().resolves(sites);
       sinon.stub(google, 'webmasters').returns({
         sites: {
@@ -177,6 +239,7 @@ describe('GoogleClient', () => {
 
     it('should handle errors when the Google API call fails', async () => {
       const failMessage = 'Google API call failed';
+      stubSecretManager(defaultConfig);
       sinon.stub(google, 'webmasters').returns({
         sites: {
           list: sinon.stub().rejects(new Error(failMessage)),
@@ -191,7 +254,8 @@ describe('GoogleClient', () => {
     });
 
     it('should refresh access token when it is expired', async () => {
-      config.expiry_date = Date.now() - 2000;
+      defaultConfig.expiry_date = Date.now() - 2000;
+      stubSecretManager(defaultConfig);
 
       const testResult = { data: 'testData' };
       const webmastersStub = sinon.stub().resolves(testResult);

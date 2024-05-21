@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.2.1...@adobe/spacecat-shared-http-utils-v1.3.0) (2024-05-21)
+
+
+### Features
+
+* introduce google client ([#219](https://github.com/adobe/spacecat-shared/issues/219)) ([71eeb64](https://github.com/adobe/spacecat-shared/commit/71eeb64a7efe2037b5d40f0c62668b9eaf41aeb8))
+
 # [@adobe/spacecat-shared-http-utils-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.2.0...@adobe/spacecat-shared-http-utils-v1.2.1) (2024-05-03)
 
 

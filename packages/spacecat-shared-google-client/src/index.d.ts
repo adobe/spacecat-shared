@@ -16,6 +16,7 @@ import { OAuth2Client } from 'google-auth-library';
 export default class GoogleClient {
   /**
    * Static factory method to create an instance of GoogleClient.
+   *
    * @param {UniversalContext} context - An object containing the AWS Lambda context information
    * @param {string} url - The URL of the site to be audited.
    * @returns An instance of GoogleClient.
@@ -31,6 +32,7 @@ export default class GoogleClient {
 
   /**
    * Retrieves the Google Search Console data for the specified date range.
+   *
    * @param baseURL - The base URL of the site to be audited.
    * @param startDate - The start date of the date range.
    * @param endDate - The end date of the date range.

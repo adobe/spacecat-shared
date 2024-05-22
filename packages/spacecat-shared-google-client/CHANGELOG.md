@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.0.1...@adobe/spacecat-shared-google-client-v1.0.2) (2024-05-22)
+
+
+### Bug Fixes
+
+* getOrganicSearchData interface params ([#236](https://github.com/adobe/spacecat-shared/issues/236)) ([acfd48b](https://github.com/adobe/spacecat-shared/commit/acfd48baaaa7594d0b9d7f00f7c9d52118b137e9))
+
 # [@adobe/spacecat-shared-google-client-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.0.0...@adobe/spacecat-shared-google-client-v1.0.1) (2024-05-21)
 
 

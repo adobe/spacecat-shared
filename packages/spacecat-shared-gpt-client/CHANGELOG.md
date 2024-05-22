@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.3...@adobe/spacecat-shared-gpt-client-v1.2.4) (2024-05-22)
+
+
+### Bug Fixes
+
+* more error details for firefall job ([#238](https://github.com/adobe/spacecat-shared/issues/238)) ([10dd6e7](https://github.com/adobe/spacecat-shared/commit/10dd6e7408aaf18e6c6269a35c325adbe0c56608))
+
 # [@adobe/spacecat-shared-gpt-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.2...@adobe/spacecat-shared-gpt-client-v1.2.3) (2024-05-15)
 
 

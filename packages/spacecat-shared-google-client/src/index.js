@@ -16,12 +16,16 @@ import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-sec
 import {
   isArray,
   isInteger,
-  isValidDate,
+  isValidDate, isValidUrl,
   resolveCustomerSecretsName,
 } from '@adobe/spacecat-shared-utils';
 
 export default class GoogleClient {
   static async createFrom(context, baseURL) {
+    if (!isValidUrl(baseURL)) {
+      throw new Error('Error creating GoogleClient: Invalid base URL');
+    }
+
     try {
       const customerSecret = resolveCustomerSecretsName(baseURL, context);
       const client = new SecretsManagerClient({});
@@ -59,6 +63,10 @@ export default class GoogleClient {
 
     if (!config.refreshToken) {
       throw new Error('Missing refresh token in secret');
+    }
+
+    if (!isValidUrl(config.siteUrl)) {
+      throw new Error('Invalid site URL in secret');
     }
 
     authClient.setCredentials({

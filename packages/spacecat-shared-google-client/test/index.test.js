@@ -90,6 +90,24 @@ describe('GoogleClient', () => {
         expect(error.message).to.equal('Error creating GoogleClient: Secrets Manager error');
       }
     });
+
+    it('should throw an error if the base URL is invalid', async () => {
+      try {
+        await GoogleClient.createFrom(context, 'not a valid url');
+      } catch (error) {
+        expect(error.message).to.equal('Error creating GoogleClient: Invalid base URL');
+      }
+    });
+
+    it('should throw an error if the base URL in secrets is invalid', async () => {
+      stubSecretManager({ ...defaultConfig, site_url: 'not a valid url' });
+
+      try {
+        await GoogleClient.createFrom(context, baseURL);
+      } catch (error) {
+        expect(error.message).to.equal('Error creating GoogleClient: Invalid site URL in secret');
+      }
+    });
   });
 
   describe('getOrganicSearchData', () => {

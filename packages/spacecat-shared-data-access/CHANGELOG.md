@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.23.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.3...@adobe/spacecat-shared-data-access-v1.23.4) (2024-05-23)
+
+
+### Bug Fixes
+
+* status change key event type ([#240](https://github.com/adobe/spacecat-shared/issues/240)) ([d32dd76](https://github.com/adobe/spacecat-shared/commit/d32dd7652a29c7a3f2e778c341e2770787bcb891))
+
 # [@adobe/spacecat-shared-data-access-v1.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.2...@adobe/spacecat-shared-data-access-v1.23.3) (2024-05-18)
 
 

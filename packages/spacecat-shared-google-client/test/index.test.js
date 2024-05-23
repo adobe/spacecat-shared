@@ -16,6 +16,7 @@ import sinon from 'sinon';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import nock from 'nock';
 import GoogleClient from '../src/index.js';
 
 describe('GoogleClient', () => {
@@ -36,7 +37,8 @@ describe('GoogleClient', () => {
 
   let defaultConfig;
 
-  const baseURL = 'https://www.example.com';
+  const baseURL = 'https://example.com/';
+  const auditURL = 'www.example.com';
   const startDateString = '2024-01-01';
   const startDate = new Date(startDateString);
   const endDateString = '2024-01-31';
@@ -58,6 +60,7 @@ describe('GoogleClient', () => {
       site_url: baseURL,
       expiration_date: Date.now() + 3600 * 1000,
     };
+
     authClientStub = sinon.stub(OAuth2Client.prototype);
     authClientStub.setCredentials.returns();
     authClientStub.refreshAccessToken.resolves({
@@ -111,6 +114,11 @@ describe('GoogleClient', () => {
   });
 
   describe('getOrganicSearchData', () => {
+    beforeEach(() => {
+      nock(baseURL)
+        .get('/')
+        .reply(301, {}, { Location: 'https://www.example.com' });
+    });
     it('should return organic search data for the provided baseURL, startDate, and endDate', async () => {
       stubSecretManager(defaultConfig);
       const testResult = { data: 'testData' };
@@ -130,6 +138,17 @@ describe('GoogleClient', () => {
           dimensions: ['page'],
           startRow: 0,
           rowLimit: 1000,
+          dimensionFilterGroups: [
+            {
+              filters: [
+                {
+                  dimension: 'page',
+                  operator: 'contains',
+                  expression: auditURL,
+                },
+              ],
+            },
+          ],
         },
       };
       const result = await googleClient.getOrganicSearchData(startDate, endDate, ['page']);

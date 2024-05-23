@@ -14,6 +14,7 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import {
+  composeAuditURL,
   isArray,
   isInteger,
   isValidDate, isValidUrl,
@@ -40,6 +41,7 @@ export default class GoogleClient {
         tokenType: secrets.token_type,
         expiryDate: secrets.expiry_date,
         siteUrl: secrets.site_url,
+        baseUrl: baseURL,
         clientId: context.env.GOOGLE_CLIENT_ID,
         clientSecret: context.env.GOOGLE_CLIENT_SECRET,
         redirectUri: context.env.GOOGLE_REDIRECT_URI,
@@ -77,6 +79,7 @@ export default class GoogleClient {
     this.authClient = authClient;
     this.expiryDate = config.expiryDate;
     this.siteUrl = config.siteUrl;
+    this.baseUrl = config.baseUrl;
     this.log = log;
   }
 
@@ -108,6 +111,8 @@ export default class GoogleClient {
 
     await this.#refreshTokenIfExpired();
 
+    const auditUrl = await composeAuditURL(this.baseUrl);
+
     const webmasters = google.webmasters({
       version: 'v3',
       auth: this.authClient,
@@ -123,6 +128,17 @@ export default class GoogleClient {
           dimensions,
           startRow,
           rowLimit,
+          dimensionFilterGroups: [
+            {
+              filters: [
+                {
+                  dimension: 'page',
+                  operator: 'contains',
+                  expression: auditUrl,
+                },
+              ],
+            },
+          ],
         },
       };
       this.log.info(`Retrieving organic search data: ${JSON.stringify(params)}`);

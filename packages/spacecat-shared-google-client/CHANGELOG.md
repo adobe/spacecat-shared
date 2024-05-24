@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.0.2...@adobe/spacecat-shared-google-client-v1.1.0) (2024-05-24)
+
+
+### Features
+
+* filter fetched organic search data from google by base url ([#239](https://github.com/adobe/spacecat-shared/issues/239)) ([0bfba19](https://github.com/adobe/spacecat-shared/commit/0bfba19d08122c969f513154c697dd75017b8e43))
+
 # [@adobe/spacecat-shared-google-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.0.1...@adobe/spacecat-shared-google-client-v1.0.2) (2024-05-22)
 
 

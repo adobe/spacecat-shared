@@ -78,6 +78,17 @@ describe('Data Access Object Tests', () => {
     'removeKeyEvent',
   ];
 
+  const importJobFunctions = [
+    'getImportJobByID',
+    'getImportJobsByStatus',
+    'createNewImportJob',
+  ];
+
+  const importUrlFunctions = [
+    'getImportUrlById',
+    'createNewImportUrl',
+  ];
+
   let dao;
 
   before(() => {
@@ -114,6 +125,18 @@ describe('Data Access Object Tests', () => {
     });
   });
 
+  it('contains all known importJob functions', () => {
+    importJobFunctions.forEach((funcName) => {
+      expect(dao).to.have.property(funcName);
+    });
+  });
+
+  it('contains all known importUrl functions', () => {
+    importUrlFunctions.forEach((funcName) => {
+      expect(dao).to.have.property(funcName);
+    });
+  });
+
   it('does not contain any unexpected functions', () => {
     const expectedFunctions = new Set([
       ...auditFunctions,
@@ -122,7 +145,9 @@ describe('Data Access Object Tests', () => {
       ...siteCandidateFunctions,
       ...organizationFunctions,
       ...configurationFunctions,
-      ...siteTopPagesFunctions]);
+      ...siteTopPagesFunctions,
+      ...importJobFunctions,
+      ...importUrlFunctions]);
     Object.keys(dao).forEach((funcName) => {
       expect(expectedFunctions).to.include(funcName);
     });

@@ -38,7 +38,7 @@ export default class GoogleClient {
       const config = {
         accessToken: secrets.access_token,
         refreshToken: secrets.refresh_token,
-        tokenType: secrets.token_t4ype,
+        tokenType: secrets.token_type,
         expiryDate: secrets.expiry_date,
         siteUrl: secrets.site_url,
         baseUrl: baseURL,

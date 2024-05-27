@@ -261,6 +261,16 @@ describe('GoogleClient', () => {
         expect(error.message).to.equal('Error retrieving organic search data from Google API: Start row must be greater than or equal to 0');
       }
     });
+
+    it('should throw an error if site URL is invalid', async () => {
+      stubSecretManager({ ...defaultConfig, site_url: 'not a valid url' });
+      try {
+        const googleClient = await GoogleClient.createFrom(context, baseURL);
+        await googleClient.getOrganicSearchData(startDate, endDate);
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Invalid site URL in secret');
+      }
+    });
   });
 
   describe('listSites', () => {

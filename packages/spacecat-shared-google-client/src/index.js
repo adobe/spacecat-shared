@@ -67,10 +67,6 @@ export default class GoogleClient {
       throw new Error('Missing refresh token in secret');
     }
 
-    if (!isValidUrl(config.siteUrl)) {
-      throw new Error('Invalid site URL in secret');
-    }
-
     authClient.setCredentials({
       access_token: config.accessToken,
       refresh_token: config.refreshToken,
@@ -93,6 +89,9 @@ export default class GoogleClient {
   }
 
   async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 1000, startRow = 0) {
+    if (!isValidUrl(this.siteUrl)) {
+      throw new Error('Error retrieving organic search data from Google API: Invalid site URL in secret');
+    }
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
       throw new Error('Error retrieving organic search data from Google API: Invalid date format');
     }

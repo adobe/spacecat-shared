@@ -12,6 +12,11 @@
 
 import { Response } from '@adobe/fetch';
 
+const HEADER_CONTENT_TYPE = 'content-type';
+const HEADER_ERROR = 'x-error';
+
+const CONTENT_TYPE_JSON = 'application/json';
+
 /**
  * Creates a response with a JSON body if the content-type is JSON. Defaults to 200 status.
  * If a header is already defined and has a different content-type, it is handled accordingly.
@@ -24,13 +29,13 @@ export function createResponse(body, status = 200, headers = {}) {
   let responseBody = body;
 
   // Check if headers already contain a 'content-type' key
-  if (!headers['content-type']) {
+  if (!headers[HEADER_CONTENT_TYPE]) {
     // Set content-type to JSON if not already set
-    Object.assign(headers, { 'content-type': 'application/json; charset=utf-8' });
+    Object.assign(headers, { [HEADER_CONTENT_TYPE]: `${CONTENT_TYPE_JSON}; charset=utf-8` });
   }
 
   // Stringify body if content-type is JSON
-  if (headers['content-type'].includes('application/json')) {
+  if (headers[HEADER_CONTENT_TYPE].includes(CONTENT_TYPE_JSON)) {
     responseBody = body === '' ? '' : JSON.stringify(body);
   }
 
@@ -60,21 +65,21 @@ export function found(location, body = '') {
 
 export function badRequest(message = 'bad request', headers = {}) {
   return createResponse({ message }, 400, {
-    'x-error': message,
+    [HEADER_ERROR]: message,
     ...headers,
   });
 }
 
 export function notFound(message = 'not found', headers = {}) {
   return createResponse({ message }, 404, {
-    'x-error': message,
+    [HEADER_ERROR]: message,
     ...headers,
   });
 }
 
 export function internalServerError(message = 'internal server error', headers = {}) {
   return createResponse({ message }, 500, {
-    'x-error': message,
+    [HEADER_ERROR]: message,
     ...headers,
   });
 }

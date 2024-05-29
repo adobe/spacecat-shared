@@ -13,21 +13,33 @@
 import { Response } from '@adobe/fetch';
 
 /**
- * Creates a response with a JSON body. Defaults to 200 status.
- * @param {object} body - JSON body.
- * @param {number} status - Optional status code.
- * @param {object} headers - Optional headers.
+ * Creates a response with a JSON body if the content-type is JSON. Defaults to 200 status.
+ * If a header is already defined and has a different content-type, it is handled accordingly.
+ * @param {object} body - Response body.
+ * @param {number} [status=200] - Optional status code.
+ * @param {object} [headers={}] - Optional headers.
  * @return {Response} Response.
  */
 export function createResponse(body, status = 200, headers = {}) {
-  return new Response(
-    body === '' ? '' : JSON.stringify(body),
-    {
-      headers: { 'content-type': 'application/json; charset=utf-8', ...headers },
-      status,
-    },
-  );
+  let responseBody = body;
+
+  // Check if headers already contain a 'content-type' key
+  if (!headers['content-type']) {
+    // Set content-type to JSON if not already set
+    Object.assign(headers, { 'content-type': 'application/json; charset=utf-8' });
+  }
+
+  // Stringify body if content-type is JSON
+  if (headers['content-type'].includes('application/json')) {
+    responseBody = body === '' ? '' : JSON.stringify(body);
+  }
+
+  return new Response(responseBody, {
+    headers,
+    status,
+  });
 }
+
 export function ok(body = '') {
   return createResponse(body, 200);
 }

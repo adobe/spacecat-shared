@@ -27,6 +27,13 @@ describe('FirefallClient', () => {
   let sandbox;
   let mockContext;
 
+  const IMS_ENV = {
+    IMS_HOST: 'ims.example.com',
+    IMS_CLIENT_ID: 'yourClientId',
+    IMS_CLIENT_CODE: 'yourClientCode',
+    IMS_CLIENT_SECRET: 'yourClientSecret',
+  };
+
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     mockLog = sinon.mock(console);
@@ -34,13 +41,16 @@ describe('FirefallClient', () => {
       log: mockLog.object,
       env: {
         FIREFALL_API_ENDPOINT: 'https://api.firefall.example.com',
-        FIREFALL_IMS_ORG: 'exampleOrg',
         FIREFALL_API_KEY: 'apiKeyExample',
-        FIREFALL_API_AUTH: 'apiAuthExample',
         FIREFALL_API_POLL_INTERVAL: 100,
         FIREFALL_API_CAPABILITY_NAME: 'gpt4_32k_completions_capability',
+        ...IMS_ENV,
       },
     };
+
+    nock(`https://${mockContext.env.IMS_HOST}`)
+      .post('/ims/token/v4')
+      .reply(200, { access_token: 'accessToken' });
   });
 
   afterEach(() => {
@@ -51,7 +61,7 @@ describe('FirefallClient', () => {
   describe('constructor and createFrom', () => {
     it('throws errors for missing configuration using createFrom', () => {
       const incompleteContext = {
-        env: {},
+        env: IMS_ENV,
         log: console,
       };
       expect(() => FirefallClient.createFrom(incompleteContext)).to.throw('Missing Firefall API endpoint');
@@ -62,19 +72,9 @@ describe('FirefallClient', () => {
       expect(() => FirefallClient.createFrom(mockContext)).to.throw('Missing Firefall API endpoint');
     });
 
-    it('throws an error if the IMS Org is invalid', () => {
-      mockContext.env.FIREFALL_IMS_ORG = '';
-      expect(() => FirefallClient.createFrom(mockContext)).to.throw('Missing Firefall IMS Org');
-    });
-
     it('throws an error if the API Key is invalid', () => {
       mockContext.env.FIREFALL_API_KEY = '';
       expect(() => FirefallClient.createFrom(mockContext)).to.throw('Missing Firefall API key');
-    });
-
-    it('throws an error if the API Auth is invalid', () => {
-      mockContext.env.FIREFALL_API_AUTH = '';
-      expect(() => FirefallClient.createFrom(mockContext)).to.throw('Missing Firefall API auth');
     });
   });
 

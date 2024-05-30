@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-gpt-client-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.3...@adobe/spacecat-shared-gpt-client-v1.2.4) (2024-05-22)
+
+
+### Bug Fixes
+
+* more error details for firefall job ([#238](https://github.com/adobe/spacecat-shared/issues/238)) ([10dd6e7](https://github.com/adobe/spacecat-shared/commit/10dd6e7408aaf18e6c6269a35c325adbe0c56608))
+
+# [@adobe/spacecat-shared-gpt-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.2...@adobe/spacecat-shared-gpt-client-v1.2.3) (2024-05-15)
+
+
+### Bug Fixes
+
+* get access_token ([#232](https://github.com/adobe/spacecat-shared/issues/232)) ([a4bd344](https://github.com/adobe/spacecat-shared/commit/a4bd344d0ab06dbcf4a1a2d310fc8a42ca3318b8))
+
+# [@adobe/spacecat-shared-gpt-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.1...@adobe/spacecat-shared-gpt-client-v1.2.2) (2024-05-15)
+
+
+### Bug Fixes
+
+* add logs ([#231](https://github.com/adobe/spacecat-shared/issues/231)) ([1777bb3](https://github.com/adobe/spacecat-shared/commit/1777bb331726086040b00aadbf82835cff8385df))
+
+# [@adobe/spacecat-shared-gpt-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.0...@adobe/spacecat-shared-gpt-client-v1.2.1) (2024-05-11)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#228](https://github.com/adobe/spacecat-shared/issues/228)) ([ef2ab41](https://github.com/adobe/spacecat-shared/commit/ef2ab41a9175ec5ba8ec7e2830898e9db01fb2b6))
+
+# [@adobe/spacecat-shared-gpt-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.9...@adobe/spacecat-shared-gpt-client-v1.2.0) (2024-05-08)
+
+
+### Features
+
+* use ims-client for auth ([#226](https://github.com/adobe/spacecat-shared/issues/226)) ([2813ecc](https://github.com/adobe/spacecat-shared/commit/2813ecc7b4e7ca5de8b7c7770d6ff3ee772db1b8))
+
 # [@adobe/spacecat-shared-gpt-client-v1.1.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.1.8...@adobe/spacecat-shared-gpt-client-v1.1.9) (2024-04-17)
 
 

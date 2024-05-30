@@ -13,12 +13,15 @@
 import { createDataAccess } from './service/index.js';
 
 const TABLE_NAME_AUDITS = 'spacecat-services-audits-dev';
+const TABLE_NAME_KEY_EVENTS = 'spacecat-services-key-events';
 const TABLE_NAME_LATEST_AUDITS = 'spacecat-services-latest-audits-dev';
 const TABLE_NAME_SITES = 'spacecat-services-sites-dev';
 const TABLE_NAME_SITE_CANDIDATES = 'spacecat-services-site-candidates-dev';
 const TABLE_NAME_ORGANIZATIONS = 'spacecat-services-organizations-dev';
 const TABLE_NAME_CONFIGURATIONS = 'spacecat-services-configurations-dev';
+const TABLE_NAME_SITE_TOP_PAGES = 'spacecat-services-site-top-pages-dev';
 
+const INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID = 'spacecat-services-key-events-by-site-id';
 const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites-dev';
 const INDEX_NAME_ALL_ORGANIZATIONS = 'spacecat-services-all-organizations-dev';
 const INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID = 'spacecat-services-all-organizations-by-ims-org-id-dev';
@@ -38,11 +41,14 @@ export default function dataAccessWrapper(fn) {
 
       const {
         DYNAMO_TABLE_NAME_AUDITS = TABLE_NAME_AUDITS,
+        DYNAMO_TABLE_NAME_KEY_EVENTS = TABLE_NAME_KEY_EVENTS,
         DYNAMO_TABLE_NAME_LATEST_AUDITS = TABLE_NAME_LATEST_AUDITS,
         DYNAMO_TABLE_NAME_SITES = TABLE_NAME_SITES,
         DYNAMO_TABLE_NAME_SITE_CANDIDATES = TABLE_NAME_SITE_CANDIDATES,
         DYNAMO_TABLE_NAME_ORGANIZATIONS = TABLE_NAME_ORGANIZATIONS,
         DYNAMO_TABLE_NAME_CONFIGURATIONS = TABLE_NAME_CONFIGURATIONS,
+        DYNAMO_TABLE_NAME_SITE_TOP_PAGES = TABLE_NAME_SITE_TOP_PAGES,
+        DYNAMO_INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID = INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID,
         DYNAMO_INDEX_NAME_ALL_SITES = INDEX_NAME_ALL_SITES,
         DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES = INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
@@ -54,11 +60,14 @@ export default function dataAccessWrapper(fn) {
 
       context.dataAccess = createDataAccess({
         tableNameAudits: DYNAMO_TABLE_NAME_AUDITS,
+        tableNameKeyEvents: DYNAMO_TABLE_NAME_KEY_EVENTS,
         tableNameLatestAudits: DYNAMO_TABLE_NAME_LATEST_AUDITS,
         tableNameOrganizations: DYNAMO_TABLE_NAME_ORGANIZATIONS,
         tableNameSites: DYNAMO_TABLE_NAME_SITES,
         tableNameSiteCandidates: DYNAMO_TABLE_NAME_SITE_CANDIDATES,
         tableNameConfigurations: DYNAMO_TABLE_NAME_CONFIGURATIONS,
+        tableNameSiteTopPages: DYNAMO_TABLE_NAME_SITE_TOP_PAGES,
+        indexNameAllKeyEventsBySiteId: DYNAMO_INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID,
         indexNameAllSites: DYNAMO_INDEX_NAME_ALL_SITES,
         indexNameAllOrganizations: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS,
         indexNameAllOrganizationsByImsOrgId: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID,

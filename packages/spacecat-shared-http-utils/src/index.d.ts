@@ -13,6 +13,8 @@ import { Response } from '@adobe/fetch';
 
 export declare function ok(body?: string): Response;
 
+export declare function created(body: object): Response;
+
 export declare function noContent(headers?: object): Response;
 
 export declare function badRequest(message?: string, headers?: object): Response;
@@ -20,3 +22,5 @@ export declare function badRequest(message?: string, headers?: object): Response
 export declare function notFound(message?: string, headers?: object): Response;
 
 export declare function internalServerError(message?: string, headers?: object): Response;
+
+export declare function found(location: string): Response;

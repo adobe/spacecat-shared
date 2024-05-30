@@ -18,6 +18,8 @@ import { generateRandomAudit } from './auditUtils.js';
 import { createTable, deleteTable } from './tableOperations.js';
 
 import schema from '../../docs/schema.json' assert { type: 'json' };
+import { createKeyEvent, KEY_EVENT_TYPES } from '../../src/models/key-event.js';
+import { KeyEventDto } from '../../src/dto/key-event.js';
 
 /**
  * Creates all tables defined in a schema.
@@ -136,6 +138,8 @@ function generateAuditData(
  * @param {number} [numberOfSiteCandidates=10] - The number of sites candidates to generate.
  * @param {number} [numberOfAuditsPerType=5] - The number of audits per type to generate
  * for each site.
+ * @param {number} [numberOfSiteTopPages=5] - The number of site top pages to generate
+ * @param {number} [numberOfKeyEvents=5] - The number of key events to generate
  *
  * @example
  * // Example usage
@@ -147,6 +151,8 @@ export default async function generateSampleData(
   numberOfSites = 10,
   numberOfSiteCandidates = 10,
   numberOfAuditsPerType = 5,
+  numberOfSiteTopPages = 50,
+  numberOfKeyEvents = 10,
 ) {
   console.time('Sample data generated in');
   await deleteExistingTables([
@@ -155,15 +161,19 @@ export default async function generateSampleData(
     config.tableNameLatestAudits,
     config.tableNameOrganizations,
     config.tableNameConfigurations,
+    config.tableNameSiteTopPages,
+    config.tableNameKeyEvents,
   ]);
   await createTablesFromSchema();
 
   const auditTypes = ['lhs-mobile', 'cwv'];
   const sites = [];
   const siteCandidates = [];
+  const siteTopPages = [];
   const organizations = [];
   const auditItems = [];
   const latestAuditItems = [];
+  const keyEvents = [];
   const nowIso = new Date().toISOString();
   const configurations = [{
     jobs: [
@@ -306,12 +316,41 @@ export default async function generateSampleData(
     });
   }
 
+  // Generate site top pages  data
+  for (let i = 0; i < numberOfSiteTopPages; i += 1) {
+    const traffic = (i + 1) * 12345;
+    siteTopPages.push({
+      siteId: sites[i % numberOfSites].id,
+      SK: `ahrefs#global#${String(traffic).padStart(12, '0')}`,
+      url: `${sites[i % numberOfSites].baseURL}/page-${i}`,
+      traffic,
+      source: 'ahrefs',
+      geo: 'global',
+      importedAt: nowIso,
+    });
+  }
+
+  sites.forEach((site) => {
+    for (let i = 0; i < numberOfKeyEvents; i += 1) {
+      const keyEvent = createKeyEvent({
+        siteId: site.id,
+        name: `key-event-#${i}`,
+        type: Object.values(KEY_EVENT_TYPES).at(i % Object.keys(KEY_EVENT_TYPES).length),
+        time: new Date().toISOString(),
+      });
+
+      keyEvents.push(KeyEventDto.toDynamoItem(keyEvent));
+    }
+  });
+
   await batchWrite(config.tableNameSites, sites);
   await batchWrite(config.tableNameSiteCandidates, siteCandidates);
   await batchWrite(config.tableNameOrganizations, organizations);
   await batchWrite(config.tableNameAudits, auditItems);
   await batchWrite(config.tableNameLatestAudits, latestAuditItems);
   await batchWrite(config.tableNameConfigurations, configurations);
+  await batchWrite(config.tableNameSiteTopPages, siteTopPages);
+  await batchWrite(config.tableNameKeyEvents, keyEvents);
 
   console.log(`Generated ${numberOfOrganizations} organizations`);
   console.log(`Generated ${numberOfSites} sites with ${numberOfAuditsPerType} audits per type for each site`);

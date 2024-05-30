@@ -1,0 +1,165 @@
+/*
+ * Copyright 2024 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+import { google } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
+import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import {
+  composeAuditURL,
+  isArray,
+  isInteger,
+  isValidDate, isValidUrl,
+  resolveCustomerSecretsName,
+} from '@adobe/spacecat-shared-utils';
+
+export default class GoogleClient {
+  static async createFrom(context, baseURL) {
+    if (!isValidUrl(baseURL)) {
+      throw new Error('Error creating GoogleClient: Invalid base URL');
+    }
+
+    try {
+      const customerSecret = resolveCustomerSecretsName(baseURL, context);
+      const client = new SecretsManagerClient({});
+      const command = new GetSecretValueCommand({
+        SecretId: customerSecret,
+      });
+      const response = await client.send(command);
+      const secrets = JSON.parse(response.SecretString);
+      const config = {
+        accessToken: secrets.access_token,
+        refreshToken: secrets.refresh_token,
+        tokenType: secrets.token_type,
+        expiryDate: secrets.expiry_date,
+        siteUrl: secrets.site_url,
+        baseUrl: baseURL,
+        clientId: context.env.GOOGLE_CLIENT_ID,
+        clientSecret: context.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: context.env.GOOGLE_REDIRECT_URI,
+      };
+      return new GoogleClient(config, context.log);
+    } catch (error) {
+      throw new Error(`Error creating GoogleClient: ${error.message}`);
+    }
+  }
+
+  constructor(config, log = console) {
+    const authClient = new OAuth2Client(
+      config.clientId,
+      config.clientSecret,
+      config.redirectUri,
+    );
+
+    if (!config.accessToken) {
+      throw new Error('Missing access token in secret');
+    }
+
+    if (!config.refreshToken) {
+      throw new Error('Missing refresh token in secret');
+    }
+
+    authClient.setCredentials({
+      access_token: config.accessToken,
+      refresh_token: config.refreshToken,
+      token_type: config.tokenType,
+    });
+    this.authClient = authClient;
+    this.expiryDate = config.expiryDate;
+    this.siteUrl = config.siteUrl;
+    this.baseUrl = config.baseUrl;
+    this.log = log;
+  }
+
+  async #refreshTokenIfExpired() {
+    if (new Date(this.expiryDate).getTime() < Date.now()) {
+      const { credentials } = await this.authClient.refreshAccessToken();
+      this.authClient.setCredentials({
+        access_token: credentials.access_token,
+      });
+    }
+  }
+
+  async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 1000, startRow = 0) {
+    if (!isValidUrl(this.siteUrl)) {
+      throw new Error('Error retrieving organic search data from Google API: Invalid site URL in secret');
+    }
+    if (!isValidDate(startDate) || !isValidDate(endDate)) {
+      throw new Error('Error retrieving organic search data from Google API: Invalid date format');
+    }
+    if (!isArray(dimensions)) {
+      throw new Error('Error retrieving organic search data from Google API: Invalid dimensions format');
+    }
+    if (!isInteger(rowLimit) || !isInteger(startRow)) {
+      throw new Error('Error retrieving organic search data from Google API: Invalid row limit or start row format');
+    }
+    if (rowLimit > 1000 || rowLimit < 1) {
+      throw new Error('Error retrieving organic search data from Google API: Row limit must be between 1 and 1000');
+    }
+    if (startRow < 0) {
+      throw new Error('Error retrieving organic search data from Google API: Start row must be greater than or equal to 0');
+    }
+
+    await this.#refreshTokenIfExpired();
+
+    const auditUrl = await composeAuditURL(this.baseUrl);
+
+    const webmasters = google.webmasters({
+      version: 'v3',
+      auth: this.authClient,
+    });
+    try {
+      const params = {
+        siteUrl: this.siteUrl,
+        requestBody: {
+          startDate: startDate.toISOString()
+            .split('T')[0],
+          endDate: endDate.toISOString()
+            .split('T')[0],
+          dimensions,
+          startRow,
+          rowLimit,
+          dimensionFilterGroups: [
+            {
+              filters: [
+                {
+                  dimension: 'page',
+                  operator: 'contains',
+                  expression: auditUrl,
+                },
+              ],
+            },
+          ],
+        },
+      };
+      this.log.info(`Retrieving organic search data: ${JSON.stringify(params)}`);
+      return await webmasters.searchanalytics.query(params);
+    } catch (error) {
+      this.log.error('Error retrieving organic search data:', error.message);
+      throw new Error(`Error retrieving organic search data from Google API: ${error.message}`);
+    }
+  }
+
+  async listSites() {
+    await this.#refreshTokenIfExpired();
+
+    const webmasters = google.webmasters({
+      version: 'v3',
+      auth: this.authClient,
+    });
+    try {
+      return await webmasters.sites.list();
+    } catch (error) {
+      this.log.error('Error retrieving sites:', error.message);
+      throw new Error(`Error retrieving sites from Google API: ${error.message}`);
+    }
+  }
+}

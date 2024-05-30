@@ -130,6 +130,53 @@ export interface AuditConfig {
 }
 
 /**
+ * Represents a key event.
+ */
+export interface KeyEvent {
+  /**
+   * Retrieves the ID of the key event.
+   * @returns {string} The Key Event ID.
+   */
+  getId: () => string;
+
+  /**
+   * Retrieves the site id of the key event.
+   * @returns {string} site id
+   */
+  getSiteId: () => string;
+
+  /**
+   * Retrieves the name of the key event.
+   * @returns {string} The name
+   */
+  getName: () => string;
+
+  /**
+   * Retrieves the type of the key event.
+   * @returns {string} The type
+   */
+  getType: () => string;
+
+  /**
+   * Retrieves the time of the key event.
+   * @returns {string} The time
+   */
+  getTime: () => string;
+
+  /**
+   * Retrieves the creation timestamp of the key event.
+   * @returns {string} The creation timestamp.
+   */
+  getCreatedAt: () => string;
+
+  /**
+   * Retrieves the last update timestamp of the key event.
+   * @returns {string} The last update timestamp.
+   */
+  getUpdatedAt: () => string;
+}
+
+/**
  * Represents a site with associated audit and configuration data.
  */
 export interface Site {
@@ -279,6 +326,44 @@ export interface SiteCandidate {
    * @returns {string} The last update timestamp.
    */
   getUpdatedBy: () => string;
+}
+
+export interface SiteTopPage {
+  /**
+   * Retrieves the site ID of the site top page.
+   * @returns {string} The site ID.
+   */
+  getSiteId: () => string;
+
+  /**
+   * Retrieves the URL of the site top page.
+   * @returns {string} The URL.
+   */
+  getURL: () => string;
+
+  /**
+   * Retrieves the traffic of the site top page.
+   * @returns {number} The traffic.
+   */
+  getTraffic: () => number;
+
+  /**
+   * Retrieves the source of the site top page.
+   * @returns {string} The source.
+   */
+  getSource: () => string;
+
+  /**
+   * Retrieves the geo of the site top page.
+   * @returns {string} The geo.
+   */
+  getGeo: () => string;
+
+  /**
+   * Retrieves the timestamp when the import was performed.
+   * @returns {string} The import timestamp.
+   */
+  getImportedAt: () => string;
 }
 
 export interface Organization {
@@ -442,20 +527,34 @@ export interface DataAccess {
   siteCandidateExists: (baseURL: string) => Promise<boolean>;
   updateSiteCandidate: (siteCandidate: SiteCandidate) => Promise<SiteCandidate>;
 
+  // site top pages functions
+  getTopPagesForSite: (siteId: string, source: string, geo: string)
+      => Promise<Readonly<SiteTopPage>[]>;
+  addSiteTopPage: (siteTopPageData: object) => Promise<SiteTopPage>;
+  removeSiteTopPages: (siteId: string, source: string, geo: string) => Promise<void>;
+
   // configuration functions
   getConfiguration: () => Promise<Readonly<Configuration>>
   getConfigurations: () => Promise<Readonly<Configuration>[]>
   getConfigurationByVersion: (version: string) => Promise<Readonly<Configuration>>
   updateConfiguration: (configurationData: object) => Promise<Readonly<Configuration>>
+
+  // key events functions
+  createKeyEvent: (keyEventData: object) => Promise<KeyEvent>;
+  getKeyEventsForSite: (siteId: string) => Promise<KeyEvent[]>
+  removeKeyEvent: (keyEventId: string) => Promise<void>;
 }
 
 interface DataAccessConfig {
   tableNameAudits: string;
+  tableNameKeyEvents: string;
   tableNameLatestAudits: string;
   tableNameOrganizations: string,
   tableNameSites: string;
   tableNameSiteCandidates: string;
   tableNameConfigurations: string;
+  tableNameSiteTopPages: string;
+  indexNameAllKeyEventsBySiteId: string,
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,
   indexNameAllSitesByDeliveryType: string;

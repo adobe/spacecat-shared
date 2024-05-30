@@ -120,7 +120,7 @@ export default class AhrefsAPIClient {
         'url',
         'sum_traffic',
       ].join(','),
-      order_by: 'sum_traffic_merged',
+      order_by: 'sum_traffic',
       date: new Date().toISOString().split('T')[0],
       target: url,
       limit: getLimit(limit, 2000),
@@ -158,5 +158,19 @@ export default class AhrefsAPIClient {
     };
 
     return this.sendRequest('/site-explorer/all-backlinks', queryParams);
+  }
+
+  async getOrganicTraffic(url, startDate, endDate) {
+    const queryParams = {
+      target: url,
+      date_from: startDate,
+      date_to: endDate,
+      history_grouping: 'weekly',
+      volume_mode: 'average',
+      mode: 'prefix',
+      output: 'json',
+    };
+
+    return this.sendRequest('/site-explorer/metrics-history', queryParams);
   }
 }

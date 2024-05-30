@@ -1,3 +1,46 @@
+# [@adobe/spacecat-shared-utils-v1.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.2...@adobe/spacecat-shared-utils-v1.15.3) (2024-05-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#241](https://github.com/adobe/spacecat-shared/issues/241)) ([85babb2](https://github.com/adobe/spacecat-shared/commit/85babb22b8663f79fe857dead6ecc3bf65674687))
+
+# [@adobe/spacecat-shared-utils-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.1...@adobe/spacecat-shared-utils-v1.15.2) (2024-05-18)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#233](https://github.com/adobe/spacecat-shared/issues/233)) ([85c1f50](https://github.com/adobe/spacecat-shared/commit/85c1f509c4ba860dffd62ffe3ac8adf2c76ecf9e))
+
+# [@adobe/spacecat-shared-utils-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.0...@adobe/spacecat-shared-utils-v1.15.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* use local dependency instead of external dependency for data-access ([#230](https://github.com/adobe/spacecat-shared/issues/230)) ([cf10f33](https://github.com/adobe/spacecat-shared/commit/cf10f33a619acc5c05a0b93beee5691d34006e03))
+
+# [@adobe/spacecat-shared-utils-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.14.6...@adobe/spacecat-shared-utils-v1.15.0) (2024-05-14)
+
+
+### Bug Fixes
+
+* convert spacecat-data-access to a regular dependency for utils ([486933c](https://github.com/adobe/spacecat-shared/commit/486933c6a8aeeb3fc5249ad21d92cb8bfedad059))
+* **deps:** update external fixes ([#221](https://github.com/adobe/spacecat-shared/issues/221)) ([13e72c3](https://github.com/adobe/spacecat-shared/commit/13e72c36433dd62058275475acb46a03bd307f91))
+* **deps:** update external fixes ([#225](https://github.com/adobe/spacecat-shared/issues/225)) ([ffb3e3d](https://github.com/adobe/spacecat-shared/commit/ffb3e3d216dd05bafaa7ab26f83ae1c3f0c4d391))
+* **deps:** update external fixes ([#228](https://github.com/adobe/spacecat-shared/issues/228)) ([ef2ab41](https://github.com/adobe/spacecat-shared/commit/ef2ab41a9175ec5ba8ec7e2830898e9db01fb2b6))
+
+
+### Features
+
+* resolve customer secret names ([#229](https://github.com/adobe/spacecat-shared/issues/229)) ([cbf6e1d](https://github.com/adobe/spacecat-shared/commit/cbf6e1db1a2f938a8287b27dd8bde509c1282088))
+
+# [@adobe/spacecat-shared-utils-v1.14.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.14.5...@adobe/spacecat-shared-utils-v1.14.6) (2024-04-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#215](https://github.com/adobe/spacecat-shared/issues/215)) ([4227263](https://github.com/adobe/spacecat-shared/commit/4227263b6bc917982d361cd621c7001c4ee1fa56))
+
 # [@adobe/spacecat-shared-utils-v1.14.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.14.4...@adobe/spacecat-shared-utils-v1.14.5) (2024-04-16)
 
 

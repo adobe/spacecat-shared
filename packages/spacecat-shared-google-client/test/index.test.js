@@ -157,6 +157,45 @@ describe('GoogleClient', () => {
       expect(webmastersStub.calledOnce).to.be.true;
     });
 
+    it('should return organic search data for the provided baseURL, startDate, and endDate if site url is a domain property', async () => {
+      defaultConfig.site_url = 'sc-domain:example.com';
+      stubSecretManager(defaultConfig);
+      const testResult = { data: 'testData' };
+      const webmastersStub = sinon.stub().resolves(testResult);
+      sinon.stub(google, 'webmasters').returns({
+        searchanalytics: {
+          query: webmastersStub,
+        },
+      });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const expectedRequest = {
+        siteUrl: baseURL,
+        requestBody: {
+          startDate: startDateString,
+          endDate: endDateString,
+          dimensions: ['page'],
+          startRow: 0,
+          rowLimit: 1000,
+          dimensionFilterGroups: [
+            {
+              filters: [
+                {
+                  dimension: 'page',
+                  operator: 'contains',
+                  expression: auditURL,
+                },
+              ],
+            },
+          ],
+        },
+      };
+      const result = await googleClient.getOrganicSearchData(startDate, endDate, ['page']);
+      expect(context.log.info.calledWith(`Retrieving organic search data: ${JSON.stringify(expectedRequest)}`)).to.be.true;
+      expect(result).to.eql(testResult);
+      expect(webmastersStub.calledOnce).to.be.true;
+    });
+
     it('should handle errors when the Google API call fails', async () => {
       stubSecretManager(defaultConfig);
       sinon.stub(google, 'webmasters').returns({
@@ -263,12 +302,13 @@ describe('GoogleClient', () => {
     });
 
     it('should throw an error if site URL is invalid', async () => {
-      stubSecretManager({ ...defaultConfig, site_url: 'not a valid url' });
+      const invalidUrl = 'not a valid url';
+      stubSecretManager({ ...defaultConfig, site_url: invalidUrl });
       try {
         const googleClient = await GoogleClient.createFrom(context, baseURL);
         await googleClient.getOrganicSearchData(startDate, endDate);
       } catch (error) {
-        expect(error.message).to.equal('Error retrieving organic search data from Google API: Invalid site URL in secret');
+        expect(error.message).to.equal(`Error retrieving organic search data from Google API: Invalid site URL in secret (${invalidUrl})`);
       }
     });
   });

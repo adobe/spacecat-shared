@@ -11,7 +11,6 @@
  */
 
 import Joi from 'joi';
-import AuditConfig from './audit-config.js';
 
 export const configSchema = Joi.object({
   slack: Joi.object({
@@ -19,26 +18,22 @@ export const configSchema = Joi.object({
     channel: Joi.string(),
     invitedUserCount: Joi.number().integer().min(0),
   }),
-  alerts: Joi.array().items(Joi.object({
-    type: Joi.string().required(),
-    byOrg: Joi.boolean(),
-    mentions: Joi.array().items(Joi.object({ slack: Joi.array().items(Joi.string()) })),
-  }).unknown(true)),
-  audits: Joi.object({
-    auditsDisabled: Joi.boolean().optional(),
-    auditTypeConfigs: Joi.object().pattern(
-      Joi.string(),
-      Joi.object({
-        disabled: Joi.boolean().optional(),
-      }).unknown(true),
-    ).unknown(true),
+  configsHandler: Joi.object({
+    allEnabled: Joi.boolean(),
+    type: Joi.object({
+      enabled: Joi.object({
+        audits: Joi.boolean(),
+        reports: Joi.boolean(),
+      }),
+      mentions: Joi.object({ slack: Joi.array().items(Joi.string()) }),
+    }).required(),
   }).unknown(true),
 }).unknown(true);
 
 export const DEFAULT_CONFIG = {
   slack: {},
-  alerts: [],
-  audits: {},
+  configsHandler: {
+  },
 };
 
 // Function to validate incoming configuration
@@ -54,11 +49,40 @@ function validateConfiguration(config) {
 
 export const Config = (data = {}) => {
   const validConfig = validateConfiguration(data);
-  validConfig.audits = AuditConfig(validConfig.audits);
 
-  const state = { ...validConfig };
+  const self = { ...validConfig };
+  self.getSlackConfig = () => self.configsHandler?.slack;
+  self.getAuditState = (type) => self?.configsHandler[type]?.enable?.audits;
+  self.getReportState = (type) => self?.configsHandler[type]?.enable?.reports;
+  self.getSlackMentions = (type) => self?.configsHandler[type]?.mentions?.slack;
 
-  const self = { ...state };
+  self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
+    self.configsHandler.slack = {
+      channel,
+      workspace,
+      invitedUserCount,
+    };
+  };
+
+  self.updateAuditState = (type, enabled) => {
+    const { configsHandler } = self;
+    configsHandler[type] = configsHandler[type] || {};
+    configsHandler[type].enable = configsHandler[type].enable || {};
+    configsHandler[type].enable.audits = enabled;
+  };
+
+  self.updateReportState = (type, enabled) => {
+    const { configsHandler } = self;
+    configsHandler[type] = configsHandler[type] || {};
+    configsHandler[type].enable = configsHandler[type].enable || {};
+    configsHandler[type].enable.reports = enabled;
+  };
+
+  self.updateSlackMentions = (type, mentions) => {
+    const { configsHandler } = self;
+    configsHandler[type] = configsHandler[type] || {};
+    configsHandler[type].mentions.slack = mentions;
+  };
 
   return Object.freeze(self);
 };
@@ -67,5 +91,4 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 
 Config.toDynamoItem = (config) => ({
   ...config,
-  audits: AuditConfig.toDynamoItem(config.audits),
 });

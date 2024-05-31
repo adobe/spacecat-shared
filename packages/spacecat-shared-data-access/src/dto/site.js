@@ -11,7 +11,6 @@
  */
 
 import { createSite } from '../models/site.js';
-import AuditConfig from '../models/site/audit-config.js';
 import { Config } from '../models/site/config.js';
 
 /**
@@ -34,7 +33,6 @@ export const SiteDto = {
     createdAt: site.getCreatedAt(),
     updatedAt: site.getUpdatedAt(),
     GSI1PK: 'ALL_SITES',
-    auditConfig: AuditConfig.toDynamoItem(site.getAuditConfig()),
     config: Config.toDynamoItem(site.getConfig()),
   }),
 
@@ -54,7 +52,6 @@ export const SiteDto = {
       isLiveToggledAt: dynamoItem.isLiveToggledAt,
       createdAt: dynamoItem.createdAt,
       updatedAt: dynamoItem.updatedAt,
-      auditConfig: dynamoItem.auditConfig,
       config: dynamoItem.config,
     };
 

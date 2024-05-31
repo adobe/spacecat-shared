@@ -13,7 +13,6 @@
 import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
-import AuditConfig from './site/audit-config.js';
 import { Config, DEFAULT_CONFIG } from './site/config.js';
 import { DEFAULT_ORGANIZATION_ID } from './organization.js';
 
@@ -34,7 +33,6 @@ export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
 const Site = (data = {}) => {
   const self = Base(data);
 
-  self.getAuditConfig = () => self.state.auditConfig;
   self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
   self.getConfig = () => self.state.config;
@@ -81,14 +79,14 @@ const Site = (data = {}) => {
     return self;
   }; */
 
-  self.setAllAuditsDisabled = (disabled) => {
-    self.state.auditConfig.updateAuditsDisabled(disabled);
+  self.disableAllAudits = () => {
+    self.state.config.configsHandler.allEnabled = false;
     self.touch();
     return self;
   };
 
-  self.updateAuditTypeConfig = (type, config) => {
-    self.state.auditConfig.updateAuditTypeConfig(type, config);
+  self.updateAuditState = (type, enabled) => {
+    self.state.config.updateAuditState(type, enabled);
     self.touch();
     return self;
   };
@@ -195,15 +193,6 @@ export const createSite = (data) => {
   if (!Array.isArray(newState.audits)) {
     newState.audits = [];
   }
-
-  if (!isObject(newState.auditConfig)) {
-    newState.auditConfig = {
-      auditsDisabled: false,
-      auditTypeConfigs: {},
-    };
-  }
-
-  newState.auditConfig = AuditConfig(newState.auditConfig);
 
   if (!isObject(newState.config)) {
     newState.config = { ...DEFAULT_CONFIG };

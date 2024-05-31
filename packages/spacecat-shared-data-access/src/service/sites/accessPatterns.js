@@ -337,7 +337,6 @@ export const getSiteByID = async (
 
   return isObject(dynamoItem) ? SiteDto.fromDynamoItem(dynamoItem) : null;
 };
-
 /**
  * Adds a site.
  *
@@ -466,4 +465,41 @@ export const removeSitesForOrganization = async (
     log.error(`Error removing sites for organization ${organizationId}: ${error.message}`);
     throw error;
   }
+};
+
+/**
+ * Updates the state of an audit.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The logger.
+ * @param {string} siteId - The ID of the site.
+ * @param {string} auditType - The type of audit.
+ * @param {boolean} state - The new state of the audit.
+ * @returns {Promise<Site>} A promise that resolves to the updated site.
+ */
+export const updateSiteAuditState = async (
+  dynamoClient,
+  config,
+  log,
+  siteId,
+  auditType,
+  state,
+) => {
+  const site = await getSiteByID(dynamoClient, config, log, siteId);
+
+  if (!site) {
+    log.error(`Site not found: ${siteId}`);
+    throw new Error(`Site not found: ${siteId}`);
+  }
+
+  if (site.getConfig().getAuditState(auditType) === state) {
+    return site;
+  }
+
+  site.getConfig().setAuditState(auditType, state);
+
+  await updateSite(dynamoClient, config, log, site);
+
+  return site;
 };

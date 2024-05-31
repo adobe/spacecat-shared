@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.1.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.2...@adobe/spacecat-shared-google-client-v1.1.3) (2024-05-31)
+
+
+### Bug Fixes
+
+* allow domain properties for organic search data ([#246](https://github.com/adobe/spacecat-shared/issues/246)) ([d692fda](https://github.com/adobe/spacecat-shared/commit/d692fda3efb89b8acbcbb5a2f2a2bcfbbd0256a5))
+
 # [@adobe/spacecat-shared-google-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.1...@adobe/spacecat-shared-google-client-v1.1.2) (2024-05-27)
 
 

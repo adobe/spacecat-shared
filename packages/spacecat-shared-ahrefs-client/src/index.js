@@ -96,6 +96,7 @@ export default class AhrefsAPIClient {
         'title',
         'url_from',
         'url_to',
+        'traffic_domain',
       ].join(','),
       limit: getLimit(limit, 100),
       mode: 'prefix',

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.3.1...@adobe/spacecat-shared-http-utils-v1.3.2) (2024-06-01)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.3 ([#249](https://github.com/adobe/spacecat-shared/issues/249)) ([6966fe9](https://github.com/adobe/spacecat-shared/commit/6966fe9a7161b105fa90aa8a396a43e2ad280dfd))
+
 # [@adobe/spacecat-shared-http-utils-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.3.0...@adobe/spacecat-shared-http-utils-v1.3.1) (2024-05-29)
 
 

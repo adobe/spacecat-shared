@@ -17,6 +17,72 @@ const Configuration = (data = {}) => {
   self.getJobs = () => self.jobs;
   self.getVersion = () => self.version;
   self.getQueues = () => self.queues;
+  self.getHandlers = () => self.handlers;
+  self.getHandler = (type) => self.handlers[type];
+  self.isHandlerTypeEnabledForSite = (type, site) => {
+    if (self.handlers[type]?.enabled) {
+      if (self.handlers[type].enabled.sites.includes(site.getId())) {
+        return true;
+      } else {
+        const orgId = site.getId();
+        return self.handlers[type].enabled.orgs.includes(orgId);
+      }
+    }
+    if (self.handlers[type]?.disabled) {
+      if (self.handlers[type].disabled.sites.includes(site.getId())) {
+        return false;
+      } else {
+        const orgId = site.getId();
+        return !self.handlers[type].disabled.orgs.includes(orgId);
+      }
+    }
+    return self.handlers[type].enabledByDefault;
+  };
+
+  self.isHandlerTypeEnabledForOrg = (type, org) => {
+    if (self.handlers[type]?.enabled) {
+      return self.handlers[type].enabled.orgs.includes(org.getId());
+    } else if (self.handlers[type]?.disabled) {
+      return !self.handlers[type].disabled.orgs.includes(org.getId());
+    }
+    return self.handlers[type].enabledByDefault;
+  };
+
+  self.enableHandlerTypeForSite = (type, site) => {
+    const isEnabled = self.isHandlerTypeEnabledForSite(type, site);
+    if (isEnabled) {
+      return;
+    }
+    if (self.handlers[type]?.enabledByDefault) {
+      if (self.handlers[type]?.disabled?.sites) {
+        self.handlers[type]?.disabled.sites.push(site.getId());
+      } else {
+        self.handlers[type].disabled = { sites: [site.getId()] };
+      }
+    } else if (self.handlers[type]?.enabled?.sites) {
+      self.handlers[type]?.enabled.sites.push(site.getId());
+    } else {
+      self.handlers[type].enabled = { sites: [site.getId()] };
+    }
+  };
+
+  self.enableHandlerTypeForOrganization = (type, org) => {
+    const isEnabled = self.isHandlerTypeEnabledForOrg(type, org);
+    if (isEnabled) {
+      return;
+    }
+    if (self.handlers[type]?.enabledByDefault) {
+      if (self.handlers[type]?.disabled?.orgs) {
+        self.handlers[type]?.disabled.orgs.push(org.getId());
+      } else {
+        self.handlers[type].disabled = { orgs: [org.getId()] };
+      }
+    } else if (self.handlers[type]?.enabled?.orgs) {
+      self.handlers[type]?.enabled.sites.push(org.getId());
+    } else {
+      self.handlers[type].enabled = { sites: [org.getId()] };
+    }
+  };
 
   return Object.freeze(self);
 };
@@ -25,6 +91,25 @@ export const checkConfiguration = (configuration) => {
   const schema = Joi.object({
     version: Joi.string().required(),
     queues: Joi.object().required(),
+    handlers: Joi.object().pattern(Joi.string(), Joi.object(
+      {
+        enabled: Joi.object({
+          sites: Joi.array().items(Joi.string()),
+          orgs: Joi.array().items(Joi.string()),
+        }),
+        disabled: Joi.object({
+          sites: Joi.array().items(Joi.string()),
+          orgs: Joi.array().items(Joi.string()),
+        }),
+        enabledByDefault: Joi.boolean().required(),
+        dependencies: Joi.array().items(Joi.object(
+          {
+            handler: Joi.string(),
+            actions: Joi.array().items(Joi.string()),
+          },
+        )),
+      },
+    )),
     jobs: Joi.array().required(),
   }).unknown(true);
   const { error, value } = schema.validate(configuration);

@@ -18,15 +18,8 @@ export const configSchema = Joi.object({
     channel: Joi.string(),
     invitedUserCount: Joi.number().integer().min(0),
   }),
-  configsHandler: Joi.object({
-    allEnabled: Joi.boolean(),
-    type: Joi.object({
-      enabled: Joi.object({
-        audits: Joi.boolean(),
-        reports: Joi.boolean(),
-      }),
-      mentions: Joi.object({ slack: Joi.array().items(Joi.string()) }),
-    }).required(),
+  handlers: Joi.object({
+    mentions: Joi.object({ slack: Joi.array().items(Joi.string()) }),
   }).unknown(true),
 }).unknown(true);
 
@@ -52,8 +45,6 @@ export const Config = (data = {}) => {
 
   const self = { ...validConfig };
   self.getSlackConfig = () => self.configsHandler?.slack;
-  self.getAuditState = (type) => self?.configsHandler[type]?.enable?.audits;
-  self.getReportState = (type) => self?.configsHandler[type]?.enable?.reports;
   self.getSlackMentions = (type) => self?.configsHandler[type]?.mentions?.slack;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
@@ -62,20 +53,6 @@ export const Config = (data = {}) => {
       workspace,
       invitedUserCount,
     };
-  };
-
-  self.updateAuditState = (type, enabled) => {
-    const { configsHandler } = self;
-    configsHandler[type] = configsHandler[type] || {};
-    configsHandler[type].enable = configsHandler[type].enable || {};
-    configsHandler[type].enable.audits = enabled;
-  };
-
-  self.updateReportState = (type, enabled) => {
-    const { configsHandler } = self;
-    configsHandler[type] = configsHandler[type] || {};
-    configsHandler[type].enable = configsHandler[type].enable || {};
-    configsHandler[type].enable.reports = enabled;
   };
 
   self.updateSlackMentions = (type, mentions) => {

@@ -223,12 +223,6 @@ export interface Site {
   getUpdatedAt: () => string;
 
   /**
-   * Retrieves the current audit configuration for the site.
-   * @returns {AuditConfig} The current audit configuration.
-   */
-  getAuditConfig: () => AuditConfig;
-
-  /**
    * Retrieves the current configuration for the site.
    * @returns {Config} The current configuration.
    */

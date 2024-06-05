@@ -44,11 +44,11 @@ export const Config = (data = {}) => {
   const validConfig = validateConfiguration(data);
 
   const self = { ...validConfig };
-  self.getSlackConfig = () => self.configsHandler?.slack;
-  self.getSlackMentions = (type) => self?.configsHandler[type]?.mentions?.slack;
+  self.getSlackConfig = () => self.slack;
+  self.getSlackMentions = (type) => self?.handlers[type]?.mentions?.slack;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
-    self.configsHandler.slack = {
+    self.slack = {
       channel,
       workspace,
       invitedUserCount,
@@ -56,9 +56,9 @@ export const Config = (data = {}) => {
   };
 
   self.updateSlackMentions = (type, mentions) => {
-    const { configsHandler } = self;
-    configsHandler[type] = configsHandler[type] || {};
-    configsHandler[type].mentions.slack = mentions;
+    const { handlers } = self;
+    handlers[type] = handlers[type] || {};
+    handlers[type].mentions.slack = mentions;
   };
 
   return Object.freeze(self);

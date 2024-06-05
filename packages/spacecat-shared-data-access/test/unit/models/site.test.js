@@ -21,13 +21,6 @@ const validData = {
   baseURL: 'https://www.example.com',
   deliveryType: 'aem_edge',
   organizationId: 'org123',
-  auditConfig: {
-    auditsDisabled: false,
-    auditTypeConfigs: {
-      type1: { /* some config */ },
-      type2: { /* some config */ },
-    },
-  },
 };
 
 describe('Site Model Tests', () => {
@@ -51,32 +44,24 @@ describe('Site Model Tests', () => {
       expect(site.getOrganizationId()).to.equal('default');
     });
 
-    it('creates a site with default auditConfig when none provided', () => {
-      const site = createSite({ ...validData });
-      const auditConfig = site.getAuditConfig();
-
-      expect(auditConfig).to.be.an('object');
-      expect(auditConfig.auditsDisabled()).be.false;
-      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-    });
-
-    it('creates a site with provided auditConfig', () => {
-      const newAuditConfig = {
-        auditsDisabled: true,
-        auditTypeConfigs: {
-          type1: { /* some config */ },
-          type2: { /* some config */ },
+    it('creates a site with provided config', () => {
+      const config = {
+        slack: {
+          workspace: 'workspace1',
+          channel: 'channel1',
+        },
+        handlers: {
+          type1: { mentions: { slack: ['slackId1'] } },
+          type2: { mentions: { slack: ['slackId2'] } },
         },
       };
-      const site = createSite({ ...validData, auditConfig: newAuditConfig });
-      const auditConfig = site.getAuditConfig();
+      const site = createSite({ ...validData, config });
+      const siteConfig = site.getConfig();
 
-      expect(auditConfig).to.be.an('object');
-      expect(auditConfig.auditsDisabled()).to.be.true;
-      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
-      expect(auditConfig.getAuditTypeConfig('type2')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.true;
+      expect(siteConfig).to.be.an('object');
+      expect(siteConfig.getSlackConfig()).to.be.an('object');
+      expect(siteConfig.getSlackMentions('type1')).to.deep.equal(['slackId1']);
+      expect(siteConfig.getSlackMentions('type2')).to.deep.equal(['slackId2']);
     });
   });
 
@@ -117,19 +102,18 @@ describe('Site Model Tests', () => {
           workspace: 'workspace',
           channel: 'channel',
         },
-        alerts: [{
-          type: '404',
-          byOrg: false,
-          mentions: [{ slack: ['slackId'] }],
-        }],
+        handlers: {
+          404: {
+            mentions: { slack: ['slackId'] },
+          },
+        },
       };
       site.updateConfig(conf);
       const updatedConf = site.getConfig();
       expect(updatedConf.slack).to.be.an('object');
-      expect(updatedConf.alerts).to.be.an('array');
       expect(updatedConf.slack.workspace).to.equal('workspace');
       expect(updatedConf.slack.channel).to.equal('channel');
-      expect(updatedConf.alerts[0].mentions[0].slack[0]).to.equal('slackId');
+      expect(updatedConf.getSlackMentions(404)).to.deep.equal(['slackId']);
     });
 
     it('updates gitHubURL correctly', () => {
@@ -205,46 +189,6 @@ describe('Site Model Tests', () => {
 
       expect(site.isLive()).to.be.true;
       expect(isIsoDate(site.getIsLiveToggledAt())).to.be.true;
-    });
-  });
-
-  describe('AuditConfig Integration', () => {
-    let site;
-
-    beforeEach(() => {
-      site = createSite(validData);
-    });
-
-    it('handles AuditConfig and AuditConfigType correctly', () => {
-      const auditConfigData = {
-        auditsDisabled: false,
-        auditTypeConfigs: {
-          type1: { /* some config */ },
-          type2: { /* some config */ },
-        },
-      };
-      const newSite = createSite({ ...validData, auditConfig: auditConfigData });
-      const auditConfig = newSite.getAuditConfig();
-
-      expect(auditConfig).to.be.an('object');
-      expect(auditConfig.auditsDisabled()).to.be.false;
-      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
-    });
-
-    it('sets all audits disabled correctly', () => {
-      site.setAllAuditsDisabled(true);
-      expect(site.getAuditConfig().auditsDisabled()).to.be.true;
-    });
-
-    it('updates a specific audit type configuration', () => {
-      site.updateAuditTypeConfig('type1', { disabled: true });
-      expect(site.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.true;
-    });
-
-    it('adds a new audit type configuration if it does not exist', () => {
-      site.updateAuditTypeConfig('type3', { disabled: true });
-      expect(site.getAuditConfig().getAuditTypeConfig('type3').disabled()).to.be.true;
     });
   });
 });

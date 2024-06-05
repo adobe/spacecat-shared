@@ -39,7 +39,6 @@ describe('Organization Model Tests', () => {
       const config = org.getConfig();
 
       expect(config).to.be.an('object');
-      expect(config.alerts).to.be.an('array');
       expect(config.slack).to.be.an('object');
     });
 
@@ -49,20 +48,19 @@ describe('Organization Model Tests', () => {
           workspace: 'workspace',
           channel: 'channel',
         },
-        alerts: [{
-          type: '404',
-          byOrg: false,
-          mentions: [{ slack: ['slackId'] }],
-        }],
+        handlers: {
+          404: {
+            mentions: { slack: ['slackId'] },
+          },
+        },
       };
       const org = createOrganization({ ...validData, config: conf });
       const config = org.getConfig();
 
       expect(config.slack).to.be.an('object');
-      expect(config.alerts).to.be.an('array');
       expect(config.slack.workspace).to.equal('workspace');
       expect(config.slack.channel).to.equal('channel');
-      expect(config.alerts[0].mentions[0].slack[0]).to.equal('slackId');
+      expect(config.handlers[404].mentions.slack[0]).to.equal('slackId');
     });
   });
 
@@ -91,20 +89,18 @@ describe('Organization Model Tests', () => {
           workspace: 'workspace',
           channel: 'channel',
         },
-        alerts: [{
-          type: '404',
-          byOrg: false,
-          mentions: [{ slack: ['slackId'] }],
-        }],
-        audits: {},
+        handlers: {
+          404: {
+            mentions: { slack: ['slackId'] },
+          },
+        },
       };
       organization.updateConfig(conf);
       const updatedConf = organization.getConfig();
       expect(updatedConf.slack).to.be.an('object');
-      expect(updatedConf.alerts).to.be.an('array');
       expect(updatedConf.slack.workspace).to.equal('workspace');
       expect(updatedConf.slack.channel).to.equal('channel');
-      expect(updatedConf.alerts[0].mentions[0].slack[0]).to.equal('slackId');
+      expect(updatedConf.handlers[404].mentions.slack[0]).to.equal('slackId');
     });
 
     it('throws an error when updating with an empty name', () => {
@@ -183,51 +179,6 @@ describe('Organization Model Tests', () => {
 
       fulfillableItemsData = ['thing_one'];
       expect(() => organization.updateFulfillableItems(fulfillableItemsData)).to.throw('Fulfillable items object must be provided');
-    });
-  });
-
-  describe('AuditConfig Integration', () => {
-    let organization;
-    const auditConfigData = {
-      auditsDisabled: false,
-      auditTypeConfigs: {
-        type1: { disabled: true },
-        type2: { /* some other config */ },
-      },
-    };
-
-    beforeEach(() => {
-      organization = createOrganization({
-        ...validData,
-        config: {
-          ...validData.config,
-          audits: auditConfigData,
-        },
-      });
-    });
-
-    it('handles AuditConfig and AuditConfigType correctly', () => {
-      const auditConfig = organization.getAuditConfig();
-
-      expect(auditConfig).to.be.an('object');
-      expect(auditConfig.auditsDisabled()).to.be.false;
-      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
-    });
-
-    it('sets all audits disabled correctly', () => {
-      organization.setAllAuditsDisabled(true);
-      expect(organization.getAuditConfig().auditsDisabled()).to.be.true;
-    });
-
-    it('updates a specific audit type configuration', () => {
-      organization.updateAuditTypeConfig('type1', { disabled: true });
-      expect(organization.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.true;
-    });
-
-    it('adds a new audit type configuration if it does not exist', () => {
-      organization.updateAuditTypeConfig('type3', { disabled: true });
-      expect(organization.getAuditConfig().getAuditTypeConfig('type3').disabled()).to.be.true;
     });
   });
 });

@@ -12,7 +12,7 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import {
-  ok, badRequest, notFound, internalServerError, noContent, found, created,
+  ok, badRequest, notFound, internalServerError, noContent, found, created, createResponse,
 } from '../src/index.js';
 
 async function testMethod(response, expectedCode, expectedBody) {
@@ -22,6 +22,25 @@ async function testMethod(response, expectedCode, expectedBody) {
 }
 
 describe('HTTP Response Functions', () => {
+  it('createResponse should handle text/plain content type', async () => {
+    const body = 'text body';
+    const headers = { 'content-type': 'text/plain' };
+    const response = await createResponse(body, 200, headers);
+    expect(response.status).to.equal(200);
+    expect(response.headers.get('content-type')).to.equal('text/plain');
+    const responseBody = await response.text();
+    expect(responseBody).to.equal(body);
+  });
+
+  it('createResponse should handle application/json content type', async () => {
+    const body = { success: true };
+    const response = await createResponse(body);
+    expect(response.status).to.equal(200);
+    expect(response.headers.get('content-type')).to.equal('application/json; charset=utf-8');
+    const responseBody = await response.json();
+    expect(responseBody).to.deep.equal(body);
+  });
+
   it('ok should return a 200 OK response with default body', async () => {
     const response = await ok();
     await testMethod(response, 200, '');

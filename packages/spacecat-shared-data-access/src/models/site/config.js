@@ -19,13 +19,13 @@ export const configSchema = Joi.object({
     invitedUserCount: Joi.number().integer().min(0),
   }),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
-    mentions: Joi.object({ slack: Joi.array().items(Joi.string()) }),
+    mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
   })).unknown(true),
 }).unknown(true);
 
 export const DEFAULT_CONFIG = {
   slack: {},
-  configsHandler: {
+  handlers: {
   },
 };
 

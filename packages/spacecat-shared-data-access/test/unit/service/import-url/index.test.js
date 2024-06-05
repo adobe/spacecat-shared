@@ -48,7 +48,6 @@ describe('Import Url Tests', () => {
         const mockImportUrl = {
           id: 'test-id',
           status: 'RUNNING',
-          options: {},
           url: 'https://www.test.com',
           jobId: 'test-job-id',
         };
@@ -69,7 +68,6 @@ describe('Import Url Tests', () => {
         const mockImportUrl = {
           id: 'test-id',
           status: 'RUNNING',
-          options: {},
           url: 'https://www.test.com',
         };
         await exportedFunctions.createNewImportUrl(mockImportUrl);

@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 import { IMPORT_JOB_STATUS } from './import-job.js';
 
@@ -24,8 +24,7 @@ const ImportUrl = (data) => {
   const self = Base(data);
 
   self.getJobId = () => self.state.jobId;
-  self.getBaseURL = () => self.state.baseURL;
-  self.getOptions = () => self.state.options;
+  self.getUrl = () => self.state.url;
   self.getStatus = () => self.state.status;
 
   /**
@@ -50,12 +49,8 @@ const ImportUrl = (data) => {
 export const createImportUrl = (data) => {
   const newState = { ...data };
 
-  if (!isValidUrl(newState.baseURL)) {
-    throw new Error(`Invalid base URL: ${newState.baseURL}`);
-  }
-
-  if (!isObject(newState.options)) {
-    throw new Error(`Invalid options: ${newState.options}`);
+  if (!isValidUrl(newState.url)) {
+    throw new Error(`Invalid Url: ${newState.url}`);
   }
 
   if (!Object.values(IMPORT_JOB_STATUS).includes(newState.status)) {

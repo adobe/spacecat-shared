@@ -15,8 +15,10 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import { importJobFunctions } from '../../../../src/service/import-job/index.js';
 
+chai.use(sinonChai);
 chai.use(chaiAsPromised);
 
 const { expect } = chai;
@@ -35,9 +37,9 @@ describe('Import Job Tests', () => {
 
     beforeEach(() => {
       mockDynamoClient = {
-        getItem: sinon.stub().returns(Promise.resolve([])),
-        query: sinon.stub().returns(Promise.resolve(null)),
-        putItem: sinon.stub().returns(Promise.resolve()),
+        getItem: sinon.stub().resolves([]),
+        query: sinon.stub().resolves(null),
+        putItem: sinon.stub().resolves(),
       };
       mockLog = {
         log: sinon.stub(),
@@ -60,7 +62,7 @@ describe('Import Job Tests', () => {
 
         expect(result).to.be.not.null;
         expect(result.state.id).to.equal('test-id');
-        expect(mockDynamoClient.getItem.calledOnce).to.be.true;
+        expect(mockDynamoClient.getItem).to.have.been.calledOnce;
       });
 
       it('should return null if item is not found', async () => {

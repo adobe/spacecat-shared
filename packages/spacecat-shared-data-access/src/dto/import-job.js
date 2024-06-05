@@ -37,6 +37,7 @@ export const ImportJobDto = {
     successCount: importJob.getSuccessCount(),
     failedCount: importJob.getFailedCount(),
     importQueueId: importJob.getImportQueueId(),
+    GSI1PK: 'ALL_IMPORT_JOBS',
   }),
 
   /**

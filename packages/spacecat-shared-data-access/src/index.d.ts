@@ -438,6 +438,11 @@ export interface ImportJob {
   getId: () => string;
 
   /**
+   * Retrieves the apiKey of the import job.
+   */
+  getApiKey: () => string;
+
+  /**
    * Retrieves the status of the import job.
    */
   getStatus: () => string;
@@ -498,12 +503,12 @@ export interface ImportUrl {
   /**
    * Retrieves the URL of the import URL.
    */
-    getBaseURL: () => string;
+    getUrl: () => string;
 
   /**
-   * Retrieves the options of the import URL.
+   * Retrieves the job ID of the import URL.
    */
-    getOptions: () => object;
+    getJobId: () => string;
 
 }
 

@@ -11,7 +11,7 @@
  */
 
 import {
-  hasText, isIsoDate, isValidUrl, isObject,
+  hasText, isIsoDate, isValidUrl, isObject, isString,
 } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 
@@ -62,7 +62,6 @@ const ImportJob = (data) => {
      * @param {number} duration - The new duration.
      * @returns {ImportJob} The updated ImportJob object.
      */
-
   self.updateDuration = (duration) => {
     if (typeof duration !== 'number' || duration < 0) {
       throw new Error(`Invalid duration during update: ${duration}`);
@@ -79,7 +78,6 @@ const ImportJob = (data) => {
      * @param {string} status - The new status.
      * @returns {ImportJob} The updated ImportJob object.
      */
-
   self.updateStatus = (status) => {
     if (!Object.values(IMPORT_JOB_STATUS).includes(status)) {
       throw new Error(`Invalid Import Job status during update: ${status}`);
@@ -146,7 +144,6 @@ const ImportJob = (data) => {
  * @param {Object} importJobData - The data for the ImportJob object.
  * @returns {ImportJob} The new ImportJob object.
  */
-
 export const createImportJob = (data) => {
   const newState = { ...data };
 
@@ -154,7 +151,7 @@ export const createImportJob = (data) => {
     throw new Error(`Invalid base URL: ${newState.baseURL}`);
   }
 
-  if (!newState.apiKey || typeof newState.apiKey !== 'string') {
+  if (!isString(newState.apiKey)) {
     throw new Error(`Invalid API key: ${newState.apiKey}`);
   }
 

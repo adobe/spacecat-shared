@@ -26,7 +26,7 @@ const TEST_DA_CONFIG = {
 };
 
 describe('Import Url Tests', () => {
-  describe('Import Job Functions', () => {
+  describe('Import Url Functions', () => {
     let mockDynamoClient;
     let mockLog;
     let exportedFunctions;
@@ -49,7 +49,7 @@ describe('Import Url Tests', () => {
           id: 'test-id',
           status: 'RUNNING',
           options: {},
-          baseURL: 'https://www.test.com',
+          url: 'https://www.test.com',
           jobId: 'test-job-id',
         };
         mockDynamoClient.getItem.resolves(mockImportUrl);
@@ -70,7 +70,7 @@ describe('Import Url Tests', () => {
           id: 'test-id',
           status: 'RUNNING',
           options: {},
-          baseURL: 'https://www.test.com',
+          url: 'https://www.test.com',
         };
         await exportedFunctions.createNewImportUrl(mockImportUrl);
         expect(mockDynamoClient.putItem.calledOnce).to.be.true;

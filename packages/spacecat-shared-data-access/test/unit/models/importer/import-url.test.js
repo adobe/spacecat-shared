@@ -17,24 +17,19 @@ import { createImportUrl } from '../../../../src/models/importer/import-url.js';
 
 const validImportUrlData = {
   id: '123',
-  baseURL: 'https://www.example.com',
+  url: 'https://www.example.com',
   jobId: '456',
   status: 'RUNNING',
-  options: {},
 };
 
 describe('ImportUrl Model tests', () => {
   describe('Validation Tests', () => {
-    it('throws an error if baseURL is not a valid URL', () => {
-      expect(() => createImportUrl({ ...validImportUrlData, baseURL: 'invalid-url' })).to.throw('Invalid base URL: invalid-url');
+    it('throws an error if url is not a valid URL', () => {
+      expect(() => createImportUrl({ ...validImportUrlData, url: 'invalid-url' })).to.throw('Invalid Url: invalid-url');
     });
 
     it('throws an error if status is invalid', () => {
       expect(() => createImportUrl({ ...validImportUrlData, status: 'invalid' })).to.throw('Invalid Import URL status: invalid');
-    });
-
-    it('throws an error if options is not an object', () => {
-      expect(() => createImportUrl({ ...validImportUrlData, options: 'invalid-options' })).to.throw('Invalid options: invalid-options');
     });
   });
   describe('Import URL Functionality Tests', () => {
@@ -46,14 +41,11 @@ describe('ImportUrl Model tests', () => {
       importUrl.updateStatus('COMPLETE');
       expect(importUrl.getStatus()).to.equal('COMPLETE');
     });
-    it('returns the base URL of the import URL', () => {
-      expect(importUrl.getBaseURL()).to.equal('https://www.example.com');
+    it('returns the url attribute of the import URL', () => {
+      expect(importUrl.getUrl()).to.equal('https://www.example.com');
     });
     it('returns the job ID of the import URL', () => {
       expect(importUrl.getJobId()).to.equal('456');
-    });
-    it('returns the options of the import URL', () => {
-      expect(importUrl.getOptions()).to.deep.equal({});
     });
     it('throws an error if the status is invalid', () => {
       expect(() => importUrl.updateStatus('invalid')).to.throw('Invalid Import URL status during update: invalid');

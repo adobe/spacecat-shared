@@ -24,8 +24,7 @@ export const ImportUrlDto = {
   toDynamoItem: (importUrl) => ({
     id: importUrl.getId(),
     jobId: importUrl.getJobId(),
-    baseURL: importUrl.getBaseURL(),
-    options: importUrl.getOptions(),
+    url: importUrl.getUrl(),
     status: importUrl.getStatus(),
   }),
 
@@ -36,8 +35,7 @@ export const ImportUrlDto = {
     const importUrlData = {
       id: dynamoItem.id,
       jobId: dynamoItem.jobId,
-      baseURL: dynamoItem.baseURL,
-      options: dynamoItem.options,
+      url: dynamoItem.url,
       status: dynamoItem.status,
     };
     return createImportUrl(importUrlData);

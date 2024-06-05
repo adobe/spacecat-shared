@@ -33,9 +33,9 @@ describe('Import Url Tests', () => {
 
     beforeEach(() => {
       mockDynamoClient = {
-        getItem: sinon.stub().returns(Promise.resolve([])),
-        query: sinon.stub().returns(Promise.resolve(null)),
-        putItem: sinon.stub().returns(Promise.resolve()),
+        getItem: sinon.stub().resolves([]),
+        query: sinon.stub().resolves(null),
+        putItem: sinon.stub().resolves(),
       };
       mockLog = {
         log: sinon.stub(),

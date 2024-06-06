@@ -18,6 +18,8 @@ import { siteCandidateFunctions } from './site-candidates/index.js';
 import { organizationFunctions } from './organizations/index.js';
 import { configurationFunctions } from './configurations/index.js';
 import { siteTopPagesFunctions } from './site-top-pages/index.js';
+import { importJobFunctions } from './import-job/index.js';
+import { importUrlFunctions } from './import-url/index.js';
 
 /**
  * Creates a data access object.
@@ -25,6 +27,7 @@ import { siteTopPagesFunctions } from './site-top-pages/index.js';
  * @param {{pkAllSites: string, pkAllLatestAudits: string, indexNameAllLatestAuditScores: string,
  * tableNameAudits: string,tableNameLatestAudits: string, indexNameAllSitesOrganizations: string,
  * tableNameSites: string, tableNameOrganizations: string, indexNameAllSites: string,
+ * tableNameImportJobs: string, pkAllImportJobs: string, indexNameAllImportJobs: string,
  * tableNameSiteTopPages: string, indexNameAllOrganizations: string,
  * indexNameAllOrganizationsByImsOrgId: string, pkAllOrganizations: string}} config configuration
  * @param {Logger} log logger
@@ -40,6 +43,8 @@ export const createDataAccess = (config, log = console) => {
   const organizationFuncs = organizationFunctions(dynamoClient, config, log);
   const configurationFuncs = configurationFunctions(dynamoClient, config);
   const siteTopPagesFuncs = siteTopPagesFunctions(dynamoClient, config);
+  const importJobFuncs = importJobFunctions(dynamoClient, config, log);
+  const importUrlFuncs = importUrlFunctions(dynamoClient, config, log);
 
   return {
     ...auditFuncs,
@@ -49,5 +54,7 @@ export const createDataAccess = (config, log = console) => {
     ...organizationFuncs,
     ...configurationFuncs,
     ...siteTopPagesFuncs,
+    ...importJobFuncs,
+    ...importUrlFuncs,
   };
 };

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.2...@adobe/spacecat-shared-ahrefs-client-v1.2.3) (2024-06-05)
+
+
+### Bug Fixes
+
+* expose traffic_domain in the broken backlinks audit data (SITES-22464) ([#251](https://github.com/adobe/spacecat-shared/issues/251)) ([62ce855](https://github.com/adobe/spacecat-shared/commit/62ce8552bfb9a42fdf43e264cafbedb23304a72e))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.1...@adobe/spacecat-shared-ahrefs-client-v1.2.2) (2024-06-01)
 
 

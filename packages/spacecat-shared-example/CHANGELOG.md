@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-example-v1.2.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.9...@adobe/spacecat-shared-example-v1.2.10) (2024-06-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.4 ([#253](https://github.com/adobe/spacecat-shared/issues/253)) ([687d739](https://github.com/adobe/spacecat-shared/commit/687d73947f15344ed6f4d6e74f223aa838ec3d6a))
+
 # [@adobe/spacecat-shared-example-v1.2.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.8...@adobe/spacecat-shared-example-v1.2.9) (2024-06-01)
 
 

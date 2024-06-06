@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.6...@adobe/spacecat-shared-data-access-v1.24.0) (2024-06-06)
+
+
+### Features
+
+* Add import-job.js and import-url.js to the data model layer ([#250](https://github.com/adobe/spacecat-shared/issues/250)) ([447a95e](https://github.com/adobe/spacecat-shared/commit/447a95e0c4fbb6afa630d9ba78c699974b9f5d5c))
+
 # [@adobe/spacecat-shared-data-access-v1.23.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.5...@adobe/spacecat-shared-data-access-v1.23.6) (2024-06-01)
 
 

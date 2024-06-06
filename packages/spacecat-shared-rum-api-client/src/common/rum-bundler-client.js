@@ -16,8 +16,9 @@ import { fetch } from '../utils.js';
 import { GRANULARITY } from './constants.js';
 
 const BASE_URL = 'https://rum.fastly-aem.page/bundles';
+const HOURS_IN_DAY = 24;
 const ONE_HOUR = 1000 * 60 * 60;
-const ONE_DAY = ONE_HOUR * 24;
+const ONE_DAY = ONE_HOUR * HOURS_IN_DAY;
 
 const CHUNK_SIZE = 31;
 
@@ -63,7 +64,9 @@ async function fetchBundles(opts = {}) {
   }
 
   const multiplier = granularity.toUpperCase() === GRANULARITY.HOURLY ? ONE_HOUR : ONE_DAY;
-  const range = granularity.toUpperCase() === GRANULARITY.HOURLY ? interval * 24 : interval + 1;
+  const range = granularity.toUpperCase() === GRANULARITY.HOURLY
+    ? interval * HOURS_IN_DAY
+    : interval + 1;
 
   const urls = [];
   const currentDate = new Date();

@@ -156,7 +156,7 @@ describe('Import Job Tests', () => {
         };
         const importJob = createImportJob(mockImportJobData);
         const result = exportedFunctions.updateImportJob(importJob);
-        expect(result).to.be.rejectedWith('Import Job does not exist');
+        expect(result).to.be.rejectedWith('Import Job with id:test-id does not exist');
       });
     });
   });

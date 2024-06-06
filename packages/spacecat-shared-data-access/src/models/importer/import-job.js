@@ -30,7 +30,6 @@ export const IMPORT_JOB_STATUS = {
 const ImportJob = (data) => {
   const self = Base(data);
 
-  self.getId = () => self.state.id;
   self.getBaseURL = () => self.state.baseURL;
   self.getApiKey = () => self.state.apiKey;
   self.getOptions = () => self.state.options;

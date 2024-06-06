@@ -6,9 +6,10 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test": "c8 mocha",
+    "test": "c8 mocha 'test/**/*.test.js'",
     "lint": "eslint .",
-    "clean": "rm -rf package-lock.json node_modules"
+    "clean": "rm -rf package-lock.json node_modules",
+    "run": "node src/test.js"
   },
   "mocha": {
     "require": "test/setup-env.js",
@@ -34,7 +35,8 @@
     "@adobe/helix-shared-wrap": "2.0.2",
     "@adobe/helix-universal": "4.5.2",
     "@adobe/spacecat-shared-utils": "1.4.0",
-    "aws4": "1.13.0"
+    "aws4": "1.13.0",
+    "d3-array": "3.2.4"
   },
   "devDependencies": {
     "chai": "4.4.1",

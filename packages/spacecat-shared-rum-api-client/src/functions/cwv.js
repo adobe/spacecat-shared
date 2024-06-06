@@ -22,15 +22,15 @@ function collectCWVs(groupedByUrlIdTime) {
   // first level: grouped by url
   const CWVs = itemsByUrl.reduce((acc, { items: itemsById }) => {
     // second level: grouped by id
-    const maximums = itemsById.flatMap((itemById) => itemById.items)
-      // third level: grouped by time
-      .reduce((values, item) => {
-        // each session (id-time) can contain multiple measurement for the same metric
-        // we need to find the maximum per metric type
-        // eslint-disable-next-line no-param-reassign
-        values[item.checkpoint] = Math.max(values[item.checkpoint] || 0, item.value);
-        return values;
-      }, {});
+    const itemsByTime = itemsById.flatMap((itemById) => itemById.items);
+    // third level: grouped by time
+    const maximums = itemsByTime.reduce((values, item) => {
+      // each session (id-time) can contain multiple measurement for the same metric
+      // we need to find the maximum per metric type
+      // eslint-disable-next-line no-param-reassign
+      values[item.checkpoint] = Math.max(values[item.checkpoint] || 0, item.value);
+      return values;
+    }, {});
 
     // max values per id for each metric type are collected into an array
     CWV_METRICS.forEach((metric) => {

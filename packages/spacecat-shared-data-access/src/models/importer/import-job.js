@@ -11,7 +11,7 @@
  */
 
 import {
-  hasText, isIsoDate, isValidUrl, isObject, isString,
+  hasText, isIsoDate, isValidUrl, isObject, isString, isNumber,
 } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 
@@ -63,7 +63,7 @@ const ImportJob = (data) => {
      * @returns {ImportJob} The updated ImportJob object.
      */
   self.updateDuration = (duration) => {
-    if (typeof duration !== 'number' || duration < 0) {
+    if (!isNumber(duration)) {
       throw new Error(`Invalid duration during update: ${duration}`);
     }
 
@@ -95,7 +95,7 @@ const ImportJob = (data) => {
      * @returns {ImportJob} The updated ImportJob object.
      */
   self.updateSuccessCount = (successCount) => {
-    if (typeof successCount !== 'number' || successCount < 0) {
+    if (!isNumber(successCount)) {
       throw new Error(`Invalid success count during update: ${successCount}`);
     }
 
@@ -111,7 +111,7 @@ const ImportJob = (data) => {
      * @returns {ImportJob} The updated ImportJob object.
      */
   self.updateFailedCount = (failedCount) => {
-    if (typeof failedCount !== 'number' || failedCount < 0) {
+    if (!isNumber(failedCount)) {
       throw new Error(`Invalid failed count during update: ${failedCount}`);
     }
 
@@ -127,7 +127,7 @@ const ImportJob = (data) => {
      * @returns {ImportJob} The updated ImportJob object.
      */
   self.updateImportQueueId = (importQueueId) => {
-    if (typeof importQueueId !== 'string' || importQueueId.length === 0) {
+    if (!hasText(importQueueId)) {
       throw new Error(`Invalid import queue id during update: ${importQueueId}`);
     }
 

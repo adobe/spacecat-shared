@@ -16,17 +16,21 @@ import { FlatBundle } from '../common/flat-bundle.js';
 
 const CWV_METRICS = ['lcp', 'cls', 'inp', 'ttfb'].map((metric) => `cwv-${metric}`);
 
-function collectCWVs(groupedByUrlAndSource) {
-  const { url, items: itemsByUrl } = groupedByUrlAndSource;
+function collectCWVs(groupedByUrlIdTime) {
+  const { url, items: itemsByUrl } = groupedByUrlIdTime;
 
-  const CWVs = itemsByUrl.reduce((acc, { items }) => {
-    // each session (id) can contain multiple measurement for the same metric
-    // we need to find the maximum per metric type
-    const maximums = items.reduce((values, item) => {
-      // eslint-disable-next-line no-param-reassign
-      values[item.checkpoint] = Math.max(values[item.checkpoint] || 0, item.value);
-      return values;
-    }, {});
+  // first level: grouped by url
+  const CWVs = itemsByUrl.reduce((acc, { items: itemsById }) => {
+    // second level: grouped by id
+    const maximums = itemsById.flatMap((itemById) => itemById.items)
+      // third level: grouped by time
+      .reduce((values, item) => {
+        // each session (id-time) can contain multiple measurement for the same metric
+        // we need to find the maximum per metric type
+        // eslint-disable-next-line no-param-reassign
+        values[item.checkpoint] = Math.max(values[item.checkpoint] || 0, item.value);
+        return values;
+      }, {});
 
     // max values per id for each metric type are collected into an array
     CWV_METRICS.forEach((metric) => {
@@ -55,7 +59,7 @@ function handler(bundles) {
   const pageviews = pageviewsByUrl(bundles);
 
   return FlatBundle.fromArray(bundles)
-    .groupBy('url', 'id')
+    .groupBy('url', 'id', 'time')
     .map(collectCWVs)
     .filter((row) => row.lcp || row.cls || row.inp || row.ttfb) // filter out pages with no cwv data
     .map((acc) => {

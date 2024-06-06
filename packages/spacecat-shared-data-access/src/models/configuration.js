@@ -55,7 +55,9 @@ const Configuration = (data = {}) => {
     }
     if (self.handlers[type]?.enabledByDefault) {
       if (self.handlers[type]?.disabled?.sites) {
-        self.handlers[type]?.disabled.sites.push(site.getId());
+        self.handlers[type].disabled.sites = self.handlers[type].disabled.sites.filter(
+          (id) => id !== site.getId(),
+        );
       } else {
         self.handlers[type].disabled = { sites: [site.getId()] };
       }
@@ -66,26 +68,70 @@ const Configuration = (data = {}) => {
     }
   };
 
-  self.enableHandlerTypeForOrganization = (type, org) => {
+  self.enableHandlerTypeForOrg = (type, org) => {
     const isEnabled = self.isHandlerTypeEnabledForOrg(type, org);
     if (isEnabled) {
       return;
     }
     if (self.handlers[type]?.enabledByDefault) {
       if (self.handlers[type]?.disabled?.orgs) {
-        self.handlers[type]?.disabled.orgs.push(org.getId());
+        self.handlers[type].disabled.orgs = self.handlers[type]?.disabled.orgs.filter(
+          (id) => id !== org.getId(),
+        );
       } else {
         self.handlers[type].disabled = { orgs: [org.getId()] };
       }
     } else if (self.handlers[type]?.enabled?.orgs) {
-      self.handlers[type]?.enabled.sites.push(org.getId());
+      self.handlers[type]?.enabled.orgs.push(org.getId());
     } else {
-      self.handlers[type].enabled = { sites: [org.getId()] };
+      self.handlers[type].enabled = { orgs: [org.getId()] };
+    }
+  };
+
+  self.disableHandlerTypeForSite = (type, site) => {
+    const isEnabled = self.isHandlerTypeEnabledForSite(type, site);
+    if (!isEnabled) {
+      return;
+    }
+    if (self.handlers[type]?.enabledByDefault) {
+      if (self.handlers[type]?.enabled?.sites) {
+        self.handlers[type].enabled.sites = self.handlers[type]?.enabled.sites.filter(
+          (id) => id !== site.getId(),
+        );
+      }
+    } else if (self.handlers[type]?.disabled?.sites) {
+      self.handlers[type]?.disabled.sites.push(site.getId());
+    } else {
+      self.handlers[type].disabled = { sites: [site.getId()] };
+    }
+  };
+
+  self.disableHandlerTypeForOrg = (type, org) => {
+    const isEnabled = self.isHandlerTypeEnabledForOrg(type, org);
+    if (!isEnabled) {
+      return;
+    }
+    if (self.handlers[type]?.enabledByDefault) {
+      if (self.handlers[type]?.enabled?.orgs) {
+        self.handlers[type].enabled.orgs = self.handlers[type]?.enabled.orgs.filter(
+          (id) => id !== org.getId(),
+        );
+      }
+    } else if (self.handlers[type]?.disabled?.orgs) {
+      self.handlers[type]?.disabled.orgs.push(org.getId());
+    } else {
+      self.handlers[type].disabled = { orgs: [org.getId()] };
     }
   };
 
   return Object.freeze(self);
 };
+
+/**
+ *
+ * @param configuration
+ * @returns {any}
+ */
 
 export const checkConfiguration = (configuration) => {
   const schema = Joi.object({

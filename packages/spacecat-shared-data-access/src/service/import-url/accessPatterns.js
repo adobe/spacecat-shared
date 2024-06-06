@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { isObject } from '@adobe/spacecat-shared-utils';
 import { ImportUrlDto } from '../../dto/import-url.js';
 import { createImportUrl } from '../../models/importer/import-url.js';
 
@@ -44,4 +45,29 @@ export const createNewImportUrl = async (dynamoClient, config, log, importUrlDat
     ImportUrlDto.toDynamoItem(importUrl),
   );
   return importUrl;
+};
+
+/**
+ * Update an existing Import Url
+ * @param {DynamoClient} dynamoClient
+ * @param {Object} config
+ * @param {Logger} log
+ * @param {Object} importUrlData
+ * @returns {ImportUrlDto}
+ */
+export const updateImportUrl = async (dynamoClient, config, log, importUrlData) => {
+  const existingImportUrl = await getImportUrlById(
+    dynamoClient,
+    config,
+    log,
+    importUrlData.getId(),
+  );
+
+  if (!isObject(existingImportUrl)) {
+    throw new Error(`Import Url with ID:${importUrlData.getId()} does not exist`);
+  }
+
+  await dynamoClient.putItem(config.tableNameImportUrls, ImportUrlDto.toDynamoItem(importUrlData));
+
+  return importUrlData;
 };

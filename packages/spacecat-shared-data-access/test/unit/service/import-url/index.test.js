@@ -15,8 +15,11 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import { importUrlFunctions } from '../../../../src/service/import-url/index.js';
+import { createImportUrl } from '../../../../src/models/importer/import-url.js';
 
+chai.use(sinonChai);
 chai.use(chaiAsPromised);
 
 const { expect } = chai;
@@ -33,7 +36,7 @@ describe('Import Url Tests', () => {
 
     beforeEach(() => {
       mockDynamoClient = {
-        getItem: sinon.stub().resolves([]),
+        getItem: sinon.stub().resolves(),
         query: sinon.stub().resolves(null),
         putItem: sinon.stub().resolves(),
       };
@@ -72,6 +75,36 @@ describe('Import Url Tests', () => {
         };
         await exportedFunctions.createNewImportUrl(mockImportUrl);
         expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+      });
+    });
+
+    describe('updateImportUrl', () => {
+      it('should update an existing importUrl with the correct status', async () => {
+        const mockImportUrl = {
+          id: 'test-id',
+          status: 'RUNNING',
+          url: 'https://www.test.com',
+        };
+        mockDynamoClient.getItem.resolves(mockImportUrl);
+
+        const importUrl = await exportedFunctions.getImportUrlById('test-id');
+        importUrl.updateStatus('COMPLETE');
+        const result = await exportedFunctions.updateImportUrl(importUrl);
+
+        expect(result).to.be.not.null;
+        expect(mockDynamoClient.putItem).to.have.been.calledOnce;
+        expect(result.getStatus()).to.equal('COMPLETE');
+      });
+      it('should throw an error when the importUrl does not exist', async () => {
+        const mockImportUrl = {
+          id: 'test-id',
+          status: 'RUNNING',
+          url: 'https://www.test.com',
+        };
+
+        const importUrl = createImportUrl(mockImportUrl);
+        const result = exportedFunctions.updateImportUrl(importUrl);
+        await expect(result).to.be.rejectedWith('Import Url with ID:test-id does not exist');
       });
     });
   });

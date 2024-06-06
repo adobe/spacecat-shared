@@ -17,6 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { importJobFunctions } from '../../../../src/service/import-job/index.js';
+import { createImportJob } from '../../../../src/models/importer/import-job.js';
 
 chai.use(sinonChai);
 chai.use(chaiAsPromised);
@@ -37,14 +38,18 @@ describe('Import Job Tests', () => {
 
     beforeEach(() => {
       mockDynamoClient = {
-        getItem: sinon.stub().resolves([]),
+        getItem: sinon.stub().resolves(),
         query: sinon.stub().resolves(null),
         putItem: sinon.stub().resolves(),
       };
       mockLog = {
         log: sinon.stub(),
       };
-      exportedFunctions = importJobFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
+      exportedFunctions = importJobFunctions(
+        mockDynamoClient,
+        TEST_DA_CONFIG,
+        mockLog,
+      );
     });
 
     describe('getImportJobByID', () => {
@@ -110,10 +115,48 @@ describe('Import Job Tests', () => {
           apiKey: 'test-api-key',
           importQueueId: 'test-import-queue-id',
         };
-        const result = await exportedFunctions.createNewImportJob(mockImportJobData);
+        const result = await exportedFunctions.createNewImportJob(
+          mockImportJobData,
+        );
 
         expect(result).to.be.not.null;
         expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+      });
+    });
+
+    describe('updateImportJob', () => {
+      it('should update an existing ImportJob', async () => {
+        const mockImportJobData = {
+          id: 'test-id',
+          status: 'RUNNING',
+          options: {},
+          baseURL: 'https://www.test.com',
+          apiKey: 'test-api-key',
+          importQueueId: 'test-import-queue-id',
+        };
+        mockDynamoClient.getItem.resolves(mockImportJobData);
+
+        const importJob = await exportedFunctions.getImportJobByID('test-id');
+        importJob.updateStatus('COMPLETE');
+        const result = await exportedFunctions.updateImportJob(
+          importJob,
+        );
+
+        expect(result).to.be.not.null;
+        expect(mockDynamoClient.putItem).to.have.been.calledOnce;
+        expect(result.getStatus()).to.equal('COMPLETE');
+      });
+      it('should throw an error if the ImportJob does not exist', async () => {
+        const mockImportJobData = {
+          id: 'test-id',
+          status: 'RUNNING',
+          apiKey: 'test-api-key',
+          options: {},
+          baseURL: 'https://www.test.com',
+        };
+        const importJob = createImportJob(mockImportJobData);
+        const result = exportedFunctions.updateImportJob(importJob);
+        expect(result).to.be.rejectedWith('Import Job does not exist');
       });
     });
   });

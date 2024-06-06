@@ -1,3 +1,16 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.8.4...@adobe/spacecat-shared-rum-api-client-v2.0.0) (2024-06-06)
+
+
+### Features
+
+* client for rum bundler ([#252](https://github.com/adobe/spacecat-shared/issues/252)) ([854fc58](https://github.com/adobe/spacecat-shared/commit/854fc583d7184048d22c357cf11f349d3c1cfc9d))
+
+
+### BREAKING CHANGES
+
+* With this change RUMAPIClient will not be using
+helix-run-query as datasource anymore
+
 # [@adobe/spacecat-shared-rum-api-client-v1.8.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v1.8.3...@adobe/spacecat-shared-rum-api-client-v1.8.4) (2024-06-01)
 
 

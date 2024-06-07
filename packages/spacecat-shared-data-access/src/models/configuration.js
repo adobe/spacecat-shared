@@ -54,81 +54,52 @@ self.isHandlerTypeEnabledForOrg = (type, org) => {
   return handler.enabledByDefault;
 };
 
-  self.enableHandlerTypeForSite = (type, site) => {
-    const isEnabled = self.isHandlerTypeEnabledForSite(type, site);
-    if (isEnabled) {
-      return;
-    }
-    if (self.handlers[type]?.enabledByDefault) {
-      if (self.handlers[type]?.disabled?.sites) {
-        self.handlers[type].disabled.sites = self.handlers[type].disabled.sites.filter(
-          (id) => id !== site.getId(),
-        );
-      } else {
-        self.handlers[type].disabled = { sites: [site.getId()] };
-      }
-    } else if (self.handlers[type]?.enabled?.sites) {
-      self.handlers[type]?.enabled.sites.push(site.getId());
-    } else {
-      self.handlers[type].enabled = { sites: [site.getId()] };
-    }
-  };
+const updateHandlerOrgs = (type, orgId, enabled) => {
+  const handler = self.handlers[type];
+  if (!handler) return;
 
-  self.enableHandlerTypeForOrg = (type, org) => {
-    const isEnabled = self.isHandlerTypeEnabledForOrg(type, org);
-    if (isEnabled) {
-      return;
-    }
-    if (self.handlers[type]?.enabledByDefault) {
-      if (self.handlers[type]?.disabled?.orgs) {
-        self.handlers[type].disabled.orgs = self.handlers[type]?.disabled.orgs.filter(
-          (id) => id !== org.getId(),
-        );
-      } else {
-        self.handlers[type].disabled = { orgs: [org.getId()] };
-      }
-    } else if (self.handlers[type]?.enabled?.orgs) {
-      self.handlers[type]?.enabled.orgs.push(org.getId());
+  if (enabled) {
+    if (handler.enabledByDefault) {
+      handler.disabled.orgs = handler.disabled.orgs?.filter(id => id !== orgId) || [];
     } else {
-      self.handlers[type].enabled = { orgs: [org.getId()] };
+      handler.enabled.orgs = [...(handler.enabled.orgs || []), orgId];
     }
-  };
+  } else {
+    if (handler.enabledByDefault) {
+      handler.enabled.orgs = handler.enabled.orgs?.filter(id => id !== orgId) || [];
+    } else {
+      handler.disabled.orgs = [...(handler.disabled.orgs || []), orgId];
+    }
+  }
+};
 
-  self.disableHandlerTypeForSite = (type, site) => {
-    const isEnabled = self.isHandlerTypeEnabledForSite(type, site);
-    if (!isEnabled) {
-      return;
-    }
-    if (self.handlers[type]?.enabledByDefault) {
-      if (self.handlers[type]?.enabled?.sites) {
-        self.handlers[type].enabled.sites = self.handlers[type]?.enabled.sites.filter(
-          (id) => id !== site.getId(),
-        );
-      }
-    } else if (self.handlers[type]?.disabled?.sites) {
-      self.handlers[type]?.disabled.sites.push(site.getId());
-    } else {
-      self.handlers[type].disabled = { sites: [site.getId()] };
-    }
-  };
+self.enableHandlerTypeForSite = (type, site) => {
+  const siteId = site.getId();
+  if (self.isHandlerTypeEnabledForSite(type, site)) return;
 
-  self.disableHandlerTypeForOrg = (type, org) => {
-    const isEnabled = self.isHandlerTypeEnabledForOrg(type, org);
-    if (!isEnabled) {
-      return;
-    }
-    if (self.handlers[type]?.enabledByDefault) {
-      if (self.handlers[type]?.enabled?.orgs) {
-        self.handlers[type].enabled.orgs = self.handlers[type]?.enabled.orgs.filter(
-          (id) => id !== org.getId(),
-        );
-      }
-    } else if (self.handlers[type]?.disabled?.orgs) {
-      self.handlers[type]?.disabled.orgs.push(org.getId());
-    } else {
-      self.handlers[type].disabled = { orgs: [org.getId()] };
-    }
-  };
+  updateHandlerSites(type, siteId, true);
+};
+
+self.enableHandlerTypeForOrg = (type, org) => {
+  const orgId = org.getId();
+  if (self.isHandlerTypeEnabledForOrg(type, org)) return;
+
+  updateHandlerOrgs(type, orgId, true);
+};
+
+self.disableHandlerTypeForSite = (type, site) => {
+  const siteId = site.getId();
+  if (!self.isHandlerTypeEnabledForSite(type, site)) return;
+
+  updateHandlerSites(type, siteId, false);
+};
+
+self.disableHandlerTypeForOrg = (type, org) => {
+  const orgId = org.getId();
+  if (!self.isHandlerTypeEnabledForOrg(type, org)) return;
+
+  updateHandlerOrgs(type, orgId, false);
+};
 
   return Object.freeze(self);
 };

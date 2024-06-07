@@ -95,6 +95,7 @@ describe('Import Url Tests', () => {
         expect(mockDynamoClient.putItem).to.have.been.calledOnce;
         expect(result.getStatus()).to.equal('COMPLETE');
       });
+
       it('should throw an error when the importUrl does not exist', async () => {
         const mockImportUrl = {
           id: 'test-id',

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.24.0...@adobe/spacecat-shared-data-access-v1.25.0) (2024-06-07)
+
+
+### Features
+
+* Add update queries for import-job and import-url entites ([#254](https://github.com/adobe/spacecat-shared/issues/254)) ([d1cba93](https://github.com/adobe/spacecat-shared/commit/d1cba93c2ce1073426dc8333142a8d8fd81017ea))
+
 # [@adobe/spacecat-shared-data-access-v1.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.6...@adobe/spacecat-shared-data-access-v1.24.0) (2024-06-06)
 
 

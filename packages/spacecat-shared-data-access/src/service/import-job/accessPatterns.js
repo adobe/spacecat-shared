@@ -76,7 +76,7 @@ export const updateImportJob = async (dynamoClient, config, log, importJob) => {
   const existingImportJob = await getImportJobByID(dynamoClient, config, log, importJob.getId());
 
   if (!isObject(existingImportJob)) {
-    throw new Error(`Import Job with id:${importJob.getId()} does not exist`);
+    throw new Error(`Import Job with id: ${importJob.getId()} does not exist`);
   }
 
   await dynamoClient.putItem(config.tableNameImportJobs, ImportJobDto.toDynamoItem(importJob));

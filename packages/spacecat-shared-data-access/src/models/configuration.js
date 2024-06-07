@@ -37,14 +37,22 @@ self.isHandlerTypeEnabledForSite = (type, site) => {
   return handler.enabledByDefault;
 };
 
-  self.isHandlerTypeEnabledForOrg = (type, org) => {
-    if (self.handlers[type]?.enabled) {
-      return self.handlers[type].enabled.orgs.includes(org.getId());
-    } else if (self.handlers[type]?.disabled) {
-      return !self.handlers[type].disabled.orgs.includes(org.getId());
-    }
-    return self.handlers[type].enabledByDefault;
-  };
+self.isHandlerTypeEnabledForOrg = (type, org) => {
+  const handler = self.handlers[type];
+  if (!handler) return false;
+
+  const orgId = org.getId();
+
+  if (handler.enabled) {
+    return handler.enabled.orgs.includes(orgId);
+  }
+
+  if (handler.disabled) {
+    return !handler.disabled.orgs.includes(orgId);
+  }
+
+  return handler.enabledByDefault;
+};
 
   self.enableHandlerTypeForSite = (type, site) => {
     const isEnabled = self.isHandlerTypeEnabledForSite(type, site);

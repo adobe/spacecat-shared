@@ -43,7 +43,7 @@ describe('Import Job Tests', () => {
         putItem: sinon.stub().resolves(),
       };
       mockLog = {
-        log: sinon.stub(),
+        log: console,
       };
       exportedFunctions = importJobFunctions(
         mockDynamoClient,

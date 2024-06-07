@@ -20,108 +20,100 @@ const Configuration = (data = {}) => {
   self.getHandlers = () => self.handlers;
   self.getHandler = (type) => self.handlers[type];
   self.isHandlerTypeEnabledForSite = (type, site) => {
-    if (self.handlers[type]?.enabled) {
-      if (self.handlers[type].enabled.sites.includes(site.getId())) {
-        return true;
-      } else {
-        const orgId = site.getId();
-        return self.handlers[type].enabled.orgs.includes(orgId);
-      }
+    const handler = self.handlers[type];
+    if (!handler) return false;
+
+    const siteId = site.getId();
+    const orgId = site.getOrgId();
+
+    if (handler.enabled) {
+      return handler.enabled.sites.includes(siteId) || handler.enabled.orgs.includes(orgId);
     }
-    if (self.handlers[type]?.disabled) {
-      if (self.handlers[type].disabled.sites.includes(site.getId())) {
-        return false;
-      } else {
-        const orgId = site.getId();
-        return !self.handlers[type].disabled.orgs.includes(orgId);
-      }
+
+    if (handler.disabled) {
+      return !(handler.disabled.sites.includes(siteId) || handler.disabled.orgs.includes(orgId));
     }
-    return self.handlers[type].enabledByDefault;
+
+    return handler.enabledByDefault;
   };
 
   self.isHandlerTypeEnabledForOrg = (type, org) => {
-    if (self.handlers[type]?.enabled) {
-      return self.handlers[type].enabled.orgs.includes(org.getId());
-    } else if (self.handlers[type]?.disabled) {
-      return !self.handlers[type].disabled.orgs.includes(org.getId());
+    const handler = self.handlers[type];
+    if (!handler) return false;
+
+    const orgId = org.getId();
+
+    if (handler.enabled) {
+      return handler.enabled.orgs.includes(orgId);
     }
-    return self.handlers[type].enabledByDefault;
+
+    if (handler.disabled) {
+      return !handler.disabled.orgs.includes(orgId);
+    }
+
+    return handler.enabledByDefault;
+  };
+
+  const updateHandlerOrgs = (type, orgId, enabled) => {
+    const handler = self.handlers[type];
+    if (!handler) return;
+
+    if (enabled) {
+      if (handler.enabledByDefault) {
+        handler.disabled.orgs = handler.disabled.orgs?.filter((id) => id !== orgId) || [];
+      } else {
+        handler.enabled.orgs = [...(handler.enabled.orgs || []), orgId];
+      }
+    } else if (handler.enabledByDefault) {
+      handler.enabled.orgs = handler.enabled.orgs?.filter((id) => id !== orgId) || [];
+    } else {
+      handler.disabled.orgs = [...(handler.disabled.orgs || []), orgId];
+    }
+  };
+
+  const updateHandlerSites = (type, siteId, enabled) => {
+    const handler = self.handlers[type];
+    if (!handler) return;
+
+    if (enabled) {
+      if (handler.enabledByDefault) {
+        handler.disabled.sites = handler.disabled.sites?.filter((id) => id !== siteId) || [];
+      } else {
+        handler.enabled.sites = [...(handler.enabled.sites || []), siteId];
+      }
+    } else if (handler.enabledByDefault) {
+      handler.enabled.sites = handler.enabled.sites?.filter((id) => id !== siteId) || [];
+    } else {
+      handler.disabled.sites = [...(handler.disabled.sites || []), siteId];
+    }
   };
 
   self.enableHandlerTypeForSite = (type, site) => {
-    const isEnabled = self.isHandlerTypeEnabledForSite(type, site);
-    if (isEnabled) {
-      return;
-    }
-    if (self.handlers[type]?.enabledByDefault) {
-      if (self.handlers[type]?.disabled?.sites) {
-        self.handlers[type].disabled.sites = self.handlers[type].disabled.sites.filter(
-          (id) => id !== site.getId(),
-        );
-      } else {
-        self.handlers[type].disabled = { sites: [site.getId()] };
-      }
-    } else if (self.handlers[type]?.enabled?.sites) {
-      self.handlers[type]?.enabled.sites.push(site.getId());
-    } else {
-      self.handlers[type].enabled = { sites: [site.getId()] };
-    }
+    const siteId = site.getId();
+    if (self.isHandlerTypeEnabledForSite(type, site)) return;
+
+    updateHandlerSites(type, siteId, true);
   };
 
   self.enableHandlerTypeForOrg = (type, org) => {
-    const isEnabled = self.isHandlerTypeEnabledForOrg(type, org);
-    if (isEnabled) {
-      return;
-    }
-    if (self.handlers[type]?.enabledByDefault) {
-      if (self.handlers[type]?.disabled?.orgs) {
-        self.handlers[type].disabled.orgs = self.handlers[type]?.disabled.orgs.filter(
-          (id) => id !== org.getId(),
-        );
-      } else {
-        self.handlers[type].disabled = { orgs: [org.getId()] };
-      }
-    } else if (self.handlers[type]?.enabled?.orgs) {
-      self.handlers[type]?.enabled.orgs.push(org.getId());
-    } else {
-      self.handlers[type].enabled = { orgs: [org.getId()] };
-    }
+    const orgId = org.getId();
+    if (self.isHandlerTypeEnabledForOrg(type, org)) return;
+
+    updateHandlerOrgs(type, orgId, true);
   };
 
   self.disableHandlerTypeForSite = (type, site) => {
-    const isEnabled = self.isHandlerTypeEnabledForSite(type, site);
-    if (!isEnabled) {
-      return;
-    }
-    if (self.handlers[type]?.enabledByDefault) {
-      if (self.handlers[type]?.enabled?.sites) {
-        self.handlers[type].enabled.sites = self.handlers[type]?.enabled.sites.filter(
-          (id) => id !== site.getId(),
-        );
-      }
-    } else if (self.handlers[type]?.disabled?.sites) {
-      self.handlers[type]?.disabled.sites.push(site.getId());
-    } else {
-      self.handlers[type].disabled = { sites: [site.getId()] };
-    }
+    const siteId = site.getId();
+    if (!self.isHandlerTypeEnabledForSite(type, site)) return;
+
+    updateHandlerSites(type, siteId, false);
   };
 
   self.disableHandlerTypeForOrg = (type, org) => {
-    const isEnabled = self.isHandlerTypeEnabledForOrg(type, org);
-    if (!isEnabled) {
-      return;
-    }
-    if (self.handlers[type]?.enabledByDefault) {
-      if (self.handlers[type]?.enabled?.orgs) {
-        self.handlers[type].enabled.orgs = self.handlers[type]?.enabled.orgs.filter(
-          (id) => id !== org.getId(),
-        );
-      }
-    } else if (self.handlers[type]?.disabled?.orgs) {
-      self.handlers[type]?.disabled.orgs.push(org.getId());
-    } else {
-      self.handlers[type].disabled = { orgs: [org.getId()] };
-    }
+    const orgId = org.getId();
+    if (!self.isHandlerTypeEnabledForOrg(type, org)) return;
+
+    updateHandlerOrgs(type, orgId, false);
   };
 
   return Object.freeze(self);

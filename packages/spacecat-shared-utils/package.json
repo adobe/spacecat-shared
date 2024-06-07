@@ -40,7 +40,7 @@
     "sinon-chai": "3.7.0"
   },
   "dependencies": {
-    "@adobe/fetch": "4.1.4",
+    "@adobe/fetch": "4.1.8",
     "@aws-sdk/client-s3": "3.588.0",
     "@aws-sdk/client-sqs": "3.588.0",
     "@json2csv/plainjs": "7.0.6"

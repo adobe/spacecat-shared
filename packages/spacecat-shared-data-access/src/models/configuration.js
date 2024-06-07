@@ -19,7 +19,7 @@ const Configuration = (data = {}) => {
   self.getQueues = () => self.queues;
   self.getHandlers = () => self.handlers;
   self.getHandler = (type) => self.handlers[type];
-  self.isHandlerTypeEnabledForSite = (type, site) => {
+  self.isHandlerEnabledForSite = (type, site) => {
     const handler = self.handlers[type];
     if (!handler) return false;
 
@@ -37,7 +37,7 @@ const Configuration = (data = {}) => {
     return handler.enabledByDefault;
   };
 
-  self.isHandlerTypeEnabledForOrg = (type, org) => {
+  self.isHandlerEnabledForOrg = (type, org) => {
     const handler = self.handlers[type];
     if (!handler) return false;
 
@@ -88,30 +88,30 @@ const Configuration = (data = {}) => {
     }
   };
 
-  self.enableHandlerTypeForSite = (type, site) => {
+  self.enableHandlerForSite = (type, site) => {
     const siteId = site.getId();
-    if (self.isHandlerTypeEnabledForSite(type, site)) return;
+    if (self.isHandlerEnabledForSite(type, site)) return;
 
     updateHandlerSites(type, siteId, true);
   };
 
-  self.enableHandlerTypeForOrg = (type, org) => {
+  self.enableHandlerForOrg = (type, org) => {
     const orgId = org.getId();
-    if (self.isHandlerTypeEnabledForOrg(type, org)) return;
+    if (self.isHandlerEnabledForOrg(type, org)) return;
 
     updateHandlerOrgs(type, orgId, true);
   };
 
-  self.disableHandlerTypeForSite = (type, site) => {
+  self.disableHandlerForSite = (type, site) => {
     const siteId = site.getId();
-    if (!self.isHandlerTypeEnabledForSite(type, site)) return;
+    if (!self.isHandlerEnabledForSite(type, site)) return;
 
     updateHandlerSites(type, siteId, false);
   };
 
-  self.disableHandlerTypeForOrg = (type, org) => {
+  self.disableHandlerForOrg = (type, org) => {
     const orgId = org.getId();
-    if (!self.isHandlerTypeEnabledForOrg(type, org)) return;
+    if (!self.isHandlerEnabledForOrg(type, org)) return;
 
     updateHandlerOrgs(type, orgId, false);
   };

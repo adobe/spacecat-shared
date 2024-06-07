@@ -52,15 +52,15 @@ export const createNewImportUrl = async (dynamoClient, config, log, importUrlDat
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
- * @param {Object} importUrlData
+ * @param {Object} importUrl
  * @returns {ImportUrlDto}
  */
-export const updateImportUrl = async (dynamoClient, config, log, importUrlData) => {
+export const updateImportUrl = async (dynamoClient, config, log, importUrl) => {
   const existingImportUrl = await getImportUrlById(
     dynamoClient,
     config,
     log,
-    importUrlData.getId(),
+    importUrl.getId(),
   );
 
   if (!isObject(existingImportUrl)) {

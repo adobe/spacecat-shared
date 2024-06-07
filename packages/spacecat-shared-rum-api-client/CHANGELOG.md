@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.0.1...@adobe/spacecat-shared-rum-api-client-v2.0.2) (2024-06-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.8 ([#255](https://github.com/adobe/spacecat-shared/issues/255)) ([ef89237](https://github.com/adobe/spacecat-shared/commit/ef8923738d9e0591693e47f4bd4345651d180389))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.0.0...@adobe/spacecat-shared-rum-api-client-v2.0.1) (2024-06-06)
 
 

@@ -24,7 +24,7 @@ const Configuration = (data = {}) => {
     if (!handler) return false;
 
     const siteId = site.getId();
-    const orgId = site.getOrgId();
+    const orgId = site.getOrganizationId();
 
     if (handler.enabled) {
       return handler.enabled.sites.includes(siteId) || handler.enabled.orgs.includes(orgId);

@@ -67,41 +67,41 @@ describe('Configuration Model Tests', () => {
 
   it('checks if a handler type is enabled for a site', () => {
     const configuration = createConfiguration(validData);
-    const isEnabled = configuration.isHandlerTypeEnabledForSite('404', { getId: () => 'site1' });
+    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org1' });
     expect(isEnabled).to.be.a('boolean');
   });
 
   it('checks if a handler type is enabled for an organization', () => {
     const configuration = createConfiguration(validData);
-    const isEnabled = configuration.isHandlerTypeEnabledForOrg('404', { getId: () => 'org1' });
+    const isEnabled = configuration.isHandlerEnabledForOrg('404', { getId: () => 'org1' });
     expect(isEnabled).to.be.a('boolean');
   });
 
   it('enables a handler type for a site', () => {
     const configuration = createConfiguration(validData);
-    configuration.enableHandlerTypeForSite('404', { getId: () => 'site1' });
-    const isEnabled = configuration.isHandlerTypeEnabledForSite('404', { getId: () => 'site1' });
+    configuration.enableHandlerForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org2' });
+    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org2' });
     expect(isEnabled).to.be.true;
   });
 
   it('enables a handler type for an organization', () => {
     const configuration = createConfiguration(validData);
-    configuration.enableHandlerTypeForOrg('404', { getId: () => 'org1' });
-    const isEnabled = configuration.isHandlerTypeEnabledForOrg('404', { getId: () => 'org1' });
+    configuration.enableHandlerForOrg('404', { getId: () => 'org1' });
+    const isEnabled = configuration.isHandlerEnabledForOrg('404', { getId: () => 'org1' });
     expect(isEnabled).to.be.true;
   });
 
   it('disables a handler type for a site', () => {
     const configuration = createConfiguration(validData);
-    configuration.disableHandlerTypeForSite('404', { getId: () => 'site1' });
-    const isEnabled = configuration.isHandlerTypeEnabledForSite('404', { getId: () => 'site1' });
+    configuration.disableHandlerForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org1' });
+    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org1' });
     expect(isEnabled).to.be.false;
   });
 
   it('disables a handler type for an organization', () => {
     const configuration = createConfiguration(validData);
-    configuration.disableHandlerTypeForOrg('404', { getId: () => 'org1' });
-    const isEnabled = configuration.isHandlerTypeEnabledForOrg('404', { getId: () => 'org1' });
+    configuration.disableHandlerForOrg('404', { getId: () => 'org1' });
+    const isEnabled = configuration.isHandlerEnabledForOrg('404', { getId: () => 'org1' });
     expect(isEnabled).to.be.false;
   });
 

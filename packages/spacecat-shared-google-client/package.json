@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.1.8",
-    "@adobe/helix-universal": "4.5.2",
+    "@adobe/helix-universal": "5.0.5",
     "@adobe/spacecat-shared-http-utils": "1.1.4",
     "@adobe/spacecat-shared-utils": "1.15.1",
     "@aws-sdk/client-secrets-manager": "3.588.0",

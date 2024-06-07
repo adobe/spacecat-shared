@@ -20,6 +20,8 @@ const TABLE_NAME_SITE_CANDIDATES = 'spacecat-services-site-candidates-dev';
 const TABLE_NAME_ORGANIZATIONS = 'spacecat-services-organizations-dev';
 const TABLE_NAME_CONFIGURATIONS = 'spacecat-services-configurations-dev';
 const TABLE_NAME_SITE_TOP_PAGES = 'spacecat-services-site-top-pages-dev';
+const TABLE_NAME_IMPORT_JOBS = 'spacecat-services-import-jobs-dev';
+const TABLE_NAME_IMPORT_URLS = 'spacecat-services-import-urls-dev';
 
 const INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID = 'spacecat-services-key-events-by-site-id';
 const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites-dev';
@@ -28,11 +30,13 @@ const INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID = 'spacecat-services-all-organi
 const INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = 'spacecat-services-all-sites-by-delivery-type-dev';
 const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'spacecat-services-all-latest-audit-scores-dev';
 const INDEX_NAME_ALL_SITES_ORGANIZATIONS = 'spacecat-services-all-sites-organizations-dev';
+const INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS = 'spacecat-services-all-import-jobs-by-status-dev';
 
 const PK_ALL_SITES = 'ALL_SITES';
 const PK_ALL_CONFIGURATIONS = 'ALL_CONFIGURATIONS';
 const PK_ALL_ORGANIZATIONS = 'ALL_ORGANIZATIONS';
 const PK_ALL_LATEST_AUDITS = 'ALL_LATEST_AUDITS';
+const PK_ALL_IMPORT_JOBS = 'ALL_IMPORT_JOBS';
 
 export default function dataAccessWrapper(fn) {
   return async (request, context) => {
@@ -48,6 +52,8 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_TABLE_NAME_ORGANIZATIONS = TABLE_NAME_ORGANIZATIONS,
         DYNAMO_TABLE_NAME_CONFIGURATIONS = TABLE_NAME_CONFIGURATIONS,
         DYNAMO_TABLE_NAME_SITE_TOP_PAGES = TABLE_NAME_SITE_TOP_PAGES,
+        DYNAMO_TABLE_NAME_IMPORT_JOBS = TABLE_NAME_IMPORT_JOBS,
+        DYNAMO_TABLE_NAME_IMPORT_URLS = TABLE_NAME_IMPORT_URLS,
         DYNAMO_INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID = INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID,
         DYNAMO_INDEX_NAME_ALL_SITES = INDEX_NAME_ALL_SITES,
         DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
@@ -56,6 +62,7 @@ export default function dataAccessWrapper(fn) {
         // eslint-disable-next-line max-len
         DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID = INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID,
         DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS = INDEX_NAME_ALL_SITES_ORGANIZATIONS,
+        DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS = INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS,
       } = context.env;
 
       context.dataAccess = createDataAccess({
@@ -67,6 +74,8 @@ export default function dataAccessWrapper(fn) {
         tableNameSiteCandidates: DYNAMO_TABLE_NAME_SITE_CANDIDATES,
         tableNameConfigurations: DYNAMO_TABLE_NAME_CONFIGURATIONS,
         tableNameSiteTopPages: DYNAMO_TABLE_NAME_SITE_TOP_PAGES,
+        tableNameImportJobs: DYNAMO_TABLE_NAME_IMPORT_JOBS,
+        tableNameImportUrls: DYNAMO_TABLE_NAME_IMPORT_URLS,
         indexNameAllKeyEventsBySiteId: DYNAMO_INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID,
         indexNameAllSites: DYNAMO_INDEX_NAME_ALL_SITES,
         indexNameAllOrganizations: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS,
@@ -74,10 +83,12 @@ export default function dataAccessWrapper(fn) {
         indexNameAllSitesByDeliveryType: DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
         indexNameAllLatestAuditScores: DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         indexNameAllSitesOrganizations: DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS,
+        indexNameAllImportJobsByStatus: DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS,
         pkAllSites: PK_ALL_SITES,
         pkAllOrganizations: PK_ALL_ORGANIZATIONS,
         pkAllLatestAudits: PK_ALL_LATEST_AUDITS,
         pkAllConfigurations: PK_ALL_CONFIGURATIONS,
+        pkAllImportJobs: PK_ALL_IMPORT_JOBS,
       }, log);
     }
 

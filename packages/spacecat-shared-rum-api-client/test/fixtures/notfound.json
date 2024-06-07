@@ -1,0 +1,32 @@
+[
+  {
+    "url": "https://www.aem.live/developer/tutorial",
+    "views": 400,
+    "all_sources": [
+      "https://www.google.com",
+      "",
+      "https://www.instagram.com"
+    ],
+    "source_count": 3,
+    "top_source": "https://www.google.com"
+  },
+  {
+    "url": "https://www.aem.live/some-other-page",
+    "views": 300,
+    "all_sources": [
+      "https://www.bing.com",
+      ""
+    ],
+    "source_count": 2,
+    "top_source": ""
+  },
+  {
+    "url": "https://www.aem.live/developer/",
+    "views": 100,
+    "all_sources": [
+      ""
+    ],
+    "source_count": 1,
+    "top_source": ""
+  }
+]

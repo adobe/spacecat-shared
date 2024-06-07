@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "1.23.6",
+  "version": "1.24.0",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "main": "src/index.js",

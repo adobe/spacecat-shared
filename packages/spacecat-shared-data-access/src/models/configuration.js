@@ -19,25 +19,23 @@ const Configuration = (data = {}) => {
   self.getQueues = () => self.queues;
   self.getHandlers = () => self.handlers;
   self.getHandler = (type) => self.handlers[type];
-  self.isHandlerTypeEnabledForSite = (type, site) => {
-    if (self.handlers[type]?.enabled) {
-      if (self.handlers[type].enabled.sites.includes(site.getId())) {
-        return true;
-      } else {
-        const orgId = site.getId();
-        return self.handlers[type].enabled.orgs.includes(orgId);
-      }
-    }
-    if (self.handlers[type]?.disabled) {
-      if (self.handlers[type].disabled.sites.includes(site.getId())) {
-        return false;
-      } else {
-        const orgId = site.getId();
-        return !self.handlers[type].disabled.orgs.includes(orgId);
-      }
-    }
-    return self.handlers[type].enabledByDefault;
-  };
+self.isHandlerTypeEnabledForSite = (type, site) => {
+  const handler = self.handlers[type];
+  if (!handler) return false;
+
+  const siteId = site.getId();
+  const orgId = site.getOrgId();
+
+  if (handler.enabled) {
+    return handler.enabled.sites.includes(siteId) || handler.enabled.orgs.includes(orgId);
+  }
+
+  if (handler.disabled) {
+    return !(handler.disabled.sites.includes(siteId) || handler.disabled.orgs.includes(orgId));
+  }
+
+  return handler.enabledByDefault;
+};
 
   self.isHandlerTypeEnabledForOrg = (type, org) => {
     if (self.handlers[type]?.enabled) {

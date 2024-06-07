@@ -64,7 +64,7 @@ export const updateImportUrl = async (dynamoClient, config, log, importUrl) => {
   );
 
   if (!isObject(existingImportUrl)) {
-    throw new Error(`Import Url with ID:${importUrlData.getId()} does not exist`);
+    throw new Error(`Import Url with ID:${importUrl.getId()} does not exist`);
   }
 
   await dynamoClient.putItem(config.tableNameImportUrls, ImportUrlDto.toDynamoItem(importUrl));

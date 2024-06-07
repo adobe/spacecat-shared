@@ -146,6 +146,7 @@ describe('Import Job Tests', () => {
         expect(mockDynamoClient.putItem).to.have.been.calledOnce;
         expect(result.getStatus()).to.equal('COMPLETE');
       });
+
       it('should throw an error if the ImportJob does not exist', async () => {
         const mockImportJobData = {
           id: 'test-id',

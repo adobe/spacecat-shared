@@ -29,7 +29,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.1.4"
+    "@adobe/fetch": "4.1.8"
   },
   "devDependencies": {
     "chai": "4.4.1"

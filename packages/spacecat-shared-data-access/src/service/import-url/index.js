@@ -29,10 +29,10 @@ export const importUrlFunctions = (dynamoClient, config, log) => ({
     log,
     importUrlData,
   ),
-  updateImportUrl: (importUrlData) => updateImportUrl(
+  updateImportUrl: (importUrl) => updateImportUrl(
     dynamoClient,
     config,
     log,
-    importUrlData,
+    importUrl,
   ),
 });

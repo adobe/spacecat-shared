@@ -115,15 +115,11 @@ describe('AhrefsAPIClient', () => {
 
   describe('constructor', () => {
     it('throws error when api base url is missing', () => {
-      expect(() => new AhrefsAPIClient({}))
-        .to
-        .throw('Invalid Ahrefs API Base URL: undefined');
+      expect(() => new AhrefsAPIClient({})).to.throw('Invalid Ahrefs API Base URL: undefined');
     });
 
     it('throws error when fetch is not a function', () => {
-      expect(() => new AhrefsAPIClient(config, 'fetch'))
-        .to
-        .throw('"fetchAPI" must be a function');
+      expect(() => new AhrefsAPIClient(config, 'fetch')).to.throw('"fetchAPI" must be a function');
     });
   });
 
@@ -137,10 +133,7 @@ describe('AhrefsAPIClient', () => {
       };
 
       const ahrefsAPIClient = AhrefsAPIClient.createFrom(context);
-      expect(ahrefsAPIClient)
-        .to
-        .be
-        .instanceOf(AhrefsAPIClient);
+      expect(ahrefsAPIClient).to.be.instanceOf(AhrefsAPIClient);
     });
   });
 
@@ -151,13 +144,10 @@ describe('AhrefsAPIClient', () => {
         .reply(200, backlinksResponse);
 
       const result = await client.sendRequest('/some-endpoint');
-      expect(result)
-        .to
-        .deep
-        .equal({
-          result: backlinksResponse,
-          fullAuditRef: 'https://example.com/some-endpoint',
-        });
+      expect(result).to.deep.equal({
+        result: backlinksResponse,
+        fullAuditRef: 'https://example.com/some-endpoint',
+      });
     });
 
     it('throw error when API response is not ok', async () => {
@@ -165,10 +155,7 @@ describe('AhrefsAPIClient', () => {
         .get(/.*/)
         .reply(400, 'Bad Request');
 
-      await expect(client.sendRequest('/some-endpoint'))
-        .to
-        .be
-        .rejectedWith('Ahrefs API request failed with status: 400');
+      await expect(client.sendRequest('/some-endpoint')).to.be.rejectedWith('Ahrefs API request failed with status: 400');
     });
 
     it('throw error when API response body cannot be parsed as JSON', async () => {
@@ -176,10 +163,7 @@ describe('AhrefsAPIClient', () => {
         .get(/.*/)
         .reply(200, 'invalid-json');
 
-      await expect(client.sendRequest('/some-endpoint'))
-        .to
-        .be
-        .rejectedWith('Error parsing Ahrefs API response:');
+      await expect(client.sendRequest('/some-endpoint')).to.be.rejectedWith('Error parsing Ahrefs API response:');
     });
   });
 
@@ -201,39 +185,21 @@ describe('AhrefsAPIClient', () => {
           output: 'json',
           where: JSON.stringify({
             and: [
-              {
-                field: 'is_dofollow',
-                is: ['eq', 1],
-              },
-              {
-                field: 'is_content',
-                is: ['eq', 1],
-              },
-              {
-                field: 'domain_rating_source',
-                is: ['gte', 29.5],
-              },
-              {
-                field: 'traffic_domain',
-                is: ['gte', 500],
-              },
-              {
-                field: 'links_external',
-                is: ['lte', 300],
-              },
+              { field: 'is_dofollow', is: ['eq', 1] },
+              { field: 'is_content', is: ['eq', 1] },
+              { field: 'domain_rating_source', is: ['gte', 29.5] },
+              { field: 'traffic_domain', is: ['gte', 500] },
+              { field: 'links_external', is: ['lte', 300] },
             ],
           }),
         })
         .reply(200, backlinksResponse);
 
       const result = await client.getBrokenBacklinks('test-site.com');
-      expect(result)
-        .to
-        .deep
-        .equal({
-          result: backlinksResponse,
-          fullAuditRef: 'https://example.com/site-explorer/broken-backlinks?select=title%2Curl_from%2Curl_to%2Ctraffic_domain&limit=50&mode=prefix&order_by=domain_rating_source%3Adesc%2Ctraffic_domain%3Adesc&target=test-site.com&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_dofollow%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22is_content%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22domain_rating_source%22%2C%22is%22%3A%5B%22gte%22%2C29.5%5D%7D%2C%7B%22field%22%3A%22traffic_domain%22%2C%22is%22%3A%5B%22gte%22%2C500%5D%7D%2C%7B%22field%22%3A%22links_external%22%2C%22is%22%3A%5B%22lte%22%2C300%5D%7D%5D%7D',
-        });
+      expect(result).to.deep.equal({
+        result: backlinksResponse,
+        fullAuditRef: 'https://example.com/site-explorer/broken-backlinks?select=title%2Curl_from%2Curl_to%2Ctraffic_domain&limit=50&mode=prefix&order_by=domain_rating_source%3Adesc%2Ctraffic_domain%3Adesc&target=test-site.com&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_dofollow%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22is_content%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22domain_rating_source%22%2C%22is%22%3A%5B%22gte%22%2C29.5%5D%7D%2C%7B%22field%22%3A%22traffic_domain%22%2C%22is%22%3A%5B%22gte%22%2C500%5D%7D%2C%7B%22field%22%3A%22links_external%22%2C%22is%22%3A%5B%22lte%22%2C300%5D%7D%5D%7D',
+      });
     });
   });
 
@@ -245,10 +211,7 @@ describe('AhrefsAPIClient', () => {
       const date = mockDate.split('T')[0];
       const filter = {
         and: [
-          {
-            field: 'sum_traffic',
-            is: ['gt', 0],
-          },
+          { field: 'sum_traffic', is: ['gt', 0] },
         ],
       };
       const queryParams = {
@@ -271,13 +234,10 @@ describe('AhrefsAPIClient', () => {
         .reply(200, topPagesResponse);
 
       const result = await client.getTopPages(target, specifiedLimit);
-      expect(result)
-        .to
-        .deep
-        .equal({
-          result: topPagesResponse,
-          fullAuditRef: `https://example.com/site-explorer/top-pages?select=url%2Csum_traffic&order_by=sum_traffic&date=${date}&target=${target}&limit=${specifiedLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22sum_traffic%22%2C%22is%22%3A%5B%22gt%22%2C0%5D%7D%5D%7D`,
-        });
+      expect(result).to.deep.equal({
+        result: topPagesResponse,
+        fullAuditRef: `https://example.com/site-explorer/top-pages?select=url%2Csum_traffic&order_by=sum_traffic&date=${date}&target=${target}&limit=${specifiedLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22sum_traffic%22%2C%22is%22%3A%5B%22gt%22%2C0%5D%7D%5D%7D`,
+      });
     });
   });
 
@@ -300,39 +260,21 @@ describe('AhrefsAPIClient', () => {
           output: 'json',
           where: JSON.stringify({
             and: [
-              {
-                field: 'is_dofollow',
-                is: ['eq', 1],
-              },
-              {
-                field: 'is_content',
-                is: ['eq', 1],
-              },
-              {
-                field: 'domain_rating_source',
-                is: ['gte', 29.5],
-              },
-              {
-                field: 'traffic_domain',
-                is: ['gte', 500],
-              },
-              {
-                field: 'links_external',
-                is: ['lte', 300],
-              },
+              { field: 'is_dofollow', is: ['eq', 1] },
+              { field: 'is_content', is: ['eq', 1] },
+              { field: 'domain_rating_source', is: ['gte', 29.5] },
+              { field: 'traffic_domain', is: ['gte', 500] },
+              { field: 'links_external', is: ['lte', 300] },
             ],
           }),
         })
         .reply(200, backlinksResponse);
 
       const result = await client.getBacklinks('test-site.com', upperLimit * 3);
-      expect(result)
-        .to
-        .deep
-        .equal({
-          result: backlinksResponse,
-          fullAuditRef: `https://example.com/site-explorer/all-backlinks?select=title%2Curl_from%2Curl_to&order_by=domain_rating_source%3Adesc%2Ctraffic_domain%3Adesc&target=test-site.com&limit=${upperLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_dofollow%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22is_content%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22domain_rating_source%22%2C%22is%22%3A%5B%22gte%22%2C29.5%5D%7D%2C%7B%22field%22%3A%22traffic_domain%22%2C%22is%22%3A%5B%22gte%22%2C500%5D%7D%2C%7B%22field%22%3A%22links_external%22%2C%22is%22%3A%5B%22lte%22%2C300%5D%7D%5D%7D`,
-        });
+      expect(result).to.deep.equal({
+        result: backlinksResponse,
+        fullAuditRef: `https://example.com/site-explorer/all-backlinks?select=title%2Curl_from%2Curl_to&order_by=domain_rating_source%3Adesc%2Ctraffic_domain%3Adesc&target=test-site.com&limit=${upperLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_dofollow%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22is_content%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22domain_rating_source%22%2C%22is%22%3A%5B%22gte%22%2C29.5%5D%7D%2C%7B%22field%22%3A%22traffic_domain%22%2C%22is%22%3A%5B%22gte%22%2C500%5D%7D%2C%7B%22field%22%3A%22links_external%22%2C%22is%22%3A%5B%22lte%22%2C300%5D%7D%5D%7D`,
+      });
     });
   });
 
@@ -355,13 +297,10 @@ describe('AhrefsAPIClient', () => {
         .reply(200, organicTrafficMetricsResponse);
 
       const result = await client.getOrganicTraffic('test-site.com', startDate, endDate);
-      expect(result)
-        .to
-        .deep
-        .equal({
-          result: organicTrafficMetricsResponse,
-          fullAuditRef: 'https://example.com/site-explorer/metrics-history?target=test-site.com&date_from=2024-01-29&date_to=2024-02-05&history_grouping=weekly&volume_mode=average&mode=prefix&output=json',
-        });
+      expect(result).to.deep.equal({
+        result: organicTrafficMetricsResponse,
+        fullAuditRef: 'https://example.com/site-explorer/metrics-history?target=test-site.com&date_from=2024-01-29&date_to=2024-02-05&history_grouping=weekly&volume_mode=average&mode=prefix&output=json',
+      });
     });
   });
 

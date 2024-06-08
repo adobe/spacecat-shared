@@ -174,4 +174,26 @@ export default class AhrefsAPIClient {
 
     return this.sendRequest('/site-explorer/metrics-history', queryParams);
   }
+
+  async getOrganicKeywords(url, country = 'us', keywordFilter = [], limit = 200) {
+    const queryParams = {
+      country,
+      date: new Date().toISOString().split('T')[0],
+      select: [
+        'keyword',
+        'sum_traffic',
+        'best_position_url',
+      ].join(','),
+      order_by: 'sum_traffic:desc',
+      target: url,
+      limit: getLimit(limit, 2000),
+      mode: 'prefix',
+      where: JSON.stringify({
+        or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
+      }),
+      output: 'json',
+    };
+
+    return this.sendRequest('/site-explorer/organic-keywords', queryParams);
+  }
 }

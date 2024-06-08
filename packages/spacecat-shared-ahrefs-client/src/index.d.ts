@@ -70,4 +70,10 @@ export default class AhrefsAPIClient {
      */
   getBacklinks(url: string, limit?: number):
       Promise<{ result: object, fullAuditRef: string }>;
+
+  /**
+   * Asynchronous method to get organic keywords.
+   */
+  getOrganicKeywords(url: string, limit?: number):
+      Promise<{ result: object, fullAuditRef: string }>;
 }

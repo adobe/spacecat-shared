@@ -188,11 +188,13 @@ export default class AhrefsAPIClient {
       target: url,
       limit: getLimit(limit, 2000),
       mode: 'prefix',
-      where: JSON.stringify({
-        or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
-      }),
       output: 'json',
     };
+    if (keywordFilter.length > 0) {
+      queryParams.where = JSON.stringify({
+        or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
+      });
+    }
 
     return this.sendRequest('/site-explorer/organic-keywords', queryParams);
   }

@@ -320,13 +320,13 @@ describe('AhrefsAPIClient', () => {
           target: 'test-site.com',
           limit: 200,
           mode: 'prefix',
+          output: 'json',
           where: JSON.stringify({
             or: [
               { field: 'keyword', is: ['iphrase_match', 'keyword1'] },
               { field: 'keyword', is: ['iphrase_match', 'keyword2'] },
             ],
           }),
-          output: 'json',
         })
         .reply(200, organicKeywordsResponse);
 
@@ -337,7 +337,37 @@ describe('AhrefsAPIClient', () => {
         .deep
         .equal({
           result: organicKeywordsResponse,
-          fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cbest_position_url&order_by=sum_traffic%3Adesc&target=test-site.com&limit=200&mode=prefix&where=%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D&output=json',
+          fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cbest_position_url&order_by=sum_traffic%3Adesc&target=test-site.com&limit=200&mode=prefix&output=json&where=%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D',
+        });
+    });
+
+    it('sends API request with no keyword filter if none are specified', async () => {
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/organic-keywords')
+        .query({
+          country: 'us',
+          date: new Date().toISOString().split('T')[0],
+          select: [
+            'keyword',
+            'sum_traffic',
+            'best_position_url',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          target: 'test-site.com',
+          limit: 200,
+          mode: 'prefix',
+          output: 'json',
+        })
+        .reply(200, organicKeywordsResponse);
+
+      const result = await client.getOrganicKeywords('test-site.com');
+
+      expect(result)
+        .to
+        .deep
+        .equal({
+          result: organicKeywordsResponse,
+          fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cbest_position_url&order_by=sum_traffic%3Adesc&target=test-site.com&limit=200&mode=prefix&output=json',
         });
     });
   });

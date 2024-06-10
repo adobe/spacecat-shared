@@ -11,6 +11,8 @@
  */
 
 import { createDataAccess } from './service/index.js';
+import { ImportJobStatus } from './models/importer/import-job.js';
+import { ImportUrlStatus } from './models/importer/import-url.js';
 
 const TABLE_NAME_AUDITS = 'spacecat-services-audits-dev';
 const TABLE_NAME_KEY_EVENTS = 'spacecat-services-key-events';
@@ -95,3 +97,8 @@ export default function dataAccessWrapper(fn) {
     return fn(request, context);
   };
 }
+
+export {
+  ImportJobStatus,
+  ImportUrlStatus,
+};

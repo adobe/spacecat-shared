@@ -42,7 +42,10 @@ export const getImportJobsByStatus = async (dynamoClient, config, log, status) =
   const items = await dynamoClient.query({
     TableName: config.tableNameImportJobs,
     IndexName: config.indexNameAllImportJobsByStatus,
-    KeyConditionExpression: 'GSI1PK = :gsi1pk AND status = :status',
+    KeyConditionExpression: 'GSI1PK = :gsi1pk AND #status = :status',
+    ExpressionAttributeNames: {
+        '#status': 'status',
+    },
     ExpressionAttributeValues: {
       ':gsi1pk': config.pkAllImportJobs,
       ':status': status,

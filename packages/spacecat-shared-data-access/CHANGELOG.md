@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.26.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.26.0...@adobe/spacecat-shared-data-access-v1.26.1) (2024-06-10)
+
+
+### Bug Fixes
+
+* Add an ExpressionAttributeName to fix issues with reserved keywords ([#261](https://github.com/adobe/spacecat-shared/issues/261)) ([b528c65](https://github.com/adobe/spacecat-shared/commit/b528c659b5ae2f6b17db0146ca0f650d9426f332)), closes [#260](https://github.com/adobe/spacecat-shared/issues/260)
+
 # [@adobe/spacecat-shared-data-access-v1.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.25.1...@adobe/spacecat-shared-data-access-v1.26.0) (2024-06-10)
 
 

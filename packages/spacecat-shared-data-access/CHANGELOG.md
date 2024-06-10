@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.25.1...@adobe/spacecat-shared-data-access-v1.26.0) (2024-06-10)
+
+
+### Features
+
+* Add PENDING status for import URL entities ([#259](https://github.com/adobe/spacecat-shared/issues/259)) ([031194c](https://github.com/adobe/spacecat-shared/commit/031194cb91434ae66bc3870e63e29167ea94de8f)), closes [#258](https://github.com/adobe/spacecat-shared/issues/258)
+
 # [@adobe/spacecat-shared-data-access-v1.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.25.0...@adobe/spacecat-shared-data-access-v1.25.1) (2024-06-08)
 
 

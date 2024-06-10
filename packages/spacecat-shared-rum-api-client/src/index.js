@@ -12,10 +12,12 @@
 import { fetchBundles } from './common/rum-bundler-client.js';
 import notfound from './functions/404.js';
 import cwv from './functions/cwv.js';
+import experimentationOpportunities from './functions/experimentation-opportunities.js';
 
 const HANDLERS = {
   404: notfound,
   cwv,
+  'experimentation-opportunities': experimentationOpportunities,
 };
 
 export default class RUMAPIClient {

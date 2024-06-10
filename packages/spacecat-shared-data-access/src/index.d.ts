@@ -677,3 +677,13 @@ export function createDataAccess(
   config: DataAccessConfig,
   logger: object,
 ): DataAccess;
+
+export interface ImportJobStatus {
+  RUNNING: string,
+  COMPLETE: string,
+  FAILED: string,
+}
+
+export interface ImportUrlStatus extends ImportJobStatus {
+  PENDING: string,
+}

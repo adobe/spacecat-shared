@@ -12,7 +12,12 @@
 
 import { isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
-import { IMPORT_JOB_STATUS } from './import-job.js';
+import { ImportJobStatus } from './import-job.js';
+
+export const ImportUrlStatus = {
+  PENDING: 'PENDING',
+  ...ImportJobStatus,
+};
 
 /**
  * Creates a new ImportUrl object
@@ -31,7 +36,7 @@ const ImportUrl = (data) => {
      * Updates the status of the ImportUrl
      */
   self.updateStatus = (status) => {
-    if (!Object.values(IMPORT_JOB_STATUS).includes(status)) {
+    if (!Object.values(ImportUrlStatus).includes(status)) {
       throw new Error(`Invalid Import URL status during update: ${status}`);
     }
 
@@ -53,7 +58,7 @@ export const createImportUrl = (data) => {
     throw new Error(`Invalid Url: ${newState.url}`);
   }
 
-  if (!Object.values(IMPORT_JOB_STATUS).includes(newState.status)) {
+  if (!Object.values(ImportUrlStatus).includes(newState.status)) {
     throw new Error(`Invalid Import URL status: ${newState.status}`);
   }
 

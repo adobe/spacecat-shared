@@ -604,11 +604,17 @@ export interface DataAccess {
   createNewImportJob: (
     importJobData: object,
     ) => Promise<ImportJob>;
+  updateImportJob: (
+    importJob: ImportJob,
+    ) => Promise<ImportJob>;
   getImportUrlByID: (
     id: string,
     ) => Promise<ImportUrl | null>;
   createNewImportUrl: (
     importUrlData: object,
+    ) => Promise<ImportUrl>;
+  updateImportUrl: (
+    importUrl: ImportUrl,
     ) => Promise<ImportUrl>;
 
   // site candidate functions

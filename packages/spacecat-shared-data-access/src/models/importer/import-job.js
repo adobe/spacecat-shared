@@ -15,7 +15,7 @@ import {
 } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 
-export const IMPORT_JOB_STATUS = {
+export const ImportJobStatus = {
   RUNNING: 'RUNNING',
   COMPLETE: 'COMPLETE',
   FAILED: 'FAILED',
@@ -79,7 +79,7 @@ const ImportJob = (data) => {
      * @returns {ImportJob} The updated ImportJob object.
      */
   self.updateStatus = (status) => {
-    if (!Object.values(IMPORT_JOB_STATUS).includes(status)) {
+    if (!Object.values(ImportJobStatus).includes(status)) {
       throw new Error(`Invalid Import Job status during update: ${status}`);
     }
 
@@ -163,7 +163,7 @@ export const createImportJob = (data) => {
     newState.startTime = new Date().toISOString();
   }
 
-  if (!Object.values(IMPORT_JOB_STATUS).includes(newState.status)) {
+  if (!Object.values(ImportJobStatus).includes(newState.status)) {
     throw new Error(`Invalid Import Job status ${newState.status}`);
   }
 

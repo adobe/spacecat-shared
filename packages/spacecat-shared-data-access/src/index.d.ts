@@ -622,7 +622,7 @@ export interface DataAccess {
   updateImportUrl: (
     importUrl: ImportUrl,
     ) => Promise<ImportUrl>;
-  getImportUrlsByJobIDAndStatus: (
+  getImportUrlsByJobIdAndStatus: (
       jobId: string,
       status: string,
     ) => Promise<ImportUrl[]>;

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.1.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.8...@adobe/spacecat-shared-google-client-v1.1.9) (2024-06-11)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5 ([#245](https://github.com/adobe/spacecat-shared/issues/245)) ([ee87b9a](https://github.com/adobe/spacecat-shared/commit/ee87b9ac366ca6139513091e75466e95e125f79d))
+
 # [@adobe/spacecat-shared-google-client-v1.1.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.7...@adobe/spacecat-shared-google-client-v1.1.8) (2024-06-08)
 
 

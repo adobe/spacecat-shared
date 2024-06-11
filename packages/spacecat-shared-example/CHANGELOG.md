@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-example-v1.2.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.11...@adobe/spacecat-shared-example-v1.2.12) (2024-06-11)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5 ([#245](https://github.com/adobe/spacecat-shared/issues/245)) ([ee87b9a](https://github.com/adobe/spacecat-shared/commit/ee87b9ac366ca6139513091e75466e95e125f79d))
+
 # [@adobe/spacecat-shared-example-v1.2.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.10...@adobe/spacecat-shared-example-v1.2.11) (2024-06-07)
 
 

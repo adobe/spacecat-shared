@@ -120,6 +120,7 @@ describe('Import Url Tests', () => {
         mockDynamoClient.query.resolves([mockImportUrl]);
         const result = await exportedFunctions.getImportUrlsByJobIdAndStatus('test-job-id', 'RUNNING');
         expect(result.length).to.equal(1);
+        expect(result[0].getUrl()).to.equal('https://www.test.com');
       });
     });
   });

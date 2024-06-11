@@ -120,6 +120,7 @@ export default class AhrefsAPIClient {
       select: [
         'url',
         'sum_traffic',
+        'top_keyword',
       ].join(','),
       order_by: 'sum_traffic',
       date: new Date().toISOString().split('T')[0],

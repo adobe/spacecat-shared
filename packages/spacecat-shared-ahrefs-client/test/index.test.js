@@ -52,10 +52,12 @@ describe('AhrefsAPIClient', () => {
       {
         url: 'page-url-1',
         sum_traffic: 100,
+        top_keyword: 'keyword1',
       },
       {
         url: 'page-url-2',
         sum_traffic: 300,
+        top_keyword: 'keyword2',
       },
     ],
   };
@@ -218,6 +220,7 @@ describe('AhrefsAPIClient', () => {
         select: [
           'url',
           'sum_traffic',
+          'top_keyword',
         ].join(','),
         where: JSON.stringify(filter),
         order_by: 'sum_traffic',
@@ -236,7 +239,7 @@ describe('AhrefsAPIClient', () => {
       const result = await client.getTopPages(target, specifiedLimit);
       expect(result).to.deep.equal({
         result: topPagesResponse,
-        fullAuditRef: `https://example.com/site-explorer/top-pages?select=url%2Csum_traffic&order_by=sum_traffic&date=${date}&target=${target}&limit=${specifiedLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22sum_traffic%22%2C%22is%22%3A%5B%22gt%22%2C0%5D%7D%5D%7D`,
+        fullAuditRef: `https://example.com/site-explorer/top-pages?select=url%2Csum_traffic%2Ctop_keyword&order_by=sum_traffic&date=${date}&target=${target}&limit=${specifiedLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22sum_traffic%22%2C%22is%22%3A%5B%22gt%22%2C0%5D%7D%5D%7D`,
       });
     });
   });

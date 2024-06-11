@@ -21,6 +21,12 @@
         "dynamo-db-local"
       ],
       "allowedVersions": "<8.1.0"
+    },
+    {
+      "matchPackageNames": [
+        "eslint"
+      ],
+      "allowedVersions": "<9.0.0"
     }
   ]
 }

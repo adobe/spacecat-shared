@@ -33,10 +33,10 @@
     "@adobe/helix-shared-wrap": "2.0.2",
     "@adobe/spacecat-shared-data-access": "file:../spacecat-shared-data-access",
     "chai": "4.4.1",
-    "chai-as-promised": "7.1.2",
+    "chai-as-promised": "8.0.0",
     "husky": "9.0.11",
     "nock": "13.5.4",
-    "sinon": "17.0.2",
+    "sinon": "18.0.0",
     "sinon-chai": "3.7.0"
   },
   "dependencies": {

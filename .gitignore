@@ -135,3 +135,6 @@ junit
 
 # Files deliberately excluded from version control
 *DO-NOT-COMMIT*
+
+# MAC OS hidden files
+.DS_Store

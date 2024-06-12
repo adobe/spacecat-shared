@@ -73,19 +73,35 @@ describe('AuditConfigType Tests', () => {
     });
   });
 
+  describe('excludedURLs Method', () => {
+    it('returns the default excludedURLs array', () => {
+      const auditConfigType = AuditConfigType();
+      expect(auditConfigType.excludedURLs()).to.be.an('array').that.is.empty;
+    });
+
+    it('returns the specified excludedURLs array', () => {
+      const urls = ['http://example.com', 'http://test.com'];
+      const auditConfigType = AuditConfigType({ excludedURLs: urls });
+      expect(auditConfigType.excludedURLs()).to.eql(urls);
+    });
+  });
+
   describe('fromDynamoItem Static Method', () => {
     it('correctly converts from DynamoDB item', () => {
-      const dynamoItem = { disabled: true };
+      const dynamoItem = { disabled: true, excludedURLs: ['http://example.com'] };
       const typeConfig = AuditConfigType.fromDynamoItem(dynamoItem);
       expect(typeConfig.disabled()).to.be.true;
+      expect(typeConfig.excludedURLs()).to.eql(['http://example.com']);
     });
   });
 
   describe('toDynamoItem Static Method', () => {
     it('correctly converts to DynamoDB item format', () => {
-      const auditConfigType = AuditConfigType({ disabled: true });
+      const urls = ['http://example.com', 'http://test.com'];
+      const auditConfigType = AuditConfigType({ disabled: true, excludedURLs: urls });
       const dynamoItem = AuditConfigType.toDynamoItem(auditConfigType);
       expect(dynamoItem.disabled).to.be.true;
+      expect(dynamoItem.excludedURLs).to.eql(urls);
     });
   });
 });

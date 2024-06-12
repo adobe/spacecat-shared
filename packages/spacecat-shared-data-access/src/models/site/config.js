@@ -30,6 +30,7 @@ export const configSchema = Joi.object({
       Joi.string(),
       Joi.object({
         disabled: Joi.boolean().optional(),
+        excludedURLs: Joi.array().items(Joi.string()).optional(),
       }).unknown(true),
     ).unknown(true),
   }).unknown(true),

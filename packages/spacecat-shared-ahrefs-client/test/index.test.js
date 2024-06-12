@@ -373,5 +373,10 @@ describe('AhrefsAPIClient', () => {
           fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cbest_position_url&order_by=sum_traffic%3Adesc&target=test-site.com&limit=200&mode=prefix&output=json',
         });
     });
+
+    it('throws error when keyword filter is not an array', async () => {
+      const result = client.getOrganicKeywords('test-site.com', 'us', 'keyword1');
+      await expect(result).to.be.rejectedWith('Error parsing keyword filter: keywordFilter.map is not a function');
+    });
   });
 });

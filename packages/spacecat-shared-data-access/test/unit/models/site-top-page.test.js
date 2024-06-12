@@ -19,6 +19,7 @@ const validData = {
   siteId: 'site123',
   url: 'https://www.example.com',
   traffic: 1000,
+  topKeyword: 'keyword',
   source: 'rum',
   geo: 'au',
   importedAt: new Date().toISOString(),
@@ -49,6 +50,11 @@ describe('SiteTopPage Model Tests', () => {
     it('throws an error if importedAt is not a valid ISO date', () => {
       expect(() => createSiteTopPage({ ...validData, importedAt: 'invalid-date' }))
         .to.throw('Imported at must be a valid ISO date');
+    });
+
+    it('throws an error if top keyword is not provided', () => {
+      expect(() => createSiteTopPage({ ...validData, topKeyword: '' }))
+        .to.throw('Top keyword must be provided');
     });
 
     it('creates a SiteTopPage object with valid data', () => {

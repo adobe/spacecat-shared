@@ -23,6 +23,7 @@ const SiteTopPage = (data = {}) => {
   self.getSiteId = () => self.state.siteId;
   self.getURL = () => self.state.url;
   self.getTraffic = () => self.state.traffic;
+  self.getTopKeyword = () => self.state.topKeyword;
   self.getSource = () => self.state.source.toLowerCase();
   self.getGeo = () => self.state.geo;
   self.getImportedAt = () => self.state.importedAt;
@@ -47,6 +48,10 @@ export const createSiteTopPage = (data) => {
 
   if (!hasText(newState.source)) {
     throw new Error('Source must be provided');
+  }
+
+  if (!hasText(newState.topKeyword)) {
+    throw new Error('Top keyword must be provided');
   }
 
   if (!hasText(newState.geo)) {

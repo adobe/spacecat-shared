@@ -192,9 +192,14 @@ export default class AhrefsAPIClient {
       output: 'json',
     };
     if (keywordFilter.length > 0) {
-      queryParams.where = JSON.stringify({
-        or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
-      });
+      try {
+        queryParams.where = JSON.stringify({
+          or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
+        });
+      } catch (e) {
+        this.log.error(`Error parsing keyword filter: ${e.message}`);
+        throw new Error(`Error parsing keyword filter: ${e.message}`);
+      }
     }
 
     return this.sendRequest('/site-explorer/organic-keywords', queryParams);

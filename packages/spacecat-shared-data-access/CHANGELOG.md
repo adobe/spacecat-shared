@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.26.1...@adobe/spacecat-shared-data-access-v1.27.0) (2024-06-12)
+
+
+### Features
+
+* query for URLs for a given jobID matching status ([#262](https://github.com/adobe/spacecat-shared/issues/262)) ([a74b629](https://github.com/adobe/spacecat-shared/commit/a74b629b78b100c140515efd072807f628de4a2a))
+
 # [@adobe/spacecat-shared-data-access-v1.26.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.26.0...@adobe/spacecat-shared-data-access-v1.26.1) (2024-06-10)
 
 

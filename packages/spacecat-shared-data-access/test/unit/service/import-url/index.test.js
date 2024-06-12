@@ -108,5 +108,20 @@ describe('Import Url Tests', () => {
         await expect(result).to.be.rejectedWith('Import Url with ID:test-id does not exist');
       });
     });
+
+    describe('getImportUrlsByJobIdAndStatus', () => {
+      it('should return an array of ImportUrlDto when items are found', async () => {
+        const mockImportUrl = {
+          id: 'test-id',
+          status: 'RUNNING',
+          url: 'https://www.test.com',
+          jobId: 'test-job-id',
+        };
+        mockDynamoClient.query.resolves([mockImportUrl]);
+        const result = await exportedFunctions.getImportUrlsByJobIdAndStatus('test-job-id', 'RUNNING');
+        expect(result.length).to.equal(1);
+        expect(result[0].getUrl()).to.equal('https://www.test.com');
+      });
+    });
   });
 });

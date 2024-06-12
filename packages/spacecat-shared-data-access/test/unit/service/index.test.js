@@ -89,6 +89,7 @@ describe('Data Access Object Tests', () => {
     'getImportUrlById',
     'createNewImportUrl',
     'updateImportUrl',
+    'getImportUrlsByJobIdAndStatus',
   ];
 
   let dao;

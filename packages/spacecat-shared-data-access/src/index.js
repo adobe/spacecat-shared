@@ -33,6 +33,7 @@ const INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = 'spacecat-services-all-sites-by-de
 const INDEX_NAME_ALL_LATEST_AUDIT_SCORES = 'spacecat-services-all-latest-audit-scores-dev';
 const INDEX_NAME_ALL_SITES_ORGANIZATIONS = 'spacecat-services-all-sites-organizations-dev';
 const INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS = 'spacecat-services-all-import-jobs-by-status-dev';
+const INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS = 'spacecat-services-all-import-urls-by-job-id-and-status-dev';
 
 const PK_ALL_SITES = 'ALL_SITES';
 const PK_ALL_CONFIGURATIONS = 'ALL_CONFIGURATIONS';
@@ -65,6 +66,8 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID = INDEX_NAME_ALL_ORGANIZATIONS_BY_IMS_ORG_ID,
         DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS = INDEX_NAME_ALL_SITES_ORGANIZATIONS,
         DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS = INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS,
+        DYNAMO_INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS =
+        INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS,
       } = context.env;
 
       context.dataAccess = createDataAccess({
@@ -86,6 +89,7 @@ export default function dataAccessWrapper(fn) {
         indexNameAllLatestAuditScores: DYNAMO_INDEX_NAME_ALL_LATEST_AUDIT_SCORES,
         indexNameAllSitesOrganizations: DYNAMO_INDEX_NAME_ALL_SITES_ORGANIZATIONS,
         indexNameAllImportJobsByStatus: DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS,
+        indexNameImportUrlsByJobIdAndStatus: DYNAMO_INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS,
         pkAllSites: PK_ALL_SITES,
         pkAllOrganizations: PK_ALL_ORGANIZATIONS,
         pkAllLatestAudits: PK_ALL_LATEST_AUDITS,

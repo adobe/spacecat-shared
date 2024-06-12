@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.27.0...@adobe/spacecat-shared-data-access-v1.28.0) (2024-06-12)
+
+
+### Features
+
+* opt-out broken-backlinks ([#263](https://github.com/adobe/spacecat-shared/issues/263)) ([14402cb](https://github.com/adobe/spacecat-shared/commit/14402cbda51bf54b2928ca1d66afac00ca2444ed))
+
 # [@adobe/spacecat-shared-data-access-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.26.1...@adobe/spacecat-shared-data-access-v1.27.0) (2024-06-12)
 
 

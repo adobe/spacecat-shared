@@ -38,8 +38,9 @@ function getOrCreateVariantObject(variants, variantName) {
     variantObject = {
       name: variantName,
       views: 0,
-      clicks: {},
-      conversions: {},
+      click: {},
+      convert: {},
+      formsubmit: {},
     };
     variants.push(variantObject);
   }

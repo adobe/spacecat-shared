@@ -49,6 +49,7 @@ function checkSite(site) {
   expect(auditConfig.auditsDisabled()).to.be.a('boolean').which.is.false;
   expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE)).to.be.an('object');
   expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).disabled()).to.be.a('boolean').which.is.false;
+  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).getExcludedURLs()).to.be.a('array').which.is.deep.equal(['https://example.com/excluded']);
   expect(auditConfig.getAuditTypeConfig('non-existing-type')).to.be.undefined;
   expect(auditConfig.getAuditTypeConfig('cwv')).to.be.an('object');
   expect(auditConfig.getAuditTypeConfig('cwv').disabled()).to.be.a('boolean').which.is.true;
@@ -416,7 +417,7 @@ describe('DynamoDB Integration Test', async () => {
       auditConfig: {
         auditsDisabled: false,
         auditTypeConfigs: {
-          'lhs-mobile': { disabled: false },
+          'lhs-mobile': { disabled: false, excludedURLs: ['https://example.com/excluded'] },
           cwv: { disabled: true },
         },
       },

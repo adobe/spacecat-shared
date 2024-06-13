@@ -73,16 +73,30 @@ describe('AuditConfigType Tests', () => {
     });
   });
 
-  describe('excludedURLs Method', () => {
+  describe('updateExcludedURLs Method', () => {
     it('returns the default excludedURLs array', () => {
       const auditConfigType = AuditConfigType();
-      expect(auditConfigType.excludedURLs()).to.be.an('array').that.is.empty;
+      expect(auditConfigType.getExcludedURLs()).to.be.an('array').that.is.empty;
     });
 
     it('returns the specified excludedURLs array', () => {
       const urls = ['http://example.com', 'http://test.com'];
       const auditConfigType = AuditConfigType({ excludedURLs: urls });
-      expect(auditConfigType.excludedURLs()).to.eql(urls);
+      expect(auditConfigType.getExcludedURLs()).to.eql(urls);
+    });
+
+    it('updates the excludedURLs array to an empty array', () => {
+      const urls = ['http://example.com', 'http://test.com'];
+      const auditConfigType = AuditConfigType({ excludedURLs: urls });
+      auditConfigType.updateExcludedURLs([]);
+      expect(auditConfigType.getExcludedURLs()).to.be.an('array').that.is.empty;
+    });
+
+    it('updates the excludedURLs array', () => {
+      const auditConfigType = AuditConfigType();
+      const newURLs = ['http://newexample.com', 'http://newtest.com'];
+      auditConfigType.updateExcludedURLs(newURLs);
+      expect(auditConfigType.getExcludedURLs()).to.eql(newURLs);
     });
   });
 
@@ -91,7 +105,7 @@ describe('AuditConfigType Tests', () => {
       const dynamoItem = { disabled: true, excludedURLs: ['http://example.com'] };
       const typeConfig = AuditConfigType.fromDynamoItem(dynamoItem);
       expect(typeConfig.disabled()).to.be.true;
-      expect(typeConfig.excludedURLs()).to.eql(['http://example.com']);
+      expect(typeConfig.getExcludedURLs()).to.eql(['http://example.com']);
     });
   });
 

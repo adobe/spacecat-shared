@@ -238,8 +238,9 @@ describe('Site Model Tests', () => {
     });
 
     it('updates a specific audit type configuration', () => {
-      site.updateAuditTypeConfig('type1', { disabled: true });
+      site.updateAuditTypeConfig('type1', { disabled: true, excludedURLs: ['http://example.com'] });
       expect(site.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.true;
+      expect(site.getAuditConfig().getAuditTypeConfig('type1').getExcludedURLs()).to.eql(['http://example.com']);
     });
 
     it('adds a new audit type configuration if it does not exist', () => {

@@ -86,12 +86,12 @@ function convertToExperimentsSchema(experimentInsights) {
 function handler(bundles) {
   const experimentInsights = {};
   for (const bundle of bundles) {
-    const { url, weight } = bundle;
-    if (!experimentInsights[url]) {
-      experimentInsights[url] = [];
-    }
     const experimentEvent = bundle.events.find((e) => e.checkpoint === 'experiment');
     if (experimentEvent) {
+      const { url, weight } = bundle;
+      if (!experimentInsights[url]) {
+        experimentInsights[url] = [];
+      }
       const experimentName = experimentEvent.source;
       const variantName = experimentEvent.target;
       const experimentObject = getOrCreateExperimentObject(experimentInsights[url], experimentName);

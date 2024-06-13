@@ -290,7 +290,7 @@ export default async function generateSampleData(
       auditConfig: {
         auditsDisabled: false,
         auditTypeConfigs: {
-          'lhs-mobile': { disabled: false },
+          'lhs-mobile': { disabled: false, excludedURLs: ['https://example.com/excluded'] },
           cwv: { disabled: true },
         },
       },

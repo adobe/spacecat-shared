@@ -18,8 +18,10 @@ const AuditConfigType = (data = {}) => {
 
   const self = {
     disabled: () => state.disabled,
-    excludedURLs: () => state.excludedURLs,
-
+    getExcludedURLs: () => state.excludedURLs,
+    updateExcludedURLs: (excludeURLs) => {
+      state.excludedURLs = excludeURLs;
+    },
     updateDisabled: (newValue) => {
       state.disabled = newValue;
     },
@@ -38,7 +40,7 @@ AuditConfigType.fromDynamoItem = (dynamoItem) => {
 
 AuditConfigType.toDynamoItem = (auditConfigType) => ({
   disabled: auditConfigType.disabled(),
-  excludedURLs: auditConfigType.excludedURLs(),
+  excludedURLs: auditConfigType.getExcludedURLs(),
 });
 
 export default AuditConfigType;

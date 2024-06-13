@@ -50,10 +50,6 @@ export const createSiteTopPage = (data) => {
     throw new Error('Source must be provided');
   }
 
-  if (!hasText(newState.topKeyword)) {
-    throw new Error('Top keyword must be provided');
-  }
-
   if (!hasText(newState.geo)) {
     newState.geo = DEFAULT_GEO;
   }

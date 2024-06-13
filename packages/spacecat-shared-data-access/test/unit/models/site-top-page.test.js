@@ -52,11 +52,6 @@ describe('SiteTopPage Model Tests', () => {
         .to.throw('Imported at must be a valid ISO date');
     });
 
-    it('throws an error if top keyword is not provided', () => {
-      expect(() => createSiteTopPage({ ...validData, topKeyword: '' }))
-        .to.throw('Top keyword must be provided');
-    });
-
     it('creates a SiteTopPage object with valid data', () => {
       const siteTopPage = createSiteTopPage(validData);
       expect(siteTopPage).to.be.an('object');

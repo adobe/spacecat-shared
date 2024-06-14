@@ -26,7 +26,6 @@ export const DEFAULT_ORGANIZATION_ID = 'default';
 const Organization = (data = {}) => {
   const self = Base(data);
 
-  self.getAuditConfig = () => self.state.config.audits;
   self.getConfig = () => self.state.config;
   self.getName = () => self.state.name;
   self.getImsOrgId = () => self.state.imsOrgId;

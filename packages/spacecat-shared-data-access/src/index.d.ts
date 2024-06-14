@@ -386,6 +386,22 @@ export interface Configuration {
    */
   getJobs: () => Array<object>;
 
+  getHandlers: () => object;
+
+  getHandler: (type) => object;
+
+  isHandlerEnabledForOrg: (type: string, org: Organization ) => boolean;
+
+  isHandlerEnabledForSite: (type: string, site: Site ) => boolean;
+
+  enableHandlerForSite: (type: string, site: Site) => void;
+
+  enableHandlerForOrg: (type: string, org: Organization) => void;
+
+  disableHandlerForSite: (type: string, site: Site) => void;
+
+  disableHandlerForOrg: (type:string, org: Organization) => void;
+
 }
 
 export interface ImportJob {

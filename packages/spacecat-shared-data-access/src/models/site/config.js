@@ -20,6 +20,7 @@ export const configSchema = Joi.object({
   }),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
+    excludedURLs: Joi.array().items(Joi.string()),
   })).unknown(true),
 }).unknown(true);
 
@@ -46,6 +47,8 @@ export const Config = (data = {}) => {
   const self = { ...validConfig };
   self.getSlackConfig = () => self.slack;
   self.getSlackMentions = (type) => self?.handlers[type]?.mentions?.slack;
+  self.getHandlerConfig = (type) => self?.handlers[type];
+  self.getExcludedURLs = (type) => self?.handlers[type]?.excludedURLs;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     self.slack = {
@@ -59,6 +62,12 @@ export const Config = (data = {}) => {
     const { handlers } = self;
     handlers[type] = handlers[type] || {};
     handlers[type].mentions.slack = mentions;
+  };
+
+  self.updateExcludeURLs = (type, excludedURLs) => {
+    const { handlers } = self;
+    handlers[type] = handlers[type] || {};
+    handlers[type].excludedURLs = excludedURLs;
   };
 
   return Object.freeze(self);

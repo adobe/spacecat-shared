@@ -10,7 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { getImportUrlById, createNewImportUrl } from './accessPatterns.js';
+import {
+  getImportUrlById,
+  createNewImportUrl,
+  updateImportUrl,
+} from './accessPatterns.js';
 
 export const importUrlFunctions = (dynamoClient, config, log) => ({
   getImportUrlById: (id) => getImportUrlById(
@@ -24,5 +28,11 @@ export const importUrlFunctions = (dynamoClient, config, log) => ({
     config,
     log,
     importUrlData,
+  ),
+  updateImportUrl: (importUrl) => updateImportUrl(
+    dynamoClient,
+    config,
+    log,
+    importUrl,
   ),
 });

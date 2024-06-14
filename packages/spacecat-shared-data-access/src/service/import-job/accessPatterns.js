@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { isObject } from '@adobe/spacecat-shared-utils';
 import { ImportJobDto } from '../../dto/import-job.js';
 import { createImportJob } from '../../models/importer/import-job.js';
 
@@ -41,7 +42,10 @@ export const getImportJobsByStatus = async (dynamoClient, config, log, status) =
   const items = await dynamoClient.query({
     TableName: config.tableNameImportJobs,
     IndexName: config.indexNameAllImportJobsByStatus,
-    KeyConditionExpression: 'GSI1PK = :gsi1pk AND status = :status',
+    KeyConditionExpression: 'GSI1PK = :gsi1pk AND #status = :status',
+    ExpressionAttributeNames: {
+      '#status': 'status',
+    },
     ExpressionAttributeValues: {
       ':gsi1pk': config.pkAllImportJobs,
       ':status': status,
@@ -61,5 +65,24 @@ export const getImportJobsByStatus = async (dynamoClient, config, log, status) =
 export const createNewImportJob = async (dynamoClient, config, log, importJobData) => {
   const importJob = createImportJob(importJobData);
   await dynamoClient.putItem(config.tableNameImportJobs, ImportJobDto.toDynamoItem(importJob));
+  return importJob;
+};
+
+/**
+ * Updates an Import Job
+ * @param {DynamoClient} dynamoClient
+ * @param {Object} config
+ * @param {Logger} log
+ * @param {ImportJobDto} importJob
+ */
+export const updateImportJob = async (dynamoClient, config, log, importJob) => {
+  const existingImportJob = await getImportJobByID(dynamoClient, config, log, importJob.getId());
+
+  if (!isObject(existingImportJob)) {
+    throw new Error(`Import Job with id: ${importJob.getId()} does not exist`);
+  }
+
+  await dynamoClient.putItem(config.tableNameImportJobs, ImportJobDto.toDynamoItem(importJob));
+
   return importJob;
 };

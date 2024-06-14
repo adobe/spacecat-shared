@@ -567,11 +567,17 @@ export interface DataAccess {
   createNewImportJob: (
     importJobData: object,
     ) => Promise<ImportJob>;
+  updateImportJob: (
+    importJob: ImportJob,
+    ) => Promise<ImportJob>;
   getImportUrlByID: (
     id: string,
     ) => Promise<ImportUrl | null>;
   createNewImportUrl: (
     importUrlData: object,
+    ) => Promise<ImportUrl>;
+  updateImportUrl: (
+    importUrl: ImportUrl,
     ) => Promise<ImportUrl>;
 
   // site candidate functions
@@ -628,3 +634,13 @@ export function createDataAccess(
   config: DataAccessConfig,
   logger: object,
 ): DataAccess;
+
+export interface ImportJobStatus {
+  RUNNING: string,
+  COMPLETE: string,
+  FAILED: string,
+}
+
+export interface ImportUrlStatus extends ImportJobStatus {
+  PENDING: string,
+}

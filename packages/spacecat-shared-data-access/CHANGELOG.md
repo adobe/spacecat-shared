@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v1.26.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.26.0...@adobe/spacecat-shared-data-access-v1.26.1) (2024-06-10)
+
+
+### Bug Fixes
+
+* Add an ExpressionAttributeName to fix issues with reserved keywords ([#261](https://github.com/adobe/spacecat-shared/issues/261)) ([b528c65](https://github.com/adobe/spacecat-shared/commit/b528c659b5ae2f6b17db0146ca0f650d9426f332)), closes [#260](https://github.com/adobe/spacecat-shared/issues/260)
+
+# [@adobe/spacecat-shared-data-access-v1.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.25.1...@adobe/spacecat-shared-data-access-v1.26.0) (2024-06-10)
+
+
+### Features
+
+* Add PENDING status for import URL entities ([#259](https://github.com/adobe/spacecat-shared/issues/259)) ([031194c](https://github.com/adobe/spacecat-shared/commit/031194cb91434ae66bc3870e63e29167ea94de8f)), closes [#258](https://github.com/adobe/spacecat-shared/issues/258)
+
+# [@adobe/spacecat-shared-data-access-v1.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.25.0...@adobe/spacecat-shared-data-access-v1.25.1) (2024-06-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#256](https://github.com/adobe/spacecat-shared/issues/256)) ([f28b6b6](https://github.com/adobe/spacecat-shared/commit/f28b6b6f520a8dfb8e82a7302da1b8c5e6bc4390))
+
+# [@adobe/spacecat-shared-data-access-v1.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.24.0...@adobe/spacecat-shared-data-access-v1.25.0) (2024-06-07)
+
+
+### Features
+
+* Add update queries for import-job and import-url entites ([#254](https://github.com/adobe/spacecat-shared/issues/254)) ([d1cba93](https://github.com/adobe/spacecat-shared/commit/d1cba93c2ce1073426dc8333142a8d8fd81017ea))
+
 # [@adobe/spacecat-shared-data-access-v1.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.6...@adobe/spacecat-shared-data-access-v1.24.0) (2024-06-06)
 
 

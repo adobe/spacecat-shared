@@ -14,6 +14,7 @@ import {
   createNewImportJob,
   getImportJobByID,
   getImportJobsByStatus,
+  updateImportJob,
 } from './accessPatterns.js';
 
 export const importJobFunctions = (dynamoClient, config, log) => ({
@@ -30,6 +31,12 @@ export const importJobFunctions = (dynamoClient, config, log) => ({
     status,
   ),
   createNewImportJob: (importJobData) => createNewImportJob(
+    dynamoClient,
+    config,
+    log,
+    importJobData,
+  ),
+  updateImportJob: (importJobData) => updateImportJob(
     dynamoClient,
     config,
     log,

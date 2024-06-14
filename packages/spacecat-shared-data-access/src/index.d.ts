@@ -84,49 +84,12 @@ export interface Audit {
   getScores: () => object;
 }
 
-/**
- * AuditConfigType defines the structure for specific audit type configurations.
- */
-export interface AuditConfigType {
-  /**
-   * Returns true if the audit type is disabled for the site. If an audit type is disabled, no
-   * audits of that type will be scheduled for the site.
-   * @returns {boolean} True if the audit type is disabled for the site.
-   */
-  disabled: () => boolean;
-}
-
 export interface Config {
 
 }
 
 export interface FulfillableItems {
   items: string[];
-}
-
-/**
- * AuditConfig defines the structure for the overall audit configuration of a site.
- */
-export interface AuditConfig {
-  /**
-   * Returns true if audits are disabled for the site. If audits are disabled, no audits will be
-   * scheduled for the site. Overrides any audit type specific configurations.
-   * @returns {boolean} True if audits are disabled for the site.
-   */
-  auditsDisabled: () => boolean;
-
-  /**
-   * Returns the audit config for a specific audit type. The audit type is the key.
-   * @param {string} auditType The audit type to get the config for.
-   * @returns {AuditConfigType} The audit config for the audit type.
-   */
-  getAuditTypeConfig: (auditType: string) => AuditConfigType;
-
-  /**
-   * Returns the audit configs for all audit types. The keys are the audit types.
-   * @returns {object} The audit configs for all audit types.
-   */
-  getAuditTypeConfigs: () => object;
 }
 
 /**

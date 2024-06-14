@@ -79,18 +79,6 @@ const Site = (data = {}) => {
     return self;
   }; */
 
-  self.disableAllAudits = () => {
-    self.state.config.configsHandler.allEnabled = false;
-    self.touch();
-    return self;
-  };
-
-  self.updateAuditState = (type, enabled) => {
-    self.state.config.updateAuditState(type, enabled);
-    self.touch();
-    return self;
-  };
-
   /**
    * Updates the site config.
    * @param {string} config - The Site config.

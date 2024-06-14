@@ -595,6 +595,10 @@ export interface DataAccess {
   updateImportUrl: (
     importUrl: ImportUrl,
     ) => Promise<ImportUrl>;
+  getImportUrlsByJobIdAndStatus: (
+      jobId: string,
+      status: string,
+    ) => Promise<ImportUrl[]>;
 
   // site candidate functions
   getSiteCandidateByBaseURL: (baseURL: string) => Promise<SiteCandidate>;
@@ -639,6 +643,7 @@ interface DataAccessConfig {
   indexNameAllOrganizations: string,
   indexNameAllOrganizationsByImsOrgId: string,
   indexNameAllImportJobsByStatus: string,
+  indexNameAllImportUrlsByJobIdAndStatus: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;

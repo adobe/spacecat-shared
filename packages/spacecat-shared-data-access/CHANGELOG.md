@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.28.0...@adobe/spacecat-shared-data-access-v1.29.0) (2024-06-13)
+
+
+### Features
+
+* opt-out brokenlinks ([#265](https://github.com/adobe/spacecat-shared/issues/265)) ([025158f](https://github.com/adobe/spacecat-shared/commit/025158f8549733ff2c45c67fc3d421a03dac66d7))
+
+# [@adobe/spacecat-shared-data-access-v1.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.27.0...@adobe/spacecat-shared-data-access-v1.28.0) (2024-06-12)
+
+
+### Features
+
+* opt-out broken-backlinks ([#263](https://github.com/adobe/spacecat-shared/issues/263)) ([14402cb](https://github.com/adobe/spacecat-shared/commit/14402cbda51bf54b2928ca1d66afac00ca2444ed))
+
+# [@adobe/spacecat-shared-data-access-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.26.1...@adobe/spacecat-shared-data-access-v1.27.0) (2024-06-12)
+
+
+### Features
+
+* query for URLs for a given jobID matching status ([#262](https://github.com/adobe/spacecat-shared/issues/262)) ([a74b629](https://github.com/adobe/spacecat-shared/commit/a74b629b78b100c140515efd072807f628de4a2a))
+
 # [@adobe/spacecat-shared-data-access-v1.26.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.26.0...@adobe/spacecat-shared-data-access-v1.26.1) (2024-06-10)
 
 

@@ -47,42 +47,6 @@ function getOrCreateVariantObject(variants, variantName) {
   return variantObject;
 }
 
-function convertToExperimentsSchema(experimentInsights) {
-  const experiments = [];
-  for (const url of Object.keys(experimentInsights)) {
-    const urlInsights = experimentInsights[url];
-    for (const experiment of urlInsights) {
-      const id = experiment.experiment;
-      const variants = [];
-      for (const variant of experiment.variants) {
-        const variantName = variant.name;
-        const { views } = variant;
-        const metrics = [];
-        for (const metric of METRIC_CHECKPOINTS) {
-          for (const selector of Object.keys(variant[metric])) {
-            metrics.push({
-              type: metric,
-              value: variant[metric][selector],
-              selector,
-            });
-          }
-        }
-        variants.push({
-          name: variantName,
-          views,
-          metrics,
-        });
-      }
-      experiments.push({
-        id,
-        url,
-        variants,
-      });
-    }
-  }
-  return experiments;
-}
-
 function handler(bundles) {
   const experimentInsights = {};
   for (const bundle of bundles) {
@@ -110,7 +74,7 @@ function handler(bundles) {
       }
     }
   }
-  return convertToExperimentsSchema(experimentInsights);
+  return experimentInsights;
 }
 
 export default {

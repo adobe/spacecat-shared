@@ -18,6 +18,7 @@ import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import experiment from '../src/functions/experiment.js';
 import expectedCwvResult from './fixtures/cwv.json' assert { type: 'json' };
 import expected404Result from './fixtures/notfound.json' assert { type: 'json' };
+import expectedExperimentsResult from './fixtures/experiments.json' assert { type: 'json' };
 
 describe('Query functions', () => {
   it('crunches cwv data', async () => {
@@ -32,7 +33,6 @@ describe('Query functions', () => {
 
   it('crunches experiment data', async () => {
     const experimentsResult = experiment.handler(bundles.rumBundles);
-    console.log(JSON.stringify(experimentsResult));
-    // expect(expected404Result).to.eql(notfoundResult);
+    expect(expectedExperimentsResult).to.eql(experimentsResult);
   });
 });

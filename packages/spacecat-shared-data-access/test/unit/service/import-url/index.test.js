@@ -88,7 +88,7 @@ describe('Import Url Tests', () => {
         mockDynamoClient.getItem.resolves(mockImportUrl);
 
         const importUrl = await exportedFunctions.getImportUrlById('test-id');
-        importUrl.updateStatus('COMPLETE');
+        importUrl.setStatus('COMPLETE');
         const result = await exportedFunctions.updateImportUrl(importUrl);
 
         expect(result).to.be.not.null;

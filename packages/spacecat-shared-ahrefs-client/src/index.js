@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidUrl, isArray } from '@adobe/spacecat-shared-utils';
 import { context as h2, h1 } from '@adobe/fetch';
 
 /* c8 ignore next 3 */
@@ -177,6 +177,18 @@ export default class AhrefsAPIClient {
   }
 
   async getOrganicKeywords(url, country = 'us', keywordFilter = [], limit = 200) {
+    if (!hasText(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+    if (!hasText(country)) {
+      throw new Error(`Invalid country: ${country}`);
+    }
+    if (!isArray(keywordFilter)) {
+      throw new Error(`Invalid keyword filter: ${keywordFilter}`);
+    }
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw new Error(`Invalid limit: ${limit}`);
+    }
     const queryParams = {
       country,
       date: new Date().toISOString().split('T')[0],

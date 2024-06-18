@@ -374,9 +374,29 @@ describe('AhrefsAPIClient', () => {
         });
     });
 
+    it('throws error when keyword filter does not contain appropriate keyword items', async () => {
+      const result = client.getOrganicKeywords('test-site.com', 'us', [BigInt(123)]);
+      await expect(result).to.be.rejectedWith('Error parsing keyword filter: Do not know how to serialize a BigInt');
+    });
+
     it('throws error when keyword filter is not an array', async () => {
       const result = client.getOrganicKeywords('test-site.com', 'us', 'keyword1');
-      await expect(result).to.be.rejectedWith('Error parsing keyword filter: keywordFilter.map is not a function');
+      await expect(result).to.be.rejectedWith('Invalid keyword filter: keyword1');
+    });
+
+    it('throws error when url is not a string', async () => {
+      const result = client.getOrganicKeywords(123);
+      await expect(result).to.be.rejectedWith('Invalid URL: 123');
+    });
+
+    it('throws error when country is not a string', async () => {
+      const result = client.getOrganicKeywords('test-site.com', 123);
+      await expect(result).to.be.rejectedWith('Invalid country: 123');
+    });
+
+    it('throws error when limit is not an integer', async () => {
+      const result = client.getOrganicKeywords('test-site.com', 'us', [], 1.5);
+      await expect(result).to.be.rejectedWith('Invalid limit: 1.5');
     });
   });
 });

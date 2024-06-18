@@ -26,6 +26,9 @@ export const ImportUrlDto = {
     jobId: importUrl.getJobId(),
     url: importUrl.getUrl(),
     status: importUrl.getStatus(),
+    reason: importUrl.getReason(),
+    path: importUrl.getPath(),
+    file: importUrl.getFile(),
   }),
 
   /**
@@ -37,6 +40,9 @@ export const ImportUrlDto = {
       jobId: dynamoItem.jobId,
       url: dynamoItem.url,
       status: dynamoItem.status,
+      reason: dynamoItem.reason,
+      path: dynamoItem.path,
+      file: dynamoItem.file,
     };
     return createImportUrl(importUrlData);
   },

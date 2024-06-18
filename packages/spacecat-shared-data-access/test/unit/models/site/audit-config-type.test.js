@@ -118,4 +118,20 @@ describe('AuditConfigType Tests', () => {
       expect(dynamoItem.excludedURLs).to.eql(urls);
     });
   });
+
+  describe('updateManualOverwrites Method', () => {
+    it('updates the manualOverwrites array', () => {
+      const auditConfigType = AuditConfigType();
+      const newManualOverwrites = ['brokenTargetURL', 'targetURL'];
+      auditConfigType.updateManualOverwrites(newManualOverwrites);
+      expect(auditConfigType.getManualOverwrites()).to.eql(newManualOverwrites);
+    });
+
+    it('updates the manualOverwrites array to an empty array', () => {
+      const manualOverwrites = ['brokenTargetURL', 'targetURL'];
+      const auditConfigType = AuditConfigType({ manualOverwrites });
+      auditConfigType.updateManualOverwrites([]);
+      expect(auditConfigType.getManualOverwrites()).to.be.an('array').that.is.empty;
+    });
+  });
 });

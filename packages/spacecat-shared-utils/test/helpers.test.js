@@ -32,6 +32,12 @@ describe('resolveSecretsName', () => {
   });
 
   it('resolves name correctly with valid ci inputs', () => {
+    const ctx = { func: { version: 'ci' } };
+    const defaultPath = 'secretPath';
+    expect(resolveSecretsName({}, ctx, defaultPath)).to.equal('secretPath/ci');
+  });
+
+  it('resolves name correctly with valid ciXXX inputs', () => {
     const ctx = { func: { version: 'ci123' } };
     const defaultPath = 'secretPath';
     expect(resolveSecretsName({}, ctx, defaultPath)).to.equal('secretPath/ci');

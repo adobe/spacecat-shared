@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.29.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.29.1...@adobe/spacecat-shared-data-access-v1.29.2) (2024-06-18)
+
+
+### Bug Fixes
+
+* [#268](https://github.com/adobe/spacecat-shared/issues/268) Import URL entities need a REDIRECT status, and additional properties for reporting ([#269](https://github.com/adobe/spacecat-shared/issues/269)) ([88bb491](https://github.com/adobe/spacecat-shared/commit/88bb49105a9b0a9cd297fe9667aff1df24bcee03))
+
 # [@adobe/spacecat-shared-data-access-v1.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.29.0...@adobe/spacecat-shared-data-access-v1.29.1) (2024-06-15)
 
 

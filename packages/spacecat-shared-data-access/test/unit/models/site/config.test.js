@@ -71,6 +71,34 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('Config Methods', () => {
+    it('correctly updates the Slack configuration', () => {
+      const config = Config();
+      config.updateSlackConfig('newChannel', 'newWorkspace', 20);
+
+      const slackConfig = config.getSlackConfig();
+      expect(slackConfig.channel).to.equal('newChannel');
+      expect(slackConfig.workspace).to.equal('newWorkspace');
+      expect(slackConfig.invitedUserCount).to.equal(20);
+    });
+
+    it('correctly updates the Slack mentions', () => {
+      const config = Config();
+      config.updateSlackMentions('404', ['id1', 'id2']);
+
+      const slackMentions = config.getSlackMentions('404');
+      expect(slackMentions).to.deep.equal(['id1', 'id2']);
+    });
+
+    it('correctly updates the excluded URLs', () => {
+      const config = Config();
+      config.updateExcludeURLs('404', ['url1', 'url2']);
+
+      const excludedURLs = config.getExcludedURLs('404');
+      expect(excludedURLs).to.deep.equal(['url1', 'url2']);
+    });
+  });
+
   describe('fromDynamoItem Static Method', () => {
     it('correctly converts from DynamoDB item', () => {
       const dynamoItem = {
@@ -86,8 +114,9 @@ describe('Config Tests', () => {
       };
       const config = Config.fromDynamoItem(dynamoItem);
       const slackMentions = config.getSlackMentions(404);
-      expect(config.slack.channel).to.equal('channel1');
-      expect(config.slack.workspace).to.equal('workspace1');
+      const slackConfig = config.getSlackConfig();
+      expect(slackConfig.channel).to.equal('channel1');
+      expect(slackConfig.workspace).to.equal('workspace1');
       expect(slackMentions[0]).to.equal('id1');
     });
   });

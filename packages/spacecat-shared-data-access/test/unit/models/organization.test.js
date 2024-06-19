@@ -39,7 +39,7 @@ describe('Organization Model Tests', () => {
       const config = org.getConfig();
 
       expect(config).to.be.an('object');
-      expect(config.slack).to.be.an('object');
+      expect(config.getSlackConfig()).to.be.an('object');
     });
 
     it('creates an organization with provided config', () => {
@@ -56,11 +56,12 @@ describe('Organization Model Tests', () => {
       };
       const org = createOrganization({ ...validData, config: conf });
       const config = org.getConfig();
-
-      expect(config.slack).to.be.an('object');
-      expect(config.slack.workspace).to.equal('workspace');
-      expect(config.slack.channel).to.equal('channel');
-      expect(config.handlers[404].mentions.slack[0]).to.equal('slackId');
+      const slack = config.getSlackConfig();
+      const handler = config.getHandlerConfig(404);
+      expect(slack).to.be.an('object');
+      expect(slack.workspace).to.equal('workspace');
+      expect(slack.channel).to.equal('channel');
+      expect(handler.mentions.slack[0]).to.equal('slackId');
     });
   });
 
@@ -97,10 +98,12 @@ describe('Organization Model Tests', () => {
       };
       organization.updateConfig(conf);
       const updatedConf = organization.getConfig();
-      expect(updatedConf.slack).to.be.an('object');
-      expect(updatedConf.slack.workspace).to.equal('workspace');
-      expect(updatedConf.slack.channel).to.equal('channel');
-      expect(updatedConf.handlers[404].mentions.slack[0]).to.equal('slackId');
+      const updatedSlack = updatedConf.getSlackConfig();
+      const updateHandlerConfig = updatedConf.getHandlerConfig(404);
+      expect(updatedSlack).to.be.an('object');
+      expect(updatedSlack.workspace).to.equal('workspace');
+      expect(updatedSlack.channel).to.equal('channel');
+      expect(updateHandlerConfig.mentions.slack[0]).to.equal('slackId');
     });
 
     it('throws an error when updating with an empty name', () => {

@@ -44,14 +44,15 @@ function validateConfiguration(config) {
 export const Config = (data = {}) => {
   const validConfig = validateConfiguration(data);
 
-  const self = { ...validConfig };
-  self.getSlackConfig = () => self.slack;
-  self.getSlackMentions = (type) => self?.handlers[type]?.mentions?.slack;
-  self.getHandlerConfig = (type) => self?.handlers[type];
-  self.getExcludedURLs = (type) => self?.handlers[type]?.excludedURLs;
+  const state = { ...validConfig };
+  const self = { state };
+  self.getSlackConfig = () => state.slack;
+  self.getSlackMentions = (type) => state?.handlers[type]?.mentions?.slack;
+  self.getHandlerConfig = (type) => state?.handlers[type];
+  self.getExcludedURLs = (type) => state?.handlers[type]?.excludedURLs;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
-    self.slack = {
+    state.slack = {
       channel,
       workspace,
       invitedUserCount,
@@ -59,15 +60,16 @@ export const Config = (data = {}) => {
   };
 
   self.updateSlackMentions = (type, mentions) => {
-    const { handlers } = self;
-    handlers[type] = handlers[type] || {};
-    handlers[type].mentions.slack = mentions;
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].mentions = state.handlers[type].mentions || {};
+    state.handlers[type].mentions.slack = mentions;
   };
 
   self.updateExcludeURLs = (type, excludedURLs) => {
-    const { handlers } = self;
-    handlers[type] = handlers[type] || {};
-    handlers[type].excludedURLs = excludedURLs;
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].excludedURLs = excludedURLs;
   };
 
   return Object.freeze(self);

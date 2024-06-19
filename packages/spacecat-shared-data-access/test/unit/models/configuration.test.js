@@ -143,7 +143,7 @@ describe('Configuration Model Tests', () => {
     const configuration = createConfiguration(validData);
     configuration.disableHandlerForSite('broken-backlinks', { getId: () => 'site2', getOrganizationId: () => 'org7' });
     const isEnabled = configuration.isHandlerEnabledForSite('broken-backlinks', { getId: () => 'site2', getOrganizationId: () => 'org7' });
-    expect(isEnabled).to.be.true;
+    expect(isEnabled).to.be.false;
   });
 
   it('disables a handler type for a site when enabled by default', () => {

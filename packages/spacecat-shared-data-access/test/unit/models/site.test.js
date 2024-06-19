@@ -110,9 +110,10 @@ describe('Site Model Tests', () => {
       };
       site.updateConfig(conf);
       const updatedConf = site.getConfig();
-      expect(updatedConf.slack).to.be.an('object');
-      expect(updatedConf.slack.workspace).to.equal('workspace');
-      expect(updatedConf.slack.channel).to.equal('channel');
+      const slack = updatedConf.getSlackConfig();
+      expect(slack).to.be.an('object');
+      expect(slack.workspace).to.equal('workspace');
+      expect(slack.channel).to.equal('channel');
       expect(updatedConf.getSlackMentions(404)).to.deep.equal(['slackId']);
     });
 

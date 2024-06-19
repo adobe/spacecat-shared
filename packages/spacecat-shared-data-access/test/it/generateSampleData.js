@@ -324,6 +324,7 @@ export default async function generateSampleData(
       SK: `ahrefs#global#${String(traffic).padStart(12, '0')}`,
       url: `${sites[i % numberOfSites].baseURL}/page-${i}`,
       traffic,
+      topKeyword: `keyword-${i}`,
       source: 'ahrefs',
       geo: 'global',
       importedAt: nowIso,

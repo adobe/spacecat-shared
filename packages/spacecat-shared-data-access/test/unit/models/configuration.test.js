@@ -42,10 +42,21 @@ const validData = {
     404: {
       disabled: {
         sites: ['site1'],
-        orgs: ['org1'],
+        orgs: ['org1', 'org2'],
       },
       enabledByDefault: true,
       dependencies: [],
+    },
+    'broken-backlinks': {
+      enabledByDefault: false,
+      enabled: {
+        sites: ['site2'],
+        orgs: ['org2'],
+      },
+      dependencies: [],
+    },
+    cwv: {
+      enabledByDefault: true,
     },
   },
   queues: {
@@ -67,21 +78,79 @@ describe('Configuration Model Tests', () => {
 
   it('checks if a handler type is enabled for a site', () => {
     const configuration = createConfiguration(validData);
-    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org1' });
+    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org2' });
     expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.false;
+  });
+
+  it('checks if a handler type is enabled for a site', () => {
+    const configuration = createConfiguration(validData);
+    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site2', getOrganizationId: () => 'org2' });
+    expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.false;
+  });
+
+  it('checks if a handler type is enabled for a site if siteId is enabled', () => {
+    const configuration = createConfiguration(validData);
+    const isEnabled = configuration.isHandlerEnabledForSite('broken-backlinks', { getId: () => 'site2', getOrganizationId: () => 'org1' });
+    expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.true;
+  });
+
+  it('checks if a handler type is enabled for a site if enabledByDefault is true', () => {
+    const configuration = createConfiguration(validData);
+    const isEnabled = configuration.isHandlerEnabledForSite('cwv', { getId: () => 'site3', getOrganizationId: () => 'org1' });
+    expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.true;
   });
 
   it('checks if a handler type is enabled for an organization', () => {
     const configuration = createConfiguration(validData);
     const isEnabled = configuration.isHandlerEnabledForOrg('404', { getId: () => 'org1' });
     expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.false;
   });
 
-  it('enables a handler type for a site', () => {
+  it('checks if a handler type is enabled for an organization', () => {
     const configuration = createConfiguration(validData);
-    configuration.enableHandlerForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org2' });
-    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org2' });
+    const isEnabled = configuration.isHandlerEnabledForOrg('cwv', { getId: () => 'org3' });
+    expect(isEnabled).to.be.a('boolean');
     expect(isEnabled).to.be.true;
+  });
+
+  it('checks if a handler type is enabled for an organization', () => {
+    const configuration = createConfiguration(validData);
+    const isEnabled = configuration.isHandlerEnabledForOrg('broken-backlinks', { getId: () => 'org2' });
+    expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.true;
+  });
+
+  it('enables a handler type for a site when disabled by id', () => {
+    const configuration = createConfiguration(validData);
+    configuration.enableHandlerForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org3' });
+    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org3' });
+    expect(isEnabled).to.be.true;
+  });
+
+  it('enables a handler type for a site when disabled by default', () => {
+    const configuration = createConfiguration(validData);
+    configuration.enableHandlerForSite('broken-backlinks', { getId: () => 'site1', getOrganizationId: () => 'org3' });
+    const isEnabled = configuration.isHandlerEnabledForSite('broken-backlinks', { getId: () => 'site1', getOrganizationId: () => 'org3' });
+    expect(isEnabled).to.be.true;
+  });
+
+  it('disables a handler type for a site when enabled by siteId', () => {
+    const configuration = createConfiguration(validData);
+    configuration.disableHandlerForSite('broken-backlinks', { getId: () => 'site2', getOrganizationId: () => 'org7' });
+    const isEnabled = configuration.isHandlerEnabledForSite('broken-backlinks', { getId: () => 'site2', getOrganizationId: () => 'org7' });
+    expect(isEnabled).to.be.true;
+  });
+
+  it('disables a handler type for a site when enabled by default', () => {
+    const configuration = createConfiguration(validData);
+    configuration.disableHandlerForSite('404', { getId: () => 'site4', getOrganizationId: () => 'org5' });
+    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site4', getOrganizationId: () => 'org3' });
+    expect(isEnabled).to.be.false;
   });
 
   it('enables a handler type for an organization', () => {
@@ -91,17 +160,24 @@ describe('Configuration Model Tests', () => {
     expect(isEnabled).to.be.true;
   });
 
-  it('disables a handler type for a site', () => {
+  it('enables a handler type for an organization when disabled by default', () => {
     const configuration = createConfiguration(validData);
-    configuration.disableHandlerForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org1' });
-    const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org1' });
+    configuration.enableHandlerForOrg('broken-backlinks', { getId: () => 'org4' });
+    const isEnabled = configuration.isHandlerEnabledForOrg('broken-backlinks', { getId: () => 'org4' });
+    expect(isEnabled).to.be.true;
+  });
+
+  it('disables a handler type for an organization when enabled by default', () => {
+    const configuration = createConfiguration(validData);
+    configuration.disableHandlerForOrg('404', { getId: () => 'org4' });
+    const isEnabled = configuration.isHandlerEnabledForOrg('404', { getId: () => 'org4' });
     expect(isEnabled).to.be.false;
   });
 
-  it('disables a handler type for an organization', () => {
+  it('disables a handler type for an organization when orgId is enabled', () => {
     const configuration = createConfiguration(validData);
-    configuration.disableHandlerForOrg('404', { getId: () => 'org1' });
-    const isEnabled = configuration.isHandlerEnabledForOrg('404', { getId: () => 'org1' });
+    configuration.disableHandlerForOrg('broken-backlinks', { getId: () => 'org2' });
+    const isEnabled = configuration.isHandlerEnabledForOrg('404', { getId: () => 'org2' });
     expect(isEnabled).to.be.false;
   });
 

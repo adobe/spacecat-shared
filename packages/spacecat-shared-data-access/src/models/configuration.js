@@ -62,12 +62,14 @@ const Configuration = (data = {}) => {
       if (handler.enabledByDefault) {
         handler.disabled.orgs = handler.disabled.orgs?.filter((id) => id !== orgId) || [];
       } else {
-        handler.enabled.orgs = [...(handler.enabled.orgs || []), orgId];
+        handler.enabled = handler.enabled || { orgs: [] };
+        handler.enabled.orgs = [...(handler.enabled?.orgs || []), orgId];
       }
     } else if (handler.enabledByDefault) {
-      handler.enabled.orgs = handler.enabled.orgs?.filter((id) => id !== orgId) || [];
+      handler.disabled = handler.disabled || { orgs: [] };
+      handler.disabled.orgs = [...(handler.disabled?.orgs || []), orgId];
     } else {
-      handler.disabled.orgs = [...(handler.disabled.orgs || []), orgId];
+      handler.enabled.orgs = handler.enabled.orgs?.filter((id) => id !== orgId) || [];
     }
   };
 
@@ -79,12 +81,14 @@ const Configuration = (data = {}) => {
       if (handler.enabledByDefault) {
         handler.disabled.sites = handler.disabled.sites?.filter((id) => id !== siteId) || [];
       } else {
+        handler.enabled = handler.enabled || { sites: [] };
         handler.enabled.sites = [...(handler.enabled.sites || []), siteId];
       }
     } else if (handler.enabledByDefault) {
-      handler.enabled.sites = handler.enabled.sites?.filter((id) => id !== siteId) || [];
-    } else {
+      handler.disabled = handler.disabled || { sites: [] };
       handler.disabled.sites = [...(handler.disabled.sites || []), siteId];
+    } else {
+      handler.enabled.sites = handler.enabled.sites?.filter((id) => id !== siteId) || [];
     }
   };
 

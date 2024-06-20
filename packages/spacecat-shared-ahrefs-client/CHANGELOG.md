@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.6...@adobe/spacecat-shared-ahrefs-client-v1.3.0) (2024-06-19)
+
+
+### Features
+
+* introduce organic keywords for ahrefs client and top keyword in top pages ([#257](https://github.com/adobe/spacecat-shared/issues/257)) ([371f1c4](https://github.com/adobe/spacecat-shared/commit/371f1c475870fd2aac833f925236237a8b25c026))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.2.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.5...@adobe/spacecat-shared-ahrefs-client-v1.2.6) (2024-06-11)
 
 

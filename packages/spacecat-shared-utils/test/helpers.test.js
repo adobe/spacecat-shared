@@ -15,7 +15,11 @@
 import { expect } from 'chai';
 import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.js';
 import { createOrganization } from '@adobe/spacecat-shared-data-access/src/models/organization.js';
-import { AUDIT_TYPE_BROKEN_BACKLINKS } from '@adobe/spacecat-shared-data-access/src/models/audit.js';
+import {
+  AUDIT_TYPE_BROKEN_BACKLINKS,
+  AUDIT_TYPE_EXPERIMENTATION_ESS_DAILY,
+  AUDIT_TYPE_EXPERIMENTATION_ESS_MONTHLY,
+} from '@adobe/spacecat-shared-data-access/src/models/audit.js';
 
 import {
   generateCSVFile,
@@ -32,6 +36,12 @@ describe('resolveSecretsName', () => {
   });
 
   it('resolves name correctly with valid ci inputs', () => {
+    const ctx = { func: { version: 'ci' } };
+    const defaultPath = 'secretPath';
+    expect(resolveSecretsName({}, ctx, defaultPath)).to.equal('secretPath/ci');
+  });
+
+  it('resolves name correctly with valid ciXXX inputs', () => {
     const ctx = { func: { version: 'ci123' } };
     const defaultPath = 'secretPath';
     expect(resolveSecretsName({}, ctx, defaultPath)).to.equal('secretPath/ci');
@@ -228,6 +238,8 @@ describe('isAuditsDisabled', () => {
     });
 
     expect(isAuditsDisabled(site, org, AUDIT_TYPE_BROKEN_BACKLINKS)).to.be.true;
+    expect(isAuditsDisabled(site, org, AUDIT_TYPE_EXPERIMENTATION_ESS_DAILY)).to.be.true;
+    expect(isAuditsDisabled(site, org, AUDIT_TYPE_EXPERIMENTATION_ESS_MONTHLY)).to.be.true;
   });
 });
 

@@ -13,12 +13,16 @@
 import AuditConfigType from './audit-config-type.js';
 import {
   AUDIT_TYPE_BROKEN_BACKLINKS,
+  AUDIT_TYPE_EXPERIMENTATION_ESS_DAILY,
+  AUDIT_TYPE_EXPERIMENTATION_ESS_MONTHLY,
   AUDIT_TYPE_ORGANIC_KEYWORDS,
   AUDIT_TYPE_ORGANIC_TRAFFIC,
 } from '../audit.js';
 
 const AUDIT_TYPE_DISABLED_DEFAULTS = {
   [AUDIT_TYPE_BROKEN_BACKLINKS]: true,
+  [AUDIT_TYPE_EXPERIMENTATION_ESS_DAILY]: true,
+  [AUDIT_TYPE_EXPERIMENTATION_ESS_MONTHLY]: true,
   [AUDIT_TYPE_ORGANIC_KEYWORDS]: true,
   [AUDIT_TYPE_ORGANIC_TRAFFIC]: true,
 };
@@ -27,6 +31,8 @@ function getAuditTypeConfigs(auditTypeConfigs, auditsDisabled) {
   if (!auditTypeConfigs || Object.keys(auditTypeConfigs).length === 0) {
     return {
       [AUDIT_TYPE_BROKEN_BACKLINKS]: AuditConfigType({ disabled: true }),
+      [AUDIT_TYPE_EXPERIMENTATION_ESS_DAILY]: AuditConfigType({ disabled: true }),
+      [AUDIT_TYPE_EXPERIMENTATION_ESS_MONTHLY]: AuditConfigType({ disabled: true }),
       [AUDIT_TYPE_ORGANIC_KEYWORDS]: AuditConfigType({ disabled: true }),
       [AUDIT_TYPE_ORGANIC_TRAFFIC]: AuditConfigType({ disabled: true }),
     };

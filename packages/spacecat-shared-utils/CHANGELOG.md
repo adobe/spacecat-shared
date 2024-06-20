@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.10...@adobe/spacecat-shared-utils-v1.16.0) (2024-06-20)
+
+
+### Features
+
+* **audit-configs:** ess audits disabled by default ([#271](https://github.com/adobe/spacecat-shared/issues/271)) ([de6f83d](https://github.com/adobe/spacecat-shared/commit/de6f83db75135820b236d55d7d2b477f29ca5e43))
+
 # [@adobe/spacecat-shared-utils-v1.15.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.9...@adobe/spacecat-shared-utils-v1.15.10) (2024-06-18)
 
 

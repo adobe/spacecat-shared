@@ -35,6 +35,10 @@ export const configSchema = Joi.object({
           brokenTargetURL: Joi.string().optional(),
           targetURL: Joi.string().optional(),
         })).optional(),
+        fixedURLs: Joi.array().items(Joi.object({
+          brokenTargetURL: Joi.string().optional(),
+          targetURL: Joi.string().optional(),
+        })).optional(),
       }).unknown(true),
     ).unknown(true),
   }).unknown(true),

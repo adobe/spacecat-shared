@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.0.3...@adobe/spacecat-shared-rum-api-client-v2.1.0) (2024-06-20)
+
+
+### Features
+
+* adding experiment function for rum bundler APIs ([#264](https://github.com/adobe/spacecat-shared/issues/264)) ([b1a076d](https://github.com/adobe/spacecat-shared/commit/b1a076d0044fe4364951accf5d2aa1a5ae315b7b))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.0.2...@adobe/spacecat-shared-rum-api-client-v2.0.3) (2024-06-11)
 
 

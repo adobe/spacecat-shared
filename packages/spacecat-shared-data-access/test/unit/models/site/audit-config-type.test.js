@@ -122,13 +122,19 @@ describe('AuditConfigType Tests', () => {
   describe('updateManualOverwrites Method', () => {
     it('updates the manualOverwrites array', () => {
       const auditConfigType = AuditConfigType();
-      const newManualOverwrites = ['brokenTargetURL', 'targetURL'];
+      const newManualOverwrites = [
+        { brokenTargetURL: 'https://broken.co', targetURL: 'https://overwrite.co' },
+        { brokenTargetURL: 'https://broken.link.co', targetURL: 'https://overwrite.link.co' },
+      ];
       auditConfigType.updateManualOverwrites(newManualOverwrites);
       expect(auditConfigType.getManualOverwrites()).to.eql(newManualOverwrites);
     });
 
     it('updates the manualOverwrites array to an empty array', () => {
-      const manualOverwrites = ['brokenTargetURL', 'targetURL'];
+      const manualOverwrites = [
+        { brokenTargetURL: 'https://broken.co', targetURL: 'https://overwrite.co' },
+        { brokenTargetURL: 'https://broken.link.co', targetURL: 'https://overwrite.link.co' },
+      ];
       const auditConfigType = AuditConfigType({ manualOverwrites });
       auditConfigType.updateManualOverwrites([]);
       expect(auditConfigType.getManualOverwrites()).to.be.an('array').that.is.empty;

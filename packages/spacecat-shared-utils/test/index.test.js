@@ -31,7 +31,6 @@ describe('Index Exports', () => {
     'isString',
     'toBoolean',
     'isValidUrl',
-    'isAuditsDisabled',
     'resolveSecretsName',
     'resolveCustomerSecretsName',
     'dateAfterDays',

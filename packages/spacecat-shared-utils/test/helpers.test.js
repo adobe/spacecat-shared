@@ -13,13 +13,9 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.js';
-import { createOrganization } from '@adobe/spacecat-shared-data-access/src/models/organization.js';
-import { AUDIT_TYPE_BROKEN_BACKLINKS } from '@adobe/spacecat-shared-data-access/src/models/audit.js';
 
 import {
   generateCSVFile,
-  isAuditsDisabled,
   resolveSecretsName,
   resolveCustomerSecretsName,
 } from '../src/helpers.js';
@@ -85,149 +81,6 @@ describe('resolveCustomerSecretsName', () => {
   it('throws error when baseURL is not a valid url', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(() => resolveCustomerSecretsName('not a valid url', ctx)).to.throw('Invalid baseURL: must be a valid URL');
-  });
-});
-
-describe('isAuditsDisabled', () => {
-  it('audits are not disabled if no audit configs', () => {
-    const site = createSite({
-      id: 'site-1',
-      baseURL: 'http://site-1.com',
-      organizationId: 'org-1',
-    });
-
-    const org = createOrganization({
-      id: 'org-1',
-      name: 'some-org',
-    });
-
-    expect(isAuditsDisabled(site, org)).to.be.false;
-  });
-
-  it('audits are not disabled if no audit config for audit type', () => {
-    const site = createSite({
-      id: 'site-1',
-      baseURL: 'http://site-1.com',
-      organizationId: 'org-1',
-    });
-
-    const org = createOrganization({
-      id: 'org-1',
-      name: 'some-org',
-    });
-
-    const auditType = 'some-audit-type';
-
-    expect(isAuditsDisabled(site, org, auditType)).to.be.false;
-  });
-
-  it('audits are disabled if all audits disabled at org level', () => {
-    const site = createSite({
-      id: 'site-1',
-      baseURL: 'http://site-1.com',
-      organizationId: 'org-1',
-    });
-
-    const org = createOrganization({
-      id: 'org-1',
-      name: 'some-org',
-      config: {
-        audits: {
-          auditsDisabled: true,
-        },
-      },
-    });
-
-    const auditType = 'some-audit-type';
-
-    expect(isAuditsDisabled(site, org, auditType)).to.be.true;
-  });
-
-  it('audits are disabled if all audits disabled at site level', () => {
-    const site = createSite({
-      id: 'site-1',
-      baseURL: 'http://site-1.com',
-      organizationId: 'org-1',
-      auditConfig: {
-        auditsDisabled: true,
-      },
-    });
-
-    const org = createOrganization({
-      id: 'org-1',
-      name: 'some-org',
-    });
-
-    const auditType = 'some-audit-type';
-
-    expect(isAuditsDisabled(site, org, auditType)).to.be.true;
-  });
-
-  it('audits are disabled if all the audit type disabled at org level', () => {
-    const auditType = 'some-audit-type';
-
-    const site = createSite({
-      id: 'site-1',
-      baseURL: 'http://site-1.com',
-      organizationId: 'org-1',
-    });
-
-    const org = createOrganization({
-      id: 'org-1',
-      name: 'some-org',
-      config: {
-        audits: {
-          auditsDisabled: false,
-          auditTypeConfigs: {
-            [auditType]: {
-              disabled: true,
-            },
-          },
-        },
-      },
-    });
-
-    expect(isAuditsDisabled(site, org, auditType)).to.be.true;
-  });
-
-  it('audits are disabled if all the audit type disabled at site level', () => {
-    const auditType = 'some-audit-type';
-
-    const site = createSite({
-      id: 'site-1',
-      baseURL: 'http://site-1.com',
-      organizationId: 'org-1',
-      auditConfig: {
-        auditsDisabled: false,
-        auditTypeConfigs: {
-          [auditType]: {
-            disabled: true,
-          },
-        },
-      },
-    });
-
-    const org = createOrganization({
-      id: 'org-1',
-      name: 'some-org',
-    });
-
-    expect(isAuditsDisabled(site, org, auditType)).to.be.true;
-  });
-
-  it('audits are disabled if the audit type is disabled by default', () => {
-    const site = createSite({
-      id: 'site-1',
-      baseURL: 'http://site-1.com',
-      organizationId: 'org-1',
-    });
-
-    const org = createOrganization({
-      id: 'org-1',
-      name: 'some-org',
-    });
-
-    expect(isAuditsDisabled(site, org, AUDIT_TYPE_BROKEN_BACKLINKS)).to.be.true;
   });
 });
 

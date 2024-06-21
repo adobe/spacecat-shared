@@ -10,12 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 import { ImportJobStatus } from './import-job.js';
 
 export const ImportUrlStatus = {
   PENDING: 'PENDING',
+  REDIRECT: 'REDIRECT',
   ...ImportJobStatus,
 };
 
@@ -31,11 +32,16 @@ const ImportUrl = (data) => {
   self.getJobId = () => self.state.jobId;
   self.getUrl = () => self.state.url;
   self.getStatus = () => self.state.status;
+  self.getReason = () => self.state.reason;
+  // Absolute path to the resource that is being imported for the given URL
+  self.getPath = () => self.state.path;
+  // Resulting path and filename of the imported .docx file
+  self.getFile = () => self.state.file;
 
   /**
-     * Updates the status of the ImportUrl
-     */
-  self.updateStatus = (status) => {
+   * Updates the status of the ImportUrl
+   */
+  self.setStatus = (status) => {
     if (!Object.values(ImportUrlStatus).includes(status)) {
       throw new Error(`Invalid Import URL status during update: ${status}`);
     }
@@ -45,6 +51,47 @@ const ImportUrl = (data) => {
 
     return self;
   };
+
+  /**
+   * Updates the reason that the import of this URL was not successful
+   */
+  self.setReason = (reason) => {
+    if (!hasText(reason)) {
+      return self; // no-op
+    }
+
+    self.state.reason = reason;
+    self.touch();
+    return self;
+  };
+
+  /**
+   * Updates the path of the ImportUrl
+   */
+  self.setPath = (path) => {
+    if (!hasText(path)) {
+      return self; // no-op
+    }
+
+    self.state.path = path;
+    self.touch();
+    return self;
+  };
+
+  /**
+   * Updates the file of the ImportUrl. This is the path and file name of the file which
+   * was imported.
+   */
+  self.setFile = (file) => {
+    if (!hasText(file)) {
+      return self; // no-op
+    }
+
+    self.state.file = file;
+    self.touch();
+    return self;
+  };
+
   return Object.freeze(self);
 };
 

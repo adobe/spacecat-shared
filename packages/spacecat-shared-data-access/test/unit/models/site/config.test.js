@@ -97,6 +97,18 @@ describe('Config Tests', () => {
       const excludedURLs = config.getExcludedURLs('404');
       expect(excludedURLs).to.deep.equal(['url1', 'url2']);
     });
+
+    it('correctly updates the manual overrides', () => {
+      const config = Config();
+      const manualOverrides = [
+        { brokenTargetURL: 'url1', targetURL: 'url2' },
+        { brokenTargetURL: 'url3', targetURL: 'url4' },
+      ];
+      config.updateManualOverrides('broken-backlinks', manualOverrides);
+
+      const updatedManualOverrides = config.getManualOverrides('broken-backlinks');
+      expect(updatedManualOverrides).to.deep.equal(manualOverrides);
+    });
   });
 
   describe('fromDynamoItem Static Method', () => {

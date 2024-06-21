@@ -305,6 +305,12 @@ export interface SiteTopPage {
   getTraffic: () => number;
 
   /**
+   * Retrieves the keyword that brings the most organic traffic to the page.
+   * @returns {string} The keyword.
+   */
+  getTopKeyword: () => string;
+
+  /**
    * Retrieves the source of the site top page.
    * @returns {string} The source.
    */

@@ -1,3 +1,15 @@
+# [@adobe/spacecat-shared-data-access-v1.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.32.0...@adobe/spacecat-shared-data-access-v1.33.0) (2024-06-21)
+
+
+### Bug Fixes
+
+* getSitesByOrganizationID performance ([485818f](https://github.com/adobe/spacecat-shared/commit/485818f846c1ceb0e50b32f531bd2e438cee7614))
+
+
+### Features
+
+* introduce fixed URLs in audit type config ([#272](https://github.com/adobe/spacecat-shared/issues/272)) ([07858a9](https://github.com/adobe/spacecat-shared/commit/07858a95ce457f395fd2c4269d79b445f34de504))
+
 # [@adobe/spacecat-shared-data-access-v1.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.31.0...@adobe/spacecat-shared-data-access-v1.32.0) (2024-06-20)
 
 

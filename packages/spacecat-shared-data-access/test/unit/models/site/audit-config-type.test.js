@@ -140,4 +140,26 @@ describe('AuditConfigType Tests', () => {
       expect(auditConfigType.getManualOverwrites()).to.be.an('array').that.is.empty;
     });
   });
+
+  describe('updateFixedURLs Method', () => {
+    it('updates the updateFixedURLs array', () => {
+      const auditConfigType = AuditConfigType();
+      const newFixedURLs = [
+        { brokenTargetURL: 'https://broken.co', targetURL: 'https://fixed.co' },
+        { brokenTargetURL: 'https://broken.link.co', targetURL: 'https://fixed.link.co' },
+      ];
+      auditConfigType.updateFixedURLs(newFixedURLs);
+      expect(auditConfigType.getFixedURLs()).to.eql(newFixedURLs);
+    });
+
+    it('updates the fixedURLs array to an empty array', () => {
+      const fixedURLs = [
+        { brokenTargetURL: 'https://broken.co', targetURL: 'https://fixed.co' },
+        { brokenTargetURL: 'https://broken.link.co', targetURL: 'https://fixed.link.co' },
+      ];
+      const auditConfigType = AuditConfigType({ fixedURLs });
+      auditConfigType.updateFixedURLs([]);
+      expect(auditConfigType.getFixedURLs()).to.be.an('array').that.is.empty;
+    });
+  });
 });

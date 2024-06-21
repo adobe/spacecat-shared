@@ -22,6 +22,8 @@ export const AUDIT_TYPE_ORGANIC_TRAFFIC = 'organic-traffic';
 export const AUDIT_TYPE_CWV = 'cwv';
 export const AUDIT_TYPE_LHS_DESKTOP = 'lhs-desktop';
 export const AUDIT_TYPE_LHS_MOBILE = 'lhs-mobile';
+export const AUDIT_TYPE_EXPERIMENTATION_ESS_MONTHLY = 'experimentation-ess-monthly';
+export const AUDIT_TYPE_EXPERIMENTATION_ESS_DAILY = 'experimentation-ess-daily';
 
 const EXPIRES_IN_DAYS = 30;
 

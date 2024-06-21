@@ -12,7 +12,7 @@ npm install @adobe/spacecat-shared-rum-api-client
 
 ## Usage
 
-### Creating and instance from Helix UniversalContext
+#### Creating and instance from Helix UniversalContext
 
 ```js
 const context = {}; // Your AWS Lambda context object
@@ -20,66 +20,175 @@ const rumApiClient = RUMAPIClient.createFrom(context);
 
 ```
 
-### Constructor
-
-`RUMAPIClient` class needs RUM API domain key to be instantiated:
+#### From constructor
 
 ```js
-const domainKey = "your-domain-key";
-const rumApiClient = new RUMAPIClient(domainKey);
+const rumApiClient = new RUMAPIClient();
 ```
 
-### Creating a RUM Backlink
+### Running a query
 
 ```js
-const url = "https://example.com";
-const expiryInDays = 7;
+const opts = {
+  domain: 'www.aem.live',
+  domainkey: '<domain-key>',
+  granularity: 'hourly',
+  interval: 10
+}
 
-const backlink = await rumApiClient.createRUMBacklink(url, expiryInDays);
-console.log(`Backlink created: ${backlink}`)
+const result = await rumApiClient.query('cwv', opts);
+console.log(`Query result: ${result}`)
 ```
 
-### Creating a 404 Report Backlink
+**Note**: all queries must be lowercase
 
-```js
-const url = "https://example.com";
-const expiryInDays = 7;
+### Query Options: the 'opts' object
 
-const backlink = await rumApiClient.create404Backlink(url, expiryInDays);
-console.log(`Backlink created: ${backlink}`)
+| option      | required | default | remarks             |
+|-------------|----------|---------|---------------------|
+| domain      | yes      |         |                     |
+| domainkey   | yes      |         |                     |
+| interval    | no       | 7       | days in integer     |
+| granularity | no       | daily   | 'daily' or 'hourly' |
+
+## Available queries
+
+### cwv
+
+Calculates the CWV data for a given domain within the requested interval. It gets the 
+P75 values for LCP, CLS, INP, TTFB metrics, along with the number of data points available for
+each metric. Additionally, it provides grouping by URL and includes the count of page view data.
+
+An example response:
+
+```json
+[
+  {
+    "url": "https://www.aem.live/home",
+    "pageviews": 2620,
+    "lcp": 2099.699999988079,
+    "lcpCount": 9,
+    "cls": 0.020660136604802475,
+    "clsCount": 7,
+    "inp": 12,
+    "inpCount": 3,
+    "ttfb": 520.4500000476837,
+    "ttfbCount": 18
+  },
+  {
+    "url": "https://www.aem.live/developer/block-collection",
+    "pageviews": 2000,
+    "lcp": 512.1249999403954,
+    "lcpCount": 4,
+    "cls": 0.0005409526209424976,
+    "clsCount": 4,
+    "inp": 20,
+    "inpCount": 2,
+    "ttfb": 122.90000003576279,
+    "ttfbCount": 4
+  }
+]
+```
+### 404
+
+Calculates the number of 404 errors for a specified domain within the requested interval. The results 
+are grouped by URL and the source of the 404 error. The output includes all the various sources that 
+direct traffic to the 404 page, as well as the total number of views originating from these sources.
+
+An example response:
+
+```json
+[
+  {
+    "url": "https://www.aem.live/developer/tutorial",
+    "views": 400,
+    "all_sources": [
+      "https://www.google.com",
+      "",
+      "https://www.instagram.com"
+    ],
+    "source_count": 3,
+    "top_source": "https://www.google.com"
+  },
+  {
+    "url": "https://www.aem.live/some-other-page",
+    "views": 300,
+    "all_sources": [
+      "https://www.bing.com",
+      ""
+    ],
+    "source_count": 2,
+    "top_source": ""
+  },
+  {
+    "url": "https://www.aem.live/developer/",
+    "views": 100,
+    "all_sources": [
+      ""
+    ],
+    "source_count": 1,
+    "top_source": ""
+  }
+]
+
 ```
 
-### Getting RUM Dashboard Data
+### experiment
 
-```js
-const url = "example.com";
+Lists all the experiments for a specified domain within the requested interval. The results are grouped by URL. The output includes all the URLs running the experiment, along with experiment id, variants, number of clicks/convert/formsubmit events per variant/selector and views for each of the variant in the experiment.
 
-const rumData = await rumApiClient.getRUMDashboard({ url });
-console.log(`RUM data: ${rumData}`)
-```
 
-### Getting 404 checkpoints
+An example response:
 
-```js
-const url = "example.com";
+```json
+{
+  "https://www.aem.live/home": [
+    {
+      "experiment": "short-home",
+      "variants": [
+        {
+          "name": "challenger-1",
+          "views": 1300,
+          "click": {
+            ".hero": 100,
+            ".header #navmenu-0": 100,
+            ".roi-calculator .button": 100,
+            ".hero .button": 100
+          },
+          "convert": {},
+          "formsubmit": {}
+        },
+        {
+          "name": "control",
+          "views": 800,
+          "click": {
+            ".hero .button": 100,
+            ".header .button": 200,
+            ".header #navmenu-0": 200
+          },
+          "convert": {},
+          "formsubmit": {}
+        }
+      ]
+    }
+  ],
 
-const backlink = await rumApiClient.get404Sources({ url });
-console.log(`404 Checkpoints: ${backlink}`)
-```
+  "https://www.aem.live/new-exp-page": [
+    {
+      "experiment": "visitor-behavior",
+      "variants": [
+        {
+          "name": "https://www.aem.live/some-other-page",
+          "views": 500,
+          "click": {},
+          "convert": {},
+          "formsubmit": {}
+        }
+      ]
+    }
+  ]
+}
 
-### Getting Edge Delivery Services Domains
-
-```js
-const url = "all";
-
-const domains = await rumApiClient.getDomainList({}, url);
-console.log(`Backlink created: ${backlink}`)
-```
-
-## Testing
-Run the included tests with the following command:
-```
-npm test
 ```
 
 ## Linting

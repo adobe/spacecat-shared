@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidUrl, isArray } from '@adobe/spacecat-shared-utils';
 import { context as h2, h1 } from '@adobe/fetch';
 
 /* c8 ignore next 3 */
@@ -96,6 +96,7 @@ export default class AhrefsAPIClient {
         'title',
         'url_from',
         'url_to',
+        'traffic_domain',
       ].join(','),
       limit: getLimit(limit, 100),
       mode: 'prefix',
@@ -119,6 +120,7 @@ export default class AhrefsAPIClient {
       select: [
         'url',
         'sum_traffic',
+        'top_keyword',
       ].join(','),
       order_by: 'sum_traffic',
       date: new Date().toISOString().split('T')[0],
@@ -172,5 +174,46 @@ export default class AhrefsAPIClient {
     };
 
     return this.sendRequest('/site-explorer/metrics-history', queryParams);
+  }
+
+  async getOrganicKeywords(url, country = 'us', keywordFilter = [], limit = 200) {
+    if (!hasText(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+    if (!hasText(country)) {
+      throw new Error(`Invalid country: ${country}`);
+    }
+    if (!isArray(keywordFilter)) {
+      throw new Error(`Invalid keyword filter: ${keywordFilter}`);
+    }
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw new Error(`Invalid limit: ${limit}`);
+    }
+    const queryParams = {
+      country,
+      date: new Date().toISOString().split('T')[0],
+      select: [
+        'keyword',
+        'sum_traffic',
+        'best_position_url',
+      ].join(','),
+      order_by: 'sum_traffic:desc',
+      target: url,
+      limit: getLimit(limit, 2000),
+      mode: 'prefix',
+      output: 'json',
+    };
+    if (keywordFilter.length > 0) {
+      try {
+        queryParams.where = JSON.stringify({
+          or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
+        });
+      } catch (e) {
+        this.log.error(`Error parsing keyword filter: ${e.message}`);
+        throw new Error(`Error parsing keyword filter: ${e.message}`);
+      }
+    }
+
+    return this.sendRequest('/site-explorer/organic-keywords', queryParams);
   }
 }

@@ -1,3 +1,101 @@
+# [@adobe/spacecat-shared-data-access-v1.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.31.0...@adobe/spacecat-shared-data-access-v1.32.0) (2024-06-20)
+
+
+### Features
+
+* **audit-configs:** ess audits disabled by default ([#271](https://github.com/adobe/spacecat-shared/issues/271)) ([de6f83d](https://github.com/adobe/spacecat-shared/commit/de6f83db75135820b236d55d7d2b477f29ca5e43))
+
+# [@adobe/spacecat-shared-data-access-v1.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.30.0...@adobe/spacecat-shared-data-access-v1.31.0) (2024-06-20)
+
+
+### Features
+
+* overwrite broken-backlinks ([#270](https://github.com/adobe/spacecat-shared/issues/270)) ([62256f2](https://github.com/adobe/spacecat-shared/commit/62256f2f750a97ada3d6b624b0ec50865589f39f))
+
+# [@adobe/spacecat-shared-data-access-v1.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.29.2...@adobe/spacecat-shared-data-access-v1.30.0) (2024-06-19)
+
+
+### Features
+
+* introduce organic keywords for ahrefs client and top keyword in top pages ([#257](https://github.com/adobe/spacecat-shared/issues/257)) ([371f1c4](https://github.com/adobe/spacecat-shared/commit/371f1c475870fd2aac833f925236237a8b25c026))
+
+# [@adobe/spacecat-shared-data-access-v1.29.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.29.1...@adobe/spacecat-shared-data-access-v1.29.2) (2024-06-18)
+
+
+### Bug Fixes
+
+* [#268](https://github.com/adobe/spacecat-shared/issues/268) Import URL entities need a REDIRECT status, and additional properties for reporting ([#269](https://github.com/adobe/spacecat-shared/issues/269)) ([88bb491](https://github.com/adobe/spacecat-shared/commit/88bb49105a9b0a9cd297fe9667aff1df24bcee03))
+
+# [@adobe/spacecat-shared-data-access-v1.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.29.0...@adobe/spacecat-shared-data-access-v1.29.1) (2024-06-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#266](https://github.com/adobe/spacecat-shared/issues/266)) ([a89ab83](https://github.com/adobe/spacecat-shared/commit/a89ab83e1c108c10044f6d098526bafed67b88b2))
+
+# [@adobe/spacecat-shared-data-access-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.28.0...@adobe/spacecat-shared-data-access-v1.29.0) (2024-06-13)
+
+
+### Features
+
+* opt-out brokenlinks ([#265](https://github.com/adobe/spacecat-shared/issues/265)) ([025158f](https://github.com/adobe/spacecat-shared/commit/025158f8549733ff2c45c67fc3d421a03dac66d7))
+
+# [@adobe/spacecat-shared-data-access-v1.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.27.0...@adobe/spacecat-shared-data-access-v1.28.0) (2024-06-12)
+
+
+### Features
+
+* opt-out broken-backlinks ([#263](https://github.com/adobe/spacecat-shared/issues/263)) ([14402cb](https://github.com/adobe/spacecat-shared/commit/14402cbda51bf54b2928ca1d66afac00ca2444ed))
+
+# [@adobe/spacecat-shared-data-access-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.26.1...@adobe/spacecat-shared-data-access-v1.27.0) (2024-06-12)
+
+
+### Features
+
+* query for URLs for a given jobID matching status ([#262](https://github.com/adobe/spacecat-shared/issues/262)) ([a74b629](https://github.com/adobe/spacecat-shared/commit/a74b629b78b100c140515efd072807f628de4a2a))
+
+# [@adobe/spacecat-shared-data-access-v1.26.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.26.0...@adobe/spacecat-shared-data-access-v1.26.1) (2024-06-10)
+
+
+### Bug Fixes
+
+* Add an ExpressionAttributeName to fix issues with reserved keywords ([#261](https://github.com/adobe/spacecat-shared/issues/261)) ([b528c65](https://github.com/adobe/spacecat-shared/commit/b528c659b5ae2f6b17db0146ca0f650d9426f332)), closes [#260](https://github.com/adobe/spacecat-shared/issues/260)
+
+# [@adobe/spacecat-shared-data-access-v1.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.25.1...@adobe/spacecat-shared-data-access-v1.26.0) (2024-06-10)
+
+
+### Features
+
+* Add PENDING status for import URL entities ([#259](https://github.com/adobe/spacecat-shared/issues/259)) ([031194c](https://github.com/adobe/spacecat-shared/commit/031194cb91434ae66bc3870e63e29167ea94de8f)), closes [#258](https://github.com/adobe/spacecat-shared/issues/258)
+
+# [@adobe/spacecat-shared-data-access-v1.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.25.0...@adobe/spacecat-shared-data-access-v1.25.1) (2024-06-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#256](https://github.com/adobe/spacecat-shared/issues/256)) ([f28b6b6](https://github.com/adobe/spacecat-shared/commit/f28b6b6f520a8dfb8e82a7302da1b8c5e6bc4390))
+
+# [@adobe/spacecat-shared-data-access-v1.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.24.0...@adobe/spacecat-shared-data-access-v1.25.0) (2024-06-07)
+
+
+### Features
+
+* Add update queries for import-job and import-url entites ([#254](https://github.com/adobe/spacecat-shared/issues/254)) ([d1cba93](https://github.com/adobe/spacecat-shared/commit/d1cba93c2ce1073426dc8333142a8d8fd81017ea))
+
+# [@adobe/spacecat-shared-data-access-v1.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.6...@adobe/spacecat-shared-data-access-v1.24.0) (2024-06-06)
+
+
+### Features
+
+* Add import-job.js and import-url.js to the data model layer ([#250](https://github.com/adobe/spacecat-shared/issues/250)) ([447a95e](https://github.com/adobe/spacecat-shared/commit/447a95e0c4fbb6afa630d9ba78c699974b9f5d5c))
+
+# [@adobe/spacecat-shared-data-access-v1.23.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.5...@adobe/spacecat-shared-data-access-v1.23.6) (2024-06-01)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#248](https://github.com/adobe/spacecat-shared/issues/248)) ([edbe81d](https://github.com/adobe/spacecat-shared/commit/edbe81d2a32f4d9977cb9548ebe47bda5a457c6e))
+
 # [@adobe/spacecat-shared-data-access-v1.23.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.23.4...@adobe/spacecat-shared-data-access-v1.23.5) (2024-05-25)
 
 

@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-example-v1.2.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.11...@adobe/spacecat-shared-example-v1.2.12) (2024-06-11)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5 ([#245](https://github.com/adobe/spacecat-shared/issues/245)) ([ee87b9a](https://github.com/adobe/spacecat-shared/commit/ee87b9ac366ca6139513091e75466e95e125f79d))
+
+# [@adobe/spacecat-shared-example-v1.2.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.10...@adobe/spacecat-shared-example-v1.2.11) (2024-06-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.8 ([#255](https://github.com/adobe/spacecat-shared/issues/255)) ([ef89237](https://github.com/adobe/spacecat-shared/commit/ef8923738d9e0591693e47f4bd4345651d180389))
+
+# [@adobe/spacecat-shared-example-v1.2.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.9...@adobe/spacecat-shared-example-v1.2.10) (2024-06-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.4 ([#253](https://github.com/adobe/spacecat-shared/issues/253)) ([687d739](https://github.com/adobe/spacecat-shared/commit/687d73947f15344ed6f4d6e74f223aa838ec3d6a))
+
+# [@adobe/spacecat-shared-example-v1.2.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.8...@adobe/spacecat-shared-example-v1.2.9) (2024-06-01)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.3 ([#249](https://github.com/adobe/spacecat-shared/issues/249)) ([6966fe9](https://github.com/adobe/spacecat-shared/commit/6966fe9a7161b105fa90aa8a396a43e2ad280dfd))
+
 # [@adobe/spacecat-shared-example-v1.2.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.7...@adobe/spacecat-shared-example-v1.2.8) (2024-05-25)
 
 

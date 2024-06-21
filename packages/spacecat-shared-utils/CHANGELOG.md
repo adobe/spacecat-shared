@@ -1,3 +1,59 @@
+# [@adobe/spacecat-shared-utils-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.10...@adobe/spacecat-shared-utils-v1.16.0) (2024-06-20)
+
+
+### Features
+
+* **audit-configs:** ess audits disabled by default ([#271](https://github.com/adobe/spacecat-shared/issues/271)) ([de6f83d](https://github.com/adobe/spacecat-shared/commit/de6f83db75135820b236d55d7d2b477f29ca5e43))
+
+# [@adobe/spacecat-shared-utils-v1.15.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.9...@adobe/spacecat-shared-utils-v1.15.10) (2024-06-18)
+
+
+### Bug Fixes
+
+* some more tests ([#267](https://github.com/adobe/spacecat-shared/issues/267)) ([2b40520](https://github.com/adobe/spacecat-shared/commit/2b40520b06ead1b654db7d3e1795a0bc160c3070))
+
+# [@adobe/spacecat-shared-utils-v1.15.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.8...@adobe/spacecat-shared-utils-v1.15.9) (2024-06-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#266](https://github.com/adobe/spacecat-shared/issues/266)) ([a89ab83](https://github.com/adobe/spacecat-shared/commit/a89ab83e1c108c10044f6d098526bafed67b88b2))
+
+# [@adobe/spacecat-shared-utils-v1.15.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.7...@adobe/spacecat-shared-utils-v1.15.8) (2024-06-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#256](https://github.com/adobe/spacecat-shared/issues/256)) ([f28b6b6](https://github.com/adobe/spacecat-shared/commit/f28b6b6f520a8dfb8e82a7302da1b8c5e6bc4390))
+
+# [@adobe/spacecat-shared-utils-v1.15.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.6...@adobe/spacecat-shared-utils-v1.15.7) (2024-06-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.8 ([#255](https://github.com/adobe/spacecat-shared/issues/255)) ([ef89237](https://github.com/adobe/spacecat-shared/commit/ef8923738d9e0591693e47f4bd4345651d180389))
+
+# [@adobe/spacecat-shared-utils-v1.15.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.5...@adobe/spacecat-shared-utils-v1.15.6) (2024-06-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.4 ([#253](https://github.com/adobe/spacecat-shared/issues/253)) ([687d739](https://github.com/adobe/spacecat-shared/commit/687d73947f15344ed6f4d6e74f223aa838ec3d6a))
+
+# [@adobe/spacecat-shared-utils-v1.15.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.4...@adobe/spacecat-shared-utils-v1.15.5) (2024-06-01)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.3 ([#249](https://github.com/adobe/spacecat-shared/issues/249)) ([6966fe9](https://github.com/adobe/spacecat-shared/commit/6966fe9a7161b105fa90aa8a396a43e2ad280dfd))
+
+# [@adobe/spacecat-shared-utils-v1.15.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.3...@adobe/spacecat-shared-utils-v1.15.4) (2024-06-01)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#248](https://github.com/adobe/spacecat-shared/issues/248)) ([edbe81d](https://github.com/adobe/spacecat-shared/commit/edbe81d2a32f4d9977cb9548ebe47bda5a457c6e))
+
 # [@adobe/spacecat-shared-utils-v1.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.2...@adobe/spacecat-shared-utils-v1.15.3) (2024-05-25)
 
 

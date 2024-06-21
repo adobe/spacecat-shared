@@ -13,11 +13,20 @@
 const AuditConfigType = (data = {}) => {
   const state = {
     disabled: data.disabled || false,
+    excludedURLs: data.excludedURLs || [],
+    manualOverwrites: data.manualOverwrites || [],
   };
 
   const self = {
     disabled: () => state.disabled,
-
+    getExcludedURLs: () => state.excludedURLs,
+    updateExcludedURLs: (excludeURLs) => {
+      state.excludedURLs = excludeURLs;
+    },
+    getManualOverwrites: () => state.manualOverwrites,
+    updateManualOverwrites: (manualOverwrites) => {
+      state.manualOverwrites = manualOverwrites;
+    },
     updateDisabled: (newValue) => {
       state.disabled = newValue;
     },
@@ -29,12 +38,16 @@ const AuditConfigType = (data = {}) => {
 AuditConfigType.fromDynamoItem = (dynamoItem) => {
   const auditConfigTypeData = {
     disabled: dynamoItem.disabled,
+    excludedURLs: dynamoItem.excludedURLs,
+    manualOverwrites: dynamoItem.manualOverwrites,
   };
   return AuditConfigType(auditConfigTypeData);
 };
 
 AuditConfigType.toDynamoItem = (auditConfigType) => ({
   disabled: auditConfigType.disabled(),
+  excludedURLs: auditConfigType.getExcludedURLs(),
+  manualOverwrites: auditConfigType.getManualOverwrites(),
 });
 
 export default AuditConfigType;

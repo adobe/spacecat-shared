@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.6...@adobe/spacecat-shared-ahrefs-client-v1.3.0) (2024-06-19)
+
+
+### Features
+
+* introduce organic keywords for ahrefs client and top keyword in top pages ([#257](https://github.com/adobe/spacecat-shared/issues/257)) ([371f1c4](https://github.com/adobe/spacecat-shared/commit/371f1c475870fd2aac833f925236237a8b25c026))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.2.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.5...@adobe/spacecat-shared-ahrefs-client-v1.2.6) (2024-06-11)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5 ([#245](https://github.com/adobe/spacecat-shared/issues/245)) ([ee87b9a](https://github.com/adobe/spacecat-shared/commit/ee87b9ac366ca6139513091e75466e95e125f79d))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.2.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.4...@adobe/spacecat-shared-ahrefs-client-v1.2.5) (2024-06-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.8 ([#255](https://github.com/adobe/spacecat-shared/issues/255)) ([ef89237](https://github.com/adobe/spacecat-shared/commit/ef8923738d9e0591693e47f4bd4345651d180389))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.3...@adobe/spacecat-shared-ahrefs-client-v1.2.4) (2024-06-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.4 ([#253](https://github.com/adobe/spacecat-shared/issues/253)) ([687d739](https://github.com/adobe/spacecat-shared/commit/687d73947f15344ed6f4d6e74f223aa838ec3d6a))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.2...@adobe/spacecat-shared-ahrefs-client-v1.2.3) (2024-06-05)
+
+
+### Bug Fixes
+
+* expose traffic_domain in the broken backlinks audit data (SITES-22464) ([#251](https://github.com/adobe/spacecat-shared/issues/251)) ([62ce855](https://github.com/adobe/spacecat-shared/commit/62ce8552bfb9a42fdf43e264cafbedb23304a72e))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.1...@adobe/spacecat-shared-ahrefs-client-v1.2.2) (2024-06-01)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.3 ([#249](https://github.com/adobe/spacecat-shared/issues/249)) ([6966fe9](https://github.com/adobe/spacecat-shared/commit/6966fe9a7161b105fa90aa8a396a43e2ad280dfd))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.0...@adobe/spacecat-shared-ahrefs-client-v1.2.1) (2024-05-11)
 
 

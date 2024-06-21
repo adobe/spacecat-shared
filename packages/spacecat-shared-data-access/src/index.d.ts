@@ -348,6 +348,12 @@ export interface SiteTopPage {
   getTraffic: () => number;
 
   /**
+   * Retrieves the keyword that brings the most organic traffic to the page.
+   * @returns {string} The keyword.
+   */
+  getTopKeyword: () => string;
+
+  /**
    * Retrieves the source of the site top page.
    * @returns {string} The source.
    */
@@ -428,6 +434,87 @@ export interface Configuration {
    * @returns {Array} The jobs configurations.
    */
   getJobs: () => Array<object>;
+
+}
+
+export interface ImportJob {
+  /**
+   * Retrieves the ID of the import job.
+   */
+  getId: () => string;
+
+  /**
+   * Retrieves the apiKey of the import job.
+   */
+  getApiKey: () => string;
+
+  /**
+   * Retrieves the status of the import job.
+   */
+  getStatus: () => string;
+
+  /**
+   * Retrieves the baseURL of the import job.
+   */
+  getBaseURL: () => string;
+
+  /**
+   * Retrieves the options of the import job.
+   */
+  getOptions: () => object;
+
+  /**
+   * Retrieves the startTime of the import job.
+   */
+  getStartTime: () => string;
+
+  /**
+   * Retrieves the endTime of the import job.
+   */
+  getEndTime: () => string;
+
+  /**
+   * Retrieves the duration of the import job.
+   */
+  getDuration: () => number;
+
+  /**
+   * Retrieves the success count of the import job.
+   */
+  getSuccessCount: () => number;
+
+  /**
+   * Retrieves the failure count of the import job.
+   */
+  getFailureCount: () => number;
+
+  /**
+   * Retrieves the importQueueId of the import job.
+   */
+  getImportQueueId: () => string;
+
+}
+
+export interface ImportUrl {
+  /**
+   * Retrieves the ID of the import URL.
+   */
+    getId: () => string;
+
+  /**
+   * Retrieves the status of the import URL.
+   */
+    getStatus: () => string;
+
+  /**
+   * Retrieves the URL of the import URL.
+   */
+    getUrl: () => string;
+
+  /**
+   * Retrieves the job ID of the import URL.
+   */
+    getJobId: () => string;
 
 }
 
@@ -520,6 +607,31 @@ export interface DataAccess {
   removeOrganization: (
       organizationId: string,
   ) => Promise<void>;
+  getImportJobByID: (
+    id: string,
+    ) => Promise<ImportJob | null>;
+  getImportJobsByStatus: (
+    status: string,
+    ) => Promise<ImportJob[]>;
+  createNewImportJob: (
+    importJobData: object,
+    ) => Promise<ImportJob>;
+  updateImportJob: (
+    importJob: ImportJob,
+    ) => Promise<ImportJob>;
+  getImportUrlByID: (
+    id: string,
+    ) => Promise<ImportUrl | null>;
+  createNewImportUrl: (
+    importUrlData: object,
+    ) => Promise<ImportUrl>;
+  updateImportUrl: (
+    importUrl: ImportUrl,
+    ) => Promise<ImportUrl>;
+  getImportUrlsByJobIdAndStatus: (
+      jobId: string,
+      status: string,
+    ) => Promise<ImportUrl[]>;
 
   // site candidate functions
   getSiteCandidateByBaseURL: (baseURL: string) => Promise<SiteCandidate>;
@@ -554,6 +666,8 @@ interface DataAccessConfig {
   tableNameSiteCandidates: string;
   tableNameConfigurations: string;
   tableNameSiteTopPages: string;
+  tableNameImportJobs: string;
+  tableNameImportUrls: string;
   indexNameAllKeyEventsBySiteId: string,
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,
@@ -561,13 +675,26 @@ interface DataAccessConfig {
   indexNameAllLatestAuditScores: string;
   indexNameAllOrganizations: string,
   indexNameAllOrganizationsByImsOrgId: string,
+  indexNameAllImportJobsByStatus: string,
+  indexNameAllImportUrlsByJobIdAndStatus: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;
   pkAllConfigurations: string;
+  pkAllImportJobs: string;
 }
 
 export function createDataAccess(
   config: DataAccessConfig,
   logger: object,
 ): DataAccess;
+
+export interface ImportJobStatus {
+  RUNNING: string,
+  COMPLETE: string,
+  FAILED: string,
+}
+
+export interface ImportUrlStatus extends ImportJobStatus {
+  PENDING: string,
+}

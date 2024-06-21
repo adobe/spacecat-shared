@@ -26,6 +26,7 @@ export const SiteTopPageDto = {
     siteId: siteTopPage.getSiteId(),
     url: siteTopPage.getURL(),
     traffic: siteTopPage.getTraffic(),
+    topKeyword: siteTopPage.getTopKeyword(),
     source: siteTopPage.getSource(),
     geo: siteTopPage.getGeo(),
     importedAt: siteTopPage.getImportedAt(),
@@ -34,13 +35,16 @@ export const SiteTopPageDto = {
 
   /**
    * Converts a DynamoDB item into a SiteTopPage object.
-   * @param {{siteId, url, traffic, source, geo, importedAt, SK: string}} item - DynamoDB item.
+   * @param {
+   *   {siteId, url, traffic, topKeyword, source, geo, importedAt, SK: string}
+   * } item - DynamoDB item.
    * @returns {SiteTopPage}
    */
   fromDynamoItem: (item) => createSiteTopPage({
     siteId: item.siteId,
     url: item.url,
     traffic: item.traffic,
+    topKeyword: item.topKeyword,
     source: item.source,
     geo: item.geo,
     importedAt: item.importedAt,

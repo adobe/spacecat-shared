@@ -52,10 +52,12 @@ describe('AhrefsAPIClient', () => {
       {
         url: 'page-url-1',
         sum_traffic: 100,
+        top_keyword: 'keyword1',
       },
       {
         url: 'page-url-2',
         sum_traffic: 300,
+        top_keyword: 'keyword2',
       },
     ],
   };
@@ -75,6 +77,21 @@ describe('AhrefsAPIClient', () => {
         paid_traffic: 52,
         org_cost: 10797893,
         paid_cost: 1724,
+      },
+    ],
+  };
+
+  const organicKeywordsResponse = {
+    keywords: [
+      {
+        keyword: 'keyword1',
+        sum_traffic: 100,
+        best_position_url: 'url1',
+      },
+      {
+        keyword: 'keyword2',
+        sum_traffic: 200,
+        best_position_url: 'url2',
       },
     ],
   };
@@ -161,6 +178,7 @@ describe('AhrefsAPIClient', () => {
             'title',
             'url_from',
             'url_to',
+            'traffic_domain',
           ].join(','),
           limit: 50,
           mode: 'prefix',
@@ -182,7 +200,7 @@ describe('AhrefsAPIClient', () => {
       const result = await client.getBrokenBacklinks('test-site.com');
       expect(result).to.deep.equal({
         result: backlinksResponse,
-        fullAuditRef: 'https://example.com/site-explorer/broken-backlinks?select=title%2Curl_from%2Curl_to&limit=50&mode=prefix&order_by=domain_rating_source%3Adesc%2Ctraffic_domain%3Adesc&target=test-site.com&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_dofollow%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22is_content%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22domain_rating_source%22%2C%22is%22%3A%5B%22gte%22%2C29.5%5D%7D%2C%7B%22field%22%3A%22traffic_domain%22%2C%22is%22%3A%5B%22gte%22%2C500%5D%7D%2C%7B%22field%22%3A%22links_external%22%2C%22is%22%3A%5B%22lte%22%2C300%5D%7D%5D%7D',
+        fullAuditRef: 'https://example.com/site-explorer/broken-backlinks?select=title%2Curl_from%2Curl_to%2Ctraffic_domain&limit=50&mode=prefix&order_by=domain_rating_source%3Adesc%2Ctraffic_domain%3Adesc&target=test-site.com&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_dofollow%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22is_content%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22domain_rating_source%22%2C%22is%22%3A%5B%22gte%22%2C29.5%5D%7D%2C%7B%22field%22%3A%22traffic_domain%22%2C%22is%22%3A%5B%22gte%22%2C500%5D%7D%2C%7B%22field%22%3A%22links_external%22%2C%22is%22%3A%5B%22lte%22%2C300%5D%7D%5D%7D',
       });
     });
   });
@@ -202,6 +220,7 @@ describe('AhrefsAPIClient', () => {
         select: [
           'url',
           'sum_traffic',
+          'top_keyword',
         ].join(','),
         where: JSON.stringify(filter),
         order_by: 'sum_traffic',
@@ -220,7 +239,7 @@ describe('AhrefsAPIClient', () => {
       const result = await client.getTopPages(target, specifiedLimit);
       expect(result).to.deep.equal({
         result: topPagesResponse,
-        fullAuditRef: `https://example.com/site-explorer/top-pages?select=url%2Csum_traffic&order_by=sum_traffic&date=${date}&target=${target}&limit=${specifiedLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22sum_traffic%22%2C%22is%22%3A%5B%22gt%22%2C0%5D%7D%5D%7D`,
+        fullAuditRef: `https://example.com/site-explorer/top-pages?select=url%2Csum_traffic%2Ctop_keyword&order_by=sum_traffic&date=${date}&target=${target}&limit=${specifiedLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22sum_traffic%22%2C%22is%22%3A%5B%22gt%22%2C0%5D%7D%5D%7D`,
       });
     });
   });
@@ -285,6 +304,99 @@ describe('AhrefsAPIClient', () => {
         result: organicTrafficMetricsResponse,
         fullAuditRef: 'https://example.com/site-explorer/metrics-history?target=test-site.com&date_from=2024-01-29&date_to=2024-02-05&history_grouping=weekly&volume_mode=average&mode=prefix&output=json',
       });
+    });
+  });
+
+  describe('getOrganicKeywords', () => {
+    it('sends API request with appropriate endpoint query params', async () => {
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/organic-keywords')
+        .query({
+          country: 'us',
+          date: new Date().toISOString().split('T')[0],
+          select: [
+            'keyword',
+            'sum_traffic',
+            'best_position_url',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          target: 'test-site.com',
+          limit: 200,
+          mode: 'prefix',
+          output: 'json',
+          where: JSON.stringify({
+            or: [
+              { field: 'keyword', is: ['iphrase_match', 'keyword1'] },
+              { field: 'keyword', is: ['iphrase_match', 'keyword2'] },
+            ],
+          }),
+        })
+        .reply(200, organicKeywordsResponse);
+
+      const result = await client.getOrganicKeywords('test-site.com', 'us', ['keyword1', 'keyword2']);
+
+      expect(result)
+        .to
+        .deep
+        .equal({
+          result: organicKeywordsResponse,
+          fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cbest_position_url&order_by=sum_traffic%3Adesc&target=test-site.com&limit=200&mode=prefix&output=json&where=%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D',
+        });
+    });
+
+    it('sends API request with no keyword filter if none are specified', async () => {
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/organic-keywords')
+        .query({
+          country: 'us',
+          date: new Date().toISOString().split('T')[0],
+          select: [
+            'keyword',
+            'sum_traffic',
+            'best_position_url',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          target: 'test-site.com',
+          limit: 200,
+          mode: 'prefix',
+          output: 'json',
+        })
+        .reply(200, organicKeywordsResponse);
+
+      const result = await client.getOrganicKeywords('test-site.com');
+
+      expect(result)
+        .to
+        .deep
+        .equal({
+          result: organicKeywordsResponse,
+          fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cbest_position_url&order_by=sum_traffic%3Adesc&target=test-site.com&limit=200&mode=prefix&output=json',
+        });
+    });
+
+    it('throws error when keyword filter does not contain appropriate keyword items', async () => {
+      const result = client.getOrganicKeywords('test-site.com', 'us', [BigInt(123)]);
+      await expect(result).to.be.rejectedWith('Error parsing keyword filter: Do not know how to serialize a BigInt');
+    });
+
+    it('throws error when keyword filter is not an array', async () => {
+      const result = client.getOrganicKeywords('test-site.com', 'us', 'keyword1');
+      await expect(result).to.be.rejectedWith('Invalid keyword filter: keyword1');
+    });
+
+    it('throws error when url is not a string', async () => {
+      const result = client.getOrganicKeywords(123);
+      await expect(result).to.be.rejectedWith('Invalid URL: 123');
+    });
+
+    it('throws error when country is not a string', async () => {
+      const result = client.getOrganicKeywords('test-site.com', 123);
+      await expect(result).to.be.rejectedWith('Invalid country: 123');
+    });
+
+    it('throws error when limit is not an integer', async () => {
+      const result = client.getOrganicKeywords('test-site.com', 'us', [], 1.5);
+      await expect(result).to.be.rejectedWith('Invalid limit: 1.5');
     });
   });
 });

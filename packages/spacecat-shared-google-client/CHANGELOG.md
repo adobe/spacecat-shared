@@ -1,3 +1,59 @@
+# [@adobe/spacecat-shared-google-client-v1.1.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.9...@adobe/spacecat-shared-google-client-v1.1.10) (2024-06-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#266](https://github.com/adobe/spacecat-shared/issues/266)) ([a89ab83](https://github.com/adobe/spacecat-shared/commit/a89ab83e1c108c10044f6d098526bafed67b88b2))
+
+# [@adobe/spacecat-shared-google-client-v1.1.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.8...@adobe/spacecat-shared-google-client-v1.1.9) (2024-06-11)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5 ([#245](https://github.com/adobe/spacecat-shared/issues/245)) ([ee87b9a](https://github.com/adobe/spacecat-shared/commit/ee87b9ac366ca6139513091e75466e95e125f79d))
+
+# [@adobe/spacecat-shared-google-client-v1.1.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.7...@adobe/spacecat-shared-google-client-v1.1.8) (2024-06-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#256](https://github.com/adobe/spacecat-shared/issues/256)) ([f28b6b6](https://github.com/adobe/spacecat-shared/commit/f28b6b6f520a8dfb8e82a7302da1b8c5e6bc4390))
+
+# [@adobe/spacecat-shared-google-client-v1.1.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.6...@adobe/spacecat-shared-google-client-v1.1.7) (2024-06-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.8 ([#255](https://github.com/adobe/spacecat-shared/issues/255)) ([ef89237](https://github.com/adobe/spacecat-shared/commit/ef8923738d9e0591693e47f4bd4345651d180389))
+
+# [@adobe/spacecat-shared-google-client-v1.1.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.5...@adobe/spacecat-shared-google-client-v1.1.6) (2024-06-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.4 ([#253](https://github.com/adobe/spacecat-shared/issues/253)) ([687d739](https://github.com/adobe/spacecat-shared/commit/687d73947f15344ed6f4d6e74f223aa838ec3d6a))
+
+# [@adobe/spacecat-shared-google-client-v1.1.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.4...@adobe/spacecat-shared-google-client-v1.1.5) (2024-06-01)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.3 ([#249](https://github.com/adobe/spacecat-shared/issues/249)) ([6966fe9](https://github.com/adobe/spacecat-shared/commit/6966fe9a7161b105fa90aa8a396a43e2ad280dfd))
+
+# [@adobe/spacecat-shared-google-client-v1.1.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.3...@adobe/spacecat-shared-google-client-v1.1.4) (2024-06-01)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#248](https://github.com/adobe/spacecat-shared/issues/248)) ([edbe81d](https://github.com/adobe/spacecat-shared/commit/edbe81d2a32f4d9977cb9548ebe47bda5a457c6e))
+
+# [@adobe/spacecat-shared-google-client-v1.1.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.2...@adobe/spacecat-shared-google-client-v1.1.3) (2024-05-31)
+
+
+### Bug Fixes
+
+* allow domain properties for organic search data ([#246](https://github.com/adobe/spacecat-shared/issues/246)) ([d692fda](https://github.com/adobe/spacecat-shared/commit/d692fda3efb89b8acbcbb5a2f2a2bcfbbd0256a5))
+
 # [@adobe/spacecat-shared-google-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.1...@adobe/spacecat-shared-google-client-v1.1.2) (2024-05-27)
 
 

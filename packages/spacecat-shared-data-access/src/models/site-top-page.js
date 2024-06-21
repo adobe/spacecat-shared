@@ -23,6 +23,7 @@ const SiteTopPage = (data = {}) => {
   self.getSiteId = () => self.state.siteId;
   self.getURL = () => self.state.url;
   self.getTraffic = () => self.state.traffic;
+  self.getTopKeyword = () => self.state.topKeyword;
   self.getSource = () => self.state.source.toLowerCase();
   self.getGeo = () => self.state.geo;
   self.getImportedAt = () => self.state.importedAt;

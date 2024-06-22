@@ -34,7 +34,7 @@
     "@adobe/helix-universal": "5.0.5",
     "@adobe/spacecat-shared-http-utils": "1.1.4",
     "@adobe/spacecat-shared-utils": "1.15.1",
-    "@aws-sdk/client-secrets-manager": "3.598.0",
+    "@aws-sdk/client-secrets-manager": "3.600.0",
     "google-auth-library": "9.11.0",
     "googleapis": "140.0.0"
   },
@@ -44,6 +44,6 @@
     "nock": "13.5.4",
     "sinon": "18.0.0",
     "sinon-chai": "3.7.0",
-    "typescript": "5.4.5"
+    "typescript": "5.5.2"
   }
 }

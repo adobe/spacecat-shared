@@ -25,7 +25,7 @@ export const configSchema = Joi.object({
       brokenTargetURL: Joi.string().optional(),
       targetURL: Joi.string().optional(),
     })).optional(),
-  })).unknown(true),
+  }).unknown(true)).unknown(true),
 }).unknown(true);
 
 export const DEFAULT_CONFIG = {
@@ -53,6 +53,7 @@ export const Config = (data = {}) => {
   self.getSlackConfig = () => state.slack;
   self.getSlackMentions = (type) => state?.handlers[type]?.mentions?.slack;
   self.getHandlerConfig = (type) => state?.handlers[type];
+  self.getHandlers = () => state.handlers;
   self.getExcludedURLs = (type) => state?.handlers[type]?.excludedURLs;
   self.getManualOverrides = (type) => state?.handlers[type]?.manualOverwrites;
 
@@ -89,5 +90,6 @@ export const Config = (data = {}) => {
 Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 
 Config.toDynamoItem = (config) => ({
-  ...config,
+  slack: config.getSlackConfig(),
+  handlers: config.getHandlers(),
 });

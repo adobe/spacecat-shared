@@ -147,8 +147,8 @@ describe('Config Tests', () => {
         },
       });
       const dynamoItem = Config.toDynamoItem(data);
-      const slackConfig = dynamoItem.getSlackConfig();
-      const slackMentions = dynamoItem.getSlackMentions(404);
+      const slackConfig = dynamoItem.slack;
+      const slackMentions = dynamoItem.handlers[404].mentions.slack;
       expect(slackConfig.channel).to.equal('channel1');
       expect(slackConfig.workspace).to.equal('workspace1');
       expect(slackMentions[0]).to.equal('id1');

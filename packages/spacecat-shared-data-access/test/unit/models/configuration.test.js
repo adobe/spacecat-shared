@@ -74,6 +74,36 @@ describe('Configuration Model Tests', () => {
     expect(configuration.getVersion()).to.equal(validData.version);
     expect(configuration.getQueues()).to.deep.equal(validData.queues);
     expect(configuration.getJobs()).to.deep.equal(validData.jobs);
+    expect(configuration.getHandlers()).to.deep.equal(validData.handlers);
+  });
+
+  it('handler does not exist usecase', () => {
+    const configuration = createConfiguration(validData);
+
+    const handler = configuration.getHandler('no-handler');
+    expect(handler).to.be.undefined;
+    expect(configuration.isHandlerEnabledForSite('no-handler', { getId: () => 'site1', getOrganizationId: () => 'org1' })).to.be.false; // Line 42
+    expect(configuration.isHandlerEnabledForOrg('no-handler', { getId: () => 'org1' })).to.be.false;
+    configuration.enableHandlerForSite('no-handler', { getId: () => 'site1', getOrganizationId: () => 'org1' });
+    expect(configuration.isHandlerEnabledForSite('no-handler', { getId: () => 'site1', getOrganizationId: () => 'org1' })).to.be.false;
+    configuration.enableHandlerForOrg('no-handler', { getId: () => 'org1' });
+    expect(configuration.isHandlerEnabledForOrg('no-handler', { getId: () => 'org1' })).to.be.false;
+    configuration.disableHandlerForSite('no-handler', { getId: () => 'site1', getOrganizationId: () => 'org1' });
+    expect(configuration.isHandlerEnabledForSite('no-handler', { getId: () => 'site1', getOrganizationId: () => 'org1' })).to.be.false;
+    configuration.disableHandlerForOrg('no-handler', { getId: () => 'org1' });
+    expect(configuration.isHandlerEnabledForOrg('no-handler', { getId: () => 'org1' })).to.be.false;
+  });
+
+  it('adds a handler', () => {
+    const handlerData = {
+      enabled: { sites: ['site1'], orgs: ['org1'] },
+      disabled: { sites: ['site2'], orgs: ['org2'] },
+      enabledByDefault: false,
+    };
+    const configuration = createConfiguration({ version: '1.1', queues: {}, jobs: [] });
+    configuration.addHandler('new-handler', handlerData);// Line 59
+    const updatedHandler = configuration.getHandler('new-handler');
+    expect(updatedHandler).to.deep.equal(handlerData);
   });
 
   it('checks if a handler type is enabled for a site', () => {

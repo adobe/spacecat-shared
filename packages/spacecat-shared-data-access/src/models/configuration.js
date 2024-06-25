@@ -13,14 +13,19 @@
 import Joi from 'joi';
 
 const Configuration = (data = {}) => {
-  const self = { ...data };
-  self.getJobs = () => self.jobs;
-  self.getVersion = () => self.version;
-  self.getQueues = () => self.queues;
-  self.getHandlers = () => self.handlers;
-  self.getHandler = (type) => self.handlers[type];
+  const state = { ...data };
+  const self = { state };
+  self.getJobs = () => self.state.jobs;
+  self.getVersion = () => self.state.version;
+  self.getQueues = () => self.state.queues;
+  self.getHandlers = () => self.state.handlers;
+  self.getHandler = (type) => self.state.handlers[type];
+  self.addHandler = (type, handlerData) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = { ...handlerData };
+  };
   self.isHandlerEnabledForSite = (type, site) => {
-    const handler = self.handlers[type];
+    const handler = state.handlers[type];
     if (!handler) return false;
 
     const siteId = site.getId();
@@ -31,14 +36,15 @@ const Configuration = (data = {}) => {
     }
 
     if (handler.disabled) {
-      return !(handler.disabled.sites.includes(siteId) || handler.disabled.orgs.includes(orgId));
+      return !((handler.disabled.sites && handler.disabled.sites.includes(siteId))
+          || (handler.disabled.orgs && handler.disabled.orgs.includes(orgId)));
     }
 
     return handler.enabledByDefault;
   };
 
   self.isHandlerEnabledForOrg = (type, org) => {
-    const handler = self.handlers[type];
+    const handler = state.handlers[type];
     if (!handler) return false;
 
     const orgId = org.getId();
@@ -55,7 +61,7 @@ const Configuration = (data = {}) => {
   };
 
   const updateHandlerOrgs = (type, orgId, enabled) => {
-    const handler = self.handlers[type];
+    const handler = state.handlers[type];
     if (!handler) return;
 
     if (enabled) {
@@ -74,7 +80,7 @@ const Configuration = (data = {}) => {
   };
 
   const updateHandlerSites = (type, siteId, enabled) => {
-    const handler = self.handlers[type];
+    const handler = state.handlers[type];
     if (!handler) return;
 
     if (enabled) {

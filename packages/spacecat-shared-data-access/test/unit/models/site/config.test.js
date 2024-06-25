@@ -109,6 +109,17 @@ describe('Config Tests', () => {
       const updatedManualOverrides = config.getManualOverrides('broken-backlinks');
       expect(updatedManualOverrides).to.deep.equal(manualOverrides);
     });
+
+    it('correctly updates the fixedURLs array to an empty array', () => {
+      const fixedURLs = [
+        { brokenTargetURL: 'https://broken.co', targetURL: 'https://fixed.co' },
+        { brokenTargetURL: 'https://broken.link.co', targetURL: 'https://fixed.link.co' },
+      ];
+      const config = Config();
+      config.updateFixedURLs('broken-backlinks', fixedURLs);
+      config.updateFixedURLs('broken-backlinks', []);
+      expect(config.getFixedURLs('broken-backlinks')).to.be.an('array').that.is.empty;
+    });
   });
 
   describe('fromDynamoItem Static Method', () => {

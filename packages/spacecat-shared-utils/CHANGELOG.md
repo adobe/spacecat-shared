@@ -1,3 +1,11 @@
+# [@adobe/spacecat-shared-utils-v1.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.16.0...@adobe/spacecat-shared-utils-v1.16.1) (2024-06-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#274](https://github.com/adobe/spacecat-shared/issues/274)) ([6bed341](https://github.com/adobe/spacecat-shared/commit/6bed3412af558946575f9f6be6d313ff0511db40))
+* sqs adapter records access ([#275](https://github.com/adobe/spacecat-shared/issues/275)) ([856e247](https://github.com/adobe/spacecat-shared/commit/856e247a8ef764ed1bfe649c1e51eb2d86d9ecc1)), closes [#181](https://github.com/adobe/spacecat-shared/issues/181)
+
 # [@adobe/spacecat-shared-utils-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.10...@adobe/spacecat-shared-utils-v1.16.0) (2024-06-20)
 
 

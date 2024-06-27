@@ -12,6 +12,7 @@
 
 import { hasText, isIsoDate } from '@adobe/spacecat-shared-utils';
 
+import { ClientError } from '@adobe/spacecat-shared-utils/src/exceptions.js';
 import { Base } from './base.js';
 
 export const KEY_EVENT_TYPES = {
@@ -66,11 +67,11 @@ export const createKeyEvent = (data) => {
   }
 
   if (!Object.values(KEY_EVENT_TYPES).includes(newState.type.toUpperCase())) {
-    throw new Error(`Unknown value for "type": ${newState.type}`);
+    throw new ClientError(`Unknown value for "type": ${newState.type}`);
   }
 
   if (hasText(newState.time) && !isIsoDate(newState.time)) {
-    throw new Error('"Time" should be a valid ISO string');
+    throw new ClientError('"Time" should be a valid ISO string');
   }
 
   if (!hasText(newState.time)) {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.2.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.8...@adobe/spacecat-shared-gpt-client-v1.2.9) (2024-06-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#274](https://github.com/adobe/spacecat-shared/issues/274)) ([6bed341](https://github.com/adobe/spacecat-shared/commit/6bed3412af558946575f9f6be6d313ff0511db40))
+
 # [@adobe/spacecat-shared-gpt-client-v1.2.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.7...@adobe/spacecat-shared-gpt-client-v1.2.8) (2024-06-11)
 
 

@@ -13,6 +13,8 @@
 
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import nock from 'nock';
+
 import RUMAPIClient from '../src/index.js';
 
 chai.use(chaiAsPromised);
@@ -31,6 +33,9 @@ describe('RUMAPIClient', () => {
   });
 
   it('runs the query', async () => {
+    nock('https://rum.fastly-aem.page')
+      .get('/bundles/space.cat/2024/06/27?domainkey=some-domain-key')
+      .reply(200, { rumBundles: [] });
     const opts = {
       domain: 'space.cat',
       domainkey: 'some-domain-key',

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.1.1...@adobe/spacecat-shared-rum-api-client-v2.2.0) (2024-06-28)
+
+
+### Features
+
+* add helix config to site/candidates ([#277](https://github.com/adobe/spacecat-shared/issues/277)) ([5ed489d](https://github.com/adobe/spacecat-shared/commit/5ed489dc84cb594689092e1f0019dd83d3647039))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.1.0...@adobe/spacecat-shared-rum-api-client-v2.1.1) (2024-06-27)
 
 

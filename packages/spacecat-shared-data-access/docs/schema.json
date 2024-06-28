@@ -51,6 +51,10 @@
           "AttributeType": "M"
         },
         {
+          "AttributeName": "hlxConfig",
+          "AttributeType": "M"
+        },
+        {
           "AttributeName": "config",
           "AttributeType": "M"
         },
@@ -459,6 +463,10 @@
         {
           "AttributeName": "status",
           "AttributeType": "S"
+        },
+        {
+          "AttributeName": "hlxConfig",
+          "AttributeType": "M"
         },
         {
           "AttributeName": "createdAt",

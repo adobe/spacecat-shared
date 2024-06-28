@@ -23,6 +23,7 @@ export const SiteCandidateDto = {
    */
   toDynamoItem: (siteCandidate) => ({
     baseURL: siteCandidate.getBaseURL(),
+    hlxConfig: siteCandidate.getHlxConfig(),
     siteId: siteCandidate.getSiteId(),
     source: siteCandidate.getSource(),
     status: siteCandidate.getStatus(),
@@ -39,6 +40,7 @@ export const SiteCandidateDto = {
   fromDynamoItem: (dynamoItem) => {
     const siteCandidateData = {
       baseURL: dynamoItem.baseURL,
+      hlxConfig: dynamoItem.hlxConfig,
       siteId: dynamoItem.siteId,
       source: dynamoItem.source,
       status: dynamoItem.status,

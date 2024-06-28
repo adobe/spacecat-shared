@@ -16503,6 +16503,12 @@
           "target": "https://www.aem.live/docs",
           "source": ".header #navmenu-0",
           "timeDelta": 6317.60009765625
+        },
+        {
+          "checkpoint": "click",
+          "target": "https://www.aem.live/docs",
+          "source": ".header #navmenu-0",
+          "timeDelta": 7613.60009765625
         }
       ]
     },

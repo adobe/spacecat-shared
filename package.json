@@ -1,6 +1,5 @@
 {
   "name": "@adobe/spacecat-shared-monorepo",
-  "private": true,
   "version": "0.0.0-semantic-release",
   "description": "Shared modules of the Spacecat Services - monorepo",
   "type": "module",

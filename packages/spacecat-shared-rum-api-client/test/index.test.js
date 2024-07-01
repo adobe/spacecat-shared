@@ -33,9 +33,20 @@ describe('RUMAPIClient', () => {
   });
 
   it('runs the query', async () => {
+    function constructUrl(domain, date, domainkey) {
+      const year = date.getUTCFullYear();
+      const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+      const day = date.getUTCDate().toString().padStart(2, '0');
+
+      return `/${domain}/${year}/${month}/${day}?domainkey=${domainkey}`;
+    }
+
+    const queryUrl = `/bundles${constructUrl('space.cat', new Date(), 'some-domain-key')}`;
+
     nock('https://rum.fastly-aem.page')
-      .get('/bundles/space.cat/2024/06/27?domainkey=some-domain-key')
+      .get(queryUrl)
       .reply(200, { rumBundles: [] });
+
     const opts = {
       domain: 'space.cat',
       domainkey: 'some-domain-key',

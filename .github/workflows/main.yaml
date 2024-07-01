@@ -19,7 +19,7 @@ jobs:
         run: npm ci
       - name: Configure npm to use the npm token
         run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}" > ~/.npmrc
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.ADOBE_BOT_NPM_TOKEN }}" > ~/.npmrc
 
       - name: Release new config
         run: npm publish

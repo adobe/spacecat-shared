@@ -38,6 +38,7 @@ const Site = (data = {}) => {
   self.getConfig = () => self.state.config;
   self.getDeliveryType = () => self.state.deliveryType;
   self.getGitHubURL = () => self.state.gitHubURL;
+  self.getHlxConfig = () => self.state.hlxConfig;
   self.getOrganizationId = () => self.state.organizationId;
   self.isLive = () => self.state.isLive;
   self.getIsLiveToggledAt = () => self.state.isLiveToggledAt;
@@ -123,6 +124,23 @@ const Site = (data = {}) => {
   };
 
   /**
+   * Updates the Helix Configuration for this site.
+   * @param {object} hlxConfig - The Helix Configuration.
+   * @throws {Error} If the provided Helix Configuration is not an object.
+   * @return {Base} The updated site.
+   */
+  self.updateHlxConfig = (hlxConfig) => {
+    if (!isObject(hlxConfig)) {
+      throw new Error('HLX Config must be an object');
+    }
+
+    self.state.hlxConfig = hlxConfig;
+    self.touch();
+
+    return self;
+  };
+
+  /**
    * Updates the organizationId the site belongs to.
    * @param {string} organizationId - The Org ID.
    * @return {Base} The updated site.
@@ -163,6 +181,14 @@ export const createSite = (data) => {
 
   if (!isValidUrl(newState.baseURL)) {
     throw new Error(`Base URL must be a valid URL: ${newState.baseURL}`);
+  }
+
+  if (newState.hlxConfig && !isObject(newState.hlxConfig)) {
+    throw new Error(`HLX Config must be an object: ${newState.hlxConfig}`);
+  }
+
+  if (!newState.hlxConfig) {
+    newState.hlxConfig = {};
   }
 
   if (!hasText(newState.organizationId)) {

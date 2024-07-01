@@ -38,6 +38,7 @@ function checkSite(site, configuration) {
   expect(site.getBaseURL()).to.be.a('string');
   expect(site.getDeliveryType()).to.be.a('string');
   expect(site.getGitHubURL()).to.be.a('string');
+  expect(site.getHlxConfig()).to.be.an('object');
   expect(site.getOrganizationId()).to.be.a('string');
   expect(isIsoDate(site.getCreatedAt())).to.be.true;
   expect(isIsoDate(site.getUpdatedAt())).to.be.true;
@@ -414,6 +415,25 @@ describe('DynamoDB Integration Test', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',
       gitHubURL: 'https://github.com/some-org/test-repo',
+      hlxConfig: {
+        cdnProdHost: 'www.another-example.com',
+        code: {
+          owner: 'another-owner',
+          repo: 'another-repo',
+          source: {
+            type: 'github',
+            url: 'https://github.com/another-owner/another-repo',
+          },
+        },
+        content: {
+          contentBusId: '1234',
+          source: {
+            type: 'onedrive',
+            url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+          },
+        },
+        hlxVersion: 5,
+      },
       organizationId: '1234',
       isLive: true,
       isLiveToggledAt: new Date().toISOString(),
@@ -443,6 +463,7 @@ describe('DynamoDB Integration Test', async () => {
     expect(newSite.getId()).to.to.be.a('string');
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
     expect(newSite.getGitHubURL()).to.equal(newSiteData.gitHubURL);
+    expect(newSite.getHlxConfig()).to.deep.equal(newSiteData.hlxConfig);
     expect(newSite.getOrganizationId()).to.equal(newSiteData.organizationId);
     expect(newSite.getAudits()).to.be.an('array').that.is.empty;
   });
@@ -453,11 +474,31 @@ describe('DynamoDB Integration Test', async () => {
     const newDeliveryType = 'aem_cs';
     const newGitHubURL = 'https://github.com/newOrg/some-repo';
     const newOrgId = 'updatedOrg123';
+    const newHlxConfig = {
+      cdnProdHost: 'www.another-example.com',
+      code: {
+        owner: 'another-owner',
+        repo: 'another-repo',
+        source: {
+          type: 'github',
+          url: 'https://github.com/another-owner/another-repo',
+        },
+      },
+      content: {
+        contentBusId: '1234',
+        source: {
+          type: 'onedrive',
+          url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+        },
+      },
+      hlxVersion: 5,
+    };
 
     await sleep(10); // Make sure updatedAt is different
 
     siteToUpdate.updateDeliveryType(newDeliveryType);
     siteToUpdate.updateGitHubURL(newGitHubURL);
+    siteToUpdate.updateHlxConfig(newHlxConfig);
     siteToUpdate.updateOrganizationId(newOrgId);
     siteToUpdate.toggleLive();
 
@@ -465,6 +506,7 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(updatedSite.getDeliveryType()).to.equal(newDeliveryType);
     expect(updatedSite.getGitHubURL()).to.equal(newGitHubURL);
+    expect(updatedSite.getHlxConfig()).to.deep.equal(newHlxConfig);
     expect(updatedSite.getOrganizationId()).to.equal(newOrgId);
     expect(updatedSite.isLive()).to.be.false;
     expect(updatedSite.getUpdatedAt()).to.not.equal(originalUpdatedAt);

@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v1.34.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.34.0...@adobe/spacecat-shared-data-access-v1.34.1) (2024-06-29)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#279](https://github.com/adobe/spacecat-shared/issues/279)) ([4710607](https://github.com/adobe/spacecat-shared/commit/471060797fac55649ff0c0ea24129bdd421d46b2))
+
+# [@adobe/spacecat-shared-data-access-v1.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.33.1...@adobe/spacecat-shared-data-access-v1.34.0) (2024-06-28)
+
+
+### Features
+
+* add helix config to site/candidates ([#277](https://github.com/adobe/spacecat-shared/issues/277)) ([5ed489d](https://github.com/adobe/spacecat-shared/commit/5ed489dc84cb594689092e1f0019dd83d3647039))
+
+# [@adobe/spacecat-shared-data-access-v1.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.33.0...@adobe/spacecat-shared-data-access-v1.33.1) (2024-06-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#274](https://github.com/adobe/spacecat-shared/issues/274)) ([6bed341](https://github.com/adobe/spacecat-shared/commit/6bed3412af558946575f9f6be6d313ff0511db40))
+
 # [@adobe/spacecat-shared-data-access-v1.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.32.0...@adobe/spacecat-shared-data-access-v1.33.0) (2024-06-21)
 
 

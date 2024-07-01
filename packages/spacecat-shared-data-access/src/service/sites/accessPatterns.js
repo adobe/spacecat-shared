@@ -336,7 +336,6 @@ export const getSiteByID = async (
 
   return isObject(dynamoItem) ? SiteDto.fromDynamoItem(dynamoItem) : null;
 };
-
 /**
  * Adds a site.
  *

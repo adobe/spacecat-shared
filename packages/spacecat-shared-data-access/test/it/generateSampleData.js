@@ -175,6 +175,76 @@ export default async function generateSampleData(
   const latestAuditItems = [];
   const keyEvents = [];
   const nowIso = new Date().toISOString();
+
+  // Generate organization data
+  for (let i = 0; i < numberOfOrganizations; i += 1) {
+    const organizationId = uuidv4();
+    organizations.push({
+      id: organizationId,
+      imsOrgId: `${i}-1234@AdobeOrg`,
+      name: `${i}-1234Name`,
+      GSI1PK: config.pkAllOrganizations,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      config: {
+        slack: {
+          workspace: `${i}-workspace`,
+          channel: `${i}-channel`,
+        },
+        handlers: {
+          404: {
+            mentions: { slack: [`${i}-slackId`] },
+          },
+          'organic-keywords': {
+            country: 'RO',
+          },
+        },
+      },
+    });
+  }
+  // Generate site data
+  for (let i = 0; i < numberOfSites; i += 1) {
+    const siteId = uuidv4();
+    sites.push({
+      id: siteId,
+      baseURL: `https://example${i}.com`,
+      deliveryType: i % 2 === 0 ? 'aem_edge' : 'aem_cs',
+      gitHubURL: `https://github.com/org-${i}/test-repo`,
+      organizationId: organizations[i % 3].id,
+      isLive: true,
+      isLiveToggledAt: nowIso,
+      GSI1PK: config.pkAllSites,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      config: {
+        slack: {
+          workspace: `${i}-workspace`,
+          channel: `${i}-channel`,
+        },
+        handlers: {
+          404: {
+            byOrg: true,
+            mentions: { slack: [`${i}-slackId`] },
+          },
+          'lhs-mobile': {
+            excludedURLs: ['https://example.com/excluded'],
+          },
+        },
+      },
+    });
+
+    if (i % 10 !== 0) { // Every tenth site will not have any audits
+      const latestAudits = generateAuditData(
+        config,
+        siteId,
+        auditTypes,
+        numberOfAuditsPerType,
+      );
+      auditItems.push(...latestAudits.auditData);
+      latestAuditItems.push(...latestAudits.latestAuditData);
+    }
+  }
+
   const configurations = [{
     jobs: [
       {
@@ -199,6 +269,21 @@ export default async function generateSampleData(
         interval: 'weekly',
       },
     ],
+    handlers: {
+      404: {
+        enabledByDefault: true,
+      },
+      'organic-keywords': {
+        enabledByDefault: false,
+      },
+      cwv: {
+        enabledByDefault: true,
+        disabled: { sites: sites.map((site) => site.id) },
+      },
+      'lhs-mobile': {
+        enabledByDefault: true,
+      },
+    },
     queues: {
       audits: 'sqs://.../spacecat-services-audit-jobs',
       imports: 'sqs://.../spacecat-services-import-jobs',
@@ -228,134 +313,11 @@ export default async function generateSampleData(
     PK: config.pkAllConfigurations,
   }];
 
-  // Generate organization data
-  for (let i = 0; i < numberOfOrganizations; i += 1) {
-    const organizationId = uuidv4();
-    organizations.push({
-      id: organizationId,
-      imsOrgId: `${i}-1234@AdobeOrg`,
-      name: `${i}-1234Name`,
-      GSI1PK: config.pkAllOrganizations,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-      config: {
-        slack: {
-          workspace: `${i}-workspace`,
-          channel: `${i}-channel`,
-        },
-        alerts: [{
-          type: '404',
-          byOrg: true,
-          mentions: [{ slack: [`${i}-slackId`] }],
-        },
-        {
-          type: 'organic-keywords',
-          country: 'RO',
-        }],
-        audits: {
-          auditsDisabled: false,
-          auditTypeConfigs: {
-            'lhs-mobile': { disabled: false },
-            cwv: { disabled: true },
-          },
-        },
-      },
-    });
-  }
-  // Generate site data
-  for (let i = 0; i < numberOfSites; i += 1) {
-    const siteId = uuidv4();
-    sites.push({
-      id: siteId,
-      baseURL: `https://example${i}.com`,
-      deliveryType: i % 2 === 0 ? 'aem_edge' : 'aem_cs',
-      gitHubURL: `https://github.com/org-${i}/test-repo`,
-      organizationId: organizations[i % 3].id,
-      isLive: true,
-      isLiveToggledAt: nowIso,
-      GSI1PK: config.pkAllSites,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-      hlxConfig: {
-        cdnProdHost: 'www.example.com',
-        code: {
-          owner: 'some-owner',
-          repo: 'some-repo',
-          source: {
-            type: 'github',
-            url: 'https://github.com/some-owner/some-repo',
-          },
-        },
-        content: {
-          contentBusId: '1234',
-          source: {
-            type: 'onedrive',
-            url: 'https://some-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/some-site/www',
-          },
-        },
-        hlxVersion: 5,
-      },
-      config: {
-        slack: {
-          workspace: `${i}-workspace`,
-          channel: `${i}-channel`,
-        },
-        alerts: [{
-          type: '404',
-          byOrg: true,
-          mentions: [{ slack: [`${i}-slackId`] }],
-        }],
-      },
-      auditConfig: {
-        auditsDisabled: false,
-        auditTypeConfigs: {
-          'lhs-mobile': { disabled: false, excludedURLs: ['https://example.com/excluded'] },
-          cwv: { disabled: true },
-        },
-      },
-    });
-
-    if (i % 10 !== 0) { // Every tenth site will not have any audits
-      const latestAudits = generateAuditData(
-        config,
-        siteId,
-        auditTypes,
-        numberOfAuditsPerType,
-      );
-      auditItems.push(...latestAudits.auditData);
-      latestAuditItems.push(...latestAudits.latestAuditData);
-    }
-  }
-
   // Generate site candidate data
   for (let i = 0; i < numberOfSiteCandidates; i += 1) {
     siteCandidates.push({
       baseURL: `https://example${i}.com`,
       status: SITE_CANDIDATE_STATUS.PENDING,
-      hlxConfig: {
-        rso: {
-          owner: 'some-owner',
-          site: `some-site${i}`,
-          ref: 'main',
-        },
-        cdnProdHost: `www.example${i}.com`,
-        code: {
-          owner: 'some-owner',
-          repo: 'some-repo',
-          source: {
-            type: 'github',
-            url: `https://github.com/some-owner/some-repo${i}`,
-          },
-        },
-        content: {
-          contentBusId: '1234',
-          source: {
-            type: 'onedrive',
-            url: `https://some-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/some-site${i}/www`,
-          },
-        },
-        hlxVersion: 5,
-      },
     });
   }
 

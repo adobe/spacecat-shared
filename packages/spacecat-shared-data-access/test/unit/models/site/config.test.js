@@ -21,12 +21,7 @@ describe('Config Tests', () => {
     it('creates an Config with defaults when no data is provided', () => {
       const config = Config();
       expect(config.slack).to.be.undefined;
-      expect(config.alerts).to.be.undefined;
-      expect(config.audits).to.have.property('auditsDisabled');
-      expect(config.audits).to.have.property('getAuditTypeConfig');
-      expect(config.audits).to.have.property('getAuditTypeConfigs');
-      expect(config.audits).to.have.property('updateAuditTypeConfig');
-      expect(config.audits).to.have.property('updateAuditsDisabled');
+      expect(config.handlers).to.be.undefined;
     });
 
     it('creates an Config with provided data when data is valid', () => {
@@ -36,55 +31,17 @@ describe('Config Tests', () => {
           workspace: 'workspace1',
           invitedUserCount: 3,
         },
-        alerts: [{
-          type: '404',
-          mentions: [{ slack: ['id1'] }],
-          byOrg: true,
-        }],
-        audits: {
-          auditsDisabled: false,
-          auditTypeConfigs: {
-            404: {
-              disabled: true,
-            },
-            cwv: {
-              disabled: true,
-            },
+        handlers: {
+          404: {
+            mentions: { slack: ['id1'] },
           },
         },
       };
       const config = Config(data);
-      expect(config.slack.channel).to.equal('channel1');
-      expect(config.slack.workspace).to.equal('workspace1');
-      expect(config.slack.invitedUserCount).to.equal(3);
-      expect(config.alerts[0].mentions[0].slack[0]).to.equal('id1');
-      expect(config.alerts[0].byOrg).to.be.true;
-      expect(config.audits.auditsDisabled()).to.be.false;
-      expect(config.audits.getAuditTypeConfig('404').disabled()).to.be.true;
-      expect(config.audits.getAuditTypeConfig('cwv').disabled()).to.be.true;
-    });
-
-    it('accepts empty audit config', () => {
-      const data = {
-        slack: {
-          channel: 'channel1',
-          workspace: 'workspace1',
-          invitedUserCount: 19,
-        },
-        alerts: [{
-          type: '404',
-          mentions: [{ slack: ['id1'] }],
-          byOrg: true,
-        }],
-        audits: {},
-      };
-      const config = Config(data);
-      expect(config.slack.channel).to.equal('channel1');
-      expect(config.slack.workspace).to.equal('workspace1');
-      expect(config.slack.invitedUserCount).to.equal(19);
-      expect(config.alerts[0].mentions[0].slack[0]).to.equal('id1');
-      expect(config.alerts[0].byOrg).to.be.true;
-      expect(config.audits.auditsDisabled()).to.be.false;
+      expect(config.getSlackConfig().channel).to.equal('channel1');
+      expect(config.getSlackConfig().workspace).to.equal('workspace1');
+      expect(config.getSlackConfig().invitedUserCount).to.equal(3);
+      expect(config.getSlackMentions(404)).to.deep.equal(['id1']);
     });
 
     it('throws an error when data is invalid', () => {
@@ -93,13 +50,13 @@ describe('Config Tests', () => {
           channel: 'channel1',
           workspace: 'workspace1',
         },
-        alerts: [{
-          type: 404,
-          mentions: [{ email: ['id1'] }],
-          byOrg: true,
-        }],
+        handlers: {
+          404: {
+            mentions: [{ email: ['id1'] }],
+          },
+        },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "alerts[0].type" must be a string');
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.404.mentions" must be of type object');
     });
 
     it('throws an error when invitedUserCount is invalid', () => {
@@ -114,6 +71,57 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('Config Methods', () => {
+    it('correctly updates the Slack configuration', () => {
+      const config = Config();
+      config.updateSlackConfig('newChannel', 'newWorkspace', 20);
+
+      const slackConfig = config.getSlackConfig();
+      expect(slackConfig.channel).to.equal('newChannel');
+      expect(slackConfig.workspace).to.equal('newWorkspace');
+      expect(slackConfig.invitedUserCount).to.equal(20);
+    });
+
+    it('correctly updates the Slack mentions', () => {
+      const config = Config();
+      config.updateSlackMentions('404', ['id1', 'id2']);
+
+      const slackMentions = config.getSlackMentions('404');
+      expect(slackMentions).to.deep.equal(['id1', 'id2']);
+    });
+
+    it('correctly updates the excluded URLs', () => {
+      const config = Config();
+      config.updateExcludeURLs('404', ['url1', 'url2']);
+
+      const excludedURLs = config.getExcludedURLs('404');
+      expect(excludedURLs).to.deep.equal(['url1', 'url2']);
+    });
+
+    it('correctly updates the manual overrides', () => {
+      const config = Config();
+      const manualOverrides = [
+        { brokenTargetURL: 'url1', targetURL: 'url2' },
+        { brokenTargetURL: 'url3', targetURL: 'url4' },
+      ];
+      config.updateManualOverrides('broken-backlinks', manualOverrides);
+
+      const updatedManualOverrides = config.getManualOverrides('broken-backlinks');
+      expect(updatedManualOverrides).to.deep.equal(manualOverrides);
+    });
+
+    it('correctly updates the fixedURLs array to an empty array', () => {
+      const fixedURLs = [
+        { brokenTargetURL: 'https://broken.co', targetURL: 'https://fixed.co' },
+        { brokenTargetURL: 'https://broken.link.co', targetURL: 'https://fixed.link.co' },
+      ];
+      const config = Config();
+      config.updateFixedURLs('broken-backlinks', fixedURLs);
+      config.updateFixedURLs('broken-backlinks', []);
+      expect(config.getFixedURLs('broken-backlinks')).to.be.an('array').that.is.empty;
+    });
+  });
+
   describe('fromDynamoItem Static Method', () => {
     it('correctly converts from DynamoDB item', () => {
       const dynamoItem = {
@@ -121,17 +129,18 @@ describe('Config Tests', () => {
           channel: 'channel1',
           workspace: 'workspace1',
         },
-        alerts: [{
-          type: '404',
-          mentions: [{ slack: ['id1'] }],
-          byOrg: true,
-        }],
+        handlers: {
+          404: {
+            mentions: { slack: ['id1'] },
+          },
+        },
       };
       const config = Config.fromDynamoItem(dynamoItem);
-      expect(config.slack.channel).to.equal('channel1');
-      expect(config.slack.workspace).to.equal('workspace1');
-      expect(config.alerts[0].mentions[0].slack[0]).to.equal('id1');
-      expect(config.alerts[0].byOrg).to.be.true;
+      const slackMentions = config.getSlackMentions(404);
+      const slackConfig = config.getSlackConfig();
+      expect(slackConfig.channel).to.equal('channel1');
+      expect(slackConfig.workspace).to.equal('workspace1');
+      expect(slackMentions[0]).to.equal('id1');
     });
   });
 
@@ -142,27 +151,18 @@ describe('Config Tests', () => {
           channel: 'channel1',
           workspace: 'workspace1',
         },
-        alerts: [{
-          type: '404',
-          mentions: [{ slack: ['id1'] }],
-          byOrg: true,
-        }],
-        audits: {
-          auditsDisabled: false,
-          auditTypeConfigs: {
-            404: {
-              disabled: true,
-            },
+        handlers: {
+          404: {
+            mentions: { slack: ['id1'] },
           },
         },
       });
       const dynamoItem = Config.toDynamoItem(data);
-      expect(dynamoItem.slack.channel).to.equal('channel1');
-      expect(dynamoItem.slack.workspace).to.equal('workspace1');
-      expect(dynamoItem.alerts[0].mentions[0].slack[0]).to.equal('id1');
-      expect(dynamoItem.alerts[0].byOrg).to.be.true;
-      expect(dynamoItem.audits.auditsDisabled).to.be.false;
-      expect(dynamoItem.audits.auditTypeConfigs['404'].disabled).to.be.true;
+      const slackConfig = dynamoItem.slack;
+      const slackMentions = dynamoItem.handlers[404].mentions.slack;
+      expect(slackConfig.channel).to.equal('channel1');
+      expect(slackConfig.workspace).to.equal('workspace1');
+      expect(slackMentions[0]).to.equal('id1');
     });
   });
 });

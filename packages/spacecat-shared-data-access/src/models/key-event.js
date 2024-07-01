@@ -10,9 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isIsoDate } from '@adobe/spacecat-shared-utils';
+import { ClientError, hasText, isIsoDate } from '@adobe/spacecat-shared-utils';
 
-import { ClientError } from '@adobe/spacecat-shared-utils/src/exceptions.js';
 import { Base } from './base.js';
 
 export const KEY_EVENT_TYPES = {

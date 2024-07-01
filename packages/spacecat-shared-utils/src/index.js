@@ -36,6 +36,7 @@ export {
 
 export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';
+export { ClientError } from './exceptions.js';
 
 export {
   composeBaseURL,

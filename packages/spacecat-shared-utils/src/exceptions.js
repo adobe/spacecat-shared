@@ -10,5 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
+/**
+ * ClientError class that extends the built-in Error class.
+ * Class used to create custom error objects that will be thrown when invalid params are sent.
+ * In the API it will be used to return a 400 response when a ClientError is thrown.
+ * @extends {Error}
+ */
 export class ClientError extends Error {
 }

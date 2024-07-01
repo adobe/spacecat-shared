@@ -21,6 +21,11 @@ jobs:
         run: npm run lint
       - name: Unit Tests
         run: npm test
+      - name: Release new config
+        run: npm publish --prefix packages/spacecat-shared-data-access
+        env:
+          GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}
       - name: Integration Tests
         run: npm run --prefix packages/spacecat-shared-data-access test:it
       - uses: codecov/codecov-action@v4

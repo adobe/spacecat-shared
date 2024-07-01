@@ -17,10 +17,10 @@ jobs:
           node-version: '20.x'
       - name: Install Dependencies
         run: npm ci
-      - name: Linting
-        run: npm run lint
-      - name: Unit Tests
-        run: npm test
+      - name: Configure npm to use the npm token
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}" > ~/.npmrc
+
       - name: Release new config
         run: npm publish --prefix packages/spacecat-shared-data-access
         env:

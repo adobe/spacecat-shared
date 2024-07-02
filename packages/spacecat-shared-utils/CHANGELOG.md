@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.17.0...@adobe/spacecat-shared-utils-v1.17.1) (2024-07-02)
+
+
+### Bug Fixes
+
+* export isNonEmptyObject ([#281](https://github.com/adobe/spacecat-shared/issues/281)) ([c9bcb98](https://github.com/adobe/spacecat-shared/commit/c9bcb989617e57dbc6d75d321703983ef7faaf9d))
+
 # [@adobe/spacecat-shared-utils-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.16.2...@adobe/spacecat-shared-utils-v1.17.0) (2024-07-02)
 
 

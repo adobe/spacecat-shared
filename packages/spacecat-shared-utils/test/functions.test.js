@@ -26,6 +26,7 @@ import {
   isIsoTimeOffsetsDate,
   isNumber,
   isObject,
+  isNonEmptyObject,
   isString,
   toBoolean,
   arrayEquals,
@@ -188,6 +189,23 @@ describe('Shared functions', () => {
 
       expect(isObject({})).to.be.true;
       expect(isObject({ asd: 'dsa' })).to.be.true;
+    });
+
+    it('non empty object', () => {
+      const invalidObjects = [
+        null,
+        undefined,
+        123,
+        'dasd',
+        [],
+        ['dasd'],
+        {},
+      ];
+
+      invalidObjects.forEach((value) => expect(isNonEmptyObject(value)).to.be.false);
+
+      expect(isNonEmptyObject({})).to.be.false;
+      expect(isNonEmptyObject({ asd: 'dsa' })).to.be.true;
     });
 
     it('is string', () => {

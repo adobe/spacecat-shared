@@ -67,6 +67,15 @@ function isObject(value) {
 }
 
 /**
+ * Checks if the given value is an object and contains properties of its own.
+ * @param {*} value - The value to check.
+ * @return {boolean} True if the value is a non-empty object, false otherwise.
+ */
+function isNonEmptyObject(value) {
+  return isObject(value) && Object.keys(value).length > 0;
+}
+
+/**
  * Determines if the given parameter is a string.
  *
  * @param {*} value - The value to check.
@@ -196,6 +205,7 @@ export {
   isIsoTimeOffsetsDate,
   isNumber,
   isObject,
+  isNonEmptyObject,
   isString,
   toBoolean,
   isValidUrl,

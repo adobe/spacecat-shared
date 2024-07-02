@@ -21,6 +21,7 @@ export {
   isIsoTimeOffsetsDate,
   isNumber,
   isObject,
+  isNonEmptyObject,
   isString,
   toBoolean,
   isValidUrl,

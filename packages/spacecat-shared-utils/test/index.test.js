@@ -28,6 +28,7 @@ describe('Index Exports', () => {
     'isIsoTimeOffsetsDate',
     'isNumber',
     'isObject',
+    'isNonEmptyObject',
     'isString',
     'toBoolean',
     'isValidUrl',

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.16.2...@adobe/spacecat-shared-utils-v1.17.0) (2024-07-02)
+
+
+### Features
+
+* isNonEmptyObject ([#280](https://github.com/adobe/spacecat-shared/issues/280)) ([2e8ce04](https://github.com/adobe/spacecat-shared/commit/2e8ce048f192b9dd5f108a3590c2b8ea01c9eb84))
+
 # [@adobe/spacecat-shared-utils-v1.16.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.16.1...@adobe/spacecat-shared-utils-v1.16.2) (2024-06-29)
 
 

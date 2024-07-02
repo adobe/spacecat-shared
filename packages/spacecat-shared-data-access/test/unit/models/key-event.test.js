@@ -14,6 +14,7 @@
 
 import { expect } from 'chai';
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
+import { ClientError } from '@adobe/spacecat-shared-utils/src/exceptions.js';
 import {
   createKeyEvent,
   KEY_EVENT_TYPES,
@@ -34,6 +35,17 @@ describe('Key Event Model Tests', () => {
 
   it('throws an error when an unknown type field is submitted', () => {
     expect(() => createKeyEvent({ name: 'some name', siteId: 'some site id', type: 'hebele' })).to.throw('Unknown value for "type": hebele');
+  });
+
+  it('throws an HttpError with status code 400 when an unknown type field is submitted', () => {
+    const badCall = () => createKeyEvent({ name: 'some name', siteId: 'some site id', type: 'hebele' });
+
+    expect(badCall).to.throw(ClientError);
+    try {
+      badCall();
+    } catch (error) {
+      expect(error.message).to.equal('Unknown value for "type": hebele');
+    }
   });
 
   it('throws an error when an invalid time field is submitted', () => {

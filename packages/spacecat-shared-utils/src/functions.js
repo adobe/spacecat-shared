@@ -75,6 +75,13 @@ function isNonEmptyObject(value) {
   return isObject(value) && Object.keys(value).length > 0;
 }
 
+/**
+ * Deeply compares two objects or arrays for equality. Supports nested objects and arrays.
+ * Does not support circular references.
+ * @param {unknown} x - The first object or array to compare.
+ * @param {unknown} y - The second object or array to compare.
+ * @return {boolean} True if the objects or arrays are equal, false otherwise.
+ */
 function deepEqual(x, y) {
   if (x === y) return true;
 

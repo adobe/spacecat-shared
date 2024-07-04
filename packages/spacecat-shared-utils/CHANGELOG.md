@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.18.0...@adobe/spacecat-shared-utils-v1.18.1) (2024-07-04)
+
+
+### Bug Fixes
+
+* export deepEqual ([#283](https://github.com/adobe/spacecat-shared/issues/283)) ([2a06640](https://github.com/adobe/spacecat-shared/commit/2a0664059e6fbee9e9218d181e9bdd13e7e6c871))
+
 # [@adobe/spacecat-shared-utils-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.17.1...@adobe/spacecat-shared-utils-v1.18.0) (2024-07-04)
 
 

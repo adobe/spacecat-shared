@@ -77,7 +77,7 @@ function isNonEmptyObject(value) {
 
 /**
  * Deeply compares two objects or arrays for equality. Supports nested objects and arrays.
- * Does not support circular references.
+ * Does not support circular references. Does not compare functions.
  * @param {unknown} x - The first object or array to compare.
  * @param {unknown} y - The second object or array to compare.
  * @return {boolean} True if the objects or arrays are equal, false otherwise.

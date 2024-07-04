@@ -443,5 +443,19 @@ describe('Shared functions', () => {
       const obj2 = { c: 3, b: 2, a: 1 };
       expect(deepEqual(obj1, obj2)).to.be.true;
     });
+
+    it('returns true for objects with function properties when functions are ignored', () => {
+      const obj1 = { a: 1, b: () => 2 };
+      const obj2 = { a: 1, b: () => 3 };
+      expect(deepEqual(obj1, obj2)).to.be.true;
+    });
+
+    it('returns true for objects with different function references when functions are ignored', () => {
+      const func1 = () => 2;
+      const func2 = () => 3;
+      const obj1 = { a: 1, b: func1 };
+      const obj2 = { a: 1, b: func2 };
+      expect(deepEqual(obj1, obj2)).to.be.true;
+    });
   });
 });

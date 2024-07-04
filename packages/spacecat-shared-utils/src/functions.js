@@ -100,8 +100,8 @@ function deepEqual(x, y) {
   if (x instanceof Date) return x.getTime() === y.getTime();
   if (x instanceof RegExp) return x.toString() === y.toString();
 
-  const xKeys = Object.keys(x);
-  const yKeys = Object.keys(y);
+  const xKeys = Object.keys(x).filter((key) => typeof x[key] !== 'function');
+  const yKeys = Object.keys(y).filter((key) => typeof y[key] !== 'function');
 
   if (xKeys.length !== yKeys.length) return false;
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.17.1...@adobe/spacecat-shared-utils-v1.18.0) (2024-07-04)
+
+
+### Features
+
+* utils deepEqual ([#282](https://github.com/adobe/spacecat-shared/issues/282)) ([d17ef5f](https://github.com/adobe/spacecat-shared/commit/d17ef5ff6dcacb7ddb3e60512d40d66202e14ffc))
+
 # [@adobe/spacecat-shared-utils-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.17.0...@adobe/spacecat-shared-utils-v1.17.1) (2024-07-02)
 
 

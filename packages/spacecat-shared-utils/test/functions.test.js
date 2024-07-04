@@ -32,6 +32,7 @@ import {
   arrayEquals,
   isValidUrl,
   dateAfterDays,
+  deepEqual,
 } from '../src/functions.js';
 
 describe('Shared functions', () => {
@@ -332,6 +333,115 @@ describe('Shared functions', () => {
     it('returns days before now', async () => {
       const sevenDaysEarlier = dateAfterDays(-7);
       expect(sevenDaysEarlier.toISOString()).to.equal(sevenDaysEarlierExpected);
+    });
+  });
+
+  describe('deepEqual', () => {
+    it('returns true for two identical primitive values', () => {
+      expect(deepEqual(1, 1)).to.be.true;
+      expect(deepEqual('hello', 'hello')).to.be.true;
+      expect(deepEqual(true, true)).to.be.true;
+    });
+
+    it('returns false for two different primitive values', () => {
+      expect(deepEqual(1, 2)).to.be.false;
+      expect(deepEqual('hello', 'world')).to.be.false;
+      expect(deepEqual(true, false)).to.be.false;
+    });
+
+    it('returns true for two identical arrays', () => {
+      expect(deepEqual([1, 2, 3], [1, 2, 3])).to.be.true;
+      expect(deepEqual(['a', 'b', 'c'], ['a', 'b', 'c'])).to.be.true;
+    });
+
+    it('returns false for two different arrays', () => {
+      expect(deepEqual([1, 2, 3], [1, 2, 4])).to.be.false;
+      expect(deepEqual(['a', 'b', 'c'], ['a', 'b', 'd'])).to.be.false;
+    });
+
+    it('returns true for two identical objects', () => {
+      expect(deepEqual({ a: 1, b: 2 }, { a: 1, b: 2 })).to.be.true;
+      expect(deepEqual({ x: 'hello', y: 'world' }, { x: 'hello', y: 'world' })).to.be.true;
+    });
+
+    it('returns false for two different objects', () => {
+      expect(deepEqual({ a: 1, b: 2 }, { a: 1, b: 3 })).to.be.false;
+      expect(deepEqual({ x: 'hello', y: 'world' }, { x: 'hello', y: 'earth' })).to.be.false;
+    });
+
+    it('returns true for deeply nested identical objects', () => {
+      const obj1 = { a: { b: { c: 1 } }, d: 2 };
+      const obj2 = { a: { b: { c: 1 } }, d: 2 };
+      expect(deepEqual(obj1, obj2)).to.be.true;
+    });
+
+    it('returns false for deeply nested different objects', () => {
+      const obj1 = { a: { b: { c: 1 } }, d: 2 };
+      const obj2 = { a: { b: { c: 2 } }, d: 2 };
+      expect(deepEqual(obj1, obj2)).to.be.false;
+    });
+
+    it('returns true for two identical Date objects', () => {
+      const date1 = new Date('2021-01-01');
+      const date2 = new Date('2021-01-01');
+      expect(deepEqual(date1, date2)).to.be.true;
+    });
+
+    it('returns false for two different Date objects', () => {
+      const date1 = new Date('2021-01-01');
+      const date2 = new Date('2022-01-01');
+      expect(deepEqual(date1, date2)).to.be.false;
+    });
+
+    it('returns true for two identical RegExp objects', () => {
+      const regex1 = /test/i;
+      const regex2 = /test/i;
+      expect(deepEqual(regex1, regex2)).to.be.true;
+    });
+
+    it('returns false for two different RegExp objects', () => {
+      const regex1 = /test/i;
+      const regex2 = /test/g;
+      expect(deepEqual(regex1, regex2)).to.be.false;
+    });
+
+    it('returns false for objects with different constructors', () => {
+      function Person(name) {
+        this.name = name;
+      }
+      const person1 = new Person('John');
+      const person2 = { name: 'John' };
+      expect(deepEqual(person1, person2)).to.be.false;
+    });
+
+    it('returns true for nested arrays', () => {
+      const arr1 = [1, [2, [3, 4]]];
+      const arr2 = [1, [2, [3, 4]]];
+      expect(deepEqual(arr1, arr2)).to.be.true;
+    });
+
+    it('returns false for different nested arrays', () => {
+      const arr1 = [1, [2, [3, 4]]];
+      const arr2 = [1, [2, [4, 3]]];
+      expect(deepEqual(arr1, arr2)).to.be.false;
+    });
+
+    it('returns false for arrays of different lengths', () => {
+      const arr1 = [1, 2, 3];
+      const arr2 = [1, 2, 3, 4];
+      expect(deepEqual(arr1, arr2)).to.be.false;
+    });
+
+    it('returns false for objects with different number of keys', () => {
+      const obj1 = { a: 1, b: 2 };
+      const obj2 = { a: 1 };
+      expect(deepEqual(obj1, obj2)).to.be.false;
+    });
+
+    it('returns true for objects with identical keys and values in different order', () => {
+      const obj1 = { a: 1, b: 2, c: 3 };
+      const obj2 = { c: 3, b: 2, a: 1 };
+      expect(deepEqual(obj1, obj2)).to.be.true;
     });
   });
 });

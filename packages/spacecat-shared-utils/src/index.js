@@ -26,6 +26,7 @@ export {
   toBoolean,
   isValidUrl,
   dateAfterDays,
+  deepEqual,
 } from './functions.js';
 
 export {

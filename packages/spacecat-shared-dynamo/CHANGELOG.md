@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.3.27](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.26...@adobe/spacecat-shared-dynamo-v1.3.27) (2024-07-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#284](https://github.com/adobe/spacecat-shared/issues/284)) ([f4fe169](https://github.com/adobe/spacecat-shared/commit/f4fe1699c432637f1217198ad7f4a1cde6deeb76))
+
 # [@adobe/spacecat-shared-dynamo-v1.3.26](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.25...@adobe/spacecat-shared-dynamo-v1.3.26) (2024-06-29)
 
 

@@ -29,6 +29,8 @@ export function isNumber(value: unknown): boolean;
 
 export function isObject(value: unknown): boolean;
 
+export function isNonEmptyObject(value: unknown): boolean;
+
 export function isString(value: unknown): boolean;
 
 export function toBoolean(value: unknown): boolean;
@@ -36,6 +38,8 @@ export function toBoolean(value: unknown): boolean;
 export function isValidUrl(urlString: string): boolean;
 
 export function dateAfterDays(days: number, dateString: string): Date;
+
+export function deepEqual(a: unknown, b: unknown): boolean;
 
 export function sqsWrapper(fn: (message: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;

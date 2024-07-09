@@ -1,3 +1,53 @@
+# [@adobe/spacecat-shared-utils-v1.18.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.18.1...@adobe/spacecat-shared-utils-v1.18.2) (2024-07-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#284](https://github.com/adobe/spacecat-shared/issues/284)) ([f4fe169](https://github.com/adobe/spacecat-shared/commit/f4fe1699c432637f1217198ad7f4a1cde6deeb76))
+
+# [@adobe/spacecat-shared-utils-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.18.0...@adobe/spacecat-shared-utils-v1.18.1) (2024-07-04)
+
+
+### Bug Fixes
+
+* export deepEqual ([#283](https://github.com/adobe/spacecat-shared/issues/283)) ([2a06640](https://github.com/adobe/spacecat-shared/commit/2a0664059e6fbee9e9218d181e9bdd13e7e6c871))
+
+# [@adobe/spacecat-shared-utils-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.17.1...@adobe/spacecat-shared-utils-v1.18.0) (2024-07-04)
+
+
+### Features
+
+* utils deepEqual ([#282](https://github.com/adobe/spacecat-shared/issues/282)) ([d17ef5f](https://github.com/adobe/spacecat-shared/commit/d17ef5ff6dcacb7ddb3e60512d40d66202e14ffc))
+
+# [@adobe/spacecat-shared-utils-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.17.0...@adobe/spacecat-shared-utils-v1.17.1) (2024-07-02)
+
+
+### Bug Fixes
+
+* export isNonEmptyObject ([#281](https://github.com/adobe/spacecat-shared/issues/281)) ([c9bcb98](https://github.com/adobe/spacecat-shared/commit/c9bcb989617e57dbc6d75d321703983ef7faaf9d))
+
+# [@adobe/spacecat-shared-utils-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.16.2...@adobe/spacecat-shared-utils-v1.17.0) (2024-07-02)
+
+
+### Features
+
+* isNonEmptyObject ([#280](https://github.com/adobe/spacecat-shared/issues/280)) ([2e8ce04](https://github.com/adobe/spacecat-shared/commit/2e8ce048f192b9dd5f108a3590c2b8ea01c9eb84))
+
+# [@adobe/spacecat-shared-utils-v1.16.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.16.1...@adobe/spacecat-shared-utils-v1.16.2) (2024-06-29)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#279](https://github.com/adobe/spacecat-shared/issues/279)) ([4710607](https://github.com/adobe/spacecat-shared/commit/471060797fac55649ff0c0ea24129bdd421d46b2))
+
+# [@adobe/spacecat-shared-utils-v1.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.16.0...@adobe/spacecat-shared-utils-v1.16.1) (2024-06-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#274](https://github.com/adobe/spacecat-shared/issues/274)) ([6bed341](https://github.com/adobe/spacecat-shared/commit/6bed3412af558946575f9f6be6d313ff0511db40))
+* sqs adapter records access ([#275](https://github.com/adobe/spacecat-shared/issues/275)) ([856e247](https://github.com/adobe/spacecat-shared/commit/856e247a8ef764ed1bfe649c1e51eb2d86d9ecc1)), closes [#181](https://github.com/adobe/spacecat-shared/issues/181)
+
 # [@adobe/spacecat-shared-utils-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.15.10...@adobe/spacecat-shared-utils-v1.16.0) (2024-06-20)
 
 

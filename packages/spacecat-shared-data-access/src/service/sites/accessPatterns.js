@@ -260,7 +260,6 @@ export const getSitesByOrganizationID = async (
     ExpressionAttributeValues: {
       ':organizationId': organizationId,
     },
-    Limit: 1,
   });
 
   return dynamoItems.map((dynamoItem) => SiteDto.fromDynamoItem(dynamoItem));

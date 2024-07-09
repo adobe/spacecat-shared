@@ -1,3 +1,43 @@
+# [@adobe/spacecat-shared-data-access-v1.34.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.34.1...@adobe/spacecat-shared-data-access-v1.34.2) (2024-07-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#284](https://github.com/adobe/spacecat-shared/issues/284)) ([f4fe169](https://github.com/adobe/spacecat-shared/commit/f4fe1699c432637f1217198ad7f4a1cde6deeb76))
+
+# [@adobe/spacecat-shared-data-access-v1.34.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.34.0...@adobe/spacecat-shared-data-access-v1.34.1) (2024-06-29)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#279](https://github.com/adobe/spacecat-shared/issues/279)) ([4710607](https://github.com/adobe/spacecat-shared/commit/471060797fac55649ff0c0ea24129bdd421d46b2))
+
+# [@adobe/spacecat-shared-data-access-v1.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.33.1...@adobe/spacecat-shared-data-access-v1.34.0) (2024-06-28)
+
+
+### Features
+
+* add helix config to site/candidates ([#277](https://github.com/adobe/spacecat-shared/issues/277)) ([5ed489d](https://github.com/adobe/spacecat-shared/commit/5ed489dc84cb594689092e1f0019dd83d3647039))
+
+# [@adobe/spacecat-shared-data-access-v1.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.33.0...@adobe/spacecat-shared-data-access-v1.33.1) (2024-06-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#274](https://github.com/adobe/spacecat-shared/issues/274)) ([6bed341](https://github.com/adobe/spacecat-shared/commit/6bed3412af558946575f9f6be6d313ff0511db40))
+
+# [@adobe/spacecat-shared-data-access-v1.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.32.0...@adobe/spacecat-shared-data-access-v1.33.0) (2024-06-21)
+
+
+### Bug Fixes
+
+* getSitesByOrganizationID performance ([485818f](https://github.com/adobe/spacecat-shared/commit/485818f846c1ceb0e50b32f531bd2e438cee7614))
+
+
+### Features
+
+* introduce fixed URLs in audit type config ([#272](https://github.com/adobe/spacecat-shared/issues/272)) ([07858a9](https://github.com/adobe/spacecat-shared/commit/07858a95ce457f395fd2c4269d79b445f34de504))
+
 # [@adobe/spacecat-shared-data-access-v1.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.31.0...@adobe/spacecat-shared-data-access-v1.32.0) (2024-06-20)
 
 

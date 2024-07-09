@@ -8,23 +8,27 @@
           "views": 1300,
           "click": {
             ".hero": 100,
+            "*": 400,
             ".header #navmenu-0": 100,
             ".roi-calculator .button": 100,
             ".hero .button": 100
           },
           "convert": {},
-          "formsubmit": {}
+          "formsubmit": {},
+          "interactionsCount": 400
         },
         {
           "name": "control",
           "views": 800,
           "click": {
             ".hero .button": 100,
+            "*": 500,
             ".header .button": 200,
             ".header #navmenu-0": 200
           },
           "convert": {},
-          "formsubmit": {}
+          "formsubmit": {},
+          "interactionsCount": 500
         }
       ]
     }

@@ -217,39 +217,5 @@ describe('FirefallClient', () => {
       const result = await client.executePromptChain(chainConfig);
       expect(result).to.eql({ capital: 'Paris', population: '2 million' });
     });
-
-    it('works', async () => {
-      const chainConfig = {
-        steps: [
-          {
-            prompt: 'What is the capital of France?',
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            onResponse: (response) => ({ context: { capital: 'Paris' } }),
-          },
-          {
-            prompt: 'What is the population of {{capital}}?',
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            onResponse: (response) => ({ context: { population: '2 million' } }),
-          },
-        ],
-      };
-
-      const ctx = {
-        env: {
-          FIREFALL_API_ENDPOINT: 'https://firefall-stage.adobe.io',
-          FIREFALL_API_KEY: 'D729BFC2-8D8A-418A-92B4-624E1E8D6F07',
-          IMS_HOST: 'ims-na1-stg1.adobelogin.com',
-          IMS_CLIENT_ID: 'spacecat-firefall-dev',
-          IMS_CLIENT_CODE: 'eyJhbGciOiJSUzI1NiIsIng1dSI6Imltc19uYTEtc3RnMS1rZXktcGFjLTEuY2VyIiwia2lkIjoiaW1zX25hMS1zdGcxLWtleS1wYWMtMSIsIml0dCI6InBhYyJ9.eyJpZCI6InNwYWNlY2F0LWZpcmVmYWxsLWRldl9zdGciLCJ0eXBlIjoiYXV0aG9yaXphdGlvbl9jb2RlIiwiY2xpZW50X2lkIjoic3BhY2VjYXQtZmlyZWZhbGwtZGV2IiwidXNlcl9pZCI6InNwYWNlY2F0LWZpcmVmYWxsLWRldkBBZG9iZVNlcnZpY2UiLCJhcyI6Imltcy1uYTEtc3RnMSIsIm90byI6ZmFsc2UsImNyZWF0ZWRfYXQiOiIxNzA3MjEwOTYyOTg3Iiwic2NvcGUiOiJzeXN0ZW0ifQ.PUUVTXY8_a2iPrkmHuc4H5RSeYmX1Bgf6Qfw0QTSlpBoNc2Qnyh86jVUoKmJa7bbVt6VPXz0PjNL5TCz-m7IEWMB7lWbNuxOcO7TFkeNdJA6KYf6rnDyfFB8HmssYpJTa79zV5Px0lXLcQ-x_5MUe_BudIpQxBD482j7Jklg-3ec8TbO34BXSixmLEFLTqz1akVmmxoPYrsGkbK9huFtlRJJnzTZKRapsTC3e0sjqYcGkOhSUIarW7DUFxNThA1JpeJSkm9NixZb3V4kuhm84mLyE2DpG1hqZPG3FqquiPbh0D0egFAExIRugTgs0OE8ULkvl_IJn-AnrPrsLcciSA',
-          IMS_CLIENT_SECRET: 's8e-zrHCq1fRAS3xxbi9s23zPnXY25cmf0AF',
-        },
-        log: console,
-      };
-      const ffClient = FirefallClient.createFrom(ctx);
-
-      const result = await ffClient.executePromptChain(chainConfig);
-
-      expect(result).to.eql({ capital: 'Paris', population: '2 million' });
-    });
   });
 });

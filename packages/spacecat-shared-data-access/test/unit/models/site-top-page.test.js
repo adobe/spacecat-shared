@@ -19,6 +19,7 @@ const validData = {
   siteId: 'site123',
   url: 'https://www.example.com',
   traffic: 1000,
+  topKeyword: 'keyword',
   source: 'rum',
   geo: 'au',
   importedAt: new Date().toISOString(),

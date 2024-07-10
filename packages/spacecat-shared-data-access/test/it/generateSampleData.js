@@ -276,6 +276,25 @@ export default async function generateSampleData(
       GSI1PK: config.pkAllSites,
       createdAt: nowIso,
       updatedAt: nowIso,
+      hlxConfig: {
+        cdnProdHost: 'www.example.com',
+        code: {
+          owner: 'some-owner',
+          repo: 'some-repo',
+          source: {
+            type: 'github',
+            url: 'https://github.com/some-owner/some-repo',
+          },
+        },
+        content: {
+          contentBusId: '1234',
+          source: {
+            type: 'onedrive',
+            url: 'https://some-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/some-site/www',
+          },
+        },
+        hlxVersion: 5,
+      },
       config: {
         slack: {
           workspace: `${i}-workspace`,
@@ -290,7 +309,7 @@ export default async function generateSampleData(
       auditConfig: {
         auditsDisabled: false,
         auditTypeConfigs: {
-          'lhs-mobile': { disabled: false },
+          'lhs-mobile': { disabled: false, excludedURLs: ['https://example.com/excluded'] },
           cwv: { disabled: true },
         },
       },
@@ -313,6 +332,30 @@ export default async function generateSampleData(
     siteCandidates.push({
       baseURL: `https://example${i}.com`,
       status: SITE_CANDIDATE_STATUS.PENDING,
+      hlxConfig: {
+        rso: {
+          owner: 'some-owner',
+          site: `some-site${i}`,
+          ref: 'main',
+        },
+        cdnProdHost: `www.example${i}.com`,
+        code: {
+          owner: 'some-owner',
+          repo: 'some-repo',
+          source: {
+            type: 'github',
+            url: `https://github.com/some-owner/some-repo${i}`,
+          },
+        },
+        content: {
+          contentBusId: '1234',
+          source: {
+            type: 'onedrive',
+            url: `https://some-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/some-site${i}/www`,
+          },
+        },
+        hlxVersion: 5,
+      },
     });
   }
 
@@ -324,6 +367,7 @@ export default async function generateSampleData(
       SK: `ahrefs#global#${String(traffic).padStart(12, '0')}`,
       url: `${sites[i % numberOfSites].baseURL}/page-${i}`,
       traffic,
+      topKeyword: `keyword-${i}`,
       source: 'ahrefs',
       geo: 'global',
       importedAt: nowIso,

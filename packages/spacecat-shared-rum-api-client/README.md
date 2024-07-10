@@ -133,6 +133,64 @@ An example response:
 
 ```
 
+### experiment
+
+Lists all the experiments for a specified domain within the requested interval. The results are grouped by URL. The output includes all the URLs running the experiment, along with experiment id, variants, number of clicks/convert/formsubmit events per variant/selector and views for each of the variant in the experiment.
+
+
+An example response:
+
+```json
+{
+  "https://www.aem.live/home": [
+    {
+      "experiment": "short-home",
+      "variants": [
+        {
+          "name": "challenger-1",
+          "views": 1300,
+          "click": {
+            ".hero": 100,
+            ".header #navmenu-0": 100,
+            ".roi-calculator .button": 100,
+            ".hero .button": 100
+          },
+          "convert": {},
+          "formsubmit": {}
+        },
+        {
+          "name": "control",
+          "views": 800,
+          "click": {
+            ".hero .button": 100,
+            ".header .button": 200,
+            ".header #navmenu-0": 200
+          },
+          "convert": {},
+          "formsubmit": {}
+        }
+      ]
+    }
+  ],
+
+  "https://www.aem.live/new-exp-page": [
+    {
+      "experiment": "visitor-behavior",
+      "variants": [
+        {
+          "name": "https://www.aem.live/some-other-page",
+          "views": 500,
+          "click": {},
+          "convert": {},
+          "formsubmit": {}
+        }
+      ]
+    }
+  ]
+}
+
+```
+
 ## Linting
 Lint the codebase using:
 ```

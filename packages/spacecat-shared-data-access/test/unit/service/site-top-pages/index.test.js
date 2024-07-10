@@ -75,6 +75,7 @@ describe('Site Top Pages Access Pattern Tests', () => {
         url: 'https://www.example.com',
         traffic: 1000,
         source: 'gsc',
+        topKeyword: 'keyword',
         geo: 'au',
         importedAt: new Date().toISOString(),
       };
@@ -93,6 +94,7 @@ describe('Site Top Pages Access Pattern Tests', () => {
       expect(result[0].getSiteId()).to.equal(siteTopPageData.siteId);
       expect(result[0].getURL()).to.equal(siteTopPageData.url);
       expect(result[0].getTraffic()).to.equal(siteTopPageData.traffic);
+      expect(result[0].getTopKeyword()).to.equal(siteTopPageData.topKeyword);
       expect(result[0].getSource()).to.equal(siteTopPageData.source);
       expect(result[0].getGeo()).to.equal(siteTopPageData.geo);
       expect(result[0].getImportedAt()).to.equal(siteTopPageData.importedAt);
@@ -103,6 +105,7 @@ describe('Site Top Pages Access Pattern Tests', () => {
         siteId: 'site123',
         url: 'https://www.example.com',
         traffic: 1000,
+        topKeyword: 'keyword',
         source: 'gsc',
         geo: 'au',
         importedAt: new Date().toISOString(),
@@ -122,6 +125,7 @@ describe('Site Top Pages Access Pattern Tests', () => {
       expect(result[0].getSiteId()).to.equal(siteTopPageData.siteId);
       expect(result[0].getURL()).to.equal(siteTopPageData.url);
       expect(result[0].getTraffic()).to.equal(siteTopPageData.traffic);
+      expect(result[0].getTopKeyword()).to.equal(siteTopPageData.topKeyword);
       expect(result[0].getSource()).to.equal(siteTopPageData.source);
       expect(result[0].getGeo()).to.equal(siteTopPageData.geo);
       expect(result[0].getImportedAt()).to.equal(siteTopPageData.importedAt);
@@ -147,6 +151,7 @@ describe('Site Top Pages Access Pattern Tests', () => {
         siteId: 'site123',
         url: 'https://www.example.com',
         traffic: 1000,
+        topKeyword: 'keyword',
         source: 'rum',
         geo: 'us',
         importedAt: new Date().toISOString(),
@@ -162,6 +167,7 @@ describe('Site Top Pages Access Pattern Tests', () => {
       expect(result.getSiteId()).to.equal(siteTopPageData.siteId);
       expect(result.getURL()).to.equal(siteTopPageData.url);
       expect(result.getTraffic()).to.equal(siteTopPageData.traffic);
+      expect(result.getTopKeyword()).to.equal(siteTopPageData.topKeyword);
       expect(result.getSource()).to.equal(siteTopPageData.source);
       expect(result.getGeo()).to.equal(siteTopPageData.geo);
       expect(result.getImportedAt()).to.equal(siteTopPageData.importedAt);
@@ -172,6 +178,7 @@ describe('Site Top Pages Access Pattern Tests', () => {
         siteId: 'site123',
         url: 'https://www.example.com',
         traffic: 1000,
+        topKeyword: 'keyword',
         source: 'rum',
         geo: 'us',
         importedAt: new Date().toISOString(),

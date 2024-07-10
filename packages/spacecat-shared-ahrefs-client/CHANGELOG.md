@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.3.1...@adobe/spacecat-shared-ahrefs-client-v1.3.2) (2024-07-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#284](https://github.com/adobe/spacecat-shared/issues/284)) ([f4fe169](https://github.com/adobe/spacecat-shared/commit/f4fe1699c432637f1217198ad7f4a1cde6deeb76))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.3.0...@adobe/spacecat-shared-ahrefs-client-v1.3.1) (2024-06-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#274](https://github.com/adobe/spacecat-shared/issues/274)) ([6bed341](https://github.com/adobe/spacecat-shared/commit/6bed3412af558946575f9f6be6d313ff0511db40))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.6...@adobe/spacecat-shared-ahrefs-client-v1.3.0) (2024-06-19)
+
+
+### Features
+
+* introduce organic keywords for ahrefs client and top keyword in top pages ([#257](https://github.com/adobe/spacecat-shared/issues/257)) ([371f1c4](https://github.com/adobe/spacecat-shared/commit/371f1c475870fd2aac833f925236237a8b25c026))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.2.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.2.5...@adobe/spacecat-shared-ahrefs-client-v1.2.6) (2024-06-11)
 
 

@@ -15,8 +15,10 @@ import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
 import notfound from '../src/functions/404.js';
 import bundles from './fixtures/bundles.json' assert { type: 'json' };
+import experiment from '../src/functions/experiment.js';
 import expectedCwvResult from './fixtures/cwv.json' assert { type: 'json' };
 import expected404Result from './fixtures/notfound.json' assert { type: 'json' };
+import expectedExperimentsResult from './fixtures/experiments.json' assert { type: 'json' };
 
 describe('Query functions', () => {
   it('crunches cwv data', async () => {
@@ -27,5 +29,10 @@ describe('Query functions', () => {
   it('crunches 404 data', async () => {
     const notfoundResult = notfound.handler(bundles.rumBundles);
     expect(expected404Result).to.eql(notfoundResult);
+  });
+
+  it('crunches experiment data', async () => {
+    const experimentsResult = experiment.handler(bundles.rumBundles);
+    expect(expectedExperimentsResult).to.eql(experimentsResult);
   });
 });

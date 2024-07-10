@@ -21,10 +21,12 @@ export {
   isIsoTimeOffsetsDate,
   isNumber,
   isObject,
+  isNonEmptyObject,
   isString,
   toBoolean,
   isValidUrl,
   dateAfterDays,
+  deepEqual,
 } from './functions.js';
 
 export {

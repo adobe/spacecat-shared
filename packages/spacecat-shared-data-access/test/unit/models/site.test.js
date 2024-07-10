@@ -20,6 +20,30 @@ import { sleep } from '../util.js';
 const validData = {
   baseURL: 'https://www.example.com',
   deliveryType: 'aem_edge',
+  hlxConfig: {
+    rso: {
+      owner: 'some-owner',
+      site: 'some-site',
+      ref: 'main',
+    },
+    cdnProdHost: 'www.example.com',
+    code: {
+      owner: 'some-owner',
+      repo: 'some-repo',
+      source: {
+        type: 'github',
+        url: 'https://github.com/some-owner/some-repo',
+      },
+    },
+    content: {
+      contentBusId: '1234',
+      source: {
+        type: 'onedrive',
+        url: 'https://some-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/some-site/www',
+      },
+    },
+    hlxVersion: 5,
+  },
   organizationId: 'org123',
   auditConfig: {
     auditsDisabled: false,
@@ -40,10 +64,20 @@ describe('Site Model Tests', () => {
       expect(() => createSite({ ...validData, deliveryType: 'invalid' })).to.throw('Invalid delivery type: invalid');
     });
 
+    it('throws an error if hlxConfig is invalid', () => {
+      expect(() => createSite({ ...validData, hlxConfig: '1234' })).to.throw('HLX Config must be an object: 1234');
+    });
+
     it('creates a site object with valid baseURL', () => {
       const site = createSite({ ...validData });
       expect(site).to.be.an('object');
       expect(site.getBaseURL()).to.equal(validData.baseURL);
+    });
+
+    it('creates a site without hlxConfig', () => {
+      const site = createSite({ ...validData, hlxConfig: undefined });
+      expect(site).to.be.an('object');
+      expect(site.getHlxConfig()).to.deep.equal({});
     });
 
     it('creates a site with default organization id', () => {
@@ -77,6 +111,33 @@ describe('Site Model Tests', () => {
       expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
       expect(auditConfig.getAuditTypeConfig('type2')).to.be.an('object');
       expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.true;
+    });
+
+    it('creates a site with provided hlxConfig', () => {
+      const newHlxConfig = {
+        cdnProdHost: 'www.another-example.com',
+        code: {
+          owner: 'another-owner',
+          repo: 'another-repo',
+          source: {
+            type: 'github',
+            url: 'https://github.com/another-owner/another-repo',
+          },
+        },
+        content: {
+          contentBusId: '1234',
+          source: {
+            type: 'onedrive',
+            url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+          },
+        },
+        hlxVersion: 5,
+      };
+      const site = createSite({ ...validData, hlxConfig: newHlxConfig });
+      const helixConfig = site.getHlxConfig();
+
+      expect(helixConfig).to.be.an('object');
+      expect(helixConfig).to.deep.equal(newHlxConfig);
     });
   });
 
@@ -138,6 +199,34 @@ describe('Site Model Tests', () => {
       expect(site.getGitHubURL()).to.equal(newGitHubURL);
     });
 
+    it('updates hlxConfig correctly', () => {
+      const newHlxConfig = {
+        cdnProdHost: 'www.another-example.com',
+        code: {
+          owner: 'another-owner',
+          repo: 'another-repo',
+          source: {
+            type: 'github',
+            url: 'https://github.com/another-owner/another-repo',
+          },
+        },
+        content: {
+          contentBusId: '1234',
+          source: {
+            type: 'onedrive',
+            url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+          },
+        },
+        hlxVersion: 5,
+      };
+
+      site.updateHlxConfig(newHlxConfig);
+      const helixConfig = site.getHlxConfig();
+
+      expect(helixConfig).to.be.an('object');
+      expect(helixConfig).to.deep.equal(newHlxConfig);
+    });
+
     it('throws an error when updating with an invalid deliveryType', () => {
       expect(() => site.updateDeliveryType('invalid')).to.throw('Invalid delivery type: invalid');
     });
@@ -148,6 +237,10 @@ describe('Site Model Tests', () => {
 
     it('throws an error when updating with an invalid config', () => {
       expect(() => site.updateConfig('abcd')).to.throw('Config must be provided');
+    });
+
+    it('throws an error when updating with an invalid hlxConfig', () => {
+      expect(() => site.updateHlxConfig('abcd')).to.throw('HLX Config must be an object');
     });
 
     it('sets audits correctly', () => {
@@ -238,8 +331,9 @@ describe('Site Model Tests', () => {
     });
 
     it('updates a specific audit type configuration', () => {
-      site.updateAuditTypeConfig('type1', { disabled: true });
+      site.updateAuditTypeConfig('type1', { disabled: true, excludedURLs: ['http://example.com'] });
       expect(site.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.true;
+      expect(site.getAuditConfig().getAuditTypeConfig('type1').getExcludedURLs()).to.eql(['http://example.com']);
     });
 
     it('adds a new audit type configuration if it does not exist', () => {

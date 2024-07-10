@@ -37,6 +37,7 @@ function checkSite(site) {
   expect(site.getBaseURL()).to.be.a('string');
   expect(site.getDeliveryType()).to.be.a('string');
   expect(site.getGitHubURL()).to.be.a('string');
+  expect(site.getHlxConfig()).to.be.an('object');
   expect(site.getOrganizationId()).to.be.a('string');
   expect(isIsoDate(site.getCreatedAt())).to.be.true;
   expect(isIsoDate(site.getUpdatedAt())).to.be.true;
@@ -49,6 +50,7 @@ function checkSite(site) {
   expect(auditConfig.auditsDisabled()).to.be.a('boolean').which.is.false;
   expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE)).to.be.an('object');
   expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).disabled()).to.be.a('boolean').which.is.false;
+  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).getExcludedURLs()).to.be.a('array').which.is.deep.equal(['https://example.com/excluded']);
   expect(auditConfig.getAuditTypeConfig('non-existing-type')).to.be.undefined;
   expect(auditConfig.getAuditTypeConfig('cwv')).to.be.an('object');
   expect(auditConfig.getAuditTypeConfig('cwv').disabled()).to.be.a('boolean').which.is.true;
@@ -82,6 +84,7 @@ function checkSiteTopPage(siteTopPage) {
   expect(siteTopPage.getSiteId()).to.be.a('string');
   expect(siteTopPage.getURL()).to.be.a('string');
   expect(siteTopPage.getTraffic()).to.be.a('number');
+  expect(siteTopPage.getTopKeyword()).to.be.a('string');
   expect(siteTopPage.getSource()).to.be.a('string');
   expect(siteTopPage.getGeo()).to.be.a('string');
   expect(isIsoDate(siteTopPage.getImportedAt())).to.be.true;
@@ -409,6 +412,25 @@ describe('DynamoDB Integration Test', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',
       gitHubURL: 'https://github.com/some-org/test-repo',
+      hlxConfig: {
+        cdnProdHost: 'www.another-example.com',
+        code: {
+          owner: 'another-owner',
+          repo: 'another-repo',
+          source: {
+            type: 'github',
+            url: 'https://github.com/another-owner/another-repo',
+          },
+        },
+        content: {
+          contentBusId: '1234',
+          source: {
+            type: 'onedrive',
+            url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+          },
+        },
+        hlxVersion: 5,
+      },
       organizationId: '1234',
       isLive: true,
       isLiveToggledAt: new Date().toISOString(),
@@ -416,7 +438,7 @@ describe('DynamoDB Integration Test', async () => {
       auditConfig: {
         auditsDisabled: false,
         auditTypeConfigs: {
-          'lhs-mobile': { disabled: false },
+          'lhs-mobile': { disabled: false, excludedURLs: ['https://example.com/excluded'] },
           cwv: { disabled: true },
         },
       },
@@ -433,6 +455,7 @@ describe('DynamoDB Integration Test', async () => {
     expect(newSite.getId()).to.to.be.a('string');
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
     expect(newSite.getGitHubURL()).to.equal(newSiteData.gitHubURL);
+    expect(newSite.getHlxConfig()).to.deep.equal(newSiteData.hlxConfig);
     expect(newSite.getOrganizationId()).to.equal(newSiteData.organizationId);
     expect(newSite.getAudits()).to.be.an('array').that.is.empty;
   });
@@ -443,11 +466,31 @@ describe('DynamoDB Integration Test', async () => {
     const newDeliveryType = 'aem_cs';
     const newGitHubURL = 'https://github.com/newOrg/some-repo';
     const newOrgId = 'updatedOrg123';
+    const newHlxConfig = {
+      cdnProdHost: 'www.another-example.com',
+      code: {
+        owner: 'another-owner',
+        repo: 'another-repo',
+        source: {
+          type: 'github',
+          url: 'https://github.com/another-owner/another-repo',
+        },
+      },
+      content: {
+        contentBusId: '1234',
+        source: {
+          type: 'onedrive',
+          url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+        },
+      },
+      hlxVersion: 5,
+    };
 
     await sleep(10); // Make sure updatedAt is different
 
     siteToUpdate.updateDeliveryType(newDeliveryType);
     siteToUpdate.updateGitHubURL(newGitHubURL);
+    siteToUpdate.updateHlxConfig(newHlxConfig);
     siteToUpdate.updateOrganizationId(newOrgId);
     siteToUpdate.toggleLive();
 
@@ -455,6 +498,7 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(updatedSite.getDeliveryType()).to.equal(newDeliveryType);
     expect(updatedSite.getGitHubURL()).to.equal(newGitHubURL);
+    expect(updatedSite.getHlxConfig()).to.deep.equal(newHlxConfig);
     expect(updatedSite.getOrganizationId()).to.equal(newOrgId);
     expect(updatedSite.isLive()).to.be.false;
     expect(updatedSite.getUpdatedAt()).to.not.equal(originalUpdatedAt);
@@ -767,6 +811,7 @@ describe('DynamoDB Integration Test', async () => {
       siteId,
       url: 'https://example12345.com/page-12345',
       traffic: 360420000,
+      topKeyword: 'keyword12345',
       source: 'rum',
       geo: 'au',
       importedAt: new Date().toISOString(),

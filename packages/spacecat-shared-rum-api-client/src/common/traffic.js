@@ -23,22 +23,21 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 const searchEngines = /^(https?:\/\/)?(.*\.)?(google|yahoo|bing|yandex|baidu|duckduckgo|brave|ecosia|aol|startpage|ask)\.(.*)(\/|$)/;
 const socialMedias = /^(https?:\/\/)?(.*\.)?(facebook|tiktok|snapchat|x|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram)\.(.*)(\/|$)/;
 const adNetworks = /googlesyndication|2mdn/;
-const videoPlatforms = /^(https?:\/\/)?(.*\.)?(youtube|tiktok|vimeo|twitch|dailymotion|wistia)\.(.*)(\/|$)/;
+const videoPlatforms = /^(https?:\/\/)?(.*\.)?(youtube|vimeo|twitch|dailymotion|wistia)\.(.*)(\/|$)/;
 
 // UTM Source related
 const paidDisplaySources = ['gdn'];
 
 // UTM Medium related
 // matches 'pp', *cp[acmuv]*, *ppc*, *paid*
-const paidUTMMediums = /^\bpp\b|(.*(cp[acmuv]|ppc|paid).*)$/;
+const paidUTMMediums = /^\bpp\b|(.*(cp[acmuv]|ppc|paid|display|banner|poster|placement).*)$/;
 const searchEngineUTMMediums = ['google', 'paidsearch', 'paidsearchnb', 'sea', 'sem'];
-const socialMediaUTMMediums = ['facebook', ' gnews', ' instagramfeed', ' instagramreels', ' instagramstories', ' line', ' linkedin', ' metasearch', ' organicsocialown', ' paidsocial', ' social', ' sociallinkedin', ' socialpaid'];
+const socialMediaUTMMediums = ['facebook', 'gnews', 'instagramfeed', 'instagramreels', 'instagramstories', 'line', 'linkedin', 'metasearch', 'organicsocialown', 'paidsocial', 'social', 'sociallinkedin', 'socialpaid'];
 const affiliateUTMMediums = ['aff', 'affiliate', 'affiliatemarketing'];
 const organicUTMMediums = ['organicsocial'];
 const emailUTMMediums = ['em', 'email', 'mail', 'newsletter'];
 const smsUTMMediums = ['sms', 'mms'];
 const qrUTMMediums = ['qr', 'qrcode'];
-const webUTMMediums = ['web'];
 const pushUTMMediums = ['push', 'pushnotification'];
 
 // Tracking params - based on the checkpoints we have in rum-enhancer now
@@ -61,6 +60,7 @@ const anyOf = (truth) => (text) => {
 const none = (input) => (Array.isArray(input) ? input.length === 0 : !hasText(input));
 
 const not = (truth) => (text) => {
+  if (!hasText(text)) return false;
   if (Array.isArray(truth)) return !truth.includes(text);
   if (truth instanceof RegExp) return !truth.test(text);
   return truth !== text;
@@ -78,12 +78,12 @@ const RULES = (origin) => ([
   { type: 'paid', category: 'search', referrer: anyOf(searchEngines), utmSource: any, utmMedium: anyOf(searchEngineUTMMediums), tracking: none },
   { type: 'paid', category: 'search', referrer: anyOf(searchEngines), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
   { type: 'paid', category: 'social', referrer: anyOf(socialMedias), utmSource: any, utmMedium: anyOf(socialMediaUTMMediums), tracking: none },
-  { type: 'paid', category: 'social', referrer: anyOf(socialMedias), utmSource: any, utmMedium: anyOf(socialMediaUTMMediums), tracking: anyOf(paidTrackingParams) },
+  { type: 'paid', category: 'social', referrer: anyOf(socialMedias), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
+  { type: 'paid', category: 'video', referrer: anyOf(videoPlatforms), utmSource: any, utmMedium: anyOf(paidUTMMediums), tracking: any },
+  { type: 'paid', category: 'video', referrer: anyOf(videoPlatforms), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
   { type: 'paid', category: 'display', referrer: notEmpty, utmSource: any, utmMedium: anyOf(paidUTMMediums), tracking: any },
   { type: 'paid', category: 'display', referrer: anyOf(adNetworks), utmSource: any, utmMedium: any, tracking: any },
   { type: 'paid', category: 'display', referrer: notEmpty, utmSource: anyOf(paidDisplaySources), utmMedium: any, tracking: any },
-  { type: 'paid', category: 'video', referrer: anyOf(videoPlatforms), utmSource: any, utmMedium: anyOf(paidUTMMediums), tracking: any },
-  { type: 'paid', category: 'video', referrer: anyOf(videoPlatforms), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
   { type: 'paid', category: 'affiliate', referrer: notEmpty, utmSource: any, utmMedium: anyOf(affiliateUTMMediums), tracking: any },
   { type: 'paid', category: 'uncategorized', referrer: not(origin), utmSource: any, utmMedium: anyOf(paidUTMMediums), tracking: any },
   { type: 'paid', category: 'uncategorized', referrer: not(origin), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
@@ -92,20 +92,18 @@ const RULES = (origin) => ([
   { type: 'earned', category: 'search', referrer: anyOf(searchEngines), utmSource: none, utmMedium: none, tracking: none },
   { type: 'earned', category: 'search', referrer: anyOf(searchEngines), utmSource: any, utmMedium: not(paidUTMMediums), tracking: not(paidTrackingParams) },
   { type: 'earned', category: 'social', referrer: anyOf(socialMedias), utmSource: none, utmMedium: none, tracking: none },
-  { type: 'earned', category: 'social', referrer: not(origin), utmSource: none, utmMedium: anyOf(organicUTMMediums), tracking: any },
+  { type: 'earned', category: 'social', referrer: not(origin), utmSource: any, utmMedium: anyOf(organicUTMMediums), tracking: none },
   { type: 'earned', category: 'video', referrer: anyOf(videoPlatforms), utmSource: none, utmMedium: none, tracking: none },
-  { type: 'earned', category: 'video', referrer: anyOf(videoPlatforms), utmSource: any, utmMedium: not(paidUTMMediums), tracking: not(paidTrackingParams) },
-  { type: 'earned', category: 'uncategorized', referrer: not(origin), utmSource: any, utmMedium: not(paidUTMMediums), tracking: not(paidTrackingParams) },
+  { type: 'earned', category: 'video', referrer: anyOf(videoPlatforms), utmSource: any, utmMedium: not(paidUTMMediums), tracking: none },
   { type: 'earned', category: 'referral', referrer: not(origin), utmSource: none, utmMedium: none, tracking: none },
 
   // OWNED
   { type: 'owned', category: 'direct', referrer: none, utmSource: none, utmMedium: none, tracking: none },
-  { type: 'owned', category: 'navigate', referrer: anyOf(origin), utmSource: none, utmMedium: none, tracking: none },
+  { type: 'owned', category: 'internal', referrer: anyOf(origin), utmSource: none, utmMedium: none, tracking: none },
   { type: 'owned', category: 'email', referrer: any, utmSource: any, utmMedium: any, tracking: anyOf(emailTrackingParams) },
   { type: 'owned', category: 'email', referrer: any, utmSource: any, utmMedium: anyOf(emailUTMMediums), tracking: any },
   { type: 'owned', category: 'sms', referrer: none, utmSource: any, utmMedium: anyOf(smsUTMMediums), tracking: none },
   { type: 'owned', category: 'qr', referrer: none, utmSource: any, utmMedium: anyOf(qrUTMMediums), tracking: none },
-  { type: 'owned', category: 'web', referrer: none, utmSource: any, utmMedium: anyOf(webUTMMediums), tracking: none },
   { type: 'owned', category: 'push', referrer: none, utmSource: any, utmMedium: anyOf(pushUTMMediums), tracking: none },
 
   // FALLBACK

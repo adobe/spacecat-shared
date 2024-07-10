@@ -18,18 +18,134 @@ import { classifyTrafficSource } from '../../src/common/traffic.js';
 const { expect } = chai;
 describe('Traffic classification', () => {
   const url = 'https://www.test.com/some/page';
+  const { origin } = new URL(url);
 
-  it('paid search', async () => {
-    const fixtures = [
-      { referrer: 'https://www.bing.com/', utmSource: '', utmMedium: 'paidsearch', tracking: [] },
-      { referrer: 'https://www.google.co.uk/', utmSource: '', utmMedium: 'sea', tracking: [] },
-      { referrer: 'https://yahoo.com/', utmSource: '', utmMedium: 'paidsearch', tracking: [] },
-      { referrer: 'https://google.com/', utmSource: '', utmMedium: 'paidsearch', tracking: 'paid' },
-    ];
+  const assert = (expected, f) => {
+    const result = classifyTrafficSource(url, f.referrer, f.utmSource, f.utmMedium, f.tracking);
+    expect(result).to.eql(expected);
+  };
 
-    for (const f of fixtures) {
-      const result = classifyTrafficSource(url, f.referrer, f.utmSource, f.utmMedium, f.tracking);
-      expect(result).to.eql({ type: 'paid', category: 'search' });
-    }
+  it('paid search', () => {
+    const expected = { type: 'paid', category: 'search' };
+
+    assert(expected, { referrer: 'https://www.bing.com/', utmSource: 'some-source', utmMedium: 'paidsearch', tracking: null });
+    assert(expected, { referrer: 'https://www.google.co.uk/', utmSource: 'some-source', utmMedium: 'sea', tracking: null });
+    assert(expected, { referrer: 'https://yahoo.com/', utmSource: 'some-source', utmMedium: 'paidsearch', tracking: null });
+    assert(expected, { referrer: 'https://google.com/', utmSource: 'some-source', utmMedium: 'paidsearch', tracking: 'paid' });
+  });
+
+  it('paid social', () => {
+    const expected = { type: 'paid', category: 'social' };
+
+    assert(expected, { referrer: 'https://www.facebook.com/', utmSource: 'some-source', utmMedium: 'facebook', tracking: null });
+    assert(expected, { referrer: 'https://www.tiktok.com/', utmSource: 'some-source', utmMedium: 'paidsocial', tracking: null });
+    assert(expected, { referrer: 'https://snapchat.com/', utmSource: 'some-source', utmMedium: 'social', tracking: null });
+    assert(expected, { referrer: 'https://x.com/', utmSource: 'some-source', utmMedium: '', tracking: 'paid' });
+  });
+
+  it('paid video', () => {
+    const expected = { type: 'paid', category: 'video' };
+
+    assert(expected, { referrer: 'https://www.youtube.com/', utmSource: 'some-source', utmMedium: 'cpc', tracking: null });
+    assert(expected, { referrer: 'https://www.youtube.com/', utmSource: 'some-source', utmMedium: 'ppc', tracking: null });
+    assert(expected, { referrer: 'https://www.dailymotion.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'paid' });
+    assert(expected, { referrer: 'https://www.twitch.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'paid' });
+  });
+
+  it('paid display', () => {
+    const expected = { type: 'paid', category: 'display' };
+
+    assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'cpc', tracking: null });
+    assert(expected, { referrer: 'https://hebele.hebele.googlesyndication.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: null });
+    assert(expected, { referrer: 'not-empty', utmSource: 'gdn', utmMedium: 'some-medium', tracking: null });
+    assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'pp', tracking: null });
+    assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'display', tracking: null });
+  });
+
+  it('paid affiliate', () => {
+    const expected = { type: 'paid', category: 'affiliate' };
+
+    assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'affiliate', tracking: null });
+  });
+
+  it('earned search', () => {
+    const expected = { type: 'earned', category: 'search' };
+
+    assert(expected, { referrer: 'https://www.bing.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert(expected, { referrer: 'https://www.google.co.uk/', utmSource: '', utmMedium: '', tracking: null });
+    assert(expected, { referrer: 'https://yahoo.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'some' });
+    assert(expected, { referrer: 'https://google.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'some' });
+  });
+
+  it('earned social', () => {
+    const expected = { type: 'earned', category: 'social' };
+
+    assert(expected, { referrer: 'https://www.facebook.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert(expected, { referrer: 'https://www.tiktok.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert(expected, { referrer: 'https://some-site.com/', utmSource: 'some-source', utmMedium: 'organicsocial', tracking: null });
+  });
+
+  it('earned video', () => {
+    const expected = { type: 'earned', category: 'video' };
+
+    assert(expected, { referrer: 'https://www.youtube.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert(expected, { referrer: 'https://www.youtube.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert(expected, { referrer: 'https://www.dailymotion.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: null });
+  });
+
+  it('earned referral', () => {
+    const expected = { type: 'earned', category: 'referral' };
+
+    assert(expected, { referrer: 'https://some-site.com/', utmSource: '', utmMedium: '', tracking: null });
+  });
+
+  it('owned direct', () => {
+    const expected = { type: 'owned', category: 'direct' };
+
+    assert(expected, { referrer: '', utmSource: '', utmMedium: '', tracking: null });
+  });
+
+  it('owned internal', () => {
+    const expected = { type: 'owned', category: 'internal' };
+
+    assert(expected, { referrer: origin, utmSource: '', utmMedium: '', tracking: null });
+  });
+
+  it('owned email', () => {
+    const expected = { type: 'owned', category: 'email' };
+
+    assert(expected, { referrer: '', utmSource: 'some-source', utmMedium: '', tracking: 'email' });
+    assert(expected, { referrer: '', utmSource: 'some-source', utmMedium: 'email', tracking: null });
+    assert(expected, { referrer: 'not-empty', utmSource: '', utmMedium: 'some-medium', tracking: 'email' });
+    assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'newsletter', tracking: null });
+  });
+
+  it('owned sms', () => {
+    const expected = { type: 'owned', category: 'sms' };
+
+    assert(expected, { referrer: '', utmSource: 'some-source', utmMedium: 'sms', tracking: null });
+    assert(expected, { referrer: '', utmSource: '', utmMedium: 'mms', tracking: null });
+  });
+
+  it('owned qr', () => {
+    const expected = { type: 'owned', category: 'qr' };
+
+    assert(expected, { referrer: '', utmSource: 'some-source', utmMedium: 'qr', tracking: null });
+    assert(expected, { referrer: '', utmSource: '', utmMedium: 'qrcode', tracking: null });
+  });
+
+  it('owned push', () => {
+    const expected = { type: 'owned', category: 'push' };
+
+    assert(expected, { referrer: '', utmSource: 'some-source', utmMedium: 'push', tracking: null });
+    assert(expected, { referrer: '', utmSource: '', utmMedium: 'pushnotification', tracking: null });
+  });
+
+  it('owned uncategorized', () => {
+    const expected = { type: 'owned', category: 'uncategorized' };
+
+    assert(expected, { referrer: 'some-referrer', utmSource: 'some-source', utmMedium: 'sms', tracking: null });
+    assert(expected, { referrer: 'some', utmSource: 'some', utmMedium: 'some', tracking: null });
+    assert(expected, { referrer: '', utmSource: 'some', utmMedium: 'some', tracking: null });
   });
 });

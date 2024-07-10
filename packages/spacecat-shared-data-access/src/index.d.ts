@@ -479,6 +479,11 @@ export interface ImportJob {
   getDuration: () => number;
 
   /**
+   * Retrieves the url count of the import job.
+   */
+  getUrlCount: () => number;
+
+  /**
    * Retrieves the success count of the import job.
    */
   getSuccessCount: () => number;

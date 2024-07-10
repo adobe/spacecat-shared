@@ -37,6 +37,7 @@ const ImportJob = (data) => {
   self.getEndTime = () => self.state.endTime;
   self.getDuration = () => self.state.duration;
   self.getStatus = () => self.state.status;
+  self.getUrlCount = () => self.state.urlCount;
   self.getSuccessCount = () => self.state.successCount;
   self.getFailedCount = () => self.state.failedCount;
   self.getImportQueueId = () => self.state.importQueueId;
@@ -84,6 +85,22 @@ const ImportJob = (data) => {
     }
 
     self.state.status = status;
+    self.touch();
+
+    return self;
+  };
+
+  /**
+   * Updates the Url count of the ImportJob
+   * @param {number} urlCount - The new url count.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  self.updateUrlCount = (urlCount) => {
+    if (!isNumber(urlCount)) {
+      throw new Error(`Invalid url count during update: ${urlCount}`);
+    }
+
+    self.state.urlCount = urlCount;
     self.touch();
 
     return self;

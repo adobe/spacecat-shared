@@ -13,11 +13,13 @@ import { fetchBundles } from './common/rum-bundler-client.js';
 import notfound from './functions/404.js';
 import cwv from './functions/cwv.js';
 import experiment from './functions/experiment.js';
+import trafficAcquisition from './functions/traffic-acquisition.js';
 
 const HANDLERS = {
   404: notfound,
   cwv,
   experiment,
+  'traffic-acquisition': trafficAcquisition,
 };
 
 export default class RUMAPIClient {

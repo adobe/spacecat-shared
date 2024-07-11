@@ -19,7 +19,7 @@ const HANDLERS = {
   404: notfound,
   cwv,
   experiment,
-  variant
+  variant,
 };
 
 export default class RUMAPIClient {

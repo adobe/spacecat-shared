@@ -66,11 +66,11 @@ function handler(bundles) {
       const languageObject = getOrCreateLanguageObject(languageInsights, pageLanguage);
       languageObject.count += 1; // Increment the total count for this page language
 
-      // Type 1 Mismatch: List out each mismatch if the preferred language list 
+      // Type 1 Mismatch: List out each mismatch if the preferred language list
       // does not contain the page language
       const isType1Mismatch = !preferredLanguages.includes(pageLanguage);
       if (isType1Mismatch) {
-        preferredLanguages.forEach(preferredLanguage => {
+        preferredLanguages.forEach((preferredLanguage) => {
           if (!languageObject.mismatches.type1.preferredLanguages[preferredLanguage]) {
             languageObject.mismatches.type1.preferredLanguages[preferredLanguage] = 1;
           } else {
@@ -79,10 +79,9 @@ function handler(bundles) {
         });
       }
 
-      // Type 2 Mismatch: Count as one mismatch if any preferred language 
+      // Type 2 Mismatch: Count as one mismatch if any preferred language
       // is different from page language
-      const isType2Mismatch = preferredLanguages.some((preferredLanguage) => 
-        preferredLanguage !== pageLanguage);
+      const isType2Mismatch = preferredLanguages.some((preferredLanguage) => preferredLanguage !== pageLanguage);
       if (isType2Mismatch) {
         const preferredLanguage = preferredLanguages.join(',');
         if (!languageObject.mismatches.type2.preferredLanguages[preferredLanguage]) {
@@ -92,7 +91,7 @@ function handler(bundles) {
         }
       }
 
-      // Type 3 Mismatch: Compare each language in preferred language list to page language, 
+      // Type 3 Mismatch: Compare each language in preferred language list to page language,
       // and count each mismatch
       preferredLanguages.forEach((preferredLanguage) => {
         if (preferredLanguage !== pageLanguage) {

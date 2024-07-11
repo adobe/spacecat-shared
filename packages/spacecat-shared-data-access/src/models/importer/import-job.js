@@ -11,7 +11,7 @@
  */
 
 import {
-  hasText, isIsoDate, isValidUrl, isObject, isString, isNumber,
+  hasText, isIsoDate, isValidUrl, isObject, isString, isNumber, isInteger,
 } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 
@@ -96,7 +96,7 @@ const ImportJob = (data) => {
    * @returns {ImportJob} The updated ImportJob object.
    */
   self.updateUrlCount = (urlCount) => {
-    if (!isNumber(urlCount)) {
+    if (!isInteger(urlCount)) {
       throw new Error(`Invalid url count during update: ${urlCount}`);
     }
 
@@ -112,7 +112,7 @@ const ImportJob = (data) => {
      * @returns {ImportJob} The updated ImportJob object.
      */
   self.updateSuccessCount = (successCount) => {
-    if (!isNumber(successCount)) {
+    if (!isInteger(successCount)) {
       throw new Error(`Invalid success count during update: ${successCount}`);
     }
 
@@ -128,7 +128,7 @@ const ImportJob = (data) => {
      * @returns {ImportJob} The updated ImportJob object.
      */
   self.updateFailedCount = (failedCount) => {
-    if (!isNumber(failedCount)) {
+    if (!isInteger(failedCount)) {
       throw new Error(`Invalid failed count during update: ${failedCount}`);
     }
 

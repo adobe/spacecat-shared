@@ -10,11 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/*
- * This file processes bundles of events to generate insights on languages and regions.
- * It focuses on the "variant" checkpoint, handling preferred language, page language, and user region.
- */
-
 const VARIANT_CHECKPOINT = 'variant';
 
 function getOrCreateLanguageObject(languageInsights, language) {
@@ -22,11 +17,19 @@ function getOrCreateLanguageObject(languageInsights, language) {
   if (!languageObject) {
     languageObject = {
       language,
-      count: 0,
+      count: 0, // Tracks the total number of events for this page language
       mismatches: {
-        preferredLanguages: {},
-        regions: {},
+        type1: {
+          preferredLanguages: {}, // Type 1 mismatches
+        },
+        type2: {
+          preferredLanguages: {}, // Type 2 mismatches
+        },
+        type3: {
+          preferredLanguages: {}, // Type 3 mismatches
+        },
       },
+      regions: {}, // Tracks the count of events for each region
     };
     languageInsights.push(languageObject);
   }
@@ -37,7 +40,7 @@ function handler(bundles) {
   const languageInsights = [];
 
   for (const bundle of bundles) {
-    let preferredLanguage = null;
+    let preferredLanguages = [];
     let pageLanguage = null;
     let userRegion = null;
 
@@ -46,7 +49,7 @@ function handler(bundles) {
         const { target, source } = event;
 
         if (source === 'preferred-languages') {
-          preferredLanguage = target;
+          preferredLanguages = target.split(',').map(lang => lang.trim());
         }
 
         if (source === 'page-language') {
@@ -59,23 +62,51 @@ function handler(bundles) {
       }
     }
 
-    if (preferredLanguage && pageLanguage && preferredLanguage !== pageLanguage) {
+    if (pageLanguage) {
       const languageObject = getOrCreateLanguageObject(languageInsights, pageLanguage);
-      languageObject.count += 1;
-      if (!languageObject.mismatches.preferredLanguages[preferredLanguage]) {
-        languageObject.mismatches.preferredLanguages[preferredLanguage] = 1;
-      } else {
-        languageObject.mismatches.preferredLanguages[preferredLanguage] += 1;
-      }
-    }
+      languageObject.count += 1; // Increment the total count for this page language
 
-    if (pageLanguage && userRegion) {
-      const languageObject = getOrCreateLanguageObject(languageInsights, pageLanguage);
-      languageObject.count += 1;
-      if (!languageObject.mismatches.regions[userRegion]) {
-        languageObject.mismatches.regions[userRegion] = 1;
-      } else {
-        languageObject.mismatches.regions[userRegion] += 1;
+      // Type 1 Mismatch: List out each mismatch if the preferred language list does not contain the page language
+      const isType1Mismatch = !preferredLanguages.includes(pageLanguage);
+      if (isType1Mismatch) {
+        preferredLanguages.forEach(preferredLanguage => {
+          if (!languageObject.mismatches.type1.preferredLanguages[preferredLanguage]) {
+            languageObject.mismatches.type1.preferredLanguages[preferredLanguage] = 1;
+          } else {
+            languageObject.mismatches.type1.preferredLanguages[preferredLanguage] += 1;
+          }
+        });
+      }
+
+      // Type 2 Mismatch: Count as one mismatch if any preferred language is different from page language
+      const isType2Mismatch = preferredLanguages.some(preferredLanguage => preferredLanguage !== pageLanguage);
+      if (isType2Mismatch) {
+        const preferredLanguage = preferredLanguages.join(',');
+        if (!languageObject.mismatches.type2.preferredLanguages[preferredLanguage]) {
+          languageObject.mismatches.type2.preferredLanguages[preferredLanguage] = 1;
+        } else {
+          languageObject.mismatches.type2.preferredLanguages[preferredLanguage] += 1;
+        };
+      }
+
+      // Type 3 Mismatch: Compare each language in preferred language list to page language, and count each mismatch
+      preferredLanguages.forEach(preferredLanguage => {
+        if (preferredLanguage !== pageLanguage) {
+          if (!languageObject.mismatches.type3.preferredLanguages[preferredLanguage]) {
+            languageObject.mismatches.type3.preferredLanguages[preferredLanguage] = 1;
+          } else {
+            languageObject.mismatches.type3.preferredLanguages[preferredLanguage] += 1;
+          }
+        }
+      });
+
+      // Track regions
+      if (userRegion) {
+        if (!languageObject.regions[userRegion]) {
+          languageObject.regions[userRegion] = 1;
+        } else {
+          languageObject.regions[userRegion] += 1;
+        }
       }
     }
   }
@@ -83,12 +114,8 @@ function handler(bundles) {
   return languageInsights;
 }
 
-export default{
-    handler,
-    checkpoints: VARIANT_CHECKPOINT,
-}
 
-async () => {
-    const languageInsights = await handler(bundle.rumBundles);
-    console.log(JSON.stringify(languageInsights, null, 2))
+export default {
+  handler,
+  checkpoints: VARIANT_CHECKPOINT,
 }

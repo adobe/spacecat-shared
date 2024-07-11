@@ -81,8 +81,8 @@ function handler(bundles) {
 
       // Type 2 Mismatch: Count as one mismatch if any preferred language
       // is different from page language
-      const isType2Mismatch = preferredLanguages.some((preferredLanguage) =>
-        preferredLanguage !== pageLanguage
+      const isType2Mismatch = preferredLanguages.some(
+        (preferredLanguage) => preferredLanguage !== pageLanguage,
       );
       if (isType2Mismatch) {
         const preferredLanguage = preferredLanguages.join(',');

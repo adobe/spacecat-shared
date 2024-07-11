@@ -19,7 +19,8 @@ export const ExperimentDto = {
   /**
    * Converts an Experiment object into a DynamoDB item.
    * @param {Readonly<Experiment>} experiment - Experiment object.
-   * @returns {{siteId, id, name, url, status, type, startDate, endDate, variants}}
+   * @returns {{siteId, id, name, url, status, type, startDate, endDate,
+   * variants, updatedAt, updatedBy, conversionEventName, conversionEventValue}}
    */
   toDynamoItem: (experiment) => ({
     siteId: experiment.getSiteId(),
@@ -33,7 +34,9 @@ export const ExperimentDto = {
     variants: experiment.getVariants(),
     updatedAt: experiment.getUpdatedAt(),
     updatedBy: experiment.getUpdatedBy(),
-    statSig: experiment.getStatSig(),
+    conversionEventName: experiment.getConversionEventName(),
+    conversionEventValue: experiment.getConversionEventValue(),
+    SK: `${experiment.getId()}#${experiment.getUrl()}}`,
   }),
 
   /**
@@ -53,7 +56,8 @@ export const ExperimentDto = {
       variants: dynamoItem.variants,
       updatedAt: dynamoItem.updatedAt,
       updatedBy: dynamoItem.updatedBy,
-      statSig: dynamoItem.statSig,
+      conversionEventName: dynamoItem.conversionEventName,
+      conversionEventValue: dynamoItem.conversionEventValue,
     };
 
     return createExperiment(experiment);

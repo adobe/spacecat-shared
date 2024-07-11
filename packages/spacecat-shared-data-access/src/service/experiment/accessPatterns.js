@@ -28,7 +28,7 @@ export const exists = async (dynamoClient, config, siteId, experimentId, url) =>
     KeyConditionExpression: 'siteId = :siteId AND sk = :sk',
     ExpressionAttributeValues: {
       ':siteId': siteId,
-      ':sk': `${url}#${experimentId}`,
+      ':sk': `${experimentId}#${url}`,
     },
     ScanIndexForward: false,
   };
@@ -72,7 +72,7 @@ export const upsertExperiment = async (
 ) => {
   const experiment = createExperiment(experimentData);
   await dynamoClient.putItem(
-    config.tableNameSiteCandidates,
+    config.tableNameExperiments,
     ExperimentDto.toDynamoItem(experiment),
   );
 

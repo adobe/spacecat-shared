@@ -16,7 +16,7 @@ import {
   exists,
 } from './accessPatterns.js';
 
-export const siteCandidateFunctions = (dynamoClient, config, log) => ({
+export const experimentFunctions = (dynamoClient, config, log) => ({
   getExperiments: (siteId) => getExperiments(
     dynamoClient,
     config,

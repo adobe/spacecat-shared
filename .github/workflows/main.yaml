@@ -17,6 +17,8 @@ jobs:
           node-version: '20.x'
       - name: Install Dependencies
         run: npm ci
+      - name: Check ESLint version
+        run: npx eslint -v
       - name: Linting
         run: npm run lint
       - name: Unit Tests

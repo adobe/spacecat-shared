@@ -92,6 +92,12 @@ describe('Data Access Object Tests', () => {
     'getImportUrlsByJobIdAndStatus',
   ];
 
+  const experimentFunctions = [
+    'getExperiments',
+    'upsertExperiment',
+    'experimentExists',
+  ];
+
   let dao;
 
   before(() => {
@@ -150,7 +156,8 @@ describe('Data Access Object Tests', () => {
       ...configurationFunctions,
       ...siteTopPagesFunctions,
       ...importJobFunctions,
-      ...importUrlFunctions]);
+      ...importUrlFunctions,
+      ...experimentFunctions]);
     Object.keys(dao).forEach((funcName) => {
       expect(expectedFunctions).to.include(funcName);
     });

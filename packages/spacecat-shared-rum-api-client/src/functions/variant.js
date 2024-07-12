@@ -14,25 +14,23 @@ const VARIANT_CHECKPOINT = 'variant';
 
 function getOrCreateLanguageObject(languageInsights, language) {
   let languageObject = languageInsights.find((l) => l.language === language);
-  if (!languageObject) {
-    languageObject = {
-      language,
-      count: 0, // Tracks the total number of events for this page language
-      mismatches: {
-        type1: {
-          preferredLanguages: {}, // Type 1 mismatches
-        },
-        type2: {
-          preferredLanguages: {}, // Type 2 mismatches
-        },
-        type3: {
-          preferredLanguages: {}, // Type 3 mismatches
-        },
-      },
-      regions: {}, // Tracks the count of events for each region
-    };
-    languageInsights.push(languageObject);
+  
+  if (isObject(languageObject)) {
+    return languageObject;
   }
+  
+  languageObject = {
+    language,
+    count: 0,
+    mismatches: {
+      type1: { preferredLanguages: {} }, // Type 1 mismatches
+      type2: { preferredLanguages: {} }, // Type 2 mismatches
+      type3: { preferredLanguages: {} }, // Type 3 mismatches
+    },
+    regions: {},  // Tracks the count of events for each region
+  };
+
+  languageInsights.push(languageObject);
   return languageObject;
 }
 
@@ -50,13 +48,9 @@ function handler(bundles) {
 
         if (source === 'preferred-languages') {
           preferredLanguages = target.split(',').map((lang) => lang.trim());
-        }
-
-        if (source === 'page-language') {
+        } else if (source === 'page-language') {
           pageLanguage = target;
-        }
-
-        if (source === 'user-region') {
+        } else if (source === 'user-region') {
           userRegion = target;
         }
       }

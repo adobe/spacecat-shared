@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v1.35.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.35.0...@adobe/spacecat-shared-data-access-v1.35.1) (2024-07-12)
+
+
+### Bug Fixes
+
+* Fix the getFailedCount function in importJob interface ([#290](https://github.com/adobe/spacecat-shared/issues/290)) ([db4d0cc](https://github.com/adobe/spacecat-shared/commit/db4d0cc754d77d6a32780c48ca45e4b86712bb01)), closes [/github.com/adobe/spacecat-shared/blob/main/packages/spacecat-shared-data-access/src/dto/import-job.js#L39](https://github.com//github.com/adobe/spacecat-shared/blob/main/packages/spacecat-shared-data-access/src/dto/import-job.js/issues/L39)
+
+# [@adobe/spacecat-shared-data-access-v1.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.34.2...@adobe/spacecat-shared-data-access-v1.35.0) (2024-07-11)
+
+
+### Features
+
+* Add urlCount attribute to import-jobs data model ([#287](https://github.com/adobe/spacecat-shared/issues/287)) ([4fecc4c](https://github.com/adobe/spacecat-shared/commit/4fecc4cb5f31fa0a62cf22ff0ae9e98d4c12b399))
+
 # [@adobe/spacecat-shared-data-access-v1.34.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.34.1...@adobe/spacecat-shared-data-access-v1.34.2) (2024-07-08)
 
 

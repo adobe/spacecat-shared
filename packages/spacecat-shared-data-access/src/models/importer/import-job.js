@@ -11,7 +11,7 @@
  */
 
 import {
-  hasText, isIsoDate, isValidUrl, isObject, isString, isNumber,
+  hasText, isIsoDate, isValidUrl, isObject, isString, isNumber, isInteger,
 } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 
@@ -37,6 +37,7 @@ const ImportJob = (data) => {
   self.getEndTime = () => self.state.endTime;
   self.getDuration = () => self.state.duration;
   self.getStatus = () => self.state.status;
+  self.getUrlCount = () => self.state.urlCount;
   self.getSuccessCount = () => self.state.successCount;
   self.getFailedCount = () => self.state.failedCount;
   self.getImportQueueId = () => self.state.importQueueId;
@@ -90,12 +91,28 @@ const ImportJob = (data) => {
   };
 
   /**
+   * Updates the Url count of the ImportJob
+   * @param {number} urlCount - The new url count.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  self.updateUrlCount = (urlCount) => {
+    if (!isInteger(urlCount)) {
+      throw new Error(`Invalid url count during update: ${urlCount}`);
+    }
+
+    self.state.urlCount = urlCount;
+    self.touch();
+
+    return self;
+  };
+
+  /**
      * Updates the success count of the ImportJob.
      * @param {number} successCount - The new success count.
      * @returns {ImportJob} The updated ImportJob object.
      */
   self.updateSuccessCount = (successCount) => {
-    if (!isNumber(successCount)) {
+    if (!isInteger(successCount)) {
       throw new Error(`Invalid success count during update: ${successCount}`);
     }
 
@@ -111,7 +128,7 @@ const ImportJob = (data) => {
      * @returns {ImportJob} The updated ImportJob object.
      */
   self.updateFailedCount = (failedCount) => {
-    if (!isNumber(failedCount)) {
+    if (!isInteger(failedCount)) {
       throw new Error(`Invalid failed count during update: ${failedCount}`);
     }
 

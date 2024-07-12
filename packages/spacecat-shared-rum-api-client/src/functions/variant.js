@@ -10,15 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
+import { isObject } from '@adobe/spacecat-shared-utils';
+
 const VARIANT_CHECKPOINT = 'variant';
 
 function getOrCreateLanguageObject(languageInsights, language) {
   let languageObject = languageInsights.find((l) => l.language === language);
-  
+
   if (isObject(languageObject)) {
     return languageObject;
   }
-  
+
   languageObject = {
     language,
     count: 0,
@@ -27,7 +29,7 @@ function getOrCreateLanguageObject(languageInsights, language) {
       type2: { preferredLanguages: {} }, // Type 2 mismatches
       type3: { preferredLanguages: {} }, // Type 3 mismatches
     },
-    regions: {},  // Tracks the count of events for each region
+    regions: {}, // Tracks the count of events for each region
   };
 
   languageInsights.push(languageObject);

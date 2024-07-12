@@ -99,6 +99,7 @@ const TEST_DA_CONFIG = {
   tableNameSiteCandidates: 'spacecat-services-site-candidates',
   tableNameConfigurations: 'spacecat-services-configurations',
   tableNameSiteTopPages: 'spacecat-services-site-top-pages',
+  tableNameExperiments: 'spacecat-services-experiments',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
@@ -123,6 +124,7 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_TOP_PAGES_PER_SITE = 5;
   const NUMBER_OF_TOP_PAGES_FOR_SITE = NUMBER_OF_SITES * NUMBER_OF_TOP_PAGES_PER_SITE;
   const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
+  const NUMBER_OF_EXPERIMENTS = 3;
 
   before(async function () {
     this.timeout(30000);
@@ -906,5 +908,26 @@ describe('DynamoDB Integration Test', async () => {
 
     const keyEventsAfter = await dataAccess.getKeyEventsForSite(siteId);
     expect(keyEventsAfter.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
+  });
+
+  it('get all experiments for the site', async () => {
+    const sites = await dataAccess.getSites();
+    const experiments = await dataAccess.getExperiments(sites[0].getId());
+
+    expect(experiments.length).to.equal(NUMBER_OF_EXPERIMENTS);
+  });
+
+  it('get 0 experiments for the siteId with out any experiments', async () => {
+    const sites = await dataAccess.getSites();
+    const experiments = await dataAccess.getExperiments(sites[1].getId());
+
+    expect(experiments.length).to.equal(0);
+  });
+
+  it('check experiment exists', async () => {
+    const sites = await dataAccess.getSites();
+    const experimentExists = await dataAccess.experimentExists(sites[0].getId(), 'experiment-1', `${sites[0].getBaseURL()}/page-1`);
+
+    expect(experimentExists).to.equal(true);
   });
 });

@@ -16,11 +16,6 @@ import { Base } from './base.js';
 
 export const DEFAULT_UPDATED_BY = 'spacecat';
 
-export const EXPERIMENT_SOURCES = {
-  EDS_PAGE: 'EDS_PAGE',
-  RUM: 'RUM',
-};
-
 /**
  * Creates a new Experiment.
  *

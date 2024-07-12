@@ -25,10 +25,10 @@ import { ExperimentDto } from '../../dto/experiment.js';
 export const exists = async (dynamoClient, config, siteId, experimentId, url) => {
   const queryParams = {
     TableName: config.tableNameExperiments,
-    KeyConditionExpression: 'siteId = :siteId AND sk = :sk',
+    KeyConditionExpression: 'siteId = :siteId AND SK = :SK',
     ExpressionAttributeValues: {
       ':siteId': siteId,
-      ':sk': `${experimentId}#${url}`,
+      ':SK': `${experimentId}#${url}`,
     },
     ScanIndexForward: false,
   };

@@ -29,11 +29,11 @@ export const experimentFunctions = (dynamoClient, config, log) => ({
     log,
     experimentData,
   ),
-  experimentExists: (siteId, url, experimentId) => exists(
+  experimentExists: (siteId, experimentId, url) => exists(
     dynamoClient,
     config,
     siteId,
-    url,
     experimentId,
+    url,
   ),
 });

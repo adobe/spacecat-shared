@@ -24,7 +24,7 @@ export const ExperimentDto = {
    */
   toDynamoItem: (experiment) => ({
     siteId: experiment.getSiteId(),
-    id: experiment.getId(),
+    experimentId: experiment.getExperimentId(),
     name: experiment.getName(),
     url: experiment.getUrl(),
     status: experiment.getStatus(),
@@ -47,7 +47,7 @@ export const ExperimentDto = {
   fromDynamoItem: (dynamoItem) => {
     const experiment = {
       siteId: dynamoItem.siteId,
-      id: dynamoItem.id,
+      experimentId: dynamoItem.experimentId,
       name: dynamoItem.name,
       status: dynamoItem.status,
       type: dynamoItem.type,

@@ -3,7 +3,7 @@
   "ModelMetadata": {
     "Author": "Dominique Jäggi",
     "DateCreated": "Nov 23, 2023, 07:00 AM",
-    "DateLastModified": "Jun 12, 2024, 10:10 AM",
+    "DateLastModified": "Jul 11, 2024, 04:18 PM",
     "Description": "",
     "AWSService": "Amazon DynamoDB",
     "Version": "3.0"
@@ -801,7 +801,7 @@
       }
     },
     {
-      "TableName": "spacecat-services-experiment",
+      "TableName": "spacecat-services-experiments",
       "KeyAttributes": {
         "PartitionKey": {
           "AttributeName": "siteId",

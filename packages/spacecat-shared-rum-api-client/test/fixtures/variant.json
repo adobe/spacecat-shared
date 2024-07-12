@@ -1,0 +1,35 @@
+[
+    {
+        "language": "en-US",
+        "count": 35,
+        "mismatches": {
+            "type1": {
+                "preferredLanguages": {
+                    "en-GB": 4
+                }
+            },
+            "type2": {
+                "preferredLanguages": {
+                    "en-US,en": 9,
+                    "en-GB": 4,
+                    "en-GB,en-US,en": 2,
+                    "en-CA,en-GB,en-US,en": 1,
+                    "en-US,fa-IR,fa,en": 1
+                }
+            },
+            "type3": {
+                "preferredLanguages": {
+                    "en": 13,
+                    "en-GB": 7,
+                    "en-CA": 1,
+                    "fa-IR": 1,
+                    "fa": 1
+                }
+            }
+        },
+        "regions": {
+            "en_US": 33,
+            "en_CA": 1
+        }
+    }
+]

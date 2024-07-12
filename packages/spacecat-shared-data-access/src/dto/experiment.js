@@ -36,7 +36,7 @@ export const ExperimentDto = {
     updatedBy: experiment.getUpdatedBy(),
     conversionEventName: experiment.getConversionEventName(),
     conversionEventValue: experiment.getConversionEventValue(),
-    SK: `${experiment.getId()}#${experiment.getUrl()}}`,
+    SK: `${experiment.getExperimentId()}#${experiment.getUrl()}`,
   }),
 
   /**

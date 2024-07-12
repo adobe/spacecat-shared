@@ -917,6 +917,14 @@ describe('DynamoDB Integration Test', async () => {
     expect(experiments.length).to.equal(NUMBER_OF_EXPERIMENTS);
   });
 
+  it('get all experiments for the site and experimentId', async () => {
+    // handling multi page experiments
+    const sites = await dataAccess.getSites();
+    const experiments = await dataAccess.getExperiments(sites[0].getId(), 'experiment-1');
+
+    expect(experiments.length).to.equal(1);
+  });
+
   it('get 0 experiments for the siteId with out any experiments', async () => {
     const sites = await dataAccess.getSites();
     const experiments = await dataAccess.getExperiments(sites[1].getId());
@@ -924,10 +932,61 @@ describe('DynamoDB Integration Test', async () => {
     expect(experiments.length).to.equal(0);
   });
 
-  it('check experiment exists', async () => {
+  it('check if experiment exists', async () => {
     const sites = await dataAccess.getSites();
-    const experimentExists = await dataAccess.experimentExists(sites[0].getId(), 'experiment-1', `${sites[0].getBaseURL()}/page-1`);
+    const experiment = await dataAccess.getExperiment(sites[0].getId(), 'experiment-1', `${sites[0].getBaseURL()}/page-1`);
 
-    expect(experimentExists).to.equal(true);
+    expect(experiment).to.not.equal(null);
+  });
+
+  it('create and update experiment', async () => {
+    const sites = await dataAccess.getSites();
+    const experimentData = {
+      siteId: sites[0].getId(),
+      experimentId: 'experiment-test',
+      name: 'Experiment Test',
+      url: `${sites[0].getBaseURL()}/page-10`,
+      status: 'active',
+      type: 'full',
+      variants: [
+        {
+          label: 'Challenger 1',
+          name: 'challenger-1',
+          interactionsCount: 40,
+          p_value: 'coming soon',
+          split: 0.5,
+          url: `${sites[0].baseURL}/page-10/variant-1`,
+          views: 1100,
+          metrics: [
+            {
+              selector: '.header .button',
+              type: 'click',
+              value: 40,
+            }],
+        },
+        {
+          label: 'Control',
+          name: 'control',
+          interactionsCount: 0,
+          p_value: 'coming soon',
+          metrics: [],
+          split: 0.5,
+          url: `${sites[0].baseURL}/page-10`,
+          views: 1090,
+        },
+      ],
+      startDate: new Date().toISOString(),
+      endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'it-test',
+    };
+    await dataAccess.upsertExperiment(experimentData);
+    const experimentTest = await dataAccess.getExperiment(sites[0].getId(), 'experiment-test', `${sites[0].getBaseURL()}/page-10`);
+    expect(experimentTest).to.not.equal(null);
+    // update the experiment variant 0 metrics to 50
+    experimentData.variants[0].metrics[0].value = 50;
+    await dataAccess.upsertExperiment(experimentData);
+    const updatedExperiment = await dataAccess.getExperiment(sites[0].getId(), 'experiment-test', `${sites[0].getBaseURL()}/page-10`);
+    expect(updatedExperiment.getVariants()[0].metrics[0].value).to.equal(50);
   });
 });

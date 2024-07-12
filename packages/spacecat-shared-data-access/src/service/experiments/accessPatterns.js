@@ -15,14 +15,14 @@ import { createExperiment } from '../../models/experiment.js';
 import { ExperimentDto } from '../../dto/experiment.js';
 
 /**
- * Checks if an experiment exists in experiments table using siteId and experimentId
+ * Returns the experiment if exists in experiments table using siteId, experimentId and url
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
  * @param {string} siteId - siteId of the experiment.
  * @param {string} id - id of the experiment.
- * @return {Promise<Readonly<Boolean>>} A promise that resolves to true if the experiment exist
+ * @return the experiment if exists, null otherwise
  */
-export const exists = async (dynamoClient, config, siteId, experimentId, url) => {
+export const getExperiment = async (dynamoClient, config, siteId, experimentId, url) => {
   const queryParams = {
     TableName: config.tableNameExperiments,
     KeyConditionExpression: 'siteId = :siteId AND SK = :SK',
@@ -33,15 +33,29 @@ export const exists = async (dynamoClient, config, siteId, experimentId, url) =>
     ScanIndexForward: false,
   };
   const dynamoItems = await dynamoClient.query(queryParams);
+  if (dynamoItems != null && dynamoItems.length > 0 && isObject(dynamoItems[0])) {
+    return ExperimentDto.fromDynamoItem(dynamoItems[0]);
+  }
 
-  return dynamoItems != null && dynamoItems.length > 0 && isObject(dynamoItems[0]);
+  return null;
 };
 
+/**
+ * Retrieves all experiments for a given siteId.
+ * @param {*} dynamoClient - The DynamoDB client.
+ * @param {*} config - The data access config.
+ * @param {*} log  - the logger object
+ * @param {*} siteId - siteId of the experiment.
+ * @param {*} experimentId - experiment id.
+ * @returns {Promise<ReadonlyArray<SiteCandidate>>} A promise that resolves to
+ * an array of experiments
+ */
 export const getExperiments = async (
   dynamoClient,
   config,
   log,
   siteId,
+  experimentId,
 ) => {
   const queryParams = {
     TableName: config.tableNameExperiments,
@@ -49,6 +63,10 @@ export const getExperiments = async (
     ExpressionAttributeValues: { ':siteId': siteId },
     ScanIndexForward: false,
   };
+  if (experimentId) {
+    queryParams.KeyConditionExpression += ' AND begins_with(SK, :experimentId)';
+    queryParams.ExpressionAttributeValues[':experimentId'] = experimentId;
+  }
   const dynamoItems = await dynamoClient.query(queryParams);
 
   return dynamoItems.map((item) => ExperimentDto.fromDynamoItem(item));
@@ -61,8 +79,8 @@ export const getExperiments = async (
  * @param {DataAccessConfig} config - The data access config.
  * @param {object} log - the logger object
  * @param {object} experimentData - The experiment data.
- * @returns {Promise<Readonly<SiteCandidate>>} newly created/updated
- * experiment if hadn't created before
+ * @returns {Promise<Readonly<SiteCandidate>>} A promise that resolves to newly created/updated
+ * experiment
  */
 export const upsertExperiment = async (
   dynamoClient,

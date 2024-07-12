@@ -36,8 +36,8 @@ const Experiment = (data = {}) => {
   self.getVariants = () => self.state.variants;
   self.getUpdatedAt = () => self.state.updatedAt;
   self.getUpdatedBy = () => self.state.updatedBy;
-  self.conversionEventName = () => self.state.conversionEventName;
-  self.conversionEventValue = () => self.state.conversionEventValue;
+  self.getConversionEventName = () => self.state.conversionEventName;
+  self.getConversionEventValue = () => self.state.conversionEventValue;
 
   return Object.freeze(self);
 };

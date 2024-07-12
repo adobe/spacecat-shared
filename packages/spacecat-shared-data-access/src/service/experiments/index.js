@@ -13,15 +13,16 @@
 import {
   getExperiments,
   upsertExperiment,
-  exists,
+  getExperiment,
 } from './accessPatterns.js';
 
 export const experimentFunctions = (dynamoClient, config, log) => ({
-  getExperiments: (siteId) => getExperiments(
+  getExperiments: (siteId, experimentId) => getExperiments(
     dynamoClient,
     config,
     log,
     siteId,
+    experimentId,
   ),
   upsertExperiment: (experimentData) => upsertExperiment(
     dynamoClient,
@@ -29,7 +30,7 @@ export const experimentFunctions = (dynamoClient, config, log) => ({
     log,
     experimentData,
   ),
-  experimentExists: (siteId, experimentId, url) => exists(
+  getExperiment: (siteId, experimentId, url) => getExperiment(
     dynamoClient,
     config,
     siteId,

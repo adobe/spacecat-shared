@@ -95,7 +95,7 @@ describe('Data Access Object Tests', () => {
   const experimentFunctions = [
     'getExperiments',
     'upsertExperiment',
-    'experimentExists',
+    'getExperiment',
   ];
 
   let dao;

@@ -518,6 +518,76 @@ export interface ImportUrl {
 
 }
 
+/**
+ * Represents an experiment entity.
+ */
+export interface Experiment {
+  /**
+   * Retrieves the ID of the experiment.
+   */
+  getExperimentId: () => string;
+
+  /**
+   * Retrieves the site ID of the experiment.
+   */
+  getSiteId: () => string;
+
+  /**
+   * Retrieves the Control URL of the experiment.
+   */
+  getUrl: () => string;
+
+  /**
+   * Retrieves the experiment name.
+   */
+  getName: () => string;
+
+  /**
+   * Retrieves the experiment type.
+   */
+  getType: () => string;
+
+  /**
+   * Retrieves the experiment status.
+   */
+  getStatus: () => string;
+
+  /**
+   * Retrieves the experiment variants.
+   */
+  getVariants: () => Array<object>;
+
+  /**
+   * Retrieves the experiment start date.
+   */
+  getStartDate: () => string;
+
+  /**
+   * Retrieves the experiment end date.
+   */
+  getEndDate: () => string;
+
+  /**
+   * Retrieves the conversion event name.
+   */
+  getConversionEventName: () => string;
+
+  /**
+   * Retrieves the conversion event value
+   */
+  getConversionEventValue: () => string;
+
+  /**
+   * Retrieves the last update timestamp of the experiment entity in persistent store.
+   */
+  getUpdatedAt: () => string;
+
+  /**
+   * Retrieves the updated by of the experiment entity in persistent store.
+   */
+  getUpdatedBy: () => string;
+}
+
 export interface DataAccess {
   getAuditForSite: (
     sitedId: string,
@@ -655,6 +725,11 @@ export interface DataAccess {
   createKeyEvent: (keyEventData: object) => Promise<KeyEvent>;
   getKeyEventsForSite: (siteId: string) => Promise<KeyEvent[]>
   removeKeyEvent: (keyEventId: string) => Promise<void>;
+
+  // experiment functions
+  getExperiments: (siteId: string) => Promise<Experiment[]>;
+  getExperiment: (siteId: string, experimentId: string, url: string) => Promise<Experiment | null>;
+  upsertExperiment: (experimentData: object) => Promise<Experiment>;
 }
 
 interface DataAccessConfig {
@@ -668,6 +743,7 @@ interface DataAccessConfig {
   tableNameSiteTopPages: string;
   tableNameImportJobs: string;
   tableNameImportUrls: string;
+  tableNameExperiments: string;
   indexNameAllKeyEventsBySiteId: string,
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,

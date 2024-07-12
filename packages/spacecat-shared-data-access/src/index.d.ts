@@ -491,7 +491,7 @@ export interface ImportJob {
   /**
    * Retrieves the failure count of the import job.
    */
-  getFailureCount: () => number;
+  getFailedCount: () => number;
 
   /**
    * Retrieves the importQueueId of the import job.

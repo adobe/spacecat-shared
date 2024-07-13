@@ -69,9 +69,10 @@ function updateInferredStartAndEndDate(experimentObject, time) {
       experimentObject.inferredEndDate = null;
     }
   } else {
-    if (bundleTime < new Date(experimentObject.infferedStartDate)) {
+    const inferredStartDateObj = new Date(experimentObject.inferredStartDate);
+    if (bundleTime < inferredStartDateObj) {
       // eslint-disable-next-line no-param-reassign
-      experimentObject.infferedStartDate = time;
+      experimentObject.inferredStartDate = time;
     }
     if (bundleDate < yesterday) {
       if (!experimentObject.inferredEndDate

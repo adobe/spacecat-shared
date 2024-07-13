@@ -47,12 +47,48 @@ function getOrCreateVariantObject(variants, variantName) {
   return variantObject;
 }
 
+function updateInferredStartAndEndDate(experimentObject, time) {
+  const bundleTime = new Date(time);
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(0, 0, 0, 0);
+  const bundleDate = new Date(bundleTime);
+  bundleDate.setHours(0, 0, 0, 0);
+  if (!experimentObject.inferredStartDate && !experimentObject.inferredEndDate) {
+    // adding the inferredStartDate and inferredEndDate properties for the first time
+    // eslint-disable-next-line no-param-reassign
+    experimentObject.inferredStartDate = time;
+    // check if bundleTime is before yesterday
+    if (bundleDate < yesterday) {
+      // RUM data is delayed by a day, so if we don't have
+      // any RUM data for yesterday, so we can infer the endDate
+      // eslint-disable-next-line no-param-reassign
+      experimentObject.inferredEndDate = time;
+    } else {
+      // eslint-disable-next-line no-param-reassign
+      experimentObject.inferredEndDate = null;
+    }
+  } else {
+    if (bundleTime < new Date(experimentObject.infferedStartDate)) {
+      // eslint-disable-next-line no-param-reassign
+      experimentObject.infferedStartDate = time;
+    }
+    if (bundleDate < yesterday) {
+      if (!experimentObject.inferredEndDate
+        || (bundleTime > new Date(experimentObject.inferredEndDate))) {
+        // eslint-disable-next-line no-param-reassign
+        experimentObject.inferredEndDate = time;
+      }
+    }
+  }
+}
+
 function handler(bundles) {
   const experimentInsights = {};
   for (const bundle of bundles) {
     const experimentEvent = bundle.events.find((e) => e.checkpoint === 'experiment');
     if (experimentEvent) {
-      const { url, weight } = bundle;
+      const { url, weight, time } = bundle;
       if (!experimentInsights[url]) {
         experimentInsights[url] = [];
       }
@@ -60,6 +96,7 @@ function handler(bundles) {
       const variantName = experimentEvent.target;
       const experimentObject = getOrCreateExperimentObject(experimentInsights[url], experimentName);
       const variantObject = getOrCreateVariantObject(experimentObject.variants, variantName);
+      updateInferredStartAndEndDate(experimentObject, time);
       variantObject.views += weight;
 
       const metrics = {};

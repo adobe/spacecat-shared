@@ -1,3 +1,18 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.2.1...@adobe/spacecat-shared-rum-api-client-v2.3.0) (2024-07-12)
+
+
+### Features
+
+* audit top pages for language mismatch (SITES-22690) ([#289](https://github.com/adobe/spacecat-shared/issues/289)) ([ec9d83a](https://github.com/adobe/spacecat-shared/commit/ec9d83a9f59ba7c88b2be3181c60290eae132219))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.2.0...@adobe/spacecat-shared-rum-api-client-v2.2.1) (2024-07-08)
+
+
+### Bug Fixes
+
+* Click count is artificially inflating the conversion rate ([#278](https://github.com/adobe/spacecat-shared/issues/278)) ([77a1c6a](https://github.com/adobe/spacecat-shared/commit/77a1c6a27103db4ce463959b882311cf1d3924a3))
+* **deps:** update external fixes ([#284](https://github.com/adobe/spacecat-shared/issues/284)) ([f4fe169](https://github.com/adobe/spacecat-shared/commit/f4fe1699c432637f1217198ad7f4a1cde6deeb76))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.1.1...@adobe/spacecat-shared-rum-api-client-v2.2.0) (2024-06-28)
 
 

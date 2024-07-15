@@ -76,6 +76,11 @@ describe('ImportJob Model tests', () => {
       expect(importJob.getDuration()).to.equal(1000);
     });
 
+    it('updates url count of import job', () => {
+      importJob.updateUrlCount(10);
+      expect(importJob.getUrlCount()).to.equal(10);
+    });
+
     it('updates success count of import job', () => {
       importJob.updateSuccessCount(10);
       expect(importJob.getSuccessCount()).to.equal(10);
@@ -109,6 +114,10 @@ describe('ImportJob Model tests', () => {
 
     it('throws an error if failed count is not a valid number during an update', () => {
       expect(() => importJob.updateFailedCount('invalid-count')).to.throw('Invalid failed count during update: invalid-count');
+    });
+
+    it('throws an error if url count is not a valid number during an update', () => {
+      expect(() => importJob.updateUrlCount('invalid-count')).to.throw('Invalid url count during update: invalid-count');
     });
 
     it('throws an error if import queue id is not a valid string during an update', () => {

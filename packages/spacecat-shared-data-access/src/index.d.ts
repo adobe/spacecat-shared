@@ -612,6 +612,10 @@ export interface DataAccess {
   removeOrganization: (
       organizationId: string,
   ) => Promise<void>;
+  getImportJobsByDateRange: (
+      startDate: string,
+      endDate: string,
+  ) => Promise<ImportJob[]>;
   getImportJobByID: (
     id: string,
     ) => Promise<ImportJob | null>;
@@ -681,6 +685,7 @@ interface DataAccessConfig {
   indexNameAllOrganizations: string,
   indexNameAllOrganizationsByImsOrgId: string,
   indexNameAllImportJobsByStatus: string,
+  indexNameAllImportJobsByDateRange: string,
   indexNameAllImportUrlsByJobIdAndStatus: string,
   pkAllSites: string;
   pkAllLatestAudits: string;

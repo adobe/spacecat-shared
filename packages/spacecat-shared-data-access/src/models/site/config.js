@@ -14,7 +14,7 @@ import Joi from 'joi';
 
 export const configSchema = Joi.object({
   slack: Joi.object({
-    workspace: Joi.string().optional(),
+    workspace: Joi.string().allow(null).allow('').optional(),
     channel: Joi.string(),
     invitedUserCount: Joi.number().integer().min(0),
   }),

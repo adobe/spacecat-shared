@@ -732,7 +732,7 @@ export interface DataAccess {
   removeKeyEvent: (keyEventId: string) => Promise<void>;
 
   // experiment functions
-  getExperiments: (siteId: string) => Promise<Experiment[]>;
+  getExperiments: (siteId: string, experimentId?: string) => Promise<Experiment[]>;
   getExperiment: (siteId: string, experimentId: string, url: string) => Promise<Experiment | null>;
   upsertExperiment: (experimentData: object) => Promise<Experiment>;
 }

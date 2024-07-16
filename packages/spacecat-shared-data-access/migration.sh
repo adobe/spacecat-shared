@@ -9,8 +9,8 @@ SITE_TABLE="spacecat-services-sites"
 ORGANIZATION_TABLE="spacecat-services-organizations"
 
 # Fetch all sites
-SITES=$($AWS_CMD scan --table-name $SITE_TABLE)
-ORGANIZATIONS=$($AWS_CMD scan --table-name $ORGANIZATION_TABLE)
+SITES=$($AWS_CMD scan --table-name $SITE_TABLE --region $REGION)
+ORGANIZATIONS=$($AWS_CMD scan --table-name $ORGANIZATION_TABLE --region $REGION)
 
 # Migrate each site
 echo "$SITES" | jq -c '.Items[]' | while read -r site; do
@@ -26,8 +26,36 @@ echo "$SITES" | jq -c '.Items[]' | while read -r site; do
     UPDATED_AT=$(echo $site | jq -r '.updatedAt.S')
     SLACK_WORKSPACE=$(echo $site | jq -r '.config.M.slack.M.workspace.S // empty')
     SLACK_CHANNEL=$(echo $site | jq -r '.config.M.slack.M.channel.S // empty')
-    MENTIONS_SLACK=$(echo $site | jq -r '.config.M.alerts.L[0].M.mentions.L[0].M.slack.L[0].S // empty')
-    EXCLUDED_URLS=$(echo $site | jq -r '.auditConfig.M.auditTypeConfigs.M["lhs-mobile"].M.excludedURLs.L[0].S // empty')
+
+    # Extract audit configurations
+    AUDIT_CONFIGS=$(echo $site | jq -c '.auditConfig.M.auditTypeConfigs.M')
+    HANDLERS=$(echo "$AUDIT_CONFIGS" | jq 'keys' | jq -c '.[]' | while read -r key; do
+        MENTIONS=$(echo "$AUDIT_CONFIGS" | jq -c --arg key "$key" '.[$key].M.mentions.L // empty')
+        EXCLUDED_URLS=$(echo "$AUDIT_CONFIGS" | jq -c --arg key "$key" '.[$key].M.excludedURLs.L // empty')
+        MANUAL_OVERWRITES=$(echo "$AUDIT_CONFIGS" | jq -c --arg key "$key" '.[$key].M.manualOverwrites.L // empty')
+        FIXED_URLS=$(echo "$AUDIT_CONFIGS" | jq -c --arg key "$key" '.[$key].M.fixedURLs.L // empty')
+
+        if [ "$key" == "\"broken-backlinks\"" ]; then
+            cat <<EOF
+"$key": {
+    "M": {
+        "mentions": {"L": $MENTIONS},
+        "excludedURLs": {"L": $EXCLUDED_URLS},
+        "manualOverwrites": {"L": $MANUAL_OVERWRITES},
+        "fixedURLs": {"L": $FIXED_URLS}
+    }
+}
+EOF
+        else
+            cat <<EOF
+"$key": {
+    "M": {
+        "mentions": {"L": $MENTIONS}
+    }
+}
+EOF
+        fi
+    done | jq -s 'add')
 
     MIGRATED_SITE=$(cat <<EOF
 {
@@ -44,12 +72,7 @@ echo "$SITES" | jq -c '.Items[]' | while read -r site; do
     "config": {
         "M": {
             "slack": {"M": {"workspace": {"S": "$SLACK_WORKSPACE"}, "channel": {"S": "$SLACK_CHANNEL"}}},
-            "handlers": {
-                "M": {
-                    "404": {"M": {"mentions": {"M": {"slack": {"L": [{"S": "$MENTIONS_SLACK"}]}}}}},
-                    "broken-backlinks": {"M": {"excludedURLs": {"L": [{"S": "$EXCLUDED_URLS"}]}}}
-                }
-            }
+            "handlers": {"M": $HANDLERS}
         }
     }
 }
@@ -57,7 +80,10 @@ EOF
 )
 
     # Insert migrated site data into the site table
-    $AWS_CMD put-item --table-name $SITE_TABLE --item "$MIGRATED_SITE"
+    $AWS_CMD put-item --table-name $SITE_TABLE --item "$MIGRATED_SITE" --region $REGION
+    if [ $? -ne 0 ]; then
+        echo "Failed to migrate site with ID $SITE_ID"
+    fi
 done
 
 # Migrate each organization
@@ -86,7 +112,6 @@ echo "$ORGANIZATIONS" | jq -c '.Items[]' | while read -r org; do
             "slack": {"M": {"workspace": {"S": "$SLACK_WORKSPACE"}, "channel": {"S": "$SLACK_CHANNEL"}}},
             "handlers": {
                 "M": {
-                    "404": {"M": {"enabledByDefault": {"BOOL": true}}},
                     "$ALERT_TYPE": {"M": {"enabledByDefault": {"BOOL": false}, "country": {"S": "$ALERT_COUNTRY"}}}
                 }
             }
@@ -97,7 +122,10 @@ EOF
 )
 
     # Insert migrated organization data into the organization table
-    $AWS_CMD put-item --table-name $ORGANIZATION_TABLE --item "$MIGRATED_ORG"
+    $AWS_CMD put-item --table-name $ORGANIZATION_TABLE --item "$MIGRATED_ORG" --region $REGION
+    if [ $? -ne 0 ]; then
+        echo "Failed to migrate organization with ID $ORG_ID"
+    fi
 done
 
 echo "Migration completed successfully."

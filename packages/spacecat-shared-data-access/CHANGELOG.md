@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.35.2...@adobe/spacecat-shared-data-access-v1.36.0) (2024-07-16)
+
+
+### Features
+
+* Get all import jobs by date range ([#292](https://github.com/adobe/spacecat-shared/issues/292)) ([21accd3](https://github.com/adobe/spacecat-shared/commit/21accd34a543af3ab39aacaa0545f84c7bb50f3b))
+
 # [@adobe/spacecat-shared-data-access-v1.35.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.35.1...@adobe/spacecat-shared-data-access-v1.35.2) (2024-07-13)
 
 

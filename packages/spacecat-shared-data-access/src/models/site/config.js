@@ -18,6 +18,7 @@ export const configSchema = Joi.object({
     channel: Joi.string(),
     invitedUserCount: Joi.number().integer().min(0),
   }),
+  imports: Joi.array().items(Joi.object({ type: Joi.string() }).unknown(true)),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),
@@ -58,6 +59,7 @@ export const Config = (data = {}) => {
   self.getSlackMentions = (type) => state?.handlers[type]?.mentions?.slack;
   self.getHandlerConfig = (type) => state?.handlers[type];
   self.getHandlers = () => state.handlers;
+  self.getImports = () => state.imports;
   self.getExcludedURLs = (type) => state?.handlers[type]?.excludedURLs;
   self.getManualOverrides = (type) => state?.handlers[type]?.manualOverwrites;
   self.getFixedURLs = (type) => state?.handlers[type]?.fixedURLs;
@@ -103,4 +105,5 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
   handlers: config.getHandlers(),
+  imports: config.getImports(),
 });

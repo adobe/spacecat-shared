@@ -9,8 +9,8 @@ SITE_TABLE="spacecat-services-sites"
 ORGANIZATION_TABLE="spacecat-services-organizations"
 
 # Fetch all sites
-SITES=$($AWS_CMD scan --table-name $SITE_TABLE --region $REGION)
-ORGANIZATIONS=$($AWS_CMD scan --table-name $ORGANIZATION_TABLE --region $REGION)
+SITES=$($AWS_CMD scan --table-name $SITE_TABLE)
+ORGANIZATIONS=$($AWS_CMD scan --table-name $ORGANIZATION_TABLE)
 
 # Migrate each site
 echo "$SITES" | jq -c '.Items[]' | while read -r site; do
@@ -24,48 +24,26 @@ echo "$SITES" | jq -c '.Items[]' | while read -r site; do
     GSI1PK=$(echo $site | jq -r '.GSI1PK.S')
     CREATED_AT=$(echo $site | jq -r '.createdAt.S')
     UPDATED_AT=$(echo $site | jq -r '.updatedAt.S')
-    SLACK_WORKSPACE=$(echo $site | jq -r '.config.M.slack.M.workspace.S // empty')
-    SLACK_CHANNEL=$(echo $site | jq -r '.config.M.slack.M.channel.S // empty')
+    SLACK=$(echo $site | jq -r '.config.M.slack // {"M": {}}')
+    IMPORTS=$(echo $site | jq -r '.config.M.imports // {"L": []}')
 
-    # Extract audit configurations
-    AUDIT_CONFIGS=$(echo $site | jq -c '.auditConfig.M.auditTypeConfigs.M')
-    HANDLERS=$(echo "$AUDIT_CONFIGS" | jq 'keys' | jq -c '.[]' | while read -r key; do
-        MENTIONS=$(echo "$AUDIT_CONFIGS" | jq -c --arg key "$key" '.[$key].M.mentions.L // empty')
-        EXCLUDED_URLS=$(echo "$AUDIT_CONFIGS" | jq -c --arg key "$key" '.[$key].M.excludedURLs.L // empty')
-        MANUAL_OVERWRITES=$(echo "$AUDIT_CONFIGS" | jq -c --arg key "$key" '.[$key].M.manualOverwrites.L // empty')
-        FIXED_URLS=$(echo "$AUDIT_CONFIGS" | jq -c --arg key "$key" '.[$key].M.fixedURLs.L // empty')
-
-        if [ "$key" == "\"broken-backlinks\"" ]; then
-            cat <<EOF
-"$key": {
-    "M": {
-        "mentions": {"L": $MENTIONS},
-        "excludedURLs": {"L": $EXCLUDED_URLS},
-        "manualOverwrites": {"L": $MANUAL_OVERWRITES},
-        "fixedURLs": {"L": $FIXED_URLS}
-    }
-}
-EOF
-        else
-            cat <<EOF
-"$key": {
-    "M": {
-        "mentions": {"L": $MENTIONS}
-    }
-}
-EOF
+    # Check for 404 and broken-backlinks mentions
+    ALERTS=$(echo $site | jq -c '.config.M.alerts.L')
+    MENTIONS_404_SLACK='{"L":[]}'
+    MENTIONS_BROKEN_BACKLINKS_SLACK='{"L":[]}'
+    for alert in $(echo "$ALERTS" | jq -c '.[]'); do
+        ALERT_TYPE=$(echo $alert | jq -r '.M.type.S // empty')
+        if [ "$ALERT_TYPE" == "404" ]; then
+            MENTIONS_404_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // empty')
+        elif [ "$ALERT_TYPE" == "broken-backlinks" ]; then
+            MENTIONS_BROKEN_BACKLINKS_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // empty')
         fi
-    done | jq -s 'add')
+    done
 
-    if [ -n "$SLACK_WORKSPACE" ] && [ -n "$SLACK_CHANNEL" ]; then
-        SLACK_CONFIG=$(cat <<EOF
-"slack": {"M": {"workspace": {"S": "$SLACK_WORKSPACE"}, "channel": {"S": "$SLACK_CHANNEL"}}}
-EOF
-)
-    else
-        SLACK_CONFIG=""
-    fi
-
+    # Get excluded URLs
+    EXCLUDED_URLS=$(echo $site | jq -c '.auditConfig.M.auditTypeConfigs.M["broken-backlinks"].M.excludedURLs // {"L" :[]} ')
+    MANUAL_OVERRIDES=$(echo $site | jq -c '.auditConfig.M.auditTypeConfigs.M["broken-backlinks"].M.manualOverrides // {"L" :[]} ')
+    FIXED_URLS=$(echo $site | jq -c '.auditConfig.M.auditTypeConfigs.M["broken-backlinks"].M.fixedURLs // {"L" :[]} ')
     MIGRATED_SITE=$(cat <<EOF
 {
     "id": {"S": "$SITE_ID"},
@@ -80,19 +58,22 @@ EOF
     "updatedAt": {"S": "$UPDATED_AT"},
     "config": {
         "M": {
-            $SLACK_CONFIG,
-            "handlers": {"M": $HANDLERS}
-        }
+            "slack": $SLACK,
+            "imports": $IMPORTS,
+            "handlers": {
+                "M": {
+                    "404": {"M": {"mentions": {"M": {"slack": $MENTIONS_404_SLACK}}}},
+                    "broken-backlinks": {"M": {"mentions": {"M": {"slack": $MENTIONS_BROKEN_BACKLINKS_SLACK}}, "excludedURLs": $EXCLUDED_URLS, "manualOverrides": $MANUAL_OVERRIDES, "fixedURLs": $FIXED_URLS}}
+                }
+              }
+          }
     }
 }
 EOF
 )
 
     # Insert migrated site data into the site table
-    $AWS_CMD put-item --table-name $SITE_TABLE --item "$MIGRATED_SITE" --region $REGION
-    if [ $? -ne 0 ]; then
-        echo "Failed to migrate site with ID $SITE_ID"
-    fi
+    $AWS_CMD put-item --table-name $SITE_TABLE --item "$MIGRATED_SITE"
 done
 
 # Migrate each organization
@@ -103,24 +84,23 @@ echo "$ORGANIZATIONS" | jq -c '.Items[]' | while read -r org; do
     GSI1PK=$(echo $org | jq -r '.GSI1PK.S')
     CREATED_AT=$(echo $org | jq -r '.createdAt.S')
     UPDATED_AT=$(echo $org | jq -r '.updatedAt.S')
-    SLACK_WORKSPACE=$(echo $org | jq -r '.config.M.slack.M.workspace.S // empty')
-    SLACK_CHANNEL=$(echo $org | jq -r '.config.M.slack.M.channel.S // empty')
-    ALERT_TYPE=$(echo $org | jq -r '.config.M.alerts.L[0].M.type.S // empty')
-    ALERT_COUNTRY=$(echo $org | jq -r '.config.M.alerts.L[1].M.country.S // empty')
+    SLACK=$(echo $org | jq -r '.config.M.slack // {"M": {}}')
+    IMPORTS=$(echo $org | jq -r '.config.M.imports // {"L": []}')
 
-    HANDLERS=$(cat <<EOF
-"$ALERT_TYPE": {"M": {"enabledByDefault": {"BOOL": false}, "country": {"S": "$ALERT_COUNTRY"}}}
-EOF
-)
+    # Check for 404 and broken-backlinks mentions
+    ALERTS=$(echo $org | jq -c '.config.M.alerts.L')
+    MENTIONS_404_SLACK='{"L":[]}'
+    MENTIONS_BROKEN_BACKLINKS_SLACK='{"L":[]}'
+    for alert in $(echo "$ALERTS" | jq -c '.[]'); do
+        ALERT_TYPE=$(echo $alert | jq -r '.M.type.S // empty')
+        if [ "$ALERT_TYPE" == "404" ]; then
+            MENTIONS_404_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // empty')
+        elif [ "$ALERT_TYPE" == "broken-backlinks" ]; then
+            MENTIONS_BROKEN_BACKLINKS_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // empty')
+        fi
+    done
 
-    if [ -n "$SLACK_WORKSPACE" ] && [ -n "$SLACK_CHANNEL" ]; then
-        SLACK_CONFIG=$(cat <<EOF
-"slack": {"M": {"workspace": {"S": "$SLACK_WORKSPACE"}, "channel": {"S": "$SLACK_CHANNEL"}}},
-EOF
-)
-    else
-        SLACK_CONFIG=""
-    fi
+
 
     MIGRATED_ORG=$(cat <<EOF
 {
@@ -132,19 +112,22 @@ EOF
     "updatedAt": {"S": "$UPDATED_AT"},
     "config": {
         "M": {
-            $SLACK_CONFIG
-            "handlers": {"M": {$HANDLERS}}
+          "slack": $SLACK,
+          "imports": $IMPORTS,
+          "handlers": {
+              "M": {
+                  "404": {"M": {"mentions": {"M": {"slack": $MENTIONS_404_SLACK}}}},
+                  "broken-backlinks": {"M": {"mentions": {"M": {"slack": $MENTIONS_BROKEN_BACKLINKS_SLACK}}}}
+              }
         }
     }
+}
 }
 EOF
 )
 
     # Insert migrated organization data into the organization table
-    $AWS_CMD put-item --table-name $ORGANIZATION_TABLE --item "$MIGRATED_ORG" --region $REGION
-    if [ $? -ne 0 ]; then
-        echo "Failed to migrate organization with ID $ORG_ID"
-    fi
+    $AWS_CMD put-item --table-name $ORGANIZATION_TABLE --item "$MIGRATED_ORG"
 done
 
 echo "Migration completed successfully."

@@ -34,9 +34,9 @@ echo "$SITES" | jq -c '.Items[]' | while read -r site; do
     for alert in $(echo "$ALERTS" | jq -c '.[]'); do
         ALERT_TYPE=$(echo $alert | jq -r '.M.type.S // empty')
         if [ "$ALERT_TYPE" == "404" ]; then
-            MENTIONS_404_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // empty')
+            MENTIONS_404_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // {"L":[]}')
         elif [ "$ALERT_TYPE" == "broken-backlinks" ]; then
-            MENTIONS_BROKEN_BACKLINKS_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // empty')
+            MENTIONS_BROKEN_BACKLINKS_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // {"L":[]}')
         fi
     done
 
@@ -94,9 +94,9 @@ echo "$ORGANIZATIONS" | jq -c '.Items[]' | while read -r org; do
     for alert in $(echo "$ALERTS" | jq -c '.[]'); do
         ALERT_TYPE=$(echo $alert | jq -r '.M.type.S // empty')
         if [ "$ALERT_TYPE" == "404" ]; then
-            MENTIONS_404_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // empty')
+            MENTIONS_404_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // {"L":[]}')
         elif [ "$ALERT_TYPE" == "broken-backlinks" ]; then
-            MENTIONS_BROKEN_BACKLINKS_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // empty')
+            MENTIONS_BROKEN_BACKLINKS_SLACK=$(echo $alert | jq -r '.M.mentions.L[0].M.slack // {"L":[]}')
         fi
     done
 

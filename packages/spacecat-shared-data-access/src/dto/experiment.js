@@ -49,6 +49,7 @@ export const ExperimentDto = {
       siteId: dynamoItem.siteId,
       experimentId: dynamoItem.experimentId,
       name: dynamoItem.name,
+      url: dynamoItem.url,
       status: dynamoItem.status,
       type: dynamoItem.type,
       startDate: dynamoItem.startDate,

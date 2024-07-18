@@ -10,30 +10,30 @@
  * governing permissions and limitations under the License.
  */
 
-import  { FlatBundle } from '../common/flat-bundle.js';
+import { FlatBundle } from '../common/flat-bundle.js';
 import { pageviewsByUrl } from '../common/aggregateFns.js';
 
 function handler(bundles) {
-    const collectPageViews = bundles => pageviewsByUrl(bundles).filter(page => page.views >= 5000);
-    const pageviewUrls = collectPageViews(bundles).map(row => row.url);
+  const collectPageViews = bundles => pageviewsByUrl(bundles).filter(page => page.views >= 5000);
+  const pageviewUrls = collectPageViews(bundles).map(row => row.url);
 
-    return FlatBundle.fromArray(bundles)
-        .filter(row => pageviewUrls.includes(row.url) && row.checkpoint === 'convert')
-        .groupBy('url')
-        .map((groupedByUrl) => {
-            const { url, items } = groupedByUrl;
-            const totalViews = pageviews.find((row) => row.url === url).views;
-            const totalConversions = items.reduce((acc, cur) => acc + cur.weight, 0);
-            return {
-              url,
-              conversionRate: totalConversions / totalViews,
-            };
-          })
-          .filter((row) => row.conversionRate < 0.05);
+  return FlatBundle.fromArray(bundles)
+    .filter(row => pageviewUrls.includes(row.url) && row.checkpoint === 'convert')
+    .groupBy('url')
+    .map((groupedByUrl) => {
+      const { url, items } = groupedByUrl;
+      const totalViews = pageviews.find((row) => row.url === url).views;
+      const totalConversions = items.reduce((acc, cur) => acc + cur.weight, 0);
+      return {
+        url,
+        conversionRate: totalConversions / totalViews,
+      };
+      })
+      .filter((row) => row.conversionRate < 0.05);
 }
     
 export default {
-    handler,
-    checkpoints: ['pageview', 'convert'],
+  handler,
+  checkpoints: ['pageview', 'convert'],
 };
 

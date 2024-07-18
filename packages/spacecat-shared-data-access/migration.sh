@@ -42,7 +42,7 @@ echo "$SITES" | jq -c '.Items[]' | while read -r site; do
 
     # Get excluded URLs
     EXCLUDED_URLS=$(echo $site | jq -c '.auditConfig.M.auditTypeConfigs.M["broken-backlinks"].M.excludedURLs // {"L" :[]} ')
-    MANUAL_OVERRIDES=$(echo $site | jq -c '.auditConfig.M.auditTypeConfigs.M["broken-backlinks"].M.manualOverrides // {"L" :[]} ')
+    MANUAL_OVERWRITES=$(echo $site | jq -c '.auditConfig.M.auditTypeConfigs.M["broken-backlinks"].M.manualOverwrites // {"L" :[]} ')
     FIXED_URLS=$(echo $site | jq -c '.auditConfig.M.auditTypeConfigs.M["broken-backlinks"].M.fixedURLs // {"L" :[]} ')
     MIGRATED_SITE=$(cat <<EOF
 {
@@ -63,7 +63,7 @@ echo "$SITES" | jq -c '.Items[]' | while read -r site; do
             "handlers": {
                 "M": {
                     "404": {"M": {"mentions": {"M": {"slack": $MENTIONS_404_SLACK}}}},
-                    "broken-backlinks": {"M": {"mentions": {"M": {"slack": $MENTIONS_BROKEN_BACKLINKS_SLACK}}, "excludedURLs": $EXCLUDED_URLS, "manualOverrides": $MANUAL_OVERRIDES, "fixedURLs": $FIXED_URLS}}
+                    "broken-backlinks": {"M": {"mentions": {"M": {"slack": $MENTIONS_BROKEN_BACKLINKS_SLACK}}, "excludedURLs": $EXCLUDED_URLS, "manualOverwrites": $MANUAL_OVERWRITES, "fixedURLs": $FIXED_URLS}}
                 }
               }
           }

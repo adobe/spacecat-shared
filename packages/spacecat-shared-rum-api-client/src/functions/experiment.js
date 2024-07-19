@@ -87,7 +87,7 @@ function updateInferredStartAndEndDate(experimentObject, time) {
 function handler(bundles) {
   const experimentInsights = {};
   for (const bundle of bundles) {
-    const experimentEvent = bundle.events.find((e) => e.checkpoint === 'experiment');
+    const experimentEvent = bundle.events?.find((e) => e.checkpoint === 'experiment');
     if (experimentEvent) {
       const { url, weight, time } = bundle;
       if (!experimentInsights[url]) {

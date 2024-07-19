@@ -14,13 +14,16 @@
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
 import notfound from '../src/functions/404.js';
-import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import experiment from '../src/functions/experiment.js';
 import trafficAcquisition from '../src/functions/traffic-acquisition.js';
+import variant from '../src/functions/variant.js';
+import bundles from './fixtures/bundles.json' assert { type: 'json' };
+import bundlesForVariant from './fixtures/bundles_for_variant.json' assert { type: 'json' };
 import expectedCwvResult from './fixtures/cwv.json' assert { type: 'json' };
 import expected404Result from './fixtures/notfound.json' assert { type: 'json' };
 import expectedExperimentsResult from './fixtures/experiments.json' assert { type: 'json' };
 import expectedTrafficSourcesResult from './fixtures/trafficSources.json' assert { type: 'json' };
+import expectedVariantResult from './fixtures/variant.json' assert { type: 'json' };
 
 describe('Query functions', () => {
   it('crunches cwv data', async () => {
@@ -36,6 +39,11 @@ describe('Query functions', () => {
   it('crunches experiment data', async () => {
     const experimentsResult = experiment.handler(bundles.rumBundles);
     expect(expectedExperimentsResult).to.eql(experimentsResult);
+  });
+
+  it('crunches variant data', async () => {
+    const variantResult = variant.handler(bundlesForVariant.rumBundles);
+    expect(expectedVariantResult).to.eql(variantResult);
   });
 
   it('crunches traffic acquisition', async () => {

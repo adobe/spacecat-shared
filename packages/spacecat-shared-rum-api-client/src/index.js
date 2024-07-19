@@ -14,12 +14,14 @@ import notfound from './functions/404.js';
 import cwv from './functions/cwv.js';
 import experiment from './functions/experiment.js';
 import trafficAcquisition from './functions/traffic-acquisition.js';
+import variant from './functions/variant.js';
 
 const HANDLERS = {
   404: notfound,
   cwv,
   experiment,
   'traffic-acquisition': trafficAcquisition,
+  variant,
 };
 
 export default class RUMAPIClient {

@@ -26,6 +26,7 @@ echo "$SITES" | jq -c '.Items[]' | while read -r site; do
     UPDATED_AT=$(echo $site | jq -r '.updatedAt.S')
     SLACK=$(echo $site | jq -r '.config.M.slack // {"M": {}}')
     IMPORTS=$(echo $site | jq -r '.config.M.imports // {"L": []}')
+    HLX_CONFIG=$(echo $site | jq -r '.hlxConfig // {"M": {}}')
 
     # Check for 404 and broken-backlinks mentions
     ALERTS=$(echo $site | jq -c '.config.M.alerts.L')
@@ -56,6 +57,7 @@ echo "$SITES" | jq -c '.Items[]' | while read -r site; do
     "GSI1PK": {"S": "$GSI1PK"},
     "createdAt": {"S": "$CREATED_AT"},
     "updatedAt": {"S": "$UPDATED_AT"},
+    "hlxConfig": $HLX_CONFIG,
     "config": {
         "M": {
             "slack": $SLACK,

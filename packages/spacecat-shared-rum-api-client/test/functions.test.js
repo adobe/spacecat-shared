@@ -16,6 +16,7 @@ import cwv from '../src/functions/cwv.js';
 import notfound from '../src/functions/404.js';
 import experiment from '../src/functions/experiment.js';
 import variant from '../src/functions/variant.js';
+import click from '../src/functions/oppty.js';
 import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import bundlesForVariant from './fixtures/bundles_for_variant.json' assert { type: 'json' };
 import expectedCwvResult from './fixtures/cwv.json' assert { type: 'json' };
@@ -42,5 +43,10 @@ describe('Query functions', () => {
   it('crunches variant data', async () => {
     const variantResult = variant.handler(bundlesForVariant.rumBundles);
     expect(expectedVariantResult).to.eql(variantResult);
+  });
+
+  it('crunches CTR data', async () => {
+    const ctrResult = click.handler(bundles.rumBundles);
+    expect(bundles).to.eql(ctrResult);
   });
 });

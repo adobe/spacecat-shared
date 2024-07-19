@@ -13,27 +13,24 @@
 import { FlatBundle } from '../common/flat-bundle.js';
 import { pageviewsByUrl } from '../common/aggregateFns.js';
 
+const CTR_CHECKPOINT = 'click';
+// handler function to calculate CTR using the collectPageviews function
 function handler(bundles) {
-  const collectPageViews = bundles => pageviewsByUrl(bundles).filter(page => page.views >= 5000);
-  const pageviewUrls = collectPageViews(bundles).map(row => row.url);
+  const pageviews = pageviewsByUrl(bundles);
 
   return FlatBundle.fromArray(bundles)
-    .filter(row => pageviewUrls.includes(row.url) && row.checkpoint === 'convert')
     .groupBy('url')
-    .map((groupedByUrl) => {
-      const { url, items } = groupedByUrl;
-      const totalViews = pageviews.find((row) => row.url === url).views;
-      const totalConversions = items.reduce((acc, cur) => acc + cur.weight, 0);
+    .filter((row) => row.checkpoint === CTR_CHECKPOINT && pageviews.views > 5000)
+    .map((collectPageviews) => {
+      const { url, views, clicks } = collectPageviews;
+      const ctr = (clicks / views) * 100;
       return {
-        url,
-        conversionRate: totalConversions / totalViews,
+        url, views, clicks, ctr,
       };
-      })
-      .filter((row) => row.conversionRate < 0.05);
+    });
 }
-    
+
 export default {
   handler,
-  checkpoints: ['pageview', 'convert'],
+  checkpoints: CTR_CHECKPOINT,
 };
-

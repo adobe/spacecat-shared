@@ -97,23 +97,6 @@ declare function composeBaseURL(domain: string): string;
 declare function composeAuditURL(url: string): Promise<string>;
 
 /**
- * Checks whether audits are disabled for a given site by inspecting the audit configurations
- * in the respective organization and site models.
- *
- * If the optional parameter `auditType` is NOT provided, only the root-level "auditsDisabled" flag
- * in the site and organization is checked.
- *
- * If the optional parameter `auditType` is provided, then the specific audit configuration for the
- * specified type is also checked.
- *
- * @param {object} site - The site object.
- * @param {object} organization - The organization object.
- * @param {string} [auditType] - The type of audit.
- * @returns {boolean} - True if the audit(s) are disabled, otherwise false.
- */
-declare function isAuditsDisabled(site: object, organization: object, auditType?: string): boolean
-
-/**
  * Resolves the name of the secret based on the function version.
  * @param {Object} opts - The options object, not used in this implementation.
  * @param {Object} ctx - The context object containing the function version.

@@ -17,7 +17,6 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
 import { configurationFunctions } from '../../../../src/service/configurations/index.js';
-import { ConfigurationDto } from '../../../../src/dto/configuration.js';
 
 chai.use(chaiAsPromised);
 
@@ -173,8 +172,8 @@ describe('Configuration Access Pattern Tests', () => {
         },
       };
 
-      mockDynamoClient.query.onFirstCall().resolves(
-        [ConfigurationDto.fromDynamoItem(configurationData)],
+      mockDynamoClient.query.resolves(
+        [configurationData],
       );
 
       const result = await exportedFunctions.updateConfiguration(configurationData);

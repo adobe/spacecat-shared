@@ -79,6 +79,34 @@ describe('Import Job Tests', () => {
       });
     });
 
+    describe('getImportJobsByDateRange', () => {
+      it('should return ImportJobDto[] if items are found', async () => {
+        const mockImportJobs = [{
+          id: 'test-id',
+          status: 'RUNNING',
+          options: {},
+          baseURL: 'https://www.test.com',
+          apiKey: 'test-api-key',
+          startTime: '2024-05-28T14:26:00.000Z',
+          importQueueId: 'test-import-queue-id',
+        },
+        {
+          id: 'test-id-1',
+          status: 'RUNNING',
+          options: {},
+          baseURL: 'https://www.test1.com',
+          apiKey: 'test-api1-key',
+          startTime: '2024-06-01T14:26:00.000Z',
+          importQueueId: 'test-import-queue-id-1',
+        }];
+        mockDynamoClient.query.resolves(mockImportJobs);
+
+        const result = await exportedFunctions.getImportJobsByDateRange(mockDynamoClient, TEST_DA_CONFIG, mockLog, '2024-05-27T14:26:00.000Z', '2024-06-02T14:26:00.000Z');
+
+        expect(result).to.be.an('array').and.to.have.lengthOf(2);
+      });
+    });
+
     describe('getImportJobsByStatus', () => {
       it('should return ImportJobDto[] if items are found', async () => {
         const mockImportJobs = [{

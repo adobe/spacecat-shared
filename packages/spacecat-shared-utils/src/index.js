@@ -30,7 +30,6 @@ export {
 } from './functions.js';
 
 export {
-  isAuditsDisabled,
   resolveSecretsName,
   resolveCustomerSecretsName,
   generateCSVFile,

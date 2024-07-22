@@ -1,0 +1,624 @@
+[
+  {
+    "url": "https://www.aem.live/home",
+    "total": 2620,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 2220
+      },
+      {
+        "type": "earned:search",
+        "views": 400
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/block-collection",
+    "total": 2000,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 2000
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/",
+    "total": 1910,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 1810
+      },
+      {
+        "type": "earned:referral",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/tools/rum/explorer.html",
+    "total": 1600,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 1500
+      },
+      {
+        "type": "earned:referral",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/tutorial",
+    "total": 1600,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 1400
+      },
+      {
+        "type": "earned:referral",
+        "views": 200
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/anatomy-of-a-franklin-project",
+    "total": 1200,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 1200
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/indexing",
+    "total": 1000,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 1000
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/custom-headers",
+    "total": 900,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 900
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/spreadsheets",
+    "total": 900,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 900
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/dev-collab-and-good-practices",
+    "total": 700,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 700
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/go-live-checklist",
+    "total": 600,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 600
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/markup-sections-blocks",
+    "total": 510,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 510
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/favicon",
+    "total": 500,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 500
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/keeping-it-100",
+    "total": 500,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 500
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/tools/sidekick/",
+    "total": 410,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 410
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/placeholders",
+    "total": 403,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 403
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/byo-cdn-cloudflare-worker-setup",
+    "total": 400,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 400
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/byo-dns",
+    "total": 400,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 400
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/byo-cdn-fastly-setup",
+    "total": 300,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 300
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/davidsmodel",
+    "total": 300,
+    "sources": [
+      {
+        "type": "earned:referral",
+        "views": 200
+      },
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/setup-customer-sharepoint",
+    "total": 300,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 300
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/sitemap",
+    "total": 300,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 300
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/byo-cdn-akamai-setup",
+    "total": 300,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 300
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/redirects",
+    "total": 300,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 300
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/bulk-metadata",
+    "total": 300,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 300
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/some-other-page",
+    "total": 300,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 300
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/authoring",
+    "total": 210,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 210
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/sidekick",
+    "total": 200,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 200
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/web-components",
+    "total": 200,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 200
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/authentication-setup-site",
+    "total": 200,
+    "sources": [
+      {
+        "type": "earned:referral",
+        "views": 100
+      },
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/rum",
+    "total": 200,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      },
+      {
+        "type": "earned:referral",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/faq",
+    "total": 200,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 200
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/placeholders",
+    "total": 200,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 200
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/block-collection/section-metadata",
+    "total": 200,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 200
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/vip/intake",
+    "total": 200,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 200
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/sidekick-extension",
+    "total": 110,
+    "sources": [
+      {
+        "type": "earned:search",
+        "views": 100
+      },
+      {
+        "type": "owned:direct",
+        "views": 10
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/rum",
+    "total": 110,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 110
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/target-integration",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/architecture",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/block-collection/breadcrumbs",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/block-collection/headings",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/cdn-guide",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/tools/bot/setup",
+    "total": 100,
+    "sources": [
+      {
+        "type": "earned:referral",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/github-actions",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/importer",
+    "total": 100,
+    "sources": [
+      {
+        "type": "earned:referral",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/configuring-aem-assets-sidekick-plugin",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/tools/rum/list.html",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/setup-byo-cdn-push-invalidation",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/forms",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/new-exp-page",
+    "total": 100,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 100
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/admin.html",
+    "total": 20,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 20
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/community-feeds.json",
+    "total": 10,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 10
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/global",
+    "total": 10,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 10
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/franklin-video-series-advanced",
+    "total": 10,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 10
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/markup-reference",
+    "total": 10,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 10
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/byo-cdn-cloudflare-setup",
+    "total": 10,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 10
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/developer/franklin-video-series",
+    "total": 10,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 10
+      }
+    ]
+  },
+  {
+    "url": "https://www.aem.live/docs/aem-assets-sidekick-plugin",
+    "total": 10,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 10
+      }
+    ]
+  }
+]

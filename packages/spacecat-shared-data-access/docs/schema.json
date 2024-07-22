@@ -47,10 +47,6 @@
           "AttributeType": "S"
         },
         {
-          "AttributeName": "auditConfig",
-          "AttributeType": "M"
-        },
-        {
           "AttributeName": "hlxConfig",
           "AttributeType": "M"
         },
@@ -178,10 +174,6 @@
         {
           "AttributeName": "GSI1PK",
           "AttributeType": "S"
-        },
-        {
-          "AttributeName": "auditConfig",
-          "AttributeType": "M"
         },
         {
           "AttributeName": "config",

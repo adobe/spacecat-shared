@@ -15,6 +15,31 @@ import { ImportJobDto } from '../../dto/import-job.js';
 import { createImportJob } from '../../models/importer/import-job.js';
 
 /**
+ * Get all Import Jobs within a specific date range
+ * @param {DynamoClient} dynamoClient
+ * @param {Object} config
+ * @param {Logger} log
+ * @param {string} startDate
+ * @param {string} endDate
+ */
+export const getImportJobsByDateRange = async (dynamoClient, config, log, startDate, endDate) => {
+  const items = await dynamoClient.query({
+    TableName: config.tableNameImportJobs,
+    IndexName: config.indexNameAllImportJobsByDateRange,
+    KeyConditionExpression: 'GSI1PK = :gsi1pk AND #startTime BETWEEN :startDate AND :endDate',
+    ExpressionAttributeNames: {
+      '#startTime': 'startTime',
+    },
+    ExpressionAttributeValues: {
+      ':gsi1pk': config.pkAllImportJobs,
+      ':startDate': startDate,
+      ':endDate': endDate,
+    },
+  });
+  return items.map((item) => ImportJobDto.fromDynamoItem(item));
+};
+
+/**
  * Get Import Job by ID
  * @param {DynamoClient} dynamoClient
  * @param {Object} config

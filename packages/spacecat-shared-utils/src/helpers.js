@@ -11,7 +11,7 @@
  */
 
 import { Parser } from '@json2csv/plainjs';
-import { hasText, isString } from './functions.js';
+import { isString } from './functions.js';
 
 /**
  * Resolves the name of the secret based on the function version.
@@ -51,27 +51,6 @@ export function resolveCustomerSecretsName(baseURL, ctx) {
     throw new Error('Invalid baseURL: must be a valid URL');
   }
   return resolveSecretsName({}, ctx, `${basePath}/${customer}`);
-}
-
-export function isAuditsDisabled(site, organization, auditType) {
-  // return early if all audits are disabled for the organization
-  if (organization.getAuditConfig().auditsDisabled()) {
-    return true;
-  }
-
-  // return early if all audits are disabled for the site
-  if (site.getAuditConfig().auditsDisabled()) {
-    return true;
-  }
-
-  if (hasText(auditType)) {
-    const disabledAtOrg = organization.getAuditConfig().getAuditTypeConfig(auditType)?.disabled();
-    const disabledAtSite = site.getAuditConfig().getAuditTypeConfig(auditType)?.disabled();
-
-    return !!disabledAtOrg || !!disabledAtSite;
-  }
-
-  return false;
 }
 
 /**

@@ -99,6 +99,7 @@ const TEST_DA_CONFIG = {
   tableNameSiteCandidates: 'spacecat-services-site-candidates',
   tableNameConfigurations: 'spacecat-services-configurations',
   tableNameSiteTopPages: 'spacecat-services-site-top-pages',
+  tableNameExperiments: 'spacecat-services-experiments',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
@@ -123,6 +124,7 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_TOP_PAGES_PER_SITE = 5;
   const NUMBER_OF_TOP_PAGES_FOR_SITE = NUMBER_OF_SITES * NUMBER_OF_TOP_PAGES_PER_SITE;
   const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
+  const NUMBER_OF_EXPERIMENTS = 3;
 
   before(async function () {
     this.timeout(30000);
@@ -896,5 +898,85 @@ describe('DynamoDB Integration Test', async () => {
 
     const keyEventsAfter = await dataAccess.getKeyEventsForSite(siteId);
     expect(keyEventsAfter.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
+  });
+
+  it('get all experiments for the site', async () => {
+    const sites = await dataAccess.getSites();
+    const experiments = await dataAccess.getExperiments(sites[0].getId());
+
+    expect(experiments.length).to.equal(NUMBER_OF_EXPERIMENTS);
+  });
+
+  it('get all experiments for the site and experimentId', async () => {
+    // handling multi page experiments
+    const sites = await dataAccess.getSites();
+    const experiments = await dataAccess.getExperiments(sites[0].getId(), 'experiment-1');
+
+    expect(experiments.length).to.equal(1);
+  });
+
+  it('get 0 experiments for the siteId with out any experiments', async () => {
+    const sites = await dataAccess.getSites();
+    const experiments = await dataAccess.getExperiments(sites[1].getId());
+
+    expect(experiments.length).to.equal(0);
+  });
+
+  it('check if experiment exists', async () => {
+    const sites = await dataAccess.getSites();
+    const experiment = await dataAccess.getExperiment(sites[0].getId(), 'experiment-1', `${sites[0].getBaseURL()}/page-1`);
+
+    expect(experiment).to.not.equal(null);
+  });
+
+  it('create and update experiment', async () => {
+    const sites = await dataAccess.getSites();
+    const experimentData = {
+      siteId: sites[0].getId(),
+      experimentId: 'experiment-test',
+      name: 'Experiment Test',
+      url: `${sites[0].getBaseURL()}/page-10`,
+      status: 'active',
+      type: 'full',
+      variants: [
+        {
+          label: 'Challenger 1',
+          name: 'challenger-1',
+          interactionsCount: 40,
+          p_value: 'coming soon',
+          split: 0.5,
+          url: `${sites[0].baseURL}/page-10/variant-1`,
+          views: 1100,
+          metrics: [
+            {
+              selector: '.header .button',
+              type: 'click',
+              value: 40,
+            }],
+        },
+        {
+          label: 'Control',
+          name: 'control',
+          interactionsCount: 0,
+          p_value: 'coming soon',
+          metrics: [],
+          split: 0.5,
+          url: `${sites[0].baseURL}/page-10`,
+          views: 1090,
+        },
+      ],
+      startDate: new Date().toISOString(),
+      endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'it-test',
+    };
+    await dataAccess.upsertExperiment(experimentData);
+    const experimentTest = await dataAccess.getExperiment(sites[0].getId(), 'experiment-test', `${sites[0].getBaseURL()}/page-10`);
+    expect(experimentTest).to.not.equal(null);
+    // update the experiment variant 0 metrics to 50
+    experimentData.variants[0].metrics[0].value = 50;
+    await dataAccess.upsertExperiment(experimentData);
+    const updatedExperiment = await dataAccess.getExperiment(sites[0].getId(), 'experiment-test', `${sites[0].getBaseURL()}/page-10`);
+    expect(updatedExperiment.getVariants()[0].metrics[0].value).to.equal(50);
   });
 });

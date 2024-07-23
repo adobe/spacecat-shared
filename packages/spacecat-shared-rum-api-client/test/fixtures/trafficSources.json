@@ -1,11 +1,11 @@
 [
   {
     "url": "https://www.aem.live/home",
-    "total": 2620,
+    "total": 2720,
     "sources": [
       {
         "type": "owned:direct",
-        "views": 2220
+        "views": 2320
       },
       {
         "type": "earned:search",

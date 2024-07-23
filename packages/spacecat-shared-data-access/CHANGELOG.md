@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v1.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.36.0...@adobe/spacecat-shared-data-access-v1.37.0) (2024-07-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#295](https://github.com/adobe/spacecat-shared/issues/295)) ([4e8d50d](https://github.com/adobe/spacecat-shared/commit/4e8d50d8d88b2d68b483fda2ead31542d15ee952))
+
+
+### Features
+
+* new config data model ([2525af4](https://github.com/adobe/spacecat-shared/commit/2525af48d1d4dad7e1b6e1fb3fbf3cda79d1252d))
+* update the config model for sites and orgs ([ed556bd](https://github.com/adobe/spacecat-shared/commit/ed556bda995d8cb6b79cb44efbee7d0b779dc0aa))
+* update to trigger release ([b1610ab](https://github.com/adobe/spacecat-shared/commit/b1610ab8160a75348803b470deaa8c28d2baf6f1))
+
+# [@adobe/spacecat-shared-data-access-v1.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.35.2...@adobe/spacecat-shared-data-access-v1.36.0) (2024-07-16)
+
+
+### Features
+
+* Get all import jobs by date range ([#292](https://github.com/adobe/spacecat-shared/issues/292)) ([21accd3](https://github.com/adobe/spacecat-shared/commit/21accd34a543af3ab39aacaa0545f84c7bb50f3b))
+
+# [@adobe/spacecat-shared-data-access-v1.35.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.35.1...@adobe/spacecat-shared-data-access-v1.35.2) (2024-07-13)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#291](https://github.com/adobe/spacecat-shared/issues/291)) ([5678328](https://github.com/adobe/spacecat-shared/commit/5678328a8efe4c2068b3b796274d8e4392f75c8a))
+
 # [@adobe/spacecat-shared-data-access-v1.35.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.35.0...@adobe/spacecat-shared-data-access-v1.35.1) (2024-07-12)
 
 

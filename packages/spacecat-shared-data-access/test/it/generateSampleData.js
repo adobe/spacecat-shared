@@ -153,16 +153,19 @@ export default async function generateSampleData(
   numberOfAuditsPerType = 5,
   numberOfSiteTopPages = 50,
   numberOfKeyEvents = 10,
+  numberOfExperiments = 3,
 ) {
   console.time('Sample data generated in');
   await deleteExistingTables([
     config.tableNameSites,
+    config.tableNameSiteCandidates,
     config.tableNameAudits,
     config.tableNameLatestAudits,
     config.tableNameOrganizations,
     config.tableNameConfigurations,
     config.tableNameSiteTopPages,
     config.tableNameKeyEvents,
+    config.tableNameExperiments,
   ]);
   await createTablesFromSchema();
 
@@ -174,6 +177,7 @@ export default async function generateSampleData(
   const auditItems = [];
   const latestAuditItems = [];
   const keyEvents = [];
+  const experiments = [];
   const nowIso = new Date().toISOString();
 
   // Generate organization data
@@ -349,6 +353,50 @@ export default async function generateSampleData(
     }
   });
 
+  // Generate experiment data
+  for (let i = 1; i <= numberOfExperiments; i += 1) {
+    experiments.push({
+      siteId: sites[0].id,
+      experimentId: `experiment-${i}`,
+      name: `Experiment ${i}`,
+      url: `${sites[0].baseURL}/page-${i}`,
+      status: 'active',
+      type: 'full',
+      variants: [
+        {
+          label: `Challenger ${i}`,
+          name: `challenger-${i}`,
+          interactionsCount: i * 10,
+          p_value: 'coming soon',
+          split: 0.8,
+          url: `${sites[0].baseURL}/page-${i}/variant-${i}`,
+          views: i * 100,
+          metrics: [
+            {
+              selector: '.header .button',
+              type: 'click',
+              value: i * 2,
+            }],
+        },
+        {
+          label: `Challenger ${i + 1}`,
+          name: `challenger-${i + 1}`,
+          interactionsCount: (i + 1) * 10,
+          p_value: 'coming soon',
+          metrics: [],
+          split: 0.8,
+          url: `${sites[0].baseURL}/page-${i + 1}/variant-${i + 1}`,
+          views: (i + 1) * 100,
+        },
+      ],
+      startDate: nowIso,
+      endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
+      updatedAt: nowIso,
+      updatedBy: 'scheduled-experiment-audit',
+      SK: `experiment-${i}#${sites[0].baseURL}/page-${i}`,
+    });
+  }
+
   await batchWrite(config.tableNameSites, sites);
   await batchWrite(config.tableNameSiteCandidates, siteCandidates);
   await batchWrite(config.tableNameOrganizations, organizations);
@@ -357,8 +405,10 @@ export default async function generateSampleData(
   await batchWrite(config.tableNameConfigurations, configurations);
   await batchWrite(config.tableNameSiteTopPages, siteTopPages);
   await batchWrite(config.tableNameKeyEvents, keyEvents);
+  await batchWrite(config.tableNameExperiments, experiments);
 
   console.log(`Generated ${numberOfOrganizations} organizations`);
   console.log(`Generated ${numberOfSites} sites with ${numberOfAuditsPerType} audits per type for each site`);
+  console.log(`Generated ${numberOfExperiments} Experiments`);
   console.timeEnd('Sample data generated in');
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.38.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.38.0...@adobe/spacecat-shared-data-access-v1.38.1) (2024-07-24)
+
+
+### Bug Fixes
+
+* naming issues ([#300](https://github.com/adobe/spacecat-shared/issues/300)) ([f0a7468](https://github.com/adobe/spacecat-shared/commit/f0a7468526a5f71c4bfed5ec0b88c3c889316cd6))
+
 # [@adobe/spacecat-shared-data-access-v1.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.37.0...@adobe/spacecat-shared-data-access-v1.38.0) (2024-07-23)
 
 

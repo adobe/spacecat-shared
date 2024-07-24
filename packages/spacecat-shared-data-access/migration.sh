@@ -86,6 +86,7 @@ echo "$ORGANIZATIONS" | jq -c '.Items[]' | while read -r org; do
     GSI1PK=$(echo $org | jq -r '.GSI1PK.S')
     CREATED_AT=$(echo $org | jq -r '.createdAt.S')
     UPDATED_AT=$(echo $org | jq -r '.updatedAt.S')
+    FULLFILLABLE_ITEMS=$(echo $org | jq -r '.fulfillableItems // {"M": {}}')
     SLACK=$(echo $org | jq -r '.config.M.slack // {"M": {}}')
     IMPORTS=$(echo $org | jq -r '.config.M.imports // {"L": []}')
 
@@ -112,6 +113,7 @@ echo "$ORGANIZATIONS" | jq -c '.Items[]' | while read -r org; do
     "GSI1PK": {"S": "$GSI1PK"},
     "createdAt": {"S": "$CREATED_AT"},
     "updatedAt": {"S": "$UPDATED_AT"},
+    "fulfillableItems": $FULLFILLABLE_ITEMS,
     "config": {
         "M": {
           "slack": $SLACK,

@@ -100,14 +100,14 @@ describe('Config Tests', () => {
 
     it('correctly updates the manual overrides', () => {
       const config = Config();
-      const ManualOverwrites = [
+      const manualOverwrites = [
         { brokenTargetURL: 'url1', targetURL: 'url2' },
         { brokenTargetURL: 'url3', targetURL: 'url4' },
       ];
-      config.updateManualOverwrites('broken-backlinks', ManualOverwrites);
+      config.updateManualOverwrites('broken-backlinks', manualOverwrites);
 
       const updatedManualOverwrites = config.getManualOverwrites('broken-backlinks');
-      expect(updatedManualOverwrites).to.deep.equal(ManualOverwrites);
+      expect(updatedManualOverwrites).to.deep.equal(manualOverwrites);
     });
 
     it('correctly updates the fixedURLs array to an empty array', () => {

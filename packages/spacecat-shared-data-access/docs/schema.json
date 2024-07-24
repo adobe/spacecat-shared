@@ -180,6 +180,10 @@
           "AttributeType": "M"
         },
         {
+          "AttributeName": "fulfillableItems",
+          "AttributeType": "M"
+        },
+        {
           "AttributeName": "createdAt",
           "AttributeType": "S"
         },

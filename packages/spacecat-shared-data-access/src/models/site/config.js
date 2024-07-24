@@ -61,7 +61,7 @@ export const Config = (data = {}) => {
   self.getHandlers = () => state.handlers;
   self.getImports = () => state.imports;
   self.getExcludedURLs = (type) => state?.handlers[type]?.excludedURLs;
-  self.getManualOverrides = (type) => state?.handlers[type]?.manualOverwrites;
+  self.getManualOverwrites = (type) => state?.handlers[type]?.manualOverwrites;
   self.getFixedURLs = (type) => state?.handlers[type]?.fixedURLs;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
@@ -79,13 +79,13 @@ export const Config = (data = {}) => {
     state.handlers[type].mentions.slack = mentions;
   };
 
-  self.updateExcludeURLs = (type, excludedURLs) => {
+  self.updateExcludedURLs = (type, excludedURLs) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = state.handlers[type] || {};
     state.handlers[type].excludedURLs = excludedURLs;
   };
 
-  self.updateManualOverrides = (type, manualOverwrites) => {
+  self.updateManualOverwrites = (type, manualOverwrites) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = state.handlers[type] || {};
     state.handlers[type].manualOverwrites = manualOverwrites;

@@ -24,6 +24,7 @@ const TABLE_NAME_CONFIGURATIONS = 'spacecat-services-configurations-dev';
 const TABLE_NAME_SITE_TOP_PAGES = 'spacecat-services-site-top-pages-dev';
 const TABLE_NAME_IMPORT_JOBS = 'spacecat-services-import-jobs-dev';
 const TABLE_NAME_IMPORT_URLS = 'spacecat-services-import-urls-dev';
+const TABLE_NAME_EXPERIMENTS = 'spacecat-services-experiments-dev';
 
 const INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID = 'spacecat-services-key-events-by-site-id';
 const INDEX_NAME_ALL_SITES = 'spacecat-services-all-sites-dev';
@@ -58,6 +59,7 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_TABLE_NAME_SITE_TOP_PAGES = TABLE_NAME_SITE_TOP_PAGES,
         DYNAMO_TABLE_NAME_IMPORT_JOBS = TABLE_NAME_IMPORT_JOBS,
         DYNAMO_TABLE_NAME_IMPORT_URLS = TABLE_NAME_IMPORT_URLS,
+        DYNAMO_TABLE_NAME_EXPERIMENTS = TABLE_NAME_EXPERIMENTS,
         DYNAMO_INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID = INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID,
         DYNAMO_INDEX_NAME_ALL_SITES = INDEX_NAME_ALL_SITES,
         DYNAMO_INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE = INDEX_NAME_ALL_SITES_BY_DELIVERY_TYPE,
@@ -83,6 +85,7 @@ export default function dataAccessWrapper(fn) {
         tableNameSiteTopPages: DYNAMO_TABLE_NAME_SITE_TOP_PAGES,
         tableNameImportJobs: DYNAMO_TABLE_NAME_IMPORT_JOBS,
         tableNameImportUrls: DYNAMO_TABLE_NAME_IMPORT_URLS,
+        tableNameExperiments: DYNAMO_TABLE_NAME_EXPERIMENTS,
         indexNameAllKeyEventsBySiteId: DYNAMO_INDEX_NAME_ALL_KEY_EVENTS_BY_SITE_ID,
         indexNameAllSites: DYNAMO_INDEX_NAME_ALL_SITES,
         indexNameAllOrganizations: DYNAMO_INDEX_NAME_ALL_ORGANIZATIONS,

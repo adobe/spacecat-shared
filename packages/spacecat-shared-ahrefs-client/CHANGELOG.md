@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.3.2...@adobe/spacecat-shared-ahrefs-client-v1.4.0) (2024-07-25)
+
+
+### Features
+
+* update broken backlinks filter for ahrefs ([#302](https://github.com/adobe/spacecat-shared/issues/302)) ([2dd383b](https://github.com/adobe/spacecat-shared/commit/2dd383b48ed8490be1fd385af946c0a1dfc84aca))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.3.1...@adobe/spacecat-shared-ahrefs-client-v1.3.2) (2024-07-08)
 
 

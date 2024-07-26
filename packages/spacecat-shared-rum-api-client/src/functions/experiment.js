@@ -12,7 +12,8 @@
 
 const EXPERIMENT_CHECKPOINT = ['experiment'];
 const METRIC_CHECKPOINTS = ['click', 'convert', 'formsubmit'];
-const CHECKPOINTS = [...EXPERIMENT_CHECKPOINT, ...METRIC_CHECKPOINTS];
+const TOP_CHECKPOINT = ['top'];
+const CHECKPOINTS = [...TOP_CHECKPOINT, ...EXPERIMENT_CHECKPOINT, ...METRIC_CHECKPOINTS];
 
 function toClassName(name) {
   return typeof name === 'string'
@@ -73,18 +74,32 @@ function updateInferredStartAndEndDate(experimentObject, time) {
   }
 }
 
+/**
+ * return the duplicate bundle if it exists
+ * @param {*} bundles all the bundles
+ * @param {*} bundle bundle to check for duplicates
+ */
+function getDuplicateBundle(bundles, bundle) {
+  return bundles.find((b) => b.id === bundle.id && b.url !== bundle.url);
+}
+
 function handler(bundles) {
   const experimentInsights = {};
   for (const bundle of bundles) {
     const experimentEvent = bundle.events?.find((e) => e.checkpoint === 'experiment');
     if (experimentEvent) {
       const { url, weight, time } = bundle;
-      if (!experimentInsights[url]) {
-        experimentInsights[url] = [];
+      const duplicateBundle = getDuplicateBundle(bundles, bundle);
+      const experimentUrl = duplicateBundle ? duplicateBundle.url : url;
+      if (!experimentInsights[experimentUrl]) {
+        experimentInsights[experimentUrl] = [];
       }
       const experimentName = experimentEvent.source;
       const variantName = experimentEvent.target;
-      const experimentObject = getOrCreateExperimentObject(experimentInsights[url], experimentName);
+      const experimentObject = getOrCreateExperimentObject(
+        experimentInsights[experimentUrl],
+        experimentName,
+      );
       const variantObject = getOrCreateVariantObject(experimentObject.variants, variantName);
       updateInferredStartAndEndDate(experimentObject, time);
       variantObject.views += weight;

@@ -535,6 +535,57 @@ export interface ImportUrl {
 }
 
 /**
+ * Represents an API Key entity.
+ */
+export interface ApiKey {
+    /**
+     * Retrieves the ID of the API Key.
+     */
+    getId: () => string;
+
+    /**
+     * Retrieves the key of the API Key.
+     */
+    getKey: () => string;
+
+    /**
+     * Retrieves the name of the API Key.
+     */
+    getName: () => string;
+
+    /**
+    * Retrieves the imsUserId of the API Key.
+    */
+    getImsUserId: () => string;
+
+    /**
+    * Retrieves the imsOrgId of the API key
+    */
+    getImsOrgId: () => string;
+
+    /**
+     * Retrieves the createdAt of the API Key.
+     */
+    getCreatedAt: () => string;
+
+    /**
+     * Retrieves the expiresAt of the API Key.
+     */
+    getExpiresAt: () => string;
+
+    /**
+     * Retrieves the revokedAt of the API Key.
+     */
+    getRevokedAt: () => string;
+
+    /**
+     * Retrieves the scopes of the API Key.
+     */
+    getScopes: () => string;
+
+}
+
+/**
  * Represents an experiment entity.
  */
 export interface Experiment {
@@ -722,6 +773,12 @@ export interface DataAccess {
       jobId: string,
       status: string,
     ) => Promise<ImportUrl[]>;
+  getApiKeyById: (
+      id: string,
+    ) => Promise<ApiKey | null>;
+  createNewApiKey: (
+      apiKeyData: object,
+  ) => Promise<ApiKey>;
 
   // site candidate functions
   getSiteCandidateByBaseURL: (baseURL: string) => Promise<SiteCandidate>;
@@ -764,6 +821,7 @@ interface DataAccessConfig {
   tableNameImportJobs: string;
   tableNameImportUrls: string;
   tableNameExperiments: string;
+  tableNameApiKeys: string;
   indexNameAllKeyEventsBySiteId: string,
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,

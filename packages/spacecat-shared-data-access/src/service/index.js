@@ -21,6 +21,7 @@ import { siteTopPagesFunctions } from './site-top-pages/index.js';
 import { importJobFunctions } from './import-job/index.js';
 import { importUrlFunctions } from './import-url/index.js';
 import { experimentFunctions } from './experiments/index.js';
+import { apiKeyFunctions } from './api-key/index.js';
 
 /**
  * Creates a data access object.
@@ -48,6 +49,7 @@ export const createDataAccess = (config, log = console) => {
   const importJobFuncs = importJobFunctions(dynamoClient, config, log);
   const importUrlFuncs = importUrlFunctions(dynamoClient, config, log);
   const experimentFuncs = experimentFunctions(dynamoClient, config, log);
+  const apiKeyFuncs = apiKeyFunctions(dynamoClient, config, log);
 
   return {
     ...auditFuncs,
@@ -60,5 +62,6 @@ export const createDataAccess = (config, log = console) => {
     ...importJobFuncs,
     ...importUrlFuncs,
     ...experimentFuncs,
+    ...apiKeyFuncs,
   };
 };

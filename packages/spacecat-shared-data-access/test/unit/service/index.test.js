@@ -152,7 +152,7 @@ describe('Data Access Object Tests', () => {
     });
   });
 
-  it('contains all knows apiKey functions', () => {
+  it('contains all known apiKey functions', () => {
     apiKeyFunctions.forEach((funcName) => {
       expect(dao).to.have.property(funcName);
     });

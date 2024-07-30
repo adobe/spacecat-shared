@@ -1,3 +1,22 @@
+# [@adobe/spacecat-shared-utils-v1.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.0...@adobe/spacecat-shared-utils-v1.19.1) (2024-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#304](https://github.com/adobe/spacecat-shared/issues/304)) ([c6c56a7](https://github.com/adobe/spacecat-shared/commit/c6c56a72897acb60fb042215b708816ec16a5870))
+
+# [@adobe/spacecat-shared-utils-v1.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.18.3...@adobe/spacecat-shared-utils-v1.19.0) (2024-07-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#295](https://github.com/adobe/spacecat-shared/issues/295)) ([4e8d50d](https://github.com/adobe/spacecat-shared/commit/4e8d50d8d88b2d68b483fda2ead31542d15ee952))
+
+
+### Features
+
+* new config data model ([2525af4](https://github.com/adobe/spacecat-shared/commit/2525af48d1d4dad7e1b6e1fb3fbf3cda79d1252d))
+
 # [@adobe/spacecat-shared-utils-v1.18.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.18.2...@adobe/spacecat-shared-utils-v1.18.3) (2024-07-13)
 
 

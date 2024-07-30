@@ -27,11 +27,12 @@ import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 import generateSampleData from './generateSampleData.js';
 import { createSiteCandidate, SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
 import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
+import { ConfigurationDto } from '../../src/dto/configuration.js';
 
 const { expect } = chai;
 chai.use(chaiAsPromised);
 
-function checkSite(site) {
+function checkSite(site, configuration) {
   expect(site).to.be.an('object');
   expect(site.getId()).to.be.a('string');
   expect(site.getBaseURL()).to.be.a('string');
@@ -45,15 +46,14 @@ function checkSite(site) {
   expect(site.isLive()).to.be.a('boolean');
   expect(isIsoDate(site.getIsLiveToggledAt())).to.be.true;
 
-  const auditConfig = site.getAuditConfig();
-  expect(auditConfig).to.be.an('object');
-  expect(auditConfig.auditsDisabled()).to.be.a('boolean').which.is.false;
-  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE)).to.be.an('object');
-  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).disabled()).to.be.a('boolean').which.is.false;
-  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).getExcludedURLs()).to.be.a('array').which.is.deep.equal(['https://example.com/excluded']);
-  expect(auditConfig.getAuditTypeConfig('non-existing-type')).to.be.undefined;
-  expect(auditConfig.getAuditTypeConfig('cwv')).to.be.an('object');
-  expect(auditConfig.getAuditTypeConfig('cwv').disabled()).to.be.a('boolean').which.is.true;
+  const lhsMobileHandler = configuration.getHandler(AUDIT_TYPE_LHS_MOBILE);
+  const cwvHandler = configuration.getHandler('cwv');
+  expect(lhsMobileHandler).to.be.an('object');
+  expect(configuration.isHandlerEnabledForSite(AUDIT_TYPE_LHS_MOBILE, site)).to.be.a('boolean').which.is.true;
+  expect(site.getConfig().getExcludedURLs(AUDIT_TYPE_LHS_MOBILE)).to.be.a('array').which.is.deep.equal(['https://example.com/excluded']);
+  expect(configuration.getHandler('non-existing')).to.be.undefined;
+  expect(cwvHandler).to.be.an('object');
+  expect(configuration.isHandlerEnabledForSite('cwv', site)).to.be.a('boolean').which.is.false;
 }
 
 function checkOrganization(organization) {
@@ -99,6 +99,7 @@ const TEST_DA_CONFIG = {
   tableNameSiteCandidates: 'spacecat-services-site-candidates',
   tableNameConfigurations: 'spacecat-services-configurations',
   tableNameSiteTopPages: 'spacecat-services-site-top-pages',
+  tableNameExperiments: 'spacecat-services-experiments',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
@@ -123,6 +124,7 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_TOP_PAGES_PER_SITE = 5;
   const NUMBER_OF_TOP_PAGES_FOR_SITE = NUMBER_OF_SITES * NUMBER_OF_TOP_PAGES_PER_SITE;
   const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
+  const NUMBER_OF_EXPERIMENTS = 3;
 
   before(async function () {
     this.timeout(30000);
@@ -186,13 +188,18 @@ describe('DynamoDB Integration Test', async () => {
         { group: 'reports', interval: 'daily', type: 'some-report' },
       ],
     };
-    const configuration = await dataAccess.updateConfiguration(configurationData);
+    const configurationV2 = await dataAccess.getConfiguration();
+    const configuration = await dataAccess.updateConfiguration({
+      ...ConfigurationDto.toDynamoItem(configurationV2),
+      ...configurationData,
+    });
 
     expect(configuration).to.be.an('object');
 
     expect(configuration.getVersion()).to.equal('v3');
     expect(configuration.getQueues()).to.deep.equal(configurationData.queues);
     expect(configuration.getJobs()).to.deep.equal(configurationData.jobs);
+    expect(configuration.getHandlers()).to.deep.equal(configurationV2.getHandlers());
   });
 
   it('gets organizations', async () => {
@@ -215,28 +222,19 @@ describe('DynamoDB Integration Test', async () => {
     expect(organization.getId()).to.equal(orgId);
   });
 
-  it('sets all audits disabled for an organization', async () => {
-    const orgId = (await dataAccess.getOrganizations())[0].getId();
-    const organization = await dataAccess.getOrganizationByID(orgId);
-
-    // set all audits to disabled & persist
-    await organization.setAllAuditsDisabled(true);
-    await dataAccess.updateOrganization(organization);
-
-    const organizationUpdated = await dataAccess.getOrganizationByID(orgId);
-    expect(organizationUpdated.getAuditConfig().auditsDisabled()).to.equal(true);
-  });
-
   it('sets a single audit disabled for an organization', async () => {
     const orgId = (await dataAccess.getOrganizations())[1].getId();
     const organization = await dataAccess.getOrganizationByID(orgId);
-
-    // set all audits to disabled & persist
-    await organization.updateAuditTypeConfig('hebele', { disabled: true });
+    const configuration = await dataAccess.getConfiguration();
+    configuration.addHandler('hebele', { enabledByDefault: true });
+    configuration.disableHandlerForOrg('hebele', organization);
     await dataAccess.updateOrganization(organization);
+    const updatedConfiguration = await dataAccess.updateConfiguration(
+      ConfigurationDto.toDynamoItem(configuration),
+    );
 
     const organizationUpdated = await dataAccess.getOrganizationByID(orgId);
-    expect(organizationUpdated.getAuditConfig().getAuditTypeConfig('hebele').disabled()).to.equal(true);
+    expect(updatedConfiguration.isHandlerEnabledForOrg('hebele', organizationUpdated)).to.be.false;
   });
 
   it('gets organization by IMS Org ID', async () => {
@@ -290,22 +288,24 @@ describe('DynamoDB Integration Test', async () => {
 
   it('gets sites', async () => {
     const sites = await dataAccess.getSites();
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.equal(NUMBER_OF_SITES);
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getAudits()).to.be.an('array').that.has.lengthOf(0);
     });
   });
 
   it('gets sites by delivery type', async () => {
     const sites = await dataAccess.getSitesByDeliveryType('aem_cs');
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.equal(NUMBER_OF_SITES / 2);
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getAudits()).to.be.an('array').that.has.lengthOf(0);
     });
   });
@@ -313,12 +313,13 @@ describe('DynamoDB Integration Test', async () => {
   it('gets sites by organizationId', async () => {
     const organizations = await dataAccess.getOrganizations();
     const sites = await dataAccess.getSitesByOrganizationID(organizations[0].getId());
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.be.lessThanOrEqual(Math.trunc(NUMBER_OF_SITES / NUMBER_OF_ORGANIZATIONS)
       + (NUMBER_OF_SITES % NUMBER_OF_ORGANIZATIONS));
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getOrganizationId()).to.be.equal(organizations[0].getId());
     });
   });
@@ -335,11 +336,12 @@ describe('DynamoDB Integration Test', async () => {
 
   it('gets sites with latest audit', async () => {
     const sites = await dataAccess.getSitesWithLatestAudit(AUDIT_TYPE_LHS_MOBILE);
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.equal(NUMBER_OF_SITES);
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getAudits()).to.be.an('array');
 
       site.getAudits().forEach((audit) => {
@@ -357,9 +359,9 @@ describe('DynamoDB Integration Test', async () => {
       organizations[0].getId(),
       AUDIT_TYPE_LHS_MOBILE,
     );
-
+    const configuration = await dataAccess.getConfiguration();
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getAudits()).to.be.an('array');
 
       site.getAudits().forEach((audit) => {
@@ -373,11 +375,12 @@ describe('DynamoDB Integration Test', async () => {
 
   it('gets sites with latest audit of delivery type', async () => {
     const sites = await dataAccess.getSitesWithLatestAudit(AUDIT_TYPE_LHS_MOBILE, true, 'aem_cs');
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.equal(NUMBER_OF_SITES / 2);
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getDeliveryType()).to.equal('aem_cs');
       expect(site.getAudits()).to.be.an('array');
 
@@ -392,19 +395,21 @@ describe('DynamoDB Integration Test', async () => {
 
   it('gets site by baseURL', async () => {
     const site = await dataAccess.getSiteByBaseURL('https://example1.com');
+    const configuration = await dataAccess.getConfiguration();
 
     expect(site).to.be.an('object');
 
-    checkSite(site);
+    checkSite(site, configuration);
   });
 
   it('gets site by ID', async () => {
     const siteId = (await dataAccess.getSites())[0].getId();
     const site = await dataAccess.getSiteByID(siteId);
+    const configuration = await dataAccess.getConfiguration();
 
     expect(site).to.be.an('object');
 
-    checkSite(site);
+    checkSite(site, configuration);
     expect(site.getId()).to.equal(siteId);
   });
 
@@ -435,22 +440,27 @@ describe('DynamoDB Integration Test', async () => {
       isLive: true,
       isLiveToggledAt: new Date().toISOString(),
       audits: [],
-      auditConfig: {
-        auditsDisabled: false,
-        auditTypeConfigs: {
-          'lhs-mobile': { disabled: false, excludedURLs: ['https://example.com/excluded'] },
-          cwv: { disabled: true },
+      config: {
+        handlers: {
+          'lhs-mobile': {
+            excludedURLs: ['https://example.com/excluded'],
+          },
         },
       },
     };
 
     const addedSite = await dataAccess.addSite(newSiteData);
+    const configuration = await dataAccess.getConfiguration();
+    configuration.disableHandlerForSite('cwv', addedSite);
+    const updatedConfiguration = await dataAccess.updateConfiguration(
+      ConfigurationDto.toDynamoItem(configuration),
+    );
 
     expect(addedSite).to.be.an('object');
 
     const newSite = await dataAccess.getSiteByBaseURL(newSiteData.baseURL);
 
-    checkSite(newSite);
+    checkSite(newSite, updatedConfiguration);
 
     expect(newSite.getId()).to.to.be.a('string');
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
@@ -726,24 +736,6 @@ describe('DynamoDB Integration Test', async () => {
     expect(latestAuditAfterRemoval).to.be.null;
   });
 
-  it('updates audit configurations for a site', async () => {
-    const siteToUpdate = await dataAccess.getSiteByBaseURL('https://example2.com');
-
-    // Update all audits to be disabled
-    siteToUpdate.setAllAuditsDisabled(true);
-    await dataAccess.updateSite(siteToUpdate);
-
-    let updatedSite = await dataAccess.getSiteByID(siteToUpdate.getId());
-    expect(updatedSite.getAuditConfig().auditsDisabled()).to.be.true;
-
-    // Update a specific audit type configuration
-    siteToUpdate.updateAuditTypeConfig('type1', { disabled: false });
-    await dataAccess.updateSite(siteToUpdate);
-
-    updatedSite = await dataAccess.getSiteByID(siteToUpdate.getId());
-    expect(updatedSite.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.false;
-  });
-
   it('removes organization', async () => {
     const organizations = await dataAccess.getOrganizations();
     const organization = organizations[0];
@@ -906,5 +898,85 @@ describe('DynamoDB Integration Test', async () => {
 
     const keyEventsAfter = await dataAccess.getKeyEventsForSite(siteId);
     expect(keyEventsAfter.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
+  });
+
+  it('get all experiments for the site', async () => {
+    const sites = await dataAccess.getSites();
+    const experiments = await dataAccess.getExperiments(sites[0].getId());
+
+    expect(experiments.length).to.equal(NUMBER_OF_EXPERIMENTS);
+  });
+
+  it('get all experiments for the site and experimentId', async () => {
+    // handling multi page experiments
+    const sites = await dataAccess.getSites();
+    const experiments = await dataAccess.getExperiments(sites[0].getId(), 'experiment-1');
+
+    expect(experiments.length).to.equal(1);
+  });
+
+  it('get 0 experiments for the siteId with out any experiments', async () => {
+    const sites = await dataAccess.getSites();
+    const experiments = await dataAccess.getExperiments(sites[1].getId());
+
+    expect(experiments.length).to.equal(0);
+  });
+
+  it('check if experiment exists', async () => {
+    const sites = await dataAccess.getSites();
+    const experiment = await dataAccess.getExperiment(sites[0].getId(), 'experiment-1', `${sites[0].getBaseURL()}/page-1`);
+
+    expect(experiment).to.not.equal(null);
+  });
+
+  it('create and update experiment', async () => {
+    const sites = await dataAccess.getSites();
+    const experimentData = {
+      siteId: sites[0].getId(),
+      experimentId: 'experiment-test',
+      name: 'Experiment Test',
+      url: `${sites[0].getBaseURL()}/page-10`,
+      status: 'active',
+      type: 'full',
+      variants: [
+        {
+          label: 'Challenger 1',
+          name: 'challenger-1',
+          interactionsCount: 40,
+          p_value: 'coming soon',
+          split: 0.5,
+          url: `${sites[0].baseURL}/page-10/variant-1`,
+          views: 1100,
+          metrics: [
+            {
+              selector: '.header .button',
+              type: 'click',
+              value: 40,
+            }],
+        },
+        {
+          label: 'Control',
+          name: 'control',
+          interactionsCount: 0,
+          p_value: 'coming soon',
+          metrics: [],
+          split: 0.5,
+          url: `${sites[0].baseURL}/page-10`,
+          views: 1090,
+        },
+      ],
+      startDate: new Date().toISOString(),
+      endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'it-test',
+    };
+    await dataAccess.upsertExperiment(experimentData);
+    const experimentTest = await dataAccess.getExperiment(sites[0].getId(), 'experiment-test', `${sites[0].getBaseURL()}/page-10`);
+    expect(experimentTest).to.not.equal(null);
+    // update the experiment variant 0 metrics to 50
+    experimentData.variants[0].metrics[0].value = 50;
+    await dataAccess.upsertExperiment(experimentData);
+    const updatedExperiment = await dataAccess.getExperiment(sites[0].getId(), 'experiment-test', `${sites[0].getBaseURL()}/page-10`);
+    expect(updatedExperiment.getVariants()[0].metrics[0].value).to.equal(50);
   });
 });

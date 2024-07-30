@@ -11,7 +11,6 @@
  */
 
 import Joi from 'joi';
-import AuditConfig from './audit-config.js';
 
 export const configSchema = Joi.object({
   slack: Joi.object({
@@ -19,35 +18,25 @@ export const configSchema = Joi.object({
     channel: Joi.string(),
     invitedUserCount: Joi.number().integer().min(0),
   }),
-  alerts: Joi.array().items(Joi.object({
-    type: Joi.string().required(),
-    byOrg: Joi.boolean(),
-    mentions: Joi.array().items(Joi.object({ slack: Joi.array().items(Joi.string()) })),
-  }).unknown(true)),
-  audits: Joi.object({
-    auditsDisabled: Joi.boolean().optional(),
-    auditTypeConfigs: Joi.object().pattern(
-      Joi.string(),
-      Joi.object({
-        disabled: Joi.boolean().optional(),
-        excludedURLs: Joi.array().items(Joi.string()).optional(),
-        manualOverwrites: Joi.array().items(Joi.object({
-          brokenTargetURL: Joi.string().optional(),
-          targetURL: Joi.string().optional(),
-        })).optional(),
-        fixedURLs: Joi.array().items(Joi.object({
-          brokenTargetURL: Joi.string().optional(),
-          targetURL: Joi.string().optional(),
-        })).optional(),
-      }).unknown(true),
-    ).unknown(true),
-  }).unknown(true),
+  imports: Joi.array().items(Joi.object({ type: Joi.string() }).unknown(true)),
+  handlers: Joi.object().pattern(Joi.string(), Joi.object({
+    mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
+    excludedURLs: Joi.array().items(Joi.string()),
+    manualOverwrites: Joi.array().items(Joi.object({
+      brokenTargetURL: Joi.string().optional(),
+      targetURL: Joi.string().optional(),
+    })).optional(),
+    fixedURLs: Joi.array().items(Joi.object({
+      brokenTargetURL: Joi.string().optional(),
+      targetURL: Joi.string().optional(),
+    })).optional(),
+  }).unknown(true)).unknown(true),
 }).unknown(true);
 
 export const DEFAULT_CONFIG = {
   slack: {},
-  alerts: [],
-  audits: {},
+  handlers: {
+  },
 };
 
 // Function to validate incoming configuration
@@ -63,11 +52,50 @@ function validateConfiguration(config) {
 
 export const Config = (data = {}) => {
   const validConfig = validateConfiguration(data);
-  validConfig.audits = AuditConfig(validConfig.audits);
 
   const state = { ...validConfig };
+  const self = { state };
+  self.getSlackConfig = () => state.slack;
+  self.getSlackMentions = (type) => state?.handlers[type]?.mentions?.slack;
+  self.getHandlerConfig = (type) => state?.handlers[type];
+  self.getHandlers = () => state.handlers;
+  self.getImports = () => state.imports;
+  self.getExcludedURLs = (type) => state?.handlers[type]?.excludedURLs;
+  self.getManualOverwrites = (type) => state?.handlers[type]?.manualOverwrites;
+  self.getFixedURLs = (type) => state?.handlers[type]?.fixedURLs;
 
-  const self = { ...state };
+  self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
+    state.slack = {
+      channel,
+      workspace,
+      invitedUserCount,
+    };
+  };
+
+  self.updateSlackMentions = (type, mentions) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].mentions = state.handlers[type].mentions || {};
+    state.handlers[type].mentions.slack = mentions;
+  };
+
+  self.updateExcludedURLs = (type, excludedURLs) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].excludedURLs = excludedURLs;
+  };
+
+  self.updateManualOverwrites = (type, manualOverwrites) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].manualOverwrites = manualOverwrites;
+  };
+
+  self.updateFixedURLs = (type, fixedURLs) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].fixedURLs = fixedURLs;
+  };
 
   return Object.freeze(self);
 };
@@ -75,6 +103,7 @@ export const Config = (data = {}) => {
 Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 
 Config.toDynamoItem = (config) => ({
-  ...config,
-  audits: AuditConfig.toDynamoItem(config.audits),
+  slack: config.getSlackConfig(),
+  handlers: config.getHandlers(),
+  imports: config.getImports(),
 });

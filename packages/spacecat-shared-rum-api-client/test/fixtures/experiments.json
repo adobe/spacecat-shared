@@ -4,6 +4,19 @@
       "experiment": "short-home",
       "variants": [
         {
+          "name": "control",
+          "views": 900,
+          "click": {
+            ".hero .button": 100,
+            "*": 500,
+            ".header .button": 200,
+            ".header #navmenu-0": 200
+          },
+          "convert": {},
+          "formsubmit": {},
+          "interactionsCount": 500
+        },
+        {
           "name": "challenger-1",
           "views": 1300,
           "click": {
@@ -16,21 +29,10 @@
           "convert": {},
           "formsubmit": {},
           "interactionsCount": 400
-        },
-        {
-          "name": "control",
-          "views": 800,
-          "click": {
-            ".hero .button": 100,
-            "*": 500,
-            ".header .button": 200,
-            ".header #navmenu-0": 200
-          },
-          "convert": {},
-          "formsubmit": {},
-          "interactionsCount": 500
         }
-      ]
+      ],
+      "inferredStartDate": "2024-05-26T03:00:02.380Z",
+      "inferredEndDate": "2024-05-31T07:00:00.190Z"
     }
   ],
   "https://www.aem.live/new-exp-page": [
@@ -44,7 +46,9 @@
           "convert": {},
           "formsubmit": {}
         }
-      ]
+      ],
+      "inferredStartDate": "2024-05-07T06:00:00.001Z",
+      "inferredEndDate": "2024-05-07T06:00:00.001Z"
     }
   ]
 }

@@ -15,13 +15,14 @@ import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
 import notfound from '../src/functions/404.js';
 import experiment from '../src/functions/experiment.js';
+import trafficAcquisition from '../src/functions/traffic-acquisition.js';
 import variant from '../src/functions/variant.js';
-import click from '../src/functions/oppty.js';
 import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import bundlesForVariant from './fixtures/bundles_for_variant.json' assert { type: 'json' };
 import expectedCwvResult from './fixtures/cwv.json' assert { type: 'json' };
 import expected404Result from './fixtures/notfound.json' assert { type: 'json' };
 import expectedExperimentsResult from './fixtures/experiments.json' assert { type: 'json' };
+import expectedTrafficSourcesResult from './fixtures/trafficSources.json' assert { type: 'json' };
 import expectedVariantResult from './fixtures/variant.json' assert { type: 'json' };
 
 describe('Query functions', () => {
@@ -45,8 +46,8 @@ describe('Query functions', () => {
     expect(expectedVariantResult).to.eql(variantResult);
   });
 
-  it('crunches CTR data', async () => {
-    const ctrResult = click.handler(bundles.rumBundles);
-    expect(bundles).to.eql(ctrResult);
+  it('crunches traffic acquisition', async () => {
+    const trafficSourcesResult = trafficAcquisition.handler(bundles.rumBundles);
+    expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
   });
 });

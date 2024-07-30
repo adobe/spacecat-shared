@@ -25,7 +25,6 @@ describe('Index Exports', () => {
     'generateCSVFile',
     'hasText',
     'isArray',
-    'isAuditsDisabled',
     'isBoolean',
     'isInteger',
     'isIsoDate',

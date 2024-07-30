@@ -13,18 +13,151 @@
 import Joi from 'joi';
 
 const Configuration = (data = {}) => {
-  const self = { ...data };
-  self.getJobs = () => self.jobs;
-  self.getVersion = () => self.version;
-  self.getQueues = () => self.queues;
+  const state = { ...data };
+  const self = { state };
+  self.getJobs = () => self.state.jobs;
+  self.getVersion = () => self.state.version;
+  self.getQueues = () => self.state.queues;
+  self.getHandlers = () => self.state.handlers;
+  self.getHandler = (type) => self.state.handlers[type];
+  self.addHandler = (type, handlerData) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = { ...handlerData };
+  };
+  self.isHandlerEnabledForSite = (type, site) => {
+    const handler = state.handlers[type];
+    if (!handler) return false;
+
+    const siteId = site.getId();
+    const orgId = site.getOrganizationId();
+
+    if (handler.enabled) {
+      return handler.enabled.sites.includes(siteId) || handler.enabled.orgs.includes(orgId);
+    }
+
+    if (handler.disabled) {
+      return !((handler.disabled.sites && handler.disabled.sites.includes(siteId))
+          || (handler.disabled.orgs && handler.disabled.orgs.includes(orgId)));
+    }
+
+    return handler.enabledByDefault;
+  };
+
+  self.isHandlerEnabledForOrg = (type, org) => {
+    const handler = state.handlers[type];
+    if (!handler) return false;
+
+    const orgId = org.getId();
+
+    if (handler.enabled) {
+      return handler.enabled.orgs.includes(orgId);
+    }
+
+    if (handler.disabled) {
+      return !handler.disabled.orgs.includes(orgId);
+    }
+
+    return handler.enabledByDefault;
+  };
+
+  const updateHandlerOrgs = (type, orgId, enabled) => {
+    const handler = state.handlers[type];
+    if (!handler) return;
+
+    if (enabled) {
+      if (handler.enabledByDefault) {
+        handler.disabled.orgs = handler.disabled.orgs?.filter((id) => id !== orgId) || [];
+      } else {
+        handler.enabled = handler.enabled || { orgs: [] };
+        handler.enabled.orgs = [...(handler.enabled?.orgs || []), orgId];
+      }
+    } else if (handler.enabledByDefault) {
+      handler.disabled = handler.disabled || { orgs: [] };
+      handler.disabled.orgs = [...(handler.disabled?.orgs || []), orgId];
+    } else {
+      handler.enabled.orgs = handler.enabled.orgs?.filter((id) => id !== orgId) || [];
+    }
+  };
+
+  const updateHandlerSites = (type, siteId, enabled) => {
+    const handler = state.handlers[type];
+    if (!handler) return;
+
+    if (enabled) {
+      if (handler.enabledByDefault) {
+        handler.disabled.sites = handler.disabled.sites?.filter((id) => id !== siteId) || [];
+      } else {
+        handler.enabled = handler.enabled || { sites: [] };
+        handler.enabled.sites = [...(handler.enabled.sites || []), siteId];
+      }
+    } else if (handler.enabledByDefault) {
+      handler.disabled = handler.disabled || { sites: [] };
+      handler.disabled.sites = [...(handler.disabled.sites || []), siteId];
+    } else {
+      handler.enabled.sites = handler.enabled.sites?.filter((id) => id !== siteId) || [];
+    }
+  };
+
+  self.enableHandlerForSite = (type, site) => {
+    const siteId = site.getId();
+    if (self.isHandlerEnabledForSite(type, site)) return;
+
+    updateHandlerSites(type, siteId, true);
+  };
+
+  self.enableHandlerForOrg = (type, org) => {
+    const orgId = org.getId();
+    if (self.isHandlerEnabledForOrg(type, org)) return;
+
+    updateHandlerOrgs(type, orgId, true);
+  };
+
+  self.disableHandlerForSite = (type, site) => {
+    const siteId = site.getId();
+    if (!self.isHandlerEnabledForSite(type, site)) return;
+
+    updateHandlerSites(type, siteId, false);
+  };
+
+  self.disableHandlerForOrg = (type, org) => {
+    const orgId = org.getId();
+    if (!self.isHandlerEnabledForOrg(type, org)) return;
+
+    updateHandlerOrgs(type, orgId, false);
+  };
 
   return Object.freeze(self);
 };
+
+/**
+ *
+ * @param configuration
+ * @returns {any}
+ */
 
 export const checkConfiguration = (configuration) => {
   const schema = Joi.object({
     version: Joi.string().required(),
     queues: Joi.object().required(),
+    handlers: Joi.object().pattern(Joi.string(), Joi.object(
+      {
+        enabled: Joi.object({
+          sites: Joi.array().items(Joi.string()),
+          orgs: Joi.array().items(Joi.string()),
+        }),
+        disabled: Joi.object({
+          sites: Joi.array().items(Joi.string()),
+          orgs: Joi.array().items(Joi.string()),
+        }),
+        enabledByDefault: Joi.boolean().required(),
+        dependencies: Joi.array().items(Joi.object(
+          {
+            handler: Joi.string(),
+            actions: Joi.array().items(Joi.string()),
+          },
+        )),
+      },
+    )),
     jobs: Joi.array().required(),
   }).unknown(true);
   const { error, value } = schema.validate(configuration);

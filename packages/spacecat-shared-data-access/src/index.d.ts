@@ -84,49 +84,12 @@ export interface Audit {
   getScores: () => object;
 }
 
-/**
- * AuditConfigType defines the structure for specific audit type configurations.
- */
-export interface AuditConfigType {
-  /**
-   * Returns true if the audit type is disabled for the site. If an audit type is disabled, no
-   * audits of that type will be scheduled for the site.
-   * @returns {boolean} True if the audit type is disabled for the site.
-   */
-  disabled: () => boolean;
-}
-
 export interface Config {
 
 }
 
 export interface FulfillableItems {
   items: string[];
-}
-
-/**
- * AuditConfig defines the structure for the overall audit configuration of a site.
- */
-export interface AuditConfig {
-  /**
-   * Returns true if audits are disabled for the site. If audits are disabled, no audits will be
-   * scheduled for the site. Overrides any audit type specific configurations.
-   * @returns {boolean} True if audits are disabled for the site.
-   */
-  auditsDisabled: () => boolean;
-
-  /**
-   * Returns the audit config for a specific audit type. The audit type is the key.
-   * @param {string} auditType The audit type to get the config for.
-   * @returns {AuditConfigType} The audit config for the audit type.
-   */
-  getAuditTypeConfig: (auditType: string) => AuditConfigType;
-
-  /**
-   * Returns the audit configs for all audit types. The keys are the audit types.
-   * @returns {object} The audit configs for all audit types.
-   */
-  getAuditTypeConfigs: () => object;
 }
 
 /**
@@ -221,12 +184,6 @@ export interface Site {
    * @returns {string} The last update timestamp.
    */
   getUpdatedAt: () => string;
-
-  /**
-   * Retrieves the current audit configuration for the site.
-   * @returns {AuditConfig} The current audit configuration.
-   */
-  getAuditConfig: () => AuditConfig;
 
   /**
    * Retrieves the current configuration for the site.
@@ -435,6 +392,60 @@ export interface Configuration {
    */
   getJobs: () => Array<object>;
 
+    /**
+     * Retrieves the handlers configuration.
+     * @returns {object} The handlers configuration.
+     */
+  getHandlers: () => object;
+
+  /**
+   * Retrieves the handler configuration for handler type.
+   * @returns {object} The handler type configuration.
+   */
+  getHandler: (type) => object;
+
+  /**
+   * Return true if a handler type is enabled for an organization.
+   * @param type handler type
+   * @param org organization
+   */
+  isHandlerEnabledForOrg: (type: string, org: Organization) => boolean;
+
+  /**
+   * Return true if a handler type is enabled for a site.
+   * @param type handler type
+   * @param site site
+   */
+  isHandlerEnabledForSite: (type: string, site: Site) => boolean;
+
+  /**
+   * Enables a handler type for an site.
+   * @param type handler type
+   * @param site site
+   */
+  enableHandlerForSite: (type: string, site: Site) => void;
+
+  /**
+   * Enables a handler type for an organization.
+   * @param type handler type
+   * @param org organization
+   */
+  enableHandlerForOrg: (type: string, org: Organization) => void;
+
+    /**
+     * Disables a handler type for an site.
+     * @param type handler type
+     * @param site site
+     */
+  disableHandlerForSite: (type: string, site: Site) => void;
+
+  /**
+   * Disables a handler type for an organization.
+   * @param type handler type
+   * @param org organization
+   */
+  disableHandlerForOrg: (type:string, org: Organization) => void;
+
 }
 
 export interface ImportJob {
@@ -521,6 +532,76 @@ export interface ImportUrl {
    */
     getJobId: () => string;
 
+}
+
+/**
+ * Represents an experiment entity.
+ */
+export interface Experiment {
+  /**
+   * Retrieves the ID of the experiment.
+   */
+  getExperimentId: () => string;
+
+  /**
+   * Retrieves the site ID of the experiment.
+   */
+  getSiteId: () => string;
+
+  /**
+   * Retrieves the Control URL of the experiment.
+   */
+  getUrl: () => string;
+
+  /**
+   * Retrieves the experiment name.
+   */
+  getName: () => string;
+
+  /**
+   * Retrieves the experiment type.
+   */
+  getType: () => string;
+
+  /**
+   * Retrieves the experiment status.
+   */
+  getStatus: () => string;
+
+  /**
+   * Retrieves the experiment variants.
+   */
+  getVariants: () => Array<object>;
+
+  /**
+   * Retrieves the experiment start date.
+   */
+  getStartDate: () => string;
+
+  /**
+   * Retrieves the experiment end date.
+   */
+  getEndDate: () => string;
+
+  /**
+   * Retrieves the conversion event name.
+   */
+  getConversionEventName: () => string;
+
+  /**
+   * Retrieves the conversion event value
+   */
+  getConversionEventValue: () => string;
+
+  /**
+   * Retrieves the last update timestamp of the experiment entity in persistent store.
+   */
+  getUpdatedAt: () => string;
+
+  /**
+   * Retrieves the updated by of the experiment entity in persistent store.
+   */
+  getUpdatedBy: () => string;
 }
 
 export interface DataAccess {
@@ -664,6 +745,11 @@ export interface DataAccess {
   createKeyEvent: (keyEventData: object) => Promise<KeyEvent>;
   getKeyEventsForSite: (siteId: string) => Promise<KeyEvent[]>
   removeKeyEvent: (keyEventId: string) => Promise<void>;
+
+  // experiment functions
+  getExperiments: (siteId: string, experimentId?: string) => Promise<Experiment[]>;
+  getExperiment: (siteId: string, experimentId: string, url: string) => Promise<Experiment | null>;
+  upsertExperiment: (experimentData: object) => Promise<Experiment>;
 }
 
 interface DataAccessConfig {
@@ -677,6 +763,7 @@ interface DataAccessConfig {
   tableNameSiteTopPages: string;
   tableNameImportJobs: string;
   tableNameImportUrls: string;
+  tableNameExperiments: string;
   indexNameAllKeyEventsBySiteId: string,
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,

@@ -52,6 +52,17 @@ function transformFormat(trafficSources) {
 /*
  * throw-away code for a single customer who customized the experimentation engine
  * this code will be removed once they start using the default exp engine
+ *
+ * this function fetches experiment manifests, then merges variants data into controls data
+ *
+ * ie:
+ *
+ * if the customer runs for an experiment where variants are as following:
+ *   control: /
+ *   challenger-1: /a1/
+ *   challenger-2: /a2/
+ *
+ * then data for the `/a1/` and `/a2` are counted towards `/`'s data
  */
 async function mergeBundlesWithSameId(bundles) {
   if (!bundles[0]?.url.includes('bamboohr.com')) return bundles;

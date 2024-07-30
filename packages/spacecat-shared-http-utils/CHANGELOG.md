@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.3.5...@adobe/spacecat-shared-http-utils-v1.4.0) (2024-07-30)
+
+
+### Features
+
+* move auth wrappers from api-service ([#307](https://github.com/adobe/spacecat-shared/issues/307)) ([3094a99](https://github.com/adobe/spacecat-shared/commit/3094a999f330dbe007b64fbfc3f282bd56807b37))
+
 # [@adobe/spacecat-shared-http-utils-v1.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.3.4...@adobe/spacecat-shared-http-utils-v1.3.5) (2024-07-27)
 
 

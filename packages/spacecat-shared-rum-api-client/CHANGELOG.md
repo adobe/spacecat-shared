@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.5.1...@adobe/spacecat-shared-rum-api-client-v2.5.2) (2024-07-30)
+
+
+### Bug Fixes
+
+* updating inferred start and end dates to reflect old and latest from RUM bundles ([#303](https://github.com/adobe/spacecat-shared/issues/303)) ([92852bd](https://github.com/adobe/spacecat-shared/commit/92852bd5e5f033fbc568c70cc7d6f5d5eda50deb))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.5.0...@adobe/spacecat-shared-rum-api-client-v2.5.1) (2024-07-27)
 
 

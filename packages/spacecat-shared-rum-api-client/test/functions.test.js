@@ -13,6 +13,7 @@
 
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
+// import opportunity from '../src/functions/oppty.js';
 import notfound from '../src/functions/404.js';
 import experiment from '../src/functions/experiment.js';
 import trafficAcquisition from '../src/functions/traffic-acquisition.js';
@@ -50,4 +51,9 @@ describe('Query functions', () => {
     const trafficSourcesResult = trafficAcquisition.handler(bundles.rumBundles);
     expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
   });
+
+  // it('crunches CTR opportunity data', async () => {
+  //   const opportunitiesResult = opportunity.handler(bundles.rumBundles);
+  //   expect(expectedOpportunitiesResult).to.eql(opportunitiesResult);
+  // });
 });

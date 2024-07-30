@@ -22,6 +22,7 @@ function collect404s(groupedByUrlAndSource) {
 
   // calculate the total number of views per 404 event
   const views = itemsByUrl.flatMap((item) => item.items).reduce((acc, cur) => acc + cur.weight, 0);
+  console.log('views', views);
 
   return {
     url,
@@ -33,11 +34,13 @@ function collect404s(groupedByUrlAndSource) {
 }
 
 function handler(bundles) {
-  return FlatBundle.fromArray(bundles)
+  const res = FlatBundle.fromArray(bundles)
     .filter((row) => row.checkpoint === '404')
     .groupBy('url', 'source')
     .map(collect404s)
     .sort((a, b) => b.views - a.views); // sort desc by views
+  console.log('res', res);
+  return res;
 }
 
 export default {

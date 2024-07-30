@@ -11,26 +11,32 @@
  */
 
 import { FlatBundle } from '../common/flat-bundle.js';
-import { pageviewsByUrl } from '../common/aggregateFns.js';
 
-const CTR_CHECKPOINT = 'click';
-// handler function to calculate CTR using the collectPageviews function
+// scan through bundles for start and end date
+// group by url
+// filter for click events
+// the weight wil equate to clicks
+
+function collectOpptyPages(groupByUrl) {
+  const { url, items: itemsByUrl } = groupByUrl;
+  console.log('itemsByUrl', itemsByUrl);
+  console.log('url', url);
+
+  const views = itemsByUrl.flatMap((item) => item.items).reduce((acc, cur) => acc + cur.weight, 0);
+  console.log('views', views);
+}
+
 function handler(bundles) {
-  const pageviews = pageviewsByUrl(bundles);
-
-  return FlatBundle.fromArray(bundles)
+  const res = FlatBundle.fromArray(bundles)
+    .filter((row) => row.checkpoint === 'click')
     .groupBy('url')
-    .filter((row) => row.checkpoint === CTR_CHECKPOINT && pageviews.views > 5000)
-    .map((collectPageviews) => {
-      const { url, views, clicks } = collectPageviews;
-      const ctr = (clicks / views) * 100;
-      return {
-        url, views, clicks, ctr,
-      };
-    });
+    .map(collectOpptyPages)
+    .sort((a, b) => b.pageviews - a.pageviews); // sort desc by pageviews
+  console.log('res', res);
+  return res;
 }
 
 export default {
   handler,
-  checkpoints: CTR_CHECKPOINT,
+  checkpoints: ['click'],
 };

@@ -17,6 +17,7 @@ import { Base } from './base.js';
 
 const scopeNames = ['sites.read_all', 'sites.write_all', 'organizations.read_all', 'organizations.write_all',
   'audits.read_all', 'audits.write_all', 'imports.read', 'imports.write', 'imports.read_all'];
+
 const ApiKey = (data) => {
   const self = Base(data);
 

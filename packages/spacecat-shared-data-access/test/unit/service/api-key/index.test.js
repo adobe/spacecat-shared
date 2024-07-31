@@ -60,7 +60,7 @@ describe('Api Key Tests', () => {
           expiresAt: '2024-05-29T14:26:00.000Z',
           revokedAt: '2024-05-29T14:26:00.000Z',
           scopes: [{
-            name: 'import.write',
+            name: 'imports.write',
             domains: ['https://www.test.com'],
           }],
         };
@@ -83,7 +83,7 @@ describe('Api Key Tests', () => {
           expiresAt: '2024-05-29T14:26:00.000Z',
           revokedAt: '2024-05-29T14:26:00.000Z',
           scopes: [{
-            name: 'import.write',
+            name: 'imports.write',
             domains: ['https://www.test.com'],
           }],
         });

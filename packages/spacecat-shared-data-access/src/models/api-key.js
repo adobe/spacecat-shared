@@ -11,10 +11,12 @@
  */
 
 import {
-  hasText, isIsoDate, isObject,
+  hasText, isIsoDate, isObject, isValidUrl,
 } from '@adobe/spacecat-shared-utils';
 import { Base } from './base.js';
 
+const scopeNames = ['sites.read', 'sites.write', 'organizations.read', 'organizations.write',
+  'audits.read', 'audits.write', 'imports.read', 'imports.write', 'imports.read_all'];
 const ApiKey = (data) => {
   const self = Base(data);
 
@@ -73,6 +75,19 @@ export const createApiKey = (data) => {
 
     if (!hasText(scope.name)) {
       throw new Error(`Invalid scope name: ${scope.name}`);
+    }
+
+    if (!scopeNames.includes(scope.name)) {
+      throw new Error(`Scope name is not part of the pre-defined scopes: ${scope.name}`);
+    }
+
+    if (hasText(scope.domains) && !Array.isArray(scope.domains)) {
+      throw new Error(`Scope domains should be an array: ${scope.domains}`);
+    }
+    for (const domain of scope.domains) {
+      if (!isValidUrl(domain)) {
+        throw new Error(`Invalid domain: ${domain}`);
+      }
     }
   }
 

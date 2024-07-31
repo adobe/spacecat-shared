@@ -23,7 +23,7 @@ const validApiKey = {
   expiresAt: '2024-05-29T14:26:00.000Z',
   revokedAt: '2024-05-29T14:26:00.000Z',
   scopes: [{
-    name: 'import.write',
+    name: 'imports.write',
     domains: ['https://www.test.com'],
   }],
 };
@@ -69,6 +69,18 @@ describe('ApiKey Model tests', () => {
     it('throws an error if scope does not have the name attribute', () => {
       expect(() => createApiKey({ ...validApiKey, scopes: [{ domains: ['https://www.test.com'] }] })).to.throw('Invalid scope name: undefined');
     });
+
+    it('throws an error if scope is not part of the predefined scopes', () => {
+      expect(() => createApiKey({ ...validApiKey, scopes: [{ name: 'invalid-scope', domains: ['https://www.test.com'] }] })).to.throw('Scope name is not part of the pre-defined scopes: invalid-scope');
+    });
+
+    it('throws an error if domains is not an array', () => {
+      expect(() => createApiKey({ ...validApiKey, scopes: [{ name: 'imports.write', domains: 'https://www.test.com' }] })).to.throw('Scope domains should be an array: https://www.test.com');
+    });
+
+    it('throws an error if domains does not have a valid url', () => {
+      expect(() => createApiKey({ ...validApiKey, scopes: [{ name: 'imports.write', domains: ['random-domain'] }] })).to.throw('Invalid domain: random-domain');
+    });
   });
   describe('ApiKey Functionality Tests', () => {
     let apiKey;
@@ -106,7 +118,7 @@ describe('ApiKey Model tests', () => {
 
     it('gets scopes', () => {
       expect(apiKey.getScopes()).to.deep.equal([{
-        name: 'import.write',
+        name: 'imports.write',
         domains: ['https://www.test.com'],
       }]);
     });

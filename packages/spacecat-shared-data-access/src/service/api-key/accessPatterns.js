@@ -13,16 +13,27 @@
 import { ApiKeyDto } from '../../dto/api-key.js';
 
 /**
- * Get ApiKey by ID
- * @param {string} id
+ * Get ApiKey by Hashed Key
+ * @param {string} hashedKey
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
  * @returns {Promise<ApiKeyDto>}
  */
-export const getApiKeyById = async (id, dynamoClient, config, log) => {
-  const item = await dynamoClient.getItem(config.tableNameApiKeys, { id }, log);
-  return ApiKeyDto.fromDynamoItem(item);
+export const getApiKeyByHashedKey = async (hashedKey, dynamoClient, log, config) => {
+  const item = await dynamoClient.query({
+    TableName: config.tableNameApiKeys,
+    IndexName: config.indexNameApiKeyByHashedKey,
+    KeyConditionExpression: '#hashedKey = :hashedKey',
+    ExpressionAttributeNames: {
+      '#hashedKey': 'hashedKey',
+    },
+    ExpressionAttributeValues: {
+      ':gsi1pk': config.pkApiKey,
+      ':hashedKey': hashedKey,
+    },
+  });
+  ApiKeyDto.fromDynamoItem(item);
 };
 
 /**

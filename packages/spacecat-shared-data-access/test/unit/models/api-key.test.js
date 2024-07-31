@@ -16,7 +16,7 @@ import { expect } from 'chai';
 import { createApiKey } from '../../../src/models/api-key.js';
 
 const validApiKey = {
-  key: 'test',
+  hashedKey: 'test',
   name: 'test-name',
   imsUserId: 'test-ims-user-id',
   imsOrgId: 'test-ims-org-id',
@@ -31,7 +31,7 @@ const validApiKey = {
 describe('ApiKey Model tests', () => {
   describe('Validation Tests', () => {
     it('throws an error if key is not a valid string', () => {
-      expect(() => createApiKey({ ...validApiKey, key: 123 })).to.throw('Invalid Key: 123');
+      expect(() => createApiKey({ ...validApiKey, hashedKey: 123 })).to.throw('Invalid Hashed Key: 123');
     });
 
     it('throws an error if name is not a valid string', () => {
@@ -61,6 +61,14 @@ describe('ApiKey Model tests', () => {
     it('throws an error if scopes is not an array', () => {
       expect(() => createApiKey({ ...validApiKey, scopes: 'invalid-scopes' })).to.throw('Invalid scopes: invalid-scopes');
     });
+
+    it('throws an error if scope is not an object', () => {
+      expect(() => createApiKey({ ...validApiKey, scopes: ['invalid-scope'] })).to.throw('Invalid scope: invalid-scope');
+    });
+
+    it('throws an error if scope does not have the name attribute', () => {
+      expect(() => createApiKey({ ...validApiKey, scopes: [{ domains: ['https://www.test.com'] }] })).to.throw('Invalid scope name: undefined');
+    });
   });
   describe('ApiKey Functionality Tests', () => {
     let apiKey;
@@ -68,8 +76,8 @@ describe('ApiKey Model tests', () => {
       apiKey = createApiKey({ ...validApiKey });
     });
 
-    it('gets key', () => {
-      expect(apiKey.getKey()).to.equal('test');
+    it('gets hashed key', () => {
+      expect(apiKey.getHashedKey()).to.equal('test');
     });
 
     it('gets name', () => {

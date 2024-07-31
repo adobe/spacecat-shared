@@ -11,14 +11,14 @@
  */
 
 import {
-  hasText, isIsoDate,
+  hasText, isIsoDate, isObject,
 } from '@adobe/spacecat-shared-utils';
 import { Base } from './base.js';
 
 const ApiKey = (data) => {
   const self = Base(data);
 
-  self.getKey = () => self.state.key;
+  self.getHashedKey = () => self.state.hashedKey;
   self.getName = () => self.state.name;
   self.getImsUserId = () => self.state.imsUserId;
   self.getImsOrgId = () => self.state.imsOrgId;
@@ -38,8 +38,8 @@ const ApiKey = (data) => {
 export const createApiKey = (data) => {
   const newState = { ...data };
 
-  if (!hasText(newState.key)) {
-    throw new Error(`Invalid Key: ${newState.key}`);
+  if (!hasText(newState.hashedKey)) {
+    throw new Error(`Invalid Hashed Key: ${newState.hashedKey}`);
   }
 
   if (!hasText(newState.name)) {
@@ -64,6 +64,16 @@ export const createApiKey = (data) => {
 
   if (!Array.isArray(newState.scopes)) {
     throw new Error(`Invalid scopes: ${newState.scopes}`);
+  }
+
+  for (const scope of newState.scopes) {
+    if (!isObject(scope)) {
+      throw new Error(`Invalid scope: ${scope}`);
+    }
+
+    if (!hasText(scope.name)) {
+      throw new Error(`Invalid scope name: ${scope.name}`);
+    }
   }
 
   return ApiKey(newState);

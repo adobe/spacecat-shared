@@ -53,7 +53,7 @@ describe('Api Key Tests', () => {
     describe('getApiKeyByKey', () => {
       it('should return an ApiKeyDto when an item is found', async () => {
         const mockApiKey = {
-          key: 'test-key',
+          hashedKey: 'test-key',
           name: 'test-name',
           imsUserId: 'test-ims-user-id',
           imsOrgId: 'test-ims-org-id',
@@ -64,19 +64,19 @@ describe('Api Key Tests', () => {
             domains: ['https://www.test.com'],
           }],
         };
-        mockDynamoClient.getItem.resolves(mockApiKey);
+        mockDynamoClient.query.resolves(mockApiKey);
 
-        const apiKey = await exportedFunctions.getApiKeyById('test-key');
+        const apiKey = await exportedFunctions.getApiKeyByHashedKey('test-key');
 
         expect(apiKey).to.be.not.null;
-        expect(mockDynamoClient.getItem).to.have.been.calledOnce;
+        expect(mockDynamoClient.query).to.have.been.calledOnce;
       });
     });
 
     describe('createNewApiKey', () => {
       it('should create a new ApiKey', async () => {
         const apiKey = createApiKey({
-          key: 'test-key',
+          hashedKey: 'test-key',
           name: 'test-name',
           imsUserId: 'test-ims-user-id',
           imsOrgId: 'test-ims-org-id',

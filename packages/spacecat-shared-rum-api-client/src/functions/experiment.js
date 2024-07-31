@@ -55,31 +55,20 @@ function updateInferredStartAndEndDate(experimentObject, time) {
   const bundleDate = new Date(bundleTime);
   bundleDate.setHours(0, 0, 0, 0);
   if (!experimentObject.inferredStartDate && !experimentObject.inferredEndDate) {
-    // adding the inferredStartDate and inferredEndDate properties for the first time
     // eslint-disable-next-line no-param-reassign
     experimentObject.inferredStartDate = time;
-    // check if bundleTime is before yesterday
-    if (bundleDate < yesterday) {
-      // RUM data is delayed by a day, so if we don't have
-      // any RUM data for yesterday, so we can infer the endDate
-      // eslint-disable-next-line no-param-reassign
-      experimentObject.inferredEndDate = time;
-    } else {
-      // eslint-disable-next-line no-param-reassign
-      experimentObject.inferredEndDate = null;
-    }
+    // eslint-disable-next-line no-param-reassign
+    experimentObject.inferredEndDate = time;
   } else {
     const inferredStartDateObj = new Date(experimentObject.inferredStartDate);
+    const inferredEndDateObj = new Date(experimentObject.inferredEndDate);
     if (bundleTime < inferredStartDateObj) {
       // eslint-disable-next-line no-param-reassign
       experimentObject.inferredStartDate = time;
     }
-    if (bundleDate < yesterday) {
-      if (!experimentObject.inferredEndDate
-        || (bundleTime > new Date(experimentObject.inferredEndDate))) {
-        // eslint-disable-next-line no-param-reassign
-        experimentObject.inferredEndDate = time;
-      }
+    if (bundleTime > inferredEndDateObj) {
+      // eslint-disable-next-line no-param-reassign
+      experimentObject.inferredEndDate = time;
     }
   }
 }

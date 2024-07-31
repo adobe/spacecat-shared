@@ -1,23 +1,6 @@
 {
   "rumBundles": [
     {
-      "id": "future-bundle",
-      "host": "main--helix-website--adobe.aem.live",
-      "time": "2030-05-30T15:00:02.057Z",
-      "timeSlot": "2030-05-30T15:00:00.000Z",
-      "url": "https://www.aem.live/home",
-      "userAgent": "desktop:mac",
-      "weight": 100,
-      "events": [
-        {
-          "checkpoint": "experiment",
-          "target": "control",
-          "source": "short-home",
-          "timeDelta": 785
-        }
-      ]
-    },
-    {
       "id": "1Sdx",
       "host": "main--helix-website--adobe.aem.live",
       "time": "2024-05-31T00:00:05.017Z",

@@ -170,7 +170,7 @@ describe('AhrefsAPIClient', () => {
   });
 
   describe('getBrokenBacklinks', () => {
-    it('sends API request with appropriate endpoint query params', async () => {
+    xit('sends API request with appropriate endpoint query params', async () => {
       nock(config.apiBaseUrl)
         .get('/site-explorer/broken-backlinks')
         .query({

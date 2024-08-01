@@ -49,4 +49,41 @@ export default class RUMAPIClient {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(opts)}. Reason: ${e.message}`);
     }
   }
+
+  // eslint-disable-next-line class-methods-use-this
+  async queryMulti(queries, opts) {
+    const queryHandlers = [];
+    const allCheckpoints = new Set();
+
+    for (const query of queries) {
+      const { handler, checkpoints = [] } = HANDLERS[query] || {};
+
+      if (!handler) {
+        throw new Error(`Unknown query: ${query}`);
+      }
+
+      queryHandlers.push({ query, handler });
+      checkpoints.forEach((checkpoint) => allCheckpoints.add(checkpoint));
+    }
+
+    try {
+      // Fetch bundles with deduplicated checkpoints
+      const bundles = await fetchBundles({
+        ...opts,
+        checkpoints: [...allCheckpoints],
+      });
+
+      const results = {};
+
+      // Execute each query handler sequentially
+      for (const { query, handler } of queryHandlers) {
+        // eslint-disable-next-line no-await-in-loop
+        results[query] = await handler(bundles);
+      }
+
+      return results;
+    } catch (e) {
+      throw new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(opts)}. Reason: ${e.message}`);
+    }
+  }
 }

@@ -52,7 +52,7 @@ const mediums = {
   socialall: /^\b(soc)\b|(.*(social).*)$/,
   display: /display|banner|poster|placement|image|dcm|businesslistings/,
   video: /video/,
-  affiliate: /^aff|patrocinados|referral/,
+  affiliate: /^aff|(.*(patrocinados|referral)).*$/,
   email: ['em', 'email', 'mail', 'newsletter'],
   sms: ['sms', 'mms'],
   qr: ['qr', 'qrcode'],

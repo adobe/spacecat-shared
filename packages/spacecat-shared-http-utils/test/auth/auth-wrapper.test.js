@@ -43,6 +43,7 @@ describe('auth wrapper', () => {
 
   let context;
   let mockDataAccess;
+  let mockApiKeyRecord;
 
   beforeEach('setup', () => {
     mockDataAccess = {
@@ -57,6 +58,14 @@ describe('auth wrapper', () => {
       },
       dataAccess: mockDataAccess,
     };
+
+    mockApiKeyRecord = {
+      getExpiresAt: () => '2099-12-31T23:59:59.999Z',
+      getRevokedAt: () => '2099-12-31T23:59:59.999Z',
+      getName: () => 'test-api-key',
+      getScopes: () => ['scope1', 'scope2'],
+    };
+    mockDataAccess.getApiKeyByHashedKey.resolves(mockApiKeyRecord);
   });
 
   it('throws error if no auth handler is provided', async () => {
@@ -110,14 +119,6 @@ describe('auth wrapper', () => {
   });
 
   it('fetches the scope from the data layer and returns true', async () => {
-    const mockApiKeyRecord = {
-      getExpiresAt: () => '2099-12-31T23:59:59.999Z',
-      getRevokedAt: () => '2099-12-31T23:59:59.999Z',
-      getName: () => 'test-api-key',
-      getScopes: () => ['scope1', 'scope2'],
-    };
-    mockDataAccess.getApiKeyByHashedKey.resolves(mockApiKeyRecord);
-
     await action(new Request('https://space.cat/', {
       headers: { 'x-api-key': 'test' },
     }), context);
@@ -146,13 +147,7 @@ describe('auth wrapper', () => {
   });
 
   it('returns authentication error when the api key is expired', async () => {
-    const mockApiKeyRecord = {
-      getExpiresAt: () => '2009-12-31T23:59:59.999Z',
-      getRevokedAt: () => '2099-12-31T23:59:59.999Z',
-      getName: () => 'test-api-key',
-      getScopes: () => ['scope1', 'scope2'],
-    };
-    mockDataAccess.getApiKeyByHashedKey.resolves(mockApiKeyRecord);
+    mockApiKeyRecord.getExpiresAt = () => '2009-12-31T23:59:59.999Z';
     await action(new Request('https://space.cat/', {
       headers: { 'x-api-key': 'test' },
     }), context);
@@ -162,13 +157,7 @@ describe('auth wrapper', () => {
   });
 
   it('return authentication error when the api key is revoked', async () => {
-    const mockApiKeyRecord = {
-      getExpiresAt: () => '2099-12-31T23:59:59.999Z',
-      getRevokedAt: () => '2009-12-31T23:59:59.999Z',
-      getName: () => 'test-api-key',
-      getScopes: () => ['scope1', 'scope2'],
-    };
-    mockDataAccess.getApiKeyByHashedKey.resolves(mockApiKeyRecord);
+    mockApiKeyRecord.getRevokedAt = () => '2009-12-31T23:59:59.999Z';
     await action(new Request('https://space.cat/', {
       headers: { 'x-api-key': 'test' },
     }), context);

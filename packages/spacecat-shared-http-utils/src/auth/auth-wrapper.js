@@ -12,7 +12,9 @@
 
 import { Response } from '@adobe/fetch';
 
+import { hasText } from '@adobe/spacecat-shared-utils';
 import AuthenticationManager from './authentication-manager.js';
+import { hashWithSHA256 } from './generate-hash.js';
 
 const ANONYMOUS_ENDPOINTS = [
   'GET /slack/events',
@@ -22,14 +24,17 @@ const ANONYMOUS_ENDPOINTS = [
 export function authWrapper(fn, opts = {}) {
   let authenticationManager;
 
+  /**
+   * @param {DataAccess} context.dataAccess - Data access.
+   */
   return async (request, context) => {
     const { log, pathInfo: { method, suffix } } = context;
 
     const route = `${method.toUpperCase()} ${suffix}`;
 
     if (ANONYMOUS_ENDPOINTS.includes(route)
-      || route.startsWith('POST /hooks/site-detection/')
-      || method.toUpperCase() === 'OPTIONS') {
+        || route.startsWith('POST /hooks/site-detection/')
+        || method.toUpperCase() === 'OPTIONS') {
       return fn(request, context);
     }
 
@@ -46,6 +51,44 @@ export function authWrapper(fn, opts = {}) {
       await authenticationManager.authenticate(request, context);
     } catch (error) {
       return new Response('Unauthorized', { status: 401 });
+    }
+
+    if (!context.auth) {
+      context.auth = {
+        hasScopes: async (scopes) => {
+          // Pull api-key from x-api-key header
+          const apiKeyFromHeader = context.pathInfo?.headers['x-api-key'];
+
+          if (!hasText(apiKeyFromHeader)) {
+            return new Response('Unauthorized', { status: 401 });
+          }
+
+          // Generate a hash of the API Key
+          const hashedKey = hashWithSHA256(apiKeyFromHeader);
+
+          if (!context.dataAccess) {
+            log.error('Data access required');
+            return new Response('Server error', { status: 500 });
+          }
+
+          // Fetch api-key record from data access layer
+          const apiKeyRecord = await context.dataAccess.getApiKeyByHashedKey(hashedKey);
+
+          // Check that the api key has not expired or revoked,
+          const now = new Date().toISOString();
+          if (apiKeyRecord.getExpiresAt() < now) {
+            log.error(`API key has expired, name = ${apiKeyRecord.getName()}`);
+            return new Response('Unauthorized', { status: 401 });
+          }
+
+          if (apiKeyRecord.getRevokedAt() < now) {
+            log.error(`API key has been revoked, name = ${apiKeyRecord.getName()}`);
+            return new Response('Unauthorized', { status: 401 });
+          }
+          // Iterate over scopes and check if the record has all the scopes
+          return scopes.every((scope) => apiKeyRecord.getScopes().includes(scope));
+        },
+      };
     }
 
     return fn(request, context);

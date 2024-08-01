@@ -15,6 +15,7 @@
 import { Request } from '@adobe/fetch';
 import wrap from '@adobe/helix-shared-wrap';
 import chai from 'chai';
+import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
 import { authWrapper, enrichPathInfo } from '../../src/index.js';
@@ -41,14 +42,20 @@ describe('auth wrapper', () => {
     .with(enrichPathInfo);
 
   let context;
+  let mockDataAccess;
 
   beforeEach('setup', () => {
+    mockDataAccess = {
+      getApiKeyByHashedKey: sinon.stub(),
+    };
+
     context = {
       attributes: {},
       log: console,
       pathInfo: {
         suffix: '',
       },
+      dataAccess: mockDataAccess,
     };
   });
 
@@ -98,6 +105,74 @@ describe('auth wrapper', () => {
       headers: { 'x-api-key': 'wrong-key' },
     }), context);
 
+    expect(await resp.text()).to.equal('Unauthorized');
+    expect(resp.status).to.equal(401);
+  });
+
+  it('fetches the scope from the data layer and returns true', async () => {
+    const mockApiKeyRecord = {
+      getExpiresAt: () => '2099-12-31T23:59:59.999Z',
+      getRevokedAt: () => '2099-12-31T23:59:59.999Z',
+      getName: () => 'test-api-key',
+      getScopes: () => ['scope1', 'scope2'],
+    };
+    mockDataAccess.getApiKeyByHashedKey.resolves(mockApiKeyRecord);
+
+    await action(new Request('https://space.cat/', {
+      headers: { 'x-api-key': 'test' },
+    }), context);
+    const val = await context.auth.hasScopes(['scope1', 'scope2']);
+    expect(val).to.be.true;
+  });
+
+  it('returns unauthorized when api key is missing', async () => {
+    await action(new Request('https://space.cat/', {
+      headers: { 'x-api-key': 'test' },
+    }), context);
+    context.pathInfo.headers['x-api-key'] = '';
+    const resp = await context.auth.hasScopes(['scope1', 'scope2']);
+    expect(await resp.text()).to.equal('Unauthorized');
+    expect(resp.status).to.equal(401);
+  });
+
+  it('returns server error if there is no dataAccess object', async () => {
+    await action(new Request('https://space.cat/', {
+      headers: { 'x-api-key': 'test' },
+    }), context);
+    context.dataAccess = null;
+    const resp = await context.auth.hasScopes(['scope1', 'scope2']);
+    expect(await resp.text()).to.equal('Server error');
+    expect(resp.status).to.equal(500);
+  });
+
+  it('returns authentication error when the api key is expired', async () => {
+    const mockApiKeyRecord = {
+      getExpiresAt: () => '2009-12-31T23:59:59.999Z',
+      getRevokedAt: () => '2099-12-31T23:59:59.999Z',
+      getName: () => 'test-api-key',
+      getScopes: () => ['scope1', 'scope2'],
+    };
+    mockDataAccess.getApiKeyByHashedKey.resolves(mockApiKeyRecord);
+    await action(new Request('https://space.cat/', {
+      headers: { 'x-api-key': 'test' },
+    }), context);
+    const resp = await context.auth.hasScopes(['scope1', 'scope2']);
+    expect(await resp.text()).to.equal('Unauthorized');
+    expect(resp.status).to.equal(401);
+  });
+
+  it('return authentication error when the api key is revoked', async () => {
+    const mockApiKeyRecord = {
+      getExpiresAt: () => '2099-12-31T23:59:59.999Z',
+      getRevokedAt: () => '2009-12-31T23:59:59.999Z',
+      getName: () => 'test-api-key',
+      getScopes: () => ['scope1', 'scope2'],
+    };
+    mockDataAccess.getApiKeyByHashedKey.resolves(mockApiKeyRecord);
+    await action(new Request('https://space.cat/', {
+      headers: { 'x-api-key': 'test' },
+    }), context);
+    const resp = await context.auth.hasScopes(['scope1', 'scope2']);
     expect(await resp.text()).to.equal('Unauthorized');
     expect(resp.status).to.equal(401);
   });

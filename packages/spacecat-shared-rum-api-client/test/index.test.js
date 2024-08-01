@@ -57,6 +57,39 @@ describe('RUMAPIClient', () => {
     expect(result).to.be.empty;
   });
 
+  it('throws error when unknown query is requested in multi query', async () => {
+    await expect(rumApiClient.queryMulti(['unknown-query'], {})).to.be.rejectedWith('Unknown query: unknown-query');
+  });
+
+  it('throws error when a query fails during multi query', async () => {
+    await expect(rumApiClient.queryMulti(['404'], {})).to.be.rejectedWith('Multi query failed. Queries: ["404"], Opts: {}. Reason: Missing required parameters');
+  });
+
+  it('runs multiple queries', async () => {
+    function constructUrl(domain, date, domainkey) {
+      const year = date.getUTCFullYear();
+      const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+      const day = date.getUTCDate().toString().padStart(2, '0');
+
+      return `/${domain}/${year}/${month}/${day}?domainkey=${domainkey}`;
+    }
+
+    const queryUrl = `/bundles${constructUrl('space.cat', new Date(), 'some-domain-key')}`;
+
+    nock('https://rum.fastly-aem.page')
+      .get(queryUrl)
+      .reply(200, { rumBundles: [] });
+
+    const opts = {
+      domain: 'space.cat',
+      domainkey: 'some-domain-key',
+      interval: 0,
+    };
+    const result = await rumApiClient.queryMulti(['404', 'cwv'], opts);
+
+    expect(Object.keys(result)).to.have.members(['404', 'cwv']);
+  });
+
   it('createFrom factory method caches the client', async () => {
     const newClient = RUMAPIClient.createFrom(context);
 

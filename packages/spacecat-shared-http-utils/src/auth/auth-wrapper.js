@@ -56,7 +56,7 @@ export function authWrapper(fn, opts = {}) {
     if (!context.auth) {
       context.auth = {
         hasScopes: async (scopes) => {
-          // Pull api-key from x-api-key header
+          // Pull the api-key from x-api-key header
           const apiKeyFromHeader = context.pathInfo?.headers['x-api-key'];
 
           if (!hasText(apiKeyFromHeader)) {
@@ -71,10 +71,10 @@ export function authWrapper(fn, opts = {}) {
             return new Response('Server error', { status: 500 });
           }
 
-          // Fetch api-key record from data access layer
+          // Fetch the api-key record from data access layer
           const apiKeyRecord = await context.dataAccess.getApiKeyByHashedKey(hashedKey);
 
-          // Check that the api key has not expired or revoked,
+          // Check that the api key has not expired or been revoked,
           const now = new Date().toISOString();
           if (apiKeyRecord.getExpiresAt() < now) {
             log.error(`API key has expired, name = ${apiKeyRecord.getName()}`);

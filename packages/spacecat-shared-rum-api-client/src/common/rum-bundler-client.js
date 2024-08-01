@@ -118,7 +118,30 @@ async function mergeBundlesWithSameId(bundles) {
     return value;
   });
 
-  return Object.values(merged);
+  const mergedBundles = Object.values(merged);
+  // if there are multiple bundles with the same id, with time difference of 1 hour
+  // we merge them into a single bundle
+  for (const bundle of mergedBundles) {
+    const duplicateBundles = mergedBundles.filter((b) => b.id === bundle.id && b !== bundle);
+    for (const duplicateBundle of duplicateBundles) {
+      const bundleTime = new Date(bundle.time);
+      const duplicateBundleTime = new Date(duplicateBundle.time);
+      if (Math.abs(bundleTime - duplicateBundleTime) < ONE_HOUR
+      && bundle.url !== duplicateBundle.url) {
+        // update the url to the bundle that has top event
+        const bundleTopEvent = bundle.events.find((e) => e.checkpoint === 'top');
+        const duplicateBundleTopEvent = duplicateBundle.events.find((e) => e.checkpoint === 'top');
+        if (bundleTopEvent && duplicateBundleTopEvent) {
+          console.log(`both the duplicate bundles have top events with urls ${bundle.url} and ${duplicateBundle.url}`);
+        } else if (bundleTopEvent) {
+          duplicateBundle.url = bundle.url;
+        } else if (duplicateBundleTopEvent) {
+          bundle.url = duplicateBundle.url;
+        }
+      }
+    }
+  }
+  return mergedBundles;
 }
 /* c8 ignore end */
 

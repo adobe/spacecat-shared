@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.5.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.5.3...@adobe/spacecat-shared-rum-api-client-v2.5.4) (2024-08-01)
+
+
+### Bug Fixes
+
+* improve traffic acquisition detection ([#310](https://github.com/adobe/spacecat-shared/issues/310)) ([25d46ff](https://github.com/adobe/spacecat-shared/commit/25d46ffed66643e0581f23067b0f6922beff8e0e))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.5.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.5.2...@adobe/spacecat-shared-rum-api-client-v2.5.3) (2024-07-31)
 
 

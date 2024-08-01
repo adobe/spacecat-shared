@@ -50,4 +50,14 @@ export default class AuthInfo {
     this.type = value;
     return this;
   }
+
+  /**
+   * Set the reason that authentication has failed.
+   * @param {string} reason - The reason for auth failure
+   * @return {AuthInfo} The auth info object
+   */
+  withReason(reason) {
+    this.reason = reason;
+    return this;
+  }
 }

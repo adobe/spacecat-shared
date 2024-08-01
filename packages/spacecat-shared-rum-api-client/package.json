@@ -36,7 +36,8 @@
     "@adobe/helix-universal": "5.0.5",
     "@adobe/spacecat-shared-utils": "1.4.0",
     "aws4": "1.13.0",
-    "d3-array": "3.2.4"
+    "d3-array": "3.2.4",
+    "urijs": "^1.19.11"
   },
   "devDependencies": {
     "chai": "4.5.0",

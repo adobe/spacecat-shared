@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.38.2...@adobe/spacecat-shared-data-access-v1.39.0) (2024-07-31)
+
+
+### Features
+
+* Add API Key data attributes ([#306](https://github.com/adobe/spacecat-shared/issues/306)) ([37ddf55](https://github.com/adobe/spacecat-shared/commit/37ddf55f73acb9e6848dbe6a9292496a15d77ff0))
+
 # [@adobe/spacecat-shared-data-access-v1.38.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.38.1...@adobe/spacecat-shared-data-access-v1.38.2) (2024-07-27)
 
 

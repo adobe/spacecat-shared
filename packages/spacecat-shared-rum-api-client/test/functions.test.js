@@ -49,7 +49,7 @@ describe('Query functions', () => {
   });
 
   it('crunches traffic acquisition', async () => {
-    const trafficSourcesResult = trafficAcquisition.handler(bundles.rumBundles);
+    const trafficSourcesResult = await trafficAcquisition.handler(bundles.rumBundles);
     expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
   });
 

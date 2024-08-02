@@ -16,8 +16,8 @@ import { hashWithSHA256 } from '../generate-hash.js';
 import AuthInfo from '../auth-info.js';
 
 /**
- * Handler for API keys which include scope details. These API keys are stored in the data layer
- * and require context.dataAccess in order to authenticate the request.
+ * Handler to support API keys which include scope details. These API keys are stored in the data
+ * layer and require context.dataAccess in order to authenticate each request.
  */
 export default class ScopedApiKeyHandler extends AbstractHandler {
   constructor(log) {
@@ -27,7 +27,7 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
   async checkAuth(request, context) {
     const { dataAccess, pathInfo: { headers = {} } } = context;
     if (!dataAccess) {
-      throw new Error('Data access required');
+      throw new Error('Data access is required');
     }
 
     const apiKeyFromHeader = headers['x-api-key'];
@@ -61,7 +61,7 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
       return authInfo.withReason('API key has been revoked');
     }
 
-    // API key is valid: return auth info with scopes
+    // API key is valid: return auth info with scope details from the API key entity
     return authInfo
       .withAuthenticated(true)
       .withScopes(apiKeyEntity.getScopes());

@@ -46,8 +46,8 @@ export function authWrapper(fn, opts = {}) {
     try {
       const authInfo = await authenticationManager.authenticate(request, context);
 
-      // Add a helper for checking scoped API keys to the context
-      // authInfo is already available at context.attributes.authInfo
+      // Add a helper function to the context for checking scoped API keys.
+      // authInfo is available at context.attributes.authInfo.
       if (!context.auth) {
         context.auth = {
           hasScopes: (scopes) => hasScopes(scopes, authInfo, log),

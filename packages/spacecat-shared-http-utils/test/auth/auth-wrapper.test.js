@@ -55,7 +55,7 @@ describe('auth wrapper', () => {
       dataAccess: {},
     };
     mockApiKey = createApiKey({
-      hashedKey: 'test-api-key',
+      hashedKey: '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
       name: 'Test API key name',
       scopes: [
         {

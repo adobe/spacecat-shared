@@ -87,7 +87,7 @@ describe('ScopedApiKeyHandler', () => {
 
   it('should throw an error if data access is not provided', async () => {
     delete mockContext.dataAccess;
-    await expect(handler.checkAuth({}, mockContext)).to.be.rejectedWith('Data access required');
+    await expect(handler.checkAuth({}, mockContext)).to.be.rejectedWith('Data access is required');
   });
 
   it('should return null if no API key is provided in the request headers', async () => {
@@ -123,6 +123,7 @@ describe('ScopedApiKeyHandler', () => {
 
     const result = await handler.checkAuth({}, mockContext);
     expect(result).to.be.instanceof(AuthInfo);
+    expect(result.isAuthenticated()).to.be.false;
     expect(result.getReason()).to.equal('API key has expired');
     expect(logStub.error.getCall(0).args[0]).to.equal('[scopedApiKey] API key has expired. Name: Test api key, id: 1C4ED8DE-8ECD-42E1-9812-AF34082FB1B4');
   });
@@ -135,6 +136,7 @@ describe('ScopedApiKeyHandler', () => {
 
     const result = await handler.checkAuth({}, mockContext);
     expect(result).to.be.instanceof(AuthInfo);
+    expect(result.isAuthenticated()).to.be.false;
     expect(result.getReason()).to.equal('API key has been revoked');
     expect(logStub.error.getCall(0).args[0]).to.equal('[scopedApiKey] API key has been revoked. Name: Test api key id: 1C4ED8DE-8ECD-42E1-9812-AF34082FB1B4');
   });

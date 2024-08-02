@@ -11,7 +11,7 @@
  */
 
 /**
- * Check if the given AuthInfo has the required scopes.
+ * Check if the given AuthInfo has the requested scopes.
  * @param {Array<string>} scopes - The scopes required for the request
  * @param {AuthInfo} authInfo - Authentication state for the current request
  * @param {Logger} log - Logger

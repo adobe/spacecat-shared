@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-const EXPERIMENT_CHECKPOINT = ['top', 'experiment'];
+const EXPERIMENT_CHECKPOINT = ['experiment'];
 const METRIC_CHECKPOINTS = ['click', 'convert', 'formsubmit'];
 const CHECKPOINTS = [...EXPERIMENT_CHECKPOINT, ...METRIC_CHECKPOINTS];
 

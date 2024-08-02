@@ -68,17 +68,50 @@ function getUrlChunks(urls, chunkSize) {
  */
 async function mergeBundlesWithSameId(bundles) {
   if (!bundles[0]?.url?.includes('bamboohr.com')) return bundles;
+  const prodBaseUrl = 'https://www.bamboohr.com/experiments/';
+  const previewBaseUrl = 'https://main--bamboohr-website--bamboohr.hlx.page/experiments/archive/';
   const manifestUrls = [
     ...new Set(bundles.flatMap((bundle) => bundle.events
       .filter((e) => e.checkpoint === 'experiment')
       .map((e) => e.source))),
-  ].map((experiment) => fetch(`https://www.bamboohr.com/experiments/${experiment}/manifest.json`));
-
-  const experiments = await Promise.all(manifestUrls);
-  const variants = (await Promise.all(experiments.map((e) => e.json().catch(() => {}))))
+  ];
+  const manifestUrlPromises = manifestUrls.map(async (experiment) => {
+    try {
+      const response = await fetch(`${prodBaseUrl}${experiment}/manifest.json`);
+      if (!response.ok) {
+        throw new Error('manifest request failed');
+      }
+      const data = await response.json();
+      return { url: `${prodBaseUrl}${experiment}/manifest.json`, data };
+    } catch (error) {
+      console.info('error fetching experiment manifest, trying the preview');
+      try {
+        const previewUrlResponse = await fetch(`${previewBaseUrl}${experiment}/manifest.json`);
+        if (!previewUrlResponse.ok) {
+          throw new Error('manifest request failed');
+        }
+        const previewUrlData = await previewUrlResponse.json();
+        return { url: `${previewBaseUrl}${experiment}/manifest.json`, data: previewUrlData };
+      } catch (err) {
+        console.error('error fetching preview URL manifest', err);
+        return { url: `${previewBaseUrl}${experiment}/manifest.json`, data: null };
+      }
+    }
+  });
+  const experiments = await Promise.all(manifestUrlPromises);
+  let hasSeenPages = false; // required for multi-page experiments
+  const variants = (await Promise.all(experiments.map((e) => e.data)))
     .filter((json) => json && Object.keys(json).length > 0)
     .flatMap((json) => json.experiences?.data ?? [])
-    .filter((data) => data.Name === 'Pages');
+    .filter((data) => {
+      if (data.Name === 'Pages') {
+        hasSeenPages = true;
+      } else if (['Percentage Split', 'Label', 'Blocks'].includes(data.Name)) {
+        // reset the flag when we see the next experiment
+        hasSeenPages = false;
+      }
+      return data.Name === 'Pages' || (hasSeenPages && data.Name === '');
+    });
 
   const mapping = variants.reduce((acc, cur) => {
     Object.entries(cur)
@@ -118,30 +151,7 @@ async function mergeBundlesWithSameId(bundles) {
     return value;
   });
 
-  const mergedBundles = Object.values(merged);
-  // if there are multiple bundles with the same id, with time difference of 1 hour
-  // we merge them into a single bundle
-  for (const bundle of mergedBundles) {
-    const duplicateBundles = mergedBundles.filter((b) => b.id === bundle.id && b !== bundle);
-    for (const duplicateBundle of duplicateBundles) {
-      const bundleTime = new Date(bundle.time);
-      const duplicateBundleTime = new Date(duplicateBundle.time);
-      if (Math.abs(bundleTime - duplicateBundleTime) < ONE_HOUR
-      && bundle.url !== duplicateBundle.url) {
-        // update the url to the bundle that has top event
-        const bundleTopEvent = bundle.events.find((e) => e.checkpoint === 'top');
-        const duplicateBundleTopEvent = duplicateBundle.events.find((e) => e.checkpoint === 'top');
-        if (bundleTopEvent && duplicateBundleTopEvent) {
-          console.log(`both the duplicate bundles have top events with urls ${bundle.url} and ${duplicateBundle.url}`);
-        } else if (bundleTopEvent) {
-          duplicateBundle.url = bundle.url;
-        } else if (duplicateBundleTopEvent) {
-          bundle.url = duplicateBundle.url;
-        }
-      }
-    }
-  }
-  return mergedBundles;
+  return Object.values(merged);
 }
 /* c8 ignore end */
 

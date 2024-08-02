@@ -12,7 +12,6 @@
 
 import { Response } from '@adobe/fetch';
 
-import { hasText } from '@adobe/spacecat-shared-utils';
 import AuthenticationManager from './authentication-manager.js';
 import { hasScopes } from './scopes.js';
 
@@ -52,13 +51,9 @@ export function authWrapper(fn, opts = {}) {
 
     const apiKeyFromHeader = context.pathInfo?.headers['x-api-key'];
 
-    if (!hasText(apiKeyFromHeader)) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-
     if (!context.auth) {
       context.auth = {
-        hasScopes: hasScopes(apiKeyFromHeader, context.dataAccess, log),
+        hasScopes: async (scopes) => hasScopes(scopes, apiKeyFromHeader, context.dataAccess, log),
       };
     }
 

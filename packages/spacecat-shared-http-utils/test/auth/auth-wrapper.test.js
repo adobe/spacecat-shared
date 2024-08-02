@@ -131,12 +131,6 @@ describe('auth wrapper', () => {
     expect(val).to.deep.equal({ result: false, reason: 'API key not found' });
   });
 
-  it('returns unauthorized when api key is missing', async () => {
-    const resp = await action(new Request('https://space.cat/'), context);
-    expect(await resp.text()).to.equal('Unauthorized');
-    expect(resp.status).to.equal(401);
-  });
-
   it('hasScopes throws an error if there is no dataAccess object', async () => {
     await expect(hasScopes(['scope1', 'scope2'], 'test', null, context.log)).to.be.rejectedWith('Data access required');
   });
@@ -151,5 +145,10 @@ describe('auth wrapper', () => {
     mockApiKeyRecord.getRevokedAt = () => '2009-12-31T23:59:59.999Z';
     const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
     expect(val).to.deep.equal({ result: false, reason: 'API key has been revoked' });
+  });
+
+  it('hasScopes returns false when a scope is missing', async () => {
+    const val = await hasScopes(['scope3', 'scope2'], 'test', context.dataAccess, context.log);
+    expect(val).to.deep.equal({ result: false, reason: 'API key is missing the [scope3] scope(s) required for this resource' });
   });
 });

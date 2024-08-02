@@ -24,8 +24,9 @@ export function hasScopes(scopes, authInfo, log) {
 
   // Check that each required scope is present in authInfo
   const missingScopes = [];
+  const authInfoScopeNames = authInfo.getScopes().map((scopeObject) => scopeObject.name);
   scopes.forEach((scope) => {
-    if (!authInfo.getScopes().includes(scope)) {
+    if (!authInfoScopeNames.includes(scope)) {
       missingScopes.push(scope);
     }
   });
@@ -39,15 +40,4 @@ export function hasScopes(scopes, authInfo, log) {
   }
 
   return { result: true };
-}
-
-/**
- * Convenience method to check if the given AuthInfo has a single required scope.
- * @param {string} scope - The scope required for the request
- * @param {AuthInfo} authInfo - Authentication state for the current request
- * @param {Logger} log - Logger
- * @return {{result: boolean, reason?: string}}
- */
-export function hasScope(scope, authInfo, log) {
-  return hasScopes([scope], authInfo, log);
 }

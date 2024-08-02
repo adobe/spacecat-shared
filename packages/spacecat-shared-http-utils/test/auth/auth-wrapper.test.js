@@ -17,10 +17,10 @@ import wrap from '@adobe/helix-shared-wrap';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
+import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key.js';
 import { authWrapper, enrichPathInfo } from '../../src/index.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
-import { hasScope, hasScopes } from '../../src/auth/has-scopes.js';
-import AuthInfo from '../../src/auth/auth-info.js';
+import ScopedApiKeyHandler from '../../src/auth/handlers/scoped-api-key.js';
 
 chai.use(chaiAsPromised);
 
@@ -43,7 +43,7 @@ describe('auth wrapper', () => {
     .with(enrichPathInfo);
 
   let context;
-  let mockAuthInfo;
+  let mockApiKey;
 
   beforeEach('setup', () => {
     context = {
@@ -52,10 +52,18 @@ describe('auth wrapper', () => {
       pathInfo: {
         suffix: '',
       },
+      dataAccess: {},
     };
-    mockAuthInfo = new AuthInfo()
-      .withProfile({ api_key_id: 'test-api-key' })
-      .withScopes(['scope1', 'scope2']);
+    mockApiKey = createApiKey({
+      hashedKey: 'test-api-key',
+      name: 'Test API key name',
+      scopes: [
+        {
+          name: 'imports.write',
+          domains: ['https://www.example.com'],
+        },
+      ],
+    });
   });
 
   it('throws error if no auth handler is provided', async () => {
@@ -108,26 +116,25 @@ describe('auth wrapper', () => {
     expect(resp.status).to.equal(401);
   });
 
-  it('fetches the scope from the data layer and returns true', () => {
-    const { result } = hasScopes(['scope1', 'scope2'], mockAuthInfo, context.log);
-    expect(result).to.equal(true);
-  });
+  it('should add auth.hasScopes to the context', async () => {
+    const scopedAction = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [ScopedApiKeyHandler] })
+      .with(enrichPathInfo);
+    context.dataAccess.getApiKeyByHashedKey = async () => mockApiKey;
 
-  it('hasScopes throws an error if there is no authInfo object', () => {
-    expect(() => hasScopes(['scope1', 'scope2'], null, context.log)).to.throw('Auth info is required');
-  });
+    const resp = await scopedAction(new Request('https://space.cat/', {
+      headers: { 'x-api-key': 'test-api-key' },
+    }), context);
 
-  it('hasScopes returns false when a scope is missing', () => {
-    const { result, reason } = hasScopes(['scope3', 'scope2'], mockAuthInfo, context.log);
-    expect(result).to.be.false;
-    expect(reason).to.equal('API key is missing the [scope3] scope(s) required for this resource');
-  });
+    expect(resp).to.equal(42);
+    expect(context.auth.hasScopes).to.be.a('function');
 
-  it('should return a truthy result for a single scope', () => {
-    const { result } = hasScope('scope1', mockAuthInfo, context.log);
+    const { result, reason } = context.auth.hasScopes(['imports.write']);
     expect(result).to.be.true;
+    expect(reason).to.be.undefined;
 
-    const { result: scope5Result } = hasScope('scope5', mockAuthInfo, context.log);
-    expect(scope5Result).to.be.false;
+    const { result: badScopeResult, reason: badScopeReason } = context.auth.hasScopes(['scope-user-does-not-have']);
+    expect(badScopeResult).to.be.false;
+    expect(badScopeReason).to.equal('API key is missing the [scope-user-does-not-have] scope(s) required for this resource');
   });
 });

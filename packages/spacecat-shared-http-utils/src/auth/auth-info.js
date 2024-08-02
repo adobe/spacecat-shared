@@ -64,7 +64,7 @@ export default class AuthInfo {
 
   /**
    * Set the scopes that this auth info instance has access to.
-   * @param {Array<string>} scopes - The array of scopes
+   * @param {Array<{name: string, domains: Array<string>}>} scopes - The array of scope objects
    * @return {AuthInfo} The auth info object
    */
   withScopes(scopes) {

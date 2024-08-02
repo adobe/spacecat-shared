@@ -20,6 +20,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { authWrapper, enrichPathInfo } from '../../src/index.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
+import { hasScopes } from '../../src/auth/scopes.js';
 
 chai.use(chaiAsPromised);
 
@@ -60,6 +61,7 @@ describe('auth wrapper', () => {
     };
 
     mockApiKeyRecord = {
+      getId: () => 'test',
       getExpiresAt: () => '2099-12-31T23:59:59.999Z',
       getRevokedAt: () => '2099-12-31T23:59:59.999Z',
       getName: () => 'test-api-key',
@@ -119,50 +121,34 @@ describe('auth wrapper', () => {
   });
 
   it('fetches the scope from the data layer and returns true', async () => {
-    await action(new Request('https://space.cat/', {
-      headers: { 'x-api-key': 'test' },
-    }), context);
-    const val = await context.auth.hasScopes(['scope1', 'scope2']);
-    expect(val).to.be.true;
+    const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
+    expect(val).to.equal(true);
   });
 
-  it('returns unauthorized when api key is missing', async () => {
-    await action(new Request('https://space.cat/', {
-      headers: { 'x-api-key': 'test' },
-    }), context);
-    context.pathInfo.headers['x-api-key'] = '';
-    const resp = await context.auth.hasScopes(['scope1', 'scope2']);
-    expect(await resp.text()).to.equal('Unauthorized');
-    expect(resp.status).to.equal(401);
+  it('hasScopes returns false when API key is not found in the DB', async () => {
+    mockDataAccess.getApiKeyByHashedKey.resolves({});
+    const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
+    expect(val).to.deep.equal({ result: false, reason: 'API key not found' });
   });
 
-  it('returns server error if there is no dataAccess object', async () => {
-    await action(new Request('https://space.cat/', {
-      headers: { 'x-api-key': 'test' },
-    }), context);
-    context.dataAccess = null;
-    const resp = await context.auth.hasScopes(['scope1', 'scope2']);
-    expect(await resp.text()).to.equal('Server error');
-    expect(resp.status).to.equal(500);
+  it('hasScopes throws an error if there is no dataAccess object', async () => {
+    await expect(hasScopes(['scope1', 'scope2'], 'test', null, context.log)).to.be.rejectedWith('Data access required');
   });
 
-  it('returns authentication error when the api key is expired', async () => {
+  it('hasScopes returns false when the api key is expired', async () => {
     mockApiKeyRecord.getExpiresAt = () => '2009-12-31T23:59:59.999Z';
-    await action(new Request('https://space.cat/', {
-      headers: { 'x-api-key': 'test' },
-    }), context);
-    const resp = await context.auth.hasScopes(['scope1', 'scope2']);
-    expect(await resp.text()).to.equal('Unauthorized');
-    expect(resp.status).to.equal(401);
+    const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
+    expect(val).to.deep.equal({ result: false, reason: 'API key has expired' });
   });
 
-  it('return authentication error when the api key is revoked', async () => {
+  it('hasScopes returns false when the api key is revoked', async () => {
     mockApiKeyRecord.getRevokedAt = () => '2009-12-31T23:59:59.999Z';
-    await action(new Request('https://space.cat/', {
-      headers: { 'x-api-key': 'test' },
-    }), context);
-    const resp = await context.auth.hasScopes(['scope1', 'scope2']);
-    expect(await resp.text()).to.equal('Unauthorized');
-    expect(resp.status).to.equal(401);
+    const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
+    expect(val).to.deep.equal({ result: false, reason: 'API key has been revoked' });
+  });
+
+  it('hasScopes returns false when a scope is missing', async () => {
+    const val = await hasScopes(['scope3', 'scope2'], 'test', context.dataAccess, context.log);
+    expect(val).to.deep.equal({ result: false, reason: 'API key is missing the [scope3] scope(s) required for this resource' });
   });
 });

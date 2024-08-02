@@ -12,9 +12,8 @@
 
 import { Response } from '@adobe/fetch';
 
-import { hasText } from '@adobe/spacecat-shared-utils';
 import AuthenticationManager from './authentication-manager.js';
-import { hashWithSHA256 } from './generate-hash.js';
+import { hasScopes } from './scopes.js';
 
 const ANONYMOUS_ENDPOINTS = [
   'GET /slack/events',
@@ -24,9 +23,6 @@ const ANONYMOUS_ENDPOINTS = [
 export function authWrapper(fn, opts = {}) {
   let authenticationManager;
 
-  /**
-   * @param {DataAccess} context.dataAccess - Data access.
-   */
   return async (request, context) => {
     const { log, pathInfo: { method, suffix } } = context;
 
@@ -53,41 +49,11 @@ export function authWrapper(fn, opts = {}) {
       return new Response('Unauthorized', { status: 401 });
     }
 
+    const apiKeyFromHeader = context.pathInfo?.headers['x-api-key'];
+
     if (!context.auth) {
       context.auth = {
-        hasScopes: async (scopes) => {
-          // Pull the api-key from x-api-key header
-          const apiKeyFromHeader = context.pathInfo?.headers['x-api-key'];
-
-          if (!hasText(apiKeyFromHeader)) {
-            return new Response('Unauthorized', { status: 401 });
-          }
-
-          // Generate a hash of the API Key
-          const hashedKey = hashWithSHA256(apiKeyFromHeader);
-
-          if (!context.dataAccess) {
-            log.error('Data access required');
-            return new Response('Server error', { status: 500 });
-          }
-
-          // Fetch the api-key record from data access layer
-          const apiKeyRecord = await context.dataAccess.getApiKeyByHashedKey(hashedKey);
-
-          // Check that the api key has not expired or been revoked,
-          const now = new Date().toISOString();
-          if (apiKeyRecord.getExpiresAt() < now) {
-            log.error(`API key has expired, name = ${apiKeyRecord.getName()}`);
-            return new Response('Unauthorized', { status: 401 });
-          }
-
-          if (apiKeyRecord.getRevokedAt() < now) {
-            log.error(`API key has been revoked, name = ${apiKeyRecord.getName()}`);
-            return new Response('Unauthorized', { status: 401 });
-          }
-          // Iterate over scopes and check if the record has all the scopes
-          return scopes.every((scope) => apiKeyRecord.getScopes().includes(scope));
-        },
+        hasScopes: async (scopes) => hasScopes(scopes, apiKeyFromHeader, context.dataAccess, log),
       };
     }
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.5.4...@adobe/spacecat-shared-rum-api-client-v2.6.0) (2024-08-02)
+
+
+### Features
+
+* multi-query support for rum-client ([#311](https://github.com/adobe/spacecat-shared/issues/311)) ([c3ac6a2](https://github.com/adobe/spacecat-shared/commit/c3ac6a20396874d0abffdcdcd50406e9718a426b))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.5.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.5.3...@adobe/spacecat-shared-rum-api-client-v2.5.4) (2024-08-01)
 
 

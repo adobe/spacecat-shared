@@ -125,6 +125,12 @@ describe('auth wrapper', () => {
     expect(val).to.equal(true);
   });
 
+  it('hasScopes returns false when API key is not found in the DB', async () => {
+    mockDataAccess.getApiKeyByHashedKey.resolves({});
+    const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
+    expect(val).to.deep.equal({ result: false, reason: 'API key not found' });
+  });
+
   it('returns unauthorized when api key is missing', async () => {
     const resp = await action(new Request('https://space.cat/'), context);
     expect(await resp.text()).to.equal('Unauthorized');

@@ -30,7 +30,7 @@ export async function hasScopes(scopes, apiKey, dataAccess, log) {
   // Fetch the api-key record from data access layer
   const apiKeyRecord = await dataAccess.getApiKeyByHashedKey(hashedKey);
 
-  if (!apiKeyRecord) {
+  if (Object.keys(apiKeyRecord).length === 0) {
     log.error('API key not found for the given hashed key');
     return { result: false, reason: 'API key not found' };
   }

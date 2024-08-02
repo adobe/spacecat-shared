@@ -19,11 +19,22 @@ import { FlatBundle } from '../common/flat-bundle.js';
 
 function collectOpptyPages(groupByUrl) {
   const { url, items: itemsByUrl } = groupByUrl;
-  console.log('itemsByUrl', itemsByUrl);
-  console.log('url', url);
+  const today = new Date();
+  const last28Days = new Date(today);
+  last28Days.setDate(last28Days.getDate() - 100);
 
-  const views = itemsByUrl.flatMap((item) => item.items).reduce((acc, cur) => acc + cur.weight, 0);
-  console.log('views', views);
+  const filteredItems = itemsByUrl.filter((item) => {
+    const itemDate = new Date(item.time);
+    return itemDate >= last28Days && itemDate <= today;
+  });
+
+  // aggregate total number of views per filtered item
+  const views = filteredItems.reduce((acc, cur) => acc + cur.weight, 0);
+
+  return {
+    url,
+    views,
+  };
 }
 
 function handler(bundles) {
@@ -31,8 +42,9 @@ function handler(bundles) {
     .filter((row) => row.checkpoint === 'click')
     .groupBy('url')
     .map(collectOpptyPages)
-    .sort((a, b) => b.pageviews - a.pageviews); // sort desc by pageviews
-  console.log('res', res);
+    .sort((a, b) => b.views - a.views); // sort desc by pageviews
+  // eslint-disable-next-line no-console
+  console.log('oppty', res);
   return res;
 }
 

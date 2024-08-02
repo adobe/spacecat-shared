@@ -13,7 +13,7 @@
 
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
-// import opportunity from '../src/functions/oppty.js';
+import opportunity from '../src/functions/oppty.js';
 import notfound from '../src/functions/404.js';
 import experiment from '../src/functions/experiment.js';
 import trafficAcquisition from '../src/functions/traffic-acquisition.js';
@@ -25,6 +25,7 @@ import expected404Result from './fixtures/notfound.json' assert { type: 'json' }
 import expectedExperimentsResult from './fixtures/experiments.json' assert { type: 'json' };
 import expectedTrafficSourcesResult from './fixtures/trafficSources.json' assert { type: 'json' };
 import expectedVariantResult from './fixtures/variant.json' assert { type: 'json' };
+import expectedOpportunitiesResult from './fixtures/oppty.json' assert { type: 'json' };
 
 describe('Query functions', () => {
   it('crunches cwv data', async () => {
@@ -52,8 +53,8 @@ describe('Query functions', () => {
     expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
   });
 
-  // it('crunches CTR opportunity data', async () => {
-  //   const opportunitiesResult = opportunity.handler(bundles.rumBundles);
-  //   expect(expectedOpportunitiesResult).to.eql(opportunitiesResult);
-  // });
+  it('crunches CTR opportunity data', async () => {
+    const opportunitiesResult = opportunity.handler(bundles.rumBundles);
+    expect(expectedOpportunitiesResult).to.eql(opportunitiesResult);
+  });
 });

@@ -15,12 +15,12 @@
 import { Request } from '@adobe/fetch';
 import wrap from '@adobe/helix-shared-wrap';
 import chai from 'chai';
-import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
 import { authWrapper, enrichPathInfo } from '../../src/index.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
-import { hasScopes } from '../../src/auth/scopes.js';
+import { hasScope, hasScopes } from '../../src/auth/has-scopes.js';
+import AuthInfo from '../../src/auth/auth-info.js';
 
 chai.use(chaiAsPromised);
 
@@ -43,31 +43,19 @@ describe('auth wrapper', () => {
     .with(enrichPathInfo);
 
   let context;
-  let mockDataAccess;
-  let mockApiKeyRecord;
+  let mockAuthInfo;
 
   beforeEach('setup', () => {
-    mockDataAccess = {
-      getApiKeyByHashedKey: sinon.stub(),
-    };
-
     context = {
       attributes: {},
       log: console,
       pathInfo: {
         suffix: '',
       },
-      dataAccess: mockDataAccess,
     };
-
-    mockApiKeyRecord = {
-      getId: () => 'test',
-      getExpiresAt: () => '2099-12-31T23:59:59.999Z',
-      getRevokedAt: () => '2099-12-31T23:59:59.999Z',
-      getName: () => 'test-api-key',
-      getScopes: () => ['scope1', 'scope2'],
-    };
-    mockDataAccess.getApiKeyByHashedKey.resolves(mockApiKeyRecord);
+    mockAuthInfo = new AuthInfo()
+      .withProfile({ api_key_id: 'test-api-key' })
+      .withScopes(['scope1', 'scope2']);
   });
 
   it('throws error if no auth handler is provided', async () => {
@@ -120,35 +108,26 @@ describe('auth wrapper', () => {
     expect(resp.status).to.equal(401);
   });
 
-  it('fetches the scope from the data layer and returns true', async () => {
-    const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
-    expect(val).to.equal(true);
+  it('fetches the scope from the data layer and returns true', () => {
+    const { result } = hasScopes(['scope1', 'scope2'], mockAuthInfo, context.log);
+    expect(result).to.equal(true);
   });
 
-  it('hasScopes returns false when API key is not found in the DB', async () => {
-    mockDataAccess.getApiKeyByHashedKey.resolves({});
-    const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
-    expect(val).to.deep.equal({ result: false, reason: 'API key not found' });
+  it('hasScopes throws an error if there is no authInfo object', () => {
+    expect(() => hasScopes(['scope1', 'scope2'], null, context.log)).to.throw('Auth info is required');
   });
 
-  it('hasScopes throws an error if there is no dataAccess object', async () => {
-    await expect(hasScopes(['scope1', 'scope2'], 'test', null, context.log)).to.be.rejectedWith('Data access required');
+  it('hasScopes returns false when a scope is missing', () => {
+    const { result, reason } = hasScopes(['scope3', 'scope2'], mockAuthInfo, context.log);
+    expect(result).to.be.false;
+    expect(reason).to.equal('API key is missing the [scope3] scope(s) required for this resource');
   });
 
-  it('hasScopes returns false when the api key is expired', async () => {
-    mockApiKeyRecord.getExpiresAt = () => '2009-12-31T23:59:59.999Z';
-    const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
-    expect(val).to.deep.equal({ result: false, reason: 'API key has expired' });
-  });
+  it('should return a truthy result for a single scope', () => {
+    const { result } = hasScope('scope1', mockAuthInfo, context.log);
+    expect(result).to.be.true;
 
-  it('hasScopes returns false when the api key is revoked', async () => {
-    mockApiKeyRecord.getRevokedAt = () => '2009-12-31T23:59:59.999Z';
-    const val = await hasScopes(['scope1', 'scope2'], 'test', context.dataAccess, context.log);
-    expect(val).to.deep.equal({ result: false, reason: 'API key has been revoked' });
-  });
-
-  it('hasScopes returns false when a scope is missing', async () => {
-    const val = await hasScopes(['scope3', 'scope2'], 'test', context.dataAccess, context.log);
-    expect(val).to.deep.equal({ result: false, reason: 'API key is missing the [scope3] scope(s) required for this resource' });
+    const { result: scope5Result } = hasScope('scope5', mockAuthInfo, context.log);
+    expect(scope5Result).to.be.false;
   });
 });

@@ -10,18 +10,22 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText, isIsoDate } from '@adobe/spacecat-shared-utils';
 import AbstractHandler from './abstract.js';
-import { hasText } from '@adobe/spacecat-shared-utils';
 import { hashWithSHA256 } from '../generate-hash.js';
 import AuthInfo from '../auth-info.js';
 
+/**
+ * Handler for API keys which include scope details. These API keys are stored in the data layer
+ * and require context.dataAccess in order to authenticate the request.
+ */
 export default class ScopedApiKeyHandler extends AbstractHandler {
   constructor(log) {
     super('scopedApiKey', log);
   }
 
   async checkAuth(request, context) {
-    const { dataAccess, pathInfo: { headers = [] }, log } = context;
+    const { dataAccess, pathInfo: { headers = {} } } = context;
     if (!dataAccess) {
       throw new Error('Data access required');
     }
@@ -31,28 +35,35 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
       return null;
     }
 
+    // Keys are stored by their hash, so we need to hash the key to look it up
     const hashedKey = hashWithSHA256(apiKeyFromHeader);
     const apiKeyEntity = await dataAccess.getApiKeyByHashedKey(hashedKey);
 
     if (!apiKeyEntity) {
-      // No API key found in the DB
+      this.log(`No API key entity found in the data layer for the provided API key: ${apiKeyFromHeader}`, 'error');
       return null;
     }
 
-    const authInfo = new AuthInfo();
-    // Check that the api key is still valid (not expired, or revoked)
+    // We have an API key entity, and need to check if it's still valid
+    const authInfo = new AuthInfo()
+      .withProfile(apiKeyEntity) // Include the API key entity as the profile
+      .withType(this.name);
+
+    // Verify that the api key has not expired or been revoked
     const now = new Date().toISOString();
-    if (apiKeyEntity.getExpiresAt() < now) {
-      this.log(`API key has expired, name: ${apiKeyEntity.getName()} id: ${apiKeyEntity.getId()}`, 'error');
+    if (isIsoDate(apiKeyEntity.getExpiresAt()) && apiKeyEntity.getExpiresAt() < now) {
+      this.log(`API key has expired. Name: ${apiKeyEntity.getName()}, id: ${apiKeyEntity.getId()}`, 'error');
       return authInfo.withReason('API key has expired');
     }
 
-    if (apiKeyEntity.getRevokedAt() < now) {
-      this.log(`API key has been revoked, name: ${apiKeyEntity.getName()} id: ${apiKeyEntity.getId()}`, 'error');
+    if (isIsoDate(apiKeyEntity.getRevokedAt()) && apiKeyEntity.getRevokedAt() < now) {
+      this.log(`API key has been revoked. Name: ${apiKeyEntity.getName()} id: ${apiKeyEntity.getId()}`, 'error');
       return authInfo.withReason('API key has been revoked');
     }
 
-    // TODO: set the profile based on the API key entity
-    return authInfo;
+    // API key is valid: return auth info with scopes
+    return authInfo
+      .withAuthenticated(true)
+      .withScopes(apiKeyEntity.getScopes());
   }
 }

@@ -13,7 +13,7 @@
 import { Response } from '@adobe/fetch';
 
 import AuthenticationManager from './authentication-manager.js';
-import { hasScopes } from './scopes.js';
+import { hasScopes } from './has-scopes.js';
 
 const ANONYMOUS_ENDPOINTS = [
   'GET /slack/events',
@@ -44,17 +44,17 @@ export function authWrapper(fn, opts = {}) {
     }
 
     try {
-      await authenticationManager.authenticate(request, context);
+      const authInfo = await authenticationManager.authenticate(request, context);
+
+      // Add the authInfo instance, and a helper for checking scoped API keys to the context
+      if (!context.auth) {
+        context.auth = {
+          authInfo,
+          hasScopes: (scopes) => hasScopes(scopes, authInfo, log),
+        };
+      }
     } catch (error) {
       return new Response('Unauthorized', { status: 401 });
-    }
-
-    const apiKeyFromHeader = context.pathInfo?.headers['x-api-key'];
-
-    if (!context.auth) {
-      context.auth = {
-        hasScopes: async (scopes) => hasScopes(scopes, apiKeyFromHeader, context.dataAccess, log),
-      };
     }
 
     return fn(request, context);

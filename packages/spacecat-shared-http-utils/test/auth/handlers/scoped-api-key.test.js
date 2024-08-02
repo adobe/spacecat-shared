@@ -38,9 +38,11 @@ describe('ScopedApiKeyHandler', () => {
     scopes: [
       {
         name: 'imports.write',
+        domains: ['https://example.com'],
       },
       {
         name: 'sites.read_all',
+        domains: ['https://example.com'],
       },
     ],
   };
@@ -145,9 +147,11 @@ describe('ScopedApiKeyHandler', () => {
     expect(result.getScopes()).to.deep.equal([
       {
         name: 'imports.write',
+        domains: ['https://example.com'],
       },
       {
         name: 'sites.read_all',
+        domains: ['https://example.com'],
       },
     ]);
     expect(result.getProfile().getId()).to.equal('1C4ED8DE-8ECD-42E1-9812-AF34082FB1B4');

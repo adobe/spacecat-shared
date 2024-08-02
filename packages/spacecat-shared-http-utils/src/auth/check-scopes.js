@@ -15,9 +15,9 @@
  * @param {Array<string>} scopes - The scopes required for the request
  * @param {AuthInfo} authInfo - Authentication state for the current request
  * @param {Logger} log - Logger
- * @return {{result: boolean, reason?: string}}
+ * @return {{hasScopes: boolean, reason?: string}}
  */
-export function hasScopes(scopes, authInfo, log) {
+export function checkScopes(scopes, authInfo, log) {
   if (!authInfo) {
     throw new Error('Auth info is required');
   }
@@ -34,10 +34,10 @@ export function hasScopes(scopes, authInfo, log) {
   if (missingScopes.length > 0) {
     log.error(`API key with ID: ${authInfo.getProfile()?.api_key_id} does not have required scopes. It's missing: ${missingScopes.join(',')}`);
     return {
-      result: false,
+      hasScopes: false,
       reason: `API key is missing the [${missingScopes.join(',')}] scope(s) required for this resource`,
     };
   }
 
-  return { result: true };
+  return { hasScopes: true };
 }

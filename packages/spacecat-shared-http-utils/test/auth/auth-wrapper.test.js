@@ -116,7 +116,7 @@ describe('auth wrapper', () => {
     expect(resp.status).to.equal(401);
   });
 
-  it('should add auth.hasScopes to the context', async () => {
+  it('should add auth.checkScopes to the context', async () => {
     const scopedAction = wrap(() => 42)
       .with(authWrapper, { authHandlers: [ScopedApiKeyHandler] })
       .with(enrichPathInfo);
@@ -127,13 +127,13 @@ describe('auth wrapper', () => {
     }), context);
 
     expect(resp).to.equal(42);
-    expect(context.auth.hasScopes).to.be.a('function');
+    expect(context.auth.checkScopes).to.be.a('function');
 
-    const { result, reason } = context.auth.hasScopes(['imports.write']);
-    expect(result).to.be.true;
+    const { hasScopes, reason } = context.auth.checkScopes(['imports.write']);
+    expect(hasScopes).to.be.true;
     expect(reason).to.be.undefined;
 
-    const { result: badScopeResult, reason: badScopeReason } = context.auth.hasScopes(['scope-user-does-not-have']);
+    const { hasScopes: badScopeResult, reason: badScopeReason } = context.auth.checkScopes(['scope-user-does-not-have']);
     expect(badScopeResult).to.be.false;
     expect(badScopeReason).to.equal('API key is missing the [scope-user-does-not-have] scope(s) required for this resource');
   });

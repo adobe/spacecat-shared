@@ -14,14 +14,14 @@
 
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { hasScopes } from '../../src/auth/has-scopes.js';
+import { checkScopes } from '../../src/auth/check-scopes.js';
 import AuthInfo from '../../src/auth/auth-info.js';
 
 chai.use(chaiAsPromised);
 
 const { expect } = chai;
 
-describe('hasScopes tests', () => {
+describe('checkScopes tests', () => {
   let context;
   let mockAuthInfo;
   beforeEach('setup', () => {
@@ -38,17 +38,17 @@ describe('hasScopes tests', () => {
   });
 
   it('should validate that the 2 scopes are set on authInfo', () => {
-    const { result } = hasScopes(['scope1', 'scope2'], mockAuthInfo, context.log);
-    expect(result).to.equal(true);
+    const { hasScopes } = checkScopes(['scope1', 'scope2'], mockAuthInfo, context.log);
+    expect(hasScopes).to.equal(true);
   });
 
   it('should throw an error if there is no authInfo object', () => {
-    expect(() => hasScopes(['scope1', 'scope2'], null, context.log)).to.throw('Auth info is required');
+    expect(() => checkScopes(['scope1', 'scope2'], null, context.log)).to.throw('Auth info is required');
   });
 
   it('should return a false result when a required scope is missing', () => {
-    const { result, reason } = hasScopes(['scope3', 'scope2'], mockAuthInfo, context.log);
-    expect(result).to.be.false;
+    const { hasScopes, reason } = checkScopes(['scope3', 'scope2'], mockAuthInfo, context.log);
+    expect(hasScopes).to.be.false;
     expect(reason).to.equal('API key is missing the [scope3] scope(s) required for this resource');
   });
 });

@@ -13,7 +13,7 @@
 import { Response } from '@adobe/fetch';
 
 import AuthenticationManager from './authentication-manager.js';
-import { hasScopes } from './has-scopes.js';
+import { checkScopes } from './check-scopes.js';
 
 const ANONYMOUS_ENDPOINTS = [
   'GET /slack/events',
@@ -50,7 +50,7 @@ export function authWrapper(fn, opts = {}) {
       // authInfo is available at context.attributes.authInfo.
       if (!context.auth) {
         context.auth = {
-          hasScopes: (scopes) => hasScopes(scopes, authInfo, log),
+          checkScopes: (scopes) => checkScopes(scopes, authInfo, log),
         };
       }
     } catch (error) {

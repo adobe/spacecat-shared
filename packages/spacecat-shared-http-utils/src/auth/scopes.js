@@ -11,6 +11,14 @@
  */
 import { hashWithSHA256 } from './generate-hash.js';
 
+/**
+ * Check if the given API key has the required scopes
+ * @param scopes
+ * @param apiKey
+ * @param dataAccess
+ * @param log
+ * @return {Promise<boolean|{result: boolean, reason: string}>}
+ */
 export async function hasScopes(scopes, apiKey, dataAccess, log) {
 // Generate a hash of the API Key
   const hashedKey = hashWithSHA256(apiKey);

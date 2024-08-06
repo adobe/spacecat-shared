@@ -73,41 +73,50 @@ function updateInferredStartAndEndDate(experimentObject, time) {
   }
 }
 
+function calculateMetrics(bundle) {
+  const metrics = {};
+  for (const checkpoint of METRIC_CHECKPOINTS) {
+    metrics[checkpoint] = {};
+  }
+  for (const event of bundle.events) {
+    if (METRIC_CHECKPOINTS.includes(event.checkpoint)) {
+      const { source, checkpoint } = event;
+      if (!metrics[checkpoint][source]) {
+        metrics[checkpoint][source] = bundle.weight;
+      } else {
+        metrics[checkpoint][source] += bundle.weight;
+      }
+    }
+  }
+  return metrics;
+}
+
 function handler(bundles) {
   const experimentInsights = {};
   for (const bundle of bundles) {
-    const experimentEvent = bundle.events?.find((e) => e.checkpoint === 'experiment');
-    if (experimentEvent) {
-      const { url, weight, time } = bundle;
+    const experimentEvents = bundle.events?.filter(
+      (e) => EXPERIMENT_CHECKPOINT.includes(e.checkpoint),
+    );
+    const { url, weight, time } = bundle;
+    const metrics = calculateMetrics(bundle);
+    for (const experimentEvent of experimentEvents) {
       if (!experimentInsights[url]) {
         experimentInsights[url] = [];
       }
       const experimentName = experimentEvent.source;
       const variantName = experimentEvent.target;
-      const experimentObject = getOrCreateExperimentObject(experimentInsights[url], experimentName);
+      const experimentObject = getOrCreateExperimentObject(
+        experimentInsights[url],
+        experimentName,
+      );
       const variantObject = getOrCreateVariantObject(experimentObject.variants, variantName);
       updateInferredStartAndEndDate(experimentObject, time);
       variantObject.views += weight;
-
-      const metrics = {};
-      for (const checkpoint of METRIC_CHECKPOINTS) {
-        metrics[checkpoint] = {};
-      }
-      for (const event of bundle.events) {
-        if (METRIC_CHECKPOINTS.includes(event.checkpoint)) {
-          const { source, checkpoint } = event;
-          if (!metrics[checkpoint][source]) {
-            metrics[checkpoint][source] = weight;
-          } else {
-            metrics[checkpoint][source] += weight;
-          }
-        }
-      }
       // combine metrics and variantObject, considering the interaction events
       // only once during the session
       for (const checkpoint of METRIC_CHECKPOINTS) {
         // eslint-disable-next-line no-restricted-syntax
-        for (const source in metrics[checkpoint]) {
+        for (const source in metrics?.[checkpoint]) {
           if (!variantObject[checkpoint][source]) {
             variantObject[checkpoint][source] = weight;
           } else {

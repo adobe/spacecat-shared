@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-slack-client-v1.3.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.3.10...@adobe/spacecat-shared-slack-client-v1.3.11) (2024-08-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#314](https://github.com/adobe/spacecat-shared/issues/314)) ([cc47ba3](https://github.com/adobe/spacecat-shared/commit/cc47ba34b7f3e859deea89da57bfa4887e788772))
+
 # [@adobe/spacecat-shared-slack-client-v1.3.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-slack-client-v1.3.9...@adobe/spacecat-shared-slack-client-v1.3.10) (2024-07-27)
 
 

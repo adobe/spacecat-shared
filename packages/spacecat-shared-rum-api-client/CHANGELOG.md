@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.6.0...@adobe/spacecat-shared-rum-api-client-v2.7.0) (2024-08-06)
+
+
+### Features
+
+* add support for multiple experiments on the same page ([#309](https://github.com/adobe/spacecat-shared/issues/309)) ([8252e1a](https://github.com/adobe/spacecat-shared/commit/8252e1a74885a73db6193d24facf439b571e9523))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.5.4...@adobe/spacecat-shared-rum-api-client-v2.6.0) (2024-08-02)
 
 

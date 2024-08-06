@@ -257,6 +257,42 @@ async function removeAudits(
 }
 
 /**
+ * Updates existing latest audit.
+ * This can be used for adding suggestions for example.
+ * @param dynamoClient - The DynamoDB client.
+ * @param config - The data access config.
+ * @param log - The logger.
+ * @param auditData - The audit data.
+ * @returns {Promise<Readonly<Audit>>}
+ */
+export const updateLatestAudit = async (
+  dynamoClient,
+  config,
+  log,
+  auditData,
+) => {
+  const newAudit = createAudit(auditData);
+  const existingAudit = await getLatestAuditForSite(
+    dynamoClient,
+    config,
+    log,
+    newAudit.getSiteId(),
+    newAudit.getAuditType(),
+  );
+
+  if (!isObject(existingAudit)) {
+    throw new Error('Audit not found');
+  }
+
+  await dynamoClient.putItem(
+    config.tableNameLatestAudits,
+    AuditDto.toDynamoItem(newAudit, true),
+  );
+
+  return newAudit;
+};
+
+/**
  * Removes all audits for a specified site and the latest audit entry.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.

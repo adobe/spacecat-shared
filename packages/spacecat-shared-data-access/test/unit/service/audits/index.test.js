@@ -330,5 +330,58 @@ describe('Audit Access Pattern Tests', () => {
 
       await expect(exportedFunctions.removeAuditsForSite('some-id')).to.be.rejectedWith(errorMessage);
     });
+
+    it('successfully updates the latest audit', async () => {
+      const mockAuditData = {
+        siteId: 'siteId',
+        auditType: 'broken-backlinks',
+        auditedAt: new Date().toISOString(),
+        fullAuditRef: 'https://someurl.com',
+        auditResult: {
+          brokenBacklinks: [
+            {
+              title: 'Broken Link 1',
+              url_to: 'https://brokenlink1.com',
+              url_from: 'https://site1.com',
+              traffic_domain: 123,
+            },
+            {
+              title: 'Broken Link 2',
+              url_to: 'https://brokenlink2.com',
+              url_from: 'https://site2.com',
+              traffic_domain: 456,
+            },
+          ],
+        },
+      };
+      const updatedAuditData = {
+        ...mockAuditData,
+        auditResult: {
+          ...mockAuditData.auditResult,
+          brokenBacklinks: mockAuditData.auditResult.brokenBacklinks.map((backlink) => ({
+            ...backlink,
+            url_suggested: 'https://suggested.com',
+          })),
+        },
+      };
+
+      mockDynamoClient.getItem.resolves(mockAuditData);
+
+      await exportedFunctions.updateLatestAudit(updatedAuditData);
+
+      expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+    });
+
+    it('should throw an error if the latest audit was not found', async () => {
+      const audit = {
+        siteId: 'siteId',
+        auditType: 'broken-backlinks',
+        auditedAt: new Date().toISOString(),
+        auditResult: {},
+        fullAuditRef: 'https://someurl.com',
+      };
+
+      await expect(exportedFunctions.updateLatestAudit(audit)).to.be.rejectedWith('Audit not found');
+    });
   });
 });

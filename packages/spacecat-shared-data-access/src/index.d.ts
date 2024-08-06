@@ -683,6 +683,9 @@ export interface DataAccess {
   removeAuditsForSite: (
     siteId: string,
   ) => Promise<void>;
+  updateLatestAudit: (
+    audit: Audit,
+  ) => Promise<Audit>;
   getSites: () => Promise<Site[]>;
   getSitesByDeliveryType: (
     deliveryType: string,

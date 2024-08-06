@@ -22,7 +22,6 @@ function collect404s(groupedByUrlAndSource) {
 
   // calculate the total number of views per 404 event
   const views = itemsByUrl.flatMap((item) => item.items).reduce((acc, cur) => acc + cur.weight, 0);
-
   return {
     url,
     views,

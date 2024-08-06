@@ -33,7 +33,7 @@ export const getApiKeyByHashedKey = async (hashedKey, dynamoClient, log, config)
       ':hashedKey': hashedKey,
     },
   });
-  ApiKeyDto.fromDynamoItem(item);
+  return item ? ApiKeyDto.fromDynamoItem(item) : null;
 };
 
 /**

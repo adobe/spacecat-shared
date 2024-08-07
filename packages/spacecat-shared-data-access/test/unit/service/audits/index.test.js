@@ -360,7 +360,7 @@ describe('Audit Access Pattern Tests', () => {
           ...mockAuditData.auditResult,
           brokenBacklinks: mockAuditData.auditResult.brokenBacklinks.map((backlink) => ({
             ...backlink,
-            url_suggested: 'https://suggested.com',
+            urls_suggested: ['https://suggested.com', 'https://suggested2.com', 'https://suggested3.com'],
           })),
         },
       };

@@ -38,8 +38,7 @@ describe('checkScopes tests', () => {
   });
 
   it('should validate that the 2 scopes are set on authInfo', () => {
-    const { hasScopes } = checkScopes(['scope1', 'scope2'], mockAuthInfo, context.log);
-    expect(hasScopes).to.equal(true);
+    checkScopes(['scope1', 'scope2'], mockAuthInfo, context.log);
   });
 
   it('should throw an error if there is no authInfo object', () => {
@@ -47,8 +46,7 @@ describe('checkScopes tests', () => {
   });
 
   it('should return a false result when a required scope is missing', () => {
-    const { hasScopes, reason } = checkScopes(['scope3', 'scope2'], mockAuthInfo, context.log);
-    expect(hasScopes).to.be.false;
-    expect(reason).to.equal('API key is missing the [scope3] scope(s) required for this resource');
+    const expectedError = 'API key is missing the [scope3] scope(s) required for this resource';
+    expect(() => checkScopes(['scope3', 'scope2'], mockAuthInfo, context.log)).to.throw(expectedError);
   });
 });

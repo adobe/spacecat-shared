@@ -12,6 +12,7 @@
 
 import { Response } from '@adobe/fetch';
 
+import { isObject } from '@adobe/spacecat-shared-utils';
 import AuthenticationManager from './authentication-manager.js';
 import { checkScopes } from './check-scopes.js';
 
@@ -48,7 +49,7 @@ export function authWrapper(fn, opts = {}) {
 
       // Add a helper function to the context for checking scoped API keys.
       // authInfo is available at context.attributes.authInfo.
-      if (!context.auth) {
+      if (!isObject(context.auth)) {
         context.auth = {
           checkScopes: (scopes) => checkScopes(scopes, authInfo, log),
         };

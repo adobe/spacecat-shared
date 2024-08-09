@@ -10,15 +10,16 @@
  * governing permissions and limitations under the License.
  */
 
+import { isObject } from '@adobe/spacecat-shared-utils';
+
 /**
- * Check if the given AuthInfo has the requested scopes.
+ * Check if the given AuthInfo has the requested scopes. Throws an error if any scopes are missing.
  * @param {Array<string>} scopes - The scopes required for the request
  * @param {AuthInfo} authInfo - Authentication state for the current request
  * @param {Logger} log - Logger
- * @return {{hasScopes: boolean, reason?: string}}
  */
 export function checkScopes(scopes, authInfo, log) {
-  if (!authInfo) {
+  if (!isObject(authInfo)) {
     throw new Error('Auth info is required');
   }
 
@@ -33,11 +34,8 @@ export function checkScopes(scopes, authInfo, log) {
 
   if (missingScopes.length > 0) {
     log.error(`API key with ID: ${authInfo.getProfile()?.api_key_id} does not have required scopes. It's missing: ${missingScopes.join(',')}`);
-    return {
-      hasScopes: false,
-      reason: `API key is missing the [${missingScopes.join(',')}] scope(s) required for this resource`,
-    };
+    throw new Error(`API key is missing the [${missingScopes.join(',')}] scope(s) required for this resource`);
   }
 
-  return { hasScopes: true };
+  // Otherwise: all good
 }

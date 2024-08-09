@@ -129,12 +129,10 @@ describe('auth wrapper', () => {
     expect(resp).to.equal(42);
     expect(context.auth.checkScopes).to.be.a('function');
 
-    const { hasScopes, reason } = context.auth.checkScopes(['imports.write']);
-    expect(hasScopes).to.be.true;
-    expect(reason).to.be.undefined;
+    // Throws an error if checkScopes check fails
+    context.auth.checkScopes(['imports.write']);
 
-    const { hasScopes: badScopeResult, reason: badScopeReason } = context.auth.checkScopes(['scope-user-does-not-have']);
-    expect(badScopeResult).to.be.false;
-    expect(badScopeReason).to.equal('API key is missing the [scope-user-does-not-have] scope(s) required for this resource');
+    const expectedError = 'API key is missing the [scope-user-does-not-have] scope(s) required for this resource';
+    expect(() => context.auth.checkScopes(['scope-user-does-not-have'])).to.throw(expectedError);
   });
 });

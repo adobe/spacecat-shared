@@ -82,12 +82,14 @@ export const createApiKey = (data) => {
       throw new Error(`Scope name is not part of the pre-defined scopes: ${scope.name}`);
     }
 
-    if (hasText(scope.domains) && !Array.isArray(scope.domains)) {
-      throw new Error(`Scope domains should be an array: ${scope.domains}`);
-    }
-    for (const domain of scope.domains) {
-      if (!isValidUrl(domain)) {
-        throw new Error(`Invalid domain: ${domain}`);
+    if (scope.domains) {
+      if (!Array.isArray(scope.domains)) {
+        throw new Error(`Scope domains should be an array: ${scope.domains}`);
+      }
+      for (const domain of scope.domains) {
+        if (!isValidUrl(domain)) {
+          throw new Error(`Invalid domain: ${domain}`);
+        }
       }
     }
   }

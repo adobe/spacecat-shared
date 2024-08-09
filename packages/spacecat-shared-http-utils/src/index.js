@@ -89,5 +89,6 @@ export function internalServerError(message = 'internal server error', headers =
 
 export { authWrapper } from './auth/auth-wrapper.js';
 export { enrichPathInfo } from './enrich-path-info-wrapper.js';
+export { hashWithSHA256 } from './auth/generate-hash.js';
 
 export { AdobeImsHandler, LegacyApiKeyHandler };

@@ -38,6 +38,7 @@ function getOrCreateVariantObject(variants, variantName) {
     variantObject = {
       name: variantName,
       views: 0,
+      samples: 0,
       click: {},
       convert: {},
       formsubmit: {},
@@ -82,9 +83,13 @@ function calculateMetrics(bundle) {
     if (METRIC_CHECKPOINTS.includes(event.checkpoint)) {
       const { source, checkpoint } = event;
       if (!metrics[checkpoint][source]) {
-        metrics[checkpoint][source] = bundle.weight;
+        metrics[checkpoint][source] = {
+          value: bundle.weight,
+          samples: 1,
+        };
       } else {
-        metrics[checkpoint][source] += bundle.weight;
+        metrics[checkpoint][source].value += bundle.weight;
+        metrics[checkpoint][source].samples += 1;
       }
     }
   }
@@ -112,15 +117,20 @@ function handler(bundles) {
       const variantObject = getOrCreateVariantObject(experimentObject.variants, variantName);
       updateInferredStartAndEndDate(experimentObject, time);
       variantObject.views += weight;
+      variantObject.samples += 1;
       // combine metrics and variantObject, considering the interaction events
       // only once during the session
       for (const checkpoint of METRIC_CHECKPOINTS) {
         // eslint-disable-next-line no-restricted-syntax
         for (const source in metrics?.[checkpoint]) {
           if (!variantObject[checkpoint][source]) {
-            variantObject[checkpoint][source] = weight;
+            variantObject[checkpoint][source] = {
+              value: weight,
+              samples: 1,
+            };
           } else {
-            variantObject[checkpoint][source] += weight;
+            variantObject[checkpoint][source].value += weight;
+            variantObject[checkpoint][source].samples += 1;
           }
         }
       }
@@ -128,9 +138,13 @@ function handler(bundles) {
       for (const checkpoint of Object.keys(metrics)) {
         if (Object.keys(metrics[checkpoint]).length > 0) {
           if (!variantObject[checkpoint]['*']) {
-            variantObject[checkpoint]['*'] = weight;
+            variantObject[checkpoint]['*'] = {
+              value: weight,
+              samples: 1,
+            };
           } else {
-            variantObject[checkpoint]['*'] += weight;
+            variantObject[checkpoint]['*'].value += weight;
+            variantObject[checkpoint]['*'].samples += 1;
           }
         }
       }

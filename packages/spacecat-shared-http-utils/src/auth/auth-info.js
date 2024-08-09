@@ -18,6 +18,7 @@ export default class AuthInfo {
     Object.assign(this, {
       authenticated: false,
       profile: null,
+      scopes: [],
     });
   }
 
@@ -50,4 +51,32 @@ export default class AuthInfo {
     this.type = value;
     return this;
   }
+
+  /**
+   * Set the reason that authentication has failed.
+   * @param {string} reason - The reason for auth failure
+   * @return {AuthInfo} The auth info object
+   */
+  withReason(reason) {
+    this.reason = reason;
+    return this;
+  }
+
+  /**
+   * Set the scopes that this auth info instance has access to.
+   * @param {Array<{name: string, domains?: Array<string>}>} scopes - The array of scope objects
+   * @return {AuthInfo} The auth info object
+   */
+  withScopes(scopes) {
+    this.scopes = scopes;
+    return this;
+  }
+
+  getScopes() { return this.scopes; }
+
+  getProfile() { return this.profile; }
+
+  getReason() { return this.reason; }
+
+  isAuthenticated() { return this.authenticated; }
 }

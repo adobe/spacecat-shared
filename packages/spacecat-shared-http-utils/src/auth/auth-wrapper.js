@@ -12,7 +12,9 @@
 
 import { Response } from '@adobe/fetch';
 
+import { isObject } from '@adobe/spacecat-shared-utils';
 import AuthenticationManager from './authentication-manager.js';
+import { checkScopes } from './check-scopes.js';
 
 const ANONYMOUS_ENDPOINTS = [
   'GET /slack/events',
@@ -28,8 +30,8 @@ export function authWrapper(fn, opts = {}) {
     const route = `${method.toUpperCase()} ${suffix}`;
 
     if (ANONYMOUS_ENDPOINTS.includes(route)
-      || route.startsWith('POST /hooks/site-detection/')
-      || method.toUpperCase() === 'OPTIONS') {
+        || route.startsWith('POST /hooks/site-detection/')
+        || method.toUpperCase() === 'OPTIONS') {
       return fn(request, context);
     }
 
@@ -43,7 +45,15 @@ export function authWrapper(fn, opts = {}) {
     }
 
     try {
-      await authenticationManager.authenticate(request, context);
+      const authInfo = await authenticationManager.authenticate(request, context);
+
+      // Add a helper function to the context for checking scoped API keys.
+      // authInfo is available at context.attributes.authInfo.
+      if (!isObject(context.auth)) {
+        context.auth = {
+          checkScopes: (scopes) => checkScopes(scopes, authInfo, log),
+        };
+      }
     } catch (error) {
       return new Response('Unauthorized', { status: 401 });
     }

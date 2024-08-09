@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.7.0...@adobe/spacecat-shared-rum-api-client-v2.7.1) (2024-08-09)
+
+
+### Bug Fixes
+
+* missing source in the experiment checkpoint ([#319](https://github.com/adobe/spacecat-shared/issues/319)) ([952a50a](https://github.com/adobe/spacecat-shared/commit/952a50a2d90bcbd6c4146460f0a51a178bf1e596))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.6.0...@adobe/spacecat-shared-rum-api-client-v2.7.0) (2024-08-06)
 
 

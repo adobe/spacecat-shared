@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.4.0...@adobe/spacecat-shared-http-utils-v1.5.0) (2024-08-09)
+
+
+### Features
+
+* Introduce scoped API keys ([#312](https://github.com/adobe/spacecat-shared/issues/312)) ([449d273](https://github.com/adobe/spacecat-shared/commit/449d2736154d7e92fb4a3d1f9f290e15e665aa5e))
+
 # [@adobe/spacecat-shared-http-utils-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.3.5...@adobe/spacecat-shared-http-utils-v1.4.0) (2024-07-30)
 
 

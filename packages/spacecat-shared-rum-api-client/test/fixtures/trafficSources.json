@@ -378,6 +378,16 @@
     ]
   },
   {
+    "url": "https://www.aem.live/new-exp-page",
+    "total": 200,
+    "sources": [
+      {
+        "type": "owned:direct",
+        "views": 200
+      }
+    ]
+  },
+  {
     "url": "https://www.aem.live/docs/sidekick-extension",
     "total": 110,
     "sources": [
@@ -523,16 +533,6 @@
   },
   {
     "url": "https://www.aem.live/developer/",
-    "total": 100,
-    "sources": [
-      {
-        "type": "owned:direct",
-        "views": 100
-      }
-    ]
-  },
-  {
-    "url": "https://www.aem.live/new-exp-page",
     "total": 100,
     "sources": [
       {

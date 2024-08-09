@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v1.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.40.0...@adobe/spacecat-shared-data-access-v1.41.0) (2024-08-09)
+
+
+### Features
+
+* Introduce scoped API keys ([#312](https://github.com/adobe/spacecat-shared/issues/312)) ([449d273](https://github.com/adobe/spacecat-shared/commit/449d2736154d7e92fb4a3d1f9f290e15e665aa5e))
+
+# [@adobe/spacecat-shared-data-access-v1.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.39.1...@adobe/spacecat-shared-data-access-v1.40.0) (2024-08-08)
+
+
+### Features
+
+* update import job models to include hashed key ([#318](https://github.com/adobe/spacecat-shared/issues/318)) ([cd90252](https://github.com/adobe/spacecat-shared/commit/cd902522629d13e2707b7a78a38bdffc5d6194c0))
+
 # [@adobe/spacecat-shared-data-access-v1.39.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.39.0...@adobe/spacecat-shared-data-access-v1.39.1) (2024-08-06)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.7.1...@adobe/spacecat-shared-rum-api-client-v2.7.2) (2024-08-09)
+
+
+### Bug Fixes
+
+* use actual number of samples in p-value calculations instead of weighted calculations ([#317](https://github.com/adobe/spacecat-shared/issues/317)) ([6b15543](https://github.com/adobe/spacecat-shared/commit/6b155437933a1ef74559afdfb93f5daaad77609f))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.7.0...@adobe/spacecat-shared-rum-api-client-v2.7.1) (2024-08-09)
 
 

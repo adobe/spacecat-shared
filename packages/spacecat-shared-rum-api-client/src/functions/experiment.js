@@ -95,7 +95,7 @@ function handler(bundles) {
   const experimentInsights = {};
   for (const bundle of bundles) {
     const experimentEvents = bundle.events?.filter(
-      (e) => EXPERIMENT_CHECKPOINT.includes(e.checkpoint),
+      (e) => (EXPERIMENT_CHECKPOINT.includes(e.checkpoint) && e.source),
     );
     const { url, weight, time } = bundle;
     const metrics = calculateMetrics(bundle);

@@ -932,7 +932,7 @@
       },
       "NonKeyAttributes": [
         {
-          "AttributeName": "apiKey",
+          "AttributeName": "hashedApiKey",
           "AttributeType": "S"
         },
         {

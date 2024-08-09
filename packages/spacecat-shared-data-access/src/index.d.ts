@@ -455,9 +455,9 @@ export interface ImportJob {
   getId: () => string;
 
   /**
-   * Retrieves the apiKey of the import job.
+   * Retrieves the hashed apiKey of the import job.
    */
-  getApiKey: () => string;
+  getHashedApiKey: () => string;
 
   /**
    * Retrieves the status of the import job.

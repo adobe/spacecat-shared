@@ -17,7 +17,8 @@
  */
 
 /* c8 ignore start */
-const RAGE_CLICK_THRESHOLD = 5;
+const RAGE_CLICK_THRESHOLD = 10;
+const SAMPLE_THRESHOLD = 10;
 
 function getRageClickSelectors(events) {
   const clickSelectors = {};
@@ -40,17 +41,37 @@ function getRageClickSelectors(events) {
 
 function handler(bundles) {
   const rageClickInstances = {};
+  const pageViews = {};
   for (const bundle of bundles) {
-    const { url } = bundle;
+    const { url, weight } = bundle;
+    pageViews[url] = (pageViews[url] || 0) + weight;
     const rageClickSelectors = getRageClickSelectors(bundle.events);
     if (Object.keys(rageClickSelectors).length > 0) {
       if (!rageClickInstances[url]) {
         rageClickInstances[url] = {};
       }
       for (const selector of Object.keys(rageClickSelectors)) {
-        rageClickInstances[url][selector] = (rageClickInstances[url][selector] || 0)
-        + rageClickSelectors[selector];
+        if (!rageClickInstances[url][selector]) {
+          rageClickInstances[url][selector] = {};
+          rageClickInstances[url][selector].value = rageClickSelectors[selector];
+          rageClickInstances[url][selector].samples = 1;
+        } else {
+          rageClickInstances[url][selector].value += rageClickSelectors[selector];
+          rageClickInstances[url][selector].samples += 1;
+        }
       }
+    }
+  }
+  for (const url of Object.keys(rageClickInstances)) {
+    for (const selector of Object.keys(rageClickInstances[url])) {
+      if (rageClickInstances[url][selector].samples < SAMPLE_THRESHOLD) {
+        delete rageClickInstances[url][selector];
+      }
+    }
+    if (Object.keys(rageClickInstances[url]).length === 0) {
+      delete rageClickInstances[url];
+    } else {
+      rageClickInstances[url].pageViews = pageViews[url];
     }
   }
   return rageClickInstances;

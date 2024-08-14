@@ -281,12 +281,17 @@ export const updateLatestAudit = async (
   );
 
   if (!isObject(existingAudit)) {
-    throw new Error('Audit not found');
+    throw new Error('Audit to update not found');
   }
 
   await dynamoClient.putItem(
     config.tableNameLatestAudits,
     AuditDto.toDynamoItem(newAudit, true),
+  );
+
+  await dynamoClient.putItem(
+    config.tableNameAudits,
+    AuditDto.toDynamoItem(newAudit),
   );
 
   return newAudit;

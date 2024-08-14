@@ -369,7 +369,7 @@ describe('Audit Access Pattern Tests', () => {
 
       await exportedFunctions.updateLatestAudit(updatedAuditData);
 
-      expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+      expect(mockDynamoClient.putItem.calledTwice).to.be.true;
     });
 
     it('should throw an error if the latest audit was not found', async () => {
@@ -381,7 +381,7 @@ describe('Audit Access Pattern Tests', () => {
         fullAuditRef: 'https://someurl.com',
       };
 
-      await expect(exportedFunctions.updateLatestAudit(audit)).to.be.rejectedWith('Audit not found');
+      await expect(exportedFunctions.updateLatestAudit(audit)).to.be.rejectedWith('Audit to update not found');
     });
   });
 });

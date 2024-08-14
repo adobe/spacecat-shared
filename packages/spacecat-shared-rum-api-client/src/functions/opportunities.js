@@ -19,7 +19,9 @@ const DAILY_STATS = {};
 const METRIC_CHECKPOINTS = 'click';
 
 function collectOpptyPages(groupedByUrl) {
-  const { items } = groupedByUrl;
+  const { url, items } = groupedByUrl;
+  // eslint-disable-next-line no-console
+  console.log('url:', url, 'items:', items);
 
   // filter the bundle by day using the time field and put it in the DAILY_STATS object
   items.forEach((item) => {

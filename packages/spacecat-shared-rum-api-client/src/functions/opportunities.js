@@ -125,8 +125,7 @@ function handler(bundles) {
   return FlatBundle.fromArray(bundles)
     .filter((row) => row.checkpoint === METRIC_CHECKPOINTS && row.weight === 100)
     .groupBy('url')
-    .map(collectOpptyPages)
-    .sort((a, b) => b.views - a.views); // sort desc by pageviews
+    .map(collectOpptyPages);
 }
 
 export default {

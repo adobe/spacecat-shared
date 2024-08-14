@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.0...@adobe/spacecat-shared-http-utils-v1.6.1) (2024-08-14)
+
+
+### Bug Fixes
+
+* add query changes ([#324](https://github.com/adobe/spacecat-shared/issues/324)) ([6104f65](https://github.com/adobe/spacecat-shared/commit/6104f65620f8f020e70494c2c2138ae2afefe15e))
+
 # [@adobe/spacecat-shared-http-utils-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.5.0...@adobe/spacecat-shared-http-utils-v1.6.0) (2024-08-14)
 
 

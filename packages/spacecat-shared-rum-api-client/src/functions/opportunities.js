@@ -56,9 +56,11 @@ function collectOpptyPages(groupedByUrl) {
 
   const week2 = last28days.filter((item) => {
     const itemTime = new Date(item.time);
-    const today = new Date();
-    today.setDate(today.getDate() - 14);
-    return itemTime > today;
+    const startWeek2 = new Date();
+    startWeek2.setDate(startWeek2.getDate() - 21);
+    const endWeek2 = new Date();
+    endWeek2.setDate(endWeek2.getDate() - 14);
+    return itemTime > startWeek2 && itemTime <= endWeek2;
   });
   // calculate the CTR for week2
   const week2Pageviews = week2.reduce((acc, item) => acc + item.weight, 0);
@@ -67,9 +69,11 @@ function collectOpptyPages(groupedByUrl) {
 
   const week3 = last28days.filter((item) => {
     const itemTime = new Date(item.time);
-    const today = new Date();
-    today.setDate(today.getDate() - 7);
-    return itemTime > today;
+    const startWeek3 = new Date();
+    startWeek3.setDate(startWeek3.getDate() - 14);
+    const endWeek3 = new Date();
+    endWeek3.setDate(endWeek3.getDate() - 7);
+    return itemTime > startWeek3 && itemTime <= endWeek3;
   });
   // calculate the CTR for week3
   const week3Pageviews = week3.reduce((acc, item) => acc + item.weight, 0);
@@ -78,9 +82,9 @@ function collectOpptyPages(groupedByUrl) {
 
   const week4 = last28days.filter((item) => {
     const itemTime = new Date(item.time);
-    const today = new Date();
-    today.setDate(today.getDate());
-    return itemTime > today;
+    const startWeek4 = new Date();
+    startWeek4.setDate(startWeek4.getDate() - 7);
+    return itemTime > startWeek4;
   });
   // calculate the CTR for week4
   const week4Pageviews = week4.reduce((acc, item) => acc + item.weight, 0);

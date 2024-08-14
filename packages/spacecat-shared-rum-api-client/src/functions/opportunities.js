@@ -13,18 +13,13 @@
 import { FlatBundle } from '../common/flat-bundle.js';
 
 /* c8 ignore start */
+
+const PAGEVIEW_THRESHOLD = 5000;
+const DAILY_STATS = {};
+const METRIC_CHECKPOINTS = 'click';
+
 function collectOpptyPages(groupedByUrl) {
   const { items } = groupedByUrl;
-  // eslint-disable-next-line no-console
-  // console.log('items', items);
-
-  // create a daily stats object
-  // days array filtered by time on items
-  // on the daily array read bundles and
-  // 5k filtering by url on rumAPIClient (first clear by this)
-
-  const PAGEVIEW_THRESHOLD = 5000;
-  const DAILY_STATS = {};
 
   // filter the bundle by day using the time field and put it in the DAILY_STATS object
   items.forEach((item) => {
@@ -35,8 +30,6 @@ function collectOpptyPages(groupedByUrl) {
   });
 
   const pageviews = items.reduce((acc, item) => acc + item.weight, 0);
-  // eslint-disable-next-line no-console
-  // console.log('pageviews', pageviews);
 
   const last28days = items.filter((item) => {
     const itemTime = new Date(item.time);
@@ -44,8 +37,6 @@ function collectOpptyPages(groupedByUrl) {
     today.setDate(today.getDate() - 28);
     return itemTime > today > PAGEVIEW_THRESHOLD;
   });
-  // eslint-disable-next-line no-console
-  // console.log('last28days', last28days.length);
 
   const week1 = last28days.filter((item) => {
     const itemTime = new Date(item.time);
@@ -55,7 +46,7 @@ function collectOpptyPages(groupedByUrl) {
   });
   // calculate the CTR for week1
   const week1Pageviews = week1.reduce((acc, item) => acc + item.weight, 0);
-  const week1Clicks = week1.filter((item) => item.checkpoint === 'click').length;
+  const week1Clicks = week1.filter((item) => item.checkpoint === METRIC_CHECKPOINTS).length;
   const week1CTR = week1Clicks / week1Pageviews;
 
   const week2 = last28days.filter((item) => {
@@ -66,7 +57,7 @@ function collectOpptyPages(groupedByUrl) {
   });
   // calculate the CTR for week2
   const week2Pageviews = week2.reduce((acc, item) => acc + item.weight, 0);
-  const week2Clicks = week2.filter((item) => item.checkpoint === 'click').length;
+  const week2Clicks = week2.filter((item) => item.checkpoint === METRIC_CHECKPOINTS).length;
   const week2CTR = week2Clicks / week2Pageviews;
 
   const week3 = last28days.filter((item) => {
@@ -97,25 +88,25 @@ function collectOpptyPages(groupedByUrl) {
       {
         url: groupedByUrl.url,
         views: pageviews,
-        description: 'CTR decline opportunity',
+        description: 'The click-through-rate is declining. Consider improving the user experience.',
         metrics: [
           {
-            type: 'click',
+            type: METRIC_CHECKPOINTS,
             week1: week1CTR,
             value: week1Clicks,
           },
           {
-            type: 'click',
+            type: METRIC_CHECKPOINTS,
             week2: week2CTR,
             value: week2Clicks,
           },
           {
-            type: 'click',
+            type: METRIC_CHECKPOINTS,
             week3: week3CTR,
             value: week3Clicks,
           },
           {
-            type: 'click',
+            type: METRIC_CHECKPOINTS,
             week4: week4CTR,
             value: week4Clicks,
           },
@@ -127,7 +118,7 @@ function collectOpptyPages(groupedByUrl) {
 
 function handler(bundles) {
   return FlatBundle.fromArray(bundles)
-    .filter((row) => row.checkpoint === 'click' && row.weight === 100)
+    .filter((row) => row.checkpoint === METRIC_CHECKPOINTS && row.weight === 100)
     .groupBy('url')
     .map(collectOpptyPages)
     .sort((a, b) => b.views - a.views); // sort desc by pageviews
@@ -135,6 +126,6 @@ function handler(bundles) {
 
 export default {
   handler,
-  checkpoints: ['click'],
+  checkpoints: METRIC_CHECKPOINTS,
 };
 /* c8 ignore end */

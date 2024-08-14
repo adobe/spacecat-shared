@@ -32,12 +32,15 @@ function collectOpptyPages(groupedByUrl) {
   });
 
   const pageviews = items.reduce((acc, item) => acc + item.weight, 0);
+  if (pageviews < PAGEVIEW_THRESHOLD) {
+    return null;
+  }
 
   const last28days = items.filter((item) => {
     const itemTime = new Date(item.time);
     const today = new Date();
     today.setDate(today.getDate() - 28);
-    return itemTime > today > PAGEVIEW_THRESHOLD;
+    return itemTime > today;
   });
 
   const week1 = last28days.filter((item) => {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-example-v1.2.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.12...@adobe/spacecat-shared-example-v1.2.13) (2024-08-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#320](https://github.com/adobe/spacecat-shared/issues/320)) ([c75b743](https://github.com/adobe/spacecat-shared/commit/c75b7432e0add9b261ddc7999fe80b20442a0dd7))
+
 # [@adobe/spacecat-shared-example-v1.2.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.11...@adobe/spacecat-shared-example-v1.2.12) (2024-06-11)
 
 

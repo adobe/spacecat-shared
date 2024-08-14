@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.5.0...@adobe/spacecat-shared-http-utils-v1.6.0) (2024-08-14)
+
+
+### Features
+
+* export ScopedApiKeyHandler ([#323](https://github.com/adobe/spacecat-shared/issues/323)) ([778e19c](https://github.com/adobe/spacecat-shared/commit/778e19c490c7ed63f600afe4ae025356f47218fd))
+
 # [@adobe/spacecat-shared-http-utils-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.4.0...@adobe/spacecat-shared-http-utils-v1.5.0) (2024-08-09)
 
 

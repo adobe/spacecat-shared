@@ -17,8 +17,8 @@
  */
 
 /* c8 ignore start */
-const RAGE_CLICK_THRESHOLD = 10;
-const SAMPLE_THRESHOLD = 10;
+const DEFAULT_RAGE_CLICK_THRESHOLD = 10;
+const DEFAULT_RAGECLICK_PERCENT_THRESHOLD = 5;
 
 function getRageClickSelectors(events) {
   const clickSelectors = {};
@@ -32,7 +32,7 @@ function getRageClickSelectors(events) {
     }
   }
   for (const selector of Object.keys(clickSelectors)) {
-    if (clickSelectors[selector] < RAGE_CLICK_THRESHOLD) {
+    if (clickSelectors[selector] < DEFAULT_RAGE_CLICK_THRESHOLD) {
       delete clickSelectors[selector];
     }
   }
@@ -64,8 +64,11 @@ function handler(bundles) {
   }
   for (const url of Object.keys(rageClickInstances)) {
     for (const selector of Object.keys(rageClickInstances[url])) {
-      if (rageClickInstances[url][selector].samples < SAMPLE_THRESHOLD) {
+      const rageClickPercentage = rageClickInstances[url][selector].samples / pageViews[url];
+      if (rageClickPercentage < DEFAULT_RAGECLICK_PERCENT_THRESHOLD) {
         delete rageClickInstances[url][selector];
+      } else {
+        rageClickInstances[url][selector].percentage = rageClickPercentage;
       }
     }
     if (Object.keys(rageClickInstances[url]).length === 0) {

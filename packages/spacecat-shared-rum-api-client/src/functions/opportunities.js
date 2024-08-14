@@ -21,7 +21,7 @@ const METRIC_CHECKPOINTS = 'click';
 function collectOpptyPages(groupedByUrl) {
   const { url, items } = groupedByUrl;
   // eslint-disable-next-line no-console
-  console.log('url:', url, 'items:', items);
+  // console.log('url:', url, 'items:', items);
 
   // filter the bundle by day using the time field and put it in the DAILY_STATS object
   items.forEach((item) => {
@@ -42,6 +42,8 @@ function collectOpptyPages(groupedByUrl) {
     today.setDate(today.getDate() - 28);
     return itemTime > today;
   });
+  // eslint-disable-next-line no-console
+  console.log('last28days:', last28days);
 
   const week1 = last28days.filter((item) => {
     const itemTime = new Date(item.time);
@@ -52,7 +54,7 @@ function collectOpptyPages(groupedByUrl) {
   // calculate the CTR for week1
   const week1Pageviews = week1.reduce((acc, item) => acc + item.weight, 0);
   const week1Clicks = week1.filter((item) => item.checkpoint === METRIC_CHECKPOINTS).length;
-  const week1CTR = week1Clicks / week1Pageviews;
+  const week1CTR = (week1Clicks / week1Pageviews) * 100;
 
   const week2 = last28days.filter((item) => {
     const itemTime = new Date(item.time);
@@ -65,7 +67,7 @@ function collectOpptyPages(groupedByUrl) {
   // calculate the CTR for week2
   const week2Pageviews = week2.reduce((acc, item) => acc + item.weight, 0);
   const week2Clicks = week2.filter((item) => item.checkpoint === METRIC_CHECKPOINTS).length;
-  const week2CTR = week2Clicks / week2Pageviews;
+  const week2CTR = (week2Clicks / week2Pageviews) * 100;
 
   const week3 = last28days.filter((item) => {
     const itemTime = new Date(item.time);
@@ -78,7 +80,7 @@ function collectOpptyPages(groupedByUrl) {
   // calculate the CTR for week3
   const week3Pageviews = week3.reduce((acc, item) => acc + item.weight, 0);
   const week3Clicks = week3.filter((item) => item.checkpoint === 'click').length;
-  const week3CTR = week3Clicks / week3Pageviews;
+  const week3CTR = (week3Clicks / week3Pageviews) * 100;
 
   const week4 = last28days.filter((item) => {
     const itemTime = new Date(item.time);
@@ -89,13 +91,13 @@ function collectOpptyPages(groupedByUrl) {
   // calculate the CTR for week4
   const week4Pageviews = week4.reduce((acc, item) => acc + item.weight, 0);
   const week4Clicks = week4.filter((item) => item.checkpoint === 'click').length;
-  const week4CTR = week4Clicks / week4Pageviews;
+  const week4CTR = (week4Clicks / week4Pageviews) * 100;
 
   return {
     type: 'CTR-decline-opportunity',
     opportunities: [
       {
-        url: groupedByUrl.url,
+        url,
         views: pageviews,
         description: 'The click-through-rate is declining. Consider improving the user experience.',
         metrics: [

@@ -581,7 +581,7 @@ export interface ApiKey {
     /**
      * Retrieves the scopes of the API Key.
      */
-    getScopes: () => string;
+    getScopes: () => Array<string>;
 
 }
 

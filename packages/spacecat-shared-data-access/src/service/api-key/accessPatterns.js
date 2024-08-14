@@ -29,7 +29,6 @@ export const getApiKeyByHashedKey = async (hashedKey, dynamoClient, log, config)
       '#hashedKey': 'hashedKey',
     },
     ExpressionAttributeValues: {
-      ':gsi1pk': config.pkApiKey,
       ':hashedKey': hashedKey,
     },
   });

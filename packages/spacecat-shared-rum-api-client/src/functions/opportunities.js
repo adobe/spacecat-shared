@@ -43,7 +43,7 @@ function collectOpptyPages(groupedByUrl) {
     return itemTime > today;
   });
   // eslint-disable-next-line no-console
-  console.log('last28days:', last28days);
+  // console.log('last28days:', last28days);
 
   const week1 = last28days.filter((item) => {
     const itemTime = new Date(item.time);
@@ -53,8 +53,14 @@ function collectOpptyPages(groupedByUrl) {
   });
   // calculate the CTR for week1
   const week1Pageviews = week1.reduce((acc, item) => acc + item.weight, 0);
+  // eslint-disable-next-line no-console
+  console.log('week1Pageviews:', week1Pageviews);
   const week1Clicks = week1.filter((item) => item.checkpoint === METRIC_CHECKPOINTS).length;
+  // eslint-disable-next-line no-console
+  console.log('week1Clicks:', week1Clicks);
   const week1CTR = (week1Clicks / week1Pageviews) * 100;
+  // eslint-disable-next-line no-console
+  console.log('week1CTR:', week1CTR);
 
   const week2 = last28days.filter((item) => {
     const itemTime = new Date(item.time);

@@ -42,7 +42,7 @@ export const createApiKey = (data) => {
   const newState = { ...data };
 
   if (!hasText(newState.hashedApiKey)) {
-    throw new Error(`Invalid Hashed Key: ${newState.hashedApiKey}`);
+    throw new Error(`Invalid Hashed API Key: ${newState.hashedApiKey}`);
   }
 
   if (!hasText(newState.name)) {

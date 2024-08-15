@@ -23,7 +23,7 @@ import { ApiKeyDto } from '../../dto/api-key.js';
 export const getApiKeyByHashedApiKey = async (hashedApiKey, dynamoClient, log, config) => {
   const items = await dynamoClient.query({
     TableName: config.tableNameApiKeys,
-    IndexName: config.indexNameApiKeyByhashedApiKey,
+    IndexName: config.indexNameApiKeyByHashedApiKey,
     KeyConditionExpression: '#hashedApiKey = :hashedApiKey',
     ExpressionAttributeNames: {
       '#hashedApiKey': 'hashedApiKey',

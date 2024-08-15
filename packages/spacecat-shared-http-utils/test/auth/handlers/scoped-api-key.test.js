@@ -159,6 +159,6 @@ describe('ScopedApiKeyHandler', () => {
     expect(result.getProfile().getId()).to.equal('1C4ED8DE-8ECD-42E1-9812-AF34082FB1B4');
     expect(result.getProfile().getScopes()[0].name).to.equal('imports.write');
     expect(result.getProfile().getScopes()[1].name).to.equal('sites.read_all');
-    expect(result.getProfile().gethashedApiKey()).to.equal('372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b');
+    expect(result.getProfile().getHashedApiKey()).to.equal('372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b');
   });
 });

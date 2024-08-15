@@ -89,7 +89,7 @@ describe('ApiKey Model tests', () => {
     });
 
     it('gets hashed key', () => {
-      expect(apiKey.gethashedApiKey()).to.equal('test');
+      expect(apiKey.getHashedApiKey()).to.equal('test');
     });
 
     it('gets name', () => {

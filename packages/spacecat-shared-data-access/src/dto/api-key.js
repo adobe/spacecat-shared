@@ -21,7 +21,7 @@ export const ApiKeyDto = {
      *          imsOrgId: *, expiresAt: *}}
      */
   toDynamoItem: (apiKey) => ({
-    hashedApiKey: apiKey.gethashedApiKey(),
+    hashedApiKey: apiKey.getHashedApiKey(),
     name: apiKey.getName(),
     imsUserId: apiKey.getImsUserId(),
     imsOrgId: apiKey.getImsOrgId(),

@@ -546,7 +546,7 @@ export interface ApiKey {
     /**
      * Retrieves the hashed key value of the API Key.
      */
-    gethashedApiKey: () => string;
+    getHashedApiKey: () => string;
 
     /**
      * Retrieves the name of the API Key.

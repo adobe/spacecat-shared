@@ -21,7 +21,7 @@ const scopeNames = ['sites.read_all', 'sites.write_all', 'organizations.read_all
 const ApiKey = (data) => {
   const self = Base(data);
 
-  self.gethashedApiKey = () => self.state.hashedApiKey;
+  self.getHashedApiKey = () => self.state.hashedApiKey;
   self.getName = () => self.state.name;
   self.getImsUserId = () => self.state.imsUserId;
   self.getImsOrgId = () => self.state.imsOrgId;

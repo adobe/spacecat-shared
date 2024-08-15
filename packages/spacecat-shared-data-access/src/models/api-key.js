@@ -21,7 +21,7 @@ const scopeNames = ['sites.read_all', 'sites.write_all', 'organizations.read_all
 const ApiKey = (data) => {
   const self = Base(data);
 
-  self.getHashedKey = () => self.state.hashedKey;
+  self.getHashedApiKey = () => self.state.hashedApiKey;
   self.getName = () => self.state.name;
   self.getImsUserId = () => self.state.imsUserId;
   self.getImsOrgId = () => self.state.imsOrgId;
@@ -41,8 +41,8 @@ const ApiKey = (data) => {
 export const createApiKey = (data) => {
   const newState = { ...data };
 
-  if (!hasText(newState.hashedKey)) {
-    throw new Error(`Invalid Hashed Key: ${newState.hashedKey}`);
+  if (!hasText(newState.hashedApiKey)) {
+    throw new Error(`Invalid Hashed API Key: ${newState.hashedApiKey}`);
   }
 
   if (!hasText(newState.name)) {

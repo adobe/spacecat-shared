@@ -12,6 +12,18 @@
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 function createFilePath({ siteId, source, metric }) {
+  if (!siteId) {
+    throw new Error('siteId is required');
+  }
+
+  if (!source) {
+    throw new Error('source is required');
+  }
+
+  if (!metric) {
+    throw new Error('metric is required');
+  }
+
   return `metrics/${siteId}/${source}/${metric}.json`;
 }
 

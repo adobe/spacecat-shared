@@ -27,7 +27,7 @@ function createFilePath({ siteId, source, metric }) {
   return `metrics/${siteId}/${source}/${metric}.json`;
 }
 
-async function getStoredMetrics(s3Client, config, context) {
+export async function getStoredMetrics(s3Client, config, context) {
   const { log } = context;
 
   const filePath = createFilePath(config);
@@ -50,7 +50,7 @@ async function getStoredMetrics(s3Client, config, context) {
   }
 }
 
-async function storeMetrics(content, s3Client, config, context) {
+export async function storeMetrics(content, s3Client, config, context) {
   const { log } = context;
 
   const filePath = createFilePath(config);
@@ -72,5 +72,3 @@ async function storeMetrics(content, s3Client, config, context) {
     throw new Error(`Failed to upload metrics to ${filePath}, error: ${e.message}`);
   }
 }
-
-export { getStoredMetrics, storeMetrics };

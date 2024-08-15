@@ -120,7 +120,7 @@ describe('auth wrapper', () => {
     const scopedAction = wrap(() => 42)
       .with(authWrapper, { authHandlers: [ScopedApiKeyHandler] })
       .with(enrichPathInfo);
-    context.dataAccess.getApiKeyByhashedApiKey = async () => mockApiKey;
+    context.dataAccess.getApiKeyByHashedApiKey = async () => mockApiKey;
 
     const resp = await scopedAction(new Request('https://space.cat/', {
       headers: { 'x-api-key': 'test-api-key' },

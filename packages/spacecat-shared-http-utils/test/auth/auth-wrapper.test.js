@@ -55,7 +55,7 @@ describe('auth wrapper', () => {
       dataAccess: {},
     };
     mockApiKey = createApiKey({
-      hashedApiKey: '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
+      hashedKey: '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
       name: 'Test API key name',
       scopes: [
         {
@@ -120,7 +120,7 @@ describe('auth wrapper', () => {
     const scopedAction = wrap(() => 42)
       .with(authWrapper, { authHandlers: [ScopedApiKeyHandler] })
       .with(enrichPathInfo);
-    context.dataAccess.getApiKeyByHashedApiKey = async () => mockApiKey;
+    context.dataAccess.getApiKeyByHashedKey = async () => mockApiKey;
 
     const resp = await scopedAction(new Request('https://space.cat/', {
       headers: { 'x-api-key': 'test-api-key' },

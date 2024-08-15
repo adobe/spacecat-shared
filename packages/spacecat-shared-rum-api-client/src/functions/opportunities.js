@@ -31,8 +31,8 @@ function collectOpptyPages(groupedByUrl) {
     DAILY_STATS[itemDate].push(item);
   });
 
-  const pageviews = items.reduce((acc, item) => acc + item.weight, 0);
-  if (pageviews < PAGEVIEW_THRESHOLD) {
+  const pageViews = items.reduce((acc, item) => acc + item.weight, 0);
+  if (pageViews < PAGEVIEW_THRESHOLD) {
     return null;
   }
 
@@ -49,10 +49,19 @@ function collectOpptyPages(groupedByUrl) {
     const itemTime = new Date(item.time);
     const today = new Date();
     today.setDate(today.getDate() - 21);
-    return itemTime > today;
+    return itemTime < today;
   });
+
+  // let week1Pageviews = 0;
+  // let week1Clicks = 0;
+  // let week1CTR = 0;
+
   // calculate the CTR for week1
-  const week1Pageviews = week1.reduce((acc, item) => acc + item.weight, 0);
+  const week1Pageviews = week1.reduce((acc, item) => {
+    // eslint-disable-next-line no-console
+    console.log('item in week 1:', item);
+    return acc + item.weight;
+  }, 0);
   // eslint-disable-next-line no-console
   console.log('week1Pageviews:', week1Pageviews);
   const week1Clicks = week1.filter((item) => item.checkpoint === METRIC_CHECKPOINTS).length;
@@ -104,7 +113,7 @@ function collectOpptyPages(groupedByUrl) {
     opportunities: [
       {
         url,
-        views: pageviews,
+        pageViews,
         description: 'The click-through-rate is declining. Consider improving the user experience.',
         metrics: [
           {

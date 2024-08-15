@@ -49,6 +49,23 @@ describe('Metrics Store', () => {
   });
 
   describe('getStoredMetrics', () => {
+    it('should throw when required params are not set', async () => {
+      expect(getStoredMetrics(s3Client, {
+        source: 'testSource',
+        metric: 'testMetric',
+      }, context)).to.eventually.throws('siteId is required');
+
+      expect(getStoredMetrics(s3Client, {
+        siteId: 'testSite',
+        metric: 'testMetric',
+      }, context)).to.eventually.throw('source is required');
+
+      expect(getStoredMetrics(s3Client, {
+        source: 'testSource',
+        siteId: 'testSite',
+      }, context)).to.eventually.throw('metric is required');
+    });
+
     it('should return metrics when retrieval is successful', async () => {
       const expectedMetrics = [{
         siteId: '123',

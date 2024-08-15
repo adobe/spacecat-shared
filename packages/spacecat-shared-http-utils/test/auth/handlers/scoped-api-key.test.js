@@ -16,6 +16,7 @@ import chai from 'chai';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
+import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key.js';
 import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
 import ScopedApiKeyHandler from '../../../src/auth/handlers/scoped-api-key.js';
@@ -29,14 +30,11 @@ describe('ScopedApiKeyHandler', () => {
   let handler;
 
   let mockContext;
-  let createApiKeyStub;
 
   const baseApiKeyData = {
-    hashedKey: '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
+    hashedApiKey: '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
     id: '1C4ED8DE-8ECD-42E1-9812-AF34082FB1B4',
     name: 'Test api key',
-    expiredAt: '2025-01-01T16:23:00.000Z',
-    revokedAt: null,
     scopes: [
       {
         name: 'imports.write',
@@ -59,7 +57,7 @@ describe('ScopedApiKeyHandler', () => {
 
     mockContext = {
       dataAccess: {
-        getApiKeyByHashedKey: sinon.stub().resolves(createApiKeyStub),
+        getApiKeyByHashedApiKey: sinon.stub().resolves(createApiKey(baseApiKeyData)),
       },
       pathInfo: {
         headers: {
@@ -67,15 +65,6 @@ describe('ScopedApiKeyHandler', () => {
         },
       },
     };
-
-    createApiKeyStub = sinon.stub().returns({
-      getId: () => baseApiKeyData.id,
-      getHashedKey: () => baseApiKeyData.hashedKey,
-      getName: () => baseApiKeyData.name,
-      getExpiresAt: () => baseApiKeyData.expiredAt,
-      getRevokedAt: () => baseApiKeyData.revokedAt,
-      getScopes: () => baseApiKeyData.scopes,
-    });
   });
 
   afterEach(() => {
@@ -117,7 +106,7 @@ describe('ScopedApiKeyHandler', () => {
     const context = {
       ...mockContext,
       dataAccess: {
-        getApiKeyByHashedKey: sinon.stub().resolves(null),
+        getApiKeyByHashedApiKey: sinon.stub().resolves(null),
       },
     };
 
@@ -127,9 +116,9 @@ describe('ScopedApiKeyHandler', () => {
   });
 
   it('should return null if the API key has expired', async () => {
-    baseApiKeyData.expiredAt = '2024-01-01T16:23:00.000Z';
-    mockContext.dataAccess.getApiKeyByHashedKey = sinon.stub().resolves(createApiKeyStub({
+    mockContext.dataAccess.getApiKeyByHashedApiKey = sinon.stub().resolves(createApiKey({
       ...baseApiKeyData,
+      expiresAt: '2024-01-01T16:23:00.000Z',
     }));
 
     const result = await handler.checkAuth({}, mockContext);
@@ -140,10 +129,9 @@ describe('ScopedApiKeyHandler', () => {
   });
 
   it('should return null if the API key has been revoked', async () => {
-    baseApiKeyData.expiredAt = '2025-01-01T16:23:00.000Z';
-    baseApiKeyData.revokedAt = '2024-01-01T16:23:00.000Z';
-    mockContext.dataAccess.getApiKeyByHashedKey = sinon.stub().resolves(createApiKeyStub({
+    mockContext.dataAccess.getApiKeyByHashedApiKey = sinon.stub().resolves(createApiKey({
       ...baseApiKeyData,
+      revokedAt: '2024-08-01T10:00:00.000Z',
     }));
 
     const result = await handler.checkAuth({}, mockContext);
@@ -154,10 +142,6 @@ describe('ScopedApiKeyHandler', () => {
   });
 
   it('should return an AuthInfo object for a valid key', async () => {
-    baseApiKeyData.revokedAt = null;
-    mockContext.dataAccess.getApiKeyByHashedKey = sinon.stub().resolves(createApiKeyStub({
-      ...baseApiKeyData,
-    }));
     const result = await handler.checkAuth({}, mockContext);
     expect(result).to.be.instanceof(AuthInfo);
     expect(result.type).to.equal('scopedApiKey');
@@ -175,6 +159,6 @@ describe('ScopedApiKeyHandler', () => {
     expect(result.getProfile().getId()).to.equal('1C4ED8DE-8ECD-42E1-9812-AF34082FB1B4');
     expect(result.getProfile().getScopes()[0].name).to.equal('imports.write');
     expect(result.getProfile().getScopes()[1].name).to.equal('sites.read_all');
-    expect(result.getProfile().getHashedKey()).to.equal('372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b');
+    expect(result.getProfile().getHashedApiKey()).to.equal('372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b');
   });
 });

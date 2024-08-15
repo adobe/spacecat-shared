@@ -66,7 +66,7 @@ describe('Api Key Tests', () => {
         };
         mockDynamoClient.query.resolves([mockApiKey]);
 
-        const apiKey = await exportedFunctions.getApiKeyByhashedApiKey('test-key');
+        const apiKey = await exportedFunctions.getApiKeyByHashedApiKey('test-key');
 
         expect(apiKey).to.be.not.null;
         expect(mockDynamoClient.query).to.have.been.calledOnce;

@@ -773,7 +773,7 @@ export interface DataAccess {
       jobId: string,
       status: string,
     ) => Promise<ImportUrl[]>;
-  getApiKeyByhashedApiKey: (
+  getApiKeyByHashedApiKey: (
       hashedApiKey: string,
     ) => Promise<ApiKey | null>;
   createNewApiKey: (
@@ -832,7 +832,7 @@ interface DataAccessConfig {
   indexNameAllImportJobsByStatus: string,
   indexNameAllImportJobsByDateRange: string,
   indexNameAllImportUrlsByJobIdAndStatus: string,
-  indexNameApiKeyByhashedApiKey: string,
+  indexNameApiKeyByHashedApiKey: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;

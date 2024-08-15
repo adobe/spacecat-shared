@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.2...@adobe/spacecat-shared-http-utils-v1.6.3) (2024-08-15)
+
+
+### Bug Fixes
+
+* refactor hashedApiKey ([#328](https://github.com/adobe/spacecat-shared/issues/328)) ([7cb8908](https://github.com/adobe/spacecat-shared/commit/7cb8908c13ffede4849fc0bd0b585ce31b4dc79a))
+
 # [@adobe/spacecat-shared-http-utils-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.1...@adobe/spacecat-shared-http-utils-v1.6.2) (2024-08-15)
 
 

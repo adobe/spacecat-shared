@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-http-utils-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.1...@adobe/spacecat-shared-http-utils-v1.6.2) (2024-08-15)
+
+
+### Bug Fixes
+
+* refactor hashed api key and query to retrieve API key ([#325](https://github.com/adobe/spacecat-shared/issues/325)) ([a99fc76](https://github.com/adobe/spacecat-shared/commit/a99fc76963fdcd6bce8de7d5b315dbefbb03fd95))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.0...@adobe/spacecat-shared-http-utils-v1.6.1) (2024-08-14)
+
+
+### Bug Fixes
+
+* add query changes ([#324](https://github.com/adobe/spacecat-shared/issues/324)) ([6104f65](https://github.com/adobe/spacecat-shared/commit/6104f65620f8f020e70494c2c2138ae2afefe15e))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.5.0...@adobe/spacecat-shared-http-utils-v1.6.0) (2024-08-14)
+
+
+### Features
+
+* export ScopedApiKeyHandler ([#323](https://github.com/adobe/spacecat-shared/issues/323)) ([778e19c](https://github.com/adobe/spacecat-shared/commit/778e19c490c7ed63f600afe4ae025356f47218fd))
+
 # [@adobe/spacecat-shared-http-utils-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.4.0...@adobe/spacecat-shared-http-utils-v1.5.0) (2024-08-09)
 
 

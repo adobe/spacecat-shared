@@ -10,9 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import { createNewApiKey, getApiKeyByHashedKey } from './accessPatterns.js';
+import { createNewApiKey, getApiKeyByHashedApiKey } from './accessPatterns.js';
 
 export const apiKeyFunctions = (dynamoClient, config, log) => ({
-  getApiKeyByHashedKey: (hashedKey) => getApiKeyByHashedKey(hashedKey, dynamoClient, log, config),
+  getApiKeyByHashedApiKey: (hashedApiKey) => getApiKeyByHashedApiKey(
+    hashedApiKey,
+    dynamoClient,
+    log,
+    config,
+  ),
   createNewApiKey: (apiKey) => createNewApiKey(apiKey, dynamoClient, config, log),
 });

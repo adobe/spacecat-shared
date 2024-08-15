@@ -37,7 +37,7 @@ const INDEX_NAME_ALL_SITES_ORGANIZATIONS = 'spacecat-services-all-sites-organiza
 const INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS = 'spacecat-services-all-import-jobs-by-status-dev';
 const INDEX_NAME_ALL_IMPORT_JOBS_BY_DATE_RANGE = 'spacecat-services-all-import-jobs-by-date-range-dev';
 const INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS = 'spacecat-services-all-import-urls-by-job-id-and-status-dev';
-const INDEX_NAME_API_KEY_BY_HASHED_KEY = 'spacecat-services-api-key-by-hashed-key-dev';
+const INDEX_NAME_API_KEY_BY_HASHED_API_KEY = 'spacecat-services-api-key-by-hashed-api-key-dev';
 
 const PK_ALL_SITES = 'ALL_SITES';
 const PK_ALL_CONFIGURATIONS = 'ALL_CONFIGURATIONS';
@@ -75,7 +75,7 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_DATE_RANGE = INDEX_NAME_ALL_IMPORT_JOBS_BY_DATE_RANGE,
         DYNAMO_INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS =
         INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS,
-        DYNAMO_INDEX_NAME_API_KEY_BY_HASHED_KEY = INDEX_NAME_API_KEY_BY_HASHED_KEY,
+        DYNAMO_INDEX_NAME_API_KEY_BY_HASHED_API_KEY = INDEX_NAME_API_KEY_BY_HASHED_API_KEY,
       } = context.env;
 
       context.dataAccess = createDataAccess({
@@ -101,7 +101,7 @@ export default function dataAccessWrapper(fn) {
         indexNameAllImportJobsByStatus: DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS,
         indexNameAllImportJobsByDateRange: DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_DATE_RANGE,
         indexNameImportUrlsByJobIdAndStatus: DYNAMO_INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS,
-        indexNameApiKeyByHashedKey: DYNAMO_INDEX_NAME_API_KEY_BY_HASHED_KEY,
+        indexNameApiKeyByhashedApiKey: DYNAMO_INDEX_NAME_API_KEY_BY_HASHED_API_KEY,
         pkAllSites: PK_ALL_SITES,
         pkAllOrganizations: PK_ALL_ORGANIZATIONS,
         pkAllLatestAudits: PK_ALL_LATEST_AUDITS,

@@ -57,7 +57,7 @@ describe('ScopedApiKeyHandler', () => {
 
     mockContext = {
       dataAccess: {
-        getApiKeyByhashedApiKey: sinon.stub().resolves(createApiKey(baseApiKeyData)),
+        getApiKeyByHashedApiKey: sinon.stub().resolves(createApiKey(baseApiKeyData)),
       },
       pathInfo: {
         headers: {
@@ -106,7 +106,7 @@ describe('ScopedApiKeyHandler', () => {
     const context = {
       ...mockContext,
       dataAccess: {
-        getApiKeyByhashedApiKey: sinon.stub().resolves(null),
+        getApiKeyByHashedApiKey: sinon.stub().resolves(null),
       },
     };
 
@@ -116,7 +116,7 @@ describe('ScopedApiKeyHandler', () => {
   });
 
   it('should return null if the API key has expired', async () => {
-    mockContext.dataAccess.getApiKeyByhashedApiKey = sinon.stub().resolves(createApiKey({
+    mockContext.dataAccess.getApiKeyByHashedApiKey = sinon.stub().resolves(createApiKey({
       ...baseApiKeyData,
       expiresAt: '2024-01-01T16:23:00.000Z',
     }));
@@ -129,7 +129,7 @@ describe('ScopedApiKeyHandler', () => {
   });
 
   it('should return null if the API key has been revoked', async () => {
-    mockContext.dataAccess.getApiKeyByhashedApiKey = sinon.stub().resolves(createApiKey({
+    mockContext.dataAccess.getApiKeyByHashedApiKey = sinon.stub().resolves(createApiKey({
       ...baseApiKeyData,
       revokedAt: '2024-08-01T10:00:00.000Z',
     }));

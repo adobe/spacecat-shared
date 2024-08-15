@@ -26,3 +26,19 @@ export function s3Bucket(fn) {
     return fn(req, context);
   };
 }
+
+/**
+ * Adds an S3Client instance to the context.
+ *
+ * @param {UniversalAction} fn
+ * @returns {function(object, UniversalContext): Promise<Response>}
+ */
+export function s3Client(fn) {
+  return async (request, context) => {
+    if (!context.s3Client) {
+      context.s3Client = new S3Client();
+    }
+
+    return fn(request, context);
+  };
+}

@@ -325,7 +325,7 @@ export default async function generateSampleData(
     });
   }
 
-  // Generate site top pages  data
+  // Generate site top pages data
   for (let i = 0; i < numberOfSiteTopPages; i += 1) {
     const traffic = (i + 1) * 12345;
     siteTopPages.push({
@@ -346,7 +346,7 @@ export default async function generateSampleData(
         siteId: site.id,
         name: `key-event-#${i}`,
         type: Object.values(KEY_EVENT_TYPES).at(i % Object.keys(KEY_EVENT_TYPES).length),
-        time: new Date().toISOString(),
+        time: new Date(Date.now() - i).toISOString(),
       });
 
       keyEvents.push(KeyEventDto.toDynamoItem(keyEvent));

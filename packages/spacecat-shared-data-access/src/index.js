@@ -101,7 +101,7 @@ export default function dataAccessWrapper(fn) {
         indexNameAllImportJobsByStatus: DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS,
         indexNameAllImportJobsByDateRange: DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_DATE_RANGE,
         indexNameImportUrlsByJobIdAndStatus: DYNAMO_INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS,
-        indexNameApiKeyByHashedKey: DYNAMO_INDEX_NAME_API_KEY_BY_HASHED_KEY,
+        indexNameApiKeyByhashedApiKey: DYNAMO_INDEX_NAME_API_KEY_BY_HASHED_KEY,
         pkAllSites: PK_ALL_SITES,
         pkAllOrganizations: PK_ALL_ORGANIZATIONS,
         pkAllLatestAudits: PK_ALL_LATEST_AUDITS,

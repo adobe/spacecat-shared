@@ -546,7 +546,7 @@ export interface ApiKey {
     /**
      * Retrieves the hashed key value of the API Key.
      */
-    getHashedKey: () => string;
+    gethashedApiKey: () => string;
 
     /**
      * Retrieves the name of the API Key.
@@ -773,8 +773,8 @@ export interface DataAccess {
       jobId: string,
       status: string,
     ) => Promise<ImportUrl[]>;
-  getApiKeyByHashedKey: (
-      hashedKey: string,
+  getApiKeyByhashedApiKey: (
+      hashedApiKey: string,
     ) => Promise<ApiKey | null>;
   createNewApiKey: (
       apiKeyData: object,
@@ -832,7 +832,7 @@ interface DataAccessConfig {
   indexNameAllImportJobsByStatus: string,
   indexNameAllImportJobsByDateRange: string,
   indexNameAllImportUrlsByJobIdAndStatus: string,
-  indexNameApiKeyByHashedKey: string,
+  indexNameApiKeyByhashedApiKey: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;

@@ -19,6 +19,7 @@
 /* c8 ignore start */
 const DEFAULT_RAGE_CLICK_THRESHOLD = 10;
 const DEFAULT_RAGECLICK_PERCENT_THRESHOLD = 5;
+const DEFAULT_PAGEVIEW_THRESHOLD = 5000;
 
 function getRageClickSelectors(events) {
   const clickSelectors = {};
@@ -41,10 +42,18 @@ function getRageClickSelectors(events) {
 
 function handler(bundles) {
   const rageClickInstances = {};
-  const pageViews = {};
+  const pageData = {};
   for (const bundle of bundles) {
     const { url, weight } = bundle;
-    pageViews[url] = (pageViews[url] || 0) + weight;
+    if (!pageData[url]) {
+      pageData[url] = {
+        pageViews: weight,
+        samples: 1,
+      };
+    } else {
+      pageData[url].pageViews += weight;
+      pageData[url].samples += 1;
+    }
     const rageClickSelectors = getRageClickSelectors(bundle.events);
     if (Object.keys(rageClickSelectors).length > 0) {
       if (!rageClickInstances[url]) {
@@ -63,18 +72,24 @@ function handler(bundles) {
     }
   }
   for (const url of Object.keys(rageClickInstances)) {
-    for (const selector of Object.keys(rageClickInstances[url])) {
-      const rageClickPercentage = rageClickInstances[url][selector].samples / pageViews[url];
-      if (rageClickPercentage < DEFAULT_RAGECLICK_PERCENT_THRESHOLD) {
-        delete rageClickInstances[url][selector];
-      } else {
-        rageClickInstances[url][selector].percentage = rageClickPercentage;
-      }
-    }
-    if (Object.keys(rageClickInstances[url]).length === 0) {
+    if (pageData[url].pageViews < DEFAULT_PAGEVIEW_THRESHOLD) {
       delete rageClickInstances[url];
     } else {
-      rageClickInstances[url].pageViews = pageViews[url];
+      for (const selector of Object.keys(rageClickInstances[url])) {
+        const rageClickPercentage = (
+          rageClickInstances[url][selector].samples / pageData[url].samples) * 100;
+        if (rageClickPercentage < DEFAULT_RAGECLICK_PERCENT_THRESHOLD) {
+          delete rageClickInstances[url][selector];
+        } else {
+          rageClickInstances[url][selector].percentage = rageClickPercentage;
+        }
+      }
+      if (Object.keys(rageClickInstances[url]).length === 0) {
+        delete rageClickInstances[url];
+      } else {
+        rageClickInstances[url].pageViews = pageData[url].pageViews;
+        rageClickInstances[url].samples = pageData[url].samples;
+      }
     }
   }
   return rageClickInstances;

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.41.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.2...@adobe/spacecat-shared-data-access-v1.41.3) (2024-08-15)
+
+
+### Bug Fixes
+
+* refactor hashed api key and query to retrieve API key ([#325](https://github.com/adobe/spacecat-shared/issues/325)) ([a99fc76](https://github.com/adobe/spacecat-shared/commit/a99fc76963fdcd6bce8de7d5b315dbefbb03fd95))
+
 # [@adobe/spacecat-shared-data-access-v1.41.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.1...@adobe/spacecat-shared-data-access-v1.41.2) (2024-08-14)
 
 

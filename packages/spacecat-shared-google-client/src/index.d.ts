@@ -64,6 +64,13 @@ export default class GoogleClient {
   ): Promise<JSON>;
 
   /**
+   * Retrieves the Google Search Console data for the specified url.
+   * @param url - The URL of the site to be inspected
+   * @returns {Promise<JSON>} The Google Search Console data.
+   */
+  urlInspect(url: string): Promise<JSON>;
+
+  /**
    * Lists all sites available to the authenticated user in Google Search Console.
    *
    * @returns {Promise<JSON>} A promise that resolves to the result of the list sites operation.

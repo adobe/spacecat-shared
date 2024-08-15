@@ -371,4 +371,55 @@ describe('GoogleClient', () => {
       expect(result).to.eql(testResult);
     });
   });
+
+  describe('urlInspect', () => {
+    beforeEach(() => {
+      stubSecretManager(defaultConfig);
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+      sinon.restore();
+    });
+
+    it('should inspect a valid URL', async () => {
+      const url = 'https://example.com/page';
+      const apiEndpoint = 'https://searchconsole.googleapis.com';
+      const mockResponse = { inspectionResult: 'some result' };
+
+      nock(apiEndpoint)
+        .post('/v1/urlInspection/index:inspect')
+        .reply(200, mockResponse);
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.urlInspect(url);
+      expect(result).to.deep.equal(mockResponse);
+    });
+
+    it('should throw an error for invalid URL format', async () => {
+      const invalidUrl = 'invalid-url';
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.urlInspect(invalidUrl);
+      } catch (error) {
+        expect(error.message).to.equal('Error inspecting URL: Invalid URL format');
+      }
+    });
+
+    it('should throw an error if the API response is not ok', async () => {
+      const url = 'https://example.com/page';
+      const apiEndpoint = 'https://searchconsole.googleapis.com';
+
+      nock(apiEndpoint)
+        .post('/v1/urlInspection/index:inspect')
+        .reply(500, 'Bad Request');
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.urlInspect(url);
+      } catch (error) {
+        expect(error.message).to.equal('Error inspecting URL');
+      }
+    });
+  });
 });

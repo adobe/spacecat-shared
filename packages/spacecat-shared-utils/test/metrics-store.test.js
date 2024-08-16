@@ -24,14 +24,10 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 describe('Metrics Store', () => {
-  let s3Client;
   let config;
   let context;
 
   beforeEach(() => {
-    s3Client = {
-      send: sinon.stub(),
-    };
     config = {
       siteId: 'testSite',
       source: 'testSource',
@@ -42,25 +38,29 @@ describe('Metrics Store', () => {
         info: sinon.stub(),
         error: sinon.stub(),
       },
-      env: {
-        S3_BUCKET_NAME: 'testBucket',
+      s3: {
+        s3Client: {
+          send: sinon.stub(),
+        },
+        s3Bucket: 'test-bucket',
+        region: 'us-west-2',
       },
     };
   });
 
   describe('getStoredMetrics', () => {
     it('should throw when required params are not set', async () => {
-      expect(getStoredMetrics(s3Client, {
+      expect(getStoredMetrics({
         source: 'testSource',
         metric: 'testMetric',
       }, context)).to.eventually.throws('siteId is required');
 
-      expect(getStoredMetrics(s3Client, {
+      expect(getStoredMetrics({
         siteId: 'testSite',
         metric: 'testMetric',
       }, context)).to.eventually.throw('source is required');
 
-      expect(getStoredMetrics(s3Client, {
+      expect(getStoredMetrics({
         source: 'testSource',
         siteId: 'testSite',
       }, context)).to.eventually.throw('metric is required');
@@ -80,25 +80,29 @@ describe('Metrics Store', () => {
         name: 'organic-traffic',
         value: 200,
       }];
-      s3Client.send.resolves({
+      context.s3.s3Client.send.resolves({
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(expectedMetrics)),
         },
       });
 
-      const metrics = await getStoredMetrics(s3Client, config, context);
+      const metrics = await getStoredMetrics(config, context);
 
       expect(metrics).to.deep.equal(expectedMetrics);
-      expect(s3Client.send.calledWith(sinon.match.instanceOf(GetObjectCommand))).to.be.true;
-      expect(s3Client.send.calledWith(sinon.match.hasNested('input.Bucket', context.env.S3_BUCKET_NAME))).to.be.true;
-      expect(s3Client.send.calledWith(sinon.match.hasNested('input.Key', 'metrics/testSite/testSource/testMetric.json'))).to.be.true;
+      expect(context.s3.s3Client.send.calledWith(sinon.match.instanceOf(GetObjectCommand)))
+        .to.be.true;
+      expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested(
+        'input.Bucket',
+        context.s3.s3Bucket,
+      ))).to.be.true;
+      expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested('input.Key', 'metrics/testSite/testSource/testMetric.json'))).to.be.true;
       expect(context.log.info).to.have.been.calledWith('Successfully retrieved 2 metrics from metrics/testSite/testSource/testMetric.json');
     });
 
     it('should return empty array when retrieval fails', async () => {
-      s3Client.send.rejects(new Error('Test error'));
+      context.s3.s3Client.send.rejects(new Error('Test error'));
 
-      const metrics = await getStoredMetrics(s3Client, config, context);
+      const metrics = await getStoredMetrics(config, context);
 
       expect(metrics).to.deep.equal([]);
       expect(context.log.error).to.have.been.calledWith('Failed to retrieve metrics from metrics/testSite/testSource/testMetric.json, error: Test error');
@@ -120,16 +124,17 @@ describe('Metrics Store', () => {
         name: 'organic-traffic',
         value: 200,
       }];
-      s3Client.send.resolves({ foo: 'bar' });
+      context.s3.s3Client.send.resolves({ foo: 'bar' });
 
-      const filePath = await storeMetrics(content, s3Client, config, context);
+      const filePath = await storeMetrics(content, config, context);
 
       expect(filePath).to.equal('metrics/testSite/testSource/testMetric.json');
-      expect(s3Client.send.calledWith(sinon.match.instanceOf(PutObjectCommand))).to.be.true;
-      expect(s3Client.send.calledWith(sinon.match.hasNested('input.Bucket', context.env.S3_BUCKET_NAME))).to.be.true;
-      expect(s3Client.send.calledWith(sinon.match.hasNested('input.Key', 'metrics/testSite/testSource/testMetric.json'))).to.be.true;
-      expect(s3Client.send.calledWith(sinon.match.hasNested('input.Body', JSON.stringify(content, null, 2)))).to.be.true;
-      expect(s3Client.send.calledWith(sinon.match.hasNested('input.ContentType', 'application/json'))).to.be.true;
+      expect(context.s3.s3Client.send.calledWith(sinon.match.instanceOf(PutObjectCommand)))
+        .to.be.true;
+      expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested('input.Bucket', context.s3.s3Bucket))).to.be.true;
+      expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested('input.Key', 'metrics/testSite/testSource/testMetric.json'))).to.be.true;
+      expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested('input.Body', JSON.stringify(content, null, 2)))).to.be.true;
+      expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested('input.ContentType', 'application/json'))).to.be.true;
       expect(context.log.info).to.have.been.calledWith('Successfully uploaded metrics to'
         + ' metrics/testSite/testSource/testMetric.json, response: {"foo":"bar"}');
     });
@@ -148,10 +153,10 @@ describe('Metrics Store', () => {
         name: 'organic-traffic',
         value: 200,
       }];
-      s3Client.send.rejects(new Error('Test error'));
+      context.s3.s3Client.send.rejects(new Error('Test error'));
 
       try {
-        await storeMetrics(content, s3Client, config, context);
+        await storeMetrics(content, config, context);
       } catch (e) {
         expect(e.message).to.equal('Failed to upload metrics to metrics/testSite/testSource/testMetric.json, error: Test error');
         expect(context.log.error).to.have.been.calledWith('Failed to upload metrics to metrics/testSite/testSource/testMetric.json, error: Test error');

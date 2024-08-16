@@ -27,18 +27,18 @@ function createFilePath({ siteId, source, metric }) {
   return `metrics/${siteId}/${source}/${metric}.json`;
 }
 
-export async function getStoredMetrics(s3Client, config, context) {
-  const { log } = context;
+export async function getStoredMetrics(config, context) {
+  const { log, s3 } = context;
 
   const filePath = createFilePath(config);
 
   const command = new GetObjectCommand({
-    Bucket: context.env.S3_BUCKET_NAME,
+    Bucket: s3.s3Bucket,
     Key: filePath,
   });
 
   try {
-    const response = await s3Client.send(command);
+    const response = await s3.s3Client.send(command);
     const content = await response.Body?.transformToString();
     const metrics = JSON.parse(content);
     log.info(`Successfully retrieved ${metrics.length} metrics from ${filePath}`);
@@ -50,20 +50,20 @@ export async function getStoredMetrics(s3Client, config, context) {
   }
 }
 
-export async function storeMetrics(content, s3Client, config, context) {
-  const { log } = context;
+export async function storeMetrics(content, config, context) {
+  const { log, s3 } = context;
 
   const filePath = createFilePath(config);
 
   const command = new PutObjectCommand({
-    Bucket: context.env.S3_BUCKET_NAME,
+    Bucket: s3.s3Bucket,
     Key: filePath,
     Body: JSON.stringify(content, null, 2),
     ContentType: 'application/json',
   });
 
   try {
-    const response = await s3Client.send(command);
+    const response = await s3.s3Client.send(command);
     log.info(`Successfully uploaded metrics to ${filePath}, response: ${JSON.stringify(response)}`);
 
     return filePath;

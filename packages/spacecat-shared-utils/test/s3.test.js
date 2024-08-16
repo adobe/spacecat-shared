@@ -12,11 +12,10 @@
 
 /* eslint-env mocha */
 
-// Import necessary libraries
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { S3Client } from '@aws-sdk/client-s3';
-import { s3Bucket, s3Client as s3ClientWrapper } from '../src/s3.js';
+import { s3Wrapper } from '../src/s3.js';
 
 describe('S3 wrapper', () => {
   let fakeContext;
@@ -41,10 +40,11 @@ describe('S3 wrapper', () => {
   });
 
   it('should initialize S3 client and bucket name in context if not present', async () => {
-    await s3Bucket(fakeFn)(fakeReq, fakeContext);
+    await s3Wrapper(fakeFn)(fakeReq, fakeContext);
 
-    expect(fakeContext).to.have.property('s3').that.is.instanceof(S3Client);
-    expect(fakeContext).to.have.property('s3Bucket', 'test-bucket');
+    expect(fakeContext).to.have.property('s3').that.is.an('object');
+    expect(fakeContext.s3).to.have.property('s3Client').that.is.instanceof(S3Client);
+    expect(fakeContext.s3).to.have.property('s3Bucket', 'test-bucket');
     sinon.assert.calledOnce(fakeFn);
     sinon.assert.calledWith(fakeFn, fakeReq, fakeContext);
   });
@@ -52,59 +52,13 @@ describe('S3 wrapper', () => {
   it('should not initialize S3 client if already present in context', async () => {
     // Pre-set the S3 client in the context to simulate it already being initialized
     const s3Client = new S3Client({ region: 'us-test-1' });
-    fakeContext.s3 = s3Client;
+    fakeContext.s3 = { s3Client };
 
-    await s3Bucket(fakeFn)(fakeReq, fakeContext);
-
-    expect(fakeContext.s3).to.equal(s3Client); // Ensure the original s3 client was not overwritten
-    sinon.assert.calledOnce(fakeFn);
-    sinon.assert.calledWith(fakeFn, fakeReq, fakeContext);
-  });
-
-  // Add more tests as necessary to cover different cases and scenarios
-});
-
-describe('S3Client wrapper', () => {
-  let fakeContext;
-  let fakeReq;
-  let fakeFn;
-
-  beforeEach(() => {
-    fakeContext = {
-      env: {
-        AWS_REGION: 'us-test-1',
-      },
-    };
-    fakeReq = {};
-    fakeFn = sinon.stub().resolves('test response');
-
-    sinon.stub(S3Client.prototype, 'constructor').callsFake(() => {});
-  });
-
-  afterEach(() => {
-    sinon.restore();
-  });
-
-  it('should initialize S3 client in context if not present', async () => {
-    await s3ClientWrapper(fakeFn)(fakeReq, fakeContext);
-
-    expect(fakeContext).to.have.property('s3Client').that.is.instanceof(S3Client);
-    sinon.assert.calledOnce(fakeFn);
-    sinon.assert.calledWith(fakeFn, fakeReq, fakeContext);
-  });
-
-  it('should not initialize S3 client if already present in context', async () => {
-    // Pre-set the S3 client in the context to simulate it already being initialized
-    const anS3Client = new S3Client({ region: 'us-test-1' });
-    fakeContext.s3Client = anS3Client;
-
-    await s3ClientWrapper(fakeFn)(fakeReq, fakeContext);
+    await s3Wrapper(fakeFn)(fakeReq, fakeContext);
 
     // Ensure the original s3 client was not overwritten
-    expect(fakeContext.s3Client).to.equal(anS3Client);
+    expect(fakeContext.s3.s3Client).to.equal(s3Client);
     sinon.assert.calledOnce(fakeFn);
     sinon.assert.calledWith(fakeFn, fakeReq, fakeContext);
   });
-
-  // Add more tests as necessary to cover different cases and scenarios
 });

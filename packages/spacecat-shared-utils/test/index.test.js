@@ -40,7 +40,7 @@ describe('Index Exports', () => {
     'resolveCustomerSecretsName',
     'resolveSecretsName',
     'sqsEventAdapter',
-    's3Client',
+    's3Wrapper',
     'sqsWrapper',
     'storeMetrics',
     'stripPort',

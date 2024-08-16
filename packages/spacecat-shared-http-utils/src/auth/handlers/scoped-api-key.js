@@ -29,12 +29,14 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
     if (!dataAccess) {
       throw new Error('Data access is required');
     }
+    this.log('Checking for API key in the request headers', 'debug');
 
     const apiKeyFromHeader = headers['x-api-key'];
     if (!hasText(apiKeyFromHeader)) {
       return null;
     }
 
+    this.log(`Checking for API key: ${apiKeyFromHeader}`, 'debug');
     // Keys are stored by their hash, so we need to hash the key to look it up
     const hashedApiKey = hashWithSHA256(apiKeyFromHeader);
     this.log(`Checking for API key with hash: ${hashedApiKey}`, 'debug');

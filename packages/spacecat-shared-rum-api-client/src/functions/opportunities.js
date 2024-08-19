@@ -38,6 +38,7 @@ function handler(bundles) {
   const data = {};
 
   for (const bundle of bundles) {
+    console.log('bundle:', bundle);
     const weekIndex = getWeekIndex(bundle.time);
     const weekKey = `week${weekIndex}`;
 
@@ -54,6 +55,11 @@ function handler(bundles) {
     }
 
     data[bundle.url][weekKey].pageViews += bundle.weight;
+    // for the click, should only count one click per bundle for the click checkpoint
+    if (bundle.checkpoint === 'click') {
+      data[bundle.url][weekKey].clicks += 1;
+    }
+    data[bundle.url][weekKey].CTR = data[bundle.url][weekKey].clicks / data[bundle.url][weekKey].pageViews;
   }
 
   for (const url in data) {

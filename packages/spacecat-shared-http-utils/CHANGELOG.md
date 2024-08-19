@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.6.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.5...@adobe/spacecat-shared-http-utils-v1.6.6) (2024-08-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#332](https://github.com/adobe/spacecat-shared/issues/332)) ([b2bb2a4](https://github.com/adobe/spacecat-shared/commit/b2bb2a4dd1a0995c36cd2b64510b7c4e0e05436f))
+
 # [@adobe/spacecat-shared-http-utils-v1.6.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.4...@adobe/spacecat-shared-http-utils-v1.6.5) (2024-08-16)
 
 

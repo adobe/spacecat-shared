@@ -46,6 +46,7 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
       this.log(`No API key entity found in the data layer for the provided API key: ${apiKeyFromHeader}`, 'error');
       return null;
     }
+    this.log(`API Key entity: ${apiKeyEntity}`, 'debug');
     this.log(`Valid API key entity found. Id: ${apiKeyEntity.getId()}, name: ${apiKeyEntity.getName()}, scopes: ${apiKeyEntity.getScopes()}`, 'debug');
 
     // We have an API key entity, and need to check if it's still valid

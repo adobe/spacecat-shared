@@ -17,7 +17,8 @@ import {
   composeAuditURL,
   isArray,
   isInteger,
-  isValidDate, isValidUrl,
+  isValidDate,
+  isValidUrl,
   resolveCustomerSecretsName,
 } from '@adobe/spacecat-shared-utils';
 import { fetch as httpFetch } from './utils.js';
@@ -151,7 +152,7 @@ export default class GoogleClient {
 
   async urlInspect(url) {
     if (!isValidUrl(url)) {
-      throw new Error('Error inspecting URL: Invalid URL format');
+      throw new Error(`Error inspecting URL: Invalid URL format (${url})`);
     }
 
     await this.#refreshTokenIfExpired();
@@ -171,10 +172,14 @@ export default class GoogleClient {
     });
 
     if (!response.ok) {
-      throw new Error('Error inspecting URL');
+      throw new Error(`Error inspecting URL ${url}. Returned status ${response.status}`);
     }
 
-    return response.json();
+    try {
+      return await response.json();
+    } catch (e) {
+      throw new Error(`Error parsing result of inspecting URL ${url}: ${e.message}`);
+    }
   }
 
   async listSites() {

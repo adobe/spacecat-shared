@@ -50,7 +50,7 @@ export default class AuthenticationManager {
         // eslint-disable-next-line no-await-in-loop
         authInfo = await handler.checkAuth(request, context);
       } catch (error) {
-        this.log.error(`Failed to authenticate with ${handler.name}: ${error.message}`);
+        this.log.error(`Failed to authenticate with ${handler.name}:`, error);
       }
 
       if (isObject(authInfo)) {

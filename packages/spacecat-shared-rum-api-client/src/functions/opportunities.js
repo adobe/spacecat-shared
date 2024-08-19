@@ -55,10 +55,13 @@ function handler(bundles) {
     }
 
     data[bundle.url][weekKey].pageViews += bundle.weight;
-    // for the click, should only count one click per bundle for the click checkpoint
-    if (bundle.checkpoint === 'click') {
-      data[bundle.url][weekKey].clicks += 1;
+    const selector = {};
+    for (const event of bundle.events) {
+      if (event.checkpoint === 'click') {
+        selector[event.source] = selector[event.source] ? selector[event.source] + 1 : 1;
+      }
     }
+    data[bundle.url][weekKey].clicks += Object.keys(selector).length * bundle.weight;
     data[bundle.url][weekKey].CTR = data[bundle.url][weekKey].clicks / data[bundle.url][weekKey].pageViews;
   }
 

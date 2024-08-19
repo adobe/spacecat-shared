@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-http-utils-v1.6.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.4...@adobe/spacecat-shared-http-utils-v1.6.5) (2024-08-16)
+
+
+### Bug Fixes
+
+* add more debug logs ([#331](https://github.com/adobe/spacecat-shared/issues/331)) ([7268589](https://github.com/adobe/spacecat-shared/commit/726858966f6a74fad91a2eafa5fbf333b72d78cd))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.3...@adobe/spacecat-shared-http-utils-v1.6.4) (2024-08-16)
+
+
+### Bug Fixes
+
+* Add id to api-key DTO ([#330](https://github.com/adobe/spacecat-shared/issues/330)) ([aa451ab](https://github.com/adobe/spacecat-shared/commit/aa451abf7b0178412803b553fe9a39f47e958c02))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.2...@adobe/spacecat-shared-http-utils-v1.6.3) (2024-08-15)
+
+
+### Bug Fixes
+
+* refactor hashedApiKey ([#328](https://github.com/adobe/spacecat-shared/issues/328)) ([7cb8908](https://github.com/adobe/spacecat-shared/commit/7cb8908c13ffede4849fc0bd0b585ce31b4dc79a))
+
 # [@adobe/spacecat-shared-http-utils-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.1...@adobe/spacecat-shared-http-utils-v1.6.2) (2024-08-15)
 
 

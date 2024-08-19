@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.41.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.3...@adobe/spacecat-shared-data-access-v1.41.4) (2024-08-16)
+
+
+### Bug Fixes
+
+* Add id to api-key DTO ([#330](https://github.com/adobe/spacecat-shared/issues/330)) ([aa451ab](https://github.com/adobe/spacecat-shared/commit/aa451abf7b0178412803b553fe9a39f47e958c02))
+
 # [@adobe/spacecat-shared-data-access-v1.41.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.2...@adobe/spacecat-shared-data-access-v1.41.3) (2024-08-15)
 
 

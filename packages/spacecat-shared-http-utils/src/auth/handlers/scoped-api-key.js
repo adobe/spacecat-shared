@@ -29,31 +29,26 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
     if (!dataAccess) {
       throw new Error('Data access is required');
     }
-    this.log('Checking for API key in the request headers', 'debug');
 
     const apiKeyFromHeader = headers['x-api-key'];
     if (!hasText(apiKeyFromHeader)) {
       return null;
     }
 
-    this.log(`Checking for API key: ${apiKeyFromHeader}`, 'debug');
     // Keys are stored by their hash, so we need to hash the key to look it up
     const hashedApiKey = hashWithSHA256(apiKeyFromHeader);
-    this.log(`Checking for API key with hash: ${hashedApiKey}`, 'debug');
     const apiKeyEntity = await dataAccess.getApiKeyByHashedApiKey(hashedApiKey);
 
     if (!apiKeyEntity) {
       this.log(`No API key entity found in the data layer for the provided API key: ${apiKeyFromHeader}`, 'error');
       return null;
     }
-    this.log(`API Key entity: ${apiKeyEntity}`, 'debug');
     this.log(`Valid API key entity found. Id: ${apiKeyEntity.getId()}, name: ${apiKeyEntity.getName()}, scopes: ${apiKeyEntity.getScopes()}`, 'debug');
 
     // We have an API key entity, and need to check if it's still valid
     const authInfo = new AuthInfo()
       .withProfile(apiKeyEntity) // Include the API key entity as the profile
       .withType(this.name);
-    this.log('Successfully constructed authInfo object', 'debug');
 
     // Verify that the api key has not expired or been revoked
     const now = new Date().toISOString();

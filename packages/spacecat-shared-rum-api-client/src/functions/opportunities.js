@@ -65,46 +65,19 @@ function handler(bundles) {
     data[bundle.url][weekKey].CTR = (data[bundle.url][weekKey].clicks / data[bundle.url][weekKey].pageViews) * 100;
   }
 
+  // remove pages with less than 5000 page views per day on average for the last 28 days
   for (const url in data) {
-    for (const week in data[url]) {
-      if (data[url][week].pageViews < PAGEVIEW_THRESHOLD) {
-        delete data[url][week];
-      }
+    const totalPageViews = Object.values(data[url]).reduce((acc, cur) => acc + cur.pageViews, 0);
+    if (totalPageViews < PAGEVIEW_THRESHOLD) {
+      delete data[url];
     }
   }
 
   console.log('data:', data);
   return data;
 }
-// function handler(bundles) {
-//   const data = {};
-//   for (const bundle of bundles) {
-//     const pageViews = bundles.reduce((acc, item) => acc + item.weight, 0);
-//     if (pageViews < PAGEVIEW_THRESHOLD) {
-//       return ;
-//     }
-//     const weekIndex = getWeekIndex(bundle.time);
-//     const weekKey = `week${weekIndex}`;
-//
-//     if (!data[bundle.url]) {
-//       data[bundle.url] = {};
-//     }
-//
-//     if (!data[bundle.url][weekKey]) {
-//       data[bundle.url][weekKey] = {
-//         'pageViews': pageViews,
-//         'clicks':0,
-//         'CTR': 0,
-//       };
-//     }
-//   }
-//
-//   console.log('data:', data);
-//   return data;
-// }
 
 export default {
   handler,
-  // checkpoints: METRIC_CHECKPOINTS,
 };
 /* c8 ignore end */

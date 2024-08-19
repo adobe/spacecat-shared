@@ -67,8 +67,8 @@ function handler(bundles) {
 
   for (const url in data) {
     for (const week in data[url]) {
-      if (data[url].pageViews < PAGEVIEW_THRESHOLD) {
-        delete data[url];
+      if (data[url][week].pageViews < PAGEVIEW_THRESHOLD) {
+        delete data[url][week];
       }
     }
   }

@@ -38,7 +38,7 @@ function handler(bundles) {
   const data = {};
 
   for (const bundle of bundles) {
-    console.log('bundle:', bundle);
+    // console.log('bundle:', bundle);
     const weekIndex = getWeekIndex(bundle.time);
     const weekKey = `week${weekIndex}`;
 

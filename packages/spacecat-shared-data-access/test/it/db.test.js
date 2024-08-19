@@ -159,6 +159,47 @@ describe('DynamoDB Integration Test', async () => {
     dynamoDbLocalProcess.kill();
   });
 
+  it('get all key events for a site', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+
+    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
+    expect(keyEvents[0].getSiteId()).to.equal(siteId);
+
+    // check if the key events are returned in descending order
+    for (let i = 1; i < keyEvents.length; i += 1) {
+      const prev = keyEvents[i - 1];
+      const next = keyEvents[i];
+      const desc = prev.getCreatedAt() >= next.getCreatedAt();
+      expect(desc).to.be.true;
+    }
+  });
+
+  it('add a new key event for a site', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+
+    await dataAccess.createKeyEvent({
+      siteId,
+      name: 'new-key-event',
+      type: KEY_EVENT_TYPES.CONTENT,
+    });
+
+    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+
+    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE + 1);
+  });
+
+  it('remove a key event', async () => {
+    const siteId = (await dataAccess.getSites())[0].getId();
+    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+
+    await dataAccess.removeKeyEvent(keyEvents[0].getId());
+
+    const keyEventsAfter = await dataAccess.getKeyEventsForSite(siteId);
+    expect(keyEventsAfter.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
+  });
+
   it('gets configuration by Version', async () => {
     const configuration = await dataAccess.getConfigurationByVersion('v1');
 
@@ -857,47 +898,6 @@ describe('DynamoDB Integration Test', async () => {
 
     const topPagesAfterRemoval = await dataAccess.getTopPagesForSite(siteId, 'ahrefs', 'global');
     expect(topPagesAfterRemoval).to.be.an('array').that.is.empty;
-  });
-
-  it('get all key events for a site', async () => {
-    const siteId = (await dataAccess.getSites())[0].getId();
-
-    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
-
-    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
-    expect(keyEvents[0].getSiteId()).to.equal(siteId);
-
-    // check if the key events are returned in descending order
-    for (let i = 1; i < keyEvents.length; i += 1) {
-      const prev = keyEvents[i - 1];
-      const next = keyEvents[i];
-      const desc = prev.getCreatedAt() >= next.getCreatedAt();
-      expect(desc).to.be.true;
-    }
-  });
-
-  it('add a new key event for a site', async () => {
-    const siteId = (await dataAccess.getSites())[0].getId();
-
-    await dataAccess.createKeyEvent({
-      siteId,
-      name: 'new-key-event',
-      type: KEY_EVENT_TYPES.CONTENT,
-    });
-
-    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
-
-    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE + 1);
-  });
-
-  it('remove a key event', async () => {
-    const siteId = (await dataAccess.getSites())[0].getId();
-    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
-
-    await dataAccess.removeKeyEvent(keyEvents[0].getId());
-
-    const keyEventsAfter = await dataAccess.getKeyEventsForSite(siteId);
-    expect(keyEventsAfter.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
   });
 
   it('get all experiments for the site', async () => {

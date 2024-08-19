@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.6.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.6...@adobe/spacecat-shared-http-utils-v1.6.7) (2024-08-19)
+
+
+### Bug Fixes
+
+* add try-catch block to authentication manager ([#336](https://github.com/adobe/spacecat-shared/issues/336)) ([a6cf629](https://github.com/adobe/spacecat-shared/commit/a6cf6290e4b8330956fdbb80406523853b0a7b51))
+
 # [@adobe/spacecat-shared-http-utils-v1.6.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.5...@adobe/spacecat-shared-http-utils-v1.6.6) (2024-08-19)
 
 

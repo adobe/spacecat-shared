@@ -62,13 +62,13 @@ function handler(bundles) {
       }
     }
     data[bundle.url][weekKey].clicks += Object.keys(selector).length * bundle.weight;
-    data[bundle.url][weekKey].CTR = data[bundle.url][weekKey].clicks / data[bundle.url][weekKey].pageViews;
+    data[bundle.url][weekKey].CTR = (data[bundle.url][weekKey].clicks / data[bundle.url][weekKey].pageViews) * 100;
   }
 
   for (const url in data) {
     for (const week in data[url]) {
-      if (data[url][week].pageViews < PAGEVIEW_THRESHOLD) {
-        delete data[url][week];
+      if (data[url].pageViews < PAGEVIEW_THRESHOLD) {
+        delete data[url];
       }
     }
   }

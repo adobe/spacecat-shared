@@ -214,4 +214,8 @@ export default class AhrefsAPIClient {
 
     return this.sendRequest('/site-explorer/organic-keywords', queryParams);
   }
+
+  async getLimitsAndUsage() {
+    return this.sendRequest('/subscription-info/limits-and-usage');
+  }
 }

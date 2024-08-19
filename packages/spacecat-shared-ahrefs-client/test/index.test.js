@@ -27,6 +27,7 @@ const mockDate = '2023-03-12T15:24:51.231Z';
 
 describe('AhrefsAPIClient', () => {
   let client;
+
   const config = {
     apiKey: 'testApiKey',
     apiBaseUrl: 'https://example.com',
@@ -94,6 +95,18 @@ describe('AhrefsAPIClient', () => {
         best_position_url: 'url2',
       },
     ],
+  };
+
+  const limitsUsageResponse = {
+    limits_and_usage: {
+      subscription: 'Enterprise, billed yearly',
+      usage_reset_date: '2024-08-28T00:00:00Z',
+      units_limit_workspace: 12000000,
+      units_usage_workspace: 6618294,
+      units_limit_api_key: 1000000,
+      units_usage_api_key: 198771,
+      api_key_expiration_date: '2025-01-04T17:44:07Z',
+    },
   };
 
   before('setup', function () {
@@ -395,6 +408,20 @@ describe('AhrefsAPIClient', () => {
     it('throws error when limit is not an integer', async () => {
       const result = client.getOrganicKeywords('test-site.com', 'us', [], 1.5);
       await expect(result).to.be.rejectedWith('Invalid limit: 1.5');
+    });
+  });
+
+  describe('getLimitsAndUsage', () => {
+    it('sends API request with appropriate endpoint', async () => {
+      nock(config.apiBaseUrl)
+        .get('/subscription-info/limits-and-usage')
+        .reply(200, limitsUsageResponse);
+
+      const result = await client.getLimitsAndUsage();
+      expect(result).to.deep.equal({
+        result: limitsUsageResponse,
+        fullAuditRef: 'https://example.com/subscription-info/limits-and-usage',
+      });
     });
   });
 });

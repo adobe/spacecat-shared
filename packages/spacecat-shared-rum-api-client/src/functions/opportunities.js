@@ -72,6 +72,7 @@ function handler(bundles) {
 
   // eslint-disable-next-line no-console
   console.log(data);
+  return data;
   // const data = {
   //   url: {
   //     'week1': {

@@ -53,17 +53,31 @@ describe('Metrics Store', () => {
       expect(getStoredMetrics({
         source: 'testSource',
         metric: 'testMetric',
-      }, context)).to.eventually.throws('siteId is required');
+      }, context)).to.eventually.throws('siteId is required to compose metrics storage path');
 
       expect(getStoredMetrics({
         siteId: 'testSite',
         metric: 'testMetric',
-      }, context)).to.eventually.throw('source is required');
+      }, context)).to.eventually.throw('source is required to compose metrics storage path');
 
       expect(getStoredMetrics({
         source: 'testSource',
         siteId: 'testSite',
-      }, context)).to.eventually.throw('metric is required');
+      }, context)).to.eventually.throw('metric is required to compose metrics storage path');
+
+      const contextWithoutS3Bucket = {
+        log: {
+          info: sinon.stub(),
+          error: sinon.stub(),
+        },
+        s3: {
+          s3Client: {
+            send: sinon.stub(),
+          },
+          region: 'us-west-2',
+        },
+      };
+      expect(getStoredMetrics(config, contextWithoutS3Bucket)).to.eventually.throw('S3 bucket name is required to get stored metrics');
     });
 
     it('should return metrics when retrieval is successful', async () => {
@@ -110,6 +124,37 @@ describe('Metrics Store', () => {
   });
 
   describe('storeMetrics', () => {
+    it('should throw when required params are not set', async () => {
+      expect(storeMetrics('{}', {
+        source: 'testSource',
+        metric: 'testMetric',
+      }, context)).to.eventually.throws('siteId is required to compose metrics storage path');
+
+      expect(storeMetrics('{}', {
+        siteId: 'testSite',
+        metric: 'testMetric',
+      }, context)).to.eventually.throw('source is required to compose metrics storage path');
+
+      expect(storeMetrics('{}', {
+        source: 'testSource',
+        siteId: 'testSite',
+      }, context)).to.eventually.throw('metric is required to compose metrics storage path');
+
+      const contextWithoutS3Bucket = {
+        log: {
+          info: sinon.stub(),
+          error: sinon.stub(),
+        },
+        s3: {
+          s3Client: {
+            send: sinon.stub(),
+          },
+          region: 'us-west-2',
+        },
+      };
+      expect(storeMetrics('{}', config, contextWithoutS3Bucket)).to.eventually.throw('S3 bucket name is required to get stored metrics');
+    });
+
     it('should return file path when upload is successful', async () => {
       const content = [{
         siteId: '123',

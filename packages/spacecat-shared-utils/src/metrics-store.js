@@ -13,15 +13,15 @@ import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 function createFilePath({ siteId, source, metric }) {
   if (!siteId) {
-    throw new Error('siteId is required');
+    throw new Error('siteId is required to compose metrics storage path');
   }
 
   if (!source) {
-    throw new Error('source is required');
+    throw new Error('source is required to compose metrics storage path');
   }
 
   if (!metric) {
-    throw new Error('metric is required');
+    throw new Error('metric is required to compose metrics storage path');
   }
 
   return `metrics/${siteId}/${source}/${metric}.json`;
@@ -29,6 +29,10 @@ function createFilePath({ siteId, source, metric }) {
 
 export async function getStoredMetrics(config, context) {
   const { log, s3 } = context;
+
+  if (!s3.s3Bucket) {
+    throw new Error('S3 bucket name is required to get stored metrics');
+  }
 
   const filePath = createFilePath(config);
 
@@ -52,6 +56,10 @@ export async function getStoredMetrics(config, context) {
 
 export async function storeMetrics(content, config, context) {
   const { log, s3 } = context;
+
+  if (!s3.s3Bucket) {
+    throw new Error('S3 bucket name is required to store metrics');
+  }
 
   const filePath = createFilePath(config);
 

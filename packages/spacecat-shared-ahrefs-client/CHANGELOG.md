@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.4.1...@adobe/spacecat-shared-ahrefs-client-v1.5.0) (2024-08-19)
+
+
+### Features
+
+* **ahrefs-client:** get limits and usage for subscription ([#334](https://github.com/adobe/spacecat-shared/issues/334)) ([e9ae2ab](https://github.com/adobe/spacecat-shared/commit/e9ae2ab495e3e9a36d79b31ba1da89e9aca05087))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.4.0...@adobe/spacecat-shared-ahrefs-client-v1.4.1) (2024-07-27)
 
 

@@ -13,8 +13,6 @@
 /* eslint-disable */
 
 /* c8 ignore start */
-// const PAGEVIEW_THRESHOLD = 5000;
-// const DAILY_STATS = {};
 // const METRIC_CHECKPOINTS = 'click';
 const PAGEVIEW_THRESHOLD = 5000;
 
@@ -39,39 +37,60 @@ function getWeekIndex(time) {
 function handler(bundles) {
   const data = {};
   for (const bundle of bundles) {
+    const pageViews = bundles.reduce((acc, item) => acc + item.weight, 0);
+    if (pageViews < PAGEVIEW_THRESHOLD) {
+      return ;
+    }
     const weekIndex = getWeekIndex(bundle.time);
-    // eslint-disable-next-line no-console
-    console.log(weekIndex);
     const weekKey = `week${weekIndex}`;
 
     if (!data[bundle.url]) {
-      data[bundle.url] = {
-        'week1': {
-          'pageViews': 0,
-          'clicks': 0,
-          'CTR': 0,
-        },
-        'week2': {
-          'pageViews': 0,
-          'clicks': 0,
-          'CTR': 0,
-        },
-        'week3': {
-          'pageViews': 0,
-          'clicks': 0,
-          'CTR': 0,
-        },
-        'week4': {
-          'pageViews': 0,
-          'clicks': 0,
-          'CTR': 0,
-        },
+      data[bundle.url] = {};
+    }
+
+    if (!data[bundle.url][weekKey]) {
+      data[bundle.url][weekKey] = {
+        'pageViews': pageViews,
+        'clicks':0,
+        'CTR': 0,
       };
     }
   }
+  // for (const bundle of bundles) {
+  //   const pageViews = bundles.reduce((acc, item) => acc + item.weight, 0);
+  //   if (pageViews < PAGEVIEW_THRESHOLD) {
+  //     return ;
+  //   }
+  //   const weekIndex = getWeekIndex(bundle.time);
+  //   const weekKey = `week${weekIndex}`;
+  //
+  //   if (!data[bundle.url]) {
+  //     data[bundle.url] = {
+  //       'week1': {
+  //         'pageViews': pageViews,
+  //         'clicks':0,
+  //         'CTR': 0,
+  //       },
+  //       'week2': {
+  //         'pageViews': pageViews,
+  //         'clicks': 0,
+  //         'CTR': 0,
+  //       },
+  //       'week3': {
+  //         'pageViews': pageViews,
+  //         'clicks': 0,
+  //         'CTR': 0,
+  //       },
+  //       'week4': {
+  //         'pageViews': pageViews,
+  //         'clicks': 0,
+  //         'CTR': 0,
+  //       },
+  //     };
+  //   }
+  // }
 
-  // eslint-disable-next-line no-console
-  console.log(data);
+  console.log('data:', data);
   return data;
   // const data = {
   //   url: {

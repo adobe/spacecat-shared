@@ -30,6 +30,7 @@ export const configSchema = Joi.object({
       brokenTargetURL: Joi.string().optional(),
       targetURL: Joi.string().optional(),
     })).optional(),
+    productDetailPages: Joi.array().items(Joi.string()),
   }).unknown(true)).unknown(true),
 }).unknown(true);
 
@@ -63,6 +64,7 @@ export const Config = (data = {}) => {
   self.getExcludedURLs = (type) => state?.handlers[type]?.excludedURLs;
   self.getManualOverwrites = (type) => state?.handlers[type]?.manualOverwrites;
   self.getFixedURLs = (type) => state?.handlers[type]?.fixedURLs;
+  self.getProductDetailPages = (type) => state?.handlers[type]?.productDetailPages;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {

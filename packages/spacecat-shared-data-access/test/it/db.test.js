@@ -977,6 +977,8 @@ describe('DynamoDB Integration Test', async () => {
     expect(updatedExperiment.getVariants()[0].metrics[0].value).to.equal(50);
   });
 
+  /** Please keep this test at the last, the remove organization is removing the org randomly,
+   * moving this  above may remove the org which may have sites required by other tests */
   it('removes organization', async () => {
     const organizations = await dataAccess.getOrganizations();
     const organization = organizations[0];

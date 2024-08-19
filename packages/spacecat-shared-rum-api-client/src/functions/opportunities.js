@@ -36,11 +36,8 @@ function getWeekIndex(time) {
 
 function handler(bundles) {
   const data = {};
+
   for (const bundle of bundles) {
-    const pageViews = bundles.reduce((acc, item) => acc + item.weight, 0);
-    if (pageViews < PAGEVIEW_THRESHOLD) {
-      return ;
-    }
     const weekIndex = getWeekIndex(bundle.time);
     const weekKey = `week${weekIndex}`;
 
@@ -50,73 +47,52 @@ function handler(bundles) {
 
     if (!data[bundle.url][weekKey]) {
       data[bundle.url][weekKey] = {
-        'pageViews': pageViews,
-        'clicks':0,
+        'pageViews': 0,
+        'clicks': 0,
         'CTR': 0,
       };
     }
+
+    data[bundle.url][weekKey].pageViews += bundle.weight;
   }
-  // for (const bundle of bundles) {
-  //   const pageViews = bundles.reduce((acc, item) => acc + item.weight, 0);
-  //   if (pageViews < PAGEVIEW_THRESHOLD) {
-  //     return ;
-  //   }
-  //   const weekIndex = getWeekIndex(bundle.time);
-  //   const weekKey = `week${weekIndex}`;
-  //
-  //   if (!data[bundle.url]) {
-  //     data[bundle.url] = {
-  //       'week1': {
-  //         'pageViews': pageViews,
-  //         'clicks':0,
-  //         'CTR': 0,
-  //       },
-  //       'week2': {
-  //         'pageViews': pageViews,
-  //         'clicks': 0,
-  //         'CTR': 0,
-  //       },
-  //       'week3': {
-  //         'pageViews': pageViews,
-  //         'clicks': 0,
-  //         'CTR': 0,
-  //       },
-  //       'week4': {
-  //         'pageViews': pageViews,
-  //         'clicks': 0,
-  //         'CTR': 0,
-  //       },
-  //     };
-  //   }
-  // }
+
+  for (const url in data) {
+    for (const week in data[url]) {
+      if (data[url][week].pageViews < PAGEVIEW_THRESHOLD) {
+        delete data[url][week];
+      }
+    }
+  }
 
   console.log('data:', data);
   return data;
-  // const data = {
-  //   url: {
-  //     'week1': {
-  //       'pageViews': 0,
-  //       'clicks': 0,
-  //       'CTR': 0,
-  //     },
-  //     'week2': {
-  //       'pageViews': 0,
-  //       'clicks': 0,
-  //       'CTR': 0,
-  //     },
-  //     'week3': {
-  //       'pageViews': 0,
-  //       'clicks': 0,
-  //       'CTR': 0,
-  //     },
-  //     'week4': {
-  //       'pageViews': 0,
-  //       'clicks': 0,
-  //       'CTR': 0,
-  //     },
-  //   },
-  // };
 }
+// function handler(bundles) {
+//   const data = {};
+//   for (const bundle of bundles) {
+//     const pageViews = bundles.reduce((acc, item) => acc + item.weight, 0);
+//     if (pageViews < PAGEVIEW_THRESHOLD) {
+//       return ;
+//     }
+//     const weekIndex = getWeekIndex(bundle.time);
+//     const weekKey = `week${weekIndex}`;
+//
+//     if (!data[bundle.url]) {
+//       data[bundle.url] = {};
+//     }
+//
+//     if (!data[bundle.url][weekKey]) {
+//       data[bundle.url][weekKey] = {
+//         'pageViews': pageViews,
+//         'clicks':0,
+//         'CTR': 0,
+//       };
+//     }
+//   }
+//
+//   console.log('data:', data);
+//   return data;
+// }
 
 export default {
   handler,

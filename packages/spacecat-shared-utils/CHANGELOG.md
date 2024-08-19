@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.19.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.3...@adobe/spacecat-shared-utils-v1.19.4) (2024-08-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#332](https://github.com/adobe/spacecat-shared/issues/332)) ([b2bb2a4](https://github.com/adobe/spacecat-shared/commit/b2bb2a4dd1a0995c36cd2b64510b7c4e0e05436f))
+
 # [@adobe/spacecat-shared-utils-v1.19.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.2...@adobe/spacecat-shared-utils-v1.19.3) (2024-08-14)
 
 

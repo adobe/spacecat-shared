@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.41.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.6...@adobe/spacecat-shared-data-access-v1.41.7) (2024-08-20)
+
+
+### Bug Fixes
+
+* move metrics-store and s3 in shared utils ([#327](https://github.com/adobe/spacecat-shared/issues/327)) ([bff367c](https://github.com/adobe/spacecat-shared/commit/bff367cf05f9b7d802a7b8c24bc81abbf0e2665c))
+
 # [@adobe/spacecat-shared-data-access-v1.41.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.5...@adobe/spacecat-shared-data-access-v1.41.6) (2024-08-20)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.8...@adobe/spacecat-shared-data-access-v1.42.0) (2024-08-20)
+
+
+### Features
+
+* introduce url inspect in google client ([#326](https://github.com/adobe/spacecat-shared/issues/326)) ([eb9e8ae](https://github.com/adobe/spacecat-shared/commit/eb9e8ae67f7a95ca5e4abb993f8b625400735312))
+
 # [@adobe/spacecat-shared-data-access-v1.41.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.7...@adobe/spacecat-shared-data-access-v1.41.8) (2024-08-20)
 
 

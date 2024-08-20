@@ -325,7 +325,7 @@ export default async function generateSampleData(
     });
   }
 
-  // Generate site top pages  data
+  // Generate site top pages data
   for (let i = 0; i < numberOfSiteTopPages; i += 1) {
     const traffic = (i + 1) * 12345;
     siteTopPages.push({

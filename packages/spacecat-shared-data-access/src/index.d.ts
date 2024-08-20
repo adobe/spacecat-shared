@@ -84,6 +84,7 @@ export interface Audit {
   getScores: () => object;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Config {
 
 }
@@ -546,7 +547,7 @@ export interface ApiKey {
     /**
      * Retrieves the hashed key value of the API Key.
      */
-    getHashedKey: () => string;
+    getHashedApiKey: () => string;
 
     /**
      * Retrieves the name of the API Key.
@@ -581,7 +582,7 @@ export interface ApiKey {
     /**
      * Retrieves the scopes of the API Key.
      */
-    getScopes: () => string;
+    getScopes: () => Array<string>;
 
 }
 
@@ -773,8 +774,8 @@ export interface DataAccess {
       jobId: string,
       status: string,
     ) => Promise<ImportUrl[]>;
-  getApiKeyByHashedKey: (
-      hashedKey: string,
+  getApiKeyByHashedApiKey: (
+      hashedApiKey: string,
     ) => Promise<ApiKey | null>;
   createNewApiKey: (
       apiKeyData: object,
@@ -832,7 +833,7 @@ interface DataAccessConfig {
   indexNameAllImportJobsByStatus: string,
   indexNameAllImportJobsByDateRange: string,
   indexNameAllImportUrlsByJobIdAndStatus: string,
-  indexNameApiKeyByHashedKey: string,
+  indexNameApiKeyByHashedApiKey: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;

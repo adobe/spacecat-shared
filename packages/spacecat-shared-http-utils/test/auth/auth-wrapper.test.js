@@ -14,15 +14,15 @@
 
 import { Request } from '@adobe/fetch';
 import wrap from '@adobe/helix-shared-wrap';
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
+import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key.js';
 import { authWrapper, enrichPathInfo } from '../../src/index.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
+import ScopedApiKeyHandler from '../../src/auth/handlers/scoped-api-key.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 describe('auth wrapper', () => {
   const DummyHandler = class extends AbstractHandler {
@@ -41,6 +41,7 @@ describe('auth wrapper', () => {
     .with(enrichPathInfo);
 
   let context;
+  let mockApiKey;
 
   beforeEach('setup', () => {
     context = {
@@ -49,7 +50,18 @@ describe('auth wrapper', () => {
       pathInfo: {
         suffix: '',
       },
+      dataAccess: {},
     };
+    mockApiKey = createApiKey({
+      hashedApiKey: '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
+      name: 'Test API key name',
+      scopes: [
+        {
+          name: 'imports.write',
+          domains: ['https://www.example.com'],
+        },
+      ],
+    });
   });
 
   it('throws error if no auth handler is provided', async () => {
@@ -100,5 +112,25 @@ describe('auth wrapper', () => {
 
     expect(await resp.text()).to.equal('Unauthorized');
     expect(resp.status).to.equal(401);
+  });
+
+  it('should add auth.checkScopes to the context', async () => {
+    const scopedAction = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [ScopedApiKeyHandler] })
+      .with(enrichPathInfo);
+    context.dataAccess.getApiKeyByHashedApiKey = async () => mockApiKey;
+
+    const resp = await scopedAction(new Request('https://space.cat/', {
+      headers: { 'x-api-key': 'test-api-key' },
+    }), context);
+
+    expect(resp).to.equal(42);
+    expect(context.auth.checkScopes).to.be.a('function');
+
+    // Throws an error if checkScopes check fails
+    context.auth.checkScopes(['imports.write']);
+
+    const expectedError = 'API key is missing the [scope-user-does-not-have] scope(s) required for this resource';
+    expect(() => context.auth.checkScopes(['scope-user-does-not-have'])).to.throw(expectedError);
   });
 });

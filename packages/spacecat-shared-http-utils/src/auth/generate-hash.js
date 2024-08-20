@@ -9,15 +9,8 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import crypto from 'crypto';
 
-import { createNewApiKey, getApiKeyByHashedApiKey } from './accessPatterns.js';
-
-export const apiKeyFunctions = (dynamoClient, config, log) => ({
-  getApiKeyByHashedApiKey: (hashedApiKey) => getApiKeyByHashedApiKey(
-    hashedApiKey,
-    dynamoClient,
-    log,
-    config,
-  ),
-  createNewApiKey: (apiKey) => createNewApiKey(apiKey, dynamoClient, config, log),
-});
+export function hashWithSHA256(input) {
+  return crypto.createHash('sha256').update(input).digest('hex');
+}

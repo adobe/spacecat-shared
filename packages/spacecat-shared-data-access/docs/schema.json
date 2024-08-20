@@ -1146,7 +1146,7 @@
       },
       "NonKeyAttributes": [
         {
-          "AttributeName": "hashedKey",
+          "AttributeName": "hashedApiKey",
           "AttributeType": "S"
         },
         {

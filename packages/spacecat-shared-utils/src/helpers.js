@@ -47,7 +47,7 @@ export function resolveCustomerSecretsName(baseURL, ctx) {
   let customer;
   try {
     customer = new URL(baseURL).host.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-  } catch (e) {
+  } catch {
     throw new Error('Invalid baseURL: must be a valid URL');
   }
   return resolveSecretsName({}, ctx, `${basePath}/${customer}`);

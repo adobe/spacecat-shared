@@ -12,16 +12,14 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
 import { organizationFunctions } from '../../../../src/service/organizations/index.js';
 import { createOrganization } from '../../../../src/models/organization.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 const TEST_DA_CONFIG = {
   tableNameOrganizations: 'spacecat-services-organizations',

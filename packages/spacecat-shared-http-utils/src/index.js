@@ -14,6 +14,7 @@ import { Response } from '@adobe/fetch';
 
 import LegacyApiKeyHandler from './auth/handlers/legacy-api-key.js';
 import AdobeImsHandler from './auth/handlers/ims.js';
+import ScopedApiKeyHandler from './auth/handlers/scoped-api-key.js';
 
 const HEADER_CONTENT_TYPE = 'content-type';
 const HEADER_ERROR = 'x-error';
@@ -89,5 +90,6 @@ export function internalServerError(message = 'internal server error', headers =
 
 export { authWrapper } from './auth/auth-wrapper.js';
 export { enrichPathInfo } from './enrich-path-info-wrapper.js';
+export { hashWithSHA256 } from './auth/generate-hash.js';
 
-export { AdobeImsHandler, LegacyApiKeyHandler };
+export { AdobeImsHandler, ScopedApiKeyHandler, LegacyApiKeyHandler };

@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-utils-v1.19.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.4...@adobe/spacecat-shared-utils-v1.19.5) (2024-08-20)
+
+
+### Bug Fixes
+
+* move metrics-store and s3 in shared utils ([#327](https://github.com/adobe/spacecat-shared/issues/327)) ([bff367c](https://github.com/adobe/spacecat-shared/commit/bff367cf05f9b7d802a7b8c24bc81abbf0e2665c))
+
+# [@adobe/spacecat-shared-utils-v1.19.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.3...@adobe/spacecat-shared-utils-v1.19.4) (2024-08-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#332](https://github.com/adobe/spacecat-shared/issues/332)) ([b2bb2a4](https://github.com/adobe/spacecat-shared/commit/b2bb2a4dd1a0995c36cd2b64510b7c4e0e05436f))
+
+# [@adobe/spacecat-shared-utils-v1.19.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.2...@adobe/spacecat-shared-utils-v1.19.3) (2024-08-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#320](https://github.com/adobe/spacecat-shared/issues/320)) ([c75b743](https://github.com/adobe/spacecat-shared/commit/c75b7432e0add9b261ddc7999fe80b20442a0dd7))
+
 # [@adobe/spacecat-shared-utils-v1.19.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.1...@adobe/spacecat-shared-utils-v1.19.2) (2024-08-06)
 
 

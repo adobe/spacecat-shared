@@ -83,7 +83,7 @@ async function mergeBundlesWithSameId(bundles) {
       }
       const data = await response.json();
       return { url: `${prodBaseUrl}${experiment}/manifest.json`, data };
-    } catch (error) {
+    } catch {
       try {
         const previewUrlResponse = await fetch(`${previewBaseUrl}${experiment}/manifest.json`);
         if (!previewUrlResponse.ok) {
@@ -91,7 +91,7 @@ async function mergeBundlesWithSameId(bundles) {
         }
         const previewUrlData = await previewUrlResponse.json();
         return { url: `${previewBaseUrl}${experiment}/manifest.json`, data: previewUrlData };
-      } catch (err) {
+      } catch {
         return { url: `${previewBaseUrl}${experiment}/manifest.json`, data: null };
       }
     }

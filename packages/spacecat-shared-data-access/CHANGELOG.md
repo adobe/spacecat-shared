@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.41.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.5...@adobe/spacecat-shared-data-access-v1.41.6) (2024-08-20)
+
+
+### Bug Fixes
+
+* experimentation IT tests failing intermittently ([#337](https://github.com/adobe/spacecat-shared/issues/337)) ([b6651d6](https://github.com/adobe/spacecat-shared/commit/b6651d60bdfe93ffb55f95018352ea3647432b0d))
+
 # [@adobe/spacecat-shared-data-access-v1.41.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.4...@adobe/spacecat-shared-data-access-v1.41.5) (2024-08-19)
 
 

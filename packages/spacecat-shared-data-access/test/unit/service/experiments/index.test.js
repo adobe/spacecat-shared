@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -20,10 +20,8 @@ import sinonChai from 'sinon-chai';
 import { experimentFunctions } from '../../../../src/service/experiments/index.js';
 import { createExperiment } from '../../../../src/models/experiment.js';
 
-chai.use(chaiAsPromised);
-chai.use(sinonChai);
-
-const { expect } = chai;
+use(chaiAsPromised);
+use(sinonChai);
 
 const TEST_DA_CONFIG = {
   tableNameAudits: 'test-audits',

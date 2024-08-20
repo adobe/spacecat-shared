@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -20,17 +20,22 @@ import AuthenticationManager from '../../src/auth/authentication-manager.js';
 import NotAuthenticatedError from '../../src/auth/errors/not-authenticated.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
 
-chai.use(chaiAsPromised);
+use(chaiAsPromised);
 
-const { expect } = chai;
-
-const createHandler = (name, shouldAuthenticate) => class extends AbstractHandler {
+const createHandler = (
+  name,
+  shouldAuthenticate,
+  shouldThrowError = false,
+) => class extends AbstractHandler {
   constructor(log) {
     super(name, log);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars,class-methods-use-this
   async checkAuth(request, ctx) {
+    if (shouldThrowError) {
+      throw new Error('Authentication error');
+    }
     return shouldAuthenticate ? { user: 'testUser' } : null;
   }
 };
@@ -56,6 +61,17 @@ describe('AuthenticationManager', () => {
   it('fails to create authentication manager without handler list', () => {
     expect(() => AuthenticationManager.create(null, logStub)).to.throw('Invalid handlers');
     expect(() => AuthenticationManager.create([], logStub)).to.throw('No handlers provided');
+  });
+
+  it('handles errors thrown by checkAuth', async () => {
+    const ErrorAuthHandler = createHandler('ErrorAuthHandler', false, true);
+    const manager = AuthenticationManager.create([ErrorAuthHandler], logStub);
+    const request = {};
+    const context = {};
+
+    await expect(manager.authenticate(request, context)).to.be.rejectedWith(NotAuthenticatedError);
+    expect(logStub.error.calledWith('Failed to authenticate with ErrorAuthHandler:')).to.be.true;
+    expect(logStub.info.calledWith('No authentication handler was able to authenticate the request')).to.be.true;
   });
 
   it('creates an instance with registered handlers', () => {

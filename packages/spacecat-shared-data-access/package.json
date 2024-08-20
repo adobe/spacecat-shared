@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "1.41.5",
+  "version": "1.41.6",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "main": "src/index.js",
@@ -38,10 +38,10 @@
     "uuid": "10.0.0"
   },
   "devDependencies": {
-    "chai": "4.5.0",
+    "chai": "5.1.1",
     "chai-as-promised": "8.0.0",
     "dynamo-db-local": "8.0.0",
     "sinon": "18.0.0",
-    "sinon-chai": "3.7.0"
+    "sinon-chai": "4.0.0"
   }
 }

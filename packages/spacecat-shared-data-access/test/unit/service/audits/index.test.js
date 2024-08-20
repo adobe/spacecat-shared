@@ -12,15 +12,13 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
 import { auditFunctions } from '../../../../src/service/audits/index.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 const TEST_DA_CONFIG = {
   tableNameAudits: 'test-audits',

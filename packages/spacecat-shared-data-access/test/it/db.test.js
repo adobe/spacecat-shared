@@ -14,7 +14,7 @@
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import DynamoDbLocal from 'dynamo-db-local';
+import { spawn } from 'dynamo-db-local';
 import Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
@@ -134,12 +134,11 @@ describe('DynamoDB Integration Test', async () => {
     process.env.AWS_ACCESS_KEY_ID = 'dummy';
     process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
 
-    dynamoDbLocalProcess = DynamoDbLocal.spawn({
-      port: 8000,
-      sharedDb: true,
+    dynamoDbLocalProcess = spawn({
+      detached: true, stdio: 'ignore',
     });
 
-    await sleep(10000); // give db time to start up
+    await sleep(5000); // give db time to start up
 
     await generateSampleData(
       TEST_DA_CONFIG,
@@ -155,7 +154,7 @@ describe('DynamoDB Integration Test', async () => {
   });
 
   after(() => {
-    dynamoDbLocalProcess.kill();
+    dynamoDbLocalProcess.unref();
   });
 
   it('get all key events for a site', async () => {

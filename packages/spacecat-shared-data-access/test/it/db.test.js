@@ -776,14 +776,6 @@ describe('DynamoDB Integration Test', async () => {
     expect(latestAuditAfterRemoval).to.be.null;
   });
 
-  it('removes organization', async () => {
-    const organizations = await dataAccess.getOrganizations();
-    const organization = organizations[0];
-    await expect(dataAccess.removeOrganization(organization.getId())).to.eventually.be.fulfilled;
-    const organizationAfterRemoval = await dataAccess.getOrganizationByID(organization.getId());
-    expect(organizationAfterRemoval).to.be.null;
-  });
-
   it('verify a previously added site candidate exists', async () => {
     const exists = await dataAccess.siteCandidateExists('https://example0.com');
     expect(exists).to.be.true;
@@ -899,42 +891,47 @@ describe('DynamoDB Integration Test', async () => {
     expect(topPagesAfterRemoval).to.be.an('array').that.is.empty;
   });
 
-  xit('get all experiments for the site', async () => {
-    const sites = await dataAccess.getSites();
-    const experiments = await dataAccess.getExperiments(sites[0].getId());
+  it('get all experiments for the site', async () => {
+    const site = await dataAccess.getSiteByBaseURL('https://example0.com');
+    const siteId = site.getId();
+    const experiments = await dataAccess.getExperiments(siteId);
 
     expect(experiments.length).to.equal(NUMBER_OF_EXPERIMENTS);
   });
 
-  xit('get all experiments for the site and experimentId', async () => {
+  it('get all experiments for the site and experimentId', async () => {
     // handling multi page experiments
-    const sites = await dataAccess.getSites();
-    const experiments = await dataAccess.getExperiments(sites[0].getId(), 'experiment-1');
+    const site = await dataAccess.getSiteByBaseURL('https://example0.com');
+    const siteId = site.getId();
+    const experiments = await dataAccess.getExperiments(siteId, 'experiment-1');
 
     expect(experiments.length).to.equal(1);
   });
 
   it('get 0 experiments for the siteId with out any experiments', async () => {
-    const sites = await dataAccess.getSites();
-    const experiments = await dataAccess.getExperiments(sites[1].getId());
+    const site = await dataAccess.getSiteByBaseURL('https://example3.com');
+    const siteId = site.getId();
+    const experiments = await dataAccess.getExperiments(siteId);
 
     expect(experiments.length).to.equal(0);
   });
 
-  xit('check if experiment exists', async () => {
-    const sites = await dataAccess.getSites();
-    const experiment = await dataAccess.getExperiment(sites[0].getId(), 'experiment-1', `${sites[0].getBaseURL()}/page-1`);
+  it('check if experiment exists', async () => {
+    const site = await dataAccess.getSiteByBaseURL('https://example0.com');
+    const siteId = site.getId();
+    const experiment = await dataAccess.getExperiment(siteId, 'experiment-1', `${site.getBaseURL()}/page-1`);
 
     expect(experiment).to.not.equal(null);
   });
 
   it('create and update experiment', async () => {
-    const sites = await dataAccess.getSites();
+    const site = await dataAccess.getSiteByBaseURL('https://example0.com');
+    const siteId = site.getId();
     const experimentData = {
-      siteId: sites[0].getId(),
+      siteId,
       experimentId: 'experiment-test',
       name: 'Experiment Test',
-      url: `${sites[0].getBaseURL()}/page-10`,
+      url: `${site.getBaseURL()}/page-10`,
       status: 'active',
       type: 'full',
       variants: [
@@ -944,7 +941,7 @@ describe('DynamoDB Integration Test', async () => {
           interactionsCount: 40,
           p_value: 'coming soon',
           split: 0.5,
-          url: `${sites[0].baseURL}/page-10/variant-1`,
+          url: `${site.getBaseURL()}/page-10/variant-1`,
           views: 1100,
           metrics: [
             {
@@ -960,7 +957,7 @@ describe('DynamoDB Integration Test', async () => {
           p_value: 'coming soon',
           metrics: [],
           split: 0.5,
-          url: `${sites[0].baseURL}/page-10`,
+          url: `${site.getBaseURL()}/page-10`,
           views: 1090,
         },
       ],
@@ -970,12 +967,22 @@ describe('DynamoDB Integration Test', async () => {
       updatedBy: 'it-test',
     };
     await dataAccess.upsertExperiment(experimentData);
-    const experimentTest = await dataAccess.getExperiment(sites[0].getId(), 'experiment-test', `${sites[0].getBaseURL()}/page-10`);
+    const experimentTest = await dataAccess.getExperiment(siteId, 'experiment-test', `${site.getBaseURL()}/page-10`);
     expect(experimentTest).to.not.equal(null);
     // update the experiment variant 0 metrics to 50
     experimentData.variants[0].metrics[0].value = 50;
     await dataAccess.upsertExperiment(experimentData);
-    const updatedExperiment = await dataAccess.getExperiment(sites[0].getId(), 'experiment-test', `${sites[0].getBaseURL()}/page-10`);
+    const updatedExperiment = await dataAccess.getExperiment(siteId, 'experiment-test', `${site.getBaseURL()}/page-10`);
     expect(updatedExperiment.getVariants()[0].metrics[0].value).to.equal(50);
+  });
+
+  /** Please keep this test at the last, the remove organization is removing the org randomly,
+   * moving this  above may remove the org which may have sites required by other tests */
+  it('removes organization', async () => {
+    const organizations = await dataAccess.getOrganizations();
+    const organization = organizations[0];
+    await expect(dataAccess.removeOrganization(organization.getId())).to.eventually.be.fulfilled;
+    const organizationAfterRemoval = await dataAccess.getOrganizationByID(organization.getId());
+    expect(organizationAfterRemoval).to.be.null;
   });
 });

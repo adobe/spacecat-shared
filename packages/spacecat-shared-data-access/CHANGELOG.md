@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.41.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.7...@adobe/spacecat-shared-data-access-v1.41.8) (2024-08-20)
+
+
+### Bug Fixes
+
+* add only unique site/org ids in enabled/disabled for a handler ([#322](https://github.com/adobe/spacecat-shared/issues/322)) ([abb01c9](https://github.com/adobe/spacecat-shared/commit/abb01c914f1d77d2adf06c0de80c977945d597bb))
+
 # [@adobe/spacecat-shared-data-access-v1.41.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.6...@adobe/spacecat-shared-data-access-v1.41.7) (2024-08-20)
 
 

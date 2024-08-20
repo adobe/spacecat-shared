@@ -12,17 +12,15 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { apiKeyFunctions } from '../../../../src/service/api-key/index.js';
 import { createApiKey } from '../../../../src/models/api-key.js';
 
-chai.use(sinonChai);
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(sinonChai);
+use(chaiAsPromised);
 
 const TEST_DA_CONFIG = {
   tableNameApiKeys: 'test-api-keys',

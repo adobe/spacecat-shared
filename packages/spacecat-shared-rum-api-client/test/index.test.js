@@ -11,14 +11,13 @@
  */
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 
 import RUMAPIClient from '../src/index.js';
 
-chai.use(chaiAsPromised);
-const { expect } = chai;
+use(chaiAsPromised);
 
 describe('RUMAPIClient', () => {
   const context = {};

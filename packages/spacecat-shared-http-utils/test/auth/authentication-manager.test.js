@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -20,9 +20,7 @@ import AuthenticationManager from '../../src/auth/authentication-manager.js';
 import NotAuthenticatedError from '../../src/auth/errors/not-authenticated.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 const createHandler = (
   name,

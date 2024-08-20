@@ -32,7 +32,7 @@
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
     "@adobe/spacecat-shared-data-access": "file:../spacecat-shared-data-access",
-    "chai": "4.5.0",
+    "chai": "5.1.1",
     "chai-as-promised": "8.0.0",
     "husky": "9.1.4",
     "nock": "13.5.4",

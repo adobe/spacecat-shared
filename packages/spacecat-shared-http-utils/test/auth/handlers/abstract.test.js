@@ -13,15 +13,13 @@
 /* eslint-env mocha */
 
 // eslint-disable-next-line max-classes-per-file
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
 import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 describe('AbstractHandler', () => {
   let logStub;

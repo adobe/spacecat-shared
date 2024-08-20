@@ -12,16 +12,15 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { getStoredMetrics, storeMetrics } from '../src/metrics-store.js';
 
-chai.use(sinonChai);
-chai.use(chaiAsPromised);
-const { expect } = chai;
+use(sinonChai);
+use(chaiAsPromised);
 
 describe('Metrics Store', () => {
   let config;

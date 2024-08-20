@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import DynamoDbLocal from 'dynamo-db-local';
 import Joi from 'joi';
@@ -29,8 +29,7 @@ import { createSiteCandidate, SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } fr
 import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 import { ConfigurationDto } from '../../src/dto/configuration.js';
 
-const { expect } = chai;
-chai.use(chaiAsPromised);
+use(chaiAsPromised);
 
 function checkSite(site, configuration) {
   expect(site).to.be.an('object');

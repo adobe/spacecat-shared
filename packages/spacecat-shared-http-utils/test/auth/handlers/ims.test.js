@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 import fs from 'fs';
@@ -24,9 +24,7 @@ import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
 import imsIdpConfigDev from '../../../src/auth/handlers/config/ims-stg.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 const privateKey = fs.readFileSync('test/fixtures/auth/ims/private_key.pem', 'utf8');
 

@@ -14,7 +14,7 @@
 
 import { Request } from '@adobe/fetch';
 import wrap from '@adobe/helix-shared-wrap';
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key.js';
@@ -22,9 +22,7 @@ import { authWrapper, enrichPathInfo } from '../../src/index.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
 import ScopedApiKeyHandler from '../../src/auth/handlers/scoped-api-key.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 describe('auth wrapper', () => {
   const DummyHandler = class extends AbstractHandler {

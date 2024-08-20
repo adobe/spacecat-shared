@@ -12,15 +12,13 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 
 import { siteTopPagesFunctions } from '../../../../src/service/site-top-pages/index.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 const TEST_DA_CONFIG = {
   tableNameSiteTopPages: 'test-site-top-pages',

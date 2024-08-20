@@ -12,17 +12,15 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { importJobFunctions } from '../../../../src/service/import-job/index.js';
 import { createImportJob } from '../../../../src/models/importer/import-job.js';
 
-chai.use(sinonChai);
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(sinonChai);
+use(chaiAsPromised);
 
 const TEST_DA_CONFIG = {
   tableNameImportJobs: 'test-import-jobs',

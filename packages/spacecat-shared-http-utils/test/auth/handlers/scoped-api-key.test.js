@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -21,9 +21,7 @@ import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
 import ScopedApiKeyHandler from '../../../src/auth/handlers/scoped-api-key.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 describe('ScopedApiKeyHandler', () => {
   let logStub;

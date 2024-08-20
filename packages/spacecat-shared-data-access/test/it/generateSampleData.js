@@ -166,6 +166,9 @@ export default async function generateSampleData(
     config.tableNameSiteTopPages,
     config.tableNameKeyEvents,
     config.tableNameExperiments,
+    config.tableNameApiKeys,
+    config.tableNameImportJobs,
+    config.tableNameImportUrls,
   ]);
   await createTablesFromSchema();
 

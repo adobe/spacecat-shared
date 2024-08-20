@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.19...@adobe/spacecat-shared-google-client-v1.2.0) (2024-08-20)
+
+
+### Features
+
+* introduce url inspect in google client ([#326](https://github.com/adobe/spacecat-shared/issues/326)) ([eb9e8ae](https://github.com/adobe/spacecat-shared/commit/eb9e8ae67f7a95ca5e4abb993f8b625400735312))
+
 # [@adobe/spacecat-shared-google-client-v1.1.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.18...@adobe/spacecat-shared-google-client-v1.1.19) (2024-08-19)
 
 

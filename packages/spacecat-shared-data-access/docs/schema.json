@@ -1178,8 +1178,6 @@
           "AttributeType": "M"
         }
       ],
-      "GlobalSecondaryIndexes": [
-      ],
       "DataAccess": {
         "MySql": {}
       },

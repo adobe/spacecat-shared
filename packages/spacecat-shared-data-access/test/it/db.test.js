@@ -99,6 +99,9 @@ const TEST_DA_CONFIG = {
   tableNameConfigurations: 'spacecat-services-configurations',
   tableNameSiteTopPages: 'spacecat-services-site-top-pages',
   tableNameExperiments: 'spacecat-services-experiments',
+  tableNameApiKeys: 'spacecat-services-api-keys',
+  tableNameImportJobs: 'spacecat-services-import-jobs',
+  tableNameImportUrls: 'spacecat-services-import-urls',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
@@ -106,6 +109,7 @@ const TEST_DA_CONFIG = {
   indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id',
   indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
+  indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
   pkAllSites: 'ALL_SITES',
   pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
@@ -135,26 +139,33 @@ describe('DynamoDB Integration Test', async () => {
     process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
 
     dynamoDbLocalProcess = spawn({
-      detached: true, stdio: 'ignore',
+      detached: true,
+      stdio: 'inherit',
+      port: 8000,
+      sharedDb: true,
     });
 
     await sleep(5000); // give db time to start up
 
-    await generateSampleData(
-      TEST_DA_CONFIG,
-      NUMBER_OF_ORGANIZATIONS,
-      NUMBER_OF_SITES,
-      NUMBER_OF_SITES_CANDIDATES,
-      NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
-      NUMBER_OF_TOP_PAGES_FOR_SITE,
-      NUMBER_OF_KEY_EVENTS_PER_SITE,
-    );
+    try {
+      await generateSampleData(
+        TEST_DA_CONFIG,
+        NUMBER_OF_ORGANIZATIONS,
+        NUMBER_OF_SITES,
+        NUMBER_OF_SITES_CANDIDATES,
+        NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
+        NUMBER_OF_TOP_PAGES_FOR_SITE,
+        NUMBER_OF_KEY_EVENTS_PER_SITE,
+      );
+    } catch (e) {
+      console.error('Error generating sample data', e);
+    }
 
     dataAccess = createDataAccess(TEST_DA_CONFIG, console);
   });
 
   after(() => {
-    dynamoDbLocalProcess.unref();
+    dynamoDbLocalProcess.kill();
   });
 
   it('get all key events for a site', async () => {

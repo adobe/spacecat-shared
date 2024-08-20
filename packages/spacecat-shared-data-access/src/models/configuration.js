@@ -69,11 +69,11 @@ const Configuration = (data = {}) => {
         handler.disabled.orgs = handler.disabled.orgs?.filter((id) => id !== orgId) || [];
       } else {
         handler.enabled = handler.enabled || { orgs: [] };
-        handler.enabled.orgs = [...(handler.enabled?.orgs || []), orgId];
+        handler.enabled.orgs = Array.from(new Set([...(handler.enabled?.orgs || []), orgId]));
       }
     } else if (handler.enabledByDefault) {
       handler.disabled = handler.disabled || { orgs: [] };
-      handler.disabled.orgs = [...(handler.disabled?.orgs || []), orgId];
+      handler.disabled.orgs = Array.from(new Set([...(handler.disabled?.orgs || []), orgId]));
     } else {
       handler.enabled.orgs = handler.enabled.orgs?.filter((id) => id !== orgId) || [];
     }
@@ -88,11 +88,11 @@ const Configuration = (data = {}) => {
         handler.disabled.sites = handler.disabled.sites?.filter((id) => id !== siteId) || [];
       } else {
         handler.enabled = handler.enabled || { sites: [] };
-        handler.enabled.sites = [...(handler.enabled.sites || []), siteId];
+        handler.enabled.sites = Array.from(new Set([...(handler.enabled.sites || []), siteId]));
       }
     } else if (handler.enabledByDefault) {
       handler.disabled = handler.disabled || { sites: [] };
-      handler.disabled.sites = [...(handler.disabled.sites || []), siteId];
+      handler.disabled.sites = Array.from(new Set([...(handler.disabled.sites || []), siteId]));
     } else {
       handler.enabled.sites = handler.enabled.sites?.filter((id) => id !== siteId) || [];
     }

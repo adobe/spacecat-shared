@@ -78,7 +78,7 @@ function handler(bundles) {
       let totalClicks = 0;
       for (const event of bundle.events) {
         if (event.checkpoint === 'click') {
-          uniqueSelectors.set(event.source, (uniqueSelectors.get(event.source) || 0) + 1);
+          uniqueSelectors.add(event.source);
           totalClicks++;
         }
       }

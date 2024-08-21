@@ -12,17 +12,15 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { importJobFunctions } from '../../../../src/service/import-job/index.js';
 import { createImportJob } from '../../../../src/models/importer/import-job.js';
 
-chai.use(sinonChai);
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(sinonChai);
+use(chaiAsPromised);
 
 const TEST_DA_CONFIG = {
   tableNameImportJobs: 'test-import-jobs',
@@ -59,7 +57,7 @@ describe('Import Job Tests', () => {
           status: 'RUNNING',
           options: {},
           baseURL: 'https://www.test.com',
-          apiKey: 'test-api-key',
+          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
         };
         mockDynamoClient.getItem.resolves(mockImportJob);
@@ -86,7 +84,7 @@ describe('Import Job Tests', () => {
           status: 'RUNNING',
           options: {},
           baseURL: 'https://www.test.com',
-          apiKey: 'test-api-key',
+          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           startTime: '2024-05-28T14:26:00.000Z',
           importQueueId: 'test-import-queue-id',
         },
@@ -95,7 +93,7 @@ describe('Import Job Tests', () => {
           status: 'RUNNING',
           options: {},
           baseURL: 'https://www.test1.com',
-          apiKey: 'test-api1-key',
+          hashedApiKey: '5c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           startTime: '2024-06-01T14:26:00.000Z',
           importQueueId: 'test-import-queue-id-1',
         }];
@@ -114,7 +112,7 @@ describe('Import Job Tests', () => {
           status: 'RUNNING',
           options: {},
           baseURL: 'https://www.test.com',
-          apiKey: 'test-api-key',
+          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
         },
         {
@@ -122,7 +120,7 @@ describe('Import Job Tests', () => {
           status: 'RUNNING',
           options: {},
           baseURL: 'https://www.test1.com',
-          apiKey: 'test-api1-key',
+          hashedApiKey: '5c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id-1',
         }];
         mockDynamoClient.query.resolves(mockImportJobs);
@@ -140,7 +138,7 @@ describe('Import Job Tests', () => {
           status: 'RUNNING',
           options: {},
           baseURL: 'https://www.test.com',
-          apiKey: 'test-api-key',
+          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
         };
         const result = await exportedFunctions.createNewImportJob(
@@ -159,7 +157,7 @@ describe('Import Job Tests', () => {
           status: 'RUNNING',
           options: {},
           baseURL: 'https://www.test.com',
-          apiKey: 'test-api-key',
+          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
         };
         mockDynamoClient.getItem.resolves(mockImportJobData);
@@ -179,7 +177,7 @@ describe('Import Job Tests', () => {
         const mockImportJobData = {
           id: 'test-id',
           status: 'RUNNING',
-          apiKey: 'test-api-key',
+          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           options: {},
           baseURL: 'https://www.test.com',
         };

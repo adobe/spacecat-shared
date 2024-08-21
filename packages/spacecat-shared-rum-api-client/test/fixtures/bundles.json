@@ -18071,7 +18071,30 @@
           "timeDelta": 1814
         }
       ]
+    },
+    {
+      "id": "58LOUV",
+      "host": "rum.hlx.page",
+      "time": "2024-07-13T06:00:00.098Z",
+      "timeSlot": "2024-07-13T06:00:00.000Z",
+      "url": "https://www.aem.live/new-exp-page",
+      "userAgent": "mobile:ios",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "experiment",
+          "target": "contr ... <<<Logpush: message truncated>>> ... d-martech",
+          "timeDelta": 98
+        },
+        {
+          "checkpoint": "load",
+          "timeDelta": 294
+        },
+        {
+          "checkpoint": "error",
+          "timeDelta": 521
+        }
+      ]
     }
-
   ]
 }

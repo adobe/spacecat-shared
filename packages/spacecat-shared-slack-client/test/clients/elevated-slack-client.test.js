@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import sinon from 'sinon';
@@ -20,9 +20,7 @@ import sinon from 'sinon';
 import ElevatedSlackClient from '../../src/clients/elevated-slack-client.js';
 import { BaseSlackClient, SLACK_TARGETS } from '../../src/index.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 describe('ElevatedSlackClient', () => {
   const mockToken = 'mock-token';

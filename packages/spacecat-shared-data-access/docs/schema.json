@@ -932,7 +932,7 @@
       },
       "NonKeyAttributes": [
         {
-          "AttributeName": "apiKey",
+          "AttributeName": "hashedApiKey",
           "AttributeType": "S"
         },
         {
@@ -1146,7 +1146,7 @@
       },
       "NonKeyAttributes": [
         {
-          "AttributeName": "hashedKey",
+          "AttributeName": "hashedApiKey",
           "AttributeType": "S"
         },
         {
@@ -1177,8 +1177,6 @@
           "AttributeName": "scopes",
           "AttributeType": "M"
         }
-      ],
-      "GlobalSecondaryIndexes": [
       ],
       "DataAccess": {
         "MySql": {}

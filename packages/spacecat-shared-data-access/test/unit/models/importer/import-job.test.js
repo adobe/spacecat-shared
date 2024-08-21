@@ -17,7 +17,7 @@ import { createImportJob } from '../../../../src/models/importer/import-job.js';
 
 const validImportJob = {
   id: '123',
-  apiKey: 'test-api-key',
+  hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
   baseURL: 'https://www.test.com',
   status: 'RUNNING',
   startTime: '2024-05-29T14:26:00.000Z',
@@ -45,7 +45,7 @@ describe('ImportJob Model tests', () => {
     });
 
     it('throws an error if apiKey is not a valid string', () => {
-      expect(() => createImportJob({ ...validImportJob, apiKey: 123 })).to.throw('Invalid API key: 123');
+      expect(() => createImportJob({ ...validImportJob, hashedApiKey: 123 })).to.throw('Invalid API key: 123');
     });
 
     it('creates an import job object with a startTime', () => {
@@ -136,7 +136,7 @@ describe('ImportJob Model tests', () => {
     });
 
     it('retrieves the apiKey of the import job', () => {
-      expect(importJob.getApiKey()).to.equal('test-api-key');
+      expect(importJob.getHashedApiKey()).to.equal('4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4');
     });
 
     it('retrieves the startTime of the import job', () => {

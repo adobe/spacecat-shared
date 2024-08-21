@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.7.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.7.2...@adobe/spacecat-shared-rum-api-client-v2.7.3) (2024-08-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#320](https://github.com/adobe/spacecat-shared/issues/320)) ([c75b743](https://github.com/adobe/spacecat-shared/commit/c75b7432e0add9b261ddc7999fe80b20442a0dd7))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.7.1...@adobe/spacecat-shared-rum-api-client-v2.7.2) (2024-08-09)
+
+
+### Bug Fixes
+
+* use actual number of samples in p-value calculations instead of weighted calculations ([#317](https://github.com/adobe/spacecat-shared/issues/317)) ([6b15543](https://github.com/adobe/spacecat-shared/commit/6b155437933a1ef74559afdfb93f5daaad77609f))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.7.0...@adobe/spacecat-shared-rum-api-client-v2.7.1) (2024-08-09)
+
+
+### Bug Fixes
+
+* missing source in the experiment checkpoint ([#319](https://github.com/adobe/spacecat-shared/issues/319)) ([952a50a](https://github.com/adobe/spacecat-shared/commit/952a50a2d90bcbd6c4146460f0a51a178bf1e596))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.6.0...@adobe/spacecat-shared-rum-api-client-v2.7.0) (2024-08-06)
 
 

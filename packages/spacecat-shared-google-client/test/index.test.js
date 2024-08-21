@@ -371,4 +371,128 @@ describe('GoogleClient', () => {
       expect(result).to.eql(testResult);
     });
   });
+
+  describe('urlInspect', () => {
+    const apiEndpoint = 'https://searchconsole.googleapis.com';
+    const apiPath = '/v1/urlInspection/index:inspect';
+
+    beforeEach(() => {
+      stubSecretManager(defaultConfig);
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+      sinon.restore();
+    });
+
+    it('should inspect a valid URL', async () => {
+      const url = 'https://example.com/page';
+      const mockResponse = {
+        inspectionResult: {
+          inspectionResultLink: 'https://search.google.com/search-console/inspect?resource_id=https://www.example.com/',
+          indexStatusResult: {
+            verdict: 'PASS',
+            coverageState: 'Submitted and indexed',
+            robotsTxtState: 'ALLOWED',
+            indexingState: 'INDEXING_ALLOWED',
+            lastCrawlTime: '2024-08-13T22:35:22Z',
+            pageFetchState: 'SUCCESSFUL',
+            googleCanonical: 'https://www.example.com/foo',
+            userCanonical: 'https://www.example.com/foo',
+            referringUrls: [
+              'https://www.example.com/bar',
+            ],
+            crawledAs: 'MOBILE',
+          },
+          mobileUsabilityResult: {
+            verdict: 'VERDICT_UNSPECIFIED',
+          },
+          richResultsResult: {
+            verdict: 'PASS',
+            detectedItems: [
+              {
+                richResultType: 'Product snippets',
+                items: [
+                  {
+                    name: 'Example Product Name',
+                    issues: [
+                      {
+                        issueMessage: 'Missing field "image"',
+                        severity: 'ERROR',
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                richResultType: 'Merchant listings',
+                items: [
+                  {
+                    name: 'Example Product Name',
+                    issues: [
+                      {
+                        issueMessage: 'Missing field "hasMerchantReturnPolicy"',
+                        severity: 'WARNING',
+                      },
+                      {
+                        issueMessage: 'Missing field "shippingDetails"',
+                        severity: 'ERROR',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      };
+
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(200, mockResponse);
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.urlInspect(url);
+      expect(result).to.deep.equal(mockResponse);
+    });
+
+    it('should throw an error for invalid URL format', async () => {
+      const invalidUrl = 'invalid-url';
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.urlInspect(invalidUrl);
+      } catch (error) {
+        expect(error.message).to.equal(`Error inspecting URL: Invalid URL format (${invalidUrl})`);
+      }
+    });
+
+    it('should throw an error if the API response is not ok', async () => {
+      const url = 'https://example.com/page';
+
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(500, 'Bad Request');
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.urlInspect(url);
+      } catch (error) {
+        expect(error.message).to.equal(`Error inspecting URL ${url}. Returned status 500`);
+      }
+    });
+
+    it('should throw an error when the response cannot be parsed to json', async () => {
+      const url = 'https://example.com/page';
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(200, 'Invalid JSON');
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.urlInspect(url);
+      } catch (error) {
+        expect(error.message).to.equal(`Error parsing result of inspecting URL ${url}: Unexpected token 'I', "Invalid JSON" is not valid JSON`);
+      }
+    });
+  });
 });

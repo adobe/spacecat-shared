@@ -17,9 +17,11 @@ import {
   composeAuditURL,
   isArray,
   isInteger,
-  isValidDate, isValidUrl,
+  isValidDate,
+  isValidUrl,
   resolveCustomerSecretsName,
 } from '@adobe/spacecat-shared-utils';
+import { fetch as httpFetch } from './utils.js';
 
 export default class GoogleClient {
   static async createFrom(context, baseURL) {
@@ -145,6 +147,38 @@ export default class GoogleClient {
     } catch (error) {
       this.log.error('Error retrieving organic search data:', error.message);
       throw new Error(`Error retrieving organic search data from Google API: ${error.message}`);
+    }
+  }
+
+  async urlInspect(url) {
+    if (!isValidUrl(url)) {
+      throw new Error(`Error inspecting URL: Invalid URL format (${url})`);
+    }
+
+    await this.#refreshTokenIfExpired();
+
+    const apiEndpoint = 'https://searchconsole.googleapis.com/v1/urlInspection/index:inspect';
+
+    const response = await httpFetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.authClient.credentials.access_token}`,
+      },
+      body: JSON.stringify({
+        inspectionUrl: url,
+        siteUrl: this.siteUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error inspecting URL ${url}. Returned status ${response.status}`);
+    }
+
+    try {
+      return await response.json();
+    } catch (e) {
+      throw new Error(`Error parsing result of inspecting URL ${url}: ${e.message}`);
     }
   }
 

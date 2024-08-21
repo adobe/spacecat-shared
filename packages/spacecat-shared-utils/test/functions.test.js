@@ -33,7 +33,7 @@ import {
   isValidUrl,
   dateAfterDays,
   deepEqual,
-} from '../src/functions.js';
+} from '../src/index.js';
 
 describe('Shared functions', () => {
   describe('Commons', () => {

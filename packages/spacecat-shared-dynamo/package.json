@@ -1,8 +1,12 @@
 {
   "name": "@adobe/spacecat-shared-dynamo",
-  "version": "1.3.31",
+  "version": "1.3.33",
   "description": "Shared modules of the Spacecat Services - DynamoDB client",
   "type": "module",
+  "engines": {
+    "node": "^20.0.0 <21.0.0",
+    "npm": "^10.0.0 <11.0.0"
+  },
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
@@ -29,8 +33,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.623.0",
-    "@aws-sdk/lib-dynamodb": "3.623.0",
+    "@aws-sdk/client-dynamodb": "3.632.0",
+    "@aws-sdk/lib-dynamodb": "3.632.0",
     "@adobe/spacecat-shared-utils": "1.1.0"
   },
   "devDependencies": {

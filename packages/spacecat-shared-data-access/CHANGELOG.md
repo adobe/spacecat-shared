@@ -1,3 +1,81 @@
+# [@adobe/spacecat-shared-data-access-v1.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.8...@adobe/spacecat-shared-data-access-v1.42.0) (2024-08-20)
+
+
+### Features
+
+* introduce url inspect in google client ([#326](https://github.com/adobe/spacecat-shared/issues/326)) ([eb9e8ae](https://github.com/adobe/spacecat-shared/commit/eb9e8ae67f7a95ca5e4abb993f8b625400735312))
+
+# [@adobe/spacecat-shared-data-access-v1.41.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.7...@adobe/spacecat-shared-data-access-v1.41.8) (2024-08-20)
+
+
+### Bug Fixes
+
+* add only unique site/org ids in enabled/disabled for a handler ([#322](https://github.com/adobe/spacecat-shared/issues/322)) ([abb01c9](https://github.com/adobe/spacecat-shared/commit/abb01c914f1d77d2adf06c0de80c977945d597bb))
+
+# [@adobe/spacecat-shared-data-access-v1.41.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.6...@adobe/spacecat-shared-data-access-v1.41.7) (2024-08-20)
+
+
+### Bug Fixes
+
+* move metrics-store and s3 in shared utils ([#327](https://github.com/adobe/spacecat-shared/issues/327)) ([bff367c](https://github.com/adobe/spacecat-shared/commit/bff367cf05f9b7d802a7b8c24bc81abbf0e2665c))
+
+# [@adobe/spacecat-shared-data-access-v1.41.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.5...@adobe/spacecat-shared-data-access-v1.41.6) (2024-08-20)
+
+
+### Bug Fixes
+
+* experimentation IT tests failing intermittently ([#337](https://github.com/adobe/spacecat-shared/issues/337)) ([b6651d6](https://github.com/adobe/spacecat-shared/commit/b6651d60bdfe93ffb55f95018352ea3647432b0d))
+
+# [@adobe/spacecat-shared-data-access-v1.41.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.4...@adobe/spacecat-shared-data-access-v1.41.5) (2024-08-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#332](https://github.com/adobe/spacecat-shared/issues/332)) ([b2bb2a4](https://github.com/adobe/spacecat-shared/commit/b2bb2a4dd1a0995c36cd2b64510b7c4e0e05436f))
+* **tests:** temporarily disable flaky tests ([#335](https://github.com/adobe/spacecat-shared/issues/335)) ([40008c1](https://github.com/adobe/spacecat-shared/commit/40008c1a29be5bc7766ed71366c9b9262c9db8c2))
+
+# [@adobe/spacecat-shared-data-access-v1.41.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.3...@adobe/spacecat-shared-data-access-v1.41.4) (2024-08-16)
+
+
+### Bug Fixes
+
+* Add id to api-key DTO ([#330](https://github.com/adobe/spacecat-shared/issues/330)) ([aa451ab](https://github.com/adobe/spacecat-shared/commit/aa451abf7b0178412803b553fe9a39f47e958c02))
+
+# [@adobe/spacecat-shared-data-access-v1.41.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.2...@adobe/spacecat-shared-data-access-v1.41.3) (2024-08-15)
+
+
+### Bug Fixes
+
+* refactor hashed api key and query to retrieve API key ([#325](https://github.com/adobe/spacecat-shared/issues/325)) ([a99fc76](https://github.com/adobe/spacecat-shared/commit/a99fc76963fdcd6bce8de7d5b315dbefbb03fd95))
+
+# [@adobe/spacecat-shared-data-access-v1.41.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.1...@adobe/spacecat-shared-data-access-v1.41.2) (2024-08-14)
+
+
+### Bug Fixes
+
+* add query changes ([#324](https://github.com/adobe/spacecat-shared/issues/324)) ([6104f65](https://github.com/adobe/spacecat-shared/commit/6104f65620f8f020e70494c2c2138ae2afefe15e))
+
+# [@adobe/spacecat-shared-data-access-v1.41.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.0...@adobe/spacecat-shared-data-access-v1.41.1) (2024-08-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#320](https://github.com/adobe/spacecat-shared/issues/320)) ([c75b743](https://github.com/adobe/spacecat-shared/commit/c75b7432e0add9b261ddc7999fe80b20442a0dd7))
+
+# [@adobe/spacecat-shared-data-access-v1.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.40.0...@adobe/spacecat-shared-data-access-v1.41.0) (2024-08-09)
+
+
+### Features
+
+* Introduce scoped API keys ([#312](https://github.com/adobe/spacecat-shared/issues/312)) ([449d273](https://github.com/adobe/spacecat-shared/commit/449d2736154d7e92fb4a3d1f9f290e15e665aa5e))
+
+# [@adobe/spacecat-shared-data-access-v1.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.39.1...@adobe/spacecat-shared-data-access-v1.40.0) (2024-08-08)
+
+
+### Features
+
+* update import job models to include hashed key ([#318](https://github.com/adobe/spacecat-shared/issues/318)) ([cd90252](https://github.com/adobe/spacecat-shared/commit/cd902522629d13e2707b7a78a38bdffc5d6194c0))
+
 # [@adobe/spacecat-shared-data-access-v1.39.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.39.0...@adobe/spacecat-shared-data-access-v1.39.1) (2024-08-06)
 
 

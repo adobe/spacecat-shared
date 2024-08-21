@@ -12,17 +12,15 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { apiKeyFunctions } from '../../../../src/service/api-key/index.js';
 import { createApiKey } from '../../../../src/models/api-key.js';
 
-chai.use(sinonChai);
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(sinonChai);
+use(chaiAsPromised);
 
 const TEST_DA_CONFIG = {
   tableNameApiKeys: 'test-api-keys',
@@ -53,7 +51,7 @@ describe('Api Key Tests', () => {
     describe('getApiKeyByKey', () => {
       it('should return an ApiKeyDto when an item is found', async () => {
         const mockApiKey = {
-          hashedKey: 'test-key',
+          hashedApiKey: 'test-key',
           name: 'test-name',
           imsUserId: 'test-ims-user-id',
           imsOrgId: 'test-ims-org-id',
@@ -64,9 +62,9 @@ describe('Api Key Tests', () => {
             domains: ['https://www.test.com'],
           }],
         };
-        mockDynamoClient.query.resolves(mockApiKey);
+        mockDynamoClient.query.resolves([mockApiKey]);
 
-        const apiKey = await exportedFunctions.getApiKeyByHashedKey('test-key');
+        const apiKey = await exportedFunctions.getApiKeyByHashedApiKey('test-key');
 
         expect(apiKey).to.be.not.null;
         expect(mockDynamoClient.query).to.have.been.calledOnce;
@@ -76,7 +74,7 @@ describe('Api Key Tests', () => {
     describe('createNewApiKey', () => {
       it('should create a new ApiKey', async () => {
         const apiKey = createApiKey({
-          hashedKey: 'test-key',
+          hashedApiKey: 'test-key',
           name: 'test-name',
           imsUserId: 'test-ims-user-id',
           imsOrgId: 'test-ims-org-id',

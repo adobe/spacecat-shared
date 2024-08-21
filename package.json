@@ -4,6 +4,10 @@
   "version": "0.0.0-semantic-release",
   "description": "Shared modules of the Spacecat Services - monorepo",
   "type": "module",
+  "engines": {
+    "node": "^20.0.0 <21.0.0",
+    "npm": "^10.0.0 <11.0.0"
+  },
   "scripts": {
     "docs:api": "jsdoc2md -c .jsdoc.json --files packages/*/src/*.js > docs/API.md",
     "docs": "npm run docs:api",

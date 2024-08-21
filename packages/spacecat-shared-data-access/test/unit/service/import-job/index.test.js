@@ -60,7 +60,7 @@ describe('Import Job Tests', () => {
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
           initiatedBy: {
-            name: 'test-user',
+            apiKeyName: 'test-user',
             imsUserId: 'test-ims-user-id',
             imsOrgId: 'test-ims-org-id',
             userAgent: 'test-user-agent',
@@ -92,7 +92,7 @@ describe('Import Job Tests', () => {
           startTime: '2024-05-28T14:26:00.000Z',
           importQueueId: 'test-import-queue-id',
           initiatedBy: {
-            name: 'test-user',
+            apiKeyName: 'test-user',
             imsUserId: 'test-ims-user-id',
             imsOrgId: 'test-ims-org-id',
             userAgent: 'test-user-agent',
@@ -107,7 +107,7 @@ describe('Import Job Tests', () => {
           startTime: '2024-06-01T14:26:00.000Z',
           importQueueId: 'test-import-queue-id-1',
           initiatedBy: {
-            name: 'test-user',
+            apiKeyName: 'test-user',
             imsUserId: 'test-ims-user-id',
             imsOrgId: 'test-ims-org-id',
             userAgent: 'test-user-agent',
@@ -131,7 +131,7 @@ describe('Import Job Tests', () => {
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
           initiatedBy: {
-            name: 'test-user',
+            apiKeyName: 'test-user',
             imsUserId: 'test-ims-user-id',
             imsOrgId: 'test-ims-org-id',
             userAgent: 'test-user-agent',
@@ -145,7 +145,7 @@ describe('Import Job Tests', () => {
           hashedApiKey: '5c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id-1',
           initiatedBy: {
-            name: 'test-user',
+            apiKeyName: 'test-user',
             imsUserId: 'test-ims-user-id',
             imsOrgId: 'test-ims-org-id',
             userAgent: 'test-user-agent',
@@ -169,7 +169,7 @@ describe('Import Job Tests', () => {
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
           initiatedBy: {
-            name: 'test-user',
+            apiKeyName: 'test-user',
             imsUserId: 'test-ims-user-id',
             imsOrgId: 'test-ims-org-id',
             userAgent: 'test-user-agent',
@@ -179,7 +179,7 @@ describe('Import Job Tests', () => {
           mockImportJobData,
         );
 
-        expect(result.state.initiatedBy.name).to.equal('test-user');
+        expect(result.state.initiatedBy.apiKeyName).to.equal('test-user');
         expect(result.state.baseURL).to.equal('https://www.test.com');
       });
     });
@@ -194,7 +194,7 @@ describe('Import Job Tests', () => {
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
           initiatedBy: {
-            name: 'test-user',
+            apiKeyName: 'test-user',
             imsUserId: 'test-ims-user-id',
             imsOrgId: 'test-ims-org-id',
             userAgent: 'test-user-agent',
@@ -218,7 +218,7 @@ describe('Import Job Tests', () => {
           options: {},
           baseURL: 'https://www.test.com',
           initiatedBy: {
-            name: 'test-user',
+            apiKeyName: 'test-user',
             imsUserId: 'test-ims-user-id',
             imsOrgId: 'test-ims-org-id',
             userAgent: 'test-user-agent',

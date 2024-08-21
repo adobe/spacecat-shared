@@ -26,7 +26,7 @@ const validImportJob = {
     enableCss: true,
   },
   initiatedBy: {
-    name: 'test',
+    apiKeyName: 'test',
   },
 };
 describe('ImportJob Model tests', () => {

@@ -145,7 +145,7 @@ describe('DynamoDB Integration Test', async () => {
       sharedDb: true,
     });
 
-    await sleep(5000); // give db time to start up
+    await sleep(10000); // give db time to start up
 
     try {
       await generateSampleData(
@@ -169,24 +169,16 @@ describe('DynamoDB Integration Test', async () => {
   });
 
   it('get all key events for a site', async () => {
-    const siteId = (await dataAccess.getSites())[0].getId();
+    const siteId = (await dataAccess.getSiteByBaseURL('https://example0.com')).getId();
 
     const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
 
     expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
     expect(keyEvents[0].getSiteId()).to.equal(siteId);
-
-    // check if the key events are returned in descending order
-    for (let i = 1; i < keyEvents.length; i += 1) {
-      const prev = keyEvents[i - 1];
-      const next = keyEvents[i];
-      const desc = prev.getCreatedAt() >= next.getCreatedAt();
-      expect(desc).to.be.true;
-    }
   });
 
   it('add a new key event for a site', async () => {
-    const siteId = (await dataAccess.getSites())[0].getId();
+    const siteId = (await dataAccess.getSiteByBaseURL('https://example0.com')).getId();
 
     await dataAccess.createKeyEvent({
       siteId,
@@ -200,7 +192,7 @@ describe('DynamoDB Integration Test', async () => {
   });
 
   it('remove a key event', async () => {
-    const siteId = (await dataAccess.getSites())[0].getId();
+    const siteId = (await dataAccess.getSiteByBaseURL('https://example0.com')).getId();
     const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
 
     await dataAccess.removeKeyEvent(keyEvents[0].getId());

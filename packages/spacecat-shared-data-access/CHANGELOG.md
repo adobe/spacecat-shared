@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.42.0...@adobe/spacecat-shared-data-access-v1.43.0) (2024-08-21)
+
+
+### Features
+
+* add initiatedBy attribute to import job ([#341](https://github.com/adobe/spacecat-shared/issues/341)) ([8a7634c](https://github.com/adobe/spacecat-shared/commit/8a7634c68cf0df01a71abc5d99a17519869f3c45))
+
 # [@adobe/spacecat-shared-data-access-v1.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.41.8...@adobe/spacecat-shared-data-access-v1.42.0) (2024-08-20)
 
 

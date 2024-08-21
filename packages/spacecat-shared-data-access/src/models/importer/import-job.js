@@ -41,6 +41,7 @@ const ImportJob = (data) => {
   self.getSuccessCount = () => self.state.successCount;
   self.getFailedCount = () => self.state.failedCount;
   self.getImportQueueId = () => self.state.importQueueId;
+  self.getInitiatedBy = () => self.state.initiatedBy;
 
   /**
      * Updates the end time of the ImportJob.

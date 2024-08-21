@@ -25,6 +25,9 @@ const validImportJob = {
     enableJavascript: true,
     enableCss: true,
   },
+  initiatedBy: {
+    apiKeyName: 'test',
+  },
 };
 describe('ImportJob Model tests', () => {
   describe('Validation Tests', () => {
@@ -50,7 +53,7 @@ describe('ImportJob Model tests', () => {
 
     it('creates an import job object with a startTime', () => {
       const importJob = createImportJob({ ...validImportJob, startTime: '' });
-      expect(importJob.getStartTime()).is.not.empty;
+      expect(importJob.getStartTime()).to.match(/^20/);
     });
   });
 

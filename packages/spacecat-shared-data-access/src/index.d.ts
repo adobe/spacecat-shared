@@ -510,6 +510,11 @@ export interface ImportJob {
    */
   getImportQueueId: () => string;
 
+  /**
+   * Retrieves the initiatedBy metadata (name, imsOrgId, imsUserId, userAgent) of the import job.
+   */
+  getInitiatedBy: () => object;
+
 }
 
 export interface ImportUrl {

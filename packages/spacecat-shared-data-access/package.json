@@ -1,8 +1,12 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "1.42.0",
+  "version": "1.43.0",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
+  "engines": {
+    "node": "^20.0.0 <21.0.0",
+    "npm": "^10.0.0 <11.0.0"
+  },
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {

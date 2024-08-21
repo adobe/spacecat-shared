@@ -12,10 +12,9 @@
 /* eslint-env mocha */
 /* eslint-disable object-curly-newline */
 
-import chai from 'chai';
+import { expect } from 'chai';
 import { classifyTrafficSource } from '../../src/common/traffic.js';
 
-const { expect } = chai;
 describe('Traffic classification', () => {
   const url = 'https://www.test.com/some/page';
   const { origin } = new URL(url);

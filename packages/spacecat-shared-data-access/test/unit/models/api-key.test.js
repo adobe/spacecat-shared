@@ -16,7 +16,7 @@ import { expect } from 'chai';
 import { createApiKey } from '../../../src/models/api-key.js';
 
 const validApiKey = {
-  hashedKey: 'test',
+  hashedApiKey: 'test',
   name: 'test-name',
   imsUserId: 'test-ims-user-id',
   imsOrgId: 'test-ims-org-id',
@@ -31,7 +31,7 @@ const validApiKey = {
 describe('ApiKey Model tests', () => {
   describe('Validation Tests', () => {
     it('throws an error if key is not a valid string', () => {
-      expect(() => createApiKey({ ...validApiKey, hashedKey: 123 })).to.throw('Invalid Hashed Key: 123');
+      expect(() => createApiKey({ ...validApiKey, hashedApiKey: 123 })).to.throw('Invalid Hashed API Key: 123');
     });
 
     it('throws an error if name is not a valid string', () => {
@@ -89,7 +89,7 @@ describe('ApiKey Model tests', () => {
     });
 
     it('gets hashed key', () => {
-      expect(apiKey.getHashedKey()).to.equal('test');
+      expect(apiKey.getHashedApiKey()).to.equal('test');
     });
 
     it('gets name', () => {

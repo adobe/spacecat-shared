@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -20,10 +20,8 @@ import sinonChai from 'sinon-chai';
 import { siteCandidateFunctions } from '../../../../src/service/site-candidates/index.js';
 import { createSiteCandidate, SITE_CANDIDATE_STATUS } from '../../../../src/models/site-candidate.js';
 
-chai.use(chaiAsPromised);
-chai.use(sinonChai);
-
-const { expect } = chai;
+use(chaiAsPromised);
+use(sinonChai);
 
 const TEST_DA_CONFIG = {
   tableNameAudits: 'test-audits',

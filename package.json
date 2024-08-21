@@ -4,6 +4,10 @@
   "version": "0.0.0-semantic-release",
   "description": "Shared modules of the Spacecat Services - monorepo",
   "type": "module",
+  "engines": {
+    "node": "^20.0.0 <21.0.0",
+    "npm": "^10.0.0 <11.0.0"
+  },
   "scripts": {
     "docs:api": "jsdoc2md -c .jsdoc.json --files packages/*/src/*.js > docs/API.md",
     "docs": "npm run docs:api",
@@ -32,18 +36,18 @@
     "@semantic-release/changelog": "6.0.3",
     "@semantic-release/git": "10.0.1",
     "@semantic-release/npm": "12.0.1",
-    "@typescript-eslint/eslint-plugin": "7.18.0",
-    "@typescript-eslint/parser": "7.18.0",
+    "@typescript-eslint/eslint-plugin": "8.2.0",
+    "@typescript-eslint/parser": "8.2.0",
     "ajv": "8.17.1",
     "c8": "10.1.2",
     "eslint": "8.57.0",
     "husky": "9.1.4",
     "jsdoc-to-markdown": "8.0.3",
-    "lint-staged": "15.2.8",
+    "lint-staged": "15.2.9",
     "mocha": "10.7.3",
     "mocha-multi-reporters": "1.5.1",
     "nock": "13.5.4",
-    "semantic-release": "24.0.0",
+    "semantic-release": "24.1.0",
     "semantic-release-monorepo": "8.0.2",
     "typescript": "5.5.4"
   },

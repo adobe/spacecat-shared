@@ -1,8 +1,12 @@
 {
   "name": "@adobe/spacecat-shared-rum-api-client",
-  "version": "2.7.2",
+  "version": "2.7.3",
   "description": "Shared modules of the Spacecat Services - Rum API client",
   "type": "module",
+  "engines": {
+    "node": "^20.0.0 <21.0.0",
+    "npm": "^10.0.0 <11.0.0"
+  },
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
@@ -40,11 +44,11 @@
     "urijs": "^1.19.11"
   },
   "devDependencies": {
-    "chai": "4.5.0",
+    "chai": "5.1.1",
     "chai-as-promised": "8.0.0",
     "nock": "13.5.4",
     "sinon": "18.0.0",
-    "sinon-chai": "3.7.0",
+    "sinon-chai": "4.0.0",
     "typescript": "5.5.4"
   }
 }

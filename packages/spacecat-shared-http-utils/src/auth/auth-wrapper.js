@@ -54,7 +54,7 @@ export function authWrapper(fn, opts = {}) {
           checkScopes: (scopes) => checkScopes(scopes, authInfo, log),
         };
       }
-    } catch (error) {
+    } catch {
       return new Response('Unauthorized', { status: 401 });
     }
 

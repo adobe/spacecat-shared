@@ -47,3 +47,7 @@ export {
   stripTrailingSlash,
   stripWWW,
 } from './url-helpers.js';
+
+export { getStoredMetrics, storeMetrics } from './metrics-store.js';
+
+export { s3Wrapper } from './s3.js';

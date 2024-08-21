@@ -36,13 +36,14 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
     }
 
     // Keys are stored by their hash, so we need to hash the key to look it up
-    const hashedKey = hashWithSHA256(apiKeyFromHeader);
-    const apiKeyEntity = await dataAccess.getApiKeyByHashedKey(hashedKey);
+    const hashedApiKey = hashWithSHA256(apiKeyFromHeader);
+    const apiKeyEntity = await dataAccess.getApiKeyByHashedApiKey(hashedApiKey);
 
     if (!apiKeyEntity) {
       this.log(`No API key entity found in the data layer for the provided API key: ${apiKeyFromHeader}`, 'error');
       return null;
     }
+    this.log(`Valid API key entity found. Id: ${apiKeyEntity.getId()}, name: ${apiKeyEntity.getName()}, scopes: ${apiKeyEntity.getScopes()}`, 'debug');
 
     // We have an API key entity, and need to check if it's still valid
     const authInfo = new AuthInfo()

@@ -14,7 +14,7 @@
 
 import { Request } from '@adobe/fetch';
 import wrap from '@adobe/helix-shared-wrap';
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key.js';
@@ -22,9 +22,7 @@ import { authWrapper, enrichPathInfo } from '../../src/index.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
 import ScopedApiKeyHandler from '../../src/auth/handlers/scoped-api-key.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 describe('auth wrapper', () => {
   const DummyHandler = class extends AbstractHandler {
@@ -55,7 +53,7 @@ describe('auth wrapper', () => {
       dataAccess: {},
     };
     mockApiKey = createApiKey({
-      hashedKey: '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
+      hashedApiKey: '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
       name: 'Test API key name',
       scopes: [
         {
@@ -120,7 +118,7 @@ describe('auth wrapper', () => {
     const scopedAction = wrap(() => 42)
       .with(authWrapper, { authHandlers: [ScopedApiKeyHandler] })
       .with(enrichPathInfo);
-    context.dataAccess.getApiKeyByHashedKey = async () => mockApiKey;
+    context.dataAccess.getApiKeyByHashedApiKey = async () => mockApiKey;
 
     const resp = await scopedAction(new Request('https://space.cat/', {
       headers: { 'x-api-key': 'test-api-key' },

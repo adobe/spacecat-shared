@@ -69,11 +69,19 @@ function handler(bundles) {
   //     data[bundle.url][weekKey].metrics.push({ selector: source, ctr });
   // }
     // Initialize an object to hold the selectors and their counts
-    let globalSelectors = {};
+    const globalSelectors = {};
 
     for (const bundle of bundles) {
       // Initialize a Set to hold the unique selectors for this bundle
-      let uniqueSelectors = new Set();
+      const uniqueSelectors = new Set();
+
+      let totalClicks = 0;
+      for (const event of bundle.events) {
+        if (event.checkpoint === 'click') {
+          uniqueSelectors.add(event.source);
+          totalClicks++;
+        }
+      }
 
       for (const event of bundle.events) {
         if (event.checkpoint === 'click') {
@@ -83,13 +91,13 @@ function handler(bundles) {
 
       // Iterate over the unique selectors and increment their count in the global selectors object
       for (const source of uniqueSelectors) {
-        globalSelectors[source] = (globalSelectors[source] || 0) + 1;
+        const count = uniqueSelectors[source] || 0;
+        if (count / totalClicks >= 0.1) {
+          globalSelectors[source] = count + 1;
+        }
       }
     }
 
-// Now, globalSelectors contains the count of each selector across all bundles
-// Convert the globalSelectors object to an array of objects and add it to the metrics array
-    // data[bundle.url][weekKey].metrics = Object.entries(globalSelectors).map(([selector, count]) => ({ selector, count }));
     data[bundle.url][weekKey].metrics = Object.entries(globalSelectors).map(([selector, count]) => {
       const ctr = (count / data[bundle.url][weekKey].pageViews) * 100;
       return { selector, ctr };

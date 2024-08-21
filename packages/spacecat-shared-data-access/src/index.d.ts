@@ -511,7 +511,7 @@ export interface ImportJob {
   getImportQueueId: () => string;
 
   /**
-   * Retrieves the initiatedBy (name, imsOrgId, imsUserId, userAgent) of the import job.
+   * Retrieves the initiatedBy metadata (name, imsOrgId, imsUserId, userAgent) of the import job.
    */
   getInitiatedBy: () => object;
 

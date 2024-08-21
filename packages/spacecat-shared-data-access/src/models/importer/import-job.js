@@ -189,9 +189,5 @@ export const createImportJob = (data) => {
     throw new Error(`Invalid options: ${newState.options}`);
   }
 
-  if (!isObject(newState.initiatedBy)) {
-    throw new Error(`Invalid initiatedBy: ${newState.initiatedBy}`);
-  }
-
   return ImportJob(newState);
 };

@@ -55,7 +55,6 @@ function handler(bundles) {
 
     data[bundle.url][weekKey].pageViews += bundle.weight;
     const selector = {};
-    let selectors = {};
     for (const event of bundle.events) {
       if (event.checkpoint === 'click') {
         selector[event.source] = selector[event.source] ? selector[event.source] + 1 : 1;
@@ -65,21 +64,33 @@ function handler(bundles) {
     data[bundle.url][weekKey].pageCTR = (data[bundle.url][weekKey].clicks / data[bundle.url][weekKey].pageViews) * 100;
 
     // Calculate CTR for each unique selector and add to metrics array
-    for (const [source] of Object.entries(selector)) {
-      const ctr = (1 / data[bundle.url][weekKey].pageViews) * 100;
-      // data[bundle.url][weekKey].metrics.push({ selector: source, ctr });
-      // If the selector already exists in the object, add the new CTR to the existing one
-      if (selectors[source]) {
-        selectors[source] += ctr;
-      } else {
-        // If the selector does not exist in the object, add it
-        selectors[source] = ctr;
+  //   for (const [source] of Object.entries(selector)) {
+  //     const ctr = (1 / data[bundle.url][weekKey].pageViews) * 100;
+  //     data[bundle.url][weekKey].metrics.push({ selector: source, ctr });
+  // }
+    // Initialize an object to hold the selectors and their counts
+    let globalSelectors = {};
+
+    for (const bundle of bundles) {
+      // Initialize a Set to hold the unique selectors for this bundle
+      let uniqueSelectors = new Set();
+
+      for (const event of bundle.events) {
+        if (event.checkpoint === 'click') {
+          uniqueSelectors.add(event.source);
+        }
       }
-      data[bundle.url][weekKey].metrics.push({ selector: selectors, ctr });
+
+      // Iterate over the unique selectors and increment their count in the global selectors object
+      for (const source of uniqueSelectors) {
+        globalSelectors[source] = (globalSelectors[source] || 0) + 1;
+      }
     }
 
-    // data[bundle.url][weekKey].metrics = Object.entries(selectors).map(([selector, ctr]) => ({ selector, ctr }));
-  }
+// Now, globalSelectors contains the count of each selector across all bundles
+// Convert the globalSelectors object to an array of objects and add it to the metrics array
+    data[bundle.url][weekKey].metrics = Object.entries(globalSelectors).map(([selector, count]) => ({ selector, count }));
+}
 
   // remove pages with less than 5000 page views per day on average for the last 28 days
   for (const url in data) {

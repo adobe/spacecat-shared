@@ -145,7 +145,7 @@ describe('DynamoDB Integration Test', async () => {
       sharedDb: true,
     });
 
-    await sleep(5000); // give db time to start up
+    await sleep(10000); // give db time to start up
 
     try {
       await generateSampleData(

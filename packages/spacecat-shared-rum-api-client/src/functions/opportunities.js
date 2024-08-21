@@ -116,8 +116,8 @@ function handler(bundles) {
     data[bundle.url][weekKey].pageCTR = (data[bundle.url][weekKey].clicks / data[bundle.url][weekKey].pageViews) * 100;
 
     // Calculate CTR for each unique selector and add to metrics array
-    for (const [source, count] of Object.entries(selector)) {
-      const ctr = (count / data[bundle.url][weekKey].pageViews) * 100;
+    for (const [source] of Object.entries(selector)) {
+      const ctr = (1 / data[bundle.url][weekKey].pageViews) * 100;
       data[bundle.url][weekKey].metrics.push({ selector: source, ctr });
     }
   }

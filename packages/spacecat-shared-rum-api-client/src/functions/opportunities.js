@@ -78,7 +78,7 @@ function handler(bundles) {
       let totalClicks = 0;
       for (const event of bundle.events) {
         if (event.checkpoint === 'click') {
-          uniqueSelectors.add(event.source);
+          uniqueSelectors.set(event.source, (uniqueSelectors.get(event.source) || 0) + 1);
           totalClicks++;
         }
       }
@@ -92,7 +92,7 @@ function handler(bundles) {
       // Iterate over the unique selectors and increment their count in the global selectors object
       for (const source of uniqueSelectors) {
         const count = uniqueSelectors[source] || 0;
-        if (count / totalClicks >= 0.1) {
+        if (count / totalClicks >= 0.05) {
           globalSelectors[source] = count + 1;
         }
       }

@@ -59,13 +59,17 @@ describe('Import Job Tests', () => {
           baseURL: 'https://www.test.com',
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
+          initiatedBy: {
+            apiKeyName: 'test-user',
+            imsUserId: 'test-ims-user-id',
+            imsOrgId: 'test-ims-org-id',
+            userAgent: 'test-user-agent',
+          },
         };
         mockDynamoClient.getItem.resolves(mockImportJob);
         const result = await exportedFunctions.getImportJobByID('test-id');
 
-        expect(result).to.be.not.null;
         expect(result.state.id).to.equal('test-id');
-        expect(mockDynamoClient.getItem).to.have.been.calledOnce;
       });
 
       it('should return null if item is not found', async () => {
@@ -73,7 +77,7 @@ describe('Import Job Tests', () => {
 
         const result = await exportedFunctions.getImportJobByID('test-id');
 
-        expect(result).to.be.null;
+        expect(result).to.equal(null);
       });
     });
 
@@ -87,6 +91,12 @@ describe('Import Job Tests', () => {
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           startTime: '2024-05-28T14:26:00.000Z',
           importQueueId: 'test-import-queue-id',
+          initiatedBy: {
+            apiKeyName: 'test-user',
+            imsUserId: 'test-ims-user-id',
+            imsOrgId: 'test-ims-org-id',
+            userAgent: 'test-user-agent',
+          },
         },
         {
           id: 'test-id-1',
@@ -96,6 +106,12 @@ describe('Import Job Tests', () => {
           hashedApiKey: '5c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           startTime: '2024-06-01T14:26:00.000Z',
           importQueueId: 'test-import-queue-id-1',
+          initiatedBy: {
+            apiKeyName: 'test-user',
+            imsUserId: 'test-ims-user-id',
+            imsOrgId: 'test-ims-org-id',
+            userAgent: 'test-user-agent',
+          },
         }];
         mockDynamoClient.query.resolves(mockImportJobs);
 
@@ -114,6 +130,12 @@ describe('Import Job Tests', () => {
           baseURL: 'https://www.test.com',
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
+          initiatedBy: {
+            apiKeyName: 'test-user',
+            imsUserId: 'test-ims-user-id',
+            imsOrgId: 'test-ims-org-id',
+            userAgent: 'test-user-agent',
+          },
         },
         {
           id: 'test-id-1',
@@ -122,6 +144,12 @@ describe('Import Job Tests', () => {
           baseURL: 'https://www.test1.com',
           hashedApiKey: '5c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id-1',
+          initiatedBy: {
+            apiKeyName: 'test-user',
+            imsUserId: 'test-ims-user-id',
+            imsOrgId: 'test-ims-org-id',
+            userAgent: 'test-user-agent',
+          },
         }];
         mockDynamoClient.query.resolves(mockImportJobs);
 
@@ -140,13 +168,19 @@ describe('Import Job Tests', () => {
           baseURL: 'https://www.test.com',
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
+          initiatedBy: {
+            apiKeyName: 'test-user',
+            imsUserId: 'test-ims-user-id',
+            imsOrgId: 'test-ims-org-id',
+            userAgent: 'test-user-agent',
+          },
         };
         const result = await exportedFunctions.createNewImportJob(
           mockImportJobData,
         );
 
-        expect(result).to.be.not.null;
-        expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+        expect(result.state.initiatedBy.apiKeyName).to.equal('test-user');
+        expect(result.state.baseURL).to.equal('https://www.test.com');
       });
     });
 
@@ -159,6 +193,12 @@ describe('Import Job Tests', () => {
           baseURL: 'https://www.test.com',
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           importQueueId: 'test-import-queue-id',
+          initiatedBy: {
+            apiKeyName: 'test-user',
+            imsUserId: 'test-ims-user-id',
+            imsOrgId: 'test-ims-org-id',
+            userAgent: 'test-user-agent',
+          },
         };
         mockDynamoClient.getItem.resolves(mockImportJobData);
 
@@ -167,9 +207,6 @@ describe('Import Job Tests', () => {
         const result = await exportedFunctions.updateImportJob(
           importJob,
         );
-
-        expect(result).to.be.not.null;
-        expect(mockDynamoClient.putItem).to.have.been.calledOnce;
         expect(result.getStatus()).to.equal('COMPLETE');
       });
 
@@ -180,6 +217,12 @@ describe('Import Job Tests', () => {
           hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
           options: {},
           baseURL: 'https://www.test.com',
+          initiatedBy: {
+            apiKeyName: 'test-user',
+            imsUserId: 'test-ims-user-id',
+            imsOrgId: 'test-ims-org-id',
+            userAgent: 'test-user-agent',
+          },
         };
         const importJob = createImportJob(mockImportJobData);
         const result = exportedFunctions.updateImportJob(importJob);

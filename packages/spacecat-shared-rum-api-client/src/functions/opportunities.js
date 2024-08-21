@@ -71,9 +71,9 @@ function handler(bundles) {
     // Initialize an object to hold the selectors and their counts for each week
     let globalSelectors = {};
 
-    for (const bundle of bundles) {
-      const weekIndex = getWeekIndex(bundle.time);
-      const weekKey = `week${weekIndex}`;
+    // for (const bundle of bundles) {
+    //   const weekIndex = getWeekIndex(bundle.time);
+    //   const weekKey = `week${weekIndex}`;
 
       // Initialize a Set to hold the unique selectors for this bundle
       let uniqueSelectors = new Set();
@@ -93,7 +93,7 @@ function handler(bundles) {
       for (const source of uniqueSelectors) {
         globalSelectors[weekKey][source] = (globalSelectors[weekKey][source] || 0) + 1;
       }
-    }
+    // }
 
 // Now, globalSelectors contains the count of each selector across all bundles for each week
 // Convert the globalSelectors object to an array of objects and add it to the metrics array

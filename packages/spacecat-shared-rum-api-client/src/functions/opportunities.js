@@ -63,11 +63,6 @@ function handler(bundles) {
     data[bundle.url][weekKey].clicks += Object.keys(selector).length * bundle.weight;
     data[bundle.url][weekKey].pageCTR = (data[bundle.url][weekKey].clicks / data[bundle.url][weekKey].pageViews) * 100;
 
-    // Calculate CTR for each unique selector and add to metrics array
-    // for (const [source] of Object.entries(selector)) {
-    //   const ctr = (1 / data[bundle.url][weekKey].pageViews) * 100;
-    //   data[bundle.url][weekKey].metrics.push({ selector: source, ctr });
-    // }
     let uniqueSelectors = new Set();
 
     for (const event of bundle.events) {
@@ -85,6 +80,7 @@ function handler(bundles) {
         data[bundle.url][weekKey].metrics.push({ selector: source, ctr });
       }
     }
+    data[bundle.url][weekKey].metrics = data[bundle.url][weekKey].metrics.filter(metric => metric.ctr >= 5);
   }
   // remove pages with less than 5000 page views per day on average for the last 28 days
   for (const url in data) {

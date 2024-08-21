@@ -41,6 +41,7 @@ const ImportJob = (data) => {
   self.getSuccessCount = () => self.state.successCount;
   self.getFailedCount = () => self.state.failedCount;
   self.getImportQueueId = () => self.state.importQueueId;
+  self.getInitiatedBy = () => self.state.initiatedBy;
 
   /**
      * Updates the end time of the ImportJob.
@@ -186,6 +187,10 @@ export const createImportJob = (data) => {
 
   if (!isObject(newState.options)) {
     throw new Error(`Invalid options: ${newState.options}`);
+  }
+
+  if (!isObject(newState.initiatedBy)) {
+    throw new Error(`Invalid initiatedBy: ${newState.initiatedBy}`);
   }
 
   return ImportJob(newState);

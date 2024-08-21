@@ -25,6 +25,9 @@ const validImportJob = {
     enableJavascript: true,
     enableCss: true,
   },
+  initiatedBy: {
+    name: 'test',
+  },
 };
 describe('ImportJob Model tests', () => {
   describe('Validation Tests', () => {
@@ -48,9 +51,13 @@ describe('ImportJob Model tests', () => {
       expect(() => createImportJob({ ...validImportJob, hashedApiKey: 123 })).to.throw('Invalid API key: 123');
     });
 
+    it('throws an error if initiatedBy is not a valid object', () => {
+      expect(() => createImportJob({ ...validImportJob, initiatedBy: 'invalid-initiatedBy' })).to.throw('Invalid initiatedBy: invalid-initiatedBy');
+    });
+
     it('creates an import job object with a startTime', () => {
       const importJob = createImportJob({ ...validImportJob, startTime: '' });
-      expect(importJob.getStartTime()).is.not.empty;
+      expect(importJob.getStartTime()).to.match(/^20/);
     });
   });
 

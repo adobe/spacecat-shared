@@ -89,7 +89,11 @@ function handler(bundles) {
 
 // Now, globalSelectors contains the count of each selector across all bundles
 // Convert the globalSelectors object to an array of objects and add it to the metrics array
-    data[bundle.url][weekKey].metrics = Object.entries(globalSelectors).map(([selector, count]) => ({ selector, count }));
+    // data[bundle.url][weekKey].metrics = Object.entries(globalSelectors).map(([selector, count]) => ({ selector, count }));
+    data[bundle.url][weekKey].metrics = Object.entries(globalSelectors).map(([selector, count]) => {
+      const ctr = (count / data[bundle.url][weekKey].pageViews) * 100;
+      return { selector, ctr };
+    });
 }
 
   // remove pages with less than 5000 page views per day on average for the last 28 days

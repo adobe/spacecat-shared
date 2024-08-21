@@ -76,6 +76,7 @@ function handler(bundles) {
         selectors[source] = ctr;
       }
     }
+    data[bundle.url][weekKey].metrics = Object.entries(selectors).map(([selector, ctr]) => ({ selector, ctr }));
   }
 
   // remove pages with less than 5000 page views per day on average for the last 28 days

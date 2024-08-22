@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.43.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.43.0...@adobe/spacecat-shared-data-access-v1.43.1) (2024-08-22)
+
+
+### Bug Fixes
+
+* add Scoped API Key docs ([#342](https://github.com/adobe/spacecat-shared/issues/342)) ([2fbf707](https://github.com/adobe/spacecat-shared/commit/2fbf707dfeff914dc47ae1f9860629873927e03e))
+
 # [@adobe/spacecat-shared-data-access-v1.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.42.0...@adobe/spacecat-shared-data-access-v1.43.0) (2024-08-21)
 
 

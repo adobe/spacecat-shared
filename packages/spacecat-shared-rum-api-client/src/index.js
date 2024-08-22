@@ -15,6 +15,7 @@ import cwv from './functions/cwv.js';
 import experiment from './functions/experiment.js';
 import trafficAcquisition from './functions/traffic-acquisition.js';
 import variant from './functions/variant.js';
+import opportunities from './functions/opportunities.js';
 
 const HANDLERS = {
   404: notfound,
@@ -22,6 +23,7 @@ const HANDLERS = {
   experiment,
   'traffic-acquisition': trafficAcquisition,
   variant,
+  opportunities,
 };
 
 export default class RUMAPIClient {

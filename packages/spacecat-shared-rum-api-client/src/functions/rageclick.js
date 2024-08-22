@@ -19,12 +19,21 @@
 /* c8 ignore start */
 const DEFAULT_RAGE_CLICK_THRESHOLD = 10;
 const DEFAULT_RAGECLICK_PERCENT_THRESHOLD = 5;
+const DEFAULT_MINIMUM_RAGECLICK_SAMPLES_THRESHOLD = 10;
+const DEFAULT_RAGECLICK_SAMPLES_THRESHOLD = 100;
 const DEFAULT_RAGECLICK_PAGEVIEW_THRESHOLD = 5000;
 
 const COMMERCE_SELECTORS_IGNORE_LIST = [
   '.product-list-page',
   '.product-details-verb',
   '.product-details',
+];
+
+const EDS_BLOCK_SELECTORS_IGNORE_LIST = ['.accordion'];
+
+const RAGECLICK_SELECTORS_IGNORE_LIST = [
+  ...COMMERCE_SELECTORS_IGNORE_LIST,
+  ...EDS_BLOCK_SELECTORS_IGNORE_LIST,
 ];
 
 const OPPORTUNITY_TYPE = 'rageclick';
@@ -57,23 +66,24 @@ function getRageClickSelectors(events, threshold, selectorsIgnoreList = []) {
 function filterRageClickInstancesByThreshold(
   rageClickInstances,
   pageData,
-  rageClickPercentThreshold,
-  rageClickPageviewThreshold,
+  thresholds,
 ) {
   for (const url of Object.keys(rageClickInstances)) {
-    if (pageData[url].pageViews < rageClickPageviewThreshold) {
+    if (pageData[url].pageViews < thresholds.rageClickPageviewThreshold) {
       // eslint-disable-next-line no-param-reassign
       delete rageClickInstances[url];
     } else {
       for (const selector of Object.keys(rageClickInstances[url])) {
         const rageClickPercentage = (
           rageClickInstances[url][selector].samples / pageData[url].samples) * 100;
-        if (rageClickPercentage < rageClickPercentThreshold) {
-          // eslint-disable-next-line no-param-reassign
-          delete rageClickInstances[url][selector];
-        } else {
+        if ((rageClickInstances[url][selector].samples >= thresholds.rageClickMinSamplesThreshold
+          && rageClickPercentage >= thresholds.rageClickPercentThreshold)
+          || rageClickInstances[url][selector].samples >= thresholds.rageClickSamplesThreshold) {
           // eslint-disable-next-line no-param-reassign
           rageClickInstances[url][selector].percentage = rageClickPercentage;
+        } else {
+          // eslint-disable-next-line no-param-reassign
+          delete rageClickInstances[url][selector];
         }
       }
       if (Object.keys(rageClickInstances[url]).length === 0) {
@@ -110,6 +120,8 @@ function getRageClickOpporunities(rageClickInstances) {
           value: rageClickInstances[url][selector].value,
           samples: rageClickInstances[url][selector].samples,
           percentage: rageClickInstances[url][selector].percentage,
+          mobileSamples: rageClickInstances[url][selector].mobileSamples,
+          desktopSamples: rageClickInstances[url][selector].desktopSamples,
         });
       }
     }
@@ -131,6 +143,16 @@ function handler(bundles) {
   || DEFAULT_RAGECLICK_PERCENT_THRESHOLD;
   const rageClickPageviewThreshold = process.env.RAGE_CLICK_PAGEVIEW_THRESHOLD
   || DEFAULT_RAGECLICK_PAGEVIEW_THRESHOLD;
+  const rageClickMinSamplesThreshold = process.env.RAGE_CLICK_MIN_SAMPLES_THRESHOLD
+  || DEFAULT_MINIMUM_RAGECLICK_SAMPLES_THRESHOLD;
+  const rageClickSamplesThreshold = process.env.RAGE_CLICK_SAMPLES_THRESHOLD
+  || DEFAULT_RAGECLICK_SAMPLES_THRESHOLD;
+  const thresholds = {
+    rageClickPercentThreshold,
+    rageClickPageviewThreshold,
+    rageClickMinSamplesThreshold,
+    rageClickSamplesThreshold,
+  };
   for (const bundle of bundles) {
     const { url, weight } = bundle;
     if (!pageData[url]) {
@@ -145,8 +167,9 @@ function handler(bundles) {
     const rageClickSelectors = getRageClickSelectors(
       bundle.events,
       rageClickThreshold,
-      COMMERCE_SELECTORS_IGNORE_LIST,
+      RAGECLICK_SELECTORS_IGNORE_LIST,
     );
+    const isMobile = bundle.userAgent && bundle.userAgent.includes('mobile');
     if (Object.keys(rageClickSelectors).length > 0) {
       if (!rageClickInstances[url]) {
         rageClickInstances[url] = {};
@@ -156,9 +179,13 @@ function handler(bundles) {
           rageClickInstances[url][selector] = {};
           rageClickInstances[url][selector].value = rageClickSelectors[selector];
           rageClickInstances[url][selector].samples = 1;
+          rageClickInstances[url][selector].mobileSamples = isMobile ? 1 : 0;
+          rageClickInstances[url][selector].desktopSamples = !isMobile ? 1 : 0;
         } else {
           rageClickInstances[url][selector].value += rageClickSelectors[selector];
           rageClickInstances[url][selector].samples += 1;
+          rageClickInstances[url][selector].mobileValue += isMobile ? 1 : 0;
+          rageClickInstances[url][selector].desktopValue += !isMobile ? 1 : 0;
         }
       }
     }
@@ -166,8 +193,7 @@ function handler(bundles) {
   filterRageClickInstancesByThreshold(
     rageClickInstances,
     pageData,
-    rageClickPercentThreshold,
-    rageClickPageviewThreshold,
+    thresholds,
   );
   return getRageClickOpporunities(rageClickInstances);
 }

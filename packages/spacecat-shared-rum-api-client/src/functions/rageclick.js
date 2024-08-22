@@ -184,8 +184,8 @@ function handler(bundles) {
         } else {
           rageClickInstances[url][selector].value += rageClickSelectors[selector];
           rageClickInstances[url][selector].samples += 1;
-          rageClickInstances[url][selector].mobileValue += isMobile ? 1 : 0;
-          rageClickInstances[url][selector].desktopValue += !isMobile ? 1 : 0;
+          rageClickInstances[url][selector].mobileSamples += isMobile ? 1 : 0;
+          rageClickInstances[url][selector].desktopSamples += !isMobile ? 1 : 0;
         }
       }
     }

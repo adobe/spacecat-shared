@@ -99,7 +99,7 @@ function filterRageClickInstancesByThreshold(
   }
 }
 
-function getRageClickOpporunities(rageClickInstances) {
+function getRageClickOpportunities(rageClickInstances) {
   const opportunities = [];
   for (const url of Object.keys(rageClickInstances)) {
     const opportunity = {
@@ -195,7 +195,7 @@ function handler(bundles) {
     pageData,
     thresholds,
   );
-  return getRageClickOpporunities(rageClickInstances);
+  return getRageClickOpportunities(rageClickInstances);
 }
 
 export default {

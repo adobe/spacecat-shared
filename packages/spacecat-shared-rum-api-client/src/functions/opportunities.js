@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable */
-
 /* c8 ignore start */
 const PAGEVIEW_THRESHOLD = 5000;
 
@@ -46,43 +44,51 @@ function handler(bundles) {
 
     if (!data[bundle.url][weekKey]) {
       data[bundle.url][weekKey] = {
-        'pageViews': 0,
-        'clicks': 0,
-        'pageCTR': 0,
-        'metrics': [] // Initialize metrics array
+        pageViews: 0,
+        clicks: 0,
+        pageCTR: 0,
+        metrics: [], // Initialize metrics array
       };
     }
 
     data[bundle.url][weekKey].pageViews += bundle.weight;
     const selector = {};
+    const bundleWeight = bundle.weight;
     for (const event of bundle.events) {
       if (event.checkpoint === 'click') {
         selector[event.source] = selector[event.source] ? selector[event.source] + 1 : 1;
       }
     }
-    data[bundle.url][weekKey].clicks += Object.keys(selector).length * bundle.weight;
-    data[bundle.url][weekKey].pageCTR = (data[bundle.url][weekKey].clicks / data[bundle.url][weekKey].pageViews) * 100;
 
-    let uniqueSelectors = new Set();
-
-    for (const event of bundle.events) {
-      if (event.checkpoint === 'click') {
-        uniqueSelectors.add(event.source);
-      }
-    }
-    // Iterate over the unique selectors and increment their count in the metrics array
-    for (const source of uniqueSelectors) {
-      const existingMetric = data[bundle.url][weekKey].metrics.find(metric => metric.selector === source);
+    for (const source of Object.keys(selector)) {
+      // eslint-disable-next-line max-len
+      const existingMetric = data[bundle.url][weekKey].metrics.find((metric) => metric.selector === source);
       if (existingMetric) {
-        existingMetric.ctr += (1 / data[bundle.url][weekKey].pageViews) * 100;
+        existingMetric.clicks += bundleWeight;
       } else {
-        const ctr = (1 / data[bundle.url][weekKey].pageViews) * 100;
-        data[bundle.url][weekKey].metrics.push({ selector: source, ctr });
+        data[bundle.url][weekKey].metrics.push({ selector: source, clicks: bundleWeight });
       }
     }
-    data[bundle.url][weekKey].metrics = data[bundle.url][weekKey].metrics.filter(metric => metric.ctr >= 5);
+
+    data[bundle.url][weekKey].clicks += Object.keys(selector).length > 0 ? bundleWeight : 0;
   }
+  // calculate the page CTR
+  // eslint-disable-next-line guard-for-in,no-restricted-syntax
+  for (const url in data) {
+    // eslint-disable-next-line guard-for-in,no-restricted-syntax
+    for (const weekKey in data[url]) {
+      // eslint-disable-next-line max-len
+      data[url][weekKey].pageCTR = parseFloat((data[url][weekKey].clicks / data[url][weekKey].pageViews).toFixed(2));
+      data[url][weekKey].metrics = data[url][weekKey].metrics.map((metric) => {
+        // eslint-disable-next-line no-param-reassign
+        metric.ctr = parseFloat((metric.clicks / data[url][weekKey].pageViews).toFixed(2));
+        return metric;
+      }).filter((metric) => metric.ctr >= 0.05);
+    }
+  }
+
   // remove pages with less than 5000 page views per day on average for the last 28 days
+  // eslint-disable-next-line guard-for-in,no-restricted-syntax
   for (const url in data) {
     const totalPageViews = Object.values(data[url]).reduce((acc, cur) => acc + cur.pageViews, 0);
     if (totalPageViews < PAGEVIEW_THRESHOLD) {

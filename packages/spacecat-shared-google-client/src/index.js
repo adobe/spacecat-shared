@@ -156,7 +156,6 @@ export default class GoogleClient {
     await this.#refreshToken();
 
     const apiEndpoint = 'https://searchconsole.googleapis.com/v1/urlInspection/index:inspect';
-    console.log(this.authClient.credentials.access_token);
 
     const response = await httpFetch(apiEndpoint, {
       method: 'POST',

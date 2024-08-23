@@ -14,29 +14,34 @@ import type { UniversalContext } from '@adobe/helix-universal';
 
 export class ContentClient {
   /**
-   * Creates a new ContentClient instance from the given UniversalContext.
+   * Creates a new ContentClient instance from the given UniversalContext and site.
    * @param {UniversalContext} context The UniversalContext to use for creating the ContentClient.
    * @param {Object} site The site object.
    * @returns {ContentClient} The ContentClient instance.
+   * @throws {Error} If the site object is not an object or is empty or has
+   * no content source defined.
+   * @throws {Error} If the context is not configured appropriate to the site's
+   * content source type.
    */
   static createFrom(context: UniversalContext, site: object): ContentClient;
 
   /**
-   * Returns the metadata for the given site and URL path. The document backing the URL path
-   * is resolved and the metadata is extracted from it. The metadata is an object with
-   * key-value pairs.
+   * Returns the metadata for the given page path. The document backing the URL path
+   * is resolved and the metadata is extracted from it. The metadata is a Map where the entries
+   * key is the metadata key and the value is the metadata value. If the page does not have any
+   * metadata, an empty Map is returned.
    *
    * The path should stem from a page's URL and is relative to the site's root.
    * Example: "/path/to/page" (from the full URL: "https://www.example.com/path/to/page").
    *
-   * @param {Object} site The site object.
    * @param {string} path The path to the page.
    * @returns {Map<string, string>} The page's metadata.
+   * @throws {Error} If the path is not a string, empty or does not start with a "/"
    */
-  getPageMetadata(site: object, path: string): Map<string, string>;
+  getPageMetadata(path: string): Map<string, string>;
 
   /**
-   * Updates the metadata for the given site and URL path. The document backing the URL path
+   * Updates the metadata for the given page path. The document backing the path
    * is resolved and the metadata is updated with the given metadata.
    *
    * The path should stem from a page's URL and is relative to the site's root.
@@ -46,14 +51,12 @@ export class ContentClient {
    * metadata value. The metadata is merged with the existing metadata where the new metadata
    * overwrites the existing metadata.
    *
-   * @param {Object} site The site object.
    * @param {string} path The path to the page.
    * @param {Map<string, string>} metadata The metadata to update.
    * @returns {Map<string, string>} The page's merged metadata.
+   * @throws {Error} If the metadata is not a Map or empty
+   * @throws {Error} If any of the metadata keys or values are not a string
+   * @throws {Error} If the path is not a string, empty or does not start with a "/"
    */
-  updatePageMetadata(
-    site: object,
-    path: string,
-    metadata: Map<string, string>
-  ): Map<string, string>;
+  updatePageMetadata(path: string, metadata: Map<string, string>): Map<string, string>;
 }

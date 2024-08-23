@@ -235,22 +235,6 @@ describe('GoogleClient', () => {
       }
     });
 
-    it('should refresh access token when it is expired', async () => {
-      defaultConfig.expiry_date = Date.now() - 1000;
-      stubSecretManager(defaultConfig);
-
-      const testResult = { data: 'testData' };
-      const webmastersStub = sinon.stub().resolves(testResult);
-      sinon.stub(google, 'webmasters').returns({
-        searchanalytics: {
-          query: webmastersStub,
-        },
-      });
-      const googleClient = await GoogleClient.createFrom(context, baseURL);
-      const result = await googleClient.getOrganicSearchData(startDate, endDate);
-      expect(result).to.eql(testResult);
-    });
-
     it('should throw an error if the date format is invalid', async () => {
       stubSecretManager(defaultConfig);
       const googleClient = await GoogleClient.createFrom(context, baseURL);

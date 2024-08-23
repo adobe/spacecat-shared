@@ -81,13 +81,11 @@ export default class GoogleClient {
     this.log = log;
   }
 
-  async #refreshTokenIfExpired() {
-    if (new Date(this.expiryDate).getTime() < Date.now()) {
-      const { credentials } = await this.authClient.refreshAccessToken();
-      this.authClient.setCredentials({
-        access_token: credentials.access_token,
-      });
-    }
+  async #refreshToken() {
+    const { credentials } = await this.authClient.refreshAccessToken();
+    this.authClient.setCredentials({
+      access_token: credentials.access_token,
+    });
   }
 
   async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 1000, startRow = 0) {
@@ -110,7 +108,7 @@ export default class GoogleClient {
       throw new Error('Error retrieving organic search data from Google API: Start row must be greater than or equal to 0');
     }
 
-    await this.#refreshTokenIfExpired();
+    await this.#refreshToken();
 
     const auditUrl = await composeAuditURL(this.baseUrl);
 
@@ -155,7 +153,7 @@ export default class GoogleClient {
       throw new Error(`Error inspecting URL: Invalid URL format (${url})`);
     }
 
-    await this.#refreshTokenIfExpired();
+    await this.#refreshToken();
 
     const apiEndpoint = 'https://searchconsole.googleapis.com/v1/urlInspection/index:inspect';
     console.log(this.authClient.credentials.access_token);
@@ -184,7 +182,7 @@ export default class GoogleClient {
   }
 
   async listSites() {
-    await this.#refreshTokenIfExpired();
+    await this.#refreshToken();
 
     const webmasters = google.webmasters({
       version: 'v3',

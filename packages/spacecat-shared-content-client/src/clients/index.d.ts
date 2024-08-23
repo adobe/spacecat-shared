@@ -37,11 +37,14 @@ export class ContentClient {
 
   /**
    * Updates the metadata for the given site and URL path. The document backing the URL path
-   * is resolved and the metadata is updated with the given metadata. The metadata is an array
-   * of objects with key-value pairs. The metadata is merged with the existing metadata.
+   * is resolved and the metadata is updated with the given metadata.
    *
    * The path should stem from a page's URL and is relative to the site's root.
    * Example: "/path/to/page" (from the full URL: "https://www.example.com/path/to/page").
+   *
+   * The metadata is a Map where the entries key is the metadata key and the value is the
+   * metadata value. The metadata is merged with the existing metadata where the new metadata
+   * overwrites the existing metadata.
    *
    * @param {Object} site The site object.
    * @param {string} path The path to the page.

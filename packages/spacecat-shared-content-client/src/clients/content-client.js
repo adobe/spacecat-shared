@@ -148,7 +148,7 @@ export default class ContentClient {
     const startTime = process.hrtime.bigint();
 
     const docPath = this.#resolveDocPath(path);
-    const metadata = this.rawClient.getPageMetadata(docPath);
+    const metadata = await this.rawClient.getPageMetadata(docPath);
 
     this.#logDuration('getPageMetadata', startTime);
 
@@ -164,7 +164,9 @@ export default class ContentClient {
     const startTime = process.hrtime.bigint();
 
     const docPath = this.#resolveDocPath(path);
-    const updatedMetadata = this.rawClient.updatePageMetadata(docPath, metadata);
+    const originalMetadata = await this.getPageMetadata(docPath);
+    const mergedMetadata = new Map([...originalMetadata, ...metadata]);
+    const updatedMetadata = await this.rawClient.updatePageMetadata(docPath, mergedMetadata);
 
     this.#logDuration('updatePageMetadata', startTime);
 

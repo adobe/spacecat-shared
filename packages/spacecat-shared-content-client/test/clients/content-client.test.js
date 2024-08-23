@@ -24,7 +24,6 @@ describe('ContentClient', () => {
   let env;
   let context;
   let log;
-  let contentSDK;
 
   let ContentClient;
 
@@ -38,6 +37,23 @@ describe('ContentClient', () => {
     getConfig: () => ({ content: { source: { type: 'onedrive' } } }),
   };
 
+  const sampleMetadata = new Map([
+    ['title', 'Test Page'],
+    ['description', 'Test description'],
+    ['keywords', 'test, metadata'],
+  ]);
+
+  const createContentClient = async (getPageMetadata, updatePageMetadata) => {
+    const contentSDK = sinon.stub().returns({
+      getPageMetadata: sinon.stub().resolves(getPageMetadata),
+      updatePageMetadata: sinon.stub().resolves(updatePageMetadata),
+    });
+
+    return esmock('../../src/clients/content-client.js', {
+      '@adobe/spacecat-helix-content-sdk': { createFrom: contentSDK },
+    });
+  };
+
   beforeEach(async () => {
     sandbox = sinon.createSandbox();
     log = { info: sinon.spy(), debug: sinon.spy() };
@@ -49,14 +65,7 @@ describe('ContentClient', () => {
     };
     context = { env, log };
 
-    contentSDK = sinon.stub().returns({
-      getPageMetadata: sinon.stub().resolves({ title: 'Test Page' }),
-      updatePageMetadata: sinon.stub().resolves({ title: 'Test Page' }),
-    });
-
-    ContentClient = await esmock('../../src/clients/content-client.js', {
-      '@adobe/spacecat-helix-content-sdk': { createFrom: contentSDK },
-    });
+    ContentClient = await createContentClient(sampleMetadata, sampleMetadata);
   });
 
   afterEach(() => {
@@ -117,7 +126,7 @@ describe('ContentClient', () => {
       const path = 'test-path';
       const metadata = await client.getPageMetadata(path);
 
-      expect(metadata).to.deep.equal({ title: 'Test Page' });
+      expect(metadata).to.deep.equal(sampleMetadata);
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getPageMetadata.calledOnceWith('test-path')).to.be.true;
       expect(log.debug.calledOnce).to.be.true;
@@ -128,7 +137,7 @@ describe('ContentClient', () => {
       const path = 'test-path';
       const metadata = await client.getPageMetadata(path);
 
-      expect(metadata).to.deep.equal({ title: 'Test Page' });
+      expect(metadata).to.deep.equal(sampleMetadata);
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getPageMetadata.calledOnceWith('test-path.docx')).to.be.true;
       expect(log.debug.calledOnce).to.be.true;
@@ -157,36 +166,42 @@ describe('ContentClient', () => {
     });
   });
 
-  describe('getPageMetadata', () => {
-    it('updates page metadata with valid metadata', async () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+  describe('updatePageMetadata', () => {
+    it('updates page sampleMetadata with valid sampleMetadata', async () => {
       const metadata = new Map([
-        ['description', 'Test description'],
+        ['lang', 'en'],
         ['keywords', 'test, metadata'],
       ]);
+      const expectedMetadata = new Map([...sampleMetadata, ...metadata]);
+
+      ContentClient = await createContentClient(sampleMetadata, expectedMetadata);
+      const client = new ContentClient(env, siteConfigGoogleDrive, log);
 
       const path = 'test-path';
-      await client.updatePageMetadata(path, metadata);
+      const updatedMetadata = await client.updatePageMetadata(path, metadata);
 
-      expect(client.rawClient.updatePageMetadata.calledOnceWith('test-path', metadata)).to.be.true;
-      expect(log.info.calledOnceWith(`Updating page metadata for test-site and path ${path}`)).to.be.true;
+      expect(updatedMetadata).to.deep.equal(expectedMetadata);
+      expect(client.rawClient.updatePageMetadata.calledOnceWith('test-path', expectedMetadata)).to.be.true;
+      expect(log.info.calledTwice).to.be.true;
+      expect(log.info.firstCall.args[0]).to.equal(`Updating page metadata for test-site and path ${path}`);
+      expect(log.info.secondCall.args[0]).to.equal(`Getting page metadata for test-site and path ${path}`);
     });
 
-    it('throws an error if metadata is not a Map', async () => {
+    it('throws an error if sampleMetadata is not a Map', async () => {
       const client = new ContentClient(env, siteConfigGoogleDrive, log);
       const metadata = { description: 'Test description' }; // Not a Map
 
       await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata must be a map');
     });
 
-    it('throws an error if metadata Map is empty', async () => {
+    it('throws an error if sampleMetadata Map is empty', async () => {
       const client = new ContentClient(env, siteConfigGoogleDrive, log);
       const metadata = new Map();
 
       await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata must not be empty');
     });
 
-    it('throws an error if metadata key is invalid', async () => {
+    it('throws an error if sampleMetadata key is invalid', async () => {
       const client = new ContentClient(env, siteConfigGoogleDrive, log);
       const metadata = new Map([
         ['', 'Test description'], // Invalid key
@@ -195,7 +210,7 @@ describe('ContentClient', () => {
       await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata key  must be a string');
     });
 
-    it('throws an error if metadata value is invalid', async () => {
+    it('throws an error if sampleMetadata value is invalid', async () => {
       const client = new ContentClient(env, siteConfigGoogleDrive, log);
       const metadata = new Map([
         ['description', ''], // Invalid value

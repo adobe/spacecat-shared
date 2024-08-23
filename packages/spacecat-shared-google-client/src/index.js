@@ -172,7 +172,7 @@ export default class GoogleClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Error inspecting URL ${url}. Returned status ${response.status}`);
+      throw new Error(`Error inspecting URL ${url}. Returned status ${response.status} ${response.statusText}`);
     }
 
     try {

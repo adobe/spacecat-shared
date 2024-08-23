@@ -477,7 +477,7 @@ describe('GoogleClient', () => {
       try {
         await googleClient.urlInspect(url);
       } catch (error) {
-        expect(error.message).to.equal(`Error inspecting URL ${url}. Returned status 500`);
+        expect(error.message).to.equal(`Error inspecting URL ${url}. Returned status 500 `);
       }
     });
 

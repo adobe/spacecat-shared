@@ -51,19 +51,19 @@ const validateConfiguration = (config, contentSourceType) => {
     }
   }
 };
+
 const validateSite = (site) => {
   if (!isObject(site)) {
     throw new Error('Site is required');
   }
 
-  const siteConfig = site.getConfig();
-  if (!isObject(siteConfig?.content?.source)) {
-    throw new Error('Site must have a content source');
+  const contentSource = site.getConfig()?.content?.source;
+  if (!isObject(contentSource)) {
+    throw new Error('Site must have a valid content source');
   }
 
-  const contentSourceType = siteConfig.content.source.type;
-  if (!SUPPORTED_CONTENT_SOURCES.has(contentSourceType)) {
-    throw new Error(`Unsupported content source type: ${contentSourceType}`);
+  if (!SUPPORTED_CONTENT_SOURCES.has(contentSource.type)) {
+    throw new Error(`Unsupported content source type: ${contentSource.type}`);
   }
 };
 
@@ -131,14 +131,10 @@ export default class ContentClient {
   }
 
   #resolveDocPath(path) {
-    let docPath = path;
-
-    if (path.endsWith('/')) {
-      docPath = `${path}index`;
-    }
+    let docPath = path.endsWith('/') ? `${path}index` : path;
 
     if (this.contentSource.type === CONTENT_SOURCE_TYPE_ONEDRIVE) {
-      docPath = `${docPath}.docx`;
+      docPath += '.docx';
     }
 
     return docPath;

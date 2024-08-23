@@ -112,7 +112,7 @@ describe('ContentClient', () => {
 
     it('throws an error if site has no content source', () => {
       const invalidSite = { getConfig: () => ({ }) };
-      expect(() => new ContentClient(env, invalidSite, log)).to.throw('Site must have a content source');
+      expect(() => new ContentClient(env, invalidSite, log)).to.throw('Site must have a valid content source');
     });
 
     it('throws an error if site\'s content source type is unsupported', () => {

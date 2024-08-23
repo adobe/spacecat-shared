@@ -51,6 +51,7 @@ describe('ContentClient', () => {
 
     contentSDK = sinon.stub().returns({
       getPageMetadata: sinon.stub().resolves({ title: 'Test Page' }),
+      updatePageMetadata: sinon.stub().resolves({ title: 'Test Page' }),
     });
 
     ContentClient = await esmock('../../src/clients/content-client.js', {
@@ -153,6 +154,54 @@ describe('ContentClient', () => {
       const client = new ContentClient(env, siteConfigOneDrive, log);
       await client.getPageMetadata('test-path/');
       expect(client.rawClient.getPageMetadata.calledOnceWith('test-path/index.docx')).to.be.true;
+    });
+  });
+
+  describe('getPageMetadata', () => {
+    it('updates page metadata with valid metadata', async () => {
+      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const metadata = new Map([
+        ['description', 'Test description'],
+        ['keywords', 'test, metadata'],
+      ]);
+
+      const path = 'test-path';
+      await client.updatePageMetadata(path, metadata);
+
+      expect(client.rawClient.updatePageMetadata.calledOnceWith('test-path', metadata)).to.be.true;
+      expect(log.info.calledOnceWith(`Updating page metadata for test-site and path ${path}`)).to.be.true;
+    });
+
+    it('throws an error if metadata is not a Map', async () => {
+      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const metadata = { description: 'Test description' }; // Not a Map
+
+      await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata must be a map');
+    });
+
+    it('throws an error if metadata Map is empty', async () => {
+      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const metadata = new Map();
+
+      await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata must not be empty');
+    });
+
+    it('throws an error if metadata key is invalid', async () => {
+      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const metadata = new Map([
+        ['', 'Test description'], // Invalid key
+      ]);
+
+      await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata key  must be a string');
+    });
+
+    it('throws an error if metadata value is invalid', async () => {
+      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const metadata = new Map([
+        ['description', ''], // Invalid value
+      ]);
+
+      await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata value for key description must be a string');
     });
   });
 });

@@ -75,6 +75,26 @@ const validatePath = (path) => {
   }
 };
 
+const validateMetadata = (metadata) => {
+  if (!(metadata instanceof Map)) {
+    throw new Error('Metadata must be a map');
+  }
+
+  if (!metadata.size) {
+    throw new Error('Metadata must not be empty');
+  }
+
+  for (const [key, value] of metadata) {
+    if (!hasText(key)) {
+      throw new Error(`Metadata key ${key} must be a string`);
+    }
+
+    if (!hasText(value)) {
+      throw new Error(`Metadata value for key ${key} must be a string`);
+    }
+  }
+};
+
 export default class ContentClient {
   static createFrom(context, site) {
     const { log = console, env } = context;
@@ -133,5 +153,21 @@ export default class ContentClient {
     this.#logDuration('getPageMetadata', startTime);
 
     return metadata;
+  }
+
+  async updatePageMetadata(path, metadata) {
+    validatePath(path);
+    validateMetadata(metadata);
+
+    this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
+
+    const startTime = process.hrtime.bigint();
+
+    const docPath = this.#resolveDocPath(path);
+    const updatedMetadata = this.rawClient.updatePageMetadata(docPath, metadata);
+
+    this.#logDuration('updatePageMetadata', startTime);
+
+    return updatedMetadata;
   }
 }

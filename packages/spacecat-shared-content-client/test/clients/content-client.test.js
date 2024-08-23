@@ -58,8 +58,19 @@ describe('ContentClient', () => {
     sandbox = sinon.createSandbox();
     log = { info: sinon.spy(), debug: sinon.spy() };
     env = {
-      GOOGLE_DRIVE_CLIENT_ID: 'drive-client-id',
-      GOOGLE_DRIVE_CLIENT_SECRET: 'drive-client-secret',
+      GDRIVE_AUTH_URI: 'https://auth.uri',
+      GDRIVE_CLIENT_ID: 'drive-client-id',
+      GDRIVE_EMAIL: 'drive-email',
+      GDRIVE_PRIVATE_KEY: 'drive-private-key',
+      GDRIVE_PRIVATE_KEY_ID: 'drive-private-key-id',
+      GDRIVE_PROJECT_ID: 'drive-project-id',
+      GDRIVE_TOKEN_URI: 'https://some.token.uri',
+      GDRIVE_TYPE: 'drive-type',
+      GDRIVE_UNIVERSE_DOMAIN: 'drive-universe-domain',
+      GDRIVE_X509_AUTH_PROVIDER_CERT_URL: 'https://auth-provider.uri',
+      GDRIVE_X509_CLIENT_CERT_URL: 'GDRIVE_X509_CLIENT_CERT_URL',
+      ADOBE_ONEDRIVE_DOMAIN_ID: 'onedrive-domain-id',
+      ONEDRIVE_AUTHORITY: 'https://authority.uri',
       ONEDRIVE_CLIENT_ID: 'onedrive-client-id',
       ONEDRIVE_CLIENT_SECRET: 'onedrive-client-secret',
     };
@@ -81,14 +92,14 @@ describe('ContentClient', () => {
 
   describe('constructor', () => {
     it('validates and sets config, site, and rawClient for Google Drive', () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       expect(client.contentSource.type).to.equal('drive.google');
       expect(client.rawClient).to.exist;
       expect(client.rawClient.getPageMetadata).to.be.a('function');
     });
 
     it('validate and sets config, site, and rawClient for OneDrive', () => {
-      const client = new ContentClient(env, siteConfigOneDrive, log);
+      const client = ContentClient.createFrom(context, siteConfigOneDrive);
       expect(client.contentSource.type).to.equal('onedrive');
       expect(client.rawClient).to.exist;
       expect(client.rawClient.getPageMetadata).to.be.a('function');
@@ -110,19 +121,19 @@ describe('ContentClient', () => {
     });
 
     it('throws an error if required config parameters are missing for Google Drive', () => {
-      const invalidEnv = { GOOGLE_DRIVE_CLIENT_ID: 'drive-client-id' }; // Missing GOOGLE_DRIVE_CLIENT_SECRET
-      expect(() => new ContentClient(invalidEnv, siteConfigGoogleDrive, log)).to.throw('Configuration parameter GOOGLE_DRIVE_CLIENT_SECRET is required for content source drive.google');
+      context.env = { GOOGLE_DRIVE_CLIENT_ID: 'drive-client-id' };
+      expect(() => ContentClient.createFrom(context, siteConfigGoogleDrive)).to.throw('Configuration parameter auth_provider_x509_cert_url is required for content source drive.google');
     });
 
     it('throws an error if required config parameters are missing for OneDrive', () => {
-      const invalidEnv = { ONEDRIVE_CLIENT_ID: 'onedrive-client-id' }; // Missing ONEDRIVE_CLIENT_SECRET
-      expect(() => new ContentClient(invalidEnv, siteConfigOneDrive, log)).to.throw('Configuration parameter ONEDRIVE_CLIENT_SECRET is required for content source onedrive');
+      context.env = { ONEDRIVE_CLIENT_ID: 'onedrive-client-id' };
+      expect(() => new ContentClient(context, siteConfigOneDrive)).to.throw('Configuration parameter authority is required for content source onedrive');
     });
   });
 
   describe('getPageMetadata', () => {
     it('gets page metadata and logs duration for Google Drive', async () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       const path = 'test-path';
       const metadata = await client.getPageMetadata(path);
 
@@ -133,7 +144,7 @@ describe('ContentClient', () => {
     });
 
     it('gets page metadata and logs duration for OneDrive', async () => {
-      const client = new ContentClient(env, siteConfigOneDrive, log);
+      const client = ContentClient.createFrom(context, siteConfigOneDrive);
       const path = 'test-path';
       const metadata = await client.getPageMetadata(path);
 
@@ -144,30 +155,30 @@ describe('ContentClient', () => {
     });
 
     it('throws an error if path is invalid', async () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.getPageMetadata('')).to.be.rejectedWith('Path must be a string');
     });
 
     it('throws an error if path starts with a slash', async () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.getPageMetadata('/test-path')).to.be.rejectedWith('Path must not start with a slash');
     });
 
     it('correctly resolves paths ending with / for Google Drive', async () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.getPageMetadata('test-path/');
       expect(client.rawClient.getPageMetadata.calledOnceWith('test-path/index')).to.be.true;
     });
 
     it('correctly resolves paths ending with / for OneDrive', async () => {
-      const client = new ContentClient(env, siteConfigOneDrive, log);
+      const client = ContentClient.createFrom(context, siteConfigOneDrive);
       await client.getPageMetadata('test-path/');
       expect(client.rawClient.getPageMetadata.calledOnceWith('test-path/index.docx')).to.be.true;
     });
   });
 
   describe('updatePageMetadata', () => {
-    it('updates page sampleMetadata with valid sampleMetadata', async () => {
+    it('updates page metadata with valid metadata', async () => {
       const metadata = new Map([
         ['lang', 'en'],
         ['keywords', 'test, metadata'],
@@ -175,7 +186,7 @@ describe('ContentClient', () => {
       const expectedMetadata = new Map([...sampleMetadata, ...metadata]);
 
       ContentClient = await createContentClient(sampleMetadata, expectedMetadata);
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       const path = 'test-path';
       const updatedMetadata = await client.updatePageMetadata(path, metadata);
@@ -187,22 +198,22 @@ describe('ContentClient', () => {
       expect(log.info.secondCall.args[0]).to.equal(`Getting page metadata for test-site and path ${path}`);
     });
 
-    it('throws an error if sampleMetadata is not a Map', async () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+    it('throws an error if metadata is not a Map', async () => {
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       const metadata = { description: 'Test description' }; // Not a Map
 
       await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata must be a map');
     });
 
-    it('throws an error if sampleMetadata Map is empty', async () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+    it('throws an error if metadata Map is empty', async () => {
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       const metadata = new Map();
 
       await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata must not be empty');
     });
 
-    it('throws an error if sampleMetadata key is invalid', async () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+    it('throws an error if metadata key is invalid', async () => {
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       const metadata = new Map([
         ['', 'Test description'], // Invalid key
       ]);
@@ -210,13 +221,59 @@ describe('ContentClient', () => {
       await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata key  must be a string');
     });
 
-    it('throws an error if sampleMetadata value is invalid', async () => {
-      const client = new ContentClient(env, siteConfigGoogleDrive, log);
+    it('throws an error if metadata value is invalid', async () => {
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       const metadata = new Map([
         ['description', ''], // Invalid value
       ]);
 
       await expect(client.updatePageMetadata('test-path', metadata)).to.be.rejectedWith('Metadata value for key description must be a string');
+    });
+
+    it('overwrites existing metadata by default when updating', async () => {
+      const newMetadata = new Map([
+        ['description', 'New description'],
+        ['author', 'New Author'],
+      ]);
+      const expectedMetadata = new Map([
+        ['title', 'Test Page'], // Original key remains
+        ['description', 'New description'], // Overwritten
+        ['author', 'New Author'], // Added
+        ['keywords', 'test, metadata'], // Original key remains
+      ]);
+
+      ContentClient = await createContentClient(sampleMetadata, expectedMetadata);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+
+      const path = 'test-path';
+      const updatedMetadata = await client.updatePageMetadata(path, newMetadata);
+
+      expect(updatedMetadata).to.deep.equal(expectedMetadata);
+      expect(client.rawClient.updatePageMetadata.calledOnceWith('test-path', expectedMetadata)).to.be.true;
+    });
+
+    it('merges without overwriting when overwrite option is false', async () => {
+      const newMetadata = new Map([
+        ['description', 'New description'],
+        ['author', 'New Author'],
+      ]);
+      const expectedMetadata = new Map([
+        ['description', 'Test description'], // Original key remains
+        ['keywords', 'test, metadata'], // Original key remains
+        ['title', 'Test Page'], // Original key remains
+        ['author', 'New Author'], // Added
+      ]);
+
+      ContentClient = await createContentClient(sampleMetadata, expectedMetadata);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+
+      const path = 'test-path';
+      const updatedMetadata = await client.updatePageMetadata(path, newMetadata, {
+        overwrite: false,
+      });
+
+      expect(updatedMetadata).to.deep.equal(expectedMetadata);
+      expect(client.rawClient.updatePageMetadata.calledOnceWith('test-path', expectedMetadata)).to.be.true;
     });
   });
 });

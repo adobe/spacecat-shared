@@ -18,37 +18,39 @@ const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
 
 /**
  * A list of supported content source types and their required configuration parameters.
- * @type {Map<string, string[]>}
+ * @type {Map<string, object>}
  */
 const SUPPORTED_CONTENT_SOURCES = new Map([
-  [CONTENT_SOURCE_TYPE_DRIVE_GOOGLE,
-    [
-      'GOOGLE_DRIVE_CLIENT_ID',
-      'GOOGLE_DRIVE_CLIENT_SECRET',
-    ],
-  ],
-  [CONTENT_SOURCE_TYPE_ONEDRIVE,
-    [
-      'ONEDRIVE_CLIENT_ID',
-      'ONEDRIVE_CLIENT_SECRET',
-    ],
-  ],
+  [CONTENT_SOURCE_TYPE_DRIVE_GOOGLE, {
+    auth_provider_x509_cert_url: 'GDRIVE_X509_AUTH_PROVIDER_CERT_URL',
+    auth_uri: 'GDRIVE_AUTH_URI',
+    client_email: 'GDRIVE_EMAIL',
+    client_id: 'GDRIVE_CLIENT_ID',
+    client_x509_cert_url: 'GDRIVE_X509_CLIENT_CERT_URL',
+    private_key: 'GDRIVE_PRIVATE_KEY',
+    private_key_id: 'GDRIVE_PRIVATE_KEY_ID',
+    project_id: 'GDRIVE_PROJECT_ID',
+    token_uri: 'GDRIVE_TOKEN_URI',
+    type: 'GDRIVE_TYPE',
+    universe_domain: 'GDRIVE_UNIVERSE_DOMAIN',
+  }],
+  [CONTENT_SOURCE_TYPE_ONEDRIVE, {
+    authority: 'ONEDRIVE_AUTHORITY',
+    clientId: 'ONEDRIVE_CLIENT_ID',
+    clientSecret: 'ONEDRIVE_CLIENT_SECRET',
+    domainId: 'ADOBE_ONEDRIVE_DOMAIN_ID',
+  }],
 ]);
 
-const validateConfiguration = (env, contentSourceType) => {
+const validateConfiguration = (config, contentSourceType) => {
   const requiredParameters = SUPPORTED_CONTENT_SOURCES.get(contentSourceType);
-  const config = {};
 
-  requiredParameters.forEach((param) => {
-    if (!hasText(env[param])) {
-      throw new Error(`Configuration parameter ${param} is required for content source ${contentSourceType}`);
+  for (const [configVar] of Object.entries(requiredParameters)) {
+    if (!hasText(config[configVar])) {
+      throw new Error(`Configuration parameter ${configVar} is required for content source ${contentSourceType}`);
     }
-    config[param] = env[param];
-  });
-
-  return config;
+  }
 };
-
 const validateSite = (site) => {
   if (!isObject(site)) {
     throw new Error('Site is required');
@@ -98,26 +100,28 @@ const validateMetadata = (metadata) => {
 export default class ContentClient {
   static createFrom(context, site) {
     const { log = console, env } = context;
-    return new ContentClient(env, site, log);
+
+    const config = {};
+    const contentSourceType = site.getConfig().content?.source?.type;
+    const envMapping = SUPPORTED_CONTENT_SOURCES.get(contentSourceType);
+
+    if (envMapping) {
+      for (const [configVar, envVar] of Object.entries(envMapping)) {
+        config[configVar] = env[envVar];
+      }
+    }
+
+    return new ContentClient(config, site, log);
   }
 
-  /**
-   * Creates a new Ims client
-   *
-   * @param {Object} config - The configuration object.
-   * @param {Object} site - The site object.
-   * @param {Object} log - The Logger.
-   * @returns {ImsClient} - the Ims client.
-   */
   constructor(config, site, log) {
     validateSite(site);
-
-    const contentSdkConfig = validateConfiguration(config, site.getConfig().content.source.type);
+    validateConfiguration(config, site.getConfig().content.source.type);
 
     this.log = log;
     this.contentSource = site.getConfig().content.source;
     this.site = site;
-    this.rawClient = ContentSDK(contentSdkConfig, this.contentSource, log);
+    this.rawClient = ContentSDK(config, this.contentSource, log);
   }
 
   #logDuration(message, startTime) {
@@ -141,11 +145,11 @@ export default class ContentClient {
   }
 
   async getPageMetadata(path) {
+    const startTime = process.hrtime.bigint();
+
     validatePath(path);
 
     this.log.info(`Getting page metadata for ${this.site.getId()} and path ${path}`);
-
-    const startTime = process.hrtime.bigint();
 
     const docPath = this.#resolveDocPath(path);
     const metadata = await this.rawClient.getPageMetadata(docPath);
@@ -155,17 +159,25 @@ export default class ContentClient {
     return metadata;
   }
 
-  async updatePageMetadata(path, metadata) {
+  async updatePageMetadata(path, metadata, options = {}) {
+    const { overwrite = true } = options;
+    const startTime = process.hrtime.bigint();
+
     validatePath(path);
     validateMetadata(metadata);
 
     this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
-    const startTime = process.hrtime.bigint();
-
     const docPath = this.#resolveDocPath(path);
     const originalMetadata = await this.getPageMetadata(docPath);
-    const mergedMetadata = new Map([...originalMetadata, ...metadata]);
+
+    let mergedMetadata;
+    if (overwrite) {
+      mergedMetadata = new Map([...originalMetadata, ...metadata]);
+    } else {
+      mergedMetadata = new Map([...metadata, ...originalMetadata]);
+    }
+
     const updatedMetadata = await this.rawClient.updatePageMetadata(docPath, mergedMetadata);
 
     this.#logDuration('updatePageMetadata', startTime);

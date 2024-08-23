@@ -15,6 +15,7 @@ import type { UniversalContext } from '@adobe/helix-universal';
 export class ContentClient {
   /**
    * Creates a new ContentClient instance from the given UniversalContext and site.
+   *
    * @param {UniversalContext} context The UniversalContext to use for creating the ContentClient.
    * @param {Object} site The site object.
    * @returns {ContentClient} The ContentClient instance.
@@ -26,7 +27,7 @@ export class ContentClient {
   static createFrom(context: UniversalContext, site: object): ContentClient;
 
   /**
-   * Returns the metadata for the given page path. The document backing the URL path
+   * Returns the metadata for the given page path. The document backing the path
    * is resolved and the metadata is extracted from it. The metadata is a Map where the entries
    * key is the metadata key and the value is the metadata value. If the page does not have any
    * metadata, an empty Map is returned.
@@ -53,10 +54,16 @@ export class ContentClient {
    *
    * @param {string} path The path to the page.
    * @param {Map<string, string>} metadata The metadata to update.
+   * @param {Object} [options] The options to use for updating the metadata.
+   * @param {Object} [options.overwrite] Whether to overwrite the existing metadata.
    * @returns {Map<string, string>} The page's merged metadata.
    * @throws {Error} If the metadata is not a Map or empty
    * @throws {Error} If any of the metadata keys or values are not a string
    * @throws {Error} If the path is not a string, empty or does not start with a "/"
    */
-  updatePageMetadata(path: string, metadata: Map<string, string>): Map<string, string>;
+  updatePageMetadata(
+    path: string,
+    metadata: Map<string, string>,
+    options: object,
+  ): Map<string, string>;
 }

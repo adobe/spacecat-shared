@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v1.43.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.43.1...@adobe/spacecat-shared-data-access-v1.43.2) (2024-08-22)
+
+
+### Bug Fixes
+
+* add property to include specific urls in the site config ([#343](https://github.com/adobe/spacecat-shared/issues/343)) ([184107a](https://github.com/adobe/spacecat-shared/commit/184107a5329a89653e6ec55cfbb9e4c86f1eea55))
+
+# [@adobe/spacecat-shared-data-access-v1.43.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.43.0...@adobe/spacecat-shared-data-access-v1.43.1) (2024-08-22)
+
+
+### Bug Fixes
+
+* add Scoped API Key docs ([#342](https://github.com/adobe/spacecat-shared/issues/342)) ([2fbf707](https://github.com/adobe/spacecat-shared/commit/2fbf707dfeff914dc47ae1f9860629873927e03e))
+
 # [@adobe/spacecat-shared-data-access-v1.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.42.0...@adobe/spacecat-shared-data-access-v1.43.0) (2024-08-21)
 
 

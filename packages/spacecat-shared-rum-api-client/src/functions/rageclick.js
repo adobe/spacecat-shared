@@ -47,16 +47,26 @@ const OPPORTUNITY_DESCRIPTION = 'The percentage of users who click on the same e
 function getRageClickSelectors(events, threshold, selectorsIgnoreList = []) {
   const clickSelectors = {};
   for (const event of events) {
-    const { source, checkpoint } = event;
+    const { source, target, checkpoint } = event;
     if (checkpoint === 'click' && !selectorsIgnoreList.includes(source)) {
       if (!clickSelectors[source]) {
-        clickSelectors[source] = 0;
+        clickSelectors[source] = {
+          value: 0,
+          target: {
+            [target]: 0,
+          },
+        };
       }
-      clickSelectors[source] += 1;
+      clickSelectors[source].value += 1;
+      if (!clickSelectors[source].target[target]) {
+        clickSelectors[source].target[target] = 1;
+      } else {
+        clickSelectors[source].target[target] += 1;
+      }
     }
   }
   for (const selector of Object.keys(clickSelectors)) {
-    if (clickSelectors[selector] < threshold) {
+    if (clickSelectors[selector].value < threshold) {
       delete clickSelectors[selector];
     }
   }
@@ -117,6 +127,7 @@ function getRageClickOpportunities(rageClickInstances) {
         opportunity.metrics.push({
           type: 'click',
           selector,
+          targets: rageClickInstances[url][selector].target,
           value: rageClickInstances[url][selector].value,
           samples: rageClickInstances[url][selector].samples,
           percentage: rageClickInstances[url][selector].percentage,
@@ -177,24 +188,30 @@ function handler(bundles) {
       for (const selector of Object.keys(rageClickSelectors)) {
         if (!rageClickInstances[url][selector]) {
           rageClickInstances[url][selector] = {};
-          rageClickInstances[url][selector].value = rageClickSelectors[selector];
+          rageClickInstances[url][selector].value = rageClickSelectors[selector].value;
           rageClickInstances[url][selector].samples = 1;
+          rageClickInstances[url][selector].target = rageClickSelectors[selector].target;
           rageClickInstances[url][selector].mobileSamples = isMobile ? 1 : 0;
           rageClickInstances[url][selector].desktopSamples = !isMobile ? 1 : 0;
         } else {
-          rageClickInstances[url][selector].value += rageClickSelectors[selector];
+          rageClickInstances[url][selector].value += rageClickSelectors[selector].value;
           rageClickInstances[url][selector].samples += 1;
           rageClickInstances[url][selector].mobileSamples += isMobile ? 1 : 0;
           rageClickInstances[url][selector].desktopSamples += !isMobile ? 1 : 0;
+          for (const target of Object.keys(rageClickSelectors[selector].target)) {
+            if (!rageClickInstances[url][selector].target[target]) {
+              // eslint-disable-next-line max-len
+              rageClickInstances[url][selector].target[target] = rageClickSelectors[selector].target[target];
+            } else {
+              // eslint-disable-next-line max-len
+              rageClickInstances[url][selector].target[target] += rageClickSelectors[selector].target[target];
+            }
+          }
         }
       }
     }
   }
-  filterRageClickInstancesByThreshold(
-    rageClickInstances,
-    pageData,
-    thresholds,
-  );
+  filterRageClickInstancesByThreshold(rageClickInstances, pageData, thresholds);
   return getRageClickOpportunities(rageClickInstances);
 }
 

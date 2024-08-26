@@ -44,7 +44,7 @@ describe('GoogleClient', () => {
   const endDateString = '2024-01-31';
   const endDate = new Date(endDateString);
 
-  let authClientStub;
+  let oauth2ClientStub;
 
   const stubSecretManager = (config) => {
     sinon.stub(SecretsManagerClient.prototype, 'send').resolves({
@@ -53,21 +53,26 @@ describe('GoogleClient', () => {
   };
 
   beforeEach(() => {
+    oauth2ClientStub = sinon.createStubInstance(OAuth2Client);
+    oauth2ClientStub.refreshAccessToken.resolves({
+      credentials: {
+        access_token: 'newAccessToken',
+        expiry_date: Date.now() + 3600 * 1000,
+      },
+    });
+
+    sinon.stub(OAuth2Client.prototype, 'constructor').callsFake(() => oauth2ClientStub);
+    sinon.stub(OAuth2Client.prototype, 'setCredentials').callsFake(function (credentials) {
+      this.credentials = credentials;
+    });
+    sinon.stub(OAuth2Client.prototype, 'refreshAccessToken').callsFake(() => oauth2ClientStub.refreshAccessToken());
     defaultConfig = {
       access_token: 'testAccessToken',
       refresh_token: 'testRefreshToken',
       token_type: 'Bearer',
       site_url: baseURL,
-      expiration_date: Date.now() + 3600 * 1000,
+      expiry_date: Date.now() * 1000,
     };
-
-    authClientStub = sinon.stub(OAuth2Client.prototype);
-    authClientStub.setCredentials.returns();
-    authClientStub.refreshAccessToken.resolves({
-      credentials: {
-        test_token: 'testToken',
-      },
-    });
   });
 
   afterEach(() => {
@@ -109,6 +114,38 @@ describe('GoogleClient', () => {
         await GoogleClient.createFrom(context, baseURL);
       } catch (error) {
         expect(error.message).to.equal('Error creating GoogleClient: Invalid site URL in secret');
+      }
+    });
+
+    it('should refresh access token when it is expired', async () => {
+      stubSecretManager({
+        ...defaultConfig,
+        expiry_date: Date.now() - 10000,
+      });
+
+      const testResult = { data: 'testData' };
+      const webmastersStub = sinon.stub().resolves(testResult);
+      sinon.stub(google, 'webmasters').returns({
+        sites: {
+          list: webmastersStub,
+        },
+      });
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.listSites();
+      expect(result).to.eql(testResult);
+      expect(oauth2ClientStub.refreshAccessToken.calledOnce).to.be.true;
+    });
+
+    it('should throw an error if the token cannot be refreshed', async () => {
+      oauth2ClientStub.refreshAccessToken.rejects(new Error('Token refresh failed'));
+      stubSecretManager({
+        ...defaultConfig,
+        expiry_date: Date.now() - 10000,
+      });
+      try {
+        await GoogleClient.createFrom(context, baseURL);
+      } catch (error) {
+        expect(error.message).to.equal('Error creating GoogleClient: Token refresh failed');
       }
     });
   });
@@ -337,22 +374,6 @@ describe('GoogleClient', () => {
       } catch (error) {
         expect(error.message).to.equal(`Error retrieving sites from Google API: ${failMessage}`);
       }
-    });
-
-    it('should refresh access token when it is expired', async () => {
-      defaultConfig.expiry_date = Date.now() - 2000;
-      stubSecretManager(defaultConfig);
-
-      const testResult = { data: 'testData' };
-      const webmastersStub = sinon.stub().resolves(testResult);
-      sinon.stub(google, 'webmasters').returns({
-        sites: {
-          list: webmastersStub,
-        },
-      });
-      const googleClient = await GoogleClient.createFrom(context, baseURL);
-      const result = await googleClient.listSites();
-      expect(result).to.eql(testResult);
     });
   });
 

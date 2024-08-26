@@ -56,5 +56,5 @@ export default class RUMAPIClient {
    * @returns {Promise<object>} A Promise that resolves to an object where each key is the name
    * of a query, and each value is the result of that query.
    */
-  queryMulti(queries: string[], opts?: RUMAPIOptions): Promise<object[]>;
+  queryMulti(queries: string[], opts?: RUMAPIOptions): Promise<object>;
 }

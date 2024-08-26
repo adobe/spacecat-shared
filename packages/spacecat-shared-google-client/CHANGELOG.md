@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.1...@adobe/spacecat-shared-google-client-v1.2.2) (2024-08-26)
+
+
+### Bug Fixes
+
+* authentication token refresh ([#344](https://github.com/adobe/spacecat-shared/issues/344)) ([37cb442](https://github.com/adobe/spacecat-shared/commit/37cb442c7837241780af3fede345db6be66e72e2))
+
 # [@adobe/spacecat-shared-google-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.0...@adobe/spacecat-shared-google-client-v1.2.1) (2024-08-24)
 
 

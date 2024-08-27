@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.7.4...@adobe/spacecat-shared-rum-api-client-v2.8.0) (2024-08-26)
+
+
+### Features
+
+* [oppty] Pages with high click amount on non-interacting element ([#329](https://github.com/adobe/spacecat-shared/issues/329)) ([610a22f](https://github.com/adobe/spacecat-shared/commit/610a22f59c1f197afb5ee4b1b9244a7f73fbce40))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.7.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.7.3...@adobe/spacecat-shared-rum-api-client-v2.7.4) (2024-08-24)
 
 

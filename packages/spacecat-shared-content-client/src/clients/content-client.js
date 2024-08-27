@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { createFrom as ContentSDK } from '@adobe/spacecat-helix-content-sdk';
+import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
 import { hasText, isObject } from '@adobe/spacecat-shared-utils';
 
 const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
@@ -72,8 +72,8 @@ const validatePath = (path) => {
     throw new Error('Path must be a string');
   }
 
-  if (path.startsWith('/')) {
-    throw new Error('Path must not start with a slash');
+  if (!path.startsWith('/')) {
+    throw new Error('Path must start with a slash');
   }
 };
 
@@ -119,9 +119,16 @@ export default class ContentClient {
     validateConfiguration(config, site.getConfig().content.source.type);
 
     this.log = log;
+    this.config = config;
     this.contentSource = site.getConfig().content.source;
     this.site = site;
-    this.rawClient = ContentSDK(config, this.contentSource, log);
+    this.rawClient = null;
+  }
+
+  async #initClient() {
+    if (!this.rawClient) {
+      this.rawClient = await createContentSDKClient(this.config, this.contentSource, this.log);
+    }
   }
 
   #logDuration(message, startTime) {
@@ -142,6 +149,7 @@ export default class ContentClient {
 
   async getPageMetadata(path) {
     const startTime = process.hrtime.bigint();
+    await this.#initClient();
 
     validatePath(path);
 
@@ -158,6 +166,7 @@ export default class ContentClient {
   async updatePageMetadata(path, metadata, options = {}) {
     const { overwrite = true } = options;
     const startTime = process.hrtime.bigint();
+    await this.#initClient();
 
     validatePath(path);
     validateMetadata(metadata);

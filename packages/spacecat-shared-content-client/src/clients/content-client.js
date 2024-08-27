@@ -183,10 +183,13 @@ export default class ContentClient {
       mergedMetadata = new Map([...metadata, ...originalMetadata]);
     }
 
-    const updatedMetadata = await this.rawClient.updatePageMetadata(docPath, mergedMetadata);
+    const response = await this.rawClient.updatePageMetadata(docPath, mergedMetadata);
+    if (response.status !== 200) {
+      throw new Error(`Failed to update metadata for path ${path}`);
+    }
 
     this.#logDuration('updatePageMetadata', startTime);
 
-    return updatedMetadata;
+    return mergedMetadata;
   }
 }

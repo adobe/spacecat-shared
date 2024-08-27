@@ -43,10 +43,22 @@ describe('ContentClient', () => {
     ['keywords', 'test, metadata'],
   ]);
 
-  const createContentClient = async (getPageMetadata, updatePageMetadata) => {
+  const createContentClient = async (getPageMetadata) => {
     const contentSDK = sinon.stub().returns({
       getPageMetadata: sinon.stub().resolves(getPageMetadata),
-      updatePageMetadata: sinon.stub().resolves(updatePageMetadata),
+      updatePageMetadata: sinon.stub().resolves({ status: 200 }),
+    });
+
+    return esmock('../../src/clients/content-client.js', {
+      '@adobe/spacecat-helix-content-sdk': { createFrom: contentSDK },
+    });
+  };
+
+  const createErrorContentClient = async (getError, updateError, errorMessage) => {
+    const contentSDK = sinon.stub().returns({
+      getPageMetadata: getError
+        ? sinon.stub().rejects(new Error(errorMessage)) : sinon.stub().resolves(new Map()),
+      updatePageMetadata: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -93,16 +105,37 @@ describe('ContentClient', () => {
   describe('constructor', () => {
     it('validates and sets config, site, and rawClient for Google Drive', () => {
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
-      expect(client.contentSource.type).to.equal('drive.google');
-      expect(client.rawClient).to.exist;
-      expect(client.rawClient.getPageMetadata).to.be.a('function');
+      expect(client.log).to.eql(log);
+      expect(client.config).to.eql({
+        auth_provider_x509_cert_url: 'https://auth-provider.uri',
+        auth_uri: 'https://auth.uri',
+        client_email: 'drive-email',
+        client_id: 'drive-client-id',
+        client_x509_cert_url: 'GDRIVE_X509_CLIENT_CERT_URL',
+        private_key: 'drive-private-key',
+        private_key_id: 'drive-private-key-id',
+        project_id: 'drive-project-id',
+        token_uri: 'https://some.token.uri',
+        type: 'drive-type',
+        universe_domain: 'drive-universe-domain',
+      });
+      expect(client.contentSource).to.eql({ type: 'drive.google' });
+      expect(client.rawClient).to.be.null;
+      expect(client.site).to.eql(siteConfigGoogleDrive);
     });
 
     it('validate and sets config, site, and rawClient for OneDrive', () => {
       const client = ContentClient.createFrom(context, siteConfigOneDrive);
+      expect(client.log).to.eql(log);
+      expect(client.config).to.eql({
+        authority: 'https://authority.uri',
+        clientId: 'onedrive-client-id',
+        clientSecret: 'onedrive-client-secret',
+        domainId: 'onedrive-domain-id',
+      });
       expect(client.contentSource.type).to.equal('onedrive');
-      expect(client.rawClient).to.exist;
-      expect(client.rawClient.getPageMetadata).to.be.a('function');
+      expect(client.rawClient).to.be.null;
+      expect(client.site).to.eql(siteConfigOneDrive);
     });
 
     it('throws an error if site is missing', () => {
@@ -132,6 +165,13 @@ describe('ContentClient', () => {
   });
 
   describe('getPageMetadata', () => {
+    it('throws an error if raw client throws an error', async () => {
+      ContentClient = await createErrorContentClient(true, true, 'Error getting page metadata');
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const path = '/test-path';
+      await expect(client.getPageMetadata(path)).to.be.rejectedWith('Error getting page metadata');
+    });
+
     it('gets page metadata and logs duration for Google Drive', async () => {
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       const path = '/test-path';
@@ -178,6 +218,17 @@ describe('ContentClient', () => {
   });
 
   describe('updatePageMetadata', () => {
+    it('throws an error if raw client has non-200 status', async () => {
+      ContentClient = await createErrorContentClient(false, true, 'Error updating page metadata');
+      const metadata = new Map([
+        ['lang', 'en'],
+        ['keywords', 'test, metadata'],
+      ]);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const path = '/test-path';
+      await expect(client.updatePageMetadata(path, metadata)).to.be.rejectedWith('Failed to update metadata for path /test-path');
+    });
+
     it('updates page metadata with valid metadata', async () => {
       const metadata = new Map([
         ['lang', 'en'],

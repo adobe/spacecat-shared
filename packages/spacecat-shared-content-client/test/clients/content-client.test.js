@@ -88,7 +88,7 @@ describe('ContentClient', () => {
     };
     context = { env, log };
 
-    ContentClient = await createContentClient(sampleMetadata, sampleMetadata);
+    ContentClient = await createContentClient(sampleMetadata);
   });
 
   afterEach(() => {
@@ -236,7 +236,7 @@ describe('ContentClient', () => {
       ]);
       const expectedMetadata = new Map([...sampleMetadata, ...metadata]);
 
-      ContentClient = await createContentClient(sampleMetadata, expectedMetadata);
+      ContentClient = await createContentClient(sampleMetadata);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       const path = '/test-path';
@@ -293,7 +293,7 @@ describe('ContentClient', () => {
         ['keywords', 'test, metadata'], // Original key remains
       ]);
 
-      ContentClient = await createContentClient(sampleMetadata, expectedMetadata);
+      ContentClient = await createContentClient(sampleMetadata);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       const path = '/test-path';
@@ -315,7 +315,7 @@ describe('ContentClient', () => {
         ['author', 'New Author'], // Added
       ]);
 
-      ContentClient = await createContentClient(sampleMetadata, expectedMetadata);
+      ContentClient = await createContentClient(sampleMetadata);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       const path = '/test-path';

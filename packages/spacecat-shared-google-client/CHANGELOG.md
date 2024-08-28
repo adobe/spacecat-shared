@@ -1,3 +1,52 @@
+# [@adobe/spacecat-shared-google-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.1...@adobe/spacecat-shared-google-client-v1.2.2) (2024-08-26)
+
+
+### Bug Fixes
+
+* authentication token refresh ([#344](https://github.com/adobe/spacecat-shared/issues/344)) ([37cb442](https://github.com/adobe/spacecat-shared/commit/37cb442c7837241780af3fede345db6be66e72e2))
+
+# [@adobe/spacecat-shared-google-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.0...@adobe/spacecat-shared-google-client-v1.2.1) (2024-08-24)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#345](https://github.com/adobe/spacecat-shared/issues/345)) ([ae2c7a6](https://github.com/adobe/spacecat-shared/commit/ae2c7a6104394a53d74f5c19465d6741751576ce))
+
+# [@adobe/spacecat-shared-google-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.19...@adobe/spacecat-shared-google-client-v1.2.0) (2024-08-20)
+
+
+### Features
+
+* introduce url inspect in google client ([#326](https://github.com/adobe/spacecat-shared/issues/326)) ([eb9e8ae](https://github.com/adobe/spacecat-shared/commit/eb9e8ae67f7a95ca5e4abb993f8b625400735312))
+
+# [@adobe/spacecat-shared-google-client-v1.1.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.18...@adobe/spacecat-shared-google-client-v1.1.19) (2024-08-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#332](https://github.com/adobe/spacecat-shared/issues/332)) ([b2bb2a4](https://github.com/adobe/spacecat-shared/commit/b2bb2a4dd1a0995c36cd2b64510b7c4e0e05436f))
+
+# [@adobe/spacecat-shared-google-client-v1.1.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.17...@adobe/spacecat-shared-google-client-v1.1.18) (2024-08-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#320](https://github.com/adobe/spacecat-shared/issues/320)) ([c75b743](https://github.com/adobe/spacecat-shared/commit/c75b7432e0add9b261ddc7999fe80b20442a0dd7))
+
+# [@adobe/spacecat-shared-google-client-v1.1.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.16...@adobe/spacecat-shared-google-client-v1.1.17) (2024-08-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#314](https://github.com/adobe/spacecat-shared/issues/314)) ([cc47ba3](https://github.com/adobe/spacecat-shared/commit/cc47ba34b7f3e859deea89da57bfa4887e788772))
+
+# [@adobe/spacecat-shared-google-client-v1.1.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.15...@adobe/spacecat-shared-google-client-v1.1.16) (2024-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#304](https://github.com/adobe/spacecat-shared/issues/304)) ([c6c56a7](https://github.com/adobe/spacecat-shared/commit/c6c56a72897acb60fb042215b708816ec16a5870))
+
 # [@adobe/spacecat-shared-google-client-v1.1.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.1.14...@adobe/spacecat-shared-google-client-v1.1.15) (2024-07-22)
 
 

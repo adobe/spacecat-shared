@@ -47,7 +47,7 @@ function transformFormat(trafficSources) {
   }));
 }
 
-function handler(bundles) {
+async function handler(bundles) {
   const trafficSources = bundles
     .map(extractHints)
     .map((row) => {
@@ -69,5 +69,5 @@ function handler(bundles) {
 
 export default {
   handler,
-  checkpoints: ['email', 'enter', 'paid', 'utm'],
+  checkpoints: ['email', 'enter', 'paid', 'utm', 'experiment'],
 };

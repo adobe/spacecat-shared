@@ -1,3 +1,87 @@
+# [@adobe/spacecat-shared-http-utils-v1.6.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.7...@adobe/spacecat-shared-http-utils-v1.6.8) (2024-08-22)
+
+
+### Bug Fixes
+
+* add Scoped API Key docs ([#342](https://github.com/adobe/spacecat-shared/issues/342)) ([2fbf707](https://github.com/adobe/spacecat-shared/commit/2fbf707dfeff914dc47ae1f9860629873927e03e))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.6...@adobe/spacecat-shared-http-utils-v1.6.7) (2024-08-19)
+
+
+### Bug Fixes
+
+* add try-catch block to authentication manager ([#336](https://github.com/adobe/spacecat-shared/issues/336)) ([a6cf629](https://github.com/adobe/spacecat-shared/commit/a6cf6290e4b8330956fdbb80406523853b0a7b51))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.5...@adobe/spacecat-shared-http-utils-v1.6.6) (2024-08-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#332](https://github.com/adobe/spacecat-shared/issues/332)) ([b2bb2a4](https://github.com/adobe/spacecat-shared/commit/b2bb2a4dd1a0995c36cd2b64510b7c4e0e05436f))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.4...@adobe/spacecat-shared-http-utils-v1.6.5) (2024-08-16)
+
+
+### Bug Fixes
+
+* add more debug logs ([#331](https://github.com/adobe/spacecat-shared/issues/331)) ([7268589](https://github.com/adobe/spacecat-shared/commit/726858966f6a74fad91a2eafa5fbf333b72d78cd))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.3...@adobe/spacecat-shared-http-utils-v1.6.4) (2024-08-16)
+
+
+### Bug Fixes
+
+* Add id to api-key DTO ([#330](https://github.com/adobe/spacecat-shared/issues/330)) ([aa451ab](https://github.com/adobe/spacecat-shared/commit/aa451abf7b0178412803b553fe9a39f47e958c02))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.2...@adobe/spacecat-shared-http-utils-v1.6.3) (2024-08-15)
+
+
+### Bug Fixes
+
+* refactor hashedApiKey ([#328](https://github.com/adobe/spacecat-shared/issues/328)) ([7cb8908](https://github.com/adobe/spacecat-shared/commit/7cb8908c13ffede4849fc0bd0b585ce31b4dc79a))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.1...@adobe/spacecat-shared-http-utils-v1.6.2) (2024-08-15)
+
+
+### Bug Fixes
+
+* refactor hashed api key and query to retrieve API key ([#325](https://github.com/adobe/spacecat-shared/issues/325)) ([a99fc76](https://github.com/adobe/spacecat-shared/commit/a99fc76963fdcd6bce8de7d5b315dbefbb03fd95))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.0...@adobe/spacecat-shared-http-utils-v1.6.1) (2024-08-14)
+
+
+### Bug Fixes
+
+* add query changes ([#324](https://github.com/adobe/spacecat-shared/issues/324)) ([6104f65](https://github.com/adobe/spacecat-shared/commit/6104f65620f8f020e70494c2c2138ae2afefe15e))
+
+# [@adobe/spacecat-shared-http-utils-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.5.0...@adobe/spacecat-shared-http-utils-v1.6.0) (2024-08-14)
+
+
+### Features
+
+* export ScopedApiKeyHandler ([#323](https://github.com/adobe/spacecat-shared/issues/323)) ([778e19c](https://github.com/adobe/spacecat-shared/commit/778e19c490c7ed63f600afe4ae025356f47218fd))
+
+# [@adobe/spacecat-shared-http-utils-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.4.0...@adobe/spacecat-shared-http-utils-v1.5.0) (2024-08-09)
+
+
+### Features
+
+* Introduce scoped API keys ([#312](https://github.com/adobe/spacecat-shared/issues/312)) ([449d273](https://github.com/adobe/spacecat-shared/commit/449d2736154d7e92fb4a3d1f9f290e15e665aa5e))
+
+# [@adobe/spacecat-shared-http-utils-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.3.5...@adobe/spacecat-shared-http-utils-v1.4.0) (2024-07-30)
+
+
+### Features
+
+* move auth wrappers from api-service ([#307](https://github.com/adobe/spacecat-shared/issues/307)) ([3094a99](https://github.com/adobe/spacecat-shared/commit/3094a999f330dbe007b64fbfc3f282bd56807b37))
+
+# [@adobe/spacecat-shared-http-utils-v1.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.3.4...@adobe/spacecat-shared-http-utils-v1.3.5) (2024-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#304](https://github.com/adobe/spacecat-shared/issues/304)) ([c6c56a7](https://github.com/adobe/spacecat-shared/commit/c6c56a72897acb60fb042215b708816ec16a5870))
+
 # [@adobe/spacecat-shared-http-utils-v1.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.3.3...@adobe/spacecat-shared-http-utils-v1.3.4) (2024-06-07)
 
 

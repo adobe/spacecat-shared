@@ -84,6 +84,7 @@ export interface Audit {
   getScores: () => object;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Config {
 
 }
@@ -455,9 +456,9 @@ export interface ImportJob {
   getId: () => string;
 
   /**
-   * Retrieves the apiKey of the import job.
+   * Retrieves the hashed apiKey of the import job.
    */
-  getApiKey: () => string;
+  getHashedApiKey: () => string;
 
   /**
    * Retrieves the status of the import job.
@@ -509,6 +510,11 @@ export interface ImportJob {
    */
   getImportQueueId: () => string;
 
+  /**
+   * Retrieves the initiatedBy metadata (name, imsOrgId, imsUserId, userAgent) of the import job.
+   */
+  getInitiatedBy: () => object;
+
 }
 
 export interface ImportUrl {
@@ -531,6 +537,57 @@ export interface ImportUrl {
    * Retrieves the job ID of the import URL.
    */
     getJobId: () => string;
+
+}
+
+/**
+ * Represents an API Key entity.
+ */
+export interface ApiKey {
+    /**
+     * Retrieves the ID of the API Key.
+     */
+    getId: () => string;
+
+    /**
+     * Retrieves the hashed key value of the API Key.
+     */
+    getHashedApiKey: () => string;
+
+    /**
+     * Retrieves the name of the API Key.
+     */
+    getName: () => string;
+
+    /**
+    * Retrieves the imsUserId of the API Key.
+    */
+    getImsUserId: () => string;
+
+    /**
+    * Retrieves the imsOrgId of the API key
+    */
+    getImsOrgId: () => string;
+
+    /**
+     * Retrieves the createdAt of the API Key.
+     */
+    getCreatedAt: () => string;
+
+    /**
+     * Retrieves the expiresAt of the API Key.
+     */
+    getExpiresAt: () => string;
+
+    /**
+     * Retrieves the revokedAt of the API Key.
+     */
+    getRevokedAt: () => string;
+
+    /**
+     * Retrieves the scopes of the API Key.
+     */
+    getScopes: () => Array<string>;
 
 }
 
@@ -722,6 +779,12 @@ export interface DataAccess {
       jobId: string,
       status: string,
     ) => Promise<ImportUrl[]>;
+  getApiKeyByHashedApiKey: (
+      hashedApiKey: string,
+    ) => Promise<ApiKey | null>;
+  createNewApiKey: (
+      apiKeyData: object,
+  ) => Promise<ApiKey>;
 
   // site candidate functions
   getSiteCandidateByBaseURL: (baseURL: string) => Promise<SiteCandidate>;
@@ -764,6 +827,7 @@ interface DataAccessConfig {
   tableNameImportJobs: string;
   tableNameImportUrls: string;
   tableNameExperiments: string;
+  tableNameApiKeys: string;
   indexNameAllKeyEventsBySiteId: string,
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,
@@ -774,6 +838,7 @@ interface DataAccessConfig {
   indexNameAllImportJobsByStatus: string,
   indexNameAllImportJobsByDateRange: string,
   indexNameAllImportUrlsByJobIdAndStatus: string,
+  indexNameApiKeyByHashedApiKey: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;

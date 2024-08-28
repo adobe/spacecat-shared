@@ -38,6 +38,7 @@ function getOrCreateVariantObject(variants, variantName) {
     variantObject = {
       name: variantName,
       views: 0,
+      samples: 0,
       click: {},
       convert: {},
       formsubmit: {},
@@ -55,74 +56,81 @@ function updateInferredStartAndEndDate(experimentObject, time) {
   const bundleDate = new Date(bundleTime);
   bundleDate.setHours(0, 0, 0, 0);
   if (!experimentObject.inferredStartDate && !experimentObject.inferredEndDate) {
-    // adding the inferredStartDate and inferredEndDate properties for the first time
     // eslint-disable-next-line no-param-reassign
     experimentObject.inferredStartDate = time;
-    // check if bundleTime is before yesterday
-    if (bundleDate < yesterday) {
-      // RUM data is delayed by a day, so if we don't have
-      // any RUM data for yesterday, so we can infer the endDate
-      // eslint-disable-next-line no-param-reassign
-      experimentObject.inferredEndDate = time;
-    } else {
-      // eslint-disable-next-line no-param-reassign
-      experimentObject.inferredEndDate = null;
-    }
+    // eslint-disable-next-line no-param-reassign
+    experimentObject.inferredEndDate = time;
   } else {
     const inferredStartDateObj = new Date(experimentObject.inferredStartDate);
+    const inferredEndDateObj = new Date(experimentObject.inferredEndDate);
     if (bundleTime < inferredStartDateObj) {
       // eslint-disable-next-line no-param-reassign
       experimentObject.inferredStartDate = time;
     }
-    if (bundleDate < yesterday) {
-      if (!experimentObject.inferredEndDate
-        || (bundleTime > new Date(experimentObject.inferredEndDate))) {
-        // eslint-disable-next-line no-param-reassign
-        experimentObject.inferredEndDate = time;
+    if (bundleTime > inferredEndDateObj) {
+      // eslint-disable-next-line no-param-reassign
+      experimentObject.inferredEndDate = time;
+    }
+  }
+}
+
+function calculateMetrics(bundle) {
+  const metrics = {};
+  for (const checkpoint of METRIC_CHECKPOINTS) {
+    metrics[checkpoint] = {};
+  }
+  for (const event of bundle.events) {
+    if (METRIC_CHECKPOINTS.includes(event.checkpoint)) {
+      const { source, checkpoint } = event;
+      if (!metrics[checkpoint][source]) {
+        metrics[checkpoint][source] = {
+          value: bundle.weight,
+          samples: 1,
+        };
+      } else {
+        metrics[checkpoint][source].value += bundle.weight;
+        metrics[checkpoint][source].samples += 1;
       }
     }
   }
+  return metrics;
 }
 
 function handler(bundles) {
   const experimentInsights = {};
   for (const bundle of bundles) {
-    const experimentEvent = bundle.events?.find((e) => e.checkpoint === 'experiment');
-    if (experimentEvent) {
-      const { url, weight, time } = bundle;
+    const experimentEvents = bundle.events?.filter(
+      (e) => (EXPERIMENT_CHECKPOINT.includes(e.checkpoint) && e.source),
+    );
+    const { url, weight, time } = bundle;
+    const metrics = calculateMetrics(bundle);
+    for (const experimentEvent of experimentEvents) {
       if (!experimentInsights[url]) {
         experimentInsights[url] = [];
       }
       const experimentName = experimentEvent.source;
       const variantName = experimentEvent.target;
-      const experimentObject = getOrCreateExperimentObject(experimentInsights[url], experimentName);
+      const experimentObject = getOrCreateExperimentObject(
+        experimentInsights[url],
+        experimentName,
+      );
       const variantObject = getOrCreateVariantObject(experimentObject.variants, variantName);
       updateInferredStartAndEndDate(experimentObject, time);
       variantObject.views += weight;
-
-      const metrics = {};
-      for (const checkpoint of METRIC_CHECKPOINTS) {
-        metrics[checkpoint] = {};
-      }
-      for (const event of bundle.events) {
-        if (METRIC_CHECKPOINTS.includes(event.checkpoint)) {
-          const { source, checkpoint } = event;
-          if (!metrics[checkpoint][source]) {
-            metrics[checkpoint][source] = weight;
-          } else {
-            metrics[checkpoint][source] += weight;
-          }
-        }
-      }
+      variantObject.samples += 1;
       // combine metrics and variantObject, considering the interaction events
       // only once during the session
       for (const checkpoint of METRIC_CHECKPOINTS) {
         // eslint-disable-next-line no-restricted-syntax
-        for (const source in metrics[checkpoint]) {
+        for (const source in metrics?.[checkpoint]) {
           if (!variantObject[checkpoint][source]) {
-            variantObject[checkpoint][source] = weight;
+            variantObject[checkpoint][source] = {
+              value: weight,
+              samples: 1,
+            };
           } else {
-            variantObject[checkpoint][source] += weight;
+            variantObject[checkpoint][source].value += weight;
+            variantObject[checkpoint][source].samples += 1;
           }
         }
       }
@@ -130,9 +138,13 @@ function handler(bundles) {
       for (const checkpoint of Object.keys(metrics)) {
         if (Object.keys(metrics[checkpoint]).length > 0) {
           if (!variantObject[checkpoint]['*']) {
-            variantObject[checkpoint]['*'] = weight;
+            variantObject[checkpoint]['*'] = {
+              value: weight,
+              samples: 1,
+            };
           } else {
-            variantObject[checkpoint]['*'] += weight;
+            variantObject[checkpoint]['*'].value += weight;
+            variantObject[checkpoint]['*'].samples += 1;
           }
         }
       }

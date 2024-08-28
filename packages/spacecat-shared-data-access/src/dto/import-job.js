@@ -28,7 +28,7 @@ export const ImportJobDto = {
   toDynamoItem: (importJob) => ({
     id: importJob.getId(),
     baseURL: importJob.getBaseURL(),
-    apiKey: importJob.getApiKey(),
+    hashedApiKey: importJob.getHashedApiKey(),
     options: importJob.getOptions(),
     startTime: importJob.getStartTime(),
     endTime: importJob.getEndTime(),
@@ -38,6 +38,7 @@ export const ImportJobDto = {
     successCount: importJob.getSuccessCount(),
     failedCount: importJob.getFailedCount(),
     importQueueId: importJob.getImportQueueId(),
+    initiatedBy: importJob.getInitiatedBy(),
     GSI1PK: 'ALL_IMPORT_JOBS',
   }),
 
@@ -48,7 +49,7 @@ export const ImportJobDto = {
     const importJobData = {
       id: dynamoItem.id,
       baseURL: dynamoItem.baseURL,
-      apiKey: dynamoItem.apiKey,
+      hashedApiKey: dynamoItem.hashedApiKey,
       options: dynamoItem.options,
       startTime: dynamoItem.startTime,
       endTime: dynamoItem.endTime,
@@ -58,6 +59,7 @@ export const ImportJobDto = {
       successCount: dynamoItem.successCount,
       failedCount: dynamoItem.failedCount,
       importQueueId: dynamoItem.importQueueId,
+      initiatedBy: dynamoItem.initiatedBy,
     };
 
     return createImportJob(importJobData);

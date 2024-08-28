@@ -12,10 +12,9 @@
 /* eslint-env mocha */
 /* eslint-disable object-curly-newline */
 
-import chai from 'chai';
+import { expect } from 'chai';
 import { classifyTrafficSource } from '../../src/common/traffic.js';
 
-const { expect } = chai;
 describe('Traffic classification', () => {
   const url = 'https://www.test.com/some/page';
   const { origin } = new URL(url);
@@ -32,6 +31,10 @@ describe('Traffic classification', () => {
     assert(expected, { referrer: 'https://www.google.co.uk/', utmSource: 'some-source', utmMedium: 'sea', tracking: null });
     assert(expected, { referrer: 'https://yahoo.com/', utmSource: 'some-source', utmMedium: 'paidsearch', tracking: null });
     assert(expected, { referrer: 'https://google.com/', utmSource: 'some-source', utmMedium: 'paidsearch', tracking: 'paid' });
+    assert(expected, { referrer: 'https://googleads.g.doubleclick.net/', utmSource: 'goo', utmMedium: 'gsea', tracking: null });
+    assert(expected, { referrer: '', utmSource: 'goo', utmMedium: 'sem', tracking: null });
+    assert(expected, { referrer: 'https://www.google.com/', utmSource: 'googlemaps', utmMedium: 'seomaps', tracking: null });
+    assert(expected, { referrer: '', utmSource: 'gsea', utmMedium: 'sea', tracking: null });
   });
 
   it('paid social', () => {
@@ -41,6 +44,11 @@ describe('Traffic classification', () => {
     assert(expected, { referrer: 'https://www.tiktok.com/', utmSource: 'some-source', utmMedium: 'paidsocial', tracking: null });
     assert(expected, { referrer: 'https://snapchat.com/', utmSource: 'some-source', utmMedium: 'social', tracking: null });
     assert(expected, { referrer: 'https://x.com/', utmSource: 'some-source', utmMedium: '', tracking: 'paid' });
+    assert(expected, { referrer: '', utmSource: 'meta', utmMedium: 'paidsocial', tracking: null });
+    assert(expected, { referrer: 'https://www.tiktok.com/', utmSource: 'tt', utmMedium: 'soci', tracking: null });
+    assert(expected, { referrer: '', utmSource: 'reddit', utmMedium: 'social', tracking: null });
+    assert(expected, { referrer: '', utmSource: 'soc', utmMedium: 'fbig', tracking: null });
+    assert(expected, { referrer: '', utmSource: 'instagram', utmMedium: 'social', tracking: null });
   });
 
   it('paid video', () => {
@@ -50,6 +58,7 @@ describe('Traffic classification', () => {
     assert(expected, { referrer: 'https://www.youtube.com/', utmSource: 'some-source', utmMedium: 'ppc', tracking: null });
     assert(expected, { referrer: 'https://www.dailymotion.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'paid' });
     assert(expected, { referrer: 'https://www.twitch.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'paid' });
+    assert(expected, { referrer: '', utmSource: 'youtube', utmMedium: 'video', tracking: null });
   });
 
   it('paid display', () => {
@@ -60,6 +69,13 @@ describe('Traffic classification', () => {
     assert(expected, { referrer: 'not-empty', utmSource: 'gdn', utmMedium: 'some-medium', tracking: null });
     assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'pp', tracking: null });
     assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'display', tracking: null });
+    assert(expected, { referrer: '', utmSource: 'dv360', utmMedium: 'some-medium', tracking: null });
+    assert(expected, { referrer: '', utmSource: 'some-source', utmMedium: 'cpc', tracking: null });
+    assert(expected, { referrer: 'some-referrer', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'paid' });
+    assert(expected, { referrer: '', utmSource: '', utmMedium: '', tracking: 'paid' });
+    assert(expected, { referrer: 'https://www.google.com/', utmSource: 'newsshowcase', utmMedium: 'discover', tracking: null });
+    assert(expected, { referrer: 'https://googleads.g.doubleclick.net/', utmSource: 'some', utmMedium: 'some', tracking: null });
+    assert(expected, { referrer: 'https://www.google.com/', utmSource: 'google', utmMedium: 'businesslistings', tracking: null });
   });
 
   it('paid affiliate', () => {
@@ -75,6 +91,7 @@ describe('Traffic classification', () => {
     assert(expected, { referrer: 'https://www.google.co.uk/', utmSource: '', utmMedium: '', tracking: null });
     assert(expected, { referrer: 'https://yahoo.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'some' });
     assert(expected, { referrer: 'https://google.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'some' });
+    assert(expected, { referrer: 'https://www.google.com/', utmSource: 'google', utmMedium: 'organicgmb', tracking: null });
   });
 
   it('earned social', () => {
@@ -144,7 +161,6 @@ describe('Traffic classification', () => {
   it('owned uncategorized', () => {
     const expected = { type: 'owned', category: 'uncategorized' };
 
-    assert(expected, { referrer: 'some-referrer', utmSource: 'some-source', utmMedium: 'sms', tracking: null });
     assert(expected, { referrer: 'some', utmSource: 'some', utmMedium: 'some', tracking: null });
     assert(expected, { referrer: '', utmSource: 'some', utmMedium: 'some', tracking: null });
   });

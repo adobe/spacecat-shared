@@ -31,7 +31,7 @@ const ImportJob = (data) => {
   const self = Base(data);
 
   self.getBaseURL = () => self.state.baseURL;
-  self.getApiKey = () => self.state.apiKey;
+  self.getHashedApiKey = () => self.state.hashedApiKey;
   self.getOptions = () => self.state.options;
   self.getStartTime = () => self.state.startTime;
   self.getEndTime = () => self.state.endTime;
@@ -41,6 +41,7 @@ const ImportJob = (data) => {
   self.getSuccessCount = () => self.state.successCount;
   self.getFailedCount = () => self.state.failedCount;
   self.getImportQueueId = () => self.state.importQueueId;
+  self.getInitiatedBy = () => self.state.initiatedBy;
 
   /**
      * Updates the end time of the ImportJob.
@@ -168,8 +169,8 @@ export const createImportJob = (data) => {
     throw new Error(`Invalid base URL: ${newState.baseURL}`);
   }
 
-  if (!isString(newState.apiKey)) {
-    throw new Error(`Invalid API key: ${newState.apiKey}`);
+  if (!isString(newState.hashedApiKey)) {
+    throw new Error(`Invalid API key: ${newState.hashedApiKey}`);
   }
 
   if (hasText(newState.startTime) && !isIsoDate(newState.startTime)) {

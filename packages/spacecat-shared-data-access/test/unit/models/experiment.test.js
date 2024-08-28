@@ -98,8 +98,8 @@ describe('Experiment Model Tests', () => {
       expect(experiment.getType()).to.equal(validExperimentData.type);
       expect(experiment.getStartDate()).to.equal(validExperimentData.startDate);
       expect(experiment.getEndDate()).to.equal(validExperimentData.endDate);
-      expect(new Date(experiment.getUpdatedAt()).getMilliseconds()).to.be.greaterThan(
-        new Date(validExperimentData.updatedAt).getMilliseconds(),
+      expect(new Date(experiment.getUpdatedAt()).getTime()).to.be.greaterThan(
+        new Date(validExperimentData.updatedAt).getTime(),
       );
       expect(experiment.getUpdatedBy()).to.equal(validExperimentData.updatedBy);
       expect(experiment.getVariants()).to.deep.equal(validExperimentData.variants);

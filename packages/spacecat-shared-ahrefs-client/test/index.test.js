@@ -12,21 +12,21 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import sinon from 'sinon';
 
 import AhrefsAPIClient, { fetch } from '../src/index.js';
 
-chai.use(chaiAsPromised);
-const { expect } = chai;
+use(chaiAsPromised);
 const sandbox = sinon.createSandbox();
 
 const mockDate = '2023-03-12T15:24:51.231Z';
 
 describe('AhrefsAPIClient', () => {
   let client;
+
   const config = {
     apiKey: 'testApiKey',
     apiBaseUrl: 'https://example.com',
@@ -94,6 +94,18 @@ describe('AhrefsAPIClient', () => {
         best_position_url: 'url2',
       },
     ],
+  };
+
+  const limitsUsageResponse = {
+    limits_and_usage: {
+      subscription: 'Enterprise, billed yearly',
+      usage_reset_date: '2024-08-28T00:00:00Z',
+      units_limit_workspace: 12000000,
+      units_usage_workspace: 6618294,
+      units_limit_api_key: 1000000,
+      units_usage_api_key: 198771,
+      api_key_expiration_date: '2025-01-04T17:44:07Z',
+    },
   };
 
   before('setup', function () {
@@ -263,8 +275,6 @@ describe('AhrefsAPIClient', () => {
           output: 'json',
           where: JSON.stringify({
             and: [
-              { field: 'is_dofollow', is: ['eq', 1] },
-              { field: 'is_content', is: ['eq', 1] },
               { field: 'domain_rating_source', is: ['gte', 29.5] },
               { field: 'traffic_domain', is: ['gte', 500] },
               { field: 'links_external', is: ['lte', 300] },
@@ -276,7 +286,7 @@ describe('AhrefsAPIClient', () => {
       const result = await client.getBacklinks('test-site.com', upperLimit * 3);
       expect(result).to.deep.equal({
         result: backlinksResponse,
-        fullAuditRef: `https://example.com/site-explorer/all-backlinks?select=title%2Curl_from%2Curl_to&order_by=domain_rating_source%3Adesc%2Ctraffic_domain%3Adesc&target=test-site.com&limit=${upperLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_dofollow%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22is_content%22%2C%22is%22%3A%5B%22eq%22%2C1%5D%7D%2C%7B%22field%22%3A%22domain_rating_source%22%2C%22is%22%3A%5B%22gte%22%2C29.5%5D%7D%2C%7B%22field%22%3A%22traffic_domain%22%2C%22is%22%3A%5B%22gte%22%2C500%5D%7D%2C%7B%22field%22%3A%22links_external%22%2C%22is%22%3A%5B%22lte%22%2C300%5D%7D%5D%7D`,
+        fullAuditRef: `https://example.com/site-explorer/all-backlinks?select=title%2Curl_from%2Curl_to&order_by=domain_rating_source%3Adesc%2Ctraffic_domain%3Adesc&target=test-site.com&limit=${upperLimit}&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22domain_rating_source%22%2C%22is%22%3A%5B%22gte%22%2C29.5%5D%7D%2C%7B%22field%22%3A%22traffic_domain%22%2C%22is%22%3A%5B%22gte%22%2C500%5D%7D%2C%7B%22field%22%3A%22links_external%22%2C%22is%22%3A%5B%22lte%22%2C300%5D%7D%5D%7D`,
       });
     });
   });
@@ -397,6 +407,20 @@ describe('AhrefsAPIClient', () => {
     it('throws error when limit is not an integer', async () => {
       const result = client.getOrganicKeywords('test-site.com', 'us', [], 1.5);
       await expect(result).to.be.rejectedWith('Invalid limit: 1.5');
+    });
+  });
+
+  describe('getLimitsAndUsage', () => {
+    it('sends API request with appropriate endpoint', async () => {
+      nock(config.apiBaseUrl)
+        .get('/subscription-info/limits-and-usage')
+        .reply(200, limitsUsageResponse);
+
+      const result = await client.getLimitsAndUsage();
+      expect(result).to.deep.equal({
+        result: limitsUsageResponse,
+        fullAuditRef: 'https://example.com/subscription-info/limits-and-usage',
+      });
     });
   });
 });

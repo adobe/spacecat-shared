@@ -11,15 +11,14 @@
  */
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import nock from 'nock';
 import { fetchBundles } from '../../src/common/rum-bundler-client.js';
 import { generateDailyDates, generateHourlyDates, generateRumBundles } from '../fixtures/rum-bundler-urls.js';
 
-chai.use(chaiAsPromised);
-const { expect } = chai;
+use(chaiAsPromised);
 
 const BASE_URL = 'https://rum.fastly-aem.page';
 describe('Rum bundler client', () => {

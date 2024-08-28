@@ -124,3 +124,38 @@ declare function resolveCustomerSecretsName(baseURL: string, ctx: object): strin
  * @returns {Buffer} A Buffer containing the CSV formatted data, encoded in UTF-8.
  */
 declare function generateCSVFile(data: object[]): Buffer;
+
+/**
+ * Retrieves stored metrics from S3.
+ * @param config - Configuration object
+ * @param config.siteId - The site ID.
+ * @param config.source - The source of the metrics.
+ * @param config.metric - The metric name.
+ * @param context - Context object
+ * @param context.log - Logger
+ * @param context.s3 - S3 configuration
+ * @param context.s3.s3Client - S3 client
+ * @param context.s3.s3Bucket - S3 bucket name
+ * @returns {Promise<any|*[]>} - The stored metrics
+ */
+export function getStoredMetrics(config: object, context: object):
+    Promise<Array<object>>;
+
+/**
+ * Stores metrics in S3.
+ * @param content - The metrics to store
+ * @param config - Configuration object
+ * @param config.siteId - The site ID
+ * @param config.source - The source of the metrics
+ * @param config.metric - The metric name
+ * @param context - Context object
+ * @param context.log - Logger
+ * @param context.s3 - S3 configuration
+ * @param context.s3.s3Client - S3 client
+ * @param context.s3.s3Bucket - S3 bucket name
+ * @returns {Promise<string>} - The path where the metrics are stored
+ */
+export function storeMetrics(content: object, config: object, context: object): Promise<string>;
+
+export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
+    (request: object, context: object) => Promise<Response>;

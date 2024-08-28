@@ -12,17 +12,15 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { importUrlFunctions } from '../../../../src/service/import-url/index.js';
 import { createImportUrl } from '../../../../src/models/importer/import-url.js';
 
-chai.use(sinonChai);
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(sinonChai);
+use(chaiAsPromised);
 
 const TEST_DA_CONFIG = {
   tableNameImportUrls: 'test-import-urls',

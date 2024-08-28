@@ -21,26 +21,40 @@ export interface RUMAPIOptions {
 
 export default class RUMAPIClient {
   /**
-     * Static factory method to create an instance of RUMAPIClient.
-     * @param {UniversalContext} context - An object containing the AWS Lambda context information
-     * @returns An instance of RUMAPIClient.
-     * @remarks This method is designed to create a new instance from an AWS Lambda context.
-     *   The created instance is stored in the Lambda context, and subsequent calls to
-     *   this method will return the singleton instance if previously created.
-     */
+   * Static factory method to create an instance of RUMAPIClient.
+   * @param {UniversalContext} context - An object containing the AWS Lambda context information
+   * @returns An instance of RUMAPIClient.
+   * @remarks This method is designed to create a new instance from an AWS Lambda context.
+   *   The created instance is stored in the Lambda context, and subsequent calls to
+   *   this method will return the singleton instance if previously created.
+   */
   static createFrom(context: UniversalContext): RUMAPIClient;
 
   /**
-     * Constructor for creating an instance of RUMAPIClient.
-     */
+   * Constructor for creating an instance of RUMAPIClient.
+   */
   constructor();
 
   /**
-     * Asynchronous method to run queries against RUM Bundler API.
-     * @param {string} query - Name of the query to run.
-     * @param {RUMAPIOptions} opts - A object containing options for query to run.
-     * @returns A Promise resolving to an object with the query results.
-     * @remarks See the README.md for the available queries.
-     */
+   * Asynchronous method to run queries against RUM Bundler API.
+   * @param {string} query - Name of the query to run.
+   * @param {RUMAPIOptions} opts - A object containing options for query to run.
+   * @returns A Promise resolving to an object with the query results.
+   * @remarks See the README.md for the available queries.
+   */
   query(query: string, opts?: RUMAPIOptions): Promise<object>;
+
+  /**
+   * Asynchronous method to run multiple queries against the data fetched from RUM Bundler API.
+   *
+   * This method makes a single call to the RUM Bundler API to fetch the raw data, then applies
+   * all the requested queries to this raw data. The results are returned in an object where each
+   * key corresponds to a query name and each value contains the result of that query.
+   *
+   * @param {string[]} queries - An array of query names to execute.
+   * @param {RUMAPIOptions} [opts] - Optional object containing options for the queries.
+   * @returns {Promise<object>} A Promise that resolves to an object where each key is the name
+   * of a query, and each value is the result of that query.
+   */
+  queryMulti(queries: string[], opts?: RUMAPIOptions): Promise<object>;
 }

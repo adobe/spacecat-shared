@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import sinon from 'sinon';
@@ -30,9 +30,7 @@ import {
   IMS_FETCH_PC_BY_ORG_RESPONSE,
 } from './ims-sample-responses.js';
 
-chai.use(chaiAsPromised);
-
-const { expect } = chai;
+use(chaiAsPromised);
 
 describe('ImsClient', () => {
   const DUMMY_HOST = 'ims.example.com';

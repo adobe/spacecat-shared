@@ -174,7 +174,8 @@ export default class ContentClient {
     this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const originalMetadata = await this.getPageMetadata(docPath);
+    this.log.info(`Getting page metadata for ${this.site.getId()} and path ${path}`);
+    const originalMetadata = await this.rawClient.getPageMetadata(docPath);
 
     let mergedMetadata;
     if (overwrite) {

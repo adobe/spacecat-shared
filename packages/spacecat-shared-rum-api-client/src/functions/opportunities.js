@@ -87,11 +87,17 @@ function handler(bundles) {
     }
   }
 
-  // remove pages with less than 5000 page views per day on average for the last 28 days
   // eslint-disable-next-line guard-for-in,no-restricted-syntax
   for (const url in data) {
-    const totalPageViews = Object.values(data[url]).reduce((acc, cur) => acc + cur.pageViews, 0);
-    if (totalPageViews < PAGEVIEW_THRESHOLD) {
+    let hasEnoughPageViews = true;
+    // eslint-disable-next-line no-restricted-syntax
+    for (const weekKey in data[url]) {
+      if (data[url][weekKey].pageViews < PAGEVIEW_THRESHOLD) {
+        hasEnoughPageViews = false;
+        break;
+      }
+    }
+    if (!hasEnoughPageViews) {
       delete data[url];
     }
   }

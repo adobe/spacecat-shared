@@ -80,7 +80,7 @@ export default class RUMAPIClient {
       // Execute each query handler sequentially
       for (const { query, handler } of queryHandlers) {
         // eslint-disable-next-line no-await-in-loop
-        results[query] = await handler(bundles);
+        results[query] = await handler(bundles, opts);
       }
 
       return results;

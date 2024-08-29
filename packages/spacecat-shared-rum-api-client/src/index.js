@@ -15,7 +15,9 @@ import cwv from './functions/cwv.js';
 import experiment from './functions/experiment.js';
 import trafficAcquisition from './functions/traffic-acquisition.js';
 import variant from './functions/variant.js';
-import rageclick from './functions/rageclick.js';
+import rageclick from './functions/opportunities/rageclick.js';
+import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
+import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
 
 const HANDLERS = {
   404: notfound,
@@ -23,7 +25,9 @@ const HANDLERS = {
   experiment,
   'traffic-acquisition': trafficAcquisition,
   variant,
-  rageclick,
+  'exp-opportunity/rage-click': rageclick,
+  'exp-opportunity/high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
+  'exp-opportunity/high-organic-low-bounce-rate': highOrganicLowCtr,
 };
 
 export default class RUMAPIClient {

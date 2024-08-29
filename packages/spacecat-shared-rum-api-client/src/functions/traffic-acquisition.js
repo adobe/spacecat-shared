@@ -12,8 +12,6 @@
 
 import { classifyTrafficSource } from '../common/traffic.js';
 
-const MAIN_TYPES = ['total', 'paid', 'earned', 'owned'];
-
 function extractHints(bundle) {
   const findEvent = (checkpoint, source = '') => bundle.events.find((e) => e.checkpoint === checkpoint && (!source || e.source === source)) || {};
 
@@ -33,12 +31,9 @@ function extractHints(bundle) {
 }
 
 function collectByUrlAndTrafficSource(acc, { url, weight, trafficSource }) {
-  acc[url] = acc[url] || {
-    total: 0, owned: 0, earned: 0, paid: 0,
-  };
+  acc[url] = acc[url] || { total: 0 };
   acc[url][trafficSource] = (acc[url][trafficSource] || 0) + weight;
   acc[url].total += weight;
-  acc[url][trafficSource.split(':')[0]] += weight;
   return acc;
 }
 
@@ -46,16 +41,13 @@ function transformFormat(trafficSources) {
   return Object.entries(trafficSources).map(([url, value]) => ({
     url,
     total: value.total,
-    earned: value.earned,
-    owned: value.owned,
-    paid: value.paid,
     sources: Object.entries(value)
-      .filter(([source]) => !MAIN_TYPES.includes(source))
+      .filter(([source]) => source !== 'total')
       .map(([source, views]) => ({ type: source, views })),
   }));
 }
 
-function handler(bundles) {
+async function handler(bundles) {
   const trafficSources = bundles
     .map(extractHints)
     .map((row) => {

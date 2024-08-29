@@ -16,8 +16,6 @@ import cwv from '../src/functions/cwv.js';
 import notfound from '../src/functions/404.js';
 import experiment from '../src/functions/experiment.js';
 import trafficAcquisition from '../src/functions/traffic-acquisition.js';
-import highInorganicHighBounce from '../src/functions/opportunities/high-inorganic-high-bounce-rate.js';
-import highOrganicLowCTR from '../src/functions/opportunities/high-organic-low-ctr.js';
 import variant from '../src/functions/variant.js';
 import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import bundlesForVariant from './fixtures/bundles_for_variant.json' assert { type: 'json' };
@@ -51,18 +49,5 @@ describe('Query functions', () => {
   it('crunches traffic acquisition', async () => {
     const trafficSourcesResult = await trafficAcquisition.handler(bundles.rumBundles);
     expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
-  });
-
-  xit('crunches oppty/high-inorganic-high-bounce', async () => {
-    const highInorganicHighBounceResult = highInorganicHighBounce.handler(bundles.rumBundles);
-    expect({}).to.eql(highInorganicHighBounceResult);
-  });
-
-  xit('crunches oppty/high-organic-low-ctr', async () => {
-    const highInorganicHighBounceResult = highOrganicLowCTR.handler(
-      bundles.rumBundles,
-      { interval: 7 },
-    );
-    expect({}).to.eql(highInorganicHighBounceResult);
   });
 });

@@ -13,6 +13,21 @@
 import trafficAcquisition from '../traffic-acquisition.js';
 import { getCTRByUrl } from '../../common/aggregateFns.js';
 
+function convertToOpportunity(traffic) {
+  const { url, total, bounceRate } = traffic;
+
+  return {
+    type: 'high-inorganic-high-bounce-rate',
+    page: url,
+    screenshot: '',
+    trackedPageKPIName: 'Bounce Rate',
+    trackedPageKPIValue: bounceRate,
+    pageViews: total,
+    samples: total, // todo: get the actual number of samples
+    metrics: [], // none needed
+  };
+}
+
 function hasHighInorganicTraffic(traffic) {
   const { url, paid, total } = traffic;
   const isHomapage = new URL(url).pathname === '/';
@@ -29,7 +44,9 @@ function handler(bundles) {
   const ctrByUrl = getCTRByUrl(bundles);
 
   return trafficByUrl.filter(hasHighInorganicTraffic)
-    .filter((traffic) => hasHighBounceRate(ctrByUrl[traffic.url]));
+    .filter((traffic) => hasHighBounceRate(ctrByUrl[traffic.url]))
+    .map((traffic) => ({ ...traffic, bounceRate: 1 - ctrByUrl[traffic.url] }))
+    .map(convertToOpportunity);
 }
 
 export default {

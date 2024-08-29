@@ -15,6 +15,21 @@ import { getCTRByUrl, getSiteAvgCTR } from '../../common/aggregateFns.js';
 
 const DAILY_EARNED_THRESHOLD = 5000;
 
+function convertToOpportunity(traffic) {
+  const { url, total, ctr } = traffic;
+
+  return {
+    type: 'high-organic-low-ctr',
+    page: url,
+    screenshot: '',
+    trackedPageKPIName: 'Click Through Rate',
+    trackedPageKPIValue: ctr,
+    pageViews: total,
+    samples: total, // todo: get the actual number of samples
+    metrics: [], // none needed
+  };
+}
+
 function hasHighOrganicTraffic(interval, traffic) {
   const { earned } = traffic;
   return earned > DAILY_EARNED_THRESHOLD * interval;
@@ -32,7 +47,9 @@ function handler(bundles, opts) {
   const siteAvgCTR = getSiteAvgCTR(bundles);
 
   return trafficByUrl.filter(hasHighOrganicTraffic.bind(null, interval))
-    .filter((traffic) => hasLowerCTR(ctrByUrl[traffic.url], siteAvgCTR));
+    .filter((traffic) => hasLowerCTR(ctrByUrl[traffic.url], siteAvgCTR))
+    .map((traffic) => ({ ...traffic, ctr: ctrByUrl[traffic.url] }))
+    .map(convertToOpportunity);
 }
 
 export default {

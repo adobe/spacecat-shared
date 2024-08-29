@@ -27,7 +27,7 @@ const HANDLERS = {
   variant,
   rageclick,
   'high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
-  'high-organic-low-bounce-rate': highOrganicLowCtr,
+  'high-organic-low-ctr': highOrganicLowCtr,
 };
 
 export default class RUMAPIClient {

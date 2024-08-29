@@ -25,9 +25,9 @@ const HANDLERS = {
   experiment,
   'traffic-acquisition': trafficAcquisition,
   variant,
-  'exp-opportunity/rage-click': rageclick,
-  'exp-opportunity/high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
-  'exp-opportunity/high-organic-low-bounce-rate': highOrganicLowCtr,
+  rageclick,
+  'high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
+  'high-organic-low-bounce-rate': highOrganicLowCtr,
 };
 
 export default class RUMAPIClient {

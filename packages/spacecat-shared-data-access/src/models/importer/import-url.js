@@ -10,89 +10,82 @@
  * governing permissions and limitations under the License.
  */
 
+/**
+ * @typedef {import('../../').ImportUrl} ImportUrl
+ */
+
 import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
-import { ImportJobStatus } from './import-job.js';
-
-export const ImportUrlStatus = {
-  PENDING: 'PENDING',
-  REDIRECT: 'REDIRECT',
-  ...ImportJobStatus,
-};
+import { ImportUrlStatus } from './import-constants.js';
 
 /**
- * Creates a new ImportUrl object
- *
- * @param {Object} importUrlData
- * @returns {ImportUrl}
+ * Creates a new ImportUrl object.
+ * @param {Object} data - The data for the ImportUrl object.
+ * @return {ImportUrl} The new ImportUrl object.
  */
-const ImportUrl = (data) => {
-  const self = Base(data);
+const ImportUrlEntry = (data) => {
+  const importUrl = Base(data);
 
-  self.getJobId = () => self.state.jobId;
-  self.getUrl = () => self.state.url;
-  self.getStatus = () => self.state.status;
-  self.getReason = () => self.state.reason;
+  importUrl.getJobId = () => importUrl.state.jobId;
+  importUrl.getUrl = () => importUrl.state.url;
+  importUrl.getStatus = () => importUrl.state.status;
+  importUrl.getReason = () => importUrl.state.reason;
   // Absolute path to the resource that is being imported for the given URL
-  self.getPath = () => self.state.path;
+  importUrl.getPath = () => importUrl.state.path;
   // Resulting path and filename of the imported .docx file
-  self.getFile = () => self.state.file;
+  importUrl.getFile = () => importUrl.state.file;
+
+  /**
+   * Updates the state of the ImportJob.
+   * @param key - The key to update.
+   * @param value - The new value.
+   * @param validator - An optional validation function to use before updating the value.
+   * The validator can return false to indicate that the value isn't worth throwing an exception,
+   * but continue to use the previous value.
+   * @returns {ImportUrl} The updated ImportUrl object.
+   */
+  const updateState = (key, value, validator) => {
+    if (validator && typeof validator === 'function') {
+      // a validator can return true or false to indicate if the value is valid
+      // however if a validator throws an error, it is considered critical and invalid.
+      if (!validator(value)) {
+        return importUrl;
+      }
+    }
+
+    importUrl.state[key] = value;
+    importUrl.touch();
+
+    return importUrl;
+  };
 
   /**
    * Updates the status of the ImportUrl
    */
-  self.setStatus = (status) => {
-    if (!Object.values(ImportUrlStatus).includes(status)) {
-      throw new Error(`Invalid Import URL status during update: ${status}`);
+  importUrl.setStatus = (status) => updateState('status', status, (value) => {
+    if (!ImportUrlStatus[value]) {
+      throw new Error(`Invalid Import URL status during update: ${value}`);
     }
-
-    self.state.status = status;
-    self.touch();
-
-    return self;
-  };
+    return true;
+  });
 
   /**
-   * Updates the reason that the import of this URL was not successful
+   * Updates the reason that the import of this URL was not successful.
    */
-  self.setReason = (reason) => {
-    if (!hasText(reason)) {
-      return self; // no-op
-    }
-
-    self.state.reason = reason;
-    self.touch();
-    return self;
-  };
+  importUrl.setReason = (reason) => updateState('reason', reason, hasText);
 
   /**
    * Updates the path of the ImportUrl
    */
-  self.setPath = (path) => {
-    if (!hasText(path)) {
-      return self; // no-op
-    }
-
-    self.state.path = path;
-    self.touch();
-    return self;
-  };
+  importUrl.setPath = (path) => updateState('path', path, hasText);
 
   /**
    * Updates the file of the ImportUrl. This is the path and file name of the file which
    * was imported.
    */
-  self.setFile = (file) => {
-    if (!hasText(file)) {
-      return self; // no-op
-    }
+  importUrl.setFile = (file) => updateState('file', file, hasText);
 
-    self.state.file = file;
-    self.touch();
-    return self;
-  };
-
-  return Object.freeze(self);
+  return Object.freeze(importUrl);
 };
 
 /**
@@ -109,5 +102,5 @@ export const createImportUrl = (data) => {
     throw new Error(`Invalid Import URL status: ${newState.status}`);
   }
 
-  return ImportUrl(newState);
+  return ImportUrlEntry(newState);
 };

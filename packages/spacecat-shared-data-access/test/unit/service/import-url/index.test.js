@@ -103,7 +103,7 @@ describe('Import Url Tests', () => {
 
         const importUrl = createImportUrl(mockImportUrl);
         const result = exportedFunctions.updateImportUrl(importUrl);
-        await expect(result).to.be.rejectedWith('Import Url with ID:test-id does not exist');
+        await expect(result).to.be.rejectedWith('Import Url with ID: test-id does not exist');
       });
     });
 

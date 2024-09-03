@@ -14,10 +14,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { isString } from '@adobe/spacecat-shared-utils';
 
 /**
- * Base model.
+ * The Base function assigns the properties of the data object to the new object and
+ * provides methods to get the id, createdAt, updatedAt properties, along with a touch method
+ * that updates the updatedAt property.
  *
- * @param {object} data data
- * @returns {Base} base model
+ * @param {object} data - The data object to assign to the new state being returned.
+ * @returns {{ state: {}, touch, getId, getCreatedAt, getUpdatedAt }} The new object with the
+ * state and functions.
  */
 export const Base = (data = {}) => {
   const self = { state: { ...data } };

@@ -13,18 +13,16 @@
 import { createImportJob } from '../models/importer/import-job.js';
 
 /**
- * Data Transfer Object for ImportJob
+ * The ImportJobDto is a helper that can concert an ImportJob object to a DynamoDB item and
+ * vice versa.
  */
-
 export const ImportJobDto = {
 
   /**
-     * Converts an ImportJob object into a DynamoDB item.
-     * @param importJob
-     * @returns {{duration: *, baseURL: *, failedCount: *, apiKey: *,
-     *      options: *, successCount: *, importQueueId: *, startTime: *, id: *,
-     *      endTime: *, status: *}}
-     */
+   * Converts an ImportJob object into a DynamoDB item.
+   * @param {Readonly<ImportJob>} importJob - The ImportJob object to convert.
+   * @returns {Object} The new DynamoDB item.
+   */
   toDynamoItem: (importJob) => ({
     id: importJob.getId(),
     baseURL: importJob.getBaseURL(),
@@ -43,8 +41,10 @@ export const ImportJobDto = {
   }),
 
   /**
-     * Converts a DynamoDB item into an ImportJob object.
-     */
+   * Converts a DynamoDB item into an ImportJob object.
+   * @param dynamoItem - The DynamoDB item to convert.
+   * @return {Readonly<ImportJob>} The new ImportJob object.
+   */
   fromDynamoItem: (dynamoItem) => {
     const importJobData = {
       id: dynamoItem.id,

@@ -14,6 +14,7 @@
 
 import { expect } from 'chai';
 import { createImportJob } from '../../../../src/models/importer/import-job.js';
+import { ImportJobStatus, ImportOptions } from '../../../../src/index.js';
 
 const validImportJob = {
   id: '123',
@@ -22,13 +23,13 @@ const validImportJob = {
   status: 'RUNNING',
   startTime: '2024-05-29T14:26:00.000Z',
   options: {
-    enableJavascript: true,
-    enableCss: true,
+    [ImportOptions.ENABLE_JAVASCRIPT]: true,
   },
   initiatedBy: {
     apiKeyName: 'test',
   },
 };
+
 describe('ImportJob Model tests', () => {
   describe('Validation Tests', () => {
     it('throws an error if baseURL is not a valid URL', () => {
@@ -45,6 +46,60 @@ describe('ImportJob Model tests', () => {
 
     it('throws an error if options is not an object', () => {
       expect(() => createImportJob({ ...validImportJob, options: 'invalid-options' })).to.throw('Invalid options: invalid-options');
+    });
+
+    it('verify supported options', () => {
+      const job = createImportJob({
+        ...validImportJob,
+        options: {
+          [ImportOptions.ENABLE_JAVASCRIPT]: true,
+          [ImportOptions.PAGE_LOAD_TIMEOUT]: 1000,
+        },
+      });
+      expect(job.getOptions()).to.deep.equal({
+        [ImportOptions.ENABLE_JAVASCRIPT]: true,
+        [ImportOptions.PAGE_LOAD_TIMEOUT]: 1000,
+      });
+    });
+
+    it('test option data types', () => {
+      // boolean checks
+      let options = { [ImportOptions.ENABLE_JAVASCRIPT]: 'true' };
+      expect(() => createImportJob({ ...validImportJob, options })).to.not.throw;
+      options = { [ImportOptions.ENABLE_JAVASCRIPT]: true };
+      expect(() => createImportJob({ ...validImportJob, options })).to.not.throw;
+      options = { [ImportOptions.ENABLE_JAVASCRIPT]: 'truex' };
+      expect(() => createImportJob({ ...validImportJob, options })).to.throw('Invalid value for enableJavascript: truex');
+
+      // number checks
+      options = { [ImportOptions.PAGE_LOAD_TIMEOUT]: '1000' };
+      expect(() => createImportJob({ ...validImportJob, options })).to.not.throw;
+      options = { [ImportOptions.PAGE_LOAD_TIMEOUT]: 1000 };
+      expect(() => createImportJob({ ...validImportJob, options })).to.not.throw;
+      options = { [ImportOptions.PAGE_LOAD_TIMEOUT]: -1 };
+      expect(() => createImportJob({ ...validImportJob, options })).to.throw('Invalid value for pageLoadTimeout: -1');
+      options = { [ImportOptions.PAGE_LOAD_TIMEOUT]: 'x' };
+      expect(() => createImportJob({ ...validImportJob, options })).to.throw('Invalid value for pageLoadTimeout: x');
+    });
+
+    it('verify no options does not fail', () => {
+      const {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        options,
+        ...noOptions
+      } = validImportJob;
+
+      const job = createImportJob({ ...noOptions });
+      expect(job.getOptions()).to.be.undefined;
+    });
+
+    it('verify unsupported options throw', () => {
+      expect(() => createImportJob({
+        ...validImportJob,
+        options: {
+          notSupported: true,
+        },
+      })).to.throw('Invalid options: notSupported');
     });
 
     it('throws an error if apiKey is not a valid string', () => {
@@ -64,8 +119,8 @@ describe('ImportJob Model tests', () => {
     });
 
     it('updates status of import job', () => {
-      importJob.updateStatus('COMPLETE');
-      expect(importJob.getStatus()).to.equal('COMPLETE');
+      importJob.updateStatus(ImportJobStatus.COMPLETE);
+      expect(importJob.getStatus()).to.equal(ImportJobStatus.COMPLETE);
     });
 
     it('updates end time of import job', () => {
@@ -133,8 +188,7 @@ describe('ImportJob Model tests', () => {
 
     it('retrieves the options of the import job', () => {
       expect(importJob.getOptions()).to.deep.equal({
-        enableJavascript: true,
-        enableCss: true,
+        [ImportOptions.ENABLE_JAVASCRIPT]: true,
       });
     });
 

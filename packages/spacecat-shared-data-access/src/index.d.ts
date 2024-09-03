@@ -521,23 +521,37 @@ export interface ImportUrl {
   /**
    * Retrieves the ID of the import URL.
    */
-    getId: () => string;
+  getId: () => string;
 
   /**
    * Retrieves the status of the import URL.
    */
-    getStatus: () => string;
+  getStatus: () => string;
 
   /**
    * Retrieves the URL of the import URL.
    */
-    getUrl: () => string;
+  getUrl: () => string;
 
   /**
    * Retrieves the job ID of the import URL.
    */
-    getJobId: () => string;
+  getJobId: () => string;
 
+  /**
+   * The reason that the import of a URL failed.
+   */
+  getReason: () => string;
+
+  /**
+   * The absolute path to the resource that is being imported for the given URL.
+   */
+  getFile: () => string;
+
+  /**
+   * Retrieves the resulting path and filename of the imported .docx file
+   */
+  getPath: () => string;
 }
 
 /**
@@ -661,6 +675,9 @@ export interface Experiment {
   getUpdatedBy: () => string;
 }
 
+export type ImportJobStatus = 'RUNNING' | 'COMPLETE' | 'FAILED';
+export type ImportUrlStatus = 'PENDING' | 'REDIRECT' & ImportJobStatus;
+
 export interface DataAccess {
   getAuditForSite: (
     sitedId: string,
@@ -758,7 +775,7 @@ export interface DataAccess {
     id: string,
     ) => Promise<ImportJob | null>;
   getImportJobsByStatus: (
-    status: string,
+    status: ImportJobStatus,
     ) => Promise<ImportJob[]>;
   createNewImportJob: (
     importJobData: object,
@@ -777,7 +794,7 @@ export interface DataAccess {
     ) => Promise<ImportUrl>;
   getImportUrlsByJobIdAndStatus: (
       jobId: string,
-      status: string,
+      status: ImportUrlStatus,
     ) => Promise<ImportUrl[]>;
   getApiKeyByHashedApiKey: (
       hashedApiKey: string,
@@ -850,13 +867,3 @@ export function createDataAccess(
   config: DataAccessConfig,
   logger: object,
 ): DataAccess;
-
-export interface ImportJobStatus {
-  RUNNING: string,
-  COMPLETE: string,
-  FAILED: string,
-}
-
-export interface ImportUrlStatus extends ImportJobStatus {
-  PENDING: string,
-}

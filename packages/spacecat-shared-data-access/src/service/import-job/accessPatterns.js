@@ -10,17 +10,22 @@
  * governing permissions and limitations under the License.
  */
 
+/**
+ * @typedef {import('@adobe/spacecat-shared-data-access').DynamoClient} DynamoClient
+ */
+
 import { isObject } from '@adobe/spacecat-shared-utils';
 import { ImportJobDto } from '../../dto/import-job.js';
 import { createImportJob } from '../../models/importer/import-job.js';
 
 /**
- * Get all Import Jobs within a specific date range
+ * Get all ImportJobs within a specific date range.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
  * @param {string} startDate
  * @param {string} endDate
+ * @return {ReadonlyArray<ImportJob>} - The ImportJobs within the date range.
  */
 export const getImportJobsByDateRange = async (dynamoClient, config, log, startDate, endDate) => {
   const items = await dynamoClient.query({
@@ -40,12 +45,12 @@ export const getImportJobsByDateRange = async (dynamoClient, config, log, startD
 };
 
 /**
- * Get Import Job by ID
+ * Get Import Job by ID.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
  * @param {string} id
- * @returns {Promise<ImportJobDto> | null}
+ * @return {ImportJob | null}
  */
 export const getImportJobByID = async (dynamoClient, config, log, id) => {
   const item = await dynamoClient.getItem(
@@ -56,12 +61,12 @@ export const getImportJobByID = async (dynamoClient, config, log, id) => {
 };
 
 /**
- * Get Import jobs by status
+ * Get Import jobs by status.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
  * @param {string} status
- * @returns {Promise<ImportJobDto[]>}
+ * @return {Array<ImportJob>} - The ImportJobs with the given status.
  */
 export const getImportJobsByStatus = async (dynamoClient, config, log, status) => {
   const items = await dynamoClient.query({
@@ -85,7 +90,7 @@ export const getImportJobsByStatus = async (dynamoClient, config, log, status) =
  * @param {Object} config
  * @param {Logger} log
  * @param {Object} importJobData
- * @returns {Promise<ImportJobDto>}
+ * @return {ImportJob}
  */
 export const createNewImportJob = async (dynamoClient, config, log, importJobData) => {
   const importJob = createImportJob(importJobData);
@@ -94,11 +99,12 @@ export const createNewImportJob = async (dynamoClient, config, log, importJobDat
 };
 
 /**
- * Updates an Import Job
+ * Updates an Import Job in the database.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
- * @param {ImportJobDto} importJob
+ * @param {ImportJob} importJob
+ * @return {ImportJob} - The updated ImportJob.
  */
 export const updateImportJob = async (dynamoClient, config, log, importJob) => {
   const existingImportJob = await getImportJobByID(dynamoClient, config, log, importJob.getId());

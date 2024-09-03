@@ -10,17 +10,21 @@
  * governing permissions and limitations under the License.
  */
 
+/**
+ * @typedef {import('@adobe/spacecat-shared-data-access').DynamoClient} DynamoClient
+ */
+
 import { isObject } from '@adobe/spacecat-shared-utils';
 import { ImportUrlDto } from '../../dto/import-url.js';
 import { createImportUrl } from '../../models/importer/import-url.js';
 
 /**
- * Get import url by ID
+ * Get the ImportURL by ID, if it exists. Otherwise, return null.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
  * @param {string} id
- * @returns {Promise<ImportUrlDto> | null}
+ * @returns {ImportUrl | null}
  */
 export const getImportUrlById = async (dynamoClient, config, log, id) => {
   const item = await dynamoClient.getItem(
@@ -31,12 +35,12 @@ export const getImportUrlById = async (dynamoClient, config, log, id) => {
 };
 
 /**
- * Create a new Import Url
+ * Create a new Import Url.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
  * @param {Object} importUrlData
- * @returns {Promise<ImportUrlDto>}
+ * @returns {ImportUrl}
  */
 export const createNewImportUrl = async (dynamoClient, config, log, importUrlData) => {
   const importUrl = createImportUrl(importUrlData);
@@ -48,12 +52,12 @@ export const createNewImportUrl = async (dynamoClient, config, log, importUrlDat
 };
 
 /**
- * Update an existing Import Url
+ * Update an existing Import Url.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
  * @param {Object} importUrl
- * @returns {ImportUrlDto}
+ * @returns {ImportUrl}
  */
 export const updateImportUrl = async (dynamoClient, config, log, importUrl) => {
   const existingImportUrl = await getImportUrlById(
@@ -64,7 +68,7 @@ export const updateImportUrl = async (dynamoClient, config, log, importUrl) => {
   );
 
   if (!isObject(existingImportUrl)) {
-    throw new Error(`Import Url with ID:${importUrl.getId()} does not exist`);
+    throw new Error(`Import Url with ID: ${importUrl.getId()} does not exist`);
   }
 
   await dynamoClient.putItem(config.tableNameImportUrls, ImportUrlDto.toDynamoItem(importUrl));
@@ -79,7 +83,7 @@ export const updateImportUrl = async (dynamoClient, config, log, importUrl) => {
  * @param {Logger} log
  * @param {string} jobId
  * @param {string} status
- * @returns {Promise<ImportUrlDto[]>}
+ * @returns {ImportUrl[]}
  */
 export const getImportUrlsByJobIdAndStatus = async (dynamoClient, config, log, jobId, status) => {
   const items = await dynamoClient.query({

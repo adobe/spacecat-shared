@@ -13,8 +13,9 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 
-import { createImportUrl, ImportUrlStatus } from '../../../../src/models/importer/import-url.js';
+import { createImportUrl } from '../../../../src/models/importer/import-url.js';
 import { ImportUrlDto } from '../../../../src/dto/import-url.js';
+import { ImportUrlStatus } from '../../../../src/index.js';
 
 const validImportUrlData = {
   id: '123',

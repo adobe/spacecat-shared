@@ -13,8 +13,15 @@
 import trafficAcquisition from '../traffic-acquisition.js';
 import { getCTRByUrl } from '../../common/aggregateFns.js';
 
+const HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.8;
+const NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.5;
+const BOUNCE_RATE_THRESHOLD = 0.5;
+const DAILY_PAGEVIEW_THRESHOLD = 1000;
+
 function convertToOpportunity(traffic) {
-  const { url, total, bounceRate } = traffic;
+  const {
+    url, total, bounceRate, paid, earned, owned,
+  } = traffic;
 
   return {
     type: 'high-inorganic-high-bounce-rate',
@@ -24,26 +31,38 @@ function convertToOpportunity(traffic) {
     trackedPageKPIValue: bounceRate,
     pageViews: total,
     samples: total, // todo: get the actual number of samples
-    metrics: [], // none needed
+    metrics: [{
+      type: 'traffic',
+      value: {
+        total,
+        paid,
+        owned,
+        earned,
+      },
+    }],
   };
 }
 
 function hasHighInorganicTraffic(traffic) {
   const { url, paid, total } = traffic;
-  const isHomapage = new URL(url).pathname === '/';
-  const threshold = isHomapage ? 0.5 : 0.8;
+  const isHomepage = new URL(url).pathname === '/';
+  const threshold = isHomepage
+    ? HOMEPAGE_PAID_TRAFFIC_THRESHOLD
+    : NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD;
   return paid / total > threshold;
 }
 
 function hasHighBounceRate(ctr) {
-  return ctr < 0.5;
+  return ctr < BOUNCE_RATE_THRESHOLD;
 }
 
-function handler(bundles) {
+function handler(bundles, opts = {}) {
+  const { interval = 7 } = opts;
   const trafficByUrl = trafficAcquisition.handler(bundles);
   const ctrByUrl = getCTRByUrl(bundles);
 
-  return trafficByUrl.filter(hasHighInorganicTraffic)
+  return trafficByUrl.filter((traffic) => traffic.total > interval * DAILY_PAGEVIEW_THRESHOLD)
+    .filter(hasHighInorganicTraffic)
     .filter((traffic) => hasHighBounceRate(ctrByUrl[traffic.url]))
     .map((traffic) => ({ ...traffic, bounceRate: 1 - ctrByUrl[traffic.url] }))
     .map(convertToOpportunity);

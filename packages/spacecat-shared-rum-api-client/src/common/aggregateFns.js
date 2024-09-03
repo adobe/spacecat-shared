@@ -55,7 +55,7 @@ function getCTRByUrl(bundles) {
 /**
  * Calculates the Click-Through Rate (CTR) average for the entire site.
  * CTR is defined as the total number of sessions with at least one click event
- * divided by the total number of pageviews for each URL.
+ * divided by the total number of pageviews for the entire site.
  *
  * @param {Array<Object>} bundles - An array of RUM bundles (NOT Flat bundles).
  * @returns {number} - Average CTR for the site.

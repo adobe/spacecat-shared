@@ -1,0 +1,29 @@
+[
+  {
+    "type": "high-organic-low-ctr",
+    "page": "https://www.spacecat.com/about-us",
+    "screenshot": "",
+    "trackedPageKPIName": "Click Through Rate",
+    "trackedPageKPIValue": 0.14099783080260303,
+    "pageViews": 46100,
+    "samples": 46100,
+    "metrics": [
+      {
+        "type": "traffic",
+        "value": {
+          "total": 46100,
+          "paid": 0,
+          "owned": 46100,
+          "earned": 0
+        }
+      },
+      {
+        "type": "ctr",
+        "value": {
+          "page": 0.14099783080260303,
+          "siteAverage": 0.4077909270216962
+        }
+      }
+    ]
+  }
+]

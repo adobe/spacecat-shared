@@ -14,9 +14,13 @@ import trafficAcquisition from '../traffic-acquisition.js';
 import { getCTRByUrl, getSiteAvgCTR } from '../../common/aggregateFns.js';
 
 const DAILY_EARNED_THRESHOLD = 5000;
+const CTR_THRESHOLD_RATIO = 0.95;
+const DAILY_PAGEVIEW_THRESHOLD = 1000;
 
 function convertToOpportunity(traffic) {
-  const { url, total, ctr } = traffic;
+  const {
+    url, total, ctr, paid, owned, earned, siteAvgCTR,
+  } = traffic;
 
   return {
     type: 'high-organic-low-ctr',
@@ -26,29 +30,44 @@ function convertToOpportunity(traffic) {
     trackedPageKPIValue: ctr,
     pageViews: total,
     samples: total, // todo: get the actual number of samples
-    metrics: [], // none needed
+    metrics: [{
+      type: 'traffic',
+      value: {
+        total,
+        paid,
+        owned,
+        earned,
+      },
+    }, {
+      type: 'ctr',
+      value: {
+        page: ctr,
+        siteAverage: siteAvgCTR,
+      },
+    }],
   };
 }
 
 function hasHighOrganicTraffic(interval, traffic) {
-  const { earned } = traffic;
-  return earned > DAILY_EARNED_THRESHOLD * interval;
+  const { earned, owned } = traffic;
+  return earned + owned > DAILY_EARNED_THRESHOLD * interval;
 }
 
 function hasLowerCTR(ctr, siteAvgCTR) {
-  return ctr < 0.95 * siteAvgCTR;
+  return ctr < CTR_THRESHOLD_RATIO * siteAvgCTR;
 }
 
-function handler(bundles, opts) {
+function handler(bundles, opts = {}) {
   const { interval = 7 } = opts;
 
   const trafficByUrl = trafficAcquisition.handler(bundles);
   const ctrByUrl = getCTRByUrl(bundles);
   const siteAvgCTR = getSiteAvgCTR(bundles);
 
-  return trafficByUrl.filter(hasHighOrganicTraffic.bind(null, interval))
+  return trafficByUrl.filter((traffic) => traffic.total > interval * DAILY_PAGEVIEW_THRESHOLD)
+    .filter(hasHighOrganicTraffic.bind(null, interval))
     .filter((traffic) => hasLowerCTR(ctrByUrl[traffic.url], siteAvgCTR))
-    .map((traffic) => ({ ...traffic, ctr: ctrByUrl[traffic.url] }))
+    .map((traffic) => ({ ...traffic, ctr: ctrByUrl[traffic.url], siteAvgCTR }))
     .map(convertToOpportunity);
 }
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.8.0...@adobe/spacecat-shared-rum-api-client-v2.9.0) (2024-09-03)
+
+
+### Features
+
+* experimentation opportunities ([#351](https://github.com/adobe/spacecat-shared/issues/351)) ([f21a765](https://github.com/adobe/spacecat-shared/commit/f21a765996990b1748c11b0cd8089e87ec91d9ad))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.7.4...@adobe/spacecat-shared-rum-api-client-v2.8.0) (2024-08-26)
 
 

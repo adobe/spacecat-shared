@@ -97,6 +97,47 @@ const validateMetadata = (metadata) => {
   }
 };
 
+const validateRedirects = (redirects) => {
+  if (!Array.isArray(redirects)) {
+    throw new Error('Redirects must be an array');
+  }
+
+  if (!redirects.length) {
+    throw new Error('Redirects must not be empty');
+  }
+
+  for (const redirect of redirects) {
+    if (!isObject(redirect)) {
+      throw new Error('Redirect must be an object');
+    }
+
+    if (!hasText(redirect.from)) {
+      throw new Error('Redirect must have a valid from path');
+    }
+
+    if (!hasText(redirect.to)) {
+      throw new Error('Redirect must have a valid to path');
+    }
+
+    if (!redirect.from.startsWith('/')) {
+      throw new Error('Redirect from path must start with a slash');
+    }
+
+    if (!redirect.to.startsWith('/')) {
+      throw new Error('Redirect to path must start with a slash');
+    }
+
+    if (redirect.from === redirect.to) {
+      throw new Error('Redirect from and to paths must be different');
+    }
+  }
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const validateRedirectsUpdate = (currentRedirects, existingRedirects) => {
+  // todo: detect conflicts, duplicates and cycles
+};
+
 export default class ContentClient {
   static createFrom(context, site) {
     const { log = console, env } = context;
@@ -149,9 +190,10 @@ export default class ContentClient {
 
   async getPageMetadata(path) {
     const startTime = process.hrtime.bigint();
-    await this.#initClient();
 
     validatePath(path);
+
+    await this.#initClient();
 
     this.log.info(`Getting page metadata for ${this.site.getId()} and path ${path}`);
 
@@ -166,10 +208,11 @@ export default class ContentClient {
   async updatePageMetadata(path, metadata, options = {}) {
     const { overwrite = true } = options;
     const startTime = process.hrtime.bigint();
-    await this.#initClient();
 
     validatePath(path);
     validateMetadata(metadata);
+
+    await this.#initClient();
 
     this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
@@ -191,5 +234,38 @@ export default class ContentClient {
     this.#logDuration('updatePageMetadata', startTime);
 
     return mergedMetadata;
+  }
+
+  async getRedirects() {
+    const startTime = process.hrtime.bigint();
+    await this.#initClient();
+
+    this.log.info(`Getting redirects for ${this.site.getId()}`);
+
+    const redirects = await this.rawClient.getRedirects();
+    this.#logDuration('getRedirects', startTime);
+
+    return redirects;
+  }
+
+  async updateRedirects(redirects) {
+    const startTime = process.hrtime.bigint();
+
+    validateRedirects(redirects);
+
+    await this.#initClient();
+
+    this.log.info(`Updating redirects for ${this.site.getId()}`);
+
+    const currentRedirects = await this.getRedirects();
+
+    validateRedirectsUpdate(currentRedirects, redirects);
+
+    const response = await this.rawClient.updateRedirects(redirects);
+    if (response.status !== 200) {
+      throw new Error('Failed to update redirects');
+    }
+
+    this.#logDuration('updateRedirects', startTime);
   }
 }

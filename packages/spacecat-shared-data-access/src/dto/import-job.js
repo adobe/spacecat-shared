@@ -13,7 +13,7 @@
 import { createImportJob } from '../models/importer/import-job.js';
 
 /**
- * The ImportJobDto is a helper that can concert an ImportJob object to a DynamoDB item and
+ * The ImportJobDto is a helper that can convert an ImportJob object to a DynamoDB item and
  * vice versa.
  */
 export const ImportJobDto = {

@@ -21,7 +21,7 @@ export const ImportUrlDto = {
   /**
    * Converts an ImportUrl object to a DynamoDB item.
    * @param {Readonly<ImportUrl>} importUrl - The ImportUrl object to convert.
-   * @returns {Object} The new DynamoDB item.
+   * @returns {object} The new DynamoDB item.
    */
   toDynamoItem: (importUrl) => ({
     id: importUrl.getId(),

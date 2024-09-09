@@ -538,6 +538,20 @@ export interface ImportUrl {
    */
     getJobId: () => string;
 
+  /**
+   * The reason that the import of a URL failed.
+   */
+  getReason: () => string;
+
+  /**
+   * The absolute path to the resource that is being imported for the given URL.
+   */
+  getFile: () => string;
+
+  /**
+   * Retrieves the resulting path and filename of the imported file.
+   */
+  getPath: () => string;
 }
 
 /**

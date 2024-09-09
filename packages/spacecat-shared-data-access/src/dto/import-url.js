@@ -13,14 +13,15 @@
 import { createImportUrl } from '../models/importer/import-url.js';
 
 /**
- * Data Transfer Object for ImportUrl
+ * The ImportUrlDto is a helper that can convert an ImportUrl object to a DynamoDB item and
+ * vice versa.
  */
-
 export const ImportUrlDto = {
 
   /**
-     * Converts an importUrl object to a DynamoDB item
-     */
+   * Converts an ImportUrl object to a DynamoDB item.
+   * @returns {object} The new DynamoDB item.
+   */
   toDynamoItem: (importUrl) => ({
     id: importUrl.getId(),
     jobId: importUrl.getJobId(),
@@ -32,8 +33,9 @@ export const ImportUrlDto = {
   }),
 
   /**
-     * Converts a DynamoDB item into an ImportUrl object
-     */
+   * Converts a DynamoDB item into an ImportUrl object.
+   * @param {object} dynamoItem - The DynamoDB item to convert.
+   */
   fromDynamoItem: (dynamoItem) => {
     const importUrlData = {
       id: dynamoItem.id,

@@ -14,16 +14,16 @@
 
 import { expect } from 'chai';
 import { createImportJob } from '../../../../src/models/importer/import-job.js';
+import { ImportJobStatus, ImportOptions } from '../../../../src/index.js';
 
 const validImportJob = {
   id: '123',
   hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
   baseURL: 'https://www.test.com',
-  status: 'RUNNING',
+  status: ImportJobStatus.RUNNING,
   startTime: '2024-05-29T14:26:00.000Z',
   options: {
-    enableJavascript: true,
-    enableCss: true,
+    [ImportOptions.ENABLE_JAVASCRIPT]: true,
   },
   initiatedBy: {
     apiKeyName: 'test',
@@ -51,6 +51,63 @@ describe('ImportJob Model tests', () => {
       expect(() => createImportJob({ ...validImportJob, hashedApiKey: 123 })).to.throw('Invalid API key: 123');
     });
 
+    it('verify supported options', () => {
+      const job = createImportJob({
+        ...validImportJob,
+        options: {
+          [ImportOptions.ENABLE_JAVASCRIPT]: true,
+          [ImportOptions.PAGE_LOAD_TIMEOUT]: 1000,
+        },
+      });
+      expect(job.getOptions()).to.deep.equal({
+        [ImportOptions.ENABLE_JAVASCRIPT]: true,
+        [ImportOptions.PAGE_LOAD_TIMEOUT]: 1000,
+      });
+    });
+
+    /**
+     * There is an expectation that values coming into the import job ran through the
+     * body-data-wrapper's coerce logic, converting the string values into their potential data
+     * types like booleans, integers.
+     */
+    /* eslint-disable max-len */
+    it('test option data types', () => {
+      // Enable Javascript checks
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.ENABLE_JAVASCRIPT]: true } })).to.not.throw();
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.ENABLE_JAVASCRIPT]: false } })).to.not.throw();
+
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.ENABLE_JAVASCRIPT]: 'true' } })).to.throw('Invalid value for enableJavascript: true');
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.ENABLE_JAVASCRIPT]: 'false' } })).to.throw('Invalid value for enableJavascript: false');
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.ENABLE_JAVASCRIPT]: 'x' } })).to.throw('Invalid value for enableJavascript: x');
+
+      // Page Load Timeout checks
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.PAGE_LOAD_TIMEOUT]: 1000 } })).to.not.throw();
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.PAGE_LOAD_TIMEOUT]: 1.1 } })).to.throw('Invalid value for pageLoadTimeout: 1.1');
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.PAGE_LOAD_TIMEOUT]: '1000' } })).to.throw('Invalid value for pageLoadTimeout: 1000');
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.PAGE_LOAD_TIMEOUT]: -1 } })).to.throw('Invalid value for pageLoadTimeout: -1');
+      expect(() => createImportJob({ ...validImportJob, options: { [ImportOptions.PAGE_LOAD_TIMEOUT]: 'x' } })).to.throw('Invalid value for pageLoadTimeout: x');
+    });
+
+    it('verify no options does not fail', () => {
+      const {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        options,
+        ...noOptions
+      } = validImportJob;
+
+      const job = createImportJob({ ...noOptions });
+      expect(job.getOptions()).to.be.undefined;
+    });
+
+    it('verify unsupported options throw', () => {
+      expect(() => createImportJob({
+        ...validImportJob,
+        options: {
+          notSupported: true,
+        },
+      })).to.throw('Invalid options: notSupported');
+    });
+
     it('creates an import job object with a startTime', () => {
       const importJob = createImportJob({ ...validImportJob, startTime: '' });
       expect(importJob.getStartTime()).to.match(/^20/);
@@ -64,8 +121,8 @@ describe('ImportJob Model tests', () => {
     });
 
     it('updates status of import job', () => {
-      importJob.updateStatus('COMPLETE');
-      expect(importJob.getStatus()).to.equal('COMPLETE');
+      importJob.updateStatus(ImportJobStatus.COMPLETE);
+      expect(importJob.getStatus()).to.equal(ImportJobStatus.COMPLETE);
     });
 
     it('updates end time of import job', () => {
@@ -133,8 +190,7 @@ describe('ImportJob Model tests', () => {
 
     it('retrieves the options of the import job', () => {
       expect(importJob.getOptions()).to.deep.equal({
-        enableJavascript: true,
-        enableCss: true,
+        [ImportOptions.ENABLE_JAVASCRIPT]: true,
       });
     });
 

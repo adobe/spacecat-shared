@@ -38,6 +38,8 @@ export {
 export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';
 
+export { jobLogWrapper } from './job-logger.js';
+
 export {
   composeBaseURL,
   composeAuditURL,

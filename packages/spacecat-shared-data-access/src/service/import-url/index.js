@@ -14,7 +14,7 @@ import {
   getImportUrlById,
   createNewImportUrl,
   updateImportUrl,
-  getImportUrlsByJobIdAndStatus,
+  getImportUrlsByJobIdAndStatus, getImportUrlsByJobId,
 } from './accessPatterns.js';
 
 export const importUrlFunctions = (dynamoClient, config, log) => ({
@@ -42,5 +42,11 @@ export const importUrlFunctions = (dynamoClient, config, log) => ({
     log,
     jobId,
     status,
+  ),
+  getImportUrlsByJobId: (jobId) => getImportUrlsByJobId(
+    dynamoClient,
+    config,
+    log,
+    jobId,
   ),
 });

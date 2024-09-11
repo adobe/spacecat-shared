@@ -60,7 +60,7 @@ describe('Import Url Tests', () => {
       it('should return null when an item is not found', async () => {
         mockDynamoClient.getItem.resolves(null);
         const result = await exportedFunctions.getImportUrlById('test-id');
-        expect(result).to.be.null;
+        expect(result).to.equal(null);
       });
     });
 
@@ -72,7 +72,7 @@ describe('Import Url Tests', () => {
           url: 'https://www.test.com',
         };
         await exportedFunctions.createNewImportUrl(mockImportUrl);
-        expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+        expect(mockDynamoClient.putItem.calledOnce).to.equal(true);
       });
     });
 
@@ -89,8 +89,8 @@ describe('Import Url Tests', () => {
         importUrl.setStatus('COMPLETE');
         const result = await exportedFunctions.updateImportUrl(importUrl);
 
-        expect(result).to.be.not.null;
-        expect(mockDynamoClient.putItem).to.have.been.calledOnce;
+        expect(result).to.not.equal(null);
+        expect(mockDynamoClient.putItem.callCount).to.equal(1);
         expect(result.getStatus()).to.equal('COMPLETE');
       });
 
@@ -119,6 +119,22 @@ describe('Import Url Tests', () => {
         const result = await exportedFunctions.getImportUrlsByJobIdAndStatus('test-job-id', 'RUNNING');
         expect(result.length).to.equal(1);
         expect(result[0].getUrl()).to.equal('https://www.test.com');
+      });
+    });
+
+    describe('getImportUrlsByJobId', () => {
+      it('should return an array of ImportUrlDto when items are found', async () => {
+        const mockImportUrl = {
+          id: 'test-job-id',
+          status: 'RUNNING',
+          url: 'https://www.test.com',
+          jobId: 'test-job-id',
+        };
+        mockDynamoClient.query.resolves([mockImportUrl]);
+        const result = await exportedFunctions.getImportUrlsByJobId('test-job-id');
+        expect(result.length).to.equal(1);
+        expect(result[0].getUrl()).to.equal('https://www.test.com');
+        expect(result[0].getId()).to.equal('test-job-id');
       });
     });
   });

@@ -60,7 +60,7 @@ describe('Import Url Tests', () => {
       it('should return null when an item is not found', async () => {
         mockDynamoClient.getItem.resolves(null);
         const result = await exportedFunctions.getImportUrlById('test-id');
-        expect(result).to.equal(null);
+        expect(result).to.be.null;
       });
     });
 

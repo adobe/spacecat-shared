@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.43.4...@adobe/spacecat-shared-data-access-v1.44.0) (2024-09-11)
+
+
+### Features
+
+* Add a query to get all import urls by jobId ([#365](https://github.com/adobe/spacecat-shared/issues/365)) ([17b216d](https://github.com/adobe/spacecat-shared/commit/17b216d75f3573480e257c36101b0388dc1772be)), closes [/github.com/adobe/spacecat-content-processor/pull/143#discussion_r1754542157](https://github.com//github.com/adobe/spacecat-content-processor/pull/143/issues/discussion_r1754542157)
+
 # [@adobe/spacecat-shared-data-access-v1.43.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.43.3...@adobe/spacecat-shared-data-access-v1.43.4) (2024-09-07)
 
 

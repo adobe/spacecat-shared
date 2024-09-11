@@ -779,6 +779,9 @@ export interface DataAccess {
       jobId: string,
       status: string,
     ) => Promise<ImportUrl[]>;
+  getImportUrlsByJobId: (
+      jobId: string,
+    ) => Promise<ImportUrl[]>;
   getApiKeyByHashedApiKey: (
       hashedApiKey: string,
     ) => Promise<ApiKey | null>;

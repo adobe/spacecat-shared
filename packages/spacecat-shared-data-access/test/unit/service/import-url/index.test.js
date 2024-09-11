@@ -121,5 +121,21 @@ describe('Import Url Tests', () => {
         expect(result[0].getUrl()).to.equal('https://www.test.com');
       });
     });
+
+    describe('getImportUrlsByJobId', () => {
+      it('should return an array of ImportUrl when items are found', async () => {
+        const mockImportUrl = {
+          id: 'test-url-id',
+          status: 'RUNNING',
+          url: 'https://www.test.com',
+          jobId: 'test-job-id',
+        };
+        mockDynamoClient.query.resolves([mockImportUrl]);
+        const result = await exportedFunctions.getImportUrlsByJobId('test-url-id');
+        expect(result.length).to.equal(1);
+        expect(result[0].getUrl()).to.equal('https://www.test.com');
+        expect(result[0].getId()).to.equal('test-url-id');
+      });
+    });
   });
 });

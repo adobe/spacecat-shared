@@ -91,6 +91,7 @@ describe('Data Access Object Tests', () => {
     'createNewImportUrl',
     'updateImportUrl',
     'getImportUrlsByJobIdAndStatus',
+    'getImportUrlsByJobId',
   ];
 
   const experimentFunctions = [

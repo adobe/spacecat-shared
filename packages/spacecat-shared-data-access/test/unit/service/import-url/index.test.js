@@ -72,7 +72,7 @@ describe('Import Url Tests', () => {
           url: 'https://www.test.com',
         };
         await exportedFunctions.createNewImportUrl(mockImportUrl);
-        expect(mockDynamoClient.putItem.calledOnce).to.equal(true);
+        expect(mockDynamoClient.putItem.calledOnce).to.be.true;
       });
     });
 

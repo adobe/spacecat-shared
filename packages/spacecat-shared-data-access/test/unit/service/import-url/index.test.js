@@ -89,8 +89,8 @@ describe('Import Url Tests', () => {
         importUrl.setStatus('COMPLETE');
         const result = await exportedFunctions.updateImportUrl(importUrl);
 
-        expect(result).to.not.equal(null);
-        expect(mockDynamoClient.putItem.callCount).to.equal(1);
+        expect(result).to.be.not.null;
+        expect(mockDynamoClient.putItem).to.have.been.calledOnce;
         expect(result.getStatus()).to.equal('COMPLETE');
       });
 

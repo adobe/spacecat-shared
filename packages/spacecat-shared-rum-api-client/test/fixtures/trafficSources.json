@@ -2,6 +2,9 @@
   {
     "url": "https://www.aem.live/home",
     "total": 2620,
+    "earned": 400,
+    "owned": 2220,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -16,6 +19,9 @@
   {
     "url": "https://www.aem.live/developer/block-collection",
     "total": 2000,
+    "earned": 0,
+    "owned": 2000,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -26,6 +32,9 @@
   {
     "url": "https://www.aem.live/docs/",
     "total": 1910,
+    "earned": 100,
+    "owned": 1810,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -40,6 +49,9 @@
   {
     "url": "https://www.aem.live/tools/rum/explorer.html",
     "total": 1600,
+    "earned": 100,
+    "owned": 1500,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -54,6 +66,9 @@
   {
     "url": "https://www.aem.live/developer/tutorial",
     "total": 1600,
+    "earned": 200,
+    "owned": 1400,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -68,6 +83,9 @@
   {
     "url": "https://www.aem.live/developer/anatomy-of-a-franklin-project",
     "total": 1200,
+    "earned": 0,
+    "owned": 1200,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -78,6 +96,9 @@
   {
     "url": "https://www.aem.live/developer/indexing",
     "total": 1000,
+    "earned": 0,
+    "owned": 1000,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -88,6 +109,9 @@
   {
     "url": "https://www.aem.live/docs/custom-headers",
     "total": 900,
+    "earned": 0,
+    "owned": 900,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -98,6 +122,9 @@
   {
     "url": "https://www.aem.live/developer/spreadsheets",
     "total": 900,
+    "earned": 0,
+    "owned": 900,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -108,6 +135,9 @@
   {
     "url": "https://www.aem.live/docs/dev-collab-and-good-practices",
     "total": 700,
+    "earned": 0,
+    "owned": 700,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -118,6 +148,9 @@
   {
     "url": "https://www.aem.live/docs/go-live-checklist",
     "total": 600,
+    "earned": 0,
+    "owned": 600,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -128,6 +161,9 @@
   {
     "url": "https://www.aem.live/developer/markup-sections-blocks",
     "total": 510,
+    "earned": 0,
+    "owned": 510,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -138,6 +174,9 @@
   {
     "url": "https://www.aem.live/developer/favicon",
     "total": 500,
+    "earned": 0,
+    "owned": 500,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -148,6 +187,9 @@
   {
     "url": "https://www.aem.live/developer/keeping-it-100",
     "total": 500,
+    "earned": 0,
+    "owned": 500,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -158,6 +200,9 @@
   {
     "url": "https://www.aem.live/tools/sidekick/",
     "total": 410,
+    "earned": 0,
+    "owned": 410,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -168,6 +213,9 @@
   {
     "url": "https://www.aem.live/docs/placeholders",
     "total": 403,
+    "earned": 0,
+    "owned": 403,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -178,6 +226,9 @@
   {
     "url": "https://www.aem.live/docs/byo-cdn-cloudflare-worker-setup",
     "total": 400,
+    "earned": 0,
+    "owned": 400,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -188,6 +239,9 @@
   {
     "url": "https://www.aem.live/docs/byo-dns",
     "total": 400,
+    "earned": 0,
+    "owned": 400,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -198,6 +252,9 @@
   {
     "url": "https://www.aem.live/docs/byo-cdn-fastly-setup",
     "total": 300,
+    "earned": 0,
+    "owned": 300,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -208,6 +265,9 @@
   {
     "url": "https://www.aem.live/docs/davidsmodel",
     "total": 300,
+    "earned": 200,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "earned:referral",
@@ -222,6 +282,9 @@
   {
     "url": "https://www.aem.live/docs/setup-customer-sharepoint",
     "total": 300,
+    "earned": 0,
+    "owned": 300,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -232,6 +295,9 @@
   {
     "url": "https://www.aem.live/developer/sitemap",
     "total": 300,
+    "earned": 0,
+    "owned": 300,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -242,6 +308,9 @@
   {
     "url": "https://www.aem.live/docs/byo-cdn-akamai-setup",
     "total": 300,
+    "earned": 0,
+    "owned": 300,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -252,6 +321,9 @@
   {
     "url": "https://www.aem.live/docs/redirects",
     "total": 300,
+    "earned": 0,
+    "owned": 300,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -262,6 +334,9 @@
   {
     "url": "https://www.aem.live/docs/bulk-metadata",
     "total": 300,
+    "earned": 0,
+    "owned": 300,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -272,6 +347,9 @@
   {
     "url": "https://www.aem.live/some-other-page",
     "total": 300,
+    "earned": 0,
+    "owned": 300,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -282,6 +360,9 @@
   {
     "url": "https://www.aem.live/docs/authoring",
     "total": 210,
+    "earned": 0,
+    "owned": 210,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -292,6 +373,9 @@
   {
     "url": "https://www.aem.live/docs/sidekick",
     "total": 200,
+    "earned": 0,
+    "owned": 200,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -302,6 +386,9 @@
   {
     "url": "https://www.aem.live/developer/web-components",
     "total": 200,
+    "earned": 0,
+    "owned": 200,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -312,6 +399,9 @@
   {
     "url": "https://www.aem.live/docs/authentication-setup-site",
     "total": 200,
+    "earned": 100,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "earned:referral",
@@ -326,6 +416,9 @@
   {
     "url": "https://www.aem.live/developer/rum",
     "total": 200,
+    "earned": 100,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -340,6 +433,9 @@
   {
     "url": "https://www.aem.live/docs/faq",
     "total": 200,
+    "earned": 0,
+    "owned": 200,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -350,6 +446,9 @@
   {
     "url": "https://www.aem.live/developer/placeholders",
     "total": 200,
+    "earned": 0,
+    "owned": 200,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -360,6 +459,9 @@
   {
     "url": "https://www.aem.live/developer/block-collection/section-metadata",
     "total": 200,
+    "earned": 0,
+    "owned": 200,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -370,6 +472,9 @@
   {
     "url": "https://www.aem.live/vip/intake",
     "total": 200,
+    "earned": 0,
+    "owned": 200,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -380,6 +485,9 @@
   {
     "url": "https://www.aem.live/new-exp-page",
     "total": 200,
+    "earned": 0,
+    "owned": 200,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -390,6 +498,9 @@
   {
     "url": "https://www.aem.live/docs/sidekick-extension",
     "total": 110,
+    "earned": 100,
+    "owned": 10,
+    "paid": 0,
     "sources": [
       {
         "type": "earned:search",
@@ -404,6 +515,9 @@
   {
     "url": "https://www.aem.live/docs/rum",
     "total": 110,
+    "earned": 0,
+    "owned": 110,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -414,6 +528,9 @@
   {
     "url": "https://www.aem.live/developer/target-integration",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -424,6 +541,9 @@
   {
     "url": "https://www.aem.live/docs/architecture",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -434,6 +554,9 @@
   {
     "url": "https://www.aem.live/developer/block-collection/breadcrumbs",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -444,6 +567,9 @@
   {
     "url": "https://www.aem.live/developer/block-collection/headings",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -454,6 +580,9 @@
   {
     "url": "https://www.aem.live/docs/cdn-guide",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -464,6 +593,9 @@
   {
     "url": "https://www.aem.live/tools/bot/setup",
     "total": 100,
+    "earned": 100,
+    "owned": 0,
+    "paid": 0,
     "sources": [
       {
         "type": "earned:referral",
@@ -474,6 +606,9 @@
   {
     "url": "https://www.aem.live/developer/github-actions",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -484,6 +619,9 @@
   {
     "url": "https://www.aem.live/developer/importer",
     "total": 100,
+    "earned": 100,
+    "owned": 0,
+    "paid": 0,
     "sources": [
       {
         "type": "earned:referral",
@@ -494,6 +632,9 @@
   {
     "url": "https://www.aem.live/developer/configuring-aem-assets-sidekick-plugin",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -504,6 +645,9 @@
   {
     "url": "https://www.aem.live/tools/rum/list.html",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -514,6 +658,9 @@
   {
     "url": "https://www.aem.live/docs/setup-byo-cdn-push-invalidation",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -524,6 +671,9 @@
   {
     "url": "https://www.aem.live/developer/forms",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -534,6 +684,9 @@
   {
     "url": "https://www.aem.live/developer/",
     "total": 100,
+    "earned": 0,
+    "owned": 100,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -544,6 +697,9 @@
   {
     "url": "https://www.aem.live/docs/admin.html",
     "total": 20,
+    "earned": 0,
+    "owned": 20,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -554,6 +710,9 @@
   {
     "url": "https://www.aem.live/community-feeds.json",
     "total": 10,
+    "earned": 0,
+    "owned": 10,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -564,6 +723,9 @@
   {
     "url": "https://www.aem.live/docs/global",
     "total": 10,
+    "earned": 0,
+    "owned": 10,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -574,6 +736,9 @@
   {
     "url": "https://www.aem.live/developer/franklin-video-series-advanced",
     "total": 10,
+    "earned": 0,
+    "owned": 10,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -584,6 +749,9 @@
   {
     "url": "https://www.aem.live/developer/markup-reference",
     "total": 10,
+    "earned": 0,
+    "owned": 10,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -594,6 +762,9 @@
   {
     "url": "https://www.aem.live/docs/byo-cdn-cloudflare-setup",
     "total": 10,
+    "earned": 0,
+    "owned": 10,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -604,6 +775,9 @@
   {
     "url": "https://www.aem.live/developer/franklin-video-series",
     "total": 10,
+    "earned": 0,
+    "owned": 10,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",
@@ -614,6 +788,9 @@
   {
     "url": "https://www.aem.live/docs/aem-assets-sidekick-plugin",
     "total": 10,
+    "earned": 0,
+    "owned": 10,
+    "paid": 0,
     "sources": [
       {
         "type": "owned:direct",

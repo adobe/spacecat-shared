@@ -79,7 +79,7 @@ export const updateImportUrl = async (dynamoClient, config, log, importUrl) => {
  * @param {Logger} log
  * @param {string} jobId
  * @param {string} status
- * @returns {Promise<ImportUrlDto[]>}
+ * @returns {Promise<ImportUrl[]>}
  */
 export const getImportUrlsByJobIdAndStatus = async (dynamoClient, config, log, jobId, status) => {
   const items = await dynamoClient.query({
@@ -92,6 +92,26 @@ export const getImportUrlsByJobIdAndStatus = async (dynamoClient, config, log, j
     ExpressionAttributeValues: {
       ':jobId': jobId,
       ':status': status,
+    },
+  });
+  return items.map((item) => ImportUrlDto.fromDynamoItem(item));
+};
+
+/**
+ * Get Import Urls by Job ID
+ * @param {DynamoClient} dynamoClient
+ * @param {Object} config
+ * @param {Logger} log
+ * @param {string} jobId
+ * @returns {Promise<ImportUrl[]>}
+ */
+export const getImportUrlsByJobId = async (dynamoClient, config, log, jobId) => {
+  const items = await dynamoClient.query({
+    TableName: config.tableNameImportUrls,
+    IndexName: config.indexNameImportUrlsByJobIdAndStatus,
+    KeyConditionExpression: 'jobId = :jobId',
+    ExpressionAttributeValues: {
+      ':jobId': jobId,
     },
   });
   return items.map((item) => ImportUrlDto.fromDynamoItem(item));

@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-content-client-v1.0.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.4...@adobe/spacecat-shared-content-client-v1.0.5) (2024-09-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.1.7 ([#364](https://github.com/adobe/spacecat-shared/issues/364)) ([b800657](https://github.com/adobe/spacecat-shared/commit/b8006573b0c08bbd29f5248d618e1532690bb53d))
+
+# [@adobe/spacecat-shared-content-client-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.3...@adobe/spacecat-shared-content-client-v1.0.4) (2024-09-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.1.6 ([#359](https://github.com/adobe/spacecat-shared/issues/359)) ([c785f39](https://github.com/adobe/spacecat-shared/commit/c785f392ef741da92261fa62c06532a4f9428615))
+
+# [@adobe/spacecat-shared-content-client-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.2...@adobe/spacecat-shared-content-client-v1.0.3) (2024-09-02)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.1.5 ([#354](https://github.com/adobe/spacecat-shared/issues/354)) ([da21b30](https://github.com/adobe/spacecat-shared/commit/da21b30161d3ab77ac866dcf996551649be86cf5))
+
+# [@adobe/spacecat-shared-content-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.1...@adobe/spacecat-shared-content-client-v1.0.2) (2024-08-31)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.1.4 ([#353](https://github.com/adobe/spacecat-shared/issues/353)) ([9116f64](https://github.com/adobe/spacecat-shared/commit/9116f64640fe068ac13f145cfd4265ec3443bc11))
+
 # [@adobe/spacecat-shared-content-client-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.0...@adobe/spacecat-shared-content-client-v1.0.1) (2024-08-29)
 
 

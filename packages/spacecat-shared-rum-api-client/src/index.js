@@ -15,7 +15,9 @@ import cwv from './functions/cwv.js';
 import experiment from './functions/experiment.js';
 import trafficAcquisition from './functions/traffic-acquisition.js';
 import variant from './functions/variant.js';
-import rageclick from './functions/rageclick.js';
+import rageclick from './functions/opportunities/rageclick.js';
+import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
+import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
 
 const HANDLERS = {
   404: notfound,
@@ -24,6 +26,8 @@ const HANDLERS = {
   'traffic-acquisition': trafficAcquisition,
   variant,
   rageclick,
+  'high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
+  'high-organic-low-ctr': highOrganicLowCtr,
 };
 
 export default class RUMAPIClient {
@@ -80,7 +84,7 @@ export default class RUMAPIClient {
       // Execute each query handler sequentially
       for (const { query, handler } of queryHandlers) {
         // eslint-disable-next-line no-await-in-loop
-        results[query] = await handler(bundles);
+        results[query] = await handler(bundles, opts);
       }
 
       return results;

@@ -18,14 +18,14 @@
  * @returns {function(object, object): Promise<Response>} A new function that, when invoked,
  *  will automatically include the `jobId` in all log statements within the context.
  */
-export function jobLogWrapper(fn) {
+export function logWrapper(fn) {
   return async (message, context) => {
     const { log } = context;
 
     if (log) {
       if (!message || !message.jobId) {
         log.debug('Missing jobId, hence it will not be included in log messages.');
-        context.jobLog = log;
+        context.contextualLog = log;
 
         return fn(message, context);
       }
@@ -33,7 +33,7 @@ export function jobLogWrapper(fn) {
       const { jobId } = message;
 
       // Enhance the log object to include jobId in each log statement
-      context.jobLog = {
+      context.contextualLog = {
         info: (...args) => {
           log.info({ jobId, ...args });
         },

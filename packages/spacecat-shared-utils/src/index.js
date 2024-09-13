@@ -38,7 +38,7 @@ export {
 export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';
 
-export { jobLogWrapper } from './job-logger.js';
+export { logWrapper } from './log-wrapper.js';
 
 export {
   composeBaseURL,

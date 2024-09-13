@@ -12,6 +12,7 @@
 
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
 import { hasText, isObject } from '@adobe/spacecat-shared-utils';
+import { Graph, hasCycle } from 'graph-data-structure';
 
 const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
@@ -133,9 +134,30 @@ const validateRedirects = (redirects) => {
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const validateRedirectsUpdate = (currentRedirects, existingRedirects) => {
-  // todo: detect conflicts, duplicates and cycles
+const removeDuplicatedRedirects = (currentRedirects, newRedirects) => {
+  const redirectsSet = new Set();
+  currentRedirects.map(({ from, to }) => `${from}:${to}`)
+    .forEach((redirectRule) => redirectsSet.add(redirectRule));
+
+  const newRedirectsClean = [];
+  newRedirects.forEach((redirectRule) => {
+    const { from, to } = redirectRule;
+    const strRedirectRule = `${from}:${to}`;
+    if (!redirectsSet.has(strRedirectRule)) {
+      redirectsSet.add(strRedirectRule);
+      newRedirectsClean.push(redirectRule);
+    } // TODO: report duplicated entry??
+  });
+  return newRedirectsClean;
+};
+
+const detectRedirectLoops = (currentRedirects, newRedirects) => {
+  const redirectsGraph = new Graph();
+  [...currentRedirects, ...newRedirects].forEach((r) => redirectsGraph.addEdge(r.from, r.to));
+  if (hasCycle(redirectsGraph)) {
+    // TODO: report cycle path??
+    throw new Error('Redirect cycle detected');
+  }
 };
 
 export default class ContentClient {
@@ -259,9 +281,11 @@ export default class ContentClient {
 
     const currentRedirects = await this.getRedirects();
 
-    validateRedirectsUpdate(currentRedirects, redirects);
+    // validate combination of existing and new redirects
+    const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects);
+    detectRedirectLoops(currentRedirects, cleanNewRedirects);
 
-    const response = await this.rawClient.updateRedirects(redirects);
+    const response = await this.rawClient.appendRedirects(cleanNewRedirects);
     if (response.status !== 200) {
       throw new Error('Failed to update redirects');
     }

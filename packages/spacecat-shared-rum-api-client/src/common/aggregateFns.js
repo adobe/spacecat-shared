@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { extractTrafficHints, classifyUTMSource } from './traffic.js';
+import { extractTrafficHints, classifyReferrer, getSecondLevelDomain } from './traffic.js';
 
 /**
  * Calculates the total page views by URL from an array of bundles.
@@ -55,7 +55,7 @@ function getCTRByUrl(bundles) {
 }
 
 /**
- * Calculates the Click-Through Rate (CTR) by URL and Referrer obtained from utm_source.
+ * Calculates the Click-Through Rate (CTR) by URL and Referrer.
  * CTR is defined as the total number of sessions with at least one click event per referrer.
  * divided by the total number of pageviews for each URL per referrer.
  *
@@ -67,7 +67,8 @@ function getCTRByUrlAndChannel(bundles) {
   const aggregated = bundles.reduce((acc, bundle) => {
     const { url } = bundle;
     const trafficHints = extractTrafficHints(bundle);
-    const channel = classifyUTMSource(trafficHints.utmSource);
+    const referrerDomain = getSecondLevelDomain(trafficHints.referrer);
+    const channel = classifyReferrer(referrerDomain);
     if (!acc[url]) {
       acc[url] = { sessionsWithClick: 0, totalPageviews: 0, channels: {} };
     }
@@ -90,9 +91,14 @@ function getCTRByUrlAndChannel(bundles) {
   }, {});
   return Object.entries(aggregated)
     .reduce((acc, [url, { sessionsWithClick, totalPageviews, channels }]) => {
+      if (!acc[url]) {
+        acc[url] = { value: 0, channels: {} };
+      }
       acc[url].value = (sessionsWithClick / totalPageviews);
       acc[url].channels = Object.entries(channels)
-        .reduce((_acc, [source, { _sessionsWithClick, _totalPageviews }]) => {
+        .reduce((_acc, [source, {
+          sessionsWithClick: _sessionsWithClick, totalPageviews: _totalPageviews,
+        }]) => {
           // eslint-disable-next-line no-param-reassign
           _acc[source] = (_sessionsWithClick / _totalPageviews);
           return _acc;

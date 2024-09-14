@@ -24,7 +24,7 @@ import URI from 'urijs';
  * @returns {string} The second-level domain of the given URL, or the original
  *                    URL if it does not contain any text.
  */
-function getSecondLevelDomain(url) {
+export function getSecondLevelDomain(url) {
   if (!hasText(url)) return url;
   const uri = new URI(url);
   const domain = uri.domain();
@@ -39,7 +39,7 @@ function getSecondLevelDomain(url) {
 // Referrer related
 const referrers = {
   search: /google|yahoo|bing|yandex|baidu|duckduckgo|brave|ecosia|aol|startpage|ask/,
-  social: /^\b(x)\b|(.*(facebook|tiktok|snapchat|x|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
+  social: /^\b(x)\b|(.*(facebook|tiktok|snapchat|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
   ad: /googlesyndication|2mdn|doubleclick|syndicatedsearch/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
 };
@@ -68,14 +68,12 @@ const sources = {
   email: /sfmc|email/,
 };
 
-// Indexes of the mathcing groups in the regexes above, to obtain the utm source string
-const sourceGroupingIndex = {
+// Indexes of the mathcing groups for the regexes in referrer
+const referrerGroupingIndex = {
+  search: [0],
   social: [1, 3],
-  search: [1, 3],
+  ad: [0],
   video: [0],
-  display: [0],
-  affiliate: [0],
-  email: [0],
 };
 
 // Tracking params - based on the checkpoints we have in rum-enhancer now
@@ -189,25 +187,22 @@ export function extractTrafficHints(bundle) {
 }
 
 /**
- * Returns the name of the utm source as single word, for example: facebook instead of facebook.com
- * @param {*} utmSource
+ * Returns the name of the referrer as single word.
+ * For example: facebook instead of www.facebook.com
+ * @param {*} referrerString
  */
-export function classifyUTMSource(utmSource) {
-  if (!utmSource) return '';
-  let classifiedSource = '';
-  for (const [source, regex] of Object.entries(sources)) {
-    const match = utmSource.match(regex);
+export function classifyReferrer(referrerString) {
+  if (!referrerString) return '';
+  let classifiedReferrer = '';
+  for (const [referrer, regex] of Object.entries(referrers)) {
+    const match = referrerString.match(regex);
     if (match) {
-      const indexes = sourceGroupingIndex[source];
-      const classifiedSourceIndex = indexes.find((index) => match[index]);
-      if (classifiedSourceIndex === undefined) {
-        classifiedSource = '';
-      } else {
-        classifiedSource = match[classifiedSourceIndex];
-      }
+      const indexes = referrerGroupingIndex[referrer];
+      const classifiedReferrerIndex = indexes.find((index) => match[index]);
+      classifiedReferrer = match[classifiedReferrerIndex];
     }
   }
-  return classifiedSource;
+  return classifiedReferrer;
 }
 
 export function classifyTrafficSource(url, referrer, utmSource, utmMedium, trackingParams) {
@@ -224,7 +219,7 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
     && rule.utmMedium(sanitize(utmMedium))
     && rule.tracking(trackingParams)
   ));
-  const channel = classifyUTMSource(utmSource);
+  const channel = classifyReferrer(referrerDomain);
 
   return {
     type,

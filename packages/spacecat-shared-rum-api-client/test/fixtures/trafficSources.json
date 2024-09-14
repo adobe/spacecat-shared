@@ -3,18 +3,36 @@
     "url": "https://www.aem.live/home",
     "total": 2620,
     "earned": 400,
-    "owned": 2220,
-    "paid": 0,
+    "owned": 2120,
+    "paid": 100,
     "sources": [
       {
         "type": "owned:direct",
-        "views": 2220
+        "views": 2120
       },
       {
         "type": "earned:search",
         "views": 400
+      },
+      {
+        "type": "paid:social",
+        "views": 100
       }
-    ]
+    ],
+    "channels": {
+      "google": {
+        "total": 400,
+        "owned": 0,
+        "earned": 400,
+        "paid": 0
+      },
+      "tiktok": {
+        "total": 100,
+        "owned": 0,
+        "earned": 0,
+        "paid": 100
+      }
+    }
   },
   {
     "url": "https://www.aem.live/developer/block-collection",
@@ -27,7 +45,8 @@
         "type": "owned:direct",
         "views": 2000
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/",
@@ -44,7 +63,8 @@
         "type": "earned:referral",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/tools/rum/explorer.html",
@@ -61,7 +81,8 @@
         "type": "earned:referral",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/tutorial",
@@ -78,7 +99,8 @@
         "type": "earned:referral",
         "views": 200
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/anatomy-of-a-franklin-project",
@@ -91,7 +113,8 @@
         "type": "owned:direct",
         "views": 1200
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/indexing",
@@ -104,7 +127,8 @@
         "type": "owned:direct",
         "views": 1000
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/custom-headers",
@@ -117,7 +141,8 @@
         "type": "owned:direct",
         "views": 900
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/spreadsheets",
@@ -130,7 +155,8 @@
         "type": "owned:direct",
         "views": 900
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/dev-collab-and-good-practices",
@@ -143,7 +169,8 @@
         "type": "owned:direct",
         "views": 700
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/go-live-checklist",
@@ -156,7 +183,8 @@
         "type": "owned:direct",
         "views": 600
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/markup-sections-blocks",
@@ -169,7 +197,8 @@
         "type": "owned:direct",
         "views": 510
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/favicon",
@@ -182,7 +211,8 @@
         "type": "owned:direct",
         "views": 500
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/keeping-it-100",
@@ -195,7 +225,8 @@
         "type": "owned:direct",
         "views": 500
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/tools/sidekick/",
@@ -208,7 +239,8 @@
         "type": "owned:direct",
         "views": 410
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/placeholders",
@@ -221,7 +253,8 @@
         "type": "owned:direct",
         "views": 403
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/byo-cdn-cloudflare-worker-setup",
@@ -234,7 +267,8 @@
         "type": "owned:direct",
         "views": 400
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/byo-dns",
@@ -247,7 +281,8 @@
         "type": "owned:direct",
         "views": 400
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/byo-cdn-fastly-setup",
@@ -260,7 +295,8 @@
         "type": "owned:direct",
         "views": 300
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/davidsmodel",
@@ -277,7 +313,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/setup-customer-sharepoint",
@@ -290,7 +327,8 @@
         "type": "owned:direct",
         "views": 300
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/sitemap",
@@ -303,7 +341,8 @@
         "type": "owned:direct",
         "views": 300
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/byo-cdn-akamai-setup",
@@ -316,7 +355,8 @@
         "type": "owned:direct",
         "views": 300
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/redirects",
@@ -329,7 +369,8 @@
         "type": "owned:direct",
         "views": 300
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/bulk-metadata",
@@ -342,7 +383,8 @@
         "type": "owned:direct",
         "views": 300
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/some-other-page",
@@ -355,7 +397,8 @@
         "type": "owned:direct",
         "views": 300
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/authoring",
@@ -368,7 +411,8 @@
         "type": "owned:direct",
         "views": 210
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/sidekick",
@@ -381,7 +425,8 @@
         "type": "owned:direct",
         "views": 200
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/web-components",
@@ -394,7 +439,8 @@
         "type": "owned:direct",
         "views": 200
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/authentication-setup-site",
@@ -411,7 +457,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/rum",
@@ -428,7 +475,8 @@
         "type": "earned:referral",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/faq",
@@ -441,7 +489,8 @@
         "type": "owned:direct",
         "views": 200
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/placeholders",
@@ -454,7 +503,8 @@
         "type": "owned:direct",
         "views": 200
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/block-collection/section-metadata",
@@ -467,7 +517,8 @@
         "type": "owned:direct",
         "views": 200
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/vip/intake",
@@ -480,7 +531,8 @@
         "type": "owned:direct",
         "views": 200
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/new-exp-page",
@@ -493,7 +545,8 @@
         "type": "owned:direct",
         "views": 200
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/sidekick-extension",
@@ -510,7 +563,15 @@
         "type": "owned:direct",
         "views": 10
       }
-    ]
+    ],
+    "channels": {
+      "google": {
+        "total": 100,
+        "owned": 0,
+        "earned": 100,
+        "paid": 0
+      }
+    }
   },
   {
     "url": "https://www.aem.live/docs/rum",
@@ -523,7 +584,8 @@
         "type": "owned:direct",
         "views": 110
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/target-integration",
@@ -536,7 +598,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/architecture",
@@ -549,7 +612,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/block-collection/breadcrumbs",
@@ -562,7 +626,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/block-collection/headings",
@@ -575,7 +640,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/cdn-guide",
@@ -588,7 +654,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/tools/bot/setup",
@@ -601,7 +668,8 @@
         "type": "earned:referral",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/github-actions",
@@ -614,7 +682,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/importer",
@@ -627,7 +696,8 @@
         "type": "earned:referral",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/configuring-aem-assets-sidekick-plugin",
@@ -640,7 +710,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/tools/rum/list.html",
@@ -653,7 +724,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/setup-byo-cdn-push-invalidation",
@@ -666,7 +738,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/forms",
@@ -679,7 +752,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/",
@@ -692,7 +766,8 @@
         "type": "owned:direct",
         "views": 100
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/admin.html",
@@ -705,7 +780,8 @@
         "type": "owned:direct",
         "views": 20
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/community-feeds.json",
@@ -718,7 +794,8 @@
         "type": "owned:direct",
         "views": 10
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/global",
@@ -731,7 +808,8 @@
         "type": "owned:direct",
         "views": 10
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/franklin-video-series-advanced",
@@ -744,7 +822,8 @@
         "type": "owned:direct",
         "views": 10
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/markup-reference",
@@ -757,7 +836,8 @@
         "type": "owned:direct",
         "views": 10
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/byo-cdn-cloudflare-setup",
@@ -770,7 +850,8 @@
         "type": "owned:direct",
         "views": 10
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/developer/franklin-video-series",
@@ -783,7 +864,8 @@
         "type": "owned:direct",
         "views": 10
       }
-    ]
+    ],
+    "channels": {}
   },
   {
     "url": "https://www.aem.live/docs/aem-assets-sidekick-plugin",
@@ -796,6 +878,7 @@
         "type": "owned:direct",
         "views": 10
       }
-    ]
+    ],
+    "channels": {}
   }
 ]

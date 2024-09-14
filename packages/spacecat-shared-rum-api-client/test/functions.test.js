@@ -53,7 +53,6 @@ describe('Query functions', () => {
 
   it('crunches traffic acquisition', async () => {
     const trafficSourcesResult = await trafficAcquisition.handler(bundles.rumBundles);
-    console.log(JSON.stringify(trafficSourcesResult, null, 2));
     expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
   });
 
@@ -70,6 +69,7 @@ describe('Query functions', () => {
       bundlesWithTraffic.rumBundles,
       { interval: 7 },
     );
+    console.log(JSON.stringify(highInorganicHighBounceResult, null, 2));
     expect(expectedHighOrganicLowCTRResult).to.eql(highInorganicHighBounceResult);
   });
 });

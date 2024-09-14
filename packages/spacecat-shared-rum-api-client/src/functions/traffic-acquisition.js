@@ -10,35 +10,29 @@
  * governing permissions and limitations under the License.
  */
 
-import { classifyTrafficSource } from '../common/traffic.js';
+import { classifyTrafficSource, extractTrafficHints } from '../common/traffic.js';
 
 const MAIN_TYPES = ['total', 'paid', 'earned', 'owned'];
 
-function extractHints(bundle) {
-  const findEvent = (checkpoint, source = '') => bundle.events.find((e) => e.checkpoint === checkpoint && (!source || e.source === source)) || {};
-
-  const referrer = findEvent('enter').source || '';
-  const utmSource = findEvent('utm', 'utm_source').target || '';
-  const utmMedium = findEvent('utm', 'utm_medium').target || '';
-  const tracking = findEvent('paid').checkpoint || findEvent('email').checkpoint || '';
-
-  return {
-    url: bundle.url,
-    weight: bundle.weight,
-    referrer,
-    utmSource,
-    utmMedium,
-    tracking,
-  };
-}
-
-function collectByUrlAndTrafficSource(acc, { url, weight, trafficSource }) {
+function collectByUrlAndTrafficSource(acc, {
+  url, weight, trafficSource, channel,
+}) {
   acc[url] = acc[url] || {
-    total: 0, owned: 0, earned: 0, paid: 0,
+    total: 0, owned: 0, earned: 0, paid: 0, channels: {},
   };
   acc[url][trafficSource] = (acc[url][trafficSource] || 0) + weight;
   acc[url].total += weight;
-  acc[url][trafficSource.split(':')[0]] += weight;
+  const trafficType = trafficSource.split(':')[0];
+  acc[url][trafficType] += weight;
+  if (channel) {
+    if (!acc[url].channels[channel]) {
+      acc[url].channels[channel] = {
+        total: 0, owned: 0, earned: 0, paid: 0,
+      };
+    }
+    acc[url].channels[channel].total += weight;
+    acc[url].channels[channel][trafficType] += weight;
+  }
   return acc;
 }
 
@@ -50,23 +44,26 @@ function transformFormat(trafficSources) {
     owned: value.owned,
     paid: value.paid,
     sources: Object.entries(value)
-      .filter(([source]) => !MAIN_TYPES.includes(source))
+      .filter(([source]) => !MAIN_TYPES.includes(source) && source !== 'channels')
       .map(([source, views]) => ({ type: source, views })),
+    channels: value.channels,
   }));
 }
 
 function handler(bundles) {
   const trafficSources = bundles
-    .map(extractHints)
+    .map(extractTrafficHints)
     .map((row) => {
       const {
         type,
         category,
+        channel,
       } = classifyTrafficSource(row.url, row.referrer, row.utmSource, row.utmMedium, row.tracking);
       return {
         url: row.url,
         weight: row.weight,
         trafficSource: `${type}:${category}`,
+        channel,
       };
     })
     .reduce(collectByUrlAndTrafficSource, {});

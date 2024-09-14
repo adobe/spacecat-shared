@@ -63,9 +63,19 @@ const sources = {
   social: /^\b(ig|fb|x|soc)\b|(.*(meta|tiktok|facebook|snapchat|twitter|igshopping|instagram|linkedin|reddit).*)$/,
   search: /^\b(goo)\b|(.*(sea|google|yahoo|bing|yandex|baidu|duckduckgo|brave|ecosia|aol|startpage|ask).*)$/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
-  display: /optumib2b|jun|googleads|dv36|dv360|microsoft|flipboard|programmatic|yext|gdn|banner|newsshowcase/,
+  display: /optumib2b|jun|googleads|dv360|dv36|microsoft|flipboard|programmatic|yext|gdn|banner|newsshowcase/,
   affiliate: /brandreward|yieldkit|fashionistatop|partner|linkbux|stylesblog|linkinbio|affiliate/,
   email: /sfmc|email/,
+};
+
+// Indexes of the mathcing groups in the regexes above, to obtain the utm source string
+const sourceGroupingIndex = {
+  social: [1, 3],
+  search: [1, 3],
+  video: [0],
+  display: [0],
+  affiliate: [0],
+  email: [0],
 };
 
 // Tracking params - based on the checkpoints we have in rum-enhancer now
@@ -160,6 +170,46 @@ const RULES = (domain) => ([
   { type: 'owned', category: 'uncategorized', referrer: any, utmSource: any, utmMedium: any, tracking: any },
 ]);
 
+export function extractTrafficHints(bundle) {
+  const findEvent = (checkpoint, source = '') => bundle.events.find((e) => e.checkpoint === checkpoint && (!source || e.source === source)) || {};
+
+  const referrer = findEvent('enter').source || '';
+  const utmSource = findEvent('utm', 'utm_source').target || '';
+  const utmMedium = findEvent('utm', 'utm_medium').target || '';
+  const tracking = findEvent('paid').checkpoint || findEvent('email').checkpoint || '';
+
+  return {
+    url: bundle.url,
+    weight: bundle.weight,
+    referrer,
+    utmSource,
+    utmMedium,
+    tracking,
+  };
+}
+
+/**
+ * Returns the name of the utm source as single word, for example: facebook instead of facebook.com
+ * @param {*} utmSource
+ */
+export function classifyUTMSource(utmSource) {
+  if (!utmSource) return '';
+  let classifiedSource = '';
+  for (const [source, regex] of Object.entries(sources)) {
+    const match = utmSource.match(regex);
+    if (match) {
+      const indexes = sourceGroupingIndex[source];
+      const classifiedSourceIndex = indexes.find((index) => match[index]);
+      if (classifiedSourceIndex === undefined) {
+        classifiedSource = '';
+      } else {
+        classifiedSource = match[classifiedSourceIndex];
+      }
+    }
+  }
+  return classifiedSource;
+}
+
 export function classifyTrafficSource(url, referrer, utmSource, utmMedium, trackingParams) {
   const secondLevelDomain = getSecondLevelDomain(url);
   const rules = RULES(secondLevelDomain);
@@ -174,9 +224,11 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
     && rule.utmMedium(sanitize(utmMedium))
     && rule.tracking(trackingParams)
   ));
+  const channel = classifyUTMSource(utmSource);
 
   return {
     type,
     category,
+    channel,
   };
 }

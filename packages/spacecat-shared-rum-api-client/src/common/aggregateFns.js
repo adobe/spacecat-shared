@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { extractTrafficHints, classifyUTMSource } from './traffic.js';
+
 /**
  * Calculates the total page views by URL from an array of bundles.
  * @param {Array<Object>} bundles - An array of RUM bundles (NOT Flat bundles).
@@ -53,6 +55,53 @@ function getCTRByUrl(bundles) {
 }
 
 /**
+ * Calculates the Click-Through Rate (CTR) by URL and Referrer obtained from utm_source.
+ * CTR is defined as the total number of sessions with at least one click event per referrer.
+ * divided by the total number of pageviews for each URL per referrer.
+ *
+ * @param {Array<Object>} bundles - An array of RUM bundles (NOT Flat bundles).
+ * @returns {Object} - An object where the key is the URL and the value is an object
+ * with the CTR value by referrer.
+ */
+function getCTRByUrlAndChannel(bundles) {
+  const aggregated = bundles.reduce((acc, bundle) => {
+    const { url } = bundle;
+    const trafficHints = extractTrafficHints(bundle);
+    const channel = classifyUTMSource(trafficHints.utmSource);
+    if (!acc[url]) {
+      acc[url] = { sessionsWithClick: 0, totalPageviews: 0, channels: {} };
+    }
+    const hasClick = bundle.events.some((event) => event.checkpoint === 'click');
+
+    acc[url].totalPageviews += bundle.weight;
+    if (hasClick) {
+      acc[url].sessionsWithClick += bundle.weight;
+    }
+    if (channel) {
+      if (!acc[url].channels[channel]) {
+        acc[url].channels[channel] = { sessionsWithClick: 0, totalPageviews: 0 };
+      }
+      acc[url].channels[channel].totalPageviews += bundle.weight;
+      if (hasClick) {
+        acc[url].channels[channel].sessionsWithClick += bundle.weight;
+      }
+    }
+    return acc;
+  }, {});
+  return Object.entries(aggregated)
+    .reduce((acc, [url, { sessionsWithClick, totalPageviews, channels }]) => {
+      acc[url].value = (sessionsWithClick / totalPageviews);
+      acc[url].channels = Object.entries(channels)
+        .reduce((_acc, [source, { _sessionsWithClick, _totalPageviews }]) => {
+          // eslint-disable-next-line no-param-reassign
+          _acc[source] = (_sessionsWithClick / _totalPageviews);
+          return _acc;
+        }, {});
+      return acc;
+    }, {});
+}
+
+/**
  * Calculates the Click-Through Rate (CTR) average for the entire site.
  * CTR is defined as the total number of sessions with at least one click event
  * divided by the total number of pageviews for the entire site.
@@ -78,5 +127,6 @@ function getSiteAvgCTR(bundles) {
 export {
   getSiteAvgCTR,
   getCTRByUrl,
+  getCTRByUrlAndChannel,
   pageviewsByUrl,
 };

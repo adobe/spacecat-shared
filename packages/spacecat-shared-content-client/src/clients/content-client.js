@@ -158,7 +158,7 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
   const noCycleRedirects = [];
   currentRedirects.forEach((r) => redirectsGraph.addEdge(r.from, r.to));
   if (hasCycle(redirectsGraph)) {
-    throw new Error('Redirect cycle detected');
+    throw new Error('Redirect cycle detected in current redirects');
   }
   newRedirects.forEach((r) => {
     redirectsGraph.addEdge(r.from, r.to);

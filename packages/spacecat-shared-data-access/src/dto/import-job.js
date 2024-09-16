@@ -43,6 +43,7 @@ export const ImportJobDto = {
   /**
    * Converts a DynamoDB item into an ImportJob object.
    * @param {object} dynamoItem - The DynamoDB item to convert.
+   * @returns {ImportJob} - The ImportJob object.
    */
   fromDynamoItem: (dynamoItem) => {
     const importJobData = {

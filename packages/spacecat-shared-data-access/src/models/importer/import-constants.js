@@ -9,12 +9,15 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 /**
  * Supported Import Options.
  */
 export const ImportOptions = {
   ENABLE_JAVASCRIPT: 'enableJavascript',
   PAGE_LOAD_TIMEOUT: 'pageLoadTimeout',
+
+  // the following 4 options need to be removed
   SAVE_AS_DOCX: 'saveAsDocx',
   HAS_CUSTOM_HEADERS: 'hasCustomHeaders',
   HAS_CUSTOM_IMPORT_JS: 'hasCustomImportJs',

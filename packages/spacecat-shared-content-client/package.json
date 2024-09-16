@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-content-client",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "Shared modules of the Spacecat Services - Content Client",
   "type": "module",
   "engines": {
@@ -44,8 +44,8 @@
     "chai-as-promised": "8.0.0",
     "esmock": "2.6.7",
     "nock": "13.5.4",
-    "sinon": "18.0.0",
+    "sinon": "18.0.1",
     "sinon-chai": "4.0.0",
-    "typescript": "5.5.4"
+    "typescript": "5.6.2"
   }
 }

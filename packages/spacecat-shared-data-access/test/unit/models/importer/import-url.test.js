@@ -42,6 +42,10 @@ describe('ImportUrl Model tests', () => {
     it('throws an error if status is invalid', () => {
       expect(() => createImportUrl({ ...validImportUrlData, status: 'invalid' })).to.throw('Invalid Import URL status: invalid');
     });
+
+    it('throws an error if jobId is not a valid string', () => {
+      expect(() => createImportUrl({ ...validImportUrlData, jobId: null })).to.throw('Invalid Job ID: null');
+    });
   });
   describe('Import URL Functionality Tests', () => {
     let importUrl;

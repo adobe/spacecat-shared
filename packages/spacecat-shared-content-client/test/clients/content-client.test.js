@@ -16,8 +16,10 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import esmock from 'esmock';
 import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 
 use(chaiAsPromised);
+use(sinonChai);
 
 describe('ContentClient', () => {
   let sandbox;
@@ -394,13 +396,37 @@ describe('ContentClient', () => {
       await client.updateRedirects(newRedirects);
       await expect(client.rawClient.appendRedirects.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
     });
-    it('detect cycles', async () => {
+    it('detect cycles in new redirects', async () => {
+      const newRedirects = [
+        { from: '/test-D', to: '/test-A' },
+        { from: '/test-C', to: '/test-E' },
+      ];
+      ContentClient = await createContentClientForRedirects(existingRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await client.updateRedirects(newRedirects);
+      await expect(client.rawClient.appendRedirects.calledOnceWith(sinon.match([{ from: '/test-C', to: '/test-E' }]))).to.be.true;
+    });
+    it('detect cycles in current redirects', async () => {
+      const newRedirects = [
+        { from: '/test-I', to: '/test-J' },
+      ];
+      const cycleRedirects = [
+        { from: '/test-A', to: '/test-C' },
+        { from: '/test-C', to: '/test-E' },
+        { from: '/test-E', to: '/test-A' },
+      ];
+      ContentClient = await createContentClientForRedirects(cycleRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await expect(client.updateRedirects(newRedirects)).to.be.rejectedWith('Redirect cycle detected');
+    });
+    it('does not call rawClient when there are no valid redirects', async () => {
       const newRedirects = [
         { from: '/test-D', to: '/test-A' },
       ];
       ContentClient = await createContentClientForRedirects(existingRedirects);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
-      await expect(client.updateRedirects(newRedirects)).to.be.rejectedWith('Redirect cycle detected');
+      await client.updateRedirects(newRedirects);
+      await expect(client.rawClient.appendRedirects).to.not.have.been.called;
     });
   });
 });

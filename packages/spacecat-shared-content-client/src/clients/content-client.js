@@ -134,7 +134,7 @@ const validateRedirects = (redirects) => {
   }
 };
 
-const removeDuplicatedRedirects = (currentRedirects, newRedirects) => {
+const removeDuplicatedRedirects = (currentRedirects, newRedirects, log) => {
   const redirectsSet = new Set();
   currentRedirects.map(({ from, to }) => `${from}:${to}`)
     .forEach((redirectRule) => redirectsSet.add(redirectRule));
@@ -146,18 +146,30 @@ const removeDuplicatedRedirects = (currentRedirects, newRedirects) => {
     if (!redirectsSet.has(strRedirectRule)) {
       redirectsSet.add(strRedirectRule);
       newRedirectsClean.push(redirectRule);
-    } // TODO: report duplicated entry??
+    } else {
+      log.info(`Duplicate redirect rule detected: ${strRedirectRule}`);
+    }
   });
   return newRedirectsClean;
 };
 
-const detectRedirectLoops = (currentRedirects, newRedirects) => {
+const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
   const redirectsGraph = new Graph();
-  [...currentRedirects, ...newRedirects].forEach((r) => redirectsGraph.addEdge(r.from, r.to));
+  const noCycleRedirects = [];
+  currentRedirects.forEach((r) => redirectsGraph.addEdge(r.from, r.to));
   if (hasCycle(redirectsGraph)) {
-    // TODO: report cycle path??
     throw new Error('Redirect cycle detected');
   }
+  newRedirects.forEach((r) => {
+    redirectsGraph.addEdge(r.from, r.to);
+    if (hasCycle(redirectsGraph)) {
+      log.info(`Redirect loop detected: ${r.from} -> ${r.to}`);
+      redirectsGraph.removeEdge(r.from, r.to);
+    } else {
+      noCycleRedirects.push(r);
+    }
+  });
+  return noCycleRedirects;
 };
 
 export default class ContentClient {
@@ -282,10 +294,21 @@ export default class ContentClient {
     const currentRedirects = await this.getRedirects();
 
     // validate combination of existing and new redirects
-    const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects);
-    detectRedirectLoops(currentRedirects, cleanNewRedirects);
+    const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects, this.log);
+    if (cleanNewRedirects.length === 0) {
+      this.log.info('No valid redirects to update');
+      return;
+    }
+    const noCycleRedirects = removeRedirectLoops(currentRedirects, cleanNewRedirects, this.log);
+    if (noCycleRedirects.length === 0) {
+      this.log.info('No valid redirects to update');
+      return;
+    }
+    if (noCycleRedirects.length !== cleanNewRedirects.length) {
+      this.log.info(`Removed ${cleanNewRedirects.length - noCycleRedirects.length} redirect loops`);
+    }
 
-    const response = await this.rawClient.appendRedirects(cleanNewRedirects);
+    const response = await this.rawClient.appendRedirects(noCycleRedirects);
     if (response.status !== 200) {
       throw new Error('Failed to update redirects');
     }

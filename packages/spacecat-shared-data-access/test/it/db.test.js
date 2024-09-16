@@ -11,6 +11,7 @@
  */
 
 /* eslint-env mocha */
+/* eslint-disable no-console */
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
@@ -137,7 +138,7 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
   const NUMBER_OF_EXPERIMENTS = 3;
 
-  before(async function () {
+  before(async function beforeSuite() {
     this.timeout(30000);
 
     process.env.AWS_REGION = 'local';

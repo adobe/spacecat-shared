@@ -278,7 +278,7 @@ describe('ContentClient', () => {
         ['description', ''], // Invalid value
       ]);
 
-      await expect(client.updatePageMetadata('/test-path', metadata)).to.be.rejectedWith('Metadata value for key description must be a string');
+      await expect(client.updatePageMetadata('/test-path', metadata)).to.be.rejectedWith('Metadata value for key description must be a object that has a value and type');
     });
 
     it('overwrites existing metadata by default when updating', async () => {
@@ -305,11 +305,11 @@ describe('ContentClient', () => {
 
     it('merges without overwriting when overwrite option is false', async () => {
       const newMetadata = new Map([
-        ['description', 'New description'],
-        ['author', 'New Author'],
+        ['description', { value: 'New description', type: 'text' }],
+        ['author', { value: 'New Author', type: 'text' }],
       ]);
       const expectedMetadata = new Map([
-        ['description', 'Test description'], // Original key remains
+        ['description', { value: 'Test description' }], // Original key remains
         ['keywords', 'test, metadata'], // Original key remains
         ['title', 'Test Page'], // Original key remains
         ['author', 'New Author'], // Added

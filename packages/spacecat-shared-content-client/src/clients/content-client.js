@@ -91,8 +91,8 @@ const validateMetadata = (metadata) => {
       throw new Error(`Metadata key ${key} must be a string`);
     }
 
-    if (!hasText(value)) {
-      throw new Error(`Metadata value for key ${key} must be a string`);
+    if (!hasText(value.value) || !hasText(value.type)) {
+      throw new Error(`Metadata value for key ${key} must be a object that has a value and type`);
     }
   }
 };

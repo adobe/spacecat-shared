@@ -37,11 +37,11 @@ describe('ContentClient', () => {
     getConfig: () => ({ content: { source: { type: 'onedrive' } } }),
   };
 
-  const sampleMetadata = new Map([
-    ['title', 'Test Page'],
-    ['description', 'Test description'],
-    ['keywords', 'test, metadata'],
-  ]);
+  const sampleMetadata = new Map(
+    [['title', { value: 'Test Page', type: 'text' }],
+      ['description', { value: 'Test description', type: 'text' }],
+      ['keywords', { value: 'test, metadata', type: 'text' }]],
+  );
 
   const createContentClient = async (getPageMetadata) => {
     const contentSDK = sinon.stub().returns({
@@ -221,8 +221,8 @@ describe('ContentClient', () => {
     it('throws an error if raw client has non-200 status', async () => {
       ContentClient = await createErrorContentClient(false, true, 'Error updating page metadata');
       const metadata = new Map([
-        ['lang', 'en'],
-        ['keywords', 'test, metadata'],
+        ['lang', { value: 'en', type: 'text' }],
+        ['keywords', { value: 'test, metadata', type: 'text' }],
       ]);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       const path = '/test-path';
@@ -231,8 +231,8 @@ describe('ContentClient', () => {
 
     it('updates page metadata with valid metadata', async () => {
       const metadata = new Map([
-        ['lang', 'en'],
-        ['keywords', 'test, metadata'],
+        ['lang', { value: 'en', type: 'text' }],
+        ['keywords', { value: 'test, metadata', type: 'text' }],
       ]);
       const expectedMetadata = new Map([...sampleMetadata, ...metadata]);
 
@@ -283,14 +283,14 @@ describe('ContentClient', () => {
 
     it('overwrites existing metadata by default when updating', async () => {
       const newMetadata = new Map([
-        ['description', 'New description'],
-        ['author', 'New Author'],
+        ['description', { value: 'New description', type: 'text' }],
+        ['author', { value: 'New Author', type: 'text' }],
       ]);
       const expectedMetadata = new Map([
-        ['title', 'Test Page'], // Original key remains
-        ['description', 'New description'], // Overwritten
-        ['author', 'New Author'], // Added
-        ['keywords', 'test, metadata'], // Original key remains
+        ['title', { value: 'Test Page', type: 'text' }], // Original key remains
+        ['description', { value: 'New description', type: 'text' }], // Overwritten
+        ['author', { value: 'New Author', type: 'text' }], // Added
+        ['keywords', { value: 'test, metadata', type: 'text' }], // Original key remains
       ]);
 
       ContentClient = await createContentClient(sampleMetadata);
@@ -309,10 +309,10 @@ describe('ContentClient', () => {
         ['author', { value: 'New Author', type: 'text' }],
       ]);
       const expectedMetadata = new Map([
-        ['description', { value: 'Test description' }], // Original key remains
-        ['keywords', 'test, metadata'], // Original key remains
-        ['title', 'Test Page'], // Original key remains
-        ['author', 'New Author'], // Added
+        ['description', { value: 'Test description', type: 'text' }], // Original key remains
+        ['keywords', { value: 'test, metadata', type: 'text' }], // Original key remains
+        ['title', { value: 'Test Page', type: 'text' }], // Original key remains
+        ['author', { value: 'New Author', type: 'text' }], // Added
       ]);
 
       ContentClient = await createContentClient(sampleMetadata);

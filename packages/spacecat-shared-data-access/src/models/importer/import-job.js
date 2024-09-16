@@ -16,6 +16,19 @@ import {
 import { Base } from '../base.js';
 import { ImportJobStatus, ImportOptions } from './import-constants.js';
 
+export const jobToApiMap = [
+  ['id', 'id'],
+  ['baseURL', 'baseURL'],
+  ['options', 'options'],
+  ['startTime', 'startTime'],
+  ['endTime', 'endTime'],
+  ['duration', 'duration'],
+  ['status', 'status'],
+  ['urlCount', 'urlCount'],
+  ['initiatedBy', 'initiatedBy'],
+  ['progress', 'progress'],
+];
+
 /**
  * Creates a new ImportJob object.
  *
@@ -34,10 +47,17 @@ const ImportJob = (data) => {
   self.getDuration = () => self.state.duration;
   self.getStatus = () => self.state.status;
   self.getUrlCount = () => self.state.urlCount;
-  self.getSuccessCount = () => self.state.successCount;
-  self.getFailedCount = () => self.state.failedCount;
   self.getImportQueueId = () => self.state.importQueueId;
   self.getInitiatedBy = () => self.state.initiatedBy;
+
+  // the progress is a derived property from querying the status of the import urls table
+  self.getProgress = () => self.state.progress || {
+    running: 0,
+    failed: 0,
+    completed: 0,
+    pending: 0,
+    redirect: 0,
+  };
 
   /**
    * Updates the state of the ImportJob.
@@ -94,27 +114,6 @@ const ImportJob = (data) => {
   self.updateUrlCount = (urlCount) => updateState('urlCount', urlCount, (value) => {
     if (!isInteger(value)) {
       throw new Error(`Invalid url count during update: ${urlCount}`);
-    }
-  });
-
-  /**
-   * Updates the success count of the ImportJob.
-   * @param {number} successCount - The new success count.
-   */
-  self.updateSuccessCount = (successCount) => updateState('successCount', successCount, (value) => {
-    if (!isInteger(value)) {
-      throw new Error(`Invalid success count during update: ${value}`);
-    }
-  });
-
-  /**
-   * Updates the failed count of the ImportJob.
-   * @param {number} failedCount - The new failed count.
-   * @returns {{ImportJob}} The updated ImportJob object.
-   */
-  self.updateFailedCount = (failedCount) => updateState('failedCount', failedCount, (value) => {
-    if (!isInteger(value)) {
-      throw new Error(`Invalid failed count during update: ${value}`);
     }
   });
 
@@ -184,8 +183,10 @@ export const createImportJob = (data) => {
       throw new Error(`Invalid options: ${newState.options}`);
     }
 
-    const invalidOptions = Object.keys(newState.options)
-      .filter((key) => !Object.values(ImportOptions).includes(key));
+    const invalidOptions = Object.keys(newState.options).filter(
+      (key) => !Object.values(ImportOptions)
+        .some((value) => value.toLowerCase() === key.toLowerCase()),
+    );
 
     if (invalidOptions.length > 0) {
       throw new Error(`Invalid options: ${invalidOptions}`);

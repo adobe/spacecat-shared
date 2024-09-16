@@ -1000,6 +1000,22 @@
           "Projection": {
             "ProjectionType": "ALL"
           }
+        },
+        {
+          "IndexName": "spacecat-services-all-import-jobs-by-date-range",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "GSI1PK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "startTime",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
         }
       ],
       "DataAccess": {

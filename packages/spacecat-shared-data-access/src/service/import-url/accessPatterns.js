@@ -64,7 +64,7 @@ export const updateImportUrl = async (dynamoClient, config, log, importUrl) => {
   );
 
   if (!isObject(existingImportUrl)) {
-    throw new Error(`Import Url with ID:${importUrl.getId()} does not exist`);
+    throw new Error(`Import Url with ID: ${importUrl.getId()} does not exist`);
   }
 
   await dynamoClient.putItem(config.tableNameImportUrls, ImportUrlDto.toDynamoItem(importUrl));
@@ -103,7 +103,7 @@ export const getImportUrlsByJobIdAndStatus = async (dynamoClient, config, log, j
  * @param {Object} config
  * @param {Logger} log
  * @param {string} jobId
- * @returns {Promise<ImportUrl[]>}
+ * @returns {Promise<ImportUrlDto[]>}
  */
 export const getImportUrlsByJobId = async (dynamoClient, config, log, jobId) => {
   const items = await dynamoClient.query({
@@ -114,5 +114,6 @@ export const getImportUrlsByJobId = async (dynamoClient, config, log, jobId) => 
       ':jobId': jobId,
     },
   });
-  return items.map((item) => ImportUrlDto.fromDynamoItem(item));
+
+  return items ? items.map(ImportUrlDto.fromDynamoItem) : null;
 };

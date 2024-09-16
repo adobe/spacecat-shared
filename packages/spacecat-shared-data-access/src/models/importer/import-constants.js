@@ -15,6 +15,10 @@
 export const ImportOptions = {
   ENABLE_JAVASCRIPT: 'enableJavascript',
   PAGE_LOAD_TIMEOUT: 'pageLoadTimeout',
+  SAVE_AS_DOCX: 'saveAsDocx',
+  HAS_CUSTOM_HEADERS: 'hasCustomHeaders',
+  HAS_CUSTOM_IMPORT_JS: 'hasCustomImportJs',
+  SCROLL_TO_BOTTOM: 'scrollToBottom',
 };
 
 /**

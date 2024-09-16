@@ -141,16 +141,6 @@ describe('ImportJob Model tests', () => {
       expect(importJob.getUrlCount()).to.equal(10);
     });
 
-    it('updates success count of import job', () => {
-      importJob.updateSuccessCount(10);
-      expect(importJob.getSuccessCount()).to.equal(10);
-    });
-
-    it('updates failed count of import job', () => {
-      importJob.updateFailedCount(5);
-      expect(importJob.getFailedCount()).to.equal(5);
-    });
-
     it('updates import queue id of import job', () => {
       importJob.updateImportQueueId('123');
       expect(importJob.getImportQueueId()).to.equal('123');
@@ -166,14 +156,6 @@ describe('ImportJob Model tests', () => {
 
     it('throws an error if duration is not a valid number during an update', () => {
       expect(() => importJob.updateDuration('invalid-duration')).to.throw('Invalid duration during update: invalid-duration');
-    });
-
-    it('throws an error if success count is not a valid number during an update', () => {
-      expect(() => importJob.updateSuccessCount('invalid-count')).to.throw('Invalid success count during update: invalid-count');
-    });
-
-    it('throws an error if failed count is not a valid number during an update', () => {
-      expect(() => importJob.updateFailedCount('invalid-count')).to.throw('Invalid failed count during update: invalid-count');
     });
 
     it('throws an error if url count is not a valid number during an update', () => {
@@ -200,6 +182,16 @@ describe('ImportJob Model tests', () => {
 
     it('retrieves the startTime of the import job', () => {
       expect(importJob.getStartTime()).to.equal('2024-05-29T14:26:00.000Z');
+    });
+
+    it('retrieves the progress of the job', () => {
+      expect(importJob.getProgress()).to.deep.equal({
+        running: 0,
+        failed: 0,
+        completed: 0,
+        pending: 0,
+        redirect: 0,
+      });
     });
   });
 });

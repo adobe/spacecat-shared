@@ -10,6 +10,22 @@
  * governing permissions and limitations under the License.
  */
 
+// see packages/spacecat-shared-data-access/src/models/importer/import-constants.js
+export declare const ImportJobStatus: {
+  readonly RUNNING: 'RUNNING';
+  readonly COMPLETE: 'COMPLETE';
+  readonly FAILED: 'FAILED';
+};
+
+// packages/spacecat-shared-data-access/src/models/importer/import-constants.js
+export declare const ImportUrlStatus: {
+  readonly PENDING: 'PENDING';
+  readonly REDIRECT: 'REDIRECT';
+  readonly RUNNING: 'RUNNING';
+  readonly COMPLETE: 'COMPLETE';
+  readonly FAILED: 'FAILED';
+};
+
 // TODO: introduce AuditType interface or Scores interface
 
 /**
@@ -463,7 +479,7 @@ export interface ImportJob {
   /**
    * Retrieves the status of the import job.
    */
-  getStatus: () => string;
+  getStatus: () => typeof ImportJobStatus;
 
   /**
    * Retrieves the baseURL of the import job.
@@ -515,28 +531,38 @@ export interface ImportJob {
    */
   getInitiatedBy: () => object;
 
+  /**
+   * Retrieves the progress of the import job.
+   */
+  getProgress: () => {
+    completed: number;
+    failed: number;
+    pending: number;
+    running: number;
+    redirect: number;
+  };
 }
 
 export interface ImportUrl {
   /**
    * Retrieves the ID of the import URL.
    */
-    getId: () => string;
+  getId: () => string;
 
   /**
    * Retrieves the status of the import URL.
    */
-    getStatus: () => string;
+  getStatus: () => typeof ImportUrlStatus;
 
   /**
    * Retrieves the URL of the import URL.
    */
-    getUrl: () => string;
+  getUrl: () => string;
 
   /**
    * Retrieves the job ID of the import URL.
    */
-    getJobId: () => string;
+  getJobId: () => string;
 
   /**
    * The reason that the import of a URL failed.
@@ -867,13 +893,3 @@ export function createDataAccess(
   config: DataAccessConfig,
   logger: object,
 ): DataAccess;
-
-export interface ImportJobStatus {
-  RUNNING: string,
-  COMPLETE: string,
-  FAILED: string,
-}
-
-export interface ImportUrlStatus extends ImportJobStatus {
-  PENDING: string,
-}

@@ -18,6 +18,7 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { importJobFunctions } from '../../../../src/service/import-job/index.js';
 import { createImportJob } from '../../../../src/models/importer/import-job.js';
+import { ImportUrlStatus } from '../../../../src/index.js';
 
 use(sinonChai);
 use(chaiAsPromised);
@@ -66,10 +67,29 @@ describe('Import Job Tests', () => {
             userAgent: 'test-user-agent',
           },
         };
+
+        const urls = [];
+        Object.values(ImportUrlStatus).forEach((status) => {
+          const mockImportUrl = {
+            id: `test-import-url-${status}`,
+            jobId: 'test-id',
+            status,
+            url: `https://www.test.com/${status}`,
+          };
+          urls.push(mockImportUrl);
+        });
+
         mockDynamoClient.getItem.resolves(mockImportJob);
+        mockDynamoClient.query.resolves(urls);
+
         const result = await exportedFunctions.getImportJobByID('test-id');
 
         expect(result.state.id).to.equal('test-id');
+        expect(result.state.progress.pending).to.equal(1);
+        expect(result.state.progress.redirect).to.equal(1);
+        expect(result.state.progress.running).to.equal(1);
+        expect(result.state.progress.completed).to.equal(1);
+        expect(result.state.progress.failed).to.equal(1);
       });
 
       it('should return null if item is not found', async () => {

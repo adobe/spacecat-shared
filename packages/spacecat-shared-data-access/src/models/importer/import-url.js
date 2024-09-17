@@ -36,7 +36,7 @@ const ImportUrl = (data) => {
    * Updates the state of the ImportJob.
    * @param key - The key to update.
    * @param value - The new value.
-   * @param validator - An optional validation function to use before updating the value.
+   * @param {Function} validator - An optional validation function to use before updating the value.
    * The validator can return false to indicate that the value isn't worth throwing an exception,
    * but continue to use the previous value.
    */

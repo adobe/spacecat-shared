@@ -68,8 +68,6 @@ function handler(bundles) {
     })
     .reduce(collectByUrlAndTrafficSource, {});
 
-  console.log('trafficSources before transform', trafficSources);
-
   return transformFormat(trafficSources)
     .sort((a, b) => b.total - a.total); // sort desc by total views
 }

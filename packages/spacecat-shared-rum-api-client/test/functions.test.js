@@ -69,7 +69,6 @@ describe('Query functions', () => {
       bundlesWithTraffic.rumBundles,
       { interval: 7 },
     );
-    console.log(JSON.stringify(highInorganicHighBounceResult, null, 2));
     expect(expectedHighOrganicLowCTRResult).to.eql(highInorganicHighBounceResult);
   });
 });

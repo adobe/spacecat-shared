@@ -23,11 +23,8 @@ function convertToOpportunity(traffic) {
     url, total, ctr, paid, owned, earned, channels, siteAvgCTR, ctrByUrlAndChannel,
   } = traffic;
 
-  console.log('channels', channels);
-
   const topChannels = Object.entries(channels)
     .sort((a, b) => b[1].total - a[1].total).slice(0, CHANNELS_TO_CONSIDER);
-  console.log('topChannels', topChannels);
   const opportunity = {
     type: 'high-organic-low-ctr',
     page: url,
@@ -67,7 +64,6 @@ function convertToOpportunity(traffic) {
         paid: _paid,
       },
     };
-    console.log('trafficMetrics', trafficMetrics);
     const ctrMetrics = {
       type: 'ctr',
       referrer: channel,
@@ -93,9 +89,7 @@ function handler(bundles, opts = {}) {
   const { interval = 7 } = opts;
 
   const trafficByUrl = trafficAcquisition.handler(bundles);
-  console.log('trafficByUrl', trafficByUrl);
   const ctrByUrlAndChannel = getCTRByUrlAndChannel(bundles);
-  console.log('ctrByUrlAndChannel', ctrByUrlAndChannel);
   const siteAvgCTR = getSiteAvgCTR(bundles);
 
   return trafficByUrl.filter((traffic) => traffic.total > interval * DAILY_PAGEVIEW_THRESHOLD)

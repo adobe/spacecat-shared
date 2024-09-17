@@ -976,6 +976,10 @@
           "AttributeType": "N"
         },
         {
+          "AttributeName": "redirectCount",
+          "AttributeType": "N"
+        },
+        {
           "AttributeName": "urlCount",
           "AttributeType": "N"
         },

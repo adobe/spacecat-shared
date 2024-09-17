@@ -1055,13 +1055,6 @@ describe('DynamoDB Integration Test', async () => {
         expect(updatedJob.getDuration()).to.be.equal(1234);
         expect(updatedJob.getUrlCount()).to.be.equal(100);
         expect(updatedJob.getImportQueueId()).to.be.equal('Q-456');
-        expect(updatedJob.getProgress()).to.deep.equal({
-          running: 0,
-          failed: 0,
-          completed: 0,
-          pending: 0,
-          redirect: 0,
-        });
         expect(updatedJob.getOptions()).to.deep.equal({
           [ImportOptions.ENABLE_JAVASCRIPT]: true,
         });
@@ -1079,13 +1072,6 @@ describe('DynamoDB Integration Test', async () => {
         const job = await createNewImportJob();
         const jobEntry = await dataAccess.getImportJobByID(job.getId());
         expect(job.getId()).to.be.equal(jobEntry.getId());
-        expect(job.getProgress()).to.deep.equal({
-          running: 0,
-          failed: 0,
-          completed: 0,
-          pending: 0,
-          redirect: 0,
-        });
       });
 
       it('Verify getImportJobsByDateRange', async () => {

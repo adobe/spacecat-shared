@@ -85,11 +85,6 @@ describe('Import Job Tests', () => {
         const result = await exportedFunctions.getImportJobByID('test-id');
 
         expect(result.state.id).to.equal('test-id');
-        expect(result.state.progress.pending).to.equal(1);
-        expect(result.state.progress.redirect).to.equal(1);
-        expect(result.state.progress.running).to.equal(1);
-        expect(result.state.progress.completed).to.equal(1);
-        expect(result.state.progress.failed).to.equal(1);
       });
 
       it('should return null if item is not found', async () => {

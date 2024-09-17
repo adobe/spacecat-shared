@@ -10,11 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { isArray, isObject } from '@adobe/spacecat-shared-utils';
+import { isObject } from '@adobe/spacecat-shared-utils';
 import { ImportJobDto } from '../../dto/import-job.js';
 import { createImportJob } from '../../models/importer/import-job.js';
-import { getImportUrlsByJobId } from '../import-url/accessPatterns.js';
-import { ImportUrlStatus } from '../../models/importer/import-constants.js';
 
 /**
  * Get all Import Jobs within a specific date range
@@ -50,50 +48,12 @@ export const getImportJobsByDateRange = async (dynamoClient, config, log, startD
  * @returns {Promise<ImportJobDto> | null}
  */
 export const getImportJobByID = async (dynamoClient, config, log, id) => {
-  const jobEntity = await dynamoClient.getItem(
+  const item = await dynamoClient.getItem(
     config.tableNameImportJobs,
     { id },
   );
 
-  if (!jobEntity) {
-    return null;
-  }
-
-  const jobModel = ImportJobDto.fromDynamoItem(jobEntity);
-
-  const importUrls = await getImportUrlsByJobId(dynamoClient, config, log, id);
-
-  if (isArray(importUrls)) {
-    jobModel.state.progress = importUrls.reduce((acc, importUrl) => {
-      // eslint-disable-next-line default-case
-      switch (importUrl.state.status) {
-        case ImportUrlStatus.PENDING:
-          acc.pending += 1;
-          break;
-        case ImportUrlStatus.REDIRECT:
-          acc.redirect += 1;
-          break;
-        case ImportUrlStatus.RUNNING:
-          acc.running += 1;
-          break;
-        case ImportUrlStatus.COMPLETE:
-          acc.completed += 1;
-          break;
-        case ImportUrlStatus.FAILED:
-          acc.failed += 1;
-          break;
-      }
-      return acc;
-    }, {
-      pending: 0,
-      redirect: 0,
-      running: 0,
-      completed: 0,
-      failed: 0,
-    });
-  }
-
-  return jobModel;
+  return item ? ImportJobDto.fromDynamoItem(item) : null;
 };
 
 /**

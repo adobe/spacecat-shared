@@ -16,12 +16,6 @@
 export const ImportOptions = {
   ENABLE_JAVASCRIPT: 'enableJavascript',
   PAGE_LOAD_TIMEOUT: 'pageLoadTimeout',
-
-  // the following 4 options need to be removed
-  SAVE_AS_DOCX: 'saveAsDocx',
-  HAS_CUSTOM_HEADERS: 'hasCustomHeaders',
-  HAS_CUSTOM_IMPORT_JS: 'hasCustomImportJs',
-  SCROLL_TO_BOTTOM: 'scrollToBottom',
 };
 
 /**

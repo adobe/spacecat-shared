@@ -530,17 +530,6 @@ export interface ImportJob {
    * Retrieves the initiatedBy metadata (name, imsOrgId, imsUserId, userAgent) of the import job.
    */
   getInitiatedBy: () => object;
-
-  /**
-   * Retrieves the progress of the import job.
-   */
-  getProgress: () => {
-    completed: number;
-    failed: number;
-    pending: number;
-    running: number;
-    redirect: number;
-  };
 }
 
 export interface ImportUrl {

@@ -98,7 +98,7 @@ export const getImportUrlsByJobIdAndStatus = async (dynamoClient, config, log, j
 };
 
 /**
- * Get Import Urls by Job ID
+ * Get Import Urls by Job ID, if no urls exist an empty array is returned.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
@@ -115,5 +115,5 @@ export const getImportUrlsByJobId = async (dynamoClient, config, log, jobId) => 
     },
   });
 
-  return items ? items.map(ImportUrlDto.fromDynamoItem) : null;
+  return items ? items.map((item) => ImportUrlDto.fromDynamoItem(item)) : [];
 };

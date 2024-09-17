@@ -183,15 +183,5 @@ describe('ImportJob Model tests', () => {
     it('retrieves the startTime of the import job', () => {
       expect(importJob.getStartTime()).to.equal('2024-05-29T14:26:00.000Z');
     });
-
-    it('retrieves the progress of the job', () => {
-      expect(importJob.getProgress()).to.deep.equal({
-        running: 0,
-        failed: 0,
-        completed: 0,
-        pending: 0,
-        redirect: 0,
-      });
-    });
   });
 });

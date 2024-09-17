@@ -419,6 +419,16 @@ describe('ContentClient', () => {
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.updateRedirects(newRedirects)).to.be.rejectedWith('Redirect cycle detected');
     });
+    it('does not call rawClient when all redirects are duplicates', async () => {
+      const newRedirects = [
+        { from: '/test-A', to: '/test-B' },
+        { from: '/test-C', to: '/test-D' },
+      ];
+      ContentClient = await createContentClientForRedirects(existingRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await client.updateRedirects(newRedirects);
+      await expect(client.rawClient.appendRedirects).to.not.have.been.called;
+    });
     it('does not call rawClient when there are no valid redirects', async () => {
       const newRedirects = [
         { from: '/test-D', to: '/test-A' },

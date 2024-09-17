@@ -35,6 +35,7 @@ export const ImportUrlDto = {
   /**
    * Converts a DynamoDB item into an ImportUrl object.
    * @param {object} dynamoItem - The DynamoDB item to convert.
+   * @returns {ImportUrl} - The ImportUrl object.
    */
   fromDynamoItem: (dynamoItem) => {
     const importUrlData = {

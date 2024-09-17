@@ -57,7 +57,8 @@ const ImportJob = (data) => {
 
   /**
    * Updates the end time of the ImportJob.
-   * @param {string} endTime - The new end time.
+   * @param {string} endTime - The new end time in JavaScript ISO date string in Zulu (UTC)
+   * timezone. eg. 2024-05-29T14:36:00.000Z.
    */
   self.updateEndTime = (endTime) => updateState('endTime', endTime, (value) => {
     if (!isIsoDate(value)) {

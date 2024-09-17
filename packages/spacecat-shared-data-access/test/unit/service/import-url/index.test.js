@@ -69,6 +69,7 @@ describe('Import Url Tests', () => {
         const mockImportUrl = {
           id: 'test-id',
           status: 'RUNNING',
+          jobId: 'test-job-id',
           url: 'https://www.test.com',
         };
         await exportedFunctions.createNewImportUrl(mockImportUrl);
@@ -80,6 +81,7 @@ describe('Import Url Tests', () => {
       it('should update an existing importUrl with the correct status', async () => {
         const mockImportUrl = {
           id: 'test-id',
+          jobId: 'test-job-id',
           status: 'RUNNING',
           url: 'https://www.test.com',
         };
@@ -97,6 +99,7 @@ describe('Import Url Tests', () => {
       it('should throw an error when the importUrl does not exist', async () => {
         const mockImportUrl = {
           id: 'test-id',
+          jobId: 'test-job-id',
           status: 'RUNNING',
           url: 'https://www.test.com',
         };

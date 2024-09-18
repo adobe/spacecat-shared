@@ -11,77 +11,82 @@
  */
 
 import { DataChunks } from '../common/cruncher.js';
+import { pageviewsByUrl } from '../common/aggregateFns.js';
 
 const EXPERIMENT_CHECKPOINT = ['experiment'];
 const METRIC_CHECKPOINTS = ['click', 'convert', 'formsubmit'];
 const CHECKPOINTS = [...EXPERIMENT_CHECKPOINT, ...METRIC_CHECKPOINTS];
+const DELIMITER = '\u3343';
 
-const sourceOf = (c) => (b) => b.events.filter((e) => e.checkpoint === c).map((e) => e.source);
-const targetOf = (c) => (b) => b.events.filter((e) => e.checkpoint === c).map((e) => e.target);
+function createOrGetExperiment(acc, url, experiment) {
+  if (!acc[url]) acc[url] = [];
+  const experimentIndex = acc[url].findIndex((item) => item.experiment === experiment);
+  if (experimentIndex === -1) {
+    acc[url].push({
+      experiment,
+      variants: [],
+    });
+    return acc[url][acc[url].length - 1];
+  }
+  return acc[url][experimentIndex];
+}
 
-function handler(bundles) {
+function collect(bundles, checkpoint) {
+  return bundles.reduce((acc, cur) => {
+    const sources = [...new Set(cur.events.filter((event) => event.checkpoint === checkpoint)
+      .map((event) => event.source))];
+    sources.forEach((source) => {
+      if (!acc[source]) acc[source] = { value: 0, samples: 0 };
+      acc[source].value += cur.weight;
+      acc[source].samples += 1;
+    });
+    if (sources.length > 0) {
+      if (!acc['*']) acc['*'] = { value: 0, samples: 0 };
+      acc['*'].value += cur.weight;
+      acc['*'].samples += 1;
+    }
+    return acc;
+  }, {});
+}
+
+function count(bundles, ...checkpoints) {
+  return bundles.filter((b) => b.events.some((e) => checkpoints.includes(e.checkpoint)))
+    .reduce((acc, cur) => {
+      acc += cur.weight;
+      return acc;
+    }, 0);
+}
+
+function handler(chunks) {
   const dataChunks = new DataChunks();
 
-  dataChunks.load(bundles);
+  dataChunks.load(chunks);
 
-  dataChunks.addFacet('urls', (bundle) => bundle.url);
-  dataChunks.addFacet('experiments', sourceOf('experiment'));
-  dataChunks.addFacet('variants', targetOf('experiment'));
-  dataChunks.addFacet('clicks', sourceOf('click'));
-  dataChunks.addFacet('urlExperimentVariant', (bundle) => bundle.events.filter((e) => e.checkpoint === 'experiment')
-    .map((e) => `${bundle.url}\u3343${e.source}\u3343${e.target}`));
+  const groupedChunks = dataChunks.group((bundle) => bundle.events.filter((event) => event.checkpoint === 'experiment')
+    .map((e) => `${bundle.url}${DELIMITER}${e.source}${DELIMITER}${e.target}`));
 
-  const {
-    urls, experiments, variants, clicks, urlExperimentVariant,
-  } = dataChunks.facets;
-
-  const result = {};
-
-  urls.forEach((urlFacet) => {
-    result[urlFacet.value] = [];
-
-    dataChunks.facets.experiments.forEach((experimentFacet) => {
-      const experiment = {
-        experiment: experimentFacet.value,
-        variants: [],
-      };
-
-      let found = false;
-
-      dataChunks.facets.variants.forEach((variantFacet) => {
-        const filtered = dataChunks.filterBundles(urlFacet.entries, {
-          urlExperimentVariant: [`${urlFacet.value}\u3343${experimentFacet.value}\u3343${variantFacet.value}`],
-        });
-
-        if (filtered.length > 0) found = true;
-
-        const click = filtered.reduce((acc, cur) => {
-          [...new Set(cur.events.filter((e) => e.checkpoint === 'click')
-            .map((e) => e.source))].forEach((source) => {
-            if (!acc[source]) acc[source] = 0;
-            acc[source] += cur.weight;
-          });
-          return acc;
-        }, {});
-
-        experiment.variants.push({
-          name: variantFacet.value,
-          click,
-          views: filtered.reduce((acc, cur) => {
-            acc += cur.weight;
-            return acc;
-          }, 0),
-        });
-
-        console.log();
+  return Object.entries(groupedChunks)
+    .reduce((acc, [key, bundles]) => {
+      const [url, experimentName, variant] = key.split(DELIMITER);
+      const experiment = createOrGetExperiment(acc, url, experimentName);
+      experiment.variants.push({
+        name: variant,
+        views: pageviewsByUrl(bundles)[url],
+        samples: bundles.length,
+        click: collect(bundles, 'click'),
+        convert: collect(bundles, 'convert'),
+        formsubmit: collect(bundles, 'formsubmit'),
+        interactionsCount: count(bundles, 'click', 'convert', 'formsubmit'),
       });
 
-      if (found) result[urlFacet.value].push(experiment);
-    });
-  });
-
-  console.log();
-  return result;
+      const sorted = [
+        ...(experiment.inferredStartDate ? [experiment.inferredStartDate] : []),
+        ...(experiment.inferredEndDate ? [experiment.inferredEndDate] : []),
+        ...bundles.map((b) => b.time)].sort();
+      experiment.inferredStartDate = sorted.shift();
+      experiment.inferredEndDate = sorted.pop();
+      return acc;
+    }, {});
 }
 
 export default {

@@ -16,71 +16,128 @@ const EXPERIMENT_CHECKPOINT = ['experiment'];
 const METRIC_CHECKPOINTS = ['click', 'convert', 'formsubmit'];
 const CHECKPOINTS = [...EXPERIMENT_CHECKPOINT, ...METRIC_CHECKPOINTS];
 
-const sourceOf = (c) => (b) => b.events.filter((e) => e.checkpoint === c).map((e) => e.source);
-const targetOf = (c) => (b) => b.events.filter((e) => e.checkpoint === c).map((e) => e.target);
+const values = (source) => [...new Set(source.values.flatMap((v) => v))];
+const totals = (c) => (bundle) => {
+  const result = [...new Set(bundle.events.filter((e) => e.checkpoint === c
+    && e.source).map((e) => e.source))];
+  return result.length > 0 ? result : undefined;
+};
+const weight = (c) => (bundle) => (bundle.events.find((e) => e.checkpoint === c)
+  ? bundle.weight : undefined);
 
 function handler(bundles) {
   const dataChunks = new DataChunks();
 
   dataChunks.load(bundles);
 
-  dataChunks.addFacet('urls', (bundle) => bundle.url);
-  dataChunks.addFacet('experiments', sourceOf('experiment'));
-  dataChunks.addFacet('variants', targetOf('experiment'));
-  dataChunks.addFacet('clicks', sourceOf('click'));
+  dataChunks.addFacet('urlExperiment', (bundle) => bundle.events.filter((e) => e.checkpoint === 'experiment')
+    .map((e) => `${bundle.url}\u3343${e.source}`));
   dataChunks.addFacet('urlExperimentVariant', (bundle) => bundle.events.filter((e) => e.checkpoint === 'experiment')
     .map((e) => `${bundle.url}\u3343${e.source}\u3343${e.target}`));
+  dataChunks.addFacet('urlExperimentVariantClick', (bundle) => bundle.events.filter((e) => e.checkpoint === 'experiment')
+    .flatMap((e) => bundle.events.filter((c) => c.checkpoint === 'click' && c.source).map((c) => `${bundle.url}\u3343${e.source}\u3343${e.target}\u3343${c.source}`)));
+  dataChunks.addFacet('urlExperimentVariantForm', (bundle) => bundle.events.filter((e) => e.checkpoint === 'experiment')
+    .flatMap((e) => bundle.events.filter((c) => c.checkpoint === 'formsubmit' && c.source).map((c) => `${bundle.url}\u3343${e.source}\u3343${e.target}\u3343${c.source}`)));
+  dataChunks.addFacet('urlExperimentVariantConvert', (bundle) => bundle.events.filter((e) => e.checkpoint === 'experiment')
+    .flatMap((e) => bundle.events.filter((c) => c.checkpoint === 'convert' && c.source).map((c) => `${bundle.url}\u3343${e.source}\u3343${e.target}\u3343${c.source}`)));
+
+  dataChunks.addSeries('views', (bundle) => bundle.weight);
+  dataChunks.addSeries('clickviews', weight('click'));
+  dataChunks.addSeries('formviews', weight('formsubmit'));
+  dataChunks.addSeries('convertviews', weight('convert'));
+  dataChunks.addSeries('clicks', totals('click'));
+  dataChunks.addSeries('formsubmit', totals('formsubmit'));
+  dataChunks.addSeries('convert', totals('convert'));
+  dataChunks.addSeries('experimenttime', (bundle) => new Date(bundle.time).getTime());
+  dataChunks.addSeries('interaction', (bundle) => (bundle.events.find((e) => 'click' || e.checkpoint === 'formsubmit' || e.checkpoint === 'convert') ? bundle.weight : undefined));
 
   const {
-    urls, experiments, variants, clicks, urlExperimentVariant,
+    urlExperimentVariant,
   } = dataChunks.facets;
 
   const result = {};
 
-  urls.forEach((urlFacet) => {
-    result[urlFacet.value] = [];
-
-    dataChunks.facets.experiments.forEach((experimentFacet) => {
-      const experiment = {
-        experiment: experimentFacet.value,
-        variants: [],
+  urlExperimentVariant.forEach((uev) => {
+    const [url, experiment, variant] = uev.value.split('\u3343');
+    if (!result[url]) result[url] = [];
+    let experimentIndex = result[url].findIndex((e) => e.experiment === experiment);
+    if (experimentIndex === -1) {
+      dataChunks.filter = {
+        urlExperiment: [`${url}\u3343${experiment}`],
       };
-
-      let found = false;
-
-      dataChunks.facets.variants.forEach((variantFacet) => {
-        const filtered = dataChunks.filterBundles(urlFacet.entries, {
-          urlExperimentVariant: [`${urlFacet.value}\u3343${experimentFacet.value}\u3343${variantFacet.value}`],
-        });
-
-        if (filtered.length > 0) found = true;
-
-        const click = filtered.reduce((acc, cur) => {
-          [...new Set(cur.events.filter((e) => e.checkpoint === 'click')
-            .map((e) => e.source))].forEach((source) => {
-            if (!acc[source]) acc[source] = 0;
-            acc[source] += cur.weight;
-          });
-          return acc;
-        }, {});
-
-        experiment.variants.push({
-          name: variantFacet.value,
-          click,
-          views: filtered.reduce((acc, cur) => {
-            acc += cur.weight;
-            return acc;
-          }, 0),
-        });
-
-        console.log();
+      result[url].push({
+        experiment,
+        variants: [],
+        inferredStartDate: new Date(dataChunks.totals.experimenttime.min).toISOString(),
+        inferredEndDate: new Date(dataChunks.totals.experimenttime.max).toISOString(),
       });
+      experimentIndex = result[url].length - 1;
+    }
 
-      if (found) result[urlFacet.value].push(experiment);
+    dataChunks.filter = {
+      urlExperimentVariant: [uev.value],
+    };
+
+    const views = dataChunks.totals.views.sum;
+    const samples = dataChunks.totals.views.count;
+    const interactionsCount = dataChunks.totals.interaction.sum;
+    const clicktotals = dataChunks.totals.clicks;
+    const formtotals = dataChunks.totals.formsubmit;
+    const converttotals = dataChunks.totals.convert;
+
+    const clicks = dataChunks.totals.clickviews.count > 0 ? {
+      '*': { value: dataChunks.totals.clickviews.sum, samples: dataChunks.totals.clickviews.count },
+    } : {};
+
+    const formsubmit = dataChunks.totals.formviews.count > 0 ? {
+      '*': { value: dataChunks.totals.formviews.sum, samples: dataChunks.totals.formviews.count },
+    } : {};
+
+    const convert = dataChunks.totals.convertviews.count > 0 ? {
+      '*': { value: dataChunks.totals.convertviews.sum, samples: dataChunks.totals.convertviews.count },
+    } : {};
+
+    values(clicktotals).forEach((click) => {
+      dataChunks.filter = {
+        urlExperimentVariantClick: [`${uev.value}\u3343${click}`],
+      };
+      clicks[click] = {
+        value: dataChunks.totals.views.sum,
+        samples: dataChunks.totals.views.count,
+      };
+    });
+
+    values(formtotals).forEach((click) => {
+      dataChunks.filter = {
+        urlExperimentVariantForm: [`${uev.value}\u3343${click}`],
+      };
+      formsubmit[click] = {
+        value: dataChunks.totals.views.sum,
+        samples: dataChunks.totals.views.count,
+      };
+    });
+
+    values(converttotals).forEach((click) => {
+      dataChunks.filter = {
+        urlExperimentVariantConvert: [`${uev.value}\u3343${click}`],
+      };
+      convert[click] = {
+        value: dataChunks.totals.views.sum,
+        samples: dataChunks.totals.views.count,
+      };
+    });
+
+    result[url][experimentIndex].variants.push({
+      name: variant,
+      views,
+      samples,
+      interactionsCount,
+      clicks,
+      formsubmit,
+      convert,
     });
   });
 
-  console.log();
   return result;
 }
 

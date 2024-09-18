@@ -191,6 +191,92 @@ An example response:
 
 ```
 
+### high-inorganic-high-bounce-rate (Experimentation Opportunity)
+
+Calculates the amount of inorganic traffic and the bounce rate for each page. Identifies pages with both high inorganic traffic and high bounce rates, which can be targeted for future experimentation opportunities. An example payload is provided below:
+
+```json
+[
+  {
+    "type": "high-inorganic-high-bounce-rate",
+    "page": "https://www.spacecat.com/",
+    "screenshot": "",
+    "trackedPageKPIName": "Bounce Rate",
+    "trackedPageKPIValue": 0.6507592190889371,
+    "pageViews": 46100,
+    "samples": 46100,
+    "metrics": [
+      {
+        "type": "traffic",
+        "value": {
+          "total": 46100,
+          "paid": 40700,
+          "owned": 5400,
+          "earned": 0
+        }
+      }
+    ]
+  },
+  {
+    "type": "high-inorganic-high-bounce-rate",
+    "page": "https://www.spacecat.com/pricing",
+    "screenshot": "",
+    "trackedPageKPIName": "Bounce Rate",
+    "trackedPageKPIValue": 0.8723897911832946,
+    "pageViews": 43100,
+    "samples": 43100,
+    "metrics": [
+      {
+        "type": "traffic",
+        "value": {
+          "total": 43100,
+          "paid": 24100,
+          "owned": 19000,
+          "earned": 0
+        }
+      }
+    ]
+  }
+]
+```
+
+### high-organic-low-ctr (Experimentation Opportunity)
+
+Calculates the amount of non-inorganic (earned and owned) traffic and the click-through rate for each page. Identifies pages with high non-inorganic traffic and low click-through rates, which can be targeted for future experimentation opportunities. An example payload is provided below:
+
+```json
+[
+  {
+    "type": "high-organic-low-ctr",
+    "page": "https://www.spacecat.com/about-us",
+    "screenshot": "",
+    "trackedPageKPIName": "Click Through Rate",
+    "trackedPageKPIValue": 0.14099783080260303,
+    "pageViews": 46100,
+    "samples": 46100,
+    "metrics": [
+      {
+        "type": "traffic",
+        "value": {
+          "total": 46100,
+          "paid": 0,
+          "owned": 46100,
+          "earned": 0
+        }
+      },
+      {
+        "type": "ctr",
+        "value": {
+          "page": 0.14099783080260303,
+          "siteAverage": 0.4077909270216962
+        }
+      }
+    ]
+  }
+]
+
+```
+
 ## Linting
 Lint the codebase using:
 ```

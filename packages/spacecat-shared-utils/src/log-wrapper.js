@@ -41,6 +41,9 @@ export function logWrapper(fn) {
           warn: (...args) => {
             log.warn({ jobId, ...args });
           },
+          trace: (...args) => {
+            log.trace({ jobId, ...args });
+          },
         };
       } else {
         log.debug('No jobId found in the provided message. Log entries will be recorded without a jobId.');

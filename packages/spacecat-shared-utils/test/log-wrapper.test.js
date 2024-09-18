@@ -26,8 +26,13 @@ const message = {
   ],
 };
 
-const logLevels = ['info', 'error', 'debug', 'warn'];
-
+const logLevels = [
+  'info',
+  'error',
+  'debug',
+  'warn',
+  'trace',
+];
 // Helper function to check if a key-value pair exists in a JSON object
 function containsKeyValue(obj, key, value) {
   return Object.prototype.hasOwnProperty.call(obj, key) && obj[key] === value;
@@ -53,6 +58,7 @@ describe('logWrapper tests', () => {
         error: sinon.spy(),
         debug: sinon.spy(),
         warn: sinon.spy(),
+        trace: sinon.spy(),
       },
     };
   });

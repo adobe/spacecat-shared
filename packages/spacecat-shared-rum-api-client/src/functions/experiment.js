@@ -96,7 +96,9 @@ function calculateMetrics(bundle) {
   return metrics;
 }
 
-function handler(bundles) {
+function handler(chunks) {
+  const bundles = chunks.flatMap((chunk) => chunk.rumBundles);
+
   const experimentInsights = {};
   for (const bundle of bundles) {
     const experimentEvents = bundle.events?.filter(

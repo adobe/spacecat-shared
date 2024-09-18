@@ -35,6 +35,8 @@ export const ImportJobDto = {
     duration: importJob.getDuration(),
     status: importJob.getStatus(),
     urlCount: importJob.getUrlCount(),
+    successCount: importJob.getSuccessCount(),
+    failedCount: importJob.getFailedCount(),
     importQueueId: importJob.getImportQueueId(),
     initiatedBy: importJob.getInitiatedBy(),
     GSI1PK: 'ALL_IMPORT_JOBS',
@@ -56,6 +58,8 @@ export const ImportJobDto = {
       duration: dynamoItem.duration,
       status: dynamoItem.status,
       urlCount: dynamoItem.urlCount,
+      successCount: dynamoItem.successCount,
+      failedCount: dynamoItem.failedCount,
       importQueueId: dynamoItem.importQueueId,
       initiatedBy: dynamoItem.initiatedBy,
     };

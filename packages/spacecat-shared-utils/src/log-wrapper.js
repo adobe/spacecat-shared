@@ -11,40 +11,42 @@
  */
 
 /**
- * A wrapper function that enhances logging by appending the `jobId` to all log statements
- * within the provided context. This allows better traceability and correlation of logs
- * associated with a specific job.
+ * A higher-order function that wraps a given function and enhances logging by appending
+ * a `jobId` to log messages when available. This improves traceability of logs associated
+ * with specific jobs or processes.
  *
- * @param {function} fn - The original function to be wrapped.
- * @returns {function(object, object): Promise<Response>} A wrapped function that includes
- *  `jobId` in all log statements if `context.contextualLog` is used.
+ * The wrapper checks if a `log` object exists in the `context` and whether the `message`
+ * contains a `jobId`. If found, log methods (e.g., `info`, `error`, etc.) will prepend the
+ * `jobId` to all log statements where `context.contextualLog` is used. If no `jobId` is found,
+ * logging will remain unchanged.
+ *
+ * @param {function} fn - The original function to be wrapped, called with the provided
+ * message and context after logging enhancement.
+ * @returns {function(object, object): Promise<Response>} - A wrapped function that enhances
+ * logging and returns the result of the original function.
+ *
+ * `context.contextualLog` will include logging methods with `jobId` prefixed, or fall back
+ * to the existing `log` object if no `jobId` is provided.
  */
 export function logWrapper(fn) {
   return async (message, context) => {
     const { log } = context;
 
     if (log) {
-      if (message && 'jobId' in message) {
+      if (typeof message === 'object' && message !== null && 'jobId' in message) {
         const { jobId } = message;
+        const jobIdMarker = `[jobId=${jobId}]`;
+
+        // Define log levels
+        const logLevels = ['info', 'error', 'debug', 'warn', 'trace', 'verbose', 'silly', 'fatal'];
 
         // Enhance the log object to include jobId in all log statements
-        context.contextualLog = {
-          info: (...args) => {
-            log.info({ jobId, ...args });
-          },
-          error: (...args) => {
-            log.error({ jobId, ...args });
-          },
-          debug: (...args) => {
-            log.debug({ jobId, ...args });
-          },
-          warn: (...args) => {
-            log.warn({ jobId, ...args });
-          },
-          trace: (...args) => {
-            log.trace({ jobId, ...args });
-          },
-        };
+        context.contextualLog = logLevels.reduce((accumulator, level) => {
+          if (typeof log[level] === 'function') {
+            accumulator[level] = (...args) => log[level](jobIdMarker, ...args);
+          }
+          return accumulator;
+        }, {});
       } else {
         log.debug('No jobId found in the provided message. Log entries will be recorded without a jobId.');
         context.contextualLog = log;

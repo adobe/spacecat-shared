@@ -32,11 +32,10 @@ const logLevels = [
   'debug',
   'warn',
   'trace',
+  'verbose',
+  'silly',
+  'fatal',
 ];
-// Helper function to check if a key-value pair exists in a JSON object
-function containsKeyValue(obj, key, value) {
-  return Object.prototype.hasOwnProperty.call(obj, key) && obj[key] === value;
-}
 
 const mockFnFromSqs = sinon.spy();
 let mockContext;
@@ -59,6 +58,9 @@ describe('logWrapper tests', () => {
         debug: sinon.spy(),
         warn: sinon.spy(),
         trace: sinon.spy(),
+        verbose: sinon.spy(),
+        silly: sinon.spy(),
+        fatal: sinon.spy(),
       },
     };
   });
@@ -86,8 +88,12 @@ describe('logWrapper tests', () => {
 
       await wrappedFn(message, mockContext);
 
+      // Log something to test the wrapper
       mockContext.contextualLog[level](`${level} log`);
-      expect(containsKeyValue(mockContext.log[level].getCall(0).args[0], 'jobId', message.jobId)).to.be.true;
+
+      // Verify that the jobId is included in the log statement
+      const logArgs = mockContext.log[level].getCall(0).args[0];
+      expect(logArgs).to.contain(`[jobId=${message.jobId}]`);
     });
   });
 
@@ -95,10 +101,15 @@ describe('logWrapper tests', () => {
     it(`should not include jobId in ${level} log when jobId is missing`, async () => {
       const wrappedFn = logWrapper(mockFnFromSqs);
 
+      // Call without a jobId
       await wrappedFn({}, mockContext);
 
-      mockContext.contextualLog[level](`${level.charAt(0).toUpperCase() + level.slice(1)} log`);
-      expect(mockContext.log[level].getCall(0).args[0]).to.not.have.property('jobId');
+      // Log something to test the wrapper
+      mockContext.contextualLog[level](`${level} log`);
+
+      // Verify that the jobId is not included in the log statement
+      const logArgs = mockContext.log[level].getCall(0).args[0];
+      expect(logArgs).to.not.contain('jobId');
     });
   });
 });

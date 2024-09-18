@@ -11,45 +11,43 @@
  */
 
 /**
- * Wraps the provided function to enhance the logging functionality by including the
- * `jobId` in each log statement.
+ * A wrapper function that enhances logging by appending the `jobId` to all log statements
+ * within the provided context. This allows better traceability and correlation of logs
+ * associated with a specific job.
  *
- * @param {function} fn - The original function that will be wrapped.
- * @returns {function(object, object): Promise<Response>} A new function that, when invoked,
- *  will automatically include the `jobId` in all log statements within the context.
+ * @param {function} fn - The original function to be wrapped.
+ * @returns {function(object, object): Promise<Response>} A wrapped function that includes
+ *  `jobId` in all log statements if `context.contextualLog` is used.
  */
 export function logWrapper(fn) {
   return async (message, context) => {
     const { log } = context;
 
     if (log) {
-      if (!message || !message.jobId) {
-        log.debug('Missing jobId, hence it will not be included in log messages.');
+      if (message && 'jobId' in message) {
+        const { jobId } = message;
+
+        // Enhance the log object to include jobId in all log statements
+        context.contextualLog = {
+          info: (...args) => {
+            log.info({ jobId, ...args });
+          },
+          error: (...args) => {
+            log.error({ jobId, ...args });
+          },
+          debug: (...args) => {
+            log.debug({ jobId, ...args });
+          },
+          warn: (...args) => {
+            log.warn({ jobId, ...args });
+          },
+        };
+      } else {
+        log.debug('No jobId found in the provided message. Log entries will be recorded without a jobId.');
         context.contextualLog = log;
-
-        return fn(message, context);
       }
-
-      const { jobId } = message;
-
-      // Enhance the log object to include jobId in each log statement
-      context.contextualLog = {
-        info: (...args) => {
-          log.info({ jobId, ...args });
-        },
-        error: (...args) => {
-          log.error({ jobId, ...args });
-        },
-        debug: (...args) => {
-          log.debug({ jobId, ...args });
-        },
-        warn: (...args) => {
-          log.warn({ jobId, ...args });
-        },
-      };
     }
 
-    // Call the wrapped function
     return fn(message, context);
   };
 }

@@ -26,6 +26,8 @@ const message = {
   ],
 };
 
+const logLevels = ['info', 'error', 'debug', 'warn'];
+
 // Helper function to check if a key-value pair exists in a JSON object
 function containsKeyValue(obj, key, value) {
   return Object.prototype.hasOwnProperty.call(obj, key) && obj[key] === value;
@@ -34,7 +36,7 @@ function containsKeyValue(obj, key, value) {
 const mockFnFromSqs = sinon.spy();
 let mockContext;
 
-describe('logWrapper', () => {
+describe('logWrapper tests', () => {
   beforeEach(() => {
     sinon.resetHistory();
     mockContext = {
@@ -59,27 +61,6 @@ describe('logWrapper', () => {
     sinon.restore();
   });
 
-  it('should wrap log methods to include jobId when jobId is present', async () => {
-    const wrappedFn = logWrapper(mockFnFromSqs);
-
-    await wrappedFn(message, mockContext);
-
-    mockContext.contextualLog.info('Test log');
-    const logArgs = mockContext.log.info.getCall(0).args[0];
-    expect(containsKeyValue(logArgs, 'jobId', message.jobId)).to.be.true;
-  });
-
-  it('should not wrap log methods when jobId is missing', async () => {
-    const wrappedFn = logWrapper(mockFnFromSqs);
-
-    await wrappedFn({ message: 'This contains no jobId' }, mockContext);
-
-    mockContext.contextualLog.info('Test log');
-    const logArgs = mockContext.log.info.getCall(0).args[0];
-    expect(containsKeyValue(logArgs, 'jobId', undefined)).to.be.false;
-    expect(logArgs).to.equal('Test log');
-  });
-
   it('should call the original function with the provided message and context, and update the context with contextualLog object', async () => {
     const wrappedFn = logWrapper(mockFnFromSqs);
 
@@ -93,35 +74,25 @@ describe('logWrapper', () => {
     expect(mockContext.contextualLog).to.be.an('object');
   });
 
-  it('should call log methods with correct parameters when jobId is present', async () => {
-    const wrappedFn = logWrapper(mockFnFromSqs);
+  logLevels.forEach((level) => {
+    it(`should call ${level} log method with correct parameters when jobId is present`, async () => {
+      const wrappedFn = logWrapper(mockFnFromSqs);
 
-    await wrappedFn(message, mockContext);
+      await wrappedFn(message, mockContext);
 
-    mockContext.contextualLog.info('Info log');
-    mockContext.contextualLog.error('Error log');
-    mockContext.contextualLog.debug('Debug log');
-    mockContext.contextualLog.warn('Warn log');
-
-    expect(containsKeyValue(mockContext.log.info.getCall(0).args[0], 'jobId', message.jobId)).to.be.true;
-    expect(containsKeyValue(mockContext.log.error.getCall(0).args[0], 'jobId', message.jobId)).to.be.true;
-    expect(containsKeyValue(mockContext.log.debug.getCall(0).args[0], 'jobId', message.jobId)).to.be.true;
-    expect(containsKeyValue(mockContext.log.warn.getCall(0).args[0], 'jobId', message.jobId)).to.be.true;
+      mockContext.contextualLog[level](`${level} log`);
+      expect(containsKeyValue(mockContext.log[level].getCall(0).args[0], 'jobId', message.jobId)).to.be.true;
+    });
   });
 
-  it('should call log methods with correct parameters when jobId is missing', async () => {
-    const wrappedFn = logWrapper(mockFnFromSqs);
+  logLevels.forEach((level) => {
+    it(`should not include jobId in ${level} log when jobId is missing`, async () => {
+      const wrappedFn = logWrapper(mockFnFromSqs);
 
-    await wrappedFn({}, mockContext);
+      await wrappedFn({}, mockContext);
 
-    mockContext.contextualLog.info('Info log');
-    mockContext.contextualLog.error('Error log');
-    mockContext.contextualLog.debug('Debug log');
-    mockContext.contextualLog.warn('Warn log');
-
-    expect(containsKeyValue(mockContext.log.info.getCall(0).args[0], 'jobId', undefined)).to.be.false;
-    expect(containsKeyValue(mockContext.log.error.getCall(0).args[0], 'jobId', undefined)).to.be.false;
-    expect(containsKeyValue(mockContext.log.debug.getCall(0).args[0], 'jobId', undefined)).to.be.false;
-    expect(containsKeyValue(mockContext.log.warn.getCall(0).args[0], 'jobId', undefined)).to.be.false;
+      mockContext.contextualLog[level](`${level.charAt(0).toUpperCase() + level.slice(1)} log`);
+      expect(mockContext.log[level].getCall(0).args[0]).to.not.have.property('jobId');
+    });
   });
 });

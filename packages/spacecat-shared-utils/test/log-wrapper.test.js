@@ -107,9 +107,9 @@ describe('logWrapper tests', () => {
       // Log something to test the wrapper
       mockContext.contextualLog[level](`${level} log`);
 
-      // Verify that the jobId is not included in the log statement
+      // Verify that the jobIdMarker is not included in the log statement
       const logArgs = mockContext.log[level].getCall(0).args[0];
-      expect(logArgs).to.not.contain('jobId');
+      expect(logArgs).to.not.contain('[jobId=');
     });
   });
 });

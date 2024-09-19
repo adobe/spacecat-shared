@@ -12,6 +12,7 @@
 
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
 import { hasText, isObject } from '@adobe/spacecat-shared-utils';
+import { Graph, hasCycle } from 'graph-data-structure';
 
 const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
@@ -91,10 +92,88 @@ const validateMetadata = (metadata) => {
       throw new Error(`Metadata key ${key} must be a string`);
     }
 
-    if (!hasText(value)) {
-      throw new Error(`Metadata value for key ${key} must be a string`);
+    if (!hasText(value.value) || !hasText(value.type)) {
+      throw new Error(`Metadata value for key ${key} must be a object that has a value and type`);
     }
   }
+};
+
+const validateRedirects = (redirects) => {
+  const pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
+  if (!Array.isArray(redirects)) {
+    throw new Error('Redirects must be an array');
+  }
+
+  if (!redirects.length) {
+    throw new Error('Redirects must not be empty');
+  }
+
+  for (const redirect of redirects) {
+    if (!isObject(redirect)) {
+      throw new Error('Redirect must be an object');
+    }
+
+    if (!hasText(redirect.from)) {
+      throw new Error('Redirect must have a valid from path');
+    }
+
+    if (!hasText(redirect.to)) {
+      throw new Error('Redirect must have a valid to path');
+    }
+
+    if (!pathRegex.test(redirect.from)) {
+      throw new Error(`Invalid redirect from path: ${redirect.from}`);
+    }
+
+    if (!pathRegex.test(redirect.to)) {
+      throw new Error(`Invalid redirect to path: ${redirect.to}`);
+    }
+
+    if (redirect.from === redirect.to) {
+      throw new Error('Redirect from and to paths must be different');
+    }
+  }
+};
+
+const removeDuplicatedRedirects = (currentRedirects, newRedirects, log) => {
+  const redirectsSet = new Set(
+    currentRedirects.map(({ from, to }) => `${from}:${to}`),
+  );
+
+  const newRedirectsClean = [];
+  newRedirects.forEach((redirectRule) => {
+    const { from, to } = redirectRule;
+    const strRedirectRule = `${from}:${to}`;
+    if (!redirectsSet.has(strRedirectRule)) {
+      redirectsSet.add(strRedirectRule);
+      newRedirectsClean.push(redirectRule);
+    } else {
+      log.info(`Duplicate redirect rule detected: ${strRedirectRule}`);
+    }
+  });
+  return newRedirectsClean;
+};
+
+const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
+  const redirectsGraph = new Graph();
+  const noCycleRedirects = [];
+  currentRedirects.forEach((r) => redirectsGraph.addEdge(r.from, r.to));
+  if (hasCycle(redirectsGraph)) {
+    throw new Error('Redirect cycle detected in current redirects');
+  }
+  newRedirects.forEach((r) => {
+    redirectsGraph.addEdge(r.from, r.to);
+    if (hasCycle(redirectsGraph)) {
+      log.info(`Redirect loop detected: ${r.from} -> ${r.to}`);
+      redirectsGraph.removeEdge(r.from, r.to);
+    } else {
+      noCycleRedirects.push(r);
+    }
+  });
+  if (newRedirects.length !== noCycleRedirects.length) {
+    log.info(`Removed ${newRedirects.length - noCycleRedirects.length} redirect loops`);
+  }
+  return noCycleRedirects;
 };
 
 export default class ContentClient {
@@ -149,9 +228,10 @@ export default class ContentClient {
 
   async getPageMetadata(path) {
     const startTime = process.hrtime.bigint();
-    await this.#initClient();
 
     validatePath(path);
+
+    await this.#initClient();
 
     this.log.info(`Getting page metadata for ${this.site.getId()} and path ${path}`);
 
@@ -166,15 +246,16 @@ export default class ContentClient {
   async updatePageMetadata(path, metadata, options = {}) {
     const { overwrite = true } = options;
     const startTime = process.hrtime.bigint();
-    await this.#initClient();
 
     validatePath(path);
     validateMetadata(metadata);
 
+    await this.#initClient();
+
     this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const originalMetadata = await this.getPageMetadata(docPath);
+    const originalMetadata = await this.getPageMetadata(path);
 
     let mergedMetadata;
     if (overwrite) {
@@ -191,5 +272,48 @@ export default class ContentClient {
     this.#logDuration('updatePageMetadata', startTime);
 
     return mergedMetadata;
+  }
+
+  async getRedirects() {
+    const startTime = process.hrtime.bigint();
+    await this.#initClient();
+
+    this.log.info(`Getting redirects for ${this.site.getId()}`);
+
+    const redirects = await this.rawClient.getRedirects();
+    this.#logDuration('getRedirects', startTime);
+
+    return redirects;
+  }
+
+  async updateRedirects(redirects) {
+    const startTime = process.hrtime.bigint();
+
+    validateRedirects(redirects);
+
+    await this.#initClient();
+
+    this.log.info(`Updating redirects for ${this.site.getId()}`);
+
+    const currentRedirects = await this.getRedirects();
+
+    // validate combination of existing and new redirects
+    const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects, this.log);
+    if (cleanNewRedirects.length === 0) {
+      this.log.info('No valid redirects to update');
+      return;
+    }
+    const noCycleRedirects = removeRedirectLoops(currentRedirects, cleanNewRedirects, this.log);
+    if (noCycleRedirects.length === 0) {
+      this.log.info('No valid redirects to update');
+      return;
+    }
+
+    const response = await this.rawClient.appendRedirects(noCycleRedirects);
+    if (response.status !== 200) {
+      throw new Error('Failed to update redirects');
+    }
+
+    this.#logDuration('updateRedirects', startTime);
   }
 }

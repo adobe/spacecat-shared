@@ -9,9 +9,9 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-
-import trafficAcquisition from '../traffic-acquisition.js';
-import { getCTRByUrl, getSiteAvgCTR } from '../../common/aggregateFns.js';
+import { DataChunks } from '../../common/cruncher.js';
+import { classifyTrafficSource } from '../../common/traffic.js';
+import { extractHints } from '../traffic-acquisition.js';
 
 const DAILY_EARNED_THRESHOLD = 5000;
 const CTR_THRESHOLD_RATIO = 0.95;
@@ -47,27 +47,56 @@ function convertToOpportunity(traffic) {
     }],
   };
 }
-
-function hasHighOrganicTraffic(interval, traffic) {
-  const { earned, owned } = traffic;
-  return earned + owned > DAILY_EARNED_THRESHOLD * interval;
-}
-
-function hasLowerCTR(ctr, siteAvgCTR) {
-  return ctr < CTR_THRESHOLD_RATIO * siteAvgCTR;
-}
-
 function handler(bundles, opts = {}) {
   const { interval = 7 } = opts;
 
-  const trafficByUrl = trafficAcquisition.handler(bundles);
-  const ctrByUrl = getCTRByUrl(bundles);
-  const siteAvgCTR = getSiteAvgCTR(bundles);
+  const dataChunks = new DataChunks();
 
-  return trafficByUrl.filter((traffic) => traffic.total > interval * DAILY_PAGEVIEW_THRESHOLD)
-    .filter(hasHighOrganicTraffic.bind(null, interval))
-    .filter((traffic) => hasLowerCTR(ctrByUrl[traffic.url], siteAvgCTR))
-    .map((traffic) => ({ ...traffic, ctr: ctrByUrl[traffic.url], siteAvgCTR }))
+  dataChunks.load(bundles);
+
+  dataChunks.addFacet('urls', (bundle) => bundle.url);
+
+  dataChunks.addSeries('views', (bundle) => bundle.weight);
+  dataChunks.addSeries('clicks', (bundle) => (bundle.events.some((e) => e.checkpoint === 'click') ? bundle.weight : 0));
+  dataChunks.addSeries('earned', (bundle) => {
+    const row = extractHints(bundle);
+    const {
+      type,
+    } = classifyTrafficSource(row.url, row.referrer, row.utmSource, row.utmMedium, row.tracking);
+    return type === 'earned' ? bundle.weight : 0;
+  });
+  dataChunks.addSeries('owned', (bundle) => {
+    const row = extractHints(bundle);
+    const {
+      type,
+    } = classifyTrafficSource(row.url, row.referrer, row.utmSource, row.utmMedium, row.tracking);
+    return type === 'owned' ? bundle.weight : 0;
+  });
+  dataChunks.addSeries('paid', (bundle) => {
+    const row = extractHints(bundle);
+    const {
+      type,
+    } = classifyTrafficSource(row.url, row.referrer, row.utmSource, row.utmMedium, row.tracking);
+    return type === 'paid' ? bundle.weight : 0;
+  });
+
+  const siteAvgCTR = dataChunks.totals.clicks.sum / dataChunks.totals.views.sum;
+
+  return dataChunks.facets.urls
+    .filter((url) => url.total > interval * DAILY_PAGEVIEW_THRESHOLD)
+    .filter((url) => (
+      url.metrics.earned.sum + url.metrics.owned.sum) > DAILY_EARNED_THRESHOLD * interval)
+    .filter((url) => (
+      url.metrics.clicks.sum / url.metrics.views.sum) < CTR_THRESHOLD_RATIO * siteAvgCTR)
+    .map((url) => ({
+      url: url.value,
+      total: url.metrics.views.sum,
+      earned: url.metrics.earned.sum,
+      owned: url.metrics.owned.sum,
+      paid: url.metrics.paid.sum,
+      ctr: url.metrics.clicks.sum / url.metrics.views.sum,
+      siteAvgCTR,
+    }))
     .map(convertToOpportunity);
 }
 

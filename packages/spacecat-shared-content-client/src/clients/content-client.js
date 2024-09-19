@@ -92,8 +92,8 @@ const validateMetadata = (metadata) => {
       throw new Error(`Metadata key ${key} must be a string`);
     }
 
-    if (!hasText(value)) {
-      throw new Error(`Metadata value for key ${key} must be a string`);
+    if (!hasText(value.value) || !hasText(value.type)) {
+      throw new Error(`Metadata value for key ${key} must be a object that has a value and type`);
     }
   }
 };
@@ -135,9 +135,9 @@ const validateRedirects = (redirects) => {
 };
 
 const removeDuplicatedRedirects = (currentRedirects, newRedirects, log) => {
-  const redirectsSet = new Set();
-  currentRedirects.map(({ from, to }) => `${from}:${to}`)
-    .forEach((redirectRule) => redirectsSet.add(redirectRule));
+  const redirectsSet = new Set(
+    currentRedirects.map(({ from, to }) => `${from}:${to}`),
+  );
 
   const newRedirectsClean = [];
   newRedirects.forEach((redirectRule) => {
@@ -169,6 +169,9 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
       noCycleRedirects.push(r);
     }
   });
+  if (newRedirects.length !== noCycleRedirects.length) {
+    this.log.info(`Removed ${newRedirects.length - noCycleRedirects.length} redirect loops`);
+  }
   return noCycleRedirects;
 };
 
@@ -251,7 +254,7 @@ export default class ContentClient {
     this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const originalMetadata = await this.getPageMetadata(docPath);
+    const originalMetadata = await this.getPageMetadata(path);
 
     let mergedMetadata;
     if (overwrite) {
@@ -303,9 +306,6 @@ export default class ContentClient {
     if (noCycleRedirects.length === 0) {
       this.log.info('No valid redirects to update');
       return;
-    }
-    if (noCycleRedirects.length !== cleanNewRedirects.length) {
-      this.log.info(`Removed ${cleanNewRedirects.length - noCycleRedirects.length} redirect loops`);
     }
 
     const response = await this.rawClient.appendRedirects(noCycleRedirects);

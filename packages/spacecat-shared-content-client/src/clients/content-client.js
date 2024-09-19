@@ -91,8 +91,8 @@ const validateMetadata = (metadata) => {
       throw new Error(`Metadata key ${key} must be a string`);
     }
 
-    if (!hasText(value)) {
-      throw new Error(`Metadata value for key ${key} must be a string`);
+    if (!hasText(value.value) || !hasText(value.type)) {
+      throw new Error(`Metadata value for key ${key} must be a object that has a value and type`);
     }
   }
 };
@@ -174,7 +174,7 @@ export default class ContentClient {
     this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const originalMetadata = await this.getPageMetadata(docPath);
+    const originalMetadata = await this.getPageMetadata(path);
 
     let mergedMetadata;
     if (overwrite) {

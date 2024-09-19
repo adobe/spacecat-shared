@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.0.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.7...@adobe/spacecat-shared-content-client-v1.0.8) (2024-09-19)
+
+
+### Bug Fixes
+
+* keep image in get and update page metadata table ([251a96c](https://github.com/adobe/spacecat-shared/commit/251a96cd61a55ab9e305babf68a3f5c3db273e39))
+
 # [@adobe/spacecat-shared-content-client-v1.0.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.6...@adobe/spacecat-shared-content-client-v1.0.7) (2024-09-14)
 
 

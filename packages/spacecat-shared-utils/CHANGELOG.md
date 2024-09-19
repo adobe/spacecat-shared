@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.0...@adobe/spacecat-shared-utils-v1.20.1) (2024-09-19)
+
+
+### Bug Fixes
+
+* add null check for empty message in logWrapper ([#377](https://github.com/adobe/spacecat-shared/issues/377)) ([231ceea](https://github.com/adobe/spacecat-shared/commit/231ceeaaad518c2358c0df728911a991cfde563c))
+
 # [@adobe/spacecat-shared-utils-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.8...@adobe/spacecat-shared-utils-v1.20.0) (2024-09-19)
 
 

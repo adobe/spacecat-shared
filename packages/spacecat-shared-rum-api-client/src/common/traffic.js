@@ -68,10 +68,15 @@ const sources = {
   email: /sfmc|email/,
 };
 
+/**
+ * Vendor classification rules from https://github.com/adobe/helix-website/blob/main/tools/oversight/acquisition.js#L12
+ * Added dailymotion, twitch to the list
+ * Using full word match for social media shorts like ig, fb, x
+ */
 const vendorClassifications = [
   { regex: /google|googleads|google-ads|google_search|google_deman|adwords|dv360|gdn|doubleclick|dbm|gmb/i, result: 'google' },
   { regex: /instagram|\b(ig)\b/i, result: 'instagram' },
-  { regex: /facebook|fb|meta/i, result: 'facebook' },
+  { regex: /facebook|\b(fb)\b|meta/i, result: 'facebook' },
   { regex: /bing/i, result: 'bing' },
   { regex: /tiktok/i, result: 'tiktok' },
   { regex: /youtube|yt/i, result: 'youtube' },
@@ -211,13 +216,17 @@ export function extractTrafficHints(bundle) {
 }
 
 /**
- * Returns the name of the referrer as single word.
+ * Returns the name of the vendor obtained from respective order: referrer, utmSource, utmMedium.
  * For example: facebook instead of www.facebook.com
- * @param {*} origin
+ * @param {*} referrer
  */
-export function classifyVendor(origin) {
-  if (!origin) return '';
-  const result = vendorClassifications.find(({ regex }) => regex.test(origin));
+export function classifyVendor(referrer, utmSource, utmMedium) {
+  const result = vendorClassifications.find(({ regex }) => {
+    if (regex.test(referrer)) return true;
+    if (regex.test(utmSource)) return true;
+    if (regex.test(utmMedium)) return true;
+    return false;
+  });
   return result ? result.result : '';
 }
 
@@ -235,7 +244,7 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
     && rule.utmMedium(sanitize(utmMedium))
     && rule.tracking(trackingParams)
   ));
-  const vendor = classifyVendor(referrerDomain);
+  const vendor = classifyVendor(referrerDomain, utmSource, utmMedium);
 
   return {
     type,

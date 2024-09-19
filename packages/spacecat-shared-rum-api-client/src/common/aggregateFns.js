@@ -68,7 +68,7 @@ function getCTRByUrlAndVendor(bundles) {
     const { url } = bundle;
     const trafficHints = extractTrafficHints(bundle);
     const referrerDomain = getSecondLevelDomain(trafficHints.referrer);
-    const vendor = classifyVendor(referrerDomain);
+    const vendor = classifyVendor(referrerDomain, trafficHints.utmSource, trafficHints.utmMedium);
     if (!acc[url]) {
       acc[url] = { sessionsWithClick: 0, totalPageviews: 0, vendors: {} };
     }

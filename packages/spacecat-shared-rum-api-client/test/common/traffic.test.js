@@ -44,11 +44,11 @@ describe('Traffic classification', () => {
     assert({ ...expected, vendor: 'tiktok' }, { referrer: 'https://www.tiktok.com/', utmSource: 'some-source', utmMedium: 'paidsocial', tracking: null });
     assert({ ...expected, vendor: 'snapchat' }, { referrer: 'https://snapchat.com/', utmSource: 'some-source', utmMedium: 'social', tracking: null });
     assert({ ...expected, vendor: 'x' }, { referrer: 'https://x.com/', utmSource: 'some-source', utmMedium: '', tracking: 'paid' });
-    assert({ ...expected, vendor: '' }, { referrer: '', utmSource: 'meta', utmMedium: 'paidsocial', tracking: null });
+    assert({ ...expected, vendor: 'facebook' }, { referrer: '', utmSource: 'meta', utmMedium: 'paidsocial', tracking: null });
     assert({ ...expected, vendor: 'tiktok' }, { referrer: 'https://www.tiktok.com/', utmSource: 'tt', utmMedium: 'soci', tracking: null });
-    assert({ ...expected, vendor: '' }, { referrer: '', utmSource: 'reddit', utmMedium: 'social', tracking: null });
+    assert({ ...expected, vendor: 'reddit' }, { referrer: '', utmSource: 'reddit', utmMedium: 'social', tracking: null });
     assert({ ...expected, vendor: '' }, { referrer: '', utmSource: 'soc', utmMedium: 'fbig', tracking: null });
-    assert({ ...expected, vendor: '' }, { referrer: '', utmSource: 'instagram', utmMedium: 'social', tracking: null });
+    assert({ ...expected, vendor: 'instagram' }, { referrer: '', utmSource: 'instagram', utmMedium: 'social', tracking: null });
   });
 
   it('paid video', () => {
@@ -58,7 +58,7 @@ describe('Traffic classification', () => {
     assert({ ...expected, vendor: 'youtube' }, { referrer: 'https://www.youtube.com/', utmSource: 'some-source', utmMedium: 'ppc', tracking: null });
     assert({ ...expected, vendor: 'dailymotion' }, { referrer: 'https://www.dailymotion.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'paid' });
     assert({ ...expected, vendor: 'twitch' }, { referrer: 'https://www.twitch.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'paid' });
-    assert({ ...expected, vendor: '' }, { referrer: '', utmSource: 'youtube', utmMedium: 'video', tracking: null });
+    assert({ ...expected, vendor: 'youtube' }, { referrer: '', utmSource: 'youtube', utmMedium: 'video', tracking: null });
   });
 
   it('paid display', () => {
@@ -66,16 +66,17 @@ describe('Traffic classification', () => {
 
     assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'cpc', tracking: null });
     assert({ ...expected, vendor: 'google' }, { referrer: 'https://hebele.hebele.googlesyndication.com/', utmSource: 'some-source', utmMedium: 'some-medium', tracking: null });
-    assert(expected, { referrer: 'not-empty', utmSource: 'gdn', utmMedium: 'some-medium', tracking: null });
+    assert({ ...expected, vendor: 'google' }, { referrer: 'not-empty', utmSource: 'gdn', utmMedium: 'some-medium', tracking: null });
     assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'pp', tracking: null });
     assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'display', tracking: null });
-    assert(expected, { referrer: '', utmSource: 'dv360', utmMedium: 'some-medium', tracking: null });
+    assert({ ...expected, vendor: 'google' }, { referrer: '', utmSource: 'dv360', utmMedium: 'some-medium', tracking: null });
     assert(expected, { referrer: '', utmSource: 'some-source', utmMedium: 'cpc', tracking: null });
     assert(expected, { referrer: 'some-referrer', utmSource: 'some-source', utmMedium: 'some-medium', tracking: 'paid' });
     assert(expected, { referrer: '', utmSource: '', utmMedium: '', tracking: 'paid' });
     assert({ ...expected, vendor: 'google' }, { referrer: 'https://www.google.com/', utmSource: 'newsshowcase', utmMedium: 'discover', tracking: null });
     assert({ ...expected, vendor: 'google' }, { referrer: 'https://googleads.g.doubleclick.net/', utmSource: 'some', utmMedium: 'some', tracking: null });
     assert({ ...expected, vendor: 'google' }, { referrer: 'https://www.google.com/', utmSource: 'google', utmMedium: 'businesslistings', tracking: null });
+    assert({ ...expected, vendor: 'google' }, { referrer: '', utmSource: '', utmMedium: 'google', tracking: 'paid' });
   });
 
   it('paid affiliate', () => {

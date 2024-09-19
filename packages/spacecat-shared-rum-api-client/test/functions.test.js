@@ -33,7 +33,7 @@ import expectedHighOrganicLowCTRResult from './fixtures/high-organic-low-ctr.jso
 describe('Query functions', () => {
   it('crunches cwv data', async () => {
     const cwvResult = cwv.handler(bundles.rumBundles);
-    expect(expectedCwvResult).to.eql(cwvResult);
+    expect(cwvResult).to.eql(expectedCwvResult);
   });
 
   it('crunches 404 data', async () => {

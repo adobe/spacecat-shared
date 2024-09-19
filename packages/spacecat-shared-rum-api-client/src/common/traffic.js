@@ -178,9 +178,7 @@ function extractHints(bundle) {
   };
 }
 
-export function classifyTrafficSource(bundle) {
-  const { url, referrer, utmSource, utmMedium, trackingParams } = extractHints(bundle);
-
+export function classifyTraffic(url, referrer, utmSource, utmMedium, trackingParams) {
   const secondLevelDomain = getSecondLevelDomain(url);
   const rules = RULES(secondLevelDomain);
 
@@ -199,4 +197,9 @@ export function classifyTrafficSource(bundle) {
     type,
     category,
   };
+}
+
+export function classifyTrafficSource(bundle) {
+  const { url, referrer, utmSource, utmMedium, trackingParams } = extractHints(bundle);
+  return classifyTraffic(url, referrer, utmSource, utmMedium, trackingParams);
 }

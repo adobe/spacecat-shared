@@ -16,8 +16,10 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import esmock from 'esmock';
 import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 
 use(chaiAsPromised);
+use(sinonChai);
 
 describe('ContentClient', () => {
   let sandbox;
@@ -43,6 +45,12 @@ describe('ContentClient', () => {
       ['keywords', { value: 'test, metadata', type: 'text' }]],
   );
 
+  const existingRedirects = [
+    { from: '/test-A', to: '/test-B' },
+    { from: '/test-C', to: '/test-D' },
+    { from: '/test-B', to: '/test-D' },
+  ];
+
   const createContentClient = async (getPageMetadata) => {
     const contentSDK = sinon.stub().returns({
       getPageMetadata: sinon.stub().resolves(getPageMetadata),
@@ -59,6 +67,20 @@ describe('ContentClient', () => {
       getPageMetadata: getError
         ? sinon.stub().rejects(new Error(errorMessage)) : sinon.stub().resolves(new Map()),
       updatePageMetadata: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
+      getRedirects: getError
+        ? sinon.stub().rejects(new Error(errorMessage)) : sinon.stub().resolves(existingRedirects),
+      appendRedirects: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
+    });
+
+    return esmock('../../src/clients/content-client.js', {
+      '@adobe/spacecat-helix-content-sdk': { createFrom: contentSDK },
+    });
+  };
+
+  const createContentClientForRedirects = async (getRedirects) => {
+    const contentSDK = sinon.stub().returns({
+      getRedirects: sinon.stub().resolves(getRedirects),
+      appendRedirects: sinon.stub().resolves({ status: 200 }),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -325,6 +347,96 @@ describe('ContentClient', () => {
 
       expect(updatedMetadata).to.deep.equal(expectedMetadata);
       expect(client.rawClient.updatePageMetadata.calledOnceWith('/test-path', expectedMetadata)).to.be.true;
+    });
+  });
+
+  describe('updateRedirects', () => {
+    it('throws an error if raw client has non-200 status', async () => {
+      ContentClient = await createErrorContentClient(false, true, 'Error updating redirects');
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await expect(client.updateRedirects([{ from: '/A', to: '/B' }])).to.be.rejectedWith('Failed to update redirects');
+    });
+    it('throws an error if new redirects are not an array', async () => {
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await expect(client.updateRedirects({})).to.be.rejectedWith('Redirects must be an array');
+    });
+    it('throws an error if new redirects are an empty array', async () => {
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await expect(client.updateRedirects([])).to.be.rejectedWith('Redirects must not be empty');
+    });
+    it('throws an error if new redirects contains an invalid entry', async () => {
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await expect(client.updateRedirects([{ from: '/A', to: '/B' }, 'malformed-redirect'])).to.be.rejectedWith('Redirect must be an object');
+      await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '', to: '/B' }])).to.be.rejectedWith('Redirect must have a valid from path');
+      await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '/A', to: '' }])).to.be.rejectedWith('Redirect must have a valid to path');
+      await expect(client.updateRedirects([{ from: 'A', to: '/B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Invalid redirect from path: A');
+      await expect(client.updateRedirects([{ from: '/A', to: 'B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Invalid redirect to path: B');
+      await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '/A', to: '/A' }])).to.be.rejectedWith('Redirect from and to paths must be different');
+    });
+    it('update success', async () => {
+      const newRedirects = [
+        { from: '/test-X', to: '/test-Y' },
+      ];
+
+      ContentClient = await createContentClientForRedirects(existingRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await client.updateRedirects(newRedirects);
+      await expect(client.rawClient.appendRedirects.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
+    });
+    it('update success ignores duplicates', async () => {
+      const newRedirects = [
+        { from: '/test-A', to: '/test-B' },
+        { from: '/test-X', to: '/test-Y' },
+        { from: '/test-B', to: '/test-D' },
+        { from: '/test-X', to: '/test-Y' },
+      ];
+
+      ContentClient = await createContentClientForRedirects(existingRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await client.updateRedirects(newRedirects);
+      await expect(client.rawClient.appendRedirects.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
+    });
+    it('detect cycles in new redirects', async () => {
+      const newRedirects = [
+        { from: '/test-D', to: '/test-A' },
+        { from: '/test-C', to: '/test-E' },
+      ];
+      ContentClient = await createContentClientForRedirects(existingRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await client.updateRedirects(newRedirects);
+      await expect(client.rawClient.appendRedirects.calledOnceWith(sinon.match([{ from: '/test-C', to: '/test-E' }]))).to.be.true;
+    });
+    it('detect cycles in current redirects', async () => {
+      const newRedirects = [
+        { from: '/test-I', to: '/test-J' },
+      ];
+      const cycleRedirects = [
+        { from: '/test-A', to: '/test-C' },
+        { from: '/test-C', to: '/test-E' },
+        { from: '/test-E', to: '/test-A' },
+      ];
+      ContentClient = await createContentClientForRedirects(cycleRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await expect(client.updateRedirects(newRedirects)).to.be.rejectedWith('Redirect cycle detected');
+    });
+    it('does not call rawClient when all redirects are duplicates', async () => {
+      const newRedirects = [
+        { from: '/test-A', to: '/test-B' },
+        { from: '/test-C', to: '/test-D' },
+      ];
+      ContentClient = await createContentClientForRedirects(existingRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await client.updateRedirects(newRedirects);
+      await expect(client.rawClient.appendRedirects).to.not.have.been.called;
+    });
+    it('does not call rawClient when there are no valid redirects', async () => {
+      const newRedirects = [
+        { from: '/test-D', to: '/test-A' },
+      ];
+      ContentClient = await createContentClientForRedirects(existingRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await client.updateRedirects(newRedirects);
+      await expect(client.rawClient.appendRedirects).to.not.have.been.called;
     });
   });
 });

@@ -109,7 +109,7 @@ describe('Audit Model Tests', () => {
       const audit = createAudit(validData);
       expect(audit.getExpiresAt()).to.be.a('Date');
       const expectedDate = new Date(validData.auditedAt);
-      expectedDate.setDate(expectedDate.getDate() + 30);
+      expectedDate.setDate(expectedDate.getDate() + 30 * 6);
       expect(audit.getExpiresAt().toDateString()).to.equal(expectedDate.toDateString());
     });
   });

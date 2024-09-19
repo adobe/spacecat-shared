@@ -25,7 +25,7 @@ export const AUDIT_TYPE_LHS_MOBILE = 'lhs-mobile';
 export const AUDIT_TYPE_EXPERIMENTATION_ESS_MONTHLY = 'experimentation-ess-monthly';
 export const AUDIT_TYPE_EXPERIMENTATION_ESS_DAILY = 'experimentation-ess-daily';
 
-const EXPIRES_IN_DAYS = 30;
+const EXPIRES_IN_DAYS = 30 * 6;
 
 const AUDIT_TYPE_PROPERTIES = {
   [AUDIT_TYPE_LHS_DESKTOP]: ['performance', 'seo', 'accessibility', 'best-practices'],

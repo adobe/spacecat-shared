@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.8...@adobe/spacecat-shared-content-client-v1.1.0) (2024-09-19)
+
+
+### Features
+
+* update redirects ([719b29d](https://github.com/adobe/spacecat-shared/commit/719b29dc4b8d267e68f263abd29eafd79a925365))
+
 # [@adobe/spacecat-shared-content-client-v1.0.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.7...@adobe/spacecat-shared-content-client-v1.0.8) (2024-09-19)
 
 

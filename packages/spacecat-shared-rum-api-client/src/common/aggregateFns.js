@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { extractTrafficHints, classifyReferrer, getSecondLevelDomain } from './traffic.js';
+import { extractTrafficHints, classifyVendor, getSecondLevelDomain } from './traffic.js';
 
 /**
  * Calculates the total page views by URL from an array of bundles.
@@ -63,14 +63,14 @@ function getCTRByUrl(bundles) {
  * @returns {Object} - An object where the key is the URL and the value is an object
  * with the CTR value by referrer.
  */
-function getCTRByUrlAndChannel(bundles) {
+function getCTRByUrlAndVendor(bundles) {
   const aggregated = bundles.reduce((acc, bundle) => {
     const { url } = bundle;
     const trafficHints = extractTrafficHints(bundle);
     const referrerDomain = getSecondLevelDomain(trafficHints.referrer);
-    const channel = classifyReferrer(referrerDomain);
+    const vendor = classifyVendor(referrerDomain);
     if (!acc[url]) {
-      acc[url] = { sessionsWithClick: 0, totalPageviews: 0, channels: {} };
+      acc[url] = { sessionsWithClick: 0, totalPageviews: 0, vendors: {} };
     }
     const hasClick = bundle.events.some((event) => event.checkpoint === 'click');
 
@@ -78,24 +78,24 @@ function getCTRByUrlAndChannel(bundles) {
     if (hasClick) {
       acc[url].sessionsWithClick += bundle.weight;
     }
-    if (channel) {
-      if (!acc[url].channels[channel]) {
-        acc[url].channels[channel] = { sessionsWithClick: 0, totalPageviews: 0 };
+    if (vendor) {
+      if (!acc[url].vendors[vendor]) {
+        acc[url].vendors[vendor] = { sessionsWithClick: 0, totalPageviews: 0 };
       }
-      acc[url].channels[channel].totalPageviews += bundle.weight;
+      acc[url].vendors[vendor].totalPageviews += bundle.weight;
       if (hasClick) {
-        acc[url].channels[channel].sessionsWithClick += bundle.weight;
+        acc[url].vendors[vendor].sessionsWithClick += bundle.weight;
       }
     }
     return acc;
   }, {});
   return Object.entries(aggregated)
-    .reduce((acc, [url, { sessionsWithClick, totalPageviews, channels }]) => {
+    .reduce((acc, [url, { sessionsWithClick, totalPageviews, vendors }]) => {
       if (!acc[url]) {
-        acc[url] = { value: 0, channels: {} };
+        acc[url] = { value: 0, vendors: {} };
       }
       acc[url].value = (sessionsWithClick / totalPageviews);
-      acc[url].channels = Object.entries(channels)
+      acc[url].vendors = Object.entries(vendors)
         .reduce((_acc, [source, {
           sessionsWithClick: _sessionsWithClick, totalPageviews: _totalPageviews,
         }]) => {
@@ -133,6 +133,6 @@ function getSiteAvgCTR(bundles) {
 export {
   getSiteAvgCTR,
   getCTRByUrl,
-  getCTRByUrlAndChannel,
+  getCTRByUrlAndVendor,
   pageviewsByUrl,
 };

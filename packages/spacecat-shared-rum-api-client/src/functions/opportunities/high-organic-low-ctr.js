@@ -11,20 +11,20 @@
  */
 
 import trafficAcquisition from '../traffic-acquisition.js';
-import { getCTRByUrlAndChannel, getSiteAvgCTR } from '../../common/aggregateFns.js';
+import { getCTRByUrlAndVendor, getSiteAvgCTR } from '../../common/aggregateFns.js';
 
 const DAILY_EARNED_THRESHOLD = 5000;
 const CTR_THRESHOLD_RATIO = 0.95;
 const DAILY_PAGEVIEW_THRESHOLD = 1000;
-const CHANNELS_TO_CONSIDER = 5;
+const VENDORS_TO_CONSIDER = 5;
 
 function convertToOpportunity(traffic) {
   const {
-    url, total, ctr, paid, owned, earned, channels, siteAvgCTR, ctrByUrlAndChannel,
+    url, total, ctr, paid, owned, earned, vendors, siteAvgCTR, ctrByUrlAndVendor,
   } = traffic;
 
-  const topChannels = Object.entries(channels)
-    .sort((a, b) => b[1].total - a[1].total).slice(0, CHANNELS_TO_CONSIDER);
+  const topVendors = Object.entries(vendors)
+    .sort((a, b) => b[1].total - a[1].total).slice(0, VENDORS_TO_CONSIDER);
   const opportunity = {
     type: 'high-organic-low-ctr',
     page: url,
@@ -51,12 +51,12 @@ function convertToOpportunity(traffic) {
       },
     }],
   };
-  opportunity.metrics.push(...topChannels.map(([channel, {
+  opportunity.metrics.push(...topVendors.flatMap(([vendor, {
     total: _total, owned: _owned, earned: _earned, paid: _paid,
   }]) => {
     const trafficMetrics = {
       type: 'traffic',
-      referrer: channel,
+      referrer: vendor,
       value: {
         total: _total,
         owned: _owned,
@@ -66,9 +66,9 @@ function convertToOpportunity(traffic) {
     };
     const ctrMetrics = {
       type: 'ctr',
-      referrer: channel,
+      referrer: vendor,
       value: {
-        page: ctrByUrlAndChannel[channel],
+        page: ctrByUrlAndVendor[vendor],
       },
     };
     return [trafficMetrics, ctrMetrics];
@@ -89,17 +89,17 @@ function handler(bundles, opts = {}) {
   const { interval = 7 } = opts;
 
   const trafficByUrl = trafficAcquisition.handler(bundles);
-  const ctrByUrlAndChannel = getCTRByUrlAndChannel(bundles);
+  const ctrByUrlAndVendor = getCTRByUrlAndVendor(bundles);
   const siteAvgCTR = getSiteAvgCTR(bundles);
 
   return trafficByUrl.filter((traffic) => traffic.total > interval * DAILY_PAGEVIEW_THRESHOLD)
     .filter(hasHighOrganicTraffic.bind(null, interval))
-    .filter((traffic) => hasLowerCTR(ctrByUrlAndChannel[traffic.url].value, siteAvgCTR))
+    .filter((traffic) => hasLowerCTR(ctrByUrlAndVendor[traffic.url].value, siteAvgCTR))
     .map((traffic) => ({
       ...traffic,
-      ctr: ctrByUrlAndChannel[traffic.url].value,
+      ctr: ctrByUrlAndVendor[traffic.url].value,
       siteAvgCTR,
-      ctrByUrlAndChannel: ctrByUrlAndChannel[traffic.url].channels,
+      ctrByUrlAndVendor: ctrByUrlAndVendor[traffic.url].vendors,
     }))
     .map(convertToOpportunity);
 }

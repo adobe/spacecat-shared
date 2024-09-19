@@ -26,25 +26,23 @@
           "page": 0.14316702819956617
         }
       },
-      [
-        {
-          "type": "traffic",
-          "referrer": "tiktok",
-          "value": {
-            "total": 300,
-            "owned": 0,
-            "earned": 0,
-            "paid": 300
-          }
-        },
-        {
-          "type": "ctr",
-          "referrer": "tiktok",
-          "value": {
-            "page": 0.3333333333333333
-          }
+      {
+        "type": "traffic",
+        "referrer": "tiktok",
+        "value": {
+          "total": 300,
+          "owned": 0,
+          "earned": 0,
+          "paid": 300
         }
-      ]
+      },
+      {
+        "type": "ctr",
+        "referrer": "tiktok",
+        "value": {
+          "page": 0.3333333333333333
+        }
+      }
     ]
   }
 ]

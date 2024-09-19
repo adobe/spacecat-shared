@@ -15,23 +15,23 @@ import { classifyTrafficSource, extractTrafficHints } from '../common/traffic.js
 const MAIN_TYPES = ['total', 'paid', 'earned', 'owned'];
 
 function collectByUrlAndTrafficSource(acc, {
-  url, weight, trafficSource, channel,
+  url, weight, trafficSource, vendor,
 }) {
   acc[url] = acc[url] || {
-    total: 0, owned: 0, earned: 0, paid: 0, channels: {},
+    total: 0, owned: 0, earned: 0, paid: 0, vendors: {},
   };
   acc[url][trafficSource] = (acc[url][trafficSource] || 0) + weight;
   acc[url].total += weight;
   const trafficType = trafficSource.split(':')[0];
   acc[url][trafficType] += weight;
-  if (channel) {
-    if (!acc[url].channels[channel]) {
-      acc[url].channels[channel] = {
+  if (vendor) {
+    if (!acc[url].vendors[vendor]) {
+      acc[url].vendors[vendor] = {
         total: 0, owned: 0, earned: 0, paid: 0,
       };
     }
-    acc[url].channels[channel].total += weight;
-    acc[url].channels[channel][trafficType] += weight;
+    acc[url].vendors[vendor].total += weight;
+    acc[url].vendors[vendor][trafficType] += weight;
   }
   return acc;
 }
@@ -44,9 +44,9 @@ function transformFormat(trafficSources) {
     owned: value.owned,
     paid: value.paid,
     sources: Object.entries(value)
-      .filter(([source]) => !MAIN_TYPES.includes(source) && source !== 'channels')
+      .filter(([source]) => !MAIN_TYPES.includes(source) && source !== 'vendors')
       .map(([source, views]) => ({ type: source, views })),
-    channels: value.channels,
+    vendors: value.vendors,
   }));
 }
 
@@ -57,13 +57,13 @@ function handler(bundles) {
       const {
         type,
         category,
-        channel,
+        vendor,
       } = classifyTrafficSource(row.url, row.referrer, row.utmSource, row.utmMedium, row.tracking);
       return {
         url: row.url,
         weight: row.weight,
         trafficSource: `${type}:${category}`,
-        channel,
+        vendor,
       };
     })
     .reduce(collectByUrlAndTrafficSource, {});

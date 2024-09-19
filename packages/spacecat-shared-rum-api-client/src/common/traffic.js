@@ -68,13 +68,37 @@ const sources = {
   email: /sfmc|email/,
 };
 
-// Indexes of the mathcing groups for the regexes in referrer
-const referrerGroupingIndex = {
-  search: [0],
-  social: [1, 3],
-  ad: [0],
-  video: [0],
-};
+const vendorClassifications = [
+  { regex: /google|googleads|google-ads|google_search|google_deman|adwords|dv360|gdn|doubleclick|dbm|gmb/i, result: 'google' },
+  { regex: /instagram|\b(ig)\b/i, result: 'instagram' },
+  { regex: /facebook|fb|meta/i, result: 'facebook' },
+  { regex: /bing/i, result: 'bing' },
+  { regex: /tiktok/i, result: 'tiktok' },
+  { regex: /youtube|yt/i, result: 'youtube' },
+  { regex: /linkedin/i, result: 'linkedin' },
+  { regex: /twitter|^\b(x)\b/i, result: 'x' },
+  { regex: /snapchat/i, result: 'snapchat' },
+  { regex: /microsoft/i, result: 'microsoft' },
+  { regex: /pinterest/i, result: 'pinterest' },
+  { regex: /reddit/i, result: 'reddit' },
+  { regex: /spotify/i, result: 'spotify' },
+  { regex: /criteo/i, result: 'criteo' },
+  { regex: /taboola/i, result: 'taboola' },
+  { regex: /outbrain/i, result: 'outbrain' },
+  { regex: /yahoo/i, result: 'yahoo' },
+  { regex: /marketo/i, result: 'marketo' },
+  { regex: /eloqua/i, result: 'eloqua' },
+  { regex: /substack/i, result: 'substack' },
+  { regex: /line/i, result: 'line' },
+  { regex: /yext/i, result: 'yext' },
+  { regex: /teads/i, result: 'teads' },
+  { regex: /yandex/i, result: 'yandex' },
+  { regex: /baidu/i, result: 'baidu' },
+  { regex: /amazon|ctv/i, result: 'amazon' },
+  { regex: /dailymotion/i, result: 'dailymotion' },
+  { regex: /twitch/i, result: 'twitch' },
+  { regex: /direct/i, result: 'direct' },
+];
 
 // Tracking params - based on the checkpoints we have in rum-enhancer now
 // const organicTrackingParams = ['srsltid']; WE DO NOT HAVE THIS AS OF NOW
@@ -189,20 +213,12 @@ export function extractTrafficHints(bundle) {
 /**
  * Returns the name of the referrer as single word.
  * For example: facebook instead of www.facebook.com
- * @param {*} referrerString
+ * @param {*} origin
  */
-export function classifyReferrer(referrerString) {
-  if (!referrerString) return '';
-  let classifiedReferrer = '';
-  for (const [referrer, regex] of Object.entries(referrers)) {
-    const match = referrerString.match(regex);
-    if (match) {
-      const indexes = referrerGroupingIndex[referrer];
-      const classifiedReferrerIndex = indexes.find((index) => match[index]);
-      classifiedReferrer = match[classifiedReferrerIndex];
-    }
-  }
-  return classifiedReferrer;
+export function classifyVendor(origin) {
+  if (!origin) return '';
+  const result = vendorClassifications.find(({ regex }) => regex.test(origin));
+  return result ? result.result : '';
 }
 
 export function classifyTrafficSource(url, referrer, utmSource, utmMedium, trackingParams) {
@@ -219,11 +235,11 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
     && rule.utmMedium(sanitize(utmMedium))
     && rule.tracking(trackingParams)
   ));
-  const channel = classifyReferrer(referrerDomain);
+  const vendor = classifyVendor(referrerDomain);
 
   return {
     type,
     category,
-    channel,
+    vendor,
   };
 }

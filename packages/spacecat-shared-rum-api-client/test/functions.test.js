@@ -69,6 +69,6 @@ describe('Query functions', () => {
       bundlesWithTraffic.rumBundles,
       { interval: 7 },
     );
-    expect(expectedHighOrganicLowCTRResult).to.eql(highInorganicHighBounceResult);
+    expect(highInorganicHighBounceResult).to.eql(expectedHighOrganicLowCTRResult);
   });
 });

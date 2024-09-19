@@ -14,24 +14,6 @@ import { classifyTrafficSource } from '../common/traffic.js';
 
 const MAIN_TYPES = ['total', 'paid', 'earned', 'owned'];
 
-function extractHints(bundle) {
-  const findEvent = (checkpoint, source = '') => bundle.events.find((e) => e.checkpoint === checkpoint && (!source || e.source === source)) || {};
-
-  const referrer = findEvent('enter').source || '';
-  const utmSource = findEvent('utm', 'utm_source').target || '';
-  const utmMedium = findEvent('utm', 'utm_medium').target || '';
-  const tracking = findEvent('paid').checkpoint || findEvent('email').checkpoint || '';
-
-  return {
-    url: bundle.url,
-    weight: bundle.weight,
-    referrer,
-    utmSource,
-    utmMedium,
-    tracking,
-  };
-}
-
 function collectByUrlAndTrafficSource(acc, { url, weight, trafficSource }) {
   acc[url] = acc[url] || {
     total: 0, owned: 0, earned: 0, paid: 0,
@@ -57,15 +39,11 @@ function transformFormat(trafficSources) {
 
 function handler(bundles) {
   const trafficSources = bundles
-    .map(extractHints)
-    .map((row) => {
-      const {
-        type,
-        category,
-      } = classifyTrafficSource(row.url, row.referrer, row.utmSource, row.utmMedium, row.tracking);
+    .map((bundle) => {
+      const { type, category } = classifyTrafficSource(bundle);
       return {
-        url: row.url,
-        weight: row.weight,
+        url: bundle.url,
+        weight: bundle.weight,
         trafficSource: `${type}:${category}`,
       };
     })

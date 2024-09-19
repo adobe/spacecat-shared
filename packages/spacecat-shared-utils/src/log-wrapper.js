@@ -32,7 +32,7 @@ export function logWrapper(fn) {
   return async (message, context) => {
     const { log } = context;
 
-    if (log) {
+    if (log && !context.contextualLog) {
       if (typeof message === 'object' && message !== null && 'jobId' in message) {
         const { jobId } = message;
         const jobIdMarker = `[jobId=${jobId}]`;

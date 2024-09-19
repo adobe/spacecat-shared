@@ -99,7 +99,7 @@ const validateMetadata = (metadata) => {
 };
 
 const validateRedirects = (redirects) => {
-  const pathRegex = /^\/(?:[a-zA-Z0-9\-._~%!$&'()*+,;=:@]+\/?)*$/;
+  const pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
   if (!Array.isArray(redirects)) {
     throw new Error('Redirects must be an array');
   }

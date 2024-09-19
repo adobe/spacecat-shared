@@ -170,7 +170,7 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
     }
   });
   if (newRedirects.length !== noCycleRedirects.length) {
-    this.log.info(`Removed ${newRedirects.length - noCycleRedirects.length} redirect loops`);
+    log.info(`Removed ${newRedirects.length - noCycleRedirects.length} redirect loops`);
   }
   return noCycleRedirects;
 };

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.8...@adobe/spacecat-shared-utils-v1.20.0) (2024-09-19)
+
+
+### Features
+
+* SITES-24835:[Importer] Tracing: logging infrastructure to support tracing an import job across all Lambdas ([#368](https://github.com/adobe/spacecat-shared/issues/368)) ([a425a4d](https://github.com/adobe/spacecat-shared/commit/a425a4def31d8511b628211441ecf29b8a15de4e))
+
 # [@adobe/spacecat-shared-utils-v1.19.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.7...@adobe/spacecat-shared-utils-v1.19.8) (2024-09-14)
 
 

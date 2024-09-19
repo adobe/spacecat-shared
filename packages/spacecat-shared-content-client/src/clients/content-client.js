@@ -99,6 +99,7 @@ const validateMetadata = (metadata) => {
 };
 
 const validateRedirects = (redirects) => {
+  const pathRegex = /^\/(?:[a-zA-Z0-9\-._~%!$&'()*+,;=:@]+\/?)*$/;
   if (!Array.isArray(redirects)) {
     throw new Error('Redirects must be an array');
   }
@@ -120,12 +121,12 @@ const validateRedirects = (redirects) => {
       throw new Error('Redirect must have a valid to path');
     }
 
-    if (!redirect.from.startsWith('/')) {
-      throw new Error('Redirect from path must start with a slash');
+    if (!pathRegex.test(redirect.from)) {
+      throw new Error(`Invalid redirect from path: ${redirect.from}`);
     }
 
-    if (!redirect.to.startsWith('/')) {
-      throw new Error('Redirect to path must start with a slash');
+    if (!pathRegex.test(redirect.to)) {
+      throw new Error(`Invalid redirect to path: ${redirect.to}`);
     }
 
     if (redirect.from === redirect.to) {

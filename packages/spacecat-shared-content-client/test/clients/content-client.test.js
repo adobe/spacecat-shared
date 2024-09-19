@@ -369,8 +369,8 @@ describe('ContentClient', () => {
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, 'malformed-redirect'])).to.be.rejectedWith('Redirect must be an object');
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '', to: '/B' }])).to.be.rejectedWith('Redirect must have a valid from path');
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '/A', to: '' }])).to.be.rejectedWith('Redirect must have a valid to path');
-      await expect(client.updateRedirects([{ from: 'A', to: '/B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Redirect from path must start with a slash');
-      await expect(client.updateRedirects([{ from: '/A', to: 'B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Redirect to path must start with a slash');
+      await expect(client.updateRedirects([{ from: 'A', to: '/B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Invalid redirect from path: A');
+      await expect(client.updateRedirects([{ from: '/A', to: 'B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Invalid redirect to path: B');
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '/A', to: '/A' }])).to.be.rejectedWith('Redirect from and to paths must be different');
     });
     it('update success', async () => {

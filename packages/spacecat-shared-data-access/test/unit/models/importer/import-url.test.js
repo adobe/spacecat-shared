@@ -47,6 +47,7 @@ describe('ImportUrl Model tests', () => {
       expect(() => createImportUrl({ ...validImportUrlData, jobId: null })).to.throw('Invalid Job ID: null');
     });
   });
+
   describe('Import URL Functionality Tests', () => {
     let importUrl;
 

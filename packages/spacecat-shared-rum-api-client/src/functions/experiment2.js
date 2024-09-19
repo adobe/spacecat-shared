@@ -49,7 +49,7 @@ function handler(bundles) {
   dataChunks.addSeries('formsubmit', totals('formsubmit'));
   dataChunks.addSeries('convert', totals('convert'));
   dataChunks.addSeries('experimenttime', (bundle) => new Date(bundle.time).getTime());
-  dataChunks.addSeries('interaction', (bundle) => (bundle.events.find((e) => 'click' || e.checkpoint === 'formsubmit' || e.checkpoint === 'convert') ? bundle.weight : undefined));
+  dataChunks.addSeries('interaction', (bundle) => (bundle.events.find((e) => e.checkpoint === 'click' || e.checkpoint === 'formsubmit' || e.checkpoint === 'convert') ? bundle.weight : undefined));
 
   const {
     urlExperimentVariant,

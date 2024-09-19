@@ -2,3 +2,4 @@
 .vscode/*
 coverage/*
 *DO-NOT-COMMIT*
+packages/spacecat-shared-rum-api-client/src/common/cruncher.js

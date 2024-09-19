@@ -43,7 +43,7 @@ describe('Query functions', () => {
 
   it('crunches experiment data', async () => {
     const experimentsResult = experiment.handler(bundles.rumBundles);
-    expect(expectedExperimentsResult).to.eql(experimentsResult);
+    expect(experimentsResult).to.eql(expectedExperimentsResult);
   });
 
   it('crunches variant data', async () => {

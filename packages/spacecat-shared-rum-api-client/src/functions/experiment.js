@@ -10,161 +10,81 @@
  * governing permissions and limitations under the License.
  */
 
-const EXPERIMENT_CHECKPOINT = ['experiment'];
-const METRIC_CHECKPOINTS = ['click', 'convert', 'formsubmit'];
-const CHECKPOINTS = [...EXPERIMENT_CHECKPOINT, ...METRIC_CHECKPOINTS];
+import { DataChunks, generateKey, DELIMITER } from '../common/cruncher.js';
 
-function toClassName(name) {
-  return typeof name === 'string'
-    ? name.toLowerCase().replace(/[^0-9a-z]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
-    : '';
-}
+const METRICS = ['click', 'convert', 'formsubmit'];
 
-function getOrCreateExperimentObject(urlInsights, experimentName) {
-  let experimentObject = urlInsights.find((e) => e.experiment === toClassName(experimentName));
-  if (!experimentObject) {
-    experimentObject = {
-      experiment: toClassName(experimentName),
+const experimentsFacetFn = (bundle) => bundle.events.filter((e) => e.checkpoint === 'experiment').map((e) => generateKey(bundle.url, e.source));
+const variantsFacetFn = (bundle) => bundle.events.filter((e) => e.checkpoint === 'experiment').map((e) => generateKey(bundle.url, e.source, e.target));
+
+const checkpointsFacetFn = (bundle) => {
+  const experiments = bundle.events.filter((e) => e.checkpoint === 'experiment');
+  const metrics = bundle.events.filter((c) => METRICS.includes(c.checkpoint) && c.source);
+
+  const keys = experiments.flatMap(
+    (exp) => metrics.flatMap((metric) => [
+      generateKey(bundle.url, exp.source, exp.target, metric.checkpoint, metric.source),
+      generateKey(bundle.url, exp.source, exp.target, metric.checkpoint, '*'),
+    ]),
+  );
+
+  return [...new Set(keys)];
+};
+
+function handler(bundles) {
+  const dataChunks = new DataChunks();
+
+  dataChunks.loadBundles(bundles.filter((bundle) => bundle.events.some((event) => event.checkpoint === 'experiment')));
+
+  dataChunks.addFacet('experiments', experimentsFacetFn);
+  dataChunks.addFacet('variants', variantsFacetFn);
+  dataChunks.addFacet('checkpoints', checkpointsFacetFn);
+
+  dataChunks.addSeries('experimenttime', (bundle) => new Date(bundle.time).getTime());
+  dataChunks.addSeries('views', (bundle) => bundle.weight);
+  dataChunks.addSeries('interaction', (bundle) => (bundle.events.find((e) => e.checkpoint === 'click' || e.checkpoint === 'formsubmit' || e.checkpoint === 'convert') ? bundle.weight : undefined));
+
+  const { experiments, variants, checkpoints } = dataChunks.facets;
+
+  const result = {};
+  experiments.forEach((uev) => {
+    const [url, experiment] = uev.value.split(DELIMITER);
+    if (!result[url]) result[url] = [];
+    result[url].push({
+      experiment,
       variants: [],
-    };
-    urlInsights.push(experimentObject);
-  }
-  return experimentObject;
-}
-
-function getOrCreateVariantObject(variants, variantName) {
-  let variantObject = variants.find((v) => v.name === variantName);
-  if (!variantObject) {
-    variantObject = {
-      name: variantName,
-      views: 0,
-      samples: 0,
+      inferredStartDate: new Date(uev.metrics.experimenttime.min).toISOString(),
+      inferredEndDate: new Date(uev.metrics.experimenttime.max).toISOString(),
+    });
+  });
+  variants.forEach((uev) => {
+    const [url, experiment, variant] = uev.value.split(DELIMITER);
+    const eIdx = result[url].findIndex((e) => e.experiment === experiment);
+    result[url][eIdx].variants.push({
+      name: variant,
       click: {},
-      convert: {},
       formsubmit: {},
+      convert: {},
+      interactionsCount: uev.metrics.interaction.sum,
+      samples: uev.metrics.views.count,
+      views: uev.metrics.views.sum,
+    });
+  });
+  checkpoints.forEach((uev) => {
+    const [url, experiment, variant, checkpoint, source] = uev.value.split(DELIMITER);
+    const eIdx = result[url].findIndex((e) => e.experiment === experiment);
+    const vIdx = result[url][eIdx].variants.findIndex((v) => v.name === variant);
+
+    result[url][eIdx].variants[vIdx][checkpoint][source] = {
+      value: uev.metrics.views.sum,
+      samples: uev.metrics.views.count,
     };
-    variants.push(variantObject);
-  }
-  return variantObject;
-}
+  });
 
-function updateInferredStartAndEndDate(experimentObject, time) {
-  const bundleTime = new Date(time);
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  yesterday.setHours(0, 0, 0, 0);
-  const bundleDate = new Date(bundleTime);
-  bundleDate.setHours(0, 0, 0, 0);
-  if (!experimentObject.inferredStartDate && !experimentObject.inferredEndDate) {
-    // eslint-disable-next-line no-param-reassign
-    experimentObject.inferredStartDate = time;
-    // eslint-disable-next-line no-param-reassign
-    experimentObject.inferredEndDate = time;
-  } else {
-    const inferredStartDateObj = new Date(experimentObject.inferredStartDate);
-    const inferredEndDateObj = new Date(experimentObject.inferredEndDate);
-    if (bundleTime < inferredStartDateObj) {
-      // eslint-disable-next-line no-param-reassign
-      experimentObject.inferredStartDate = time;
-    }
-    if (bundleTime > inferredEndDateObj) {
-      // eslint-disable-next-line no-param-reassign
-      experimentObject.inferredEndDate = time;
-    }
-  }
-}
-
-function calculateMetrics(bundle) {
-  const metrics = {};
-  for (const checkpoint of METRIC_CHECKPOINTS) {
-    metrics[checkpoint] = {};
-  }
-  for (const event of bundle.events) {
-    if (METRIC_CHECKPOINTS.includes(event.checkpoint)) {
-      const { source, checkpoint } = event;
-      if (!metrics[checkpoint][source]) {
-        metrics[checkpoint][source] = {
-          value: bundle.weight,
-          samples: 1,
-        };
-      } else {
-        metrics[checkpoint][source].value += bundle.weight;
-        metrics[checkpoint][source].samples += 1;
-      }
-    }
-  }
-  return metrics;
-}
-
-function handler(chunks) {
-  const bundles = chunks.flatMap((chunk) => chunk.rumBundles);
-
-  const experimentInsights = {};
-  for (const bundle of bundles) {
-    const experimentEvents = bundle.events?.filter(
-      (e) => (EXPERIMENT_CHECKPOINT.includes(e.checkpoint) && e.source),
-    );
-    const { url, weight, time } = bundle;
-    const metrics = calculateMetrics(bundle);
-    for (const experimentEvent of experimentEvents) {
-      if (!experimentInsights[url]) {
-        experimentInsights[url] = [];
-      }
-      const experimentName = experimentEvent.source;
-      const variantName = experimentEvent.target;
-      const experimentObject = getOrCreateExperimentObject(
-        experimentInsights[url],
-        experimentName,
-      );
-      const variantObject = getOrCreateVariantObject(experimentObject.variants, variantName);
-      updateInferredStartAndEndDate(experimentObject, time);
-      variantObject.views += weight;
-      variantObject.samples += 1;
-      // combine metrics and variantObject, considering the interaction events
-      // only once during the session
-      for (const checkpoint of METRIC_CHECKPOINTS) {
-        // eslint-disable-next-line no-restricted-syntax
-        for (const source in metrics?.[checkpoint]) {
-          if (!variantObject[checkpoint][source]) {
-            variantObject[checkpoint][source] = {
-              value: weight,
-              samples: 1,
-            };
-          } else {
-            variantObject[checkpoint][source].value += weight;
-            variantObject[checkpoint][source].samples += 1;
-          }
-        }
-      }
-      // add each metric to the variantObject's * count by weight
-      for (const checkpoint of Object.keys(metrics)) {
-        if (Object.keys(metrics[checkpoint]).length > 0) {
-          if (!variantObject[checkpoint]['*']) {
-            variantObject[checkpoint]['*'] = {
-              value: weight,
-              samples: 1,
-            };
-          } else {
-            variantObject[checkpoint]['*'].value += weight;
-            variantObject[checkpoint]['*'].samples += 1;
-          }
-        }
-      }
-      // add global interactionsCount if there's any interaction
-      const hasInteraction = Object.values(metrics).some((m) => Object.keys(m).length > 0);
-      if (hasInteraction) {
-        if (!variantObject.interactionsCount) {
-          variantObject.interactionsCount = weight;
-        } else {
-          variantObject.interactionsCount += weight;
-        }
-      }
-    }
-  }
-  return experimentInsights;
+  return result;
 }
 
 export default {
   handler,
-  checkpoints: CHECKPOINTS,
+  checkpoints: [...METRICS, 'experiment'],
 };

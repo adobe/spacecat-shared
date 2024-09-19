@@ -1,6 +1,13 @@
 /*
- * This module is another service worker, which will handle the number crunching, i.e.
- * filtering, aggregating, and summarizing the data.
+ * Copyright 2024 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
  */
 /* eslint-disable max-classes-per-file */
 /**
@@ -42,6 +49,9 @@
  * @property {string} date - the base date of all bundles in the chunk
  * @property {RawBundle[]} rumBundles - the bundles, as retrieved from the server
  */
+
+export const DELIMITER = '≡';
+export const generateKey = (...keys) => keys.join(DELIMITER);
 
 /**
  * Calculates properties on the bundle, so that bundle-level filtering can be performed
@@ -585,6 +595,17 @@ export class DataChunks {
    */
   load(chunks) {
     this.data = chunks;
+    this.resetData();
+  }
+
+  /**
+   * Load raw bundles. This will replace data that has been loaded before
+   * @param {RawBundle[]} bundles the raw data to load, an array of raw bundles
+   */
+  loadBundles(bundles) {
+    this.data = [{
+      rumBundles: bundles,
+    }];
     this.resetData();
   }
 

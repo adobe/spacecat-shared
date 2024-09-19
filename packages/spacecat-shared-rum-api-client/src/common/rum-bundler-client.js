@@ -185,7 +185,7 @@ async function fetchBundles(opts = {}) {
   for (const chunk of chunks) {
     const responses = await Promise.all(chunk.map((url) => fetch(url)));
     const bundles = await Promise.all(responses.map((response) => response.json()));
-    result.push(...bundles);
+    result.push(...bundles.flatMap((b) => b.rumBundles.map(filterBundles(checkpoints))));
   }
   return mergeBundlesWithSameId(result);
 }

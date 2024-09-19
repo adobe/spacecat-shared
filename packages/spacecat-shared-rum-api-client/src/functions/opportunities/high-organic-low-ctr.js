@@ -16,11 +16,10 @@ const DAILY_EARNED_THRESHOLD = 5000;
 const CTR_THRESHOLD_RATIO = 0.95;
 const DAILY_PAGEVIEW_THRESHOLD = 1000;
 
-const memo = {};
-
-const trafficSeriesFn = (type) => (bundle) => {
+const trafficSeriesFn = (memo, type) => (bundle) => {
   const key = generateKey(bundle.url, bundle.id, bundle.time);
   if (!memo[key]) {
+    // eslint-disable-next-line no-param-reassign
     memo[key] = classifyTrafficSource(bundle).type;
   }
 
@@ -68,9 +67,11 @@ function handler(bundles, opts = {}) {
 
   dataChunks.addSeries('views', (bundle) => bundle.weight);
   dataChunks.addSeries('clicks', (bundle) => (bundle.events.some((e) => e.checkpoint === 'click') ? bundle.weight : 0));
-  dataChunks.addSeries('earned', trafficSeriesFn('earned'));
-  dataChunks.addSeries('owned', trafficSeriesFn('owned'));
-  dataChunks.addSeries('paid', trafficSeriesFn('paid'));
+
+  const memo = {};
+  dataChunks.addSeries('earned', trafficSeriesFn(memo, 'earned'));
+  dataChunks.addSeries('owned', trafficSeriesFn(memo, 'owned'));
+  dataChunks.addSeries('paid', trafficSeriesFn(memo, 'paid'));
 
   const siteAvgCTR = dataChunks.totals.clicks.sum / dataChunks.totals.views.sum;
 

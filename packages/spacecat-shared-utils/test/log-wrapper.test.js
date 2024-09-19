@@ -82,6 +82,28 @@ describe('logWrapper tests', () => {
     expect(mockContext.contextualLog).to.be.an('object');
   });
 
+  it('should handle empty messages and assign context.log to context.contextualLog', async () => {
+    const wrappedFn = logWrapper(mockFnFromSqs);
+
+    // Test with empty message
+    await wrappedFn({}, mockContext);
+    expect(mockFnFromSqs.calledWith({}, mockContext)).to.be.true;
+    expect(mockContext).to.have.property('contextualLog');
+    expect(mockContext.contextualLog).to.be.an('object');
+    expect(mockContext.contextualLog).to.equal(mockContext.log);
+  });
+
+  it('should handle null messages and assign context.log to context.contextualLog', async () => {
+    const wrappedFn = logWrapper(mockFnFromSqs);
+
+    // Test with null message
+    await wrappedFn(null, mockContext);
+    expect(mockFnFromSqs.calledWith(null, mockContext)).to.be.true;
+    expect(mockContext).to.have.property('contextualLog');
+    expect(mockContext.contextualLog).to.be.an('object');
+    expect(mockContext.contextualLog).to.equal(mockContext.log);
+  });
+
   logLevels.forEach((level) => {
     it(`should call ${level} log method with correct parameters when jobId is present`, async () => {
       const wrappedFn = logWrapper(mockFnFromSqs);

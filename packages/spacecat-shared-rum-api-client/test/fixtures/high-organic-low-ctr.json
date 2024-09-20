@@ -7,7 +7,7 @@
     "trackedPageKPIValue": 0.14316702819956617,
     "pageViews": 46100,
     "samples": 46100,
-    "siteAverageCTR": 0.40828402366863903,
+    "trackedKPISiteAverage": 0.40828402366863903,
     "metrics": [
       {
         "type": "traffic",

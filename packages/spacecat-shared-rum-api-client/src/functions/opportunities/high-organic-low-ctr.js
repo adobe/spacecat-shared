@@ -48,9 +48,9 @@ function convertToOpportunity(traffic) {
     screenshot: '',
     trackedPageKPIName: 'Click Through Rate',
     trackedPageKPIValue: ctr,
+    trackedKPISiteAverage: siteAvgCTR,
     pageViews: total,
     samples: total, // todo: get the actual number of samples
-    siteAverageCTR: siteAvgCTR,
     metrics: [{
       type: 'traffic',
       vendor: '*',

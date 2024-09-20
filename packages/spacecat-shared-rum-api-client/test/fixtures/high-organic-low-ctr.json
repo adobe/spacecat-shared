@@ -11,7 +11,7 @@
     "metrics": [
       {
         "type": "traffic",
-        "referrer": "*",
+        "vendor": "*",
         "value": {
           "total": 46100,
           "paid": 300,
@@ -21,14 +21,14 @@
       },
       {
         "type": "ctr",
-        "referrer": "*",
+        "vendor": "*",
         "value": {
           "page": 0.14316702819956617
         }
       },
       {
         "type": "traffic",
-        "referrer": "tiktok",
+        "vendor": "tiktok",
         "value": {
           "total": 300,
           "owned": 0,
@@ -38,7 +38,7 @@
       },
       {
         "type": "ctr",
-        "referrer": "tiktok",
+        "vendor": "tiktok",
         "value": {
           "page": 0.3333333333333333
         }

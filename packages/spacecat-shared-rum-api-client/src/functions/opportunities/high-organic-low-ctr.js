@@ -18,10 +18,27 @@ const CTR_THRESHOLD_RATIO = 0.95;
 const DAILY_PAGEVIEW_THRESHOLD = 1000;
 const VENDORS_TO_CONSIDER = 5;
 
+const MAIN_TYPES = ['paid', 'earned', 'owned'];
+
 function convertToOpportunity(traffic) {
   const {
-    url, total, ctr, paid, owned, earned, vendors, siteAvgCTR, ctrByUrlAndVendor,
+    url, total, ctr, paid, owned, earned, sources, siteAvgCTR, ctrByUrlAndVendor,
   } = traffic;
+
+  const vendors = sources.reduce((acc, { type, views }) => {
+    const [trafficType, , vendor] = type.split(':');
+    if (!vendor) {
+      return acc;
+    }
+    if (MAIN_TYPES.includes(trafficType)) {
+      acc[vendor] = acc[vendor] || {
+        total: 0, owned: 0, earned: 0, paid: 0,
+      };
+      acc[vendor].total += views;
+      acc[vendor][trafficType] += views;
+    }
+    return acc;
+  }, {});
 
   const topVendors = Object.entries(vendors)
     .sort((a, b) => b[1].total - a[1].total).slice(0, VENDORS_TO_CONSIDER);
@@ -36,7 +53,7 @@ function convertToOpportunity(traffic) {
     siteAverage: siteAvgCTR,
     metrics: [{
       type: 'traffic',
-      referrer: '*',
+      vendor: '*',
       value: {
         total,
         paid,
@@ -45,7 +62,7 @@ function convertToOpportunity(traffic) {
       },
     }, {
       type: 'ctr',
-      referrer: '*',
+      vendor: '*',
       value: {
         page: ctr,
       },
@@ -56,7 +73,7 @@ function convertToOpportunity(traffic) {
   }]) => {
     const trafficMetrics = {
       type: 'traffic',
-      referrer: vendor,
+      vendor,
       value: {
         total: _total,
         owned: _owned,
@@ -66,7 +83,7 @@ function convertToOpportunity(traffic) {
     };
     const ctrMetrics = {
       type: 'ctr',
-      referrer: vendor,
+      vendor,
       value: {
         page: ctrByUrlAndVendor[vendor],
       },

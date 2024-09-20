@@ -13,14 +13,14 @@
 /* eslint-disable object-curly-newline */
 
 import { expect } from 'chai';
-import { classifyTrafficSource } from '../../src/common/traffic.js';
+import { classifyTraffic } from '../../src/common/traffic.js';
 
 describe('Traffic classification', () => {
   const url = 'https://www.test.com/some/page';
   const { origin } = new URL(url);
 
   const assert = (expected, f) => {
-    const result = classifyTrafficSource(url, f.referrer, f.utmSource, f.utmMedium, f.tracking);
+    const result = classifyTraffic(url, f.referrer, f.utmSource, f.utmMedium, f.tracking);
     expect(result).to.eql(expected);
   };
 

@@ -160,7 +160,25 @@ const RULES = (domain) => ([
   { type: 'owned', category: 'uncategorized', referrer: any, utmSource: any, utmMedium: any, tracking: any },
 ]);
 
-export function classifyTrafficSource(url, referrer, utmSource, utmMedium, trackingParams) {
+function extractHints(bundle) {
+  const findEvent = (checkpoint, source = '') => bundle.events.find((e) => e.checkpoint === checkpoint && (!source || e.source === source)) || {};
+
+  const referrer = findEvent('enter').source || '';
+  const utmSource = findEvent('utm', 'utm_source').target || '';
+  const utmMedium = findEvent('utm', 'utm_medium').target || '';
+  const trackingParams = findEvent('paid').checkpoint || findEvent('email').checkpoint || '';
+
+  return {
+    url: bundle.url,
+    weight: bundle.weight,
+    referrer,
+    utmSource,
+    utmMedium,
+    trackingParams,
+  };
+}
+
+export function classifyTraffic(url, referrer, utmSource, utmMedium, trackingParams) {
   const secondLevelDomain = getSecondLevelDomain(url);
   const rules = RULES(secondLevelDomain);
 
@@ -179,4 +197,9 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
     type,
     category,
   };
+}
+
+export function classifyTrafficSource(bundle) {
+  const { url, referrer, utmSource, utmMedium, trackingParams } = extractHints(bundle);
+  return classifyTraffic(url, referrer, utmSource, utmMedium, trackingParams);
 }

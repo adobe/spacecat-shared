@@ -18058,7 +18058,7 @@
     {
       "id": "1656750620-1715646747687-ccd3b6776f8fc",
       "host": "rum.hlx.page",
-      "time": "2024-05-07T06:00:00.001Z",
+      "time": "2024-01-01T00:00:00.111Z",
       "timeSlot": "2024-05-07T06:00:00.000Z",
       "url": "https://www.aem.live/new-exp-page",
       "userAgent": "desktop:windows",
@@ -18066,8 +18066,8 @@
       "events": [
         {
           "checkpoint": "experiment",
-          "target": "https://www.aem.live/some-other-page",
-          "source": 3,
+          "target": "challenger-1",
+          "source": "new-exp",
           "timeDelta": 1814
         }
       ]
@@ -18075,7 +18075,7 @@
     {
       "id": "58LOUV",
       "host": "rum.hlx.page",
-      "time": "2024-07-13T06:00:00.098Z",
+      "time": "2024-01-31T00:00:00.999Z",
       "timeSlot": "2024-07-13T06:00:00.000Z",
       "url": "https://www.aem.live/new-exp-page",
       "userAgent": "mobile:ios",
@@ -18083,7 +18083,8 @@
       "events": [
         {
           "checkpoint": "experiment",
-          "target": "contr ... <<<Logpush: message truncated>>> ... d-martech",
+          "source": "new-exp",
+          "target": "challenger-2",
           "timeDelta": 98
         },
         {

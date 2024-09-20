@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.9.1...@adobe/spacecat-shared-rum-api-client-v2.9.2) (2024-09-20)
+
+
+### Bug Fixes
+
+* Improve granularity of high organic traffic audit ([#372](https://github.com/adobe/spacecat-shared/issues/372)) ([a2d3770](https://github.com/adobe/spacecat-shared/commit/a2d37707d94134d7998ba17fa4505c4fc25b46c3))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.9.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.9.0...@adobe/spacecat-shared-rum-api-client-v2.9.1) (2024-09-14)
 
 

@@ -34,7 +34,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.1.8",
+    "@adobe/fetch": "4.1.9",
     "@adobe/helix-universal": "5.0.5",
     "@adobe/spacecat-shared-utils": "1.14.5"
   },

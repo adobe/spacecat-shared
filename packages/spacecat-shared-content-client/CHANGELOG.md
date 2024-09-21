@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.0...@adobe/spacecat-shared-content-client-v1.1.1) (2024-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#374](https://github.com/adobe/spacecat-shared/issues/374)) ([426e61b](https://github.com/adobe/spacecat-shared/commit/426e61b2e77a955a33651245344724881b0f4f55))
+
 # [@adobe/spacecat-shared-content-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.0.8...@adobe/spacecat-shared-content-client-v1.1.0) (2024-09-19)
 
 

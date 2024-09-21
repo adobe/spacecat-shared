@@ -35,7 +35,7 @@
   "dependencies": {
     "@adobe/helix-universal": "5.0.5",
     "@adobe/spacecat-shared-utils": "1.7.2",
-    "@slack/web-api": "7.4.0"
+    "@slack/web-api": "7.5.0"
   },
   "devDependencies": {
     "chai": "5.1.1",

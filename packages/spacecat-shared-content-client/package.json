@@ -44,7 +44,7 @@
     "chai-as-promised": "8.0.0",
     "esmock": "2.6.7",
     "nock": "13.5.4",
-    "sinon": "18.0.1",
+    "sinon": "19.0.2",
     "sinon-chai": "4.0.0",
     "typescript": "5.6.2"
   }

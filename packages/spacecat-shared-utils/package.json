@@ -40,7 +40,7 @@
     "chai-as-promised": "8.0.0",
     "husky": "9.1.6",
     "nock": "13.5.5",
-    "sinon": "18.0.1",
+    "sinon": "19.0.2",
     "sinon-chai": "4.0.0"
   },
   "dependencies": {

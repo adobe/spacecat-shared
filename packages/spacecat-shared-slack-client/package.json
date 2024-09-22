@@ -33,7 +33,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/helix-universal": "5.0.5",
+    "@adobe/helix-universal": "5.0.6",
     "@adobe/spacecat-shared-utils": "1.7.2",
     "@slack/web-api": "7.5.0"
   },

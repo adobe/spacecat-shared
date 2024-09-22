@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.3.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.3.15...@adobe/spacecat-shared-ims-client-v1.3.16) (2024-09-22)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.0.6 ([#379](https://github.com/adobe/spacecat-shared/issues/379)) ([6e4abc8](https://github.com/adobe/spacecat-shared/commit/6e4abc8768c61712c2c02d32406fa32acc3cd3a3))
+
 # [@adobe/spacecat-shared-ims-client-v1.3.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.3.14...@adobe/spacecat-shared-ims-client-v1.3.15) (2024-09-21)
 
 

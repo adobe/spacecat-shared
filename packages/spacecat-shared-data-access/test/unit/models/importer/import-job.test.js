@@ -28,6 +28,8 @@ const validImportJob = {
   initiatedBy: {
     apiKeyName: 'test',
   },
+  hasCustomHeaders: false,
+  hasCustomImportJs: false,
 };
 describe('ImportJob Model tests', () => {
   describe('Validation Tests', () => {
@@ -112,6 +114,11 @@ describe('ImportJob Model tests', () => {
       const importJob = createImportJob({ ...validImportJob, startTime: '' });
       expect(importJob.getStartTime()).to.match(/^20/);
     });
+
+    it('create an import job with invalid custom fields', () => {
+      expect(() => createImportJob({ ...validImportJob, hasCustomHeaders: 'x' })).to.throw('Invalid hasCustomHeaders value: x');
+      expect(() => createImportJob({ ...validImportJob, hasCustomImportJs: 'x' })).to.throw('Invalid hasCustomImportJs value: x');
+    });
   });
 
   describe('Import Job Functionality Tests', () => {
@@ -169,6 +176,26 @@ describe('ImportJob Model tests', () => {
     it('set invalid redirect count of import job', () => {
       expect(() => importJob.updateRedirectCount('1')).to.throw('Invalid redirect count during update: 1');
       expect(() => importJob.updateRedirectCount(-1)).to.throw('Invalid redirect count during update: -1');
+    });
+
+    it('update hasCustomHeaders of import job', () => {
+      importJob.updateHasCustomHeaders(true);
+      expect(importJob.hasCustomHeaders()).to.equal(true);
+
+      importJob.updateHasCustomHeaders(false);
+      expect(importJob.hasCustomHeaders()).to.equal(false);
+
+      expect(() => importJob.updateHasCustomHeaders(undefined)).to.throw('Invalid hasCustomHeaders value: undefined');
+    });
+
+    it('update hasCustomImportJs of import job', () => {
+      importJob.updateHasCustomImportJs(true);
+      expect(importJob.hasCustomImportJs()).to.equal(true);
+
+      importJob.updateHasCustomImportJs(false);
+      expect(importJob.hasCustomImportJs()).to.equal(false);
+
+      expect(() => importJob.updateHasCustomImportJs(undefined)).to.throw('Invalid hasCustomImportJs value: undefined');
     });
 
     it('updates import queue id of import job', () => {

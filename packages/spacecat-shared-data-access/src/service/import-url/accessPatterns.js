@@ -103,7 +103,7 @@ export const getImportUrlsByJobIdAndStatus = async (dynamoClient, config, log, j
  * @param {Object} config
  * @param {Logger} log
  * @param {string} jobId
- * @returns {Promise<ImportUrlDto[]>}
+ * @returns {Promise<ImportUrlDto[]> | []}
  */
 export const getImportUrlsByJobId = async (dynamoClient, config, log, jobId) => {
   const items = await dynamoClient.query({

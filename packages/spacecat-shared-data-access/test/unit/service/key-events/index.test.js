@@ -52,7 +52,7 @@ describe('Site Candidate Functions Tests', () => {
     exportedFunctions = keyEventFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
   });
 
-  before('setup', function () {
+  before('setup', function beforeSetup() {
     this.clock = sandbox.useFakeTimers({
       now: new Date(mockDate).getTime(),
     });

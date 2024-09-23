@@ -976,6 +976,10 @@
           "AttributeType": "N"
         },
         {
+          "AttributeName": "redirectCount",
+          "AttributeType": "N"
+        },
+        {
           "AttributeName": "urlCount",
           "AttributeType": "N"
         },
@@ -994,6 +998,22 @@
             },
             "SortKey": {
               "AttributeName": "status",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-services-all-import-jobs-by-date-range",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "GSI1PK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "startTime",
               "AttributeType": "S"
             }
           },

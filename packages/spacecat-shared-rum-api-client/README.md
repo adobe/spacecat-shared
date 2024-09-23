@@ -203,6 +203,7 @@ Calculates the amount of inorganic traffic and the bounce rate for each page. Id
     "screenshot": "",
     "trackedPageKPIName": "Bounce Rate",
     "trackedPageKPIValue": 0.6507592190889371,
+    "trackedKPISiteAverage": "",
     "pageViews": 46100,
     "samples": 46100,
     "metrics": [
@@ -223,6 +224,7 @@ Calculates the amount of inorganic traffic and the bounce rate for each page. Id
     "screenshot": "",
     "trackedPageKPIName": "Bounce Rate",
     "trackedPageKPIValue": 0.8723897911832946,
+    "trackedKPISiteAverage": "",
     "pageViews": 43100,
     "samples": 43100,
     "metrics": [
@@ -242,7 +244,7 @@ Calculates the amount of inorganic traffic and the bounce rate for each page. Id
 
 ### high-organic-low-ctr (Experimentation Opportunity)
 
-Calculates the amount of non-inorganic (earned and owned) traffic and the click-through rate for each page. Identifies pages with high non-inorganic traffic and low click-through rates, which can be targeted for future experimentation opportunities. An example payload is provided below:
+Calculates the amount of non-inorganic (earned and owned) traffic and the click-through rate for each page and vendor. Identifies pages with high non-inorganic traffic and low click-through rates, which can be targeted for future experimentation opportunities. An example payload is provided below:
 
 ```json
 [
@@ -251,24 +253,43 @@ Calculates the amount of non-inorganic (earned and owned) traffic and the click-
     "page": "https://www.spacecat.com/about-us",
     "screenshot": "",
     "trackedPageKPIName": "Click Through Rate",
-    "trackedPageKPIValue": 0.14099783080260303,
+    "trackedPageKPIValue": 0.14316702819956617,
+    "trackedKPISiteAverage": 0.40828402366863903,
     "pageViews": 46100,
     "samples": 46100,
     "metrics": [
       {
         "type": "traffic",
+        "vendor": "*",
         "value": {
           "total": 46100,
-          "paid": 0,
-          "owned": 46100,
+          "paid": 300,
+          "owned": 45800,
           "earned": 0
         }
       },
       {
         "type": "ctr",
+        "vendor": "*",
         "value": {
-          "page": 0.14099783080260303,
-          "siteAverage": 0.4077909270216962
+          "page": 0.14316702819956617
+        }
+      },
+      {
+        "type": "traffic",
+        "vendor": "tiktok",
+        "value": {
+          "total": 300,
+          "owned": 0,
+          "earned": 0,
+          "paid": 300
+        }
+      },
+      {
+        "type": "ctr",
+        "vendor": "tiktok",
+        "value": {
+          "page": 0.3333333333333333
         }
       }
     ]

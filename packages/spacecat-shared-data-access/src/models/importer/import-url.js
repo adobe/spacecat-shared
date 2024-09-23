@@ -94,6 +94,10 @@ export const createImportUrl = (data) => {
     throw new Error(`Invalid Url: ${newState.url}`);
   }
 
+  if (!hasText(newState.jobId)) {
+    throw new Error(`Invalid Job ID: ${newState.jobId}`);
+  }
+
   if (!Object.values(ImportUrlStatus).includes(newState.status)) {
     throw new Error(`Invalid Import URL status: ${newState.status}`);
   }

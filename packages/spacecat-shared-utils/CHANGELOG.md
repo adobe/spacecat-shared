@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.20.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.2...@adobe/spacecat-shared-utils-v1.20.3) (2024-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#374](https://github.com/adobe/spacecat-shared/issues/374)) ([426e61b](https://github.com/adobe/spacecat-shared/commit/426e61b2e77a955a33651245344724881b0f4f55))
+
+# [@adobe/spacecat-shared-utils-v1.20.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.1...@adobe/spacecat-shared-utils-v1.20.2) (2024-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#378](https://github.com/adobe/spacecat-shared/issues/378)) ([273a70d](https://github.com/adobe/spacecat-shared/commit/273a70d6b6e862a266628185254e1e99bcaae219))
+
+# [@adobe/spacecat-shared-utils-v1.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.0...@adobe/spacecat-shared-utils-v1.20.1) (2024-09-19)
+
+
+### Bug Fixes
+
+* add null check for empty message in logWrapper ([#377](https://github.com/adobe/spacecat-shared/issues/377)) ([231ceea](https://github.com/adobe/spacecat-shared/commit/231ceeaaad518c2358c0df728911a991cfde563c))
+
+# [@adobe/spacecat-shared-utils-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.8...@adobe/spacecat-shared-utils-v1.20.0) (2024-09-19)
+
+
+### Features
+
+* SITES-24835:[Importer] Tracing: logging infrastructure to support tracing an import job across all Lambdas ([#368](https://github.com/adobe/spacecat-shared/issues/368)) ([a425a4d](https://github.com/adobe/spacecat-shared/commit/a425a4def31d8511b628211441ecf29b8a15de4e))
+
 # [@adobe/spacecat-shared-utils-v1.19.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.7...@adobe/spacecat-shared-utils-v1.19.8) (2024-09-14)
 
 

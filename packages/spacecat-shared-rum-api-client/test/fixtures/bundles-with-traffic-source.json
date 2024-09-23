@@ -13,6 +13,12 @@
           "checkpoint": "paid",
           "source": "gclid",
           "target": "google"
+        },
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.google.com/",
+          "timeDelta": 1007
         }
       ]
     },
@@ -661,7 +667,25 @@
       "url": "https://www.spacecat.com/about-us",
       "userAgent": "desktop:mac",
       "weight": 100,
-      "events": []
+      "events": [
+        {
+          "checkpoint": "paid",
+          "target": "ttclid",
+          "source": "tiktok",
+          "timeDelta": 1018
+        },
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.tiktok.com/",
+          "timeDelta": 1007
+        },
+        {
+          "checkpoint": "click",
+          "source": ".some-block",
+          "target": "some-url"
+        }
+      ]
     },
     {
       "id": "51vtsh15kn",
@@ -750,7 +774,20 @@
       "url": "https://www.spacecat.com/about-us",
       "userAgent": "mobile:android",
       "weight": 100,
-      "events": []
+      "events": [
+        {
+          "checkpoint": "paid",
+          "target": "ttclid",
+          "source": "tiktok",
+          "timeDelta": 1018
+        },
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.tiktok.com/",
+          "timeDelta": 1007
+        }
+      ]
     },
     {
       "id": "32i721xsw1b",
@@ -834,7 +871,20 @@
       "url": "https://www.spacecat.com/about-us",
       "userAgent": "mobile:android",
       "weight": 100,
-      "events": []
+      "events": [
+        {
+          "checkpoint": "paid",
+          "target": "ttclid",
+          "source": "tiktok",
+          "timeDelta": 1018
+        },
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.tiktok.com/",
+          "timeDelta": 1007
+        }
+      ]
     },
     {
       "id": "bl2v3z6olbo",

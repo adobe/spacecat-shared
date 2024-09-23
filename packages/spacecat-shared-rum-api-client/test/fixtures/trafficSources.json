@@ -3,16 +3,20 @@
     "url": "https://www.aem.live/home",
     "total": 2620,
     "earned": 400,
-    "owned": 2220,
-    "paid": 0,
+    "owned": 2120,
+    "paid": 100,
     "sources": [
       {
         "type": "owned:direct",
-        "views": 2220
+        "views": 2120
       },
       {
-        "type": "earned:search",
+        "type": "earned:search:google",
         "views": 400
+      },
+      {
+        "type": "paid:social:tiktok",
+        "views": 100
       }
     ]
   },
@@ -503,7 +507,7 @@
     "paid": 0,
     "sources": [
       {
-        "type": "earned:search",
+        "type": "earned:search:google",
         "views": 100
       },
       {

@@ -37,6 +37,7 @@ export const ImportJobDto = {
     urlCount: importJob.getUrlCount(),
     successCount: importJob.getSuccessCount(),
     failedCount: importJob.getFailedCount(),
+    redirectCount: importJob.getRedirectCount(),
     importQueueId: importJob.getImportQueueId(),
     initiatedBy: importJob.getInitiatedBy(),
     GSI1PK: 'ALL_IMPORT_JOBS',
@@ -60,6 +61,7 @@ export const ImportJobDto = {
       urlCount: dynamoItem.urlCount,
       successCount: dynamoItem.successCount,
       failedCount: dynamoItem.failedCount,
+      redirectCount: dynamoItem.redirectCount,
       importQueueId: dynamoItem.importQueueId,
       initiatedBy: dynamoItem.initiatedBy,
     };

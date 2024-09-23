@@ -141,6 +141,36 @@ describe('ImportJob Model tests', () => {
       expect(importJob.getUrlCount()).to.equal(10);
     });
 
+    it('updates success count of import job', () => {
+      importJob.updateSuccessCount(10);
+      expect(importJob.getSuccessCount()).to.equal(10);
+    });
+
+    it('set invalid success count of import job', () => {
+      expect(() => importJob.updateSuccessCount('10')).to.throw('Invalid success count during update: 10');
+      expect(() => importJob.updateSuccessCount(-1)).to.throw('Invalid success count during update: -1');
+    });
+
+    it('updates failed count of import job', () => {
+      importJob.updateFailedCount(5);
+      expect(importJob.getFailedCount()).to.equal(5);
+    });
+
+    it('set invalid failed count of import job', () => {
+      expect(() => importJob.updateFailedCount('1')).to.throw('Invalid failed count during update: 1');
+      expect(() => importJob.updateFailedCount(-1)).to.throw('Invalid failed count during update: -1');
+    });
+
+    it('updates redirect count of import job', () => {
+      importJob.updateRedirectCount(1);
+      expect(importJob.getRedirectCount()).to.equal(1);
+    });
+
+    it('set invalid redirect count of import job', () => {
+      expect(() => importJob.updateRedirectCount('1')).to.throw('Invalid redirect count during update: 1');
+      expect(() => importJob.updateRedirectCount(-1)).to.throw('Invalid redirect count during update: -1');
+    });
+
     it('updates import queue id of import job', () => {
       importJob.updateImportQueueId('123');
       expect(importJob.getImportQueueId()).to.equal('123');

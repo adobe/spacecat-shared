@@ -34,6 +34,9 @@ const ImportJob = (data) => {
   self.getDuration = () => self.state.duration;
   self.getStatus = () => self.state.status;
   self.getUrlCount = () => self.state.urlCount;
+  self.getSuccessCount = () => self.state.successCount;
+  self.getFailedCount = () => self.state.failedCount;
+  self.getRedirectCount = () => self.state.redirectCount;
   self.getImportQueueId = () => self.state.importQueueId;
   self.getInitiatedBy = () => self.state.initiatedBy;
 
@@ -92,7 +95,40 @@ const ImportJob = (data) => {
    */
   self.updateUrlCount = (urlCount) => updateState('urlCount', urlCount, (value) => {
     if (!isInteger(value)) {
-      throw new Error(`Invalid url count during update: ${urlCount}`);
+      throw new Error(`Invalid url count during update: ${value}`);
+    }
+  });
+
+  /**
+   * Updates the success count of the ImportJob.
+   * @param {number} successCount - The new success count.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  self.updateSuccessCount = (successCount) => updateState('successCount', successCount, (value) => {
+    if (!isInteger(value) || value < 0) {
+      throw new Error(`Invalid success count during update: ${value}`);
+    }
+  });
+
+  /**
+   * Updates the failed count of the ImportJob.
+   * @param {number} failedCount - The new failed count.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  self.updateFailedCount = (failedCount) => updateState('failedCount', failedCount, (value) => {
+    if (!isInteger(value) || value < 0) {
+      throw new Error(`Invalid failed count during update: ${value}`);
+    }
+  });
+
+  /**
+   * Updates the redirect count of the ImportJob.
+   * @param {number} redirectCount - The new redirect count.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  self.updateRedirectCount = (redirectCount) => updateState('redirectCount', redirectCount, (value) => {
+    if (!isInteger(value) || value < 0) {
+      throw new Error(`Invalid redirect count during update: ${value}`);
     }
   });
 

@@ -522,6 +522,11 @@ export interface ImportJob {
   getFailedCount: () => number;
 
   /**
+   * Retrieves the redirect count of the import job.
+   */
+  getRedirectCount: () => number;
+
+  /**
    * Retrieves the importQueueId of the import job.
    */
   getImportQueueId: () => string;

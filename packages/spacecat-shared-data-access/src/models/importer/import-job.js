@@ -240,11 +240,11 @@ export const createImportJob = (data) => {
     });
   }
 
-  if (!isBoolean(newState.hasCustomImportJs)) {
+  if (newState.hasCustomImportJs && !isBoolean(newState.hasCustomImportJs)) {
     throw new Error(`Invalid hasCustomImportJs value: ${newState.hasCustomImportJs}`);
   }
 
-  if (!isBoolean(newState.hasCustomHeaders)) {
+  if (newState.hasCustomHeaders && !isBoolean(newState.hasCustomHeaders)) {
     throw new Error(`Invalid hasCustomHeaders value: ${newState.hasCustomHeaders}`);
   }
 

@@ -28,8 +28,6 @@ const validImportJob = {
   initiatedBy: {
     apiKeyName: 'test',
   },
-  hasCustomHeaders: false,
-  hasCustomImportJs: false,
 };
 describe('ImportJob Model tests', () => {
   describe('Validation Tests', () => {
@@ -115,8 +113,21 @@ describe('ImportJob Model tests', () => {
       expect(importJob.getStartTime()).to.match(/^20/);
     });
 
-    it('create an import job with invalid custom fields', () => {
+    it('create an import job with custom fields', () => {
+      let headersJob = createImportJob({ ...validImportJob, hasCustomHeaders: true });
+      expect(headersJob.hasCustomHeaders()).to.be.true;
+      headersJob = createImportJob({ ...validImportJob, hasCustomHeaders: false });
+      expect(headersJob.hasCustomHeaders()).to.be.false;
+      headersJob = createImportJob({ ...validImportJob });
+      expect(headersJob.hasCustomHeaders()).to.be.false;
       expect(() => createImportJob({ ...validImportJob, hasCustomHeaders: 'x' })).to.throw('Invalid hasCustomHeaders value: x');
+
+      let importJsJob = createImportJob({ ...validImportJob, hasCustomImportJs: true });
+      expect(importJsJob.hasCustomImportJs()).to.be.true;
+      importJsJob = createImportJob({ ...validImportJob, hasCustomImportJs: false });
+      expect(importJsJob.hasCustomImportJs()).to.be.false;
+      importJsJob = createImportJob({ ...validImportJob });
+      expect(importJsJob.hasCustomImportJs()).to.be.false;
       expect(() => createImportJob({ ...validImportJob, hasCustomImportJs: 'x' })).to.throw('Invalid hasCustomImportJs value: x');
     });
   });

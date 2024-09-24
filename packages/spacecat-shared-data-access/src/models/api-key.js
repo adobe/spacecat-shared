@@ -26,6 +26,7 @@ const scopeNames = [
   'imports.read',
   'imports.write',
   'imports.read_all',
+  'imports.write_all_domains',
 ];
 
 const ApiKey = (data) => {

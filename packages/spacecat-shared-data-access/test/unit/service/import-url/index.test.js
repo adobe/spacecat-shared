@@ -18,6 +18,7 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { importUrlFunctions } from '../../../../src/service/import-url/index.js';
 import { createImportUrl } from '../../../../src/models/importer/import-url.js';
+import { ImportJobStatus } from '../../../../src/index.js';
 
 use(sinonChai);
 use(chaiAsPromised);
@@ -31,6 +32,7 @@ describe('Import Url Tests', () => {
     let mockDynamoClient;
     let mockLog;
     let exportedFunctions;
+    let mockImportUrl;
 
     beforeEach(() => {
       mockDynamoClient = {
@@ -42,35 +44,31 @@ describe('Import Url Tests', () => {
         log: sinon.stub(),
       };
       exportedFunctions = importUrlFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
+
+      mockImportUrl = {
+        id: 'test-url-id',
+        status: ImportJobStatus.RUNNING,
+        url: 'https://www.test.com',
+        jobId: 'test-job-id',
+      };
     });
 
     describe('getImportUrlByID', () => {
       it('should return an ImportUrlDto when an item is found', async () => {
-        const mockImportUrl = {
-          id: 'test-id',
-          status: 'RUNNING',
-          url: 'https://www.test.com',
-          jobId: 'test-job-id',
-        };
         mockDynamoClient.getItem.resolves(mockImportUrl);
-        const result = await exportedFunctions.getImportUrlById('test-id');
-        expect(result.state.id).to.equal('test-id');
+        const result = await exportedFunctions.getImportUrlById('test-url-id');
+        expect(result.state.id).to.equal('test-url-id');
       });
 
       it('should return null when an item is not found', async () => {
         mockDynamoClient.getItem.resolves(null);
-        const result = await exportedFunctions.getImportUrlById('test-id');
+        const result = await exportedFunctions.getImportUrlById('test-url-id');
         expect(result).to.be.null;
       });
     });
 
     describe('createImportUrl', () => {
       it('should create an ImportUrlDto with the correct status', async () => {
-        const mockImportUrl = {
-          id: 'test-id',
-          status: 'RUNNING',
-          url: 'https://www.test.com',
-        };
         await exportedFunctions.createNewImportUrl(mockImportUrl);
         expect(mockDynamoClient.putItem.calledOnce).to.be.true;
       });
@@ -78,43 +76,26 @@ describe('Import Url Tests', () => {
 
     describe('updateImportUrl', () => {
       it('should update an existing importUrl with the correct status', async () => {
-        const mockImportUrl = {
-          id: 'test-id',
-          status: 'RUNNING',
-          url: 'https://www.test.com',
-        };
         mockDynamoClient.getItem.resolves(mockImportUrl);
 
-        const importUrl = await exportedFunctions.getImportUrlById('test-id');
-        importUrl.setStatus('COMPLETE');
+        const importUrl = await exportedFunctions.getImportUrlById('test-url-id');
+        importUrl.setStatus(ImportJobStatus.COMPLETE);
         const result = await exportedFunctions.updateImportUrl(importUrl);
 
         expect(result).to.be.not.null;
         expect(mockDynamoClient.putItem).to.have.been.calledOnce;
-        expect(result.getStatus()).to.equal('COMPLETE');
+        expect(result.getStatus()).to.equal(ImportJobStatus.COMPLETE);
       });
 
       it('should throw an error when the importUrl does not exist', async () => {
-        const mockImportUrl = {
-          id: 'test-id',
-          status: 'RUNNING',
-          url: 'https://www.test.com',
-        };
-
         const importUrl = createImportUrl(mockImportUrl);
         const result = exportedFunctions.updateImportUrl(importUrl);
-        await expect(result).to.be.rejectedWith('Import Url with ID:test-id does not exist');
+        await expect(result).to.be.rejectedWith('Import Url with ID: test-url-id does not exist');
       });
     });
 
     describe('getImportUrlsByJobIdAndStatus', () => {
       it('should return an array of ImportUrlDto when items are found', async () => {
-        const mockImportUrl = {
-          id: 'test-id',
-          status: 'RUNNING',
-          url: 'https://www.test.com',
-          jobId: 'test-job-id',
-        };
         mockDynamoClient.query.resolves([mockImportUrl]);
         const result = await exportedFunctions.getImportUrlsByJobIdAndStatus('test-job-id', 'RUNNING');
         expect(result.length).to.equal(1);
@@ -124,12 +105,6 @@ describe('Import Url Tests', () => {
 
     describe('getImportUrlsByJobId', () => {
       it('should return an array of ImportUrl when items are found', async () => {
-        const mockImportUrl = {
-          id: 'test-url-id',
-          status: 'RUNNING',
-          url: 'https://www.test.com',
-          jobId: 'test-job-id',
-        };
         mockDynamoClient.query.resolves([mockImportUrl]);
         const result = await exportedFunctions.getImportUrlsByJobId('test-url-id');
         expect(result.length).to.equal(1);

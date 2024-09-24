@@ -18,6 +18,7 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { importJobFunctions } from '../../../../src/service/import-job/index.js';
 import { createImportJob } from '../../../../src/models/importer/import-job.js';
+import { ImportUrlStatus } from '../../../../src/index.js';
 
 use(sinonChai);
 use(chaiAsPromised);
@@ -66,7 +67,21 @@ describe('Import Job Tests', () => {
             userAgent: 'test-user-agent',
           },
         };
+
+        const urls = [];
+        Object.values(ImportUrlStatus).forEach((status) => {
+          const mockImportUrl = {
+            id: `test-import-url-${status}`,
+            jobId: 'test-id',
+            status,
+            url: `https://www.test.com/${status}`,
+          };
+          urls.push(mockImportUrl);
+        });
+
         mockDynamoClient.getItem.resolves(mockImportJob);
+        mockDynamoClient.query.resolves(urls);
+
         const result = await exportedFunctions.getImportJobByID('test-id');
 
         expect(result.state.id).to.equal('test-id');

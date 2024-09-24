@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-console */
+
 import { v4 as uuidv4 } from 'uuid';
 
 import { SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
@@ -140,7 +142,7 @@ function generateAuditData(
  * for each site.
  * @param {number} [numberOfSiteTopPages=5] - The number of site top pages to generate
  * @param {number} [numberOfKeyEvents=5] - The number of key events to generate
- *
+ * @param {number} [numberOfExperiments=3] - The number of experiments to generate
  * @example
  * // Example usage
  * generateSampleData(20, 10); // Generates 20 sites with 10 audits per type for each site

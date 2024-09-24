@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-data-access-v1.44.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.4...@adobe/spacecat-shared-data-access-v1.44.5) (2024-09-23)
+
+
+### Bug Fixes
+
+* [Importer] Specify the list of supported features ([#362](https://github.com/adobe/spacecat-shared/issues/362)) ([c1cf7e1](https://github.com/adobe/spacecat-shared/commit/c1cf7e19b7a4bfe78a03a1996bb6d6c8667dd823))
+
+# [@adobe/spacecat-shared-data-access-v1.44.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.3...@adobe/spacecat-shared-data-access-v1.44.4) (2024-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#378](https://github.com/adobe/spacecat-shared/issues/378)) ([273a70d](https://github.com/adobe/spacecat-shared/commit/273a70d6b6e862a266628185254e1e99bcaae219))
+
+# [@adobe/spacecat-shared-data-access-v1.44.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.2...@adobe/spacecat-shared-data-access-v1.44.3) (2024-09-19)
+
+
+### Bug Fixes
+
+* add an additional space in the unit test ([#376](https://github.com/adobe/spacecat-shared/issues/376)) ([c98ae55](https://github.com/adobe/spacecat-shared/commit/c98ae55433970663bc5d50a9546d1fbc9d4bf8d7))
+
+# [@adobe/spacecat-shared-data-access-v1.44.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.1...@adobe/spacecat-shared-data-access-v1.44.2) (2024-09-16)
+
+
+### Bug Fixes
+
+* **audits:** extend expiry date for audits from 1 to 6 months ([#363](https://github.com/adobe/spacecat-shared/issues/363)) ([1327a5b](https://github.com/adobe/spacecat-shared/commit/1327a5bcc60fdb7dab0284e9d10d3001ad7fa403))
+
+# [@adobe/spacecat-shared-data-access-v1.44.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.0...@adobe/spacecat-shared-data-access-v1.44.1) (2024-09-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#369](https://github.com/adobe/spacecat-shared/issues/369)) ([5412d7b](https://github.com/adobe/spacecat-shared/commit/5412d7be554b9940d43b39b18f2913146e866846))
+
 # [@adobe/spacecat-shared-data-access-v1.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.43.4...@adobe/spacecat-shared-data-access-v1.44.0) (2024-09-11)
 
 

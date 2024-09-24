@@ -118,6 +118,7 @@ function getRageClickOpportunities(rageClickInstances) {
       screenshot: '',
       trackedPageKPIName: OPPORTUNITY_DESCRIPTION,
       trackedPageKPIValue: '',
+      trackedKPISiteAverage: '',
       pageViews: rageClickInstances[url].pageViews,
       samples: rageClickInstances[url].samples,
       metrics: [],

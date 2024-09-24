@@ -535,6 +535,16 @@ export interface ImportJob {
    * Retrieves the initiatedBy metadata (name, imsOrgId, imsUserId, userAgent) of the import job.
    */
   getInitiatedBy: () => object;
+
+  /**
+   * Indicates if the import job has custom headers.
+   */
+  hasCustomHeaders: () => boolean;
+
+  /**
+   * Indicates if the import job has custom import js.
+   */
+  hasCustomImportJs: () => boolean;
 }
 
 export interface ImportUrl {

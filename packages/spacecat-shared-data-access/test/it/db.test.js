@@ -1022,6 +1022,8 @@ describe('DynamoDB Integration Test', async () => {
       options: {
         [ImportOptions.ENABLE_JAVASCRIPT]: true,
       },
+      hasCustomImportJs: true,
+      hasCustomHeaders: false,
     });
 
     // helper
@@ -1036,6 +1038,8 @@ describe('DynamoDB Integration Test', async () => {
         const job = await createNewImportJob();
         expect(job.getId()).to.be.a('string');
         expect(job.getCreatedAt()).to.be.a('string');
+        expect(job.hasCustomHeaders()).to.be.false;
+        expect(job.hasCustomImportJs()).to.be.true;
       });
 
       it('Verify updateImportJob', async () => {
@@ -1047,6 +1051,7 @@ describe('DynamoDB Integration Test', async () => {
         newJob.updateDuration(1234);
         newJob.updateUrlCount(100);
         newJob.updateImportQueueId('Q-456');
+        newJob.updateHasCustomHeaders(true);
 
         const updatedJob = await dataAccess.updateImportJob(newJob);
 
@@ -1058,6 +1063,7 @@ describe('DynamoDB Integration Test', async () => {
         expect(updatedJob.getOptions()).to.deep.equal({
           [ImportOptions.ENABLE_JAVASCRIPT]: true,
         });
+        expect(updatedJob.hasCustomHeaders()).to.be.true;
       });
 
       it('Verify getImportJobsByStatus', async () => {

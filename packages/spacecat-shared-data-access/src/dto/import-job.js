@@ -40,6 +40,8 @@ export const ImportJobDto = {
     redirectCount: importJob.getRedirectCount(),
     importQueueId: importJob.getImportQueueId(),
     initiatedBy: importJob.getInitiatedBy(),
+    hasCustomHeaders: importJob.hasCustomHeaders(),
+    hasCustomImportJs: importJob.hasCustomImportJs(),
     GSI1PK: 'ALL_IMPORT_JOBS',
   }),
 
@@ -64,6 +66,8 @@ export const ImportJobDto = {
       redirectCount: dynamoItem.redirectCount,
       importQueueId: dynamoItem.importQueueId,
       initiatedBy: dynamoItem.initiatedBy,
+      hasCustomHeaders: dynamoItem.hasCustomHeaders,
+      hasCustomImportJs: dynamoItem.hasCustomImportJs,
     };
 
     return createImportJob(importJobData);

@@ -11,7 +11,7 @@
  */
 
 import {
-  hasText, isIsoDate, isValidUrl, isObject, isString, isNumber, isInteger,
+  hasText, isIsoDate, isValidUrl, isObject, isString, isNumber, isInteger, isBoolean,
 } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 import { ImportJobStatus, ImportOptions } from './import-constants.js';
@@ -39,6 +39,8 @@ const ImportJob = (data) => {
   self.getRedirectCount = () => self.state.redirectCount;
   self.getImportQueueId = () => self.state.importQueueId;
   self.getInitiatedBy = () => self.state.initiatedBy;
+  self.hasCustomHeaders = () => self.state.hasCustomHeaders || false;
+  self.hasCustomImportJs = () => self.state.hasCustomImportJs || false;
 
   /**
    * Updates the state of the ImportJob.
@@ -147,6 +149,29 @@ const ImportJob = (data) => {
     },
   );
 
+  /**
+   * Update the hasCustomHeaders value to true if the ImportJob has custom headers, false otherwise.
+   * @param {boolean} hasCustomHeaders - The new value for hasCustomHeaders.
+   * @return {ImportJob} The updated ImportJob object.
+   */
+  self.updateHasCustomHeaders = (hasCustomHeaders) => updateState('hasCustomHeaders', hasCustomHeaders, (value) => {
+    if (!isBoolean(value)) {
+      throw new Error(`Invalid hasCustomHeaders value: ${value}`);
+    }
+  });
+
+  /**
+   * Update the hasCustomImportJs value to true if the ImportJob has custom import js, false
+   * otherwise.
+   * @param {boolean} hasCustomImportJs - The new value for hasCustomImportJs.
+   * @return {ImportJob} The updated ImportJob object.
+   */
+  self.updateHasCustomImportJs = (hasCustomImportJs) => updateState('hasCustomImportJs', hasCustomImportJs, (value) => {
+    if (!isBoolean(value)) {
+      throw new Error(`Invalid hasCustomImportJs value: ${value}`);
+    }
+  });
+
   return Object.freeze(self);
 };
 
@@ -213,6 +238,14 @@ export const createImportJob = (data) => {
         ImportOptionTypeValidator[key](data.options[key]);
       }
     });
+  }
+
+  if (newState.hasCustomImportJs && !isBoolean(newState.hasCustomImportJs)) {
+    throw new Error(`Invalid hasCustomImportJs value: ${newState.hasCustomImportJs}`);
+  }
+
+  if (newState.hasCustomHeaders && !isBoolean(newState.hasCustomHeaders)) {
+    throw new Error(`Invalid hasCustomHeaders value: ${newState.hasCustomHeaders}`);
   }
 
   return ImportJob(newState);

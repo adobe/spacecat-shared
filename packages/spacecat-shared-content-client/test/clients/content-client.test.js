@@ -31,12 +31,12 @@ describe('ContentClient', () => {
 
   const siteConfigGoogleDrive = {
     getId: () => 'test-site',
-    getConfig: () => ({ content: { source: { type: 'drive.google' } } }),
+    getConfig: () => ({ getHlxContentConfig: () => ({ source: { type: 'drive.google' } }) }),
   };
 
   const siteConfigOneDrive = {
     getId: () => 'test-site',
-    getConfig: () => ({ content: { source: { type: 'onedrive' } } }),
+    getConfig: () => ({ getHlxContentConfig: () => ({ source: { type: 'onedrive' } }) }),
   };
 
   const sampleMetadata = new Map(
@@ -166,12 +166,12 @@ describe('ContentClient', () => {
     });
 
     it('throws an error if site has no content source', () => {
-      const invalidSite = { getConfig: () => ({ }) };
+      const invalidSite = { getConfig: () => ({ getHlxContentConfig: () => ({ }) }) };
       expect(() => new ContentClient(env, invalidSite, log)).to.throw('Site must have a valid content source');
     });
 
     it('throws an error if site\'s content source type is unsupported', () => {
-      const invalidSite = { getConfig: () => ({ content: { source: {} } }) };
+      const invalidSite = { getConfig: () => ({ getHlxContentConfig: () => ({ source: {} }) }) };
       expect(() => new ContentClient(env, invalidSite, log)).to.throw('Unsupported content source type: undefined');
     });
 

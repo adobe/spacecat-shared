@@ -95,6 +95,14 @@ describe('Import Job Tests', () => {
 
           // expect that 2 results were in the db, and that the results were not modified
           expect(result).to.be.an('array').and.to.have.lengthOf(2);
+
+          // verify that the mocked properties are present in the result
+          function hasPropertiesOf(mockJob, importJob) {
+            return Object.keys(mockJob).every((key) => mockJob[key] === importJob.state[key]);
+          }
+
+          expect(hasPropertiesOf(mockImportJobs[0], result[0])).to.be.true;
+          expect(hasPropertiesOf(mockImportJobs[1], result[1])).to.be.true;
         },
       );
     });

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.45.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.0...@adobe/spacecat-shared-data-access-v1.45.1) (2024-09-24)
+
+
+### Bug Fixes
+
+* SITES-25634 [Importer] Expose hasCustomImportJs and hasCustomHeaders as two new fields on a import job ([#381](https://github.com/adobe/spacecat-shared/issues/381)) ([b90a7c5](https://github.com/adobe/spacecat-shared/commit/b90a7c5623af90924a2122dbc10077f989a8550b))
+
 # [@adobe/spacecat-shared-data-access-v1.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.5...@adobe/spacecat-shared-data-access-v1.45.0) (2024-09-24)
 
 

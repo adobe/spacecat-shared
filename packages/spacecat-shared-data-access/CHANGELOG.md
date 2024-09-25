@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.45.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.1...@adobe/spacecat-shared-data-access-v1.45.2) (2024-09-25)
+
+
+### Bug Fixes
+
+* Add a unit test for imports.write_all_domains scope ([#384](https://github.com/adobe/spacecat-shared/issues/384)) ([800ec89](https://github.com/adobe/spacecat-shared/commit/800ec89532cc83f32290ced2b91f1af4fcccb44a))
+
 # [@adobe/spacecat-shared-data-access-v1.45.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.0...@adobe/spacecat-shared-data-access-v1.45.1) (2024-09-24)
 
 

@@ -55,8 +55,8 @@ describe('ApiKey Model tests', () => {
     });
 
     it('creates an ApiKey object for a user with scope - imports.all_domains', () => {
-      const apiKey = createApiKey({ ...validApiKey, scopes: [{ name: 'imports.all_domains', domains: [] }] });
-      expect(apiKey.getScopes()).to.deep.equal([{ name: 'imports.all_domains', domains: [] }]);
+      const apiKey = createApiKey({ ...validApiKey, scopes: [{ name: 'imports.all_domains', domains: [] }, { name: 'imports.write', domains: [] }] });
+      expect(apiKey.getScopes()).to.deep.equal([{ name: 'imports.all_domains', domains: [] }, { name: 'imports.write', domains: [] }]);
     });
 
     it('creates an ApiKey object for a user with scope - imports.write', () => {

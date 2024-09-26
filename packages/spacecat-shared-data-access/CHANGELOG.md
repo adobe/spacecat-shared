@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.45.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.2...@adobe/spacecat-shared-data-access-v1.45.3) (2024-09-26)
+
+
+### Bug Fixes
+
+* Modify the scope name to imports.all_domains ([#385](https://github.com/adobe/spacecat-shared/issues/385)) ([3462257](https://github.com/adobe/spacecat-shared/commit/34622579fec6e7fd8f49e1836b63576f0983a564))
+
 # [@adobe/spacecat-shared-data-access-v1.45.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.1...@adobe/spacecat-shared-data-access-v1.45.2) (2024-09-25)
 
 

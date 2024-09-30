@@ -58,7 +58,7 @@ const validateSite = (site) => {
     throw new Error('Site is required');
   }
 
-  const contentSource = site.getConfig()?.content?.source;
+  const contentSource = site.getConfig()?.getHlxContentConfig()?.source;
   if (!isObject(contentSource)) {
     throw new Error('Site must have a valid content source');
   }
@@ -181,7 +181,7 @@ export default class ContentClient {
     const { log = console, env } = context;
 
     const config = {};
-    const contentSourceType = site.getConfig().content?.source?.type;
+    const contentSourceType = site.getConfig()?.getHlxContentConfig()?.source?.type;
     const envMapping = SUPPORTED_CONTENT_SOURCES.get(contentSourceType);
 
     if (envMapping) {
@@ -195,11 +195,11 @@ export default class ContentClient {
 
   constructor(config, site, log) {
     validateSite(site);
-    validateConfiguration(config, site.getConfig().content.source.type);
+    validateConfiguration(config, site.getConfig()?.getHlxContentConfig()?.source?.type);
 
     this.log = log;
     this.config = config;
-    this.contentSource = site.getConfig().content.source;
+    this.contentSource = site.getConfig()?.getHlxContentConfig()?.source;
     this.site = site;
     this.rawClient = null;
   }

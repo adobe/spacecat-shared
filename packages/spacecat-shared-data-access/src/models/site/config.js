@@ -60,6 +60,7 @@ export const Config = (data = {}) => {
   self.getSlackMentions = (type) => state?.handlers[type]?.mentions?.slack;
   self.getHandlerConfig = (type) => state?.handlers[type];
   self.getHandlers = () => state.handlers;
+  self.getHlxContentConfig = () => state.content;
   self.getImports = () => state.imports;
   self.getExcludedURLs = (type) => state?.handlers[type]?.excludedURLs;
   self.getManualOverwrites = (type) => state?.handlers[type]?.manualOverwrites;
@@ -72,6 +73,17 @@ export const Config = (data = {}) => {
       workspace,
       invitedUserCount,
     };
+  };
+
+  self.updateHlxContentConfig = (source, path) => {
+    state.content = {
+      source,
+      path,
+    };
+  };
+
+  self.updateImports = (imports) => {
+    state.imports = imports;
   };
 
   self.updateSlackMentions = (type, mentions) => {
@@ -106,6 +118,7 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 
 Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
+  content: config.getHlxContentConfig(),
   handlers: config.getHandlers(),
   imports: config.getImports(),
 });

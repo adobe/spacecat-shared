@@ -13,7 +13,8 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 
-import { createImportUrl, ImportUrlStatus } from '../../../../src/models/importer/import-url.js';
+import { ImportUrlStatus } from '../../../../src/index.js';
+import { createImportUrl } from '../../../../src/models/importer/import-url.js';
 import { ImportUrlDto } from '../../../../src/dto/import-url.js';
 
 const validImportUrlData = {
@@ -27,7 +28,7 @@ const importUrlRedirectData = {
   id: '456',
   url: 'https://www.example.com/redirect',
   jobId: '456',
-  status: 'REDIRECT',
+  status: ImportUrlStatus.REDIRECT,
   reason: 'https://www.example.com/redirect/destination',
   path: '/test-data',
   file: '/test-data.docx',
@@ -56,8 +57,8 @@ describe('ImportUrl Model tests', () => {
     });
 
     it('updates the status of the import URL', () => {
-      importUrl.setStatus('COMPLETE');
-      expect(importUrl.getStatus()).to.equal('COMPLETE');
+      importUrl.setStatus(ImportUrlStatus.COMPLETE);
+      expect(importUrl.getStatus()).to.equal(ImportUrlStatus.COMPLETE);
     });
 
     it('returns the url attribute of the import URL', () => {
@@ -73,7 +74,7 @@ describe('ImportUrl Model tests', () => {
     });
 
     it('updates the status and reason for a url', () => {
-      importUrl.setStatus('REDIRECT');
+      importUrl.setStatus(ImportUrlStatus.REDIRECT);
       importUrl.setReason('https://www.example.com/redirect/destination');
       expect(importUrl.getStatus()).to.equal(ImportUrlStatus.REDIRECT);
       expect(importUrl.getReason()).to.equal('https://www.example.com/redirect/destination');
@@ -93,7 +94,7 @@ describe('ImportUrl Model tests', () => {
     });
 
     it('updates the file and path for a url', () => {
-      importUrl.setStatus('COMPLETE');
+      importUrl.setStatus(ImportUrlStatus.COMPLETE);
       importUrl.setPath('/index');
       importUrl.setFile('/index.docx');
 
@@ -110,7 +111,7 @@ describe('ImportUrl Model tests', () => {
         id: '456',
         url: 'https://www.example.com/redirect',
         jobId: '456',
-        status: 'REDIRECT',
+        status: ImportUrlStatus.REDIRECT,
         reason: 'https://www.example.com/redirect/destination',
         path: '/test-data',
         file: '/test-data.docx',

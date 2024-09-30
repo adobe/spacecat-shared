@@ -13,18 +13,18 @@
 import { createImportJob } from '../models/importer/import-job.js';
 
 /**
- * Data Transfer Object for ImportJob
+ * The ImportJobDto is a helper that can convert an ImportJob object to a DynamoDB item and
+ * vice versa.
  */
-
 export const ImportJobDto = {
 
   /**
-     * Converts an ImportJob object into a DynamoDB item.
-     * @param importJob
-     * @returns {{duration: *, baseURL: *, failedCount: *, apiKey: *,
-     *      options: *, successCount: *, importQueueId: *, startTime: *, id: *,
-     *      endTime: *, status: *}}
-     */
+   * Converts an ImportJob object into a DynamoDB item.
+   * @param importJob
+   * @returns {{duration: *, baseURL: *, failedCount: *, apiKey: *,
+   *      options: *, successCount: *, importQueueId: *, startTime: *, id: *,
+   *      endTime: *, status: *}}
+   */
   toDynamoItem: (importJob) => ({
     id: importJob.getId(),
     baseURL: importJob.getBaseURL(),
@@ -37,14 +37,19 @@ export const ImportJobDto = {
     urlCount: importJob.getUrlCount(),
     successCount: importJob.getSuccessCount(),
     failedCount: importJob.getFailedCount(),
+    redirectCount: importJob.getRedirectCount(),
     importQueueId: importJob.getImportQueueId(),
     initiatedBy: importJob.getInitiatedBy(),
+    hasCustomHeaders: importJob.hasCustomHeaders(),
+    hasCustomImportJs: importJob.hasCustomImportJs(),
     GSI1PK: 'ALL_IMPORT_JOBS',
   }),
 
   /**
-     * Converts a DynamoDB item into an ImportJob object.
-     */
+   * Converts a DynamoDB item into an ImportJob object.
+   * @param {object} dynamoItem - The DynamoDB item to convert.
+   * @returns {ImportJob} - The ImportJob object.
+   */
   fromDynamoItem: (dynamoItem) => {
     const importJobData = {
       id: dynamoItem.id,
@@ -58,10 +63,14 @@ export const ImportJobDto = {
       urlCount: dynamoItem.urlCount,
       successCount: dynamoItem.successCount,
       failedCount: dynamoItem.failedCount,
+      redirectCount: dynamoItem.redirectCount,
       importQueueId: dynamoItem.importQueueId,
       initiatedBy: dynamoItem.initiatedBy,
+      hasCustomHeaders: dynamoItem.hasCustomHeaders,
+      hasCustomImportJs: dynamoItem.hasCustomImportJs,
     };
 
     return createImportJob(importJobData);
   },
+
 };

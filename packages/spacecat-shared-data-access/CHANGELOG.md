@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-data-access-v1.45.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.3...@adobe/spacecat-shared-data-access-v1.45.4) (2024-09-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#387](https://github.com/adobe/spacecat-shared/issues/387)) ([5f301fb](https://github.com/adobe/spacecat-shared/commit/5f301fb7bfee78ab57c966ebc3559bc148744933))
+
+# [@adobe/spacecat-shared-data-access-v1.45.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.2...@adobe/spacecat-shared-data-access-v1.45.3) (2024-09-26)
+
+
+### Bug Fixes
+
+* Modify the scope name to imports.all_domains ([#385](https://github.com/adobe/spacecat-shared/issues/385)) ([3462257](https://github.com/adobe/spacecat-shared/commit/34622579fec6e7fd8f49e1836b63576f0983a564))
+
+# [@adobe/spacecat-shared-data-access-v1.45.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.1...@adobe/spacecat-shared-data-access-v1.45.2) (2024-09-25)
+
+
+### Bug Fixes
+
+* Add a unit test for imports.write_all_domains scope ([#384](https://github.com/adobe/spacecat-shared/issues/384)) ([800ec89](https://github.com/adobe/spacecat-shared/commit/800ec89532cc83f32290ced2b91f1af4fcccb44a))
+
+# [@adobe/spacecat-shared-data-access-v1.45.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.0...@adobe/spacecat-shared-data-access-v1.45.1) (2024-09-24)
+
+
+### Bug Fixes
+
+* SITES-25634 [Importer] Expose hasCustomImportJs and hasCustomHeaders as two new fields on a import job ([#381](https://github.com/adobe/spacecat-shared/issues/381)) ([b90a7c5](https://github.com/adobe/spacecat-shared/commit/b90a7c5623af90924a2122dbc10077f989a8550b))
+
+# [@adobe/spacecat-shared-data-access-v1.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.5...@adobe/spacecat-shared-data-access-v1.45.0) (2024-09-24)
+
+
+### Features
+
+* Add an additional scope to all imports on all domains ([#383](https://github.com/adobe/spacecat-shared/issues/383)) ([92ad32c](https://github.com/adobe/spacecat-shared/commit/92ad32c892b151082b1ac6b67b29f6307dbeba15))
+
 # [@adobe/spacecat-shared-data-access-v1.44.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.4...@adobe/spacecat-shared-data-access-v1.44.5) (2024-09-23)
 
 

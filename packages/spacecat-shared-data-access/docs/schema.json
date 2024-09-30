@@ -986,6 +986,14 @@
         {
           "AttributeName": "initiatedBy",
           "AttributeType": "M"
+        },
+        {
+          "AttributeName": "hasCustomHeaders",
+          "AttributeType": "B"
+        },
+        {
+          "AttributeName": "hasCustomImportJs",
+          "AttributeType": "B"
         }
       ],
       "GlobalSecondaryIndexes": [

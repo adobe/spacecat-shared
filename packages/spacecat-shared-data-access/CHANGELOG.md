@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.45.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.4...@adobe/spacecat-shared-data-access-v1.45.5) (2024-09-30)
+
+
+### Bug Fixes
+
+* config and content client fixes ([9650742](https://github.com/adobe/spacecat-shared/commit/965074276cc93b8a6e9e382602670ae8a709d9bb))
+
 # [@adobe/spacecat-shared-data-access-v1.45.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.3...@adobe/spacecat-shared-data-access-v1.45.4) (2024-09-28)
 
 

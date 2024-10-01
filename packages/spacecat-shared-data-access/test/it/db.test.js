@@ -11,6 +11,7 @@
  */
 
 /* eslint-env mocha */
+/* eslint-disable no-console */
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
@@ -25,9 +26,14 @@ import { configSchema } from '../../src/models/site/config.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
 import generateSampleData from './generateSampleData.js';
-import { createSiteCandidate, SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
+import {
+  createSiteCandidate,
+  SITE_CANDIDATE_SOURCES,
+  SITE_CANDIDATE_STATUS,
+} from '../../src/models/site-candidate.js';
 import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 import { ConfigurationDto } from '../../src/dto/configuration.js';
+import { ImportJobStatus, ImportOptions, ImportUrlStatus } from '../../src/index.js';
 
 use(chaiAsPromised);
 
@@ -110,10 +116,13 @@ const TEST_DA_CONFIG = {
   indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
   indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
+  indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
+  indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
   pkAllSites: 'ALL_SITES',
   pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
   pkAllConfigurations: 'ALL_CONFIGURATIONS',
+  pkAllImportJobs: 'ALL_IMPORT_JOBS',
 };
 
 describe('DynamoDB Integration Test', async () => {
@@ -129,7 +138,7 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
   const NUMBER_OF_EXPERIMENTS = 3;
 
-  before(async function () {
+  before(async function beforeSuite() {
     this.timeout(30000);
 
     process.env.AWS_REGION = 'local';
@@ -986,5 +995,147 @@ describe('DynamoDB Integration Test', async () => {
     await expect(dataAccess.removeOrganization(organization.getId())).to.eventually.be.fulfilled;
     const organizationAfterRemoval = await dataAccess.getOrganizationByID(organization.getId());
     expect(organizationAfterRemoval).to.be.null;
+  });
+
+  /**
+   * The following section is related to the Importer.
+   * It includes tests for the ImportJob and ImportUrl Data Access APIs.
+   *
+   * Before running the tests inject a ImportJob and ImportUrl into their respective tables.
+   * This is done such that each test could be executed individually without the need to run the
+   * entire suite.
+   */
+  describe('Importer Tests', async () => {
+    const startTime = new Date().toISOString();
+
+    // helper
+    const createNewImportJob = async () => dataAccess.createNewImportJob({
+      urls: ['https://example.com/cars', 'https://example.com/bikes'],
+      importQueueId: 'Q-123',
+      hashedApiKey: '1234',
+      baseURL: 'https://example.com/cars',
+      startTime,
+      status: ImportJobStatus.RUNNING,
+      initiatedBy: {
+        apiKeyName: 'K-123',
+      },
+      options: {
+        [ImportOptions.ENABLE_JAVASCRIPT]: true,
+      },
+      hasCustomImportJs: true,
+      hasCustomHeaders: false,
+    });
+
+    // helper
+    const createNewImportUrl = async (importJob) => dataAccess.createNewImportUrl({
+      url: 'https://example.com/cars',
+      jobId: importJob.getId(),
+      status: ImportUrlStatus.PENDING,
+    });
+
+    describe('Import Job Tests', async () => {
+      it('Verify the creation of the import job.', async () => {
+        const job = await createNewImportJob();
+        expect(job.getId()).to.be.a('string');
+        expect(job.getCreatedAt()).to.be.a('string');
+        expect(job.hasCustomHeaders()).to.be.false;
+        expect(job.hasCustomImportJs()).to.be.true;
+      });
+
+      it('Verify updateImportJob', async () => {
+        const job = await createNewImportJob();
+        const newJob = { ...job };
+        const newEndTime = new Date().toISOString();
+        newJob.updateStatus(ImportJobStatus.COMPLETE);
+        newJob.updateEndTime(newEndTime);
+        newJob.updateDuration(1234);
+        newJob.updateUrlCount(100);
+        newJob.updateImportQueueId('Q-456');
+        newJob.updateHasCustomHeaders(true);
+
+        const updatedJob = await dataAccess.updateImportJob(newJob);
+
+        expect(updatedJob.getStatus()).to.be.equal(ImportJobStatus.COMPLETE);
+        expect(updatedJob.getEndTime()).to.equal(newEndTime);
+        expect(updatedJob.getDuration()).to.be.equal(1234);
+        expect(updatedJob.getUrlCount()).to.be.equal(100);
+        expect(updatedJob.getImportQueueId()).to.be.equal('Q-456');
+        expect(updatedJob.getOptions()).to.deep.equal({
+          [ImportOptions.ENABLE_JAVASCRIPT]: true,
+        });
+        expect(updatedJob.hasCustomHeaders()).to.be.true;
+      });
+
+      it('Verify getImportJobsByStatus', async () => {
+        const job = await createNewImportJob();
+        job.updateStatus(ImportJobStatus.FAILED);
+        await dataAccess.updateImportJob(job);
+        const result = await dataAccess.getImportJobsByStatus(ImportJobStatus.FAILED);
+        expect(result.length).to.be.greaterThan(0);
+      });
+
+      it('Verify getImportJobByID', async () => {
+        const job = await createNewImportJob();
+        const jobEntry = await dataAccess.getImportJobByID(job.getId());
+        expect(job.getId()).to.be.equal(jobEntry.getId());
+      });
+
+      it('Verify getImportJobsByDateRange', async () => {
+        const endDate = new Date().toISOString();
+        const jobs = await dataAccess.getImportJobsByDateRange(startTime, endDate);
+        expect(jobs.length).to.be.greaterThan(0);
+      });
+    });
+
+    describe('Import URL Tests', async () => {
+      it('Verify the creation of a new import url.', async () => {
+        const job = await createNewImportJob();
+        const url = await createNewImportUrl(job);
+
+        expect(url.getId()).to.be.a('string');
+        expect(url.getJobId()).to.equal(job.getId());
+      });
+
+      it('Verify getImportUrlById', async () => {
+        const job = await createNewImportJob();
+        const url = await createNewImportUrl(job);
+        const urlRow = await dataAccess.getImportUrlById(url.getId());
+        expect(urlRow.getId()).to.be.equal(url.getId());
+      });
+
+      it('Verify getImportUrlsByJobId', async () => {
+        const job = await createNewImportJob();
+        await createNewImportUrl(job);
+        const urlRow = await dataAccess.getImportUrlsByJobId(job.getId());
+        expect(urlRow.length).to.be.greaterThan(0);
+      });
+
+      it('Verify getImportUrlsByJobIdAndStatus', async () => {
+        const job = await createNewImportJob();
+        await createNewImportUrl(job);
+
+        const urlRows = await dataAccess
+          .getImportUrlsByJobIdAndStatus(job.getId(), ImportUrlStatus.PENDING);
+        expect(urlRows.length).to.be.greaterThan(0);
+      });
+
+      it('Verify updateImportUrl', async () => {
+        const job = await createNewImportJob();
+        const url = await createNewImportUrl(job);
+
+        const newUrl = { ...url };
+        newUrl.setStatus(ImportUrlStatus.COMPLETE);
+        newUrl.setReason('Just Because');
+        newUrl.setPath('/path/to/file');
+        newUrl.setFile('thefile.docx');
+
+        const updatedUrl = await dataAccess.updateImportUrl(newUrl);
+
+        expect(updatedUrl.getStatus()).to.be.equal(ImportUrlStatus.COMPLETE);
+        expect(updatedUrl.getReason()).to.be.equal('Just Because');
+        expect(updatedUrl.getPath()).to.be.equal('/path/to/file');
+        expect(updatedUrl.getFile()).to.be.equal('thefile.docx');
+      });
+    });
   });
 });

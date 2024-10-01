@@ -6154,6 +6154,18 @@
           "checkpoint": "top",
           "target": "visible",
           "timeDelta": 705.5
+        },
+        {
+          "checkpoint": "paid",
+          "target": "ttclid",
+          "source": "tiktok",
+          "timeDelta": 1018
+        },
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.tiktok.com/",
+          "timeDelta": 1007
         }
       ]
     },

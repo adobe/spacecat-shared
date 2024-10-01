@@ -40,7 +40,7 @@ export const getImportJobsByDateRange = async (dynamoClient, config, log, startD
 };
 
 /**
- * Get Import Job by ID
+ * Get Import Job by ID.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
@@ -52,6 +52,7 @@ export const getImportJobByID = async (dynamoClient, config, log, id) => {
     config.tableNameImportJobs,
     { id },
   );
+
   return item ? ImportJobDto.fromDynamoItem(item) : null;
 };
 

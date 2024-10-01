@@ -1,3 +1,80 @@
+# [@adobe/spacecat-shared-data-access-v1.45.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.4...@adobe/spacecat-shared-data-access-v1.45.5) (2024-09-30)
+
+
+### Bug Fixes
+
+* config and content client fixes ([9650742](https://github.com/adobe/spacecat-shared/commit/965074276cc93b8a6e9e382602670ae8a709d9bb))
+
+# [@adobe/spacecat-shared-data-access-v1.45.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.3...@adobe/spacecat-shared-data-access-v1.45.4) (2024-09-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#387](https://github.com/adobe/spacecat-shared/issues/387)) ([5f301fb](https://github.com/adobe/spacecat-shared/commit/5f301fb7bfee78ab57c966ebc3559bc148744933))
+
+# [@adobe/spacecat-shared-data-access-v1.45.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.2...@adobe/spacecat-shared-data-access-v1.45.3) (2024-09-26)
+
+
+### Bug Fixes
+
+* Modify the scope name to imports.all_domains ([#385](https://github.com/adobe/spacecat-shared/issues/385)) ([3462257](https://github.com/adobe/spacecat-shared/commit/34622579fec6e7fd8f49e1836b63576f0983a564))
+
+# [@adobe/spacecat-shared-data-access-v1.45.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.1...@adobe/spacecat-shared-data-access-v1.45.2) (2024-09-25)
+
+
+### Bug Fixes
+
+* Add a unit test for imports.write_all_domains scope ([#384](https://github.com/adobe/spacecat-shared/issues/384)) ([800ec89](https://github.com/adobe/spacecat-shared/commit/800ec89532cc83f32290ced2b91f1af4fcccb44a))
+
+# [@adobe/spacecat-shared-data-access-v1.45.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.0...@adobe/spacecat-shared-data-access-v1.45.1) (2024-09-24)
+
+
+### Bug Fixes
+
+* SITES-25634 [Importer] Expose hasCustomImportJs and hasCustomHeaders as two new fields on a import job ([#381](https://github.com/adobe/spacecat-shared/issues/381)) ([b90a7c5](https://github.com/adobe/spacecat-shared/commit/b90a7c5623af90924a2122dbc10077f989a8550b))
+
+# [@adobe/spacecat-shared-data-access-v1.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.5...@adobe/spacecat-shared-data-access-v1.45.0) (2024-09-24)
+
+
+### Features
+
+* Add an additional scope to all imports on all domains ([#383](https://github.com/adobe/spacecat-shared/issues/383)) ([92ad32c](https://github.com/adobe/spacecat-shared/commit/92ad32c892b151082b1ac6b67b29f6307dbeba15))
+
+# [@adobe/spacecat-shared-data-access-v1.44.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.4...@adobe/spacecat-shared-data-access-v1.44.5) (2024-09-23)
+
+
+### Bug Fixes
+
+* [Importer] Specify the list of supported features ([#362](https://github.com/adobe/spacecat-shared/issues/362)) ([c1cf7e1](https://github.com/adobe/spacecat-shared/commit/c1cf7e19b7a4bfe78a03a1996bb6d6c8667dd823))
+
+# [@adobe/spacecat-shared-data-access-v1.44.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.3...@adobe/spacecat-shared-data-access-v1.44.4) (2024-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#378](https://github.com/adobe/spacecat-shared/issues/378)) ([273a70d](https://github.com/adobe/spacecat-shared/commit/273a70d6b6e862a266628185254e1e99bcaae219))
+
+# [@adobe/spacecat-shared-data-access-v1.44.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.2...@adobe/spacecat-shared-data-access-v1.44.3) (2024-09-19)
+
+
+### Bug Fixes
+
+* add an additional space in the unit test ([#376](https://github.com/adobe/spacecat-shared/issues/376)) ([c98ae55](https://github.com/adobe/spacecat-shared/commit/c98ae55433970663bc5d50a9546d1fbc9d4bf8d7))
+
+# [@adobe/spacecat-shared-data-access-v1.44.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.1...@adobe/spacecat-shared-data-access-v1.44.2) (2024-09-16)
+
+
+### Bug Fixes
+
+* **audits:** extend expiry date for audits from 1 to 6 months ([#363](https://github.com/adobe/spacecat-shared/issues/363)) ([1327a5b](https://github.com/adobe/spacecat-shared/commit/1327a5bcc60fdb7dab0284e9d10d3001ad7fa403))
+
+# [@adobe/spacecat-shared-data-access-v1.44.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.44.0...@adobe/spacecat-shared-data-access-v1.44.1) (2024-09-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#369](https://github.com/adobe/spacecat-shared/issues/369)) ([5412d7b](https://github.com/adobe/spacecat-shared/commit/5412d7be554b9940d43b39b18f2913146e866846))
+
 # [@adobe/spacecat-shared-data-access-v1.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.43.4...@adobe/spacecat-shared-data-access-v1.44.0) (2024-09-11)
 
 

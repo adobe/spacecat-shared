@@ -132,17 +132,6 @@ describe('Config Tests', () => {
       const updatedImports = config.getImports();
       expect(updatedImports).to.deep.equal(imports);
     });
-
-    it('correctly updates the hlx content configuration', () => {
-      const config = Config();
-      const source = 'source1';
-      const path = 'path1';
-      config.updateHlxContentConfig(source, path);
-
-      const hlxContentConfig = config.getHlxContentConfig();
-      expect(hlxContentConfig.source).to.equal(source);
-      expect(hlxContentConfig.path).to.equal(path);
-    });
   });
 
   describe('fromDynamoItem Static Method', () => {

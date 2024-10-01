@@ -14,6 +14,8 @@ import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 import { ImportUrlStatus } from './import-constants.js';
 
+const EXPIRES_IN_DAYS = 30;
+
 /**
  * Creates a new ImportUrl object
  *
@@ -31,6 +33,11 @@ const ImportUrl = (data) => {
   self.getPath = () => self.state.path;
   // Resulting path and filename of the imported .docx file
   self.getFile = () => self.state.file;
+
+  if (!self.expiresAt) {
+    self.expiresAt = new Date();
+    self.expiresAt.setDate(self.expiresAt.getDate() + EXPIRES_IN_DAYS);
+  }
 
   /**
    * Updates the state of the ImportJob.

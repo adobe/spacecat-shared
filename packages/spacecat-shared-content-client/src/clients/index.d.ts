@@ -36,7 +36,7 @@ export class ContentClient {
    * Example: "/path/to/page" (from the full URL: "https://www.example.com/path/to/page").
    *
    * @param {string} path The path to the page.
-   * @returns {Promise<Map<string, string>>} A promise that resolves to the page's metadata.
+   * @returns {Promise<Map<string, { value: string, type: string }>>} A promise that resolves to the page's metadata.
    * @throws {Error} If the path is not a string, empty or does not start with a "/"
    */
   getPageMetadata(path: string): Promise<Map<string, { value: string, type: string }>>;

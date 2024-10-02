@@ -13,15 +13,7 @@
 import { isObject } from '@adobe/spacecat-shared-utils';
 
 import { createAudit } from '../models/audit.js';
-
-function parseEpochToDate(epochInSeconds) {
-  const milliseconds = epochInSeconds * 1000;
-  return new Date(milliseconds);
-}
-
-function convertDateToEpochSeconds(date) {
-  return Math.floor(date.getTime() / 1000);
-}
+import { convertDateToEpochSeconds, parseEpochToDate } from './dto-utils.js';
 
 /**
  * Data transfer object for Audit.

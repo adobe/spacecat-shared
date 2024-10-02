@@ -1089,6 +1089,10 @@
       },
       "NonKeyAttributes": [
         {
+          "AttributeName": "expiresAt",
+          "AttributeType": "S"
+        },
+        {
           "AttributeName": "file",
           "AttributeType": "S"
         },

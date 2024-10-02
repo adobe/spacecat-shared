@@ -17,6 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 import esmock from 'esmock';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -29,15 +30,21 @@ describe('ContentClient', () => {
 
   let ContentClient;
 
-  const siteConfigGoogleDrive = {
-    getId: () => 'test-site',
-    getConfig: () => ({ getHlxContentConfig: () => ({ source: { type: 'drive.google' } }) }),
-  };
+  const siteConfigGoogleDrive = createSite(
+    {
+      id: 'test-site',
+      hlxConfig: { content: { source: { type: 'drive.google' } } },
+      baseURL: 'https://base.spacecat',
+    },
+  );
 
-  const siteConfigOneDrive = {
-    getId: () => 'test-site',
-    getConfig: () => ({ getHlxContentConfig: () => ({ source: { type: 'onedrive' } }) }),
-  };
+  const siteConfigOneDrive = createSite(
+    {
+      id: 'test-site',
+      hlxConfig: { content: { source: { type: 'onedrive' } } },
+      baseURL: 'https://base.spacecat',
+    },
+  );
 
   const sampleMetadata = new Map(
     [['title', { value: 'Test Page', type: 'text' }],
@@ -166,12 +173,12 @@ describe('ContentClient', () => {
     });
 
     it('throws an error if site has no content source', () => {
-      const invalidSite = { getConfig: () => ({ getHlxContentConfig: () => ({ }) }) };
+      const invalidSite = { getHlxConfig: () => ({ }) };
       expect(() => new ContentClient(env, invalidSite, log)).to.throw('Site must have a valid content source');
     });
 
     it('throws an error if site\'s content source type is unsupported', () => {
-      const invalidSite = { getConfig: () => ({ getHlxContentConfig: () => ({ source: {} }) }) };
+      const invalidSite = { getHlxConfig: () => ({ content: { source: {} } }) };
       expect(() => new ContentClient(env, invalidSite, log)).to.throw('Unsupported content source type: undefined');
     });
 

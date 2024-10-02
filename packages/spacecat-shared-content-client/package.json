@@ -40,6 +40,7 @@
     "graph-data-structure": "4.0.0"
   },
   "devDependencies": {
+    "@adobe/spacecat-shared-data-access": "1.45.5",
     "chai": "5.1.1",
     "chai-as-promised": "8.0.0",
     "esmock": "2.6.7",

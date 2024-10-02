@@ -34,6 +34,7 @@ import {
 import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 import { ConfigurationDto } from '../../src/dto/configuration.js';
 import { ImportJobStatus, ImportOptions, ImportUrlStatus } from '../../src/index.js';
+import { IMPORT_URL_EXPIRES_IN_DAYS } from '../../src/models/importer/import-url.js';
 
 use(chaiAsPromised);
 
@@ -1094,6 +1095,12 @@ describe('DynamoDB Integration Test', async () => {
 
         expect(url.getId()).to.be.a('string');
         expect(url.getJobId()).to.equal(job.getId());
+
+        // Check that expiresAt was set correctly
+        const expectedExpiresAtDate = new Date();
+        expectedExpiresAtDate.setDate(expectedExpiresAtDate.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
+
+        expect(url.getExpiresAt().toDateString()).to.equal(expectedExpiresAtDate.toDateString());
       });
 
       it('Verify getImportUrlById', async () => {

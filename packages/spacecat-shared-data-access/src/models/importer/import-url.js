@@ -14,6 +14,8 @@ import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
 import { ImportUrlStatus } from './import-constants.js';
 
+export const IMPORT_URL_EXPIRES_IN_DAYS = 30;
+
 /**
  * Creates a new ImportUrl object
  *
@@ -31,6 +33,8 @@ const ImportUrl = (data) => {
   self.getPath = () => self.state.path;
   // Resulting path and filename of the imported .docx file
   self.getFile = () => self.state.file;
+  // Expiration date for the URL
+  self.getExpiresAt = () => self.state.expiresAt;
 
   /**
    * Updates the state of the ImportJob.
@@ -100,6 +104,11 @@ export const createImportUrl = (data) => {
 
   if (!Object.values(ImportUrlStatus).includes(newState.status)) {
     throw new Error(`Invalid Import URL status: ${newState.status}`);
+  }
+
+  if (!newState.expiresAt) {
+    newState.expiresAt = new Date();
+    newState.expiresAt.setDate(newState.expiresAt.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
   }
 
   return ImportUrl(newState);

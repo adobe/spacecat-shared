@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.1.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.6...@adobe/spacecat-shared-content-client-v1.1.7) (2024-10-02)
+
+
+### Bug Fixes
+
+* content client should use the hlxConfig ([8e74827](https://github.com/adobe/spacecat-shared/commit/8e74827613421828eaef29cf1372d329433526cc))
+
 # [@adobe/spacecat-shared-content-client-v1.1.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.5...@adobe/spacecat-shared-content-client-v1.1.6) (2024-10-01)
 
 

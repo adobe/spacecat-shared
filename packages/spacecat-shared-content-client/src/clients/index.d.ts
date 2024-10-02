@@ -36,10 +36,10 @@ export class ContentClient {
    * Example: "/path/to/page" (from the full URL: "https://www.example.com/path/to/page").
    *
    * @param {string} path The path to the page.
-   * @returns {Map<string, string>} The page's metadata.
+   * @returns {Promise<Map<string, string>>} A promise that resolves to the page's metadata.
    * @throws {Error} If the path is not a string, empty or does not start with a "/"
    */
-  getPageMetadata(path: string): Map<string, string>;
+  getPageMetadata(path: string): Promise<Map<string, { value: string, type: string }>>;
 
   /**
    * Updates the metadata for the given page path. The document backing the path
@@ -53,17 +53,41 @@ export class ContentClient {
    * overwrites the existing metadata.
    *
    * @param {string} path The path to the page.
-   * @param {Map<string, string>} metadata The metadata to update.
+   * @param {Map<string, { value: string, type: string }>} metadata The metadata to update.
    * @param {Object} [options] The options to use for updating the metadata.
    * @param {Object} [options.overwrite] Whether to overwrite the existing metadata.
-   * @returns {Map<string, string>} The page's merged metadata.
+   * @returns {Promise<Map<string, { value: string, type: string }>>}  A promise that resolves to
+   * the page's merged metadata.
    * @throws {Error} If the metadata is not a Map or empty
    * @throws {Error} If any of the metadata keys or values are not a string
    * @throws {Error} If the path is not a string, empty or does not start with a "/"
    */
   updatePageMetadata(
     path: string,
-    metadata: Map<string, string>,
+    metadata: Map<string, { value: string, type: string }>,
     options: object,
-  ): Map<string, string>;
+  ): Promise<Map<string, { value: string, type: string }>>;
+
+  /**
+   * Retrieves the current redirects for the site from the redirects.xlsx file.
+   *
+   * @returns {Promise<Array<{ from: string, to: string }>>} A promise that resolves to
+   * an array of redirect objects.
+   * @throws {Error} If there is an issue retrieving the redirects.
+   */
+  getRedirects(): Promise<Array<{ from: string, to: string }>>
+
+  /**
+   * Updates the redirects for the site with the valid array of redirects.
+   * The redirects are validated before updating the redirects.
+   * The duplicate redirects are removed.
+   * The redundant redirects are removed.
+   * The valid redirects are appended at the end of the redirects.xlsx file.
+   *
+   * @param {Array<{ from: string, to: string }>} redirects The array of redirect objects to update.
+   * @returns {Promise<void>} A promise that resolves when the redirects have been updated.
+   * @throws {Error} If the redirects array is not valid or if there
+   * is an issue updating the redirects.
+   */
+  updateRedirects(redirects: Array<{ from: string, to: string }>): Promise<void>
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.6...@adobe/spacecat-shared-data-access-v1.46.0) (2024-10-02)
+
+
+### Features
+
+* Expire Import URLs automatically after set period of time ([#392](https://github.com/adobe/spacecat-shared/issues/392)) ([294fd9e](https://github.com/adobe/spacecat-shared/commit/294fd9ec112b99a66e7025bed9219fed280eb128))
+
 # [@adobe/spacecat-shared-data-access-v1.45.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.5...@adobe/spacecat-shared-data-access-v1.45.6) (2024-10-02)
 
 

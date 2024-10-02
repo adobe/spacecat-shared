@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.45.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.5...@adobe/spacecat-shared-data-access-v1.45.6) (2024-10-02)
+
+
+### Bug Fixes
+
+* content client should use the hlxConfig ([8e74827](https://github.com/adobe/spacecat-shared/commit/8e74827613421828eaef29cf1372d329433526cc))
+
 # [@adobe/spacecat-shared-data-access-v1.45.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.4...@adobe/spacecat-shared-data-access-v1.45.5) (2024-09-30)
 
 

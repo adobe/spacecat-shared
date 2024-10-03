@@ -111,6 +111,7 @@ describe('AhrefsAPIClient', () => {
   before('setup', function () {
     this.clock = sandbox.useFakeTimers({
       now: new Date(mockDate).getTime(),
+      shouldAdvanceTime: true,
     });
   });
 

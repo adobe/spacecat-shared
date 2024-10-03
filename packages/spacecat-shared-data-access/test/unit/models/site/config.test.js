@@ -120,6 +120,18 @@ describe('Config Tests', () => {
       config.updateFixedURLs('broken-backlinks', []);
       expect(config.getFixedURLs('broken-backlinks')).to.be.an('array').that.is.empty;
     });
+
+    it('correctly updates the imports array', () => {
+      const config = Config();
+      const imports = [
+        { type: 'import1' },
+        { type: 'import2' },
+      ];
+      config.updateImports(imports);
+
+      const updatedImports = config.getImports();
+      expect(updatedImports).to.deep.equal(imports);
+    });
   });
 
   describe('fromDynamoItem Static Method', () => {

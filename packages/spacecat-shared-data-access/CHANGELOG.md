@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v1.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.6...@adobe/spacecat-shared-data-access-v1.46.0) (2024-10-02)
+
+
+### Features
+
+* Expire Import URLs automatically after set period of time ([#392](https://github.com/adobe/spacecat-shared/issues/392)) ([294fd9e](https://github.com/adobe/spacecat-shared/commit/294fd9ec112b99a66e7025bed9219fed280eb128))
+
+# [@adobe/spacecat-shared-data-access-v1.45.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.5...@adobe/spacecat-shared-data-access-v1.45.6) (2024-10-02)
+
+
+### Bug Fixes
+
+* content client should use the hlxConfig ([8e74827](https://github.com/adobe/spacecat-shared/commit/8e74827613421828eaef29cf1372d329433526cc))
+
+# [@adobe/spacecat-shared-data-access-v1.45.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.4...@adobe/spacecat-shared-data-access-v1.45.5) (2024-09-30)
+
+
+### Bug Fixes
+
+* config and content client fixes ([9650742](https://github.com/adobe/spacecat-shared/commit/965074276cc93b8a6e9e382602670ae8a709d9bb))
+
 # [@adobe/spacecat-shared-data-access-v1.45.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.3...@adobe/spacecat-shared-data-access-v1.45.4) (2024-09-28)
 
 

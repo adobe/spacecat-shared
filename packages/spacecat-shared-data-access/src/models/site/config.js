@@ -74,6 +74,10 @@ export const Config = (data = {}) => {
     };
   };
 
+  self.updateImports = (imports) => {
+    state.imports = imports;
+  };
+
   self.updateSlackMentions = (type, mentions) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = state.handlers[type] || {};

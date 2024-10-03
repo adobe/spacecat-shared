@@ -1,3 +1,32 @@
+# [@adobe/spacecat-shared-content-client-v1.1.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.7...@adobe/spacecat-shared-content-client-v1.1.8) (2024-10-02)
+
+
+### Bug Fixes
+
+* docs for content client ([0978c2d](https://github.com/adobe/spacecat-shared/commit/0978c2d84636f03b7ebdf22e9888740d9518b989))
+
+# [@adobe/spacecat-shared-content-client-v1.1.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.6...@adobe/spacecat-shared-content-client-v1.1.7) (2024-10-02)
+
+
+### Bug Fixes
+
+* content client should use the hlxConfig ([8e74827](https://github.com/adobe/spacecat-shared/commit/8e74827613421828eaef29cf1372d329433526cc))
+
+# [@adobe/spacecat-shared-content-client-v1.1.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.5...@adobe/spacecat-shared-content-client-v1.1.6) (2024-10-01)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.1.15 ([#389](https://github.com/adobe/spacecat-shared/issues/389)) ([e4fdfdf](https://github.com/adobe/spacecat-shared/commit/e4fdfdfe934ff2ef439cec85bd890330ee58df6a))
+
+# [@adobe/spacecat-shared-content-client-v1.1.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.4...@adobe/spacecat-shared-content-client-v1.1.5) (2024-09-30)
+
+
+### Bug Fixes
+
+* config and content client fixes ([9650742](https://github.com/adobe/spacecat-shared/commit/965074276cc93b8a6e9e382602670ae8a709d9bb))
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.1.14 ([#388](https://github.com/adobe/spacecat-shared/issues/388)) ([19322bb](https://github.com/adobe/spacecat-shared/commit/19322bb59269aed1e613739e3a5932c09ca1475e))
+
 # [@adobe/spacecat-shared-content-client-v1.1.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.3...@adobe/spacecat-shared-content-client-v1.1.4) (2024-09-28)
 
 

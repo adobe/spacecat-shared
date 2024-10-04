@@ -65,6 +65,12 @@ const validData = {
     reports: 'sqs://.../spacecat-services-report-jobs',
   },
   version: 'v1',
+  slackRoles: {
+    scrape: [
+      'WSVT1K36Z',
+      'S03CR0FDC2V',
+    ],
+  },
 };
 
 describe('Configuration Model Tests', () => {
@@ -106,6 +112,17 @@ describe('Configuration Model Tests', () => {
     expect(updatedHandler).to.deep.equal(handlerData);
   });
 
+  it('gets slack roles by audit type', () => {
+    const configuration = createConfiguration(validData);
+    const roles = configuration.getSlackRolesByAuditType('scrape');
+    expect(roles).to.deep.equal(validData.slackRoles.scrape);
+  });
+
+  it('gets all slack roles', () => {
+    const configuration = createConfiguration(validData);
+    const roles = configuration.getSlackRoles();
+    expect(roles).to.deep.equal(validData.slackRoles);
+  });
   it('checks if a handler type is enabled for a site', () => {
     const configuration = createConfiguration(validData);
     const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org2' });

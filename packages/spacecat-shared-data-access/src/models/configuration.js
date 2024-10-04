@@ -15,6 +15,7 @@ import Joi from 'joi';
 const Configuration = (data = {}) => {
   const state = { ...data };
   const self = { state };
+  self.getSlackRoles = () => self.state.slackRoles;
   self.getJobs = () => self.state.jobs;
   self.getVersion = () => self.state.version;
   self.getQueues = () => self.state.queues;
@@ -23,6 +24,10 @@ const Configuration = (data = {}) => {
   self.addHandler = (type, handlerData) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = { ...handlerData };
+  };
+  self.getSlackRolesByAuditType = (type) => {
+    const roles = self.getSlackRoles();
+    return roles ? roles[type] : [];
   };
   self.isHandlerEnabledForSite = (type, site) => {
     const handler = state.handlers[type];

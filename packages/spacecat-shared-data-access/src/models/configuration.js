@@ -25,9 +25,9 @@ const Configuration = (data = {}) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = { ...handlerData };
   };
-  self.getSlackRolesByAuditType = (type) => {
+  self.getSlackRoleMembersByRole = (role) => {
     const roles = self.getSlackRoles();
-    return roles ? roles[type] : [];
+    return roles ? roles[role] : [];
   };
   self.isHandlerEnabledForSite = (type, site) => {
     const handler = state.handlers[type];

@@ -114,7 +114,7 @@ describe('Configuration Model Tests', () => {
 
   it('gets slack roles by audit type', () => {
     const configuration = createConfiguration(validData);
-    const roles = configuration.getSlackRolesByAuditType('scrape');
+    const roles = configuration.getSlackRoleMembersByRole('scrape');
     expect(roles).to.deep.equal(validData.slackRoles.scrape);
   });
 

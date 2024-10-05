@@ -38,7 +38,7 @@
     "@adobe/helix-universal": "5.0.6",
     "@adobe/spacecat-shared-http-utils": "1.1.4",
     "@adobe/spacecat-shared-utils": "1.15.1",
-    "@aws-sdk/client-secrets-manager": "3.658.1",
+    "@aws-sdk/client-secrets-manager": "3.665.0",
     "google-auth-library": "9.14.1",
     "googleapis": "144.0.0"
   },

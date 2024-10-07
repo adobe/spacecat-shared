@@ -132,6 +132,16 @@ describe('Config Tests', () => {
       const updatedImports = config.getImports();
       expect(updatedImports).to.deep.equal(imports);
     });
+
+    it('should fail gracefully if handler is not present in the configuration', () => {
+      const config = Config();
+      expect(config.getSlackMentions('404')).to.be.undefined;
+      expect(config.getHandlerConfig('404')).to.be.undefined;
+      expect(config.getExcludedURLs('404')).to.be.undefined;
+      expect(config.getManualOverwrites('404')).to.be.undefined;
+      expect(config.getFixedURLs('404')).to.be.undefined;
+      expect(config.getIncludedURLs('404')).to.be.undefined;
+    });
   });
 
   describe('fromDynamoItem Static Method', () => {

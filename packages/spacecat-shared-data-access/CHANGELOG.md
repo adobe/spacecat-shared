@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.46.1...@adobe/spacecat-shared-data-access-v1.47.0) (2024-10-07)
+
+
+### Features
+
+* added `slackRoles` access methods to configuration and model ([#393](https://github.com/adobe/spacecat-shared/issues/393)) ([269b911](https://github.com/adobe/spacecat-shared/commit/269b91158ed2977379aee2c53a06db3821b131f5))
+
 # [@adobe/spacecat-shared-data-access-v1.46.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.46.0...@adobe/spacecat-shared-data-access-v1.46.1) (2024-10-05)
 
 

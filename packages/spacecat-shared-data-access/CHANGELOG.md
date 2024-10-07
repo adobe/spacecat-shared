@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.47.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.47.0...@adobe/spacecat-shared-data-access-v1.47.1) (2024-10-07)
+
+
+### Bug Fixes
+
+* gracefully handle config in case handler is not defined ([#396](https://github.com/adobe/spacecat-shared/issues/396)) ([a4c8abd](https://github.com/adobe/spacecat-shared/commit/a4c8abdf4c99cfc32b1d92233eb8786f439320f1))
+
 # [@adobe/spacecat-shared-data-access-v1.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.46.1...@adobe/spacecat-shared-data-access-v1.47.0) (2024-10-07)
 
 

@@ -25,6 +25,7 @@ const scopeNames = [
   'audits.write_all',
   'imports.read',
   'imports.write',
+  'imports.delete',
   'imports.read_all',
   'imports.all_domains',
 ];

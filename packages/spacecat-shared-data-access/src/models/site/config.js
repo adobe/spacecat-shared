@@ -57,28 +57,20 @@ export const Config = (data = {}) => {
   const state = { ...validConfig };
   const self = { state };
   self.getSlackConfig = () => state.slack;
-  self.getSlackMentions = (type) => state?.handlers[type]?.mentions?.slack;
-  self.getHandlerConfig = (type) => state?.handlers[type];
+  self.getSlackMentions = (type) => state?.handlers?.[type]?.mentions?.slack;
+  self.getHandlerConfig = (type) => state?.handlers?.[type];
   self.getHandlers = () => state.handlers;
-  self.getHlxContentConfig = () => state.content;
   self.getImports = () => state.imports;
-  self.getExcludedURLs = (type) => state?.handlers[type]?.excludedURLs;
-  self.getManualOverwrites = (type) => state?.handlers[type]?.manualOverwrites;
-  self.getFixedURLs = (type) => state?.handlers[type]?.fixedURLs;
-  self.getIncludedURLs = (type) => state?.handlers[type]?.includedURLs;
+  self.getExcludedURLs = (type) => state?.handlers?.[type]?.excludedURLs;
+  self.getManualOverwrites = (type) => state?.handlers?.[type]?.manualOverwrites;
+  self.getFixedURLs = (type) => state?.handlers?.[type]?.fixedURLs;
+  self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
       workspace,
       invitedUserCount,
-    };
-  };
-
-  self.updateHlxContentConfig = (source, path) => {
-    state.content = {
-      source,
-      path,
     };
   };
 
@@ -118,7 +110,6 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 
 Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
-  content: config.getHlxContentConfig(),
   handlers: config.getHandlers(),
   imports: config.getImports(),
 });

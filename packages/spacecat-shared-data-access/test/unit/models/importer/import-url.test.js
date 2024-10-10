@@ -14,7 +14,10 @@
 import { expect } from 'chai';
 
 import { ImportUrlStatus } from '../../../../src/index.js';
-import { createImportUrl } from '../../../../src/models/importer/import-url.js';
+import {
+  createImportUrl,
+  IMPORT_URL_EXPIRES_IN_DAYS,
+} from '../../../../src/models/importer/import-url.js';
 import { ImportUrlDto } from '../../../../src/dto/import-url.js';
 
 const validImportUrlData = {
@@ -107,7 +110,20 @@ describe('ImportUrl Model tests', () => {
   describe('Import URL DTO Tests', () => {
     it('should serialize to a Dynamo-compatible object', () => {
       const importUrlRedirect = createImportUrl(importUrlRedirectData);
-      expect(ImportUrlDto.toDynamoItem(importUrlRedirect)).to.deep.equal({
+
+      const expiresAtDate = importUrlRedirect.getExpiresAt();
+
+      // Check that expiresAtDate is IMPORT_URL_EXPIRES_IN_DAYS days from today
+      const expectedExpiresAtDate = new Date();
+      expectedExpiresAtDate.setDate(expectedExpiresAtDate.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
+
+      expect(expiresAtDate.toDateString()).to.equal(expectedExpiresAtDate.toDateString());
+
+      // expiresAt is dynamic, so now that we've checked it we'll remove it from the object
+      const importUrlDynamoItem = ImportUrlDto.toDynamoItem(importUrlRedirect);
+      delete importUrlDynamoItem.expiresAt;
+
+      expect(importUrlDynamoItem).to.deep.equal({
         id: '456',
         url: 'https://www.example.com/redirect',
         jobId: '456',

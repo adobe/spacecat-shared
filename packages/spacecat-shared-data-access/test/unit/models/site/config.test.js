@@ -133,15 +133,14 @@ describe('Config Tests', () => {
       expect(updatedImports).to.deep.equal(imports);
     });
 
-    it('correctly updates the hlx content configuration', () => {
+    it('should fail gracefully if handler is not present in the configuration', () => {
       const config = Config();
-      const source = 'source1';
-      const path = 'path1';
-      config.updateHlxContentConfig(source, path);
-
-      const hlxContentConfig = config.getHlxContentConfig();
-      expect(hlxContentConfig.source).to.equal(source);
-      expect(hlxContentConfig.path).to.equal(path);
+      expect(config.getSlackMentions('404')).to.be.undefined;
+      expect(config.getHandlerConfig('404')).to.be.undefined;
+      expect(config.getExcludedURLs('404')).to.be.undefined;
+      expect(config.getManualOverwrites('404')).to.be.undefined;
+      expect(config.getFixedURLs('404')).to.be.undefined;
+      expect(config.getIncludedURLs('404')).to.be.undefined;
     });
   });
 

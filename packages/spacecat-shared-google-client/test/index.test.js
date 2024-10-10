@@ -332,6 +332,17 @@ describe('GoogleClient', () => {
         expect(error.message).to.equal(`Error retrieving organic search data from Google API: Invalid site URL in secret (${invalidUrl})`);
       }
     });
+
+    it('should throw an error if site URL is not defined', async () => {
+      delete defaultConfig.site_url;
+      stubSecretManager(defaultConfig);
+      try {
+        const googleClient = await GoogleClient.createFrom(context, baseURL);
+        await googleClient.getOrganicSearchData(startDate, endDate);
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Invalid site URL in secret (undefined)');
+      }
+    });
   });
 
   describe('listSites', () => {

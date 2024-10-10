@@ -94,7 +94,7 @@ export default class GoogleClient {
   }
 
   async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 1000, startRow = 0) {
-    if (!isValidUrl(this.siteUrl) && !this.siteUrl.startsWith('sc-domain')) {
+    if (!isValidUrl(this.siteUrl) && !this.siteUrl?.startsWith('sc-domain')) {
       throw new Error(`Error retrieving organic search data from Google API: Invalid site URL in secret (${this.siteUrl})`);
     }
     if (!isValidDate(startDate) || !isValidDate(endDate)) {

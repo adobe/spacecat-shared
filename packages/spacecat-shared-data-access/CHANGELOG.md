@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-data-access-v1.47.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.47.0...@adobe/spacecat-shared-data-access-v1.47.1) (2024-10-07)
+
+
+### Bug Fixes
+
+* gracefully handle config in case handler is not defined ([#396](https://github.com/adobe/spacecat-shared/issues/396)) ([a4c8abd](https://github.com/adobe/spacecat-shared/commit/a4c8abdf4c99cfc32b1d92233eb8786f439320f1))
+
+# [@adobe/spacecat-shared-data-access-v1.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.46.1...@adobe/spacecat-shared-data-access-v1.47.0) (2024-10-07)
+
+
+### Features
+
+* added `slackRoles` access methods to configuration and model ([#393](https://github.com/adobe/spacecat-shared/issues/393)) ([269b911](https://github.com/adobe/spacecat-shared/commit/269b91158ed2977379aee2c53a06db3821b131f5))
+
+# [@adobe/spacecat-shared-data-access-v1.46.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.46.0...@adobe/spacecat-shared-data-access-v1.46.1) (2024-10-05)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#394](https://github.com/adobe/spacecat-shared/issues/394)) ([ad165f5](https://github.com/adobe/spacecat-shared/commit/ad165f5fcf9c0ab17d2e901e7a5c0ed3c39dcb51))
+
+# [@adobe/spacecat-shared-data-access-v1.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.6...@adobe/spacecat-shared-data-access-v1.46.0) (2024-10-02)
+
+
+### Features
+
+* Expire Import URLs automatically after set period of time ([#392](https://github.com/adobe/spacecat-shared/issues/392)) ([294fd9e](https://github.com/adobe/spacecat-shared/commit/294fd9ec112b99a66e7025bed9219fed280eb128))
+
+# [@adobe/spacecat-shared-data-access-v1.45.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.5...@adobe/spacecat-shared-data-access-v1.45.6) (2024-10-02)
+
+
+### Bug Fixes
+
+* content client should use the hlxConfig ([8e74827](https://github.com/adobe/spacecat-shared/commit/8e74827613421828eaef29cf1372d329433526cc))
+
 # [@adobe/spacecat-shared-data-access-v1.45.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.45.4...@adobe/spacecat-shared-data-access-v1.45.5) (2024-09-30)
 
 

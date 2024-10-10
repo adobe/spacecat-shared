@@ -422,6 +422,12 @@ export interface Configuration {
   getHandler: (type) => object;
 
   /**
+   * Retrieves the slack roles configuration.
+   * @returns {object} The slack roles configuration.
+   */
+  getSlackRoles: () => object;
+
+  /**
    * Return true if a handler type is enabled for an organization.
    * @param type handler type
    * @param org organization

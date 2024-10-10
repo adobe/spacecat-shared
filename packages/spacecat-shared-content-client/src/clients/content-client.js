@@ -236,7 +236,8 @@ export default class ContentClient {
     this.log.info(`Getting page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const metadata = await this.rawClient.getPageMetadata(docPath);
+    const document = await this.rawClient.read(docPath);
+    const metadata = document.getMetadata();
 
     this.#logDuration('getPageMetadata', startTime);
 
@@ -255,7 +256,8 @@ export default class ContentClient {
     this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const originalMetadata = await this.getPageMetadata(path);
+    const document = await this.rawClient.read(docPath);
+    const originalMetadata = document.getMetadata();
 
     let mergedMetadata;
     if (overwrite) {
@@ -264,9 +266,12 @@ export default class ContentClient {
       mergedMetadata = new Map([...metadata, ...originalMetadata]);
     }
 
-    const response = await this.rawClient.updatePageMetadata(docPath, mergedMetadata);
-    if (response.status !== 200) {
-      throw new Error(`Failed to update metadata for path ${path}`);
+    const response = await document.updateMetadata(mergedMetadata);
+    if (response?.status !== 200) {
+      const saveResponse = await this.rawClient.save(document);
+      if (saveResponse.status !== 200) {
+        throw new Error(`Failed to update metadata for path ${path}`);
+      }
     }
 
     this.#logDuration('updatePageMetadata', startTime);

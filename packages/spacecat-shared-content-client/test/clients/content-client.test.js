@@ -18,6 +18,7 @@ import esmock from 'esmock';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.js';
+import { Mdast } from '@adobe/spacecat-helix-content-sdk/src/mdast.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -60,8 +61,10 @@ describe('ContentClient', () => {
 
   const createContentClient = async (getPageMetadata) => {
     const contentSDK = sinon.stub().returns({
-      getPageMetadata: sinon.stub().resolves(getPageMetadata),
-      updatePageMetadata: sinon.stub().resolves({ status: 200 }),
+      read: sinon.stub().resolves({
+        getMetadata: sinon.stub().resolves(getPageMetadata),
+        updateMetadata: sinon.stub().resolves({ status: 200 }),
+      }),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -71,9 +74,8 @@ describe('ContentClient', () => {
 
   const createErrorContentClient = async (getError, updateError, errorMessage) => {
     const contentSDK = sinon.stub().returns({
-      getPageMetadata: getError
-        ? sinon.stub().rejects(new Error(errorMessage)) : sinon.stub().resolves(new Map()),
-      updatePageMetadata: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
+      read: getError ? sinon.stub().rejects(new Error(errorMessage))
+        : sinon.stub().resolves(new Mdast()),
       getRedirects: getError
         ? sinon.stub().rejects(new Error(errorMessage)) : sinon.stub().resolves(existingRedirects),
       appendRedirects: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
@@ -208,7 +210,7 @@ describe('ContentClient', () => {
 
       expect(metadata).to.deep.equal(sampleMetadata);
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
-      expect(client.rawClient.getPageMetadata.calledOnceWith('/test-path')).to.be.true;
+      expect(client.rawClient.read.calledOnceWith('/test-path')).to.be.true;
       expect(log.debug.calledOnce).to.be.true;
     });
 
@@ -219,7 +221,7 @@ describe('ContentClient', () => {
 
       expect(metadata).to.deep.equal(sampleMetadata);
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
-      expect(client.rawClient.getPageMetadata.calledOnceWith('/test-path.docx')).to.be.true;
+      expect(client.rawClient.read.calledOnceWith('/test-path.docx')).to.be.true;
       expect(log.debug.calledOnce).to.be.true;
     });
 
@@ -236,13 +238,13 @@ describe('ContentClient', () => {
     it('correctly resolves paths ending with / for Google Drive', async () => {
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.getPageMetadata('/test-path/');
-      expect(client.rawClient.getPageMetadata.calledOnceWith('/test-path/index')).to.be.true;
+      expect(client.rawClient.read.calledOnceWith('/test-path/index')).to.be.true;
     });
 
     it('correctly resolves paths ending with / for OneDrive', async () => {
       const client = ContentClient.createFrom(context, siteConfigOneDrive);
       await client.getPageMetadata('/test-path/');
-      expect(client.rawClient.getPageMetadata.calledOnceWith('/test-path/index.docx')).to.be.true;
+      expect(client.rawClient.read.calledOnceWith('/test-path/index.docx')).to.be.true;
     });
   });
 

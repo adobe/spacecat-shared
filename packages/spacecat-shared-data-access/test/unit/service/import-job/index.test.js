@@ -39,10 +39,9 @@ describe('Import Job Tests', () => {
         getItem: sinon.stub().resolves(),
         query: sinon.stub().resolves(null),
         putItem: sinon.stub().resolves(),
+        removeItem: sinon.stub().resolves(),
       };
-      mockLog = {
-        log: console,
-      };
+      mockLog = console;
       exportedFunctions = importJobFunctions(
         mockDynamoClient,
         TEST_DA_CONFIG,
@@ -149,6 +148,14 @@ describe('Import Job Tests', () => {
         const importJob = createImportJob(mockImportJob);
         const result = exportedFunctions.updateImportJob(importJob);
         expect(result).to.be.rejectedWith('Import Job with id:test-id does not exist');
+      });
+    });
+
+    describe('removeImportJob', () => {
+      it('should remove an existing ImportJob', async () => {
+        const importJob = createImportJob(mockImportJob);
+        await exportedFunctions.removeImportJob(importJob);
+        expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
       });
     });
   });

@@ -22,10 +22,15 @@ const validApiKey = {
   imsOrgId: 'test-ims-org-id',
   expiresAt: '2024-05-29T14:26:00.000Z',
   revokedAt: '2024-05-29T14:26:00.000Z',
-  scopes: [{
-    name: 'imports.write',
-    domains: ['https://www.test.com'],
-  }],
+  scopes: [
+    {
+      name: 'imports.write',
+      domains: ['https://www.test.com'],
+    },
+    {
+      name: 'imports.delete',
+    },
+  ],
 };
 
 describe('ApiKey Model tests', () => {
@@ -130,6 +135,9 @@ describe('ApiKey Model tests', () => {
       expect(apiKey.getScopes()).to.deep.equal([{
         name: 'imports.write',
         domains: ['https://www.test.com'],
+      },
+      {
+        name: 'imports.delete',
       }]);
     });
   });

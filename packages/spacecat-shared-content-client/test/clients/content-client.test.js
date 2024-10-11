@@ -28,6 +28,7 @@ describe('ContentClient', () => {
   let env;
   let context;
   let log;
+  let documentSdk;
 
   let ContentClient;
 
@@ -60,11 +61,13 @@ describe('ContentClient', () => {
   ];
 
   const createContentClient = async (getPageMetadata) => {
+    documentSdk = {
+      getMetadata: sinon.stub().returns(getPageMetadata),
+      updateMetadata: sinon.stub().resolves(),
+    };
     const contentSDK = sinon.stub().returns({
-      read: sinon.stub().resolves({
-        getMetadata: sinon.stub().resolves(getPageMetadata),
-        updateMetadata: sinon.stub().resolves({ status: 200 }),
-      }),
+      read: sinon.stub().resolves(documentSdk),
+      save: sinon.stub().resolves({ status: 200 }),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -75,7 +78,86 @@ describe('ContentClient', () => {
   const createErrorContentClient = async (getError, updateError, errorMessage) => {
     const contentSDK = sinon.stub().returns({
       read: getError ? sinon.stub().rejects(new Error(errorMessage))
-        : sinon.stub().resolves(new Mdast()),
+        : sinon.stub().resolves(new Mdast({
+          type: 'root',
+          children: [
+            {
+              type: 'heading',
+              depth: 1,
+              children: [
+                { type: 'text', value: 'Document Title' },
+              ],
+            },
+            {
+              type: 'paragraph',
+              children: [
+                { type: 'text', value: 'This is an introductory paragraph.' },
+              ],
+            },
+            {
+              type: 'thematicBreak',
+            },
+            {
+              type: 'table',
+              children: [
+                {
+                  type: 'tableRow',
+                  children: [
+                    {
+                      type: 'tableCell',
+                      children: [
+                        {
+                          type: 'paragraph',
+                          children: [
+                            {
+                              type: 'text',
+                              value: 'metadata',
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    { type: 'tableCell', children: [{ type: 'text', value: ' ' }] },
+                  ],
+                },
+                {
+                  type: 'tableRow',
+                  children: [
+                    {
+                      type: 'tableCell',
+                      children: [
+                        {
+                          type: 'paragraph',
+                          children: [
+                            {
+                              type: 'text',
+                              value: 'Title',
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      type: 'tableCell',
+                      children: [
+                        {
+                          type: 'paragraph',
+                          children: [
+                            {
+                              type: 'text',
+                              value: 'TestTitle',
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                }],
+            },
+          ],
+        })),
+      save: updateError ? sinon.stub().resolves({ status: 500 })
+        : sinon.stub().resolves({ status: 200 }),
       getRedirects: getError
         ? sinon.stub().rejects(new Error(errorMessage)) : sinon.stub().resolves(existingRedirects),
       appendRedirects: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
@@ -211,6 +293,7 @@ describe('ContentClient', () => {
       expect(metadata).to.deep.equal(sampleMetadata);
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.read.calledOnceWith('/test-path')).to.be.true;
+      expect(documentSdk.getMetadata.calledOnce).to.be.true;
       expect(log.debug.calledOnce).to.be.true;
     });
 
@@ -222,6 +305,7 @@ describe('ContentClient', () => {
       expect(metadata).to.deep.equal(sampleMetadata);
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.read.calledOnceWith('/test-path.docx')).to.be.true;
+      expect(documentSdk.getMetadata.calledOnce).to.be.true;
       expect(log.debug.calledOnce).to.be.true;
     });
 
@@ -274,10 +358,11 @@ describe('ContentClient', () => {
       const updatedMetadata = await client.updatePageMetadata(path, metadata);
 
       expect(updatedMetadata).to.deep.equal(expectedMetadata);
-      expect(client.rawClient.updatePageMetadata.calledOnceWith('/test-path', expectedMetadata)).to.be.true;
-      expect(log.info.calledTwice).to.be.true;
+      expect(client.rawClient.read.calledOnceWith('/test-path')).to.be.true;
+      expect(documentSdk.updateMetadata.calledOnceWith(expectedMetadata)).to.be.true;
+      expect(client.rawClient.save.calledOnce).to.be.true;
+      expect(log.info.calledOnce).to.be.true;
       expect(log.info.firstCall.args[0]).to.equal(`Updating page metadata for test-site and path ${path}`);
-      expect(log.info.secondCall.args[0]).to.equal(`Getting page metadata for test-site and path ${path}`);
     });
 
     it('throws an error if metadata is not a Map', async () => {
@@ -331,7 +416,8 @@ describe('ContentClient', () => {
       const updatedMetadata = await client.updatePageMetadata(path, newMetadata);
 
       expect(updatedMetadata).to.deep.equal(expectedMetadata);
-      expect(client.rawClient.updatePageMetadata.calledOnceWith('/test-path', expectedMetadata)).to.be.true;
+      expect(client.rawClient.read.calledOnceWith('/test-path')).to.be.true;
+      expect(documentSdk.updateMetadata.calledOnceWith(expectedMetadata)).to.be.true;
     });
 
     it('merges without overwriting when overwrite option is false', async () => {
@@ -355,7 +441,8 @@ describe('ContentClient', () => {
       });
 
       expect(updatedMetadata).to.deep.equal(expectedMetadata);
-      expect(client.rawClient.updatePageMetadata.calledOnceWith('/test-path', expectedMetadata)).to.be.true;
+      expect(client.rawClient.read.calledOnceWith('/test-path')).to.be.true;
+      expect(documentSdk.updateMetadata.calledOnceWith(expectedMetadata)).to.be.true;
     });
   });
 

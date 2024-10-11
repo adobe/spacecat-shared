@@ -890,7 +890,6 @@ interface DataAccessConfig {
   indexNameAllOrganizationsByImsOrgId: string,
   indexNameAllImportJobsByStatus: string,
   indexNameAllImportJobsByDateRange: string,
-  indexNameAllImportUrlsByJobIdAndStatus: string,
   indexNameImportUrlsByJobIdAndStatus: string,
   indexNameApiKeyByHashedApiKey: string,
   pkAllSites: string;

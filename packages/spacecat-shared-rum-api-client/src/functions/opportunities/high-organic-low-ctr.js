@@ -9,22 +9,12 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { DataChunks, generateKey } from '../../common/cruncher.js';
-import { classifyTrafficSource } from '../../common/traffic.js';
+import { DataChunks, facets } from '@adobe/rum-distiller';
+import { loadBundles, trafficSeriesFn } from '../../utils.js';
 
 const DAILY_EARNED_THRESHOLD = 5000;
 const CTR_THRESHOLD_RATIO = 0.95;
 const DAILY_PAGEVIEW_THRESHOLD = 1000;
-
-const trafficSeriesFn = (memo, type) => (bundle) => {
-  const key = generateKey(bundle.url, bundle.id, bundle.time);
-  if (!memo[key]) {
-    // eslint-disable-next-line no-param-reassign
-    memo[key] = classifyTrafficSource(bundle).type;
-  }
-
-  return type === memo[key] ? bundle.weight : 0;
-};
 
 function convertToOpportunity(traffic) {
   const {
@@ -61,9 +51,9 @@ function handler(bundles, opts = {}) {
 
   const dataChunks = new DataChunks();
 
-  dataChunks.loadBundles(bundles);
+  loadBundles(bundles, dataChunks);
 
-  dataChunks.addFacet('urls', (bundle) => bundle.url);
+  dataChunks.addFacet('urls', facets.url);
 
   dataChunks.addSeries('views', (bundle) => bundle.weight);
   dataChunks.addSeries('clicks', (bundle) => (bundle.events.some((e) => e.checkpoint === 'click') ? bundle.weight : 0));

@@ -10,27 +10,22 @@
  * governing permissions and limitations under the License.
  */
 
-import { DataChunks } from '../common/cruncher.js';
-
-function getMax(metric) {
-  return (bundle) => {
-    const values = bundle.events.filter((event) => event.checkpoint === `cwv-${metric}`)
-      .map((event) => event.value);
-    return values.length > 0 ? Math.max(values) : undefined;
-  };
-}
+import {
+  DataChunks, series, facets,
+} from '@adobe/rum-distiller';
+import { loadBundles } from '../utils.js';
 
 function handler(bundles) {
   const dataChunks = new DataChunks();
 
-  dataChunks.loadBundles(bundles);
+  loadBundles(bundles, dataChunks);
 
-  dataChunks.addFacet('urls', (bundle) => bundle.url);
+  dataChunks.addFacet('urls', facets.url);
 
-  dataChunks.addSeries('lcp', getMax('lcp'));
-  dataChunks.addSeries('cls', getMax('cls'));
-  dataChunks.addSeries('inp', getMax('inp'));
-  dataChunks.addSeries('ttfb', getMax('ttfb'));
+  dataChunks.addSeries('lcp', series.lcp);
+  dataChunks.addSeries('cls', series.cls);
+  dataChunks.addSeries('inp', series.inp);
+  dataChunks.addSeries('ttfb', series.ttfb);
 
   return dataChunks.facets.urls.map((urlFacet) => ({
     url: urlFacet.value,

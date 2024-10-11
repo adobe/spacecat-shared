@@ -84,6 +84,7 @@ describe('Data Access Object Tests', () => {
     'createNewImportJob',
     'updateImportJob',
     'getImportJobsByDateRange',
+    'removeImportJob',
   ];
 
   const importUrlFunctions = [

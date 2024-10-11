@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.47.1...@adobe/spacecat-shared-data-access-v1.48.0) (2024-10-11)
+
+
+### Features
+
+* Support import job deletion ([#400](https://github.com/adobe/spacecat-shared/issues/400)) ([d5a9df6](https://github.com/adobe/spacecat-shared/commit/d5a9df68f103b34adab87dfc78cc5bca7aa99ebc))
+
 # [@adobe/spacecat-shared-data-access-v1.47.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.47.0...@adobe/spacecat-shared-data-access-v1.47.1) (2024-10-07)
 
 

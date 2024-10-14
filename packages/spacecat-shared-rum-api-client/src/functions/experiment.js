@@ -10,7 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { DataChunks, generateKey, DELIMITER } from '../common/cruncher.js';
+import { DataChunks } from '@adobe/rum-distiller';
+import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const METRICS = ['click', 'convert', 'formsubmit'];
 
@@ -34,7 +35,7 @@ const checkpointsFacetFn = (bundle) => {
 function handler(bundles) {
   const dataChunks = new DataChunks();
 
-  dataChunks.loadBundles(bundles.filter((bundle) => bundle.events.some((event) => event.checkpoint === 'experiment')));
+  loadBundles(bundles.filter((bundle) => bundle.events.some((event) => event.checkpoint === 'experiment')), dataChunks);
 
   dataChunks.addFacet('experiments', experimentsFacetFn);
   dataChunks.addFacet('variants', variantsFacetFn);

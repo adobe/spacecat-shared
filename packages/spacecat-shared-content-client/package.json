@@ -43,7 +43,7 @@
     "@adobe/spacecat-shared-data-access": "1.45.5",
     "chai": "5.1.1",
     "chai-as-promised": "8.0.0",
-    "esmock": "2.6.7",
+    "esmock": "2.6.9",
     "nock": "13.5.4",
     "sinon": "19.0.2",
     "sinon-chai": "4.0.0",

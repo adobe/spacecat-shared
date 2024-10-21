@@ -65,6 +65,12 @@ const validData = {
     reports: 'sqs://.../spacecat-services-report-jobs',
   },
   version: 'v1',
+  slackRoles: {
+    scrape: [
+      'test-id-1',
+      'test-id-2',
+    ],
+  },
 };
 
 describe('Configuration Model Tests', () => {
@@ -100,12 +106,25 @@ describe('Configuration Model Tests', () => {
       disabled: { sites: ['site2'], orgs: ['org2'] },
       enabledByDefault: false,
     };
-    const configuration = createConfiguration({ version: '1.1', queues: {}, jobs: [] });
+    const configuration = createConfiguration({
+      version: '1.1', queues: {}, jobs: [], slackRoles: {},
+    });
     configuration.addHandler('new-handler', handlerData);// Line 59
     const updatedHandler = configuration.getHandler('new-handler');
     expect(updatedHandler).to.deep.equal(handlerData);
   });
 
+  it('gets slack roles by audit type', () => {
+    const configuration = createConfiguration(validData);
+    const roles = configuration.getSlackRoleMembersByRole('scrape');
+    expect(roles).to.deep.equal(validData.slackRoles.scrape);
+  });
+
+  it('gets all slack roles', () => {
+    const configuration = createConfiguration(validData);
+    const roles = configuration.getSlackRoles();
+    expect(roles).to.deep.equal(validData.slackRoles);
+  });
   it('checks if a handler type is enabled for a site', () => {
     const configuration = createConfiguration(validData);
     const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org2' });

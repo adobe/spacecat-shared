@@ -60,6 +60,12 @@ describe('Configuration Access Pattern Tests', () => {
         imports: 'sqs://.../spacecat-services-import-jobs',
         reports: 'sqs://.../spacecat-services-report-jobs',
       },
+      slackRoles: {
+        import: [
+          'test-id-1',
+          'test-id-2',
+        ],
+      },
     };
 
     let mockDynamoClient;
@@ -130,6 +136,12 @@ describe('Configuration Access Pattern Tests', () => {
           imports: 'sqs://.../spacecat-services-import-jobs',
           reports: 'sqs://.../spacecat-services-report-jobs',
         },
+        slackRoles: {
+          import: [
+            'test-id-1',
+            'test-id-2',
+          ],
+        },
       };
 
       mockDynamoClient.getItem.onFirstCall().resolves(mockConfigurationData);
@@ -168,6 +180,12 @@ describe('Configuration Access Pattern Tests', () => {
           imports: 'sqs://.../spacecat-services-import-jobs',
           reports: 'sqs://.../spacecat-services-report-jobs',
         },
+        slackRoles: {
+          import: [
+            'test-id-1',
+            'test-id-2',
+          ],
+        },
       };
 
       mockDynamoClient.query.resolves(
@@ -202,6 +220,12 @@ describe('Configuration Access Pattern Tests', () => {
           audits: 'sqs://.../spacecat-services-audit-jobs',
           imports: 'sqs://.../spacecat-services-import-jobs',
           reports: 'sqs://.../spacecat-services-report-jobs',
+        },
+        slackRoles: {
+          import: [
+            'test-id-1',
+            'test-id-2',
+          ],
         },
       };
 

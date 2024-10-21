@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-rum-api-client",
-  "version": "2.9.4",
+  "version": "2.9.5",
   "description": "Shared modules of the Spacecat Services - Rum API client",
   "type": "module",
   "engines": {
@@ -49,6 +49,6 @@
     "nock": "13.5.5",
     "sinon": "19.0.2",
     "sinon-chai": "4.0.0",
-    "typescript": "5.6.2"
+    "typescript": "5.6.3"
   }
 }

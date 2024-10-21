@@ -19,6 +19,7 @@ import sinonChai from 'sinon-chai';
 import { importUrlFunctions } from '../../../../src/service/import-url/index.js';
 import { createImportUrl } from '../../../../src/models/importer/import-url.js';
 import { ImportJobStatus } from '../../../../src/index.js';
+import { removeUrlsForImportJob } from '../../../../src/service/import-url/accessPatterns.js';
 
 use(sinonChai);
 use(chaiAsPromised);
@@ -42,6 +43,7 @@ describe('Import Url Tests', () => {
       };
       mockLog = {
         log: sinon.stub(),
+        error: sinon.stub(),
       };
       exportedFunctions = importUrlFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
 
@@ -110,6 +112,13 @@ describe('Import Url Tests', () => {
         expect(result.length).to.equal(1);
         expect(result[0].getUrl()).to.equal('https://www.test.com');
         expect(result[0].getId()).to.equal('test-url-id');
+      });
+    });
+
+    describe('removeUrlsForImportJob', () => {
+      it('should handle a Dynamo error', async () => {
+        mockDynamoClient.query.rejects(new Error('Dynamo Error'));
+        await expect(removeUrlsForImportJob(mockDynamoClient, TEST_DA_CONFIG, mockLog, 'test-job-id')).to.be.rejectedWith('Dynamo Error');
       });
     });
   });

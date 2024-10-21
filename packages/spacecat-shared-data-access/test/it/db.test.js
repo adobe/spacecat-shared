@@ -239,6 +239,12 @@ describe('DynamoDB Integration Test', async () => {
         { group: 'audits', interval: 'daily', type: 'some-audit' },
         { group: 'reports', interval: 'daily', type: 'some-report' },
       ],
+      slackRoles: {
+        import: [
+          'test-id-1',
+          'test-id-2',
+        ],
+      },
     };
     const configurationV2 = await dataAccess.getConfiguration();
     const configuration = await dataAccess.updateConfiguration({
@@ -1085,6 +1091,32 @@ describe('DynamoDB Integration Test', async () => {
         const endDate = new Date().toISOString();
         const jobs = await dataAccess.getImportJobsByDateRange(startTime, endDate);
         expect(jobs.length).to.be.greaterThan(0);
+      });
+
+      it('Verify removeImportJob', async () => {
+        const job = await createNewImportJob();
+        const jobId = job.getId();
+        const url = await createNewImportUrl(job);
+        const url2 = await createNewImportUrl(job);
+
+        expect(url.getId()).to.be.a('string');
+        expect(url.getJobId()).to.equal(jobId);
+        expect(url2.getJobId()).to.equal(jobId);
+
+        // Before we delete the job, there should be 2 URLs in the DB relating to this jobId
+        const importJobUrlsFromDb = await dataAccess.getImportUrlsByJobId(jobId);
+        expect(importJobUrlsFromDb.length).to.equal(2);
+
+        // Remove the new job
+        await dataAccess.removeImportJob(job);
+
+        // Try to find it in the DB
+        const deletedJob = await dataAccess.getImportJobByID(jobId);
+        expect(deletedJob).to.be.null;
+
+        // Try to find its URLs in the DB
+        const deletedJobImportUrls = await dataAccess.getImportUrlsByJobId(jobId);
+        expect(deletedJobImportUrls.length).to.equal(0);
       });
     });
 

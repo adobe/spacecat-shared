@@ -15,6 +15,7 @@ import Joi from 'joi';
 const Configuration = (data = {}) => {
   const state = { ...data };
   const self = { state };
+  self.getSlackRoles = () => self.state.slackRoles || {};
   self.getJobs = () => self.state.jobs;
   self.getVersion = () => self.state.version;
   self.getQueues = () => self.state.queues;
@@ -23,6 +24,10 @@ const Configuration = (data = {}) => {
   self.addHandler = (type, handlerData) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = { ...handlerData };
+  };
+  self.getSlackRoleMembersByRole = (role) => {
+    const roles = self.getSlackRoles();
+    return roles[role] || [];
   };
   self.isHandlerEnabledForSite = (type, site) => {
     const handler = state.handlers[type];
@@ -159,6 +164,7 @@ export const checkConfiguration = (configuration) => {
       },
     )),
     jobs: Joi.array().required(),
+    slackRoles: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())).required(),
   }).unknown(true);
   const { error, value } = schema.validate(configuration);
 

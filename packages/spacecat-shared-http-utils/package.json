@@ -34,8 +34,8 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.1.9",
-    "@adobe/spacecat-shared-utils": "1.19.1",
-    "@adobe/spacecat-shared-data-access": "1.41.3",
+    "@adobe/spacecat-shared-utils": "1.20.8",
+    "@adobe/spacecat-shared-data-access": "1.48.2",
     "jose": "5.9.4"
   },
   "devDependencies": {

@@ -255,6 +255,12 @@ export default async function generateSampleData(
   }
 
   const configurations = [{
+    slackRoles: {
+      import: [
+        'test-id-1',
+        'test-id-2',
+      ],
+    },
     jobs: [
       {
         group: 'audits',
@@ -302,6 +308,12 @@ export default async function generateSampleData(
     PK: config.pkAllConfigurations,
   },
   {
+    slackRoles: {
+      import: [
+        'test-id-1',
+        'test-id-2',
+      ],
+    },
     jobs: [
       {
         group: 'audits',

@@ -239,6 +239,12 @@ describe('DynamoDB Integration Test', async () => {
         { group: 'audits', interval: 'daily', type: 'some-audit' },
         { group: 'reports', interval: 'daily', type: 'some-report' },
       ],
+      slackRoles: {
+        import: [
+          'test-id-1',
+          'test-id-2',
+        ],
+      },
     };
     const configurationV2 = await dataAccess.getConfiguration();
     const configuration = await dataAccess.updateConfiguration({

@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import AWSXray from 'aws-xray-sdk';
 import { S3Client } from '@aws-sdk/client-s3';
 
 /**
@@ -28,7 +29,7 @@ export function s3Wrapper(fn) {
         S3_BUCKET_NAME: bucket,
       } = context.env;
 
-      context.s3.s3Client = new S3Client({ region });
+      context.s3.s3Client = AWSXray.captureAWSv3Client(new S3Client({ region }));
       context.s3.s3Bucket = bucket;
     }
 

@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import AWSXray from 'aws-xray-sdk';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
@@ -65,7 +66,7 @@ export default class GoogleClient {
     }
 
     const customerSecret = resolveCustomerSecretsName(baseURL, context);
-    const client = new SecretsManagerClient({});
+    const client = AWSXray.captureAWSv3Client(new SecretsManagerClient({}));
 
     try {
       const command = new GetSecretValueCommand({ SecretId: customerSecret });

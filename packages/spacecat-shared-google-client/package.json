@@ -39,6 +39,7 @@
     "@adobe/spacecat-shared-http-utils": "1.1.4",
     "@adobe/spacecat-shared-utils": "1.15.1",
     "@aws-sdk/client-secrets-manager": "3.675.0",
+    "aws-xray-sdk": "3.10.1",
     "google-auth-library": "9.14.2",
     "googleapis": "144.0.0"
   },

@@ -176,4 +176,44 @@ describe('FirefallClient', () => {
       await expect(client.fetch('Test prompt')).to.be.rejectedWith('Invalid response format.');
     });
   });
+
+  describe('executePromptChain', async () => {
+    let client;
+
+    beforeEach(() => {
+      client = FirefallClient.createFrom(mockContext);
+    });
+
+    it('executes a prompt chain successfully using conversation API', async () => {
+      const chainConfig = {
+        steps: [
+          {
+            prompt: 'What is the capital of France?',
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onResponse: (response) => ({ context: { capital: 'Paris' } }),
+          },
+          {
+            prompt: 'What is the population of {{capital}}?',
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onResponse: (response) => ({ context: { population: '2 million' } }),
+          },
+        ],
+      };
+
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post('/v2/conversations')
+        .reply(200, { conversation_id: 'sessionId' })
+        .post('/v2/conversations/sessionId/messages')
+        .reply(200, { messages: [{ id: 'messageId1', content: 'Paris', status: 'SUCCEEDED' }] })
+        .get('/v2/conversations/sessionId/messages/messageId1')
+        .reply(200, { messages: [{ content: 'Paris' }], status: 'SUCCEEDED' })
+        .post('/v2/conversations/sessionId/messages')
+        .reply(200, { messages: [{ id: 'messageId2', content: '2 million', status: 'SUCCEEDED' }] })
+        .get('/v2/conversations/sessionId/messages/messageId2')
+        .reply(200, { messages: [{ content: '2 million' }], status: 'SUCCEEDED' });
+
+      const result = await client.executePromptChain(chainConfig);
+      expect(result).to.eql({ capital: 'Paris', population: '2 million' });
+    });
+  });
 });

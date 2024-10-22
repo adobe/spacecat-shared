@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.20.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.7...@adobe/spacecat-shared-utils-v1.20.8) (2024-10-21)
+
+
+### Bug Fixes
+
+* add tracing support for v3 aws clients ([#406](https://github.com/adobe/spacecat-shared/issues/406)) ([b83ae6e](https://github.com/adobe/spacecat-shared/commit/b83ae6e6dce155358b22558c37464a9002d33fc8))
+
 # [@adobe/spacecat-shared-utils-v1.20.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.6...@adobe/spacecat-shared-utils-v1.20.7) (2024-10-19)
 
 

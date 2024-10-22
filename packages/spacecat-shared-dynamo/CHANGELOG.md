@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.3.42](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.41...@adobe/spacecat-shared-dynamo-v1.3.42) (2024-10-21)
+
+
+### Bug Fixes
+
+* add tracing support for v3 aws clients ([#406](https://github.com/adobe/spacecat-shared/issues/406)) ([b83ae6e](https://github.com/adobe/spacecat-shared/commit/b83ae6e6dce155358b22558c37464a9002d33fc8))
+
 # [@adobe/spacecat-shared-dynamo-v1.3.41](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.40...@adobe/spacecat-shared-dynamo-v1.3.41) (2024-10-19)
 
 

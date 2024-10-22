@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-google-client-v1.2.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.14...@adobe/spacecat-shared-google-client-v1.2.15) (2024-10-21)
+
+
+### Bug Fixes
+
+* update deps ([#408](https://github.com/adobe/spacecat-shared/issues/408)) ([b1f8283](https://github.com/adobe/spacecat-shared/commit/b1f8283f658e22a69d69f4379de306cfd73133d1))
+
+# [@adobe/spacecat-shared-google-client-v1.2.14](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.13...@adobe/spacecat-shared-google-client-v1.2.14) (2024-10-21)
+
+
+### Bug Fixes
+
+* add tracing support for v3 aws clients ([#406](https://github.com/adobe/spacecat-shared/issues/406)) ([b83ae6e](https://github.com/adobe/spacecat-shared/commit/b83ae6e6dce155358b22558c37464a9002d33fc8))
+
 # [@adobe/spacecat-shared-google-client-v1.2.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.12...@adobe/spacecat-shared-google-client-v1.2.13) (2024-10-19)
 
 

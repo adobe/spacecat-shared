@@ -11,6 +11,7 @@
  */
 
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
+import AWSXray from 'aws-xray-sdk';
 
 /**
  * @class SQS utility to send messages to SQS
@@ -19,7 +20,7 @@ import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
  */
 class SQS {
   constructor(region, log) {
-    this.sqsClient = new SQSClient({ region });
+    this.sqsClient = AWSXray.captureAWSv3Client(new SQSClient({ region }));
     this.log = log;
   }
 

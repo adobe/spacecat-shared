@@ -10,14 +10,14 @@
  * governing permissions and limitations under the License.
  */
 /* eslint-env mocha */
-// fetch.test.mjs
+
 import { expect } from 'chai';
 import sinon from 'sinon';
 import nock from 'nock';
 import AWSXRay from 'aws-xray-sdk';
 import { fetch } from '../src/tracing-fetch.js';
 
-describe('fetch function', () => {
+describe('tracing fetch function', () => {
   let sandbox;
   let getSegmentStub;
   let parentSegment;
@@ -45,10 +45,9 @@ describe('fetch function', () => {
     nock.cleanAll();
   });
 
-  it('should call adobeFetch and return response when there is no parent segment', async () => {
+  it('calls adobeFetch and return response when there is no parent segment', async () => {
     getSegmentStub.returns(null);
 
-    // Use Nock to intercept the HTTP request
     const url = 'https://example.com/api/data';
     nock('https://example.com')
       .get('/api/data')
@@ -61,10 +60,9 @@ describe('fetch function', () => {
     expect(responseBody).to.equal('OK');
   });
 
-  it('should create subsegment, add annotations, call adobeFetch, and close subsegment', async () => {
+  it('creates subsegment, add annotations, call adobeFetch, and close subsegment', async () => {
     getSegmentStub.returns(parentSegment);
 
-    // Use Nock to intercept the HTTP request
     const url = 'https://example.com/api/data';
 
     nock('https://example.com')
@@ -88,7 +86,7 @@ describe('fetch function', () => {
     expect(subsegment.close.calledOnce).to.be.true;
   });
 
-  it('should handle fetch error, add error to subsegment, close subsegment, and rethrow', async () => {
+  it('handles fetch error, adds error to subsegment, closes subsegment, and rethrows', async () => {
     getSegmentStub.returns(parentSegment);
 
     const url = 'https://example.com/api/data';

@@ -15,7 +15,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import nock from 'nock';
 import AWSXRay from 'aws-xray-sdk';
-import { fetch } from '../src/tracing-fetch.js';
+import { tracingFetch } from '../src/tracing-fetch.js';
 
 describe('tracing fetch function', () => {
   let sandbox;
@@ -53,7 +53,7 @@ describe('tracing fetch function', () => {
       .get('/api/data')
       .reply(200, 'OK');
 
-    const response = await fetch(url);
+    const response = await tracingFetch(url);
 
     expect(response.status).to.equal(200);
     const responseBody = await response.text();
@@ -71,7 +71,7 @@ describe('tracing fetch function', () => {
 
     const options = { method: 'GET' };
 
-    const response = await fetch(url, options);
+    const response = await tracingFetch(url, options);
 
     expect(parentSegment.addNewSubsegment.calledOnceWithExactly(`HTTP GET ${url}`)).to.be.true;
     expect(subsegment.addAnnotation.calledWith('url', url)).to.be.true;
@@ -96,7 +96,7 @@ describe('tracing fetch function', () => {
       .replyWithError('Network Error');
 
     try {
-      await fetch(url);
+      await tracingFetch(url);
       throw new Error('Expected fetch to throw an error');
     } catch (error) {
       expect(error.message).to.equal('Network Error');

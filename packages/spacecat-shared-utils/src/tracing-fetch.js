@@ -13,18 +13,19 @@ import AWSXRay from 'aws-xray-sdk';
 
 import { fetch as adobeFetch } from './adobe-fetch.js';
 
-export async function fetch(url, options = {}) {
+export async function tracingFetch(url, options = {}) {
   const parentSegment = AWSXRay.getSegment();
 
   if (!parentSegment) {
     return adobeFetch(url, options);
   }
 
-  const subsegment = parentSegment.addNewSubsegment(`HTTP ${options.method || 'GET'} ${url}`);
+  const method = options.method || 'GET';
+  const subsegment = parentSegment.addNewSubsegment(`HTTP ${method} ${url}`);
 
   try {
     subsegment.addAnnotation('url', url);
-    subsegment.addAnnotation('method', options.method || 'GET');
+    subsegment.addAnnotation('method', method);
 
     const response = await adobeFetch(url, options);
 

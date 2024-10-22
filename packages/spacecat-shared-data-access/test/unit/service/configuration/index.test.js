@@ -94,6 +94,7 @@ describe('Configuration Access Pattern Tests', () => {
       expect(config.getVersion()).to.equal(mockConfigurationData.version);
       expect(config.getQueues()).to.deep.equal(mockConfigurationData.queues);
       expect(config.getJobs()).to.deep.equal(mockConfigurationData.jobs);
+      expect(config.getSlackRoles()).to.deep.equal(mockConfigurationData.slackRoles);
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
@@ -114,6 +115,7 @@ describe('Configuration Access Pattern Tests', () => {
       expect(result.getVersion()).to.equal(mockConfigurationData.version);
       expect(result.getQueues()).to.deep.equal(mockConfigurationData.queues);
       expect(result.getJobs()).to.deep.equal(mockConfigurationData.jobs);
+      expect(result.getSlackRoles()).to.deep.equal(mockConfigurationData.slackRoles);
       expect(mockDynamoClient.query.called).to.be.true;
     });
 
@@ -152,6 +154,7 @@ describe('Configuration Access Pattern Tests', () => {
       expect(result.getVersion()).to.equal(mockConfigurationData.version);
       expect(result.getQueues()).to.deep.equal(mockConfigurationData.queues);
       expect(result.getJobs()).to.deep.equal(mockConfigurationData.jobs);
+      expect(result.getSlackRoles()).to.deep.equal(mockConfigurationData.slackRoles);
       expect(mockDynamoClient.getItem.called).to.be.true;
     });
 
@@ -199,6 +202,7 @@ describe('Configuration Access Pattern Tests', () => {
       expect(result.getVersion()).to.equal('v2');
       expect(result.getQueues()).to.deep.equal(configurationData.queues);
       expect(result.getJobs()).to.deep.equal(configurationData.jobs);
+      expect(result.getSlackRoles()).to.deep.equal(configurationData.slackRoles);
       expect(mockDynamoClient.putItem.called).to.be.true;
     });
 
@@ -236,6 +240,7 @@ describe('Configuration Access Pattern Tests', () => {
       expect(result.getVersion()).to.equal('v1');
       expect(result.getQueues()).to.deep.equal(configurationData.queues);
       expect(result.getJobs()).to.deep.equal(configurationData.jobs);
+      expect(result.getSlackRoles()).to.deep.equal(configurationData.slackRoles);
       expect(mockDynamoClient.putItem.called).to.be.true;
     });
   });

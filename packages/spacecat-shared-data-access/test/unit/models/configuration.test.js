@@ -81,6 +81,7 @@ describe('Configuration Model Tests', () => {
     expect(configuration.getQueues()).to.deep.equal(validData.queues);
     expect(configuration.getJobs()).to.deep.equal(validData.jobs);
     expect(configuration.getHandlers()).to.deep.equal(validData.handlers);
+    expect(configuration.getSlackRoles()).to.deep.equal(validData.slackRoles);
   });
 
   it('handler does not exist usecase', () => {

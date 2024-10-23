@@ -15,6 +15,7 @@ export declare const ImportJobStatus: {
   readonly RUNNING: 'RUNNING';
   readonly COMPLETE: 'COMPLETE';
   readonly FAILED: 'FAILED';
+  readonly STOPPED: 'STOPPED';
 };
 
 // packages/spacecat-shared-data-access/src/models/importer/import-constants.js

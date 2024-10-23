@@ -140,7 +140,6 @@ describe('tracing fetch function', () => {
 
     getSegmentStub.returns(parentSegment);
 
-    // Nock intercepts the HTTP request
     const url = 'https://example.com/api/data';
     nock('https://example.com')
       .get('/api/data')

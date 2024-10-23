@@ -53,3 +53,6 @@ export {
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';
 
 export { s3Wrapper } from './s3.js';
+
+export { fetch } from './adobe-fetch.js';
+export { tracingFetch } from './tracing-fetch.js';

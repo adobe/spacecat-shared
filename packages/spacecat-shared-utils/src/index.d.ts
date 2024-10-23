@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { Request, RequestOptions, Response } from '@adobe/fetch';
+
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
 
@@ -159,3 +161,7 @@ export function storeMetrics(content: object, config: object, context: object): 
 
 export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
     (request: object, context: object) => Promise<Response>;
+
+export function fetch(url: string|Request, options?: RequestOptions): Promise<Response>;
+
+export function tracingFetch(url: string|Request, options?: RequestOptions): Promise<Response>;

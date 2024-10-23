@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.48.3...@adobe/spacecat-shared-data-access-v1.49.0) (2024-10-23)
+
+
+### Features
+
+* Support cancelling / stopping a running job ([#410](https://github.com/adobe/spacecat-shared/issues/410)) ([68fdee4](https://github.com/adobe/spacecat-shared/commit/68fdee4db65fe87c75b925eda804ac8cb97c02af))
+
 # [@adobe/spacecat-shared-data-access-v1.48.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.48.2...@adobe/spacecat-shared-data-access-v1.48.3) (2024-10-21)
 
 

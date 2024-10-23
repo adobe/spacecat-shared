@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.8...@adobe/spacecat-shared-utils-v1.21.0) (2024-10-23)
+
+
+### Features
+
+* tracing fetch ([#409](https://github.com/adobe/spacecat-shared/issues/409)) ([6579a26](https://github.com/adobe/spacecat-shared/commit/6579a26d917db0bb8dc3baa2e19a0dfee8db5fc8))
+
 # [@adobe/spacecat-shared-utils-v1.20.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.7...@adobe/spacecat-shared-utils-v1.20.8) (2024-10-21)
 
 

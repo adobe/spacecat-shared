@@ -12,16 +12,18 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
+import { AbortController } from '@adobe/fetch';
 import sinon from 'sinon';
 import nock from 'nock';
 import AWSXRay from 'aws-xray-sdk';
-import { tracingFetch } from '../src/tracing-fetch.js';
+import { tracingFetch } from '../src/index.js';
 
 describe('tracing fetch function', () => {
   let sandbox;
   let getSegmentStub;
   let parentSegment;
   let subsegment;
+  let log;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -37,6 +39,10 @@ describe('tracing fetch function', () => {
 
     parentSegment = {
       addNewSubsegment: sandbox.stub().returns(subsegment),
+    };
+
+    log = {
+      warn: sandbox.spy(),
     };
   });
 
@@ -109,5 +115,50 @@ describe('tracing fetch function', () => {
 
       expect(subsegment.close.calledOnce).to.be.true;
     }
+  });
+
+  it('handles timeout and returns 408 status with tracing', async () => {
+    const fetchWithTimeout = async (url, timeout, logger) => {
+      const controller = new AbortController();
+      const { signal } = controller;
+      const id = setTimeout(() => controller.abort(), timeout);
+
+      try {
+        const response = await tracingFetch(url, { signal });
+        clearTimeout(id);
+        return response;
+      } catch (error) {
+        clearTimeout(id);
+        if (error.name === 'AbortError') {
+          logger.warn(`Request to ${url} timed out after ${timeout}ms`);
+          return { ok: false, status: 408 };
+        } else {
+          throw error;
+        }
+      }
+    };
+
+    getSegmentStub.returns(parentSegment);
+
+    // Nock intercepts the HTTP request
+    const url = 'https://example.com/api/data';
+    nock('https://example.com')
+      .get('/api/data')
+      .delay(1000) // Delay longer than timeout
+      .reply(200, 'OK');
+
+    const timeout = 500; // Timeout shorter than response delay
+
+    const response = await fetchWithTimeout(url, timeout, log);
+
+    expect(response.ok).to.be.false;
+    expect(response.status).to.equal(408);
+
+    expect(parentSegment.addNewSubsegment.calledOnceWithExactly(`HTTP GET ${url}`)).to.be.true;
+    expect(subsegment.addAnnotation.calledWith('url', url)).to.be.true;
+    expect(subsegment.addError.calledOnce).to.be.true;
+    expect(subsegment.close.calledOnce).to.be.true;
+
+    expect(log.warn.calledOnceWithExactly(`Request to ${url} timed out after ${timeout}ms`)).to.be.true;
   });
 });

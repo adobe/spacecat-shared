@@ -49,6 +49,8 @@ describe('Index Exports', () => {
     'stripTrailingSlash',
     'stripWWW',
     'toBoolean',
+    'fetch',
+    'tracingFetch',
   ];
 
   it('exports all expected functions', () => {

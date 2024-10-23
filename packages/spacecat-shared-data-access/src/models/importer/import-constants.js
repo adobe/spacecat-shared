@@ -26,6 +26,7 @@ export const ImportJobStatus = {
   RUNNING: 'RUNNING',
   COMPLETE: 'COMPLETE',
   FAILED: 'FAILED',
+  STOPPED: 'STOPPED',
 };
 
 /**

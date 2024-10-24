@@ -35,6 +35,10 @@ const ImportUrl = (data) => {
   self.getFile = () => self.state.file;
   // Expiration date for the URL
   self.getExpiresAt = () => self.state.expiresAt;
+  // The number of the URL in the import job
+  self.getUrlNumber = () => self.state.urlNumber;
+  // The total number of URLs in the import job
+  self.getTotalUrlCount = () => self.state.totalUrlCount;
 
   /**
    * Updates the state of the ImportJob.

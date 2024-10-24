@@ -35,6 +35,8 @@ const importUrlRedirectData = {
   reason: 'https://www.example.com/redirect/destination',
   path: '/test-data',
   file: '/test-data.docx',
+  urlNumber: 8,
+  totalUrlCount: 10,
 };
 
 describe('ImportUrl Model tests', () => {
@@ -131,6 +133,8 @@ describe('ImportUrl Model tests', () => {
         reason: 'https://www.example.com/redirect/destination',
         path: '/test-data',
         file: '/test-data.docx',
+        totalUrlCount: 10,
+        urlNumber: 8,
       });
     });
 
@@ -145,6 +149,8 @@ describe('ImportUrl Model tests', () => {
       expect(urlFromDynamo.getReason()).to.deep.equal(importUrlRedirect.getReason());
       expect(urlFromDynamo.getPath()).to.deep.equal(importUrlRedirect.getPath());
       expect(urlFromDynamo.getFile()).to.deep.equal(importUrlRedirect.getFile());
+      expect(urlFromDynamo.getTotalUrlCount()).to.equal(importUrlRedirect.getTotalUrlCount());
+      expect(urlFromDynamo.getUrlNumber()).to.equal(importUrlRedirect.getUrlNumber());
     });
   });
 });

@@ -589,6 +589,17 @@ export interface ImportUrl {
    * Retrieves the resulting path and filename of the imported file.
    */
   getPath: () => string;
+
+  /**
+   * Retrieves the number of this URL in the job. If there is only 1 URL in the job, this number
+   * will be 1. If there are 10 URLs and this is the 9th, this number will be 9.
+   */
+  getUrlNumber: () => number;
+
+  /**
+   * Retrieves the total number of URLs in the job.
+   */
+  getTotalUrlCount: () => number;
 }
 
 /**

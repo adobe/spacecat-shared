@@ -32,6 +32,8 @@ export const ImportUrlDto = {
     path: importUrl.getPath(),
     file: importUrl.getFile(),
     expiresAt: convertDateToEpochSeconds(importUrl.getExpiresAt()),
+    urlNumber: importUrl.getUrlNumber(),
+    totalUrlCount: importUrl.getTotalUrlCount(),
   }),
 
   /**
@@ -49,6 +51,8 @@ export const ImportUrlDto = {
       path: dynamoItem.path,
       file: dynamoItem.file,
       expiresAt: parseEpochToDate(dynamoItem.expiresAt),
+      urlNumber: dynamoItem.urlNumber,
+      totalUrlCount: dynamoItem.totalUrlCount,
     };
     return createImportUrl(importUrlData);
   },

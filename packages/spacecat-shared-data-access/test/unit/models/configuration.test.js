@@ -67,8 +67,8 @@ const validData = {
   version: 'v1',
   slackRoles: {
     scrape: [
-      'WSVT1K36Z',
-      'S03CR0FDC2V',
+      'test-id-1',
+      'test-id-2',
     ],
   },
 };
@@ -81,6 +81,7 @@ describe('Configuration Model Tests', () => {
     expect(configuration.getQueues()).to.deep.equal(validData.queues);
     expect(configuration.getJobs()).to.deep.equal(validData.jobs);
     expect(configuration.getHandlers()).to.deep.equal(validData.handlers);
+    expect(configuration.getSlackRoles()).to.deep.equal(validData.slackRoles);
   });
 
   it('handler does not exist usecase', () => {
@@ -106,7 +107,9 @@ describe('Configuration Model Tests', () => {
       disabled: { sites: ['site2'], orgs: ['org2'] },
       enabledByDefault: false,
     };
-    const configuration = createConfiguration({ version: '1.1', queues: {}, jobs: [] });
+    const configuration = createConfiguration({
+      version: '1.1', queues: {}, jobs: [], slackRoles: {},
+    });
     configuration.addHandler('new-handler', handlerData);// Line 59
     const updatedHandler = configuration.getHandler('new-handler');
     expect(updatedHandler).to.deep.equal(handlerData);

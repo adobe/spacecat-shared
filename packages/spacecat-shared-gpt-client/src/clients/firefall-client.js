@@ -25,6 +25,10 @@ function validateFirefallResponse(response) {
     || !hasText(response.generations[0][0].text));
 }
 
+function templatePrompt(prompt, context) {
+  return prompt.replace(/\{\{(\w+)\}\}/g, (_, key) => context[key] || '');
+}
+
 export default class FirefallClient {
   static createFrom(context) {
     const { log = console } = context;
@@ -71,6 +75,7 @@ export default class FirefallClient {
    */
   constructor(config, log) {
     this.config = config;
+    this.apiBaseUrl = `${config.apiEndpoint}/v2/`;
     this.log = log;
     this.imsClient = config.imsClient;
     this.apiAuth = null;
@@ -89,15 +94,9 @@ export default class FirefallClient {
     this.log.debug(`${message}: took ${duration}ms`);
   }
 
-  async #submitJob(prompt) {
+  async #apiCall(path, method, body = null) {
     const apiAuth = await this.#getApiAuth();
-
-    const body = JSON.stringify({
-      input: prompt,
-      capability_name: this.config.capabilityName,
-    });
-
-    const url = createUrl(`${this.config.apiEndpoint}/v2/capability_execution/job`);
+    const url = `${this.apiBaseUrl}${path}`;
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiAuth}`,
@@ -105,53 +104,47 @@ export default class FirefallClient {
       'x-gw-ims-org-id': this.config.imsOrg,
     };
 
+    const options = {
+      method,
+      headers,
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
     this.log.info(`URL: ${url}, Headers: ${JSON.stringify(headers)}`);
 
-    const response = await httpFetch(url, {
-      method: 'POST',
-      headers,
-      body,
-    });
+    const response = await httpFetch(createUrl(url), options);
 
     if (!response.ok) {
-      throw new Error(`Job submission failed with status code ${response.status}`);
+      const msg = await response.text();
+      throw new Error(`API call failed with status code ${response.status}: ${msg}`);
     }
 
     return response.json();
   }
 
+  async #submitJob(prompt) {
+    const path = 'capability_execution/job';
+    const body = {
+      input: prompt,
+      capability_name: this.config.capabilityName,
+    };
+
+    return this.#apiCall(path, 'POST', body);
+  }
+
   /* eslint-disable no-await-in-loop */
   async #pollJobStatus(jobId) {
-    const apiAuth = await this.#getApiAuth();
-
     let jobStatusResponse;
     do {
       await new Promise(
         (resolve) => { setTimeout(resolve, this.config.pollInterval); },
-      ); // Wait for 2 seconds before polling
+      ); // Wait for pollInterval before polling
 
-      const url = `${this.config.apiEndpoint}/v2/capability_execution/job/${jobId}`;
-      const headers = {
-        Authorization: `Bearer ${apiAuth}`,
-        'x-api-key': this.config.apiKey,
-        'x-gw-ims-org-id': this.config.imsOrg,
-      };
-
-      this.log.info(`URL: ${url}, Headers: ${JSON.stringify(headers)}`);
-
-      const response = await httpFetch(
-        createUrl(url),
-        {
-          method: 'GET',
-          headers,
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(`Job polling failed with status code ${response.status}`);
-      }
-
-      jobStatusResponse = await response.json();
+      const url = `capability_execution/job/${jobId}`;
+      jobStatusResponse = await this.#apiCall(url, 'GET');
     } while (jobStatusResponse.status === 'PROCESSING' || jobStatusResponse.status === 'WAITING');
 
     if (jobStatusResponse.status !== 'SUCCEEDED') {
@@ -159,6 +152,44 @@ export default class FirefallClient {
     }
 
     return jobStatusResponse;
+  }
+
+  async #createConversationSession() {
+    const url = 'conversation';
+    const body = { capability_name: this.config.capabilityName, conversation_name: 'spacecat' };
+
+    const response = await this.#apiCall(url, 'POST', body);
+    return response.conversation_id;
+  }
+
+  async #submitPromptToConversation(sessionId, prompt) {
+    const path = 'query';
+    const body = { dialogue: { question: prompt }, conversation_id: sessionId };
+
+    return this.#apiCall(path, 'POST', body);
+  }
+
+  async executePromptChain(chainConfig) {
+    const sessionId = await this.#createConversationSession();
+
+    let context = {};
+    for (const step of chainConfig.steps) {
+      const prompt = templatePrompt(step.prompt, context);
+      const response = await this.#submitPromptToConversation(sessionId, prompt);
+      const { answer } = response.dialogue;
+
+      if (step.onResponse) {
+        const result = step.onResponse(answer, context);
+        if (result.abort) {
+          this.log.info('Prompt chain aborted.');
+          break;
+        }
+        context = { ...context, ...result.context };
+      } else {
+        context = { ...context, ...response };
+      }
+    }
+    return context;
   }
 
   async fetch(prompt) {

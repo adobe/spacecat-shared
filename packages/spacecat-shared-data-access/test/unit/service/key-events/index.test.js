@@ -12,7 +12,7 @@
 
 /* eslint-env mocha */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -20,10 +20,8 @@ import sinonChai from 'sinon-chai';
 import { keyEventFunctions } from '../../../../src/service/key-events/index.js';
 import { KEY_EVENT_TYPES } from '../../../../src/models/key-event.js';
 
-chai.use(chaiAsPromised);
-chai.use(sinonChai);
-
-const { expect } = chai;
+use(chaiAsPromised);
+use(sinonChai);
 
 const TEST_DA_CONFIG = {
   tableNameKeyEvents: 'spacecat-services-key-events',
@@ -54,7 +52,7 @@ describe('Site Candidate Functions Tests', () => {
     exportedFunctions = keyEventFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
   });
 
-  before('setup', function () {
+  before('setup', function beforeSetup() {
     this.clock = sandbox.useFakeTimers({
       now: new Date(mockDate).getTime(),
     });

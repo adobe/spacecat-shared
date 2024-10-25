@@ -83,6 +83,8 @@ describe('Data Access Object Tests', () => {
     'getImportJobsByStatus',
     'createNewImportJob',
     'updateImportJob',
+    'getImportJobsByDateRange',
+    'removeImportJob',
   ];
 
   const importUrlFunctions = [
@@ -90,6 +92,18 @@ describe('Data Access Object Tests', () => {
     'createNewImportUrl',
     'updateImportUrl',
     'getImportUrlsByJobIdAndStatus',
+    'getImportUrlsByJobId',
+  ];
+
+  const experimentFunctions = [
+    'getExperiments',
+    'upsertExperiment',
+    'getExperiment',
+  ];
+
+  const apiKeyFunctions = [
+    'getApiKeyByHashedApiKey',
+    'createNewApiKey',
   ];
 
   let dao;
@@ -140,6 +154,12 @@ describe('Data Access Object Tests', () => {
     });
   });
 
+  it('contains all known apiKey functions', () => {
+    apiKeyFunctions.forEach((funcName) => {
+      expect(dao).to.have.property(funcName);
+    });
+  });
+
   it('does not contain any unexpected functions', () => {
     const expectedFunctions = new Set([
       ...auditFunctions,
@@ -150,7 +170,9 @@ describe('Data Access Object Tests', () => {
       ...configurationFunctions,
       ...siteTopPagesFunctions,
       ...importJobFunctions,
-      ...importUrlFunctions]);
+      ...importUrlFunctions,
+      ...experimentFunctions,
+      ...apiKeyFunctions]);
     Object.keys(dao).forEach((funcName) => {
       expect(expectedFunctions).to.include(funcName);
     });

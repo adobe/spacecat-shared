@@ -15,9 +15,18 @@ import {
   getImportJobByID,
   getImportJobsByStatus,
   updateImportJob,
+  getImportJobsByDateRange,
+  removeImportJob,
 } from './accessPatterns.js';
 
 export const importJobFunctions = (dynamoClient, config, log) => ({
+  getImportJobsByDateRange: (startDate, endDate) => getImportJobsByDateRange(
+    dynamoClient,
+    config,
+    log,
+    startDate,
+    endDate,
+  ),
   getImportJobByID: (id) => getImportJobByID(
     dynamoClient,
     config,
@@ -36,10 +45,16 @@ export const importJobFunctions = (dynamoClient, config, log) => ({
     log,
     importJobData,
   ),
-  updateImportJob: (importJobData) => updateImportJob(
+  updateImportJob: (importJob) => updateImportJob(
     dynamoClient,
     config,
     log,
-    importJobData,
+    importJob,
+  ),
+  removeImportJob: (importJob) => removeImportJob(
+    dynamoClient,
+    config,
+    log,
+    importJob,
   ),
 });

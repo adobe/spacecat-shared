@@ -37,16 +37,16 @@ export const createFormData = (fields) => {
 
 /**
  * Generates the IMS groups endpoint URL.
- * @param {string} imsHost - The IMS host.
- * @param {string} clientId - The IMS client ID.
- * @return {`/ims/organizations/${string}/groups/${string}/members`} - The IMS groups endpoint URL.
+ * @param {string} imsOrgId - The IMS host.
+ * @param {string} groupId - The IMS client ID.
+ * @return `/ims/organizations/${string}/groups/${string}/members` - The IMS groups endpoint URL.
  */
 export const getGroupMembersEndpoint = (imsOrgId, groupId) => `/ims/organizations/${imsOrgId}/groups/${groupId}/members`;
 
 /**
  * Generates the IMS organizations endpoint URL.
- * @param {string} imsHost - The IMS host.
- * @return {`/ims/organizations/${string}/v2`} - The IMS organizations endpoint URL.
+ * @param {string} imsOrgId - The IMS host.
+ * @return `/ims/organizations/${string}/v2` - The IMS organizations endpoint URL.
  */
 export const getImsOrgsApiPath = (imsOrgId) => `${IMS_ORGANIZATIONS_ENDPOINT}/${imsOrgId}/v2`;
 

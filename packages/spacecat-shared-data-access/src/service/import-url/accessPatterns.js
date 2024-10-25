@@ -64,7 +64,7 @@ export const updateImportUrl = async (dynamoClient, config, log, importUrl) => {
   );
 
   if (!isObject(existingImportUrl)) {
-    throw new Error(`Import Url with ID:${importUrl.getId()} does not exist`);
+    throw new Error(`Import Url with ID: ${importUrl.getId()} does not exist`);
   }
 
   await dynamoClient.putItem(config.tableNameImportUrls, ImportUrlDto.toDynamoItem(importUrl));
@@ -79,7 +79,7 @@ export const updateImportUrl = async (dynamoClient, config, log, importUrl) => {
  * @param {Logger} log
  * @param {string} jobId
  * @param {string} status
- * @returns {Promise<ImportUrlDto[]>}
+ * @returns {Promise<ImportUrl[]>}
  */
 export const getImportUrlsByJobIdAndStatus = async (dynamoClient, config, log, jobId, status) => {
   const items = await dynamoClient.query({
@@ -95,4 +95,59 @@ export const getImportUrlsByJobIdAndStatus = async (dynamoClient, config, log, j
     },
   });
   return items.map((item) => ImportUrlDto.fromDynamoItem(item));
+};
+
+/**
+ * Get Import Urls by Job ID, if no urls exist an empty array is returned.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The logger.
+ * @param {string} jobId - The ID of the import job.
+ * @returns {Promise<ImportUrl[]>}
+ */
+export const getImportUrlsByJobId = async (dynamoClient, config, log, jobId) => {
+  const items = await dynamoClient.query({
+    TableName: config.tableNameImportUrls,
+    IndexName: config.indexNameImportUrlsByJobIdAndStatus,
+    KeyConditionExpression: 'jobId = :jobId',
+    ExpressionAttributeValues: {
+      ':jobId': jobId,
+    },
+  });
+
+  return items ? items.map((item) => ImportUrlDto.fromDynamoItem(item)) : [];
+};
+
+/**
+ * Remove all given import URLs.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {ImportUrl[]} urls - The import URLs to remove.
+ * @return {Promise<void>} A promise that resolves when all URLs have been removed.
+ */
+async function removeUrls(dynamoClient, config, urls) {
+  const removeUrlPromises = urls.map((url) => dynamoClient.removeItem(
+    config.tableNameImportUrls,
+    { id: url.getId() },
+  ));
+
+  await Promise.all(removeUrlPromises);
+}
+
+/**
+ * Remove all URLs associated with an import job.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The logger.
+ * @param {string} jobId - The ID of the import job.
+ * @return {Promise<void>} A promise that resolves when all URLs have been removed.
+ */
+export const removeUrlsForImportJob = async (dynamoClient, config, log, jobId) => {
+  try {
+    const urls = await getImportUrlsByJobId(dynamoClient, config, log, jobId);
+    await removeUrls(dynamoClient, config, urls);
+  } catch (error) {
+    log.error(`Error removing urls for import jobId: ${jobId} : ${error.message}`);
+    throw error;
+  }
 };

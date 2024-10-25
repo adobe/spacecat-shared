@@ -26,6 +26,8 @@ export const ConfigurationDto = {
       version: dynamoItem.version,
       queues: dynamoItem.queues,
       jobs: dynamoItem.jobs,
+      handlers: dynamoItem.handlers,
+      slackRoles: dynamoItem.slackRoles,
     };
 
     return createConfiguration(configurationData);
@@ -41,5 +43,7 @@ export const ConfigurationDto = {
     version: configuration.getVersion(),
     queues: configuration.getQueues(),
     jobs: configuration.getJobs(),
+    handlers: configuration.getHandlers(),
+    slackRoles: configuration.getSlackRoles(),
   }),
 };

@@ -83,8 +83,6 @@ export default class AhrefsAPIClient {
   async getBrokenBacklinks(url, limit = 50) {
     const filter = {
       and: [
-        { field: 'is_dofollow', is: ['eq', 1] },
-        { field: 'is_content', is: ['eq', 1] },
         { field: 'domain_rating_source', is: ['gte', 29.5] },
         { field: 'traffic_domain', is: ['gte', 500] },
         { field: 'links_external', is: ['lte', 300] },
@@ -137,8 +135,6 @@ export default class AhrefsAPIClient {
   async getBacklinks(url, limit = 200) {
     const filter = {
       and: [
-        { field: 'is_dofollow', is: ['eq', 1] },
-        { field: 'is_content', is: ['eq', 1] },
         { field: 'domain_rating_source', is: ['gte', 29.5] },
         { field: 'traffic_domain', is: ['gte', 500] },
         { field: 'links_external', is: ['lte', 300] },
@@ -215,5 +211,9 @@ export default class AhrefsAPIClient {
     }
 
     return this.sendRequest('/site-explorer/organic-keywords', queryParams);
+  }
+
+  async getLimitsAndUsage() {
+    return this.sendRequest('/subscription-info/limits-and-usage');
   }
 }

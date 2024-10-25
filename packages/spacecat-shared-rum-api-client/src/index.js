@@ -13,11 +13,21 @@ import { fetchBundles } from './common/rum-bundler-client.js';
 import notfound from './functions/404.js';
 import cwv from './functions/cwv.js';
 import experiment from './functions/experiment.js';
+import trafficAcquisition from './functions/traffic-acquisition.js';
+import variant from './functions/variant.js';
+import rageclick from './functions/opportunities/rageclick.js';
+import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
+import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
 
 const HANDLERS = {
   404: notfound,
   cwv,
   experiment,
+  'traffic-acquisition': trafficAcquisition,
+  variant,
+  rageclick,
+  'high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
+  'high-organic-low-ctr': highOrganicLowCtr,
 };
 
 export default class RUMAPIClient {
@@ -43,6 +53,43 @@ export default class RUMAPIClient {
       return handler(bundles);
     } catch (e) {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(opts)}. Reason: ${e.message}`);
+    }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async queryMulti(queries, opts) {
+    const queryHandlers = [];
+    const allCheckpoints = new Set();
+
+    for (const query of queries) {
+      const { handler, checkpoints = [] } = HANDLERS[query] || {};
+
+      if (!handler) {
+        throw new Error(`Unknown query: ${query}`);
+      }
+
+      queryHandlers.push({ query, handler });
+      checkpoints.forEach((checkpoint) => allCheckpoints.add(checkpoint));
+    }
+
+    try {
+      // Fetch bundles with deduplicated checkpoints
+      const bundles = await fetchBundles({
+        ...opts,
+        checkpoints: [...allCheckpoints],
+      });
+
+      const results = {};
+
+      // Execute each query handler sequentially
+      for (const { query, handler } of queryHandlers) {
+        // eslint-disable-next-line no-await-in-loop
+        results[query] = await handler(bundles, opts);
+      }
+
+      return results;
+    } catch (e) {
+      throw new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(opts)}. Reason: ${e.message}`);
     }
   }
 }

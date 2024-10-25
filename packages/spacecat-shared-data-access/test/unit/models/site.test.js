@@ -20,14 +20,31 @@ import { sleep } from '../util.js';
 const validData = {
   baseURL: 'https://www.example.com',
   deliveryType: 'aem_edge',
-  organizationId: 'org123',
-  auditConfig: {
-    auditsDisabled: false,
-    auditTypeConfigs: {
-      type1: { /* some config */ },
-      type2: { /* some config */ },
+  hlxConfig: {
+    rso: {
+      owner: 'some-owner',
+      site: 'some-site',
+      ref: 'main',
     },
+    cdnProdHost: 'www.example.com',
+    code: {
+      owner: 'some-owner',
+      repo: 'some-repo',
+      source: {
+        type: 'github',
+        url: 'https://github.com/some-owner/some-repo',
+      },
+    },
+    content: {
+      contentBusId: '1234',
+      source: {
+        type: 'onedrive',
+        url: 'https://some-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/some-site/www',
+      },
+    },
+    hlxVersion: 5,
   },
+  organizationId: 'org123',
 };
 
 describe('Site Model Tests', () => {
@@ -40,10 +57,20 @@ describe('Site Model Tests', () => {
       expect(() => createSite({ ...validData, deliveryType: 'invalid' })).to.throw('Invalid delivery type: invalid');
     });
 
+    it('throws an error if hlxConfig is invalid', () => {
+      expect(() => createSite({ ...validData, hlxConfig: '1234' })).to.throw('HLX Config must be an object: 1234');
+    });
+
     it('creates a site object with valid baseURL', () => {
       const site = createSite({ ...validData });
       expect(site).to.be.an('object');
       expect(site.getBaseURL()).to.equal(validData.baseURL);
+    });
+
+    it('creates a site without hlxConfig', () => {
+      const site = createSite({ ...validData, hlxConfig: undefined });
+      expect(site).to.be.an('object');
+      expect(site.getHlxConfig()).to.deep.equal({});
     });
 
     it('creates a site with default organization id', () => {
@@ -51,32 +78,51 @@ describe('Site Model Tests', () => {
       expect(site.getOrganizationId()).to.equal('default');
     });
 
-    it('creates a site with default auditConfig when none provided', () => {
-      const site = createSite({ ...validData });
-      const auditConfig = site.getAuditConfig();
-
-      expect(auditConfig).to.be.an('object');
-      expect(auditConfig.auditsDisabled()).be.false;
-      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-    });
-
-    it('creates a site with provided auditConfig', () => {
-      const newAuditConfig = {
-        auditsDisabled: true,
-        auditTypeConfigs: {
-          type1: { /* some config */ },
-          type2: { /* some config */ },
+    it('creates a site with provided config', () => {
+      const config = {
+        slack: {
+          workspace: 'workspace1',
+          channel: 'channel1',
+        },
+        handlers: {
+          type1: { mentions: { slack: ['slackId1'] } },
+          type2: { mentions: { slack: ['slackId2'] } },
         },
       };
-      const site = createSite({ ...validData, auditConfig: newAuditConfig });
-      const auditConfig = site.getAuditConfig();
+      const site = createSite({ ...validData, config });
+      const siteConfig = site.getConfig();
 
-      expect(auditConfig).to.be.an('object');
-      expect(auditConfig.auditsDisabled()).to.be.true;
-      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.true;
-      expect(auditConfig.getAuditTypeConfig('type2')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type2').disabled()).to.be.true;
+      expect(siteConfig).to.be.an('object');
+      expect(siteConfig.getSlackConfig()).to.be.an('object');
+      expect(siteConfig.getSlackMentions('type1')).to.deep.equal(['slackId1']);
+      expect(siteConfig.getSlackMentions('type2')).to.deep.equal(['slackId2']);
+    });
+
+    it('creates a site with provided hlxConfig', () => {
+      const newHlxConfig = {
+        cdnProdHost: 'www.another-example.com',
+        code: {
+          owner: 'another-owner',
+          repo: 'another-repo',
+          source: {
+            type: 'github',
+            url: 'https://github.com/another-owner/another-repo',
+          },
+        },
+        content: {
+          contentBusId: '1234',
+          source: {
+            type: 'onedrive',
+            url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+          },
+        },
+        hlxVersion: 5,
+      };
+      const site = createSite({ ...validData, hlxConfig: newHlxConfig });
+      const helixConfig = site.getHlxConfig();
+
+      expect(helixConfig).to.be.an('object');
+      expect(helixConfig).to.deep.equal(newHlxConfig);
     });
   });
 
@@ -117,25 +163,53 @@ describe('Site Model Tests', () => {
           workspace: 'workspace',
           channel: 'channel',
         },
-        alerts: [{
-          type: '404',
-          byOrg: false,
-          mentions: [{ slack: ['slackId'] }],
-        }],
+        handlers: {
+          404: {
+            mentions: { slack: ['slackId'] },
+          },
+        },
       };
       site.updateConfig(conf);
       const updatedConf = site.getConfig();
-      expect(updatedConf.slack).to.be.an('object');
-      expect(updatedConf.alerts).to.be.an('array');
-      expect(updatedConf.slack.workspace).to.equal('workspace');
-      expect(updatedConf.slack.channel).to.equal('channel');
-      expect(updatedConf.alerts[0].mentions[0].slack[0]).to.equal('slackId');
+      const slack = updatedConf.getSlackConfig();
+      expect(slack).to.be.an('object');
+      expect(slack.workspace).to.equal('workspace');
+      expect(slack.channel).to.equal('channel');
+      expect(updatedConf.getSlackMentions(404)).to.deep.equal(['slackId']);
     });
 
     it('updates gitHubURL correctly', () => {
       const newGitHubURL = 'https://gibhub.com/example/example';
       site.updateGitHubURL(newGitHubURL);
       expect(site.getGitHubURL()).to.equal(newGitHubURL);
+    });
+
+    it('updates hlxConfig correctly', () => {
+      const newHlxConfig = {
+        cdnProdHost: 'www.another-example.com',
+        code: {
+          owner: 'another-owner',
+          repo: 'another-repo',
+          source: {
+            type: 'github',
+            url: 'https://github.com/another-owner/another-repo',
+          },
+        },
+        content: {
+          contentBusId: '1234',
+          source: {
+            type: 'onedrive',
+            url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+          },
+        },
+        hlxVersion: 5,
+      };
+
+      site.updateHlxConfig(newHlxConfig);
+      const helixConfig = site.getHlxConfig();
+
+      expect(helixConfig).to.be.an('object');
+      expect(helixConfig).to.deep.equal(newHlxConfig);
     });
 
     it('throws an error when updating with an invalid deliveryType', () => {
@@ -148,6 +222,10 @@ describe('Site Model Tests', () => {
 
     it('throws an error when updating with an invalid config', () => {
       expect(() => site.updateConfig('abcd')).to.throw('Config must be provided');
+    });
+
+    it('throws an error when updating with an invalid hlxConfig', () => {
+      expect(() => site.updateHlxConfig('abcd')).to.throw('HLX Config must be an object');
     });
 
     it('sets audits correctly', () => {
@@ -205,47 +283,6 @@ describe('Site Model Tests', () => {
 
       expect(site.isLive()).to.be.true;
       expect(isIsoDate(site.getIsLiveToggledAt())).to.be.true;
-    });
-  });
-
-  describe('AuditConfig Integration', () => {
-    let site;
-
-    beforeEach(() => {
-      site = createSite(validData);
-    });
-
-    it('handles AuditConfig and AuditConfigType correctly', () => {
-      const auditConfigData = {
-        auditsDisabled: false,
-        auditTypeConfigs: {
-          type1: { /* some config */ },
-          type2: { /* some config */ },
-        },
-      };
-      const newSite = createSite({ ...validData, auditConfig: auditConfigData });
-      const auditConfig = newSite.getAuditConfig();
-
-      expect(auditConfig).to.be.an('object');
-      expect(auditConfig.auditsDisabled()).to.be.false;
-      expect(auditConfig.getAuditTypeConfig('type1')).to.be.an('object');
-      expect(auditConfig.getAuditTypeConfig('type1').disabled()).to.be.false;
-    });
-
-    it('sets all audits disabled correctly', () => {
-      site.setAllAuditsDisabled(true);
-      expect(site.getAuditConfig().auditsDisabled()).to.be.true;
-    });
-
-    it('updates a specific audit type configuration', () => {
-      site.updateAuditTypeConfig('type1', { disabled: true, excludedURLs: ['http://example.com'] });
-      expect(site.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.true;
-      expect(site.getAuditConfig().getAuditTypeConfig('type1').getExcludedURLs()).to.eql(['http://example.com']);
-    });
-
-    it('adds a new audit type configuration if it does not exist', () => {
-      site.updateAuditTypeConfig('type3', { disabled: true });
-      expect(site.getAuditConfig().getAuditTypeConfig('type3').disabled()).to.be.true;
     });
   });
 });

@@ -10,6 +10,23 @@
  * governing permissions and limitations under the License.
  */
 
+// see packages/spacecat-shared-data-access/src/models/importer/import-constants.js
+export declare const ImportJobStatus: {
+  readonly RUNNING: 'RUNNING';
+  readonly COMPLETE: 'COMPLETE';
+  readonly FAILED: 'FAILED';
+  readonly STOPPED: 'STOPPED';
+};
+
+// packages/spacecat-shared-data-access/src/models/importer/import-constants.js
+export declare const ImportUrlStatus: {
+  readonly PENDING: 'PENDING';
+  readonly REDIRECT: 'REDIRECT';
+  readonly RUNNING: 'RUNNING';
+  readonly COMPLETE: 'COMPLETE';
+  readonly FAILED: 'FAILED';
+};
+
 // TODO: introduce AuditType interface or Scores interface
 
 /**
@@ -84,49 +101,13 @@ export interface Audit {
   getScores: () => object;
 }
 
-/**
- * AuditConfigType defines the structure for specific audit type configurations.
- */
-export interface AuditConfigType {
-  /**
-   * Returns true if the audit type is disabled for the site. If an audit type is disabled, no
-   * audits of that type will be scheduled for the site.
-   * @returns {boolean} True if the audit type is disabled for the site.
-   */
-  disabled: () => boolean;
-}
-
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Config {
 
 }
 
 export interface FulfillableItems {
   items: string[];
-}
-
-/**
- * AuditConfig defines the structure for the overall audit configuration of a site.
- */
-export interface AuditConfig {
-  /**
-   * Returns true if audits are disabled for the site. If audits are disabled, no audits will be
-   * scheduled for the site. Overrides any audit type specific configurations.
-   * @returns {boolean} True if audits are disabled for the site.
-   */
-  auditsDisabled: () => boolean;
-
-  /**
-   * Returns the audit config for a specific audit type. The audit type is the key.
-   * @param {string} auditType The audit type to get the config for.
-   * @returns {AuditConfigType} The audit config for the audit type.
-   */
-  getAuditTypeConfig: (auditType: string) => AuditConfigType;
-
-  /**
-   * Returns the audit configs for all audit types. The keys are the audit types.
-   * @returns {object} The audit configs for all audit types.
-   */
-  getAuditTypeConfigs: () => object;
 }
 
 /**
@@ -221,12 +202,6 @@ export interface Site {
    * @returns {string} The last update timestamp.
    */
   getUpdatedAt: () => string;
-
-  /**
-   * Retrieves the current audit configuration for the site.
-   * @returns {AuditConfig} The current audit configuration.
-   */
-  getAuditConfig: () => AuditConfig;
 
   /**
    * Retrieves the current configuration for the site.
@@ -435,6 +410,66 @@ export interface Configuration {
    */
   getJobs: () => Array<object>;
 
+    /**
+     * Retrieves the handlers configuration.
+     * @returns {object} The handlers configuration.
+     */
+  getHandlers: () => object;
+
+  /**
+   * Retrieves the handler configuration for handler type.
+   * @returns {object} The handler type configuration.
+   */
+  getHandler: (type) => object;
+
+  /**
+   * Retrieves the slack roles configuration.
+   * @returns {object} The slack roles configuration.
+   */
+  getSlackRoles: () => object;
+
+  /**
+   * Return true if a handler type is enabled for an organization.
+   * @param type handler type
+   * @param org organization
+   */
+  isHandlerEnabledForOrg: (type: string, org: Organization) => boolean;
+
+  /**
+   * Return true if a handler type is enabled for a site.
+   * @param type handler type
+   * @param site site
+   */
+  isHandlerEnabledForSite: (type: string, site: Site) => boolean;
+
+  /**
+   * Enables a handler type for an site.
+   * @param type handler type
+   * @param site site
+   */
+  enableHandlerForSite: (type: string, site: Site) => void;
+
+  /**
+   * Enables a handler type for an organization.
+   * @param type handler type
+   * @param org organization
+   */
+  enableHandlerForOrg: (type: string, org: Organization) => void;
+
+    /**
+     * Disables a handler type for an site.
+     * @param type handler type
+     * @param site site
+     */
+  disableHandlerForSite: (type: string, site: Site) => void;
+
+  /**
+   * Disables a handler type for an organization.
+   * @param type handler type
+   * @param org organization
+   */
+  disableHandlerForOrg: (type:string, org: Organization) => void;
+
 }
 
 export interface ImportJob {
@@ -444,14 +479,14 @@ export interface ImportJob {
   getId: () => string;
 
   /**
-   * Retrieves the apiKey of the import job.
+   * Retrieves the hashed apiKey of the import job.
    */
-  getApiKey: () => string;
+  getHashedApiKey: () => string;
 
   /**
    * Retrieves the status of the import job.
    */
-  getStatus: () => string;
+  getStatus: () => typeof ImportJobStatus;
 
   /**
    * Retrieves the baseURL of the import job.
@@ -479,6 +514,11 @@ export interface ImportJob {
   getDuration: () => number;
 
   /**
+   * Retrieves the url count of the import job.
+   */
+  getUrlCount: () => number;
+
+  /**
    * Retrieves the success count of the import job.
    */
   getSuccessCount: () => number;
@@ -486,36 +526,190 @@ export interface ImportJob {
   /**
    * Retrieves the failure count of the import job.
    */
-  getFailureCount: () => number;
+  getFailedCount: () => number;
+
+  /**
+   * Retrieves the redirect count of the import job.
+   */
+  getRedirectCount: () => number;
 
   /**
    * Retrieves the importQueueId of the import job.
    */
   getImportQueueId: () => string;
 
+  /**
+   * Retrieves the initiatedBy metadata (name, imsOrgId, imsUserId, userAgent) of the import job.
+   */
+  getInitiatedBy: () => object;
+
+  /**
+   * Indicates if the import job has custom headers.
+   */
+  hasCustomHeaders: () => boolean;
+
+  /**
+   * Indicates if the import job has custom import js.
+   */
+  hasCustomImportJs: () => boolean;
 }
 
 export interface ImportUrl {
   /**
    * Retrieves the ID of the import URL.
    */
-    getId: () => string;
+  getId: () => string;
 
   /**
    * Retrieves the status of the import URL.
    */
-    getStatus: () => string;
+  getStatus: () => typeof ImportUrlStatus;
 
   /**
    * Retrieves the URL of the import URL.
    */
-    getUrl: () => string;
+  getUrl: () => string;
 
   /**
    * Retrieves the job ID of the import URL.
    */
-    getJobId: () => string;
+  getJobId: () => string;
 
+  /**
+   * The reason that the import of a URL failed.
+   */
+  getReason: () => string;
+
+  /**
+   * The absolute path to the resource that is being imported for the given URL.
+   */
+  getFile: () => string;
+
+  /**
+   * Retrieves the resulting path and filename of the imported file.
+   */
+  getPath: () => string;
+}
+
+/**
+ * Represents an API Key entity.
+ */
+export interface ApiKey {
+    /**
+     * Retrieves the ID of the API Key.
+     */
+    getId: () => string;
+
+    /**
+     * Retrieves the hashed key value of the API Key.
+     */
+    getHashedApiKey: () => string;
+
+    /**
+     * Retrieves the name of the API Key.
+     */
+    getName: () => string;
+
+    /**
+    * Retrieves the imsUserId of the API Key.
+    */
+    getImsUserId: () => string;
+
+    /**
+    * Retrieves the imsOrgId of the API key
+    */
+    getImsOrgId: () => string;
+
+    /**
+     * Retrieves the createdAt of the API Key.
+     */
+    getCreatedAt: () => string;
+
+    /**
+     * Retrieves the expiresAt of the API Key.
+     */
+    getExpiresAt: () => string;
+
+    /**
+     * Retrieves the revokedAt of the API Key.
+     */
+    getRevokedAt: () => string;
+
+    /**
+     * Retrieves the scopes of the API Key.
+     */
+    getScopes: () => Array<string>;
+
+}
+
+/**
+ * Represents an experiment entity.
+ */
+export interface Experiment {
+  /**
+   * Retrieves the ID of the experiment.
+   */
+  getExperimentId: () => string;
+
+  /**
+   * Retrieves the site ID of the experiment.
+   */
+  getSiteId: () => string;
+
+  /**
+   * Retrieves the Control URL of the experiment.
+   */
+  getUrl: () => string;
+
+  /**
+   * Retrieves the experiment name.
+   */
+  getName: () => string;
+
+  /**
+   * Retrieves the experiment type.
+   */
+  getType: () => string;
+
+  /**
+   * Retrieves the experiment status.
+   */
+  getStatus: () => string;
+
+  /**
+   * Retrieves the experiment variants.
+   */
+  getVariants: () => Array<object>;
+
+  /**
+   * Retrieves the experiment start date.
+   */
+  getStartDate: () => string;
+
+  /**
+   * Retrieves the experiment end date.
+   */
+  getEndDate: () => string;
+
+  /**
+   * Retrieves the conversion event name.
+   */
+  getConversionEventName: () => string;
+
+  /**
+   * Retrieves the conversion event value
+   */
+  getConversionEventValue: () => string;
+
+  /**
+   * Retrieves the last update timestamp of the experiment entity in persistent store.
+   */
+  getUpdatedAt: () => string;
+
+  /**
+   * Retrieves the updated by of the experiment entity in persistent store.
+   */
+  getUpdatedBy: () => string;
 }
 
 export interface DataAccess {
@@ -607,6 +801,10 @@ export interface DataAccess {
   removeOrganization: (
       organizationId: string,
   ) => Promise<void>;
+  getImportJobsByDateRange: (
+      startDate: string,
+      endDate: string,
+  ) => Promise<ImportJob[]>;
   getImportJobByID: (
     id: string,
     ) => Promise<ImportJob | null>;
@@ -632,6 +830,15 @@ export interface DataAccess {
       jobId: string,
       status: string,
     ) => Promise<ImportUrl[]>;
+  getImportUrlsByJobId: (
+      jobId: string,
+    ) => Promise<ImportUrl[]>;
+  getApiKeyByHashedApiKey: (
+      hashedApiKey: string,
+    ) => Promise<ApiKey | null>;
+  createNewApiKey: (
+      apiKeyData: object,
+  ) => Promise<ApiKey>;
 
   // site candidate functions
   getSiteCandidateByBaseURL: (baseURL: string) => Promise<SiteCandidate>;
@@ -655,6 +862,11 @@ export interface DataAccess {
   createKeyEvent: (keyEventData: object) => Promise<KeyEvent>;
   getKeyEventsForSite: (siteId: string) => Promise<KeyEvent[]>
   removeKeyEvent: (keyEventId: string) => Promise<void>;
+
+  // experiment functions
+  getExperiments: (siteId: string, experimentId?: string) => Promise<Experiment[]>;
+  getExperiment: (siteId: string, experimentId: string, url: string) => Promise<Experiment | null>;
+  upsertExperiment: (experimentData: object) => Promise<Experiment>;
 }
 
 interface DataAccessConfig {
@@ -668,6 +880,8 @@ interface DataAccessConfig {
   tableNameSiteTopPages: string;
   tableNameImportJobs: string;
   tableNameImportUrls: string;
+  tableNameExperiments: string;
+  tableNameApiKeys: string;
   indexNameAllKeyEventsBySiteId: string,
   indexNameAllSites: string;
   indexNameAllSitesOrganizations: string,
@@ -676,7 +890,9 @@ interface DataAccessConfig {
   indexNameAllOrganizations: string,
   indexNameAllOrganizationsByImsOrgId: string,
   indexNameAllImportJobsByStatus: string,
-  indexNameAllImportUrlsByJobIdAndStatus: string,
+  indexNameAllImportJobsByDateRange: string,
+  indexNameImportUrlsByJobIdAndStatus: string,
+  indexNameApiKeyByHashedApiKey: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;
@@ -688,13 +904,3 @@ export function createDataAccess(
   config: DataAccessConfig,
   logger: object,
 ): DataAccess;
-
-export interface ImportJobStatus {
-  RUNNING: string,
-  COMPLETE: string,
-  FAILED: string,
-}
-
-export interface ImportUrlStatus extends ImportJobStatus {
-  PENDING: string,
-}

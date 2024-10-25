@@ -44,7 +44,7 @@ describe('GoogleClient', () => {
   const endDateString = '2024-01-31';
   const endDate = new Date(endDateString);
 
-  let authClientStub;
+  let oauth2ClientStub;
 
   const stubSecretManager = (config) => {
     sinon.stub(SecretsManagerClient.prototype, 'send').resolves({
@@ -53,21 +53,26 @@ describe('GoogleClient', () => {
   };
 
   beforeEach(() => {
+    oauth2ClientStub = sinon.createStubInstance(OAuth2Client);
+    oauth2ClientStub.refreshAccessToken.resolves({
+      credentials: {
+        access_token: 'newAccessToken',
+        expiry_date: Date.now() + 3600 * 1000,
+      },
+    });
+
+    sinon.stub(OAuth2Client.prototype, 'constructor').callsFake(() => oauth2ClientStub);
+    sinon.stub(OAuth2Client.prototype, 'setCredentials').callsFake(function (credentials) {
+      this.credentials = credentials;
+    });
+    sinon.stub(OAuth2Client.prototype, 'refreshAccessToken').callsFake(() => oauth2ClientStub.refreshAccessToken());
     defaultConfig = {
       access_token: 'testAccessToken',
       refresh_token: 'testRefreshToken',
       token_type: 'Bearer',
       site_url: baseURL,
-      expiration_date: Date.now() + 3600 * 1000,
+      expiry_date: Date.now() * 1000,
     };
-
-    authClientStub = sinon.stub(OAuth2Client.prototype);
-    authClientStub.setCredentials.returns();
-    authClientStub.refreshAccessToken.resolves({
-      credentials: {
-        test_token: 'testToken',
-      },
-    });
   });
 
   afterEach(() => {
@@ -109,6 +114,38 @@ describe('GoogleClient', () => {
         await GoogleClient.createFrom(context, baseURL);
       } catch (error) {
         expect(error.message).to.equal('Error creating GoogleClient: Invalid site URL in secret');
+      }
+    });
+
+    it('should refresh access token when it is expired', async () => {
+      stubSecretManager({
+        ...defaultConfig,
+        expiry_date: Date.now() - 10000,
+      });
+
+      const testResult = { data: 'testData' };
+      const webmastersStub = sinon.stub().resolves(testResult);
+      sinon.stub(google, 'webmasters').returns({
+        sites: {
+          list: webmastersStub,
+        },
+      });
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.listSites();
+      expect(result).to.eql(testResult);
+      expect(oauth2ClientStub.refreshAccessToken.calledOnce).to.be.true;
+    });
+
+    it('should throw an error if the token cannot be refreshed', async () => {
+      oauth2ClientStub.refreshAccessToken.rejects(new Error('Token refresh failed'));
+      stubSecretManager({
+        ...defaultConfig,
+        expiry_date: Date.now() - 10000,
+      });
+      try {
+        await GoogleClient.createFrom(context, baseURL);
+      } catch (error) {
+        expect(error.message).to.equal('Error creating GoogleClient: Token refresh failed');
       }
     });
   });
@@ -235,22 +272,6 @@ describe('GoogleClient', () => {
       }
     });
 
-    it('should refresh access token when it is expired', async () => {
-      defaultConfig.expiry_date = Date.now() - 1000;
-      stubSecretManager(defaultConfig);
-
-      const testResult = { data: 'testData' };
-      const webmastersStub = sinon.stub().resolves(testResult);
-      sinon.stub(google, 'webmasters').returns({
-        searchanalytics: {
-          query: webmastersStub,
-        },
-      });
-      const googleClient = await GoogleClient.createFrom(context, baseURL);
-      const result = await googleClient.getOrganicSearchData(startDate, endDate);
-      expect(result).to.eql(testResult);
-    });
-
     it('should throw an error if the date format is invalid', async () => {
       stubSecretManager(defaultConfig);
       const googleClient = await GoogleClient.createFrom(context, baseURL);
@@ -311,6 +332,17 @@ describe('GoogleClient', () => {
         expect(error.message).to.equal(`Error retrieving organic search data from Google API: Invalid site URL in secret (${invalidUrl})`);
       }
     });
+
+    it('should throw an error if site URL is not defined', async () => {
+      delete defaultConfig.site_url;
+      stubSecretManager(defaultConfig);
+      try {
+        const googleClient = await GoogleClient.createFrom(context, baseURL);
+        await googleClient.getOrganicSearchData(startDate, endDate);
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving organic search data from Google API: Invalid site URL in secret (undefined)');
+      }
+    });
   });
 
   describe('listSites', () => {
@@ -354,21 +386,129 @@ describe('GoogleClient', () => {
         expect(error.message).to.equal(`Error retrieving sites from Google API: ${failMessage}`);
       }
     });
+  });
 
-    it('should refresh access token when it is expired', async () => {
-      defaultConfig.expiry_date = Date.now() - 2000;
+  describe('urlInspect', () => {
+    const apiEndpoint = 'https://searchconsole.googleapis.com';
+    const apiPath = '/v1/urlInspection/index:inspect';
+
+    beforeEach(() => {
       stubSecretManager(defaultConfig);
+    });
 
-      const testResult = { data: 'testData' };
-      const webmastersStub = sinon.stub().resolves(testResult);
-      sinon.stub(google, 'webmasters').returns({
-        sites: {
-          list: webmastersStub,
+    afterEach(() => {
+      nock.cleanAll();
+      sinon.restore();
+    });
+
+    it('should inspect a valid URL', async () => {
+      const url = 'https://example.com/page';
+      const mockResponse = {
+        inspectionResult: {
+          inspectionResultLink: 'https://search.google.com/search-console/inspect?resource_id=https://www.example.com/',
+          indexStatusResult: {
+            verdict: 'PASS',
+            coverageState: 'Submitted and indexed',
+            robotsTxtState: 'ALLOWED',
+            indexingState: 'INDEXING_ALLOWED',
+            lastCrawlTime: '2024-08-13T22:35:22Z',
+            pageFetchState: 'SUCCESSFUL',
+            googleCanonical: 'https://www.example.com/foo',
+            userCanonical: 'https://www.example.com/foo',
+            referringUrls: [
+              'https://www.example.com/bar',
+            ],
+            crawledAs: 'MOBILE',
+          },
+          mobileUsabilityResult: {
+            verdict: 'VERDICT_UNSPECIFIED',
+          },
+          richResultsResult: {
+            verdict: 'PASS',
+            detectedItems: [
+              {
+                richResultType: 'Product snippets',
+                items: [
+                  {
+                    name: 'Example Product Name',
+                    issues: [
+                      {
+                        issueMessage: 'Missing field "image"',
+                        severity: 'ERROR',
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                richResultType: 'Merchant listings',
+                items: [
+                  {
+                    name: 'Example Product Name',
+                    issues: [
+                      {
+                        issueMessage: 'Missing field "hasMerchantReturnPolicy"',
+                        severity: 'WARNING',
+                      },
+                      {
+                        issueMessage: 'Missing field "shippingDetails"',
+                        severity: 'ERROR',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
         },
-      });
+      };
+
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(200, mockResponse);
+
       const googleClient = await GoogleClient.createFrom(context, baseURL);
-      const result = await googleClient.listSites();
-      expect(result).to.eql(testResult);
+      const result = await googleClient.urlInspect(url);
+      expect(result).to.deep.equal(mockResponse);
+    });
+
+    it('should throw an error for invalid URL format', async () => {
+      const invalidUrl = 'invalid-url';
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.urlInspect(invalidUrl);
+      } catch (error) {
+        expect(error.message).to.equal(`Error inspecting URL: Invalid URL format (${invalidUrl})`);
+      }
+    });
+
+    it('should throw an error if the API response is not ok', async () => {
+      const url = 'https://example.com/page';
+
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(500, 'Bad Request');
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.urlInspect(url);
+      } catch (error) {
+        expect(error.message).to.equal(`Error inspecting URL ${url}. Returned status 500`);
+      }
+    });
+
+    it('should throw an error when the response cannot be parsed to json', async () => {
+      const url = 'https://example.com/page';
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(200, 'Invalid JSON');
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.urlInspect(url);
+      } catch (error) {
+        expect(error.message).to.equal(`Error parsing result of inspecting URL ${url}: Unexpected token 'I', "Invalid JSON" is not valid JSON`);
+      }
     });
   });
 });

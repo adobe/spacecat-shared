@@ -13,7 +13,6 @@
 import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
-import AuditConfig from './site/audit-config.js';
 import { Config, DEFAULT_CONFIG } from './site/config.js';
 import { DEFAULT_ORGANIZATION_ID } from './organization.js';
 
@@ -34,12 +33,12 @@ export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
 const Site = (data = {}) => {
   const self = Base(data);
 
-  self.getAuditConfig = () => self.state.auditConfig;
   self.getAudits = () => self.state.audits;
   self.getBaseURL = () => self.state.baseURL;
   self.getConfig = () => self.state.config;
   self.getDeliveryType = () => self.state.deliveryType;
   self.getGitHubURL = () => self.state.gitHubURL;
+  self.getHlxConfig = () => self.state.hlxConfig;
   self.getOrganizationId = () => self.state.organizationId;
   self.isLive = () => self.state.isLive;
   self.getIsLiveToggledAt = () => self.state.isLiveToggledAt;
@@ -81,18 +80,6 @@ const Site = (data = {}) => {
     return self;
   }; */
 
-  self.setAllAuditsDisabled = (disabled) => {
-    self.state.auditConfig.updateAuditsDisabled(disabled);
-    self.touch();
-    return self;
-  };
-
-  self.updateAuditTypeConfig = (type, config) => {
-    self.state.auditConfig.updateAuditTypeConfig(type, config);
-    self.touch();
-    return self;
-  };
-
   /**
    * Updates the site config.
    * @param {string} config - The Site config.
@@ -131,6 +118,23 @@ const Site = (data = {}) => {
     }
 
     self.state.gitHubURL = gitHubURL;
+    self.touch();
+
+    return self;
+  };
+
+  /**
+   * Updates the Helix Configuration for this site.
+   * @param {object} hlxConfig - The Helix Configuration.
+   * @throws {Error} If the provided Helix Configuration is not an object.
+   * @return {Base} The updated site.
+   */
+  self.updateHlxConfig = (hlxConfig) => {
+    if (!isObject(hlxConfig)) {
+      throw new Error('HLX Config must be an object');
+    }
+
+    self.state.hlxConfig = hlxConfig;
     self.touch();
 
     return self;
@@ -179,6 +183,14 @@ export const createSite = (data) => {
     throw new Error(`Base URL must be a valid URL: ${newState.baseURL}`);
   }
 
+  if (newState.hlxConfig && !isObject(newState.hlxConfig)) {
+    throw new Error(`HLX Config must be an object: ${newState.hlxConfig}`);
+  }
+
+  if (!newState.hlxConfig) {
+    newState.hlxConfig = {};
+  }
+
   if (!hasText(newState.organizationId)) {
     newState.organizationId = DEFAULT_ORGANIZATION_ID;
   }
@@ -195,15 +207,6 @@ export const createSite = (data) => {
   if (!Array.isArray(newState.audits)) {
     newState.audits = [];
   }
-
-  if (!isObject(newState.auditConfig)) {
-    newState.auditConfig = {
-      auditsDisabled: false,
-      auditTypeConfigs: {},
-    };
-  }
-
-  newState.auditConfig = AuditConfig(newState.auditConfig);
 
   if (!isObject(newState.config)) {
     newState.config = { ...DEFAULT_CONFIG };

@@ -11,10 +11,11 @@
  */
 
 /* eslint-env mocha */
+/* eslint-disable no-console */
 
-import chai from 'chai';
+import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import DynamoDbLocal from 'dynamo-db-local';
+import { spawn } from 'dynamo-db-local';
 import Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
@@ -26,18 +27,25 @@ import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
 import { parseVersion } from '../../src/service/configurations/accessPatterns.js';
 import generateSampleData from './generateSampleData.js';
-import { createSiteCandidate, SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
+import {
+  createSiteCandidate,
+  SITE_CANDIDATE_SOURCES,
+  SITE_CANDIDATE_STATUS,
+} from '../../src/models/site-candidate.js';
 import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
+import { ConfigurationDto } from '../../src/dto/configuration.js';
+import { ImportJobStatus, ImportOptions, ImportUrlStatus } from '../../src/index.js';
+import { IMPORT_URL_EXPIRES_IN_DAYS } from '../../src/models/importer/import-url.js';
 
-const { expect } = chai;
-chai.use(chaiAsPromised);
+use(chaiAsPromised);
 
-function checkSite(site) {
+function checkSite(site, configuration) {
   expect(site).to.be.an('object');
   expect(site.getId()).to.be.a('string');
   expect(site.getBaseURL()).to.be.a('string');
   expect(site.getDeliveryType()).to.be.a('string');
   expect(site.getGitHubURL()).to.be.a('string');
+  expect(site.getHlxConfig()).to.be.an('object');
   expect(site.getOrganizationId()).to.be.a('string');
   expect(isIsoDate(site.getCreatedAt())).to.be.true;
   expect(isIsoDate(site.getUpdatedAt())).to.be.true;
@@ -45,15 +53,14 @@ function checkSite(site) {
   expect(site.isLive()).to.be.a('boolean');
   expect(isIsoDate(site.getIsLiveToggledAt())).to.be.true;
 
-  const auditConfig = site.getAuditConfig();
-  expect(auditConfig).to.be.an('object');
-  expect(auditConfig.auditsDisabled()).to.be.a('boolean').which.is.false;
-  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE)).to.be.an('object');
-  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).disabled()).to.be.a('boolean').which.is.false;
-  expect(auditConfig.getAuditTypeConfig(AUDIT_TYPE_LHS_MOBILE).getExcludedURLs()).to.be.a('array').which.is.deep.equal(['https://example.com/excluded']);
-  expect(auditConfig.getAuditTypeConfig('non-existing-type')).to.be.undefined;
-  expect(auditConfig.getAuditTypeConfig('cwv')).to.be.an('object');
-  expect(auditConfig.getAuditTypeConfig('cwv').disabled()).to.be.a('boolean').which.is.true;
+  const lhsMobileHandler = configuration.getHandler(AUDIT_TYPE_LHS_MOBILE);
+  const cwvHandler = configuration.getHandler('cwv');
+  expect(lhsMobileHandler).to.be.an('object');
+  expect(configuration.isHandlerEnabledForSite(AUDIT_TYPE_LHS_MOBILE, site)).to.be.a('boolean').which.is.true;
+  expect(site.getConfig().getExcludedURLs(AUDIT_TYPE_LHS_MOBILE)).to.be.a('array').which.is.deep.equal(['https://example.com/excluded']);
+  expect(configuration.getHandler('non-existing')).to.be.undefined;
+  expect(cwvHandler).to.be.an('object');
+  expect(configuration.isHandlerEnabledForSite('cwv', site)).to.be.a('boolean').which.is.false;
 }
 
 function checkOrganization(organization) {
@@ -99,6 +106,10 @@ const TEST_DA_CONFIG = {
   tableNameSiteCandidates: 'spacecat-services-site-candidates',
   tableNameConfigurations: 'spacecat-services-configurations',
   tableNameSiteTopPages: 'spacecat-services-site-top-pages',
+  tableNameExperiments: 'spacecat-services-experiments',
+  tableNameApiKeys: 'spacecat-services-api-keys',
+  tableNameImportJobs: 'spacecat-services-import-jobs',
+  tableNameImportUrls: 'spacecat-services-import-urls',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
@@ -106,10 +117,14 @@ const TEST_DA_CONFIG = {
   indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id',
   indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
+  indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
+  indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
+  indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
   pkAllSites: 'ALL_SITES',
   pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
   pkAllConfigurations: 'ALL_CONFIGURATIONS',
+  pkAllImportJobs: 'ALL_IMPORT_JOBS',
 };
 
 describe('DynamoDB Integration Test', async () => {
@@ -123,8 +138,9 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_TOP_PAGES_PER_SITE = 5;
   const NUMBER_OF_TOP_PAGES_FOR_SITE = NUMBER_OF_SITES * NUMBER_OF_TOP_PAGES_PER_SITE;
   const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
+  const NUMBER_OF_EXPERIMENTS = 3;
 
-  before(async function () {
+  before(async function beforeSuite() {
     this.timeout(30000);
 
     process.env.AWS_REGION = 'local';
@@ -133,28 +149,67 @@ describe('DynamoDB Integration Test', async () => {
     process.env.AWS_ACCESS_KEY_ID = 'dummy';
     process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
 
-    dynamoDbLocalProcess = DynamoDbLocal.spawn({
+    dynamoDbLocalProcess = spawn({
+      detached: true,
+      stdio: 'inherit',
       port: 8000,
       sharedDb: true,
     });
 
     await sleep(10000); // give db time to start up
 
-    await generateSampleData(
-      TEST_DA_CONFIG,
-      NUMBER_OF_ORGANIZATIONS,
-      NUMBER_OF_SITES,
-      NUMBER_OF_SITES_CANDIDATES,
-      NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
-      NUMBER_OF_TOP_PAGES_FOR_SITE,
-      NUMBER_OF_KEY_EVENTS_PER_SITE,
-    );
+    try {
+      await generateSampleData(
+        TEST_DA_CONFIG,
+        NUMBER_OF_ORGANIZATIONS,
+        NUMBER_OF_SITES,
+        NUMBER_OF_SITES_CANDIDATES,
+        NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
+        NUMBER_OF_TOP_PAGES_FOR_SITE,
+        NUMBER_OF_KEY_EVENTS_PER_SITE,
+      );
+    } catch (e) {
+      console.error('Error generating sample data', e);
+    }
 
     dataAccess = createDataAccess(TEST_DA_CONFIG, console);
   });
 
   after(() => {
     dynamoDbLocalProcess.kill();
+  });
+
+  it('get all key events for a site', async () => {
+    const siteId = (await dataAccess.getSiteByBaseURL('https://example0.com')).getId();
+
+    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+
+    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
+    expect(keyEvents[0].getSiteId()).to.equal(siteId);
+  });
+
+  it('add a new key event for a site', async () => {
+    const siteId = (await dataAccess.getSiteByBaseURL('https://example0.com')).getId();
+
+    await dataAccess.createKeyEvent({
+      siteId,
+      name: 'new-key-event',
+      type: KEY_EVENT_TYPES.CONTENT,
+    });
+
+    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+
+    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE + 1);
+  });
+
+  it('remove a key event', async () => {
+    const siteId = (await dataAccess.getSiteByBaseURL('https://example0.com')).getId();
+    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+
+    await dataAccess.removeKeyEvent(keyEvents[0].getId());
+
+    const keyEventsAfter = await dataAccess.getKeyEventsForSite(siteId);
+    expect(keyEventsAfter.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
   });
 
   it('gets configuration by Version', async () => {
@@ -186,13 +241,18 @@ describe('DynamoDB Integration Test', async () => {
         { group: 'reports', interval: 'daily', type: 'some-report' },
       ],
     };
-    const configuration = await dataAccess.updateConfiguration(configurationData);
+    const configurationV2 = await dataAccess.getConfiguration();
+    const configuration = await dataAccess.updateConfiguration({
+      ...ConfigurationDto.toDynamoItem(configurationV2),
+      ...configurationData,
+    });
 
     expect(configuration).to.be.an('object');
 
     expect(configuration.getVersion()).to.equal('v3');
     expect(configuration.getQueues()).to.deep.equal(configurationData.queues);
     expect(configuration.getJobs()).to.deep.equal(configurationData.jobs);
+    expect(configuration.getHandlers()).to.deep.equal(configurationV2.getHandlers());
   });
 
   it('gets organizations', async () => {
@@ -215,28 +275,19 @@ describe('DynamoDB Integration Test', async () => {
     expect(organization.getId()).to.equal(orgId);
   });
 
-  it('sets all audits disabled for an organization', async () => {
-    const orgId = (await dataAccess.getOrganizations())[0].getId();
-    const organization = await dataAccess.getOrganizationByID(orgId);
-
-    // set all audits to disabled & persist
-    await organization.setAllAuditsDisabled(true);
-    await dataAccess.updateOrganization(organization);
-
-    const organizationUpdated = await dataAccess.getOrganizationByID(orgId);
-    expect(organizationUpdated.getAuditConfig().auditsDisabled()).to.equal(true);
-  });
-
   it('sets a single audit disabled for an organization', async () => {
     const orgId = (await dataAccess.getOrganizations())[1].getId();
     const organization = await dataAccess.getOrganizationByID(orgId);
-
-    // set all audits to disabled & persist
-    await organization.updateAuditTypeConfig('hebele', { disabled: true });
+    const configuration = await dataAccess.getConfiguration();
+    configuration.addHandler('hebele', { enabledByDefault: true });
+    configuration.disableHandlerForOrg('hebele', organization);
     await dataAccess.updateOrganization(organization);
+    const updatedConfiguration = await dataAccess.updateConfiguration(
+      ConfigurationDto.toDynamoItem(configuration),
+    );
 
     const organizationUpdated = await dataAccess.getOrganizationByID(orgId);
-    expect(organizationUpdated.getAuditConfig().getAuditTypeConfig('hebele').disabled()).to.equal(true);
+    expect(updatedConfiguration.isHandlerEnabledForOrg('hebele', organizationUpdated)).to.be.false;
   });
 
   it('gets organization by IMS Org ID', async () => {
@@ -290,22 +341,24 @@ describe('DynamoDB Integration Test', async () => {
 
   it('gets sites', async () => {
     const sites = await dataAccess.getSites();
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.equal(NUMBER_OF_SITES);
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getAudits()).to.be.an('array').that.has.lengthOf(0);
     });
   });
 
   it('gets sites by delivery type', async () => {
     const sites = await dataAccess.getSitesByDeliveryType('aem_cs');
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.equal(NUMBER_OF_SITES / 2);
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getAudits()).to.be.an('array').that.has.lengthOf(0);
     });
   });
@@ -313,12 +366,13 @@ describe('DynamoDB Integration Test', async () => {
   it('gets sites by organizationId', async () => {
     const organizations = await dataAccess.getOrganizations();
     const sites = await dataAccess.getSitesByOrganizationID(organizations[0].getId());
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.be.lessThanOrEqual(Math.trunc(NUMBER_OF_SITES / NUMBER_OF_ORGANIZATIONS)
       + (NUMBER_OF_SITES % NUMBER_OF_ORGANIZATIONS));
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getOrganizationId()).to.be.equal(organizations[0].getId());
     });
   });
@@ -335,11 +389,12 @@ describe('DynamoDB Integration Test', async () => {
 
   it('gets sites with latest audit', async () => {
     const sites = await dataAccess.getSitesWithLatestAudit(AUDIT_TYPE_LHS_MOBILE);
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.equal(NUMBER_OF_SITES);
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getAudits()).to.be.an('array');
 
       site.getAudits().forEach((audit) => {
@@ -357,9 +412,9 @@ describe('DynamoDB Integration Test', async () => {
       organizations[0].getId(),
       AUDIT_TYPE_LHS_MOBILE,
     );
-
+    const configuration = await dataAccess.getConfiguration();
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getAudits()).to.be.an('array');
 
       site.getAudits().forEach((audit) => {
@@ -373,11 +428,12 @@ describe('DynamoDB Integration Test', async () => {
 
   it('gets sites with latest audit of delivery type', async () => {
     const sites = await dataAccess.getSitesWithLatestAudit(AUDIT_TYPE_LHS_MOBILE, true, 'aem_cs');
+    const configuration = await dataAccess.getConfiguration();
 
     expect(sites.length).to.equal(NUMBER_OF_SITES / 2);
 
     sites.forEach((site) => {
-      checkSite(site);
+      checkSite(site, configuration);
       expect(site.getDeliveryType()).to.equal('aem_cs');
       expect(site.getAudits()).to.be.an('array');
 
@@ -392,19 +448,21 @@ describe('DynamoDB Integration Test', async () => {
 
   it('gets site by baseURL', async () => {
     const site = await dataAccess.getSiteByBaseURL('https://example1.com');
+    const configuration = await dataAccess.getConfiguration();
 
     expect(site).to.be.an('object');
 
-    checkSite(site);
+    checkSite(site, configuration);
   });
 
   it('gets site by ID', async () => {
     const siteId = (await dataAccess.getSites())[0].getId();
     const site = await dataAccess.getSiteByID(siteId);
+    const configuration = await dataAccess.getConfiguration();
 
     expect(site).to.be.an('object');
 
-    checkSite(site);
+    checkSite(site, configuration);
     expect(site.getId()).to.equal(siteId);
   });
 
@@ -412,30 +470,55 @@ describe('DynamoDB Integration Test', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',
       gitHubURL: 'https://github.com/some-org/test-repo',
+      hlxConfig: {
+        cdnProdHost: 'www.another-example.com',
+        code: {
+          owner: 'another-owner',
+          repo: 'another-repo',
+          source: {
+            type: 'github',
+            url: 'https://github.com/another-owner/another-repo',
+          },
+        },
+        content: {
+          contentBusId: '1234',
+          source: {
+            type: 'onedrive',
+            url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+          },
+        },
+        hlxVersion: 5,
+      },
       organizationId: '1234',
       isLive: true,
       isLiveToggledAt: new Date().toISOString(),
       audits: [],
-      auditConfig: {
-        auditsDisabled: false,
-        auditTypeConfigs: {
-          'lhs-mobile': { disabled: false, excludedURLs: ['https://example.com/excluded'] },
-          cwv: { disabled: true },
+      config: {
+        handlers: {
+          'lhs-mobile': {
+            excludedURLs: ['https://example.com/excluded'],
+          },
         },
       },
     };
 
     const addedSite = await dataAccess.addSite(newSiteData);
+    const configuration = await dataAccess.getConfiguration();
+    configuration.disableHandlerForSite('cwv', addedSite);
+    const updatedConfiguration = await dataAccess.updateConfiguration(
+      ConfigurationDto.toDynamoItem(configuration),
+    );
 
     expect(addedSite).to.be.an('object');
 
     const newSite = await dataAccess.getSiteByBaseURL(newSiteData.baseURL);
 
-    checkSite(newSite);
+    checkSite(newSite, updatedConfiguration);
 
     expect(newSite.getId()).to.to.be.a('string');
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
     expect(newSite.getGitHubURL()).to.equal(newSiteData.gitHubURL);
+    expect(newSite.getHlxConfig()).to.deep.equal(newSiteData.hlxConfig);
     expect(newSite.getOrganizationId()).to.equal(newSiteData.organizationId);
     expect(newSite.getAudits()).to.be.an('array').that.is.empty;
   });
@@ -446,11 +529,31 @@ describe('DynamoDB Integration Test', async () => {
     const newDeliveryType = 'aem_cs';
     const newGitHubURL = 'https://github.com/newOrg/some-repo';
     const newOrgId = 'updatedOrg123';
+    const newHlxConfig = {
+      cdnProdHost: 'www.another-example.com',
+      code: {
+        owner: 'another-owner',
+        repo: 'another-repo',
+        source: {
+          type: 'github',
+          url: 'https://github.com/another-owner/another-repo',
+        },
+      },
+      content: {
+        contentBusId: '1234',
+        source: {
+          type: 'onedrive',
+          url: 'https://another-owner.sharepoint.com/:f:/r/sites/SomeFolder/Shared%20Documents/another-site/www',
+        },
+      },
+      hlxVersion: 5,
+    };
 
     await sleep(10); // Make sure updatedAt is different
 
     siteToUpdate.updateDeliveryType(newDeliveryType);
     siteToUpdate.updateGitHubURL(newGitHubURL);
+    siteToUpdate.updateHlxConfig(newHlxConfig);
     siteToUpdate.updateOrganizationId(newOrgId);
     siteToUpdate.toggleLive();
 
@@ -458,6 +561,7 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(updatedSite.getDeliveryType()).to.equal(newDeliveryType);
     expect(updatedSite.getGitHubURL()).to.equal(newGitHubURL);
+    expect(updatedSite.getHlxConfig()).to.deep.equal(newHlxConfig);
     expect(updatedSite.getOrganizationId()).to.equal(newOrgId);
     expect(updatedSite.isLive()).to.be.false;
     expect(updatedSite.getUpdatedAt()).to.not.equal(originalUpdatedAt);
@@ -685,32 +789,6 @@ describe('DynamoDB Integration Test', async () => {
     expect(latestAuditAfterRemoval).to.be.null;
   });
 
-  it('updates audit configurations for a site', async () => {
-    const siteToUpdate = await dataAccess.getSiteByBaseURL('https://example2.com');
-
-    // Update all audits to be disabled
-    siteToUpdate.setAllAuditsDisabled(true);
-    await dataAccess.updateSite(siteToUpdate);
-
-    let updatedSite = await dataAccess.getSiteByID(siteToUpdate.getId());
-    expect(updatedSite.getAuditConfig().auditsDisabled()).to.be.true;
-
-    // Update a specific audit type configuration
-    siteToUpdate.updateAuditTypeConfig('type1', { disabled: false });
-    await dataAccess.updateSite(siteToUpdate);
-
-    updatedSite = await dataAccess.getSiteByID(siteToUpdate.getId());
-    expect(updatedSite.getAuditConfig().getAuditTypeConfig('type1').disabled()).to.be.false;
-  });
-
-  it('removes organization', async () => {
-    const organizations = await dataAccess.getOrganizations();
-    const organization = organizations[0];
-    await expect(dataAccess.removeOrganization(organization.getId())).to.eventually.be.fulfilled;
-    const organizationAfterRemoval = await dataAccess.getOrganizationByID(organization.getId());
-    expect(organizationAfterRemoval).to.be.null;
-  });
-
   it('verify a previously added site candidate exists', async () => {
     const exists = await dataAccess.siteCandidateExists('https://example0.com');
     expect(exists).to.be.true;
@@ -826,45 +904,273 @@ describe('DynamoDB Integration Test', async () => {
     expect(topPagesAfterRemoval).to.be.an('array').that.is.empty;
   });
 
-  it('get all key events for a site', async () => {
-    const siteId = (await dataAccess.getSites())[0].getId();
+  it('get all experiments for the site', async () => {
+    const site = await dataAccess.getSiteByBaseURL('https://example0.com');
+    const siteId = site.getId();
+    const experiments = await dataAccess.getExperiments(siteId);
 
-    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
-
-    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
-    expect(keyEvents[0].getSiteId()).to.equal(siteId);
-
-    // check if the key events are returned in descending order
-    for (let i = 1; i < keyEvents.length; i += 1) {
-      const prev = keyEvents[i - 1];
-      const next = keyEvents[i];
-      const desc = prev.getCreatedAt() >= next.getCreatedAt();
-      expect(desc).to.be.true;
-    }
+    expect(experiments.length).to.equal(NUMBER_OF_EXPERIMENTS);
   });
 
-  it('add a new key event for a site', async () => {
-    const siteId = (await dataAccess.getSites())[0].getId();
+  it('get all experiments for the site and experimentId', async () => {
+    // handling multi page experiments
+    const site = await dataAccess.getSiteByBaseURL('https://example0.com');
+    const siteId = site.getId();
+    const experiments = await dataAccess.getExperiments(siteId, 'experiment-1');
 
-    await dataAccess.createKeyEvent({
+    expect(experiments.length).to.equal(1);
+  });
+
+  it('get 0 experiments for the siteId with out any experiments', async () => {
+    const site = await dataAccess.getSiteByBaseURL('https://example3.com');
+    const siteId = site.getId();
+    const experiments = await dataAccess.getExperiments(siteId);
+
+    expect(experiments.length).to.equal(0);
+  });
+
+  it('check if experiment exists', async () => {
+    const site = await dataAccess.getSiteByBaseURL('https://example0.com');
+    const siteId = site.getId();
+    const experiment = await dataAccess.getExperiment(siteId, 'experiment-1', `${site.getBaseURL()}/page-1`);
+
+    expect(experiment).to.not.equal(null);
+  });
+
+  it('create and update experiment', async () => {
+    const site = await dataAccess.getSiteByBaseURL('https://example0.com');
+    const siteId = site.getId();
+    const experimentData = {
       siteId,
-      name: 'new-key-event',
-      type: KEY_EVENT_TYPES.CONTENT,
+      experimentId: 'experiment-test',
+      name: 'Experiment Test',
+      url: `${site.getBaseURL()}/page-10`,
+      status: 'active',
+      type: 'full',
+      variants: [
+        {
+          label: 'Challenger 1',
+          name: 'challenger-1',
+          interactionsCount: 40,
+          p_value: 'coming soon',
+          split: 0.5,
+          url: `${site.getBaseURL()}/page-10/variant-1`,
+          views: 1100,
+          metrics: [
+            {
+              selector: '.header .button',
+              type: 'click',
+              value: 40,
+            }],
+        },
+        {
+          label: 'Control',
+          name: 'control',
+          interactionsCount: 0,
+          p_value: 'coming soon',
+          metrics: [],
+          split: 0.5,
+          url: `${site.getBaseURL()}/page-10`,
+          views: 1090,
+        },
+      ],
+      startDate: new Date().toISOString(),
+      endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'it-test',
+    };
+    await dataAccess.upsertExperiment(experimentData);
+    const experimentTest = await dataAccess.getExperiment(siteId, 'experiment-test', `${site.getBaseURL()}/page-10`);
+    expect(experimentTest).to.not.equal(null);
+    // update the experiment variant 0 metrics to 50
+    experimentData.variants[0].metrics[0].value = 50;
+    await dataAccess.upsertExperiment(experimentData);
+    const updatedExperiment = await dataAccess.getExperiment(siteId, 'experiment-test', `${site.getBaseURL()}/page-10`);
+    expect(updatedExperiment.getVariants()[0].metrics[0].value).to.equal(50);
+  });
+
+  /** Please keep this test at the last, the remove organization is removing the org randomly,
+   * moving this  above may remove the org which may have sites required by other tests */
+  it('removes organization', async () => {
+    const organizations = await dataAccess.getOrganizations();
+    const organization = organizations[0];
+    await expect(dataAccess.removeOrganization(organization.getId())).to.eventually.be.fulfilled;
+    const organizationAfterRemoval = await dataAccess.getOrganizationByID(organization.getId());
+    expect(organizationAfterRemoval).to.be.null;
+  });
+
+  /**
+   * The following section is related to the Importer.
+   * It includes tests for the ImportJob and ImportUrl Data Access APIs.
+   *
+   * Before running the tests inject a ImportJob and ImportUrl into their respective tables.
+   * This is done such that each test could be executed individually without the need to run the
+   * entire suite.
+   */
+  describe('Importer Tests', async () => {
+    const startTime = new Date().toISOString();
+
+    // helper
+    const createNewImportJob = async () => dataAccess.createNewImportJob({
+      urls: ['https://example.com/cars', 'https://example.com/bikes'],
+      importQueueId: 'Q-123',
+      hashedApiKey: '1234',
+      baseURL: 'https://example.com/cars',
+      startTime,
+      status: ImportJobStatus.RUNNING,
+      initiatedBy: {
+        apiKeyName: 'K-123',
+      },
+      options: {
+        [ImportOptions.ENABLE_JAVASCRIPT]: true,
+      },
+      hasCustomImportJs: true,
+      hasCustomHeaders: false,
     });
 
-    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+    // helper
+    const createNewImportUrl = async (importJob) => dataAccess.createNewImportUrl({
+      url: 'https://example.com/cars',
+      jobId: importJob.getId(),
+      status: ImportUrlStatus.PENDING,
+    });
 
-    expect(keyEvents.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE + 1);
-  });
+    describe('Import Job Tests', async () => {
+      it('Verify the creation of the import job.', async () => {
+        const job = await createNewImportJob();
+        expect(job.getId()).to.be.a('string');
+        expect(job.getCreatedAt()).to.be.a('string');
+        expect(job.hasCustomHeaders()).to.be.false;
+        expect(job.hasCustomImportJs()).to.be.true;
+      });
 
-  it('remove a key event', async () => {
-    const siteId = (await dataAccess.getSites())[0].getId();
-    const keyEvents = await dataAccess.getKeyEventsForSite(siteId);
+      it('Verify updateImportJob', async () => {
+        const job = await createNewImportJob();
+        const newJob = { ...job };
+        const newEndTime = new Date().toISOString();
+        newJob.updateStatus(ImportJobStatus.COMPLETE);
+        newJob.updateEndTime(newEndTime);
+        newJob.updateDuration(1234);
+        newJob.updateUrlCount(100);
+        newJob.updateImportQueueId('Q-456');
+        newJob.updateHasCustomHeaders(true);
 
-    await dataAccess.removeKeyEvent(keyEvents[0].getId());
+        const updatedJob = await dataAccess.updateImportJob(newJob);
 
-    const keyEventsAfter = await dataAccess.getKeyEventsForSite(siteId);
-    expect(keyEventsAfter.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
+        expect(updatedJob.getStatus()).to.be.equal(ImportJobStatus.COMPLETE);
+        expect(updatedJob.getEndTime()).to.equal(newEndTime);
+        expect(updatedJob.getDuration()).to.be.equal(1234);
+        expect(updatedJob.getUrlCount()).to.be.equal(100);
+        expect(updatedJob.getImportQueueId()).to.be.equal('Q-456');
+        expect(updatedJob.getOptions()).to.deep.equal({
+          [ImportOptions.ENABLE_JAVASCRIPT]: true,
+        });
+        expect(updatedJob.hasCustomHeaders()).to.be.true;
+      });
+
+      it('Verify getImportJobsByStatus', async () => {
+        const job = await createNewImportJob();
+        job.updateStatus(ImportJobStatus.FAILED);
+        await dataAccess.updateImportJob(job);
+        const result = await dataAccess.getImportJobsByStatus(ImportJobStatus.FAILED);
+        expect(result.length).to.be.greaterThan(0);
+      });
+
+      it('Verify getImportJobByID', async () => {
+        const job = await createNewImportJob();
+        const jobEntry = await dataAccess.getImportJobByID(job.getId());
+        expect(job.getId()).to.be.equal(jobEntry.getId());
+      });
+
+      it('Verify getImportJobsByDateRange', async () => {
+        const endDate = new Date().toISOString();
+        const jobs = await dataAccess.getImportJobsByDateRange(startTime, endDate);
+        expect(jobs.length).to.be.greaterThan(0);
+      });
+
+      it('Verify removeImportJob', async () => {
+        const job = await createNewImportJob();
+        const jobId = job.getId();
+        const url = await createNewImportUrl(job);
+        const url2 = await createNewImportUrl(job);
+
+        expect(url.getId()).to.be.a('string');
+        expect(url.getJobId()).to.equal(jobId);
+        expect(url2.getJobId()).to.equal(jobId);
+
+        // Before we delete the job, there should be 2 URLs in the DB relating to this jobId
+        const importJobUrlsFromDb = await dataAccess.getImportUrlsByJobId(jobId);
+        expect(importJobUrlsFromDb.length).to.equal(2);
+
+        // Remove the new job
+        await dataAccess.removeImportJob(job);
+
+        // Try to find it in the DB
+        const deletedJob = await dataAccess.getImportJobByID(jobId);
+        expect(deletedJob).to.be.null;
+
+        // Try to find its URLs in the DB
+        const deletedJobImportUrls = await dataAccess.getImportUrlsByJobId(jobId);
+        expect(deletedJobImportUrls.length).to.equal(0);
+      });
+    });
+
+    describe('Import URL Tests', async () => {
+      it('Verify the creation of a new import url.', async () => {
+        const job = await createNewImportJob();
+        const url = await createNewImportUrl(job);
+
+        expect(url.getId()).to.be.a('string');
+        expect(url.getJobId()).to.equal(job.getId());
+
+        // Check that expiresAt was set correctly
+        const expectedExpiresAtDate = new Date();
+        expectedExpiresAtDate.setDate(expectedExpiresAtDate.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
+
+        expect(url.getExpiresAt().toDateString()).to.equal(expectedExpiresAtDate.toDateString());
+      });
+
+      it('Verify getImportUrlById', async () => {
+        const job = await createNewImportJob();
+        const url = await createNewImportUrl(job);
+        const urlRow = await dataAccess.getImportUrlById(url.getId());
+        expect(urlRow.getId()).to.be.equal(url.getId());
+      });
+
+      it('Verify getImportUrlsByJobId', async () => {
+        const job = await createNewImportJob();
+        await createNewImportUrl(job);
+        const urlRow = await dataAccess.getImportUrlsByJobId(job.getId());
+        expect(urlRow.length).to.be.greaterThan(0);
+      });
+
+      it('Verify getImportUrlsByJobIdAndStatus', async () => {
+        const job = await createNewImportJob();
+        await createNewImportUrl(job);
+
+        const urlRows = await dataAccess
+          .getImportUrlsByJobIdAndStatus(job.getId(), ImportUrlStatus.PENDING);
+        expect(urlRows.length).to.be.greaterThan(0);
+      });
+
+      it('Verify updateImportUrl', async () => {
+        const job = await createNewImportJob();
+        const url = await createNewImportUrl(job);
+
+        const newUrl = { ...url };
+        newUrl.setStatus(ImportUrlStatus.COMPLETE);
+        newUrl.setReason('Just Because');
+        newUrl.setPath('/path/to/file');
+        newUrl.setFile('thefile.docx');
+
+        const updatedUrl = await dataAccess.updateImportUrl(newUrl);
+
+        expect(updatedUrl.getStatus()).to.be.equal(ImportUrlStatus.COMPLETE);
+        expect(updatedUrl.getReason()).to.be.equal('Just Because');
+        expect(updatedUrl.getPath()).to.be.equal('/path/to/file');
+        expect(updatedUrl.getFile()).to.be.equal('thefile.docx');
+      });
+    });
   });
 
   it('sorts configurations in descending order for getConfiguration (latest version)', async () => {

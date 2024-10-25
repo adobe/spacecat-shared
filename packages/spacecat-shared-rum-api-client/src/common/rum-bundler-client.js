@@ -50,6 +50,109 @@ function getUrlChunks(urls, chunkSize) {
     .map((_, index) => urls.slice(index * chunkSize, (index + 1) * chunkSize));
 }
 
+/* c8 ignore start */
+/*
+ * throw-away code for a single customer who customized the experimentation engine
+ * this code will be removed once they start using the default exp engine
+ *
+ * this function fetches experiment manifests, then merges variants data into controls data
+ *
+ * ie:
+ *
+ * if the customer runs for an experiment where variants are as following:
+ *   control: /
+ *   challenger-1: /a1/
+ *   challenger-2: /a2/
+ *
+ * then data for the `/a1/` and `/a2` are counted towards `/`'s data
+ */
+async function mergeBundlesWithSameId(bundles) {
+  if (!bundles[0]?.url?.includes('bamboohr.com')) return bundles;
+  const prodBaseUrl = 'https://www.bamboohr.com/experiments/';
+  const previewBaseUrl = 'https://main--bamboohr-website--bamboohr.hlx.page/experiments/archive/';
+  const manifestUrls = [
+    ...new Set(bundles.flatMap((bundle) => bundle.events
+      .filter((e) => e.checkpoint === 'experiment')
+      .map((e) => e.source))),
+  ];
+  const manifestUrlPromises = manifestUrls.map(async (experiment) => {
+    try {
+      const response = await fetch(`${prodBaseUrl}${experiment}/manifest.json`);
+      if (!response.ok) {
+        throw new Error('manifest request failed');
+      }
+      const data = await response.json();
+      return { url: `${prodBaseUrl}${experiment}/manifest.json`, data };
+    } catch {
+      try {
+        const previewUrlResponse = await fetch(`${previewBaseUrl}${experiment}/manifest.json`);
+        if (!previewUrlResponse.ok) {
+          throw new Error('manifest request failed');
+        }
+        const previewUrlData = await previewUrlResponse.json();
+        return { url: `${previewBaseUrl}${experiment}/manifest.json`, data: previewUrlData };
+      } catch {
+        return { url: `${previewBaseUrl}${experiment}/manifest.json`, data: null };
+      }
+    }
+  });
+  const experiments = await Promise.all(manifestUrlPromises);
+  let hasSeenPages = false; // required for multi-page experiments
+  const variants = (await Promise.all(experiments.map((e) => e.data)))
+    .filter((json) => json && Object.keys(json).length > 0)
+    .flatMap((json) => json.experiences?.data ?? [])
+    .filter((data) => {
+      if (data.Name === 'Pages') {
+        hasSeenPages = true;
+      } else if (['Percentage Split', 'Label', 'Blocks'].includes(data.Name)) {
+        // reset the flag when we see the next experiment
+        hasSeenPages = false;
+      }
+      return data.Name === 'Pages' || (hasSeenPages && data.Name === '');
+    });
+
+  const mapping = variants.reduce((acc, cur) => {
+    Object.entries(cur)
+      .filter(([k]) => !['Name', 'Control'].includes(k))
+      .forEach(([, v]) => {
+        acc[new URL(v).pathname] = new URL(cur.Control).pathname;
+      });
+    return acc;
+  }, {});
+
+  const variantPaths = Object.keys(mapping);
+
+  const getControlPath = (url) => {
+    const path = new URL(url).pathname;
+    if (variantPaths.includes(path)) return mapping[path];
+    return path;
+  };
+
+  const byIdAndPath = bundles.reduce((acc, cur) => {
+    const controlPath = getControlPath(cur.url);
+    const key = `${cur.id}-${controlPath}`;
+    if (!acc[key]) acc[key] = [];
+    if (variantPaths.includes(new URL(cur.url).pathname)) {
+      // eslint-disable-next-line no-param-reassign
+      cur.url = new URL(controlPath, cur.url).href;
+    }
+    acc[key].push(cur);
+    return acc;
+  }, {});
+
+  const merged = Object.entries(byIdAndPath).flatMap(([, v]) => {
+    let value = v;
+    if (v.length > 1) {
+      v[0].events.push(...v.slice(1).flatMap((bundle) => bundle.events));
+      value = [v[0]];
+    }
+    return value;
+  });
+
+  return Object.values(merged);
+}
+/* c8 ignore end */
+
 async function fetchBundles(opts = {}) {
   const {
     domain,
@@ -84,7 +187,7 @@ async function fetchBundles(opts = {}) {
     const bundles = await Promise.all(responses.map((response) => response.json()));
     result.push(...bundles.flatMap((b) => b.rumBundles.map(filterBundles(checkpoints))));
   }
-  return result;
+  return mergeBundlesWithSameId(result);
 }
 
 export {

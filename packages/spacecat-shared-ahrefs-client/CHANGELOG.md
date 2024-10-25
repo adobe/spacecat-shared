@@ -1,3 +1,80 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.5.6...@adobe/spacecat-shared-ahrefs-client-v1.5.7) (2024-10-21)
+
+
+### Bug Fixes
+
+* update deps ([#408](https://github.com/adobe/spacecat-shared/issues/408)) ([b1f8283](https://github.com/adobe/spacecat-shared/commit/b1f8283f658e22a69d69f4379de306cfd73133d1))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.5.5...@adobe/spacecat-shared-ahrefs-client-v1.5.6) (2024-10-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#402](https://github.com/adobe/spacecat-shared/issues/402)) ([9a5acba](https://github.com/adobe/spacecat-shared/commit/9a5acba2773b83ce26f4ac97e04d8ad24b00d8ce))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.5.4...@adobe/spacecat-shared-ahrefs-client-v1.5.5) (2024-09-22)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.0.6 ([#379](https://github.com/adobe/spacecat-shared/issues/379)) ([6e4abc8](https://github.com/adobe/spacecat-shared/commit/6e4abc8768c61712c2c02d32406fa32acc3cd3a3))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.5.3...@adobe/spacecat-shared-ahrefs-client-v1.5.4) (2024-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#374](https://github.com/adobe/spacecat-shared/issues/374)) ([426e61b](https://github.com/adobe/spacecat-shared/commit/426e61b2e77a955a33651245344724881b0f4f55))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.5.2...@adobe/spacecat-shared-ahrefs-client-v1.5.3) (2024-09-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#369](https://github.com/adobe/spacecat-shared/issues/369)) ([5412d7b](https://github.com/adobe/spacecat-shared/commit/5412d7be554b9940d43b39b18f2913146e866846))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.5.1...@adobe/spacecat-shared-ahrefs-client-v1.5.2) (2024-09-04)
+
+
+### Bug Fixes
+
+* **ahrefs-client:** broken backlinks filter adjustment: do not limit to is do follow and is content ([#357](https://github.com/adobe/spacecat-shared/issues/357)) ([b548336](https://github.com/adobe/spacecat-shared/commit/b54833615d480a567fc87e17009f6c5e87110179))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.5.0...@adobe/spacecat-shared-ahrefs-client-v1.5.1) (2024-08-24)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#345](https://github.com/adobe/spacecat-shared/issues/345)) ([ae2c7a6](https://github.com/adobe/spacecat-shared/commit/ae2c7a6104394a53d74f5c19465d6741751576ce))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.4.1...@adobe/spacecat-shared-ahrefs-client-v1.5.0) (2024-08-19)
+
+
+### Features
+
+* **ahrefs-client:** get limits and usage for subscription ([#334](https://github.com/adobe/spacecat-shared/issues/334)) ([e9ae2ab](https://github.com/adobe/spacecat-shared/commit/e9ae2ab495e3e9a36d79b31ba1da89e9aca05087))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.4.0...@adobe/spacecat-shared-ahrefs-client-v1.4.1) (2024-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#304](https://github.com/adobe/spacecat-shared/issues/304)) ([c6c56a7](https://github.com/adobe/spacecat-shared/commit/c6c56a72897acb60fb042215b708816ec16a5870))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.3.2...@adobe/spacecat-shared-ahrefs-client-v1.4.0) (2024-07-25)
+
+
+### Features
+
+* update broken backlinks filter for ahrefs ([#302](https://github.com/adobe/spacecat-shared/issues/302)) ([2dd383b](https://github.com/adobe/spacecat-shared/commit/2dd383b48ed8490be1fd385af946c0a1dfc84aca))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.3.1...@adobe/spacecat-shared-ahrefs-client-v1.3.2) (2024-07-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#284](https://github.com/adobe/spacecat-shared/issues/284)) ([f4fe169](https://github.com/adobe/spacecat-shared/commit/f4fe1699c432637f1217198ad7f4a1cde6deeb76))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.3.0...@adobe/spacecat-shared-ahrefs-client-v1.3.1) (2024-06-27)
 
 

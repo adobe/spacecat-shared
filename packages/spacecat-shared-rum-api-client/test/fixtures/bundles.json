@@ -6154,6 +6154,18 @@
           "checkpoint": "top",
           "target": "visible",
           "timeDelta": 705.5
+        },
+        {
+          "checkpoint": "paid",
+          "target": "ttclid",
+          "source": "tiktok",
+          "timeDelta": 1018
+        },
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.tiktok.com/",
+          "timeDelta": 1007
         }
       ]
     },
@@ -16503,6 +16515,12 @@
           "target": "https://www.aem.live/docs",
           "source": ".header #navmenu-0",
           "timeDelta": 6317.60009765625
+        },
+        {
+          "checkpoint": "click",
+          "target": "https://www.aem.live/docs",
+          "source": ".header #navmenu-0",
+          "timeDelta": 7613.60009765625
         }
       ]
     },
@@ -18065,8 +18083,30 @@
           "timeDelta": 1814
         }
       ]
+    },
+    {
+      "id": "58LOUV",
+      "host": "rum.hlx.page",
+      "time": "2024-07-13T06:00:00.098Z",
+      "timeSlot": "2024-07-13T06:00:00.000Z",
+      "url": "https://www.aem.live/new-exp-page",
+      "userAgent": "mobile:ios",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "experiment",
+          "target": "contr ... <<<Logpush: message truncated>>> ... d-martech",
+          "timeDelta": 98
+        },
+        {
+          "checkpoint": "load",
+          "timeDelta": 294
+        },
+        {
+          "checkpoint": "error",
+          "timeDelta": 521
+        }
+      ]
     }
-
-
   ]
 }

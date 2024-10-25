@@ -14,11 +14,21 @@
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
 import notfound from '../src/functions/404.js';
-import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import experiment from '../src/functions/experiment.js';
+import trafficAcquisition from '../src/functions/traffic-acquisition.js';
+import highInorganicHighBounce from '../src/functions/opportunities/high-inorganic-high-bounce-rate.js';
+import highOrganicLowCTR from '../src/functions/opportunities/high-organic-low-ctr.js';
+import variant from '../src/functions/variant.js';
+import bundles from './fixtures/bundles.json' assert { type: 'json' };
+import bundlesWithTraffic from './fixtures/bundles-with-traffic-source.json' assert { type: 'json' };
+import bundlesForVariant from './fixtures/bundles_for_variant.json' assert { type: 'json' };
 import expectedCwvResult from './fixtures/cwv.json' assert { type: 'json' };
 import expected404Result from './fixtures/notfound.json' assert { type: 'json' };
 import expectedExperimentsResult from './fixtures/experiments.json' assert { type: 'json' };
+import expectedTrafficSourcesResult from './fixtures/trafficSources.json' assert { type: 'json' };
+import expectedVariantResult from './fixtures/variant.json' assert { type: 'json' };
+import expectedHighInorganicHighBounceResult from './fixtures/high-inorganic-high-bounce.json' assert { type: 'json' };
+import expectedHighOrganicLowCTRResult from './fixtures/high-organic-low-ctr.json' assert { type: 'json' };
 
 describe('Query functions', () => {
   it('crunches cwv data', async () => {
@@ -34,5 +44,31 @@ describe('Query functions', () => {
   it('crunches experiment data', async () => {
     const experimentsResult = experiment.handler(bundles.rumBundles);
     expect(expectedExperimentsResult).to.eql(experimentsResult);
+  });
+
+  it('crunches variant data', async () => {
+    const variantResult = variant.handler(bundlesForVariant.rumBundles);
+    expect(expectedVariantResult).to.eql(variantResult);
+  });
+
+  it('crunches traffic acquisition', async () => {
+    const trafficSourcesResult = await trafficAcquisition.handler(bundles.rumBundles);
+    expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
+  });
+
+  it('crunches oppty/high-inorganic-high-bounce', async () => {
+    const highInorganicHighBounceResult = highInorganicHighBounce.handler(
+      bundlesWithTraffic.rumBundles,
+      { interval: 7 },
+    );
+    expect(expectedHighInorganicHighBounceResult).to.eql(highInorganicHighBounceResult);
+  });
+
+  it('crunches oppty/high-organic-low-ctr', async () => {
+    const highInorganicHighBounceResult = highOrganicLowCTR.handler(
+      bundlesWithTraffic.rumBundles,
+      { interval: 7 },
+    );
+    expect(expectedHighOrganicLowCTRResult).to.eql(highInorganicHighBounceResult);
   });
 });

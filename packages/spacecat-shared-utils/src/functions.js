@@ -63,7 +63,53 @@ function isNumber(value) {
  * @returns {boolean} True if the parameter is an object, false otherwise.
  */
 function isObject(value) {
-  return !isArray(value) && value !== null && typeof value === 'object';
+  return value !== null && typeof value === 'object' && !isArray(value);
+}
+
+/**
+ * Checks if the given value is an object and contains properties of its own.
+ * @param {*} value - The value to check.
+ * @return {boolean} True if the value is a non-empty object, false otherwise.
+ */
+function isNonEmptyObject(value) {
+  return isObject(value) && Object.keys(value).length > 0;
+}
+
+/**
+ * Deeply compares two objects or arrays for equality. Supports nested objects and arrays.
+ * Does not support circular references. Does not compare functions.
+ * @param {unknown} x - The first object or array to compare.
+ * @param {unknown} y - The second object or array to compare.
+ * @return {boolean} True if the objects or arrays are equal, false otherwise.
+ */
+function deepEqual(x, y) {
+  if (x === y) return true;
+
+  if (isArray(x) && isArray(y)) {
+    if (x.length !== y.length) return false;
+    for (let i = 0; i < x.length; i += 1) {
+      if (!deepEqual(x[i], y[i])) return false;
+    }
+    return true;
+  }
+
+  if (!isObject(x) || !isObject(y)) return false;
+
+  if (x.constructor !== y.constructor) return false;
+
+  if (x instanceof Date) return x.getTime() === y.getTime();
+  if (x instanceof RegExp) return x.toString() === y.toString();
+
+  const xKeys = Object.keys(x).filter((key) => typeof x[key] !== 'function');
+  const yKeys = Object.keys(y).filter((key) => typeof y[key] !== 'function');
+
+  if (xKeys.length !== yKeys.length) return false;
+
+  for (const key of xKeys) {
+    if (!Object.prototype.hasOwnProperty.call(y, key) || !deepEqual(x[key], y[key])) return false;
+  }
+
+  return true;
 }
 
 /**
@@ -134,7 +180,7 @@ function isValidUrl(urlString) {
   try {
     const url = new URL(urlString);
     return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -196,8 +242,10 @@ export {
   isIsoTimeOffsetsDate,
   isNumber,
   isObject,
+  isNonEmptyObject,
   isString,
   toBoolean,
   isValidUrl,
   dateAfterDays,
+  deepEqual,
 };

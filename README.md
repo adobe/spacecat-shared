@@ -6,6 +6,7 @@ Shared modules for Spacecat Services
 - `spacecat-shared-dynamodb` - DynamoDB client for basic access
 - `spacecat-shared-http-utils` - HTTP utility functions
 - `spacecat-shared-utils` - Utility functions
+- `spacecat-shared-rum-api-client` - Client for RUM Bundler API: [DOCS](https://github.com/adobe/spacecat-shared/blob/main/packages/spacecat-shared-rum-api-client/README.md)
 
 ## Installation
 ```bash

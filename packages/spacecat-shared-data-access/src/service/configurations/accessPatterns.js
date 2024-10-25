@@ -142,8 +142,7 @@ export const updateConfiguration = async (
   const newConfigurationData = { ...configurationData };
   const latestConfiguration = await getConfiguration(dynamoClient, config);
 
-  newConfigurationData.version = incrementVersion(latestConfiguration?.version);
-  newConfigurationData.PK = config.pkAllConfigurations;
+  newConfigurationData.version = incrementVersion(latestConfiguration?.getVersion());
 
   const newConfiguration = createConfiguration(newConfigurationData);
 

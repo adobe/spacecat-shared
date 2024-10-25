@@ -12,15 +12,9 @@
     },
     {
       "matchPackageNames": [
-        "chai"
-      ],
-      "allowedVersions": "<5.0.0"
-    },
-    {
-      "matchPackageNames": [
         "dynamo-db-local"
       ],
-      "allowedVersions": "<8.1.0"
+      "allowedVersions": "<10.0.0"
     },
     {
       "matchPackageNames": [

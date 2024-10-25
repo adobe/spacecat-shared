@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { Base } from './base.js';
 
@@ -43,6 +43,7 @@ const SiteCandidate = (data = {}) => {
   delete self.state.id; // no id property used in SiteCandidate modal
 
   self.getBaseURL = () => self.state.baseURL;
+  self.getHlxConfig = () => self.state.hlxConfig;
   self.getSiteId = () => self.state.siteId;
   self.getSource = () => self.state.source;
   self.getStatus = () => self.state.status;
@@ -50,6 +51,12 @@ const SiteCandidate = (data = {}) => {
 
   self.setSiteId = (siteId) => {
     self.state.siteId = siteId;
+    self.touch();
+    return self;
+  };
+
+  self.setHlxConfig = (hlxConfig) => {
+    self.state.hlxConfig = hlxConfig;
     self.touch();
     return self;
   };
@@ -86,6 +93,14 @@ export const createSiteCandidate = (data) => {
 
   if (!isValidUrl(newState.baseURL)) {
     throw new Error(`Base URL must be a valid URL: ${newState.baseURL}`);
+  }
+
+  if (newState.hlxConfig && !isObject(newState.hlxConfig)) {
+    throw new Error(`HLX Config must be an object: ${newState.hlxConfig}`);
+  }
+
+  if (!newState.hlxConfig) {
+    newState.hlxConfig = {};
   }
 
   if (!hasText(newState.updatedBy)) {

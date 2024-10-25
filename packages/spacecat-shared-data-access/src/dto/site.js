@@ -11,7 +11,6 @@
  */
 
 import { createSite } from '../models/site.js';
-import AuditConfig from '../models/site/audit-config.js';
 import { Config } from '../models/site/config.js';
 
 /**
@@ -28,13 +27,13 @@ export const SiteDto = {
     baseURL: site.getBaseURL(),
     deliveryType: site.getDeliveryType(),
     gitHubURL: site.getGitHubURL() || '',
+    hlxConfig: site.getHlxConfig(),
     organizationId: site.getOrganizationId() || '',
     isLive: site.isLive(),
     isLiveToggledAt: site.getIsLiveToggledAt(),
     createdAt: site.getCreatedAt(),
     updatedAt: site.getUpdatedAt(),
     GSI1PK: 'ALL_SITES',
-    auditConfig: AuditConfig.toDynamoItem(site.getAuditConfig()),
     config: Config.toDynamoItem(site.getConfig()),
   }),
 
@@ -49,12 +48,12 @@ export const SiteDto = {
       baseURL: dynamoItem.baseURL,
       deliveryType: dynamoItem.deliveryType,
       gitHubURL: dynamoItem.gitHubURL,
+      hlxConfig: dynamoItem.hlxConfig,
       organizationId: dynamoItem.organizationId,
       isLive: dynamoItem.isLive,
       isLiveToggledAt: dynamoItem.isLiveToggledAt,
       createdAt: dynamoItem.createdAt,
       updatedAt: dynamoItem.updatedAt,
-      auditConfig: dynamoItem.auditConfig,
       config: dynamoItem.config,
     };
 

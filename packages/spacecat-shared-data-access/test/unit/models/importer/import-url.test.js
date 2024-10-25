@@ -13,7 +13,11 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 
-import { createImportUrl, ImportUrlStatus } from '../../../../src/models/importer/import-url.js';
+import { ImportUrlStatus } from '../../../../src/index.js';
+import {
+  createImportUrl,
+  IMPORT_URL_EXPIRES_IN_DAYS,
+} from '../../../../src/models/importer/import-url.js';
 import { ImportUrlDto } from '../../../../src/dto/import-url.js';
 
 const validImportUrlData = {
@@ -27,7 +31,7 @@ const importUrlRedirectData = {
   id: '456',
   url: 'https://www.example.com/redirect',
   jobId: '456',
-  status: 'REDIRECT',
+  status: ImportUrlStatus.REDIRECT,
   reason: 'https://www.example.com/redirect/destination',
   path: '/test-data',
   file: '/test-data.docx',
@@ -42,7 +46,12 @@ describe('ImportUrl Model tests', () => {
     it('throws an error if status is invalid', () => {
       expect(() => createImportUrl({ ...validImportUrlData, status: 'invalid' })).to.throw('Invalid Import URL status: invalid');
     });
+
+    it('throws an error if jobId is not a valid string', () => {
+      expect(() => createImportUrl({ ...validImportUrlData, jobId: null })).to.throw('Invalid Job ID: null');
+    });
   });
+
   describe('Import URL Functionality Tests', () => {
     let importUrl;
 
@@ -51,8 +60,8 @@ describe('ImportUrl Model tests', () => {
     });
 
     it('updates the status of the import URL', () => {
-      importUrl.setStatus('COMPLETE');
-      expect(importUrl.getStatus()).to.equal('COMPLETE');
+      importUrl.setStatus(ImportUrlStatus.COMPLETE);
+      expect(importUrl.getStatus()).to.equal(ImportUrlStatus.COMPLETE);
     });
 
     it('returns the url attribute of the import URL', () => {
@@ -68,7 +77,7 @@ describe('ImportUrl Model tests', () => {
     });
 
     it('updates the status and reason for a url', () => {
-      importUrl.setStatus('REDIRECT');
+      importUrl.setStatus(ImportUrlStatus.REDIRECT);
       importUrl.setReason('https://www.example.com/redirect/destination');
       expect(importUrl.getStatus()).to.equal(ImportUrlStatus.REDIRECT);
       expect(importUrl.getReason()).to.equal('https://www.example.com/redirect/destination');
@@ -88,7 +97,7 @@ describe('ImportUrl Model tests', () => {
     });
 
     it('updates the file and path for a url', () => {
-      importUrl.setStatus('COMPLETE');
+      importUrl.setStatus(ImportUrlStatus.COMPLETE);
       importUrl.setPath('/index');
       importUrl.setFile('/index.docx');
 
@@ -101,11 +110,24 @@ describe('ImportUrl Model tests', () => {
   describe('Import URL DTO Tests', () => {
     it('should serialize to a Dynamo-compatible object', () => {
       const importUrlRedirect = createImportUrl(importUrlRedirectData);
-      expect(ImportUrlDto.toDynamoItem(importUrlRedirect)).to.deep.equal({
+
+      const expiresAtDate = importUrlRedirect.getExpiresAt();
+
+      // Check that expiresAtDate is IMPORT_URL_EXPIRES_IN_DAYS days from today
+      const expectedExpiresAtDate = new Date();
+      expectedExpiresAtDate.setDate(expectedExpiresAtDate.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
+
+      expect(expiresAtDate.toDateString()).to.equal(expectedExpiresAtDate.toDateString());
+
+      // expiresAt is dynamic, so now that we've checked it we'll remove it from the object
+      const importUrlDynamoItem = ImportUrlDto.toDynamoItem(importUrlRedirect);
+      delete importUrlDynamoItem.expiresAt;
+
+      expect(importUrlDynamoItem).to.deep.equal({
         id: '456',
         url: 'https://www.example.com/redirect',
         jobId: '456',
-        status: 'REDIRECT',
+        status: ImportUrlStatus.REDIRECT,
         reason: 'https://www.example.com/redirect/destination',
         path: '/test-data',
         file: '/test-data.docx',

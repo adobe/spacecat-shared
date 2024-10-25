@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { Request, RequestOptions, Response } from '@adobe/fetch';
+
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
 
@@ -29,6 +31,8 @@ export function isNumber(value: unknown): boolean;
 
 export function isObject(value: unknown): boolean;
 
+export function isNonEmptyObject(value: unknown): boolean;
+
 export function isString(value: unknown): boolean;
 
 export function toBoolean(value: unknown): boolean;
@@ -36,6 +40,8 @@ export function toBoolean(value: unknown): boolean;
 export function isValidUrl(urlString: string): boolean;
 
 export function dateAfterDays(days: number, dateString: string): Date;
+
+export function deepEqual(a: unknown, b: unknown): boolean;
 
 export function sqsWrapper(fn: (message: object, context: object) => Promise<Response>):
   (request: object, context: object) => Promise<Response>;
@@ -93,23 +99,6 @@ declare function composeBaseURL(domain: string): string;
 declare function composeAuditURL(url: string): Promise<string>;
 
 /**
- * Checks whether audits are disabled for a given site by inspecting the audit configurations
- * in the respective organization and site models.
- *
- * If the optional parameter `auditType` is NOT provided, only the root-level "auditsDisabled" flag
- * in the site and organization is checked.
- *
- * If the optional parameter `auditType` is provided, then the specific audit configuration for the
- * specified type is also checked.
- *
- * @param {object} site - The site object.
- * @param {object} organization - The organization object.
- * @param {string} [auditType] - The type of audit.
- * @returns {boolean} - True if the audit(s) are disabled, otherwise false.
- */
-declare function isAuditsDisabled(site: object, organization: object, auditType?: string): boolean
-
-/**
  * Resolves the name of the secret based on the function version.
  * @param {Object} opts - The options object, not used in this implementation.
  * @param {Object} ctx - The context object containing the function version.
@@ -137,3 +126,42 @@ declare function resolveCustomerSecretsName(baseURL: string, ctx: object): strin
  * @returns {Buffer} A Buffer containing the CSV formatted data, encoded in UTF-8.
  */
 declare function generateCSVFile(data: object[]): Buffer;
+
+/**
+ * Retrieves stored metrics from S3.
+ * @param config - Configuration object
+ * @param config.siteId - The site ID.
+ * @param config.source - The source of the metrics.
+ * @param config.metric - The metric name.
+ * @param context - Context object
+ * @param context.log - Logger
+ * @param context.s3 - S3 configuration
+ * @param context.s3.s3Client - S3 client
+ * @param context.s3.s3Bucket - S3 bucket name
+ * @returns {Promise<any|*[]>} - The stored metrics
+ */
+export function getStoredMetrics(config: object, context: object):
+    Promise<Array<object>>;
+
+/**
+ * Stores metrics in S3.
+ * @param content - The metrics to store
+ * @param config - Configuration object
+ * @param config.siteId - The site ID
+ * @param config.source - The source of the metrics
+ * @param config.metric - The metric name
+ * @param context - Context object
+ * @param context.log - Logger
+ * @param context.s3 - S3 configuration
+ * @param context.s3.s3Client - S3 client
+ * @param context.s3.s3Bucket - S3 bucket name
+ * @returns {Promise<string>} - The path where the metrics are stored
+ */
+export function storeMetrics(content: object, config: object, context: object): Promise<string>;
+
+export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
+    (request: object, context: object) => Promise<Response>;
+
+export function fetch(url: string|Request, options?: RequestOptions): Promise<Response>;
+
+export function tracingFetch(url: string|Request, options?: RequestOptions): Promise<Response>;

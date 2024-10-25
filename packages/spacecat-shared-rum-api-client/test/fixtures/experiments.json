@@ -6,27 +6,62 @@
         {
           "name": "challenger-1",
           "views": 1300,
+          "samples": 13,
           "click": {
-            ".hero": 100,
-            ".header #navmenu-0": 100,
-            ".roi-calculator .button": 100,
-            ".hero .button": 100
+            ".hero": {
+              "value": 100,
+              "samples": 1
+            },
+            "*": {
+              "value": 400,
+              "samples": 4
+            },
+            ".header #navmenu-0": {
+              "value": 100,
+              "samples": 1
+            },
+            ".roi-calculator .button": {
+              "value": 100,
+              "samples": 1
+            },
+            ".hero .button": {
+              "value": 100,
+              "samples": 1
+            }
           },
           "convert": {},
-          "formsubmit": {}
+          "formsubmit": {},
+          "interactionsCount": 400
         },
         {
           "name": "control",
           "views": 800,
+          "samples": 8,
           "click": {
-            ".hero .button": 100,
-            ".header .button": 200,
-            ".header #navmenu-0": 200
+            ".hero .button": {
+              "value": 100,
+              "samples": 1
+            },
+            "*": {
+              "value": 500,
+              "samples": 5
+            },
+            ".header .button": {
+              "value": 200,
+              "samples": 2
+            },
+            ".header #navmenu-0": {
+              "value": 200,
+              "samples": 2
+            }
           },
           "convert": {},
-          "formsubmit": {}
+          "formsubmit": {},
+          "interactionsCount": 500
         }
-      ]
+      ],
+      "inferredStartDate": "2024-05-26T03:00:02.380Z",
+      "inferredEndDate": "2024-05-31T07:00:00.190Z"
     }
   ],
   "https://www.aem.live/new-exp-page": [
@@ -36,11 +71,14 @@
         {
           "name": "https://www.aem.live/some-other-page",
           "views": 100,
+          "samples": 1,
           "click": {},
           "convert": {},
           "formsubmit": {}
         }
-      ]
+      ],
+      "inferredStartDate": "2024-05-07T06:00:00.001Z",
+      "inferredEndDate": "2024-05-07T06:00:00.001Z"
     }
   ]
 }

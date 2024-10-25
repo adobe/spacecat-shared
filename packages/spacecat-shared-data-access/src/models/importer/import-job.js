@@ -11,164 +11,241 @@
  */
 
 import {
-  hasText, isIsoDate, isValidUrl, isObject, isString, isNumber,
+  hasText, isIsoDate, isValidUrl, isObject, isString, isNumber, isInteger, isBoolean,
 } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
-
-export const ImportJobStatus = {
-  RUNNING: 'RUNNING',
-  COMPLETE: 'COMPLETE',
-  FAILED: 'FAILED',
-};
+import { ImportJobStatus, ImportOptions } from './import-constants.js';
 
 /**
  * Creates a new ImportJob object.
  *
- * @param {Object} importJobData - The data for the ImportJob object.
+ * @param {Object} data - The data for the ImportJob object.
  * @returns {ImportJob} The new ImportJob object.
  */
 const ImportJob = (data) => {
   const self = Base(data);
 
+  // generate get methods for all properties of our base object
   self.getBaseURL = () => self.state.baseURL;
-  self.getApiKey = () => self.state.apiKey;
+  self.getHashedApiKey = () => self.state.hashedApiKey;
   self.getOptions = () => self.state.options;
   self.getStartTime = () => self.state.startTime;
   self.getEndTime = () => self.state.endTime;
   self.getDuration = () => self.state.duration;
   self.getStatus = () => self.state.status;
+  self.getUrlCount = () => self.state.urlCount;
   self.getSuccessCount = () => self.state.successCount;
   self.getFailedCount = () => self.state.failedCount;
+  self.getRedirectCount = () => self.state.redirectCount;
   self.getImportQueueId = () => self.state.importQueueId;
+  self.getInitiatedBy = () => self.state.initiatedBy;
+  self.hasCustomHeaders = () => self.state.hasCustomHeaders || false;
+  self.hasCustomImportJs = () => self.state.hasCustomImportJs || false;
 
   /**
-     * Updates the end time of the ImportJob.
-     * @param {string} endTime - The new end time.
-     * @returns {ImportJob} The updated ImportJob object.
-     */
-  self.updateEndTime = (endTime) => {
-    if (!isIsoDate(endTime)) {
+   * Updates the state of the ImportJob.
+   * @param key - The key to update.
+   * @param value - The new value.
+   * @param validator - An optional validation function to use before updating the value.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  const updateState = (key, value, validator) => {
+    if (validator && typeof validator === 'function') {
+      validator(value);
+    }
+
+    self.state[key] = value;
+    self.touch();
+
+    return self;
+  };
+
+  /**
+   * Updates the end time of the ImportJob.
+   * @param {string} endTime - The new end time in JavaScript ISO date string in Zulu (UTC)
+   * timezone. eg. 2024-05-29T14:36:00.000Z.
+   */
+  self.updateEndTime = (endTime) => updateState('endTime', endTime, (value) => {
+    if (!isIsoDate(value)) {
       throw new Error(`Invalid end time during update: ${endTime}`);
     }
-
-    self.state.endTime = endTime;
-    self.touch();
-
-    return self;
-  };
+  });
 
   /**
-     * Updates the duration of the ImportJob.
-     * @param {number} duration - The new duration.
-     * @returns {ImportJob} The updated ImportJob object.
-     */
-  self.updateDuration = (duration) => {
-    if (!isNumber(duration)) {
-      throw new Error(`Invalid duration during update: ${duration}`);
+   * Updates the duration of the ImportJob.
+   * @param {number} duration - The new duration.
+   */
+  self.updateDuration = (duration) => updateState('duration', duration, (value) => {
+    if (!isNumber(value)) {
+      throw new Error(`Invalid duration during update: ${value}`);
     }
-
-    self.state.duration = duration;
-    self.touch();
-
-    return self;
-  };
+  });
 
   /**
-     * Updates the status of the ImportJob.
-     * @param {string} status - The new status.
-     * @returns {ImportJob} The updated ImportJob object.
-     */
-  self.updateStatus = (status) => {
-    if (!Object.values(ImportJobStatus).includes(status)) {
-      throw new Error(`Invalid Import Job status during update: ${status}`);
+   * Updates the status of the ImportJob.
+   * @param {string} status - The new status.
+   */
+  self.updateStatus = (status) => updateState('status', status, (value) => {
+    if (!Object.values(ImportJobStatus).includes(value)) {
+      throw new Error(`Invalid Import Job status during update: ${value}`);
     }
-
-    self.state.status = status;
-    self.touch();
-
-    return self;
-  };
+  });
 
   /**
-     * Updates the success count of the ImportJob.
-     * @param {number} successCount - The new success count.
-     * @returns {ImportJob} The updated ImportJob object.
-     */
-  self.updateSuccessCount = (successCount) => {
-    if (!isNumber(successCount)) {
-      throw new Error(`Invalid success count during update: ${successCount}`);
+   * Updates the Url count of the ImportJob
+   * @param {number} urlCount - The new url count.
+   */
+  self.updateUrlCount = (urlCount) => updateState('urlCount', urlCount, (value) => {
+    if (!isInteger(value)) {
+      throw new Error(`Invalid url count during update: ${value}`);
     }
-
-    self.state.successCount = successCount;
-    self.touch();
-
-    return self;
-  };
+  });
 
   /**
-     * Updates the failed count of the ImportJob.
-     * @param {number} failedCount - The new failed count.
-     * @returns {ImportJob} The updated ImportJob object.
-     */
-  self.updateFailedCount = (failedCount) => {
-    if (!isNumber(failedCount)) {
-      throw new Error(`Invalid failed count during update: ${failedCount}`);
+   * Updates the success count of the ImportJob.
+   * @param {number} successCount - The new success count.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  self.updateSuccessCount = (successCount) => updateState('successCount', successCount, (value) => {
+    if (!isInteger(value) || value < 0) {
+      throw new Error(`Invalid success count during update: ${value}`);
     }
-
-    self.state.failedCount = failedCount;
-    self.touch();
-
-    return self;
-  };
+  });
 
   /**
-     * Updates the import queue id of the ImportJob.
-     * @param {string} importQueueId - The new import queue id.
-     * @returns {ImportJob} The updated ImportJob object.
-     */
-  self.updateImportQueueId = (importQueueId) => {
-    if (!hasText(importQueueId)) {
-      throw new Error(`Invalid import queue id during update: ${importQueueId}`);
+   * Updates the failed count of the ImportJob.
+   * @param {number} failedCount - The new failed count.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  self.updateFailedCount = (failedCount) => updateState('failedCount', failedCount, (value) => {
+    if (!isInteger(value) || value < 0) {
+      throw new Error(`Invalid failed count during update: ${value}`);
     }
+  });
 
-    self.state.importQueueId = importQueueId;
-    self.touch();
+  /**
+   * Updates the redirect count of the ImportJob.
+   * @param {number} redirectCount - The new redirect count.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  self.updateRedirectCount = (redirectCount) => updateState('redirectCount', redirectCount, (value) => {
+    if (!isInteger(value) || value < 0) {
+      throw new Error(`Invalid redirect count during update: ${value}`);
+    }
+  });
 
-    return self;
-  };
+  /**
+   * Updates the import queue id of the ImportJob.
+   * @param {string} importQueueId - The new import queue id.
+   * @returns {ImportJob} The updated ImportJob object.
+   */
+  self.updateImportQueueId = (importQueueId) => updateState(
+    'importQueueId',
+    importQueueId,
+    (value) => {
+      if (!hasText(importQueueId)) {
+        throw new Error(`Invalid import queue id during update: ${value}`);
+      }
+    },
+  );
+
+  /**
+   * Update the hasCustomHeaders value to true if the ImportJob has custom headers, false otherwise.
+   * @param {boolean} hasCustomHeaders - The new value for hasCustomHeaders.
+   * @return {ImportJob} The updated ImportJob object.
+   */
+  self.updateHasCustomHeaders = (hasCustomHeaders) => updateState('hasCustomHeaders', hasCustomHeaders, (value) => {
+    if (!isBoolean(value)) {
+      throw new Error(`Invalid hasCustomHeaders value: ${value}`);
+    }
+  });
+
+  /**
+   * Update the hasCustomImportJs value to true if the ImportJob has custom import js, false
+   * otherwise.
+   * @param {boolean} hasCustomImportJs - The new value for hasCustomImportJs.
+   * @return {ImportJob} The updated ImportJob object.
+   */
+  self.updateHasCustomImportJs = (hasCustomImportJs) => updateState('hasCustomImportJs', hasCustomImportJs, (value) => {
+    if (!isBoolean(value)) {
+      throw new Error(`Invalid hasCustomImportJs value: ${value}`);
+    }
+  });
+
   return Object.freeze(self);
 };
 
 /**
  * Creates a new ImportJob object.
- * @param {Object} importJobData - The data for the ImportJob object.
+ * @param {Object} data - The data for the ImportJob object.
  * @returns {ImportJob} The new ImportJob object.
  */
 export const createImportJob = (data) => {
+  // Define a list of data type validators for each import option
+  const ImportOptionTypeValidator = {
+    [ImportOptions.ENABLE_JAVASCRIPT]: (value) => {
+      if (value !== true && value !== false) {
+        throw new Error(`Invalid value for ${ImportOptions.ENABLE_JAVASCRIPT}: ${value}`);
+      }
+    },
+    [ImportOptions.PAGE_LOAD_TIMEOUT]: (value) => {
+      if (!isInteger(value) || value < 0) {
+        throw new Error(`Invalid value for ${ImportOptions.PAGE_LOAD_TIMEOUT}: ${value}`);
+      }
+    },
+  };
+
   const newState = { ...data };
+
+  // set default values for the start time if one is not provided
+  if (!hasText(newState.startTime)) {
+    newState.startTime = new Date().toISOString();
+  }
 
   if (!isValidUrl(newState.baseURL)) {
     throw new Error(`Invalid base URL: ${newState.baseURL}`);
   }
 
-  if (!isString(newState.apiKey)) {
-    throw new Error(`Invalid API key: ${newState.apiKey}`);
+  if (!isString(newState.hashedApiKey)) {
+    throw new Error(`Invalid API key: ${newState.hashedApiKey}`);
   }
 
   if (hasText(newState.startTime) && !isIsoDate(newState.startTime)) {
     throw new Error('"StartTime" should be a valid ISO string');
   }
 
-  if (!hasText(newState.startTime)) {
-    newState.startTime = new Date().toISOString();
-  }
-
   if (!Object.values(ImportJobStatus).includes(newState.status)) {
     throw new Error(`Invalid Import Job status ${newState.status}`);
   }
 
-  if (!isObject(newState.options)) {
-    throw new Error(`Invalid options: ${newState.options}`);
+  if (newState.options) {
+    if (!isObject(newState.options)) {
+      throw new Error(`Invalid options: ${newState.options}`);
+    }
+
+    const invalidOptions = Object.keys(newState.options).filter(
+      (key) => !Object.values(ImportOptions)
+        .some((value) => value.toLowerCase() === key.toLowerCase()),
+    );
+
+    if (invalidOptions.length > 0) {
+      throw new Error(`Invalid options: ${invalidOptions}`);
+    }
+
+    // validate each option for it's expected data type
+    Object.keys(newState.options).forEach((key) => {
+      if (ImportOptionTypeValidator[key]) {
+        ImportOptionTypeValidator[key](data.options[key]);
+      }
+    });
+  }
+
+  if (newState.hasCustomImportJs && !isBoolean(newState.hasCustomImportJs)) {
+    throw new Error(`Invalid hasCustomImportJs value: ${newState.hasCustomImportJs}`);
+  }
+
+  if (newState.hasCustomHeaders && !isBoolean(newState.hasCustomHeaders)) {
+    throw new Error(`Invalid hasCustomHeaders value: ${newState.hasCustomHeaders}`);
   }
 
   return ImportJob(newState);

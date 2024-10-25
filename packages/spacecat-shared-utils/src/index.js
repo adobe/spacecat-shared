@@ -21,14 +21,15 @@ export {
   isIsoTimeOffsetsDate,
   isNumber,
   isObject,
+  isNonEmptyObject,
   isString,
   toBoolean,
   isValidUrl,
   dateAfterDays,
+  deepEqual,
 } from './functions.js';
 
 export {
-  isAuditsDisabled,
   resolveSecretsName,
   resolveCustomerSecretsName,
   generateCSVFile,
@@ -36,6 +37,8 @@ export {
 
 export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';
+
+export { logWrapper } from './log-wrapper.js';
 
 export {
   composeBaseURL,
@@ -46,3 +49,10 @@ export {
   stripTrailingSlash,
   stripWWW,
 } from './url-helpers.js';
+
+export { getStoredMetrics, storeMetrics } from './metrics-store.js';
+
+export { s3Wrapper } from './s3.js';
+
+export { fetch } from './adobe-fetch.js';
+export { tracingFetch } from './tracing-fetch.js';

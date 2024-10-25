@@ -98,7 +98,7 @@ export const getConfigurations = async (
   const sortedItems = dynamoItems.sort((a, b) => {
     const versionA = parseInt(a.version.substring(1), 10);
     const versionB = parseInt(b.version.substring(1), 10);
-    return versionA - versionB;
+    return versionA - versionB; // Ascending order
   });
 
   return sortedItems.map(ConfigurationDto.fromDynamoItem);

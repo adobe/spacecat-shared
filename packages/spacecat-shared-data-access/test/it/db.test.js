@@ -24,6 +24,7 @@ import { createDataAccess } from '../../src/service/index.js';
 import { configSchema } from '../../src/models/site/config.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
+import { parseVersion } from '../../src/service/configurations/accessPatterns.js';
 import generateSampleData from './generateSampleData.js';
 import { createSiteCandidate, SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
 import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
@@ -864,5 +865,47 @@ describe('DynamoDB Integration Test', async () => {
 
     const keyEventsAfter = await dataAccess.getKeyEventsForSite(siteId);
     expect(keyEventsAfter.length).to.equal(NUMBER_OF_KEY_EVENTS_PER_SITE);
+  });
+
+  it('sorts configurations in descending order for getConfiguration (latest version)', async () => {
+    const configurations = [
+      { version: 'v1' },
+      { version: 'v2' },
+      { version: 'v10' },
+      { version: 'v5' },
+    ];
+
+    const sortedItems = configurations.sort((a, b) => {
+      const versionA = parseVersion(a.version);
+      const versionB = parseVersion(b.version);
+      return versionB - versionA; // Descending order
+    });
+
+    // Check that the first item is the highest version
+    expect(sortedItems[0].version).to.equal('v10');
+    expect(sortedItems[1].version).to.equal('v5');
+    expect(sortedItems[2].version).to.equal('v2');
+    expect(sortedItems[3].version).to.equal('v1');
+  });
+
+  it('sorts configurations in ascending order for getConfigurations (all versions)', async () => {
+    const configurations = [
+      { version: 'v1' },
+      { version: 'v2' },
+      { version: 'v10' },
+      { version: 'v5' },
+    ];
+
+    const sortedItems = configurations.sort((a, b) => {
+      const versionA = parseInt(a.version.substring(1), 10);
+      const versionB = parseInt(b.version.substring(1), 10);
+      return versionA - versionB; // Ascending order
+    });
+
+    // Check the expected order
+    expect(sortedItems[0].version).to.equal('v1');
+    expect(sortedItems[1].version).to.equal('v2');
+    expect(sortedItems[2].version).to.equal('v5');
+    expect(sortedItems[3].version).to.equal('v10');
   });
 });

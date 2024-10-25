@@ -19,6 +19,32 @@ import { ConfigurationDto } from '../../dto/configuration.js';
 import { createConfiguration } from '../../models/configuration.js';
 
 /**
+ * Parses the version string and returns the version number as an integer.
+ * If the version string is not provided or invalid, it returns 0.
+ * The version string is expected to be in the format 'v<version-number>', for example 'v1'.
+ *
+ * @param {string} version - The version string to parse.
+ * @returns {number} The parsed version number.
+ */
+export function parseVersion(version) {
+  if (!hasText(version)) return 0;
+  return parseInt(version.substring(1), 10);
+}
+
+/**
+ * Increments the version string. If the input version is not provided or invalid, it returns 'v1'.
+ * The version string is expected to be in the format 'v<version-number>', for example 'v1'.
+ *
+ * @param {string} version - The current version string.
+ * @returns {string} The incremented version string.
+ */
+function incrementVersion(version) {
+  if (!hasText(version)) return 'v1';
+  const versionNumber = parseVersion(version);
+  return `v${versionNumber + 1}`;
+}
+
+/**
  * Retrieves configuration with latest version.
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
@@ -36,12 +62,18 @@ export const getConfiguration = async (
     ExpressionAttributeValues: {
       ':pk': config.pkAllConfigurations,
     },
-    Limit: 1,
-    ScanIndexForward: false, // Sorts ascending if true, descending if false
   });
 
   if (dynamoItems.length === 0) return null;
-  return ConfigurationDto.fromDynamoItem(dynamoItems[0]);
+
+  // Sort configurations by version number in descending order to get the latest version
+  const sortedItems = dynamoItems.sort((a, b) => {
+    const versionA = parseVersion(a.version);
+    const versionB = parseVersion(b.version);
+    return versionB - versionA; // Descending order
+  });
+
+  return ConfigurationDto.fromDynamoItem(sortedItems[0]);
 };
 
 /**
@@ -62,7 +94,14 @@ export const getConfigurations = async (
     },
   });
 
-  return dynamoItems.map(ConfigurationDto.fromDynamoItem);
+  // sort configurations by version number in ascending order
+  const sortedItems = dynamoItems.sort((a, b) => {
+    const versionA = parseInt(a.version.substring(1), 10);
+    const versionB = parseInt(b.version.substring(1), 10);
+    return versionA - versionB;
+  });
+
+  return sortedItems.map(ConfigurationDto.fromDynamoItem);
 };
 
 /**
@@ -86,13 +125,6 @@ export const getConfigurationByVersion = async (
 
   return isObject(dynamoItem) ? ConfigurationDto.fromDynamoItem(dynamoItem) : null;
 };
-
-function incrementVersion(version) {
-  if (!hasText(version)) return 'v1';
-
-  const versionNumber = parseInt(version.substring(1), 10);
-  return `v${versionNumber + 1}`;
-}
 
 /**
  * Updates the configuration. Updating the configuration will create a new version of the

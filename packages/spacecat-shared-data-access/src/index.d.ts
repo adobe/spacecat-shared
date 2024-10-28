@@ -396,7 +396,7 @@ export interface Configuration {
    * Retrieves the configuration version.
    * @returns {string} The configuration version.
    */
-  getVersion: () => string;
+  getVersion: () => number;
 
   /**
    * Retrieves the queues configuration.
@@ -855,7 +855,7 @@ export interface DataAccess {
   // configuration functions
   getConfiguration: () => Promise<Readonly<Configuration>>
   getConfigurations: () => Promise<Readonly<Configuration>[]>
-  getConfigurationByVersion: (version: string) => Promise<Readonly<Configuration>>
+  getConfigurationByVersion: (version: number) => Promise<Readonly<Configuration>>
   updateConfiguration: (configurationData: object) => Promise<Readonly<Configuration>>
 
   // key events functions

@@ -20,6 +20,7 @@ import Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { v4 as uuidv4 } from 'uuid';
+import AWSXRay from 'aws-xray-sdk';
 import { sleep } from '../unit/util.js';
 import { createDataAccess } from '../../src/service/index.js';
 import { configSchema } from '../../src/models/site/config.js';
@@ -156,6 +157,9 @@ describe('DynamoDB Integration Test', async () => {
     });
 
     await sleep(10000); // give db time to start up
+
+    AWSXRay.captureFunc('test', () => {
+    });
 
     try {
       await generateSampleData(

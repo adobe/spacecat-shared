@@ -298,7 +298,7 @@ export default async function generateSampleData(
       imports: 'sqs://.../spacecat-services-import-jobs',
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
-    version: 'v2',
+    version: 2,
     PK: config.pkAllConfigurations,
   },
   {
@@ -318,7 +318,7 @@ export default async function generateSampleData(
       audits: 'sqs://.../spacecat-services-audit-jobs',
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
-    version: 'v1',
+    version: 1,
     PK: config.pkAllConfigurations,
   }];
 

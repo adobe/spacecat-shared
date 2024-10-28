@@ -142,7 +142,7 @@ const Configuration = (data = {}) => {
 
 export const checkConfiguration = (configuration) => {
   const schema = Joi.object({
-    version: Joi.string().required(),
+    version: Joi.number().required(),
     queues: Joi.object().required(),
     handlers: Joi.object().pattern(Joi.string(), Joi.object(
       {

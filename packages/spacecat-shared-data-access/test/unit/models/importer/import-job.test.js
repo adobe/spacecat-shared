@@ -143,6 +143,11 @@ describe('ImportJob Model tests', () => {
       expect(importJob.getStatus()).to.equal(ImportJobStatus.COMPLETE);
     });
 
+    it('updates status of the import job to STOPPED', () => {
+      importJob.updateStatus(ImportJobStatus.STOPPED);
+      expect(importJob.getStatus()).to.equal(ImportJobStatus.STOPPED);
+    });
+
     it('updates end time of import job', () => {
       const newEndTime = '2024-05-29T14:36:00.000Z';
       importJob.updateEndTime(newEndTime);

@@ -15,6 +15,7 @@ export declare const ImportJobStatus: {
   readonly RUNNING: 'RUNNING';
   readonly COMPLETE: 'COMPLETE';
   readonly FAILED: 'FAILED';
+  readonly STOPPED: 'STOPPED';
 };
 
 // packages/spacecat-shared-data-access/src/models/importer/import-constants.js
@@ -890,7 +891,7 @@ interface DataAccessConfig {
   indexNameAllOrganizationsByImsOrgId: string,
   indexNameAllImportJobsByStatus: string,
   indexNameAllImportJobsByDateRange: string,
-  indexNameAllImportUrlsByJobIdAndStatus: string,
+  indexNameImportUrlsByJobIdAndStatus: string,
   indexNameApiKeyByHashedApiKey: string,
   pkAllSites: string;
   pkAllLatestAudits: string;

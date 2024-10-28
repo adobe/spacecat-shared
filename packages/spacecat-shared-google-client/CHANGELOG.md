@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-google-client-v1.2.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.15...@adobe/spacecat-shared-google-client-v1.2.16) (2024-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#413](https://github.com/adobe/spacecat-shared/issues/413)) ([ee2c715](https://github.com/adobe/spacecat-shared/commit/ee2c715e08034bea8fb88b4f7166d40b18e107c4))
+
+# [@adobe/spacecat-shared-google-client-v1.2.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.14...@adobe/spacecat-shared-google-client-v1.2.15) (2024-10-21)
+
+
+### Bug Fixes
+
+* update deps ([#408](https://github.com/adobe/spacecat-shared/issues/408)) ([b1f8283](https://github.com/adobe/spacecat-shared/commit/b1f8283f658e22a69d69f4379de306cfd73133d1))
+
+# [@adobe/spacecat-shared-google-client-v1.2.14](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.13...@adobe/spacecat-shared-google-client-v1.2.14) (2024-10-21)
+
+
+### Bug Fixes
+
+* add tracing support for v3 aws clients ([#406](https://github.com/adobe/spacecat-shared/issues/406)) ([b83ae6e](https://github.com/adobe/spacecat-shared/commit/b83ae6e6dce155358b22558c37464a9002d33fc8))
+
+# [@adobe/spacecat-shared-google-client-v1.2.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.12...@adobe/spacecat-shared-google-client-v1.2.13) (2024-10-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#405](https://github.com/adobe/spacecat-shared/issues/405)) ([11072b4](https://github.com/adobe/spacecat-shared/commit/11072b4289db7e18328ed8faff4651fb95a1370d))
+
+# [@adobe/spacecat-shared-google-client-v1.2.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.11...@adobe/spacecat-shared-google-client-v1.2.12) (2024-10-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#402](https://github.com/adobe/spacecat-shared/issues/402)) ([9a5acba](https://github.com/adobe/spacecat-shared/commit/9a5acba2773b83ce26f4ac97e04d8ad24b00d8ce))
+
 # [@adobe/spacecat-shared-google-client-v1.2.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.10...@adobe/spacecat-shared-google-client-v1.2.11) (2024-10-08)
 
 

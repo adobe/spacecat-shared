@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-utils-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.21.0...@adobe/spacecat-shared-utils-v1.21.1) (2024-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#413](https://github.com/adobe/spacecat-shared/issues/413)) ([ee2c715](https://github.com/adobe/spacecat-shared/commit/ee2c715e08034bea8fb88b4f7166d40b18e107c4))
+
+# [@adobe/spacecat-shared-utils-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.8...@adobe/spacecat-shared-utils-v1.21.0) (2024-10-23)
+
+
+### Features
+
+* tracing fetch ([#409](https://github.com/adobe/spacecat-shared/issues/409)) ([6579a26](https://github.com/adobe/spacecat-shared/commit/6579a26d917db0bb8dc3baa2e19a0dfee8db5fc8))
+
+# [@adobe/spacecat-shared-utils-v1.20.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.7...@adobe/spacecat-shared-utils-v1.20.8) (2024-10-21)
+
+
+### Bug Fixes
+
+* add tracing support for v3 aws clients ([#406](https://github.com/adobe/spacecat-shared/issues/406)) ([b83ae6e](https://github.com/adobe/spacecat-shared/commit/b83ae6e6dce155358b22558c37464a9002d33fc8))
+
+# [@adobe/spacecat-shared-utils-v1.20.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.6...@adobe/spacecat-shared-utils-v1.20.7) (2024-10-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#405](https://github.com/adobe/spacecat-shared/issues/405)) ([11072b4](https://github.com/adobe/spacecat-shared/commit/11072b4289db7e18328ed8faff4651fb95a1370d))
+
+# [@adobe/spacecat-shared-utils-v1.20.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.5...@adobe/spacecat-shared-utils-v1.20.6) (2024-10-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#402](https://github.com/adobe/spacecat-shared/issues/402)) ([9a5acba](https://github.com/adobe/spacecat-shared/commit/9a5acba2773b83ce26f4ac97e04d8ad24b00d8ce))
+
 # [@adobe/spacecat-shared-utils-v1.20.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.4...@adobe/spacecat-shared-utils-v1.20.5) (2024-10-05)
 
 

@@ -39,10 +39,9 @@ describe('Import Job Tests', () => {
         getItem: sinon.stub().resolves(),
         query: sinon.stub().resolves(null),
         putItem: sinon.stub().resolves(),
+        removeItem: sinon.stub().resolves(),
       };
-      mockLog = {
-        log: console,
-      };
+      mockLog = console;
       exportedFunctions = importJobFunctions(
         mockDynamoClient,
         TEST_DA_CONFIG,
@@ -149,6 +148,39 @@ describe('Import Job Tests', () => {
         const importJob = createImportJob(mockImportJob);
         const result = exportedFunctions.updateImportJob(importJob);
         expect(result).to.be.rejectedWith('Import Job with id:test-id does not exist');
+      });
+    });
+
+    describe('removeImportJob', () => {
+      it('should remove an existing ImportJob with no URLs', async () => {
+        const importJob = createImportJob(mockImportJob);
+        await exportedFunctions.removeImportJob(importJob);
+        expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
+      });
+
+      it('should remove an existing ImportJob with a couple of URLs', async () => {
+        mockDynamoClient.query.resolves([
+          {
+            id: 'test-url-1', url: 'https://www.example.com/resource-a', jobId: 'test-id', status: 'RUNNING',
+          },
+          {
+            id: 'test-url-2', url: 'https://www.example.com/resource-b', jobId: 'test-id', status: 'RUNNING',
+          },
+        ]);
+        const importJob = createImportJob(mockImportJob);
+        await exportedFunctions.removeImportJob(importJob);
+        // Note `calledThrice` — remove should be called on both URLs, then the import job
+        expect(mockDynamoClient.removeItem.calledThrice).to.be.true;
+        // Check the id's passed to removeItem
+        expect(mockDynamoClient.removeItem.getCall(0).args[1].id).to.equal('test-url-1');
+        expect(mockDynamoClient.removeItem.getCall(1).args[1].id).to.equal('test-url-2');
+        expect(mockDynamoClient.removeItem.getCall(2).args[1].id).to.equal('test-id');
+      });
+
+      it('should handle a Dynamo failure', async () => {
+        mockDynamoClient.removeItem = sinon.stub().rejects(new Error('Dynamo Error'));
+        const importJob = createImportJob(mockImportJob);
+        await expect(exportedFunctions.removeImportJob(importJob)).to.be.rejectedWith('Dynamo Error');
       });
     });
   });

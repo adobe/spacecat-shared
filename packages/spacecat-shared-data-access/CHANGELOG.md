@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-data-access-v1.49.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.0...@adobe/spacecat-shared-data-access-v1.49.1) (2024-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#413](https://github.com/adobe/spacecat-shared/issues/413)) ([ee2c715](https://github.com/adobe/spacecat-shared/commit/ee2c715e08034bea8fb88b4f7166d40b18e107c4))
+
+# [@adobe/spacecat-shared-data-access-v1.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.48.3...@adobe/spacecat-shared-data-access-v1.49.0) (2024-10-23)
+
+
+### Features
+
+* Support cancelling / stopping a running job ([#410](https://github.com/adobe/spacecat-shared/issues/410)) ([68fdee4](https://github.com/adobe/spacecat-shared/commit/68fdee4db65fe87c75b925eda804ac8cb97c02af))
+
+# [@adobe/spacecat-shared-data-access-v1.48.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.48.2...@adobe/spacecat-shared-data-access-v1.48.3) (2024-10-21)
+
+
+### Bug Fixes
+
+* update deps ([#408](https://github.com/adobe/spacecat-shared/issues/408)) ([b1f8283](https://github.com/adobe/spacecat-shared/commit/b1f8283f658e22a69d69f4379de306cfd73133d1))
+
+# [@adobe/spacecat-shared-data-access-v1.48.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.48.1...@adobe/spacecat-shared-data-access-v1.48.2) (2024-10-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#405](https://github.com/adobe/spacecat-shared/issues/405)) ([11072b4](https://github.com/adobe/spacecat-shared/commit/11072b4289db7e18328ed8faff4651fb95a1370d))
+
+# [@adobe/spacecat-shared-data-access-v1.48.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.48.0...@adobe/spacecat-shared-data-access-v1.48.1) (2024-10-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#402](https://github.com/adobe/spacecat-shared/issues/402)) ([9a5acba](https://github.com/adobe/spacecat-shared/commit/9a5acba2773b83ce26f4ac97e04d8ad24b00d8ce))
+
+# [@adobe/spacecat-shared-data-access-v1.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.47.1...@adobe/spacecat-shared-data-access-v1.48.0) (2024-10-11)
+
+
+### Features
+
+* Support import job deletion ([#400](https://github.com/adobe/spacecat-shared/issues/400)) ([d5a9df6](https://github.com/adobe/spacecat-shared/commit/d5a9df68f103b34adab87dfc78cc5bca7aa99ebc))
+
 # [@adobe/spacecat-shared-data-access-v1.47.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.47.0...@adobe/spacecat-shared-data-access-v1.47.1) (2024-10-07)
 
 

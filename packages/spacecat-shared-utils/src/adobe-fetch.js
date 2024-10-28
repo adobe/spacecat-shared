@@ -9,32 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import { context as h2, h1 } from '@adobe/fetch';
 
-/**
- * Supported Import Options.
- */
-export const ImportOptions = {
-  ENABLE_JAVASCRIPT: 'enableJavascript',
-  PAGE_LOAD_TIMEOUT: 'pageLoadTimeout',
-};
-
-/**
- * Import Job Status types.
- * Any changes to this object needs to be reflected in the index.d.ts file as well.
- */
-export const ImportJobStatus = {
-  RUNNING: 'RUNNING',
-  COMPLETE: 'COMPLETE',
-  FAILED: 'FAILED',
-  STOPPED: 'STOPPED',
-};
-
-/**
- * ImportURL Status types.
- * Any changes to this object needs to be reflected in the index.d.ts file as well.
- */
-export const ImportUrlStatus = {
-  PENDING: 'PENDING',
-  REDIRECT: 'REDIRECT',
-  ...ImportJobStatus,
-};
+export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1 ? h1() : h2();

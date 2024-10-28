@@ -158,7 +158,8 @@ describe('DynamoDB Integration Test', async () => {
 
     await sleep(10000); // give db time to start up
 
-    AWSXRay.captureFunc('test', () => {
+    AWSXRay.captureFunc('test', (subsegment) => {
+      subsegment.close();
     });
 
     try {

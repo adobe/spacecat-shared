@@ -64,7 +64,7 @@ const validData = {
     imports: 'sqs://.../spacecat-services-import-jobs',
     reports: 'sqs://.../spacecat-services-report-jobs',
   },
-  version: 'v1',
+  version: 1,
   slackRoles: {
     scrape: [
       'WSVT1K36Z',
@@ -106,7 +106,7 @@ describe('Configuration Model Tests', () => {
       disabled: { sites: ['site2'], orgs: ['org2'] },
       enabledByDefault: false,
     };
-    const configuration = createConfiguration({ version: '1.1', queues: {}, jobs: [] });
+    const configuration = createConfiguration({ version: 2, queues: {}, jobs: [] });
     configuration.addHandler('new-handler', handlerData);// Line 59
     const updatedHandler = configuration.getHandler('new-handler');
     expect(updatedHandler).to.deep.equal(handlerData);

@@ -555,7 +555,7 @@
         },
         "SortKey": {
           "AttributeName": "version",
-          "AttributeType": "S"
+          "AttributeType": "N"
         }
       },
       "NonKeyAttributes": [

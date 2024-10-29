@@ -394,7 +394,7 @@ export interface Organization {
 export interface Configuration {
   /**
    * Retrieves the configuration version.
-   * @returns {string} The configuration version.
+   * @returns {number} The configuration version.
    */
   getVersion: () => number;
 

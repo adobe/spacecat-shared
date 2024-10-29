@@ -11,7 +11,7 @@
  */
 
 import {
-  isNumber,
+  isInteger,
   isObject,
 } from '@adobe/spacecat-shared-utils';
 
@@ -88,7 +88,7 @@ export const getConfigurationByVersion = async (
 };
 
 function incrementVersion(version) {
-  if (!isNumber(version)) return 1;
+  if (!isInteger(version)) return 1;
 
   const versionNumber = parseInt(version, 10);
   return versionNumber + 1;

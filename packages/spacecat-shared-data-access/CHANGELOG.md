@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.49.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.1...@adobe/spacecat-shared-data-access-v1.49.2) (2024-10-29)
+
+
+### Bug Fixes
+
+* configuration version should have numeric type ([e9b9dfc](https://github.com/adobe/spacecat-shared/commit/e9b9dfc6e35f9c1c383ec3941834b18a3179a237))
+
 # [@adobe/spacecat-shared-data-access-v1.49.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.0...@adobe/spacecat-shared-data-access-v1.49.1) (2024-10-26)
 
 

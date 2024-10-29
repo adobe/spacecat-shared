@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.49.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.2...@adobe/spacecat-shared-data-access-v1.49.3) (2024-10-29)
+
+
+### Bug Fixes
+
+* **deps:** update dependency uuid to v11 ([#416](https://github.com/adobe/spacecat-shared/issues/416)) ([35c9f4a](https://github.com/adobe/spacecat-shared/commit/35c9f4ab24e12800e3227f59533fc8c06e71a705))
+
 # [@adobe/spacecat-shared-data-access-v1.49.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.1...@adobe/spacecat-shared-data-access-v1.49.2) (2024-10-29)
 
 

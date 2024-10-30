@@ -1,0 +1,152 @@
+[
+  {
+    "url": "https://business.adobe.com/request-consultation/experience-cloud.html",
+    "formViews": 1800,
+    "formSubmits": 0,
+    "formSubmitByUserAgent": {
+
+    },
+    "errors": 0,
+    "formSubmitButtonClicks": 100,
+    "isFormViewPresent": false,
+    "isFormSubmitPresent": false,
+    "pageviews": 1800,
+    "pageviewsByUserAgent": {
+      "desktop:mac": 200,
+      "desktop:linux": 1600
+    }
+  },
+  {
+    "url": "https://business.adobe.com/",
+    "formViews": 3100,
+    "formSubmits": 0,
+    "formSubmitByUserAgent": {
+
+    },
+    "errors": 200,
+    "formSubmitButtonClicks": 100,
+    "isFormViewPresent": false,
+    "isFormSubmitPresent": false,
+    "pageviews": 3100,
+    "pageviewsByUserAgent": {
+      "desktop:mac": 800,
+      "desktop:windows": 1900,
+      "mobile:ios": 100,
+      "mobile:android": 300
+    }
+  },
+  {
+    "url": "https://business.adobe.com/resources/demo/adobe-learning-manager-lms.html",
+    "formViews": 700,
+    "formSubmits": 0,
+    "formSubmitByUserAgent": {
+
+    },
+    "errors": 0,
+    "formSubmitButtonClicks": 100,
+    "isFormViewPresent": false,
+    "isFormSubmitPresent": false,
+    "pageviews": 700,
+    "pageviewsByUserAgent": {
+      "mobile:ios": 100,
+      "mobile:android": 200,
+      "desktop:windows": 400
+    }
+  },
+  {
+    "url": "https://business.adobe.com/jp/resources/guides/leading-generative-ai-deployment-for-marketing.html",
+    "formViews": 200,
+    "formSubmits": 0,
+    "formSubmitByUserAgent": {
+
+    },
+    "errors": 0,
+    "formSubmitButtonClicks": 200,
+    "isFormViewPresent": false,
+    "isFormSubmitPresent": false,
+    "pageviews": 200,
+    "pageviewsByUserAgent": {
+      "desktop:windows": 200
+    }
+  },
+  {
+    "url": "https://business.adobe.com/uk/products/magento/magento-commerce/sem.html",
+    "formViews": 100,
+    "formSubmits": 0,
+    "formSubmitByUserAgent": {
+
+    },
+    "errors": 0,
+    "formSubmitButtonClicks": 100,
+    "isFormViewPresent": false,
+    "isFormSubmitPresent": false,
+    "pageviews": 100,
+    "pageviewsByUserAgent": {
+      "desktop:windows": 100
+    }
+  },
+  {
+    "url": "https://business.adobe.com/jp/resources/digital-trends-apj-report.html",
+    "formViews": 100,
+    "formSubmits": 0,
+    "formSubmitByUserAgent": {
+
+    },
+    "errors": 0,
+    "formSubmitButtonClicks": 100,
+    "isFormViewPresent": false,
+    "isFormSubmitPresent": false,
+    "pageviews": 100,
+    "pageviewsByUserAgent": {
+      "desktop:windows": 100
+    }
+  },
+  {
+    "url": "https://business.adobe.com/products/workfront/get-demo.html",
+    "formViews": 100,
+    "formSubmits": 0,
+    "formSubmitByUserAgent": {
+
+    },
+    "errors": 0,
+    "formSubmitButtonClicks": 100,
+    "isFormViewPresent": false,
+    "isFormSubmitPresent": false,
+    "pageviews": 100,
+    "pageviewsByUserAgent": {
+      "desktop:mac": 100
+    }
+  },
+  {
+    "url": "https://business.adobe.com/jp/resources/reports/retail-digital-trends.html",
+    "formViews": 100,
+    "formSubmits": 0,
+    "formSubmitByUserAgent": {
+
+    },
+    "errors": 0,
+    "formSubmitButtonClicks": 100,
+    "isFormViewPresent": false,
+    "isFormSubmitPresent": false,
+    "pageviews": 100,
+    "pageviewsByUserAgent": {
+      "desktop:windows": 100
+    }
+  },
+  {
+    "url": "https://business.adobe.com/resources/reports/forrester-tei-adobe-content-supply-chain.html",
+    "formViews": 100,
+    "formSubmits": 100,
+    "formSubmitByUserAgent": {
+      "desktop:mac": 100
+    },
+    "errors": 0,
+    "formSubmitButtonClicks": 0,
+    "isFormViewPresent": false,
+    "isFormSubmitPresent": true,
+    "pageviews": 100,
+    "pageviewsByUserAgent": {
+      "desktop:mac": 100
+    }
+  }
+]

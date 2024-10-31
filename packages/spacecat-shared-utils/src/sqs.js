@@ -32,7 +32,7 @@ class SQS {
    * @param {string} messageGroupId - (Optional) The message group ID for FIFO queues.
    * @return {Promise<void>}
    */
-  async sendMessage(queueUrl, message, messageGroupId) {
+  async sendMessage(queueUrl, message, messageGroupId = undefined) {
     const body = {
       ...message,
       timestamp: new Date().toISOString(),

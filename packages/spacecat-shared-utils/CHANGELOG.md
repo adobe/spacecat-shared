@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.21.1...@adobe/spacecat-shared-utils-v1.22.0) (2024-10-31)
+
+
+### Features
+
+* support FIFO queues with the SQS sendMessage helper ([#417](https://github.com/adobe/spacecat-shared/issues/417)) ([f9df606](https://github.com/adobe/spacecat-shared/commit/f9df606d62b9e23c89b9944f7042b4804cef0599))
+
 # [@adobe/spacecat-shared-utils-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.21.0...@adobe/spacecat-shared-utils-v1.21.1) (2024-10-26)
 
 

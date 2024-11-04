@@ -76,7 +76,7 @@ describe('FirefallClient', () => {
     });
   });
 
-  describe('fetchCapabilityExecution', function () {
+  describe('fetchCapabilityExecution', () => {
     this.timeout(3000);
     let client;
 
@@ -177,7 +177,7 @@ describe('FirefallClient', () => {
     });
   });
 
-  describe('fetchChatCompletion', function () {
+  describe('fetchChatCompletion', () => {
     const chatPath = '/v2/chat/completions';
     const chatResponse = {
       choices: [
@@ -232,11 +232,18 @@ describe('FirefallClient', () => {
         .reply(200, chatResponseDup);
       const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
 
+      mockLog.expects('warn').once().withArgs('Image URLs were provided but capability (gpt4_32k_completions_capability) may not handle vision prompts. Continuing...');
       await expect(client.fetchChatCompletion('Test prompt', { imageUrls: [imageUrl] }))
         .to.be.rejectedWith('Invalid response format.');
+      mockLog.verify();
     });
 
-    it('should handle an missing message', async () => {
+    it('should handle a missing response message', async () => {
+      // Run this with a different capability.
+      mockContext.env.FIREFALL_API_CAPABILITY_NAME = 'gpt-4-vision';
+      const clientCapacity = FirefallClient.createFrom(mockContext);
+      const logSpy = sinon.spy(mockContext.log, 'warn');
+
       const chatResponseDup = JSON.parse(JSON.stringify(chatResponse));
       delete chatResponseDup.choices[0].message;
       nock(mockContext.env.FIREFALL_API_ENDPOINT)
@@ -244,11 +251,17 @@ describe('FirefallClient', () => {
         .reply(200, chatResponseDup);
       const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
 
-      await expect(client.fetchChatCompletion('Test prompt', { imageUrls: [imageUrl] }))
+      await expect(clientCapacity.fetchChatCompletion(
+        'Test prompt',
+        { imageUrls: [imageUrl] },
+      ))
         .to.be.rejectedWith('Invalid response format.');
+
+      // Modal (capacity) handles vision prompts, so no warning should be logged.
+      expect(logSpy.callCount).to.equal(0);
     });
 
-    it('should handle an missing content', async () => {
+    it('should handle a missing response content', async () => {
       const chatResponseDup = JSON.parse(JSON.stringify(chatResponse));
       delete chatResponseDup.choices[0].message.content;
       nock(mockContext.env.FIREFALL_API_ENDPOINT)

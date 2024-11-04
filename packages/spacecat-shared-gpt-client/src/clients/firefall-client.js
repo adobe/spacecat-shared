@@ -204,6 +204,10 @@ export default class FirefallClient {
         if (!Array.isArray(options?.imageUrls)) {
           throw new Error('imageUrls must be an array.');
         }
+        // Warn if model might not handle images.
+        if (!this.config.capabilityName.includes('vision') && this.log?.warn) {
+          this.log.warn(`Image URLs were provided but capability (${this.config.capabilityName}) may not handle vision prompts. Continuing...`);
+        }
         options.imageUrls.forEach((imageUrl) => {
           userRole.content.push({
             type: 'image_url',

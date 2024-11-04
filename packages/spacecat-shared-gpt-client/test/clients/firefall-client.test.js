@@ -76,7 +76,7 @@ describe('FirefallClient', () => {
     });
   });
 
-  describe('fetch', function () {
+  describe('fetchCapabilityExecution', function () {
     this.timeout(3000);
     let client;
 
@@ -112,7 +112,7 @@ describe('FirefallClient', () => {
         .reply(400);
 
       mockLog.expects('error').once();
-      await expect(client.fetch('Test prompt')).to.be.rejected;
+      await expect(client.fetchCapabilityExecution('Test prompt')).to.be.rejected;
       mockLog.verify();
     });
 
@@ -127,7 +127,7 @@ describe('FirefallClient', () => {
         .reply(400);
 
       mockLog.expects('error').once();
-      await expect(client.fetch('Test prompt')).to.be.rejected;
+      await expect(client.fetchCapabilityExecution('Test prompt')).to.be.rejected;
       mockLog.verify();
     });
 
@@ -173,7 +173,103 @@ describe('FirefallClient', () => {
         .get(`/v2/capability_execution/job/${mockJobId}`)
         .reply(200, { status: 'SUCCEEDED', output: { capability_response: invalidResponse } });
 
-      await expect(client.fetch('Test prompt')).to.be.rejectedWith('Invalid response format.');
+      await expect(client.fetchCapabilityExecution('Test prompt')).to.be.rejectedWith('Invalid response format.');
+    });
+  });
+
+  describe('fetchChatCompletion', function () {
+    const chatPath = '/v2/chat/completions';
+    const chatResponse = {
+      choices: [
+        {
+          finish_reason: 'stop',
+          index: 0,
+          message: {
+            content: 'Test response',
+            role: 'assistant',
+          },
+        },
+      ],
+      model: 'hello',
+    };
+    this.timeout(3000);
+    let client;
+
+    beforeEach(() => {
+      client = FirefallClient.createFrom(mockContext);
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+      sandbox.restore();
+    });
+
+    it('should throw an error for invalid prompt', async () => {
+      await expect(client.fetchChatCompletion(''))
+        .to.be.rejectedWith('Invalid prompt received');
+    });
+
+    it('should throw an error for invalid options', async () => {
+      await expect(client.fetchChatCompletion('prompt this', { imageUrls: 'string' }))
+        .to.be.rejectedWith('imageUrls must be an array.');
+    });
+
+    it('should handle no options', async () => {
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post(chatPath)
+        .reply(200, chatResponse);
+
+      const result = await client.fetchChatCompletion('Test prompt', null);
+      expect(result.choices[0].message.content).to.equal('Test response');
+      expect(result.model).to.equal('hello');
+    });
+
+    it('should handle a bad response', async () => {
+      const chatResponseDup = JSON.parse(JSON.stringify(chatResponse));
+      delete chatResponseDup.choices;
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post(chatPath)
+        .reply(200, chatResponseDup);
+      const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
+
+      await expect(client.fetchChatCompletion('Test prompt', { imageUrls: [imageUrl] }))
+        .to.be.rejectedWith('Invalid response format.');
+    });
+
+    it('should handle an missing message', async () => {
+      const chatResponseDup = JSON.parse(JSON.stringify(chatResponse));
+      delete chatResponseDup.choices[0].message;
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post(chatPath)
+        .reply(200, chatResponseDup);
+      const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
+
+      await expect(client.fetchChatCompletion('Test prompt', { imageUrls: [imageUrl] }))
+        .to.be.rejectedWith('Invalid response format.');
+    });
+
+    it('should handle an missing content', async () => {
+      const chatResponseDup = JSON.parse(JSON.stringify(chatResponse));
+      delete chatResponseDup.choices[0].message.content;
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post(chatPath)
+        .reply(200, chatResponseDup);
+      const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
+
+      await expect(client.fetchChatCompletion('Test prompt', { imageUrls: [imageUrl] }))
+        .to.be.rejectedWith('Prompt completed but no output was found.');
+    });
+
+    // Image docs: https://wiki.corp.adobe.com/pages/viewpage.action?spaceKey=adobeds&title=tutorial+-+using+firefall+generative+APIs
+    it('should handle good options', async () => {
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post(chatPath)
+        .reply(200, chatResponse);
+      const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
+
+      const result = await client.fetchChatCompletion('Test prompt', { imageUrls: [imageUrl] });
+      expect(result.choices[0].message.content).to.equal('Test response');
+      expect(result.model).to.equal('hello');
     });
   });
 });

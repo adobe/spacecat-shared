@@ -42,6 +42,8 @@ try {
 
 ### Fetching Insights
 
+#### Via Capability Execution endpoint
+
 ```javascript
 async function fetchInsights(prompt) {
   try {
@@ -58,7 +60,8 @@ async function fetchInsights(prompt) {
       log: console,
     });
 
-    const insights = await client.fetch(prompt);
+    // Internally, use Firefall's .../capability_execution/job endpoint.
+    const insights = await client.fetchCapabilityExecution(prompt);
     console.log('Insights:', insights);
   } catch (error) {
     console.error('Failed to fetch insights:', error.message);
@@ -66,6 +69,38 @@ async function fetchInsights(prompt) {
 }
 
 fetchInsights('How can we improve customer satisfaction?');
+```
+
+#### Via Chat Completions endpoint
+
+```javascript
+async function fetchInsights(prompt) {
+  try {
+    const client = FirefallClient.createFrom({
+      env: {
+        FIREFALL_API_ENDPOINT: 'https://api.firefall.example.com',
+        FIREFALL_API_KEY: 'yourApiKey',
+        FIREFALL_API_CAPABILITY_NAME: 'yourCapabilityName',
+        IMS_HOST: 'ims.example.com',
+        IMS_CLIENT_ID: 'yourClientId',
+        IMS_CLIENT_CODE: 'yourClientCode',
+        IMS_CLIENT_SECRET: 'yourClientSecret',
+      },
+      log: console,
+    });
+    const options = {
+      imageUrls: ['data:image/png;base64,iVBORw0KGgoAAAA...=']
+    };
+
+    // // Internally, use Firefall's .../chat/completions endpoint.
+    const insights = await client.fetchChatCompletion(prompt, { options });
+    console.log('Insights:', insights);
+  } catch (error) {
+    console.error('Failed to fetch insights:', error.message);
+  }
+}
+
+fetchInsights('Identify all food items in this image', { imageUrls: ['data:image/png;base64,iVBORw0KGgoAAAA...='] });
 ```
 
 Ensure that you replace `'path/to/firefall-client'` with the actual path to the `FirefallClient` class in your project and adjust the configuration parameters according to your Firefall API credentials.

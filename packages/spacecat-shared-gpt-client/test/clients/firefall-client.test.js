@@ -38,7 +38,7 @@ describe('FirefallClient', () => {
     mockContext = {
       log: mockLog.object,
       env: {
-        FIREFALL_API_ENDPOINT: 'https://api.firefall.example.com',
+        FIREFALL_API_ENDPOINT: FirefallClient.STAGE_FIREFALL_API_ENDPOINT,
         FIREFALL_API_KEY: 'apiKeyExample',
         FIREFALL_API_POLL_INTERVAL: 100,
         FIREFALL_API_CAPABILITY_NAME: 'gpt4_32k_completions_capability',
@@ -76,7 +76,8 @@ describe('FirefallClient', () => {
     });
   });
 
-  describe('fetchCapabilityExecution', () => {
+  // eslint-disable-next-line func-names
+  describe('fetchCapabilityExecution', function () {
     this.timeout(3000);
     let client;
 
@@ -177,7 +178,8 @@ describe('FirefallClient', () => {
     });
   });
 
-  describe('fetchChatCompletion', () => {
+  // eslint-disable-next-line func-names
+  describe('fetchChatCompletion', function () {
     const chatPath = '/v2/chat/completions';
     const chatResponse = {
       choices: [
@@ -231,19 +233,17 @@ describe('FirefallClient', () => {
         .post(chatPath)
         .reply(200, chatResponseDup);
       const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
+      const options = {
+        imageUrls: [imageUrl],
+        model: 'gpt-4-turbo',
+        responseFormat: 'json_object',
+      };
 
-      mockLog.expects('warn').once().withArgs('Image URLs were provided but capability (gpt4_32k_completions_capability) may not handle vision prompts. Continuing...');
-      await expect(client.fetchChatCompletion('Test prompt', { imageUrls: [imageUrl] }))
+      await expect(client.fetchChatCompletion('Test prompt', options))
         .to.be.rejectedWith('Invalid response format.');
-      mockLog.verify();
     });
 
     it('should handle a missing response message', async () => {
-      // Run this with a different capability.
-      mockContext.env.FIREFALL_API_CAPABILITY_NAME = 'gpt-4-vision';
-      const clientCapacity = FirefallClient.createFrom(mockContext);
-      const logSpy = sinon.spy(mockContext.log, 'warn');
-
       const chatResponseDup = JSON.parse(JSON.stringify(chatResponse));
       delete chatResponseDup.choices[0].message;
       nock(mockContext.env.FIREFALL_API_ENDPOINT)
@@ -251,14 +251,11 @@ describe('FirefallClient', () => {
         .reply(200, chatResponseDup);
       const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
 
-      await expect(clientCapacity.fetchChatCompletion(
+      await expect(client.fetchChatCompletion(
         'Test prompt',
-        { imageUrls: [imageUrl] },
+        { imageUrls: [imageUrl], model: 'gpt-4-vision', responseFormat: 'ignored' },
       ))
         .to.be.rejectedWith('Invalid response format.');
-
-      // Modal (capacity) handles vision prompts, so no warning should be logged.
-      expect(logSpy.callCount).to.equal(0);
     });
 
     it('should handle a missing response content', async () => {

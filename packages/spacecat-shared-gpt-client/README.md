@@ -45,6 +45,9 @@ try {
 #### Via Capability Execution endpoint
 
 ```javascript
+/**
+ *  Fetch insights using the Firefall's capability execution endpoint.
+ */
 async function fetchInsights(prompt) {
   try {
     const client = FirefallClient.createFrom({
@@ -60,7 +63,6 @@ async function fetchInsights(prompt) {
       log: console,
     });
 
-    // Internally, use Firefall's .../capability_execution/job endpoint.
     const insights = await client.fetchCapabilityExecution(prompt);
     console.log('Insights:', insights);
   } catch (error) {
@@ -74,13 +76,15 @@ fetchInsights('How can we improve customer satisfaction?');
 #### Via Chat Completions endpoint
 
 ```javascript
-async function fetchInsights(prompt) {
+/**
+ *  Fetch completions using the Firefall's chat completions endpoint.
+ */
+async function fetchCompletions(prompt) {
   try {
     const client = FirefallClient.createFrom({
       env: {
         FIREFALL_API_ENDPOINT: 'https://api.firefall.example.com',
         FIREFALL_API_KEY: 'yourApiKey',
-        FIREFALL_API_CAPABILITY_NAME: 'yourCapabilityName',
         IMS_HOST: 'ims.example.com',
         IMS_CLIENT_ID: 'yourClientId',
         IMS_CLIENT_CODE: 'yourClientCode',
@@ -89,18 +93,19 @@ async function fetchInsights(prompt) {
       log: console,
     });
     const options = {
-      imageUrls: ['data:image/png;base64,iVBORw0KGgoAAAA...=']
+      imageUrls: ['data:image/png;base64,iVBORw0KGgoAAAA...='],
+      model:'gpt-4-vision',
+      responseFormat: undefined,
     };
 
-    // // Internally, use Firefall's .../chat/completions endpoint.
-    const insights = await client.fetchChatCompletion(prompt, { options });
-    console.log('Insights:', insights);
+    const response = await client.fetchChatCompletion(prompt, { options });
+    console.log('Response:', JSON.stringify(response));
   } catch (error) {
-    console.error('Failed to fetch insights:', error.message);
+    console.error('Failed to fetch chat completion:', error.message);
   }
 }
 
-fetchInsights('Identify all food items in this image', { imageUrls: ['data:image/png;base64,iVBORw0KGgoAAAA...='] });
+fetchCompletions('Identify all food items in this image', { imageUrls: ['data:image/png;base64,iVBORw0KGgoAAAA...='] });
 ```
 
 Ensure that you replace `'path/to/firefall-client'` with the actual path to the `FirefallClient` class in your project and adjust the configuration parameters according to your Firefall API credentials.

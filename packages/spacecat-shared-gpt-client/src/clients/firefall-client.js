@@ -33,6 +33,10 @@ function validateChatCompletionResponse(response) {
 }
 
 export default class FirefallClient {
+  static STAGE_FIREFALL_API_ENDPOINT = 'http://firefall-stage.adobe.io';
+
+  static PROD_FIREFALL_API_ENDPOINT = 'http://firefall.adobe.io/';
+
   static createFrom(context) {
     const { log = console } = context;
     const imsClient = ImsClient.createFrom(context);
@@ -96,7 +100,7 @@ export default class FirefallClient {
     this.log.debug(`${message}: took ${duration}ms`);
   }
 
-  async #submitPrompt(prompt, body, path) {
+  async #submitPrompt(body, path) {
     const apiAuth = await this.#getApiAuth();
 
     const url = createUrl(`${this.config.apiEndpoint}${path}`);
@@ -168,16 +172,13 @@ export default class FirefallClient {
    * @param prompt The text prompt to provide to Firefall
    * @param options The options for the call:
    *                - imageUrls: An array of URLs of the images to provide to Firefall
-   * @returns {Promise<*>}
+   * @returns {Object} - AI response
    */
   async fetchChatCompletion(prompt, options = {}) {
-    if (!hasText(prompt)) {
-      throw new Error('Invalid prompt received');
-    }
-    const hasImageUrls = options?.imageUrls && options.imageUrls.length > 0;
+    const getBody = () => {
+      const { imageUrls, responseFormat, model: llmModel = 'gpt-4-turbo' } = options || {};
+      const hasImageUrls = imageUrls && imageUrls.length > 0;
 
-    try {
-      const startTime = process.hrtime.bigint();
       const userRole = {
         role: 'user',
         content: [
@@ -187,26 +188,10 @@ export default class FirefallClient {
           },
         ],
       };
-      const body = {
-        llm_metadata: {
-          model_name: this.config.FIREFALL_API_CAPABILITY_NAME,
-          llm_type: 'azure_chat_openai',
-        },
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant designed to output JSON.',
-          },
-          userRole,
-        ],
-      };
+
       if (hasImageUrls) {
-        if (!Array.isArray(options?.imageUrls)) {
+        if (!Array.isArray(imageUrls)) {
           throw new Error('imageUrls must be an array.');
-        }
-        // Warn if model might not handle images.
-        if (!this.config.capabilityName.includes('vision') && this.log?.warn) {
-          this.log.warn(`Image URLs were provided but capability (${this.config.capabilityName}) may not handle vision prompts. Continuing...`);
         }
         options.imageUrls.forEach((imageUrl) => {
           userRole.content.push({
@@ -217,34 +202,65 @@ export default class FirefallClient {
           });
         });
       }
-      const chatSubmissionResponse = await this.#submitPrompt(
-        prompt,
+
+      const body = {
+        llm_metadata: {
+          model_name: llmModel,
+          llm_type: 'azure_chat_openai',
+        },
+        messages: [
+          userRole,
+        ],
+      };
+      if (responseFormat === 'json_object') {
+        body.response_format = {
+          type: 'json_object',
+        };
+        body.messages.push({
+          role: 'system',
+          content: 'You are a helpful assistant designed to output JSON.',
+        });
+      }
+
+      return body;
+    };
+
+    if (!hasText(prompt)) {
+      throw new Error('Invalid prompt received');
+    }
+
+    let chatSubmissionResponse;
+    try {
+      const startTime = process.hrtime.bigint();
+      const body = getBody();
+
+      chatSubmissionResponse = await this.#submitPrompt(
         JSON.stringify(body),
         '/v2/chat/completions',
       );
       this.#logDuration('Firefall API Chat Completion call', startTime);
-
-      if (!validateChatCompletionResponse(chatSubmissionResponse)) {
-        this.log.error(
-          'Could not obtain data from Firefall: Invalid response format.',
-        );
-        throw new Error('Invalid response format.');
-      }
-      if (!chatSubmissionResponse.choices.some((ch) => hasText(ch?.message?.content))) {
-        throw new Error('Prompt completed but no output was found.');
-      }
-
-      return chatSubmissionResponse;
     } catch (error) {
       this.log.error('Error while fetching data from Firefall chat API: ', error.message);
       throw error;
     }
+
+    if (!validateChatCompletionResponse(chatSubmissionResponse)) {
+      this.log.error(
+        'Could not obtain data from Firefall: Invalid response format.',
+      );
+      throw new Error('Invalid response format.');
+    }
+    if (!chatSubmissionResponse.choices.some((ch) => hasText(ch?.message?.content))) {
+      throw new Error('Prompt completed but no output was found.');
+    }
+
+    return chatSubmissionResponse;
   }
 
   /**
    * Fetches data from Firefall API.
    * @param prompt The text prompt to provide to Firefall
-   * @returns {Promise<*>}
+   * @returns {string} - AI response
    */
   async fetchCapabilityExecution(prompt) {
     if (!hasText(prompt)) {
@@ -260,7 +276,7 @@ export default class FirefallClient {
       });
       const path = '/v2/capability_execution/job';
 
-      const jobSubmissionResponse = await this.#submitPrompt(prompt, body, path);
+      const jobSubmissionResponse = await this.#submitPrompt(body, path);
       const jobStatusResponse = await this.#pollJobStatus(jobSubmissionResponse.job_id, path);
       this.#logDuration('Firefall API Capability Execution call', startTime);
 

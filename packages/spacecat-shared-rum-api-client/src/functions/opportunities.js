@@ -11,12 +11,8 @@
  */
 
 /* c8 ignore start */
-const PAGEVIEW_THRESHOLD = 5000;
+const PAGEVIEW_THRESHOLD = 35000;
 
-/*
-  * This function is responsible for indexing the week based
-  * on the date of the event.
-*/
 function getWeekIndex(time) {
   const date = new Date(time);
   const currentDate = new Date();
@@ -31,7 +27,7 @@ function getWeekIndex(time) {
   }
 }
 
-function handler(bundles) {
+function processBundles(bundles) {
   const data = {};
 
   for (const bundle of bundles) {
@@ -47,7 +43,7 @@ function handler(bundles) {
         pageViews: 0,
         clicks: 0,
         pageCTR: 0,
-        metrics: [], // Initialize metrics array
+        metrics: [],
       };
     }
 
@@ -72,7 +68,7 @@ function handler(bundles) {
 
     data[bundle.url][weekKey].clicks += Object.keys(selector).length > 0 ? bundleWeight : 0;
   }
-  // calculate the page CTR
+
   // eslint-disable-next-line guard-for-in,no-restricted-syntax
   for (const url in data) {
     // eslint-disable-next-line guard-for-in,no-restricted-syntax
@@ -90,7 +86,7 @@ function handler(bundles) {
   // eslint-disable-next-line guard-for-in,no-restricted-syntax
   for (const url in data) {
     let hasEnoughPageViews = true;
-    // eslint-disable-next-line no-restricted-syntax
+    // eslint-disable-next-line guard-for-in,no-restricted-syntax
     for (const weekKey in data[url]) {
       if (data[url][weekKey].pageViews < PAGEVIEW_THRESHOLD) {
         hasEnoughPageViews = false;
@@ -101,10 +97,35 @@ function handler(bundles) {
       delete data[url];
     }
   }
+
   return data;
+}
+
+function handler(bundles) {
+  const acquisitionBundles = [];
+  const nonAcquisitionBundles = [];
+
+  for (const bundle of bundles) {
+    const hasAcquisition = bundle.events.some((event) => event.checkpoint === 'acquisition');
+    if (hasAcquisition) {
+      acquisitionBundles.push(bundle);
+    } else {
+      nonAcquisitionBundles.push(bundle);
+    }
+  }
+
+  const acquisitionData = processBundles(acquisitionBundles);
+  const nonAcquisitionData = processBundles(nonAcquisitionBundles);
+
+  return {
+    acquisitionData,
+    nonAcquisitionData,
+  };
 }
 
 export default {
   handler,
 };
+
+// eslint-disable-next-line guard-for-in,no-restricted-syntax
 /* c8 ignore end */

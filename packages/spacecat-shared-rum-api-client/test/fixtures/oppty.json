@@ -1,17 +1,194 @@
 [
-    {
-      "url": "https://www.aem.live/docs/sidekick-extension",
-      "views": 1400
-    },
-    {
-      "url": "https://www.aem.live/developer/placeholders",
-      "views": 1300
-    },
-    { "url": "https://www.aem.live/home",
-      "views": 1000
-    },
-    {
-      "url": "https://www.aem.live/developer/block-collection",
-      "views": 900
-    }
-  ]
+  {
+    "url": "https://www.aem.live/docs/sidekick-extension",
+    "views": 1400,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/placeholders",
+    "views": 1300,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/home",
+    "views": 1000,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/block-collection",
+    "views": 900,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/importer",
+    "views": 800,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/docs/",
+    "views": 700,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/tools/rum/explorer.html",
+    "views": 600,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/tutorial",
+    "views": 600,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/docs/davidsmodel",
+    "views": 600,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/docs/byo-cdn-cloudflare-worker-setup",
+    "views": 500,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/block-collection/breadcrumbs",
+    "views": 400,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/rum",
+    "views": 400,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/docs/go-live-checklist",
+    "views": 400,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/web-components",
+    "views": 200,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/keeping-it-100",
+    "views": 200,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/docs/dev-collab-and-good-practices",
+    "views": 200,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/target-integration",
+    "views": 100,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/developer/anatomy-of-a-franklin-project",
+    "views": 100,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/tools/bot/setup",
+    "views": 100,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/docs/placeholders",
+    "views": 100,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/docs/custom-headers",
+    "views": 100,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/tools/rum/list.html",
+    "views": 100,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/docs/authentication-setup-site",
+    "views": 100,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  },
+  {
+    "url": "https://www.aem.live/vip/intake",
+    "views": 100,
+    "week1CTR": 0.01,
+    "week2CTR": 0.01,
+    "week3CTR": 0.01,
+    "week4CTR": 0.01
+  }
+]

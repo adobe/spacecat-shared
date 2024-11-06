@@ -38,7 +38,7 @@ describe('FirefallClient', () => {
     mockContext = {
       log: mockLog.object,
       env: {
-        FIREFALL_API_ENDPOINT: FirefallClient.STAGE_FIREFALL_API_ENDPOINT,
+        FIREFALL_API_ENDPOINT: 'https://api.firefall.example.com',
         FIREFALL_API_KEY: 'apiKeyExample',
         FIREFALL_API_POLL_INTERVAL: 100,
         FIREFALL_API_CAPABILITY_NAME: 'gpt4_32k_completions_capability',
@@ -181,6 +181,7 @@ describe('FirefallClient', () => {
   // eslint-disable-next-line func-names
   describe('fetchChatCompletion', function () {
     const chatPath = '/v2/chat/completions';
+    const base64ImageUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
     const chatResponse = {
       choices: [
         {
@@ -226,15 +227,23 @@ describe('FirefallClient', () => {
       expect(result.model).to.equal('hello');
     });
 
+    it('should handle a bad response code', async () => {
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post(chatPath)
+        .reply(404, 'Not Found');
+
+      await expect(client.fetchChatCompletion('Test prompt'))
+        .to.be.rejectedWith('Job submission failed with status code 404');
+    });
+
     it('should handle a bad response', async () => {
       const chatResponseDup = JSON.parse(JSON.stringify(chatResponse));
       delete chatResponseDup.choices;
       nock(mockContext.env.FIREFALL_API_ENDPOINT)
         .post(chatPath)
         .reply(200, chatResponseDup);
-      const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
       const options = {
-        imageUrls: [imageUrl],
+        imageUrls: [base64ImageUrl],
         model: 'gpt-4-turbo',
         responseFormat: 'json_object',
       };
@@ -249,11 +258,10 @@ describe('FirefallClient', () => {
       nock(mockContext.env.FIREFALL_API_ENDPOINT)
         .post(chatPath)
         .reply(200, chatResponseDup);
-      const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
 
       await expect(client.fetchChatCompletion(
         'Test prompt',
-        { imageUrls: [imageUrl], model: 'gpt-4-vision', responseFormat: 'ignored' },
+        { imageUrls: [base64ImageUrl], model: 'gpt-4-vision', responseFormat: 'ignored' },
       ))
         .to.be.rejectedWith('Invalid response format.');
     });
@@ -264,9 +272,8 @@ describe('FirefallClient', () => {
       nock(mockContext.env.FIREFALL_API_ENDPOINT)
         .post(chatPath)
         .reply(200, chatResponseDup);
-      const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
 
-      await expect(client.fetchChatCompletion('Test prompt', { imageUrls: [imageUrl] }))
+      await expect(client.fetchChatCompletion('Test prompt', { imageUrls: [base64ImageUrl] }))
         .to.be.rejectedWith('Prompt completed but no output was found.');
     });
 
@@ -275,9 +282,14 @@ describe('FirefallClient', () => {
       nock(mockContext.env.FIREFALL_API_ENDPOINT)
         .post(chatPath)
         .reply(200, chatResponse);
-      const imageUrl = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYA...=';
+      const imageHttpsUrl = 'https://www.eatthis.com/wp-content/uploads/sites/4/2021/05/healthy-plate.jpg';
 
-      const result = await client.fetchChatCompletion('Test prompt', { imageUrls: [imageUrl] });
+      const result = await client.fetchChatCompletion(
+        'Test prompt',
+        {
+          imageUrls: [imageHttpsUrl, base64ImageUrl, 'not_url so ignore'], model: 'gpt-4-vision',
+        },
+      );
       expect(result.choices[0].message.content).to.equal('Test response');
       expect(result.model).to.equal('hello');
     });

@@ -16,6 +16,13 @@ import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { fetch as httpFetch } from '../utils.js';
 
+const USER_ROLE_IMAGE_URL_TYPE = 'image_url';
+const USER_ROLE_TEXT_TYPE = 'text';
+const SYSTEM_ROLE = 'system';
+const USER_ROLE = 'user';
+const AZURE_CHAT_OPENAI_LLM_TYPE = 'azure_chat_openai';
+const JSON_OBJECT_RESPONSE_FORMAT = 'json_object';
+
 function validateCapabilityExecutionResponse(response) {
   return !(!isObject(response)
     || !Array.isArray(response.generations)
@@ -32,11 +39,11 @@ function validateChatCompletionResponse(response) {
     && response.choices[0]?.message;
 }
 
+function isBase64UrlImage(base64String) {
+  return base64String.startsWith('data:image') && base64String.endsWith('=') && base64String.includes('base64');
+}
+
 export default class FirefallClient {
-  static STAGE_FIREFALL_API_ENDPOINT = 'http://firefall-stage.adobe.io';
-
-  static PROD_FIREFALL_API_ENDPOINT = 'http://firefall.adobe.io/';
-
   static createFrom(context) {
     const { log = console } = context;
     const imsClient = ImsClient.createFrom(context);
@@ -175,49 +182,48 @@ export default class FirefallClient {
    * @returns {Object} - AI response
    */
   async fetchChatCompletion(prompt, options = {}) {
-    const getBody = () => {
-      const { imageUrls, responseFormat, model: llmModel = 'gpt-4-turbo' } = options || {};
-      const hasImageUrls = imageUrls && imageUrls.length > 0;
+    const { imageUrls, responseFormat, model: llmModel = 'gpt-4-turbo' } = options || {};
+    const hasImageUrls = imageUrls && imageUrls.length > 0;
 
+    const getBody = () => {
       const userRole = {
-        role: 'user',
+        role: USER_ROLE,
         content: [
           {
-            type: 'text',
+            type: USER_ROLE_TEXT_TYPE,
             text: prompt,
           },
         ],
       };
 
       if (hasImageUrls) {
-        if (!Array.isArray(imageUrls)) {
-          throw new Error('imageUrls must be an array.');
-        }
-        options.imageUrls.forEach((imageUrl) => {
-          userRole.content.push({
-            type: 'image_url',
-            image_url: {
-              url: imageUrl,
-            },
+        imageUrls
+          .filter((iu) => isValidUrl(iu) || isBase64UrlImage(iu))
+          .forEach((imageUrl) => {
+            userRole.content.push({
+              type: USER_ROLE_IMAGE_URL_TYPE,
+              image_url: {
+                url: imageUrl,
+              },
+            });
           });
-        });
       }
 
       const body = {
         llm_metadata: {
           model_name: llmModel,
-          llm_type: 'azure_chat_openai',
+          llm_type: AZURE_CHAT_OPENAI_LLM_TYPE,
         },
         messages: [
           userRole,
         ],
       };
-      if (responseFormat === 'json_object') {
+      if (responseFormat === JSON_OBJECT_RESPONSE_FORMAT) {
         body.response_format = {
-          type: 'json_object',
+          type: JSON_OBJECT_RESPONSE_FORMAT,
         };
         body.messages.push({
-          role: 'system',
+          role: SYSTEM_ROLE,
           content: 'You are a helpful assistant designed to output JSON.',
         });
       }
@@ -225,8 +231,12 @@ export default class FirefallClient {
       return body;
     };
 
+    // Validate inputs
     if (!hasText(prompt)) {
       throw new Error('Invalid prompt received');
+    }
+    if (hasImageUrls && !Array.isArray(imageUrls)) {
+      throw new Error('imageUrls must be an array.');
     }
 
     let chatSubmissionResponse;

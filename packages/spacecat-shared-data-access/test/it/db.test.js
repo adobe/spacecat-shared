@@ -35,6 +35,7 @@ import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 import { ConfigurationDto } from '../../src/dto/configuration.js';
 import { ImportJobStatus, ImportOptions, ImportUrlStatus } from '../../src/index.js';
 import { IMPORT_URL_EXPIRES_IN_DAYS } from '../../src/models/importer/import-url.js';
+import { ApiKeyStatus } from '../../src/models/api-key/api-key-constants.js';
 
 use(chaiAsPromised);
 
@@ -119,6 +120,8 @@ const TEST_DA_CONFIG = {
   indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
   indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
   indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
+  indexNameApiKeyByHashedApiKey: 'spacecat-services-api-key-by-hashed-api-key',
+  indexNameApiKeyByImsUserIdAndImsOrgId: 'spacecat-services-api-key-by-ims-user-id-and-ims-org-id',
   pkAllSites: 'ALL_SITES',
   pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
@@ -1168,6 +1171,76 @@ describe('DynamoDB Integration Test', async () => {
         expect(updatedUrl.getReason()).to.be.equal('Just Because');
         expect(updatedUrl.getPath()).to.be.equal('/path/to/file');
         expect(updatedUrl.getFile()).to.be.equal('thefile.docx');
+      });
+    });
+
+    describe('ApiKey Tests', async () => {
+      const apiKeyData = {
+        name: 'Test API Key',
+        createdAt: '2024-10-09T19:21:55.834Z',
+        expiresAt: '2025-10-09T19:21:55.834Z',
+        hashedApiKey: '1234',
+        imsOrgId: '1234@AdobeOrg',
+        status: ApiKeyStatus.ACTIVE,
+        imsUserId: '1234',
+        scopes: [{
+          name: 'imports.read',
+        },
+        {
+          name: 'imports.write',
+          domains: ['https://example.com'],
+        }],
+      };
+      const createNewApiKey = async () => dataAccess.createNewApiKey(apiKeyData);
+
+      it('Verify the creation of a new api key.', async () => {
+        const apiKey = await createNewApiKey();
+        expect(apiKey.getId()).to.be.a('string');
+        expect(apiKey.getName()).to.be.equal('Test API Key');
+        expect(apiKey.getExpiresAt()).to.be.equal('2025-10-09T19:21:55.834Z');
+        expect(apiKey.getHashedApiKey()).to.be.equal('1234');
+        expect(apiKey.getImsOrgId()).to.be.equal('1234@AdobeOrg');
+        expect(apiKey.getStatus()).to.be.equal(ApiKeyStatus.ACTIVE);
+        expect(apiKey.getImsUserId()).to.be.equal('1234');
+        expect(apiKey.getScopes()).to.deep.equal(apiKeyData.scopes);
+      });
+
+      it('Verify retrieval of an api key by ImsUserId and ImsOrgId.', async () => {
+        await createNewApiKey();
+        const apiKey = await dataAccess.getApiKeysByImsUserIdAndImsOrgId('1234', '1234@AdobeOrg');
+        expect(apiKey.length).to.be.greaterThan(0);
+        expect(apiKey[0].getImsUserId()).to.be.equal('1234');
+        expect(apiKey[0].getImsOrgId()).to.be.equal('1234@AdobeOrg');
+        expect(apiKey[0].getScopes()).to.deep.equal(apiKeyData.scopes);
+        expect(apiKey[0].getStatus()).to.be.equal(ApiKeyStatus.ACTIVE);
+        expect(apiKey[0].getExpiresAt()).to.be.equal('2025-10-09T19:21:55.834Z');
+        expect(apiKey[0].getHashedApiKey()).to.be.equal('1234');
+      });
+
+      it('Verify retrieval of an api key by hashedApiKey', async () => {
+        await createNewApiKey();
+        const apiKey = await dataAccess.getApiKeyByHashedApiKey('1234');
+        expect(apiKey).to.not.be.null;
+        expect(apiKey.getHashedApiKey()).to.be.equal('1234');
+        expect(apiKey.getImsUserId()).to.be.equal('1234');
+        expect(apiKey.getImsOrgId()).to.be.equal('1234@AdobeOrg');
+        expect(apiKey.getScopes()).to.deep.equal(apiKeyData.scopes);
+        expect(apiKey.getStatus()).to.be.equal(ApiKeyStatus.ACTIVE);
+      });
+
+      it('Verify retrieval of an api key by id', async () => {
+        const apiKey = await createNewApiKey();
+        const apiKeyId = apiKey.getId();
+        const apiKeyById = await dataAccess.getApiKeyById(apiKeyId);
+        expect(apiKeyById.getId()).to.be.equal(apiKeyId);
+      });
+
+      it('Verify update of an api key.', async () => {
+        const apiKey = await createNewApiKey();
+        const newApiKey = { ...apiKey };
+        newApiKey.updateStatus(ApiKeyStatus.INACTIVE);
+        const updatedApiKey = await dataAccess.updateApiKey(newApiKey);
+        expect(updatedApiKey.getStatus()).to.be.equal(ApiKeyStatus.INACTIVE);
       });
     });
   });

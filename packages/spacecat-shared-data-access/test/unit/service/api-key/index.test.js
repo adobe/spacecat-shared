@@ -17,7 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { apiKeyFunctions } from '../../../../src/service/api-key/index.js';
-import { createApiKey } from '../../../../src/models/api-key.js';
+import { createApiKey } from '../../../../src/models/api-key/api-key.js';
 
 use(sinonChai);
 use(chaiAsPromised);

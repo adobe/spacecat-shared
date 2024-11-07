@@ -13,7 +13,8 @@
 import {
   hasText, isIsoDate, isObject, isValidUrl,
 } from '@adobe/spacecat-shared-utils';
-import { Base } from './base.js';
+import { Base } from '../base.js';
+import { ApiKeyStatus } from './api-key-constants.js';
 
 // List of known scope names that can be used with scoped API keys
 const scopeNames = [
@@ -40,7 +41,47 @@ const ApiKey = (data) => {
   self.getCreatedAt = () => self.state.createdAt;
   self.getExpiresAt = () => self.state.expiresAt;
   self.getRevokedAt = () => self.state.revokedAt;
+  self.getDeletedAt = () => self.state.deletedAt;
+  self.getStatus = () => self.state.status;
   self.getScopes = () => self.state.scopes;
+
+  /**
+   * Updates the state of the ApiKey.
+   * @param key - The key to update.
+   * @param value - The new value.
+   * @param validator - An optional validation function to use before updating the value.
+   * @returns {ApiKey} The updated ApiKey object.
+   */
+  const updateState = (key, value, validator) => {
+    if (validator && typeof validator === 'function') {
+      validator(value);
+    }
+
+    self.state[key] = value;
+    self.touch();
+
+    return self;
+  };
+
+  /**
+   * Updates the status of the ApiKey.
+   * @param {string} status - The new status.
+   */
+  self.updateStatus = (status) => updateState('status', status, (value) => {
+    if (!Object.values(ApiKeyStatus).includes(value)) {
+      throw new Error(`Invalid ApiKey status during update: ${value}`);
+    }
+  });
+
+  /**
+   * Updates the deletedAt attribute of the ApiKey.
+   * @param {string} deletedAt - The deletedAt timestamp - ISO 8601 date string.
+   */
+  self.updateStatus = (status) => updateState('status', status, (value) => {
+    if (!Object.values(ApiKeyStatus).includes(value)) {
+      throw new Error(`Invalid ApiKey status during update: ${value}`);
+    }
+  });
 
   return Object.freeze(self);
 };

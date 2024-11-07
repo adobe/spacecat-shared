@@ -621,6 +621,11 @@ export interface ApiKey {
     getImsOrgId: () => string;
 
     /**
+    * Retrieves the status of the API Key
+    */
+    getStatus: () => string;
+
+    /**
      * Retrieves the createdAt of the API Key.
      */
     getCreatedAt: () => string;
@@ -636,9 +641,24 @@ export interface ApiKey {
     getRevokedAt: () => string;
 
     /**
+      * Retrieves the deletedAt of the API Key.
+      */
+    getDeletedAt: () => string;
+
+    /**
      * Retrieves the scopes of the API Key.
      */
     getScopes: () => Array<string>;
+
+    /**
+    * Updates the status of the API Key
+    */
+    updateStatus: (status: string) => ApiKey;
+
+    /**
+    * Updates the deletedAt attribute of the API Key.
+    */
+    updateDeletedAt: (deletedAt: string) => ApiKey;
 
 }
 
@@ -839,6 +859,16 @@ export interface DataAccess {
   createNewApiKey: (
       apiKeyData: object,
   ) => Promise<ApiKey>;
+  updateApiKey: (
+      apiKey: ApiKey,
+  ) => Promise<ApiKey>;
+  getApiKeyByImsUserIdAndImsOrgId: (
+      imsUserId: string,
+      imsOrgId: string,
+  ) => Promise<ApiKey | null>;
+  getApiKeyById: (
+      id: string,
+  ) => Promise<ApiKey | null>;
 
   // site candidate functions
   getSiteCandidateByBaseURL: (baseURL: string) => Promise<SiteCandidate>;
@@ -893,6 +923,7 @@ interface DataAccessConfig {
   indexNameAllImportJobsByDateRange: string,
   indexNameImportUrlsByJobIdAndStatus: string,
   indexNameApiKeyByHashedApiKey: string,
+  indexNameApiKeyByImsUserIdAndImsOrgId: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;

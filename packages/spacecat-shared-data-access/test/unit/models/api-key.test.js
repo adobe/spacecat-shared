@@ -13,7 +13,8 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { createApiKey } from '../../../src/models/api-key.js';
+import { createApiKey } from '../../../src/models/api-key/api-key.js';
+import { ApiKeyStatus } from '../../../src/models/api-key/api-key-constants.js';
 
 const validApiKey = {
   hashedApiKey: 'test',
@@ -139,6 +140,16 @@ describe('ApiKey Model tests', () => {
       {
         name: 'imports.delete',
       }]);
+    });
+
+    it('updates status', () => {
+      apiKey.updateStatus(ApiKeyStatus.INACTIVE);
+      expect(apiKey.getStatus()).to.equal('INACTIVE');
+    });
+
+    it('updates deletedAt', () => {
+      apiKey.updateDeletedAt('2024-05-29T14:26:00.000Z');
+      expect(apiKey.getDeletedAt()).to.equal('2024-05-29T14:26:00.000Z');
     });
   });
 });

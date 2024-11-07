@@ -10,15 +10,15 @@
  * governing permissions and limitations under the License.
  */
 
-import { createApiKey } from '../models/api-key.js';
+import { createApiKey } from '../models/api-key/api-key.js';
 
 export const ApiKeyDto = {
 
   /**
      * Converts an ApiKey object into a DynamoDB item.
      * @param apiKey
-     * @returns {{createdAt: *, name: *, imsUserId, scopes, revokedAt, key: *,
-     *          imsOrgId: *, expiresAt: *}}
+     * @returns {{createdAt: *, name: *, imsUserId, scopes, revokedAt, deletedAt,
+     *            status, hashedApiKey: *, imsOrgId: *, expiresAt: *}}
      */
   toDynamoItem: (apiKey) => ({
     id: apiKey.getId(),
@@ -29,6 +29,8 @@ export const ApiKeyDto = {
     createdAt: apiKey.getCreatedAt(),
     expiresAt: apiKey.getExpiresAt(),
     revokedAt: apiKey.getRevokedAt(),
+    deletedAt: apiKey.getDeletedAt(),
+    status: apiKey.getStatus(),
     scopes: apiKey.getScopes(),
   }),
 
@@ -47,6 +49,8 @@ export const ApiKeyDto = {
       createdAt: dynamoItem.createdAt,
       expiresAt: dynamoItem.expiresAt,
       revokedAt: dynamoItem.revokedAt,
+      deletedAt: dynamoItem.deletedAt,
+      status: dynamoItem.status,
       scopes: dynamoItem.scopes,
     };
 

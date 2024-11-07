@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.1...@adobe/spacecat-shared-utils-v1.22.2) (2024-11-07)
+
+
+### Bug Fixes
+
+* set correct node engine spec ([#423](https://github.com/adobe/spacecat-shared/issues/423)) ([5086ce7](https://github.com/adobe/spacecat-shared/commit/5086ce7d41bebb502cadf092e5b9a7b84b5bf103))
+
 # [@adobe/spacecat-shared-utils-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.0...@adobe/spacecat-shared-utils-v1.22.1) (2024-11-02)
 
 

@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v1.49.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.5...@adobe/spacecat-shared-data-access-v1.49.6) (2024-11-07)
+
+
+### Bug Fixes
+
+* handle missing 'sites' and 'orgs' in enabled/disabled configuraions safely ([#424](https://github.com/adobe/spacecat-shared/issues/424)) ([5a1468f](https://github.com/adobe/spacecat-shared/commit/5a1468f92fb2b0b288cebb44576dea3f4948b462)), closes [/github.com/adobe/spacecat-shared/blob/main/packages/spacecat-shared-data-access/src/models/configuration.js#L39-L45](https://github.com//github.com/adobe/spacecat-shared/blob/main/packages/spacecat-shared-data-access/src/models/configuration.js/issues/L39-L45)
+
+# [@adobe/spacecat-shared-data-access-v1.49.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.4...@adobe/spacecat-shared-data-access-v1.49.5) (2024-11-07)
+
+
+### Bug Fixes
+
+* set correct node engine spec ([#423](https://github.com/adobe/spacecat-shared/issues/423)) ([5086ce7](https://github.com/adobe/spacecat-shared/commit/5086ce7d41bebb502cadf092e5b9a7b84b5bf103))
+
 # [@adobe/spacecat-shared-data-access-v1.49.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.3...@adobe/spacecat-shared-data-access-v1.49.4) (2024-11-02)
 
 

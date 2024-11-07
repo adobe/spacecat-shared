@@ -151,5 +151,13 @@ describe('ApiKey Model tests', () => {
       apiKey.updateDeletedAt('2024-05-29T14:26:00.000Z');
       expect(apiKey.getDeletedAt()).to.equal('2024-05-29T14:26:00.000Z');
     });
+
+    it('fails to update status with invalid status', () => {
+      expect(() => apiKey.updateStatus('123')).to.throw('Invalid ApiKey status during update: 123');
+    });
+
+    it('fails to update deletedAt with invalid date', () => {
+      expect(() => apiKey.updateDeletedAt('invalid-date')).to.throw('Invalid deletedAt during update: invalid-date');
+    });
   });
 });

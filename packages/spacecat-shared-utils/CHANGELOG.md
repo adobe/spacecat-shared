@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.22.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.2...@adobe/spacecat-shared-utils-v1.22.3) (2024-11-07)
+
+
+### Bug Fixes
+
+* proper http data for x-ray trace ([#427](https://github.com/adobe/spacecat-shared/issues/427)) ([4fa4d2d](https://github.com/adobe/spacecat-shared/commit/4fa4d2d417d51e911957e37df5136453dea521b2))
+
 # [@adobe/spacecat-shared-utils-v1.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.1...@adobe/spacecat-shared-utils-v1.22.2) (2024-11-07)
 
 

@@ -27,6 +27,12 @@ export declare const ImportUrlStatus: {
   readonly FAILED: 'FAILED';
 };
 
+// packages/spacecat-shared-data-access/src/models/api-key/api-key-constants.js
+export declare const ApiKeyStatus: {
+  readonly ACTIVE: 'ACTIVE';
+  readonly INACTIVE: 'INACTIVE';
+};
+
 // TODO: introduce AuditType interface or Scores interface
 
 /**

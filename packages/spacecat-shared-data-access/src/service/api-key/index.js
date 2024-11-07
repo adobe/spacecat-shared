@@ -32,5 +32,5 @@ export const apiKeyFunctions = (dynamoClient, config, log) => ({
     config,
   ),
   getApiKeyById: (id) => getApiKeyById(id, dynamoClient, config),
-  updateApiKey: (apiKey) => updateApiKey(apiKey, dynamoClient, config, log),
+  updateApiKey: (apiKey) => updateApiKey(apiKey, dynamoClient, config),
 });

@@ -77,9 +77,9 @@ const ApiKey = (data) => {
    * Updates the deletedAt attribute of the ApiKey.
    * @param {string} deletedAt - The deletedAt timestamp - ISO 8601 date string.
    */
-  self.updateStatus = (status) => updateState('status', status, (value) => {
-    if (!Object.values(ApiKeyStatus).includes(value)) {
-      throw new Error(`Invalid ApiKey status during update: ${value}`);
+  self.updateDeletedAt = (deletedAt) => updateState('deletedAt', deletedAt, (value) => {
+    if (!isIsoDate(value)) {
+      throw new Error(`Invalid deletedAt during update: ${value}`);
     }
   });
 

@@ -4,8 +4,8 @@
   "description": "Shared modules of the Spacecat Services - IMS Client",
   "type": "module",
   "engines": {
-    "node": "^20.0.0 <23.0.0",
-    "npm": "^10.0.0 <11.0.0"
+    "node": ">=20.0.0 <23.0.0",
+    "npm": ">=10.0.0 <11.0.0"
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -36,7 +36,7 @@
   "dependencies": {
     "@adobe/fetch": "4.1.9",
     "@adobe/helix-universal": "5.0.6",
-    "@adobe/spacecat-shared-utils": "1.20.8"
+    "@adobe/spacecat-shared-utils": "1.22.1"
   },
   "devDependencies": {
     "chai": "5.1.2",

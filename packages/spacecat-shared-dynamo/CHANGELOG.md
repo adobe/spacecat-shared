@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.3.45](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.44...@adobe/spacecat-shared-dynamo-v1.3.45) (2024-11-07)
+
+
+### Bug Fixes
+
+* set correct node engine spec ([#423](https://github.com/adobe/spacecat-shared/issues/423)) ([5086ce7](https://github.com/adobe/spacecat-shared/commit/5086ce7d41bebb502cadf092e5b9a7b84b5bf103))
+
 # [@adobe/spacecat-shared-dynamo-v1.3.44](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.43...@adobe/spacecat-shared-dynamo-v1.3.44) (2024-11-02)
 
 

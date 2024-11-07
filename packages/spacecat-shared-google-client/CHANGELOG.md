@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-google-client-v1.2.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.17...@adobe/spacecat-shared-google-client-v1.2.18) (2024-11-07)
+
+
+### Bug Fixes
+
+* set correct node engine spec ([#423](https://github.com/adobe/spacecat-shared/issues/423)) ([5086ce7](https://github.com/adobe/spacecat-shared/commit/5086ce7d41bebb502cadf092e5b9a7b84b5bf103))
+
+# [@adobe/spacecat-shared-google-client-v1.2.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.16...@adobe/spacecat-shared-google-client-v1.2.17) (2024-11-02)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#419](https://github.com/adobe/spacecat-shared/issues/419)) ([6ee73f3](https://github.com/adobe/spacecat-shared/commit/6ee73f3aa944bda730276d7a06a588f39b52a56a))
+
 # [@adobe/spacecat-shared-google-client-v1.2.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.15...@adobe/spacecat-shared-google-client-v1.2.16) (2024-10-26)
 
 

@@ -58,13 +58,29 @@ const validData = {
     cwv: {
       enabledByDefault: true,
     },
+    'handler-configuration-without-orgs': {
+      enabledByDefault: false,
+      enabled: {
+        sites: [
+          'site0-id',
+        ],
+      },
+    },
+    'handler-configuration-without-sites': {
+      enabledByDefault: false,
+      enabled: {
+        orgs: [
+          'org0-id',
+        ],
+      },
+    },
   },
   queues: {
     audits: 'sqs://.../spacecat-services-audit-jobs',
     imports: 'sqs://.../spacecat-services-import-jobs',
     reports: 'sqs://.../spacecat-services-report-jobs',
   },
-  version: 'v1',
+  version: 1,
   slackRoles: {
     scrape: [
       'WSVT1K36Z',
@@ -106,7 +122,7 @@ describe('Configuration Model Tests', () => {
       disabled: { sites: ['site2'], orgs: ['org2'] },
       enabledByDefault: false,
     };
-    const configuration = createConfiguration({ version: '1.1', queues: {}, jobs: [] });
+    const configuration = createConfiguration({ version: 2, queues: {}, jobs: [] });
     configuration.addHandler('new-handler', handlerData);// Line 59
     const updatedHandler = configuration.getHandler('new-handler');
     expect(updatedHandler).to.deep.equal(handlerData);
@@ -163,6 +179,26 @@ describe('Configuration Model Tests', () => {
     const isEnabled = configuration.isHandlerEnabledForOrg('cwv', { getId: () => 'org3' });
     expect(isEnabled).to.be.a('boolean');
     expect(isEnabled).to.be.true;
+  });
+
+  it('Checks if a handler configuration is missing sites key', () => {
+    const configuration = createConfiguration(validData);
+    const isEnabled = configuration.isHandlerEnabledForSite(
+      'handler-configuration-without-sites',
+      { getId: () => 'site1-id', getOrganizationId: () => 'org2' },
+    );
+    expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.false;
+  });
+
+  it('Checks if a handler configuration is missing orgs ke', () => {
+    const configuration = createConfiguration(validData);
+    const isEnabled = configuration.isHandlerEnabledForSite(
+      'handler-configuration-without-orgs',
+      { getId: () => 'site1-id', getOrganizationId: () => 'org2' },
+    );
+    expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.false;
   });
 
   it('checks if a handler type is enabled for an organization', () => {

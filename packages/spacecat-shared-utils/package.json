@@ -1,11 +1,11 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.21.1",
+  "version": "1.22.2",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "engines": {
-    "node": "^20.0.0 <21.0.0",
-    "npm": "^10.0.0 <11.0.0"
+    "node": ">=20.0.0 <23.0.0",
+    "npm": ">=10.0.0 <11.0.0"
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -45,8 +45,8 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.1.9",
-    "@aws-sdk/client-s3": "3.679.0",
-    "@aws-sdk/client-sqs": "3.679.0",
+    "@aws-sdk/client-s3": "3.685.0",
+    "@aws-sdk/client-sqs": "3.682.0",
     "@json2csv/plainjs": "7.0.6",
     "aws-xray-sdk": "3.10.1"
   }

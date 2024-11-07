@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-content-client-v1.1.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.17...@adobe/spacecat-shared-content-client-v1.1.18) (2024-11-07)
+
+
+### Bug Fixes
+
+* set correct node engine spec ([#423](https://github.com/adobe/spacecat-shared/issues/423)) ([5086ce7](https://github.com/adobe/spacecat-shared/commit/5086ce7d41bebb502cadf092e5b9a7b84b5bf103))
+
+# [@adobe/spacecat-shared-content-client-v1.1.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.16...@adobe/spacecat-shared-content-client-v1.1.17) (2024-11-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.2.4 ([#420](https://github.com/adobe/spacecat-shared/issues/420)) ([aa3b7bf](https://github.com/adobe/spacecat-shared/commit/aa3b7bf9985c6f2460566fcc8ce01c5491ccdbb3))
+
 # [@adobe/spacecat-shared-content-client-v1.1.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.15...@adobe/spacecat-shared-content-client-v1.1.16) (2024-10-26)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.8...@adobe/spacecat-shared-data-access-v1.50.0) (2024-11-08)
+
+
+### Features
+
+* support queries to generate self-service api-keys ([#428](https://github.com/adobe/spacecat-shared/issues/428)) ([90a46c2](https://github.com/adobe/spacecat-shared/commit/90a46c2f095e07d77636189c04f52ba31a626c7b))
+
 # [@adobe/spacecat-shared-data-access-v1.49.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.7...@adobe/spacecat-shared-data-access-v1.49.8) (2024-11-08)
 
 

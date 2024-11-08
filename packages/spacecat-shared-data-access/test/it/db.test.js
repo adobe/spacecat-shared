@@ -35,7 +35,6 @@ import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 import { ConfigurationDto } from '../../src/dto/configuration.js';
 import { ImportJobStatus, ImportOptions, ImportUrlStatus } from '../../src/index.js';
 import { IMPORT_URL_EXPIRES_IN_DAYS } from '../../src/models/importer/import-url.js';
-import { ApiKeyStatus } from '../../src/models/api-key/api-key-constants.js';
 
 use(chaiAsPromised);
 
@@ -1181,7 +1180,6 @@ describe('DynamoDB Integration Test', async () => {
         expiresAt: '2025-10-09T19:21:55.834Z',
         hashedApiKey: '1234',
         imsOrgId: '1234@AdobeOrg',
-        status: ApiKeyStatus.ACTIVE,
         imsUserId: '1234',
         scopes: [{
           name: 'imports.read',
@@ -1200,7 +1198,6 @@ describe('DynamoDB Integration Test', async () => {
         expect(apiKey.getExpiresAt()).to.be.equal('2025-10-09T19:21:55.834Z');
         expect(apiKey.getHashedApiKey()).to.be.equal('1234');
         expect(apiKey.getImsOrgId()).to.be.equal('1234@AdobeOrg');
-        expect(apiKey.getStatus()).to.be.equal(ApiKeyStatus.ACTIVE);
         expect(apiKey.getImsUserId()).to.be.equal('1234');
         expect(apiKey.getScopes()).to.deep.equal(apiKeyData.scopes);
       });
@@ -1212,7 +1209,6 @@ describe('DynamoDB Integration Test', async () => {
         expect(apiKey[0].getImsUserId()).to.be.equal('1234');
         expect(apiKey[0].getImsOrgId()).to.be.equal('1234@AdobeOrg');
         expect(apiKey[0].getScopes()).to.deep.equal(apiKeyData.scopes);
-        expect(apiKey[0].getStatus()).to.be.equal(ApiKeyStatus.ACTIVE);
         expect(apiKey[0].getExpiresAt()).to.be.equal('2025-10-09T19:21:55.834Z');
         expect(apiKey[0].getHashedApiKey()).to.be.equal('1234');
       });
@@ -1225,7 +1221,6 @@ describe('DynamoDB Integration Test', async () => {
         expect(apiKey.getImsUserId()).to.be.equal('1234');
         expect(apiKey.getImsOrgId()).to.be.equal('1234@AdobeOrg');
         expect(apiKey.getScopes()).to.deep.equal(apiKeyData.scopes);
-        expect(apiKey.getStatus()).to.be.equal(ApiKeyStatus.ACTIVE);
       });
 
       it('Verify retrieval of an api key by id', async () => {
@@ -1238,9 +1233,9 @@ describe('DynamoDB Integration Test', async () => {
       it('Verify update of an api key.', async () => {
         const apiKey = await createNewApiKey();
         const newApiKey = { ...apiKey };
-        newApiKey.updateStatus(ApiKeyStatus.INACTIVE);
+        newApiKey.updateDeletedAt('2025-10-10T19:21:55.834Z');
         const updatedApiKey = await dataAccess.updateApiKey(newApiKey);
-        expect(updatedApiKey.getStatus()).to.be.equal(ApiKeyStatus.INACTIVE);
+        expect(updatedApiKey.getDeletedAt()).to.be.equal('2025-10-10T19:21:55.834Z');
       });
     });
   });

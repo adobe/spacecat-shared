@@ -14,7 +14,6 @@
 
 import { expect } from 'chai';
 import { createApiKey } from '../../../src/models/api-key/api-key.js';
-import { ApiKeyStatus } from '../../../src/models/api-key/api-key-constants.js';
 
 const validApiKey = {
   hashedApiKey: 'test',
@@ -140,11 +139,6 @@ describe('ApiKey Model tests', () => {
       {
         name: 'imports.delete',
       }]);
-    });
-
-    it('updates status', () => {
-      apiKey.updateStatus(ApiKeyStatus.INACTIVE);
-      expect(apiKey.getStatus()).to.equal('INACTIVE');
     });
 
     it('updates deletedAt', () => {

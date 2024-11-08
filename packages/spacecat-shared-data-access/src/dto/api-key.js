@@ -19,7 +19,7 @@ export const ApiKeyDto = {
      * @param apiKey
      * @returns {{createdAt: string, name: string, imsUserId: string,
      * scopes: array<object>, revokedAt: string, deletedAt: string,
-     *            status, hashedApiKey: *, imsOrgId: *, expiresAt: *}}
+     * hashedApiKey: *, imsOrgId: *, expiresAt: *}}
      */
   toDynamoItem: (apiKey) => ({
     id: apiKey.getId(),
@@ -31,7 +31,6 @@ export const ApiKeyDto = {
     expiresAt: apiKey.getExpiresAt(),
     revokedAt: apiKey.getRevokedAt(),
     deletedAt: apiKey.getDeletedAt(),
-    status: apiKey.getStatus(),
     scopes: apiKey.getScopes(),
   }),
 
@@ -51,7 +50,6 @@ export const ApiKeyDto = {
       expiresAt: dynamoItem.expiresAt,
       revokedAt: dynamoItem.revokedAt,
       deletedAt: dynamoItem.deletedAt,
-      status: dynamoItem.status,
       scopes: dynamoItem.scopes,
     };
 

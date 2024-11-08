@@ -14,7 +14,6 @@ import {
   hasText, isIsoDate, isObject, isValidUrl,
 } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
-import { ApiKeyStatus } from './api-key-constants.js';
 
 // List of known scope names that can be used with scoped API keys
 const scopeNames = [
@@ -62,16 +61,6 @@ const ApiKey = (data) => {
 
     return self;
   };
-
-  /**
-   * Updates the status of the ApiKey.
-   * @param {string} status - The new status.
-   */
-  self.updateStatus = (status) => updateState('status', status, (value) => {
-    if (!Object.values(ApiKeyStatus).includes(value)) {
-      throw new Error(`Invalid ApiKey status during update: ${value}`);
-    }
-  });
 
   /**
    * Updates the deletedAt attribute of the ApiKey.

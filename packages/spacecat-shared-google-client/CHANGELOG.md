@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.2.20](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.19...@adobe/spacecat-shared-google-client-v1.2.20) (2024-11-08)
+
+
+### Bug Fixes
+
+* engine spec ([#433](https://github.com/adobe/spacecat-shared/issues/433)) ([19dd309](https://github.com/adobe/spacecat-shared/commit/19dd30956c0a9d35ea343c580e589205bfdbdfd8))
+
 # [@adobe/spacecat-shared-google-client-v1.2.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.18...@adobe/spacecat-shared-google-client-v1.2.19) (2024-11-08)
 
 

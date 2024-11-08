@@ -13,7 +13,7 @@
 import {
   hasText, isIsoDate, isObject, isValidUrl,
 } from '@adobe/spacecat-shared-utils';
-import { Base } from './base.js';
+import { Base } from '../base.js';
 
 // List of known scope names that can be used with scoped API keys
 const scopeNames = [
@@ -40,7 +40,78 @@ const ApiKey = (data) => {
   self.getCreatedAt = () => self.state.createdAt;
   self.getExpiresAt = () => self.state.expiresAt;
   self.getRevokedAt = () => self.state.revokedAt;
+  self.getDeletedAt = () => self.state.deletedAt;
   self.getScopes = () => self.state.scopes;
+
+  /**
+   * Checks if the apiKey is valid.
+   * @returns {boolean} True if the apiKey is valid, false otherwise
+   */
+  self.isValid = () => {
+    const now = new Date();
+
+    if (self.state.deletedAt && new Date(self.state.deletedAt) < now) {
+      return false;
+    }
+
+    if (self.state.revokedAt && new Date(self.state.revokedAt) < now) {
+      return false;
+    }
+
+    if (self.state.expiresAt && new Date(self.state.expiresAt) < now) {
+      return false;
+    }
+
+    return true;
+  };
+
+  /**
+   * Updates the state of the ApiKey.
+   * @param key - The key to update.
+   * @param value - The new value.
+   * @param validator - An optional validation function to use before updating the value.
+   * @returns {ApiKey} The updated ApiKey object.
+   */
+  const updateState = (key, value, validator) => {
+    if (validator && typeof validator === 'function') {
+      validator(value);
+    }
+
+    self.state[key] = value;
+    self.touch();
+
+    return self;
+  };
+
+  /**
+   * Updates the deletedAt attribute of the ApiKey.
+   * @param {string} deletedAt - The deletedAt timestamp - ISO 8601 date string.
+   */
+  self.updateDeletedAt = (deletedAt) => updateState('deletedAt', deletedAt, (value) => {
+    if (!isIsoDate(value)) {
+      throw new Error(`Invalid deletedAt during update: ${value}. Must be a valid ISO 8601 date string.`);
+    }
+  });
+
+  /**
+   * Updates the expiresAt attribute of the ApiKey.
+   * @param {string} expiresAt - The expiresAt timestamp - ISO 8601 date string.
+   */
+  self.updateExpiresAt = (expiresAt) => updateState('expiresAt', expiresAt, (value) => {
+    if (!isIsoDate(value)) {
+      throw new Error(`Invalid expiresAt during update: ${value}. Must be a valid ISO 8601 date string.`);
+    }
+  });
+
+  /**
+   * Updates the revokedAt attribute of the ApiKey.
+   * @param {string} revokedAt - The revokedAt timestamp - ISO 8601 date string.
+   */
+  self.updateRevokedAt = (revokedAt) => updateState('revokedAt', revokedAt, (value) => {
+    if (!isIsoDate(value)) {
+      throw new Error(`Invalid revokedAt during update: ${value}. Must be a valid ISO 8601 date string.`);
+    }
+  });
 
   return Object.freeze(self);
 };

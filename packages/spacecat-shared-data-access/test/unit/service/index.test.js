@@ -104,6 +104,9 @@ describe('Data Access Object Tests', () => {
   const apiKeyFunctions = [
     'getApiKeyByHashedApiKey',
     'createNewApiKey',
+    'updateApiKey',
+    'getApiKeysByImsUserIdAndImsOrgId',
+    'getApiKeyById',
   ];
 
   let dao;

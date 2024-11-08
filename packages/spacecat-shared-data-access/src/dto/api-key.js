@@ -17,7 +17,7 @@ export const ApiKeyDto = {
   /**
      * Converts an ApiKey object into a DynamoDB item.
      * @param apiKey
-     * @returns {{createdAt: *, name: *, imsUserId, scopes, revokedAt, deletedAt,
+     * @returns {{createdAt: string, name: string, imsUserId: string, scopes: array<object>, revokedAt: string, deletedAt: string,
      *            status, hashedApiKey: *, imsOrgId: *, expiresAt: *}}
      */
   toDynamoItem: (apiKey) => ({

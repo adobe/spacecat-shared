@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.49.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.7...@adobe/spacecat-shared-data-access-v1.49.8) (2024-11-08)
+
+
+### Bug Fixes
+
+* engine spec ([#433](https://github.com/adobe/spacecat-shared/issues/433)) ([19dd309](https://github.com/adobe/spacecat-shared/commit/19dd30956c0a9d35ea343c580e589205bfdbdfd8))
+
 # [@adobe/spacecat-shared-data-access-v1.49.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.49.6...@adobe/spacecat-shared-data-access-v1.49.7) (2024-11-08)
 
 

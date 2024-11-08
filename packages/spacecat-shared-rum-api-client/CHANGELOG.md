@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.9.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.9.8...@adobe/spacecat-shared-rum-api-client-v2.9.9) (2024-11-08)
+
+
+### Bug Fixes
+
+* engine spec ([#431](https://github.com/adobe/spacecat-shared/issues/431)) ([f19600e](https://github.com/adobe/spacecat-shared/commit/f19600e74ae7ee42a97c08d5b1c30db79c8ec13d))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.9.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.9.7...@adobe/spacecat-shared-rum-api-client-v2.9.8) (2024-11-07)
 
 

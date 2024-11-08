@@ -34,7 +34,7 @@ export const getConfiguration = async (
     TableName: config.tableNameConfigurations,
     KeyConditionExpression: 'PK = :pk',
     ExpressionAttributeValues: {
-      ':pk': config.pkAllConfigurations,
+      ':pk': config.pkAllConfigurations + 2,
     },
     Limit: 1,
     ScanIndexForward: false, // Sorts ascending if true, descending if false

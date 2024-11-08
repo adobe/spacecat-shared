@@ -299,7 +299,7 @@ export default async function generateSampleData(
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
     version: 2,
-    PK: config.pkAllConfigurations,
+    PK: config.pkAllConfigurations + 2,
   },
   {
     jobs: [
@@ -319,7 +319,7 @@ export default async function generateSampleData(
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
     version: 1,
-    PK: config.pkAllConfigurations,
+    PK: config.pkAllConfigurations + 1,
   }];
 
   // Generate site candidate data

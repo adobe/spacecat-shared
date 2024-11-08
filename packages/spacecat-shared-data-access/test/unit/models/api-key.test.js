@@ -181,15 +181,15 @@ describe('ApiKey Model tests', () => {
     });
 
     it('returns true if deletedAt, revokedAt, and expiresAt are after the current time', () => {
-      apiKey.updateDeletedAt('2025-05-27T14:26:00.000Z');
-      apiKey.updateRevokedAt('2025-05-27T14:26:00.000Z');
-      apiKey.updateExpiresAt('2025-05-27T14:26:00.000Z');
+      apiKey.updateDeletedAt('3025-05-27T14:26:00.000Z');
+      apiKey.updateRevokedAt('3025-05-27T14:26:00.000Z');
+      apiKey.updateExpiresAt('3025-05-27T14:26:00.000Z');
       expect(apiKey.isValid()).to.be.true;
     });
 
     it('returns false if deletedAt, revokedAt are after the current and expiresAt is before the current time', () => {
-      apiKey.updateDeletedAt('2025-05-27T14:26:00.000Z');
-      apiKey.updateRevokedAt('2025-05-27T14:26:00.000Z');
+      apiKey.updateDeletedAt('3025-05-27T14:26:00.000Z');
+      apiKey.updateRevokedAt('3025-05-27T14:26:00.000Z');
       apiKey.updateExpiresAt('2024-05-27T14:26:00.000Z');
       expect(apiKey.isValid()).to.be.false;
     });

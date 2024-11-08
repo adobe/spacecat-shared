@@ -157,7 +157,7 @@ describe('ApiKey Model tests', () => {
     });
 
     it('fails to update deletedAt with invalid date', () => {
-      expect(() => apiKey.updateDeletedAt('invalid-date')).to.throw('Invalid deletedAt during update: invalid-date');
+      expect(() => apiKey.updateDeletedAt('invalid-date')).to.throw('Invalid deletedAt during update: invalid-date. Must be a valid ISO 8601 date string');
     });
   });
 });

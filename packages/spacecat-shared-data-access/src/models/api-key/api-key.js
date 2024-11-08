@@ -79,7 +79,7 @@ const ApiKey = (data) => {
    */
   self.updateDeletedAt = (deletedAt) => updateState('deletedAt', deletedAt, (value) => {
     if (!isIsoDate(value)) {
-      throw new Error(`Invalid deletedAt during update: ${value}`);
+      throw new Error(`Invalid deletedAt during update: ${value}. Must be a valid ISO 8601 date string.`);
     }
   });
 

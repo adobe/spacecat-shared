@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.6.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.16...@adobe/spacecat-shared-http-utils-v1.6.17) (2024-11-08)
+
+
+### Bug Fixes
+
+* engine spec ([#433](https://github.com/adobe/spacecat-shared/issues/433)) ([19dd309](https://github.com/adobe/spacecat-shared/commit/19dd30956c0a9d35ea343c580e589205bfdbdfd8))
+
 # [@adobe/spacecat-shared-http-utils-v1.6.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.15...@adobe/spacecat-shared-http-utils-v1.6.16) (2024-11-08)
 
 

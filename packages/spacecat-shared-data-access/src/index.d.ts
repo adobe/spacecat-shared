@@ -871,7 +871,7 @@ export interface DataAccess {
   getApiKeysByImsUserIdAndImsOrgId: (
       imsUserId: string,
       imsOrgId: string,
-  ) => Promise<ApiKey | null>;
+  ) => Promise<ApiKey[] | null>;
   getApiKeyById: (
       id: string,
   ) => Promise<ApiKey | null>;

@@ -19,7 +19,7 @@ export const ApiKeyDto = {
      * @param apiKey
      * @returns {{createdAt: string, name: string, imsUserId: string,
      * scopes: array<object>, revokedAt: string, deletedAt: string,
-     * hashedApiKey: *, imsOrgId: *, expiresAt: *}}
+     * hashedApiKey: string, imsOrgId: string, expiresAt: string}}
      */
   toDynamoItem: (apiKey) => ({
     id: apiKey.getId(),

@@ -19,8 +19,10 @@ import trafficAcquisition from '../src/functions/traffic-acquisition.js';
 import highInorganicHighBounce from '../src/functions/opportunities/high-inorganic-high-bounce-rate.js';
 import highOrganicLowCTR from '../src/functions/opportunities/high-organic-low-ctr.js';
 import variant from '../src/functions/variant.js';
+import formVitals from '../src/functions/formVitals.js';
 import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import bundlesWithTraffic from './fixtures/bundles-with-traffic-source.json' assert { type: 'json' };
+import bundlesWithForm from './fixtures/bundles-for-form-vitals.json' assert { type: 'json' };
 import bundlesForVariant from './fixtures/bundles_for_variant.json' assert { type: 'json' };
 import expectedCwvResult from './fixtures/cwv.json' assert { type: 'json' };
 import expected404Result from './fixtures/notfound.json' assert { type: 'json' };
@@ -29,11 +31,17 @@ import expectedTrafficSourcesResult from './fixtures/trafficSources.json' assert
 import expectedVariantResult from './fixtures/variant.json' assert { type: 'json' };
 import expectedHighInorganicHighBounceResult from './fixtures/high-inorganic-high-bounce.json' assert { type: 'json' };
 import expectedHighOrganicLowCTRResult from './fixtures/high-organic-low-ctr.json' assert { type: 'json' };
+import expectedFormVitalsResult from './fixtures/expected-form-vitals-result.json' assert { type: 'json' };
 
 describe('Query functions', () => {
   it('crunches cwv data', async () => {
     const cwvResult = cwv.handler(bundles.rumBundles);
     expect(expectedCwvResult).to.eql(cwvResult);
+  });
+
+  it('crunches form vitals', async () => {
+    const formVitalsResult = await formVitals.handler(bundlesWithForm.rumBundles);
+    expect(expectedFormVitalsResult).to.eql(formVitalsResult);
   });
 
   it('crunches 404 data', async () => {

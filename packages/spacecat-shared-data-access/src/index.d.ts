@@ -868,7 +868,7 @@ export interface DataAccess {
   updateApiKey: (
       apiKey: ApiKey,
   ) => Promise<ApiKey>;
-  getApiKeyByImsUserIdAndImsOrgId: (
+  getApiKeysByImsUserIdAndImsOrgId: (
       imsUserId: string,
       imsOrgId: string,
   ) => Promise<ApiKey | null>;

@@ -50,15 +50,15 @@ const ApiKey = (data) => {
   self.isValid = () => {
     const now = new Date();
 
-    if (self.state.deletedAt && new Date(self.state.deletedAt) > now) {
+    if (self.state.deletedAt && new Date(self.state.deletedAt) < now) {
       return false;
     }
 
-    if (self.state.revokedAt && new Date(self.state.revokedAt) > now) {
+    if (self.state.revokedAt && new Date(self.state.revokedAt) < now) {
       return false;
     }
 
-    if (self.state.expiresAt && new Date(self.state.expiresAt) > now) {
+    if (self.state.expiresAt && new Date(self.state.expiresAt) < now) {
       return false;
     }
 

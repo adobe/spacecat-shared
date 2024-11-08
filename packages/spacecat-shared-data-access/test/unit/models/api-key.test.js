@@ -166,17 +166,17 @@ describe('ApiKey Model tests', () => {
     });
 
     it('returns false if deletedAt is after the current time', () => {
-      apiKey.updateDeletedAt(new Date(Date.now() + 10000).toISOString());
+      apiKey.updateDeletedAt(new Date(Date.now() - 10000).toISOString());
       expect(apiKey.isValid()).to.be.false;
     });
 
     it('returns false if revokedAt is after the current time', () => {
-      apiKey.updateRevokedAt(new Date(Date.now() + 10000).toISOString());
+      apiKey.updateRevokedAt(new Date(Date.now() - 10000).toISOString());
       expect(apiKey.isValid()).to.be.false;
     });
 
     it('returns false if expiresAt is after the current time', () => {
-      apiKey.updateExpiresAt(new Date(Date.now() + 10000).toISOString());
+      apiKey.updateExpiresAt(new Date(Date.now() - 10000).toISOString());
       expect(apiKey.isValid()).to.be.false;
     });
 

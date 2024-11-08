@@ -150,6 +150,14 @@ describe('ApiKey Model tests', () => {
       expect(() => apiKey.updateDeletedAt('invalid-date')).to.throw('Invalid deletedAt during update: invalid-date. Must be a valid ISO 8601 date string');
     });
 
+    it('fails to update expiresAt with invalid date', () => {
+      expect(() => apiKey.updateExpiresAt('invalid-date')).to.throw('Invalid expiresAt during update: invalid-date. Must be a valid ISO 8601 date string');
+    });
+
+    it('fails to update revokedAt with invalid date', () => {
+      expect(() => apiKey.updateRevokedAt('invalid-date')).to.throw('Invalid revokedAt during update: invalid-date. Must be a valid ISO 8601 date string');
+    });
+
     it('returns true if deletedAt, revokedAt, and expiresAt are not set', () => {
       apiKey.state.deletedAt = null;
       apiKey.state.revokedAt = null;

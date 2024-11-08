@@ -100,10 +100,10 @@ describe('Api Key Tests', () => {
         mockDynamoClient.getItem.resolves(apiKey);
 
         const apiKeyToUpdate = await exportedFunctions.getApiKeyById('test-id');
-        apiKeyToUpdate.updateStatus('INACTIVE');
+        apiKeyToUpdate.updateDeletedAt('2024-05-29T14:26:00.000Z');
         const result = await exportedFunctions.updateApiKey(apiKeyToUpdate);
         expect(result).to.be.not.null;
-        expect(result.getStatus()).to.equal('INACTIVE');
+        expect(result.getDeletedAt()).to.equal('2024-05-29T14:26:00.000Z');
       });
 
       it('should throw an error when updating a non-existing ApiKey', async () => {

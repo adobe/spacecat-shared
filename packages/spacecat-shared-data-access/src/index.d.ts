@@ -651,11 +651,6 @@ export interface ApiKey {
     getScopes: () => Array<string>;
 
     /**
-    * Updates the status of the API Key
-    */
-    updateStatus: (status: string) => ApiKey;
-
-    /**
     * Updates the deletedAt attribute of the API Key.
     */
     updateDeletedAt: (deletedAt: string) => ApiKey;

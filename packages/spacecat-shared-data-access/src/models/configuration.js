@@ -37,12 +37,15 @@ const Configuration = (data = {}) => {
     const orgId = site.getOrganizationId();
 
     if (handler.enabled) {
-      return handler.enabled.sites.includes(siteId) || handler.enabled.orgs.includes(orgId);
+      const sites = handler.enabled.sites || [];
+      const orgs = handler.enabled.orgs || [];
+      return sites.includes(siteId) || orgs.includes(orgId);
     }
 
     if (handler.disabled) {
-      return !((handler.disabled.sites && handler.disabled.sites.includes(siteId))
-          || (handler.disabled.orgs && handler.disabled.orgs.includes(orgId)));
+      const sites = handler.disabled.sites || [];
+      const orgs = handler.disabled.orgs || [];
+      return !(sites.includes(siteId) || orgs.includes(orgId));
     }
 
     return handler.enabledByDefault;
@@ -142,7 +145,7 @@ const Configuration = (data = {}) => {
 
 export const checkConfiguration = (configuration) => {
   const schema = Joi.object({
-    version: Joi.string().required(),
+    version: Joi.number().required(),
     queues: Joi.object().required(),
     handlers: Joi.object().pattern(Joi.string(), Joi.object(
       {

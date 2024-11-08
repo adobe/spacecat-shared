@@ -212,11 +212,11 @@ describe('DynamoDB Integration Test', async () => {
   });
 
   it('gets configuration by Version', async () => {
-    const configuration = await dataAccess.getConfigurationByVersion('v1');
+    const configuration = await dataAccess.getConfigurationByVersion(1);
 
     expect(configuration).to.be.an('object');
 
-    expect(configuration.getVersion()).to.equal('v1');
+    expect(configuration.getVersion()).to.equal(1);
   });
 
   it('gets configuration', async () => {
@@ -224,12 +224,12 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(configuration).to.be.an('object');
 
-    expect(configuration.getVersion()).to.equal('v2');
+    expect(configuration.getVersion()).to.equal(2);
   });
 
   it('updates a configuration', async () => {
     const configurationData = {
-      version: 'v2',
+      version: 2,
       queues: {
         audits: 'audits-queue',
         imports: 'imports-queue',
@@ -254,7 +254,7 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(configuration).to.be.an('object');
 
-    expect(configuration.getVersion()).to.equal('v3');
+    expect(configuration.getVersion()).to.equal(3);
     expect(configuration.getQueues()).to.deep.equal(configurationData.queues);
     expect(configuration.getJobs()).to.deep.equal(configurationData.jobs);
     expect(configuration.getHandlers()).to.deep.equal(configurationV2.getHandlers());

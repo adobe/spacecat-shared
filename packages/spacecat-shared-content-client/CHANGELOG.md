@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-content-client-v1.1.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.18...@adobe/spacecat-shared-content-client-v1.1.19) (2024-11-08)
+
+
+### Bug Fixes
+
+* engine spec ([#431](https://github.com/adobe/spacecat-shared/issues/431)) ([f19600e](https://github.com/adobe/spacecat-shared/commit/f19600e74ae7ee42a97c08d5b1c30db79c8ec13d))
+
+# [@adobe/spacecat-shared-content-client-v1.1.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.17...@adobe/spacecat-shared-content-client-v1.1.18) (2024-11-07)
+
+
+### Bug Fixes
+
+* set correct node engine spec ([#423](https://github.com/adobe/spacecat-shared/issues/423)) ([5086ce7](https://github.com/adobe/spacecat-shared/commit/5086ce7d41bebb502cadf092e5b9a7b84b5bf103))
+
+# [@adobe/spacecat-shared-content-client-v1.1.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.16...@adobe/spacecat-shared-content-client-v1.1.17) (2024-11-03)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.2.4 ([#420](https://github.com/adobe/spacecat-shared/issues/420)) ([aa3b7bf](https://github.com/adobe/spacecat-shared/commit/aa3b7bf9985c6f2460566fcc8ce01c5491ccdbb3))
+
+# [@adobe/spacecat-shared-content-client-v1.1.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.15...@adobe/spacecat-shared-content-client-v1.1.16) (2024-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.2.3 ([#414](https://github.com/adobe/spacecat-shared/issues/414)) ([2fb558e](https://github.com/adobe/spacecat-shared/commit/2fb558e842007343157cd7939956bbaff55c5381))
+
+# [@adobe/spacecat-shared-content-client-v1.1.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.14...@adobe/spacecat-shared-content-client-v1.1.15) (2024-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#413](https://github.com/adobe/spacecat-shared/issues/413)) ([ee2c715](https://github.com/adobe/spacecat-shared/commit/ee2c715e08034bea8fb88b4f7166d40b18e107c4))
+
 # [@adobe/spacecat-shared-content-client-v1.1.14](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.13...@adobe/spacecat-shared-content-client-v1.1.14) (2024-10-19)
 
 

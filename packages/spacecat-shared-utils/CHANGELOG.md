@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-utils-v1.22.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.2...@adobe/spacecat-shared-utils-v1.22.3) (2024-11-07)
+
+
+### Bug Fixes
+
+* proper http data for x-ray trace ([#427](https://github.com/adobe/spacecat-shared/issues/427)) ([4fa4d2d](https://github.com/adobe/spacecat-shared/commit/4fa4d2d417d51e911957e37df5136453dea521b2))
+
+# [@adobe/spacecat-shared-utils-v1.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.1...@adobe/spacecat-shared-utils-v1.22.2) (2024-11-07)
+
+
+### Bug Fixes
+
+* set correct node engine spec ([#423](https://github.com/adobe/spacecat-shared/issues/423)) ([5086ce7](https://github.com/adobe/spacecat-shared/commit/5086ce7d41bebb502cadf092e5b9a7b84b5bf103))
+
+# [@adobe/spacecat-shared-utils-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.0...@adobe/spacecat-shared-utils-v1.22.1) (2024-11-02)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#419](https://github.com/adobe/spacecat-shared/issues/419)) ([6ee73f3](https://github.com/adobe/spacecat-shared/commit/6ee73f3aa944bda730276d7a06a588f39b52a56a))
+
+# [@adobe/spacecat-shared-utils-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.21.1...@adobe/spacecat-shared-utils-v1.22.0) (2024-10-31)
+
+
+### Features
+
+* support FIFO queues with the SQS sendMessage helper ([#417](https://github.com/adobe/spacecat-shared/issues/417)) ([f9df606](https://github.com/adobe/spacecat-shared/commit/f9df606d62b9e23c89b9944f7042b4804cef0599))
+
+# [@adobe/spacecat-shared-utils-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.21.0...@adobe/spacecat-shared-utils-v1.21.1) (2024-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#413](https://github.com/adobe/spacecat-shared/issues/413)) ([ee2c715](https://github.com/adobe/spacecat-shared/commit/ee2c715e08034bea8fb88b4f7166d40b18e107c4))
+
+# [@adobe/spacecat-shared-utils-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.8...@adobe/spacecat-shared-utils-v1.21.0) (2024-10-23)
+
+
+### Features
+
+* tracing fetch ([#409](https://github.com/adobe/spacecat-shared/issues/409)) ([6579a26](https://github.com/adobe/spacecat-shared/commit/6579a26d917db0bb8dc3baa2e19a0dfee8db5fc8))
+
 # [@adobe/spacecat-shared-utils-v1.20.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.7...@adobe/spacecat-shared-utils-v1.20.8) (2024-10-21)
 
 

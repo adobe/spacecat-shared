@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.3.46](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.45...@adobe/spacecat-shared-dynamo-v1.3.46) (2024-11-08)
+
+
+### Bug Fixes
+
+* fix query with limit ([7d0eb6a](https://github.com/adobe/spacecat-shared/commit/7d0eb6a9e7e34830bd722808545501e3202ca420))
+
 # [@adobe/spacecat-shared-dynamo-v1.3.45](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.44...@adobe/spacecat-shared-dynamo-v1.3.45) (2024-11-07)
 
 

@@ -14,7 +14,8 @@ import {
   createNewApiKey,
   getApiKeyByHashedApiKey,
   getApiKeyById,
-  getApiKeysByImsUserIdAndImsOrgId, updateApiKey,
+  getApiKeysByImsUserIdAndImsOrgId, 
+  updateApiKey,
 } from './accessPatterns.js';
 
 export const apiKeyFunctions = (dynamoClient, config, log) => ({

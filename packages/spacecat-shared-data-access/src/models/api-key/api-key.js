@@ -41,7 +41,6 @@ const ApiKey = (data) => {
   self.getExpiresAt = () => self.state.expiresAt;
   self.getRevokedAt = () => self.state.revokedAt;
   self.getDeletedAt = () => self.state.deletedAt;
-  self.getStatus = () => self.state.status;
   self.getScopes = () => self.state.scopes;
 
   /**

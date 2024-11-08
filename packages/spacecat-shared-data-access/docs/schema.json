@@ -1214,10 +1214,6 @@
           "AttributeType": "S"
         },
         {
-          "AttributeName": "status",
-          "AttributeType": "S"
-        },
-        {
           "AttributeName": "scopes",
           "AttributeType": "M"
         }

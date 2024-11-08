@@ -621,11 +621,6 @@ export interface ApiKey {
     getImsOrgId: () => string;
 
     /**
-    * Retrieves the status of the API Key
-    */
-    getStatus: () => string;
-
-    /**
      * Retrieves the createdAt of the API Key.
      */
     getCreatedAt: () => string;

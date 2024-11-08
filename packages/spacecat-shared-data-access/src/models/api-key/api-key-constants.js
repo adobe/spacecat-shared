@@ -11,7 +11,7 @@
  */
 
 /**
- * Api Key Status Types
+ * API Key Status Types
  * Any changes to this object needs to be reflected in the index.d.ts file as well.
  */
 export const ApiKeyStatus = {

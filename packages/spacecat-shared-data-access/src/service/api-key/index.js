@@ -14,7 +14,7 @@ import {
   createNewApiKey,
   getApiKeyByHashedApiKey,
   getApiKeyById,
-  getApiKeysByImsUserIdAndImsOrgId, 
+  getApiKeysByImsUserIdAndImsOrgId,
   updateApiKey,
 } from './accessPatterns.js';
 

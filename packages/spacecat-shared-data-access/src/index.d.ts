@@ -650,6 +650,11 @@ export interface ApiKey {
     */
     updateDeletedAt: (deletedAt: string) => ApiKey;
 
+    /**
+     * Indicates whether the API Key is valid.
+     */
+    isValid: () => boolean;
+
 }
 
 /**

@@ -44,6 +44,28 @@ const ApiKey = (data) => {
   self.getScopes = () => self.state.scopes;
 
   /**
+   * Checks if the apiKey is valid.
+   * @returns {boolean} True if the apiKey is valid, false otherwise
+   */
+  self.isValid = () => {
+    const now = new Date().toISOString();
+
+    if (self.state.deletedAt && self.state.deletedAt > now) {
+      return false;
+    }
+
+    if (self.state.revokedAt && self.state.revokedAt > now) {
+      return false;
+    }
+
+    if (self.state.expiresAt && self.state.expiresAt > now) {
+      return false;
+    }
+
+    return true;
+  };
+
+  /**
    * Updates the state of the ApiKey.
    * @param key - The key to update.
    * @param value - The new value.
@@ -68,6 +90,26 @@ const ApiKey = (data) => {
   self.updateDeletedAt = (deletedAt) => updateState('deletedAt', deletedAt, (value) => {
     if (!isIsoDate(value)) {
       throw new Error(`Invalid deletedAt during update: ${value}. Must be a valid ISO 8601 date string.`);
+    }
+  });
+
+  /**
+   * Updates the expiresAt attribute of the ApiKey.
+   * @param {string} expiresAt - The expiresAt timestamp - ISO 8601 date string.
+   */
+  self.updateExpiresAt = (expiresAt) => updateState('expiresAt', expiresAt, (value) => {
+    if (!isIsoDate(value)) {
+      throw new Error(`Invalid expiresAt during update: ${value}. Must be a valid ISO 8601 date string.`);
+    }
+  });
+
+  /**
+   * Updates the revokedAt attribute of the ApiKey.
+   * @param {string} revokedAt - The revokedAt timestamp - ISO 8601 date string.
+   */
+  self.updateRevokedAt = (revokedAt) => updateState('revokedAt', revokedAt, (value) => {
+    if (!isIsoDate(value)) {
+      throw new Error(`Invalid revokedAt during update: ${value}. Must be a valid ISO 8601 date string.`);
     }
   });
 

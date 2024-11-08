@@ -149,5 +149,34 @@ describe('ApiKey Model tests', () => {
     it('fails to update deletedAt with invalid date', () => {
       expect(() => apiKey.updateDeletedAt('invalid-date')).to.throw('Invalid deletedAt during update: invalid-date. Must be a valid ISO 8601 date string');
     });
+
+    it('returns true if deletedAt, revokedAt, and expiresAt are not set', () => {
+      apiKey.state.deletedAt = null;
+      apiKey.state.revokedAt = null;
+      apiKey.state.expiresAt = null;
+      expect(apiKey.isValid()).to.be.true;
+    });
+
+    it('returns false if deletedAt is after the current time', () => {
+      apiKey.updateDeletedAt(new Date(Date.now() + 10000).toISOString());
+      expect(apiKey.isValid()).to.be.false;
+    });
+
+    it('returns false if revokedAt is after the current time', () => {
+      apiKey.updateRevokedAt(new Date(Date.now() + 10000).toISOString());
+      expect(apiKey.isValid()).to.be.false;
+    });
+
+    it('returns false if expiresAt is after the current time', () => {
+      apiKey.updateExpiresAt(new Date(Date.now() + 10000).toISOString());
+      expect(apiKey.isValid()).to.be.false;
+    });
+
+    it('returns true if deletedAt, revokedAt, and expiresAt are before the current time', () => {
+      apiKey.updateDeletedAt(new Date(Date.now() - 10000).toISOString());
+      apiKey.updateRevokedAt(new Date(Date.now() - 10000).toISOString());
+      apiKey.updateExpiresAt(new Date(Date.now() - 10000).toISOString());
+      expect(apiKey.isValid()).to.be.true;
+    });
   });
 });

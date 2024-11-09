@@ -12,6 +12,8 @@
 
 import { FlatBundle } from '../common/flat-bundle.js';
 
+const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
+
 function collectFormVitals(groupedByUrlId) {
   const { url, items: itemsByUrlId } = groupedByUrlId;
 
@@ -19,7 +21,7 @@ function collectFormVitals(groupedByUrlId) {
     .flatMap((item) => item.items)
     .reduce((acc, cur) => {
       // Check for 'viewblock' checkpoint
-      if (cur && cur.checkpoint === 'viewblock' && cur.source === '.form') {
+      if (cur && cur.checkpoint === 'viewblock' && FORM_SOURCE.includes(cur.source)) {
         acc.isFormViewPresent = true;
       } else if (cur && cur.checkpoint === 'formsubmit') {
         acc.isFormSubmitPresent = true;
@@ -34,17 +36,9 @@ function collectFormVitals(groupedByUrlId) {
       isFormSubmitButtonClickPresent: false,
     });
 
-  // Check if any condition was met; if not, return undefined
-  const { isFormViewPresent, isFormSubmitPresent, isFormSubmitButtonClickPresent } = result;
-  if (!isFormViewPresent && !isFormSubmitPresent && !isFormSubmitButtonClickPresent) {
-    return undefined;
-  }
-
   return {
     url,
-    isFormViewPresent: result.isFormViewPresent,
-    isFormSubmitPresent: result.isFormSubmitPresent,
-    isFormSubmitButtonClickPresent: result.isFormSubmitButtonClickPresent,
+    ...result,
   };
 }
 
@@ -52,8 +46,8 @@ function handler(bundles) {
   return FlatBundle.fromArray(bundles)
     .groupBy('url', 'id')
     .map(collectFormVitals)
-    .filter((item) => item !== undefined)
-    .sort((a, b) => b.views - a.views); // sort desc by views
+  // eslint-disable-next-line max-len
+    .filter((item) => item && (item.isFormViewPresent || item.isFormSubmitPresent || item.isFormSubmitButtonClickPresent));
 }
 
 export default {

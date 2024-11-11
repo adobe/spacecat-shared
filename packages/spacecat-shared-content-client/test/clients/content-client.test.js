@@ -19,7 +19,11 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.js';
 import { Mdast } from '@adobe/spacecat-helix-content-sdk/src/mdast.js';
+import nock from 'nock';
 
+import { SPACECAT_API_ENDPOINT } from '../../src/clients/content-client.js';
+
+use(chaiAsPromised);
 use(chaiAsPromised);
 use(sinonChai);
 
@@ -212,6 +216,66 @@ describe('ContentClient', () => {
     it('creates a new ContentClient instance', () => {
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       expect(client).to.be.an.instanceof(ContentClient);
+    });
+  });
+
+  describe('createFromDomain', () => {
+    it('should create a ContentClient instance from a domain', async () => {
+      const domain = 'example.com';
+      const encodedBaseURL = 'aHR0cHM6Ly9leGFtcGxlLmNvbQ==';
+      const site = {
+        id: 'test-site',
+        baseURL: 'https://example.com',
+        hlxConfig: { content: { source: { type: 'drive.google' } } },
+      };
+      nock(SPACECAT_API_ENDPOINT)
+        .get(`/sites/by-base-url/${encodedBaseURL}`)
+        .reply(200, site);
+
+      const client = await ContentClient.createFromDomain(
+        domain,
+        env,
+        log = { info: sinon.spy(), error: sinon.spy() },
+      );
+      expect(client).to.be.an.instanceof(ContentClient);
+    });
+
+    it('should throw an error if site is not fetched', async () => {
+      const domain = 'example.com';
+      const encodedBaseURL = 'aHR0cHM6Ly9leGFtcGxlLmNvbQ==';
+      nock(SPACECAT_API_ENDPOINT)
+        .get(`/sites/by-base-url/${encodedBaseURL}`)
+        .reply(404, null);
+
+      try {
+        await ContentClient.createFromDomain(
+          domain,
+          env,
+          log = { info: sinon.spy(), error: sinon.spy() },
+        );
+      } catch (error) {
+        expect(error.message).to.equal(`Failed to fetch ${domain}`);
+        expect(log.error.calledOnce).to.be.true;
+      }
+    });
+
+    it('should log and throw an error if fetch fails', async () => {
+      const domain = 'example.com';
+      const encodedBaseURL = 'aHR0cHM6Ly9leGFtcGxlLmNvbQ==';
+      nock(SPACECAT_API_ENDPOINT)
+        .get(`/sites/by-base-url/${encodedBaseURL}`)
+        .replyWithError(200, 'Network error');
+
+      try {
+        await ContentClient.createFromDomain(
+          domain,
+          env,
+          log = { info: sinon.spy(), error: sinon.spy() },
+        );
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.equal(`Failed to fetch ${domain}`);
+      }
     });
   });
 

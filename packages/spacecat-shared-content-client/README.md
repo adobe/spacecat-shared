@@ -32,6 +32,15 @@ const gdriveclient = await ContentClient.createFrom(context, { url: 'GOOGLE_DRIV
 const results = await client.getPageMetadata('/path1');
 console.log(results);
 ```
+```js
+import { ContentClient } from '../src/index.js';
+
+const env = {}; // Your AWS Lambda context object
+const onedriveclient = await ContentClient.createFromDomain('example.com', env, log);
+
+const results = await client.getPageMetadata('/path1');
+console.log(results);
+```
 
 ### Microsoft Sharepoint Drive
 
@@ -40,6 +49,16 @@ import { ContentClient } from '../src/index.js';
 
 const context = {}; // Your AWS Lambda context object
 const onedriveclient = await ContentClient.createFrom(context, { url: 'ONEDRIVE_URL', type: 'onedrive' });
+
+const results = await client.getPageMetadata('/path1');
+console.log(results);
+```
+
+```js
+import { ContentClient } from '../src/index.js';
+
+const env = {}; // Your AWS Lambda context object
+const onedriveclient = await ContentClient.createFromDomain('example.com', env, log);
 
 const results = await client.getPageMetadata('/path1');
 console.log(results);

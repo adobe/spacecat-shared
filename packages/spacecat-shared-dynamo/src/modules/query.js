@@ -33,6 +33,10 @@ async function query(docClient, originalParams, log = console) {
 
   try {
     let data;
+    if (params.Limit && params.Limit <= 1) {
+      const result = await docClient.query(params);
+      return result.Items;
+    }
     do {
       const startTime = performance.now();
 

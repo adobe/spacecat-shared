@@ -308,6 +308,7 @@ describe('Shared functions', () => {
     const sevenDaysLaterExpected = '2023-12-04T12:30:01.124Z';
     const sevenDaysEarlierExpected = '2023-11-20T12:30:01.124Z';
 
+    // eslint-disable-next-line func-names
     before('setup', function () {
       this.clock = sandbox.useFakeTimers({
         now: new Date(mockDate).getTime(),

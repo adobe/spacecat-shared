@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-utils-v1.22.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.4...@adobe/spacecat-shared-utils-v1.22.5) (2024-11-11)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#434](https://github.com/adobe/spacecat-shared/issues/434)) ([b71b615](https://github.com/adobe/spacecat-shared/commit/b71b61528513821f9e34c50a095d47cb4e14f8db))
+
+# [@adobe/spacecat-shared-utils-v1.22.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.3...@adobe/spacecat-shared-utils-v1.22.4) (2024-11-08)
+
+
+### Bug Fixes
+
+* engine spec ([#433](https://github.com/adobe/spacecat-shared/issues/433)) ([19dd309](https://github.com/adobe/spacecat-shared/commit/19dd30956c0a9d35ea343c580e589205bfdbdfd8))
+
+# [@adobe/spacecat-shared-utils-v1.22.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.2...@adobe/spacecat-shared-utils-v1.22.3) (2024-11-07)
+
+
+### Bug Fixes
+
+* proper http data for x-ray trace ([#427](https://github.com/adobe/spacecat-shared/issues/427)) ([4fa4d2d](https://github.com/adobe/spacecat-shared/commit/4fa4d2d417d51e911957e37df5136453dea521b2))
+
 # [@adobe/spacecat-shared-utils-v1.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.1...@adobe/spacecat-shared-utils-v1.22.2) (2024-11-07)
 
 

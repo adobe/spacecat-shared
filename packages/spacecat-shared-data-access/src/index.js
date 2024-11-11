@@ -38,6 +38,7 @@ const INDEX_NAME_ALL_IMPORT_JOBS_BY_STATUS = 'spacecat-services-all-import-jobs-
 const INDEX_NAME_ALL_IMPORT_JOBS_BY_DATE_RANGE = 'spacecat-services-all-import-jobs-by-date-range-dev';
 const INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS = 'spacecat-services-all-import-urls-by-job-id-and-status-dev';
 const INDEX_NAME_API_KEY_BY_HASHED_API_KEY = 'spacecat-services-api-key-by-hashed-api-key-dev';
+const INDEX_NAME_API_KEY_BY_IMS_USER_ID_AND_IMS_ORG_ID = 'spacecat-services-api-key-by-ims-user-id-and-ims-org-id-dev';
 
 const PK_ALL_SITES = 'ALL_SITES';
 const PK_ALL_CONFIGURATIONS = 'ALL_CONFIGURATIONS';
@@ -76,6 +77,8 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS =
         INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS,
         DYNAMO_INDEX_NAME_API_KEY_BY_HASHED_API_KEY = INDEX_NAME_API_KEY_BY_HASHED_API_KEY,
+        DYNAMO_INDEX_NAME_API_KEY_BY_IMS_USER_ID_AND_IMS_ORG_ID =
+        INDEX_NAME_API_KEY_BY_IMS_USER_ID_AND_IMS_ORG_ID,
       } = context.env;
 
       context.dataAccess = createDataAccess({
@@ -102,6 +105,8 @@ export default function dataAccessWrapper(fn) {
         indexNameAllImportJobsByDateRange: DYNAMO_INDEX_NAME_ALL_IMPORT_JOBS_BY_DATE_RANGE,
         indexNameImportUrlsByJobIdAndStatus: DYNAMO_INDEX_NAME_ALL_IMPORT_URLS_BY_JOB_ID_AND_STATUS,
         indexNameApiKeyByHashedApiKey: DYNAMO_INDEX_NAME_API_KEY_BY_HASHED_API_KEY,
+        indexNameApiKeyByImsUserIdAndImsOrgId:
+        DYNAMO_INDEX_NAME_API_KEY_BY_IMS_USER_ID_AND_IMS_ORG_ID,
         pkAllSites: PK_ALL_SITES,
         pkAllOrganizations: PK_ALL_ORGANIZATIONS,
         pkAllLatestAudits: PK_ALL_LATEST_AUDITS,

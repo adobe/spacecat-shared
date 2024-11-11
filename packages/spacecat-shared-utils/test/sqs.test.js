@@ -14,6 +14,7 @@
 
 import { SQSClient } from '@aws-sdk/client-sqs';
 import wrap from '@adobe/helix-shared-wrap';
+import AWSXRay from 'aws-xray-sdk';
 import sinon from 'sinon';
 import { expect, use } from 'chai';
 import sinonChai from 'sinon-chai';
@@ -30,6 +31,7 @@ const sandbox = sinon.createSandbox();
 describe('SQS', () => {
   describe('SQS class', () => {
     let context;
+    AWSXRay.enableManualMode();
 
     beforeEach('setup', () => {
       context = {

@@ -16,7 +16,7 @@ import { expect, use } from 'chai';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
-import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key.js';
+import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key/api-key.js';
 import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
 import ScopedApiKeyHandler from '../../../src/auth/handlers/scoped-api-key.js';

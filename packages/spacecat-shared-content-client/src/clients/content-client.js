@@ -11,20 +11,14 @@
  */
 
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
-import { composeBaseURL, hasText, isObject } from '@adobe/spacecat-shared-utils';
+import {
+  composeBaseURL, hasText, isObject, tracingFetch,
+} from '@adobe/spacecat-shared-utils';
 import { Graph, hasCycle } from 'graph-data-structure';
-import { context as h2, h1 } from '@adobe/fetch';
 import { SiteDto } from '@adobe/spacecat-shared-data-access/src/dto/site.js';
-
-/* c8 ignore next 3 */
-export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
-  ? h1()
-  : h2();
 
 const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
-export const SPACECAT_API_ENDPOINT = 'https://spacecat.experiencecloud.live/api/v1';
-export const SITES_API_ENDPOINT = `${SPACECAT_API_ENDPOINT}/sites/by-base-url`;
 
 /**
  * A list of supported content source types and their required configuration parameters.
@@ -206,8 +200,9 @@ export default class ContentClient {
     const baseUrl = composeBaseURL(domain);
     const siteBaseUrlEncoded = Buffer.from(baseUrl).toString('base64');
     let site;
+    const sitesApiEndpoint = `${env.SPACECAT_API_ENDPOINT}/sites/by-base-url`;
     try {
-      const response = await fetch(`${SITES_API_ENDPOINT}/${siteBaseUrlEncoded}`, {
+      const response = await tracingFetch(`${sitesApiEndpoint}/${siteBaseUrlEncoded}`, {
         method: 'GET',
         headers: {
           'x-api-key': env.SPACECAT_API_KEY,

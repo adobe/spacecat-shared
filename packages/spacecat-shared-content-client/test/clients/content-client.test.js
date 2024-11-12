@@ -21,8 +21,6 @@ import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.j
 import { Mdast } from '@adobe/spacecat-helix-content-sdk/src/mdast.js';
 import nock from 'nock';
 
-import { SPACECAT_API_ENDPOINT } from '../../src/clients/content-client.js';
-
 use(chaiAsPromised);
 use(chaiAsPromised);
 use(sinonChai);
@@ -202,6 +200,7 @@ describe('ContentClient', () => {
       ONEDRIVE_AUTHORITY: 'https://authority.uri',
       ONEDRIVE_CLIENT_ID: 'onedrive-client-id',
       ONEDRIVE_CLIENT_SECRET: 'onedrive-client-secret',
+      SPACECAT_API_ENDPOINT: 'https://spacecat.experiencecloud.live/api/v1',
     };
     context = { env, log };
 
@@ -228,7 +227,7 @@ describe('ContentClient', () => {
         baseURL: 'https://example.com',
         hlxConfig: { content: { source: { type: 'drive.google' } } },
       };
-      nock(SPACECAT_API_ENDPOINT)
+      nock(env.SPACECAT_API_ENDPOINT)
         .get(`/sites/by-base-url/${encodedBaseURL}`)
         .reply(200, site);
 
@@ -243,7 +242,7 @@ describe('ContentClient', () => {
     it('should throw an error if site is not fetched', async () => {
       const domain = 'example.com';
       const encodedBaseURL = 'aHR0cHM6Ly9leGFtcGxlLmNvbQ==';
-      nock(SPACECAT_API_ENDPOINT)
+      nock(env.SPACECAT_API_ENDPOINT)
         .get(`/sites/by-base-url/${encodedBaseURL}`)
         .reply(404, null);
 
@@ -262,7 +261,7 @@ describe('ContentClient', () => {
     it('should log and throw an error if fetch fails', async () => {
       const domain = 'example.com';
       const encodedBaseURL = 'aHR0cHM6Ly9leGFtcGxlLmNvbQ==';
-      nock(SPACECAT_API_ENDPOINT)
+      nock(env.SPACECAT_API_ENDPOINT)
         .get(`/sites/by-base-url/${encodedBaseURL}`)
         .replyWithError(200, 'Network error');
 

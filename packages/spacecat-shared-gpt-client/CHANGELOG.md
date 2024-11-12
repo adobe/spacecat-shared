@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.22...@adobe/spacecat-shared-gpt-client-v1.3.0) (2024-11-12)
+
+
+### Features
+
+* SITES-26591 [Import Assistant] Expand GPT client to user chat endpoint ([#436](https://github.com/adobe/spacecat-shared/issues/436)) ([4aaca2e](https://github.com/adobe/spacecat-shared/commit/4aaca2ede0fb9b019c8c88c2f7afd396065088b1))
+
 # [@adobe/spacecat-shared-gpt-client-v1.2.22](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.21...@adobe/spacecat-shared-gpt-client-v1.2.22) (2024-11-11)
 
 

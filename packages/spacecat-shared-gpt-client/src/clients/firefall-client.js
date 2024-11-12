@@ -16,13 +16,31 @@ import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { fetch as httpFetch } from '../utils.js';
 
-function validateFirefallResponse(response) {
+const USER_ROLE_IMAGE_URL_TYPE = 'image_url';
+const USER_ROLE_TEXT_TYPE = 'text';
+const SYSTEM_ROLE = 'system';
+const USER_ROLE = 'user';
+const AZURE_CHAT_OPENAI_LLM_TYPE = 'azure_chat_openai';
+const JSON_OBJECT_RESPONSE_FORMAT = 'json_object';
+
+function validateCapabilityExecutionResponse(response) {
   return !(!isObject(response)
     || !Array.isArray(response.generations)
     || response.generations.length === 0
     || !Array.isArray(response.generations[0])
     || !isObject(response.generations[0][0])
     || !hasText(response.generations[0][0].text));
+}
+
+function validateChatCompletionResponse(response) {
+  return isObject(response)
+    && Array.isArray(response?.choices)
+    && response.choices.length > 0
+    && response.choices[0]?.message;
+}
+
+function isBase64UrlImage(base64String) {
+  return base64String.startsWith('data:image') && base64String.endsWith('=') && base64String.includes('base64');
 }
 
 export default class FirefallClient {
@@ -89,15 +107,10 @@ export default class FirefallClient {
     this.log.debug(`${message}: took ${duration}ms`);
   }
 
-  async #submitJob(prompt) {
+  async #submitPrompt(body, path) {
     const apiAuth = await this.#getApiAuth();
 
-    const body = JSON.stringify({
-      input: prompt,
-      capability_name: this.config.capabilityName,
-    });
-
-    const url = createUrl(`${this.config.apiEndpoint}/v2/capability_execution/job`);
+    const url = createUrl(`${this.config.apiEndpoint}${path}`);
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiAuth}`,
@@ -121,7 +134,7 @@ export default class FirefallClient {
   }
 
   /* eslint-disable no-await-in-loop */
-  async #pollJobStatus(jobId) {
+  async #pollJobStatus(jobId, path) {
     const apiAuth = await this.#getApiAuth();
 
     let jobStatusResponse;
@@ -130,7 +143,7 @@ export default class FirefallClient {
         (resolve) => { setTimeout(resolve, this.config.pollInterval); },
       ); // Wait for 2 seconds before polling
 
-      const url = `${this.config.apiEndpoint}/v2/capability_execution/job/${jobId}`;
+      const url = `${this.config.apiEndpoint}${path}/${jobId}`;
       const headers = {
         Authorization: `Bearer ${apiAuth}`,
         'x-api-key': this.config.apiKey,
@@ -161,23 +174,128 @@ export default class FirefallClient {
     return jobStatusResponse;
   }
 
-  async fetch(prompt) {
+  /**
+   * Fetches data from Firefall Chat Completion API.
+   * @param prompt The text prompt to provide to Firefall
+   * @param options The options for the call:
+   *                - imageUrls: An array of URLs of the images to provide to Firefall
+   * @returns {Object} - AI response
+   */
+  async fetchChatCompletion(prompt, options = {}) {
+    const { imageUrls, responseFormat, model: llmModel = 'gpt-4-turbo' } = options || {};
+    const hasImageUrls = imageUrls && imageUrls.length > 0;
+
+    const getBody = () => {
+      const userRole = {
+        role: USER_ROLE,
+        content: [
+          {
+            type: USER_ROLE_TEXT_TYPE,
+            text: prompt,
+          },
+        ],
+      };
+
+      if (hasImageUrls) {
+        imageUrls
+          .filter((iu) => isValidUrl(iu) || isBase64UrlImage(iu))
+          .forEach((imageUrl) => {
+            userRole.content.push({
+              type: USER_ROLE_IMAGE_URL_TYPE,
+              image_url: {
+                url: imageUrl,
+              },
+            });
+          });
+      }
+
+      const body = {
+        llm_metadata: {
+          model_name: llmModel,
+          llm_type: AZURE_CHAT_OPENAI_LLM_TYPE,
+        },
+        messages: [
+          userRole,
+        ],
+      };
+      if (responseFormat === JSON_OBJECT_RESPONSE_FORMAT) {
+        body.response_format = {
+          type: JSON_OBJECT_RESPONSE_FORMAT,
+        };
+        body.messages.push({
+          role: SYSTEM_ROLE,
+          content: 'You are a helpful assistant designed to output JSON.',
+        });
+      }
+
+      return body;
+    };
+
+    // Validate inputs
+    if (!hasText(prompt)) {
+      throw new Error('Invalid prompt received');
+    }
+    if (hasImageUrls && !Array.isArray(imageUrls)) {
+      throw new Error('imageUrls must be an array.');
+    }
+
+    let chatSubmissionResponse;
+    try {
+      const startTime = process.hrtime.bigint();
+      const body = getBody();
+
+      chatSubmissionResponse = await this.#submitPrompt(
+        JSON.stringify(body),
+        '/v2/chat/completions',
+      );
+      this.#logDuration('Firefall API Chat Completion call', startTime);
+    } catch (error) {
+      this.log.error('Error while fetching data from Firefall chat API: ', error.message);
+      throw error;
+    }
+
+    if (!validateChatCompletionResponse(chatSubmissionResponse)) {
+      this.log.error(
+        'Could not obtain data from Firefall: Invalid response format.',
+      );
+      throw new Error('Invalid response format.');
+    }
+    if (!chatSubmissionResponse.choices.some((ch) => hasText(ch?.message?.content))) {
+      throw new Error('Prompt completed but no output was found.');
+    }
+
+    return chatSubmissionResponse;
+  }
+
+  /**
+   * Fetches data from Firefall API.
+   * @param prompt The text prompt to provide to Firefall
+   * @returns {string} - AI response
+   */
+  async fetchCapabilityExecution(prompt) {
     if (!hasText(prompt)) {
       throw new Error('Invalid prompt received');
     }
 
     try {
       const startTime = process.hrtime.bigint();
-      const jobSubmissionResponse = await this.#submitJob(prompt);
-      const jobStatusResponse = await this.#pollJobStatus(jobSubmissionResponse.job_id);
-      this.#logDuration('Firefall API call', startTime);
+
+      const body = JSON.stringify({
+        input: prompt,
+        capability_name: this.config.capabilityName,
+      });
+      const path = '/v2/capability_execution/job';
+
+      const jobSubmissionResponse = await this.#submitPrompt(body, path);
+      const jobStatusResponse = await this.#pollJobStatus(jobSubmissionResponse.job_id, path);
+      this.#logDuration('Firefall API Capability Execution call', startTime);
 
       const { output } = jobStatusResponse;
       if (!output || !output.capability_response) {
         throw new Error('Job completed but no output was found');
       }
 
-      if (!validateFirefallResponse(output.capability_response)) {
+      if (!validateCapabilityExecutionResponse(output.capability_response)) {
         this.log.error('Could not obtain data from Firefall: Invalid response format.');
         throw new Error('Invalid response format.');
       }
@@ -189,8 +307,15 @@ export default class FirefallClient {
 
       return result.text;
     } catch (error) {
-      this.log.error('Error while fetching data from Firefall API: ', error.message);
+      this.log.error('Error while fetching data from Firefall Capability Execution API: ', error.message);
       throw error;
     }
+  }
+
+  /**
+   * @deprecated since version 1.2.19. Use fetchCapabilityExecution instead.
+   */
+  async fetch(prompt) {
+    return this.fetchCapabilityExecution(prompt);
   }
 }

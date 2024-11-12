@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.50.1...@adobe/spacecat-shared-data-access-v1.51.0) (2024-11-12)
+
+
+### Features
+
+* enable internal workspace reporting ([2425c88](https://github.com/adobe/spacecat-shared/commit/2425c881b147272645ea29c0028ebe11878a5e26))
+
 # [@adobe/spacecat-shared-data-access-v1.50.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.50.0...@adobe/spacecat-shared-data-access-v1.50.1) (2024-11-11)
 
 

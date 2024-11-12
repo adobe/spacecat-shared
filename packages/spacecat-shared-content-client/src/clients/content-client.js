@@ -11,8 +11,11 @@
  */
 
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
-import { hasText, isObject } from '@adobe/spacecat-shared-utils';
+import {
+  composeBaseURL, hasText, isObject, tracingFetch,
+} from '@adobe/spacecat-shared-utils';
 import { Graph, hasCycle } from 'graph-data-structure';
+import { SiteDto } from '@adobe/spacecat-shared-data-access/src/dto/site.js';
 
 const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
@@ -191,6 +194,31 @@ export default class ContentClient {
     }
 
     return new ContentClient(config, site, log);
+  }
+
+  static async createFromDomain(domain, env, log = console) {
+    const baseUrl = composeBaseURL(domain);
+    const siteBaseUrlEncoded = Buffer.from(baseUrl).toString('base64');
+    let site;
+    const sitesApiEndpoint = `${env.SPACECAT_API_ENDPOINT}/sites/by-base-url`;
+    try {
+      const response = await tracingFetch(`${sitesApiEndpoint}/${siteBaseUrlEncoded}`, {
+        method: 'GET',
+        headers: {
+          'x-api-key': env.SPACECAT_API_KEY,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${domain}`);
+      }
+      site = await response.json();
+      const siteDto = SiteDto.fromDynamoItem(site);
+      return ContentClient.createFrom({ log, env }, siteDto);
+    } catch (e) {
+      log.error(`Failed to fetch ${domain}: ${e.message}`);
+      throw new Error(`Failed to fetch ${domain}`);
+    }
   }
 
   constructor(config, site, log) {

@@ -69,6 +69,11 @@ describe('ApiKey Model tests', () => {
       expect(apiKey.getScopes()).to.deep.equal([{ name: 'imports.write', domains: ['https://adobe.com', 'https://test.com'] }]);
     });
 
+    it('creates an ApiKey object for a user with scope - imports.assistant', () => {
+      const apiKey = createApiKey({ ...validApiKey, scopes: [{ name: 'imports.assistant' }] });
+      expect(apiKey.getScopes()).to.deep.equal([{ name: 'imports.assistant' }]);
+    });
+
     it('throws an error if revokedAt is not a valid date', () => {
       expect(() => createApiKey({ ...validApiKey, revokedAt: 'invalid-date' })).to.throw('revokedAt should be a valid ISO 8601 string: invalid-date');
     });

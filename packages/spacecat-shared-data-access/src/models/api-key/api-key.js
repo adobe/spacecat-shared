@@ -28,6 +28,7 @@ const scopeNames = [
   'imports.delete',
   'imports.read_all',
   'imports.all_domains',
+  'imports.assistant',
 ];
 
 const ApiKey = (data) => {
@@ -121,8 +122,8 @@ const ApiKey = (data) => {
  * @param {Object} apiKeyData - The data for the ApiKey object.
  * @returns {ApiKey} The new ApiKey object.
  */
-export const createApiKey = (data) => {
-  const newState = { ...data };
+export const createApiKey = (apiKeyData) => {
+  const newState = { ...apiKeyData };
 
   if (!hasText(newState.hashedApiKey)) {
     throw new Error(`Invalid Hashed API Key: ${newState.hashedApiKey}`);

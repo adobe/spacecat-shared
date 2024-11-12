@@ -27,6 +27,18 @@ export class ContentClient {
   static createFrom(context: UniversalContext, site: object): ContentClient;
 
   /**
+   * Creates a new ContentClient instance from the given domain and environment.
+   *
+   * @param {string} domain The domain of the site to create the ContentClient for.
+   * @param {Object} env The environment object that contains the required configuration
+   * for the site's content source type.
+   * @returns {Promise<ContentClient>} A promise that resolves to the ContentClient instance.
+   * @throws {Error} If the domain is not a string or empty.
+   * @throws {Error} If the env is not an object or does not contain the required configuration.
+   */
+  static createFromDomain(domain: string, env: object,): Promise<ContentClient>;
+
+  /**
    * Returns the metadata for the given page path. The document backing the path
    * is resolved and the metadata is extracted from it. The metadata is a Map where the entries
    * key is the metadata key and the value is the metadata value. If the page does not have any

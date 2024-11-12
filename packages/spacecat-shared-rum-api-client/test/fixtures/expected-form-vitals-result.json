@@ -1,68 +1,143 @@
 [
   {
-    "isFormSubmitButtonClickPresent": true,
-    "isFormSubmitPresent": false,
-    "isFormViewPresent": false,
-    "url": "https://business.adobe.com/se/resources/main.html"
+    "url": "https://business.adobe.com/se/resources/main.html",
+    "formsubmit": {},
+    "formviews": {},
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "desktop:windows": 100
+    }
   },
   {
-    "isFormSubmitButtonClickPresent": false,
-    "isFormSubmitPresent": false,
-    "isFormViewPresent": true,
-    "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html"
+    "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html",
+    "formsubmit": {},
+    "formviews": {
+      "desktop:mac": 100
+    },
+    "formengagement": {},
+    "pageview": {
+      "desktop:mac": 100,
+      "desktop:linux": 2200,
+      "desktop:windows": 100
+    }
   },
   {
     "url": "https://business.adobe.com/request-consultation/experience-cloud.html",
-    "isFormViewPresent": false,
-    "isFormSubmitPresent": true,
-    "isFormSubmitButtonClickPresent": true
+    "formsubmit": {
+      "desktop:mac": 100
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:mac": 700
+    },
+    "pageview": {
+      "desktop:mac": 200,
+      "desktop:linux": 1600
+    }
   },
   {
     "url": "https://business.adobe.com/",
-    "isFormViewPresent": false,
-    "isFormSubmitPresent": false,
-    "isFormSubmitButtonClickPresent": true
+    "formsubmit": {},
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "desktop:mac": 800,
+      "desktop:windows": 1900,
+      "mobile:ios": 100,
+      "mobile:android": 300
+    }
   },
   {
     "url": "https://business.adobe.com/resources/demo/adobe-learning-manager-lms.html",
-    "isFormViewPresent": false,
-    "isFormSubmitPresent": true,
-    "isFormSubmitButtonClickPresent": true
+    "formsubmit": {
+      "desktop:windows": 100
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 500
+    },
+    "pageview": {
+      "mobile:ios": 100,
+      "mobile:android": 200,
+      "desktop:windows": 400
+    }
   },
   {
     "url": "https://business.adobe.com/jp/resources/guides/leading-generative-ai-deployment-for-marketing.html",
-    "isFormViewPresent": false,
-    "isFormSubmitPresent": true,
-    "isFormSubmitButtonClickPresent": true
+    "formsubmit": {
+      "desktop:windows": 200
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 400
+    },
+    "pageview": {
+      "desktop:windows": 200
+    }
   },
   {
     "url": "https://business.adobe.com/uk/products/magento/magento-commerce/sem.html",
-    "isFormViewPresent": false,
-    "isFormSubmitPresent": false,
-    "isFormSubmitButtonClickPresent": true
+    "formsubmit": {},
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "desktop:windows": 100
+    }
   },
   {
     "url": "https://business.adobe.com/jp/resources/digital-trends-apj-report.html",
-    "isFormViewPresent": false,
-    "isFormSubmitPresent": true,
-    "isFormSubmitButtonClickPresent": true
+    "formsubmit": {
+      "desktop:windows": 100
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "desktop:windows": 100
+    }
   },
   {
     "url": "https://business.adobe.com/products/workfront/get-demo.html",
-    "isFormViewPresent": false,
-    "isFormSubmitPresent": true,
-    "isFormSubmitButtonClickPresent": true
+    "formsubmit": {
+      "desktop:mac": 100
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:mac": 600
+    },
+    "pageview": {
+      "desktop:mac": 100
+    }
   },
   {
     "url": "https://business.adobe.com/jp/resources/reports/retail-digital-trends.html",
-    "isFormViewPresent": false,
-    "isFormSubmitPresent": true,
-    "isFormSubmitButtonClickPresent": true
+    "formsubmit": {
+      "desktop:windows": 100
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 400
+    },
+    "pageview": {
+      "desktop:windows": 100
+    }
   },
   {
     "url": "https://business.adobe.com/resources/reports/forrester-tei-adobe-content-supply-chain.html",
-    "isFormViewPresent": false,
-    "isFormSubmitPresent": true,
-    "isFormSubmitButtonClickPresent": true
+    "formsubmit": {
+      "desktop:mac": 100
+    },
+    "formview": {},
+    "formengagement": {},
+    "pageview": {
+      "desktop:mac": 100
+    }
   }
 ]

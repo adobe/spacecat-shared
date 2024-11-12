@@ -177,8 +177,10 @@ export default class FirefallClient {
   /**
    * Fetches data from Firefall Chat Completion API.
    * @param prompt The text prompt to provide to Firefall
-   * @param options The options for the call:
-   *                - imageUrls: An array of URLs of the images to provide to Firefall
+   * @param options The options for the call, with optional properties:
+   *          - imageUrls: An array of URLs of the images to provide to Firefall
+   *          - model: LLM Model to use (default: gpt-4-turbo).  Use 'gpt-4-vision' with images.
+   *          - responseFormat: The response format to request from Firefall (accepts: json_object)
    * @returns {Object} - AI response
    */
   async fetchChatCompletion(prompt, options = {}) {

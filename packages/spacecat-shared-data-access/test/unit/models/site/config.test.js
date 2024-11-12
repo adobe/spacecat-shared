@@ -149,7 +149,7 @@ describe('Config Tests', () => {
       const dynamoItem = {
         slack: {
           channel: 'channel1',
-          workspace: 'workspace1',
+          workspace: 'internal',
         },
         handlers: {
           404: {
@@ -160,8 +160,10 @@ describe('Config Tests', () => {
       const config = Config.fromDynamoItem(dynamoItem);
       const slackMentions = config.getSlackMentions(404);
       const slackConfig = config.getSlackConfig();
+      const isInternal = config.isInternalCustomer();
       expect(slackConfig.channel).to.equal('channel1');
-      expect(slackConfig.workspace).to.equal('workspace1');
+      expect(slackConfig.workspace).to.equal('internal');
+      expect(isInternal).to.equal(true);
       expect(slackMentions[0]).to.equal('id1');
     });
   });
@@ -171,7 +173,7 @@ describe('Config Tests', () => {
       const data = Config({
         slack: {
           channel: 'channel1',
-          workspace: 'workspace1',
+          workspace: 'external',
         },
         handlers: {
           404: {
@@ -183,7 +185,8 @@ describe('Config Tests', () => {
       const slackConfig = dynamoItem.slack;
       const slackMentions = dynamoItem.handlers[404].mentions.slack;
       expect(slackConfig.channel).to.equal('channel1');
-      expect(slackConfig.workspace).to.equal('workspace1');
+      expect(slackConfig.workspace).to.equal('external');
+      expect(data.isInternalCustomer()).to.equal(false);
       expect(slackMentions[0]).to.equal('id1');
     });
   });

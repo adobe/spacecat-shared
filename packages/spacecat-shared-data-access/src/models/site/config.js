@@ -57,6 +57,7 @@ export const Config = (data = {}) => {
   const state = { ...validConfig };
   const self = { state };
   self.getSlackConfig = () => state.slack;
+  self.isInternalCustomer = () => state?.slack?.workspace === 'internal';
   self.getSlackMentions = (type) => state?.handlers?.[type]?.mentions?.slack;
   self.getHandlerConfig = (type) => state?.handlers?.[type];
   self.getHandlers = () => state.handlers;

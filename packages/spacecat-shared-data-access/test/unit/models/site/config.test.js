@@ -185,6 +185,8 @@ describe('Config Tests', () => {
       const slackConfig = dynamoItem.slack;
       const slackMentions = dynamoItem.handlers[404].mentions.slack;
       expect(slackConfig.channel).to.equal('channel1');
+      expect(slackConfig.workspace).to.equal('external');
+      expect(data.isInternalCustomer()).to.equal(false);
       expect(slackMentions[0]).to.equal('id1');
     });
   });

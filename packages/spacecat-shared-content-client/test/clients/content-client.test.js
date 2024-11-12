@@ -22,7 +22,6 @@ import { Mdast } from '@adobe/spacecat-helix-content-sdk/src/mdast.js';
 import nock from 'nock';
 
 use(chaiAsPromised);
-use(chaiAsPromised);
 use(sinonChai);
 
 describe('ContentClient', () => {

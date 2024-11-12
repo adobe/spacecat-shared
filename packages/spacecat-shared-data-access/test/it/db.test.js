@@ -96,7 +96,7 @@ function checkSiteTopPage(siteTopPage) {
   expect(isIsoDate(siteTopPage.getImportedAt())).to.be.true;
 }
 
-const TEST_DA_CONFIG = {
+export const TEST_DA_CONFIG = {
   tableNameAudits: 'spacecat-services-audits',
   tableNameKeyEvents: 'spacecat-services-key-events',
   tableNameLatestAudits: 'spacecat-services-latest-audits',
@@ -109,6 +109,7 @@ const TEST_DA_CONFIG = {
   tableNameApiKeys: 'spacecat-services-api-keys',
   tableNameImportJobs: 'spacecat-services-import-jobs',
   tableNameImportUrls: 'spacecat-services-import-urls',
+  tableNameSpacecatData: 'spacecat-data',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',

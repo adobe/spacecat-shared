@@ -10,6 +10,71 @@
   },
   "DataModel": [
     {
+      "TableName": "spacecat-services-data",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "pk",
+          "AttributeType": "S"
+        },
+        "SortKey": {
+          "AttributeName": "sk",
+          "AttributeType": "S"
+        }
+      },
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "gsi1pk",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "gsi1sk",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "gsi2pk",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "gsi2sk",
+          "AttributeType": "S"
+        }
+      ],
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "spacecat-data-opportunity-by-site-and-status",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "gsi1pk",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "gsi1sk",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-data-suggestion-by-opportunity-and-status",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "gsi1pk",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "gsi1sk",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        }
+      ]
+    },
+    {
       "TableName": "spacecat-services-sites",
       "KeyAttributes": {
         "PartitionKey": {

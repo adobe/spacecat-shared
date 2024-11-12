@@ -46,7 +46,7 @@ async function createTablesFromSchema() {
  * @param {Array<string>} tableNames - An array of table names to delete.
  * @returns {Promise<void>} A promise that resolves when all tables have been deleted.
  */
-async function deleteExistingTables(tableNames) {
+export async function deleteExistingTables(tableNames) {
   const deletionPromises = tableNames.map((tableName) => deleteTable(dbClient, tableName));
   await Promise.all(deletionPromises);
 }

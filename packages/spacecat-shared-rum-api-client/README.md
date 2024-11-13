@@ -298,35 +298,6 @@ Calculates the amount of non-inorganic (earned and owned) traffic and the click-
 
 ```
 
-```json
-[
-  {
-    "url": "https://www.aem.live/home",
-    "pageviews": 2620,
-    "lcp": 2099.699999988079,
-    "lcpCount": 9,
-    "cls": 0.020660136604802475,
-    "clsCount": 7,
-    "inp": 12,
-    "inpCount": 3,
-    "ttfb": 520.4500000476837,
-    "ttfbCount": 18
-  },
-  {
-    "url": "https://www.aem.live/developer/block-collection",
-    "pageviews": 2000,
-    "lcp": 512.1249999403954,
-    "lcpCount": 4,
-    "cls": 0.0005409526209424976,
-    "clsCount": 4,
-    "inp": 20,
-    "inpCount": 2,
-    "ttfb": 122.90000003576279,
-    "ttfbCount": 4
-  }
-]
-```
-
 ### formVitals
 
 Checks the form vitals for a given domain within the requested interval. It checks whether the

@@ -1,5 +1,25 @@
 [
   {
+    "group-name": "Developer Section",
+    "pattern": "https://www.aem.live/developer/*",
+    "urls": [
+      {
+        "url": "https://www.aem.live/developer/tutorial",
+        "lcp": 711.3499999996275,
+        "lcpCount": 15,
+        "cls": 0.011139588793585503,
+        "clsCount": 10,
+        "inp": 36,
+        "inpCount": 8,
+        "ttfb": 96.97500000149012,
+        "ttfbCount": 16,
+        "pageviews": 1910
+      }
+    ]
+  },
+
+  // draft 1
+  {
     "groupedUrls": {
       "name": "Developer Section",
       "pattern": "https://www.aem.live/developer/*",
@@ -15,6 +35,8 @@
     "ttfbCount": 4,
     "pageviews": 2000
   },
+
+  // draft 2
   {
     "url": "https://www.aem.live/docs/*",
     "lcp": 711.3499999996275,

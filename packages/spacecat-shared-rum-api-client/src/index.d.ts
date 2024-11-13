@@ -17,6 +17,10 @@ export interface RUMAPIOptions {
     domainkey: string;
     interval?: number;
     granularity?: 'hourly' | 'daily';
+    groupedURLs?: Array<{
+      name: string; // Name of the URL group
+      pattern: string; // Pattern representing the URL path structure to group
+    }>;
 }
 
 export default class RUMAPIClient {

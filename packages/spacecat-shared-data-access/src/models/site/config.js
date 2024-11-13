@@ -31,6 +31,10 @@ export const configSchema = Joi.object({
       targetURL: Joi.string().optional(),
     })).optional(),
     includedURLs: Joi.array().items(Joi.string()),
+    groupedURLs: Joi.array().items(Joi.object({
+      name: Joi.string(),
+      pattern: Joi.string(),
+    })).optional(),
   }).unknown(true)).unknown(true),
 }).unknown(true);
 
@@ -66,6 +70,7 @@ export const Config = (data = {}) => {
   self.getManualOverwrites = (type) => state?.handlers?.[type]?.manualOverwrites;
   self.getFixedURLs = (type) => state?.handlers?.[type]?.fixedURLs;
   self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
+  self.getGroupedURLs = (type) => state?.handlers?.[type]?.groupedURLs;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -102,6 +107,12 @@ export const Config = (data = {}) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = state.handlers[type] || {};
     state.handlers[type].fixedURLs = fixedURLs;
+  };
+
+  self.updateGroupedURLs = (type, groupedURLs) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].groupedURLs = groupedURLs;
   };
 
   return Object.freeze(self);

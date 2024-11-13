@@ -141,6 +141,49 @@ describe('Config Tests', () => {
       expect(config.getManualOverwrites('404')).to.be.undefined;
       expect(config.getFixedURLs('404')).to.be.undefined;
       expect(config.getIncludedURLs('404')).to.be.undefined;
+      expect(config.getGroupedURLs('404')).to.be.undefined;
+    });
+  });
+
+  describe('Grouped URLs option', () => {
+    it('Config creation with the groupedURLs option', () => {
+      const groupedURLs = [
+        { name: 'catalog', pattern: '/products/' },
+        { name: 'blog', pattern: '/post/' },
+      ];
+      const data = {
+        handlers: {
+          'broken-backlinks': {
+            groupedURLs,
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getGroupedURLs('broken-backlinks')).to.deep.equal(groupedURLs);
+    });
+
+    it('Config creation with the incorrect groupedURLs option', () => {
+      const groupedURLs = [
+        { wrong: 'wrong', structure: 'structure' },
+      ];
+      const data = {
+        handlers: {
+          'broken-backlinks': {
+            groupedURLs,
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.broken-backlinks.groupedURLs[0].wrong" is not allowed');
+    });
+
+    it('correctly updates the grouped URLs', () => {
+      const groupedURLs = [
+        { name: 'catalog', pattern: '/products/' },
+        { name: 'blog', pattern: '/post/' },
+      ];
+      const config = Config();
+      config.updateGroupedURLs('broken-backlinks', groupedURLs);
+      expect(config.getGroupedURLs('broken-backlinks')).to.deep.equal(groupedURLs);
     });
   });
 

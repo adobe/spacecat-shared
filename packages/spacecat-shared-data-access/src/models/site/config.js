@@ -113,6 +113,8 @@ export const Config = (data = {}) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = state.handlers[type] || {};
     state.handlers[type].groupedURLs = groupedURLs;
+
+    validateConfiguration(state);
   };
 
   return Object.freeze(self);

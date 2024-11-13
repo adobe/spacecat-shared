@@ -308,32 +308,28 @@ An example response:
 ```json
 [
   {
-    "url": "https://business.adobe.com/resources/experience-magento.html",
-    "formSubmits": {
-      "desktop:mac": 100,
+    "url": "https://business.adobe.com/",
+    "formsubmit": {},
+    "formview": {},
+    "formengagement": {
       "desktop:windows": 100
     },
-    "formViews": {},
-    "formEngagement": {
-      "desktop:mac": 100,
-      "desktop:windows": 100
-    },
-    "pageViews": {
-      "desktop:mac": 100,
-      "desktop:windows": 200
+    "pageview": {
+      "desktop:mac": 800,
+      "desktop:windows": 1900,
+      "mobile:ios": 100,
+      "mobile:android": 300
     }
   },
   {
-    "url": "https://business.adobe.com/resources/webinars/getting-started-with-generative-ai.html",
-    "formSubmits": {
-      "desktop:mac": 100
+    "url": "https://business.adobe.com/se/resources/main.html",
+    "formsubmit": {},
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 100
     },
-    "formViews": {},
-    "formEngagement": {
-      "desktop:mac": 100
-    },
-    "pageViews": {
-      "desktop:mac": 100
+    "pageview": {
+      "desktop:windows": 100
     }
   }
 ]

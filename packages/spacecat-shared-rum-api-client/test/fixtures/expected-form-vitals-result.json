@@ -1,19 +1,5 @@
 [
   {
-    "url": "https://business.adobe.com/",
-    "formsubmit": {},
-    "formview": {},
-    "formengagement": {
-      "desktop:windows": 100
-    },
-    "pageview": {
-      "desktop:mac": 800,
-      "desktop:windows": 1900,
-      "mobile:ios": 100,
-      "mobile:android": 300
-    }
-  },
-  {
     "url": "https://business.adobe.com/se/resources/main.html",
     "formsubmit": {},
     "formview": {},
@@ -38,32 +24,17 @@
     }
   },
   {
-    "url": "https://business.adobe.com/request-consultation/experience-cloud.html",
-    "formsubmit": {
-      "desktop:mac": 100
-    },
-    "formview": {},
-    "formengagement": {
-      "desktop:mac": 100
-    },
-    "pageview": {
-      "desktop:mac": 200,
-      "desktop:linux": 1600
-    }
-  },
-  {
-    "url": "https://business.adobe.com/resources/demo/adobe-learning-manager-lms.html",
-    "formsubmit": {
-      "desktop:windows": 100
-    },
+    "url": "https://business.adobe.com/",
+    "formsubmit": {},
     "formview": {},
     "formengagement": {
       "desktop:windows": 100
     },
     "pageview": {
+      "desktop:mac": 800,
+      "desktop:windows": 1900,
       "mobile:ios": 100,
-      "mobile:android": 200,
-      "desktop:windows": 400
+      "mobile:android": 300
     }
   },
   {
@@ -104,6 +75,20 @@
     }
   },
   {
+    "url": "https://business.adobe.com/request-consultation/experience-cloud.html",
+    "formsubmit": {
+      "desktop:mac": 100
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:mac": 100
+    },
+    "pageview": {
+      "desktop:mac": 200,
+      "desktop:linux": 1600
+    }
+  },
+  {
     "url": "https://business.adobe.com/products/workfront/get-demo.html",
     "formsubmit": {
       "desktop:mac": 100
@@ -114,6 +99,21 @@
     },
     "pageview": {
       "desktop:mac": 100
+    }
+  },
+  {
+    "url": "https://business.adobe.com/resources/demo/adobe-learning-manager-lms.html",
+    "formsubmit": {
+      "desktop:windows": 100
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "mobile:ios": 100,
+      "mobile:android": 200,
+      "desktop:windows": 400
     }
   },
   {

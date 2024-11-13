@@ -12,67 +12,54 @@
 
 const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
 const BOT = 'bot';
+const CHECKPOINT_MAPPING = { formsubmit: 'formsubmit', viewblock: 'formview', click: 'formengagement' };
 
-function collectFormVitals(bundles) {
-  const results = {};
-
-  // Accumulate counts by user agent
-  const accumulateByUserAgent = (userAgentCounts, userAgent, weight) => {
-    if (userAgent && !userAgent.startsWith(BOT)) {
-      if (!userAgentCounts[userAgent]) {
-        // eslint-disable-next-line no-param-reassign
-        userAgentCounts[userAgent] = 0;
-      }
-      // eslint-disable-next-line no-param-reassign
-      userAgentCounts[userAgent] += weight;
-    }
+function initializeResult(url, pageViews) {
+  return {
+    url,
+    formsubmit: {},
+    formview: {},
+    formengagement: {},
+    pageview: pageViews[url],
   };
+}
 
+function collectFormVitals(bundles, pageViews) {
+  const results = {};
   for (const bundle of bundles) {
     const {
       url, userAgent, weight, events,
     } = bundle;
 
-    // Initialize the URL entry in the result if not already present
-    if (!results[url]) {
-      results[url] = {
-        url,
-        formsubmit: {},
-        formview: {},
-        formengagement: {},
+    if (userAgent && !userAgent.startsWith(BOT)) {
+      // Track if each condition has been processed for this event
+      const processedCheckpoints = {
+        viewblock: false,
+        formsubmit: false,
+        click: false,
       };
-    }
 
-    // Reference the current URL’s data object in the results
-    const urlData = results[url];
-    // Track if each condition has been processed for this event
-    const processedCheckpoints = new Set();
+      // Process each event within the bundle
+      for (const event of events) {
+        const { checkpoint, source } = event;
 
-    // Process each event within the bundle
-    for (const event of events) {
-      const { checkpoint, source } = event;
-
-      // Only process the checkpoint once per event
-      if (!processedCheckpoints.has(checkpoint)) {
-        // Check for 'viewblock' checkpoint indicating form views
-        if (checkpoint === 'viewblock' && FORM_SOURCE.includes(source)) {
-          accumulateByUserAgent(urlData.formview, userAgent, weight);
-          processedCheckpoints.add('viewblock'); // Mark as processed
-        }
-        // Check for 'formsubmit' checkpoint indicating form submissions
-        if (checkpoint === 'formsubmit') {
-          accumulateByUserAgent(urlData.formsubmit, userAgent, weight);
-          processedCheckpoints.add('formsubmit'); // Mark as processed
-        }
-        // Check for 'click' checkpoint with source indicating form engagement
-        if (checkpoint === 'click' && source && /\bform\b/.test(source.toLowerCase())) {
-          accumulateByUserAgent(urlData.formengagement, userAgent, weight);
-          processedCheckpoints.add('click'); // Mark as processed
+        // Only process the checkpoint once per event
+        if (!processedCheckpoints[checkpoint]) {
+          if ((checkpoint === 'viewblock' && FORM_SOURCE.includes(source)) || (checkpoint === 'formsubmit') || (checkpoint === 'click' && source && /\bform\b/.test(source.toLowerCase()))) {
+            results[url] = results[url] || initializeResult(url, pageViews);
+            const key = CHECKPOINT_MAPPING[checkpoint];
+            const res = results[url];
+            res[key] = {
+              ...res[key],
+              [userAgent]: (res[key][userAgent] || 0) + weight,
+            };
+            // Mark this checkpoint as processed
+            processedCheckpoints[checkpoint] = true;
+          }
         }
       }
     }
   }
-
   return results;
 }
 
@@ -80,33 +67,16 @@ function pageviewsByUrlAndUserAgent(bundles) {
   return bundles.reduce((acc, cur) => {
     const { userAgent } = cur;
     if (!userAgent || userAgent.startsWith(BOT)) return acc;
-    // Initialize the URL object if it doesn't exist
     acc[cur.url] = acc[cur.url] || {};
-    // Initialize the userAgent count if it doesn't exist
     acc[cur.url][userAgent] = (acc[cur.url][userAgent] || 0) + cur.weight;
     return acc;
   }, {});
 }
 
 function handler(bundles) {
-  const pageviews = pageviewsByUrlAndUserAgent(bundles);
-  const formVitals = collectFormVitals(bundles);
-
-  return Object.values(formVitals)
-    .map((acc) => {
-      acc.pageview = pageviews[acc.url];
-      return acc;
-    })
-    .filter((item) => {
-      // Calculate the sum of values in formView, formSubmit, and formEngagement
-      const formViewSum = Object.values(item.formview).reduce((sum, value) => sum + value, 0);
-      const formSubmitSum = Object.values(item.formsubmit).reduce((sum, value) => sum + value, 0);
-      // eslint-disable-next-line max-len
-      const formEngagementSum = Object.values(item.formengagement).reduce((sum, value) => sum + value, 0);
-
-      // Check if any of the sums is greater than zero
-      return formViewSum > 0 || formSubmitSum > 0 || formEngagementSum > 0;
-    });
+  const pageViews = pageviewsByUrlAndUserAgent(bundles);
+  const formVitals = collectFormVitals(bundles, pageViews);
+  return Object.values(formVitals);
 }
 
 export default {

@@ -102,25 +102,36 @@ const OpportunitySchema = {
     // todo: add createdBy, updatedBy and auto-set from auth context
   },
   indexes: {
-    bySiteId: { // operates on the main table, no 'index' property
+    primary: { // operates on the main table, no 'index' property
       pk: {
         field: 'pk',
-        composite: ['siteId'],
+        composite: ['opportunityId'],
       },
       sk: {
         field: 'sk',
-        composite: ['opportunityId'],
+        composite: [],
       },
     },
-    bySiteIdAndStatus: {
-      index: 'spacecat-data-opportunity-by-site-and-status',
+    bySiteId: {
+      index: 'spacecat-data-opportunity-by-site',
       pk: {
         field: 'gsi1pk',
         composite: ['siteId'],
       },
       sk: {
         field: 'gsi1sk',
-        composite: ['status', 'updatedAt'],
+        composite: ['opportunityId'],
+      },
+    },
+    bySiteIdAndStatus: {
+      index: 'spacecat-data-opportunity-by-site-and-status',
+      pk: {
+        field: 'gsi2pk',
+        composite: ['siteId', 'status'],
+      },
+      sk: {
+        field: 'gsi2sk',
+        composite: ['updatedAt'],
       },
     },
   },

@@ -40,7 +40,6 @@ function collectFormVitals(bundles, pageViews) {
     if (userAgent && !userAgent.startsWith(BOT)) {
       // Track if each condition has been processed for this event
       const processedCheckpoints = {
-        viewblock: false,
         formsubmit: false,
         click: false,
       };
@@ -61,8 +60,10 @@ function collectFormVitals(bundles, pageViews) {
               ...res[key],
               [userAgent]: (res[key][userAgent] || 0) + weight,
             };
-            // Mark this checkpoint as processed
-            processedCheckpoints[checkpoint] = true;
+            // Mark this checkpoint as processed - click and formsubmit as processed
+            if (checkpoint === 'click' || checkpoint === 'formsubmit') {
+              processedCheckpoints[checkpoint] = true;
+            }
           }
         }
       }

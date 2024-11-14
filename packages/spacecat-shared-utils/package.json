@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.22.3",
+  "version": "1.22.5",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "engines": {
@@ -35,18 +35,18 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "@adobe/spacecat-shared-data-access": "file:../spacecat-shared-data-access",
+    "@adobe/spacecat-shared-data-access": "1.50.0",
     "chai": "5.1.2",
     "chai-as-promised": "8.0.0",
     "husky": "9.1.6",
-    "nock": "13.5.5",
+    "nock": "13.5.6",
     "sinon": "19.0.2",
     "sinon-chai": "4.0.0"
   },
   "dependencies": {
     "@adobe/fetch": "4.1.9",
-    "@aws-sdk/client-s3": "3.685.0",
-    "@aws-sdk/client-sqs": "3.682.0",
+    "@aws-sdk/client-s3": "3.688.0",
+    "@aws-sdk/client-sqs": "3.687.0",
     "@json2csv/plainjs": "7.0.6",
     "aws-xray-sdk": "3.10.1"
   }

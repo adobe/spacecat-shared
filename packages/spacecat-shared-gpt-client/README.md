@@ -42,7 +42,12 @@ try {
 
 ### Fetching Insights
 
+#### Via Capability Execution endpoint
+
 ```javascript
+/**
+ *  Fetch insights using the Firefall's capability execution endpoint.
+ */
 async function fetchInsights(prompt) {
   try {
     const client = FirefallClient.createFrom({
@@ -58,7 +63,7 @@ async function fetchInsights(prompt) {
       log: console,
     });
 
-    const insights = await client.fetch(prompt);
+    const insights = await client.fetchCapabilityExecution(prompt);
     console.log('Insights:', insights);
   } catch (error) {
     console.error('Failed to fetch insights:', error.message);
@@ -66,6 +71,41 @@ async function fetchInsights(prompt) {
 }
 
 fetchInsights('How can we improve customer satisfaction?');
+```
+
+#### Via Chat Completions endpoint
+
+```javascript
+/**
+ *  Fetch completions using the Firefall's chat completions endpoint.
+ */
+async function fetchCompletions(prompt) {
+  try {
+    const client = FirefallClient.createFrom({
+      env: {
+        FIREFALL_API_ENDPOINT: 'https://api.firefall.example.com',
+        FIREFALL_API_KEY: 'yourApiKey',
+        IMS_HOST: 'ims.example.com',
+        IMS_CLIENT_ID: 'yourClientId',
+        IMS_CLIENT_CODE: 'yourClientCode',
+        IMS_CLIENT_SECRET: 'yourClientSecret',
+      },
+      log: console,
+    });
+    const options = {
+      imageUrls: ['data:image/png;base64,iVBORw0KGgoAAAA...='],
+      model:'gpt-4-vision',
+      responseFormat: undefined,
+    };
+
+    const response = await client.fetchChatCompletion(prompt, { options });
+    console.log('Response:', JSON.stringify(response));
+  } catch (error) {
+    console.error('Failed to fetch chat completion:', error.message);
+  }
+}
+
+fetchCompletions('Identify all food items in this image', { imageUrls: ['data:image/png;base64,iVBORw0KGgoAAAA...='] });
 ```
 
 Ensure that you replace `'path/to/firefall-client'` with the actual path to the `FirefallClient` class in your project and adjust the configuration parameters according to your Firefall API credentials.

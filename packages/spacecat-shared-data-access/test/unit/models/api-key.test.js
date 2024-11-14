@@ -13,7 +13,7 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { createApiKey } from '../../../src/models/api-key.js';
+import { createApiKey } from '../../../src/models/api-key/api-key.js';
 
 const validApiKey = {
   hashedApiKey: 'test',
@@ -67,6 +67,11 @@ describe('ApiKey Model tests', () => {
     it('creates an ApiKey object for a user with scope - imports.write', () => {
       const apiKey = createApiKey({ ...validApiKey, scopes: [{ name: 'imports.write', domains: ['https://adobe.com', 'https://test.com'] }] });
       expect(apiKey.getScopes()).to.deep.equal([{ name: 'imports.write', domains: ['https://adobe.com', 'https://test.com'] }]);
+    });
+
+    it('creates an ApiKey object for a user with scope - imports.assistant', () => {
+      const apiKey = createApiKey({ ...validApiKey, scopes: [{ name: 'imports.assistant' }] });
+      expect(apiKey.getScopes()).to.deep.equal([{ name: 'imports.assistant' }]);
     });
 
     it('throws an error if revokedAt is not a valid date', () => {
@@ -139,6 +144,59 @@ describe('ApiKey Model tests', () => {
       {
         name: 'imports.delete',
       }]);
+    });
+
+    it('updates deletedAt', () => {
+      apiKey.updateDeletedAt('2024-05-29T14:26:00.000Z');
+      expect(apiKey.getDeletedAt()).to.equal('2024-05-29T14:26:00.000Z');
+    });
+
+    it('fails to update deletedAt with invalid date', () => {
+      expect(() => apiKey.updateDeletedAt('invalid-date')).to.throw('Invalid deletedAt during update: invalid-date. Must be a valid ISO 8601 date string');
+    });
+
+    it('fails to update expiresAt with invalid date', () => {
+      expect(() => apiKey.updateExpiresAt('invalid-date')).to.throw('Invalid expiresAt during update: invalid-date. Must be a valid ISO 8601 date string');
+    });
+
+    it('fails to update revokedAt with invalid date', () => {
+      expect(() => apiKey.updateRevokedAt('invalid-date')).to.throw('Invalid revokedAt during update: invalid-date. Must be a valid ISO 8601 date string');
+    });
+
+    it('returns true if deletedAt, revokedAt, and expiresAt are not set', () => {
+      apiKey.state.deletedAt = null;
+      apiKey.state.revokedAt = null;
+      apiKey.state.expiresAt = null;
+      expect(apiKey.isValid()).to.be.true;
+    });
+
+    it('returns false if deletedAt is after the current time', () => {
+      apiKey.updateDeletedAt('2024-05-29T14:26:00.000Z');
+      expect(apiKey.isValid()).to.be.false;
+    });
+
+    it('returns false if revokedAt is after the current time', () => {
+      apiKey.updateRevokedAt('2024-05-29T14:26:00.000Z');
+      expect(apiKey.isValid()).to.be.false;
+    });
+
+    it('returns false if expiresAt is after the current time', () => {
+      apiKey.updateExpiresAt('2024-05-29T14:26:00.000Z');
+      expect(apiKey.isValid()).to.be.false;
+    });
+
+    it('returns true if deletedAt, revokedAt, and expiresAt are after the current time', () => {
+      apiKey.updateDeletedAt('3025-05-27T14:26:00.000Z');
+      apiKey.updateRevokedAt('3025-05-27T14:26:00.000Z');
+      apiKey.updateExpiresAt('3025-05-27T14:26:00.000Z');
+      expect(apiKey.isValid()).to.be.true;
+    });
+
+    it('returns false if deletedAt, revokedAt are after the current and expiresAt is before the current time', () => {
+      apiKey.updateDeletedAt('3025-05-27T14:26:00.000Z');
+      apiKey.updateRevokedAt('3025-05-27T14:26:00.000Z');
+      apiKey.updateExpiresAt('2024-05-27T14:26:00.000Z');
+      expect(apiKey.isValid()).to.be.false;
     });
   });
 });

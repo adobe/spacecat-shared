@@ -17,7 +17,7 @@ import wrap from '@adobe/helix-shared-wrap';
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key.js';
+import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key/api-key.js';
 import { authWrapper, enrichPathInfo } from '../../src/index.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
 import ScopedApiKeyHandler from '../../src/auth/handlers/scoped-api-key.js';

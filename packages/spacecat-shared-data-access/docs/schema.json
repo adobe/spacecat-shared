@@ -1210,8 +1210,42 @@
           "AttributeType": "S"
         },
         {
+          "AttributeName": "deletedAt",
+          "AttributeType": "S"
+        },
+        {
           "AttributeName": "scopes",
           "AttributeType": "M"
+        }
+      ],
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "spacecat-services-api-key-by-ims-user-id-and-ims-org-id",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "imsUserId",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "imsOrgId",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-services-api-key-by-hashed-api-key",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "hashedApiKey",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
         }
       ],
       "DataAccess": {

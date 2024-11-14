@@ -26,6 +26,12 @@ function initializeResult(url, pageViews) {
 
 function collectFormVitals(bundles, pageViews) {
   const results = {};
+
+  // Helper functions to identify event types
+  const isFormViewEvent = ({ checkpoint, source }) => checkpoint === 'viewblock' && FORM_SOURCE.includes(source);
+  const isFormClickEvent = ({ checkpoint, source }) => checkpoint === 'click' && source && /\bform\b/.test(source.toLowerCase());
+  const isFormSubmitEvent = ({ checkpoint }) => checkpoint === 'formsubmit';
+
   for (const bundle of bundles) {
     const {
       url, userAgent, weight, events,
@@ -45,7 +51,9 @@ function collectFormVitals(bundles, pageViews) {
 
         // Only process the checkpoint once per event
         if (!processedCheckpoints[checkpoint]) {
-          if ((checkpoint === 'viewblock' && FORM_SOURCE.includes(source)) || (checkpoint === 'formsubmit') || (checkpoint === 'click' && source && /\bform\b/.test(source.toLowerCase()))) {
+          if (isFormViewEvent({ checkpoint, source })
+              || isFormSubmitEvent({ checkpoint })
+              || isFormClickEvent({ checkpoint, source })) {
             results[url] = results[url] || initializeResult(url, pageViews);
             const key = CHECKPOINT_MAPPING[checkpoint];
             const res = results[url];

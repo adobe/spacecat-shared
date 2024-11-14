@@ -19,7 +19,7 @@ import trafficAcquisition from '../src/functions/traffic-acquisition.js';
 import highInorganicHighBounce from '../src/functions/opportunities/high-inorganic-high-bounce-rate.js';
 import highOrganicLowCTR from '../src/functions/opportunities/high-organic-low-ctr.js';
 import variant from '../src/functions/variant.js';
-import formVitals from '../src/functions/formVitals.js';
+import formVitals from '../src/functions/form-vitals.js';
 import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import bundlesWithTraffic from './fixtures/bundles-with-traffic-source.json' assert { type: 'json' };
 import bundlesWithForm from './fixtures/bundles-for-form-vitals.json' assert { type: 'json' };

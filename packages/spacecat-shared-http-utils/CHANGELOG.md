@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.18...@adobe/spacecat-shared-http-utils-v1.7.0) (2024-11-14)
+
+
+### Features
+
+* Add unauthorized and forbidden to https status codes ([#441](https://github.com/adobe/spacecat-shared/issues/441)) ([ffaa981](https://github.com/adobe/spacecat-shared/commit/ffaa981dd94b834ce164730ef1072b1fe601446d)), closes [/github.com/adobe/spacecat-api-service/pull/569/files#r1841073366](https://github.com//github.com/adobe/spacecat-api-service/pull/569/files/issues/r1841073366)
+
 # [@adobe/spacecat-shared-http-utils-v1.6.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.17...@adobe/spacecat-shared-http-utils-v1.6.18) (2024-11-11)
 
 

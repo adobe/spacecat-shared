@@ -298,7 +298,7 @@ Calculates the amount of non-inorganic (earned and owned) traffic and the click-
 
 ```
 
-### formVitals
+### form-vitals
 
 Collects form vitals for a specified domain within a given time interval. Identifies whether each URL has embedded forms and counts form views/submission/engagement. This data can infer opportunities, such as URLs with low CTR and limited form engagement, URLs with high page views but fewer form submissions etc.
 An example response:

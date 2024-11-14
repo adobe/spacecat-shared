@@ -12,7 +12,8 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import {
-  ok, badRequest, notFound, internalServerError, noContent, found, created, createResponse,
+  ok, badRequest, notFound, internalServerError,
+  noContent, found, created, createResponse, unauthorized, forbidden,
 } from '../src/index.js';
 
 async function testMethod(response, expectedCode, expectedBody) {
@@ -96,6 +97,24 @@ describe('HTTP Response Functions', () => {
     expect(response.headers.get('custom-header')).to.equal('value');
     const responseBody = await response.json();
     expect(responseBody).to.deep.equal({ message: 'Invalid input' });
+  });
+
+  it('unauthorized should return a 401 Unauthorized response with custom message and headers', async () => {
+    const response = await unauthorized('Unauthorized access', { 'custom-header': 'value' });
+    expect(response.status).to.equal(401);
+    expect(response.headers.get('x-error')).to.equal('Unauthorized access');
+    expect(response.headers.get('custom-header')).to.equal('value');
+    const responseBody = await response.json();
+    expect(responseBody).to.deep.equal({ message: 'Unauthorized access' });
+  });
+
+  it('forbidden should return a 403 Forbidden response with custom message and headers', async () => {
+    const response = await forbidden('Forbidden access', { 'custom-header': 'value' });
+    expect(response.status).to.equal(403);
+    expect(response.headers.get('x-error')).to.equal('Forbidden access');
+    expect(response.headers.get('custom-header')).to.equal('value');
+    const responseBody = await response.json();
+    expect(responseBody).to.deep.equal({ message: 'Forbidden access' });
   });
 
   it('notFound should return a 404 Not Found response with default message and headers', async () => {

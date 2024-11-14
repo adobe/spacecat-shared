@@ -90,5 +90,5 @@ function handler(bundles) {
 
 export default {
   handler,
-  checkpoints: ['viewblock', 'formsubmit', 'click', 'error', 'top'],
+  checkpoints: ['viewblock', 'formsubmit', 'click'],
 };

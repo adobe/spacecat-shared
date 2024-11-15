@@ -107,7 +107,14 @@ export default class FirefallClient {
     this.log.debug(`${message}: took ${duration}ms`);
   }
 
-  async #submitPrompt(body, path) {
+  /**
+   * Submit a prompt to the Firefall API.
+   * @param body The body of the request.
+   * @param path The Firefall API path.
+   * @param imsOrgId An optional IMS Org ID, to override the config default.
+   * @returns {Promise<unknown>}
+   */
+  async #submitPrompt(body, path, imsOrgId = undefined) {
     const apiAuth = await this.#getApiAuth();
 
     const url = createUrl(`${this.config.apiEndpoint}${path}`);
@@ -115,7 +122,7 @@ export default class FirefallClient {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiAuth}`,
       'x-api-key': this.config.apiKey,
-      'x-gw-ims-org-id': this.config.imsOrg,
+      'x-gw-ims-org-id': imsOrgId ?? this.config.imsOrg,
     };
 
     this.log.info(`URL: ${url}, Headers: ${JSON.stringify(headers)}`);
@@ -181,10 +188,16 @@ export default class FirefallClient {
    *          - imageUrls: An array of URLs of the images to provide to Firefall
    *          - model: LLM Model to use (default: gpt-4-turbo).  Use 'gpt-4-vision' with images.
    *          - responseFormat: The response format to request from Firefall (accepts: json_object)
+   *          - imsOrgId: The IMS Org id to send with Firefall prompts (optional)
    * @returns {Object} - AI response
    */
   async fetchChatCompletion(prompt, options = {}) {
-    const { imageUrls, responseFormat, model: llmModel = 'gpt-4-turbo' } = options || {};
+    const {
+      imageUrls,
+      responseFormat,
+      imsOrgId,
+      model: llmModel = 'gpt-4-turbo',
+    } = options || {};
     const hasImageUrls = imageUrls && imageUrls.length > 0;
 
     const getBody = () => {
@@ -249,6 +262,7 @@ export default class FirefallClient {
       chatSubmissionResponse = await this.#submitPrompt(
         JSON.stringify(body),
         '/v2/chat/completions',
+        imsOrgId,
       );
       this.#logDuration('Firefall API Chat Completion call', startTime);
     } catch (error) {

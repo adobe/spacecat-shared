@@ -246,6 +246,7 @@ describe('FirefallClient', () => {
         imageUrls: [base64ImageUrl],
         model: 'gpt-4-turbo',
         responseFormat: 'json_object',
+        imsOrgId: 'ImsOrgId',
       };
 
       await expect(client.fetchChatCompletion('Test prompt', options))

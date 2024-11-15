@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.22.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.5...@adobe/spacecat-shared-utils-v1.22.6) (2024-11-15)
+
+
+### Bug Fixes
+
+* resolving url when site has bot protection ([#442](https://github.com/adobe/spacecat-shared/issues/442)) ([2730271](https://github.com/adobe/spacecat-shared/commit/273027155a982719429c14fd94f7b4867f17f094))
+
 # [@adobe/spacecat-shared-utils-v1.22.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.4...@adobe/spacecat-shared-utils-v1.22.5) (2024-11-11)
 
 

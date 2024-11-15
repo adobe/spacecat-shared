@@ -51,7 +51,7 @@ export default class FirefallClient {
     const {
       FIREFALL_API_ENDPOINT: apiEndpoint,
       IMS_CLIENT_ID: imsOrg,
-      FIREFALL_IMS_ORG: firefallImsOrg,
+      FIREFALL_IMS_ORG_ID: firefallImsOrgId,
       FIREFALL_API_KEY: apiKey,
       FIREFALL_API_POLL_INTERVAL: pollInterval = 2000,
       FIREFALL_API_CAPABILITY_NAME: capabilityName = 'gpt4_32k_completions_capability',
@@ -70,7 +70,7 @@ export default class FirefallClient {
       apiKey,
       capabilityName,
       imsClient,
-      imsOrg: firefallImsOrg || imsOrg,
+      imsOrg: firefallImsOrgId || imsOrg,
       pollInterval,
     }, log);
   }

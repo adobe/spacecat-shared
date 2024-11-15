@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.3.0...@adobe/spacecat-shared-gpt-client-v1.3.1) (2024-11-15)
+
+
+### Bug Fixes
+
+* SITES-26948 [Import Assistant] Allow calls to Firefall to use specified ims org id ([#443](https://github.com/adobe/spacecat-shared/issues/443)) ([a63016c](https://github.com/adobe/spacecat-shared/commit/a63016c426ae8a4c0f7f66653e49f1098d466ee8))
+
 # [@adobe/spacecat-shared-gpt-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.2.22...@adobe/spacecat-shared-gpt-client-v1.3.0) (2024-11-12)
 
 

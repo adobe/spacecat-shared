@@ -51,6 +51,7 @@ export default class FirefallClient {
     const {
       FIREFALL_API_ENDPOINT: apiEndpoint,
       IMS_CLIENT_ID: imsOrg,
+      FIREFALL_IMS_ORG: firefallImsOrg,
       FIREFALL_API_KEY: apiKey,
       FIREFALL_API_POLL_INTERVAL: pollInterval = 2000,
       FIREFALL_API_CAPABILITY_NAME: capabilityName = 'gpt4_32k_completions_capability',
@@ -69,7 +70,7 @@ export default class FirefallClient {
       apiKey,
       capabilityName,
       imsClient,
-      imsOrg,
+      imsOrg: firefallImsOrg || imsOrg,
       pollInterval,
     }, log);
   }
@@ -111,10 +112,9 @@ export default class FirefallClient {
    * Submit a prompt to the Firefall API.
    * @param body The body of the request.
    * @param path The Firefall API path.
-   * @param imsOrgId An optional IMS Org ID, to override the config default.
    * @returns {Promise<unknown>}
    */
-  async #submitPrompt(body, path, imsOrgId = undefined) {
+  async #submitPrompt(body, path) {
     const apiAuth = await this.#getApiAuth();
 
     const url = createUrl(`${this.config.apiEndpoint}${path}`);
@@ -122,7 +122,7 @@ export default class FirefallClient {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiAuth}`,
       'x-api-key': this.config.apiKey,
-      'x-gw-ims-org-id': imsOrgId ?? this.config.imsOrg,
+      'x-gw-ims-org-id': this.config.imsOrg,
     };
 
     this.log.info(`URL: ${url}, Headers: ${JSON.stringify(headers)}`);
@@ -195,7 +195,6 @@ export default class FirefallClient {
     const {
       imageUrls,
       responseFormat,
-      imsOrgId,
       model: llmModel = 'gpt-4-turbo',
     } = options || {};
     const hasImageUrls = imageUrls && imageUrls.length > 0;
@@ -259,11 +258,7 @@ export default class FirefallClient {
       const startTime = process.hrtime.bigint();
       const body = getBody();
 
-      chatSubmissionResponse = await this.#submitPrompt(
-        JSON.stringify(body),
-        '/v2/chat/completions',
-        imsOrgId,
-      );
+      chatSubmissionResponse = await this.#submitPrompt(JSON.stringify(body), '/v2/chat/completions');
       this.#logDuration('Firefall API Chat Completion call', startTime);
     } catch (error) {
       this.log.error('Error while fetching data from Firefall chat API: ', error.message);

@@ -50,7 +50,7 @@ export default class FirefallClient {
 
     const {
       FIREFALL_API_ENDPOINT: apiEndpoint,
-      IMS_CLIENT_ID: imsOrg,
+      IMS_CLIENT_ID: imsClientId,
       FIREFALL_IMS_ORG_ID: firefallImsOrgId,
       FIREFALL_API_KEY: apiKey,
       FIREFALL_API_POLL_INTERVAL: pollInterval = 2000,
@@ -70,7 +70,7 @@ export default class FirefallClient {
       apiKey,
       capabilityName,
       imsClient,
-      imsOrg: firefallImsOrgId || imsOrg,
+      imsOrg: firefallImsOrgId || imsClientId,
       pollInterval,
     }, log);
   }
@@ -188,7 +188,6 @@ export default class FirefallClient {
    *          - imageUrls: An array of URLs of the images to provide to Firefall
    *          - model: LLM Model to use (default: gpt-4-turbo).  Use 'gpt-4-vision' with images.
    *          - responseFormat: The response format to request from Firefall (accepts: json_object)
-   *          - imsOrgId: The IMS Org id to send with Firefall prompts (optional)
    * @returns {Object} - AI response
    */
   async fetchChatCompletion(prompt, options = {}) {

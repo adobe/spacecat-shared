@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.51.0...@adobe/spacecat-shared-data-access-v1.52.0) (2024-11-13)
+
+
+### Features
+
+* SITES-26835 [Import Assistant] Introduce imports.assistant api key scope ([#438](https://github.com/adobe/spacecat-shared/issues/438)) ([0cb0d35](https://github.com/adobe/spacecat-shared/commit/0cb0d357b11be588ab1bc00ed71745cc6052a321))
+
 # [@adobe/spacecat-shared-data-access-v1.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.50.1...@adobe/spacecat-shared-data-access-v1.51.0) (2024-11-12)
 
 

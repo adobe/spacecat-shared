@@ -13,24 +13,33 @@
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 class BaseCollection {
-  static register(service, log) {
-    return new this(service, log);
-  }
-
-  constructor(service, clazz, log) {
+  constructor(electroService, modelFactory, clazz, log) {
+    this.electroService = electroService;
+    this.modelFactory = modelFactory;
     this.clazz = clazz;
-    this.entityName = this.clazz.name.replace(/Model$/, '').toLowerCase();
-    this.entity = service.entities[this.entityName];
+    this.entityName = this.clazz.name.toLowerCase();
+    this.entity = electroService.entities[this.entityName];
     this.idName = `${this.entityName}Id`;
     this.log = log;
   }
 
   _createInstance(record) {
+    if (!isNonEmptyObject(record?.data)) {
+      return null;
+    }
     // eslint-disable-next-line new-cap
-    return new this.clazz(this.entity, record.data, this.log);
+    return new this.clazz(
+      this.electroService,
+      this.modelFactory,
+      record.data,
+      this.log,
+    );
   }
 
   _createInstances(records) {
+    if (!Array.isArray(records?.data)) {
+      return [];
+    }
     return records.data.map((record) => this._createInstance({ data: record }));
   }
 
@@ -40,11 +49,25 @@ class BaseCollection {
     }
 
     const record = await this.entity.get({ [this.idName]: id }).go();
-    if (!isNonEmptyObject(record)) {
-      return null;
-    }
 
     return this._createInstance(record);
+  }
+
+  async findByForeignKey(foreignKey, value) {
+    try {
+      const indexName = `by${foreignKey.charAt(0).toUpperCase() + foreignKey.slice(1)}`;
+      const index = this.entity.query[indexName];
+
+      if (!index) {
+        throw new Error(`Index ${indexName} not found in ${this.entityName}`);
+      }
+
+      const results = await index({ [foreignKey]: value }).go();
+      return results.data.map((record) => this._createInstance(record));
+    } catch (error) {
+      this.log.error(`Failed to find ${this.model.model.entity} by foreign key ${foreignKey}`, error);
+      throw error;
+    }
   }
 
   async create(data) {

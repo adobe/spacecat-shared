@@ -1,10 +1,9 @@
 {
   "ModelName": "StarCatalogue",
   "ModelMetadata": {
-    "Author": "Dominique Jäggi",
+    "Author": "SpaceCat Team",
     "DateCreated": "Nov 23, 2023, 07:00 AM",
-    "DateLastModified": "Jul 11, 2024, 04:18 PM",
-    "Description": "",
+    "DateLastModified": "Nov 15, 2024, 2:00 PM",
     "AWSService": "Amazon DynamoDB",
     "Version": "3.0"
   },
@@ -73,7 +72,7 @@
           }
         },
         {
-          "IndexName": "spacecat-data-suggestion-by-opportunity-and-status",
+          "IndexName": "spacecat-data-suggestion-by-opportunity",
           "KeyAttributes": {
             "PartitionKey": {
               "AttributeName": "gsi1pk",
@@ -81,6 +80,22 @@
             },
             "SortKey": {
               "AttributeName": "gsi1sk",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-data-suggestion-by-opportunity-and-status",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "gsi2pk",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "gsi2sk",
               "AttributeType": "S"
             }
           },

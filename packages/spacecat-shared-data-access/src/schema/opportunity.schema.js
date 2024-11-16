@@ -10,8 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
+import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+
 import { v4 as uuid } from 'uuid';
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -57,6 +58,7 @@ const OpportunitySchema = {
     data: {
       type: 'any',
       required: true,
+      validation: (value) => !isObject(value),
     },
     origin: {
       type: ['ESS_OPS', 'AI', 'AUTOMATION'],
@@ -79,6 +81,7 @@ const OpportunitySchema = {
       type: 'map',
       properties: {},
       required: false,
+      validation: (value) => !isObject(value),
     },
     tags: {
       type: 'set',

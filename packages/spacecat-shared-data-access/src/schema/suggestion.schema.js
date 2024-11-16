@@ -11,6 +11,7 @@
  */
 
 import { v4 as uuid } from 'uuid';
+import { isObject } from '@adobe/spacecat-shared-utils';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -51,11 +52,13 @@ const SuggestionSchema = {
     data: {
       type: 'any',
       required: true,
+      validation: (value) => !isObject(value),
     },
     kpiDeltas: {
       type: 'map',
       properties: {},
       required: false,
+      validation: (value) => !isObject(value),
     },
     status: {
       type: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'], // Corrected enum declaration
@@ -78,25 +81,36 @@ const SuggestionSchema = {
     },
     // todo: add createdBy, updatedBy and auto-set from auth context
   },
-  indexes: { // operates on the main table, no 'index' property
-    byOpportunityId: {
+  indexes: {
+    primary: { // operates on the main table, no 'index' property
       pk: {
         field: 'pk',
-        composite: ['opportunityId'],
+        composite: ['suggestionId'],
       },
       sk: {
         field: 'sk',
-        composite: ['suggestionId'],
+        composite: [],
       },
     },
-    byOpportunityAndStatus: {
-      index: 'spacecat-data-suggestion-by-opportunity-and-status',
+    byOpportunityId: {
+      index: 'spacecat-data-suggestion-by-opportunity',
       pk: {
         field: 'gsi1pk',
         composite: ['opportunityId'],
       },
       sk: {
         field: 'gsi1sk',
+        composite: ['suggestionId'],
+      },
+    },
+    byOpportunityAndStatus: {
+      index: 'spacecat-data-suggestion-by-opportunity-and-status',
+      pk: {
+        field: 'gsi2pk',
+        composite: ['opportunityId'],
+      },
+      sk: {
+        field: 'gsi2sk',
         composite: ['status', 'rank'],
       },
     },

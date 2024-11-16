@@ -10,13 +10,31 @@
  * governing permissions and limitations under the License.
  */
 
+import Patcher from '../util/patcher.js';
+
 class Base {
-  constructor(entity, record, log) {
-    this.entity = entity;
-    this.entityName = this.entity.model.name.toLowerCase();
-    this.idName = `${this.entityName}Id`;
+  constructor(electroService, modelFactory, record, log) {
+    this.modelFactory = modelFactory;
     this.record = record;
+    this.entityName = this.constructor.name.toLowerCase();
+    this.entity = electroService.entities[this.entityName];
+    this.idName = `${this.entityName}Id`;
     this.log = log;
+
+    this.patcher = new Patcher(this.entity, this.record);
+    this.associationsCache = {};
+  }
+
+  async _getAssociation(modelName, method, ...args) {
+    const cache = this.associationsCache;
+
+    cache[modelName] = cache[modelName] || {};
+
+    if (!(method in cache[modelName])) {
+      cache[modelName][method] = this.modelFactory.getCollection(modelName)[method](...args);
+    }
+
+    return cache[modelName][method];
   }
 
   getId() {
@@ -29,6 +47,26 @@ class Base {
 
   getUpdatedAt() {
     return new Date(this.record.updatedAt).toISOString();
+  }
+
+  async remove() {
+    try {
+      await this.entity.remove({ [this.idName]: this.getId() }).go();
+      return this;
+    } catch (error) {
+      this.log.error('Failed to remove record', error);
+      throw error;
+    }
+  }
+
+  async save() {
+    try {
+      await this.patcher.save();
+      return this;
+    } catch (error) {
+      this.log.error('Failed to save record', error);
+      throw error;
+    }
   }
 }
 

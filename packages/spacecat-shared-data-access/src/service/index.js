@@ -16,6 +16,12 @@ import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import AWSXray from 'aws-xray-sdk';
 import { Service } from 'electrodb';
 
+import ModelFactory from '../models/model.factory.js';
+import OpportunityCollection from '../models/opportunity.collection.js';
+import SuggestionCollection from '../models/suggestion.collection.js';
+import OpportunitySchema from '../schema/opportunity.schema.js';
+import SuggestionSchema from '../schema/suggestion.schema.js';
+
 import { auditFunctions } from './audits/index.js';
 import { keyEventFunctions } from './key-events/index.js';
 import { siteFunctions } from './sites/index.js';
@@ -28,10 +34,6 @@ import { importUrlFunctions } from './import-url/index.js';
 import { experimentFunctions } from './experiments/index.js';
 import { apiKeyFunctions } from './api-key/index.js';
 
-import OpportunitySchema from '../schema/opportunity.schema.js';
-import SuggestionSchema from '../schema/suggestion.schema.js';
-import OpportunityCollection from '../models/opportunity.collection.js';
-
 const createRawClient = () => {
   const dbClient = AWSXray.captureAWSv3Client(new DynamoDB());
   return DynamoDBDocument.from(dbClient, {
@@ -42,16 +44,22 @@ const createRawClient = () => {
   });
 };
 
-const createElectroService = (client, table) => new Service(
-  {
-    opportunity: OpportunitySchema,
-    suggestion: SuggestionSchema,
-  },
-  {
-    client,
-    table,
-  },
-);
+const createElectroService = (client, table, log) => {
+  const logger = (event) => {
+    log.debug(JSON.stringify(event, null, 4));
+  };
+  return new Service(
+    {
+      opportunity: OpportunitySchema,
+      suggestion: SuggestionSchema,
+    },
+    {
+      client,
+      table,
+      logger,
+    },
+  );
+};
 
 /**
  * Creates a data access object.
@@ -68,8 +76,6 @@ const createElectroService = (client, table) => new Service(
  */
 export const createDataAccess = (config, log = console) => {
   const dynamoClient = createClient(log);
-  const rawClient = createRawClient();
-  const electroService = createElectroService(rawClient, config.tableNameData);
 
   const auditFuncs = auditFunctions(dynamoClient, config, log);
   const keyEventFuncs = keyEventFunctions(dynamoClient, config, log);
@@ -84,7 +90,12 @@ export const createDataAccess = (config, log = console) => {
   const apiKeyFuncs = apiKeyFunctions(dynamoClient, config, log);
 
   // electro-based data access objects
-  const Opportunity = OpportunityCollection.register(electroService, log);
+  const rawClient = createRawClient();
+  const electroService = createElectroService(rawClient, config.tableNameData, log);
+  const modelFactory = new ModelFactory(electroService, log);
+
+  const Opportunity = modelFactory.getCollection(OpportunityCollection.name);
+  const Suggestion = modelFactory.getCollection(SuggestionCollection.name);
 
   return {
     ...auditFuncs,
@@ -100,5 +111,6 @@ export const createDataAccess = (config, log = console) => {
     ...apiKeyFuncs,
     // electro-based data access objects
     Opportunity,
+    Suggestion,
   };
 };

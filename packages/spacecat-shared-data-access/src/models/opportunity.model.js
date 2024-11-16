@@ -13,28 +13,66 @@
 import Base from './base.model.js';
 
 class Opportunity extends Base {
+  async getSuggestions() {
+    return this._getAssociation(
+      'SuggestionCollection',
+      'allByOpportunityId',
+      this.getId(),
+    );
+  }
+
   getSiteId() {
     return this.record.siteId;
+  }
+
+  setSiteId(siteId) {
+    this.patcher.patchString('siteId', siteId);
+    return this;
   }
 
   getAuditId() {
     return this.record.auditId;
   }
 
+  setAuditId(auditId) {
+    this.patcher.patchId('auditId', auditId);
+    return this;
+  }
+
   getRunbook() {
     return this.record.runbook;
+  }
+
+  setRunbook(runbook) {
+    this.patcher.patchString('runbook', runbook);
+    return this;
   }
 
   getGuidance() {
     return this.record.guidance;
   }
 
+  setGuidance(guidance) {
+    this.patcher.patchString('guidance', guidance);
+    return this;
+  }
+
   getTitle() {
     return this.record.title;
   }
 
+  setTitle(title) {
+    this.patcher.patchString('title', title);
+    return this;
+  }
+
   getDescription() {
     return this.record.description;
+  }
+
+  setDescription(description) {
+    this.patcher.patchString('description', description);
+    return this;
   }
 
   getType() {
@@ -45,16 +83,36 @@ class Opportunity extends Base {
     return this.record.status;
   }
 
+  setStatus(status) {
+    this.patcher.patchEnum('status', status);
+    return this;
+  }
+
   getOrigin() {
     return this.record.origin;
+  }
+
+  setOrigin(origin) {
+    this.patcher.patchString('origin', origin);
+    return this;
   }
 
   getTags() {
     return this.record.tags;
   }
 
+  setTags(tags) {
+    this.patcher.patchSet('tags', tags);
+    return this;
+  }
+
   getData() {
     return this.record.data;
+  }
+
+  setData(data) {
+    this.patcher.patchMap('data', data);
+    return this;
   }
 }
 

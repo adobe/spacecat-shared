@@ -38,8 +38,8 @@ const setupDb = async (client, table) => {
 };
 
 const generateSampleData = async (dataAccess, siteId) => {
-  const { Opportunity } = dataAccess;
-  const sampleData = [];
+  const { Opportunity, Suggestion } = dataAccess;
+  const sampleData = { opportunities: [], suggestions: [] };
 
   for (let i = 0; i < 10; i += 1) {
     const type = i % 2 === 0 ? 'broken-backlinks' : 'broken-internal-links';
@@ -61,14 +61,29 @@ const generateSampleData = async (dataAccess, siteId) => {
       data,
     });
 
-    sampleData.push(opportunity);
+    sampleData.opportunities.push(opportunity);
+
+    // generate suggestions for each opportunity
+    for (let j = 0; j < 3; j += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const suggestion = await Suggestion.create({
+        opportunityId: opportunity.getId(),
+        title: `Suggestion ${j} for Opportunity ${i}`,
+        description: `Description for Suggestion ${j} of Opportunity ${i}`,
+        data: { suggestionData: `https://suggestion-${j}.com` },
+        type: 'CODE_CHANGE',
+        rank: j,
+        status: 'NEW',
+      });
+
+      sampleData.suggestions.push(suggestion);
+    }
   }
 
   return sampleData;
 };
 
 describe('ElectroDB Integration Test', () => {
-  // AWSXRay.enableManualMode();
   const siteId = uuid();
 
   let dynamoDbLocalProcess;
@@ -110,10 +125,71 @@ describe('ElectroDB Integration Test', () => {
   it('finds one opportunity by id', async () => {
     const { Opportunity } = dataAccess;
 
-    const opportunity = await Opportunity.findById(sampleData[0].getId());
+    const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
 
     expect(opportunity).to.be.an('object');
-    expect(opportunity.record).to.eql(sampleData[0].record);
+    expect(opportunity.record).to.eql(sampleData.opportunities[0].record);
+
+    const suggestions = await opportunity.getSuggestions();
+    expect(suggestions).to.be.an('array').with.length(3);
+
+    const parentOpportunity = await suggestions[0].getOpportunity();
+    expect(parentOpportunity).to.be.an('object');
+    expect(parentOpportunity.record).to.eql(sampleData.opportunities[0].record);
+  });
+
+  it('partially updates one opportunity by id', async () => {
+    const { Opportunity } = dataAccess;
+
+    // retrieve the opportunity by ID
+    const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
+    expect(opportunity).to.be.an('object');
+    expect(opportunity.record).to.eql(sampleData.opportunities[0].record);
+
+    // apply updates
+    const updates = {
+      runbook: 'https://example-updated.com',
+      status: 'IN_PROGRESS',
+    };
+
+    await opportunity
+      .setRunbook(updates.runbook)
+      .setStatus(updates.status)
+      .save();
+
+    // validate in-memory updates
+    expect(opportunity.getRunbook()).to.equal(updates.runbook);
+    expect(opportunity.getStatus()).to.equal(updates.status);
+
+    // validate unchanged fields
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      runbook, status, updatedAt, ...originalUnchangedFields
+    } = sampleData.opportunities[0].record;
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      runbook: _, status: __, updatedAt: ___, ...actualUnchangedFields
+    } = opportunity.record;
+
+    expect(actualUnchangedFields).to.eql(originalUnchangedFields);
+
+    // validate persistence of updates
+    const storedOpportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
+    expect(storedOpportunity.getRunbook()).to.equal(updates.runbook);
+    expect(storedOpportunity.getStatus()).to.equal(updates.status);
+
+    // validate timestamps or audit logs
+    expect(new Date(storedOpportunity.record.updatedAt)).to.be.greaterThan(
+      new Date(sampleData.opportunities[0].record.updatedAt),
+    );
+
+    // validate persisted record matches in-memory state
+    const storedWithoutUpdatedAt = { ...storedOpportunity.record };
+    const inMemoryWithoutUpdatedAt = { ...opportunity.record };
+    delete storedWithoutUpdatedAt.updatedAt;
+    delete inMemoryWithoutUpdatedAt.updatedAt;
+
+    expect(storedWithoutUpdatedAt).to.eql(inMemoryWithoutUpdatedAt);
   });
 
   it('finds all opportunities by siteId', async () => {
@@ -150,5 +226,16 @@ describe('ElectroDB Integration Test', () => {
     delete opportunity.record.createdAt;
     delete opportunity.record.updatedAt;
     expect(opportunity.record).to.eql(data);
+  });
+
+  it('deletes an opportunity', async () => {
+    const { Opportunity } = dataAccess;
+
+    const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
+
+    await opportunity.remove();
+
+    const notFound = await Opportunity.findById(sampleData.opportunities[0].getId());
+    await expect(notFound).to.be.null;
   });
 });

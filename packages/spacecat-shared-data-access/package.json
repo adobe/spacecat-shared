@@ -35,8 +35,8 @@
   "dependencies": {
     "@adobe/spacecat-shared-dynamo": "1.3.47",
     "@adobe/spacecat-shared-utils": "1.22.4",
-    "@aws-sdk/client-dynamodb": "3.687.0",
-    "@aws-sdk/lib-dynamodb": "3.687.0",
+    "@aws-sdk/client-dynamodb": "3.693.0",
+    "@aws-sdk/lib-dynamodb": "3.693.0",
     "@types/joi": "17.2.3",
     "joi": "17.13.3",
     "uuid": "11.0.3"
@@ -44,7 +44,7 @@
   "devDependencies": {
     "chai": "5.1.2",
     "chai-as-promised": "8.0.0",
-    "dynamo-db-local": "9.2.3",
+    "dynamo-db-local": "9.3.0",
     "sinon": "19.0.2",
     "sinon-chai": "4.0.0"
   }

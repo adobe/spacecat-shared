@@ -45,9 +45,9 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.1.9",
-    "@aws-sdk/client-s3": "3.688.0",
-    "@aws-sdk/client-sqs": "3.687.0",
+    "@aws-sdk/client-s3": "3.693.0",
+    "@aws-sdk/client-sqs": "3.693.0",
     "@json2csv/plainjs": "7.0.6",
-    "aws-xray-sdk": "3.10.1"
+    "aws-xray-sdk": "3.10.2"
   }
 }

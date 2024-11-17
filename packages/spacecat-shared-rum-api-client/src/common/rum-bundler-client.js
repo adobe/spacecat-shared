@@ -23,11 +23,7 @@ const ONE_DAY = ONE_HOUR * HOURS_IN_DAY;
 const CHUNK_SIZE = 31;
 
 function isBotTraffic(bundle) {
-  const isBot = bundle?.userAgent?.includes('bot');
-  if (isBot) {
-    console.log('isBotTraffic is true', bundle);
-  }
-  return isBot;
+  return bundle?.userAgent?.includes('bot');
 }
 
 function filterEvents(checkpoints = []) {

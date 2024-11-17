@@ -52,7 +52,7 @@ describe('RUMAPIClient', () => {
       interval: 0,
     };
     const result = await rumApiClient.query('404', opts);
-
+    // eslint-disable-next-line no-unused-expressions
     expect(result).to.be.empty;
   });
 

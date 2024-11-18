@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.9.10...@adobe/spacecat-shared-rum-api-client-v2.10.0) (2024-11-18)
+
+
+### Features
+
+* form vitals ([#429](https://github.com/adobe/spacecat-shared/issues/429)) ([1b0f92f](https://github.com/adobe/spacecat-shared/commit/1b0f92f682070ffc7db379602d94fa04cb442b10))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.9.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.9.9...@adobe/spacecat-shared-rum-api-client-v2.9.10) (2024-11-11)
 
 

@@ -28,7 +28,7 @@ jobs:
         run: npm test
       - name: Integration Tests
         run: npm run --prefix packages/spacecat-shared-data-access test:it
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Semantic Release (Dry Run)

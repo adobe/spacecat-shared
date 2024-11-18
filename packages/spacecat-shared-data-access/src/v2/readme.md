@@ -1,4 +1,83 @@
-# Adding a New ElectroDB-Based Entity
+# ElectroDB Model Framework
+
+This repository contains a model framework built using the ElectroDB ORM, designed to manage website improvements in a scalable manner. The system consists of several entities, including Opportunities and Suggestions, which represent potential areas of improvement and the actions to resolve them.
+
+## Architecture Overview
+
+The architecture is centered around a collection-management pattern with ElectroDB, enabling efficient management of DynamoDB entities. It uses a layered architecture as follows:
+
+1. **Data Layer**: Utilizes DynamoDB as the data store, with ElectroDB for managing schema definitions and data interactions.
+2. **Model Layer**: The `BaseModel` provides common methods like `save`, `remove`, and associations for all entities. Each entity (e.g., `Opportunity`, `Suggestion`) extends `BaseModel` for specific features.
+3. **Collection Layer**: The `BaseCollection` handles entity-specific CRUD operations. `OpportunityCollection` and `SuggestionCollection` extend `BaseCollection` to provide tailored methods for managing Opportunities and Suggestions.
+4. **Factory Layer**: The `ModelFactory` centralizes the instantiation of models and collections, providing a unified interface for interacting with different entity types.
+
+### Architectural Diagram
+
+```plaintext
++--------------------+
+|  Data Layer        |
+|--------------------|
+|  DynamoDB + ElectroDB ORM  |
++--------------------+
+         ↓
++--------------------+
+|  Collection Layer  |
+|--------------------|
+|  BaseCollection,   |
+|  OpportunityCollection,    |
+|  SuggestionCollection      |
++--------------------+
+         ↓
++--------------------+
+|  Model Layer       |
+|--------------------|
+|  BaseModel,        |
+|  Opportunity,      |
+|  Suggestion        |
++--------------------+
+         ↓
++--------------------+
+|  Factory Layer     |
+|--------------------|
+|  ModelFactory      |
++--------------------+
+```
+
+## Entities and Relationships
+- **Opportunity**: Represents a specific issue identified on a website. It includes attributes like `title`, `description`, `siteId`, and `status`.
+- **Suggestion**: Represents a proposed fix for an Opportunity. Attributes include `opportunityId`, `type`, `status`, and `rank`.
+- **Relationship**: Opportunities have many Suggestions. This is implemented through the `OpportunityCollection` and `SuggestionCollection`, which interact via ElectroDB-managed DynamoDB relationships.
+
+## Getting Started
+
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Setup DynamoDB**
+   - This framework relies on AWS DynamoDB for data storage. Ensure you have AWS credentials configured and a DynamoDB table set up.
+   - Configure the DynamoDB table name and related settings in the `index.js` configuration.
+
+3. **Usage Example**
+   ```javascript
+   import { createDataAccess } from './index.js';
+
+   const config = { tableNameData: 'YOUR_TABLE_NAME' };
+   const log = console;
+   const dao = createDataAccess(config, log);
+
+   // Create a new Opportunity
+   const opportunityData = { title: 'Broken Links', siteId: 'site123', type: 'broken-backlinks' };
+   const newOpportunity = await dao.Opportunity.create(opportunityData);
+   console.log('New Opportunity Created:', newOpportunity);
+   ```
+
+4. **Extending Functionality**
+   - Add new models by extending `BaseModel` and new collections by extending `BaseCollection`.
+   - Register new models in the `ModelFactory` for unified access.
+
+## Adding a New ElectroDB-Based Entity
 
 This guide provides a step-by-step overview for adding a new ElectroDB-based entity to the existing application. By following this guide, you will be able to create, integrate, and test a new entity seamlessly.
 
@@ -130,12 +209,12 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
 
 1. **Create Unit Test for the Model Class**: Add a new file in the `/tests/unit/v2/models/` directory named `myNewEntity.model.test.js`.
 
-    - Follow the existing test structure to test all getters, setters, and interactions for `MyNewEntity`.
-    - Use Mocha, Chai, Chai-as-promised, and Sinon for testing.
+   - Follow the existing test structure to test all getters, setters, and interactions for `MyNewEntity`.
+   - Use Mocha, Chai, Chai-as-promised, and Sinon for testing.
 
 2. **Create Unit Test for the Collection Class**: Add another test named `myNewEntity.collection.test.js`.
 
-    - Test the methods in `MyNewEntityCollection`, particularly those interacting with ElectroDB services, such as `allByStatus`.
+   - Test the methods in `MyNewEntityCollection`, particularly those interacting with ElectroDB services, such as `allByStatus`.
 
 ## Step 6: Add Guard Methods (if needed)
 
@@ -152,13 +231,13 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
 ## Step 7: Update the Patcher (if needed)
 
 1. **Update Patcher if Needed**: Update `patcher.js` only if there are new types of data being patched that are not yet covered by the current patch methods (e.g., adding a new type like `Date` that hasn't been handled before).
-    - Create methods like `patchString`, `patchEnum`, etc., only if the existing ones do not suffice for your new entity attributes.
+   - Create methods like `patchString`, `patchEnum`, etc., only if the existing ones do not suffice for your new entity attributes.
 
 ## Step 8: Add to Integration Tests
 
 1. **Add Integration Tests**: Update the integration test suite to include the new entity. This will help ensure that the new entity integrates well with the rest of the system. Create an integration test file named `myNewEntity.integration.test.js` in the `/tests/it/v2/` directory.
-    - Test the full lifecycle of the entity: creation, updating, querying, and deletion.
-    - Make sure the entity can be retrieved through various service methods and that relationships with other entities are properly maintained.
+   - Test the full lifecycle of the entity: creation, updating, querying, and deletion.
+   - Make sure the entity can be retrieved through various service methods and that relationships with other entities are properly maintained.
 
 ## Step 9: Create JSDoc and Update Documentation
 
@@ -179,6 +258,3 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
    ```bash
    npm run lint
    ```
-
-##
-

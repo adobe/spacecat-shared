@@ -88,7 +88,7 @@ export const createDataAccess = (config, log = console) => {
 
   // electro-based data access objects
   const rawClient = createRawClient();
-  const electroService = createElectroService(rawClient, config, log);
+  const electroService = createElectroService(rawClient, config);
   const modelFactory = new ModelFactory(electroService, log);
 
   const Opportunity = modelFactory.getCollection(OpportunityCollection.name);

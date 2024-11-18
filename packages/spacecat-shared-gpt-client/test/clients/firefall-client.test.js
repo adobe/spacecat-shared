@@ -218,6 +218,8 @@ describe('FirefallClient', () => {
     });
 
     it('should handle no options', async () => {
+      mockContext.env.FIREFALL_IMS_ORG = 'myOrgId@adobe.com';
+      client = FirefallClient.createFrom(mockContext);
       nock(mockContext.env.FIREFALL_API_ENDPOINT)
         .post(chatPath)
         .reply(200, chatResponse);

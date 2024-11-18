@@ -298,6 +298,48 @@ Calculates the amount of non-inorganic (earned and owned) traffic and the click-
 
 ```
 
+### form-vitals
+
+Collects form vitals for a specified domain within a given time interval. Identifies whether each URL has embedded forms and counts form views/submission/engagement. This data can infer opportunities, such as URLs with low CTR and limited form engagement, URLs with high page views but fewer form submissions etc.
+An example response:
+
+```json
+[
+  {
+    "url": "https://business.adobe.com/",
+    "formsubmit": {},
+    "formview": {
+      "desktop:mac": 800,
+      "desktop:windows": 1900,
+      "mobile:ios": 100,
+      "mobile:android": 300
+    },
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "desktop:mac": 800,
+      "desktop:windows": 1900,
+      "mobile:ios": 100,
+      "mobile:android": 300
+    }
+  },
+  {
+    "url": "https://business.adobe.com/se/resources/main.html",
+    "formsubmit": {      
+      "desktop:windows": 100
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "desktop:windows": 100
+    }
+  }
+]
+```
+
 ## Linting
 Lint the codebase using:
 ```

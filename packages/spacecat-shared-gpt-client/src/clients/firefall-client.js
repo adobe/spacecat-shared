@@ -50,7 +50,8 @@ export default class FirefallClient {
 
     const {
       FIREFALL_API_ENDPOINT: apiEndpoint,
-      IMS_CLIENT_ID: imsOrg,
+      IMS_CLIENT_ID: imsClientId,
+      FIREFALL_IMS_ORG_ID: firefallImsOrgId,
       FIREFALL_API_KEY: apiKey,
       FIREFALL_API_POLL_INTERVAL: pollInterval = 2000,
       FIREFALL_API_CAPABILITY_NAME: capabilityName = 'gpt4_32k_completions_capability',
@@ -69,7 +70,7 @@ export default class FirefallClient {
       apiKey,
       capabilityName,
       imsClient,
-      imsOrg,
+      imsOrg: firefallImsOrgId || imsClientId,
       pollInterval,
     }, log);
   }
@@ -107,6 +108,12 @@ export default class FirefallClient {
     this.log.debug(`${message}: took ${duration}ms`);
   }
 
+  /**
+   * Submit a prompt to the Firefall API.
+   * @param body The body of the request.
+   * @param path The Firefall API path.
+   * @returns {Promise<unknown>}
+   */
   async #submitPrompt(body, path) {
     const apiAuth = await this.#getApiAuth();
 
@@ -177,12 +184,18 @@ export default class FirefallClient {
   /**
    * Fetches data from Firefall Chat Completion API.
    * @param prompt The text prompt to provide to Firefall
-   * @param options The options for the call:
-   *                - imageUrls: An array of URLs of the images to provide to Firefall
+   * @param options The options for the call, with optional properties:
+   *          - imageUrls: An array of URLs of the images to provide to Firefall
+   *          - model: LLM Model to use (default: gpt-4-turbo).  Use 'gpt-4-vision' with images.
+   *          - responseFormat: The response format to request from Firefall (accepts: json_object)
    * @returns {Object} - AI response
    */
   async fetchChatCompletion(prompt, options = {}) {
-    const { imageUrls, responseFormat, model: llmModel = 'gpt-4-turbo' } = options || {};
+    const {
+      imageUrls,
+      responseFormat,
+      model: llmModel = 'gpt-4-turbo',
+    } = options || {};
     const hasImageUrls = imageUrls && imageUrls.length > 0;
 
     const getBody = () => {
@@ -244,10 +257,7 @@ export default class FirefallClient {
       const startTime = process.hrtime.bigint();
       const body = getBody();
 
-      chatSubmissionResponse = await this.#submitPrompt(
-        JSON.stringify(body),
-        '/v2/chat/completions',
-      );
+      chatSubmissionResponse = await this.#submitPrompt(JSON.stringify(body), '/v2/chat/completions');
       this.#logDuration('Firefall API Chat Completion call', startTime);
     } catch (error) {
       this.log.error('Error while fetching data from Firefall chat API: ', error.message);

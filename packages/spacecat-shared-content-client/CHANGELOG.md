@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-content-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.2.0...@adobe/spacecat-shared-content-client-v1.2.1) (2024-11-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#444](https://github.com/adobe/spacecat-shared/issues/444)) ([5e86c98](https://github.com/adobe/spacecat-shared/commit/5e86c98f274e514e8ec3032b52a128b7b394f5bc))
+
+# [@adobe/spacecat-shared-content-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.22...@adobe/spacecat-shared-content-client-v1.2.0) (2024-11-12)
+
+
+### Features
+
+* create content client directly from domain ([17aec10](https://github.com/adobe/spacecat-shared/commit/17aec10cabb7b50d35588054587a96032b52ef73))
+
 # [@adobe/spacecat-shared-content-client-v1.1.22](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.1.21...@adobe/spacecat-shared-content-client-v1.1.22) (2024-11-11)
 
 

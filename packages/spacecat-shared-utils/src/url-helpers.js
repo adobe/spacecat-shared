@@ -85,7 +85,12 @@ function composeBaseURL(domain) {
 
 async function composeAuditURL(url) {
   const urlWithScheme = prependSchema(url);
-  const resp = await fetch(urlWithScheme);
+  const resp = await fetch(urlWithScheme, {
+    method: 'GET',
+    headers: {
+      'User-Agent': 'curl/7.88.1',
+    },
+  });
   const finalUrl = resp.url.split('://')[1];
   return stripTrailingSlash(finalUrl);
 }

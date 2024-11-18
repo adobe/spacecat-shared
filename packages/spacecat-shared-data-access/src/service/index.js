@@ -16,11 +16,11 @@ import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import AWSXray from 'aws-xray-sdk';
 import { Service } from 'electrodb';
 
-import ModelFactory from '../models/model.factory.js';
-import OpportunityCollection from '../models/opportunity.collection.js';
-import SuggestionCollection from '../models/suggestion.collection.js';
-import OpportunitySchema from '../schema/opportunity.schema.js';
-import SuggestionSchema from '../schema/suggestion.schema.js';
+import ModelFactory from '../v2/models/model.factory.js';
+import OpportunityCollection from '../v2/models/opportunity.collection.js';
+import SuggestionCollection from '../v2/models/suggestion.collection.js';
+import OpportunitySchema from '../v2/schema/opportunity.schema.js';
+import SuggestionSchema from '../v2/schema/suggestion.schema.js';
 
 import { auditFunctions } from './audits/index.js';
 import { keyEventFunctions } from './key-events/index.js';
@@ -44,10 +44,8 @@ const createRawClient = () => {
   });
 };
 
-const createElectroService = (client, table, log) => {
-  const logger = (event) => {
-    log.debug(JSON.stringify(event, null, 4));
-  };
+const createElectroService = (client, config) => {
+  const { tableNameData: table } = config;
   return new Service(
     {
       opportunity: OpportunitySchema,
@@ -56,7 +54,6 @@ const createElectroService = (client, table, log) => {
     {
       client,
       table,
-      logger,
     },
   );
 };
@@ -91,7 +88,7 @@ export const createDataAccess = (config, log = console) => {
 
   // electro-based data access objects
   const rawClient = createRawClient();
-  const electroService = createElectroService(rawClient, config.tableNameData, log);
+  const electroService = createElectroService(rawClient, config, log);
   const modelFactory = new ModelFactory(electroService, log);
 
   const Opportunity = modelFactory.getCollection(OpportunityCollection.name);

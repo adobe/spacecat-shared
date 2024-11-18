@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+/* c8 ignore start */
+
 import { v4 as uuid } from 'uuid';
 import { isObject } from '@adobe/spacecat-shared-utils';
 

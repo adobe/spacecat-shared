@@ -10,25 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
-import BaseCollection from './base.collection.js';
-import Suggestion from './suggestion.model.js';
-
-class SuggestionCollection extends BaseCollection {
-  constructor(service, modelFactory, log) {
-    super(service, modelFactory, Suggestion, log);
-  }
-
-  async allByOpportunityId(opportunityId) {
-    if (!hasText(opportunityId)) {
-      throw new Error('OpportunityId is required');
-    }
-
-    const records = await this.entity.query.byOpportunityId({ opportunityId }).go();
-
-    return this._createInstances(records);
-  }
-}
-
-export default SuggestionCollection;
+export {
+  guardArray,
+  guardEnum,
+  guardId,
+  guardMap,
+  guardNumber,
+  guardString,
+} from './guards.js';

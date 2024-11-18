@@ -17,7 +17,7 @@ import {
   guardMap,
   guardNumber,
   guardString,
-} from './guards.js';
+} from './index.js';
 
 class Patcher {
   constructor(entity, record) {
@@ -58,14 +58,14 @@ class Patcher {
     // https://electrodb.dev/en/reference/errors/#missing-composite-attributes
     // https://github.com/tywalch/electrodb/issues/406
     const compositeValues = this.#getCompositeValuesForKey(this.record, propertyName);
-    this.patchRecord = this.getPatchRecord().set({
+    this.patchRecord = this.#getPatchRecord().set({
       ...compositeValues,
       [propertyName]: value,
     });
     this.record[propertyName] = value;
   }
 
-  getPatchRecord() {
+  #getPatchRecord() {
     if (!this.patchRecord) {
       this.patchRecord = this.entity.patch({ [this.idName]: this.record[this.idName] });
     }
@@ -114,7 +114,7 @@ class Patcher {
   }
 
   async save() {
-    await this.getPatchRecord().go();
+    await this.#getPatchRecord().go();
     this.record.updatedAt = new Date().getTime();
   }
 }

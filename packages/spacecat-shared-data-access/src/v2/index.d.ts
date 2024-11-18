@@ -10,25 +10,5 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
-import BaseCollection from './base.collection.js';
-import Opportunity from './opportunity.model.js';
-
-class OpportunityCollection extends BaseCollection {
-  constructor(service, modelFactory, log) {
-    super(service, modelFactory, Opportunity, log);
-  }
-
-  async allBySiteId(siteId) {
-    if (!hasText(siteId)) {
-      throw new Error('SiteId is required');
-    }
-
-    const records = await this.entity.query.bySiteId({ siteId }).go();
-
-    return this._createInstances(records);
-  }
-}
-
-export default OpportunityCollection;
+export type * from './models/index.d.ts';
+export type * from './util/index.d.ts';

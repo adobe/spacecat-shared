@@ -19,7 +19,7 @@ import { dbClient, docClient as client } from './db.js';
 import { generateRandomAudit } from './auditUtils.js';
 import { createTable, deleteTable } from './tableOperations.js';
 
-import schema from '../../docs/schema.json' assert { type: 'json' };
+import schema from '../../docs/schema.json' with { type: 'json' };
 import { createKeyEvent, KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 import { KeyEventDto } from '../../src/dto/key-event.js';
 

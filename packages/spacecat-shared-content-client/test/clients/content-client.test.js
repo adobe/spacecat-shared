@@ -62,11 +62,11 @@ describe('ContentClient', () => {
 
   const createContentClient = async (getPageMetadata) => {
     documentSdk = {
-      getMetadata: sinon.stub().returns(getPageMetadata),
+      getMetadata: sinon.stub().resolves(getPageMetadata),
       updateMetadata: sinon.stub().resolves({ status: 200 }),
     };
     const contentSDK = sinon.stub().returns({
-      getDocument: sinon.stub().resolves(documentSdk),
+      getDocument: sinon.stub().returns(documentSdk),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -77,15 +77,19 @@ describe('ContentClient', () => {
   const createErrorContentClient = async (getError, updateError, errorMessage) => {
     const contentSDK = sinon.stub().returns({
       getDocument: getError ? sinon.stub().rejects(new Error(errorMessage))
-        : sinon.stub().resolves({
+        : sinon.stub().returns({
           updateMetadata: updateError ? sinon.stub().resolves({ status: 500 })
             : sinon.stub().resolves({ status: 200 }),
           getMetadata: getError
-            ? sinon.stub().rejects(new Error(errorMessage)) : sinon.stub().resolves(new Map()),
+            ? sinon.stub().rejects(new Error(errorMessage))
+            : sinon.stub().resolves(new Map()),
         }),
-      getRedirects: getError
-        ? sinon.stub().rejects(new Error(errorMessage)) : sinon.stub().resolves(existingRedirects),
-      appendRedirects: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
+      getRedirects: sinon.stub().returns({
+        get: getError
+          ? sinon.stub().rejects(new Error(errorMessage))
+          : sinon.stub().resolves(existingRedirects),
+        append: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
+      }),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -94,9 +98,12 @@ describe('ContentClient', () => {
   };
 
   const createContentClientForRedirects = async (getRedirects) => {
+    const redirectsSDK = sinon.stub().returns({
+      get: sinon.stub().resolves(getRedirects),
+      append: sinon.stub().resolves({ status: 200 }),
+    });
     const contentSDK = sinon.stub().returns({
-      getRedirects: sinon.stub().resolves(getRedirects),
-      appendRedirects: sinon.stub().resolves({ status: 200 }),
+      getRedirects: redirectsSDK,
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -462,7 +469,7 @@ describe('ContentClient', () => {
       ContentClient = await createContentClientForRedirects(existingRedirects);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
-      await expect(client.rawClient.appendRedirects.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
+      await expect(client.rawClient.getRedirects.append.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
     });
     it('update success ignores duplicates', async () => {
       const newRedirects = [

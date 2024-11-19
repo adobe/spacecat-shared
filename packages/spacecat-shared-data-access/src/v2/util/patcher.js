@@ -10,14 +10,31 @@
  * governing permissions and limitations under the License.
  */
 
+import { isObject } from '@adobe/spacecat-shared-utils';
+
 import {
+  guardAny,
   guardArray,
   guardEnum,
   guardId,
   guardMap,
   guardNumber,
+  guardSet,
   guardString,
 } from './index.js';
+
+/**
+ * Checks if a property is read-only and throws an error if it is.
+ * @param {string} propertyName - The name of the property to check.
+ * @param {Object} attribute - The attribute to check.
+ * @throws {Error} - Throws an error if the property is read-only.
+ * @private
+ */
+const checkReadOnly = (propertyName, attribute) => {
+  if (attribute.readOnly) {
+    throw new Error(`The property ${propertyName} is read-only and cannot be updated.`);
+  }
+};
 
 class Patcher {
   constructor(entity, record) {
@@ -30,6 +47,25 @@ class Patcher {
     this.patchRecord = null;
   }
 
+  /**
+   * Checks if a property is nullable.
+   * @param {string} propertyName - The name of the property to check.
+   * @return {boolean} True if the property is nullable, false otherwise.
+   * @private
+   */
+  #isAttributeNullable(propertyName) {
+    return !this.model.schema.attributes[propertyName]?.required;
+  }
+
+  /**
+   * Gets the composite values for a given key from the entity schema.
+   * Composite keys have to be provided to ElectroDB in order to update a record across
+   * multiple indexes.
+   * @param {Object} record - The record to get the composite values from.
+   * @param {string} key - The key to get the composite values for.
+   * @return {{}} - An object containing the composite values for the given key.
+   * @private
+   */
   #getCompositeValuesForKey(record, key) {
     const { indexes } = this.model;
     const result = {};
@@ -53,10 +89,13 @@ class Patcher {
     return result;
   }
 
+  /**
+   * Sets a property on the record and updates the patch record.
+   * @param {string} propertyName - The name of the property to set.
+   * @param {any} value - The value to set for the property.
+   * @private
+   */
   #set(propertyName, value) {
-    // if a property is part of a composite key, we need to update the composite key as well
-    // https://electrodb.dev/en/reference/errors/#missing-composite-attributes
-    // https://github.com/tywalch/electrodb/issues/406
     const compositeValues = this.#getCompositeValuesForKey(this.record, propertyName);
     this.patchRecord = this.#getPatchRecord().set({
       ...compositeValues,
@@ -65,6 +104,11 @@ class Patcher {
     this.record[propertyName] = value;
   }
 
+  /**
+   * Gets the patch record for the entity. If it does not exist, it will be created.
+   * @return {Object} - The patch record for the entity.
+   * @private
+   */
   #getPatchRecord() {
     if (!this.patchRecord) {
       this.patchRecord = this.entity.patch({ [this.idName]: this.record[this.idName] });
@@ -72,47 +116,62 @@ class Patcher {
     return this.patchRecord;
   }
 
-  patchString(propertyName, value) {
-    guardString(propertyName, value, this.entityName);
+  /**
+   * Patches a value for a given property on the entity. This method will validate the value
+   * against the schema and throw an error if the value is invalid. If the value is declared as
+   * a reference, it will validate the ID format.
+   * @param {string} propertyName - The name of the property to patch.
+   * @param {any} value - The value to patch.
+   * @param {boolean} [isReference=false] - Whether the value is a reference to another entity.
+   */
+  patchValue(propertyName, value, isReference = false) {
+    const attribute = this.model.schema?.attributes[propertyName];
+    if (!isObject(attribute)) {
+      throw new Error(`Property ${propertyName} does not exist on entity ${this.entityName}.`);
+    }
+
+    checkReadOnly(propertyName, attribute);
+
+    const nullable = this.#isAttributeNullable(propertyName);
+
+    if (isReference) {
+      guardId(propertyName, value, this.entityName, nullable);
+    } else {
+      switch (attribute.type) {
+        case 'any':
+          guardAny(propertyName, value, this.entityName, nullable);
+          break;
+        case 'enum':
+          guardEnum(propertyName, value, attribute.enumArray, this.entityName, nullable);
+          break;
+        case 'list':
+          guardArray(propertyName, value, this.entityName, attribute.items?.type, nullable);
+          break;
+        case 'map':
+          guardMap(propertyName, value, this.entityName, nullable);
+          break;
+        case 'number':
+          guardNumber(propertyName, value, this.entityName, nullable);
+          break;
+        case 'set':
+          guardSet(propertyName, value, this.entityName, attribute.items?.type, nullable);
+          break;
+        case 'string':
+          guardString(propertyName, value, this.entityName, nullable);
+          break;
+        default:
+          throw new Error(`Unsupported type for property ${propertyName}`);
+      }
+    }
 
     this.#set(propertyName, value);
   }
 
-  patchEnum(propertyName, value) {
-    guardEnum(
-      propertyName,
-      value,
-      this.model.schema.attributes[propertyName].enumArray,
-      this.entityName,
-    );
-
-    this.#set(propertyName, value);
-  }
-
-  patchId(propertyName, value) {
-    guardId(propertyName, value, this.entityName);
-
-    this.#set(propertyName, value);
-  }
-
-  patchMap(propertyName, value) {
-    guardMap(propertyName, value, this.entityName);
-
-    this.#set(propertyName, value);
-  }
-
-  patchNumber(propertyName, value) {
-    guardNumber(propertyName, value, this.entityName);
-
-    this.#set(propertyName, value);
-  }
-
-  patchSet(propertyName, value) {
-    guardArray(propertyName, value, this.entityName);
-
-    this.#set(propertyName, value);
-  }
-
+  /**
+   * Saves the current state of the entity to the database.
+   * @return {Promise<void>}
+   * @throws {Error} - Throws an error if the save operation fails.
+   */
   async save() {
     await this.#getPatchRecord().go();
     this.record.updatedAt = new Date().getTime();

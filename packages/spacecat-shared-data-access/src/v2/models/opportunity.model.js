@@ -51,7 +51,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the siteId is not a valid UUID.
    */
   setSiteId(siteId) {
-    this.patcher.patchString('siteId', siteId);
+    this.patcher.patchValue('siteId', siteId, true);
     return this;
   }
 
@@ -70,7 +70,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the auditId is not a valid UUID.
    */
   setAuditId(auditId) {
-    this.patcher.patchId('auditId', auditId);
+    this.patcher.patchValue('auditId', auditId, true);
     return this;
   }
 
@@ -89,7 +89,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the runbook is not a string or empty.
    */
   setRunbook(runbook) {
-    this.patcher.patchString('runbook', runbook);
+    this.patcher.patchValue('runbook', runbook);
     return this;
   }
 
@@ -108,7 +108,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the guidance is not an object or empty.
    */
   setGuidance(guidance) {
-    this.patcher.patchMap('guidance', guidance);
+    this.patcher.patchValue('guidance', guidance);
     return this;
   }
 
@@ -127,7 +127,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the title is not a string or empty.
    */
   setTitle(title) {
-    this.patcher.patchString('title', title);
+    this.patcher.patchValue('title', title);
     return this;
   }
 
@@ -146,7 +146,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the description is not a string or empty.
    */
   setDescription(description) {
-    this.patcher.patchString('description', description);
+    this.patcher.patchValue('description', description);
     return this;
   }
 
@@ -173,7 +173,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the status is not a valid value.
    */
   setStatus(status) {
-    this.patcher.patchEnum('status', status);
+    this.patcher.patchValue('status', status);
     return this;
   }
 
@@ -192,7 +192,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the origin is not a valid value.
    */
   setOrigin(origin) {
-    this.patcher.patchString('origin', origin);
+    this.patcher.patchValue('origin', origin);
     return this;
   }
 
@@ -211,7 +211,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the tags are not an array.
    */
   setTags(tags) {
-    this.patcher.patchSet('tags', tags);
+    this.patcher.patchValue('tags', tags);
     return this;
   }
 
@@ -230,7 +230,7 @@ class Opportunity extends BaseModel {
    * @throws {Error} - Throws an error if the data is not a valid object.
    */
   setData(data) {
-    this.patcher.patchMap('data', data);
+    this.patcher.patchValue('data', data);
     return this;
   }
 }

@@ -11,10 +11,12 @@
  */
 
 export {
+  guardAny,
   guardArray,
   guardEnum,
   guardId,
   guardMap,
   guardNumber,
+  guardSet,
   guardString,
 } from './guards.js';

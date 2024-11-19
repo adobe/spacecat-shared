@@ -13,27 +13,25 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
+import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
 import Opportunity from '../../../../src/v2/models/opportunity.model.js';
+import OpportunitySchema from '../../../../src/v2/schema/opportunity.schema.js';
 
 chaiUse(chaiAsPromised);
+
+const { attributes } = new Entity(OpportunitySchema).model.schema;
 
 const mockElectroService = {
   entities: {
     opportunity: {
       model: {
         name: 'opportunity',
-        schema: {
-          attributes: {
-            status: {
-              enumArray: ['NEW', 'IN_PROGRESS', 'CLOSED'],
-            },
-          },
-        },
+        schema: { attributes },
         indexes: {
-          primary: { // operates on the main table, no 'index' property
+          primary: {
             pk: {
               field: 'pk',
               composite: ['opportunityId'],
@@ -114,8 +112,8 @@ describe('Opportunity', () => {
     });
 
     it('sets the site ID of the opportunity', () => {
-      opportunityInstance.setSiteId('newSite123');
-      expect(opportunityInstance.record.siteId).to.equal('newSite123');
+      opportunityInstance.setSiteId('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(opportunityInstance.record.siteId).to.equal('ef39921f-9a02-41db-b491-02c98987d956');
     });
   });
 

@@ -10,7 +10,15 @@
  * governing permissions and limitations under the License.
  */
 
-export function guardArray(
+export function guardSet(
+  propertyName: string,
+  value: never,
+  entityName: string,
+  type?: string,
+  nullable?: boolean,
+): void;
+
+export function guardAny(
   propertyName: string,
   value: never,
   entityName: string,

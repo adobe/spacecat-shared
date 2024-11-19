@@ -13,12 +13,16 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
+import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
 import Suggestion from '../../../../src/v2/models/suggestion.model.js';
+import SuggestionSchema from '../../../../src/v2/schema/suggestion.schema.js';
 
 chaiUse(chaiAsPromised);
+
+const { attributes } = new Entity(SuggestionSchema).model.schema;
 
 describe('Suggestion', () => {
   let suggestionInstance;
@@ -46,15 +50,9 @@ describe('Suggestion', () => {
         suggestion: {
           model: {
             name: 'suggestion',
-            schema: {
-              attributes: {
-                status: {
-                  enumArray: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'],
-                },
-              },
-            },
+            schema: { attributes },
             indexes: {
-              primary: { // operates on the main table, no 'index' property
+              primary: {
                 pk: {
                   field: 'pk',
                   composite: ['suggestionId'],
@@ -113,8 +111,8 @@ describe('Suggestion', () => {
     });
 
     it('sets the Opportunity ID of the suggestion', () => {
-      suggestionInstance.setOpportunityId('newOp123');
-      expect(suggestionInstance.record.opportunityId).to.equal('newOp123');
+      suggestionInstance.setOpportunityId('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(suggestionInstance.record.opportunityId).to.equal('ef39921f-9a02-41db-b491-02c98987d956');
     });
   });
 

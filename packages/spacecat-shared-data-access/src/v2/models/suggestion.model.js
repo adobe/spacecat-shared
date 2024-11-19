@@ -46,7 +46,7 @@ class Suggestion extends BaseModel {
    * @throws {Error} - Throws an error if the opportunityId is not a valid UUID.
    */
   setOpportunityId(opportunityId) {
-    this.patcher.patchString('opportunityId', opportunityId);
+    this.patcher.patchValue('opportunityId', opportunityId, true);
     return this;
   }
 
@@ -73,7 +73,7 @@ class Suggestion extends BaseModel {
    * @throws {Error} - Throws an error if the status is not a valid value.
    */
   setStatus(status) {
-    this.patcher.patchEnum('status', status);
+    this.patcher.patchValue('status', status);
     return this;
   }
 
@@ -92,7 +92,7 @@ class Suggestion extends BaseModel {
    * @throws {Error} - Throws an error if the rank is not a valid number.
    */
   setRank(rank) {
-    this.patcher.patchNumber('rank', rank);
+    this.patcher.patchValue('rank', rank);
     return this;
   }
 
@@ -111,7 +111,7 @@ class Suggestion extends BaseModel {
    * @throws {Error} - Throws an error if the data is not a valid object.
    */
   setData(data) {
-    this.patcher.patchMap('data', data);
+    this.patcher.patchValue('data', data);
     return this;
   }
 
@@ -130,7 +130,7 @@ class Suggestion extends BaseModel {
    * @throws {Error} - Throws an error if the kpiDeltas is not a valid object.
    */
   setKpiDeltas(kpiDeltas) {
-    this.patcher.patchMap('kpiDeltas', kpiDeltas);
+    this.patcher.patchValue('kpiDeltas', kpiDeltas);
     return this;
   }
 }

@@ -38,26 +38,51 @@ const checkType = (value, type) => {
       return typeof value === 'boolean';
     case 'object':
       return isObject(value);
-    case 'uuid':
-      return validateUUID(value);
     default:
       throw new Error(`Unsupported type: ${type}`);
   }
 };
 
 /**
- * Validates that a given property is an array.
+ * Validates that a given property of any type is not null or undefined.
  * @param {String} propertyName - Name of the property being validated.
  * @param {any} value - The value to validate.
  * @param {String} entityName - Name of the entity containing this property.
- * @param {String} [type] - Type of the array elements. Defaults to 'string'.
  * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
- * @throws Will throw an error if the value is not an array.
+ * @throws Will throw an error if the value is null or undefined.
  */
+export const guardAny = (propertyName, value, entityName, nullable = false) => {
+  if (!checkNullable(value, nullable) && (value === undefined || value === null)) {
+    throw new Error(`Validation failed in ${entityName}: ${propertyName} is required`);
+  }
+};
+
 export const guardArray = (propertyName, value, entityName, type = 'string', nullable = false) => {
   if (checkNullable(value, nullable)) return;
-  if (!Array.isArray(value) || value.length === 0 || !value.every((v) => checkType(v, type))) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be a non-empty array of ${type}s`);
+  if (!Array.isArray(value)) {
+    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be an array`);
+  }
+  if (!value.every((v) => checkType(v, type))) {
+    throw new Error(`Validation failed in ${entityName}: ${propertyName} must contain items of type ${type}`);
+  }
+};
+
+/**
+ * Validates that a given property is a set (unique array) of a given type (defaults to string).
+ * @param {String} propertyName - Name of the property being validated.
+ * @param {any} value - The value to validate.
+ * @param {String} entityName - Name of the entity containing this property.
+ * @param {String} [type] - The type of the items in the set. Defaults to 'string'.
+ * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
+ * @throws Will throw an error if the value is not a valid set (unique array) of a given type.
+ */
+export const guardSet = (propertyName, value, entityName, type = 'string', nullable = false) => {
+  if (checkNullable(value, nullable)) return;
+  if (!Array.isArray(value) || new Set(value).size !== value.length) {
+    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be a unique array (set)`);
+  }
+  if (!value.every((v) => checkType(v, type))) {
+    throw new Error(`Validation failed in ${entityName}: ${propertyName} must contain items of type ${type}`);
   }
 };
 

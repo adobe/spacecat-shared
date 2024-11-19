@@ -76,14 +76,13 @@ describe('ContentClient', () => {
 
   const createErrorContentClient = async (getError, updateError, errorMessage) => {
     const contentSDK = sinon.stub().returns({
-      getDocument: getError ? sinon.stub().rejects(new Error(errorMessage))
-        : sinon.stub().returns({
-          updateMetadata: updateError ? sinon.stub().resolves({ status: 500 })
-            : sinon.stub().resolves({ status: 200 }),
-          getMetadata: getError
-            ? sinon.stub().rejects(new Error(errorMessage))
-            : sinon.stub().resolves(new Map()),
-        }),
+      getDocument: sinon.stub().returns({
+        updateMetadata: updateError ? sinon.stub().resolves({ status: 500 })
+          : sinon.stub().resolves({ status: 200 }),
+        getMetadata: getError
+          ? sinon.stub().rejects(new Error(errorMessage))
+          : sinon.stub().resolves(new Map()),
+      }),
       getRedirects: sinon.stub().returns({
         get: getError
           ? sinon.stub().rejects(new Error(errorMessage))

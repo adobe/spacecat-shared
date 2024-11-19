@@ -51,6 +51,28 @@ class OpportunityCollection extends BaseCollection {
 
     return this._createInstances(records);
   }
+
+  /**
+   * Retrieves all Opportunity entities by their associated site ID and status.
+   * @param {string} siteId - The unique identifier of the site.
+   * @param {string} status - The status of the Opportunity entities to retrieve.
+   * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of
+   * Opportunity instances.
+   * @throws {Error} - Throws an error if the siteId or status is not provided or if the
+   * query fails.
+   */
+  async allBySiteIdAndStatus(siteId, status) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    if (!hasText(status)) {
+      throw new Error('Status is required');
+    }
+
+    const records = await this.entity.query.bySiteIdAndStatus({ siteId, status }).go();
+    return this._createInstances(records);
+  }
 }
 
 export default OpportunityCollection;

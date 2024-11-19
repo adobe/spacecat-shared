@@ -81,6 +81,7 @@ export interface BaseCollection<T extends BaseModel> {
  */
 export interface OpportunityCollection extends BaseCollection<Opportunity> {
   allBySiteId(siteId: string): Promise<Opportunity[]>;
+  allBySiteIdAndStatus(siteId: string, status: string): Promise<Opportunity[]>;
 }
 
 /**
@@ -88,6 +89,7 @@ export interface OpportunityCollection extends BaseCollection<Opportunity> {
  */
 export interface SuggestionCollection extends BaseCollection<Suggestion> {
   allByOpportunityId(opportunityId: string): Promise<Suggestion[]>;
+  allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion[]>;
 }
 
 /**

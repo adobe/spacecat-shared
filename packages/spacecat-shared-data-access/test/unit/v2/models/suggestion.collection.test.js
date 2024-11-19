@@ -29,6 +29,7 @@ const mockElectroService = {
       },
       query: {
         byOpportunityId: stub(),
+        byOpportunityIdAndStatus: stub(),
       },
       put: stub(),
     },
@@ -107,6 +108,39 @@ describe('SuggestionCollection', () => {
     it('throws an error if opportunityId is not provided', async () => {
       await expect(suggestionCollectionInstance.allByOpportunityId(''))
         .to.be.rejectedWith('OpportunityId is required');
+    });
+  });
+
+  describe('allByOpportunityIdAndStatus', () => {
+    it('returns the suggestions by opportunity and status', async () => {
+      const mockFindResults = { data: [mockRecord] };
+      mockElectroService.entities.suggestion.query.byOpportunityIdAndStatus.returns(
+        { go: () => Promise.resolve(mockFindResults) },
+      );
+
+      const results = await suggestionCollectionInstance.allByOpportunityIdAndStatus('op67890', 'NEW');
+      expect(results).to.be.an('array').that.has.length(1);
+      expect(results[0]).to.be.instanceOf(Suggestion);
+      expect(results[0].record).to.deep.include(mockSuggestionModel.record);
+    });
+
+    it('returns an empty array if no suggestions exist for the given opportunity ID and status', async () => {
+      mockElectroService.entities.suggestion.query.byOpportunityIdAndStatus.returns(
+        { go: () => Promise.resolve([]) },
+      );
+
+      const results = await suggestionCollectionInstance.allByOpportunityIdAndStatus('op67890', 'NEW');
+      expect(results).to.be.an('array').that.is.empty;
+    });
+
+    it('throws an error if opportunityId is not provided', async () => {
+      await expect(suggestionCollectionInstance.allByOpportunityIdAndStatus('', 'NEW'))
+        .to.be.rejectedWith('OpportunityId is required');
+    });
+
+    it('throws an error if status is not provided', async () => {
+      await expect(suggestionCollectionInstance.allByOpportunityIdAndStatus('op67890', ''))
+        .to.be.rejectedWith('Status is required');
     });
   });
 });

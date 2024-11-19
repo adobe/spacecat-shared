@@ -105,7 +105,7 @@ const SuggestionSchema = {
         composite: ['suggestionId'],
       },
     },
-    byOpportunityAndStatus: {
+    byOpportunityIdAndStatus: {
       index: 'spacecat-data-suggestion-by-opportunity-and-status',
       pk: {
         field: 'gsi2pk',

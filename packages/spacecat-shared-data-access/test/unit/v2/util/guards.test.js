@@ -14,6 +14,7 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+
 import {
   guardArray,
   guardEnum,
@@ -25,7 +26,6 @@ import {
 
 chaiUse(chaiAsPromised);
 
-// Guards Unit Tests
 describe('Guards', () => {
   describe('guardArray', () => {
     it('throws an error if value is not an array', () => {
@@ -36,6 +36,60 @@ describe('Guards', () => {
     it('does not throw if value is an array with strings', () => {
       expect(() => guardArray('testProperty', ['1', '2', '3'], 'TestEntity'))
         .not.to.throw();
+    });
+
+    it('throws an error if array does not contain valid types', () => {
+      expect(() => guardArray('testProperty', [1, 2, 3], 'TestEntity'))
+        .to.throw('Validation failed in TestEntity: testProperty must be a non-empty array of strings');
+    });
+
+    it('allows specifying type as number', () => {
+      expect(() => guardArray('testProperty', [1, 2, 3], 'TestEntity', 'number', false))
+        .not.to.throw();
+    });
+
+    it('throws an error if array contains wrong type when expecting numbers', () => {
+      expect(() => guardArray('testProperty', [1, '2', 3], 'TestEntity', 'number', false))
+        .to.throw('Validation failed in TestEntity: testProperty must be a non-empty array of numbers');
+    });
+
+    it('does not throw if value is null and nullable is true', () => {
+      expect(() => guardArray('testProperty', null, 'TestEntity', 'string', true)).not.to.throw();
+    });
+
+    it('allows specifying type as uuid', () => {
+      expect(() => guardArray('testProperty', ['ef39921f-9a02-41db-b491-02c98987d956', 'a3d4b59d-6e1f-4a6d-8ee4-4bfc1d9a9182'], 'TestEntity', 'uuid', false))
+        .not.to.throw();
+    });
+
+    it('throws an error if array contains invalid UUIDs when expecting UUIDs', () => {
+      expect(() => guardArray('testProperty', ['not-a-uuid', 'another-bad-uuid'], 'TestEntity', 'uuid', false))
+        .to.throw('Validation failed in TestEntity: testProperty must be a non-empty array of uuids');
+    });
+
+    it('allows specifying type as boolean', () => {
+      expect(() => guardArray('testProperty', [true, false, true], 'TestEntity', 'boolean'))
+        .not.to.throw();
+    });
+
+    it('throws an error if array contains wrong type when expecting booleans', () => {
+      expect(() => guardArray('testProperty', [true, 'false', true], 'TestEntity', 'boolean'))
+        .to.throw('Validation failed in TestEntity: testProperty must be a non-empty array of booleans');
+    });
+
+    it('allows specifying type as object', () => {
+      expect(() => guardArray('testProperty', [{ key: 'value' }, { anotherKey: 'anotherValue' }], 'TestEntity', 'object'))
+        .not.to.throw();
+    });
+
+    it('throws an error if array contains wrong type when expecting objects', () => {
+      expect(() => guardArray('testProperty', [{ key: 'value' }, 'notAnObject'], 'TestEntity', 'object'))
+        .to.throw('Validation failed in TestEntity: testProperty must be a non-empty array of objects');
+    });
+
+    it('throws an error if an unsupported type is specified', () => {
+      expect(() => guardArray('testProperty', ['value1', 'value2'], 'TestEntity', 'unsupportedType', false))
+        .to.throw('Unsupported type: unsupportedType');
     });
   });
 
@@ -49,19 +103,25 @@ describe('Guards', () => {
       expect(() => guardEnum('testProperty', 'VALUE1', ['VALUE1', 'VALUE2'], 'TestEntity'))
         .not.to.throw();
     });
+
+    it('does not throw if value is null and nullable is true', () => {
+      expect(() => guardEnum('testProperty', null, ['VALUE1', 'VALUE2'], 'TestEntity', true)).not.to.throw();
+    });
   });
 
   describe('guardId', () => {
-    it('throws an error if value is not a valid ID (not a string or empty)', () => {
+    it('throws an error if value is not a valid ID', () => {
       expect(() => guardId('testId', 12345, 'TestEntity'))
-        .to.throw('Validation failed in TestEntity: testId must be a valid UUID');
-      expect(() => guardId('testId', '', 'TestEntity'))
         .to.throw('Validation failed in TestEntity: testId must be a valid UUID');
     });
 
-    it('does not throw if value is a valid ID (non-empty string)', () => {
+    it('does not throw if value is a valid ID', () => {
       expect(() => guardId('testId', 'ef39921f-9a02-41db-b491-02c98987d956', 'TestEntity'))
         .not.to.throw();
+    });
+
+    it('does not throw if value is null and nullable is true', () => {
+      expect(() => guardId('testId', null, 'TestEntity', true)).not.to.throw();
     });
   });
 
@@ -69,12 +129,15 @@ describe('Guards', () => {
     it('throws an error if value is not an object', () => {
       expect(() => guardMap('testProperty', 'notAnObject', 'TestEntity'))
         .to.throw('Validation failed in TestEntity: testProperty must be an object');
-      expect(() => guardMap('testProperty', null, 'TestEntity'))
-        .to.throw('Validation failed in TestEntity: testProperty must be an object');
     });
 
     it('does not throw if value is an object', () => {
       expect(() => guardMap('testProperty', { key: 'value' }, 'TestEntity')).not.to.throw();
+    });
+
+    it('does not throw if value is null and nullable is true', () => {
+      expect(() => guardMap('testProperty', null, 'TestEntity', true))
+        .not.to.throw();
     });
   });
 
@@ -88,6 +151,10 @@ describe('Guards', () => {
       expect(() => guardNumber('testProperty', 123, 'TestEntity'))
         .not.to.throw();
     });
+
+    it('does not throw if value is null and nullable is true', () => {
+      expect(() => guardNumber('testProperty', null, 'TestEntity', true)).not.to.throw();
+    });
   });
 
   describe('guardString', () => {
@@ -99,6 +166,14 @@ describe('Guards', () => {
     it('does not throw if value is a string', () => {
       expect(() => guardString('testProperty', 'validString', 'TestEntity'))
         .not.to.throw();
+    });
+
+    it('does not throw if value is null and nullable is true', () => {
+      expect(() => guardString('testProperty', null, 'TestEntity', true)).not.to.throw();
+    });
+
+    it('does not throw if value is undefined and nullable is true', () => {
+      expect(() => guardString('testProperty', undefined, 'TestEntity', true)).not.to.throw();
     });
   });
 });

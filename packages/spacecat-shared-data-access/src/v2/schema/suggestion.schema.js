@@ -13,7 +13,7 @@
 /* c8 ignore start */
 
 import { v4 as uuid } from 'uuid';
-import { isObject } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -54,16 +54,16 @@ const SuggestionSchema = {
     data: {
       type: 'any',
       required: true,
-      validation: (value) => !isObject(value),
+      validation: (value) => !isNonEmptyObject(value),
     },
     kpiDeltas: {
       type: 'map',
       properties: {},
       required: false,
-      validation: (value) => !isObject(value),
+      validation: (value) => !isNonEmptyObject(value),
     },
     status: {
-      type: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'], // Corrected enum declaration
+      type: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'],
       required: true,
       default: () => 'NEW',
     },

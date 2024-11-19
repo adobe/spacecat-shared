@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { v4 as uuid } from 'uuid';
 
@@ -59,8 +59,8 @@ const OpportunitySchema = {
     },
     data: {
       type: 'any',
-      required: true,
-      validation: (value) => !isObject(value),
+      required: false,
+      validation: (value) => !isNonEmptyObject(value),
     },
     origin: {
       type: ['ESS_OPS', 'AI', 'AUTOMATION'],
@@ -83,7 +83,7 @@ const OpportunitySchema = {
       type: 'map',
       properties: {},
       required: false,
-      validation: (value) => !isObject(value),
+      validation: (value) => !isNonEmptyObject(value),
     },
     tags: {
       type: 'set',

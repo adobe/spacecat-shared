@@ -10,19 +10,45 @@
  * governing permissions and limitations under the License.
  */
 
-export function guardArray(propertyName: string, value: never, entityName: string): void;
+export function guardArray(
+  propertyName: string,
+  value: never,
+  entityName: string,
+  nullable?: boolean,
+): void;
 
 export function guardEnum(
   propertyName: string,
   value: never,
   enumValues: string[],
   entityName: string,
+  nullable?: boolean,
 ): void;
 
-export function guardId(propertyName: string, value: never, entityName: string): void;
+export function guardId(
+  propertyName: string,
+  value: never,
+  entityName: string,
+  nullable?: boolean,
+): void;
 
-export function guardMap(propertyName: string, value: never, entityName: string): void;
+export function guardMap(
+  propertyName: string,
+  value: never,
+  entityName: string,
+  nullable?: boolean,
+): void;
 
-export function guardNumber(propertyName: string, value: never, entityName: string): void;
+export function guardNumber(
+  propertyName: string,
+  value: never,
+  entityName: string,
+  nullable?: boolean,
+): void;
 
-export function guardString(propertyName: string, value: never, entityName: string): void;
+export function guardString(
+  propertyName: string,
+  value: never,
+  entityName: string,
+  nullable?: boolean,
+): void;

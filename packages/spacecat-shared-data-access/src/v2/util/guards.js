@@ -14,27 +14,63 @@ import { hasText, isNumber, isObject } from '@adobe/spacecat-shared-utils';
 import { validate as validateUUID } from 'uuid';
 
 /**
+ * Checks if a value is nullable and if the value is null or undefined.
+ * @param {any} value - The value to check.
+ * @param {boolean} nullable - Whether the value is nullable.
+ * @return {boolean} True if the value is nullable and null or undefined, false otherwise.
+ */
+const checkNullable = (value, nullable) => nullable && (value === null || value === undefined);
+
+/**
+ * Checks if a value is of a given type.
+ * Supported types are 'string', 'number', 'boolean', 'object', and 'uuid'.
+ * @param {any} value
+ * @param {string} type
+ * @return {boolean} True if the value is of the given type, false otherwise.
+ */
+const checkType = (value, type) => {
+  switch (type) {
+    case 'string':
+      return typeof value === 'string';
+    case 'number':
+      return typeof value === 'number';
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'object':
+      return isObject(value);
+    case 'uuid':
+      return validateUUID(value);
+    default:
+      throw new Error(`Unsupported type: ${type}`);
+  }
+};
+
+/**
  * Validates that a given property is an array.
- * @param propertyName - Name of the property being validated.
- * @param value - The value to validate.
- * @param entityName - Name of the entity containing this property.
+ * @param {String} propertyName - Name of the property being validated.
+ * @param {any} value - The value to validate.
+ * @param {String} entityName - Name of the entity containing this property.
+ * @param {String} [type] - Type of the array elements. Defaults to 'string'.
+ * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
  * @throws Will throw an error if the value is not an array.
  */
-export const guardArray = (propertyName, value, entityName) => {
-  // array must be non-empty and have all string values
-  if (!Array.isArray(value) || value.length === 0 || !value.every((v) => typeof v === 'string')) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be a non-empty array of strings`);
+export const guardArray = (propertyName, value, entityName, type = 'string', nullable = false) => {
+  if (checkNullable(value, nullable)) return;
+  if (!Array.isArray(value) || value.length === 0 || !value.every((v) => checkType(v, type))) {
+    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be a non-empty array of ${type}s`);
   }
 };
 
 /**
  * Validates that a given property is a string.
- * @param propertyName - Name of the property being validated.
- * @param value - The value to validate.
- * @param entityName - Name of the entity containing this property.
+ * @param {String} propertyName - Name of the property being validated.
+ * @param {any} value - The value to validate.
+ * @param {String} entityName - Name of the entity containing this property.
+ * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
  * @throws Will throw an error if the value is not a valid string.
  */
-export const guardString = (propertyName, value, entityName) => {
+export const guardString = (propertyName, value, entityName, nullable = false) => {
+  if (checkNullable(value, nullable)) return;
   if (!hasText(value)) {
     throw new Error(`Validation failed in ${entityName}: ${propertyName} is required`);
   }
@@ -42,13 +78,15 @@ export const guardString = (propertyName, value, entityName) => {
 
 /**
  * Validates that a given property is of an enum type.
- * @param propertyName - Name of the property being validated.
- * @param value - The value to validate.
- * @param enumValues - Allowed enum values.
- * @param entityName - Name of the entity containing this property.
+ * @param {String} propertyName - Name of the property being validated.
+ * @param {any} value - The value to validate.
+ * @param {Array<String>} enumValues - Allowed enum values.
+ * @param {String} entityName - Name of the entity containing this property.
+ * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
  * @throws Will throw an error if the value is not a valid enum value.
  */
-export const guardEnum = (propertyName, value, enumValues, entityName) => {
+export const guardEnum = (propertyName, value, enumValues, entityName, nullable = false) => {
+  if (checkNullable(value, nullable)) return;
   if (!enumValues.includes(value)) {
     throw new Error(`Validation failed in ${entityName}: ${propertyName} must be one of ${enumValues}`);
   }
@@ -56,12 +94,14 @@ export const guardEnum = (propertyName, value, enumValues, entityName) => {
 
 /**
  * Validates that a given property is a valid ID.
- * @param propertyName - Name of the property being validated.
- * @param value - The value to validate.
- * @param entityName - Name of the entity containing this property.
+ * @param {String} propertyName - Name of the property being validated.
+ * @param {any} value - The value to validate.
+ * @param {String} entityName - Name of the entity containing this property.
+ * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
  * @throws Will throw an error if the value is not a valid ID.
  */
-export const guardId = (propertyName, value, entityName) => {
+export const guardId = (propertyName, value, entityName, nullable = false) => {
+  if (checkNullable(value, nullable)) return;
   if (!validateUUID(value)) {
     throw new Error(`Validation failed in ${entityName}: ${propertyName} must be a valid UUID`);
   }
@@ -69,12 +109,14 @@ export const guardId = (propertyName, value, entityName) => {
 
 /**
  * Validates that a given property is a map (object).
- * @param propertyName - Name of the property being validated.
- * @param value - The value to validate.
- * @param entityName - Name of the entity containing this property.
+ * @param {String} propertyName - Name of the property being validated.
+ * @param {any} value - The value to validate.
+ * @param {String} entityName - Name of the entity containing this property.
+ * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
  * @throws Will throw an error if the value is not a valid map (object).
  */
-export const guardMap = (propertyName, value, entityName) => {
+export const guardMap = (propertyName, value, entityName, nullable = false) => {
+  if (checkNullable(value, nullable)) return;
   if (!isObject(value)) {
     throw new Error(`Validation failed in ${entityName}: ${propertyName} must be an object`);
   }
@@ -82,12 +124,14 @@ export const guardMap = (propertyName, value, entityName) => {
 
 /**
  * Validates that a given property is a number.
- * @param propertyName - Name of the property being validated.
- * @param value - The value to validate.
- * @param entityName - Name of the entity containing this property.
+ * @param {String} propertyName - Name of the property being validated.
+ * @param {any} value - The value to validate.
+ * @param {String} entityName - Name of the entity containing this property.
+ * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
  * @throws Will throw an error if the value is not a valid number.
  */
-export const guardNumber = (propertyName, value, entityName) => {
+export const guardNumber = (propertyName, value, entityName, nullable = false) => {
+  if (checkNullable(value, nullable)) return;
   if (!isNumber(value)) {
     throw new Error(`Validation failed in ${entityName}: ${propertyName} must be a number`);
   }

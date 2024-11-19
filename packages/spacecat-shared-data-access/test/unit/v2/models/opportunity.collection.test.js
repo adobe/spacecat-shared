@@ -45,8 +45,8 @@ describe('OpportunityCollection', () => {
     opportunityId: 'op12345',
     siteId: 'site67890',
     data: {
-      title: 'Test Opportunity',
-      description: 'This is a test opportunity.',
+      foo: 'bar',
+      bing: 'batz',
     },
   };
   const mockOpportunityModel = new Opportunity(

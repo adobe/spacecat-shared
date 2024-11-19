@@ -45,8 +45,8 @@ const generateSampleData = async (dataAccess, siteId) => {
     const type = i % 2 === 0 ? 'broken-backlinks' : 'broken-internal-links';
     const status = i % 2 === 0 ? 'NEW' : 'IN_PROGRESS';
     const data = type === 'broken-backlinks'
-      ? { brokenLinks: [`https://another-example-${i}.com`] }
-      : { brokenInternalLinks: [`https://another-example-${i}.com`] };
+      ? { brokenLinks: [`foo-${i}`] }
+      : { brokenInternalLinks: [`bar-${i}`] };
 
     // eslint-disable-next-line no-await-in-loop
     const opportunity = await Opportunity.create({
@@ -70,7 +70,7 @@ const generateSampleData = async (dataAccess, siteId) => {
         opportunityId: opportunity.getId(),
         title: `Suggestion ${j} for Opportunity ${i}`,
         description: `Description for Suggestion ${j} of Opportunity ${i}`,
-        data: { suggestionData: `https://suggestion-${j}.com` },
+        data: { foo: `bar-${j}` },
         type: 'CODE_CHANGE',
         rank: j,
         status: 'NEW',

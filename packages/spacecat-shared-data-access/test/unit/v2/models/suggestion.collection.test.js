@@ -95,7 +95,7 @@ describe('SuggestionCollection', () => {
       expect(results[0].record).to.deep.include(mockSuggestionModel.record);
     });
 
-    it('returns an empty array if no opportunities exist for the given site ID', async () => {
+    it('returns an empty array if no suggestions exist for the given opportunity ID', async () => {
       mockElectroService.entities.suggestion.query.byOpportunityId.returns(
         { go: () => Promise.resolve([]) },
       );
@@ -104,7 +104,7 @@ describe('SuggestionCollection', () => {
       expect(results).to.be.an('array').that.is.empty;
     });
 
-    it('throws an error if siteId is not provided', async () => {
+    it('throws an error if opportunityId is not provided', async () => {
       await expect(suggestionCollectionInstance.allByOpportunityId(''))
         .to.be.rejectedWith('OpportunityId is required');
     });

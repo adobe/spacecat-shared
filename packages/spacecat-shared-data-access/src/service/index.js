@@ -44,8 +44,13 @@ const createRawClient = () => {
   });
 };
 
-const createElectroService = (client, config) => {
+const createElectroService = (client, config, log) => {
   const { tableNameData: table } = config;
+  /* c8 ignore start */
+  const logger = (event) => {
+    log.debug(JSON.stringify(event, null, 4));
+  };
+  /* c8 ignore end */
   return new Service(
     {
       opportunity: OpportunitySchema,
@@ -54,6 +59,7 @@ const createElectroService = (client, config) => {
     {
       client,
       table,
+      logger,
     },
   );
 };
@@ -88,7 +94,7 @@ export const createDataAccess = (config, log = console) => {
 
   // electro-based data access objects
   const rawClient = createRawClient();
-  const electroService = createElectroService(rawClient, config);
+  const electroService = createElectroService(rawClient, config, log);
   const modelFactory = new ModelFactory(electroService, log);
 
   const Opportunity = modelFactory.getCollection(OpportunityCollection.name);

@@ -12,6 +12,8 @@
 
 import { isObject } from '@adobe/spacecat-shared-utils';
 
+import ValidationError from '../errors/validation.error.js';
+
 import {
   guardAny,
   guardArray,
@@ -32,7 +34,7 @@ import {
  */
 const checkReadOnly = (propertyName, attribute) => {
   if (attribute.readOnly) {
-    throw new Error(`The property ${propertyName} is read-only and cannot be updated.`);
+    throw new ValidationError(`The property ${propertyName} is read-only and cannot be updated.`);
   }
 };
 
@@ -127,7 +129,7 @@ class Patcher {
   patchValue(propertyName, value, isReference = false) {
     const attribute = this.model.schema?.attributes[propertyName];
     if (!isObject(attribute)) {
-      throw new Error(`Property ${propertyName} does not exist on entity ${this.entityName}.`);
+      throw new ValidationError(`Property ${propertyName} does not exist on entity ${this.entityName}.`);
     }
 
     checkReadOnly(propertyName, attribute);
@@ -160,7 +162,7 @@ class Patcher {
           guardString(propertyName, value, this.entityName, nullable);
           break;
         default:
-          throw new Error(`Unsupported type for property ${propertyName}`);
+          throw new ValidationError(`Unsupported type for property ${propertyName}`);
       }
     }
 

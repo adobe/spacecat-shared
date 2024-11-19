@@ -13,6 +13,8 @@
 import { hasText, isNumber, isObject } from '@adobe/spacecat-shared-utils';
 import { validate as validateUUID } from 'uuid';
 
+import { ValidationError } from '../errors/index.js';
+
 /**
  * Checks if a value is nullable and if the value is null or undefined.
  * @param {any} value - The value to check.
@@ -39,7 +41,7 @@ const checkType = (value, type) => {
     case 'object':
       return isObject(value);
     default:
-      throw new Error(`Unsupported type: ${type}`);
+      throw new ValidationError(`Unsupported type: ${type}`);
   }
 };
 
@@ -53,17 +55,17 @@ const checkType = (value, type) => {
  */
 export const guardAny = (propertyName, value, entityName, nullable = false) => {
   if (!checkNullable(value, nullable) && (value === undefined || value === null)) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} is required`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} is required`);
   }
 };
 
 export const guardArray = (propertyName, value, entityName, type = 'string', nullable = false) => {
   if (checkNullable(value, nullable)) return;
   if (!Array.isArray(value)) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be an array`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be an array`);
   }
   if (!value.every((v) => checkType(v, type))) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must contain items of type ${type}`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must contain items of type ${type}`);
   }
 };
 
@@ -79,10 +81,10 @@ export const guardArray = (propertyName, value, entityName, type = 'string', nul
 export const guardSet = (propertyName, value, entityName, type = 'string', nullable = false) => {
   if (checkNullable(value, nullable)) return;
   if (!Array.isArray(value) || new Set(value).size !== value.length) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be a unique array (set)`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a unique array (set)`);
   }
   if (!value.every((v) => checkType(v, type))) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must contain items of type ${type}`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must contain items of type ${type}`);
   }
 };
 
@@ -97,7 +99,7 @@ export const guardSet = (propertyName, value, entityName, type = 'string', nulla
 export const guardString = (propertyName, value, entityName, nullable = false) => {
   if (checkNullable(value, nullable)) return;
   if (!hasText(value)) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} is required`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} is required`);
   }
 };
 
@@ -113,7 +115,7 @@ export const guardString = (propertyName, value, entityName, nullable = false) =
 export const guardEnum = (propertyName, value, enumValues, entityName, nullable = false) => {
   if (checkNullable(value, nullable)) return;
   if (!enumValues.includes(value)) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be one of ${enumValues}`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be one of ${enumValues}`);
   }
 };
 
@@ -128,7 +130,7 @@ export const guardEnum = (propertyName, value, enumValues, entityName, nullable 
 export const guardId = (propertyName, value, entityName, nullable = false) => {
   if (checkNullable(value, nullable)) return;
   if (!validateUUID(value)) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be a valid UUID`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a valid UUID`);
   }
 };
 
@@ -143,7 +145,7 @@ export const guardId = (propertyName, value, entityName, nullable = false) => {
 export const guardMap = (propertyName, value, entityName, nullable = false) => {
   if (checkNullable(value, nullable)) return;
   if (!isObject(value)) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be an object`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be an object`);
   }
 };
 
@@ -158,6 +160,6 @@ export const guardMap = (propertyName, value, entityName, nullable = false) => {
 export const guardNumber = (propertyName, value, entityName, nullable = false) => {
   if (checkNullable(value, nullable)) return;
   if (!isNumber(value)) {
-    throw new Error(`Validation failed in ${entityName}: ${propertyName} must be a number`);
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a number`);
   }
 };

@@ -13,7 +13,6 @@
 /* eslint-env mocha */
 /* eslint-disable no-console */
 
-import AWSXRay from 'aws-xray-sdk';
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { spawn } from 'dynamo-db-local';
@@ -93,9 +92,6 @@ describe('ElectroDB Integration Test', () => {
   before(async function beforeSuite() {
     this.timeout(30000);
 
-    AWSXRay.setContextMissingStrategy(() => {});
-    AWSXRay.enableAutomaticMode();
-
     process.env.AWS_REGION = 'local';
     process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
     process.env.AWS_DEFAULT_REGION = 'local';
@@ -156,6 +152,7 @@ describe('ElectroDB Integration Test', () => {
       await opportunity
         .setRunbook(updates.runbook)
         .setStatus(updates.status)
+        .setAuditId('asdfdasfasdf')
         .save();
 
       // validate in-memory updates

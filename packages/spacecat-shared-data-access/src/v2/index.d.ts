@@ -10,5 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
+export type * from './errors/index.d.ts';
 export type * from './models/index.d.ts';
 export type * from './util/index.d.ts';

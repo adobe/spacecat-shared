@@ -10,6 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-export * from './errors/index.js';
-export * from './models/index.js';
-export * from './util/index.js';
+import ValidationError from './validation.error.js';
+
+export { ValidationError };

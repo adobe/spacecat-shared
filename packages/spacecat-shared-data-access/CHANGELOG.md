@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v1.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.54.0...@adobe/spacecat-shared-data-access-v1.55.0) (2024-11-20)
+
+
+### Features
+
+* Adding getEnabledSiteIdsForHandler in Configuration ([#449](https://github.com/adobe/spacecat-shared/issues/449)) ([ba3f3aa](https://github.com/adobe/spacecat-shared/commit/ba3f3aa3578551c39fc1115956967b74e824b659))
+
+# [@adobe/spacecat-shared-data-access-v1.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.53.1...@adobe/spacecat-shared-data-access-v1.54.0) (2024-11-20)
+
+
+### Features
+
+* opportunity & suggestion model (+electrodb) ([#447](https://github.com/adobe/spacecat-shared/issues/447)) ([91cf931](https://github.com/adobe/spacecat-shared/commit/91cf931facbc7f13a6fe6eebe71f2948a4ec007e))
+
 # [@adobe/spacecat-shared-data-access-v1.53.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.53.0...@adobe/spacecat-shared-data-access-v1.53.1) (2024-11-16)
 
 

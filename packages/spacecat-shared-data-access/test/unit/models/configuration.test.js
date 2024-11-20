@@ -139,6 +139,24 @@ describe('Configuration Model Tests', () => {
     const roles = configuration.getSlackRoles();
     expect(roles).to.deep.equal(validData.slackRoles);
   });
+
+  it('get all enabled sites for handler', () => {
+    const handlerData = {
+      enabled: { sites: ['site1', 'site2'], orgs: ['org1'] },
+      enabledByDefault: false,
+    };
+    const handlerData2 = {
+      enabledByDefault: false,
+    };
+
+    const configuration = createConfiguration({ version: 2, queues: {}, jobs: [] });
+    configuration.addHandler('test-handler-1', handlerData);
+    configuration.addHandler('test-handler-2', handlerData2);
+
+    expect(configuration.getEnabledSiteIdsForHandler('test-handler-1')).to.deep.equal(['site1', 'site2']);
+    expect(configuration.getEnabledSiteIdsForHandler('test-handler-2')).to.deep.equal([]);
+  });
+
   it('checks if a handler type is enabled for a site', () => {
     const configuration = createConfiguration(validData);
     const isEnabled = configuration.isHandlerEnabledForSite('404', { getId: () => 'site1', getOrganizationId: () => 'org2' });

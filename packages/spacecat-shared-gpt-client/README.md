@@ -10,6 +10,11 @@ To use the `FirefallClient`, you need to configure it with the following paramet
 - `FIREFALL_API_KEY`: Your API key for accessing the Firefall API.
 - `FIREFALL_API_CAPABILITY_NAME`: The capability name for the Firefall API.
 
+Optionally, you can specify the IMS ORG ID to use when calling the Firefall APIs.  If this value is not specified, the IMS_CLIENT_ID (see below) will
+be used for the header's value:
+
+- `FIREFALL_IMS_ORG_ID`: The IMS ORG ID to use when calling the Firefall APIs and tracking the request.
+
 These parameters can be set through environment variables or passed directly to the `FirefallClient.createFrom` method.
 
 Additionally, the configuration for the `@adobe/spacecat-shared-ims-client` library is required to fetch the service access token from the IMS API:

@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-google-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.22...@adobe/spacecat-shared-google-client-v1.3.0) (2024-11-20)
+
+
+### Features
+
+* opportunity & suggestion model (+electrodb) ([#447](https://github.com/adobe/spacecat-shared/issues/447)) ([91cf931](https://github.com/adobe/spacecat-shared/commit/91cf931facbc7f13a6fe6eebe71f2948a4ec007e))
+
+# [@adobe/spacecat-shared-google-client-v1.2.22](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.21...@adobe/spacecat-shared-google-client-v1.2.22) (2024-11-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#444](https://github.com/adobe/spacecat-shared/issues/444)) ([5e86c98](https://github.com/adobe/spacecat-shared/commit/5e86c98f274e514e8ec3032b52a128b7b394f5bc))
+
 # [@adobe/spacecat-shared-google-client-v1.2.21](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.2.20...@adobe/spacecat-shared-google-client-v1.2.21) (2024-11-11)
 
 

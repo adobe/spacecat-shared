@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v1.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.53.1...@adobe/spacecat-shared-data-access-v1.54.0) (2024-11-20)
+
+
+### Features
+
+* opportunity & suggestion model (+electrodb) ([#447](https://github.com/adobe/spacecat-shared/issues/447)) ([91cf931](https://github.com/adobe/spacecat-shared/commit/91cf931facbc7f13a6fe6eebe71f2948a4ec007e))
+
+# [@adobe/spacecat-shared-data-access-v1.53.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.53.0...@adobe/spacecat-shared-data-access-v1.53.1) (2024-11-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#444](https://github.com/adobe/spacecat-shared/issues/444)) ([5e86c98](https://github.com/adobe/spacecat-shared/commit/5e86c98f274e514e8ec3032b52a128b7b394f5bc))
+
+# [@adobe/spacecat-shared-data-access-v1.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.52.0...@adobe/spacecat-shared-data-access-v1.53.0) (2024-11-15)
+
+
+### Features
+
+* Introduce configurable grouping patterns ([#439](https://github.com/adobe/spacecat-shared/issues/439)) ([bd2ad3b](https://github.com/adobe/spacecat-shared/commit/bd2ad3b39379f66ccdb8e20bfd4ef013c6230f79))
+
+# [@adobe/spacecat-shared-data-access-v1.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.51.0...@adobe/spacecat-shared-data-access-v1.52.0) (2024-11-13)
+
+
+### Features
+
+* SITES-26835 [Import Assistant] Introduce imports.assistant api key scope ([#438](https://github.com/adobe/spacecat-shared/issues/438)) ([0cb0d35](https://github.com/adobe/spacecat-shared/commit/0cb0d357b11be588ab1bc00ed71745cc6052a321))
+
 # [@adobe/spacecat-shared-data-access-v1.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.50.1...@adobe/spacecat-shared-data-access-v1.51.0) (2024-11-12)
 
 

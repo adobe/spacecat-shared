@@ -892,6 +892,10 @@ export interface DataAccess {
   getExperiments: (siteId: string, experimentId?: string) => Promise<Experiment[]>;
   getExperiment: (siteId: string, experimentId: string, url: string) => Promise<Experiment | null>;
   upsertExperiment: (experimentData: object) => Promise<Experiment>;
+
+  // electro-based entities
+  Opportunity: object,
+  Suggestion: object,
 }
 
 interface DataAccessConfig {
@@ -930,3 +934,5 @@ export function createDataAccess(
   config: DataAccessConfig,
   logger: object,
 ): DataAccess;
+
+export type * from './v2/index.d.ts';

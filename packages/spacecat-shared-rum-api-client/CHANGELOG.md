@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.10.0...@adobe/spacecat-shared-rum-api-client-v2.11.0) (2024-11-20)
+
+
+### Features
+
+* opportunity & suggestion model (+electrodb) ([#447](https://github.com/adobe/spacecat-shared/issues/447)) ([91cf931](https://github.com/adobe/spacecat-shared/commit/91cf931facbc7f13a6fe6eebe71f2948a4ec007e))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.9.10...@adobe/spacecat-shared-rum-api-client-v2.10.0) (2024-11-18)
 
 

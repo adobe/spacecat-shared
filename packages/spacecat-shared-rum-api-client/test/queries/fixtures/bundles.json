@@ -1,0 +1,68 @@
+{
+  "rumBundles": [
+    {
+      "id": "1Sdx",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T00:00:05.017Z",
+      "timeSlot": "2024-05-31T00:00:00.000Z",
+      "url": "https://www.aem.live/catalog/product-1",
+      "userAgent": "desktop:mac",
+      "weight": 98,
+      "events": [
+        {
+          "checkpoint": "lazy",
+          "timeDelta": 5017
+        },
+        {
+          "checkpoint": "reload",
+          "target": "hidden",
+          "source": "https://www.aem.live/tools/rum/explorer.html",
+          "timeDelta": 9689
+        },
+        {
+          "checkpoint": "cwv",
+          "timeDelta": 8024
+        }
+      ]
+    },
+    {
+      "id": "6KPdjku",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T01:00:01.894Z",
+      "timeSlot": "2024-05-31T01:00:00.000Z",
+      "url": "https://www.aem.live/catalog/product-2",
+      "userAgent": "desktop:windows",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "load",
+          "timeDelta": 1310.60009765625
+        },
+        {
+          "checkpoint": "lazy",
+          "timeDelta": 2110.89990234375
+        },
+        {
+          "checkpoint": "cwv",
+          "timeDelta": 5255.300048828125
+        }
+      ]
+    },
+    {
+      "id": "67Caj",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T03:00:00.193Z",
+      "timeSlot": "2024-05-31T03:00:00.000Z",
+      "url": "https://www.aem.live/developer/some-page",
+      "userAgent": "desktop:mac",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "top",
+          "target": "hidden",
+          "timeDelta": 193.300048828125
+        }
+      ]
+    }
+  ]
+}

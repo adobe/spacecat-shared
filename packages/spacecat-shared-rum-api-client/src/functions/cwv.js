@@ -55,18 +55,77 @@ function collectCWVs(groupedByUrlIdTime) {
   };
 }
 
-function handler(bundles) {
+function groupByWithPattern(data, groupedURLs, ...keys) {
+  const result = [];
+
+  // Helper function to find the matching pattern
+  const findMatchingPattern = (url) => {
+    const matchedGroup = groupedURLs.find(({ pattern }) => {
+      try {
+        const regex = new RegExp(pattern.replace(/\*/g, '.*')); // @TODO
+        return regex.test(url);
+      } catch (error) {
+        console.error(`Invalid pattern: ${pattern}`, error);
+        return false;
+      }
+    });
+    return matchedGroup ? matchedGroup.pattern : null; // Return the pattern or null
+  };
+
+  // Iterate through each item in the data
+  for (const item of data) {
+    const pattern = findMatchingPattern(item.url);
+    const topLevelKey = pattern || item.url; // Use pattern or the URL itself
+
+    // Find or create the top-level group
+    let group = result.find((g) => g.pattern === topLevelKey || g.url === topLevelKey);
+    if (!group) {
+      group = pattern
+          ? { pattern: topLevelKey, items: [] }
+          : { url: topLevelKey, items: [] }; // Separate grouping for non-matching URLs
+      result.push(group);
+    }
+
+    // Process additional grouping keys (id, time, etc.)
+    let currentLevel = group.items;
+    for (const key of keys) {
+      let subGroup = currentLevel.find((g) => g[key] === item[key]);
+      if (!subGroup) {
+        subGroup = { [key]: item[key], items: [] };
+        currentLevel.push(subGroup);
+      }
+      currentLevel = subGroup.items;
+    }
+
+    // Add the item to the final group
+    currentLevel.push(item);
+  }
+
+  return result;
+}
+
+function handler(bundles, groupedURLs) {
   const pageviews = pageviewsByUrl(bundles);
 
-  return FlatBundle.fromArray(bundles)
-    .groupBy('url', 'id', 'time')
-    .map(collectCWVs)
-    .filter((row) => row.lcp || row.cls || row.inp || row.ttfb) // filter out pages with no cwv data
-    .map((acc) => {
-      acc.pageviews = pageviews[acc.url];
-      return acc;
-    })
-    .sort((a, b) => b.pageviews - a.pageviews); // sort desc by pageviews
+  let result;
+
+  result = FlatBundle.fromArray(bundles);
+
+  // Original method
+  // result = result.groupBy('url', 'id', 'time');
+
+  // POC method
+  result = groupByWithPattern(result, groupedURLs, 'id', 'time');
+
+  result.map(collectCWVs)
+      .filter((row) => row.lcp || row.cls || row.inp || row.ttfb) // filter out pages with no cwv data
+      .map((acc) => {
+        acc.pageviews = pageviews[acc.url];
+        return acc;
+      })
+      .sort((a, b) => b.pageviews - a.pageviews); // sort desc by pageviews
+
+  return result;
 }
 
 export default {

@@ -13,17 +13,17 @@
 /* eslint-env mocha */
 /* eslint-disable no-console */
 
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
+
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { spawn } from 'dynamo-db-local';
 import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
-import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import SCHEMA from '../../../docs/schema.json' with { type: 'json' };
-import { sleep } from '../../unit/util.js';
-import { dbClient } from '../db.js';
-import { createTable, deleteTable } from '../tableOperations.js';
 import { createDataAccess } from '../../../src/service/index.js';
+
+import { closeDynamoClients, getDynamoClients } from '../util/db.js';
+import { createTable, deleteTable } from '../util/tableOperations.js';
 
 use(chaiAsPromised);
 
@@ -82,30 +82,17 @@ const generateSampleData = async (dataAccess, siteId) => {
   return sampleData;
 };
 
-describe('ElectroDB Integration Test', () => {
+// eslint-disable-next-line func-names
+describe('Opportunity & Suggestion IT', function () {
+  this.timeout(30000);
+
   const siteId = uuid();
 
-  let dynamoDbLocalProcess;
   let dataAccess;
   let sampleData;
 
-  before(async function beforeSuite() {
-    this.timeout(30000);
-
-    process.env.AWS_REGION = 'local';
-    process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
-    process.env.AWS_DEFAULT_REGION = 'local';
-    process.env.AWS_ACCESS_KEY_ID = 'dummy';
-    process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
-
-    dynamoDbLocalProcess = spawn({
-      detached: true,
-      stdio: 'inherit',
-      port: 8000,
-      sharedDb: true,
-    });
-
-    await sleep(2000); // give db time to start up
+  before(async () => {
+    const { dbClient } = await getDynamoClients();
 
     await setupDb(dbClient, DATA_TABLE_NAME);
 
@@ -114,8 +101,8 @@ describe('ElectroDB Integration Test', () => {
     sampleData = await generateSampleData(dataAccess, siteId);
   });
 
-  after(() => {
-    dynamoDbLocalProcess.kill();
+  after(async () => {
+    closeDynamoClients();
   });
 
   describe('Opportunity', () => {
@@ -135,6 +122,14 @@ describe('ElectroDB Integration Test', () => {
       expect(parentOpportunity.record).to.eql(sampleData.opportunities[0].record);
     });
 
+    it('finds all opportunities by siteId and status', async () => {
+      const { Opportunity } = dataAccess;
+
+      const opportunities = await Opportunity.allBySiteIdAndStatus(siteId, 'NEW');
+
+      expect(opportunities).to.be.an('array').with.length(5);
+    });
+
     it('partially updates one opportunity by id', async () => {
       const { Opportunity } = dataAccess;
 
@@ -149,11 +144,15 @@ describe('ElectroDB Integration Test', () => {
         status: 'IN_PROGRESS',
       };
 
-      await opportunity
+      opportunity
         .setRunbook(updates.runbook)
-        .setStatus(updates.status)
-        .setAuditId('asdfdasfasdf')
-        .save();
+        .setStatus(updates.status);
+
+      expect(() => {
+        opportunity.setAuditId('invalid-audit-id');
+      }).to.throw(Error);
+
+      await opportunity.save();
 
       // validate in-memory updates
       expect(opportunity.getRunbook()).to.equal(updates.runbook);
@@ -196,14 +195,6 @@ describe('ElectroDB Integration Test', () => {
       const opportunities = await Opportunity.allBySiteId(siteId);
 
       expect(opportunities).to.be.an('array').with.length(10);
-    });
-
-    it('finds all opportunities by siteId and status', async () => {
-      const { Opportunity } = dataAccess;
-
-      const opportunities = await Opportunity.allBySiteIdAndStatus(siteId, 'NEW');
-
-      expect(opportunities).to.be.an('array').with.length(4);
     });
 
     it('creates a new opportunity', async () => {

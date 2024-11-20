@@ -438,6 +438,40 @@ describe('ContentClient', () => {
     });
   });
 
+  describe('getRedirects', () => {
+    it('successfully retrieves redirects', async () => {
+      const expectedRedirects = [
+        { from: '/old-path', to: '/new-path' },
+        { from: '/another-old-path', to: '/another-new-path' },
+      ];
+      ContentClient = await createContentClientForRedirects(expectedRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+
+      const redirects = await client.getRedirects();
+
+      expect(redirects).to.deep.equal(expectedRedirects);
+      expect(log.info.calledOnceWith('Getting redirects for test-site')).to.be.true;
+      expect(redirectsSdk.get.calledOnce).to.be.true;
+      expect(log.debug.calledOnce).to.be.true;
+    });
+
+    it('returns an empty array when there are no redirects', async () => {
+      ContentClient = await createContentClientForRedirects([]);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+
+      const redirects = await client.getRedirects();
+
+      expect(redirects).to.be.an('array').that.is.empty;
+    });
+
+    it('throws an error if raw client throws an error', async () => {
+      ContentClient = await createErrorContentClient(true, false, 'Error getting redirects');
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+
+      await expect(client.getRedirects()).to.be.rejectedWith('Error getting redirects');
+    });
+  });
+
   describe('updateRedirects', () => {
     it('throws an error if raw client has non-200 status', async () => {
       ContentClient = await createErrorContentClient(false, true, 'Error updating redirects');

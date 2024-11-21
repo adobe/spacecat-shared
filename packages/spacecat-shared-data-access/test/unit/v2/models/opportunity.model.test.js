@@ -92,6 +92,20 @@ describe('Opportunity', () => {
     });
   });
 
+  describe('addSuggestions', () => {
+    it('adds related suggestions to the opportunity', async () => {
+      const mockSuggestionCollection = {
+        createMany: stub().returns(Promise.resolve({ id: 'suggestion-1' })),
+      };
+      mockModelFactory.getCollection.withArgs('SuggestionCollection').returns(mockSuggestionCollection);
+
+      const suggestion = await opportunityInstance.addSuggestions([{ text: 'Suggestion text' }]);
+      expect(suggestion).to.deep.equal({ id: 'suggestion-1' });
+      expect(mockModelFactory.getCollection.calledOnceWith('SuggestionCollection')).to.be.true;
+      expect(mockSuggestionCollection.createMany.calledOnceWith([{ text: 'Suggestion text', opportunityId: 'op12345' }])).to.be.true;
+    });
+  });
+
   describe('getSuggestions', () => {
     it('returns related suggestions', async () => {
       const mockSuggestionResults = [{ id: 'suggestion-1' }, { id: 'suggestion-2' }];

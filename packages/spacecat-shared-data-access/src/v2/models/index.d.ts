@@ -26,6 +26,8 @@ export interface BaseModel {
  */
 export interface Opportunity extends BaseModel {
   // eslint-disable-next-line no-use-before-define
+  addSuggestions(suggestions: Array<object>): Promise<Array<Suggestion>>;
+  // eslint-disable-next-line no-use-before-define
   getSuggestions(): Promise<Suggestion[]>;
   getSiteId(): string;
   setSiteId(siteId: string): Opportunity;

@@ -376,5 +376,53 @@ describe('Opportunity & Suggestion IT', function () {
 
       expect(suggestions).to.be.an('array').with.length(2);
     });
+
+    it('adds many suggestions to an opportunity', async () => {
+      const opportunity = sampleData.opportunities[0];
+      const data = [
+        {
+          type: 'CODE_CHANGE',
+          rank: 0,
+          status: 'NEW',
+          data: { foo: 'bar' },
+        },
+        {
+          type: 'REDIRECT_UPDATE',
+          rank: 1,
+          status: 'APPROVED',
+          data: { foo: 'bar' },
+        },
+      ];
+
+      const suggestions = await opportunity.addSuggestions(data);
+
+      expect(suggestions).to.be.an('array').with.length(2);
+
+      suggestions.forEach((suggestion, index) => {
+        expect(suggestion).to.be.an('object');
+
+        expect(suggestion.getOpportunityId()).to.equal(opportunity.getId());
+        expect(uuidValidate(suggestion.getId())).to.be.true;
+        expect(isIsoDate(suggestion.getCreatedAt())).to.be.true;
+        expect(isIsoDate(suggestion.getUpdatedAt())).to.be.true;
+
+        const { record } = suggestion;
+        delete record.opportunityId;
+        delete record.suggestionId;
+        delete record.createdAt;
+        delete record.updatedAt;
+        delete record.sk;
+        delete record.pk;
+        delete record.gsi1pk;
+        delete record.gsi1sk;
+        delete record.gsi2pk;
+        delete record.gsi2sk;
+        // eslint-disable-next-line no-underscore-dangle
+        delete record.__edb_e__;
+        // eslint-disable-next-line no-underscore-dangle
+        delete record.__edb_v__;
+        expect(record).to.eql(data[index]);
+      });
+    });
   });
 });

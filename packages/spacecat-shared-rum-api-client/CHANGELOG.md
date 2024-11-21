@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.11.0...@adobe/spacecat-shared-rum-api-client-v2.12.0) (2024-11-21)
+
+
+### Features
+
+* **data-cruncher:** port queries to the data cruncher from RUM Explorer ([#375](https://github.com/adobe/spacecat-shared/issues/375)) ([599ebfc](https://github.com/adobe/spacecat-shared/commit/599ebfc7a7e14580ee1af9e42eac0d208acd5d94))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.10.0...@adobe/spacecat-shared-rum-api-client-v2.11.0) (2024-11-20)
 
 

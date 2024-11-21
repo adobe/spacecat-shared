@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.55.0...@adobe/spacecat-shared-data-access-v1.56.0) (2024-11-21)
+
+
+### Features
+
+* introduce missing audit id property ([#452](https://github.com/adobe/spacecat-shared/issues/452)) ([c17e447](https://github.com/adobe/spacecat-shared/commit/c17e447b275d9788d587dc44f3043fb60e83c51b))
+
 # [@adobe/spacecat-shared-data-access-v1.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.54.0...@adobe/spacecat-shared-data-access-v1.55.0) (2024-11-20)
 
 

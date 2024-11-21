@@ -127,8 +127,9 @@ class BaseCollection {
    *
    * @async
    * @param {Array<Object>} newItems - An array of data for the entities to be created.
-   * @return {Promise<Array<BaseModel>>} - A promise that resolves to an object containing
-   * the created model instances and any unprocessed items.
+   * @return {Promise<{ createdItems: BaseModel[],
+   * errorItems: { item: Object, error: ElectroValidationError }[] }>} - A promise that resolves to
+   * an object containing the created items and any items that failed validation.
    * @throws {ValidationError} - Throws a validation error if any of the items has validation
    * failures.
    */
@@ -140,7 +141,20 @@ class BaseCollection {
     }
 
     try {
+      const validatedItems = [];
+      const errorItems = [];
       const createdItems = [];
+
+      newItems.forEach((item) => {
+        try {
+          this.entity.put(item).params();
+          validatedItems.push(item);
+        } catch (error) {
+          if (error instanceof ElectroValidationError) {
+            errorItems.push({ item, error: new ValidationError(error) });
+          }
+        }
+      });
 
       /**
        * ElectroDB does not return the created items in the response for batch write operations.
@@ -158,19 +172,20 @@ class BaseCollection {
         });
       };
 
-      const response = await this.entity.put(newItems).go({ listeners: [requestItemsListener] });
-      const records = this._createInstances({ data: createdItems });
+      let records = [];
+      if (validatedItems.length > 0) {
+        const response = await this.entity.put(validatedItems).go(
+          { listeners: [requestItemsListener] },
+        );
+        records = this._createInstances({ data: createdItems });
 
-      if (response.unprocessed) {
-        this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
+        if (Array.isArray(response.unprocessed) && response.unprocessed.length > 0) {
+          this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
+        }
       }
 
-      return records;
+      return { createdItems: records, errorItems };
     } catch (error) {
-      if (error instanceof ElectroValidationError) {
-        throw new ValidationError(error);
-      }
-
       this.log.error(`Failed to create many [${this.entityName}]`, error);
       throw error;
     }

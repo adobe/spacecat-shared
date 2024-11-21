@@ -21,6 +21,7 @@ import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
 import SCHEMA from '../../../docs/schema.json' with { type: 'json' };
 import { createDataAccess } from '../../../src/service/index.js';
+import { ValidationError } from '../../../src/index.js';
 
 import { closeDynamoClients, getDynamoClients } from '../util/db.js';
 import { createTable, deleteTable } from '../util/tableOperations.js';
@@ -80,6 +81,24 @@ const generateSampleData = async (dataAccess, siteId) => {
   }
 
   return sampleData;
+};
+
+const removeElectroProperties = (record) => { /* eslint-disable no-underscore-dangle */
+  const cleanedRecord = { ...record };
+  delete cleanedRecord.opportunityId;
+  delete cleanedRecord.suggestionId;
+  delete cleanedRecord.createdAt;
+  delete cleanedRecord.updatedAt;
+  delete cleanedRecord.sk;
+  delete cleanedRecord.pk;
+  delete cleanedRecord.gsi1pk;
+  delete cleanedRecord.gsi1sk;
+  delete cleanedRecord.gsi2pk;
+  delete cleanedRecord.gsi2sk;
+  delete cleanedRecord.__edb_e__;
+  delete cleanedRecord.__edb_v__;
+
+  return cleanedRecord;
 };
 
 // eslint-disable-next-line func-names
@@ -290,6 +309,60 @@ describe('Opportunity & Suggestion IT', function () {
         delete record.__edb_v__;
         expect(record).to.eql(data[index]);
       });
+    });
+
+    it('fails to create many opportunities with invalid data', async () => {
+      const { Opportunity } = dataAccess;
+      const data = [
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 1',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-backlinks',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenLinks: ['https://example.com'] },
+        },
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 2',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-internal-links',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenInternalLinks: ['https://example.com'] },
+        },
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 3',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-internal-links',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenInternalLinks: ['https://example.com'] },
+        },
+      ];
+
+      data[2].title = null;
+
+      const result = await Opportunity.createMany(data);
+
+      expect(result).to.be.an('object');
+      expect(result).to.have.property('createdItems');
+      expect(result).to.have.property('errorItems');
+
+      expect(result.createdItems).to.be.an('array').with.length(2);
+      expect(removeElectroProperties(result.createdItems[0].record)).to.eql(data[0]);
+      expect(removeElectroProperties(result.createdItems[1].record)).to.eql(data[1]);
+      expect(result.errorItems).to.be.an('array').with.length(1);
+      expect(result.errorItems[0].item).to.eql(data[2]);
+      expect(result.errorItems[0].error).to.be.an.instanceOf(ValidationError);
     });
   });
 

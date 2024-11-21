@@ -13,6 +13,7 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
+import { ElectroValidationError } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -51,6 +52,9 @@ describe('BaseCollection', () => {
           get: stub(),
           put: stub(),
           create: stub(),
+          model: {
+            table: 'mockentitymodel',
+          },
         },
       },
     };
@@ -113,6 +117,95 @@ describe('BaseCollection', () => {
       );
 
       await expect(baseCollectionInstance.create(mockRecord.data)).to.be.rejectedWith('Create failed');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+  });
+
+  describe('createMany', () => {
+    it('throws an error if the records are empty', async () => {
+      await expect(baseCollectionInstance.createMany(null))
+        .to.be.rejectedWith('Failed to create many [mockentitymodel]: items must be a non-empty array');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('creates multiple entities successfully', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      const mockPutResults = {
+        type: 'query',
+        method: 'batchWrite',
+        params: {
+          RequestItems: {
+            mockentitymodel: [
+              { PutRequest: { Item: mockRecord } },
+              { PutRequest: { Item: mockRecord } },
+            ],
+          },
+        },
+      };
+      mockElectroService.entities.mockentitymodel.put.returns(
+        {
+          go: (options) => {
+            options.listeners[0](mockPutResults);
+            options.listeners[0]({ type: 'result' });
+            options.listeners[0]({ type: 'query', method: 'ignore' });
+            return Promise.resolve({ unprocessed: [] });
+          },
+        },
+      );
+
+      const result = await baseCollectionInstance.createMany(mockRecords);
+      expect(result).to.be.an('array').that.has.length(2);
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockentitymodel.put.calledOnce).to.be.true;
+    });
+
+    it('creates some entities successfully with unprocessed items', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      const mockPutResults = {
+        type: 'query',
+        method: 'batchWrite',
+        params: {
+          RequestItems: {
+            mockentitymodel: [
+              { PutRequest: { Item: mockRecord } },
+            ],
+          },
+        },
+      };
+      mockElectroService.entities.mockentitymodel.put.returns(
+        {
+          go: (options) => {
+            options.listeners[0](mockPutResults);
+            return Promise.resolve({ unprocessed: [mockRecord] });
+          },
+        },
+      );
+
+      const result = await baseCollectionInstance.createMany(mockRecords);
+      expect(result).to.be.an('array').that.has.length(1);
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockentitymodel.put.calledOnce).to.be.true;
+      expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockentitymodel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
+    });
+
+    it('fails creating many items due to ValidationError', async () => {
+      const error = new ElectroValidationError('Validation failed');
+      mockElectroService.entities.mockentitymodel.put.returns(
+        { go: () => Promise.reject(error) },
+      );
+
+      await expect(baseCollectionInstance.createMany([mockRecord]))
+        .to.be.rejectedWith('ElectroValidationError: Invalid value');
+    });
+
+    it('logs an error and throws when creation fails', async () => {
+      const error = new Error('Create failed');
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockentitymodel.put.returns(
+        { go: () => Promise.reject(error) },
+      );
+
+      await expect(baseCollectionInstance.createMany(mockRecords)).to.be.rejectedWith('Create failed');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
   });

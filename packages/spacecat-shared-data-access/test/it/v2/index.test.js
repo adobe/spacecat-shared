@@ -102,7 +102,7 @@ describe('Opportunity & Suggestion IT', function () {
   });
 
   after(async () => {
-    closeDynamoClients();
+    await closeDynamoClients();
   });
 
   describe('Opportunity', () => {
@@ -234,6 +234,62 @@ describe('Opportunity & Suggestion IT', function () {
 
       const notFound = await Opportunity.findById(sampleData.opportunities[0].getId());
       await expect(notFound).to.be.null;
+    });
+
+    it('creates many opportunities', async () => {
+      const { Opportunity } = dataAccess;
+      const data = [
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 1',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-backlinks',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenLinks: ['https://example.com'] },
+        },
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 2',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-internal-links',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenInternalLinks: ['https://example.com'] },
+        },
+      ];
+
+      const opportunities = await Opportunity.createMany(data);
+
+      expect(opportunities).to.be.an('array').with.length(2);
+
+      opportunities.forEach((opportunity, index) => {
+        expect(opportunity).to.be.an('object');
+
+        expect(uuidValidate(opportunity.getId())).to.be.true;
+        expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
+        expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
+
+        const { record } = opportunity;
+        delete record.opportunityId;
+        delete record.createdAt;
+        delete record.updatedAt;
+        delete record.sk;
+        delete record.pk;
+        delete record.gsi1pk;
+        delete record.gsi1sk;
+        delete record.gsi2pk;
+        delete record.gsi2sk;
+        // eslint-disable-next-line no-underscore-dangle
+        delete record.__edb_e__;
+        // eslint-disable-next-line no-underscore-dangle
+        delete record.__edb_v__;
+        expect(record).to.eql(data[index]);
+      });
     });
   });
 

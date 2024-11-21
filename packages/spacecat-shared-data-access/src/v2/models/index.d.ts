@@ -73,7 +73,8 @@ export interface Suggestion extends BaseModel {
  */
 export interface BaseCollection<T extends BaseModel> {
   findById(id: string): Promise<T>;
-  create(data: object): Promise<T>;
+  create(item: object): Promise<T>;
+  createMany(items: object[]): Promise<Array<T>>;
 }
 
 /**

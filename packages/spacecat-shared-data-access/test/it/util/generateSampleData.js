@@ -10,24 +10,28 @@
  * governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-console */
+
 import { v4 as uuidv4 } from 'uuid';
 
-import { SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
-import { dbClient, docClient as client } from './db.js';
+import schema from '../../../docs/schema.json' with { type: 'json' };
+import { SITE_CANDIDATE_STATUS } from '../../../src/models/site-candidate.js';
+import { createKeyEvent, KEY_EVENT_TYPES } from '../../../src/models/key-event.js';
+import { KeyEventDto } from '../../../src/dto/key-event.js';
+
 import { generateRandomAudit } from './auditUtils.js';
 import { createTable, deleteTable } from './tableOperations.js';
-
-import schema from '../../docs/schema.json' assert { type: 'json' };
-import { createKeyEvent, KEY_EVENT_TYPES } from '../../src/models/key-event.js';
-import { KeyEventDto } from '../../src/dto/key-event.js';
+import { getDynamoClients } from './db.js';
 
 /**
  * Creates all tables defined in a schema.
  *
  * Iterates over a predefined schema object and creates each table using the createTable function.
  * The schema object should define all required attributes and configurations for each table.
+ *
+ * @param {AWS.DynamoDB.DocumentClient} dbClient - The DynamoDB client to use for creating tables.
  */
-async function createTablesFromSchema() {
+async function createTablesFromSchema(dbClient) {
   const creationPromises = schema.DataModel.map(
     (tableDefinition) => createTable(dbClient, tableDefinition),
   );
@@ -41,10 +45,11 @@ async function createTablesFromSchema() {
  * This is typically used to clean up the database before creating new tables or
  * generating test data.
  *
+ * @param {Object} dbClient - The DynamoDB client to use for creating tables.
  * @param {Array<string>} tableNames - An array of table names to delete.
  * @returns {Promise<void>} A promise that resolves when all tables have been deleted.
  */
-async function deleteExistingTables(tableNames) {
+export async function deleteExistingTables(dbClient, tableNames) {
   const deletionPromises = tableNames.map((tableName) => deleteTable(dbClient, tableName));
   await Promise.all(deletionPromises);
 }
@@ -52,6 +57,7 @@ async function deleteExistingTables(tableNames) {
 /**
  * Performs a batch write operation for a specified table in DynamoDB.
  *
+ * @param {Object} client - The DynamoDB client to use for creating tables.
  * @param {string} tableName - The name of the table to perform the batch write operation on.
  * @param {Array<Object>} items - An array of items to be written to the table.
  *
@@ -60,7 +66,7 @@ async function deleteExistingTables(tableNames) {
  * const itemsToWrite = [{ id: '1', data: 'example' }, { id: '2', data: 'sample' }];
  * batchWrite('myTable', itemsToWrite);
  */
-async function batchWrite(tableName, items) {
+async function batchWrite(client, tableName, items) {
   const batchWriteRequests = [];
   while (items.length) {
     const batch = items.splice(0, 25).map((item) => ({
@@ -140,7 +146,7 @@ function generateAuditData(
  * for each site.
  * @param {number} [numberOfSiteTopPages=5] - The number of site top pages to generate
  * @param {number} [numberOfKeyEvents=5] - The number of key events to generate
- *
+ * @param {number} [numberOfExperiments=3] - The number of experiments to generate
  * @example
  * // Example usage
  * generateSampleData(20, 10); // Generates 20 sites with 10 audits per type for each site
@@ -155,8 +161,9 @@ export default async function generateSampleData(
   numberOfKeyEvents = 10,
   numberOfExperiments = 3,
 ) {
+  const { dbClient, docClient } = await getDynamoClients();
   console.time('Sample data generated in');
-  await deleteExistingTables([
+  await deleteExistingTables(dbClient, [
     config.tableNameSites,
     config.tableNameSiteCandidates,
     config.tableNameAudits,
@@ -170,7 +177,7 @@ export default async function generateSampleData(
     config.tableNameImportJobs,
     config.tableNameImportUrls,
   ]);
-  await createTablesFromSchema();
+  await createTablesFromSchema(dbClient);
 
   const auditTypes = ['lhs-mobile', 'cwv'];
   const sites = [];
@@ -296,7 +303,7 @@ export default async function generateSampleData(
       imports: 'sqs://.../spacecat-services-import-jobs',
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
-    version: 'v2',
+    version: 2,
     PK: config.pkAllConfigurations,
   },
   {
@@ -316,7 +323,7 @@ export default async function generateSampleData(
       audits: 'sqs://.../spacecat-services-audit-jobs',
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
-    version: 'v1',
+    version: 1,
     PK: config.pkAllConfigurations,
   }];
 
@@ -400,15 +407,15 @@ export default async function generateSampleData(
     });
   }
 
-  await batchWrite(config.tableNameSites, sites);
-  await batchWrite(config.tableNameSiteCandidates, siteCandidates);
-  await batchWrite(config.tableNameOrganizations, organizations);
-  await batchWrite(config.tableNameAudits, auditItems);
-  await batchWrite(config.tableNameLatestAudits, latestAuditItems);
-  await batchWrite(config.tableNameConfigurations, configurations);
-  await batchWrite(config.tableNameSiteTopPages, siteTopPages);
-  await batchWrite(config.tableNameKeyEvents, keyEvents);
-  await batchWrite(config.tableNameExperiments, experiments);
+  await batchWrite(docClient, config.tableNameSites, sites);
+  await batchWrite(docClient, config.tableNameSiteCandidates, siteCandidates);
+  await batchWrite(docClient, config.tableNameOrganizations, organizations);
+  await batchWrite(docClient, config.tableNameAudits, auditItems);
+  await batchWrite(docClient, config.tableNameLatestAudits, latestAuditItems);
+  await batchWrite(docClient, config.tableNameConfigurations, configurations);
+  await batchWrite(docClient, config.tableNameSiteTopPages, siteTopPages);
+  await batchWrite(docClient, config.tableNameKeyEvents, keyEvents);
+  await batchWrite(docClient, config.tableNameExperiments, experiments);
 
   console.log(`Generated ${numberOfOrganizations} organizations`);
   console.log(`Generated ${numberOfSites} sites with ${numberOfAuditsPerType} audits per type for each site`);

@@ -24,7 +24,7 @@ import URI from 'urijs';
  * @returns {string} The second-level domain of the given URL, or the original
  *                    URL if it does not contain any text.
  */
-function getSecondLevelDomain(url) {
+export function getSecondLevelDomain(url) {
   if (!hasText(url)) return url;
   const uri = new URI(url);
   const domain = uri.domain();
@@ -39,7 +39,7 @@ function getSecondLevelDomain(url) {
 // Referrer related
 const referrers = {
   search: /google|yahoo|bing|yandex|baidu|duckduckgo|brave|ecosia|aol|startpage|ask/,
-  social: /^\b(x)\b|(.*(facebook|tiktok|snapchat|x|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
+  social: /^\b(x)\b|(.*(facebook|tiktok|snapchat|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
   ad: /googlesyndication|2mdn|doubleclick|syndicatedsearch/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
 };
@@ -63,10 +63,47 @@ const sources = {
   social: /^\b(ig|fb|x|soc)\b|(.*(meta|tiktok|facebook|snapchat|twitter|igshopping|instagram|linkedin|reddit).*)$/,
   search: /^\b(goo)\b|(.*(sea|google|yahoo|bing|yandex|baidu|duckduckgo|brave|ecosia|aol|startpage|ask).*)$/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
-  display: /optumib2b|jun|googleads|dv36|dv360|microsoft|flipboard|programmatic|yext|gdn|banner|newsshowcase/,
+  display: /optumib2b|jun|googleads|dv360|dv36|microsoft|flipboard|programmatic|yext|gdn|banner|newsshowcase/,
   affiliate: /brandreward|yieldkit|fashionistatop|partner|linkbux|stylesblog|linkinbio|affiliate/,
   email: /sfmc|email/,
 };
+
+/**
+ * Vendor classification rules from https://github.com/adobe/helix-website/blob/main/tools/oversight/acquisition.js#L12
+ * Added dailymotion, twitch to the list
+ * Using full word match for social media shorts like ig, fb, x
+ */
+const vendorClassifications = [
+  { regex: /google|googleads|google-ads|google_search|google_deman|adwords|dv360|gdn|doubleclick|dbm|gmb/i, result: 'google' },
+  { regex: /instagram|\b(ig)\b/i, result: 'instagram' },
+  { regex: /facebook|\b(fb)\b|meta/i, result: 'facebook' },
+  { regex: /bing/i, result: 'bing' },
+  { regex: /tiktok/i, result: 'tiktok' },
+  { regex: /youtube|yt/i, result: 'youtube' },
+  { regex: /linkedin/i, result: 'linkedin' },
+  { regex: /twitter|^\b(x)\b/i, result: 'x' },
+  { regex: /snapchat/i, result: 'snapchat' },
+  { regex: /microsoft/i, result: 'microsoft' },
+  { regex: /pinterest/i, result: 'pinterest' },
+  { regex: /reddit/i, result: 'reddit' },
+  { regex: /spotify/i, result: 'spotify' },
+  { regex: /criteo/i, result: 'criteo' },
+  { regex: /taboola/i, result: 'taboola' },
+  { regex: /outbrain/i, result: 'outbrain' },
+  { regex: /yahoo/i, result: 'yahoo' },
+  { regex: /marketo/i, result: 'marketo' },
+  { regex: /eloqua/i, result: 'eloqua' },
+  { regex: /substack/i, result: 'substack' },
+  { regex: /line/i, result: 'line' },
+  { regex: /yext/i, result: 'yext' },
+  { regex: /teads/i, result: 'teads' },
+  { regex: /yandex/i, result: 'yandex' },
+  { regex: /baidu/i, result: 'baidu' },
+  { regex: /amazon|ctv/i, result: 'amazon' },
+  { regex: /dailymotion/i, result: 'dailymotion' },
+  { regex: /twitch/i, result: 'twitch' },
+  { regex: /direct/i, result: 'direct' },
+];
 
 // Tracking params - based on the checkpoints we have in rum-enhancer now
 // const organicTrackingParams = ['srsltid']; WE DO NOT HAVE THIS AS OF NOW
@@ -160,13 +197,13 @@ const RULES = (domain) => ([
   { type: 'owned', category: 'uncategorized', referrer: any, utmSource: any, utmMedium: any, tracking: any },
 ]);
 
-function extractHints(bundle) {
+export function extractTrafficHints(bundle) {
   const findEvent = (checkpoint, source = '') => bundle.events.find((e) => e.checkpoint === checkpoint && (!source || e.source === source)) || {};
 
   const referrer = findEvent('enter').source || '';
   const utmSource = findEvent('utm', 'utm_source').target || '';
   const utmMedium = findEvent('utm', 'utm_medium').target || '';
-  const trackingParams = findEvent('paid').checkpoint || findEvent('email').checkpoint || '';
+  const tracking = findEvent('paid').checkpoint || findEvent('email').checkpoint || '';
 
   return {
     url: bundle.url,
@@ -174,11 +211,26 @@ function extractHints(bundle) {
     referrer,
     utmSource,
     utmMedium,
-    trackingParams,
+    tracking,
   };
 }
 
-export function classifyTraffic(url, referrer, utmSource, utmMedium, trackingParams) {
+/**
+ * Returns the name of the vendor obtained from respective order: referrer, utmSource, utmMedium.
+ * For example: facebook instead of www.facebook.com
+ * @param {*} referrer
+ */
+export function classifyVendor(referrer, utmSource, utmMedium) {
+  const result = vendorClassifications.find(({ regex }) => {
+    if (regex.test(referrer)) return true;
+    if (regex.test(utmSource)) return true;
+    if (regex.test(utmMedium)) return true;
+    return false;
+  });
+  return result ? result.result : '';
+}
+
+export function classifyTrafficSource(url, referrer, utmSource, utmMedium, trackingParams) {
   const secondLevelDomain = getSecondLevelDomain(url);
   const rules = RULES(secondLevelDomain);
 
@@ -192,14 +244,28 @@ export function classifyTraffic(url, referrer, utmSource, utmMedium, trackingPar
     && rule.utmMedium(sanitize(utmMedium))
     && rule.tracking(trackingParams)
   ));
+  const vendor = classifyVendor(referrerDomain, utmSource, utmMedium);
 
   return {
     type,
     category,
+    vendor,
   };
 }
 
-export function classifyTrafficSource(bundle) {
-  const { url, referrer, utmSource, utmMedium, trackingParams } = extractHints(bundle);
-  return classifyTraffic(url, referrer, utmSource, utmMedium, trackingParams);
+export function classifyTraffic(bundle) {
+  const {
+    url,
+    weight,
+    referrer,
+    utmSource,
+    utmMedium,
+    tracking,
+  } = extractTrafficHints(bundle);
+
+  return {
+    url,
+    weight,
+    ...classifyTrafficSource(url, referrer, utmSource, utmMedium, tracking),
+  };
 }

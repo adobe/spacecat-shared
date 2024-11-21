@@ -58,13 +58,35 @@ const validData = {
     cwv: {
       enabledByDefault: true,
     },
+    'handler-configuration-without-orgs': {
+      enabledByDefault: false,
+      enabled: {
+        sites: [
+          'site0-id',
+        ],
+      },
+    },
+    'handler-configuration-without-sites': {
+      enabledByDefault: false,
+      enabled: {
+        orgs: [
+          'org0-id',
+        ],
+      },
+    },
   },
   queues: {
     audits: 'sqs://.../spacecat-services-audit-jobs',
     imports: 'sqs://.../spacecat-services-import-jobs',
     reports: 'sqs://.../spacecat-services-report-jobs',
   },
-  version: 'v1',
+  version: 1,
+  slackRoles: {
+    scrape: [
+      'WSVT1K36Z',
+      'S03CR0FDC2V',
+    ],
+  },
 };
 
 describe('Configuration Model Tests', () => {
@@ -100,10 +122,39 @@ describe('Configuration Model Tests', () => {
       disabled: { sites: ['site2'], orgs: ['org2'] },
       enabledByDefault: false,
     };
-    const configuration = createConfiguration({ version: '1.1', queues: {}, jobs: [] });
+    const configuration = createConfiguration({ version: 2, queues: {}, jobs: [] });
     configuration.addHandler('new-handler', handlerData);// Line 59
     const updatedHandler = configuration.getHandler('new-handler');
     expect(updatedHandler).to.deep.equal(handlerData);
+  });
+
+  it('gets slack roles by audit type', () => {
+    const configuration = createConfiguration(validData);
+    const roles = configuration.getSlackRoleMembersByRole('scrape');
+    expect(roles).to.deep.equal(validData.slackRoles.scrape);
+  });
+
+  it('gets all slack roles', () => {
+    const configuration = createConfiguration(validData);
+    const roles = configuration.getSlackRoles();
+    expect(roles).to.deep.equal(validData.slackRoles);
+  });
+
+  it('get all enabled sites for handler', () => {
+    const handlerData = {
+      enabled: { sites: ['site1', 'site2'], orgs: ['org1'] },
+      enabledByDefault: false,
+    };
+    const handlerData2 = {
+      enabledByDefault: false,
+    };
+
+    const configuration = createConfiguration({ version: 2, queues: {}, jobs: [] });
+    configuration.addHandler('test-handler-1', handlerData);
+    configuration.addHandler('test-handler-2', handlerData2);
+
+    expect(configuration.getEnabledSiteIdsForHandler('test-handler-1')).to.deep.equal(['site1', 'site2']);
+    expect(configuration.getEnabledSiteIdsForHandler('test-handler-2')).to.deep.equal([]);
   });
 
   it('checks if a handler type is enabled for a site', () => {
@@ -146,6 +197,26 @@ describe('Configuration Model Tests', () => {
     const isEnabled = configuration.isHandlerEnabledForOrg('cwv', { getId: () => 'org3' });
     expect(isEnabled).to.be.a('boolean');
     expect(isEnabled).to.be.true;
+  });
+
+  it('Checks if a handler configuration is missing sites key', () => {
+    const configuration = createConfiguration(validData);
+    const isEnabled = configuration.isHandlerEnabledForSite(
+      'handler-configuration-without-sites',
+      { getId: () => 'site1-id', getOrganizationId: () => 'org2' },
+    );
+    expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.false;
+  });
+
+  it('Checks if a handler configuration is missing orgs ke', () => {
+    const configuration = createConfiguration(validData);
+    const isEnabled = configuration.isHandlerEnabledForSite(
+      'handler-configuration-without-orgs',
+      { getId: () => 'site1-id', getOrganizationId: () => 'org2' },
+    );
+    expect(isEnabled).to.be.a('boolean');
+    expect(isEnabled).to.be.false;
   });
 
   it('checks if a handler type is enabled for an organization', () => {

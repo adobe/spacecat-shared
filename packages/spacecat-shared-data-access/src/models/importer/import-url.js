@@ -12,18 +12,14 @@
 
 import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { Base } from '../base.js';
-import { ImportJobStatus } from './import-job.js';
+import { ImportUrlStatus } from './import-constants.js';
 
-export const ImportUrlStatus = {
-  PENDING: 'PENDING',
-  REDIRECT: 'REDIRECT',
-  ...ImportJobStatus,
-};
+export const IMPORT_URL_EXPIRES_IN_DAYS = 30;
 
 /**
  * Creates a new ImportUrl object
  *
- * @param {Object} importUrlData
+ * @param {Object} data
  * @returns {ImportUrl}
  */
 const ImportUrl = (data) => {
@@ -37,60 +33,57 @@ const ImportUrl = (data) => {
   self.getPath = () => self.state.path;
   // Resulting path and filename of the imported .docx file
   self.getFile = () => self.state.file;
+  // Expiration date for the URL
+  self.getExpiresAt = () => self.state.expiresAt;
+
+  /**
+   * Updates the state of the ImportJob.
+   * @param key - The key to update.
+   * @param value - The new value.
+   * @param {Function} validator - An optional validation function to use before updating the value.
+   * The validator can return false to indicate that the value isn't worth throwing an exception,
+   * but continue to use the previous value.
+   */
+  const updateState = (key, value, validator) => {
+    if (validator && typeof validator === 'function') {
+      // a validator can return true or false to indicate if the value is valid
+      // however if a validator throws an error, it is considered critical and invalid.
+      if (!validator(value)) {
+        return self;
+      }
+    }
+
+    self.state[key] = value;
+    self.touch();
+
+    return self;
+  };
 
   /**
    * Updates the status of the ImportUrl
    */
-  self.setStatus = (status) => {
-    if (!Object.values(ImportUrlStatus).includes(status)) {
-      throw new Error(`Invalid Import URL status during update: ${status}`);
+  self.setStatus = (status) => updateState('status', status, (value) => {
+    if (!ImportUrlStatus[value]) {
+      throw new Error(`Invalid Import URL status during update: ${value}`);
     }
-
-    self.state.status = status;
-    self.touch();
-
-    return self;
-  };
+    return true;
+  });
 
   /**
-   * Updates the reason that the import of this URL was not successful
+   * Updates the reason that the import of this URL was not successful.
    */
-  self.setReason = (reason) => {
-    if (!hasText(reason)) {
-      return self; // no-op
-    }
-
-    self.state.reason = reason;
-    self.touch();
-    return self;
-  };
+  self.setReason = (reason) => updateState('reason', reason, hasText);
 
   /**
    * Updates the path of the ImportUrl
    */
-  self.setPath = (path) => {
-    if (!hasText(path)) {
-      return self; // no-op
-    }
-
-    self.state.path = path;
-    self.touch();
-    return self;
-  };
+  self.setPath = (path) => updateState('path', path, hasText);
 
   /**
    * Updates the file of the ImportUrl. This is the path and file name of the file which
    * was imported.
    */
-  self.setFile = (file) => {
-    if (!hasText(file)) {
-      return self; // no-op
-    }
-
-    self.state.file = file;
-    self.touch();
-    return self;
-  };
+  self.setFile = (file) => updateState('file', file, hasText);
 
   return Object.freeze(self);
 };
@@ -111,6 +104,11 @@ export const createImportUrl = (data) => {
 
   if (!Object.values(ImportUrlStatus).includes(newState.status)) {
     throw new Error(`Invalid Import URL status: ${newState.status}`);
+  }
+
+  if (!newState.expiresAt) {
+    newState.expiresAt = new Date();
+    newState.expiresAt.setDate(newState.expiresAt.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
   }
 
   return ImportUrl(newState);

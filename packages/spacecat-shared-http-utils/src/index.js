@@ -74,6 +74,20 @@ export function badRequest(message = 'bad request', headers = {}) {
   });
 }
 
+export function unauthorized(message = 'unauthorized', headers = {}) {
+  return createResponse({ message }, 401, {
+    [HEADER_ERROR]: message,
+    ...headers,
+  });
+}
+
+export function forbidden(message = 'forbidden', headers = {}) {
+  return createResponse({ message }, 403, {
+    [HEADER_ERROR]: message,
+    ...headers,
+  });
+}
+
 export function notFound(message = 'not found', headers = {}) {
   return createResponse({ message }, 404, {
     [HEADER_ERROR]: message,

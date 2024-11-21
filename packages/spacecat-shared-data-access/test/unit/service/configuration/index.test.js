@@ -43,7 +43,7 @@ describe('Configuration Access Pattern Tests', () => {
 
   describe('Configuration Functions Tests', () => {
     const mockConfig = {
-      version: 'v1',
+      version: 1,
       jobs: [
         {
           group: 'audits',
@@ -113,7 +113,7 @@ describe('Configuration Access Pattern Tests', () => {
 
     it('calls getConfigurationByVersion and returns configuration', async () => {
       const mockConfigurationData = {
-        version: 'v1',
+        version: 1,
         jobs: [
           {
             group: 'audits',
@@ -134,7 +134,7 @@ describe('Configuration Access Pattern Tests', () => {
 
       mockDynamoClient.getItem.onFirstCall().resolves(mockConfigurationData);
 
-      const result = await exportedFunctions.getConfigurationByVersion('v1');
+      const result = await exportedFunctions.getConfigurationByVersion(1);
 
       expect(result).to.be.an('object');
       expect(result.getVersion()).to.equal(mockConfigurationData.version);
@@ -151,7 +151,7 @@ describe('Configuration Access Pattern Tests', () => {
 
     it('calls updateConfiguration and returns configuration', async () => {
       const configurationData = {
-        version: 'v1',
+        version: 1,
         jobs: [
           {
             group: 'audits',
@@ -178,7 +178,7 @@ describe('Configuration Access Pattern Tests', () => {
 
       expect(result).to.be.an('object');
 
-      expect(result.getVersion()).to.equal('v2');
+      expect(result.getVersion()).to.equal(2);
       expect(result.getQueues()).to.deep.equal(configurationData.queues);
       expect(result.getJobs()).to.deep.equal(configurationData.jobs);
       expect(mockDynamoClient.putItem.called).to.be.true;
@@ -209,7 +209,7 @@ describe('Configuration Access Pattern Tests', () => {
 
       expect(result).to.be.an('object');
 
-      expect(result.getVersion()).to.equal('v1');
+      expect(result.getVersion()).to.equal(1);
       expect(result.getQueues()).to.deep.equal(configurationData.queues);
       expect(result.getJobs()).to.deep.equal(configurationData.jobs);
       expect(mockDynamoClient.putItem.called).to.be.true;

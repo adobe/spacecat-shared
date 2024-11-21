@@ -11,6 +11,17 @@
  */
 
 import { createClient } from '@adobe/spacecat-shared-dynamo';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import AWSXray from 'aws-xray-sdk';
+import { Service } from 'electrodb';
+
+import ModelFactory from '../v2/models/model.factory.js';
+import OpportunityCollection from '../v2/models/opportunity.collection.js';
+import SuggestionCollection from '../v2/models/suggestion.collection.js';
+import OpportunitySchema from '../v2/schema/opportunity.schema.js';
+import SuggestionSchema from '../v2/schema/suggestion.schema.js';
+
 import { auditFunctions } from './audits/index.js';
 import { keyEventFunctions } from './key-events/index.js';
 import { siteFunctions } from './sites/index.js';
@@ -22,6 +33,36 @@ import { importJobFunctions } from './import-job/index.js';
 import { importUrlFunctions } from './import-url/index.js';
 import { experimentFunctions } from './experiments/index.js';
 import { apiKeyFunctions } from './api-key/index.js';
+
+const createRawClient = () => {
+  const dbClient = AWSXray.captureAWSv3Client(new DynamoDB());
+  return DynamoDBDocument.from(dbClient, {
+    marshallOptions: {
+      convertEmptyValues: true,
+      removeUndefinedValues: true,
+    },
+  });
+};
+
+const createElectroService = (client, config, log) => {
+  const { tableNameData: table } = config;
+  /* c8 ignore start */
+  const logger = (event) => {
+    log.debug(JSON.stringify(event, null, 4));
+  };
+  /* c8 ignore end */
+  return new Service(
+    {
+      opportunity: OpportunitySchema,
+      suggestion: SuggestionSchema,
+    },
+    {
+      client,
+      table,
+      logger,
+    },
+  );
+};
 
 /**
  * Creates a data access object.
@@ -51,6 +92,14 @@ export const createDataAccess = (config, log = console) => {
   const experimentFuncs = experimentFunctions(dynamoClient, config, log);
   const apiKeyFuncs = apiKeyFunctions(dynamoClient, config, log);
 
+  // electro-based data access objects
+  const rawClient = createRawClient();
+  const electroService = createElectroService(rawClient, config, log);
+  const modelFactory = new ModelFactory(electroService, log);
+
+  const Opportunity = modelFactory.getCollection(OpportunityCollection.name);
+  const Suggestion = modelFactory.getCollection(SuggestionCollection.name);
+
   return {
     ...auditFuncs,
     ...keyEventFuncs,
@@ -63,5 +112,8 @@ export const createDataAccess = (config, log = console) => {
     ...importUrlFuncs,
     ...experimentFuncs,
     ...apiKeyFuncs,
+    // electro-based data access objects
+    Opportunity,
+    Suggestion,
   };
 };

@@ -1,3 +1,136 @@
+# [@adobe/spacecat-shared-utils-v1.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.7...@adobe/spacecat-shared-utils-v1.23.0) (2024-11-20)
+
+
+### Features
+
+* opportunity & suggestion model (+electrodb) ([#447](https://github.com/adobe/spacecat-shared/issues/447)) ([91cf931](https://github.com/adobe/spacecat-shared/commit/91cf931facbc7f13a6fe6eebe71f2948a4ec007e))
+
+# [@adobe/spacecat-shared-utils-v1.22.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.6...@adobe/spacecat-shared-utils-v1.22.7) (2024-11-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#444](https://github.com/adobe/spacecat-shared/issues/444)) ([5e86c98](https://github.com/adobe/spacecat-shared/commit/5e86c98f274e514e8ec3032b52a128b7b394f5bc))
+
+# [@adobe/spacecat-shared-utils-v1.22.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.5...@adobe/spacecat-shared-utils-v1.22.6) (2024-11-15)
+
+
+### Bug Fixes
+
+* resolving url when site has bot protection ([#442](https://github.com/adobe/spacecat-shared/issues/442)) ([2730271](https://github.com/adobe/spacecat-shared/commit/273027155a982719429c14fd94f7b4867f17f094))
+
+# [@adobe/spacecat-shared-utils-v1.22.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.4...@adobe/spacecat-shared-utils-v1.22.5) (2024-11-11)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#434](https://github.com/adobe/spacecat-shared/issues/434)) ([b71b615](https://github.com/adobe/spacecat-shared/commit/b71b61528513821f9e34c50a095d47cb4e14f8db))
+
+# [@adobe/spacecat-shared-utils-v1.22.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.3...@adobe/spacecat-shared-utils-v1.22.4) (2024-11-08)
+
+
+### Bug Fixes
+
+* engine spec ([#433](https://github.com/adobe/spacecat-shared/issues/433)) ([19dd309](https://github.com/adobe/spacecat-shared/commit/19dd30956c0a9d35ea343c580e589205bfdbdfd8))
+
+# [@adobe/spacecat-shared-utils-v1.22.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.2...@adobe/spacecat-shared-utils-v1.22.3) (2024-11-07)
+
+
+### Bug Fixes
+
+* proper http data for x-ray trace ([#427](https://github.com/adobe/spacecat-shared/issues/427)) ([4fa4d2d](https://github.com/adobe/spacecat-shared/commit/4fa4d2d417d51e911957e37df5136453dea521b2))
+
+# [@adobe/spacecat-shared-utils-v1.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.1...@adobe/spacecat-shared-utils-v1.22.2) (2024-11-07)
+
+
+### Bug Fixes
+
+* set correct node engine spec ([#423](https://github.com/adobe/spacecat-shared/issues/423)) ([5086ce7](https://github.com/adobe/spacecat-shared/commit/5086ce7d41bebb502cadf092e5b9a7b84b5bf103))
+
+# [@adobe/spacecat-shared-utils-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.22.0...@adobe/spacecat-shared-utils-v1.22.1) (2024-11-02)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#419](https://github.com/adobe/spacecat-shared/issues/419)) ([6ee73f3](https://github.com/adobe/spacecat-shared/commit/6ee73f3aa944bda730276d7a06a588f39b52a56a))
+
+# [@adobe/spacecat-shared-utils-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.21.1...@adobe/spacecat-shared-utils-v1.22.0) (2024-10-31)
+
+
+### Features
+
+* support FIFO queues with the SQS sendMessage helper ([#417](https://github.com/adobe/spacecat-shared/issues/417)) ([f9df606](https://github.com/adobe/spacecat-shared/commit/f9df606d62b9e23c89b9944f7042b4804cef0599))
+
+# [@adobe/spacecat-shared-utils-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.21.0...@adobe/spacecat-shared-utils-v1.21.1) (2024-10-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#413](https://github.com/adobe/spacecat-shared/issues/413)) ([ee2c715](https://github.com/adobe/spacecat-shared/commit/ee2c715e08034bea8fb88b4f7166d40b18e107c4))
+
+# [@adobe/spacecat-shared-utils-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.8...@adobe/spacecat-shared-utils-v1.21.0) (2024-10-23)
+
+
+### Features
+
+* tracing fetch ([#409](https://github.com/adobe/spacecat-shared/issues/409)) ([6579a26](https://github.com/adobe/spacecat-shared/commit/6579a26d917db0bb8dc3baa2e19a0dfee8db5fc8))
+
+# [@adobe/spacecat-shared-utils-v1.20.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.7...@adobe/spacecat-shared-utils-v1.20.8) (2024-10-21)
+
+
+### Bug Fixes
+
+* add tracing support for v3 aws clients ([#406](https://github.com/adobe/spacecat-shared/issues/406)) ([b83ae6e](https://github.com/adobe/spacecat-shared/commit/b83ae6e6dce155358b22558c37464a9002d33fc8))
+
+# [@adobe/spacecat-shared-utils-v1.20.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.6...@adobe/spacecat-shared-utils-v1.20.7) (2024-10-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#405](https://github.com/adobe/spacecat-shared/issues/405)) ([11072b4](https://github.com/adobe/spacecat-shared/commit/11072b4289db7e18328ed8faff4651fb95a1370d))
+
+# [@adobe/spacecat-shared-utils-v1.20.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.5...@adobe/spacecat-shared-utils-v1.20.6) (2024-10-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#402](https://github.com/adobe/spacecat-shared/issues/402)) ([9a5acba](https://github.com/adobe/spacecat-shared/commit/9a5acba2773b83ce26f4ac97e04d8ad24b00d8ce))
+
+# [@adobe/spacecat-shared-utils-v1.20.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.4...@adobe/spacecat-shared-utils-v1.20.5) (2024-10-05)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#394](https://github.com/adobe/spacecat-shared/issues/394)) ([ad165f5](https://github.com/adobe/spacecat-shared/commit/ad165f5fcf9c0ab17d2e901e7a5c0ed3c39dcb51))
+
+# [@adobe/spacecat-shared-utils-v1.20.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.3...@adobe/spacecat-shared-utils-v1.20.4) (2024-09-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#387](https://github.com/adobe/spacecat-shared/issues/387)) ([5f301fb](https://github.com/adobe/spacecat-shared/commit/5f301fb7bfee78ab57c966ebc3559bc148744933))
+
+# [@adobe/spacecat-shared-utils-v1.20.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.2...@adobe/spacecat-shared-utils-v1.20.3) (2024-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#374](https://github.com/adobe/spacecat-shared/issues/374)) ([426e61b](https://github.com/adobe/spacecat-shared/commit/426e61b2e77a955a33651245344724881b0f4f55))
+
+# [@adobe/spacecat-shared-utils-v1.20.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.1...@adobe/spacecat-shared-utils-v1.20.2) (2024-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#378](https://github.com/adobe/spacecat-shared/issues/378)) ([273a70d](https://github.com/adobe/spacecat-shared/commit/273a70d6b6e862a266628185254e1e99bcaae219))
+
+# [@adobe/spacecat-shared-utils-v1.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.20.0...@adobe/spacecat-shared-utils-v1.20.1) (2024-09-19)
+
+
+### Bug Fixes
+
+* add null check for empty message in logWrapper ([#377](https://github.com/adobe/spacecat-shared/issues/377)) ([231ceea](https://github.com/adobe/spacecat-shared/commit/231ceeaaad518c2358c0df728911a991cfde563c))
+
 # [@adobe/spacecat-shared-utils-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.19.8...@adobe/spacecat-shared-utils-v1.20.0) (2024-09-19)
 
 

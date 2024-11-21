@@ -120,6 +120,100 @@ describe('Config Tests', () => {
       config.updateFixedURLs('broken-backlinks', []);
       expect(config.getFixedURLs('broken-backlinks')).to.be.an('array').that.is.empty;
     });
+
+    it('correctly updates the imports array', () => {
+      const config = Config();
+      const imports = [
+        { type: 'import1' },
+        { type: 'import2' },
+      ];
+      config.updateImports(imports);
+
+      const updatedImports = config.getImports();
+      expect(updatedImports).to.deep.equal(imports);
+    });
+
+    it('should fail gracefully if handler is not present in the configuration', () => {
+      const config = Config();
+      expect(config.getSlackMentions('404')).to.be.undefined;
+      expect(config.getHandlerConfig('404')).to.be.undefined;
+      expect(config.getExcludedURLs('404')).to.be.undefined;
+      expect(config.getManualOverwrites('404')).to.be.undefined;
+      expect(config.getFixedURLs('404')).to.be.undefined;
+      expect(config.getIncludedURLs('404')).to.be.undefined;
+      expect(config.getGroupedURLs('404')).to.be.undefined;
+    });
+  });
+
+  describe('Grouped URLs option', () => {
+    it('Config creation with the groupedURLs option', () => {
+      const groupedURLs = [
+        { name: 'catalog', pattern: '/products/' },
+        { name: 'blog', pattern: '/post/' },
+      ];
+      const data = {
+        handlers: {
+          'broken-backlinks': {
+            groupedURLs,
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getGroupedURLs('broken-backlinks')).to.deep.equal(groupedURLs);
+    });
+
+    it('Config creation with an incorrect groupedURLs option type', () => {
+      const data = {
+        handlers: {
+          'broken-backlinks': {
+            groupedURLs: 'invalid-type',
+          },
+        },
+      };
+      expect(() => Config(data))
+        .to.throw('Configuration validation error: "handlers.broken-backlinks.groupedURLs" must be an array');
+    });
+
+    it('Config creation with an incorrect groupedURLs option structure', () => {
+      const data = {
+        handlers: {
+          'broken-backlinks': {
+            groupedURLs: [
+              { wrong: 'wrong', structure: 'structure' },
+            ],
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.broken-backlinks.groupedURLs[0].wrong" is not allowed');
+    });
+
+    it('Config updates grouped URLs with the groupedURLs option', () => {
+      const groupedURLs = [
+        { name: 'catalog', pattern: '/products/' },
+        { name: 'blog', pattern: '/post/' },
+      ];
+      const config = Config();
+      config.updateGroupedURLs('broken-backlinks', groupedURLs);
+      expect(config.getGroupedURLs('broken-backlinks')).to.deep.equal(groupedURLs);
+    });
+
+    it('Config update with an incorrect groupedURLs option type', () => {
+      const groupedURLs = 'invalid-type';
+      const config = Config();
+      expect(() => config.updateGroupedURLs('broken-backlinks', groupedURLs))
+        .to.throw('Configuration validation error: "handlers.broken-backlinks.groupedURLs" must be an array');
+      expect(config.getGroupedURLs('broken-backlinks')).to.deep.equal(groupedURLs);
+    });
+
+    it('Config update with an incorrect groupedURLs option structure', () => {
+      const groupedURLs = [
+        { wrong: 'wrong', structure: 'structure' },
+      ];
+      const config = Config();
+      expect(() => config.updateGroupedURLs('broken-backlinks', groupedURLs))
+        .to.throw('Configuration validation error: "handlers.broken-backlinks.groupedURLs[0].wrong" is not allowed');
+      expect(config.getGroupedURLs('broken-backlinks')).to.deep.equal(groupedURLs);
+    });
   });
 
   describe('fromDynamoItem Static Method', () => {
@@ -127,7 +221,7 @@ describe('Config Tests', () => {
       const dynamoItem = {
         slack: {
           channel: 'channel1',
-          workspace: 'workspace1',
+          workspace: 'internal',
         },
         handlers: {
           404: {
@@ -138,8 +232,10 @@ describe('Config Tests', () => {
       const config = Config.fromDynamoItem(dynamoItem);
       const slackMentions = config.getSlackMentions(404);
       const slackConfig = config.getSlackConfig();
+      const isInternal = config.isInternalCustomer();
       expect(slackConfig.channel).to.equal('channel1');
-      expect(slackConfig.workspace).to.equal('workspace1');
+      expect(slackConfig.workspace).to.equal('internal');
+      expect(isInternal).to.equal(true);
       expect(slackMentions[0]).to.equal('id1');
     });
   });
@@ -149,7 +245,7 @@ describe('Config Tests', () => {
       const data = Config({
         slack: {
           channel: 'channel1',
-          workspace: 'workspace1',
+          workspace: 'external',
         },
         handlers: {
           404: {
@@ -161,7 +257,8 @@ describe('Config Tests', () => {
       const slackConfig = dynamoItem.slack;
       const slackMentions = dynamoItem.handlers[404].mentions.slack;
       expect(slackConfig.channel).to.equal('channel1');
-      expect(slackConfig.workspace).to.equal('workspace1');
+      expect(slackConfig.workspace).to.equal('external');
+      expect(data.isInternalCustomer()).to.equal(false);
       expect(slackMentions[0]).to.equal('id1');
     });
   });

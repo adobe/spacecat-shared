@@ -23,6 +23,14 @@ describe('query', () => {
       ':partitionKey': 'testPartitionKey',
     },
   };
+  const queryParamsWithLimit = {
+    TableName: 'TestTable',
+    KeyConditionExpression: 'partitionKey = :partitionKey',
+    ExpressionAttributeValues: {
+      ':partitionKey': 'testPartitionKey',
+    },
+    Limit: 1,
+  };
 
   let dynamoDbClient;
   let mockDocClient;
@@ -30,6 +38,9 @@ describe('query', () => {
   beforeEach(() => {
     mockDocClient = {
       query: async (params) => {
+        if (params.Limit) {
+          return { Items: ['item1'] };
+        }
         // Check if LastEvaluatedKey is provided and simulate pagination
         if (params.ExclusiveStartKey === 'key2') {
           return { Items: ['item3'], LastEvaluatedKey: undefined };
@@ -51,6 +62,12 @@ describe('query', () => {
     const result = await dynamoDbClient.query(queryParams);
     expect(result).to.have.lengthOf(3);
     expect(result).to.deep.equal(['item1', 'item2', 'item3']);
+  });
+
+  it('queries items from the database with limit', async () => {
+    const result = await dynamoDbClient.query(queryParamsWithLimit);
+    expect(result).to.have.lengthOf(1);
+    expect(result).to.deep.equal(['item1']);
   });
 
   it('handles errors in query', async () => {

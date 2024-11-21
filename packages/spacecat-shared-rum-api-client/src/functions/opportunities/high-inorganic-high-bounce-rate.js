@@ -29,6 +29,7 @@ function convertToOpportunity(traffic) {
     screenshot: '',
     trackedPageKPIName: 'Bounce Rate',
     trackedPageKPIValue: bounceRate,
+    trackedKPISiteAverage: '',
     pageViews: total,
     samples: total, // todo: get the actual number of samples
     metrics: [{

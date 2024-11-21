@@ -11,10 +11,10 @@
  */
 
 /* eslint-env mocha */
+/* eslint-disable no-console */
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { spawn } from 'dynamo-db-local';
 import Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
@@ -24,10 +24,17 @@ import { createDataAccess } from '../../src/service/index.js';
 import { configSchema } from '../../src/models/site/config.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
-import generateSampleData from './generateSampleData.js';
-import { createSiteCandidate, SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from '../../src/models/site-candidate.js';
+import generateSampleData from './util/generateSampleData.js';
+import {
+  createSiteCandidate,
+  SITE_CANDIDATE_SOURCES,
+  SITE_CANDIDATE_STATUS,
+} from '../../src/models/site-candidate.js';
 import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 import { ConfigurationDto } from '../../src/dto/configuration.js';
+import { ImportJobStatus, ImportOptions, ImportUrlStatus } from '../../src/index.js';
+import { IMPORT_URL_EXPIRES_IN_DAYS } from '../../src/models/importer/import-url.js';
+import { closeDynamoClients } from './util/db.js';
 
 use(chaiAsPromised);
 
@@ -89,7 +96,7 @@ function checkSiteTopPage(siteTopPage) {
   expect(isIsoDate(siteTopPage.getImportedAt())).to.be.true;
 }
 
-const TEST_DA_CONFIG = {
+export const TEST_DA_CONFIG = {
   tableNameAudits: 'spacecat-services-audits',
   tableNameKeyEvents: 'spacecat-services-key-events',
   tableNameLatestAudits: 'spacecat-services-latest-audits',
@@ -102,6 +109,7 @@ const TEST_DA_CONFIG = {
   tableNameApiKeys: 'spacecat-services-api-keys',
   tableNameImportJobs: 'spacecat-services-import-jobs',
   tableNameImportUrls: 'spacecat-services-import-urls',
+  tableNameSpacecatData: 'spacecat-data',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
@@ -110,14 +118,21 @@ const TEST_DA_CONFIG = {
   indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
   indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
   indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
+  indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
+  indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
+  indexNameApiKeyByHashedApiKey: 'spacecat-services-api-key-by-hashed-api-key',
+  indexNameApiKeyByImsUserIdAndImsOrgId: 'spacecat-services-api-key-by-ims-user-id-and-ims-org-id',
   pkAllSites: 'ALL_SITES',
   pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
   pkAllConfigurations: 'ALL_CONFIGURATIONS',
+  pkAllImportJobs: 'ALL_IMPORT_JOBS',
 };
 
-describe('DynamoDB Integration Test', async () => {
-  let dynamoDbLocalProcess;
+// eslint-disable-next-line func-names
+describe('Legacy Data Model IT', function () {
+  this.timeout(30000);
+
   let dataAccess;
 
   const NUMBER_OF_SITES = 10;
@@ -129,24 +144,7 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
   const NUMBER_OF_EXPERIMENTS = 3;
 
-  before(async function () {
-    this.timeout(30000);
-
-    process.env.AWS_REGION = 'local';
-    process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
-    process.env.AWS_DEFAULT_REGION = 'local';
-    process.env.AWS_ACCESS_KEY_ID = 'dummy';
-    process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
-
-    dynamoDbLocalProcess = spawn({
-      detached: true,
-      stdio: 'inherit',
-      port: 8000,
-      sharedDb: true,
-    });
-
-    await sleep(10000); // give db time to start up
-
+  before(async () => {
     try {
       await generateSampleData(
         TEST_DA_CONFIG,
@@ -164,8 +162,8 @@ describe('DynamoDB Integration Test', async () => {
     dataAccess = createDataAccess(TEST_DA_CONFIG, console);
   });
 
-  after(() => {
-    dynamoDbLocalProcess.kill();
+  after(async () => {
+    await closeDynamoClients();
   });
 
   it('get all key events for a site', async () => {
@@ -202,11 +200,11 @@ describe('DynamoDB Integration Test', async () => {
   });
 
   it('gets configuration by Version', async () => {
-    const configuration = await dataAccess.getConfigurationByVersion('v1');
+    const configuration = await dataAccess.getConfigurationByVersion(1);
 
     expect(configuration).to.be.an('object');
 
-    expect(configuration.getVersion()).to.equal('v1');
+    expect(configuration.getVersion()).to.equal(1);
   });
 
   it('gets configuration', async () => {
@@ -214,12 +212,12 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(configuration).to.be.an('object');
 
-    expect(configuration.getVersion()).to.equal('v2');
+    expect(configuration.getVersion()).to.equal(2);
   });
 
   it('updates a configuration', async () => {
     const configurationData = {
-      version: 'v2',
+      version: 2,
       queues: {
         audits: 'audits-queue',
         imports: 'imports-queue',
@@ -238,7 +236,7 @@ describe('DynamoDB Integration Test', async () => {
 
     expect(configuration).to.be.an('object');
 
-    expect(configuration.getVersion()).to.equal('v3');
+    expect(configuration.getVersion()).to.equal(3);
     expect(configuration.getQueues()).to.deep.equal(configurationData.queues);
     expect(configuration.getJobs()).to.deep.equal(configurationData.jobs);
     expect(configuration.getHandlers()).to.deep.equal(configurationV2.getHandlers());
@@ -986,5 +984,245 @@ describe('DynamoDB Integration Test', async () => {
     await expect(dataAccess.removeOrganization(organization.getId())).to.eventually.be.fulfilled;
     const organizationAfterRemoval = await dataAccess.getOrganizationByID(organization.getId());
     expect(organizationAfterRemoval).to.be.null;
+  });
+
+  /**
+   * The following section is related to the Importer.
+   * It includes tests for the ImportJob and ImportUrl Data Access APIs.
+   *
+   * Before running the tests inject a ImportJob and ImportUrl into their respective tables.
+   * This is done such that each test could be executed individually without the need to run the
+   * entire suite.
+   */
+  describe('Importer Tests', async () => {
+    const startTime = new Date().toISOString();
+
+    // helper
+    const createNewImportJob = async () => dataAccess.createNewImportJob({
+      urls: ['https://example.com/cars', 'https://example.com/bikes'],
+      importQueueId: 'Q-123',
+      hashedApiKey: '1234',
+      baseURL: 'https://example.com/cars',
+      startTime,
+      status: ImportJobStatus.RUNNING,
+      initiatedBy: {
+        apiKeyName: 'K-123',
+      },
+      options: {
+        [ImportOptions.ENABLE_JAVASCRIPT]: true,
+      },
+      hasCustomImportJs: true,
+      hasCustomHeaders: false,
+    });
+
+    // helper
+    const createNewImportUrl = async (importJob) => dataAccess.createNewImportUrl({
+      url: 'https://example.com/cars',
+      jobId: importJob.getId(),
+      status: ImportUrlStatus.PENDING,
+    });
+
+    describe('Import Job Tests', async () => {
+      it('Verify the creation of the import job.', async () => {
+        const job = await createNewImportJob();
+        expect(job.getId()).to.be.a('string');
+        expect(job.getCreatedAt()).to.be.a('string');
+        expect(job.hasCustomHeaders()).to.be.false;
+        expect(job.hasCustomImportJs()).to.be.true;
+      });
+
+      it('Verify updateImportJob', async () => {
+        const job = await createNewImportJob();
+        const newJob = { ...job };
+        const newEndTime = new Date().toISOString();
+        newJob.updateStatus(ImportJobStatus.COMPLETE);
+        newJob.updateEndTime(newEndTime);
+        newJob.updateDuration(1234);
+        newJob.updateUrlCount(100);
+        newJob.updateImportQueueId('Q-456');
+        newJob.updateHasCustomHeaders(true);
+
+        const updatedJob = await dataAccess.updateImportJob(newJob);
+
+        expect(updatedJob.getStatus()).to.be.equal(ImportJobStatus.COMPLETE);
+        expect(updatedJob.getEndTime()).to.equal(newEndTime);
+        expect(updatedJob.getDuration()).to.be.equal(1234);
+        expect(updatedJob.getUrlCount()).to.be.equal(100);
+        expect(updatedJob.getImportQueueId()).to.be.equal('Q-456');
+        expect(updatedJob.getOptions()).to.deep.equal({
+          [ImportOptions.ENABLE_JAVASCRIPT]: true,
+        });
+        expect(updatedJob.hasCustomHeaders()).to.be.true;
+      });
+
+      it('Verify getImportJobsByStatus', async () => {
+        const job = await createNewImportJob();
+        job.updateStatus(ImportJobStatus.FAILED);
+        await dataAccess.updateImportJob(job);
+        const result = await dataAccess.getImportJobsByStatus(ImportJobStatus.FAILED);
+        expect(result.length).to.be.greaterThan(0);
+      });
+
+      it('Verify getImportJobByID', async () => {
+        const job = await createNewImportJob();
+        const jobEntry = await dataAccess.getImportJobByID(job.getId());
+        expect(job.getId()).to.be.equal(jobEntry.getId());
+      });
+
+      it('Verify getImportJobsByDateRange', async () => {
+        const endDate = new Date().toISOString();
+        const jobs = await dataAccess.getImportJobsByDateRange(startTime, endDate);
+        expect(jobs.length).to.be.greaterThan(0);
+      });
+
+      it('Verify removeImportJob', async () => {
+        const job = await createNewImportJob();
+        const jobId = job.getId();
+        const url = await createNewImportUrl(job);
+        const url2 = await createNewImportUrl(job);
+
+        expect(url.getId()).to.be.a('string');
+        expect(url.getJobId()).to.equal(jobId);
+        expect(url2.getJobId()).to.equal(jobId);
+
+        // Before we delete the job, there should be 2 URLs in the DB relating to this jobId
+        const importJobUrlsFromDb = await dataAccess.getImportUrlsByJobId(jobId);
+        expect(importJobUrlsFromDb.length).to.equal(2);
+
+        // Remove the new job
+        await dataAccess.removeImportJob(job);
+
+        // Try to find it in the DB
+        const deletedJob = await dataAccess.getImportJobByID(jobId);
+        expect(deletedJob).to.be.null;
+
+        // Try to find its URLs in the DB
+        const deletedJobImportUrls = await dataAccess.getImportUrlsByJobId(jobId);
+        expect(deletedJobImportUrls.length).to.equal(0);
+      });
+    });
+
+    describe('Import URL Tests', async () => {
+      it('Verify the creation of a new import url.', async () => {
+        const job = await createNewImportJob();
+        const url = await createNewImportUrl(job);
+
+        expect(url.getId()).to.be.a('string');
+        expect(url.getJobId()).to.equal(job.getId());
+
+        // Check that expiresAt was set correctly
+        const expectedExpiresAtDate = new Date();
+        expectedExpiresAtDate.setDate(expectedExpiresAtDate.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
+
+        expect(url.getExpiresAt().toDateString()).to.equal(expectedExpiresAtDate.toDateString());
+      });
+
+      it('Verify getImportUrlById', async () => {
+        const job = await createNewImportJob();
+        const url = await createNewImportUrl(job);
+        const urlRow = await dataAccess.getImportUrlById(url.getId());
+        expect(urlRow.getId()).to.be.equal(url.getId());
+      });
+
+      it('Verify getImportUrlsByJobId', async () => {
+        const job = await createNewImportJob();
+        await createNewImportUrl(job);
+        const urlRow = await dataAccess.getImportUrlsByJobId(job.getId());
+        expect(urlRow.length).to.be.greaterThan(0);
+      });
+
+      it('Verify getImportUrlsByJobIdAndStatus', async () => {
+        const job = await createNewImportJob();
+        await createNewImportUrl(job);
+
+        const urlRows = await dataAccess
+          .getImportUrlsByJobIdAndStatus(job.getId(), ImportUrlStatus.PENDING);
+        expect(urlRows.length).to.be.greaterThan(0);
+      });
+
+      it('Verify updateImportUrl', async () => {
+        const job = await createNewImportJob();
+        const url = await createNewImportUrl(job);
+
+        const newUrl = { ...url };
+        newUrl.setStatus(ImportUrlStatus.COMPLETE);
+        newUrl.setReason('Just Because');
+        newUrl.setPath('/path/to/file');
+        newUrl.setFile('thefile.docx');
+
+        const updatedUrl = await dataAccess.updateImportUrl(newUrl);
+
+        expect(updatedUrl.getStatus()).to.be.equal(ImportUrlStatus.COMPLETE);
+        expect(updatedUrl.getReason()).to.be.equal('Just Because');
+        expect(updatedUrl.getPath()).to.be.equal('/path/to/file');
+        expect(updatedUrl.getFile()).to.be.equal('thefile.docx');
+      });
+    });
+
+    describe('ApiKey Tests', async () => {
+      const apiKeyData = {
+        name: 'Test API Key',
+        createdAt: '2024-10-09T19:21:55.834Z',
+        expiresAt: '2025-10-09T19:21:55.834Z',
+        hashedApiKey: '1234',
+        imsOrgId: '1234@AdobeOrg',
+        imsUserId: '1234',
+        scopes: [{
+          name: 'imports.read',
+        },
+        {
+          name: 'imports.write',
+          domains: ['https://example.com'],
+        }],
+      };
+      const createNewApiKey = async () => dataAccess.createNewApiKey(apiKeyData);
+
+      it('Verify the creation of a new api key.', async () => {
+        const apiKey = await createNewApiKey();
+        expect(apiKey.getId()).to.be.a('string');
+        expect(apiKey.getName()).to.be.equal('Test API Key');
+        expect(apiKey.getExpiresAt()).to.be.equal('2025-10-09T19:21:55.834Z');
+        expect(apiKey.getHashedApiKey()).to.be.equal('1234');
+        expect(apiKey.getImsOrgId()).to.be.equal('1234@AdobeOrg');
+        expect(apiKey.getImsUserId()).to.be.equal('1234');
+        expect(apiKey.getScopes()).to.deep.equal(apiKeyData.scopes);
+      });
+
+      it('Verify retrieval of an api key by ImsUserId and ImsOrgId.', async () => {
+        await createNewApiKey();
+        const apiKey = await dataAccess.getApiKeysByImsUserIdAndImsOrgId('1234', '1234@AdobeOrg');
+        expect(apiKey.length).to.be.greaterThan(0);
+        expect(apiKey[0].getImsUserId()).to.be.equal('1234');
+        expect(apiKey[0].getImsOrgId()).to.be.equal('1234@AdobeOrg');
+        expect(apiKey[0].getScopes()).to.deep.equal(apiKeyData.scopes);
+        expect(apiKey[0].getExpiresAt()).to.be.equal('2025-10-09T19:21:55.834Z');
+        expect(apiKey[0].getHashedApiKey()).to.be.equal('1234');
+      });
+
+      it('Verify retrieval of an api key by hashedApiKey', async () => {
+        await createNewApiKey();
+        const apiKey = await dataAccess.getApiKeyByHashedApiKey('1234');
+        expect(apiKey).to.not.be.null;
+        expect(apiKey.getHashedApiKey()).to.be.equal('1234');
+        expect(apiKey.getImsUserId()).to.be.equal('1234');
+        expect(apiKey.getImsOrgId()).to.be.equal('1234@AdobeOrg');
+        expect(apiKey.getScopes()).to.deep.equal(apiKeyData.scopes);
+      });
+
+      it('Verify retrieval of an api key by id', async () => {
+        const apiKey = await createNewApiKey();
+        const apiKeyId = apiKey.getId();
+        const apiKeyById = await dataAccess.getApiKeyById(apiKeyId);
+        expect(apiKeyById.getId()).to.be.equal(apiKeyId);
+      });
+
+      it('Verify update of an api key.', async () => {
+        const apiKey = await createNewApiKey();
+        const newApiKey = { ...apiKey };
+        newApiKey.updateDeletedAt('2025-10-10T19:21:55.834Z');
+        const updatedApiKey = await dataAccess.updateApiKey(newApiKey);
+        expect(updatedApiKey.getDeletedAt()).to.be.equal('2025-10-10T19:21:55.834Z');
+      });
+    });
   });
 });

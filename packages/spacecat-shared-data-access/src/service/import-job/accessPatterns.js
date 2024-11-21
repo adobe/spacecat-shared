@@ -13,6 +13,7 @@
 import { isObject } from '@adobe/spacecat-shared-utils';
 import { ImportJobDto } from '../../dto/import-job.js';
 import { createImportJob } from '../../models/importer/import-job.js';
+import { removeUrlsForImportJob } from '../import-url/accessPatterns.js';
 
 /**
  * Get all Import Jobs within a specific date range
@@ -40,7 +41,7 @@ export const getImportJobsByDateRange = async (dynamoClient, config, log, startD
 };
 
 /**
- * Get Import Job by ID
+ * Get Import Job by ID.
  * @param {DynamoClient} dynamoClient
  * @param {Object} config
  * @param {Logger} log
@@ -52,6 +53,7 @@ export const getImportJobByID = async (dynamoClient, config, log, id) => {
     config.tableNameImportJobs,
     { id },
   );
+
   return item ? ImportJobDto.fromDynamoItem(item) : null;
 };
 
@@ -110,4 +112,23 @@ export const updateImportJob = async (dynamoClient, config, log, importJob) => {
   await dynamoClient.putItem(config.tableNameImportJobs, ImportJobDto.toDynamoItem(importJob));
 
   return importJob;
+};
+
+/**
+ * Removes an Import Job and all associated URLs.
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The logger.
+ * @param {ImportJob} importJob - The import job to remove.
+ * @return {Promise<void>} A promise that resolves when the import job has been removed.
+ */
+export const removeImportJob = async (dynamoClient, config, log, importJob) => {
+  try {
+    await removeUrlsForImportJob(dynamoClient, config, log, importJob.getId());
+
+    await dynamoClient.removeItem(config.tableNameImportJobs, { id: importJob.getId() });
+  } catch (error) {
+    log.error(`Error removing import job: ${error.message}`);
+    throw error;
+  }
 };

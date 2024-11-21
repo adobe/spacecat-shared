@@ -10,6 +10,23 @@
  * governing permissions and limitations under the License.
  */
 
+// see packages/spacecat-shared-data-access/src/models/importer/import-constants.js
+export declare const ImportJobStatus: {
+  readonly RUNNING: 'RUNNING';
+  readonly COMPLETE: 'COMPLETE';
+  readonly FAILED: 'FAILED';
+  readonly STOPPED: 'STOPPED';
+};
+
+// packages/spacecat-shared-data-access/src/models/importer/import-constants.js
+export declare const ImportUrlStatus: {
+  readonly PENDING: 'PENDING';
+  readonly REDIRECT: 'REDIRECT';
+  readonly RUNNING: 'RUNNING';
+  readonly COMPLETE: 'COMPLETE';
+  readonly FAILED: 'FAILED';
+};
+
 // TODO: introduce AuditType interface or Scores interface
 
 /**
@@ -377,9 +394,9 @@ export interface Organization {
 export interface Configuration {
   /**
    * Retrieves the configuration version.
-   * @returns {string} The configuration version.
+   * @returns {number} The configuration version.
    */
-  getVersion: () => string;
+  getVersion: () => number;
 
   /**
    * Retrieves the queues configuration.
@@ -404,6 +421,12 @@ export interface Configuration {
    * @returns {object} The handler type configuration.
    */
   getHandler: (type) => object;
+
+  /**
+   * Retrieves the slack roles configuration.
+   * @returns {object} The slack roles configuration.
+   */
+  getSlackRoles: () => object;
 
   /**
    * Return true if a handler type is enabled for an organization.
@@ -463,7 +486,7 @@ export interface ImportJob {
   /**
    * Retrieves the status of the import job.
    */
-  getStatus: () => string;
+  getStatus: () => typeof ImportJobStatus;
 
   /**
    * Retrieves the baseURL of the import job.
@@ -506,6 +529,11 @@ export interface ImportJob {
   getFailedCount: () => number;
 
   /**
+   * Retrieves the redirect count of the import job.
+   */
+  getRedirectCount: () => number;
+
+  /**
    * Retrieves the importQueueId of the import job.
    */
   getImportQueueId: () => string;
@@ -515,29 +543,52 @@ export interface ImportJob {
    */
   getInitiatedBy: () => object;
 
+  /**
+   * Indicates if the import job has custom headers.
+   */
+  hasCustomHeaders: () => boolean;
+
+  /**
+   * Indicates if the import job has custom import js.
+   */
+  hasCustomImportJs: () => boolean;
 }
 
 export interface ImportUrl {
   /**
    * Retrieves the ID of the import URL.
    */
-    getId: () => string;
+  getId: () => string;
 
   /**
    * Retrieves the status of the import URL.
    */
-    getStatus: () => string;
+  getStatus: () => typeof ImportUrlStatus;
 
   /**
    * Retrieves the URL of the import URL.
    */
-    getUrl: () => string;
+  getUrl: () => string;
 
   /**
    * Retrieves the job ID of the import URL.
    */
-    getJobId: () => string;
+  getJobId: () => string;
 
+  /**
+   * The reason that the import of a URL failed.
+   */
+  getReason: () => string;
+
+  /**
+   * The absolute path to the resource that is being imported for the given URL.
+   */
+  getFile: () => string;
+
+  /**
+   * Retrieves the resulting path and filename of the imported file.
+   */
+  getPath: () => string;
 }
 
 /**
@@ -585,9 +636,24 @@ export interface ApiKey {
     getRevokedAt: () => string;
 
     /**
+      * Retrieves the deletedAt of the API Key.
+      */
+    getDeletedAt: () => string;
+
+    /**
      * Retrieves the scopes of the API Key.
      */
     getScopes: () => Array<string>;
+
+    /**
+    * Updates the deletedAt attribute of the API Key.
+    */
+    updateDeletedAt: (deletedAt: string) => ApiKey;
+
+    /**
+     * Indicates whether the API Key is valid.
+     */
+    isValid: () => boolean;
 
 }
 
@@ -788,6 +854,16 @@ export interface DataAccess {
   createNewApiKey: (
       apiKeyData: object,
   ) => Promise<ApiKey>;
+  updateApiKey: (
+      apiKey: ApiKey,
+  ) => Promise<ApiKey>;
+  getApiKeysByImsUserIdAndImsOrgId: (
+      imsUserId: string,
+      imsOrgId: string,
+  ) => Promise<ApiKey[] | null>;
+  getApiKeyById: (
+      id: string,
+  ) => Promise<ApiKey | null>;
 
   // site candidate functions
   getSiteCandidateByBaseURL: (baseURL: string) => Promise<SiteCandidate>;
@@ -804,7 +880,7 @@ export interface DataAccess {
   // configuration functions
   getConfiguration: () => Promise<Readonly<Configuration>>
   getConfigurations: () => Promise<Readonly<Configuration>[]>
-  getConfigurationByVersion: (version: string) => Promise<Readonly<Configuration>>
+  getConfigurationByVersion: (version: number) => Promise<Readonly<Configuration>>
   updateConfiguration: (configurationData: object) => Promise<Readonly<Configuration>>
 
   // key events functions
@@ -816,6 +892,10 @@ export interface DataAccess {
   getExperiments: (siteId: string, experimentId?: string) => Promise<Experiment[]>;
   getExperiment: (siteId: string, experimentId: string, url: string) => Promise<Experiment | null>;
   upsertExperiment: (experimentData: object) => Promise<Experiment>;
+
+  // electro-based entities
+  Opportunity: object,
+  Suggestion: object,
 }
 
 interface DataAccessConfig {
@@ -840,8 +920,9 @@ interface DataAccessConfig {
   indexNameAllOrganizationsByImsOrgId: string,
   indexNameAllImportJobsByStatus: string,
   indexNameAllImportJobsByDateRange: string,
-  indexNameAllImportUrlsByJobIdAndStatus: string,
+  indexNameImportUrlsByJobIdAndStatus: string,
   indexNameApiKeyByHashedApiKey: string,
+  indexNameApiKeyByImsUserIdAndImsOrgId: string,
   pkAllSites: string;
   pkAllLatestAudits: string;
   pkAllOrganizations: string;
@@ -854,12 +935,4 @@ export function createDataAccess(
   logger: object,
 ): DataAccess;
 
-export interface ImportJobStatus {
-  RUNNING: string,
-  COMPLETE: string,
-  FAILED: string,
-}
-
-export interface ImportUrlStatus extends ImportJobStatus {
-  PENDING: string,
-}
+export type * from './v2/index.d.ts';

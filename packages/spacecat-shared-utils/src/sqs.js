@@ -11,6 +11,8 @@
  */
 
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
+import AWSXray from 'aws-xray-sdk';
+import { hasText } from './functions.js';
 
 /**
  * @class SQS utility to send messages to SQS
@@ -19,20 +21,34 @@ import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
  */
 class SQS {
   constructor(region, log) {
-    this.sqsClient = new SQSClient({ region });
+    this.sqsClient = AWSXray.captureAWSv3Client(new SQSClient({ region }));
     this.log = log;
   }
 
-  async sendMessage(queueUrl, message) {
+  /**
+   * Send a message to an SQS queue. For FIFO queues, messageGroupId is required.
+   * @param {string} queueUrl - The URL of the SQS queue.
+   * @param {object} message - The message body to send.
+   * @param {string} messageGroupId - (Optional) The message group ID for FIFO queues.
+   * @return {Promise<void>}
+   */
+  async sendMessage(queueUrl, message, messageGroupId = undefined) {
     const body = {
       ...message,
       timestamp: new Date().toISOString(),
     };
 
-    const msgCommand = new SendMessageCommand({
+    const params = {
       MessageBody: JSON.stringify(body),
       QueueUrl: queueUrl,
-    });
+    };
+
+    if (hasText(messageGroupId)) {
+      // MessageGroupId is required for FIFO queues
+      params.MessageGroupId = messageGroupId;
+    }
+
+    const msgCommand = new SendMessageCommand(params);
 
     try {
       const data = await this.sqsClient.send(msgCommand);

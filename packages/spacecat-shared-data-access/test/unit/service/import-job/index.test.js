@@ -39,10 +39,9 @@ describe('Import Job Tests', () => {
         getItem: sinon.stub().resolves(),
         query: sinon.stub().resolves(null),
         putItem: sinon.stub().resolves(),
+        removeItem: sinon.stub().resolves(),
       };
-      mockLog = {
-        log: console,
-      };
+      mockLog = console;
       exportedFunctions = importJobFunctions(
         mockDynamoClient,
         TEST_DA_CONFIG,
@@ -50,135 +49,87 @@ describe('Import Job Tests', () => {
       );
     });
 
+    const mockImportJob = {
+      id: 'test-id',
+      status: 'RUNNING',
+      options: {},
+      baseURL: 'https://www.test.com',
+      hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
+      importQueueId: 'test-import-queue-id',
+      initiatedBy: {
+        apiKeyName: 'test-user',
+        imsUserId: 'test-ims-user-id',
+        imsOrgId: 'test-ims-org-id',
+        userAgent: 'test-user-agent',
+      },
+      hasCustomImportJs: false,
+      hasCustomHeaders: false,
+    };
+
     describe('getImportJobByID', () => {
-      it('should return an ImportJobDto when an item is found', async () => {
-        const mockImportJob = {
-          id: 'test-id',
-          status: 'RUNNING',
-          options: {},
-          baseURL: 'https://www.test.com',
-          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
-          importQueueId: 'test-import-queue-id',
-          initiatedBy: {
-            apiKeyName: 'test-user',
-            imsUserId: 'test-ims-user-id',
-            imsOrgId: 'test-ims-org-id',
-            userAgent: 'test-user-agent',
-          },
-        };
-        mockDynamoClient.getItem.resolves(mockImportJob);
-        const result = await exportedFunctions.getImportJobByID('test-id');
-
-        expect(result.state.id).to.equal('test-id');
-      });
-
       it('should return null if item is not found', async () => {
-        mockDynamoClient.getItem.resolves(undefined);
-
+        mockDynamoClient.getItem.resolves(null);
         const result = await exportedFunctions.getImportJobByID('test-id');
-
         expect(result).to.equal(null);
       });
     });
 
     describe('getImportJobsByDateRange', () => {
-      it('should return ImportJobDto[] if items are found', async () => {
-        const mockImportJobs = [{
-          id: 'test-id',
-          status: 'RUNNING',
-          options: {},
-          baseURL: 'https://www.test.com',
-          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
-          startTime: '2024-05-28T14:26:00.000Z',
-          importQueueId: 'test-import-queue-id',
-          initiatedBy: {
-            apiKeyName: 'test-user',
-            imsUserId: 'test-ims-user-id',
-            imsOrgId: 'test-ims-org-id',
-            userAgent: 'test-user-agent',
-          },
+      it(
+        'Verify that getImportJobsByDateRange perform no additional changes to the result size',
+        async () => {
+          const mockImportJobs = [
+            { ...mockImportJob, id: 'test-1' },
+            { ...mockImportJob, id: 'test-2' },
+          ];
+          mockDynamoClient.query.resolves(mockImportJobs);
+
+          const result = await exportedFunctions.getImportJobsByDateRange(
+            mockDynamoClient,
+            TEST_DA_CONFIG,
+            mockLog,
+            '2024-05-27T14:26:00.000Z',
+            '2024-06-02T14:26:00.000Z',
+          );
+
+          // expect that 2 results were in the db, and that the results were not modified
+          expect(result).to.be.an('array').and.to.have.lengthOf(2);
+
+          // verify that the mocked properties are present in the result
+          function hasPropertiesOf(mockJob, importJob) {
+            return Object.keys(mockJob).every((key) => mockJob[key] === importJob.state[key]);
+          }
+
+          expect(hasPropertiesOf(mockImportJobs[0], result[0])).to.be.true;
+          expect(hasPropertiesOf(mockImportJobs[1], result[1])).to.be.true;
         },
-        {
-          id: 'test-id-1',
-          status: 'RUNNING',
-          options: {},
-          baseURL: 'https://www.test1.com',
-          hashedApiKey: '5c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
-          startTime: '2024-06-01T14:26:00.000Z',
-          importQueueId: 'test-import-queue-id-1',
-          initiatedBy: {
-            apiKeyName: 'test-user',
-            imsUserId: 'test-ims-user-id',
-            imsOrgId: 'test-ims-org-id',
-            userAgent: 'test-user-agent',
-          },
-        }];
-        mockDynamoClient.query.resolves(mockImportJobs);
-
-        const result = await exportedFunctions.getImportJobsByDateRange(mockDynamoClient, TEST_DA_CONFIG, mockLog, '2024-05-27T14:26:00.000Z', '2024-06-02T14:26:00.000Z');
-
-        expect(result).to.be.an('array').and.to.have.lengthOf(2);
-      });
+      );
     });
 
     describe('getImportJobsByStatus', () => {
-      it('should return ImportJobDto[] if items are found', async () => {
-        const mockImportJobs = [{
-          id: 'test-id',
-          status: 'RUNNING',
-          options: {},
-          baseURL: 'https://www.test.com',
-          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
-          importQueueId: 'test-import-queue-id',
-          initiatedBy: {
-            apiKeyName: 'test-user',
-            imsUserId: 'test-ims-user-id',
-            imsOrgId: 'test-ims-org-id',
-            userAgent: 'test-user-agent',
-          },
-        },
-        {
-          id: 'test-id-1',
-          status: 'RUNNING',
-          options: {},
-          baseURL: 'https://www.test1.com',
-          hashedApiKey: '5c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
-          importQueueId: 'test-import-queue-id-1',
-          initiatedBy: {
-            apiKeyName: 'test-user',
-            imsUserId: 'test-ims-user-id',
-            imsOrgId: 'test-ims-org-id',
-            userAgent: 'test-user-agent',
-          },
-        }];
+      it('Verify that getImportJobsByStatus perform no additional changes to the result size', async () => {
+        const mockImportJobs = [
+          { ...mockImportJob, id: 'test-1' },
+          { ...mockImportJob, id: 'test-2' },
+        ];
+
         mockDynamoClient.query.resolves(mockImportJobs);
 
-        const result = await exportedFunctions.getImportJobsByStatus(mockDynamoClient, TEST_DA_CONFIG, mockLog, 'test-status');
+        const result = await exportedFunctions.getImportJobsByStatus(
+          mockDynamoClient,
+          TEST_DA_CONFIG,
+          mockLog,
+          'dummy-status',
+        );
 
+        // verify that 2 results were in the db, and that the results were not modified
         expect(result).to.be.an('array').and.to.have.lengthOf(2);
       });
     });
 
     describe('createNewImportJob', () => {
       it('should create a new ImportJob', async () => {
-        const mockImportJobData = {
-          id: 'test-id',
-          status: 'RUNNING',
-          options: {},
-          baseURL: 'https://www.test.com',
-          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
-          importQueueId: 'test-import-queue-id',
-          initiatedBy: {
-            apiKeyName: 'test-user',
-            imsUserId: 'test-ims-user-id',
-            imsOrgId: 'test-ims-org-id',
-            userAgent: 'test-user-agent',
-          },
-        };
-        const result = await exportedFunctions.createNewImportJob(
-          mockImportJobData,
-        );
-
+        const result = await exportedFunctions.createNewImportJob(mockImportJob);
         expect(result.state.initiatedBy.apiKeyName).to.equal('test-user');
         expect(result.state.baseURL).to.equal('https://www.test.com');
       });
@@ -186,47 +137,50 @@ describe('Import Job Tests', () => {
 
     describe('updateImportJob', () => {
       it('should update an existing ImportJob', async () => {
-        const mockImportJobData = {
-          id: 'test-id',
-          status: 'RUNNING',
-          options: {},
-          baseURL: 'https://www.test.com',
-          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
-          importQueueId: 'test-import-queue-id',
-          initiatedBy: {
-            apiKeyName: 'test-user',
-            imsUserId: 'test-ims-user-id',
-            imsOrgId: 'test-ims-org-id',
-            userAgent: 'test-user-agent',
-          },
-        };
-        mockDynamoClient.getItem.resolves(mockImportJobData);
-
+        mockDynamoClient.getItem.resolves(mockImportJob);
         const importJob = await exportedFunctions.getImportJobByID('test-id');
         importJob.updateStatus('COMPLETE');
-        const result = await exportedFunctions.updateImportJob(
-          importJob,
-        );
+        const result = await exportedFunctions.updateImportJob(importJob);
         expect(result.getStatus()).to.equal('COMPLETE');
       });
 
       it('should throw an error if the ImportJob does not exist', async () => {
-        const mockImportJobData = {
-          id: 'test-id',
-          status: 'RUNNING',
-          hashedApiKey: '4c806362b613f7496abf284146efd31da90e4b16169fe001841ca17290f427c4',
-          options: {},
-          baseURL: 'https://www.test.com',
-          initiatedBy: {
-            apiKeyName: 'test-user',
-            imsUserId: 'test-ims-user-id',
-            imsOrgId: 'test-ims-org-id',
-            userAgent: 'test-user-agent',
-          },
-        };
-        const importJob = createImportJob(mockImportJobData);
+        const importJob = createImportJob(mockImportJob);
         const result = exportedFunctions.updateImportJob(importJob);
         expect(result).to.be.rejectedWith('Import Job with id:test-id does not exist');
+      });
+    });
+
+    describe('removeImportJob', () => {
+      it('should remove an existing ImportJob with no URLs', async () => {
+        const importJob = createImportJob(mockImportJob);
+        await exportedFunctions.removeImportJob(importJob);
+        expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
+      });
+
+      it('should remove an existing ImportJob with a couple of URLs', async () => {
+        mockDynamoClient.query.resolves([
+          {
+            id: 'test-url-1', url: 'https://www.example.com/resource-a', jobId: 'test-id', status: 'RUNNING',
+          },
+          {
+            id: 'test-url-2', url: 'https://www.example.com/resource-b', jobId: 'test-id', status: 'RUNNING',
+          },
+        ]);
+        const importJob = createImportJob(mockImportJob);
+        await exportedFunctions.removeImportJob(importJob);
+        // Note `calledThrice` — remove should be called on both URLs, then the import job
+        expect(mockDynamoClient.removeItem.calledThrice).to.be.true;
+        // Check the id's passed to removeItem
+        expect(mockDynamoClient.removeItem.getCall(0).args[1].id).to.equal('test-url-1');
+        expect(mockDynamoClient.removeItem.getCall(1).args[1].id).to.equal('test-url-2');
+        expect(mockDynamoClient.removeItem.getCall(2).args[1].id).to.equal('test-id');
+      });
+
+      it('should handle a Dynamo failure', async () => {
+        mockDynamoClient.removeItem = sinon.stub().rejects(new Error('Dynamo Error'));
+        const importJob = createImportJob(mockImportJob);
+        await expect(exportedFunctions.removeImportJob(importJob)).to.be.rejectedWith('Dynamo Error');
       });
     });
   });

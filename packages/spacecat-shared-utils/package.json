@@ -1,11 +1,11 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.20.0",
+  "version": "1.23.0",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "engines": {
-    "node": "^20.0.0 <21.0.0",
-    "npm": "^10.0.0 <11.0.0"
+    "node": ">=20.0.0 <23.0.0",
+    "npm": ">=10.0.0 <11.0.0"
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -35,18 +35,19 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "@adobe/spacecat-shared-data-access": "file:../spacecat-shared-data-access",
-    "chai": "5.1.1",
+    "@adobe/spacecat-shared-data-access": "1.50.0",
+    "chai": "5.1.2",
     "chai-as-promised": "8.0.0",
     "husky": "9.1.6",
-    "nock": "13.5.5",
-    "sinon": "18.0.1",
+    "nock": "13.5.6",
+    "sinon": "19.0.2",
     "sinon-chai": "4.0.0"
   },
   "dependencies": {
-    "@adobe/fetch": "4.1.8",
-    "@aws-sdk/client-s3": "3.651.1",
-    "@aws-sdk/client-sqs": "3.651.1",
-    "@json2csv/plainjs": "7.0.6"
+    "@adobe/fetch": "4.1.9",
+    "@aws-sdk/client-s3": "3.693.0",
+    "@aws-sdk/client-sqs": "3.693.0",
+    "@json2csv/plainjs": "7.0.6",
+    "aws-xray-sdk": "3.10.2"
   }
 }

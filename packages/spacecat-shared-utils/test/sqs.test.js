@@ -12,7 +12,9 @@
 
 /* eslint-env mocha */
 
+import { SQSClient } from '@aws-sdk/client-sqs';
 import wrap from '@adobe/helix-shared-wrap';
+import AWSXRay from 'aws-xray-sdk';
 import sinon from 'sinon';
 import { expect, use } from 'chai';
 import sinonChai from 'sinon-chai';
@@ -29,6 +31,7 @@ const sandbox = sinon.createSandbox();
 describe('SQS', () => {
   describe('SQS class', () => {
     let context;
+    AWSXRay.enableManualMode();
 
     beforeEach('setup', () => {
       context = {
@@ -105,8 +108,30 @@ describe('SQS', () => {
   });
 
   describe('SQS helpers', () => {
-    const exampleHandler = sinon.spy(async (message, context) => {
-      const { log } = context;
+    let sqsClientStub;
+    let sendStub;
+    let context;
+
+    beforeEach(() => {
+      // Stub the AWS SQS client so we can inspect the arguments we send it
+      sqsClientStub = sandbox.createStubInstance(SQSClient);
+      sendStub = sandbox.stub().callsFake(() => ({ MessageId: '12345' }));
+      sandbox.stub(SQSClient.prototype, 'constructor').callsFake(() => sqsClientStub);
+      sandbox.stub(SQSClient.prototype, 'send').callsFake(sendStub);
+      context = {
+        log: console,
+        runtime: {
+          region: 'us-east-1',
+        },
+      };
+    });
+
+    afterEach('clean', () => {
+      sandbox.restore();
+    });
+
+    const exampleHandler = sandbox.spy(async (message, ctx) => {
+      const { log } = ctx;
       const messageStr = JSON.stringify(message);
       log.info(`Handling message ${messageStr}`);
       return new Response(messageStr);
@@ -127,7 +152,7 @@ describe('SQS', () => {
     });
 
     it('should handle a valid context with an event record', async () => {
-      const context = {
+      const ctx = {
         log: console,
         invocation: {
           event: {
@@ -142,12 +167,42 @@ describe('SQS', () => {
       };
 
       const handler = sqsEventAdapter(exampleHandler);
-      const response = await handler(emptyRequest, context);
+      const response = await handler(emptyRequest, ctx);
 
       expect(response.status).to.equal(200);
       const result = await response.json();
       expect(result.id).to.equal('1234567890');
       expect(exampleHandler.calledWith({ id: '1234567890' })).to.be.true;
+    });
+
+    it('should not include a MessageGroupId when one is not provided', async () => {
+      const action = wrap(async (req, ctx) => {
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      expect(Object.keys(firstSendArg.input)).to.deep.equal([
+        'MessageBody',
+        'QueueUrl',
+      ]);
+    });
+
+    it('should include a MessageGroupId when provided', async () => {
+      const action = wrap(async (req, ctx) => {
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' }, 'job-id');
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      expect(Object.keys(firstSendArg.input)).to.deep.equal([
+        'MessageBody',
+        'QueueUrl',
+        'MessageGroupId',
+      ]);
+      expect(firstSendArg.input.MessageGroupId).to.equal('job-id');
     });
   });
 });

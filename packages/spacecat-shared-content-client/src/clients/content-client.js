@@ -11,8 +11,11 @@
  */
 
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
-import { hasText, isObject } from '@adobe/spacecat-shared-utils';
+import {
+  composeBaseURL, hasText, isObject, tracingFetch,
+} from '@adobe/spacecat-shared-utils';
 import { Graph, hasCycle } from 'graph-data-structure';
+import { SiteDto } from '@adobe/spacecat-shared-data-access/src/dto/site.js';
 
 const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
@@ -58,7 +61,7 @@ const validateSite = (site) => {
     throw new Error('Site is required');
   }
 
-  const contentSource = site.getConfig()?.content?.source;
+  const contentSource = site.getHlxConfig()?.content?.source;
   if (!isObject(contentSource)) {
     throw new Error('Site must have a valid content source');
   }
@@ -181,7 +184,7 @@ export default class ContentClient {
     const { log = console, env } = context;
 
     const config = {};
-    const contentSourceType = site.getConfig().content?.source?.type;
+    const contentSourceType = site.getHlxConfig()?.content?.source?.type;
     const envMapping = SUPPORTED_CONTENT_SOURCES.get(contentSourceType);
 
     if (envMapping) {
@@ -193,13 +196,38 @@ export default class ContentClient {
     return new ContentClient(config, site, log);
   }
 
+  static async createFromDomain(domain, env, log = console) {
+    const baseUrl = composeBaseURL(domain);
+    const siteBaseUrlEncoded = Buffer.from(baseUrl).toString('base64');
+    let site;
+    const sitesApiEndpoint = `${env.SPACECAT_API_ENDPOINT}/sites/by-base-url`;
+    try {
+      const response = await tracingFetch(`${sitesApiEndpoint}/${siteBaseUrlEncoded}`, {
+        method: 'GET',
+        headers: {
+          'x-api-key': env.SPACECAT_API_KEY,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch ${domain}`);
+      }
+      site = await response.json();
+      const siteDto = SiteDto.fromDynamoItem(site);
+      return ContentClient.createFrom({ log, env }, siteDto);
+    } catch (e) {
+      log.error(`Failed to fetch ${domain}: ${e.message}`);
+      throw new Error(`Failed to fetch ${domain}`);
+    }
+  }
+
   constructor(config, site, log) {
     validateSite(site);
-    validateConfiguration(config, site.getConfig().content.source.type);
+    validateConfiguration(config, site.getHlxConfig()?.content.source?.type);
 
     this.log = log;
     this.config = config;
-    this.contentSource = site.getConfig().content.source;
+    this.contentSource = site.getHlxConfig()?.content?.source;
     this.site = site;
     this.rawClient = null;
   }
@@ -236,7 +264,8 @@ export default class ContentClient {
     this.log.info(`Getting page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const metadata = await this.rawClient.getPageMetadata(docPath);
+    const document = this.rawClient.getDocument(docPath);
+    const metadata = await document.getMetadata();
 
     this.#logDuration('getPageMetadata', startTime);
 
@@ -255,7 +284,8 @@ export default class ContentClient {
     this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const originalMetadata = await this.getPageMetadata(path);
+    const document = this.rawClient.getDocument(docPath);
+    const originalMetadata = await document.getMetadata();
 
     let mergedMetadata;
     if (overwrite) {
@@ -264,8 +294,8 @@ export default class ContentClient {
       mergedMetadata = new Map([...metadata, ...originalMetadata]);
     }
 
-    const response = await this.rawClient.updatePageMetadata(docPath, mergedMetadata);
-    if (response.status !== 200) {
+    const response = await document.updateMetadata(mergedMetadata);
+    if (response?.status !== 200) {
       throw new Error(`Failed to update metadata for path ${path}`);
     }
 
@@ -280,7 +310,8 @@ export default class ContentClient {
 
     this.log.info(`Getting redirects for ${this.site.getId()}`);
 
-    const redirects = await this.rawClient.getRedirects();
+    const redirectsFile = this.rawClient.getRedirects();
+    const redirects = await redirectsFile.get();
     this.#logDuration('getRedirects', startTime);
 
     return redirects;
@@ -295,8 +326,8 @@ export default class ContentClient {
 
     this.log.info(`Updating redirects for ${this.site.getId()}`);
 
-    const currentRedirects = await this.getRedirects();
-
+    const redirectsFile = this.rawClient.getRedirects();
+    const currentRedirects = await redirectsFile.get();
     // validate combination of existing and new redirects
     const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects, this.log);
     if (cleanNewRedirects.length === 0) {
@@ -309,7 +340,7 @@ export default class ContentClient {
       return;
     }
 
-    const response = await this.rawClient.appendRedirects(noCycleRedirects);
+    const response = await redirectsFile.append(noCycleRedirects);
     if (response.status !== 200) {
       throw new Error('Failed to update redirects');
     }

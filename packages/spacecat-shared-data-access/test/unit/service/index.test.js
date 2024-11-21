@@ -84,6 +84,7 @@ describe('Data Access Object Tests', () => {
     'createNewImportJob',
     'updateImportJob',
     'getImportJobsByDateRange',
+    'removeImportJob',
   ];
 
   const importUrlFunctions = [
@@ -103,12 +104,20 @@ describe('Data Access Object Tests', () => {
   const apiKeyFunctions = [
     'getApiKeyByHashedApiKey',
     'createNewApiKey',
+    'updateApiKey',
+    'getApiKeysByImsUserIdAndImsOrgId',
+    'getApiKeyById',
+  ];
+
+  const electroServiceFunctions = [
+    'Opportunity',
+    'Suggestion',
   ];
 
   let dao;
 
   before(() => {
-    dao = createDataAccess();
+    dao = createDataAccess({ tableNameData: 'test' });
   });
 
   it('contains all known audit functions', () => {
@@ -171,7 +180,9 @@ describe('Data Access Object Tests', () => {
       ...importJobFunctions,
       ...importUrlFunctions,
       ...experimentFunctions,
-      ...apiKeyFunctions]);
+      ...apiKeyFunctions,
+      ...electroServiceFunctions,
+    ]);
     Object.keys(dao).forEach((funcName) => {
       expect(expectedFunctions).to.include(funcName);
     });

@@ -101,12 +101,39 @@ following UTC time offsets format.</p>
 corresponds to a column and its value in the CSV. The output is a UTF-8
 encoded Buffer that represents the CSV file content.</p>
 </dd>
+<dt><a href="#logWrapper">logWrapper(fn)</a> ⇒ <code>function</code></dt>
+<dd><p>A higher-order function that wraps a given function and enhances logging by appending
+a <code>jobId</code> to log messages when available. This improves traceability of logs associated
+with specific jobs or processes.</p>
+<p>The wrapper checks if a <code>log</code> object exists in the <code>context</code> and whether the <code>message</code>
+contains a <code>jobId</code>. If found, log methods (e.g., <code>info</code>, <code>error</code>, etc.) will prepend the
+<code>jobId</code> to all log statements where <code>context.contextualLog</code> is used. If no <code>jobId</code> is found,
+logging will remain unchanged.</p>
+</dd>
 <dt><a href="#s3Wrapper">s3Wrapper(fn)</a> ⇒ <code>function</code></dt>
 <dd><p>Adds an S3Client instance and bucket to the context.</p>
 </dd>
 <dt><a href="#sqsEventAdapter">sqsEventAdapter(fn)</a> ⇒ <code>function</code></dt>
 <dd><p>Wrapper to turn an SQS record into a function param
 Inspired by <a href="https://github.com/adobe/helix-admin/blob/main/src/index.js#L108-L133">https://github.com/adobe/helix-admin/blob/main/src/index.js#L108-L133</a></p>
+</dd>
+<dt><a href="#createSubsegment">createSubsegment(parentSegment, hostname)</a> ⇒ <code>Object</code></dt>
+<dd><p>Creates a subsegment for a given hostname based on whether the parent segment is traced or not.</p>
+</dd>
+<dt><a href="#setTraceHeaders">setTraceHeaders(request, parentSegment, subSegment)</a></dt>
+<dd><p>Sets the AWS X-Ray trace headers on the request object.</p>
+</dd>
+<dt><a href="#setSubSegmentFlagsByStatusCode">setSubSegmentFlagsByStatusCode(subSegment, status)</a></dt>
+<dd><p>Adds flags to the given subsegment based on the status code of the response.</p>
+</dd>
+<dt><a href="#addFetchRequestDataToSegment">addFetchRequestDataToSegment(segment, request, [response])</a></dt>
+<dd><p>Adds request and response data to the given segment for AWS X-Ray tracing.</p>
+</dd>
+<dt><a href="#handleSubSegmentError">handleSubSegmentError(subSegment, request, error)</a></dt>
+<dd><p>Adds error data to the given segment for AWS X-Ray tracing.</p>
+</dd>
+<dt><a href="#tracingFetch">tracingFetch(url, options)</a> ⇒ <code>Promise.&lt;Response&gt;</code></dt>
+<dd><p>Performs a fetch request and adds AWS X-Ray tracing, including request/response tracking.</p>
 </dd>
 <dt><a href="#prependSchema">prependSchema(url)</a> ⇒ <code>string</code></dt>
 <dd><p>Prepends &#39;https://&#39; schema to the URL if it&#39;s not already present.</p>
@@ -134,6 +161,11 @@ Inspired by <a href="https://github.com/adobe/helix-admin/blob/main/src/index.js
 SQS utility to send messages to SQS
 
 **Kind**: global class  
+
+* [SQS](#SQS)
+    * [new SQS(region, log)](#new_SQS_new)
+    * [.sendMessage(queueUrl, message, messageGroupId)](#SQS+sendMessage) ⇒ <code>Promise.&lt;void&gt;</code>
+
 <a name="new_SQS_new"></a>
 
 ### new SQS(region, log)
@@ -142,6 +174,19 @@ SQS utility to send messages to SQS
 | --- | --- | --- |
 | region | <code>string</code> | AWS region |
 | log | <code>object</code> | log object |
+
+<a name="SQS+sendMessage"></a>
+
+### sqS.sendMessage(queueUrl, message, messageGroupId) ⇒ <code>Promise.&lt;void&gt;</code>
+Send a message to an SQS queue. For FIFO queues, messageGroupId is required.
+
+**Kind**: instance method of [<code>SQS</code>](#SQS)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| queueUrl | <code>string</code> | The URL of the SQS queue. |
+| message | <code>object</code> | The message body to send. |
+| messageGroupId | <code>string</code> | (Optional) The message group ID for FIFO queues. |
 
 <a name="createFormData"></a>
 
@@ -491,6 +536,29 @@ encoded Buffer that represents the CSV file content.
 | --- | --- | --- |
 | data | <code>Array.&lt;Object&gt;</code> | An array of JSON objects to be converted into CSV format. |
 
+<a name="logWrapper"></a>
+
+## logWrapper(fn) ⇒ <code>function</code>
+A higher-order function that wraps a given function and enhances logging by appending
+a `jobId` to log messages when available. This improves traceability of logs associated
+with specific jobs or processes.
+
+The wrapper checks if a `log` object exists in the `context` and whether the `message`
+contains a `jobId`. If found, log methods (e.g., `info`, `error`, etc.) will prepend the
+`jobId` to all log statements where `context.contextualLog` is used. If no `jobId` is found,
+logging will remain unchanged.
+
+**Kind**: global function  
+**Returns**: <code>function</code> - - A wrapped function that enhances
+logging and returns the result of the original function.
+
+`context.contextualLog` will include logging methods with `jobId` prefixed, or fall back
+to the existing `log` object if no `jobId` is provided.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| fn | <code>function</code> | The original function to be wrapped, called with the provided message and context after logging enhancement. |
+
 <a name="s3Wrapper"></a>
 
 ## s3Wrapper(fn) ⇒ <code>function</code>
@@ -513,6 +581,83 @@ Inspired by https://github.com/adobe/helix-admin/blob/main/src/index.js#L108-L13
 | Param | Type |
 | --- | --- |
 | fn | <code>UniversalAction</code> | 
+
+<a name="createSubsegment"></a>
+
+## createSubsegment(parentSegment, hostname) ⇒ <code>Object</code>
+Creates a subsegment for a given hostname based on whether the parent segment is traced or not.
+
+**Kind**: global function  
+**Returns**: <code>Object</code> - The created subsegment.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| parentSegment | <code>Object</code> | The parent X-Ray segment. |
+| hostname | <code>string</code> | The hostname to associate with the subsegment. |
+
+<a name="setTraceHeaders"></a>
+
+## setTraceHeaders(request, parentSegment, subSegment)
+Sets the AWS X-Ray trace headers on the request object.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| request | <code>Request</code> | The request object on which headers are set. |
+| parentSegment | <code>Object</code> | The parent X-Ray segment. |
+| subSegment | <code>Object</code> | The subsegment to include in the headers. |
+
+<a name="setSubSegmentFlagsByStatusCode"></a>
+
+## setSubSegmentFlagsByStatusCode(subSegment, status)
+Adds flags to the given subsegment based on the status code of the response.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| subSegment | <code>Object</code> | The X-Ray subsegment to which flags are added. |
+| status | <code>number</code> | The status code of the response. |
+
+<a name="addFetchRequestDataToSegment"></a>
+
+## addFetchRequestDataToSegment(segment, request, [response])
+Adds request and response data to the given segment for AWS X-Ray tracing.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| segment | <code>Object</code> | The X-Ray segment to which request and response data are added. |
+| request | <code>Request</code> | The original request object. |
+| [response] | <code>Response</code> | The response object (if available). |
+
+<a name="handleSubSegmentError"></a>
+
+## handleSubSegmentError(subSegment, request, error)
+Adds error data to the given segment for AWS X-Ray tracing.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| subSegment | <code>Object</code> | The X-Ray subsegment to which error data is added. |
+| request | <code>Request</code> | The original request object. |
+| error | <code>Error</code> | The error object. |
+
+<a name="tracingFetch"></a>
+
+## tracingFetch(url, options) ⇒ <code>Promise.&lt;Response&gt;</code>
+Performs a fetch request and adds AWS X-Ray tracing, including request/response tracking.
+
+**Kind**: global function  
+**Returns**: <code>Promise.&lt;Response&gt;</code> - The response from the fetch request.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| url | <code>string</code> | The URL for the request. |
+| options | <code>Object</code> | Options to be passed to the fetch call. |
 
 <a name="prependSchema"></a>
 

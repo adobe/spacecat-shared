@@ -11,16 +11,18 @@
  */
 
 import { createImportUrl } from '../models/importer/import-url.js';
+import { convertDateToEpochSeconds, parseEpochToDate } from './dto-utils.js';
 
 /**
- * Data Transfer Object for ImportUrl
+ * The ImportUrlDto is a helper that can convert an ImportUrl object to a DynamoDB item and
+ * vice versa.
  */
-
 export const ImportUrlDto = {
 
   /**
-     * Converts an importUrl object to a DynamoDB item
-     */
+   * Converts an ImportUrl object to a DynamoDB item.
+   * @returns {object} The new DynamoDB item.
+   */
   toDynamoItem: (importUrl) => ({
     id: importUrl.getId(),
     jobId: importUrl.getJobId(),
@@ -29,11 +31,14 @@ export const ImportUrlDto = {
     reason: importUrl.getReason(),
     path: importUrl.getPath(),
     file: importUrl.getFile(),
+    expiresAt: convertDateToEpochSeconds(importUrl.getExpiresAt()),
   }),
 
   /**
-     * Converts a DynamoDB item into an ImportUrl object
-     */
+   * Converts a DynamoDB item into an ImportUrl object.
+   * @param {object} dynamoItem - The DynamoDB item to convert.
+   * @returns {ImportUrl} - The ImportUrl object.
+   */
   fromDynamoItem: (dynamoItem) => {
     const importUrlData = {
       id: dynamoItem.id,
@@ -43,6 +48,7 @@ export const ImportUrlDto = {
       reason: dynamoItem.reason,
       path: dynamoItem.path,
       file: dynamoItem.file,
+      expiresAt: parseEpochToDate(dynamoItem.expiresAt),
     };
     return createImportUrl(importUrlData);
   },

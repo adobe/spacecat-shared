@@ -10,17 +10,20 @@
  * governing permissions and limitations under the License.
  */
 
-import { classifyTrafficSource } from '../common/traffic.js';
+import { classifyTraffic } from '../common/traffic.js';
 
 const MAIN_TYPES = ['total', 'paid', 'earned', 'owned'];
 
-function collectByUrlAndTrafficSource(acc, { url, weight, trafficSource }) {
+function collectByUrlAndTrafficSource(acc, {
+  url, weight, trafficSource,
+}) {
   acc[url] = acc[url] || {
     total: 0, owned: 0, earned: 0, paid: 0,
   };
   acc[url][trafficSource] = (acc[url][trafficSource] || 0) + weight;
   acc[url].total += weight;
-  acc[url][trafficSource.split(':')[0]] += weight;
+  const trafficType = trafficSource.split(':')[0];
+  acc[url][trafficType] += weight;
   return acc;
 }
 
@@ -37,16 +40,21 @@ function transformFormat(trafficSources) {
   }));
 }
 
+function formatTraffic(row) {
+  const {
+    url, weight, type, category, vendor,
+  } = row;
+  return {
+    url,
+    weight,
+    trafficSource: vendor ? `${type}:${category}:${vendor}` : `${type}:${category}`,
+  };
+}
+
 function handler(bundles) {
   const trafficSources = bundles
-    .map((bundle) => {
-      const { type, category } = classifyTrafficSource(bundle);
-      return {
-        url: bundle.url,
-        weight: bundle.weight,
-        trafficSource: `${type}:${category}`,
-      };
-    })
+    .map(classifyTraffic)
+    .map(formatTraffic)
     .reduce(collectByUrlAndTrafficSource, {});
 
   return transformFormat(trafficSources)

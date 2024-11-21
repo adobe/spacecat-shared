@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import AWSXray from 'aws-xray-sdk';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 
@@ -28,7 +29,7 @@ import removeItem from './modules/removeItem.js';
  */
 const createClient = (
   log = console,
-  dbClient = new DynamoDB(),
+  dbClient = AWSXray.captureAWSv3Client(new DynamoDB()),
   docClient = DynamoDBDocument.from(dbClient, {
     marshallOptions: {
       convertEmptyValues: true,

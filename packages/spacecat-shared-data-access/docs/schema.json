@@ -1,14 +1,110 @@
 {
   "ModelName": "StarCatalogue",
   "ModelMetadata": {
-    "Author": "Dominique Jäggi",
+    "Author": "SpaceCat Team",
     "DateCreated": "Nov 23, 2023, 07:00 AM",
-    "DateLastModified": "Jul 11, 2024, 04:18 PM",
-    "Description": "",
+    "DateLastModified": "Nov 15, 2024, 2:00 PM",
     "AWSService": "Amazon DynamoDB",
     "Version": "3.0"
   },
   "DataModel": [
+    {
+      "TableName": "spacecat-services-data",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "pk",
+          "AttributeType": "S"
+        },
+        "SortKey": {
+          "AttributeName": "sk",
+          "AttributeType": "S"
+        }
+      },
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "gsi1pk",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "gsi1sk",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "gsi2pk",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "gsi2sk",
+          "AttributeType": "S"
+        }
+      ],
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "spacecat-data-opportunity-by-site",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "gsi1pk",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "gsi1sk",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-data-opportunity-by-site-and-status",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "gsi2pk",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "gsi2sk",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-data-suggestion-by-opportunity",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "gsi1pk",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "gsi1sk",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-data-suggestion-by-opportunity-and-status",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "gsi2pk",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "gsi2sk",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        }
+      ]
+    },
     {
       "TableName": "spacecat-services-sites",
       "KeyAttributes": {
@@ -555,7 +651,7 @@
         },
         "SortKey": {
           "AttributeName": "version",
-          "AttributeType": "S"
+          "AttributeType": "N"
         }
       },
       "NonKeyAttributes": [
@@ -976,12 +1072,24 @@
           "AttributeType": "N"
         },
         {
+          "AttributeName": "redirectCount",
+          "AttributeType": "N"
+        },
+        {
           "AttributeName": "urlCount",
           "AttributeType": "N"
         },
         {
           "AttributeName": "initiatedBy",
           "AttributeType": "M"
+        },
+        {
+          "AttributeName": "hasCustomHeaders",
+          "AttributeType": "B"
+        },
+        {
+          "AttributeName": "hasCustomImportJs",
+          "AttributeType": "B"
         }
       ],
       "GlobalSecondaryIndexes": [
@@ -994,6 +1102,22 @@
             },
             "SortKey": {
               "AttributeName": "status",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-services-all-import-jobs-by-date-range",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "GSI1PK",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "startTime",
               "AttributeType": "S"
             }
           },
@@ -1060,6 +1184,10 @@
         }
       },
       "NonKeyAttributes": [
+        {
+          "AttributeName": "expiresAt",
+          "AttributeType": "N"
+        },
         {
           "AttributeName": "file",
           "AttributeType": "S"
@@ -1178,8 +1306,42 @@
           "AttributeType": "S"
         },
         {
+          "AttributeName": "deletedAt",
+          "AttributeType": "S"
+        },
+        {
           "AttributeName": "scopes",
           "AttributeType": "M"
+        }
+      ],
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "spacecat-services-api-key-by-ims-user-id-and-ims-org-id",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "imsUserId",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "imsOrgId",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-services-api-key-by-hashed-api-key",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "hashedApiKey",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
         }
       ],
       "DataAccess": {

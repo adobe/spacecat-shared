@@ -31,6 +31,10 @@ export const configSchema = Joi.object({
       targetURL: Joi.string().optional(),
     })).optional(),
     includedURLs: Joi.array().items(Joi.string()),
+    groupedURLs: Joi.array().items(Joi.object({
+      name: Joi.string(),
+      pattern: Joi.string(),
+    })).optional(),
   }).unknown(true)).unknown(true),
 }).unknown(true);
 
@@ -57,14 +61,16 @@ export const Config = (data = {}) => {
   const state = { ...validConfig };
   const self = { state };
   self.getSlackConfig = () => state.slack;
-  self.getSlackMentions = (type) => state?.handlers[type]?.mentions?.slack;
-  self.getHandlerConfig = (type) => state?.handlers[type];
+  self.isInternalCustomer = () => state?.slack?.workspace === 'internal';
+  self.getSlackMentions = (type) => state?.handlers?.[type]?.mentions?.slack;
+  self.getHandlerConfig = (type) => state?.handlers?.[type];
   self.getHandlers = () => state.handlers;
   self.getImports = () => state.imports;
-  self.getExcludedURLs = (type) => state?.handlers[type]?.excludedURLs;
-  self.getManualOverwrites = (type) => state?.handlers[type]?.manualOverwrites;
-  self.getFixedURLs = (type) => state?.handlers[type]?.fixedURLs;
-  self.getIncludedURLs = (type) => state?.handlers[type]?.includedURLs;
+  self.getExcludedURLs = (type) => state?.handlers?.[type]?.excludedURLs;
+  self.getManualOverwrites = (type) => state?.handlers?.[type]?.manualOverwrites;
+  self.getFixedURLs = (type) => state?.handlers?.[type]?.fixedURLs;
+  self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
+  self.getGroupedURLs = (type) => state?.handlers?.[type]?.groupedURLs;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -72,6 +78,10 @@ export const Config = (data = {}) => {
       workspace,
       invitedUserCount,
     };
+  };
+
+  self.updateImports = (imports) => {
+    state.imports = imports;
   };
 
   self.updateSlackMentions = (type, mentions) => {
@@ -97,6 +107,14 @@ export const Config = (data = {}) => {
     state.handlers = state.handlers || {};
     state.handlers[type] = state.handlers[type] || {};
     state.handlers[type].fixedURLs = fixedURLs;
+  };
+
+  self.updateGroupedURLs = (type, groupedURLs) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].groupedURLs = groupedURLs;
+
+    validateConfiguration(state);
   };
 
   return Object.freeze(self);

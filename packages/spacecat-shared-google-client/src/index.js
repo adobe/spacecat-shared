@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import AWSXray from 'aws-xray-sdk';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
@@ -65,7 +66,7 @@ export default class GoogleClient {
     }
 
     const customerSecret = resolveCustomerSecretsName(baseURL, context);
-    const client = new SecretsManagerClient({});
+    const client = AWSXray.captureAWSv3Client(new SecretsManagerClient({}));
 
     try {
       const command = new GetSecretValueCommand({ SecretId: customerSecret });
@@ -94,7 +95,7 @@ export default class GoogleClient {
   }
 
   async getOrganicSearchData(startDate, endDate, dimensions = ['date'], rowLimit = 1000, startRow = 0) {
-    if (!isValidUrl(this.siteUrl) && !this.siteUrl.startsWith('sc-domain')) {
+    if (!isValidUrl(this.siteUrl) && !this.siteUrl?.startsWith('sc-domain')) {
       throw new Error(`Error retrieving organic search data from Google API: Invalid site URL in secret (${this.siteUrl})`);
     }
     if (!isValidDate(startDate) || !isValidDate(endDate)) {

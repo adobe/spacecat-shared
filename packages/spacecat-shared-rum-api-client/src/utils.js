@@ -12,7 +12,7 @@
 
 import { context as h2, h1 } from '@adobe/fetch';
 import { utils } from '@adobe/rum-distiller';
-import { classifyTrafficSource } from './common/traffic.js';
+import { classifyTraffic } from './common/traffic.js';
 
 export const DELIMITER = '≡';
 
@@ -22,7 +22,7 @@ export const trafficSeriesFn = (memo, type) => (bundle) => {
   const key = generateKey(bundle.url, bundle.id, bundle.time);
   if (!memo[key]) {
     // eslint-disable-next-line no-param-reassign
-    memo[key] = classifyTrafficSource(bundle).type;
+    memo[key] = classifyTraffic(bundle).type;
   }
 
   return type === memo[key] ? bundle.weight : 0;

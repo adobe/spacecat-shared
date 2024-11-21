@@ -41,7 +41,8 @@ describe('Query functions', () => {
 
   it('crunches form vitals', async () => {
     const formVitalsResult = await formVitals.handler(bundlesWithForm.rumBundles);
-    expect(expectedFormVitalsResult).to.eql(formVitalsResult);
+    const sortByUrl = (a, b) => a.url.localeCompare(b.url); // array of json objects > eql issues
+    expect(expectedFormVitalsResult.sort(sortByUrl)).to.eql(formVitalsResult.sort(sortByUrl));
   });
 
   it('crunches 404 data', async () => {

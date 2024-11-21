@@ -176,6 +176,15 @@ class BaseCollection {
     }
   }
 
+  /**
+   * Updates a collection of entities in the database using a batch write (put) operation.
+   *
+   * @async
+   * @param {Array<BaseModel>} items - An array of model instances to be updated.
+   * @return {Promise<void>} - A promise that resolves when the update operation is complete.
+   * @throws {Error} - Throws an error if the update operation fails.
+   * @protected
+   */
   async _saveMany(items) {
     if (!Array.isArray(items) || items.length === 0) {
       const message = `Failed to save many [${this.entityName}]: items must be a non-empty array`;

@@ -38,7 +38,7 @@ class SuggestionCollection extends BaseCollection {
    * Retrieves all Suggestion entities by their associated Opportunity ID.
    * @async
    * @param {string} opportunityId - The unique identifier of the associated Opportunity.
-   * @returns {Promise<Array<Suggestion>>} - A promise that resolves to an array of Suggestion
+   * @returns {Promise<Suggestion[]>} - A promise that resolves to an array of Suggestion
    * instances related to the given Opportunity ID.
    * @throws {Error} - Throws an error if the opportunityId is not provided or if the query fails.
    */
@@ -78,6 +78,9 @@ class SuggestionCollection extends BaseCollection {
 
   /**
    * Updates the status of multiple given suggestions.
+   * Saves the updated suggestions to the database automatically.
+   * You don't need to call save() on the suggestions after calling this method.
+   * @async
    * @param {Suggestion[]} suggestions - An array of Suggestion instances to update.
    * @param {string} status - The new status to set for the suggestions.
    * @return {Promise<*>} - A promise that resolves to the updated suggestions.

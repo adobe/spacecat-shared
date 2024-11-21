@@ -96,3 +96,54 @@ export const upsertExperiment = async (
 
   return experiment;
 };
+
+/**
+ * Removes all given experiments.
+ *
+ * @param {DynamoDbClient} dynamoClient - the dynamo client.
+ * @param {DataAccessConfig} config - the data access config.
+ * @param {Logger} log - the logger.
+ * @param {ReadonlyArray<SiteCandidate>} experiments - Array of experiments to be deleted
+ * @returns {Promise<void>} - A promise that resolves when all key events are removed
+ */
+export const removeExperiments = async (
+  dynamoClient,
+  config,
+  log,
+  experiments,
+) => {
+  const tableName = config.tableNameExperiments;
+  const removeExperimentPromises = experiments.map((experiment) => dynamoClient.removeItem(
+    tableName,
+    {
+      id: experiment.getSiteId(),
+      SK: `${experiment.getExperimentId()}#${experiment.getUrl()}`,
+    },
+  ));
+
+  await Promise.all(removeExperimentPromises);
+};
+/**
+ * Removes all experiments for a given site.
+ *
+ * @param {DynamoDbClient} dynamoClient - the dynamo client.
+ * @param {DataAccessConfig} config - the data access config.
+ * @param {Logger} log - the logger.
+ * @param {String} siteId - ID of the site to remove experiments.
+ */
+export const removeExperimentsForSite = async (
+  dynamoClient,
+  config,
+  log,
+  siteId,
+) => {
+  try {
+    const experiments = await getExperiments(dynamoClient, config, log, siteId);
+    if (experiments != null && experiments.length > 0) {
+      await removeExperiments(dynamoClient, config, log, experiments);
+    }
+  } catch (error) {
+    log.error(`Error while removing experiments for site ${siteId}: ${error.message}`);
+    throw error;
+  }
+};

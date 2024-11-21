@@ -95,3 +95,25 @@ export const updateSiteCandidate = async (
 
   return siteCandidate;
 };
+
+/**
+ * Removes a site candidate.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The site candidate object to be updated.
+ * @param {String} baseUrl - Base Url of the site candidate to remove.
+ * @returns {Promise<void>} - The updated site candidate.
+ */
+export const removeSiteCandidate = async (
+  dynamoClient,
+  config,
+  log,
+  baseUrl,
+) => {
+  const tableName = config.tableNameSiteCandidates;
+  await dynamoClient.removeItem(
+    tableName,
+    { baseURL: baseUrl },
+  );
+};

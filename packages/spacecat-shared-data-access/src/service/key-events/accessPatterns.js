@@ -90,3 +90,51 @@ export const removeKeyEvent = async (
     throw error;
   }
 };
+
+/**
+ * Removes all given key events
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The logger.
+ * @param {Array<KeyEvent>} keyEvents - An array of KeyEvents to remove.
+ * @returns {Promise<void>} - A promise that resolves when all key events are removed
+ */
+export const removeKeyEvents = async (
+  dynamoClient,
+  config,
+  log,
+  keyEvents,
+) => {
+  const tableName = config.tableNameKeyEvents;
+  const removeKeyEventPromises = keyEvents.map((keyEvent) => dynamoClient.removeItem(
+    tableName,
+    { id: keyEvent.getId() },
+  ));
+
+  await Promise.all(removeKeyEventPromises);
+};
+
+/**
+ * Removes all key events for a specified site
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - The logger.
+ * @param {string} siteId - ID of the site to remove the key events for.
+ */
+export const removeKeyEventsForSite = async (
+  dynamoClient,
+  config,
+  log,
+  siteId,
+) => {
+  try {
+    const keyEvents = await getKeyEventsForSite(dynamoClient, config, log, siteId);
+    if (keyEvents.length > 0) {
+      await removeKeyEvents(dynamoClient, config, log, keyEvents);
+    }
+  } catch (error) {
+    log.error(`Error while removing key events for site ${siteId}: ${error.message}`);
+    throw error;
+  }
+};

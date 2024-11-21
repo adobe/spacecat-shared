@@ -14,6 +14,7 @@ import {
   addKeyEvent,
   getKeyEventsForSite,
   removeKeyEvent,
+  removeKeyEventsForSite,
 } from './accessPatterns.js';
 
 export const keyEventFunctions = (dynamoClient, config, log) => ({
@@ -34,5 +35,11 @@ export const keyEventFunctions = (dynamoClient, config, log) => ({
     config,
     log,
     keyEventId,
+  ),
+  removeKeyEventsForSite: (siteId) => removeKeyEventsForSite(
+    dynamoClient,
+    config,
+    log,
+    siteId,
   ),
 });

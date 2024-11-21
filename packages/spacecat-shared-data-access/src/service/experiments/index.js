@@ -14,6 +14,7 @@ import {
   getExperiments,
   upsertExperiment,
   getExperiment,
+  removeExperimentsForSite,
 } from './accessPatterns.js';
 
 export const experimentFunctions = (dynamoClient, config, log) => ({
@@ -36,5 +37,11 @@ export const experimentFunctions = (dynamoClient, config, log) => ({
     siteId,
     experimentId,
     url,
+  ),
+  removeExperimentsForSite: (siteId) => removeExperimentsForSite(
+    dynamoClient,
+    config,
+    log,
+    siteId,
   ),
 });

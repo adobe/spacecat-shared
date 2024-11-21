@@ -14,7 +14,7 @@ import {
   getSiteCandidateByBaseURL,
   upsertSiteCandidate,
   exists,
-  updateSiteCandidate,
+  updateSiteCandidate, removeSiteCandidate,
 } from './accessPatterns.js';
 
 export const siteCandidateFunctions = (dynamoClient, config, log) => ({
@@ -39,5 +39,11 @@ export const siteCandidateFunctions = (dynamoClient, config, log) => ({
     dynamoClient,
     config,
     siteCandidateData,
+  ),
+  removeSiteCandidate: (baseURL) => removeSiteCandidate(
+    dynamoClient,
+    config,
+    log,
+    baseURL,
   ),
 });

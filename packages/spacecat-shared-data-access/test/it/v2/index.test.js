@@ -424,5 +424,21 @@ describe('Opportunity & Suggestion IT', function () {
         expect(record).to.eql(data[index]);
       });
     });
+
+    it('updates the status of multiple suggestions', async () => {
+      const { Suggestion } = dataAccess;
+
+      const suggestions = sampleData.suggestions.slice(0, 3);
+
+      await Suggestion.bulkUpdateStatus(suggestions, 'APPROVED');
+
+      const updatedSuggestions = await Promise.all(
+        suggestions.map((suggestion) => Suggestion.findById(suggestion.getId())),
+      );
+
+      updatedSuggestions.forEach((suggestion) => {
+        expect(suggestion.getStatus()).to.equal('APPROVED');
+      });
+    });
   });
 });

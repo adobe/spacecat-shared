@@ -175,6 +175,26 @@ class BaseCollection {
       throw error;
     }
   }
+
+  async _saveMany(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      const message = `Failed to save many [${this.entityName}]: items must be a non-empty array`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    try {
+      const updates = items.map((item) => item.record);
+      const response = await this.entity.put(updates).go();
+
+      if (response.unprocessed) {
+        this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
+      }
+    } catch (error) {
+      this.log.error(`Failed to save many [${this.entityName}]`, error);
+      throw error;
+    }
+  }
 }
 
 export default BaseCollection;

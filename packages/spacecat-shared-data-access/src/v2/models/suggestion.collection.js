@@ -75,6 +75,30 @@ class SuggestionCollection extends BaseCollection {
 
     return this._createInstances(records);
   }
+
+  /**
+   * Updates the status of multiple given suggestions.
+   * @param {Suggestion[]} suggestions - An array of Suggestion instances to update.
+   * @param {string} status - The new status to set for the suggestions.
+   * @return {Promise<*>} - A promise that resolves to the updated suggestions.
+   */
+  async bulkUpdateStatus(suggestions, status) {
+    if (!Array.isArray(suggestions)) {
+      throw new Error('Suggestions must be an array');
+    }
+
+    if (!hasText(status)) {
+      throw new Error('Status is required');
+    }
+
+    suggestions.forEach((suggestion) => {
+      suggestion.setStatus(status);
+    });
+
+    await this._saveMany(suggestions);
+
+    return suggestions;
+  }
 }
 
 export default SuggestionCollection;

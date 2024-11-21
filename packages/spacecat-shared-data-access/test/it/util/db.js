@@ -28,6 +28,7 @@ async function waitForDynamoDBStartup(url, timeout = 20000, interval = 500) {
         return;
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.log('DynamoDB Local not yet started', error.message);
     }
     // eslint-disable-next-line no-await-in-loop

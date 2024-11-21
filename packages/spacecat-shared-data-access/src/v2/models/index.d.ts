@@ -26,7 +26,7 @@ export interface BaseModel {
  */
 export interface Opportunity extends BaseModel {
   // eslint-disable-next-line no-use-before-define
-  addSuggestions(suggestions: Array<object>): Promise<Array<Suggestion>>;
+  addSuggestions(suggestions: object[]): Promise<Suggestion[]>;
   // eslint-disable-next-line no-use-before-define
   getSuggestions(): Promise<Suggestion[]>;
   getSiteId(): string;
@@ -76,7 +76,7 @@ export interface Suggestion extends BaseModel {
 export interface BaseCollection<T extends BaseModel> {
   findById(id: string): Promise<T>;
   create(item: object): Promise<T>;
-  createMany(items: object[]): Promise<Array<T>>;
+  createMany(items: object[]): Promise<T[]>;
 }
 
 /**
@@ -93,6 +93,7 @@ export interface OpportunityCollection extends BaseCollection<Opportunity> {
 export interface SuggestionCollection extends BaseCollection<Suggestion> {
   allByOpportunityId(opportunityId: string): Promise<Suggestion[]>;
   allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion[]>;
+  bulkUpdateStatus(suggestions: Suggestion[], status: string): Promise<Suggestion[]>;
 }
 
 /**

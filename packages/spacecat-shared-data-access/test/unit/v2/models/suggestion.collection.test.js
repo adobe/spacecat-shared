@@ -13,25 +13,43 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
+import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
 import SuggestionCollection from '../../../../src/v2/models/suggestion.collection.js';
 import Suggestion from '../../../../src/v2/models/suggestion.model.js';
+import SuggestionSchema from '../../../../src/v2/schema/suggestion.schema.js';
 
 chaiUse(chaiAsPromised);
+
+const { attributes } = new Entity(SuggestionSchema).model.schema;
 
 const mockElectroService = {
   entities: {
     suggestion: {
       model: {
         name: 'suggestion',
+        schema: { attributes },
+        indexes: {
+          primary: {
+            pk: {
+              field: 'pk',
+              composite: ['suggestionId'],
+            },
+          },
+        },
       },
       query: {
         byOpportunityId: stub(),
         byOpportunityIdAndStatus: stub(),
       },
-      put: stub(),
+      put: stub().returns({
+        go: stub().resolves({}),
+      }),
+      patch: stub().returns({
+        set: stub(),
+      }),
     },
   },
 };
@@ -140,6 +158,36 @@ describe('SuggestionCollection', () => {
 
     it('throws an error if status is not provided', async () => {
       await expect(suggestionCollectionInstance.allByOpportunityIdAndStatus('op67890', ''))
+        .to.be.rejectedWith('Status is required');
+    });
+  });
+
+  describe('bulkUpdateStatus', () => {
+    it('updates the status of multiple suggestions', async () => {
+      const mockSuggestions = [mockSuggestionModel];
+      const mockStatus = 'NEW';
+
+      await suggestionCollectionInstance.bulkUpdateStatus(mockSuggestions, mockStatus);
+
+      expect(mockElectroService.entities.suggestion.put.calledOnce).to.be.true;
+      expect(mockElectroService.entities.suggestion.put.firstCall.args[0]).to.deep.equal([{
+        suggestionId: 's12345',
+        opportunityId: 'op67890',
+        data: {
+          title: 'Test Suggestion',
+          description: 'This is a test suggestion.',
+        },
+        status: 'NEW',
+      }]);
+    });
+
+    it('throws an error if suggestions is not an array', async () => {
+      await expect(suggestionCollectionInstance.bulkUpdateStatus({}, 'NEW'))
+        .to.be.rejectedWith('Suggestions must be an array');
+    });
+
+    it('throws an error if status is not provided', async () => {
+      await expect(suggestionCollectionInstance.bulkUpdateStatus([mockSuggestionModel], ''))
         .to.be.rejectedWith('Status is required');
     });
   });

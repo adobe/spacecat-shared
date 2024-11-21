@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { classifyTrafficSource, extractTrafficHints } from '../common/traffic.js';
+import { classifyTraffic } from '../common/traffic.js';
 
 const MAIN_TYPES = ['total', 'paid', 'earned', 'owned'];
 
@@ -40,21 +40,21 @@ function transformFormat(trafficSources) {
   }));
 }
 
+function formatTraffic(row) {
+  const {
+    url, weight, type, category, vendor,
+  } = row;
+  return {
+    url,
+    weight,
+    trafficSource: vendor ? `${type}:${category}:${vendor}` : `${type}:${category}`,
+  };
+}
+
 function handler(bundles) {
   const trafficSources = bundles
-    .map(extractTrafficHints)
-    .map((row) => {
-      const {
-        type,
-        category,
-        vendor,
-      } = classifyTrafficSource(row.url, row.referrer, row.utmSource, row.utmMedium, row.tracking);
-      return {
-        url: row.url,
-        weight: row.weight,
-        trafficSource: vendor ? `${type}:${category}:${vendor}` : `${type}:${category}`,
-      };
-    })
+    .map(classifyTraffic)
+    .map(formatTraffic)
     .reduce(collectByUrlAndTrafficSource, {});
 
   return transformFormat(trafficSources)

@@ -10,62 +10,36 @@
  * governing permissions and limitations under the License.
  */
 
-import { quantile } from 'd3-array';
-import { pageviewsByUrl } from '../common/aggregateFns.js';
-import { FlatBundle } from '../common/flat-bundle.js';
-
-const CWV_METRICS = ['lcp', 'cls', 'inp', 'ttfb'].map((metric) => `cwv-${metric}`);
-
-function collectCWVs(groupedByUrlIdTime) {
-  const { url, items: itemsByUrl } = groupedByUrlIdTime;
-
-  // first level: grouped by url
-  const CWVs = itemsByUrl.reduce((acc, { items: itemsById }) => {
-    // second level: grouped by id
-    const itemsByTime = itemsById.flatMap((itemById) => itemById.items);
-    // third level: grouped by time
-    const maximums = itemsByTime.reduce((values, item) => {
-      // each session (id-time) can contain multiple measurement for the same metric
-      // we need to find the maximum per metric type
-      // eslint-disable-next-line no-param-reassign
-      values[item.checkpoint] = Math.max(values[item.checkpoint] || 0, item.value);
-      return values;
-    }, {});
-
-    // max values per id for each metric type are collected into an array
-    CWV_METRICS.forEach((metric) => {
-      if (!acc[metric]) acc[metric] = [];
-      if (maximums[metric]) {
-        acc[metric].push(maximums[metric]);
-      }
-    });
-    return acc;
-  }, {});
-
-  return {
-    url,
-    lcp: quantile(CWVs['cwv-lcp'], 0.75) || null,
-    lcpCount: CWVs['cwv-lcp'].length,
-    cls: quantile(CWVs['cwv-cls'], 0.75) || null,
-    clsCount: CWVs['cwv-cls'].length,
-    inp: quantile(CWVs['cwv-inp'], 0.75) || null,
-    inpCount: CWVs['cwv-inp'].length,
-    ttfb: quantile(CWVs['cwv-ttfb'], 0.75) || null,
-    ttfbCount: CWVs['cwv-ttfb'].length,
-  };
-}
+import {
+  DataChunks, series, facets,
+} from '@adobe/rum-distiller';
+import { loadBundles } from '../utils.js';
 
 function handler(bundles) {
-  const pageviews = pageviewsByUrl(bundles);
+  const dataChunks = new DataChunks();
 
-  return FlatBundle.fromArray(bundles)
-    .groupBy('url', 'id', 'time')
-    .map(collectCWVs)
+  loadBundles(bundles, dataChunks);
+
+  dataChunks.addFacet('urls', facets.url);
+
+  dataChunks.addSeries('lcp', series.lcp);
+  dataChunks.addSeries('cls', series.cls);
+  dataChunks.addSeries('inp', series.inp);
+  dataChunks.addSeries('ttfb', series.ttfb);
+
+  return dataChunks.facets.urls.map((urlFacet) => ({
+    url: urlFacet.value,
+    pageviews: urlFacet.weight,
+    lcp: urlFacet.metrics.lcp.percentile(75) || null,
+    lcpCount: urlFacet.metrics.lcp.count,
+    cls: urlFacet.metrics.cls.percentile(75) || null,
+    clsCount: urlFacet.metrics.cls.count,
+    inp: urlFacet.metrics.inp.percentile(75) || null,
+    inpCount: urlFacet.metrics.inp.count,
+    ttfb: urlFacet.metrics.ttfb.percentile(75) || null,
+    ttfbCount: urlFacet.metrics.ttfb.count,
+  }))
     .filter((row) => row.lcp || row.cls || row.inp || row.ttfb) // filter out pages with no cwv data
-    .map((acc) => {
-      acc.pageviews = pageviews[acc.url];
-      return acc;
-    })
     .sort((a, b) => b.pageviews - a.pageviews); // sort desc by pageviews
 }
 

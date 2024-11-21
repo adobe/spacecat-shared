@@ -36,7 +36,7 @@ import expectedFormVitalsResult from './fixtures/expected-form-vitals-result.jso
 describe('Query functions', () => {
   it('crunches cwv data', async () => {
     const cwvResult = cwv.handler(bundles.rumBundles);
-    expect(expectedCwvResult).to.eql(cwvResult);
+    expect(cwvResult).to.eql(expectedCwvResult);
   });
 
   it('crunches form vitals', async () => {
@@ -51,7 +51,7 @@ describe('Query functions', () => {
 
   it('crunches experiment data', async () => {
     const experimentsResult = experiment.handler(bundles.rumBundles);
-    expect(expectedExperimentsResult).to.eql(experimentsResult);
+    expect(experimentsResult).to.eql(expectedExperimentsResult);
   });
 
   it('crunches variant data', async () => {
@@ -77,6 +77,6 @@ describe('Query functions', () => {
       bundlesWithTraffic.rumBundles,
       { interval: 7 },
     );
-    expect(expectedHighOrganicLowCTRResult).to.eql(highInorganicHighBounceResult);
+    expect(highInorganicHighBounceResult).to.eql(expectedHighOrganicLowCTRResult);
   });
 });

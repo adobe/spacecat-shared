@@ -90,7 +90,5 @@ function getSiteAvgCTR(bundles) {
 
 export {
   getSiteAvgCTR,
-  getCTRByUrl,
   getCTRByUrlAndVendor,
-  pageviewsByUrl,
 };

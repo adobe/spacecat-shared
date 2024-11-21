@@ -33,6 +33,12 @@ export declare const ImportUrlStatus: {
  * Represents an individual audit of a site.
  */
 export interface Audit {
+
+  /**
+   * Retrieves the ID of the audit.
+   * @returns {string} The audit ID.
+   */
+  getId: () => string;
   /**
    * Retrieves the site ID associated with this audit.
    * @returns {string} The site ID.

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.57.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.57.0...@adobe/spacecat-shared-data-access-v1.57.1) (2024-11-22)
+
+
+### Bug Fixes
+
+* multi status create result type ([#453](https://github.com/adobe/spacecat-shared/issues/453)) ([c8df70b](https://github.com/adobe/spacecat-shared/commit/c8df70bb8606162fcb9cee16603b349ab55e1d09))
+
 # [@adobe/spacecat-shared-data-access-v1.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.56.0...@adobe/spacecat-shared-data-access-v1.57.0) (2024-11-22)
 
 

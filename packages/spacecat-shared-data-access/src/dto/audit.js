@@ -43,6 +43,7 @@ export const AuditDto = {
     } : {};
 
     return {
+      id: audit.getId(),
       siteId: audit.getSiteId(),
       auditedAt: audit.getAuditedAt(),
       auditResult: audit.getAuditResult(),
@@ -62,6 +63,7 @@ export const AuditDto = {
    */
   fromDynamoItem: (dynamoItem) => {
     const auditData = {
+      id: dynamoItem.id,
       siteId: dynamoItem.siteId,
       auditedAt: dynamoItem.auditedAt,
       auditResult: dynamoItem.auditResult,

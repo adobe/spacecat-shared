@@ -284,9 +284,11 @@ describe('Opportunity & Suggestion IT', function () {
 
       const opportunities = await Opportunity.createMany(data);
 
-      expect(opportunities).to.be.an('array').with.length(2);
+      expect(opportunities).to.be.an('object');
+      expect(opportunities.createdItems).to.be.an('array').with.length(2);
+      expect(opportunities.errorItems).to.be.an('array').with.length(0);
 
-      opportunities.forEach((opportunity, index) => {
+      opportunities.createdItems.forEach((opportunity, index) => {
         expect(opportunity).to.be.an('object');
 
         expect(uuidValidate(opportunity.getId())).to.be.true;
@@ -469,9 +471,11 @@ describe('Opportunity & Suggestion IT', function () {
 
       const suggestions = await opportunity.addSuggestions(data);
 
-      expect(suggestions).to.be.an('array').with.length(2);
+      expect(suggestions).to.be.an('object');
+      expect(suggestions.createdItems).to.be.an('array').with.length(2);
+      expect(suggestions.errorItems).to.be.an('array').with.length(0);
 
-      suggestions.forEach((suggestion, index) => {
+      suggestions.createdItems.forEach((suggestion, index) => {
         expect(suggestion).to.be.an('object');
 
         expect(suggestion.getOpportunityId()).to.equal(opportunity.getId());

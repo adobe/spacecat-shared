@@ -25,8 +25,13 @@ class Opportunity extends BaseModel {
   /**
    * Adds the given suggestions to this Opportunity. Sets this opportunity as the parent
    * of each suggestion, as such the opportunity ID does not need to be provided.
+   *
+   * @async
    * @param {Array<Object>} suggestions - An array of suggestion objects to add.
-   * @return {Promise<Array<Suggestion>>} - A promise that resolves to the added suggestions.
+   * @return {Promise<{ createdItems: BaseModel[],
+   * errorItems: { item: Object, error: ValidationError }[] }>} - A promise that
+   * resolves to an object containing the created suggestion items and any
+   * errors that occurred.
    */
   async addSuggestions(suggestions) {
     const childSuggestions = suggestions.map((suggestion) => ({

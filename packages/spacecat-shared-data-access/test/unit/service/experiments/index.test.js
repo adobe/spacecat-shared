@@ -58,6 +58,10 @@ describe('Experiments Access Pattern Tests', () => {
       expect(exportedFunctions).to.have.property('upsertExperiment');
       expect(exportedFunctions.upsertExperiment).to.be.a('function');
     });
+    it('exports removeExperimentsForSite function', () => {
+      expect(exportedFunctions).to.have.property('removeExperimentsForSite');
+      expect(exportedFunctions.removeExperimentsForSite).to.be.a('function');
+    });
   });
 
   describe('Experiments Functions Tests', () => {
@@ -69,11 +73,13 @@ describe('Experiments Access Pattern Tests', () => {
       mockDynamoClient = {
         getItem: sinon.stub().returns(Promise.resolve(null)),
         putItem: sinon.stub().returns(Promise.resolve()),
+        removeItem: sinon.stub().returns(Promise.resolve()),
         query: sinon.stub().returns(Promise.resolve(null)),
       };
 
       mockLog = {
         info: sinon.stub().resolves(),
+        error: sinon.stub().resolves(),
       };
 
       exportedFunctions = experimentFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
@@ -188,6 +194,34 @@ describe('Experiments Access Pattern Tests', () => {
       expect(mockDynamoClient.putItem.calledOnce).to.be.true;
       expect(result.getSiteId()).to.equal(experiment.getSiteId());
       expect(result.getExperimentId()).to.equal(experiment.getExperimentId());
+    });
+
+    it('removes all experiments for a site', async () => {
+      const experiments = [];
+      for (let i = 0; i < 3; i += 1) {
+        experiments.push({
+          siteId: 'a48b583f-53f6-4250-b0a4-5a1ae5ccb38f',
+          experimentId: `experiment-${i}`,
+          name: `Experiment ${i}`,
+          url: `https://example0.com/page-${i}`,
+          status: 'active',
+          type: 'full',
+          variants: [],
+          startDate: new Date().toISOString(),
+          endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
+          updatedAt: new Date().toISOString(),
+          updatedBy: 'unit-test',
+          conversionEventName: 'convert',
+          conversionEventValue: 'addToCart',
+        });
+      }
+      mockDynamoClient.query.returns(Promise.resolve(experiments));
+
+      await exportedFunctions.removeExperimentsForSite('a48b583f-53f6-4250-b0a4-5a1ae5ccb38f');
+
+      expect(mockDynamoClient.query.calledOnce).to.be.true;
+      expect(mockDynamoClient.removeItem.callCount).to.equal(experiments.length);
+      expect(mockLog.error.called).to.be.false;
     });
   });
 });

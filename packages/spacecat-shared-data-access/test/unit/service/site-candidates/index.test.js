@@ -57,6 +57,10 @@ describe('Site Candidate Access Pattern Tests', () => {
       expect(exportedFunctions).to.have.property('updateSiteCandidate');
       expect(exportedFunctions.updateSiteCandidate).to.be.a('function');
     });
+    it('exports removeSiteCandidate function', () => {
+      expect(exportedFunctions).to.have.property('removeSiteCandidate');
+      expect(exportedFunctions.removeSiteCandidate).to.be.a('function');
+    });
   });
 
   describe('Site Candidate Functions Tests', () => {
@@ -68,10 +72,12 @@ describe('Site Candidate Access Pattern Tests', () => {
       mockDynamoClient = {
         getItem: sinon.stub().returns(Promise.resolve(null)),
         putItem: sinon.stub().returns(Promise.resolve()),
+        removeItem: sinon.stub().returns(Promise.resolve()),
       };
 
       mockLog = {
         info: sinon.stub().resolves(),
+        error: sinon.stub().resolves(),
       };
 
       exportedFunctions = siteCandidateFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
@@ -156,6 +162,19 @@ describe('Site Candidate Access Pattern Tests', () => {
       expect(result.getStatus()).to.equal(siteCandidate.getStatus());
       expect(mockDynamoClient.getItem.calledOnce).to.be.true;
       expect(mockDynamoClient.putItem.calledOnce).to.be.true;
+    });
+
+    it('removes a site candidate successfully', async () => {
+      const baseURL = 'https://existingsite.com';
+
+      await exportedFunctions.removeSiteCandidate(baseURL);
+
+      expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
+      expect(mockDynamoClient.removeItem.calledWith(
+        TEST_DA_CONFIG.tableNameSiteCandidates,
+        { id: baseURL },
+      )).to.be.true;
+      expect(mockLog.error.called).to.be.false;
     });
   });
 });

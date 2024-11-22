@@ -109,4 +109,44 @@ describe('Site Candidate Functions Tests', () => {
     await expect(exportedFunctions.removeKeyEvent(id))
       .to.be.rejectedWith('some error happened');
   });
+
+  it('remove key events by siteId ', async () => {
+    const keyEventData = [{
+      id: 'some-id', siteId, name: 'some-key-event', type: KEY_EVENT_TYPES.CODE,
+    },
+    {
+      id: 'some-other-id', siteId, name: 'some-other-key-event', type: KEY_EVENT_TYPES.CODE,
+    }];
+    mockDynamoClient.query.returns(Promise.resolve(keyEventData));
+    await exportedFunctions.removeKeyEventsForSite(siteId);
+
+    expect(mockDynamoClient.query.calledOnce).to.be.true;
+    expect(mockDynamoClient.query.calledWith(siteId));
+    expect(mockDynamoClient.removeItem.callCount).to.be.equal(keyEventData.length);
+    for (const keyEvent of keyEventData) {
+      expect(mockDynamoClient.removeItem.calledWith(keyEvent));
+    }
+    expect(mockLog.error.called).to.be.false;
+  });
+
+  it('error handling when getting key events by site fails', async () => {
+    mockDynamoClient.query = sandbox.stub().rejects(new Error('Query failed'));
+
+    await expect(exportedFunctions.removeKeyEventsForSite(siteId)).to.be.rejectedWith('Query failed');
+    expect(mockLog.error.called).to.be.true;
+  });
+
+  it('error handling when removing key events by site fails', async () => {
+    mockDynamoClient.removeItem = sandbox.stub().rejects(new Error('Deleting failed'));
+    const keyEventData = [{
+      id: 'some-id', siteId, name: 'some-key-event', type: KEY_EVENT_TYPES.CODE,
+    },
+    {
+      id: 'some-other-id', siteId, name: 'some-other-key-event', type: KEY_EVENT_TYPES.CODE,
+    }];
+    mockDynamoClient.query.returns(Promise.resolve(keyEventData));
+
+    await expect(exportedFunctions.removeKeyEventsForSite(siteId)).to.be.rejectedWith('Deleting failed');
+    expect(mockDynamoClient.query.calledOnce).to.be.true;
+  });
 });

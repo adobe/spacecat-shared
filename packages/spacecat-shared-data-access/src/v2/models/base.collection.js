@@ -78,6 +78,10 @@ class BaseCollection {
     return records.data.map((record) => this._createInstance({ data: record }));
   }
 
+  _getEnumValues(fieldName) {
+    return this.entity.model.schema.attributes[fieldName]?.enumArray;
+  }
+
   /**
    * Finds an entity by its ID.
    * @async

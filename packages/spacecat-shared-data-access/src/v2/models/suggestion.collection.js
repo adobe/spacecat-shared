@@ -77,21 +77,25 @@ class SuggestionCollection extends BaseCollection {
   }
 
   /**
-   * Updates the status of multiple given suggestions.
+   * Updates the status of multiple given suggestions. The given status must conform
+   * to the status enum defined in the Suggestion schema.
    * Saves the updated suggestions to the database automatically.
    * You don't need to call save() on the suggestions after calling this method.
    * @async
    * @param {Suggestion[]} suggestions - An array of Suggestion instances to update.
    * @param {string} status - The new status to set for the suggestions.
    * @return {Promise<*>} - A promise that resolves to the updated suggestions.
+   * @throws {Error} - Throws an error if the suggestions are not provided
+   * or if the status is invalid.
    */
   async bulkUpdateStatus(suggestions, status) {
     if (!Array.isArray(suggestions)) {
       throw new Error('Suggestions must be an array');
     }
 
-    if (!hasText(status)) {
-      throw new Error('Status is required');
+    const validStatuses = this._getEnumValues('status');
+    if (!validStatuses?.includes(status)) {
+      throw new Error(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
     }
 
     suggestions.forEach((suggestion) => {

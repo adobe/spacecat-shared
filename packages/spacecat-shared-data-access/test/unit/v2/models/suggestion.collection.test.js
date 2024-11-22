@@ -187,8 +187,8 @@ describe('SuggestionCollection', () => {
     });
 
     it('throws an error if status is not provided', async () => {
-      await expect(suggestionCollectionInstance.bulkUpdateStatus([mockSuggestionModel], ''))
-        .to.be.rejectedWith('Status is required');
+      await expect(suggestionCollectionInstance.bulkUpdateStatus([mockSuggestionModel], 'foo'))
+        .to.be.rejectedWith('Invalid status: foo. Must be one of: NEW, APPROVED, SKIPPED, FIXED, ERROR');
     });
   });
 });

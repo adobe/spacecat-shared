@@ -103,10 +103,25 @@ describe('Patcher', () => {
       .to.throw('Property nonExistent does not exist on entity testentity.');
   });
 
+  it('tracks updates', () => {
+    patcher.patchValue('name', 'UpdatedName');
+
+    expect(patcher.hasUpdates()).to.be.true;
+    expect(patcher.getUpdates()).to.deep.equal({ name: 'UpdatedName' });
+  });
+
   it('saves the record', async () => {
+    patcher.patchValue('name', 'UpdatedName');
+
     await patcher.save();
+
     expect(mockEntity.patch().go.calledOnce).to.be.true;
     expect(mockRecord.updatedAt).to.be.a('number');
+  });
+
+  it('does not save if there are no updates', async () => {
+    await patcher.save();
+    expect(mockEntity.patch().go.notCalled).to.be.true;
   });
 
   it('throws error if attribute type is unsupported', () => {

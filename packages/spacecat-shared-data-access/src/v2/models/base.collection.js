@@ -12,6 +12,9 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
+import { ElectroValidationError } from 'electrodb';
+
+import ValidationError from '../errors/validation.error.js';
 import { guardId } from '../util/guards.js';
 
 /**
@@ -75,6 +78,10 @@ class BaseCollection {
     return records.data.map((record) => this._createInstance({ data: record }));
   }
 
+  _getEnumValues(fieldName) {
+    return this.entity.model.schema.attributes[fieldName]?.enumArray;
+  }
+
   /**
    * Finds an entity by its ID.
    * @async
@@ -92,24 +99,127 @@ class BaseCollection {
   }
 
   /**
-   * Creates a new entity in the collection.
+   * Creates a new entity in the collection and directly persists it to the database.
+   * There is no need to call the save method (which is for updates only) after creating
+   * the entity.
    * @async
-   * @param {Object} data - The data for the entity to be created.
+   * @param {Object} item - The data for the entity to be created.
    * @returns {Promise<BaseModel>} - A promise that resolves to the created model instance.
    * @throws {Error} - Throws an error if the data is invalid or if the creation process fails.
    */
-  async create(data) {
-    if (!isNonEmptyObject(data)) {
-      this.log.error(`Failed to create [${this.entityName}]: data is required`);
-      throw new Error(`Failed to create [${this.entityName}]: data is required`);
+  async create(item) {
+    if (!isNonEmptyObject(item)) {
+      const message = `Failed to create [${this.entityName}]: data is required`;
+      this.log.error(message);
+      throw new Error(message);
     }
 
     try {
+      // todo: catch ElectroDB validation errors and re-throws as ValidationError
       // todo: validate associations
-      const record = await this.entity.create(data).go();
+      const record = await this.entity.create(item).go();
       return this._createInstance(record);
     } catch (error) {
       this.log.error(`Failed to create [${this.entityName}]`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Creates multiple entities in the collection and directly persists them to the database in
+   * a batch write operation. Batches are written in parallel and are limited to 25 items per batch.
+   *
+   * @async
+   * @param {Array<Object>} newItems - An array of data for the entities to be created.
+   * @return {Promise<{ createdItems: BaseModel[],
+   * errorItems: { item: Object, error: ElectroValidationError }[] }>} - A promise that resolves to
+   * an object containing the created items and any items that failed validation.
+   * @throws {ValidationError} - Throws a validation error if any of the items has validation
+   * failures.
+   */
+  async createMany(newItems) {
+    if (!Array.isArray(newItems) || newItems.length === 0) {
+      const message = `Failed to create many [${this.entityName}]: items must be a non-empty array`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    try {
+      const validatedItems = [];
+      const errorItems = [];
+      const createdItems = [];
+
+      newItems.forEach((item) => {
+        try {
+          this.entity.put(item).params();
+          validatedItems.push(item);
+        } catch (error) {
+          if (error instanceof ElectroValidationError) {
+            errorItems.push({ item, error: new ValidationError(error) });
+          }
+        }
+      });
+
+      /**
+       * ElectroDB does not return the created items in the response for batch write operations.
+       * This listener intercepts the batch write requests and extracts the items before they
+       * are stored in the database.
+       * @param {Object} result - The result of the operation.
+       */
+      const requestItemsListener = (result) => {
+        if (result?.type !== 'query' || result?.method !== 'batchWrite') {
+          return;
+        }
+
+        result.params?.RequestItems[this.entity.model.table].forEach((putRequest) => {
+          createdItems.push(putRequest.PutRequest.Item);
+        });
+      };
+
+      let records = [];
+      if (validatedItems.length > 0) {
+        const response = await this.entity.put(validatedItems).go(
+          { listeners: [requestItemsListener] },
+        );
+        records = this._createInstances({ data: createdItems });
+
+        if (Array.isArray(response.unprocessed) && response.unprocessed.length > 0) {
+          this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
+        }
+      }
+
+      return { createdItems: records, errorItems };
+    } catch (error) {
+      this.log.error(`Failed to create many [${this.entityName}]`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Updates a collection of entities in the database using a batch write (put) operation.
+   *
+   * @async
+   * @param {Array<BaseModel>} items - An array of model instances to be updated.
+   * @return {Promise<void>} - A promise that resolves when the update operation is complete.
+   * @throws {Error} - Throws an error if the update operation fails.
+   * @protected
+   */
+  async _saveMany(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      const message = `Failed to save many [${this.entityName}]: items must be a non-empty array`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    try {
+      const updates = items.map((item) => item.record);
+      const response = await this.entity.put(updates).go();
+
+      if (response.unprocessed) {
+        this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
+      }
+    } catch (error) {
+      this.log.error(`Failed to save many [${this.entityName}]`, error);
       throw error;
     }
   }

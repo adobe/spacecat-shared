@@ -53,7 +53,7 @@ const OpportunitySchema = {
       validation: (value) => !isValidUrl(value),
     },
     type: {
-      type: ['broken-backlinks', 'broken-internal-links'],
+      type: 'string',
       readOnly: true,
       required: true,
     },

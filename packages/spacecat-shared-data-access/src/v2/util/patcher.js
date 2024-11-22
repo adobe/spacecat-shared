@@ -45,6 +45,7 @@ class Patcher {
     this.model = entity.model;
     this.idName = `${this.model.name.toLowerCase()}Id`;
     this.record = record;
+    this.updates = {};
 
     this.patchRecord = null;
   }
@@ -104,6 +105,7 @@ class Patcher {
       [propertyName]: value,
     });
     this.record[propertyName] = value;
+    this.updates[propertyName] = value;
   }
 
   /**
@@ -175,8 +177,19 @@ class Patcher {
    * @throws {Error} - Throws an error if the save operation fails.
    */
   async save() {
+    if (!this.hasUpdates()) {
+      return;
+    }
     await this.#getPatchRecord().go();
     this.record.updatedAt = new Date().getTime();
+  }
+
+  getUpdates() {
+    return this.updates;
+  }
+
+  hasUpdates() {
+    return Object.keys(this.updates).length > 0;
   }
 }
 

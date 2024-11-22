@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.56.0...@adobe/spacecat-shared-data-access-v1.57.0) (2024-11-22)
+
+
+### Features
+
+* batch create/update items & open oppty type ([#450](https://github.com/adobe/spacecat-shared/issues/450)) ([642beaf](https://github.com/adobe/spacecat-shared/commit/642beaf3ab1ef9494f00c2148241d3986cca7fe7))
+
 # [@adobe/spacecat-shared-data-access-v1.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.55.0...@adobe/spacecat-shared-data-access-v1.56.0) (2024-11-21)
 
 

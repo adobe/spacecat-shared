@@ -10,8 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import trafficAcquisition from '../traffic-acquisition.js';
-import { getCTRByUrl } from '../../common/aggregateFns.js';
+import { DataChunks, facets } from '@adobe/rum-distiller';
+import { loadBundles, trafficSeriesFn } from '../../utils.js';
 
 const HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.8;
 const NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.5;
@@ -44,8 +44,7 @@ function convertToOpportunity(traffic) {
   };
 }
 
-function hasHighInorganicTraffic(traffic) {
-  const { url, paid, total } = traffic;
+function hasHighInorganicTraffic(url, paid, total) {
   const isHomepage = new URL(url).pathname === '/';
   const threshold = isHomepage
     ? HOMEPAGE_PAID_TRAFFIC_THRESHOLD
@@ -53,19 +52,39 @@ function hasHighInorganicTraffic(traffic) {
   return paid / total > threshold;
 }
 
-function hasHighBounceRate(ctr) {
-  return ctr < BOUNCE_RATE_THRESHOLD;
-}
-
 function handler(bundles, opts = {}) {
   const { interval = 7 } = opts;
-  const trafficByUrl = trafficAcquisition.handler(bundles);
-  const ctrByUrl = getCTRByUrl(bundles);
 
-  return trafficByUrl.filter((traffic) => traffic.total > interval * DAILY_PAGEVIEW_THRESHOLD)
-    .filter(hasHighInorganicTraffic)
-    .filter((traffic) => hasHighBounceRate(ctrByUrl[traffic.url]))
-    .map((traffic) => ({ ...traffic, bounceRate: 1 - ctrByUrl[traffic.url] }))
+  const dataChunks = new DataChunks();
+
+  loadBundles(bundles, dataChunks);
+
+  dataChunks.addFacet('urls', facets.url);
+
+  dataChunks.addSeries('views', (bundle) => bundle.weight);
+  dataChunks.addSeries('clicks', (bundle) => (bundle.events.some((e) => e.checkpoint === 'click') ? bundle.weight : 0));
+
+  const memo = {};
+  dataChunks.addSeries('earned', trafficSeriesFn(memo, 'earned'));
+  dataChunks.addSeries('owned', trafficSeriesFn(memo, 'owned'));
+  dataChunks.addSeries('paid', trafficSeriesFn(memo, 'paid'));
+
+  return dataChunks.facets.urls
+    .filter((url) => url.metrics.views.sum > interval * DAILY_PAGEVIEW_THRESHOLD)
+    .filter((url) => hasHighInorganicTraffic(
+      url.value,
+      url.metrics.paid.sum,
+      url.metrics.views.sum,
+    ))
+    .filter((url) => url.metrics.clicks.sum / url.metrics.views.sum < BOUNCE_RATE_THRESHOLD)
+    .map((url) => ({
+      url: url.value,
+      total: url.metrics.views.sum,
+      earned: url.metrics.earned.sum,
+      owned: url.metrics.owned.sum,
+      paid: url.metrics.paid.sum,
+      bounceRate: 1 - url.metrics.clicks.sum / url.metrics.views.sum,
+    }))
     .map(convertToOpportunity);
 }
 

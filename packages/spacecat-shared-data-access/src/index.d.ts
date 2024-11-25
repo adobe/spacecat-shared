@@ -33,6 +33,12 @@ export declare const ImportUrlStatus: {
  * Represents an individual audit of a site.
  */
 export interface Audit {
+
+  /**
+   * Retrieves the ID of the audit.
+   * @returns {string} The audit ID.
+   */
+  getId: () => string;
   /**
    * Retrieves the site ID associated with this audit.
    * @returns {string} The site ID.
@@ -892,6 +898,10 @@ export interface DataAccess {
   getExperiments: (siteId: string, experimentId?: string) => Promise<Experiment[]>;
   getExperiment: (siteId: string, experimentId: string, url: string) => Promise<Experiment | null>;
   upsertExperiment: (experimentData: object) => Promise<Experiment>;
+
+  // electro-based entities
+  Opportunity: object,
+  Suggestion: object,
 }
 
 interface DataAccessConfig {
@@ -930,3 +940,5 @@ export function createDataAccess(
   config: DataAccessConfig,
   logger: object,
 ): DataAccess;
+
+export type * from './v2/index.d.ts';

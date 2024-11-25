@@ -15,7 +15,6 @@
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { spawn } from 'dynamo-db-local';
 import Joi from 'joi';
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
@@ -25,7 +24,7 @@ import { createDataAccess } from '../../src/service/index.js';
 import { configSchema } from '../../src/models/site/config.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
 
-import generateSampleData from './generateSampleData.js';
+import generateSampleData from './util/generateSampleData.js';
 import {
   createSiteCandidate,
   SITE_CANDIDATE_SOURCES,
@@ -35,6 +34,7 @@ import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 import { ConfigurationDto } from '../../src/dto/configuration.js';
 import { ImportJobStatus, ImportOptions, ImportUrlStatus } from '../../src/index.js';
 import { IMPORT_URL_EXPIRES_IN_DAYS } from '../../src/models/importer/import-url.js';
+import { closeDynamoClients } from './util/db.js';
 
 use(chaiAsPromised);
 
@@ -96,7 +96,7 @@ function checkSiteTopPage(siteTopPage) {
   expect(isIsoDate(siteTopPage.getImportedAt())).to.be.true;
 }
 
-const TEST_DA_CONFIG = {
+export const TEST_DA_CONFIG = {
   tableNameAudits: 'spacecat-services-audits',
   tableNameKeyEvents: 'spacecat-services-key-events',
   tableNameLatestAudits: 'spacecat-services-latest-audits',
@@ -109,6 +109,7 @@ const TEST_DA_CONFIG = {
   tableNameApiKeys: 'spacecat-services-api-keys',
   tableNameImportJobs: 'spacecat-services-import-jobs',
   tableNameImportUrls: 'spacecat-services-import-urls',
+  tableNameSpacecatData: 'spacecat-data',
   indexNameAllSites: 'spacecat-services-all-sites',
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
   indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
@@ -128,8 +129,10 @@ const TEST_DA_CONFIG = {
   pkAllImportJobs: 'ALL_IMPORT_JOBS',
 };
 
-describe('DynamoDB Integration Test', async () => {
-  let dynamoDbLocalProcess;
+// eslint-disable-next-line func-names
+describe('Legacy Data Model IT', function () {
+  this.timeout(30000);
+
   let dataAccess;
 
   const NUMBER_OF_SITES = 10;
@@ -141,24 +144,7 @@ describe('DynamoDB Integration Test', async () => {
   const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
   const NUMBER_OF_EXPERIMENTS = 3;
 
-  before(async function beforeSuite() {
-    this.timeout(30000);
-
-    process.env.AWS_REGION = 'local';
-    process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
-    process.env.AWS_DEFAULT_REGION = 'local';
-    process.env.AWS_ACCESS_KEY_ID = 'dummy';
-    process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
-
-    dynamoDbLocalProcess = spawn({
-      detached: true,
-      stdio: 'inherit',
-      port: 8000,
-      sharedDb: true,
-    });
-
-    await sleep(10000); // give db time to start up
-
+  before(async () => {
     try {
       await generateSampleData(
         TEST_DA_CONFIG,
@@ -176,8 +162,8 @@ describe('DynamoDB Integration Test', async () => {
     dataAccess = createDataAccess(TEST_DA_CONFIG, console);
   });
 
-  after(() => {
-    dynamoDbLocalProcess.kill();
+  after(async () => {
+    await closeDynamoClients();
   });
 
   it('get all key events for a site', async () => {

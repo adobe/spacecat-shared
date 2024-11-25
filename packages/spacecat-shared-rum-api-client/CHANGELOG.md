@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.0...@adobe/spacecat-shared-rum-api-client-v2.12.1) (2024-11-23)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#454](https://github.com/adobe/spacecat-shared/issues/454)) ([325cf8d](https://github.com/adobe/spacecat-shared/commit/325cf8dded5fcabadaf7d8fdd510d33aeafd08a7))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.11.0...@adobe/spacecat-shared-rum-api-client-v2.12.0) (2024-11-21)
+
+
+### Features
+
+* **data-cruncher:** port queries to the data cruncher from RUM Explorer ([#375](https://github.com/adobe/spacecat-shared/issues/375)) ([599ebfc](https://github.com/adobe/spacecat-shared/commit/599ebfc7a7e14580ee1af9e42eac0d208acd5d94))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.10.0...@adobe/spacecat-shared-rum-api-client-v2.11.0) (2024-11-20)
+
+
+### Features
+
+* opportunity & suggestion model (+electrodb) ([#447](https://github.com/adobe/spacecat-shared/issues/447)) ([91cf931](https://github.com/adobe/spacecat-shared/commit/91cf931facbc7f13a6fe6eebe71f2948a4ec007e))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.9.10...@adobe/spacecat-shared-rum-api-client-v2.10.0) (2024-11-18)
+
+
+### Features
+
+* form vitals ([#429](https://github.com/adobe/spacecat-shared/issues/429)) ([1b0f92f](https://github.com/adobe/spacecat-shared/commit/1b0f92f682070ffc7db379602d94fa04cb442b10))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.9.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.9.9...@adobe/spacecat-shared-rum-api-client-v2.9.10) (2024-11-11)
 
 

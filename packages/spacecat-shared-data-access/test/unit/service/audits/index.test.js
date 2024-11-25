@@ -164,6 +164,7 @@ describe('Audit Access Pattern Tests', () => {
     let exportedFunctions;
 
     const auditData = {
+      id: 'test-audit-id',
       siteId: 'site1',
       auditType: 'lhs-mobile',
       auditedAt: new Date().toISOString(),
@@ -196,6 +197,7 @@ describe('Audit Access Pattern Tests', () => {
       const result = await exportedFunctions.addAudit(auditData);
       // Once for 'audits' and once for 'latest_audits'
       expect(mockDynamoClient.putItem.calledTwice).to.be.true;
+      expect(result.getId()).to.equal(auditData.id);
       expect(result.getSiteId()).to.equal(auditData.siteId);
       expect(result.getAuditType()).to.equal(auditData.auditType);
       expect(result.getAuditedAt()).to.equal(auditData.auditedAt);

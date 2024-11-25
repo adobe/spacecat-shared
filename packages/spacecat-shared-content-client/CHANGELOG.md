@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-content-client-v1.2.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.2.4...@adobe/spacecat-shared-content-client-v1.2.5) (2024-11-24)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.3.7 ([#456](https://github.com/adobe/spacecat-shared/issues/456)) ([7cf6e6a](https://github.com/adobe/spacecat-shared/commit/7cf6e6aa314f68e70fc431e5ecebc504ef16c6fb))
+
+# [@adobe/spacecat-shared-content-client-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.2.3...@adobe/spacecat-shared-content-client-v1.2.4) (2024-11-23)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.3.6 ([#455](https://github.com/adobe/spacecat-shared/issues/455)) ([372170b](https://github.com/adobe/spacecat-shared/commit/372170b04978b92e37075758a1070bf4ad280606))
+
+# [@adobe/spacecat-shared-content-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.2.2...@adobe/spacecat-shared-content-client-v1.2.3) (2024-11-23)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#454](https://github.com/adobe/spacecat-shared/issues/454)) ([325cf8d](https://github.com/adobe/spacecat-shared/commit/325cf8dded5fcabadaf7d8fdd510d33aeafd08a7))
+
+# [@adobe/spacecat-shared-content-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.2.1...@adobe/spacecat-shared-content-client-v1.2.2) (2024-11-20)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.3.5 ([#445](https://github.com/adobe/spacecat-shared/issues/445)) ([a4a1027](https://github.com/adobe/spacecat-shared/commit/a4a1027c5ac7b2c2d342a37eca15d7a85a4582cc))
+
 # [@adobe/spacecat-shared-content-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.2.0...@adobe/spacecat-shared-content-client-v1.2.1) (2024-11-16)
 
 

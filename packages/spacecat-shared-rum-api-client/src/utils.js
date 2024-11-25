@@ -11,6 +11,26 @@
  */
 
 import { context as h2, h1 } from '@adobe/fetch';
+import { utils } from '@adobe/rum-distiller';
+import { classifyTraffic } from './common/traffic.js';
+
+export const DELIMITER = '≡';
+
+export const generateKey = (...keys) => keys.join(DELIMITER);
+
+export const trafficSeriesFn = (memo, type) => (bundle) => {
+  const key = generateKey(bundle.url, bundle.id, bundle.time);
+  if (!memo[key]) {
+    // eslint-disable-next-line no-param-reassign
+    memo[key] = classifyTraffic(bundle).type;
+  }
+
+  return type === memo[key] ? bundle.weight : 0;
+};
+
+export const loadBundles = (bundles, dataChunks) => {
+  dataChunks.load([{ rumBundles: bundles.map(utils.addCalculatedProps) }]);
+};
 
 /* c8 ignore next 3 */
 export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1

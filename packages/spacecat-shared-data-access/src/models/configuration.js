@@ -29,6 +29,10 @@ const Configuration = (data = {}) => {
     const roles = self.getSlackRoles();
     return roles ? roles[role] : [];
   };
+  self.getEnabledSiteIdsForHandler = (type) => {
+    const handler = state.handlers?.[type];
+    return handler?.enabled?.sites || [];
+  };
   self.isHandlerEnabledForSite = (type, site) => {
     const handler = state.handlers[type];
     if (!handler) return false;

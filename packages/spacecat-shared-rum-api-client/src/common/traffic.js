@@ -122,6 +122,7 @@ const anyOf = (truth) => (text) => {
   return truth === text;
 };
 
+/* c8 ignore next 1 */
 const none = (input) => (Array.isArray(input) ? input.length === 0 : !hasText(input));
 
 const not = (truth) => (text) => {
@@ -198,6 +199,7 @@ const RULES = (domain) => ([
 ]);
 
 export function extractTrafficHints(bundle) {
+  /* c8 ignore next 1 */
   const findEvent = (checkpoint, source = '') => bundle.events.find((e) => e.checkpoint === checkpoint && (!source || e.source === source)) || {};
 
   const referrer = findEvent('enter').source || '';
@@ -250,5 +252,22 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
     type,
     category,
     vendor,
+  };
+}
+
+export function classifyTraffic(bundle) {
+  const {
+    url,
+    weight,
+    referrer,
+    utmSource,
+    utmMedium,
+    tracking,
+  } = extractTrafficHints(bundle);
+
+  return {
+    url,
+    weight,
+    ...classifyTrafficSource(url, referrer, utmSource, utmMedium, tracking),
   };
 }

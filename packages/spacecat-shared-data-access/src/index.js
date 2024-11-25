@@ -14,6 +14,7 @@ import { createDataAccess } from './service/index.js';
 
 export { ImportJobStatus, ImportUrlStatus, ImportOptions } from './models/importer/import-constants.js';
 
+const TABLE_NAME_DATA = 'spacecat-services-data-dev';
 const TABLE_NAME_AUDITS = 'spacecat-services-audits-dev';
 const TABLE_NAME_KEY_EVENTS = 'spacecat-services-key-events';
 const TABLE_NAME_LATEST_AUDITS = 'spacecat-services-latest-audits-dev';
@@ -52,6 +53,7 @@ export default function dataAccessWrapper(fn) {
       const { log } = context;
 
       const {
+        DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
         DYNAMO_TABLE_NAME_AUDITS = TABLE_NAME_AUDITS,
         DYNAMO_TABLE_NAME_KEY_EVENTS = TABLE_NAME_KEY_EVENTS,
         DYNAMO_TABLE_NAME_LATEST_AUDITS = TABLE_NAME_LATEST_AUDITS,
@@ -82,6 +84,7 @@ export default function dataAccessWrapper(fn) {
       } = context.env;
 
       context.dataAccess = createDataAccess({
+        tableNameData: DYNAMO_TABLE_NAME_DATA,
         tableNameAudits: DYNAMO_TABLE_NAME_AUDITS,
         tableNameKeyEvents: DYNAMO_TABLE_NAME_KEY_EVENTS,
         tableNameLatestAudits: DYNAMO_TABLE_NAME_LATEST_AUDITS,
@@ -118,3 +121,5 @@ export default function dataAccessWrapper(fn) {
     return fn(request, context);
   };
 }
+
+export * from './v2/index.js';

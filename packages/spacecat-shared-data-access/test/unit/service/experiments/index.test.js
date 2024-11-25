@@ -223,5 +223,43 @@ describe('Experiments Access Pattern Tests', () => {
       expect(mockDynamoClient.removeItem.callCount).to.equal(experiments.length);
       expect(mockLog.error.called).to.be.false;
     });
+
+    it('logs an error if there is an error getting experiments for a site while removing', async () => {
+      mockDynamoClient.query.returns(Promise.reject(new Error('Error removing experiments')));
+
+      await expect(exportedFunctions.removeExperimentsForSite('a48b583f-53f6-4250-b0a4-5a1ae5ccb38f')).to.be.rejectedWith('Error removing experiments');
+
+      expect(mockDynamoClient.query.calledOnce).to.be.true;
+      expect(mockLog.error.calledOnce).to.be.true;
+    });
+
+    it('logs an error if there is an error removing experiments', async () => {
+      const experiments = [];
+      for (let i = 0; i < 3; i += 1) {
+        experiments.push({
+          siteId: 'a48b583f-53f6-4250-b0a4-5a1ae5ccb38f',
+          experimentId: `experiment-${i}`,
+          name: `Experiment ${i}`,
+          url: `https://example0.com/page-${i}`,
+          status: 'active',
+          type: 'full',
+          variants: [],
+          startDate: new Date().toISOString(),
+          endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
+          updatedAt: new Date().toISOString(),
+          updatedBy: 'unit-test',
+          conversionEventName: 'convert',
+          conversionEventValue: 'addToCart',
+        });
+      }
+      mockDynamoClient.query.returns(Promise.resolve(experiments));
+      mockDynamoClient.removeItem.returns(Promise.reject(new Error('Error removing experiments')));
+
+      await expect(exportedFunctions.removeExperimentsForSite('a48b583f-53f6-4250-b0a4-5a1ae5ccb38f')).to.be.rejectedWith('Error removing experiments');
+
+      expect(mockDynamoClient.query.calledOnce).to.be.true;
+      expect(mockDynamoClient.removeItem.callCount).to.equal(experiments.length);
+      expect(mockLog.error.calledOnce).to.be.true;
+    });
   });
 });

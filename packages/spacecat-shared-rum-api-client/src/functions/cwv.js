@@ -16,7 +16,7 @@ import {
 import { loadBundles } from '../utils.js';
 import { mapBundlesToGroupOrUrl, BUNDLE_TYPE } from './grouped-urls.js';
 
-function handler(rawBundles, groupedURLs) {
+function handler(rawBundles, groupedURLs = []) {
   const bundles = rawBundles.map((bundle) => ({
     ...bundle,
     url: facets.url(bundle),

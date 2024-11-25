@@ -769,7 +769,7 @@ describe('DynamoDB Integration Test', async () => {
     await expect(dataAccess.addAudit(auditData)).to.be.rejectedWith('Audit already exists');
   });
 
-  it('successfully removes a site and its related audits', async () => {
+  it('successfully removes a site and its related data', async () => {
     const siteToRemove = await dataAccess.getSiteByBaseURL('https://example1.com');
     const siteId = siteToRemove.getId();
 
@@ -786,6 +786,18 @@ describe('DynamoDB Integration Test', async () => {
       AUDIT_TYPE_LHS_MOBILE,
     );
     expect(latestAuditAfterRemoval).to.be.null;
+
+    const keyEventsAfterRemoval = await dataAccess.getKeyEventsForSite(siteId);
+    expect(keyEventsAfterRemoval).to.be.an('array').that.is.empty;
+
+    const experimentsAfterRemoval = await dataAccess.getExperiments(siteId);
+    expect(experimentsAfterRemoval).to.be.an('array').that.is.empty;
+
+    const siteTopPagesAfterRemoval = await dataAccess.getTopPagesForSite(siteId);
+    expect(siteTopPagesAfterRemoval).to.be.an('array').that.is.empty;
+
+    const siteCandidateAfterRemoval = await dataAccess.getSiteCandidateByBaseURL('https://example1.com');
+    expect(siteCandidateAfterRemoval).to.be.null;
   });
 
   it('verify a previously added site candidate exists', async () => {

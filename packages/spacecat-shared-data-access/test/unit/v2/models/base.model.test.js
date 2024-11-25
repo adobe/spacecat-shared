@@ -26,6 +26,9 @@ const mockElectroService = {
       name: 'basemodel',
       model: {
         name: 'basemodel',
+        original: {
+          references: {},
+        },
       },
       remove: stub(),
       patch: stub(),
@@ -111,35 +114,55 @@ describe('BaseModel', () => {
     });
   });
 
-  describe('_getAssociation', () => { /* eslint-disable no-underscore-dangle */
-    it('returns the associated model instance when the method is called for the first time', async () => {
-      const mockAssociationResult = { id: 'associated-123' };
-      const mockModelCollection = {
-        findById: stub().returns(Promise.resolve(mockAssociationResult)),
-      };
-
-      mockModelFactory.getCollection.returns(mockModelCollection);
-
-      const result = await baseModelInstance._getAssociation('SomeModel', 'findById', 'associated-123');
-      expect(result).to.deep.equal(mockAssociationResult);
-      expect(mockModelFactory.getCollection.calledOnceWith('SomeModel')).to.be.true;
-      expect(mockModelCollection.findById.calledOnceWith('associated-123')).to.be.true;
+  describe('_initializeReferences', () => { /* eslint-disable no-underscore-dangle */
+    it('initializes the references object', () => {
+      baseModelInstance._initializeReferences();
+      expect(baseModelInstance.referencesCache).to.deep.equal({});
     });
 
-    it('returns the cached result on subsequent calls with the same arguments', async () => {
-      const mockAssociationResult = { id: 'associated-123' };
-      const mockModelCollection = {
-        findById: stub().returns(Promise.resolve(mockAssociationResult)),
+    it('iterates references and adds getters to the instance', () => {
+      mockElectroService.entities.basemodel.model.original.references = {
+        has_many: [
+          { type: 'has_many', target: 'Foo' },
+        ],
       };
 
-      mockModelFactory.getCollection.returns(mockModelCollection);
+      baseModelInstance._initializeReferences();
+      expect(baseModelInstance.getFoos).to.be.a('function');
+    });
+  });
 
-      await baseModelInstance._getAssociation('SomeModel', 'findById', 'associated-123');
-      const cachedResult = await baseModelInstance._getAssociation('SomeModel', 'findById', 'associated-123');
+  describe('_fetchReference', () => { /* eslint-disable no-underscore-dangle */
+    it('returns a cached reference if it exists', async () => {
+      baseModelInstance._cacheReference('Foo', 'bar');
+      const result = await baseModelInstance._fetchReference('has_many', 'Foo');
+      expect(result).to.equal('bar');
+    });
 
-      expect(cachedResult).to.deep.equal(mockAssociationResult);
-      expect(mockModelFactory.getCollection.calledOnceWith('SomeModel')).to.be.true;
-      expect(mockModelCollection.findById.calledOnceWith('associated-123')).to.be.true;
+    it('returns undefined if the reference does not exist', async () => {
+      mockModelFactory.getCollection.returns({ findByIndexKeys: stub() });
+      const result = await baseModelInstance._fetchReference('has_many', 'Foo');
+      expect(result).to.be.undefined;
+    });
+
+    it('fetches a belongs_to reference by ID', async () => {
+      mockModelFactory.getCollection.returns({ findById: stub().returns('bar') });
+      baseModelInstance.record.fooId = '12345';
+      const result = await baseModelInstance._fetchReference('belongs_to', 'Foo');
+      expect(result).to.equal('bar');
+    });
+
+    it('fetches a has_one reference by ID', async () => {
+      mockModelFactory.getCollection.returns({ findById: stub().returns('bar') });
+      baseModelInstance.record.fooId = '12345';
+      const result = await baseModelInstance._fetchReference('has_one', 'Foo');
+      expect(result).to.equal('bar');
+    });
+
+    it('fetches a has_many reference by foreign key', async () => {
+      mockModelFactory.getCollection.returns({ findByIndexKeys: stub().returns(['bar']) });
+      const result = await baseModelInstance._fetchReference('has_many', 'Foo');
+      expect(result).to.deep.equal(['bar']);
     });
   });
 });

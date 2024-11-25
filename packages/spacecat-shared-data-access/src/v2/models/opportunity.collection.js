@@ -46,10 +46,7 @@ class OpportunityCollection extends BaseCollection {
     if (!hasText(siteId)) {
       throw new Error('SiteId is required');
     }
-
-    const records = await this.entity.query.bySiteId({ siteId }).go();
-
-    return this._createInstances(records);
+    return this.findByIndexKeys({ siteId });
   }
 
   /**
@@ -70,8 +67,7 @@ class OpportunityCollection extends BaseCollection {
       throw new Error('Status is required');
     }
 
-    const records = await this.entity.query.bySiteIdAndStatus({ siteId, status }).go();
-    return this._createInstances(records);
+    return this.findByIndexKeys({ siteId, status });
   }
 }
 

@@ -22,16 +22,6 @@ import BaseModel from './base.model.js';
  */
 class Suggestion extends BaseModel {
   /**
-   * Retrieves the Opportunity entity associated to this Suggestion.
-   * @async
-   * @returns {Promise<Opportunity>} - A promise that resolves to the Opportunity
-   * instance associated with this Suggestion.
-   */
-  async getOpportunity() {
-    return this._getAssociation('OpportunityCollection', 'findById', this.getOpportunityId());
-  }
-
-  /**
    * Gets the Opportunity ID for this Suggestion.
    * @returns {string} - The unique identifier of the related Opportunity.
    */

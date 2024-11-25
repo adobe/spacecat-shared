@@ -26,6 +26,9 @@ const mockElectroService = {
     opportunity: {
       model: {
         name: 'opportunity',
+        original: {
+          references: {},
+        },
       },
       query: {
         bySiteId: stub(),

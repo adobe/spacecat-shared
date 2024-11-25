@@ -10,7 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+
 import Patcher from '../util/patcher.js';
+import {
+  entityNameToCollectionName,
+  entityNameToIdName,
+  entityNameToReferenceMethodName,
+} from '../util/reference.js';
 
 /**
  * Base - A base class for representing individual entities in the application.
@@ -37,29 +44,60 @@ class BaseModel {
     this.log = log;
 
     this.patcher = new Patcher(this.entity, this.record);
-    this.associationsCache = {};
+
+    this.referencesCache = {};
+    this._initializeReferences();
   }
 
-  /**
-   * Gets the association of the model by querying another related model. Retrieved
-   * associations are cached to avoid redundant queries.
-   * @protected
-   * @async
-   * @param {string} modelName - The name of the related model.
-   * @param {string} method - The method to use for querying the related model.
-   * @param {...*} args - Additional arguments to be passed to the method.
-   * @returns {Promise<Object>} - A promise that resolves to the associated model instance.
-   */
-  async _getAssociation(modelName, method, ...args) {
-    const cache = this.associationsCache;
-
-    cache[modelName] = cache[modelName] || {};
-
-    if (!(method in cache[modelName])) {
-      cache[modelName][method] = await this.modelFactory.getCollection(modelName)[method](...args);
+  _initializeReferences() {
+    const { references } = this.entity.model.original;
+    if (!isNonEmptyObject(references)) {
+      return;
     }
 
-    return cache[modelName][method];
+    for (const [type, refs] of Object.entries(references)) {
+      refs.forEach((ref) => {
+        const { target } = ref;
+        const methodName = entityNameToReferenceMethodName(target, type);
+
+        this[methodName] = async () => this._fetchReference(type, target);
+      });
+    }
+  }
+
+  _getCachedReference(targetName) {
+    return this.referencesCache[targetName];
+  }
+
+  _cacheReference(targetName, reference) {
+    this.referencesCache[targetName] = reference;
+  }
+
+  async _fetchReference(type, targetName) { /* eslint-disable no-underscore-dangle */
+    let result = this._getCachedReference(targetName);
+    if (result) {
+      return result;
+    }
+
+    const collectionName = entityNameToCollectionName(targetName);
+    const targetCollection = this.modelFactory.getCollection(collectionName);
+
+    if (type === 'belongs_to' || type === 'has_one') {
+      const foreignKey = entityNameToIdName(targetName);
+      const id = this.record[foreignKey];
+      if (!id) return null;
+
+      result = await targetCollection.findById(id);
+    } else if (type === 'has_many') {
+      const foreignKey = entityNameToIdName(this.entityName);
+      result = await targetCollection.findByIndexKeys({ [foreignKey]: this.getId() });
+    }
+
+    if (result) {
+      await this._cacheReference(targetName, result);
+    }
+
+    return result;
   }
 
   /**
@@ -116,6 +154,7 @@ class BaseModel {
     // todo: validate associations
     try {
       await this.patcher.save();
+      // todo: in case references are updated, clear or refresh references cache
       return this;
     } catch (error) {
       this.log.error('Failed to save record', error);

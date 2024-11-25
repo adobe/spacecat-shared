@@ -119,4 +119,15 @@ const SuggestionSchema = {
   },
 };
 
+/**
+ * References to other entities. This is not part of the standard ElectroDB schema, but is used
+ * to define relationships between entities in our data layer API.
+ * @type {{belongs_to: [{type: string, target: string}]}}
+ */
+SuggestionSchema.references = {
+  belongs_to: [
+    { type: 'belongs_to', target: 'Opportunity' },
+  ],
+};
+
 export default SuggestionSchema;

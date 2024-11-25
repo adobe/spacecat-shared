@@ -16,6 +16,7 @@ import { ElectroValidationError } from 'electrodb';
 
 import ValidationError from '../errors/validation.error.js';
 import { guardId } from '../util/guards.js';
+import { keyNamesToIndexName } from '../util/reference.js';
 
 /**
  * BaseCollection - A base class for managing collections of entities in the application.
@@ -30,7 +31,7 @@ class BaseCollection {
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.
    * @param {Object} modelFactory - A factory for creating model instances.
-   * @param {Class} clazz - The model class that represents the entity.
+   * @param {BaseModel} clazz - The model class that represents the entity.
    * @param {Object} log - A logger for capturing logging information.
    */
   constructor(electroService, modelFactory, clazz, log) {
@@ -45,12 +46,12 @@ class BaseCollection {
 
   /**
    * Creates an instance of a model from a record.
-   * @protected
+   * @private
    * @param {Object} record - The record containing data to create the model instance.
    * @returns {BaseModel|null} - Returns an instance of the model class if the data is valid,
    * otherwise null.
    */
-  _createInstance(record) {
+  #createInstance(record) {
     if (!isNonEmptyObject(record?.data)) {
       this.log.warn(`Failed to create instance of [${this.entityName}]: record is empty`);
       return null;
@@ -70,12 +71,12 @@ class BaseCollection {
    * @param {Object} records - The records containing data to create the model instances.
    * @returns {Array<BaseModel>} - An array of instances of the model class.
    */
-  _createInstances(records) {
+  #createInstances(records) {
     if (!Array.isArray(records?.data)) {
       this.log.warn(`Failed to create instances of [${this.entityName}]: records are empty`);
       return [];
     }
-    return records.data.map((record) => this._createInstance({ data: record }));
+    return records.data.map((record) => this.#createInstance({ data: record }));
   }
 
   _getEnumValues(fieldName) {
@@ -95,7 +96,28 @@ class BaseCollection {
 
     const record = await this.entity.get({ [this.idName]: id }).go();
 
-    return this._createInstance(record);
+    return this.#createInstance(record);
+  }
+
+  async findByIndexKeys(keys) {
+    if (!isNonEmptyObject(keys)) {
+      const message = `Failed to find by index keys [${this.entityName}]: keys are required`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    const indexName = keyNamesToIndexName(Object.keys(keys));
+    const index = this.entity.query[indexName];
+
+    if (!index) {
+      const message = `Failed to find by index keys [${this.entityName}]: index [${indexName}] not found`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    const records = await index(keys).go();
+
+    return this.#createInstances(records);
   }
 
   /**
@@ -118,7 +140,7 @@ class BaseCollection {
       // todo: catch ElectroDB validation errors and re-throws as ValidationError
       // todo: validate associations
       const record = await this.entity.create(item).go();
-      return this._createInstance(record);
+      return this.#createInstance(record);
     } catch (error) {
       this.log.error(`Failed to create [${this.entityName}]`, error);
       throw error;
@@ -131,13 +153,14 @@ class BaseCollection {
    *
    * @async
    * @param {Array<Object>} newItems - An array of data for the entities to be created.
+   * @param {BaseModel} [parent] - Optional parent entity that these items are associated with.
    * @return {Promise<{ createdItems: BaseModel[],
    * errorItems: { item: Object, error: ElectroValidationError }[] }>} - A promise that resolves to
    * an object containing the created items and any items that failed validation.
    * @throws {ValidationError} - Throws a validation error if any of the items has validation
    * failures.
    */
-  async createMany(newItems) {
+  async createMany(newItems, parent = null) {
     if (!Array.isArray(newItems) || newItems.length === 0) {
       const message = `Failed to create many [${this.entityName}]: items must be a non-empty array`;
       this.log.error(message);
@@ -181,11 +204,18 @@ class BaseCollection {
         const response = await this.entity.put(validatedItems).go(
           { listeners: [requestItemsListener] },
         );
-        records = this._createInstances({ data: createdItems });
+        records = this.#createInstances({ data: createdItems });
 
         if (Array.isArray(response.unprocessed) && response.unprocessed.length > 0) {
           this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
         }
+      }
+
+      if (parent) {
+        records.forEach((record) => {
+          // eslint-disable-next-line no-underscore-dangle
+          record._cacheReference(parent.entity.model.name, parent);
+        });
       }
 
       return { createdItems: records, errorItems };

@@ -80,8 +80,7 @@ const OpportunitySchema = {
       default: () => 'NEW',
     },
     guidance: {
-      type: 'map',
-      properties: {},
+      type: 'any',
       required: false,
       validation: (value) => !isNonEmptyObject(value),
     },
@@ -140,6 +139,21 @@ const OpportunitySchema = {
       },
     },
   },
+};
+
+/**
+ * References to other entities. This is not part of the standard ElectroDB schema, but is used
+ * to define relationships between entities in our data layer API.
+ * @type {{belongs_to: [{type: string, target: string}]}}
+ */
+OpportunitySchema.references = {
+  has_many: [
+    { type: 'has_many', target: 'Suggestions' },
+  ],
+  belongs_to: [
+    { type: 'belongs_to', target: 'Site' },
+    { type: 'belongs_to', target: 'Audit' },
+  ],
 };
 
 export default OpportunitySchema;

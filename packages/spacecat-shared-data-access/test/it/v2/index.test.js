@@ -57,6 +57,9 @@ const generateSampleData = async (dataAccess, siteId) => {
       runbook: `https://example${i}.com`,
       type,
       origin: 'AI',
+      guidance: {
+        foo: `bar-${i}`,
+      },
       status,
       data,
     });
@@ -227,6 +230,7 @@ describe('Opportunity & Suggestion IT', function () {
         type: 'broken-backlinks',
         origin: 'AI',
         status: 'NEW',
+        guidance: { foo: 'bar' },
         data: { brokenLinks: ['https://example.com'] },
       };
 

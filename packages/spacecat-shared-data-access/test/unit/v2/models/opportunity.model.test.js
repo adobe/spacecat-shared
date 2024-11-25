@@ -30,6 +30,9 @@ const mockElectroService = {
       model: {
         name: 'opportunity',
         schema: { attributes },
+        original: {
+          references: {},
+        },
         indexes: {
           primary: {
             pk: {
@@ -103,20 +106,6 @@ describe('Opportunity', () => {
       expect(suggestion).to.deep.equal({ id: 'suggestion-1' });
       expect(mockModelFactory.getCollection.calledOnceWith('SuggestionCollection')).to.be.true;
       expect(mockSuggestionCollection.createMany.calledOnceWith([{ text: 'Suggestion text', opportunityId: 'op12345' }])).to.be.true;
-    });
-  });
-
-  describe('getSuggestions', () => {
-    it('returns related suggestions', async () => {
-      const mockSuggestionResults = [{ id: 'suggestion-1' }, { id: 'suggestion-2' }];
-      const mockSuggestionCollection = {
-        allByOpportunityId: stub().returns(Promise.resolve(mockSuggestionResults)),
-      };
-      mockModelFactory.getCollection.withArgs('SuggestionCollection').returns(mockSuggestionCollection);
-
-      const suggestions = await opportunityInstance.getSuggestions();
-      expect(suggestions).to.deep.equal(mockSuggestionResults);
-      expect(mockModelFactory.getCollection.calledOnceWith('SuggestionCollection')).to.be.true;
     });
   });
 

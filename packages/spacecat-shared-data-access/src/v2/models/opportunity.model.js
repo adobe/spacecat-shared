@@ -38,21 +38,9 @@ class Opportunity extends BaseModel {
       ...suggestion,
       [this.idName]: this.getId(),
     }));
-    return this._getAssociation('SuggestionCollection', 'createMany', childSuggestions);
-  }
-
-  /**
-   * Retrieves all Suggestion entities associated to this Opportunity.
-   * @async
-   * @returns {Promise<Array<Suggestion>>} - A promise that resolves to an array of Suggestion
-   * instances associated with this Opportunity.
-   */
-  async getSuggestions() {
-    return this._getAssociation(
-      'SuggestionCollection',
-      'allByOpportunityId',
-      this.getId(),
-    );
+    return this.modelFactory
+      .getCollection('SuggestionCollection')
+      .createMany(childSuggestions, this);
   }
 
   /**

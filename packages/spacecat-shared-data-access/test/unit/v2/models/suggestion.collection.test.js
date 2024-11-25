@@ -31,6 +31,9 @@ const mockElectroService = {
       model: {
         name: 'suggestion',
         schema: { attributes },
+        original: {
+          references: {},
+        },
         indexes: {
           primary: {
             pk: {

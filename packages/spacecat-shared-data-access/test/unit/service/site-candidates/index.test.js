@@ -172,7 +172,7 @@ describe('Site Candidate Access Pattern Tests', () => {
       expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
       expect(mockDynamoClient.removeItem.calledWith(
         TEST_DA_CONFIG.tableNameSiteCandidates,
-        { id: baseURL },
+        { baseURL },
       )).to.be.true;
       expect(mockLog.error.called).to.be.false;
     });

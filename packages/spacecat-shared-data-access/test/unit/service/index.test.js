@@ -45,9 +45,10 @@ describe('Data Access Object Tests', () => {
 
   const siteCandidateFunctions = [
     'getSiteCandidateByBaseURL',
-    'upsertSiteCandidate',
+    'removeSiteCandidate',
     'siteCandidateExists',
     'updateSiteCandidate',
+    'upsertSiteCandidate',
   ];
 
   const organizationFunctions = [
@@ -76,6 +77,7 @@ describe('Data Access Object Tests', () => {
     'createKeyEvent',
     'getKeyEventsForSite',
     'removeKeyEvent',
+    'removeKeyEventsForSite',
   ];
 
   const importJobFunctions = [
@@ -99,6 +101,8 @@ describe('Data Access Object Tests', () => {
     'getExperiments',
     'upsertExperiment',
     'getExperiment',
+    'removeExperiment',
+    'removeExperimentsForSite',
   ];
 
   const apiKeyFunctions = [

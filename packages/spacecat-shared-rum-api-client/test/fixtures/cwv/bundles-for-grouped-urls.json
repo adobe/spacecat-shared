@@ -1,0 +1,102 @@
+{
+  "rumBundles": [
+    {
+      "id": "1Sdx_1",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T00:00:05.017Z",
+      "timeSlot": "2024-05-31T00:00:00.000Z",
+      "url": "https://www.aem.live/catalog/product-1",
+      "userAgent": "desktop:mac",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "cwv-lcp",
+          "value": 100000,
+          "timeDelta": 22458.39990234375,
+          "source": ".hero"
+        }
+      ]
+    },
+    {
+      "id": "1Sdx_2",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T01:00:01.894Z",
+      "timeSlot": "2024-05-31T01:00:00.000Z",
+      "url": "https://www.aem.live/catalog/product-2",
+      "userAgent": "desktop:windows",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "cwv-lcp",
+          "value": 20000,
+          "timeDelta": 22458.39990234375,
+          "source": ".hero"
+        }
+      ]
+    },
+    {
+      "id": "67Caj_1",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T03:00:00.193Z",
+      "timeSlot": "2024-05-31T03:00:00.000Z",
+      "url": "https://www.aem.live/pages/page-1",
+      "userAgent": "desktop:mac",
+      "weight": 10,
+      "events": [
+        {
+          "checkpoint": "cwv-cls",
+          "value": 0.1,
+          "timeDelta": 12343
+        }
+      ]
+    },
+    {
+      "id": "67Caj_2",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T03:00:00.193Z",
+      "timeSlot": "2024-05-31T03:00:00.000Z",
+      "url": "https://www.aem.live/pages/page-2",
+      "userAgent": "desktop:mac",
+      "weight": 20,
+      "events": [
+        {
+          "checkpoint": "cwv-cls",
+          "value": 0.2,
+          "timeDelta": 12343
+        }
+      ]
+    },
+    {
+      "id": "67Caj_4",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T03:00:00.193Z",
+      "timeSlot": "2024-05-31T03:00:00.000Z",
+      "url": "https://www.aem.live/docs/doc-1",
+      "userAgent": "desktop:mac",
+      "weight": 5,
+      "events": [
+        {
+          "checkpoint": "cwv-cls",
+          "value": 0.1,
+          "timeDelta": 12343
+        }
+      ]
+    },
+    {
+      "id": "67Caj_5",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T03:00:00.193Z",
+      "timeSlot": "2024-05-31T03:00:00.000Z",
+      "url": "https://www.aem.live/docs/doc-2",
+      "userAgent": "desktop:mac",
+      "weight": 1,
+      "events": [
+        {
+          "checkpoint": "cwv-lcp",
+          "value": 0.1,
+          "timeDelta": 12343
+        }
+      ]
+    }
+  ]
+}

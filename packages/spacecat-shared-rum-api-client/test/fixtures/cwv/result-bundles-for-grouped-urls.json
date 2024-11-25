@@ -1,0 +1,56 @@
+[
+  {
+    "pageviews": 200,
+    "lcp": 100000,
+    "lcpCount": 2,
+    "cls": null,
+    "clsCount": 0,
+    "inp": null,
+    "inpCount": 0,
+    "ttfb": null,
+    "ttfbCount": 0,
+    "type": "group",
+    "group-name": "Catalog",
+    "pattern": "https://www.aem.live/catalog/*"
+  },
+  {
+    "pageviews": 30,
+    "lcp": null,
+    "lcpCount": 0,
+    "cls": 0.2,
+    "clsCount": 2,
+    "inp": null,
+    "inpCount": 0,
+    "ttfb": null,
+    "ttfbCount": 0,
+    "type": "group",
+    "group-name": "Static Pages",
+    "pattern": "https://www.aem.live/pages/*"
+  },
+  {
+    "pageviews": 5,
+    "lcp": null,
+    "lcpCount": 0,
+    "cls": 0.1,
+    "clsCount": 1,
+    "inp": null,
+    "inpCount": 0,
+    "ttfb": null,
+    "ttfbCount": 0,
+    "type": "url",
+    "url": "https://www.aem.live/docs/doc-1"
+  },
+  {
+    "pageviews": 1,
+    "lcp": 0.1,
+    "lcpCount": 1,
+    "cls": null,
+    "clsCount": 0,
+    "inp": null,
+    "inpCount": 0,
+    "ttfb": null,
+    "ttfbCount": 0,
+    "type": "url",
+    "url": "https://www.aem.live/docs/doc-2"
+  }
+]

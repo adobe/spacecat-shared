@@ -16,6 +16,10 @@ const BUNDLE_TYPE = {
 };
 
 const findMatchingPattern = (url, groupedURLs) => {
+  if (!groupedURLs || groupedURLs.length === 0) {
+    return null;
+  }
+
   for (const group of groupedURLs) {
     const regexPattern = new RegExp(
       `^${group.pattern.replace(/\*/g, '.*')}$`,

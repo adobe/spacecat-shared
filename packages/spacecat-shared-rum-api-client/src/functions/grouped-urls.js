@@ -10,8 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-const BUNDLE_TYPE_GROUP = 'group';
-const BUNDLE_TYPE_URL = 'url';
+const BUNDLE_TYPE = {
+  GROUP: 'group',
+  URL: 'url',
+};
 
 const findMatchingPattern = (url, groupedURLs) => {
   for (const group of groupedURLs) {
@@ -35,12 +37,12 @@ const mapBundlesToGroupOrUrl = (bundles, groupedURLs) => {
       bundle.url,
       urlGroup
         ? {
-          type: BUNDLE_TYPE_GROUP,
+          type: BUNDLE_TYPE.GROUP,
           name: urlGroup.name,
           pattern: urlGroup.pattern,
         }
         : {
-          type: BUNDLE_TYPE_URL,
+          type: BUNDLE_TYPE.URL,
           url: bundle.url,
         },
     );
@@ -51,4 +53,5 @@ const mapBundlesToGroupOrUrl = (bundles, groupedURLs) => {
 
 export {
   mapBundlesToGroupOrUrl,
+  BUNDLE_TYPE,
 };

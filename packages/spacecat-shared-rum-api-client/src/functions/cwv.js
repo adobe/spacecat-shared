@@ -14,7 +14,7 @@ import {
   DataChunks, series, facets,
 } from '@adobe/rum-distiller';
 import { loadBundles } from '../utils.js';
-import { mapBundlesToGroupOrUrl } from './grouped-urls.js';
+import { mapBundlesToGroupOrUrl, BUNDLE_TYPE } from './grouped-urls.js';
 
 function handler(rawBundles, groupedURLs) {
   const bundles = rawBundles.map((bundle) => ({
@@ -41,12 +41,12 @@ function handler(rawBundles, groupedURLs) {
 
     const typeDefinition = group
       ? {
-        type: 'group',
+        type: BUNDLE_TYPE.GROUP,
         'group-name': group.name,
         pattern: group.pattern,
       }
       : {
-        type: 'url',
+        type: BUNDLE_TYPE.URL,
         url: urlFacet.value,
       };
 

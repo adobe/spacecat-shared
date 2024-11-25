@@ -13,12 +13,14 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
+import { ElectroValidationError } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
 import BaseCollection from '../../../../src/v2/models/base.collection.js';
 
 chaiUse(chaiAsPromised);
+
 describe('BaseCollection', () => {
   let baseCollectionInstance;
   let mockElectroService;
@@ -51,6 +53,9 @@ describe('BaseCollection', () => {
           get: stub(),
           put: stub(),
           create: stub(),
+          model: {
+            table: 'mockentitymodel',
+          },
         },
       },
     };
@@ -117,6 +122,102 @@ describe('BaseCollection', () => {
     });
   });
 
+  describe('createMany', () => {
+    it('throws an error if the records are empty', async () => {
+      await expect(baseCollectionInstance.createMany(null))
+        .to.be.rejectedWith('Failed to create many [mockentitymodel]: items must be a non-empty array');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('creates multiple entities successfully', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      const mockPutResults = {
+        type: 'query',
+        method: 'batchWrite',
+        params: {
+          RequestItems: {
+            mockentitymodel: [
+              { PutRequest: { Item: mockRecord } },
+              { PutRequest: { Item: mockRecord } },
+            ],
+          },
+        },
+      };
+      mockElectroService.entities.mockentitymodel.put.returns(
+        {
+          go: (options) => {
+            options.listeners[0](mockPutResults);
+            options.listeners[0]({ type: 'result' });
+            options.listeners[0]({ type: 'query', method: 'ignore' });
+            return Promise.resolve({ unprocessed: [] });
+          },
+          params: () => {},
+        },
+      );
+
+      const result = await baseCollectionInstance.createMany(mockRecords);
+      expect(result.createdItems).to.be.an('array').that.has.length(2);
+      expect(result.createdItems).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockentitymodel.put.calledThrice).to.be.true;
+    });
+
+    it('creates some entities successfully with unprocessed items', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      const mockPutResults = {
+        type: 'query',
+        method: 'batchWrite',
+        params: {
+          RequestItems: {
+            mockentitymodel: [
+              { PutRequest: { Item: mockRecord } },
+            ],
+          },
+        },
+      };
+      mockElectroService.entities.mockentitymodel.put.returns(
+        {
+          go: (options) => {
+            options.listeners[0](mockPutResults);
+            return Promise.resolve({ unprocessed: [mockRecord] });
+          },
+          params: () => {},
+        },
+      );
+
+      const result = await baseCollectionInstance.createMany(mockRecords);
+      expect(result.createdItems).to.be.an('array').that.has.length(1);
+      expect(result.createdItems).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockentitymodel.put.calledThrice).to.be.true;
+      expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockentitymodel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
+    });
+
+    it('fails creating some items due to ValidationError', async () => {
+      const error = new ElectroValidationError('Validation failed');
+      mockElectroService.entities.mockentitymodel.put.returns(
+        { params: () => { throw error; } },
+      );
+
+      const result = await baseCollectionInstance.createMany([mockRecord]);
+      expect(result.createdItems).to.be.an('array').that.has.length(0);
+      expect(result.errorItems).to.be.an('array').that.has.length(1);
+      expect(result.errorItems[0].item).to.deep.include(mockRecord);
+    });
+
+    it('logs an error and throws when creation fails', async () => {
+      const error = new Error('Create failed');
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockentitymodel.put.returns(
+        {
+          go: () => Promise.reject(error),
+          params: () => {},
+        },
+      );
+
+      await expect(baseCollectionInstance.createMany(mockRecords)).to.be.rejectedWith('Create failed');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+  });
+
   describe('_createInstance', () => { /* eslint-disable no-underscore-dangle */
     it('returns null if the record is empty', () => {
       const instance = baseCollectionInstance._createInstance(null);
@@ -149,6 +250,48 @@ describe('BaseCollection', () => {
       expect(instances).to.be.an('array').that.has.length(2);
       expect(instances[0]).to.deep.include(mockEntityModel);
       expect(instances[1]).to.deep.include(mockEntityModel);
+    });
+  });
+
+  describe('_saveMany', () => {
+    it('throws an error if the records are empty', async () => {
+      await expect(baseCollectionInstance._saveMany(null))
+        .to.be.rejectedWith('Failed to save many [mockentitymodel]: items must be a non-empty array');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('saves multiple entities successfully', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockentitymodel.put.returns({ go: () => [] });
+
+      const result = await baseCollectionInstance._saveMany(mockRecords);
+      expect(result).to.be.undefined;
+      expect(mockElectroService.entities.mockentitymodel.put.calledOnce).to.be.true;
+    });
+
+    it('saves some entities successfully with unprocessed items', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockentitymodel.put.returns(
+        {
+          go: () => Promise.resolve({ unprocessed: [mockRecord] }),
+        },
+      );
+
+      const result = await baseCollectionInstance._saveMany(mockRecords);
+      expect(result).to.be.undefined;
+      expect(mockElectroService.entities.mockentitymodel.put.calledOnce).to.be.true;
+      expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockentitymodel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
+    });
+
+    it('throws error and logs when save fails', async () => {
+      const error = new Error('Save failed');
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockentitymodel.put.returns(
+        { go: () => Promise.reject(error) },
+      );
+
+      await expect(baseCollectionInstance._saveMany(mockRecords)).to.be.rejectedWith('Save failed');
+      expect(mockLogger.error.calledOnce).to.be.true;
     });
   });
 });

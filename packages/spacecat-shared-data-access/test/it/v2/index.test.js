@@ -21,6 +21,7 @@ import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
 import SCHEMA from '../../../docs/schema.json' with { type: 'json' };
 import { createDataAccess } from '../../../src/service/index.js';
+import { ValidationError } from '../../../src/index.js';
 
 import { closeDynamoClients, getDynamoClients } from '../util/db.js';
 import { createTable, deleteTable } from '../util/tableOperations.js';
@@ -82,6 +83,24 @@ const generateSampleData = async (dataAccess, siteId) => {
   return sampleData;
 };
 
+const removeElectroProperties = (record) => { /* eslint-disable no-underscore-dangle */
+  const cleanedRecord = { ...record };
+  delete cleanedRecord.opportunityId;
+  delete cleanedRecord.suggestionId;
+  delete cleanedRecord.createdAt;
+  delete cleanedRecord.updatedAt;
+  delete cleanedRecord.sk;
+  delete cleanedRecord.pk;
+  delete cleanedRecord.gsi1pk;
+  delete cleanedRecord.gsi1sk;
+  delete cleanedRecord.gsi2pk;
+  delete cleanedRecord.gsi2sk;
+  delete cleanedRecord.__edb_e__;
+  delete cleanedRecord.__edb_v__;
+
+  return cleanedRecord;
+};
+
 // eslint-disable-next-line func-names
 describe('Opportunity & Suggestion IT', function () {
   this.timeout(30000);
@@ -102,7 +121,7 @@ describe('Opportunity & Suggestion IT', function () {
   });
 
   after(async () => {
-    closeDynamoClients();
+    await closeDynamoClients();
   });
 
   describe('Opportunity', () => {
@@ -235,6 +254,118 @@ describe('Opportunity & Suggestion IT', function () {
       const notFound = await Opportunity.findById(sampleData.opportunities[0].getId());
       await expect(notFound).to.be.null;
     });
+
+    it('creates many opportunities', async () => {
+      const { Opportunity } = dataAccess;
+      const data = [
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 1',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-backlinks',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenLinks: ['https://example.com'] },
+        },
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 2',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-internal-links',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenInternalLinks: ['https://example.com'] },
+        },
+      ];
+
+      const opportunities = await Opportunity.createMany(data);
+
+      expect(opportunities).to.be.an('object');
+      expect(opportunities.createdItems).to.be.an('array').with.length(2);
+      expect(opportunities.errorItems).to.be.an('array').with.length(0);
+
+      opportunities.createdItems.forEach((opportunity, index) => {
+        expect(opportunity).to.be.an('object');
+
+        expect(uuidValidate(opportunity.getId())).to.be.true;
+        expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
+        expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
+
+        const { record } = opportunity;
+        delete record.opportunityId;
+        delete record.createdAt;
+        delete record.updatedAt;
+        delete record.sk;
+        delete record.pk;
+        delete record.gsi1pk;
+        delete record.gsi1sk;
+        delete record.gsi2pk;
+        delete record.gsi2sk;
+        // eslint-disable-next-line no-underscore-dangle
+        delete record.__edb_e__;
+        // eslint-disable-next-line no-underscore-dangle
+        delete record.__edb_v__;
+        expect(record).to.eql(data[index]);
+      });
+    });
+
+    it('fails to create many opportunities with invalid data', async () => {
+      const { Opportunity } = dataAccess;
+      const data = [
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 1',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-backlinks',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenLinks: ['https://example.com'] },
+        },
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 2',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-internal-links',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenInternalLinks: ['https://example.com'] },
+        },
+        {
+          siteId,
+          auditId: uuid(),
+          title: 'New Opportunity 3',
+          description: 'Description',
+          runbook: 'https://example.com',
+          type: 'broken-internal-links',
+          origin: 'AI',
+          status: 'NEW',
+          data: { brokenInternalLinks: ['https://example.com'] },
+        },
+      ];
+
+      data[2].title = null;
+
+      const result = await Opportunity.createMany(data);
+
+      expect(result).to.be.an('object');
+      expect(result).to.have.property('createdItems');
+      expect(result).to.have.property('errorItems');
+
+      expect(result.createdItems).to.be.an('array').with.length(2);
+      expect(removeElectroProperties(result.createdItems[0].record)).to.eql(data[0]);
+      expect(removeElectroProperties(result.createdItems[1].record)).to.eql(data[1]);
+      expect(result.errorItems).to.be.an('array').with.length(1);
+      expect(result.errorItems[0].item).to.eql(data[2]);
+      expect(result.errorItems[0].error).to.be.an.instanceOf(ValidationError);
+    });
   });
 
   describe('Suggestion', () => {
@@ -319,6 +450,72 @@ describe('Opportunity & Suggestion IT', function () {
       );
 
       expect(suggestions).to.be.an('array').with.length(2);
+    });
+
+    it('adds many suggestions to an opportunity', async () => {
+      const opportunity = sampleData.opportunities[0];
+      const data = [
+        {
+          type: 'CODE_CHANGE',
+          rank: 0,
+          status: 'NEW',
+          data: { foo: 'bar' },
+        },
+        {
+          type: 'REDIRECT_UPDATE',
+          rank: 1,
+          status: 'APPROVED',
+          data: { foo: 'bar' },
+        },
+      ];
+
+      const suggestions = await opportunity.addSuggestions(data);
+
+      expect(suggestions).to.be.an('object');
+      expect(suggestions.createdItems).to.be.an('array').with.length(2);
+      expect(suggestions.errorItems).to.be.an('array').with.length(0);
+
+      suggestions.createdItems.forEach((suggestion, index) => {
+        expect(suggestion).to.be.an('object');
+
+        expect(suggestion.getOpportunityId()).to.equal(opportunity.getId());
+        expect(uuidValidate(suggestion.getId())).to.be.true;
+        expect(isIsoDate(suggestion.getCreatedAt())).to.be.true;
+        expect(isIsoDate(suggestion.getUpdatedAt())).to.be.true;
+
+        const { record } = suggestion;
+        delete record.opportunityId;
+        delete record.suggestionId;
+        delete record.createdAt;
+        delete record.updatedAt;
+        delete record.sk;
+        delete record.pk;
+        delete record.gsi1pk;
+        delete record.gsi1sk;
+        delete record.gsi2pk;
+        delete record.gsi2sk;
+        // eslint-disable-next-line no-underscore-dangle
+        delete record.__edb_e__;
+        // eslint-disable-next-line no-underscore-dangle
+        delete record.__edb_v__;
+        expect(record).to.eql(data[index]);
+      });
+    });
+
+    it('updates the status of multiple suggestions', async () => {
+      const { Suggestion } = dataAccess;
+
+      const suggestions = sampleData.suggestions.slice(0, 3);
+
+      await Suggestion.bulkUpdateStatus(suggestions, 'APPROVED');
+
+      const updatedSuggestions = await Promise.all(
+        suggestions.map((suggestion) => Suggestion.findById(suggestion.getId())),
+      );
+
+      updatedSuggestions.forEach((suggestion) => {
+        expect(suggestion.getStatus()).to.equal('APPROVED');
+      });
     });
   });
 });

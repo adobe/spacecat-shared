@@ -432,8 +432,12 @@ describe('Site Access Pattern Tests', () => {
 
     beforeEach(() => {
       mockDynamoClient = {
-        query: sinon.stub().returns(Promise.resolve([])),
-        removeItem: sinon.stub().returns(Promise.resolve()),
+        query: sinon.stub()
+          .returns(Promise.resolve([])),
+        getItem: sinon.stub()
+          .returns(Promise.resolve(null)),
+        removeItem: sinon.stub()
+          .returns(Promise.resolve()),
       };
       mockLog = {
         log: sinon.stub(),
@@ -442,17 +446,32 @@ describe('Site Access Pattern Tests', () => {
       exportedFunctions = siteFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
     });
 
-    it('removes the site and its related audits', async () => {
+    it('removes the site and its related data', async () => {
+      const mockSiteData = {
+        id: 'some-id',
+        baseURL: 'https://example.com',
+      };
+      mockDynamoClient.getItem.onFirstCall()
+        .resolves(mockSiteData);
       await exportedFunctions.removeSite('some-id');
 
-      expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
+      expect(mockDynamoClient.removeItem.calledTwice).to.be.true;
     });
 
     it('logs an error and reject if the site removal fails', async () => {
       const errorMessage = 'Failed to delete site';
+      const mockSiteData = {
+        id: 'some-id',
+        baseURL: 'https://example.com',
+      };
+      mockDynamoClient.getItem.onFirstCall()
+        .resolves(mockSiteData);
       mockDynamoClient.removeItem.rejects(new Error(errorMessage));
 
-      await expect(exportedFunctions.removeSite('some-id')).to.be.rejectedWith(errorMessage);
+      await expect(exportedFunctions.removeSite('some-id'))
+        .to
+        .be
+        .rejectedWith(errorMessage);
       expect(mockLog.error.calledOnce).to.be.true;
     });
 
@@ -461,12 +480,11 @@ describe('Site Access Pattern Tests', () => {
         id: 'site1',
         baseURL: 'https://example.com',
       }];
-
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
+      mockDynamoClient.getItem.resolves(mockSiteData[0]);
 
       await exportedFunctions.removeSitesForOrganization('org1');
-
-      expect(mockDynamoClient.removeItem.calledOnce).to.be.true;
+      expect(mockDynamoClient.removeItem.calledTwice).to.be.true;
     });
 
     it('logs an error and reject if the sites remove for organization fails', async () => {
@@ -477,11 +495,11 @@ describe('Site Access Pattern Tests', () => {
       }];
 
       mockDynamoClient.query.onFirstCall().resolves(mockSiteData);
+      mockDynamoClient.getItem.resolves(mockSiteData[0]);
 
       mockDynamoClient.removeItem.rejects(new Error(errorMessage));
 
       await expect(exportedFunctions.removeSitesForOrganization('org1')).to.be.rejectedWith(errorMessage);
-      expect(mockLog.error.calledOnce).to.be.true;
     });
   });
 });

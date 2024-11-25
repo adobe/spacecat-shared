@@ -21,6 +21,10 @@ import {
 
 import { createSite } from '../../models/site.js';
 import { SiteDto } from '../../dto/site.js';
+import { removeKeyEventsForSite } from '../key-events/accessPatterns.js';
+import { removeExperimentsForSite } from '../experiments/accessPatterns.js';
+import { removeSiteTopPages } from '../site-top-pages/accessPatterns.js';
+import { removeSiteCandidate } from '../site-candidates/accessPatterns.js';
 
 /**
  * Retrieves all sites.
@@ -410,8 +414,13 @@ export const removeSite = async (
   siteId,
 ) => {
   try {
+    const site = await getSiteByID(dynamoClient, config, log, siteId);
     // TODO: Add transaction support
     await removeAuditsForSite(dynamoClient, config, log, siteId);
+    await removeKeyEventsForSite(dynamoClient, config, log, siteId);
+    await removeExperimentsForSite(dynamoClient, config, log, siteId);
+    await removeSiteTopPages(dynamoClient, config, log, siteId);
+    await removeSiteCandidate(dynamoClient, config, log, site.getBaseURL());
 
     await dynamoClient.removeItem(config.tableNameSites, { id: siteId });
   } catch (error) {
@@ -424,19 +433,22 @@ export const removeSite = async (
  * Removes all given sites.
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
+ * @param {Logger} log - the logger
  * @param {Array<Site>} sites - The sites to remove.
  * @return {Promise<void>} A promise that resolves when all sites have been removed.
  */
 async function removeSites(
   dynamoClient,
   config,
+  log,
   sites,
 ) {
-  const tableName = config.tableNameSites;
   // TODO: use batch-remove (needs dynamo client update)
-  const removeSitePromises = sites.map((site) => dynamoClient.removeItem(
-    tableName,
-    { id: site.getId() },
+  const removeSitePromises = sites.map((site) => removeSite(
+    dynamoClient,
+    config,
+    log,
+    site.getId(),
   ));
 
   await Promise.all(removeSitePromises);
@@ -459,7 +471,7 @@ export const removeSitesForOrganization = async (
 ) => {
   try {
     const sites = await getSitesByOrganizationID(dynamoClient, config, organizationId);
-    await removeSites(dynamoClient, config, sites);
+    await removeSites(dynamoClient, config, log, sites);
   } catch (error) {
     log.error(`Error removing sites for organization ${organizationId}: ${error.message}`);
     throw error;

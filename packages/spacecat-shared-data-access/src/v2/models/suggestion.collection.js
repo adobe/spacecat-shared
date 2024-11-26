@@ -46,17 +46,14 @@ class SuggestionCollection extends BaseCollection {
     if (!hasText(opportunityId)) {
       throw new Error('OpportunityId is required');
     }
-
-    const records = await this.entity.query.byOpportunityId({ opportunityId }).go();
-
-    return this._createInstances(records);
+    return this.findByIndexKeys({ opportunityId });
   }
 
   /**
    * Retrieves all Suggestion entities by their associated Opportunity ID and status.
    * @param {string} opportunityId - The unique identifier of the associated Opportunity.
    * @param {string} status - The status of the Suggestion entities
-   * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of
+   * @return {Promise<BaseModel[]>} - A promise that resolves to an array of
    * Suggestion instances.
    * @throws {Error} - Throws an error if the opportunityId or status is not provided.
    */
@@ -69,11 +66,7 @@ class SuggestionCollection extends BaseCollection {
       throw new Error('Status is required');
     }
 
-    const records = await this.entity.query.byOpportunityIdAndStatus(
-      { opportunityId, status },
-    ).go();
-
-    return this._createInstances(records);
+    return this.findByIndexKeys({ opportunityId, status });
   }
 
   /**

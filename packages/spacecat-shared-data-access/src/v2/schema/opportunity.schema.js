@@ -14,7 +14,7 @@
 
 import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
-import { v4 as uuid } from 'uuid';
+import { validate as uuidValidate, v4 as uuid } from 'uuid';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -36,21 +36,21 @@ const OpportunitySchema = {
       // https://electrodb.dev/en/modeling/attributes/#default
       default: () => uuid(),
       // https://electrodb.dev/en/modeling/attributes/#attribute-validation
-      validation: (value) => !uuid.validate(value),
+      validate: (value) => uuidValidate(value),
     },
     siteId: {
       type: 'string',
       required: true,
-      validation: (value) => !uuid.validate(value),
+      validate: (value) => uuidValidate(value),
     },
     auditId: {
       type: 'string',
       required: true,
-      validation: (value) => !uuid.validate(value),
+      validate: (value) => uuidValidate(value),
     },
     runbook: {
       type: 'string',
-      validation: (value) => !isValidUrl(value),
+      validate: (value) => !value || isValidUrl(value),
     },
     type: {
       type: 'string',
@@ -60,7 +60,7 @@ const OpportunitySchema = {
     data: {
       type: 'any',
       required: false,
-      validation: (value) => !isNonEmptyObject(value),
+      validate: (value) => !value || isNonEmptyObject(value),
     },
     origin: {
       type: ['ESS_OPS', 'AI', 'AUTOMATION'],
@@ -80,10 +80,9 @@ const OpportunitySchema = {
       default: () => 'NEW',
     },
     guidance: {
-      type: 'map',
-      properties: {},
+      type: 'any',
       required: false,
-      validation: (value) => !isNonEmptyObject(value),
+      validate: (value) => !value || isNonEmptyObject(value),
     },
     tags: {
       type: 'set',
@@ -140,6 +139,21 @@ const OpportunitySchema = {
       },
     },
   },
+};
+
+/**
+ * References to other entities. This is not part of the standard ElectroDB schema, but is used
+ * to define relationships between entities in our data layer API.
+ * @type {{belongs_to: [{type: string, target: string}]}}
+ */
+OpportunitySchema.references = {
+  has_many: [
+    { type: 'has_many', target: 'Suggestions' },
+  ],
+  belongs_to: [
+    { type: 'belongs_to', target: 'Site' },
+    { type: 'belongs_to', target: 'Audit' },
+  ],
 };
 
 export default OpportunitySchema;

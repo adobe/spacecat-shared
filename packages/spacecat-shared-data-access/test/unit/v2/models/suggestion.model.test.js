@@ -51,6 +51,9 @@ describe('Suggestion', () => {
           model: {
             name: 'suggestion',
             schema: { attributes },
+            original: {
+              references: {},
+            },
             indexes: {
               primary: {
                 pk: {
@@ -87,21 +90,6 @@ describe('Suggestion', () => {
     it('initializes the Suggestion instance correctly', () => {
       expect(suggestionInstance).to.be.an('object');
       expect(suggestionInstance.record).to.deep.equal(mockRecord);
-    });
-  });
-
-  describe('getOpportunity', () => {
-    it('returns the related Opportunity', async () => {
-      const mockOpportunityResult = { id: 'op67890', title: 'Sample Opportunity' };
-      const mockOpportunityCollection = {
-        findById: stub().returns(Promise.resolve(mockOpportunityResult)),
-      };
-      mockModelFactory.getCollection.withArgs('OpportunityCollection').returns(mockOpportunityCollection);
-
-      const opportunity = await suggestionInstance.getOpportunity();
-      expect(opportunity).to.deep.equal(mockOpportunityResult);
-      expect(mockModelFactory.getCollection.calledOnceWith('OpportunityCollection')).to.be.true;
-      expect(mockOpportunityCollection.findById.calledOnceWith('op67890')).to.be.true;
     });
   });
 

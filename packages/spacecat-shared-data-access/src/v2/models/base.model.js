@@ -95,7 +95,7 @@ class BaseModel {
       const isReference = this.entity.model.original
         .references?.belongs_to?.some((ref) => ref.target === idNameToEntityName(name));
 
-      if (!this[getterMethodName]) {
+      if (!this[getterMethodName] || name === this.idName) {
         this[getterMethodName] = () => this.record[name];
       }
 

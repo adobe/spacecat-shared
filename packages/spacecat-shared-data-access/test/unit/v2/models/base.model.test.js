@@ -13,36 +13,19 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
+import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
 import BaseModel from '../../../../src/v2/models/base.model.js';
+import OpportunitySchema from '../../../../src/v2/schema/opportunity.schema.js';
 
 chaiUse(chaiAsPromised);
 
-const mockElectroService = {
-  entities: {
-    basemodel: {
-      name: 'basemodel',
-      model: {
-        name: 'basemodel',
-        original: {
-          references: {
-            has_one: [],
-            has_many: [
-              { type: 'has_many', target: 'Suggestions' },
-            ],
-            belongs_to: [],
-          },
-        },
-      },
-      remove: stub(),
-      patch: stub(),
-    },
-  },
-};
+const opportunityEntity = new Entity(OpportunitySchema);
 
 describe('BaseModel', () => {
+  let mockElectroService;
   let baseModelInstance;
   let mockLogger;
   let mockModelFactory;
@@ -62,7 +45,42 @@ describe('BaseModel', () => {
       getCollection: stub(),
     };
 
+    mockElectroService = {
+      entities: {
+        basemodel: {
+          name: 'basemodel',
+          model: {
+            name: 'basemodel',
+            schema: opportunityEntity.model.schema,
+            original: {
+              references: {
+                has_one: [],
+                has_many: [
+                  { type: 'has_many', target: 'Suggestions' },
+                ],
+                belongs_to: [],
+              },
+            },
+          },
+          remove: stub(),
+          patch: stub(),
+        },
+      },
+    };
+
     baseModelInstance = new BaseModel(mockElectroService, mockModelFactory, mockRecord, mockLogger);
+  });
+
+  describe('base', () => {
+    it('creates a new instance of BaseModel', () => {
+      expect(baseModelInstance).to.be.an.instanceOf(BaseModel);
+    });
+
+    it('returns when initializeAttributes has no attributes', () => {
+      mockElectroService.entities.basemodel.model.schema.attributes = {};
+      const instance = new BaseModel(mockElectroService, mockModelFactory, {}, mockLogger);
+      expect(instance).to.be.an.instanceOf(BaseModel);
+    });
   });
 
   describe('getId', () => {
@@ -125,6 +143,11 @@ describe('BaseModel', () => {
       baseModelInstance._cacheReference('Foo', 'bar');
       const result = await baseModelInstance._fetchReference('has_many', 'Foo');
       expect(result).to.equal('bar');
+    });
+
+    it('returns null if belongs_to id is not set', async () => {
+      const result = await baseModelInstance._fetchReference('belongs_to', 'Foo');
+      expect(result).to.be.null;
     });
 
     it('returns undefined if the reference does not exist', async () => {

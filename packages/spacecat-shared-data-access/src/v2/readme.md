@@ -142,45 +142,49 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
 1. **Create the Model Class**: In the `/models/` directory, add a file named `myNewEntity.model.js`.
    ```javascript
    import BaseModel from './base.model.js';
-
+   
    class MyNewEntity extends BaseModel {
-     constructor(electroService, modelFactory, record, log) {
-       super(electroService, modelFactory, record, log);
-     }
-
-     getName() {
-       return this.record.name;
-     }
-
-     setName(name) {
-       this.record.name = name;
-       return this;
-     }
-
-     getStatus() {
-       return this.record.status;
-     }
-
-     setStatus(status) {
-       this.record.status = status;
-       return this;
-     }
+   constructor(electroService, modelFactory, record, log) {
+   super(electroService, modelFactory, record, log);
    }
-
+   
+   // Custom methods or overrides can be added here if needed
+   }
+   
    export default MyNewEntity;
    ```
-By extending BaseModel, all references declared in the schema are automatically available as methods on MyNewEntity instances. No need to manually implement getters for associated entities—they will be automatically available based on the references field in the schema.
+Note: By using the `BaseModel`, concrete entity classes can largely remain empty unless there is a desire to:
+•	Override an automatically generated getter or setter for specific attributes.
+•	Add custom methods specific to the entity.
+
+### Automatic Getter and Setter Methods
+
+The `BaseModel` automatically generates getter and setter methods for each attribute defined in the entity schema:
+•	Getters: These methods follow the convention `get<AttributeName>()`, allowing you to easily access any attribute’s value.
+•	Setters: These methods follow the convention `set<AttributeName>(value)` and allow for modifying entity values while also handling attribute patching.
+
+For instance, if the schema defines an attribute called name, the `BaseModel` will automatically generate:
+•	`getName()`: To retrieve the value of name.
+•	`setName(value)`: To set or update the value of name.
+
+This significantly reduces boilerplate code and allows for a consistent API across all entity models.
 
 ### Automatic Reference Getter Methods
-When you add references in the schema (e.g., belongs_to or has_many), the BaseModel class uses _initializeReferences() to automatically generate getter methods for each reference:
-•	For the above example schema, since there is a belongs_to relationship with Opportunity, a getter method named getOpportunity() is generated automatically.
-•	The naming convention for these methods follows the pattern get<EntityName>(), where <EntityName> is derived from the target in the references configuration.
 
-The automatic creation of these getters is handled by _initializeReferences(), which:
-•	Iterates over each entry in the references field.
-•	Dynamically adds a method to the instance that, when called, uses _fetchReference() to retrieve and optionally cache the related entity.
+When you add references in the schema (e.g., `belongs_to` or `has_many`), the `BaseModel` class uses `#initializeReferences()` to automatically generate getter methods for each reference:
+•	References Getter Naming:
+   •	For every reference declared in the schema (references field), the `BaseModel` automatically generates a method for accessing the related entity.
+   •	These methods are named `get<RelatedEntity>()`, where `<RelatedEntity>` is derived from the target field specified in the reference.
 
-This allows your entity models to directly support methods like myNewEntityInstance.getOpportunity(), making it easy to navigate relationships between entities without writing boilerplate code.
+For example, if your schema has:
+   ```javascript
+   references: {
+      belongs_to: [
+         { type: 'belongs_to', target: 'Opportunity' },
+      ],
+   },
+   ```
+Then `BaseModel` will automatically generate a `getOpportunity()` method, which can be called to retrieve the associated Opportunity entity without writing additional boilerplate code.
 
 ## Step 3: Add a Collection Class
 

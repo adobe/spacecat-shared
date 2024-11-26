@@ -12,6 +12,7 @@
 
 import pluralize from 'pluralize';
 
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 const entityNameToCollectionName = (entityName) => `${pluralize.singular(entityName)}Collection`;
 const entityNameToIdName = (collectionName) => `${collectionName.charAt(0).toLowerCase() + collectionName.slice(1)}Id`;
 const entityNameToReferenceMethodName = (target, type) => {
@@ -23,7 +24,7 @@ const entityNameToReferenceMethodName = (target, type) => {
   return `get${baseName}`;
 };
 
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+const idNameToEntityName = (idName) => capitalize(pluralize.singular(idName.replace('Id', '')));
 
 const keyNamesToIndexName = (keyNames) => {
   const capitalizedKeyNames = keyNames.map((keyName) => capitalize(keyName));
@@ -31,8 +32,10 @@ const keyNamesToIndexName = (keyNames) => {
 };
 
 export {
+  capitalize,
   entityNameToCollectionName,
   entityNameToIdName,
   entityNameToReferenceMethodName,
+  idNameToEntityName,
   keyNamesToIndexName,
 };

@@ -14,15 +14,24 @@ import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import Patcher from '../util/patcher.js';
 import {
+  capitalize,
   entityNameToCollectionName,
   entityNameToIdName,
-  entityNameToReferenceMethodName,
+  entityNameToReferenceMethodName, idNameToEntityName,
 } from '../util/reference.js';
 
 /**
  * Base - A base class for representing individual entities in the application.
  * Provides common functionality for entity management, including fetching, updating,
- * and deleting records.
+ * and deleting records. This class is intended to be extended by specific entity classes
+ * that represent individual entities in the application. The BaseModel class provides
+ * methods for fetching associated entities based on the type of relationship
+ * (belongs_to, has_one, has_many).
+ * The fetched references are cached to avoid redundant database queries. If the reference
+ * is already cached, it will be returned directly.
+ * Attribute values can be accessed and modified using getter and setter methods that are
+ * automatically generated based on the entity schema. The BaseModel class also provides
+ * methods for removing and saving entities to the database.
  *
  * @class BaseModel
  */
@@ -42,11 +51,12 @@ class BaseModel {
     this.entity = electroService.entities[this.entityName];
     this.idName = `${this.entityName}Id`;
     this.log = log;
+    this.referencesCache = {};
 
     this.patcher = new Patcher(this.entity, this.record);
 
-    this.referencesCache = {};
     this.#initializeReferences();
+    this.#initializeAttributes();
   }
 
   /**
@@ -68,6 +78,33 @@ class BaseModel {
 
         this[methodName] = async () => this._fetchReference(type, target);
       });
+    }
+  }
+
+  #initializeAttributes() {
+    const { attributes } = this.entity.model.schema;
+
+    if (!isNonEmptyObject(attributes)) {
+      return;
+    }
+
+    for (const [name, attr] of Object.entries(attributes)) {
+      const capitalized = capitalize(name);
+      const getterMethodName = `get${capitalized}`;
+      const setterMethodName = `set${capitalized}`;
+      const isReference = this.entity.model.original
+        .references?.belongs_to?.some((ref) => ref.target === idNameToEntityName(name));
+
+      if (!this[getterMethodName]) {
+        this[getterMethodName] = () => this.record[name];
+      }
+
+      if (!this[setterMethodName] && !attr.readOnly) {
+        this[setterMethodName] = (value) => {
+          this.patcher.patchValue(name, value, isReference);
+          return this;
+        };
+      }
     }
   }
 

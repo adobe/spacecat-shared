@@ -10,82 +10,68 @@
  * governing permissions and limitations under the License.
  */
 
-const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
-const BOT = 'bot';
-const CHECKPOINT_MAPPING = { formsubmit: 'formsubmit', viewblock: 'formview', click: 'formengagement' };
+import { DataChunks } from '@adobe/rum-distiller';
+import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
-function initializeResult(url, pageViews) {
+const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
+const METRICS = ['formview', 'formengagement', 'formsubmit'];
+
+function initializeResult(url) {
   return {
     url,
     formsubmit: {},
     formview: {},
     formengagement: {},
-    pageview: pageViews[url],
+    pageview: {},
   };
 }
 
-function collectFormVitals(bundles, pageViews) {
-  const results = {};
+const metricFns = {
+  formview: (bundle) => {
+    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock' && FORM_SOURCE.includes(e.source));
+    return formView ? bundle.weight : 0;
+  },
+  formengagement: (bundle) => {
+    const formClick = bundle.events.find((e) => e.checkpoint === 'click' && e.source && /\bform\b/.test(e.source.toLowerCase()));
+    return formClick ? bundle.weight : 0;
+  },
+  formsubmit: (bundle) => {
+    const formSubmit = bundle.events.find((e) => e.checkpoint === 'formsubmit');
+    return formSubmit ? bundle.weight : 0;
+  },
+};
 
-  // Helper functions to identify event types
-  const isFormViewEvent = ({ checkpoint, source }) => checkpoint === 'viewblock' && FORM_SOURCE.includes(source);
-  const isFormClickEvent = ({ checkpoint, source }) => checkpoint === 'click' && source && /\bform\b/.test(source.toLowerCase());
-  const isFormSubmitEvent = ({ checkpoint }) => checkpoint === 'formsubmit';
-
-  for (const bundle of bundles) {
-    const {
-      url, userAgent, weight, events,
-    } = bundle;
-
-    if (userAgent && !userAgent.startsWith(BOT)) {
-      // Track if each condition has been processed for this event
-      const processedCheckpoints = {
-        formsubmit: false,
-        click: false,
-      };
-
-      // Process each event within the bundle
-      for (const event of events) {
-        const { checkpoint, source } = event;
-
-        // Only process the checkpoint once per event
-        if (!processedCheckpoints[checkpoint]) {
-          if (isFormViewEvent({ checkpoint, source })
-              || isFormSubmitEvent({ checkpoint })
-              || isFormClickEvent({ checkpoint, source })) {
-            results[url] = results[url] || initializeResult(url, pageViews);
-            const key = CHECKPOINT_MAPPING[checkpoint];
-            const res = results[url];
-            res[key] = {
-              ...res[key],
-              [userAgent]: (res[key][userAgent] || 0) + weight,
-            };
-            // Mark this checkpoint as processed - click and formsubmit as processed
-            if (checkpoint === 'click' || checkpoint === 'formsubmit') {
-              processedCheckpoints[checkpoint] = true;
-            }
-          }
-        }
-      }
-    }
-  }
-  return results;
-}
-
-function pageviewsByUrlAndUserAgent(bundles) {
-  return bundles.reduce((acc, cur) => {
-    const { userAgent } = cur;
-    if (!userAgent || userAgent.startsWith(BOT)) return acc;
-    acc[cur.url] = acc[cur.url] || {};
-    acc[cur.url][userAgent] = (acc[cur.url][userAgent] || 0) + cur.weight;
-    return acc;
-  }, {});
+function containsFormVitals(row) {
+  return METRICS.some((metric) => Object.keys(row[metric]).length > 0);
 }
 
 function handler(bundles) {
-  const pageViews = pageviewsByUrlAndUserAgent(bundles);
-  const formVitals = collectFormVitals(bundles, pageViews);
-  return Object.values(formVitals);
+  const dataChunks = new DataChunks();
+  loadBundles(bundles, dataChunks);
+
+  // groups by url and user agent
+  dataChunks.addFacet('urlUserAgents', (bundle) => generateKey(bundle.url, bundle.userAgent));
+
+  // counts metrics per each group
+  METRICS.forEach((metric) => dataChunks.addSeries(metric, metricFns[metric]));
+
+  // aggregates metrics per group (url and user agent)
+  const formVitals = dataChunks.facets.urlUserAgents.reduce((acc, { value, metrics, weight }) => {
+    const [url, userAgent] = value.split(DELIMITER);
+
+    acc[url] = acc[url] || initializeResult(url);
+    acc[url].pageview[userAgent] = weight;
+
+    METRICS.filter((metric) => metrics[metric].sum) // filter out user-agents with no form vitals
+      .forEach((metric) => {
+        acc[url][metric][userAgent] = metrics[metric].sum;
+      });
+
+    return acc;
+  }, {});
+
+  return Object.values(formVitals)
+    .filter(containsFormVitals); // filter out pages with no form vitals
 }
 
 export default {

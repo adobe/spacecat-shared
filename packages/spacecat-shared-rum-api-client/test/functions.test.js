@@ -41,7 +41,7 @@ describe('Query functions', () => {
 
   it('crunches form vitals', async () => {
     const formVitalsResult = await formVitals.handler(bundlesWithForm.rumBundles);
-    expect(expectedFormVitalsResult).to.eql(formVitalsResult);
+    expect(expectedFormVitalsResult).to.deep.members(formVitalsResult);
   });
 
   it('crunches 404 data', async () => {

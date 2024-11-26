@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.57.2...@adobe/spacecat-shared-data-access-v1.58.0) (2024-11-26)
+
+
+### Features
+
+* auto references & attribute set/get ([#461](https://github.com/adobe/spacecat-shared/issues/461)) ([2c29683](https://github.com/adobe/spacecat-shared/commit/2c296835bb7e71f2984e5537eab1dfc25bcc6141))
+
 # [@adobe/spacecat-shared-data-access-v1.57.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.57.1...@adobe/spacecat-shared-data-access-v1.57.2) (2024-11-23)
 
 

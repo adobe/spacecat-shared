@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.12.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.2...@adobe/spacecat-shared-rum-api-client-v2.12.3) (2024-11-26)
+
+
+### Bug Fixes
+
+* **rum-api-client:** migrate form vitals to rum-distiller ([#451](https://github.com/adobe/spacecat-shared/issues/451)) ([7509143](https://github.com/adobe/spacecat-shared/commit/7509143f9b9a9aa1971ebdcd55aa3b6d221f1812))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.12.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.1...@adobe/spacecat-shared-rum-api-client-v2.12.2) (2024-11-25)
 
 

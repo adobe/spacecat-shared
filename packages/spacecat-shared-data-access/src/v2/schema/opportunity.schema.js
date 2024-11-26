@@ -14,7 +14,7 @@
 
 import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
-import { v4 as uuid } from 'uuid';
+import { validate as uuidValidate, v4 as uuid } from 'uuid';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -36,21 +36,21 @@ const OpportunitySchema = {
       // https://electrodb.dev/en/modeling/attributes/#default
       default: () => uuid(),
       // https://electrodb.dev/en/modeling/attributes/#attribute-validation
-      validation: (value) => !uuid.validate(value),
+      validate: (value) => uuidValidate(value),
     },
     siteId: {
       type: 'string',
       required: true,
-      validation: (value) => !uuid.validate(value),
+      validate: (value) => uuidValidate(value),
     },
     auditId: {
       type: 'string',
       required: true,
-      validation: (value) => !uuid.validate(value),
+      validate: (value) => uuidValidate(value),
     },
     runbook: {
       type: 'string',
-      validation: (value) => !isValidUrl(value),
+      validate: (value) => !value || isValidUrl(value),
     },
     type: {
       type: 'string',
@@ -60,7 +60,7 @@ const OpportunitySchema = {
     data: {
       type: 'any',
       required: false,
-      validation: (value) => !isNonEmptyObject(value),
+      validate: (value) => !value || isNonEmptyObject(value),
     },
     origin: {
       type: ['ESS_OPS', 'AI', 'AUTOMATION'],
@@ -82,7 +82,7 @@ const OpportunitySchema = {
     guidance: {
       type: 'any',
       required: false,
-      validation: (value) => !isNonEmptyObject(value),
+      validate: (value) => !value || isNonEmptyObject(value),
     },
     tags: {
       type: 'set',

@@ -67,7 +67,7 @@ class BaseCollection {
 
   /**
    * Creates instances of models from a set of records.
-   * @protected
+   * @private
    * @param {Object} records - The records containing data to create the model instances.
    * @returns {Array<BaseModel>} - An array of instances of the model class.
    */
@@ -79,6 +79,13 @@ class BaseCollection {
     return records.data.map((record) => this.#createInstance({ data: record }));
   }
 
+  /**
+   * Retrieves the enum values for a field in the entity schema. Useful for validating
+   * enum values prior to creating or updating an entity.
+   * @param {string} fieldName - The name of the field to retrieve enum values for.
+   * @return {string[]} - An array of enum values for the field.
+   * @protected
+   */
   _getEnumValues(fieldName) {
     return this.entity.model.schema.attributes[fieldName]?.enumArray;
   }
@@ -99,6 +106,16 @@ class BaseCollection {
     return this.#createInstance(record);
   }
 
+  /**
+   * Finds entities by a set of index keys. Index keys are used to query entities by
+   * a specific index defined in the entity schema. The index keys must match the
+   * fields defined in the index.
+   * @param {Object} keys - The index keys to use for the query.
+   * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of model instances.
+   * @throws {Error} - Throws an error if the index keys are not provided or if the index
+   * is not found.
+   * @async
+   */
   async findByIndexKeys(keys) {
     if (!isNonEmptyObject(keys)) {
       const message = `Failed to find by index keys [${this.entityName}]: keys are required`;

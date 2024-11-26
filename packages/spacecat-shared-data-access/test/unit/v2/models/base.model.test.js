@@ -27,7 +27,13 @@ const mockElectroService = {
       model: {
         name: 'basemodel',
         original: {
-          references: {},
+          references: {
+            has_one: [],
+            has_many: [
+              { type: 'has_many', target: 'Suggestions' },
+            ],
+            belongs_to: [],
+          },
         },
       },
       remove: stub(),
@@ -111,24 +117,6 @@ describe('BaseModel', () => {
 
       await expect(baseModelInstance.save()).to.be.rejectedWith('Save failed');
       expect(mockLogger.error.calledOnce).to.be.true;
-    });
-  });
-
-  describe('_initializeReferences', () => { /* eslint-disable no-underscore-dangle */
-    it('initializes the references object', () => {
-      baseModelInstance._initializeReferences();
-      expect(baseModelInstance.referencesCache).to.deep.equal({});
-    });
-
-    it('iterates references and adds getters to the instance', () => {
-      mockElectroService.entities.basemodel.model.original.references = {
-        has_many: [
-          { type: 'has_many', target: 'Foo' },
-        ],
-      };
-
-      baseModelInstance._initializeReferences();
-      expect(baseModelInstance.getFoos).to.be.a('function');
     });
   });
 

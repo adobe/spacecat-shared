@@ -521,5 +521,25 @@ describe('Opportunity & Suggestion IT', function () {
         expect(suggestion.getStatus()).to.equal('APPROVED');
       });
     });
+
+    it('throws an error when adding a suggestion with invalid opportunity id', async () => {
+      const { Suggestion } = dataAccess;
+      const data = [
+        {
+          opportunityId: 'invalid-opportunity-id',
+          type: 'CODE_CHANGE',
+          rank: 0,
+          status: 'NEW',
+          data: { foo: 'bar' },
+        },
+      ];
+
+      const results = await Suggestion.createMany(data);
+
+      expect(results.errorItems).to.be.an('array').with.length(1);
+      expect(results.createdItems).to.be.an('array').with.length(0);
+      expect(results.errorItems[0].error).to.be.an.instanceOf(ValidationError);
+      expect(results.errorItems[0].item).to.eql(data[0]);
+    });
   });
 });

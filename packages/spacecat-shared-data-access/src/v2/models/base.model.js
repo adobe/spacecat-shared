@@ -46,10 +46,16 @@ class BaseModel {
     this.patcher = new Patcher(this.entity, this.record);
 
     this.referencesCache = {};
-    this._initializeReferences();
+    this.#initializeReferences();
   }
 
-  _initializeReferences() {
+  /**
+   * Initializes the references for the current entity.
+   * This method is called during the construction of the entity instance
+   * to set up the reference methods for fetching associated entities.
+   * @private
+   */
+  #initializeReferences() {
     const { references } = this.entity.model.original;
     if (!isNonEmptyObject(references)) {
       return;
@@ -65,16 +71,41 @@ class BaseModel {
     }
   }
 
-  _getCachedReference(targetName) {
+  /**
+   * Gets a cached reference for the specified entity.
+   * @param {string} targetName - The name of the entity to fetch.
+   * @return {*}
+   */
+  #getCachedReference(targetName) {
     return this.referencesCache[targetName];
   }
 
+  /**
+   * Caches a reference for the specified entity. This method is used to store
+   * fetched references to avoid redundant database queries.
+   * @param {string} targetName - The name of the entity to cache.
+   * @param {*} reference - The reference to cache.
+   * @private
+   */
   _cacheReference(targetName, reference) {
     this.referencesCache[targetName] = reference;
   }
 
+  /**
+   * Fetches a reference for the specified entity. This method is used to fetch
+   * associated entities based on the type of relationship (belongs_to, has_one, has_many).
+   * The fetched references are cached to avoid redundant database queries. If the reference
+   * is already cached, it will be returned directly.
+   * References are defined in the entity model and are used to fetch associated entities.
+   * @async
+   * @param {string} type - The type of relationship (belongs_to, has_one, has_many).
+   * @param {string} targetName - The name of the entity to fetch.
+   * @return {Promise<*|null>} - A promise that resolves to the fetched reference or null if
+   * not found.
+   * @private
+   */
   async _fetchReference(type, targetName) { /* eslint-disable no-underscore-dangle */
-    let result = this._getCachedReference(targetName);
+    let result = this.#getCachedReference(targetName);
     if (result) {
       return result;
     }

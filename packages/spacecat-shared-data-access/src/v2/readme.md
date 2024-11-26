@@ -89,7 +89,7 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
 
 ## Step 1: Define the Entity Schema
 
-1. **Create Entity Schema File**: Start by defining the entity schema in a new file (e.g., `myNewEntity.schema.js`) within the `/entities/` directory. This file should export a simple JavaScript object that defines the schema for the entity (refer to the existing `opportunity.schema.js` for an example).
+1. **Create Entity Schema File**: Start by defining the entity schema in a new file (e.g., `myNewEntity.schema.js`) within the `/schemas/` directory. This file should export a simple JavaScript object that defines the schema for the entity (refer to the existing `opportunity.schema.js` for an example).
    ```javascript
    export const MyNewEntitySchema = {
      model: {
@@ -131,6 +131,11 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
      },
    };
    ```
+2. **Declare References:** In addition to defining your attributes and indexes, declare any relationships between entities using the references property. This will help in setting up associations that are needed for easy fetching and managing of related entities.
+   The references field contains details about the relationships that this entity has with others:
+   •	belongs_to: This specifies relationships where MyNewEntity belongs to another entity (Opportunity in this case).
+   •	has_many: You can specify related entities that MyNewEntity might have multiple references to.
+   These references allow for automatic generation of getter methods for these relationships.
 
 ## Step 2: Add a Model Class
 
@@ -164,6 +169,18 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
 
    export default MyNewEntity;
    ```
+By extending BaseModel, all references declared in the schema are automatically available as methods on MyNewEntity instances. No need to manually implement getters for associated entities—they will be automatically available based on the references field in the schema.
+
+### Automatic Reference Getter Methods
+When you add references in the schema (e.g., belongs_to or has_many), the BaseModel class uses _initializeReferences() to automatically generate getter methods for each reference:
+•	For the above example schema, since there is a belongs_to relationship with Opportunity, a getter method named getOpportunity() is generated automatically.
+•	The naming convention for these methods follows the pattern get<EntityName>(), where <EntityName> is derived from the target in the references configuration.
+
+The automatic creation of these getters is handled by _initializeReferences(), which:
+•	Iterates over each entry in the references field.
+•	Dynamically adds a method to the instance that, when called, uses _fetchReference() to retrieve and optionally cache the related entity.
+
+This allows your entity models to directly support methods like myNewEntityInstance.getOpportunity(), making it easy to navigate relationships between entities without writing boilerplate code.
 
 ## Step 3: Add a Collection Class
 
@@ -178,7 +195,7 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
      }
 
      async allByStatus(status) {
-       return await this.service.entities.myNewEntity.query.myNewEntityIndex({ status }).go();
+       return this.findByIndexKeys({ status });
      }
    }
 
@@ -220,7 +237,8 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
 
 1. **Update Guards if Needed**: If your entity requires new types of validation, add guard methods in `guards.js`. The guards should be generic and not specific to field names—ensure they can be reused for different fields of the same type. Update `index.d.ts` to add TypeScript type definitions for those new guard functions if necessary.
    ```javascript
-   export function guardStatus(propertyName, value, entityName) {
+   export function guardStatus(propertyName, value, entityName, nullable = false) {
+     if (checkNullable(value, nullable)) return;
      const allowedStatuses = ['NEW', 'IN_PROGRESS', 'COMPLETED'];
      if (!allowedStatuses.includes(value)) {
        throw new Error(`${propertyName} must be one of ${allowedStatuses.join(', ')} in ${entityName}`);

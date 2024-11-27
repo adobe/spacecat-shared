@@ -14,57 +14,100 @@ import {
   DataChunks, series, facets,
 } from '@adobe/rum-distiller';
 import { loadBundles } from '../utils.js';
-import { mapBundlesToGroupOrUrl, BUNDLE_TYPE } from './grouped-urls.js';
 
-function handler(rawBundles, groupedURLs = []) {
+const FACET_TYPE = {
+  GROUP: 'group',
+  URL: 'url',
+};
+
+const findMatchedPattern = (url, urlPatterns) => {
+  for (const urlPattern of urlPatterns) {
+    const regex = new RegExp(`^${urlPattern.pattern.replace(/\*/g, '.*')}$`);
+    if (regex.test(url)) {
+      return urlPattern;
+    }
+  }
+  return null;
+};
+
+const mapUrlsToPatterns = (bundles, patterns) => {
+  const urlToPatternMap = {};
+  if (!patterns || patterns.length === 0) {
+    return {};
+  }
+
+  for (const bundle of bundles) {
+    const matchedPattern = findMatchedPattern(bundle.url, patterns);
+
+    if (matchedPattern) {
+      urlToPatternMap[bundle.url] = matchedPattern;
+    }
+  }
+  return urlToPatternMap;
+};
+
+function handler(rawBundles, urlPatterns = []) {
   const bundles = rawBundles.map((bundle) => ({
     ...bundle,
-    url: facets.url(bundle),
+    url: facets.url(bundle), // URL without ids, hashes, and other encoded data
   }));
-  const urlToGroupMap = mapBundlesToGroupOrUrl(bundles, groupedURLs);
+  const urlToPatternMap = mapUrlsToPatterns(bundles, urlPatterns);
 
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
 
-  dataChunks.addFacet('type', (bundle) => {
-    const mappedValue = urlToGroupMap.get(bundle.url);
-    return mappedValue?.pattern || bundle.url;
-  });
+  dataChunks.addFacet('urls', facets.url);
+  dataChunks.addFacet('patterns', (bundle) => urlToPatternMap[bundle.url]?.pattern);
 
   dataChunks.addSeries('lcp', series.lcp);
   dataChunks.addSeries('cls', series.cls);
   dataChunks.addSeries('inp', series.inp);
   dataChunks.addSeries('ttfb', series.ttfb);
 
-  return dataChunks.facets.type.map((urlFacet) => {
-    const group = groupedURLs.find((g) => g.pattern === urlFacet.value);
+  const patternsChunks = dataChunks.facets.patterns.map((facet) => {
+    const pattern = Object.values(urlToPatternMap).find((p) => p.pattern === facet.value);
 
-    const typeDefinition = group
-      ? {
-        type: BUNDLE_TYPE.GROUP,
-        'group-name': group.name,
-        pattern: group.pattern,
-      }
-      : {
-        type: BUNDLE_TYPE.URL,
-        url: urlFacet.value,
-      };
-
-    const result = {
-      pageviews: urlFacet.weight,
-      lcp: urlFacet.metrics.lcp.percentile(75) || null,
-      lcpCount: urlFacet.metrics.lcp.count,
-      cls: urlFacet.metrics.cls.percentile(75) || null,
-      clsCount: urlFacet.metrics.cls.count,
-      inp: urlFacet.metrics.inp.percentile(75) || null,
-      inpCount: urlFacet.metrics.inp.count,
-      ttfb: urlFacet.metrics.ttfb.percentile(75) || null,
-      ttfbCount: urlFacet.metrics.ttfb.count,
+    return {
+      type: FACET_TYPE.GROUP,
+      name: pattern.name,
+      pattern: pattern.pattern,
+      metrics: {
+        pageviews: facet.weight,
+        lcp: facet.metrics.lcp.percentile(75) || null,
+        lcpCount: facet.metrics.lcp.count,
+        cls: facet.metrics.cls.percentile(75) || null,
+        clsCount: facet.metrics.cls.count,
+        inp: facet.metrics.inp.percentile(75) || null,
+        inpCount: facet.metrics.inp.count,
+        ttfb: facet.metrics.ttfb.percentile(75) || null,
+        ttfbCount: facet.metrics.ttfb.count,
+      },
     };
-    return { ...result, ...typeDefinition };
-  })
-    .filter((row) => row.lcp || row.cls || row.inp || row.ttfb) // filter out pages with no cwv data
-    .sort((a, b) => b.pageviews - a.pageviews); // sort desc by pageviews
+  });
+
+  const urlsChunks = dataChunks.facets.urls.map((facet) => ({
+    type: FACET_TYPE.URL,
+    url: facet.value,
+    metrics: {
+      pageviews: facet.weight,
+      lcp: facet.metrics.lcp.percentile(75) || null,
+      lcpCount: facet.metrics.lcp.count,
+      cls: facet.metrics.cls.percentile(75) || null,
+      clsCount: facet.metrics.cls.count,
+      inp: facet.metrics.inp.percentile(75) || null,
+      inpCount: facet.metrics.inp.count,
+      ttfb: facet.metrics.ttfb.percentile(75) || null,
+      ttfbCount: facet.metrics.ttfb.count,
+    },
+  }));
+
+  const result = [...patternsChunks, ...urlsChunks]
+    // filter out pages with no cwv data
+    .filter((row) => row.metrics.lcp || row.metrics.cls || row.metrics.inp || row.metrics.ttfb)
+    // sort desc by pageviews
+    .sort((a, b) => b.metrics.pageviews - a.metrics.pageviews);
+
+  return result;
 }
 
 export default {

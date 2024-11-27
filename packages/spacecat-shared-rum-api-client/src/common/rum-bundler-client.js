@@ -22,7 +22,11 @@ const ONE_DAY = ONE_HOUR * HOURS_IN_DAY;
 
 const CHUNK_SIZE = 31;
 
-function filterBundles(checkpoints = []) {
+function isBotTraffic(bundle) {
+  return bundle?.userAgent?.includes('bot');
+}
+
+function filterEvents(checkpoints = []) {
   return (bundle) => {
     if (checkpoints.length > 0) {
       const events = bundle.events.filter((event) => checkpoints.includes(event.checkpoint));
@@ -160,6 +164,7 @@ async function fetchBundles(opts = {}) {
     interval = 7,
     granularity = GRANULARITY.DAILY,
     checkpoints = [],
+    filterBotTraffic = true,
   } = opts;
 
   if (!hasText(domain) || !hasText(domainkey)) {
@@ -185,7 +190,11 @@ async function fetchBundles(opts = {}) {
   for (const chunk of chunks) {
     const responses = await Promise.all(chunk.map((url) => fetch(url)));
     const bundles = await Promise.all(responses.map((response) => response.json()));
-    result.push(...bundles.flatMap((b) => b.rumBundles.map(filterBundles(checkpoints))));
+    result.push(...bundles.flatMap(
+      (b) => b.rumBundles.filter(
+        (bundle) => !filterBotTraffic || !isBotTraffic(bundle),
+      ).map(filterEvents(checkpoints)),
+    ));
   }
   return mergeBundlesWithSameId(result);
 }

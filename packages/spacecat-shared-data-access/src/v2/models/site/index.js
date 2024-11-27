@@ -10,13 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-export type * from './audit/index.d.ts';
-export type * from './base/index.d.ts';
-export type * from './experiment/index.d.ts';
-export type * from './key-event/index.d.ts';
-export type * from './opportunity/index.d.ts';
-export type * from './organization/index.d.ts';
-export type * from './site/index.d.ts';
-export type * from './site-candidate/index.d.ts';
-export type * from './site-top-page/index.d.ts';
-export type * from './suggestion/index.d.ts';
+// eslint-disable-next-line import/no-cycle
+import Site from './site.model.js';
+import SiteCollection from './site.collection.js';
+
+export {
+  Site,
+  SiteCollection,
+};

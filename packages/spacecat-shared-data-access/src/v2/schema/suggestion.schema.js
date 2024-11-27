@@ -12,8 +12,9 @@
 
 /* c8 ignore start */
 
-import { v4 as uuid, validate as uuidValidate } from 'uuid';
+import { validate as uuidValidate } from 'uuid';
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import createSchema from './base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -21,112 +22,84 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const SuggestionSchema = {
-  model: {
-    entity: 'Suggestion',
-    version: '1',
-    service: 'SpaceCat',
-  },
-  attributes: {
-    suggestionId: {
-      type: 'string',
-      required: true,
-      readOnly: true,
-      // https://electrodb.dev/en/modeling/attributes/#default
-      default: () => uuid(),
-      // https://electrodb.dev/en/modeling/attributes/#attribute-validation
-      validate: (value) => uuidValidate(value),
-    },
-    opportunityId: {
-      type: 'string',
-      required: true,
-      validate: (value) => uuidValidate(value),
-    },
-    type: {
-      type: ['CODE_CHANGE', 'CONTENT_UPDATE', 'REDIRECT_UPDATE', 'METADATA_UPDATE'],
-      required: true,
-      readOnly: true,
-    },
-    rank: {
-      type: 'number',
-      required: true,
-    },
-    data: {
-      type: 'any',
-      required: true,
-      validate: (value) => isNonEmptyObject(value),
-    },
-    kpiDeltas: {
-      type: 'any',
-      required: false,
-      validate: (value) => !value || isNonEmptyObject(value),
-    },
-    status: {
-      type: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'],
-      required: true,
-      default: () => 'NEW',
-    },
-    createdAt: {
-      type: 'number',
-      readOnly: true,
-      required: true,
-      default: () => Date.now(),
-      set: () => Date.now(),
-    },
-    updatedAt: {
-      type: 'number',
-      watch: '*',
-      required: true,
-      default: () => Date.now(),
-      set: () => Date.now(),
-    },
-    // todo: add createdBy, updatedBy and auto-set from auth context
-  },
-  indexes: {
-    primary: { // operates on the main table, no 'index' property
-      pk: {
-        field: 'pk',
-        composite: ['suggestionId'],
+const SuggestionSchema = createSchema(
+  'Suggestion',
+  '1',
+  'SpaceCat',
+  {
+    // add your custom attributes here. the primary id and
+    // timestamps are created by default via the base schema.
+    attributes: {
+      opportunityId: {
+        type: 'string',
+        required: true,
+        validate: (value) => uuidValidate(value),
       },
-      sk: {
-        field: 'sk',
-        composite: [],
+      type: {
+        type: ['CODE_CHANGE', 'CONTENT_UPDATE', 'REDIRECT_UPDATE', 'METADATA_UPDATE'],
+        required: true,
+        readOnly: true,
+      },
+      rank: {
+        type: 'number',
+        required: true,
+      },
+      data: {
+        type: 'any',
+        required: true,
+        validate: (value) => isNonEmptyObject(value),
+      },
+      kpiDeltas: {
+        type: 'any',
+        required: false,
+        validate: (value) => !value || isNonEmptyObject(value),
+      },
+      status: {
+        type: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'],
+        required: true,
+        default: 'NEW',
       },
     },
-    byOpportunityId: {
-      index: 'spacecat-data-suggestion-by-opportunity',
-      pk: {
-        field: 'gsi1pk',
-        composite: ['opportunityId'],
+    // add your custom indexes here. the primary index is created by default via the base schema
+    indexes: {
+      byOpportunityId: {
+        index: 'spacecat-data-suggestion-by-opportunity',
+        pk: {
+          field: 'gsi1pk',
+          composite: ['opportunityId'],
+        },
+        sk: {
+          field: 'gsi1sk',
+          composite: ['suggestionId'],
+        },
       },
-      sk: {
-        field: 'gsi1sk',
-        composite: ['suggestionId'],
+      byOpportunityIdAndStatus: {
+        index: 'spacecat-data-suggestion-by-opportunity-and-status',
+        pk: {
+          field: 'gsi2pk',
+          composite: ['opportunityId'],
+        },
+        sk: {
+          field: 'gsi2sk',
+          composite: ['status', 'rank'],
+        },
       },
     },
-    byOpportunityIdAndStatus: {
-      index: 'spacecat-data-suggestion-by-opportunity-and-status',
-      pk: {
-        field: 'gsi2pk',
-        composite: ['opportunityId'],
-      },
-      sk: {
-        field: 'gsi2sk',
-        composite: ['status', 'rank'],
-      },
+    /**
+     * References to other entities. This is not part of the standard ElectroDB schema, but is used
+     * to define relationships between entities in our data layer API.
+     * @type {{
+     * [belongs_to]: [{target: string}],
+     * [has_many]: [{target: string}],
+     * [has_one]: [{target: string}]
+     * }}
+     */
+    references: {
+      belongs_to: [
+        { target: 'Opportunity' },
+      ],
     },
   },
-};
-
-/**
- * References to other entities. This is not part of the standard ElectroDB schema, but is used
- * to define relationships between entities in our data layer API.
- * @type {{belongs_to: [{type: string, target: string}]}}
- */
-SuggestionSchema.references = {
-  belongs_to: [
-    { type: 'belongs_to', target: 'Opportunity' },
-  ],
-};
+);
 
 export default SuggestionSchema;

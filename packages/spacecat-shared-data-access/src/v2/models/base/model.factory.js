@@ -10,8 +10,27 @@
  * governing permissions and limitations under the License.
  */
 
-import OpportunityCollection from './opportunity.collection.js';
-import SuggestionCollection from './suggestion.collection.js';
+import AuditCollection from '../audit/audit.collection.js';
+import ExperimentCollection from '../experiment/experiment.collection.js';
+import KeyEventCollection from '../key-event/key-event.collection.js';
+import OpportunityCollection from '../opportunity/opportunity.collection.js';
+import OrganizationCollection from '../organization/organization.collection.js';
+import SiteCandidateCollection from '../site-candidate/site-candidate.collection.js';
+import SiteCollection from '../site/site.collection.js';
+import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js';
+import SuggestionCollection from '../suggestion/suggestion.collection.js';
+
+const COLLECTIONS = [
+  AuditCollection,
+  ExperimentCollection,
+  KeyEventCollection,
+  OpportunityCollection,
+  OrganizationCollection,
+  SiteCollection,
+  SiteCandidateCollection,
+  SiteTopPageCollection,
+  SuggestionCollection,
+]; // todo: could be established by enumerating files in the schema directory
 
 /**
  * ModelFactory - A factory class responsible for creating and managing collections
@@ -32,7 +51,7 @@ class ModelFactory {
     this.logger = logger;
     this.models = new Map();
 
-    this.initialize();
+    this.#initialize();
   }
 
   /**
@@ -40,20 +59,11 @@ class ModelFactory {
    * This method creates instances of each collection and stores them in an internal map.
    * @private
    */
-  initialize() {
-    const opportunityCollection = new OpportunityCollection(
-      this.service,
-      this,
-      this.logger,
-    );
-    const suggestionCollection = new SuggestionCollection(
-      this.service,
-      this,
-      this.logger,
-    );
-
-    this.models.set(OpportunityCollection.name, opportunityCollection);
-    this.models.set(SuggestionCollection.name, suggestionCollection);
+  #initialize() {
+    COLLECTIONS.forEach((Collection) => {
+      const collection = new Collection(this.service, this, this.logger);
+      this.models.set(Collection.name, collection);
+    });
   }
 
   /**

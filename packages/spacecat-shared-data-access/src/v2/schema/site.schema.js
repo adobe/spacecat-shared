@@ -16,6 +16,7 @@ import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
+import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../models/site/config.js';
 import createSchema from './base.schema.js';
 
 /*
@@ -24,87 +25,115 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const OpportunitySchema = createSchema(
-  'Opportunity',
+export const DELIVERY_TYPES = {
+  AEM_CS: 'aem_cs',
+  AEM_EDGE: 'aem_edge',
+  OTHER: 'other',
+};
+
+export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
+
+export const DEFAULT_ORGANIZATION_ID = 'default';
+
+const SiteSchema = createSchema(
+  'Site',
   '1',
   'SpaceCat',
   {
     // add your custom attributes here. the primary id and
     // timestamps are created by default via the base schema.
     attributes: {
-      siteId: {
+      organizationId: {
         type: 'string',
         required: true,
+        default: DEFAULT_ORGANIZATION_ID,
         validate: (value) => uuidValidate(value),
       },
-      auditId: {
+      baseURL: {
         type: 'string',
         required: true,
-        validate: (value) => uuidValidate(value),
+        validate: (value) => isValidUrl(value),
       },
-      runbook: {
+      gitHubURL: {
         type: 'string',
         validate: (value) => !value || isValidUrl(value),
       },
-      type: {
-        type: 'string',
-        readOnly: true,
+      deliveryType: {
+        type: Object.values(DELIVERY_TYPES),
+        default: DEFAULT_DELIVERY_TYPE,
         required: true,
       },
-      data: {
+      config: {
+        type: 'any',
+        required: true,
+        default: DEFAULT_CONFIG,
+        validate: (value) => isNonEmptyObject(validateConfiguration(value)),
+        get: (value) => Config(value),
+      },
+      hlxConfig: {
         type: 'any',
         required: false,
         validate: (value) => !value || isNonEmptyObject(value),
       },
-      origin: {
-        type: ['ESS_OPS', 'AI', 'AUTOMATION'],
+      isLive: {
+        type: 'boolean',
         required: true,
+        default: false,
       },
-      title: {
+      isLiveToggledAt: {
+        type: 'number',
+        watch: ['isLive'],
+        required: true,
+        default: () => Date.now(),
+        set: () => Date.now(),
+      },
+      name: {
         type: 'string',
         required: true,
       },
-      description: {
+      imsOrgId: {
         type: 'string',
         required: false,
+        default: DEFAULT_ORGANIZATION_ID,
       },
-      status: {
-        type: ['NEW', 'IN_PROGRESS', 'IGNORED', 'RESOLVED'],
-        required: true,
-        default: 'NEW',
-      },
-      guidance: {
+      fulfillableItems: {
         type: 'any',
         required: false,
         validate: (value) => !value || isNonEmptyObject(value),
-      },
-      tags: {
-        type: 'set',
-        items: 'string',
-        required: false,
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      bySiteId: {
-        index: 'spacecat-data-opportunity-by-site',
+      byBaseURL: {
+        index: 'spacecat-data-site-by-base-url',
         pk: {
           field: 'gsi1pk',
-          composite: ['siteId'],
+          composite: ['baseURL'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['opportunityId'],
+          composite: ['updatedAt'],
         },
       },
-      bySiteIdAndStatus: {
-        index: 'spacecat-data-opportunity-by-site-and-status',
+      byDeliveryType: {
+        index: 'spacecat-data-site-by-delivery-type',
         pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'status'],
+          field: 'gsi1pk',
+          composite: ['deliveryType'],
         },
         sk: {
-          field: 'gsi2sk',
+          field: 'gsi1sk',
+          composite: ['updatedAt'],
+        },
+      },
+      byOrganizationId: {
+        index: 'spacecat-data-site-by-organization-id',
+        pk: {
+          field: 'gsi1pk',
+          composite: ['organizationId'],
+        },
+        sk: {
+          field: 'gsi1sk',
           composite: ['updatedAt'],
         },
       },
@@ -119,15 +148,19 @@ const OpportunitySchema = createSchema(
      * }}
      */
     references: {
-      has_many: [
-        { target: 'Suggestions' },
-      ],
       belongs_to: [
-        { target: 'Site' },
-        { target: 'Audit' },
+        { target: 'Organization' },
+      ],
+      has_many: [
+        { target: 'Audits' },
+        { target: 'Experiments' },
+        { target: 'KeyEvents' },
+        { target: 'Opportunities' },
+        { target: 'SiteCandidates' },
+        { target: 'SiteTopPages' },
       ],
     },
   },
 );
 
-export default OpportunitySchema;
+export default SiteSchema;

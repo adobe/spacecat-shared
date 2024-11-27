@@ -16,7 +16,7 @@ import { expect, use as chaiUse } from 'chai';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
-import ModelFactory from '../../../../src/v2/models/model.factory.js';
+import ModelFactory from '../../../../src/v2/models/base/model.factory.js';
 
 chaiUse(chaiAsPromised);
 

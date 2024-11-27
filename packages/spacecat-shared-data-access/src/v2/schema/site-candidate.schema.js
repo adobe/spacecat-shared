@@ -12,10 +12,11 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
+import { DEFAULT_UPDATED_BY } from '../models/site-candidate/site-candidate.model.js';
 import createSchema from './base.schema.js';
 
 /*
@@ -24,8 +25,8 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const OpportunitySchema = createSchema(
-  'Opportunity',
+const SiteCandidateSchema = createSchema(
+  'SiteCandidate',
   '1',
   'SpaceCat',
   {
@@ -34,77 +35,55 @@ const OpportunitySchema = createSchema(
     attributes: {
       siteId: {
         type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
+        required: false,
+        validate: (value) => !value || uuidValidate(value),
       },
-      auditId: {
+      baseURL: {
         type: 'string',
         required: true,
-        validate: (value) => uuidValidate(value),
+        validate: (value) => isValidUrl(value),
       },
-      runbook: {
-        type: 'string',
-        validate: (value) => !value || isValidUrl(value),
-      },
-      type: {
-        type: 'string',
-        readOnly: true,
-        required: true,
-      },
-      data: {
+      hlxConfig: {
         type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      origin: {
-        type: ['ESS_OPS', 'AI', 'AUTOMATION'],
         required: true,
+        default: {},
+        validate: (value) => isObject(value),
       },
-      title: {
-        type: 'string',
+      source: {
+        type: ['CDN', 'RUM'],
         required: true,
-      },
-      description: {
-        type: 'string',
-        required: false,
       },
       status: {
-        type: ['NEW', 'IN_PROGRESS', 'IGNORED', 'RESOLVED'],
+        type: ['IGNORED', 'APPROVED'],
+        required: false,
+      },
+      updatedBy: {
+        type: 'string',
         required: true,
-        default: 'NEW',
-      },
-      guidance: {
-        type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      tags: {
-        type: 'set',
-        items: 'string',
-        required: false,
+        default: DEFAULT_UPDATED_BY,
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       bySiteId: {
-        index: 'spacecat-data-opportunity-by-site',
+        index: 'spacecat-data-site-candidate-by-site-id',
         pk: {
           field: 'gsi1pk',
           composite: ['siteId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['opportunityId'],
+          composite: ['updatedAt'],
         },
       },
-      bySiteIdAndStatus: {
-        index: 'spacecat-data-opportunity-by-site-and-status',
+      bySiteIdAndSiteCandidateIdAndUrl: {
+        index: 'spacecat-data-site-candidate-by-base-url',
         pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'status'],
+          field: 'gsi1pk',
+          composite: ['baseURL'],
         },
         sk: {
-          field: 'gsi2sk',
+          field: 'gsi1sk',
           composite: ['updatedAt'],
         },
       },
@@ -119,15 +98,11 @@ const OpportunitySchema = createSchema(
      * }}
      */
     references: {
-      has_many: [
-        { target: 'Suggestions' },
-      ],
       belongs_to: [
         { target: 'Site' },
-        { target: 'Audit' },
       ],
     },
   },
 );
 
-export default OpportunitySchema;
+export default SiteCandidateSchema;

@@ -17,7 +17,7 @@ import { ElectroValidationError } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
-import BaseCollection from '../../../../src/v2/models/base.collection.js';
+import BaseCollection from '../../../../src/v2/models/base/base.collection.js';
 
 chaiUse(chaiAsPromised);
 

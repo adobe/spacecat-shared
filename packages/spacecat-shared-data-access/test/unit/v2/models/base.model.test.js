@@ -17,7 +17,7 @@ import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
-import BaseModel from '../../../../src/v2/models/base.model.js';
+import BaseModel from '../../../../src/v2/models/base/base.model.js';
 import OpportunitySchema from '../../../../src/v2/schema/opportunity.schema.js';
 
 chaiUse(chaiAsPromised);

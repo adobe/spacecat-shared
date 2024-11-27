@@ -12,10 +12,11 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
+import { KEY_EVENT_TYPES } from '../../models/key-event.js';
 import createSchema from './base.schema.js';
 
 /*
@@ -24,8 +25,8 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const OpportunitySchema = createSchema(
-  'Opportunity',
+const KeyEventSchema = createSchema(
+  'KeyEvent',
   '1',
   'SpaceCat',
   {
@@ -37,74 +38,31 @@ const OpportunitySchema = createSchema(
         required: true,
         validate: (value) => uuidValidate(value),
       },
-      auditId: {
+      name: {
         type: 'string',
         required: true,
-        validate: (value) => uuidValidate(value),
-      },
-      runbook: {
-        type: 'string',
-        validate: (value) => !value || isValidUrl(value),
+        validate: (value) => hasText(value),
       },
       type: {
-        type: 'string',
-        readOnly: true,
+        type: Object.values(KEY_EVENT_TYPES),
         required: true,
       },
-      data: {
-        type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      origin: {
-        type: ['ESS_OPS', 'AI', 'AUTOMATION'],
+      time: {
+        type: 'number',
         required: true,
-      },
-      title: {
-        type: 'string',
-        required: true,
-      },
-      description: {
-        type: 'string',
-        required: false,
-      },
-      status: {
-        type: ['NEW', 'IN_PROGRESS', 'IGNORED', 'RESOLVED'],
-        required: true,
-        default: 'NEW',
-      },
-      guidance: {
-        type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      tags: {
-        type: 'set',
-        items: 'string',
-        required: false,
+        default: () => Date.now(),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       bySiteId: {
-        index: 'spacecat-data-opportunity-by-site',
+        index: 'spacecat-data-key-event-by-site-id',
         pk: {
           field: 'gsi1pk',
           composite: ['siteId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['opportunityId'],
-        },
-      },
-      bySiteIdAndStatus: {
-        index: 'spacecat-data-opportunity-by-site-and-status',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'status'],
-        },
-        sk: {
-          field: 'gsi2sk',
           composite: ['updatedAt'],
         },
       },
@@ -119,15 +77,11 @@ const OpportunitySchema = createSchema(
      * }}
      */
     references: {
-      has_many: [
-        { target: 'Suggestions' },
-      ],
       belongs_to: [
         { target: 'Site' },
-        { target: 'Audit' },
       ],
     },
   },
 );
 
-export default OpportunitySchema;
+export default KeyEventSchema;

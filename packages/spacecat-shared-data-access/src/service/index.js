@@ -16,9 +16,9 @@ import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import AWSXray from 'aws-xray-sdk';
 import { Service } from 'electrodb';
 
-import ModelFactory from '../v2/models/model.factory.js';
-import OpportunityCollection from '../v2/models/opportunity.collection.js';
-import SuggestionCollection from '../v2/models/suggestion.collection.js';
+import ModelFactory from '../v2/models/base/model.factory.js';
+import OpportunityCollection from '../v2/models/opportunity/opportunity.collection.js';
+import SuggestionCollection from '../v2/models/suggestion/suggestion.collection.js';
 import OpportunitySchema from '../v2/schema/opportunity.schema.js';
 import SuggestionSchema from '../v2/schema/suggestion.schema.js';
 

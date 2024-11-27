@@ -17,7 +17,7 @@ import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
-import Suggestion from '../../../../src/v2/models/suggestion.model.js';
+import Suggestion from '../../../../src/v2/models/suggestion/suggestion.model.js';
 import SuggestionSchema from '../../../../src/v2/schema/suggestion.schema.js';
 
 chaiUse(chaiAsPromised);

@@ -10,13 +10,18 @@
  * governing permissions and limitations under the License.
  */
 
-export type * from './audit/index.d.ts';
-export type * from './base/index.d.ts';
-export type * from './experiment/index.d.ts';
-export type * from './key-event/index.d.ts';
-export type * from './opportunity/index.d.ts';
-export type * from './organization/index.d.ts';
-export type * from './site/index.d.ts';
-export type * from './site-candidate/index.d.ts';
-export type * from './site-top-page/index.d.ts';
-export type * from './suggestion/index.d.ts';
+import BaseModel from '../base/base.model.js';
+
+/**
+ * Suggestion - A class representing a Suggestion entity.
+ * Provides methods to access and manipulate Suggestion-specific data,
+ * such as related opportunities, types, statuses, etc.
+ *
+ * @class Suggestion
+ * @extends BaseModel
+ */
+class Suggestion extends BaseModel {
+  // add your customized methods here
+}
+
+export default Suggestion;

@@ -14,9 +14,9 @@ import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import { ElectroValidationError } from 'electrodb';
 
-import ValidationError from '../errors/validation.error.js';
-import { guardId } from '../util/guards.js';
-import { keyNamesToIndexName } from '../util/reference.js';
+import ValidationError from '../../errors/validation.error.js';
+import { guardId } from '../../util/guards.js';
+import { keyNamesToIndexName } from '../../util/reference.js';
 
 /**
  * BaseCollection - A base class for managing collections of entities in the application.
@@ -24,6 +24,7 @@ import { keyNamesToIndexName } from '../util/reference.js';
  * for data operations.
  *
  * @class BaseCollection
+ * @abstract
  */
 class BaseCollection {
   /**

@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseModel from './base.model.js';
+import BaseModel from '../base/base.model.js';
 
 /**
  * Opportunity - A class representing an Opportunity entity.

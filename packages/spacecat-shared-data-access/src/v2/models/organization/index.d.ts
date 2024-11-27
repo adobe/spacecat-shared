@@ -10,13 +10,19 @@
  * governing permissions and limitations under the License.
  */
 
-export type * from './audit/index.d.ts';
-export type * from './base/index.d.ts';
-export type * from './experiment/index.d.ts';
-export type * from './key-event/index.d.ts';
-export type * from './opportunity/index.d.ts';
-export type * from './organization/index.d.ts';
-export type * from './site/index.d.ts';
-export type * from './site-candidate/index.d.ts';
-export type * from './site-top-page/index.d.ts';
-export type * from './suggestion/index.d.ts';
+import type { BaseCollection, BaseModel } from '../index';
+
+export interface Organization extends BaseModel {
+  getConfig(): object;
+  getFulfillableItems(): object;
+  getImsOrgId(): string;
+  getName(): string;
+  setConfig(config: object): Organization;
+  setFulfillableItems(fulfillableItems: object): Organization;
+  setImsOrgId(imsOrgId: string): Organization;
+  setName(name: string): Organization;
+}
+
+export interface OrganizationCollection extends BaseCollection<Organization> {
+  allByImsOrgId(imsOrgId: string): Promise<Organization[]>;
+}

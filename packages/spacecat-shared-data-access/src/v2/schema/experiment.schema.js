@@ -16,6 +16,8 @@ import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
+import { DEFAULT_UPDATED_BY } from '../models/experiment/experiment.model.js';
+
 import createSchema from './base.schema.js';
 
 /*
@@ -24,8 +26,8 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const OpportunitySchema = createSchema(
-  'Opportunity',
+const ExperimentSchema = createSchema(
+  'Experiment',
   '1',
   'SpaceCat',
   {
@@ -37,75 +39,71 @@ const OpportunitySchema = createSchema(
         required: true,
         validate: (value) => uuidValidate(value),
       },
-      auditId: {
+      conversionEventName: {
+        type: 'string',
+      },
+      conversionEventValue: {
+        type: 'string',
+      },
+      endDate: {
+        type: 'number',
+      },
+      // naming this expId so that it doesn't conflict
+      // with the experimentId attribute (internal id of this entity)
+      expId: {
         type: 'string',
         required: true,
-        validate: (value) => uuidValidate(value),
       },
-      runbook: {
+      name: {
         type: 'string',
-        validate: (value) => !value || isValidUrl(value),
+      },
+      startDate: {
+        type: 'number',
+      },
+      status: {
+        type: ['ACTIVE', 'INACTIVE'],
+        required: true,
       },
       type: {
         type: 'string',
-        readOnly: true,
-        required: true,
       },
-      data: {
-        type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
+      url: {
+        type: 'string',
+        validate: (value) => !value || isValidUrl(value),
       },
-      origin: {
-        type: ['ESS_OPS', 'AI', 'AUTOMATION'],
-        required: true,
-      },
-      title: {
+      updatedBy: {
         type: 'string',
         required: true,
+        default: DEFAULT_UPDATED_BY,
       },
-      description: {
-        type: 'string',
-        required: false,
-      },
-      status: {
-        type: ['NEW', 'IN_PROGRESS', 'IGNORED', 'RESOLVED'],
-        required: true,
-        default: 'NEW',
-      },
-      guidance: {
+      variants: {
         type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      tags: {
-        type: 'set',
-        items: 'string',
-        required: false,
+        required: true,
+        validate: (value) => isNonEmptyObject(value),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       bySiteId: {
-        index: 'spacecat-data-opportunity-by-site',
+        index: 'spacecat-data-experiment-by-site-id',
         pk: {
           field: 'gsi1pk',
           composite: ['siteId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['opportunityId'],
+          composite: ['updatedAt'],
         },
       },
-      bySiteIdAndStatus: {
-        index: 'spacecat-data-opportunity-by-site-and-status',
+      bySiteIdAndExpIdAndUrl: {
+        index: 'spacecat-data-experiment-by-site-id-and-experiment-id-and-url',
         pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'status'],
+          field: 'gsi1pk',
+          composite: ['siteId', 'expId'],
         },
         sk: {
-          field: 'gsi2sk',
-          composite: ['updatedAt'],
+          field: 'gsi1sk',
+          composite: ['url', 'updatedAt'],
         },
       },
     },
@@ -119,15 +117,11 @@ const OpportunitySchema = createSchema(
      * }}
      */
     references: {
-      has_many: [
-        { target: 'Suggestions' },
-      ],
       belongs_to: [
         { target: 'Site' },
-        { target: 'Audit' },
       ],
     },
   },
 );
 
-export default OpportunitySchema;
+export default ExperimentSchema;

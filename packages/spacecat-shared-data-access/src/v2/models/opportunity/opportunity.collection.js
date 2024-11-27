@@ -12,7 +12,7 @@
 
 import { hasText } from '@adobe/spacecat-shared-utils';
 
-import BaseCollection from './base.collection.js';
+import BaseCollection from '../base/base.collection.js';
 import Opportunity from './opportunity.model.js';
 
 /**

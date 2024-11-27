@@ -12,13 +12,13 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import Patcher from '../util/patcher.js';
+import Patcher from '../../util/patcher.js';
 import {
   capitalize,
   entityNameToCollectionName,
   entityNameToIdName,
   entityNameToReferenceMethodName, idNameToEntityName,
-} from '../util/reference.js';
+} from '../../util/reference.js';
 
 /**
  * Base - A base class for representing individual entities in the application.

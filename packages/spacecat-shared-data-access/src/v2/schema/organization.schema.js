@@ -12,9 +12,10 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import { validate as uuidValidate } from 'uuid';
+import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../models/site/config.js';
+import { DEFAULT_ORGANIZATION_ID } from '../../models/organization.js';
 
 import createSchema from './base.schema.js';
 
@@ -24,87 +25,46 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const OpportunitySchema = createSchema(
-  'Opportunity',
+const OrganizationSchema = createSchema(
+  'Organization',
   '1',
   'SpaceCat',
   {
     // add your custom attributes here. the primary id and
     // timestamps are created by default via the base schema.
     attributes: {
-      siteId: {
+      config: {
+        type: 'any',
+        required: true,
+        default: DEFAULT_CONFIG,
+        validate: (value) => isNonEmptyObject(validateConfiguration(value)),
+        get: (value) => Config(value),
+      },
+      name: {
         type: 'string',
         required: true,
-        validate: (value) => uuidValidate(value),
       },
-      auditId: {
+      imsOrgId: {
         type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
+        required: false,
+        default: DEFAULT_ORGANIZATION_ID,
       },
-      runbook: {
-        type: 'string',
-        validate: (value) => !value || isValidUrl(value),
-      },
-      type: {
-        type: 'string',
-        readOnly: true,
-        required: true,
-      },
-      data: {
+      fulfillableItems: {
         type: 'any',
         required: false,
         validate: (value) => !value || isNonEmptyObject(value),
-      },
-      origin: {
-        type: ['ESS_OPS', 'AI', 'AUTOMATION'],
-        required: true,
-      },
-      title: {
-        type: 'string',
-        required: true,
-      },
-      description: {
-        type: 'string',
-        required: false,
-      },
-      status: {
-        type: ['NEW', 'IN_PROGRESS', 'IGNORED', 'RESOLVED'],
-        required: true,
-        default: 'NEW',
-      },
-      guidance: {
-        type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      tags: {
-        type: 'set',
-        items: 'string',
-        required: false,
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      bySiteId: {
-        index: 'spacecat-data-opportunity-by-site',
+      byImsOrgId: {
+        index: 'spacecat-data-organization-by-ims-org-id',
         pk: {
           field: 'gsi1pk',
-          composite: ['siteId'],
+          composite: ['imsOrgId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['opportunityId'],
-        },
-      },
-      bySiteIdAndStatus: {
-        index: 'spacecat-data-opportunity-by-site-and-status',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'status'],
-        },
-        sk: {
-          field: 'gsi2sk',
           composite: ['updatedAt'],
         },
       },
@@ -120,14 +80,10 @@ const OpportunitySchema = createSchema(
      */
     references: {
       has_many: [
-        { target: 'Suggestions' },
-      ],
-      belongs_to: [
-        { target: 'Site' },
-        { target: 'Audit' },
+        { target: 'Sites' },
       ],
     },
   },
 );
 
-export default OpportunitySchema;
+export default OrganizationSchema;

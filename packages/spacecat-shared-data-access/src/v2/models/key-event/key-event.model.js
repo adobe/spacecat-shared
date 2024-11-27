@@ -10,18 +10,28 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseModel from './base.model.js';
+import BaseModel from '../base/base.model.js';
+
+export const KEY_EVENT_TYPES = {
+  PERFORMANCE: 'PERFORMANCE',
+  SEO: 'SEO',
+  CONTENT: 'CONTENT',
+  CODE: 'CODE',
+  THIRD_PARTY: 'THIRD PARTY',
+  EXPERIMENTATION: 'EXPERIMENTATION',
+  NETWORK: 'NETWORK',
+  STATUS_CHANGE: 'STATUS CHANGE',
+};
 
 /**
- * Suggestion - A class representing a Suggestion entity.
- * Provides methods to access and manipulate Suggestion-specific data,
- * such as related opportunities, types, statuses, etc.
+ * KeyEvent - A class representing an KeyEvent entity.
+ * Provides methods to access and manipulate KeyEvent-specific data.
  *
- * @class Suggestion
+ * @class KeyEvent
  * @extends BaseModel
  */
-class Suggestion extends BaseModel {
-  // add your customized methods here
+class KeyEvent extends BaseModel {
+  // add your custom methods or overrides here
 }
 
-export default Suggestion;
+export default KeyEvent;

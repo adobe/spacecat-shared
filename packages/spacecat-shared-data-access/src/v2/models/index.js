@@ -10,18 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import ModelFactory from './model.factory.js';
-import BaseModel from './base.model.js';
-import Opportunity from './opportunity.model.js';
-import OpportunityCollection from './opportunity.collection.js';
-import Suggestion from './suggestion.model.js';
-import SuggestionCollection from './suggestion.collection.js';
+export * from './base/index.js';
 
-export {
-  ModelFactory,
-  BaseModel,
-  Opportunity,
-  OpportunityCollection,
-  Suggestion,
-  SuggestionCollection,
-};
+export * from './audit/index.js';
+export * from './experiment/index.js';
+export * from './key-event/index.js';
+export * from './opportunity/index.js';
+export * from './organization/index.js';
+export * from './site/index.js';
+export * from './site-candidate/index.js';
+export * from './site-top-page/index.js';
+export * from './suggestion/index.js';

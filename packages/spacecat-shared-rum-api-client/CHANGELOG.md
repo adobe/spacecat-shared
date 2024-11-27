@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.12.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.4...@adobe/spacecat-shared-rum-api-client-v2.12.5) (2024-11-27)
+
+
+### Bug Fixes
+
+* exclude bot traffic from page views and opportunities ctr calculations ([#446](https://github.com/adobe/spacecat-shared/issues/446)) ([3d06fb7](https://github.com/adobe/spacecat-shared/commit/3d06fb70b6b20343380c94cefc467f1dc6183cb7))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.12.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.3...@adobe/spacecat-shared-rum-api-client-v2.12.4) (2024-11-26)
 
 

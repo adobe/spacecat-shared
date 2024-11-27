@@ -81,6 +81,7 @@ export interface Suggestion extends BaseModel {
  */
 export interface BaseCollection<T extends BaseModel> {
   findById(id: string): Promise<T>;
+  findByIndexKeys(indexKeys: object): Promise<T[]>;
   create(item: object): Promise<T>;
   createMany(items: object[]): Promise<MultiStatusCreateResult<T>>;
 }

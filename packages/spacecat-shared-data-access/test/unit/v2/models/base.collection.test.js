@@ -53,7 +53,9 @@ describe('BaseCollection', () => {
           get: stub(),
           put: stub(),
           create: stub(),
+          query: stub(),
           model: {
+            name: 'mockentitymodel',
             table: 'mockentitymodel',
           },
         },
@@ -67,6 +69,9 @@ describe('BaseCollection', () => {
         constructor(service, factory, data) {
           this.data = data;
         }
+
+        // eslint-disable-next-line class-methods-use-this
+        _cacheReference() {}
       },
       mockLogger,
     );
@@ -92,6 +97,20 @@ describe('BaseCollection', () => {
       const result = await baseCollectionInstance.findById('ef39921f-9a02-41db-b491-02c98987d956');
       expect(result).to.be.null;
       expect(mockElectroService.entities.mockentitymodel.get.calledOnce).to.be.true;
+    });
+  });
+
+  describe('findByIndexKeys', () => {
+    it('throws error if keys is not provided', async () => {
+      await expect(baseCollectionInstance.findByIndexKeys())
+        .to.be.rejectedWith('Failed to find by index keys [mockentitymodel]: keys are required');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('throws error if index is not found', async () => {
+      await expect(baseCollectionInstance.findByIndexKeys({ someKey: 'someValue' }))
+        .to.be.rejectedWith('Failed to find by index keys [mockentitymodel]: index [bySomeKey] not found');
+      expect(mockLogger.error.calledOnce).to.be.true;
     });
   });
 
@@ -161,6 +180,41 @@ describe('BaseCollection', () => {
       expect(mockElectroService.entities.mockentitymodel.put.calledThrice).to.be.true;
     });
 
+    it('creates many with a parent entity', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      const mockPutResults = {
+        type: 'query',
+        method: 'batchWrite',
+        params: {
+          RequestItems: {
+            mockentitymodel: [
+              { PutRequest: { Item: mockRecord } },
+              { PutRequest: { Item: mockRecord } },
+            ],
+          },
+        },
+      };
+      mockElectroService.entities.mockentitymodel.put.returns(
+        {
+          go: (options) => {
+            options.listeners[0](mockPutResults);
+            options.listeners[0]({ type: 'result' });
+            options.listeners[0]({ type: 'query', method: 'ignore' });
+            return Promise.resolve({ unprocessed: [] });
+          },
+          params: () => {},
+        },
+      );
+
+      const result = await baseCollectionInstance.createMany(
+        mockRecords,
+        { entity: { model: { name: 'mockentitymodel' } } },
+      );
+      expect(result.createdItems).to.be.an('array').that.has.length(2);
+      expect(result.createdItems).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockentitymodel.put.calledThrice).to.be.true;
+    });
+
     it('creates some entities successfully with unprocessed items', async () => {
       const mockRecords = [mockRecord, mockRecord];
       const mockPutResults = {
@@ -218,42 +272,7 @@ describe('BaseCollection', () => {
     });
   });
 
-  describe('_createInstance', () => { /* eslint-disable no-underscore-dangle */
-    it('returns null if the record is empty', () => {
-      const instance = baseCollectionInstance._createInstance(null);
-      expect(instance).to.be.null;
-      expect(mockLogger.warn.calledOnce).to.be.true;
-    });
-
-    it('returns an instance of the entity class with valid data', () => {
-      const instance = baseCollectionInstance._createInstance(mockEntityModel);
-      expect(instance).to.deep.include(mockEntityModel);
-    });
-
-    it('returns null if the record does not contain valid data', () => {
-      const instance = baseCollectionInstance._createInstance({});
-      expect(instance).to.be.null;
-    });
-  });
-
-  describe('_createInstances', () => {
-    it('returns an empty array if records is not an array', () => {
-      const records = { data: 'not an array' };
-      const instances = baseCollectionInstance._createInstances(records);
-      expect(instances).to.be.an('array').that.is.empty;
-      expect(mockLogger.warn.calledOnce).to.be.true;
-    });
-
-    it('creates an array of model instances from valid records', () => {
-      const records = { data: [mockRecord, mockRecord] };
-      const instances = baseCollectionInstance._createInstances(records);
-      expect(instances).to.be.an('array').that.has.length(2);
-      expect(instances[0]).to.deep.include(mockEntityModel);
-      expect(instances[1]).to.deep.include(mockEntityModel);
-    });
-  });
-
-  describe('_saveMany', () => {
+  describe('_saveMany', () => { /* eslint-disable no-underscore-dangle */
     it('throws an error if the records are empty', async () => {
       await expect(baseCollectionInstance._saveMany(null))
         .to.be.rejectedWith('Failed to save many [mockentitymodel]: items must be a non-empty array');

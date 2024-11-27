@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { v4 as uuid } from 'uuid';
+import { v4 as uuid, validate as uuidValidate } from 'uuid';
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 /*
@@ -35,12 +35,12 @@ const SuggestionSchema = {
       // https://electrodb.dev/en/modeling/attributes/#default
       default: () => uuid(),
       // https://electrodb.dev/en/modeling/attributes/#attribute-validation
-      validation: (value) => !uuid.validate(value),
+      validate: (value) => uuidValidate(value),
     },
     opportunityId: {
       type: 'string',
       required: true,
-      validation: (value) => !uuid.validate(value),
+      validate: (value) => uuidValidate(value),
     },
     type: {
       type: ['CODE_CHANGE', 'CONTENT_UPDATE', 'REDIRECT_UPDATE', 'METADATA_UPDATE'],
@@ -54,13 +54,12 @@ const SuggestionSchema = {
     data: {
       type: 'any',
       required: true,
-      validation: (value) => !isNonEmptyObject(value),
+      validate: (value) => isNonEmptyObject(value),
     },
     kpiDeltas: {
-      type: 'map',
-      properties: {},
+      type: 'any',
       required: false,
-      validation: (value) => !isNonEmptyObject(value),
+      validate: (value) => !value || isNonEmptyObject(value),
     },
     status: {
       type: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'],
@@ -117,6 +116,17 @@ const SuggestionSchema = {
       },
     },
   },
+};
+
+/**
+ * References to other entities. This is not part of the standard ElectroDB schema, but is used
+ * to define relationships between entities in our data layer API.
+ * @type {{belongs_to: [{type: string, target: string}]}}
+ */
+SuggestionSchema.references = {
+  belongs_to: [
+    { type: 'belongs_to', target: 'Opportunity' },
+  ],
 };
 
 export default SuggestionSchema;

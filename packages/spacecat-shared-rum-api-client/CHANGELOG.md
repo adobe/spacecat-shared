@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.6...@adobe/spacecat-shared-rum-api-client-v2.13.0) (2024-11-28)
+
+
+### Features
+
+* Introduce configurable grouping patterns ([#458](https://github.com/adobe/spacecat-shared/issues/458)) ([6414b13](https://github.com/adobe/spacecat-shared/commit/6414b13ccffdf567460efddb019f8f3de0200b5a))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.12.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.5...@adobe/spacecat-shared-rum-api-client-v2.12.6) (2024-11-27)
 
 

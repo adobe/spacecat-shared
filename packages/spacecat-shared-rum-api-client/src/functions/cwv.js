@@ -69,7 +69,8 @@ function handler(rawBundles, opts = []) {
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
 
-  dataChunks.addFacet('urls', facets.url);
+  // groups by url and device
+  dataChunks.addFacet('urlsDevices', (bundle) => generateKey(bundle.url, bundle.userAgent.split(':')[0]));
 
   // groups by pattern and device
   dataChunks.addFacet('patternsDevices', (bundle) => {
@@ -79,7 +80,6 @@ function handler(rawBundles, opts = []) {
     }
     return null;
   });
-  dataChunks.addFacet('patterns', (bundle) => urlToPatternMap[bundle.url]?.pattern);
 
   // counts metrics per each facet
   METRICS.forEach((metric) => dataChunks.addSeries(metric, series[metric]));
@@ -109,16 +109,32 @@ function handler(rawBundles, opts = []) {
     return acc;
   }, {});
 
-  const urlsChunks = dataChunks.facets.urls.map((facet) => ({
-    type: FACET_TYPE.URL,
-    url: facet.value,
-    pageviews: facet.weight,
-    metrics: calculateMetricsPercentile(facet.metrics),
-  }))
-    // filter out pages with no cwv data
-    .filter((row) => METRICS.some((metric) => row.metrics[metric]));
+  const urlsChunks = dataChunks.facets.urlsDevices.reduce((acc, facet) => {
+    const [url, deviceType] = facet.value.split(DELIMITER);
 
-  const result = [...Object.values(patternsChunks), ...urlsChunks]
+    acc[url] = acc[url] || {
+      type: FACET_TYPE.URL,
+      url,
+      pageviews: 0,
+      metrics: [],
+    };
+
+    // Increment the total pageviews for url
+    acc[url].pageviews += facet.weight;
+
+    // Add metrics for the specific device type
+    acc[url].metrics.push({
+      deviceType,
+      pageviews: facet.weight, // Pageviews for this device type
+      ...calculateMetricsPercentile(facet.metrics),
+    });
+
+    return acc;
+  }, {});
+
+  const result = [...Object.values(patternsChunks), ...Object.values(urlsChunks)]
+    // filter out pages with no cwv data
+    .filter((row) => METRICS.some((metric) => row.metrics.some((entry) => entry[metric])))
     // sort desc by pageviews
     .sort((a, b) => b.metrics.pageviews - a.metrics.pageviews);
 

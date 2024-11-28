@@ -13,7 +13,7 @@
 import {
   DataChunks, series, facets,
 } from '@adobe/rum-distiller';
-import { loadBundles } from '../utils.js';
+import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const METRICS = ['lcp', 'cls', 'inp', 'ttfb'];
 
@@ -70,33 +70,55 @@ function handler(rawBundles, opts = []) {
   loadBundles(bundles, dataChunks);
 
   dataChunks.addFacet('urls', facets.url);
+
+  // groups by pattern and device
+  dataChunks.addFacet('patternsDevices', (bundle) => {
+    if (urlToPatternMap[bundle.url]) {
+      const device = bundle.userAgent.split(':')[0];
+      return generateKey(urlToPatternMap[bundle.url]?.pattern, device);
+    }
+    return null;
+  });
   dataChunks.addFacet('patterns', (bundle) => urlToPatternMap[bundle.url]?.pattern);
 
   // counts metrics per each facet
   METRICS.forEach((metric) => dataChunks.addSeries(metric, series[metric]));
 
-  const patternsChunks = dataChunks.facets.patterns.map((facet) => {
-    const pattern = Object.values(urlToPatternMap).find((p) => p.pattern === facet.value);
+  const patternsChunks = dataChunks.facets.patternsDevices.reduce((acc, facet) => {
+    const [pattern, deviceType] = facet.value.split(DELIMITER);
+    const patternData = Object.values(urlToPatternMap).find((p) => p.pattern === pattern);
 
-    return {
+    acc[pattern] = acc[pattern] || {
       type: FACET_TYPE.GROUP,
-      name: pattern.name,
-      pattern: pattern.pattern,
-      pageviews: facet.weight,
-      metrics: calculateMetricsPercentile(facet.metrics),
+      name: patternData.name,
+      pattern,
+      pageviews: 0,
+      metrics: [],
     };
-  });
+
+    // Increment the total pageviews for pattern
+    acc[pattern].pageviews += facet.weight;
+
+    // Add metrics for the specific device type
+    acc[pattern].metrics.push({
+      deviceType,
+      pageviews: facet.weight, // Pageviews for this device type
+      ...calculateMetricsPercentile(facet.metrics),
+    });
+
+    return acc;
+  }, {});
 
   const urlsChunks = dataChunks.facets.urls.map((facet) => ({
     type: FACET_TYPE.URL,
     url: facet.value,
     pageviews: facet.weight,
     metrics: calculateMetricsPercentile(facet.metrics),
-  }));
-
-  const result = [...patternsChunks, ...urlsChunks]
+  }))
     // filter out pages with no cwv data
-    .filter((row) => METRICS.some((metric) => row.metrics[metric]))
+    .filter((row) => METRICS.some((metric) => row.metrics[metric]));
+
+  const result = [...Object.values(patternsChunks), ...urlsChunks]
     // sort desc by pageviews
     .sort((a, b) => b.metrics.pageviews - a.metrics.pageviews);
 

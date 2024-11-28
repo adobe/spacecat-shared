@@ -4,16 +4,20 @@
     "name": "Catalog",
     "pattern": "https://www.aem.live/catalog/*",
     "pageviews": 601,
-    "metrics": {
-      "lcp": 40,
-      "lcpCount": 6,
-      "cls": 0.3,
-      "clsCount": 3,
-      "inp": 30,
-      "inpCount": 3,
-      "ttfb": 30,
-      "ttfbCount": 3
-    }
+    "metrics": [
+      {
+        "deviceType": "desktop",
+        "pageviews": 601,
+        "lcp": 40,
+        "lcpCount": 6,
+        "cls": 0.3,
+        "clsCount": 3,
+        "inp": 30,
+        "inpCount": 3,
+        "ttfb": 30,
+        "ttfbCount": 3
+      }
+    ]
   },
   {
     "type": "url",

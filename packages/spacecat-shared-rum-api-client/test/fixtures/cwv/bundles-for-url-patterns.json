@@ -1,7 +1,7 @@
 {
   "rumBundles": [
     {
-      "id": "product_1_session_1",
+      "id": "product_1_desktop_session_1",
       "host": "main--helix-website--adobe.aem.live",
       "time": "2024-05-31T00:00:05.017Z",
       "timeSlot": "2024-05-31T00:00:00.000Z",
@@ -33,7 +33,7 @@
       ]
     },
     {
-      "id": "product_1_session_2",
+      "id": "product_1_desktop_session_2",
       "host": "main--helix-website--adobe.aem.live",
       "time": "2024-05-31T00:00:05.017Z",
       "timeSlot": "2024-05-31T00:00:00.000Z",
@@ -65,7 +65,7 @@
       ]
     },
     {
-      "id": "product_1_session_3",
+      "id": "product_1_desktop_session_3",
       "host": "main--helix-website--adobe.aem.live",
       "time": "2024-05-31T00:00:05.017Z",
       "timeSlot": "2024-05-31T00:00:00.000Z",
@@ -82,7 +82,7 @@
       ]
     },
     {
-      "id": "product_1_session_4",
+      "id": "product_1_desktop_session_4",
       "host": "main--helix-website--adobe.aem.live",
       "time": "2024-05-31T00:00:05.017Z",
       "timeSlot": "2024-05-31T00:00:00.000Z",
@@ -99,7 +99,7 @@
       ]
     },
     {
-      "id": "product_1_session_5",
+      "id": "product_1_desktop_session_5",
       "host": "main--helix-website--adobe.aem.live",
       "time": "2024-05-31T00:00:05.017Z",
       "timeSlot": "2024-05-31T00:00:00.000Z",
@@ -116,7 +116,7 @@
       ]
     },
     {
-      "id": "product_2_session_1",
+      "id": "product_2_desktop_session_1",
       "host": "main--helix-website--adobe.aem.live",
       "time": "2024-05-31T01:00:01.894Z",
       "timeSlot": "2024-05-31T01:00:00.000Z",

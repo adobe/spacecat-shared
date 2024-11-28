@@ -415,14 +415,16 @@ export const removeSite = async (
 ) => {
   try {
     const site = await getSiteByID(dynamoClient, config, log, siteId);
-    // TODO: Add transaction support
-    await removeAuditsForSite(dynamoClient, config, log, siteId);
-    await removeKeyEventsForSite(dynamoClient, config, log, siteId);
-    await removeExperimentsForSite(dynamoClient, config, log, siteId);
-    await removeSiteTopPages(dynamoClient, config, log, siteId);
-    await removeSiteCandidate(dynamoClient, config, log, site.getBaseURL());
+    if (site) {
+      // TODO: Add transaction support
+      await removeAuditsForSite(dynamoClient, config, log, siteId);
+      await removeKeyEventsForSite(dynamoClient, config, log, siteId);
+      await removeExperimentsForSite(dynamoClient, config, log, siteId);
+      await removeSiteTopPages(dynamoClient, config, log, siteId);
+      await removeSiteCandidate(dynamoClient, config, log, site.getBaseURL());
 
-    await dynamoClient.removeItem(config.tableNameSites, { id: siteId });
+      await dynamoClient.removeItem(config.tableNameSites, { id: siteId });
+    }
   } catch (error) {
     log.error(`Error removing site: ${error.message}`);
     throw error;
@@ -471,7 +473,9 @@ export const removeSitesForOrganization = async (
 ) => {
   try {
     const sites = await getSitesByOrganizationID(dynamoClient, config, organizationId);
-    await removeSites(dynamoClient, config, log, sites);
+    if (sites.length > 0) {
+      await removeSites(dynamoClient, config, log, sites);
+    }
   } catch (error) {
     log.error(`Error removing sites for organization ${organizationId}: ${error.message}`);
     throw error;

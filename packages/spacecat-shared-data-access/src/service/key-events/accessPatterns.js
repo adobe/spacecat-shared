@@ -83,11 +83,13 @@ export const removeKeyEvent = async (
   log,
   keyEventId,
 ) => {
-  try {
-    await dynamoClient.removeItem(config.tableNameKeyEvents, { id: keyEventId });
-  } catch (error) {
-    log.error(`Error removing key event: ${error.message}`);
-    throw error;
+  if (keyEventId) {
+    try {
+      await dynamoClient.removeItem(config.tableNameKeyEvents, { id: keyEventId });
+    } catch (error) {
+      log.error(`Error removing key event: ${error.message}`);
+      throw error;
+    }
   }
 };
 
@@ -106,13 +108,21 @@ export const removeKeyEvents = async (
   log,
   keyEvents,
 ) => {
-  const tableName = config.tableNameKeyEvents;
-  const removeKeyEventPromises = keyEvents.map((keyEvent) => dynamoClient.removeItem(
-    tableName,
-    { id: keyEvent.getId() },
-  ));
+  if (keyEvents && keyEvents.length > 0) {
+    try {
+      const removeKeyEventPromises = keyEvents.map((keyEvent) => removeKeyEvent(
+        dynamoClient,
+        config,
+        log,
+        keyEvent.getId(),
+      ));
 
-  await Promise.all(removeKeyEventPromises);
+      await Promise.all(removeKeyEventPromises);
+    } catch (error) {
+      log.error(`Error while removing key events: ${error.message}`);
+      throw error;
+    }
+  }
 };
 
 /**

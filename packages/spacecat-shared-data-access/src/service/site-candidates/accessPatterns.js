@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject } from '@adobe/spacecat-shared-utils';
+import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { createSiteCandidate } from '../../models/site-candidate.js';
 import { SiteCandidateDto } from '../../dto/site-candidate.js';
 
@@ -111,9 +111,11 @@ export const removeSiteCandidate = async (
   log,
   baseUrl,
 ) => {
-  const tableName = config.tableNameSiteCandidates;
-  await dynamoClient.removeItem(
-    tableName,
-    { baseURL: baseUrl },
-  );
+  if (isValidUrl(baseUrl)) {
+    const tableName = config.tableNameSiteCandidates;
+    await dynamoClient.removeItem(
+      tableName,
+      { baseURL: baseUrl },
+    );
+  }
 };

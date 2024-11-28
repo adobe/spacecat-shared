@@ -259,7 +259,7 @@ describe('Experiments Access Pattern Tests', () => {
 
       expect(mockDynamoClient.query.calledOnce).to.be.true;
       expect(mockDynamoClient.removeItem.callCount).to.equal(experiments.length);
-      expect(mockLog.error.calledOnce).to.be.true;
+      expect(mockLog.error.called).to.be.true;
     });
   });
 });

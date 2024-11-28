@@ -37,7 +37,7 @@ const findMatchedPattern = (url, urlPatterns) => {
 const mapUrlsToPatterns = (bundles, patterns) => {
   const urlToPatternMap = {};
   if (!patterns || patterns.length === 0) {
-    return {};
+    return urlToPatternMap;
   }
 
   for (const bundle of bundles) {

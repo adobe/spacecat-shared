@@ -295,8 +295,6 @@
         }
       ]
     },
-
-
     {
       "id": "product_3_session_1_without_events",
       "host": "main--helix-website--adobe.aem.live",

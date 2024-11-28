@@ -48,6 +48,17 @@ const mapUrlsToPatterns = (bundles, patterns) => {
   return urlToPatternMap;
 };
 
+const calculateMetricsPercentile = (metrics) => ({
+  lcp: metrics.lcp.percentile(75) || null,
+  lcpCount: metrics.lcp.count || 0,
+  cls: metrics.cls.percentile(75) || null,
+  clsCount: metrics.cls.count || 0,
+  inp: metrics.inp.percentile(75) || null,
+  inpCount: metrics.inp.count || 0,
+  ttfb: metrics.ttfb.percentile(75) || null,
+  ttfbCount: metrics.ttfb.count || 0,
+});
+
 function handler(rawBundles, urlPatterns = []) {
   const bundles = rawBundles.map((bundle) => ({
     ...bundle,
@@ -71,34 +82,16 @@ function handler(rawBundles, urlPatterns = []) {
       type: FACET_TYPE.GROUP,
       name: pattern.name,
       pattern: pattern.pattern,
-      metrics: {
-        pageviews: facet.weight,
-        lcp: facet.metrics.lcp.percentile(75) || null,
-        lcpCount: facet.metrics.lcp.count,
-        cls: facet.metrics.cls.percentile(75) || null,
-        clsCount: facet.metrics.cls.count,
-        inp: facet.metrics.inp.percentile(75) || null,
-        inpCount: facet.metrics.inp.count,
-        ttfb: facet.metrics.ttfb.percentile(75) || null,
-        ttfbCount: facet.metrics.ttfb.count,
-      },
+      pageviews: facet.weight,
+      metrics: calculateMetricsPercentile(facet.metrics),
     };
   });
 
   const urlsChunks = dataChunks.facets.urls.map((facet) => ({
     type: FACET_TYPE.URL,
     url: facet.value,
-    metrics: {
-      pageviews: facet.weight,
-      lcp: facet.metrics.lcp.percentile(75) || null,
-      lcpCount: facet.metrics.lcp.count,
-      cls: facet.metrics.cls.percentile(75) || null,
-      clsCount: facet.metrics.cls.count,
-      inp: facet.metrics.inp.percentile(75) || null,
-      inpCount: facet.metrics.inp.count,
-      ttfb: facet.metrics.ttfb.percentile(75) || null,
-      ttfbCount: facet.metrics.ttfb.count,
-    },
+    pageviews: facet.weight,
+    metrics: calculateMetricsPercentile(facet.metrics),
   }));
 
   const result = [...patternsChunks, ...urlsChunks]

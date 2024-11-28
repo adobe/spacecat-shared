@@ -12,7 +12,6 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import cwv from '../src/functions/cwv.js';
 import notfound from '../src/functions/404.js';
 import experiment from '../src/functions/experiment.js';
 import trafficAcquisition from '../src/functions/traffic-acquisition.js';
@@ -24,7 +23,6 @@ import bundles from './fixtures/bundles.json' with { type: 'json' };
 import bundlesWithTraffic from './fixtures/bundles-with-traffic-source.json' with { type: 'json' };
 import bundlesWithForm from './fixtures/bundles-for-form-vitals.json' with { type: 'json' };
 import bundlesForVariant from './fixtures/bundles_for_variant.json' with { type: 'json' };
-import expectedCwvResult from './fixtures/cwv.json' with { type: 'json' };
 import expected404Result from './fixtures/notfound.json' with { type: 'json' };
 import expectedExperimentsResult from './fixtures/experiments.json' with { type: 'json' };
 import expectedTrafficSourcesResult from './fixtures/trafficSources.json' with { type: 'json' };
@@ -34,11 +32,6 @@ import expectedHighOrganicLowCTRResult from './fixtures/high-organic-low-ctr.jso
 import expectedFormVitalsResult from './fixtures/expected-form-vitals-result.json' with { type: 'json' };
 
 describe('Query functions', () => {
-  it('crunches cwv data', async () => {
-    const cwvResult = cwv.handler(bundles.rumBundles);
-    expect(cwvResult).to.eql(expectedCwvResult);
-  });
-
   it('crunches form vitals', async () => {
     const formVitalsResult = await formVitals.handler(bundlesWithForm.rumBundles);
     expect(expectedFormVitalsResult).to.deep.members(formVitalsResult);

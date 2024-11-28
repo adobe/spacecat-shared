@@ -14,16 +14,22 @@
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
 import bundles from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
-import expectedResult from './fixtures/cwv/result-bundles-for-url-patterns.json' assert { type: 'json' };
+import expectedCwvWithPatternsResult from './fixtures/cwv/result-bundles-for-url-patterns.json' assert { type: 'json' };
+import expectedCwvResult from './fixtures/cwv.json' assert { type: 'json' };
 
 describe('CWV Queries', () => {
-  it('should correctly process CWV data and match expected result', async () => {
+  it('crunches cwv data', async () => {
+    const result = cwv.handler(bundles.rumBundles);
+    expect(result).to.deep.equal(expectedCwvResult);
+  });
+
+  it('should correctly process CWV data with url patterns', async () => {
     const groupedURLs = [
       { name: 'Catalog', pattern: 'https://www.aem.live/catalog/*' },
       { name: 'Static Pages', pattern: 'https://www.aem.live/pages/*' },
     ];
 
-    const cwvResult = cwv.handler(bundles.rumBundles, groupedURLs);
-    expect(cwvResult).to.deep.equal(expectedResult);
+    const result = cwv.handler(bundles.rumBundles, groupedURLs);
+    expect(result).to.deep.equal(expectedCwvWithPatternsResult);
   });
 });

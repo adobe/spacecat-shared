@@ -59,12 +59,12 @@ const calculateMetricsPercentile = (metrics) => ({
   ttfbCount: metrics.ttfb.count || 0,
 });
 
-function handler(rawBundles, urlPatterns = []) {
+function handler(rawBundles, opts = []) {
   const bundles = rawBundles.map((bundle) => ({
     ...bundle,
     url: facets.url(bundle), // URL without ids, hashes, and other encoded data
   }));
-  const urlToPatternMap = mapUrlsToPatterns(bundles, urlPatterns);
+  const urlToPatternMap = mapUrlsToPatterns(bundles, opts.groupedURLs);
 
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);

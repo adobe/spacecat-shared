@@ -15,8 +15,8 @@ import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
 import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import bundlesWithPatterns from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
-import expectedCwvWithPatternsResult from './fixtures/cwv/result-for-url-patterns.json' assert { type: 'json' };
 import expectedCwvResult from './fixtures/cwv/result.json' assert { type: 'json' };
+import expectedCwvWithPatternsResult from './fixtures/cwv/result-for-url-patterns.json' assert { type: 'json' };
 
 describe('CWV Queries', () => {
   it('crunches cwv data', async () => {
@@ -29,7 +29,7 @@ describe('CWV Queries', () => {
       { name: 'Catalog', pattern: 'https://www.aem.live/catalog/*' },
     ];
 
-    const result = cwv.handler(bundlesWithPatterns.rumBundles, groupedURLs);
+    const result = cwv.handler(bundlesWithPatterns.rumBundles, { groupedURLs });
     expect(result).to.deep.equal(expectedCwvWithPatternsResult);
   });
 });

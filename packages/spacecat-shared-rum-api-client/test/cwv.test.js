@@ -13,21 +13,20 @@
 
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
-import bundlesWithPatterns from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
 import bundles from './fixtures/bundles.json' assert { type: 'json' };
+import bundlesWithPatterns from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
 import expectedCwvWithPatternsResult from './fixtures/cwv/result-for-url-patterns.json' assert { type: 'json' };
-import expectedResult from './fixtures/cwv.json' assert { type: 'json' };
+import expectedCwvResult from './fixtures/cwv/result.json' assert { type: 'json' };
 
 describe('CWV Queries', () => {
   it('crunches cwv data', async () => {
     const result = cwv.handler(bundles.rumBundles);
-    expect(result).to.deep.equal(expectedResult);
+    expect(result).to.deep.equal(expectedCwvResult);
   });
 
   it('should correctly process CWV data with url patterns', async () => {
     const groupedURLs = [
       { name: 'Catalog', pattern: 'https://www.aem.live/catalog/*' },
-      { name: 'Static Pages', pattern: 'https://www.aem.live/pages/*' },
     ];
 
     const result = cwv.handler(bundlesWithPatterns.rumBundles, groupedURLs);

@@ -79,11 +79,11 @@ const SiteCandidateSchema = createSchema(
       bySiteIdAndSiteCandidateIdAndUrl: {
         index: 'spacecat-data-site-candidate-by-base-url',
         pk: {
-          field: 'gsi1pk',
+          field: 'gsi2pk',
           composite: ['baseURL'],
         },
         sk: {
-          field: 'gsi1sk',
+          field: 'gsi2sk',
           composite: ['updatedAt'],
         },
       },

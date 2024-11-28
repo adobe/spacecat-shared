@@ -82,11 +82,11 @@ const AuditSchema = createSchema(
       bySiteIdAndType: {
         index: 'spacecat-data-audit-by-site-id-and-type',
         pk: {
-          field: 'gsi1pk',
+          field: 'gsi2pk',
           composite: ['siteId', 'auditType'],
         },
         sk: {
-          field: 'gsi1sk',
+          field: 'gsi2sk',
           composite: ['auditedAt'],
         },
       },

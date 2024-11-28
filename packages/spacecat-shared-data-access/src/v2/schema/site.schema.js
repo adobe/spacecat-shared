@@ -83,23 +83,7 @@ const SiteSchema = createSchema(
       isLiveToggledAt: {
         type: 'number',
         watch: ['isLive'],
-        required: true,
-        default: () => Date.now(),
-        set: () => Date.now(),
-      },
-      name: {
-        type: 'string',
-        required: true,
-      },
-      imsOrgId: {
-        type: 'string',
         required: false,
-        default: DEFAULT_ORGANIZATION_ID,
-      },
-      fulfillableItems: {
-        type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
@@ -118,22 +102,22 @@ const SiteSchema = createSchema(
       byDeliveryType: {
         index: 'spacecat-data-site-by-delivery-type',
         pk: {
-          field: 'gsi1pk',
+          field: 'gsi2pk',
           composite: ['deliveryType'],
         },
         sk: {
-          field: 'gsi1sk',
+          field: 'gsi2sk',
           composite: ['updatedAt'],
         },
       },
       byOrganizationId: {
         index: 'spacecat-data-site-by-organization-id',
         pk: {
-          field: 'gsi1pk',
+          field: 'gsi3pk',
           composite: ['organizationId'],
         },
         sk: {
-          field: 'gsi1sk',
+          field: 'gsi3sk',
           composite: ['updatedAt'],
         },
       },

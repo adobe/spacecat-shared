@@ -10,7 +10,7 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test:it": "mocha --spec \"test/it/**/*.test.js\"",
+    "test:it": "mocha --require ./test/it/fixtures.js --spec \"test/it/**/*.test.js\"",
     "test": "c8 mocha --spec \"test/unit/**/*.test.js\"",
     "lint": "eslint .",
     "clean": "rm -rf package-lock.json node_modules"

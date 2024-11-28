@@ -17,9 +17,23 @@ import AWSXray from 'aws-xray-sdk';
 import { Service } from 'electrodb';
 
 import ModelFactory from '../v2/models/base/model.factory.js';
+
+import ExperimentCollection from '../v2/models/experiment/experiment.collection.js';
+import KeyEventCollection from '../v2/models/key-event/key-event.collection.js';
 import OpportunityCollection from '../v2/models/opportunity/opportunity.collection.js';
+import OrganizationCollection from '../v2/models/organization/organization.collection.js';
+import SiteCandidateCollection from '../v2/models/site-candidate/site-candidate.collection.js';
+import SiteCollection from '../v2/models/site/site.collection.js';
+import SiteTopPageCollection from '../v2/models/site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../v2/models/suggestion/suggestion.collection.js';
+
+import ExperimentSchema from '../v2/schema/experiment.schema.js';
+import KeyEventSchema from '../v2/schema/key-events.schema.js';
 import OpportunitySchema from '../v2/schema/opportunity.schema.js';
+import OrganizationSchema from '../v2/schema/organization.schema.js';
+import SiteCandidateSchema from '../v2/schema/site-candidate.schema.js';
+import SiteSchema from '../v2/schema/site.schema.js';
+import SiteTopPageSchema from '../v2/schema/site-top-page.schema.js';
 import SuggestionSchema from '../v2/schema/suggestion.schema.js';
 
 import { auditFunctions } from './audits/index.js';
@@ -53,7 +67,13 @@ const createElectroService = (client, config, log) => {
   /* c8 ignore end */
   return new Service(
     {
+      experiment: ExperimentSchema,
+      keyEvent: KeyEventSchema,
       opportunity: OpportunitySchema,
+      organization: OrganizationSchema,
+      site: SiteSchema,
+      siteCandidate: SiteCandidateSchema,
+      siteTopPage: SiteTopPageSchema,
       suggestion: SuggestionSchema,
     },
     {
@@ -97,7 +117,13 @@ export const createDataAccess = (config, log = console) => {
   const electroService = createElectroService(rawClient, config, log);
   const modelFactory = new ModelFactory(electroService, log);
 
+  const Experiment = modelFactory.getCollection(ExperimentCollection.name);
+  const KeyEvent = modelFactory.getCollection(KeyEventCollection.name);
   const Opportunity = modelFactory.getCollection(OpportunityCollection.name);
+  const Organization = modelFactory.getCollection(OrganizationCollection.name);
+  const Site = modelFactory.getCollection(SiteCollection.name);
+  const SiteCandidate = modelFactory.getCollection(SiteCandidateCollection.name);
+  const SiteTopPage = modelFactory.getCollection(SiteTopPageCollection.name);
   const Suggestion = modelFactory.getCollection(SuggestionCollection.name);
 
   return {
@@ -113,7 +139,13 @@ export const createDataAccess = (config, log = console) => {
     ...experimentFuncs,
     ...apiKeyFuncs,
     // electro-based data access objects
+    Experiment,
+    KeyEvent,
     Opportunity,
+    Organization,
+    Site,
+    SiteCandidate,
+    SiteTopPage,
     Suggestion,
   };
 };

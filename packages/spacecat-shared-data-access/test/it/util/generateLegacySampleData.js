@@ -14,45 +14,12 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
-import schema from '../../../docs/schema.json' with { type: 'json' };
 import { SITE_CANDIDATE_STATUS } from '../../../src/models/site-candidate.js';
 import { createKeyEvent, KEY_EVENT_TYPES } from '../../../src/models/key-event.js';
 import { KeyEventDto } from '../../../src/dto/key-event.js';
 
 import { generateRandomAudit } from './auditUtils.js';
-import { createTable, deleteTable } from './tableOperations.js';
 import { getDynamoClients } from './db.js';
-
-/**
- * Creates all tables defined in a schema.
- *
- * Iterates over a predefined schema object and creates each table using the createTable function.
- * The schema object should define all required attributes and configurations for each table.
- *
- * @param {AWS.DynamoDB.DocumentClient} dbClient - The DynamoDB client to use for creating tables.
- */
-async function createTablesFromSchema(dbClient) {
-  const creationPromises = schema.DataModel.map(
-    (tableDefinition) => createTable(dbClient, tableDefinition),
-  );
-  await Promise.all(creationPromises);
-}
-
-/**
- * Deletes a predefined set of tables from the database.
- *
- * Iterates over a list of table names and deletes each one using the deleteTable function.
- * This is typically used to clean up the database before creating new tables or
- * generating test data.
- *
- * @param {Object} dbClient - The DynamoDB client to use for creating tables.
- * @param {Array<string>} tableNames - An array of table names to delete.
- * @returns {Promise<void>} A promise that resolves when all tables have been deleted.
- */
-export async function deleteExistingTables(dbClient, tableNames) {
-  const deletionPromises = tableNames.map((tableName) => deleteTable(dbClient, tableName));
-  await Promise.all(deletionPromises);
-}
 
 /**
  * Performs a batch write operation for a specified table in DynamoDB.
@@ -151,7 +118,7 @@ function generateAuditData(
  * // Example usage
  * generateSampleData(20, 10); // Generates 20 sites with 10 audits per type for each site
  */
-export default async function generateSampleData(
+export default async function generateLegacySampleData(
   config,
   numberOfOrganizations = 3,
   numberOfSites = 10,
@@ -161,23 +128,8 @@ export default async function generateSampleData(
   numberOfKeyEvents = 10,
   numberOfExperiments = 3,
 ) {
-  const { dbClient, docClient } = await getDynamoClients();
+  const { docClient } = getDynamoClients();
   console.time('Sample data generated in');
-  await deleteExistingTables(dbClient, [
-    config.tableNameSites,
-    config.tableNameSiteCandidates,
-    config.tableNameAudits,
-    config.tableNameLatestAudits,
-    config.tableNameOrganizations,
-    config.tableNameConfigurations,
-    config.tableNameSiteTopPages,
-    config.tableNameKeyEvents,
-    config.tableNameExperiments,
-    config.tableNameApiKeys,
-    config.tableNameImportJobs,
-    config.tableNameImportUrls,
-  ]);
-  await createTablesFromSchema(dbClient);
 
   const auditTypes = ['lhs-mobile', 'cwv'];
   const sites = [];

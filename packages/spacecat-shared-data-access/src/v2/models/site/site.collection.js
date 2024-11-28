@@ -13,7 +13,7 @@
 import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import BaseCollection from '../base/base.collection.js';
-import Site from '../organization/organization.model.js';
+import Site from './site.model.js';
 
 /**
  * SiteCollection - A collection class responsible for managing Site entities.

@@ -98,12 +98,12 @@ const ExperimentSchema = createSchema(
       bySiteIdAndExpIdAndUrl: {
         index: 'spacecat-data-experiment-by-site-id-and-experiment-id-and-url',
         pk: {
-          field: 'gsi1pk',
-          composite: ['siteId', 'expId'],
+          field: 'gsi2pk',
+          composite: ['siteId', 'expId', 'url'],
         },
         sk: {
-          field: 'gsi1sk',
-          composite: ['url', 'updatedAt'],
+          field: 'gsi2sk',
+          composite: ['updatedAt'],
         },
       },
     },

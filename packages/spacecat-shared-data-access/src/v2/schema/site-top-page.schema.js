@@ -80,11 +80,11 @@ const SiteTopPageSchema = createSchema(
       bySiteIdAndSourceAndGeo: {
         index: 'spacecat-data-site-top-page-by-site-id-and-source-and-geo',
         pk: {
-          field: 'gsi1pk',
-          composite: ['baseURL'],
+          field: 'gsi2pk',
+          composite: ['siteId', 'source', 'geo'],
         },
         sk: {
-          field: 'gsi1sk',
+          field: 'gsi2sk',
           composite: ['updatedAt'],
         },
       },

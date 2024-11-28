@@ -10,81 +10,65 @@
  * governing permissions and limitations under the License.
  */
 
-import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { spawn } from 'dynamo-db-local';
+import { createDataAccess } from '../../../src/service/index.js';
 
-import { sleep } from '../../unit/util.js';
+export const TEST_DA_CONFIG = {
+  indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
+  indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
+  indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
+  indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
+  indexNameAllOrganizations: 'spacecat-services-all-organizations',
+  indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id',
+  indexNameAllSites: 'spacecat-services-all-sites',
+  indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
+  indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
+  indexNameApiKeyByHashedApiKey: 'spacecat-services-api-key-by-hashed-api-key',
+  indexNameApiKeyByImsUserIdAndImsOrgId: 'spacecat-services-api-key-by-ims-user-id-and-ims-org-id',
+  indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
+  pkAllConfigurations: 'ALL_CONFIGURATIONS',
+  pkAllImportJobs: 'ALL_IMPORT_JOBS',
+  pkAllLatestAudits: 'ALL_LATEST_AUDITS',
+  pkAllOrganizations: 'ALL_ORGANIZATIONS',
+  pkAllSites: 'ALL_SITES',
+  tableNameApiKeys: 'spacecat-services-api-keys',
+  tableNameAudits: 'spacecat-services-audits',
+  tableNameConfigurations: 'spacecat-services-configurations',
+  tableNameData: 'spacecat-services-data',
+  tableNameExperiments: 'spacecat-services-experiments',
+  tableNameImportJobs: 'spacecat-services-import-jobs',
+  tableNameImportUrls: 'spacecat-services-import-urls',
+  tableNameKeyEvents: 'spacecat-services-key-events',
+  tableNameLatestAudits: 'spacecat-services-latest-audits',
+  tableNameOrganizations: 'spacecat-services-organizations',
+  tableNameSiteCandidates: 'spacecat-services-site-candidates',
+  tableNameSiteTopPages: 'spacecat-services-site-top-pages',
+  tableNameSites: 'spacecat-services-sites',
+  tableNameSpacecatData: 'spacecat-data',
+};
 
-async function waitForDynamoDBStartup(url, timeout = 20000, interval = 500) {
-  const startTime = Date.now();
-  while (Date.now() - startTime < timeout) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      const response = await fetch(url);
-      if (response.status === 400) {
-        return;
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.log('DynamoDB Local not yet started', error.message);
-    }
-    // eslint-disable-next-line no-await-in-loop
-    await sleep(interval);
-  }
-  throw new Error('DynamoDB Local did not start within the expected time');
-}
-
-let dynamoDbLocalProcess = null;
 let dbClient = null;
 let docClient = null;
 
-const getDynamoClients = async () => {
-  if (dynamoDbLocalProcess === null) {
-    process.env.AWS_REGION = 'local';
-    process.env.AWS_ENDPOINT_URL_DYNAMODB = 'http://127.0.0.1:8000';
-    process.env.AWS_DEFAULT_REGION = 'local';
-    process.env.AWS_ACCESS_KEY_ID = 'dummy';
-    process.env.AWS_SECRET_ACCESS_KEY = 'dummy';
-
-    dynamoDbLocalProcess = spawn({
-      detached: true,
-      stdio: 'inherit',
-      port: 8000,
-      sharedDb: true,
-    });
-
-    await waitForDynamoDBStartup('http://127.0.0.1:8000');
-
-    process.on('SIGINT', () => {
-      if (dynamoDbLocalProcess) {
-        dynamoDbLocalProcess.kill();
-      }
-      process.exit();
-    });
-
-    dbClient = new DynamoDB({
-      endpoint: 'http://127.0.0.1:8000',
-      region: 'local',
-      credentials: {
-        accessKeyId: 'dummy',
-        secretAccessKey: 'dummy',
-      },
-    });
-    docClient = DynamoDBDocument.from(dbClient);
-  }
+const getDynamoClients = () => {
+  dbClient = new DynamoDB({
+    endpoint: 'http://127.0.0.1:8000',
+    region: 'local',
+    credentials: {
+      accessKeyId: 'dummy',
+      secretAccessKey: 'dummy',
+    },
+  });
+  docClient = DynamoDBDocument.from(dbClient);
 
   return { dbClient, docClient };
 };
 
-const closeDynamoClients = async () => {
-  if (dynamoDbLocalProcess) {
-    dynamoDbLocalProcess.kill();
-    dynamoDbLocalProcess = null;
-    await sleep(2000);
-  }
+export const getDataAccess = () => {
+  const { client } = getDynamoClients();
+  return createDataAccess(TEST_DA_CONFIG, client);
 };
 
-export { getDynamoClients, closeDynamoClients };
+export { getDynamoClients };

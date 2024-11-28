@@ -1,0 +1,48 @@
+[
+  {
+    "type": "group",
+    "name": "Catalog",
+    "pattern": "https://www.aem.live/catalog/*",
+    "pageviews": 601,
+    "metrics": {
+      "lcp": 40,
+      "lcpCount": 6,
+      "cls": 0.3,
+      "clsCount": 3,
+      "inp": 30,
+      "inpCount": 3,
+      "ttfb": 30,
+      "ttfbCount": 3
+    }
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/catalog/product-1",
+    "pageviews": 500,
+    "metrics": {
+      "lcp": 40,
+      "lcpCount": 5,
+      "cls": 0.2,
+      "clsCount": 2,
+      "inp": 20,
+      "inpCount": 2,
+      "ttfb": 20,
+      "ttfbCount": 2
+    }
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/catalog/product-2",
+    "pageviews": 100,
+    "metrics": {
+      "lcp": 30,
+      "lcpCount": 1,
+      "cls": 0.3,
+      "clsCount": 1,
+      "inp": 30,
+      "inpCount": 1,
+      "ttfb": 30,
+      "ttfbCount": 1
+    }
+  }
+]

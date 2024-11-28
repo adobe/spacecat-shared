@@ -13,15 +13,15 @@
 
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
-import bundles from './fixtures/bundles.json' assert { type: 'json' };
-import bundlesWithPatterns from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
-import expectedCwvResult from './fixtures/cwv/result.json' assert { type: 'json' };
-import expectedCwvWithPatternsResult from './fixtures/cwv/result-for-url-patterns.json' assert { type: 'json' };
+import bundlesForUrls from './fixtures/bundles.json' assert { type: 'json' };
+import resultForUrls from './fixtures/cwv/result-for-urls.json' assert { type: 'json' };
+import bundlesForPatterns from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
+import resultForPatterns from './fixtures/cwv/result-for-url-patterns.json' assert { type: 'json' };
 
 describe('CWV Queries', () => {
   it('crunches cwv data', async () => {
-    const result = cwv.handler(bundles.rumBundles);
-    expect(result).to.deep.equal(expectedCwvResult);
+    const result = cwv.handler(bundlesForUrls.rumBundles);
+    expect(result).to.deep.equal(resultForUrls);
   });
 
   it('should correctly process CWV data with url patterns', async () => {
@@ -29,7 +29,7 @@ describe('CWV Queries', () => {
       { name: 'Catalog', pattern: 'https://www.aem.live/catalog/*' },
     ];
 
-    const result = cwv.handler(bundlesWithPatterns.rumBundles, { groupedURLs });
-    expect(result).to.deep.equal(expectedCwvWithPatternsResult);
+    const result = cwv.handler(bundlesForPatterns.rumBundles, { groupedURLs });
+    expect(result).to.deep.equal(resultForPatterns);
   });
 });

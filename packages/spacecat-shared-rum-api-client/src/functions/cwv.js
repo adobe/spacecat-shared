@@ -17,6 +17,8 @@ import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const METRICS = ['lcp', 'cls', 'inp', 'ttfb'];
 
+const USER_AGENT_DELIMITER = ':';
+
 const FACET_TYPE = {
   GROUP: 'group',
   URL: 'url',
@@ -70,21 +72,23 @@ function handler(rawBundles, opts = []) {
   loadBundles(bundles, dataChunks);
 
   // groups by url and device
-  dataChunks.addFacet('urlsDevices', (bundle) => generateKey(bundle.url, bundle.userAgent.split(':')[0]));
+  dataChunks.addFacet(
+    'urlsDevices',
+    (bundle) => generateKey(bundle.url, bundle.userAgent.split(USER_AGENT_DELIMITER)[0]),
+  );
 
   // groups by pattern and device
   dataChunks.addFacet('patternsDevices', (bundle) => {
-    if (urlToPatternMap[bundle.url]) {
-      const device = bundle.userAgent.split(':')[0];
-      return generateKey(urlToPatternMap[bundle.url]?.pattern, device);
-    }
-    return null;
+    const device = bundle.userAgent.split(USER_AGENT_DELIMITER)[0];
+    return urlToPatternMap[bundle.url]?.pattern
+      ? generateKey(urlToPatternMap[bundle.url].pattern, device)
+      : null;
   });
 
   // counts metrics per each facet
   METRICS.forEach((metric) => dataChunks.addSeries(metric, series[metric]));
 
-  const patternsChunks = dataChunks.facets.patternsDevices.reduce((acc, facet) => {
+  const patternsResult = dataChunks.facets.patternsDevices.reduce((acc, facet) => {
     const [pattern, deviceType] = facet.value.split(DELIMITER);
     const patternData = Object.values(urlToPatternMap).find((p) => p.pattern === pattern);
 
@@ -109,7 +113,7 @@ function handler(rawBundles, opts = []) {
     return acc;
   }, {});
 
-  const urlsChunks = dataChunks.facets.urlsDevices.reduce((acc, facet) => {
+  const urlsResult = dataChunks.facets.urlsDevices.reduce((acc, facet) => {
     const [url, deviceType] = facet.value.split(DELIMITER);
 
     acc[url] = acc[url] || {
@@ -132,7 +136,7 @@ function handler(rawBundles, opts = []) {
     return acc;
   }, {});
 
-  const result = [...Object.values(patternsChunks), ...Object.values(urlsChunks)]
+  const result = [...Object.values(patternsResult), ...Object.values(urlsResult)]
     // filter out pages with no cwv data
     .filter((row) => METRICS.some((metric) => row.metrics.some((entry) => entry[metric])))
     // sort desc by pageviews

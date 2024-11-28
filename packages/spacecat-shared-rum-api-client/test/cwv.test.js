@@ -13,14 +13,15 @@
 
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
-import bundles from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
+import bundlesWithPatterns from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
+import bundles from './fixtures/bundles.json' assert { type: 'json' };
 import expectedCwvWithPatternsResult from './fixtures/cwv/result-bundles-for-url-patterns.json' assert { type: 'json' };
-import expectedCwvResult from './fixtures/cwv.json' assert { type: 'json' };
+import expectedResult from './fixtures/cwv.json' assert { type: 'json' };
 
 describe('CWV Queries', () => {
   it('crunches cwv data', async () => {
     const result = cwv.handler(bundles.rumBundles);
-    expect(result).to.deep.equal(expectedCwvResult);
+    expect(result).to.deep.equal(expectedResult);
   });
 
   it('should correctly process CWV data with url patterns', async () => {
@@ -29,7 +30,7 @@ describe('CWV Queries', () => {
       { name: 'Static Pages', pattern: 'https://www.aem.live/pages/*' },
     ];
 
-    const result = cwv.handler(bundles.rumBundles, groupedURLs);
+    const result = cwv.handler(bundlesWithPatterns.rumBundles, groupedURLs);
     expect(result).to.deep.equal(expectedCwvWithPatternsResult);
   });
 });

@@ -1,0 +1,124 @@
+[
+  {
+    "type": "group",
+    "name": "Catalog",
+    "pattern": "https://www.aem.live/catalog/*",
+    "metrics": {
+      "pageviews": 201,
+      "lcp": 100000,
+      "lcpCount": 2,
+      "cls": null,
+      "clsCount": 0,
+      "inp": null,
+      "inpCount": 0,
+      "ttfb": null,
+      "ttfbCount": 0
+    }
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/catalog/product-1",
+    "metrics": {
+      "pageviews": 100,
+      "lcp": 100000,
+      "lcpCount": 1,
+      "cls": null,
+      "clsCount": 0,
+      "inp": null,
+      "inpCount": 0,
+      "ttfb": null,
+      "ttfbCount": 0
+    }
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/catalog/product-2",
+    "metrics": {
+      "pageviews": 100,
+      "lcp": 20000,
+      "lcpCount": 1,
+      "cls": null,
+      "clsCount": 0,
+      "inp": null,
+      "inpCount": 0,
+      "ttfb": null,
+      "ttfbCount": 0
+    }
+  },
+  {
+    "type": "group",
+    "name": "Static Pages",
+    "pattern": "https://www.aem.live/pages/*",
+    "metrics": {
+      "pageviews": 30,
+      "lcp": null,
+      "lcpCount": 0,
+      "cls": 0.2,
+      "clsCount": 2,
+      "inp": null,
+      "inpCount": 0,
+      "ttfb": null,
+      "ttfbCount": 0
+    }
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/pages/page-2",
+    "metrics": {
+      "pageviews": 20,
+      "lcp": null,
+      "lcpCount": 0,
+      "cls": 0.2,
+      "clsCount": 1,
+      "inp": null,
+      "inpCount": 0,
+      "ttfb": null,
+      "ttfbCount": 0
+    }
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/pages/page-1",
+    "metrics": {
+      "pageviews": 10,
+      "lcp": null,
+      "lcpCount": 0,
+      "cls": 0.1,
+      "clsCount": 1,
+      "inp": null,
+      "inpCount": 0,
+      "ttfb": null,
+      "ttfbCount": 0
+    }
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/docs/doc-1",
+    "metrics": {
+      "pageviews": 5,
+      "lcp": null,
+      "lcpCount": 0,
+      "cls": 0.1,
+      "clsCount": 1,
+      "inp": null,
+      "inpCount": 0,
+      "ttfb": null,
+      "ttfbCount": 0
+    }
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/docs/doc-2",
+    "metrics": {
+      "pageviews": 1,
+      "lcp": 0.1,
+      "lcpCount": 1,
+      "cls": null,
+      "clsCount": 0,
+      "inp": null,
+      "inpCount": 0,
+      "ttfb": null,
+      "ttfbCount": 0
+    }
+  }
+]

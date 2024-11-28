@@ -35,6 +35,16 @@
       ]
     },
     {
+      "id": "without_events",
+      "host": "main--helix-website--adobe.aem.live",
+      "time": "2024-05-31T03:00:00.193Z",
+      "timeSlot": "2024-05-31T03:00:00.000Z",
+      "url": "https://www.aem.live/catalog/product-3",
+      "userAgent": "desktop:mac",
+      "weight": 1,
+      "events": []
+    },
+    {
       "id": "67Caj_1",
       "host": "main--helix-website--adobe.aem.live",
       "time": "2024-05-31T03:00:00.193Z",

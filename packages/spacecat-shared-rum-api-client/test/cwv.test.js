@@ -14,7 +14,7 @@
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
 import bundles from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
-import expectedResult from './fixtures/cwv/result-bundles-for-grouped-urls.json' assert { type: 'json' };
+import expectedResult from './fixtures/cwv/result-bundles-for-url-patterns.json' assert { type: 'json' };
 
 describe('CWV Queries', () => {
   it('should correctly process CWV data and match expected result', async () => {

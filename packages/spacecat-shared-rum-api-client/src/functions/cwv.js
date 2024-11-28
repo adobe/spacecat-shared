@@ -15,6 +15,8 @@ import {
 } from '@adobe/rum-distiller';
 import { loadBundles } from '../utils.js';
 
+const METRICS = ['lcp', 'cls', 'inp', 'ttfb'];
+
 const FACET_TYPE = {
   GROUP: 'group',
   URL: 'url',
@@ -59,10 +61,8 @@ function handler(rawBundles, urlPatterns = []) {
   dataChunks.addFacet('urls', facets.url);
   dataChunks.addFacet('patterns', (bundle) => urlToPatternMap[bundle.url]?.pattern);
 
-  dataChunks.addSeries('lcp', series.lcp);
-  dataChunks.addSeries('cls', series.cls);
-  dataChunks.addSeries('inp', series.inp);
-  dataChunks.addSeries('ttfb', series.ttfb);
+  // counts metrics per each facet
+  METRICS.forEach((metric) => dataChunks.addSeries(metric, series[metric]));
 
   const patternsChunks = dataChunks.facets.patterns.map((facet) => {
     const pattern = Object.values(urlToPatternMap).find((p) => p.pattern === facet.value);
@@ -103,7 +103,7 @@ function handler(rawBundles, urlPatterns = []) {
 
   const result = [...patternsChunks, ...urlsChunks]
     // filter out pages with no cwv data
-    .filter((row) => row.metrics.lcp || row.metrics.cls || row.metrics.inp || row.metrics.ttfb)
+    .filter((row) => METRICS.some((metric) => row.metrics[metric]))
     // sort desc by pageviews
     .sort((a, b) => b.metrics.pageviews - a.metrics.pageviews);
 
@@ -112,5 +112,5 @@ function handler(rawBundles, urlPatterns = []) {
 
 export default {
   handler,
-  checkpoints: ['cwv-lcp', 'cwv-cls', 'cwv-inp', 'cwv-ttfb'],
+  checkpoints: METRICS.map((metric) => `cwv-${metric}`),
 };

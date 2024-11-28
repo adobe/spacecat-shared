@@ -52,7 +52,7 @@ export default class RUMAPIClient {
         checkpoints,
       });
 
-      return handler(bundles);
+      return handler(bundles, opts);
     } catch (e) {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(opts)}. Reason: ${e.message}`);
     }

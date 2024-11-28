@@ -3,11 +3,11 @@
     "type": "group",
     "name": "Catalog",
     "pattern": "https://www.aem.live/catalog/*",
-    "pageviews": 1201,
+    "pageviews": 1200,
     "metrics": [
       {
         "deviceType": "desktop",
-        "pageviews": 601,
+        "pageviews": 600,
         "lcp": 40,
         "lcpCount": 6,
         "cls": 0.3,

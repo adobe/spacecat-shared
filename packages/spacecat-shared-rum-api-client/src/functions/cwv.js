@@ -44,7 +44,12 @@ const mapUrlsToPatterns = (bundles, patterns) => {
     const matchedPattern = findMatchedPattern(bundle.url, patterns);
 
     if (matchedPattern) {
-      urlToPatternMap[bundle.url] = matchedPattern;
+      // Check if any cwv metric exists in bundle.events
+      const hasMetrics = bundle.events.some((event) => METRICS.some((metric) => event.checkpoint.includes(`cwv-${metric}`)));
+
+      if (hasMetrics) {
+        urlToPatternMap[bundle.url] = matchedPattern;
+      }
     }
   }
   return urlToPatternMap;

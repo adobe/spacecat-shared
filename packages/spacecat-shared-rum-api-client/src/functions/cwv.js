@@ -90,8 +90,13 @@ function handler(rawBundles, opts = []) {
       : null;
   });
 
+  dataChunks.addFacet('acquisition', facets.acquisitionSource);
+
   // counts metrics per each facet
   METRICS.forEach((metric) => dataChunks.addSeries(metric, series[metric]));
+
+  // count organic traffic per each facet
+  dataChunks.addSeries('organic', series.organic);
 
   const patternsResult = dataChunks.facets.patternsDevices.reduce((acc, facet) => {
     const [pattern, deviceType] = facet.value.split(DELIMITER);
@@ -102,11 +107,13 @@ function handler(rawBundles, opts = []) {
       name: patternData.name,
       pattern,
       pageviews: 0,
+      organic: 0,
       metrics: [],
     };
 
     // Increment the total pageviews for pattern
     acc[pattern].pageviews += facet.weight;
+    acc[pattern].organic += facet.metrics.organic.sum;
 
     // Add metrics for the specific device type
     acc[pattern].metrics.push({
@@ -125,11 +132,13 @@ function handler(rawBundles, opts = []) {
       type: FACET_TYPE.URL,
       url,
       pageviews: 0,
+      organic: 0,
       metrics: [],
     };
 
     // Increment the total pageviews for url
     acc[url].pageviews += facet.weight;
+    acc[url].organic += facet.metrics.organic.sum;
 
     // Add metrics for the specific device type
     acc[url].metrics.push({
@@ -152,5 +161,11 @@ function handler(rawBundles, opts = []) {
 
 export default {
   handler,
-  checkpoints: METRICS.map((metric) => `cwv-${metric}`),
+  checkpoints: [
+    ...METRICS.map((metric) => `cwv-${metric}`),
+    'utm',
+    'paid',
+    'email',
+    'enter',
+  ],
 };

@@ -141,53 +141,72 @@ Lists all the experiments for a specified domain within the requested interval. 
 An example response:
 
 ```json
-{
-  "https://www.aem.live/home": [
-    {
-      "experiment": "short-home",
-      "variants": [
-        {
-          "name": "challenger-1",
-          "views": 1300,
-          "click": {
-            ".hero": 100,
-            ".header #navmenu-0": 100,
-            ".roi-calculator .button": 100,
-            ".hero .button": 100
-          },
-          "convert": {},
-          "formsubmit": {}
-        },
-        {
-          "name": "control",
-          "views": 800,
-          "click": {
-            ".hero .button": 100,
-            ".header .button": 200,
-            ".header #navmenu-0": 200
-          },
-          "convert": {},
-          "formsubmit": {}
-        }
-      ]
-    }
-  ],
-
-  "https://www.aem.live/new-exp-page": [
-    {
-      "experiment": "visitor-behavior",
-      "variants": [
-        {
-          "name": "https://www.aem.live/some-other-page",
-          "views": 500,
-          "click": {},
-          "convert": {},
-          "formsubmit": {}
-        }
-      ]
-    }
-  ]
-}
+[
+  {
+    "type": "url",
+    "url": "https://www.aem.live/home",
+    "pageviews": 2620,
+    "organic": 1900,
+    "metrics": [
+      {
+        "deviceType": "desktop",
+        "pageviews": 2420,
+        "lcp": 2099.699999988079,
+        "lcpCount": 8,
+        "cls": 0.011145537287059668,
+        "clsCount": 7,
+        "inp": 8,
+        "inpCount": 5,
+        "ttfb": 548,
+        "ttfbCount": 16
+      },
+      {
+        "deviceType": "mobile",
+        "pageviews": 100,
+        "lcp": 2454.2,
+        "lcpCount": 1,
+        "cls": 0.26956930913977606,
+        "clsCount": 1,
+        "inp": null,
+        "inpCount": 0,
+        "ttfb": 807.2999999858439,
+        "ttfbCount": 1
+      }
+    ]
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/docs/",
+    "pageviews": 1910,
+    "organic": 602,
+    "metrics": [
+      {
+        "deviceType": "desktop",
+        "pageviews": 1804,
+        "lcp": 665.9000000059605,
+        "lcpCount": 11,
+        "cls": 0.012401669733174766,
+        "clsCount": 11,
+        "inp": 32,
+        "inpCount": 8,
+        "ttfb": 253.20000000298023,
+        "ttfbCount": 12
+      },
+      {
+        "deviceType": "mobile",
+        "pageviews": 106,
+        "lcp": 26276.5,
+        "lcpCount": 4,
+        "cls": null,
+        "clsCount": 5,
+        "inp": 48,
+        "inpCount": 1,
+        "ttfb": 86,
+        "ttfbCount": 5
+      }
+    ]
+  }
+]
 
 ```
 

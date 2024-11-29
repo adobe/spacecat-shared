@@ -3,6 +3,7 @@
     "type": "url",
     "url": "https://www.aem.live/home",
     "pageviews": 2620,
+    "organic": 1900,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -46,6 +47,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/block-collection",
     "pageviews": 2000,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -65,6 +67,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/",
     "pageviews": 1910,
+    "organic": 602,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -96,6 +99,7 @@
     "type": "url",
     "url": "https://www.aem.live/tools/rum/explorer.html",
     "pageviews": 1600,
+    "organic": 700,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -115,6 +119,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/tutorial",
     "pageviews": 1600,
+    "organic": 400,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -134,6 +139,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/anatomy-of-a-franklin-project",
     "pageviews": 1200,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -153,6 +159,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/indexing",
     "pageviews": 1000,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -184,6 +191,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/custom-headers",
     "pageviews": 900,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -203,6 +211,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/dev-collab-and-good-practices",
     "pageviews": 700,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -222,6 +231,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/go-live-checklist",
     "pageviews": 600,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -241,6 +251,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/keeping-it-100",
     "pageviews": 500,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -260,6 +271,7 @@
     "type": "url",
     "url": "https://www.aem.live/tools/sidekick/",
     "pageviews": 410,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -279,6 +291,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/placeholders",
     "pageviews": 403,
+    "organic": 1,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -298,6 +311,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/byo-cdn-cloudflare-worker-setup",
     "pageviews": 400,
+    "organic": 200,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -317,6 +331,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/davidsmodel",
     "pageviews": 300,
+    "organic": 200,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -336,6 +351,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/setup-customer-sharepoint",
     "pageviews": 300,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -355,6 +371,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/sidekick",
     "pageviews": 200,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -374,6 +391,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/web-components",
     "pageviews": 200,
+    "organic": 200,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -393,6 +411,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/authentication-setup-site",
     "pageviews": 200,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -412,6 +431,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/rum",
     "pageviews": 200,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -431,6 +451,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/block-collection/section-metadata",
     "pageviews": 200,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -450,6 +471,7 @@
     "type": "url",
     "url": "https://www.aem.live/vip/intake",
     "pageviews": 200,
+    "organic": 200,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -469,6 +491,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/sidekick-extension",
     "pageviews": 110,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -488,6 +511,7 @@
     "type": "url",
     "url": "https://www.aem.live/docs/rum",
     "pageviews": 110,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -507,6 +531,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/block-collection/breadcrumbs",
     "pageviews": 100,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -526,6 +551,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/block-collection/headings",
     "pageviews": 100,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -545,6 +571,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/github-actions",
     "pageviews": 100,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -564,6 +591,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/importer",
     "pageviews": 100,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -583,6 +611,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/configuring-aem-assets-sidekick-plugin",
     "pageviews": 100,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -602,6 +631,7 @@
     "type": "url",
     "url": "https://www.aem.live/tools/rum/list.html",
     "pageviews": 100,
+    "organic": 0,
     "metrics": [
       {
         "deviceType": "desktop",
@@ -621,6 +651,7 @@
     "type": "url",
     "url": "https://www.aem.live/developer/forms",
     "pageviews": 100,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",

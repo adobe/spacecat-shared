@@ -11,6 +11,7 @@
  */
 
 import AuditCollection from '../audit/audit.collection.js';
+import ConfigurationCollection from '../configuration/configuration.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
 import KeyEventCollection from '../key-event/key-event.collection.js';
 import OpportunityCollection from '../opportunity/opportunity.collection.js';
@@ -22,6 +23,7 @@ import SuggestionCollection from '../suggestion/suggestion.collection.js';
 
 const COLLECTIONS = [
   AuditCollection,
+  ConfigurationCollection,
   ExperimentCollection,
   KeyEventCollection,
   OpportunityCollection,

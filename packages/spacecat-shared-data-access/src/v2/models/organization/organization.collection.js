@@ -43,7 +43,7 @@ class OrganizationCollection extends BaseCollection {
     if (!hasText(imsOrgId)) {
       throw new Error('IMS Org ID is required');
     }
-    return this.findByIndexKeys({ imsOrgId });
+    return this.allByIndexKeys({ imsOrgId });
   }
 }
 

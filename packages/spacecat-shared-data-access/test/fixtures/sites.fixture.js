@@ -12,116 +12,413 @@
 
 const sites = [
   {
-    id: '4af16428-d0df-4987-9975-dc1ce6e9e217',
-    baseURL: 'https://example1.com',
-    hlxConfig:
-      {
-        hlxVersion: 5,
-        code:
-          {
-            owner: 'hlxsites',
-            repo: 'example1',
-            source:
-              {
-                type: 'github',
-                url: 'https://github.com/some-owner/example1',
-              },
-          },
-        cdn:
-          {
-            prod:
-              {
-                host: 'www.example1.com',
-                zoneId: 'some-zone-id',
-                apiToken: 'some-api-token',
-                type: 'some-cdn',
-                plan: 'some-plan',
-              },
-          },
-        content:
-          {
-            contentBusId: 'some-contentbus-id',
-            source:
-              {
-                type: 'onedrive',
-                url: 'https://some-provider/files/website',
-              },
-          },
-        rso:
-          {
-            owner: 'some-owner',
-            ref: 'main',
-            site: 'example1',
-            tld: 'aem.live',
-          },
-      },
+    siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
+    baseURL: 'https://example0.com',
     deliveryType: 'aem_edge',
-    gitHubURL: 'https://github.com/some-owner/example1',
-    organizationId: '643f4cda-fb22-47af-909f-6ad627f6eca1',
+    gitHubURL: 'https://github.com/org-0/test-repo',
+    organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,
-    // isLiveToggledAt: Date.parse('2024-03-09T08:37:30.408Z'),
-    createdAt: Date.parse('2023-09-08T13:10:19.801Z'),
-    updatedAt: Date.parse('2024-07-06T18:39:30.873Z'),
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
     config:
       {
         slack:
           {
-            channel: 'some-channel-id',
+            workspace: '0-workspace',
+            channel: '0-channel',
           },
         handlers:
           {
             404:
               {
+                byOrg: true,
                 mentions:
                   {
                     slack:
                       [
-                        '<@some-user-id>',
+                        '0-slackId',
                       ],
                   },
               },
-            'broken-backlinks':
+            'lhs-mobile':
               {
                 excludedURLs:
-                  [],
-                manualOverwrites:
-                  [],
-                fixedURLs:
-                  [],
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
+          },
+      },
+  },
+  {
+    siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
+    baseURL: 'https://example1.com',
+    deliveryType: 'aem_cs',
+    gitHubURL: 'https://github.com/org-1/test-repo',
+    organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
+    isLive: true,
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
+    config:
+      {
+        slack:
+          {
+            workspace: '1-workspace',
+            channel: '1-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                byOrg: true,
                 mentions:
                   {
                     slack:
                       [
-                        '<@some-user-id>',
+                        '1-slackId',
                       ],
                   },
               },
+            'lhs-mobile':
+              {
+                excludedURLs:
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
           },
-        imports:
-          [
-            {
-              sources:
-                [
-                  'google',
-                ],
-              type: 'top-pages',
-              destinations:
-                [
-                  'default',
-                ],
-            },
-            {
-              sources:
-                [
-                  'google',
-                ],
-              type: 'organic-traffic',
-              destinations:
-                [
-                  'default',
-                ],
-            },
-          ],
+      },
+  },
+  {
+    siteId: '56a691db-d32e-4308-ac99-a21de0580557',
+    baseURL: 'https://example2.com',
+    deliveryType: 'aem_edge',
+    gitHubURL: 'https://github.com/org-2/test-repo',
+    organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
+    isLive: true,
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
+    config:
+      {
+        slack:
+          {
+            workspace: '2-workspace',
+            channel: '2-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                byOrg: true,
+                mentions:
+                  {
+                    slack:
+                      [
+                        '2-slackId',
+                      ],
+                  },
+              },
+            'lhs-mobile':
+              {
+                excludedURLs:
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
+          },
+      },
+  },
+  {
+    siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
+    baseURL: 'https://example3.com',
+    deliveryType: 'aem_cs',
+    gitHubURL: 'https://github.com/org-3/test-repo',
+    organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
+    isLive: true,
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
+    config:
+      {
+        slack:
+          {
+            workspace: '3-workspace',
+            channel: '3-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                byOrg: true,
+                mentions:
+                  {
+                    slack:
+                      [
+                        '3-slackId',
+                      ],
+                  },
+              },
+            'lhs-mobile':
+              {
+                excludedURLs:
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
+          },
+      },
+  },
+  {
+    siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
+    baseURL: 'https://example4.com',
+    deliveryType: 'aem_edge',
+    gitHubURL: 'https://github.com/org-4/test-repo',
+    organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
+    isLive: true,
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
+    config:
+      {
+        slack:
+          {
+            workspace: '4-workspace',
+            channel: '4-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                byOrg: true,
+                mentions:
+                  {
+                    slack:
+                      [
+                        '4-slackId',
+                      ],
+                  },
+              },
+            'lhs-mobile':
+              {
+                excludedURLs:
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
+          },
+      },
+  },
+  {
+    siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
+    baseURL: 'https://example5.com',
+    deliveryType: 'aem_cs',
+    gitHubURL: 'https://github.com/org-5/test-repo',
+    organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
+    isLive: true,
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
+    config:
+      {
+        slack:
+          {
+            workspace: '5-workspace',
+            channel: '5-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                byOrg: true,
+                mentions:
+                  {
+                    slack:
+                      [
+                        '5-slackId',
+                      ],
+                  },
+              },
+            'lhs-mobile':
+              {
+                excludedURLs:
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
+          },
+      },
+  },
+  {
+    siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
+    baseURL: 'https://example6.com',
+    deliveryType: 'aem_edge',
+    gitHubURL: 'https://github.com/org-6/test-repo',
+    organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
+    isLive: true,
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
+    config:
+      {
+        slack:
+          {
+            workspace: '6-workspace',
+            channel: '6-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                byOrg: true,
+                mentions:
+                  {
+                    slack:
+                      [
+                        '6-slackId',
+                      ],
+                  },
+              },
+            'lhs-mobile':
+              {
+                excludedURLs:
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
+          },
+      },
+  },
+  {
+    siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
+    baseURL: 'https://example7.com',
+    deliveryType: 'aem_cs',
+    gitHubURL: 'https://github.com/org-7/test-repo',
+    organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
+    isLive: true,
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
+    config:
+      {
+        slack:
+          {
+            workspace: '7-workspace',
+            channel: '7-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                byOrg: true,
+                mentions:
+                  {
+                    slack:
+                      [
+                        '7-slackId',
+                      ],
+                  },
+              },
+            'lhs-mobile':
+              {
+                excludedURLs:
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
+          },
+      },
+  },
+  {
+    siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
+    baseURL: 'https://example8.com',
+    deliveryType: 'aem_edge',
+    gitHubURL: 'https://github.com/org-8/test-repo',
+    organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
+    isLive: true,
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
+    config:
+      {
+        slack:
+          {
+            workspace: '8-workspace',
+            channel: '8-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                byOrg: true,
+                mentions:
+                  {
+                    slack:
+                      [
+                        '8-slackId',
+                      ],
+                  },
+              },
+            'lhs-mobile':
+              {
+                excludedURLs:
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
+          },
+      },
+  },
+  {
+    siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
+    baseURL: 'https://example9.com',
+    deliveryType: 'aem_cs',
+    gitHubURL: 'https://github.com/org-9/test-repo',
+    organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
+    isLive: true,
+    isLiveToggledAt: 1732866355952,
+    GSI1PK: 'ALL_SITES',
+    createdAt: 1732866355952,
+    updatedAt: 1732866355952,
+    config:
+      {
+        slack:
+          {
+            workspace: '9-workspace',
+            channel: '9-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                byOrg: true,
+                mentions:
+                  {
+                    slack:
+                      [
+                        '9-slackId',
+                      ],
+                  },
+              },
+            'lhs-mobile':
+              {
+                excludedURLs:
+                  [
+                    'https://example.com/excluded',
+                  ],
+              },
+          },
       },
   },
 ];

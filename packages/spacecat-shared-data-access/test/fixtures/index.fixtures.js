@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import audits from './audits.fixture.js';
+import configurations from './configurations.fixture.js';
 import experiments from './experiments.fixture.js';
 import keyEvents from './key-events.fixture.js';
 import opportunities from './opportunities.fixture.js';
@@ -20,6 +22,8 @@ import sites from './sites.fixture.js';
 import suggestions from './suggestions.fixture.js';
 
 export default {
+  audits,
+  configurations,
   experiments,
   keyEvents,
   opportunities,

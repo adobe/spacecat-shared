@@ -25,11 +25,17 @@ export interface MultiStatusCreateResult<T> {
   errorItems: { item: object, error: ValidationError }[],
 }
 
+export interface QueryOptions {
+  limit?: number;
+  sort?: string;
+}
+
 export interface BaseCollection<T extends BaseModel> {
+  allByIndexKeys(keys: object, options?: QueryOptions): Promise<T[]>;
   create(item: object): Promise<T>;
   createMany(items: object[]): Promise<MultiStatusCreateResult<T>>;
   findById(id: string): Promise<T>;
-  findByIndexKeys(indexKeys: object): Promise<T[]>;
+  findByIndexKeys(indexKeys: object): Promise<T>;
 }
 
 export interface ModelFactory {

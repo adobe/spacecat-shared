@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-console */
+
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { spawn } from 'dynamo-db-local';
 

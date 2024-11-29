@@ -42,66 +42,146 @@
         {
           "IndexName": "spacecat-data-opportunity-by-site",
           "KeyAttributes": {
-            "PartitionKey": {
-              "AttributeName": "gsi1pk",
-              "AttributeType": "S"
-            },
-            "SortKey": {
-              "AttributeName": "gsi1sk",
-              "AttributeType": "S"
-            }
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
           },
-          "Projection": {
-            "ProjectionType": "ALL"
-          }
+          "Projection": { "ProjectionType": "ALL" }
         },
         {
           "IndexName": "spacecat-data-opportunity-by-site-and-status",
           "KeyAttributes": {
-            "PartitionKey": {
-              "AttributeName": "gsi2pk",
-              "AttributeType": "S"
-            },
-            "SortKey": {
-              "AttributeName": "gsi2sk",
-              "AttributeType": "S"
-            }
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
           },
-          "Projection": {
-            "ProjectionType": "ALL"
-          }
+          "Projection": { "ProjectionType": "ALL" }
         },
         {
           "IndexName": "spacecat-data-suggestion-by-opportunity",
           "KeyAttributes": {
-            "PartitionKey": {
-              "AttributeName": "gsi1pk",
-              "AttributeType": "S"
-            },
-            "SortKey": {
-              "AttributeName": "gsi1sk",
-              "AttributeType": "S"
-            }
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
           },
-          "Projection": {
-            "ProjectionType": "ALL"
-          }
+          "Projection": { "ProjectionType": "ALL" }
         },
         {
           "IndexName": "spacecat-data-suggestion-by-opportunity-and-status",
           "KeyAttributes": {
-            "PartitionKey": {
-              "AttributeName": "gsi2pk",
-              "AttributeType": "S"
-            },
-            "SortKey": {
-              "AttributeName": "gsi2sk",
-              "AttributeType": "S"
-            }
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
           },
-          "Projection": {
-            "ProjectionType": "ALL"
-          }
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-organization-by-ims-org-id",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-site-by-base-url",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-site-by-delivery-type",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-site-by-organization-id",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-audit-by-site-id",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-audit-by-site-id-and-type",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-experiment-by-site-id",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-experiment-by-site-id-and-exp-id-and-url",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-key-event-by-site-id",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-site-candidate-by-site-id",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-site-candidate-by-base-url",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-site-top-page-by-site-id",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-site-top-page-by-site-id-and-source-and-geo",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-configuration-by-version",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "version", "AttributeType": "N" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
         }
       ]
     },

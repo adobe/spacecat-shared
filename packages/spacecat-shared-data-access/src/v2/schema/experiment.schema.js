@@ -77,9 +77,12 @@ const ExperimentSchema = createSchema(
         default: DEFAULT_UPDATED_BY,
       },
       variants: {
-        type: 'any',
+        type: 'list',
+        items: {
+          type: 'any',
+          validate: (value) => isNonEmptyObject(value),
+        },
         required: true,
-        validate: (value) => isNonEmptyObject(value),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema

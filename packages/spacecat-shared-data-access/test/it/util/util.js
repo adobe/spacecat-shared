@@ -49,7 +49,17 @@ const sanitizeRecord = (record, idName) => {
   return sanitizedRecord;
 };
 
+const getExecutionOptions = (options) => {
+  const { limit, order = 'asc' } = options;
+
+  return {
+    ...(limit > 0 && { limit }),
+    order,
+  };
+};
+
 export {
+  getExecutionOptions,
   getRandomDecimal,
   getRandomInt,
   randomDate,

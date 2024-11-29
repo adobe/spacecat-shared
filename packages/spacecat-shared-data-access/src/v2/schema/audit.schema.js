@@ -12,9 +12,9 @@
 
 /* c8 ignore start */
 
-import { validate as uuidValidate } from 'uuid';
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import { validateAuditResult } from '../models/audit/audit.model.js';
+import { validate as uuidValidate } from 'uuid';
 
 import createSchema from './base.schema.js';
 
@@ -40,7 +40,7 @@ const AuditSchema = createSchema(
       auditResult: {
         type: 'any',
         required: true,
-        validate: (value, attrs) => validateAuditResult(value, attrs.auditType),
+        validate: (value) => isNonEmptyObject(value),
       },
       auditType: {
         type: 'string',

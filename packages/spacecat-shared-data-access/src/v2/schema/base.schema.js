@@ -12,8 +12,10 @@
 
 import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
+export const getIdName = (entity) => `${entity.charAt(0).toLowerCase()}${entity.slice(1)}Id`;
+
 const createSchema = (entity, version, service, schema) => {
-  const idName = `${entity.charAt(0).toLowerCase()}${entity.slice(1)}Id`;
+  const idName = getIdName(entity);
 
   const baseAttributes = {
     [idName]: {

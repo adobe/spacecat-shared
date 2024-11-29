@@ -27,7 +27,6 @@ import { removeElectroProperties } from '../util/util.js';
 
 use(chaiAsPromised);
 
-// eslint-disable-next-line func-names
 describe('Suggestion IT', async () => {
   let sampleData;
   let Suggestion;
@@ -45,18 +44,18 @@ describe('Suggestion IT', async () => {
     const suggestion = await Suggestion.findById(sampleSuggestion.getId());
 
     expect(suggestion).to.be.an('object');
-    expect(suggestion.record).to.eql(removeElectroProperties(sampleSuggestion.record));
+    expect(suggestion.toJSON()).to.eql(removeElectroProperties(sampleSuggestion.toJSON()));
 
     const opportunity = await suggestion.getOpportunity();
     expect(opportunity).to.be.an('object');
-    expect(opportunity.record).to.eql(removeElectroProperties(sampleData.opportunities[2].record));
+    expect(opportunity.toJSON()).to.eql(sampleData.opportunities[2].toJSON());
   });
 
   it('partially updates one suggestion by id', async () => {
     // retrieve the suggestion by ID
     const suggestion = await Suggestion.findById(sampleData.suggestions[0].getId());
     expect(suggestion).to.be.an('object');
-    expect(suggestion.record).to.eql(removeElectroProperties(sampleData.suggestions[0].record));
+    expect(suggestion.toJSON()).to.eql(sampleData.suggestions[0].toJSON());
 
     // apply updates
     const updates = {
@@ -74,11 +73,11 @@ describe('Suggestion IT', async () => {
     const {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       status, updatedAt, ...originalUnchangedFields
-    } = sampleData.suggestions[0].record;
+    } = sampleData.suggestions[0].toJSON();
     const {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       status: _, updatedAt: __, ...actualUnchangedFields
-    } = suggestion.record;
+    } = suggestion.toJSON();
 
     expect(actualUnchangedFields).to.eql(removeElectroProperties(originalUnchangedFields));
 
@@ -87,13 +86,13 @@ describe('Suggestion IT', async () => {
     expect(storedSuggestion.getStatus()).to.equal(updates.status);
 
     // validate timestamps or audit logs
-    expect(new Date(storedSuggestion.record.updatedAt)).to.be.greaterThan(
-      new Date(sampleData.suggestions[0].record.updatedAt),
+    expect(new Date(storedSuggestion.toJSON().updatedAt)).to.be.greaterThan(
+      new Date(sampleData.suggestions[0].toJSON().updatedAt),
     );
 
     // validate persisted record matches in-memory state
-    const storedWithoutUpdatedAt = { ...storedSuggestion.record };
-    const inMemoryWithoutUpdatedAt = { ...suggestion.record };
+    const storedWithoutUpdatedAt = { ...storedSuggestion.toJSON() };
+    const inMemoryWithoutUpdatedAt = { ...suggestion.toJSON() };
     delete storedWithoutUpdatedAt.updatedAt;
     delete inMemoryWithoutUpdatedAt.updatedAt;
 
@@ -146,21 +145,12 @@ describe('Suggestion IT', async () => {
       expect(isIsoDate(suggestion.getCreatedAt())).to.be.true;
       expect(isIsoDate(suggestion.getUpdatedAt())).to.be.true;
 
-      const { record } = suggestion;
+      const record = suggestion.toJSON();
       delete record.opportunityId;
       delete record.suggestionId;
       delete record.createdAt;
       delete record.updatedAt;
-      delete record.sk;
-      delete record.pk;
-      delete record.gsi1pk;
-      delete record.gsi1sk;
-      delete record.gsi2pk;
-      delete record.gsi2sk;
-      // eslint-disable-next-line no-underscore-dangle
-      delete record.__edb_e__;
-      // eslint-disable-next-line no-underscore-dangle
-      delete record.__edb_v__;
+
       expect(record).to.eql(data[index]);
     });
   });

@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-console */
+
 import { idNameToEntityName } from '../../../src/v2/util/reference.js';
 import fixtures from '../../fixtures/index.fixtures.js';
 

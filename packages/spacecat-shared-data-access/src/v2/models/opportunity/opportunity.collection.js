@@ -46,7 +46,7 @@ class OpportunityCollection extends BaseCollection {
     if (!hasText(siteId)) {
       throw new Error('SiteId is required');
     }
-    return this.findByIndexKeys({ siteId });
+    return this.allByIndexKeys({ siteId });
   }
 
   /**
@@ -67,7 +67,7 @@ class OpportunityCollection extends BaseCollection {
       throw new Error('Status is required');
     }
 
-    return this.findByIndexKeys({ siteId, status });
+    return this.allByIndexKeys({ siteId, status });
   }
 }
 

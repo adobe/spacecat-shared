@@ -38,21 +38,21 @@ class SiteCollection extends BaseCollection {
     if (!isValidUrl(baseURL)) {
       throw new Error('Base URL must be a valid URL');
     }
-    return this.findByIndexKeys({ baseURL });
+    return this.allByIndexKeys({ baseURL });
   }
 
   async allByDeliveryType(deliveryType) {
     if (!hasText(deliveryType)) {
       throw new Error('Delivery Type is required');
     }
-    return this.findByIndexKeys({ deliveryType });
+    return this.allByIndexKeys({ deliveryType });
   }
 
   async allByOrganizationId(organizationId) {
     if (!hasText(organizationId)) {
       throw new Error('Organization ID is required');
     }
-    return this.findByIndexKeys({ organizationId });
+    return this.allByIndexKeys({ organizationId });
   }
 }
 

@@ -12,8 +12,8 @@
 
 const opportunities = [
   {
-    siteId: '4af16428-d0df-4987-9975-dc1ce6e9e217',
-    auditId: 'd27f4e5a-850c-441e-9c22-8e5e08b1e687',
+    siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
+    auditId: '3fe5ca60-4850-431c-97b3-f88a80f07e9b',
     opportunityId: 'd27f4e5a-850c-441e-9c22-8e5e08b1e687',
     title: 'Opportunity 0',
     description: 'Description 0',
@@ -31,8 +31,8 @@ const opportunities = [
     },
   },
   {
-    siteId: '4af16428-d0df-4987-9975-dc1ce6e9e217',
-    auditId: '742c49a7-d61f-4c62-9f7c-3207f520ed1e',
+    siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
+    auditId: '48656b02-62cb-46c0-b271-ee99c940e89e',
     opportunityId: '742c49a7-d61f-4c62-9f7c-3207f520ed1e',
     title: 'Opportunity 1',
     description: 'Description 1',
@@ -50,8 +50,8 @@ const opportunities = [
     },
   },
   {
-    siteId: '4af16428-d0df-4987-9975-dc1ce6e9e217',
-    auditId: 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4',
+    siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
+    auditId: '5bc610a9-bc59-48d8-937e-4808ade2ecb1',
     opportunityId: 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4',
     title: 'Opportunity 2',
     description: 'Description 2',

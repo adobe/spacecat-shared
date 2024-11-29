@@ -21,14 +21,14 @@ import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
 import { ValidationError } from '../../../src/index.js';
 
+import fixtures from '../../fixtures/index.fixtures.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 
 use(chaiAsPromised);
 
-// eslint-disable-next-line func-names
 describe('Opportunity IT', async () => {
-  const siteId = '4af16428-d0df-4987-9975-dc1ce6e9e217';
+  const { siteId } = fixtures.sites[0];
 
   let sampleData;
 
@@ -45,14 +45,14 @@ describe('Opportunity IT', async () => {
     const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
 
     expect(opportunity).to.be.an('object');
-    expect(opportunity.record).to.eql(sampleData.opportunities[0].record);
+    expect(opportunity.toJSON()).to.eql(sampleData.opportunities[0].toJSON());
 
     const suggestions = await opportunity.getSuggestions();
     expect(suggestions).to.be.an('array').with.length(3);
 
     const parentOpportunity = await suggestions[0].getOpportunity();
     expect(parentOpportunity).to.be.an('object');
-    expect(parentOpportunity.record).to.eql(sampleData.opportunities[0].record);
+    expect(parentOpportunity.toJSON()).to.eql(sampleData.opportunities[0].toJSON());
   });
 
   it('finds all opportunities by siteId and status', async () => {
@@ -65,7 +65,7 @@ describe('Opportunity IT', async () => {
     // retrieve the opportunity by ID
     const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
     expect(opportunity).to.be.an('object');
-    expect(opportunity.record).to.eql(sampleData.opportunities[0].record);
+    expect(opportunity.toJSON()).to.eql(sampleData.opportunities[0].toJSON());
 
     // apply updates
     const updates = {
@@ -91,11 +91,11 @@ describe('Opportunity IT', async () => {
     const {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       runbook, status, updatedAt, ...originalUnchangedFields
-    } = sampleData.opportunities[0].record;
+    } = sampleData.opportunities[0].toJSON();
     const {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       runbook: _, status: __, updatedAt: ___, ...actualUnchangedFields
-    } = opportunity.record;
+    } = opportunity.toJSON();
 
     expect(actualUnchangedFields).to.eql(originalUnchangedFields);
 
@@ -105,13 +105,13 @@ describe('Opportunity IT', async () => {
     expect(storedOpportunity.getStatus()).to.equal(updates.status);
 
     // validate timestamps or audit logs
-    expect(new Date(storedOpportunity.record.updatedAt)).to.be.greaterThan(
-      new Date(sampleData.opportunities[0].record.updatedAt),
+    expect(new Date(storedOpportunity.toJSON().updatedAt)).to.be.greaterThan(
+      new Date(sampleData.opportunities[0].toJSON().updatedAt),
     );
 
     // validate persisted record matches in-memory state
-    const storedWithoutUpdatedAt = { ...storedOpportunity.record };
-    const inMemoryWithoutUpdatedAt = { ...opportunity.record };
+    const storedWithoutUpdatedAt = { ...storedOpportunity.toJSON() };
+    const inMemoryWithoutUpdatedAt = { ...opportunity.toJSON() };
     delete storedWithoutUpdatedAt.updatedAt;
     delete inMemoryWithoutUpdatedAt.updatedAt;
 
@@ -146,10 +146,11 @@ describe('Opportunity IT', async () => {
     expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
     expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
-    delete opportunity.record.opportunityId;
-    delete opportunity.record.createdAt;
-    delete opportunity.record.updatedAt;
-    expect(opportunity.record).to.eql(data);
+    const record = opportunity.toJSON();
+    delete record.opportunityId;
+    delete record.createdAt;
+    delete record.updatedAt;
+    expect(record).to.eql(data);
   });
 
   it('deletes an opportunity', async () => {
@@ -200,20 +201,11 @@ describe('Opportunity IT', async () => {
       expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
       expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
-      const { record } = opportunity;
+      const record = opportunity.toJSON();
       delete record.opportunityId;
       delete record.createdAt;
       delete record.updatedAt;
-      delete record.sk;
-      delete record.pk;
-      delete record.gsi1pk;
-      delete record.gsi1sk;
-      delete record.gsi2pk;
-      delete record.gsi2sk;
-      // eslint-disable-next-line no-underscore-dangle
-      delete record.__edb_e__;
-      // eslint-disable-next-line no-underscore-dangle
-      delete record.__edb_v__;
+
       expect(record).to.eql(data[index]);
     });
   });
@@ -259,22 +251,28 @@ describe('Opportunity IT', async () => {
 
     const result = await Opportunity.createMany(data);
 
-    delete result.createdItems[0].record.opportunityId;
-    delete result.createdItems[0].record.createdAt;
-    delete result.createdItems[0].record.updatedAt;
-    delete result.createdItems[1].record.opportunityId;
-    delete result.createdItems[1].record.createdAt;
-    delete result.createdItems[1].record.updatedAt;
-
     expect(result).to.be.an('object');
     expect(result).to.have.property('createdItems');
     expect(result).to.have.property('errorItems');
 
     expect(result.createdItems).to.be.an('array').with.length(2);
-    expect(result.createdItems[0].record).to.eql(data[0]);
-    expect(result.createdItems[1].record).to.eql(data[1]);
     expect(result.errorItems).to.be.an('array').with.length(1);
     expect(result.errorItems[0].item).to.eql(data[2]);
     expect(result.errorItems[0].error).to.be.an.instanceOf(ValidationError);
+
+    const [opportunity1, opportunity2] = result.createdItems;
+
+    const record1 = opportunity1.toJSON();
+    delete record1.opportunityId;
+    delete record1.createdAt;
+    delete record1.updatedAt;
+
+    const record2 = opportunity2.toJSON();
+    delete record2.opportunityId;
+    delete record2.createdAt;
+    delete record2.updatedAt;
+
+    expect(record1).to.eql(data[0]);
+    expect(record2).to.eql(data[1]);
   });
 });

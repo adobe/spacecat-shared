@@ -53,6 +53,9 @@ const SiteTopPageSchema = createSchema(
         type: 'string',
         required: true,
       },
+      topKeyword: {
+        type: 'string',
+      },
       geo: {
         type: 'string',
         required: false,

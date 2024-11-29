@@ -18,6 +18,8 @@ import { Service } from 'electrodb';
 
 import ModelFactory from '../v2/models/base/model.factory.js';
 
+import AuditCollection from '../v2/models/audit/audit.collection.js';
+import ConfigurationCollection from '../v2/models/configuration/configuration.collection.js';
 import ExperimentCollection from '../v2/models/experiment/experiment.collection.js';
 import KeyEventCollection from '../v2/models/key-event/key-event.collection.js';
 import OpportunityCollection from '../v2/models/opportunity/opportunity.collection.js';
@@ -27,6 +29,8 @@ import SiteCollection from '../v2/models/site/site.collection.js';
 import SiteTopPageCollection from '../v2/models/site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../v2/models/suggestion/suggestion.collection.js';
 
+import AuditSchema from '../v2/schema/audit.schema.js';
+import ConfigurationSchema from '../v2/schema/configuration.schema.js';
 import ExperimentSchema from '../v2/schema/experiment.schema.js';
 import KeyEventSchema from '../v2/schema/key-events.schema.js';
 import OpportunitySchema from '../v2/schema/opportunity.schema.js';
@@ -67,6 +71,8 @@ const createElectroService = (client, config, log) => {
   /* c8 ignore end */
   return new Service(
     {
+      audit: AuditSchema,
+      configuration: ConfigurationSchema,
       experiment: ExperimentSchema,
       keyEvent: KeyEventSchema,
       opportunity: OpportunitySchema,
@@ -117,6 +123,8 @@ export const createDataAccess = (config, log = console) => {
   const electroService = createElectroService(rawClient, config, log);
   const modelFactory = new ModelFactory(electroService, log);
 
+  const Audit = modelFactory.getCollection(AuditCollection.name);
+  const Configuration = modelFactory.getCollection(ConfigurationCollection.name);
   const Experiment = modelFactory.getCollection(ExperimentCollection.name);
   const KeyEvent = modelFactory.getCollection(KeyEventCollection.name);
   const Opportunity = modelFactory.getCollection(OpportunityCollection.name);
@@ -139,6 +147,8 @@ export const createDataAccess = (config, log = console) => {
     ...experimentFuncs,
     ...apiKeyFuncs,
     // electro-based data access objects
+    Audit,
+    Configuration,
     Experiment,
     KeyEvent,
     Opportunity,

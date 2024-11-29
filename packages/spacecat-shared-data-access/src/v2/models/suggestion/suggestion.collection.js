@@ -46,7 +46,7 @@ class SuggestionCollection extends BaseCollection {
     if (!hasText(opportunityId)) {
       throw new Error('OpportunityId is required');
     }
-    return this.findByIndexKeys({ opportunityId });
+    return this.allByIndexKeys({ opportunityId });
   }
 
   /**
@@ -66,7 +66,7 @@ class SuggestionCollection extends BaseCollection {
       throw new Error('Status is required');
     }
 
-    return this.findByIndexKeys({ opportunityId, status });
+    return this.allByIndexKeys({ opportunityId, status });
   }
 
   /**

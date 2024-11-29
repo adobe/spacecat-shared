@@ -10,14 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
-export type * from './audit/index.d.ts';
-export type * from './configuration/index.d.ts';
-export type * from './base/index.d.ts';
-export type * from './experiment/index.d.ts';
-export type * from './key-event/index.d.ts';
-export type * from './opportunity/index.d.ts';
-export type * from './organization/index.d.ts';
-export type * from './site/index.d.ts';
-export type * from './site-candidate/index.d.ts';
-export type * from './site-top-page/index.d.ts';
-export type * from './suggestion/index.d.ts';
+import BaseModel from '../base/base.model.js';
+
+/**
+ * Configuration - A class representing an Configuration entity.
+ * Provides methods to access and manipulate Configuration-specific data.
+ *
+ * @class Configuration
+ * @extends BaseModel
+ */
+class Configuration extends BaseModel {
+  // add your custom methods or overrides here
+}
+
+export default Configuration;

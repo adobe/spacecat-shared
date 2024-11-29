@@ -158,7 +158,7 @@ class BaseModel {
       result = await targetCollection.findById(id);
     } else if (type === 'has_many') {
       const foreignKey = entityNameToIdName(this.entityName);
-      result = await targetCollection.findByIndexKeys({ [foreignKey]: this.getId() });
+      result = await targetCollection.allByIndexKeys({ [foreignKey]: this.getId() });
     }
 
     if (result) {
@@ -228,6 +228,22 @@ class BaseModel {
       this.log.error('Failed to save record', error);
       throw error;
     }
+  }
+
+  /**
+   * Converts the entity attributes to a JSON object.
+   * @returns {Object} - A JSON representation of the entity attributes.
+   */
+  toJSON() {
+    const { attributes } = this.entity.model.schema;
+
+    return Object.keys(attributes).reduce((json, key) => {
+      if (this.record[key] !== undefined) {
+        // eslint-disable-next-line no-param-reassign
+        json[key] = this.record[key];
+      }
+      return json;
+    }, {});
   }
 }
 

@@ -13,18 +13,20 @@
 import type { BaseCollection, BaseModel } from '../index';
 
 export interface SiteTopPage extends BaseModel {
-  getSiteId(): string;
-  setSiteId(siteId: string): SiteTopPage;
-  getUrl(): string;
-  setUrl(url: string): SiteTopPage;
-  getTraffic(): number;
-  setTraffic(traffic: number): SiteTopPage;
-  getSource(): string;
-  setSource(source: string): SiteTopPage;
   getGeo(): string;
-  setGeo(geo: string): SiteTopPage;
   getImportedAt(): number;
+  getSiteId(): string;
+  getSource(): string;
+  getTopKeyword(): string;
+  getTraffic(): number;
+  getUrl(): string;
+  setGeo(geo: string): SiteTopPage;
   setImportedAt(importedAt: number): SiteTopPage;
+  setSiteId(siteId: string): SiteTopPage;
+  setSource(source: string): SiteTopPage;
+  setTopKeyword(topKeyword: string): SiteTopPage;
+  setTraffic(traffic: number): SiteTopPage;
+  setUrl(url: string): SiteTopPage;
 }
 
 export interface SiteTopPageCollection extends BaseCollection<SiteTopPage> {

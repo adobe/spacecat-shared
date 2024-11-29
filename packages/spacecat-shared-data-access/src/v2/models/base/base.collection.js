@@ -17,7 +17,7 @@ import { ElectroValidationError } from 'electrodb';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
 import { keyNamesToIndexName } from '../../util/reference.js';
-import { removeElectroProperties } from '../../../../test/it/util/util.js';
+import { getExecutionOptions, removeElectroProperties } from '../../../../test/it/util/util.js';
 
 /**
  * BaseCollection - A base class for managing collections of entities in the application.
@@ -109,16 +109,46 @@ class BaseCollection {
   }
 
   /**
+   * Finds the top entity in the collection based on the sort order.
+   * @param [options] - Additional options for the query.
+   * @param {string} [options.index='all'] - The index to use for the query.
+   * @param {string} [options.order='desc'] - The sort order to use for the query.
+   * @return {Promise<BaseModel|null>}
+   */
+  async findTop(options = {}) {
+    const { order = 'desc', index = 'all' } = options;
+    return this.findByIndexKeys({ pk: `all_${this.entityName.toLowerCase()}` }, { order, index });
+  }
+
+  async findByIndexKeys(keys, options = {}) {
+    if (!isNonEmptyObject(keys)) {
+      const message = `Failed to find by index keys [${this.entityName}]: keys are required`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    const { order = 'desc', index = 'all' } = options;
+    const result = await this.entity.query[index](keys).go({ order, limit: 1 });
+
+    if (result.data.length === 0) {
+      return null;
+    }
+
+    return this.#createInstance({ data: result.data[0] });
+  }
+
+  /**
    * Finds entities by a set of index keys. Index keys are used to query entities by
    * a specific index defined in the entity schema. The index keys must match the
    * fields defined in the index.
    * @param {Object} keys - The index keys to use for the query.
+   * @param {QueryOptions} [options] - Additional options for the query.
    * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of model instances.
    * @throws {Error} - Throws an error if the index keys are not provided or if the index
    * is not found.
    * @async
    */
-  async findByIndexKeys(keys) {
+  async allByIndexKeys(keys, options = {}) {
     if (!isNonEmptyObject(keys)) {
       const message = `Failed to find by index keys [${this.entityName}]: keys are required`;
       this.log.error(message);
@@ -134,7 +164,7 @@ class BaseCollection {
       throw new Error(message);
     }
 
-    const records = await index(keys).go();
+    const records = await index(keys).go(getExecutionOptions(options));
 
     return this.#createInstances(records);
   }

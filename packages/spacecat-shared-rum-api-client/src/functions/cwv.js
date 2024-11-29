@@ -90,8 +90,6 @@ function handler(rawBundles, opts = []) {
       : null;
   });
 
-  dataChunks.addFacet('acquisition', facets.acquisitionSource);
-
   // counts metrics per each facet
   METRICS.forEach((metric) => dataChunks.addSeries(metric, series[metric]));
 

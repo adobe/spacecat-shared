@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "chai": "5.1.2",
-    "chai-as-promised": "8.0.0",
+    "chai-as-promised": "8.0.1",
     "dynamo-db-local": "9.3.0",
     "sinon": "19.0.2",
     "sinon-chai": "4.0.0"

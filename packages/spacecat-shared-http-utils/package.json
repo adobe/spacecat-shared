@@ -41,7 +41,7 @@
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
     "chai": "5.1.2",
-    "chai-as-promised": "8.0.0",
+    "chai-as-promised": "8.0.1",
     "sinon": "19.0.2"
   }
 }

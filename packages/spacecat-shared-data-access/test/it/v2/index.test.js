@@ -98,6 +98,8 @@ const removeElectroProperties = (record) => { /* eslint-disable no-underscore-da
   delete cleanedRecord.gsi1sk;
   delete cleanedRecord.gsi2pk;
   delete cleanedRecord.gsi2sk;
+  delete cleanedRecord.gsi3pk;
+  delete cleanedRecord.gsi3sk;
   delete cleanedRecord.__edb_e__;
   delete cleanedRecord.__edb_v__;
 
@@ -309,6 +311,8 @@ describe('Opportunity & Suggestion IT', function () {
         delete record.gsi1sk;
         delete record.gsi2pk;
         delete record.gsi2sk;
+        delete record.gsi3pk;
+        delete record.gsi3sk;
         // eslint-disable-next-line no-underscore-dangle
         delete record.__edb_e__;
         // eslint-disable-next-line no-underscore-dangle
@@ -498,6 +502,8 @@ describe('Opportunity & Suggestion IT', function () {
         delete record.gsi1sk;
         delete record.gsi2pk;
         delete record.gsi2sk;
+        delete record.gsi3pk;
+        delete record.gsi3sk;
         // eslint-disable-next-line no-underscore-dangle
         delete record.__edb_e__;
         // eslint-disable-next-line no-underscore-dangle

@@ -69,6 +69,22 @@ class OpportunityCollection extends BaseCollection {
 
     return this.findByIndexKeys({ siteId, status });
   }
+
+  async allBySiteIdAndTypeAndStatus(siteId, type, status) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    if (!hasText(type)) {
+      throw new Error('Type is required');
+    }
+
+    if (!hasText(status)) {
+      throw new Error('Status is required');
+    }
+
+    return this.findByIndexKeys({ siteId, type, status });
+  }
 }
 
 export default OpportunityCollection;

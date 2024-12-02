@@ -10,6 +10,12 @@
       "weight": 100,
       "events": [
         {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.google.com",
+          "timeDelta": 122
+        },
+        {
           "checkpoint": "cwv-lcp",
           "value": 10,
           "timeDelta": 22458.39990234375,
@@ -73,6 +79,12 @@
       "userAgent": "desktop:mac",
       "weight": 100,
       "events": [
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.google.com",
+          "timeDelta": 122
+        },
         {
           "checkpoint": "cwv-lcp",
           "value": 30,
@@ -221,6 +233,12 @@
       "userAgent": "mobile:ios",
       "weight": 100,
       "events": [
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.google.com",
+          "timeDelta": 122
+        },
         {
           "checkpoint": "cwv-lcp",
           "value": 30,

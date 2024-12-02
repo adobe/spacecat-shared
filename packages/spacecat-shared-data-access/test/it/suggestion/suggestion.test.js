@@ -24,6 +24,7 @@ import { ValidationError } from '../../../src/index.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 import { removeElectroProperties } from '../util/util.js';
+import { sanitizeTimestamps } from '../../../src/v2/util/util.js';
 
 use(chaiAsPromised);
 
@@ -55,7 +56,11 @@ describe('Suggestion IT', async () => {
     // retrieve the suggestion by ID
     const suggestion = await Suggestion.findById(sampleData.suggestions[0].getId());
     expect(suggestion).to.be.an('object');
-    expect(suggestion.toJSON()).to.eql(sampleData.suggestions[0].toJSON());
+    expect(
+      sanitizeTimestamps(suggestion.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleData.suggestions[0].toJSON()),
+    );
 
     // apply updates
     const updates = {

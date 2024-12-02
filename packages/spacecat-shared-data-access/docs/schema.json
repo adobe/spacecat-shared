@@ -72,10 +72,10 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-organization-by-ims-org-id",
+          "IndexName": "spacecat-data-organization-all",
           "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
           },
           "Projection": { "ProjectionType": "ALL" }
         },
@@ -176,7 +176,7 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-configuration-by-version",
+          "IndexName": "spacecat-data-configuration-all",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "version", "AttributeType": "N" }

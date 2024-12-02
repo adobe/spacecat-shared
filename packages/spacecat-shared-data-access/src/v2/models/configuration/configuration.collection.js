@@ -12,6 +12,7 @@
 
 import BaseCollection from '../base/base.collection.js';
 import Configuration from './configuration.model.js';
+import { incrementVersion, sanitizeIdAndAuditFields } from '../../util/util.js';
 
 /**
  * ConfigurationCollection - A collection class responsible for managing Configuration entities.
@@ -33,12 +34,21 @@ class ConfigurationCollection extends BaseCollection {
     super(service, modelFactory, Configuration, log);
   }
 
+  async create(data) {
+    const latestConfiguration = await this.getLatestConfiguration();
+    const version = latestConfiguration ? incrementVersion(latestConfiguration.getVersion()) : 1;
+    const sanitizedData = sanitizeIdAndAuditFields('Organization', data);
+    sanitizedData.version = version;
+
+    return super.create(sanitizedData);
+  }
+
   async getLatestConfiguration() {
-    return this.findTop({ index: 'byVersion' });
+    return this.findByIndexKeys({ pk: 'all_configurations' }, { order: 'desc' });
   }
 
   async getConfigurationByVersion(version) {
-    return this.findByIndexKeys({ pk: 'all_configurations', version }, { index: 'byVersion' });
+    return this.findByIndexKeys({ pk: 'all_configurations', version });
   }
 }
 

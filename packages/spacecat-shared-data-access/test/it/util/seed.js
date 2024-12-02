@@ -12,7 +12,7 @@
 
 /* eslint-disable no-console */
 
-import { idNameToEntityName } from '../../../src/v2/util/reference.js';
+import { idNameToEntityName } from '../../../src/v2/util/util.js';
 import fixtures from '../../fixtures/index.fixtures.js';
 
 import generateLegacySampleData from './generateLegacySampleData.js';

@@ -18,6 +18,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/v2/util/util.js';
 
 use(chaiAsPromised);
 
@@ -39,7 +40,11 @@ describe('Configuration IT', async () => {
     );
 
     expect(configuration).to.be.an('object');
-    expect(configuration.toJSON()).to.eql(sampleConfiguration.toJSON());
+    expect(
+      sanitizeTimestamps(configuration.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleConfiguration.toJSON()),
+    );
   });
 
   it('finds the latest configuration', async () => {
@@ -47,6 +52,45 @@ describe('Configuration IT', async () => {
     const configuration = await Configuration.getLatestConfiguration();
 
     expect(configuration).to.be.an('object');
-    expect(configuration.toJSON()).to.eql(sampleConfiguration.toJSON());
+    expect(
+      sanitizeTimestamps(configuration.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleConfiguration.toJSON()),
+    );
+  });
+
+  it('updates a configuration', async () => {
+    const configuration = await Configuration.getLatestConfiguration();
+
+    const data = {
+      enabledByDefault: true,
+      enabled: {
+        sites: ['site1'],
+        orgs: ['org1'],
+      },
+    };
+
+    const expectedConfiguration = {
+      ...configuration.toJSON(),
+      handlers: {
+        ...configuration.toJSON().handlers,
+        test: data,
+      },
+      version: configuration.getVersion() + 1,
+    };
+
+    configuration.addHandler('test', data);
+
+    await configuration.save();
+
+    const updatedConfiguration = await Configuration.getLatestConfiguration();
+    expect(updatedConfiguration.getId()).to.not.equal(configuration.getId());
+    expect(updatedConfiguration.record.createdAt).to.be.greaterThan(configuration.record.createdAt);
+    expect(updatedConfiguration.record.updatedAt).to.be.greaterThan(configuration.record.updatedAt);
+    expect(
+      sanitizeIdAndAuditFields('Configuration', updatedConfiguration.toJSON()),
+    ).to.eql(
+      sanitizeIdAndAuditFields('Configuration', expectedConfiguration),
+    );
   });
 });

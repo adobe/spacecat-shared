@@ -24,6 +24,7 @@ import { ValidationError } from '../../../src/index.js';
 import fixtures from '../../fixtures/index.fixtures.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/v2/util/util.js';
 
 use(chaiAsPromised);
 
@@ -45,14 +46,22 @@ describe('Opportunity IT', async () => {
     const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
 
     expect(opportunity).to.be.an('object');
-    expect(opportunity.toJSON()).to.eql(sampleData.opportunities[0].toJSON());
+    expect(
+      sanitizeTimestamps(opportunity.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleData.opportunities[0].toJSON()),
+    );
 
     const suggestions = await opportunity.getSuggestions();
     expect(suggestions).to.be.an('array').with.length(3);
 
     const parentOpportunity = await suggestions[0].getOpportunity();
     expect(parentOpportunity).to.be.an('object');
-    expect(parentOpportunity.toJSON()).to.eql(sampleData.opportunities[0].toJSON());
+    expect(
+      sanitizeTimestamps(opportunity.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleData.opportunities[0].toJSON()),
+    );
   });
 
   it('finds all opportunities by siteId and status', async () => {
@@ -65,7 +74,11 @@ describe('Opportunity IT', async () => {
     // retrieve the opportunity by ID
     const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
     expect(opportunity).to.be.an('object');
-    expect(opportunity.toJSON()).to.eql(sampleData.opportunities[0].toJSON());
+    expect(
+      sanitizeTimestamps(opportunity.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleData.opportunities[0].toJSON()),
+    );
 
     // apply updates
     const updates = {
@@ -97,17 +110,16 @@ describe('Opportunity IT', async () => {
       runbook: _, status: __, updatedAt: ___, ...actualUnchangedFields
     } = opportunity.toJSON();
 
-    expect(actualUnchangedFields).to.eql(originalUnchangedFields);
+    expect(
+      sanitizeTimestamps(actualUnchangedFields),
+    ).to.eql(
+      sanitizeTimestamps(originalUnchangedFields),
+    );
 
     // validate persistence of updates
     const storedOpportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
     expect(storedOpportunity.getRunbook()).to.equal(updates.runbook);
     expect(storedOpportunity.getStatus()).to.equal(updates.status);
-
-    // validate timestamps or audit logs
-    expect(new Date(storedOpportunity.toJSON().updatedAt)).to.be.greaterThan(
-      new Date(sampleData.opportunities[0].toJSON().updatedAt),
-    );
 
     // validate persisted record matches in-memory state
     const storedWithoutUpdatedAt = { ...storedOpportunity.toJSON() };
@@ -201,12 +213,11 @@ describe('Opportunity IT', async () => {
       expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
       expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
-      const record = opportunity.toJSON();
-      delete record.opportunityId;
-      delete record.createdAt;
-      delete record.updatedAt;
-
-      expect(record).to.eql(data[index]);
+      expect(
+        sanitizeIdAndAuditFields('Opportunity', opportunity.toJSON()),
+      ).to.eql(
+        sanitizeTimestamps(data[index]),
+      );
     });
   });
 

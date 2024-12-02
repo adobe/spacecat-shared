@@ -104,8 +104,8 @@ const ConfigurationSchema = createSchema(
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      byVersion: {
-        index: 'spacecat-data-configuration-by-version',
+      all: {
+        index: 'spacecat-data-configuration-all',
         pk: {
           field: 'gsi1pk',
           template: 'ALL_CONFIGURATIONS',

@@ -11,6 +11,7 @@
  */
 
 import pluralize from 'pluralize';
+import { isInteger } from '@adobe/spacecat-shared-utils';
 
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 const entityNameToCollectionName = (entityName) => `${pluralize.singular(entityName)}Collection`;
@@ -31,11 +32,39 @@ const keyNamesToIndexName = (keyNames) => {
   return `by${capitalizedKeyNames.join('And')}`;
 };
 
+const sanitizeTimestamps = (data) => {
+  const sanitizedData = { ...data };
+
+  delete sanitizedData.createdAt;
+  delete sanitizedData.updatedAt;
+
+  return sanitizedData;
+};
+
+const sanitizeIdAndAuditFields = (entityName, data) => {
+  const idName = entityNameToIdName(entityName);
+  const sanitizedData = { ...data };
+
+  delete sanitizedData[idName];
+
+  return sanitizeTimestamps(sanitizedData);
+};
+
+function incrementVersion(version) {
+  if (!isInteger(version)) return 1;
+
+  const versionNumber = parseInt(version, 10);
+  return versionNumber + 1;
+}
+
 export {
   capitalize,
   entityNameToCollectionName,
   entityNameToIdName,
   entityNameToReferenceMethodName,
   idNameToEntityName,
+  incrementVersion,
   keyNamesToIndexName,
+  sanitizeIdAndAuditFields,
+  sanitizeTimestamps,
 };

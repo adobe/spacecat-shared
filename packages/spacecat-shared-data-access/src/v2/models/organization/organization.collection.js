@@ -34,6 +34,14 @@ class OrganizationCollection extends BaseCollection {
     super(service, modelFactory, Organization, log);
   }
 
+  async all() {
+    return this._allByIndexKeys({ pk: 'all_organizations' });
+  }
+
+  async findByImsOrgId(imsOrgId) {
+    return this.findByIndexKeys({ pk: 'all_organizations', imsOrgId });
+  }
+
   /**
    * Retrieves all organizations associated with the specified IMS Org ID.
    * @param {string} imsOrgId - The IMS Org ID.

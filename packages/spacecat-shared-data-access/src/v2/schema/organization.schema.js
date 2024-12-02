@@ -14,7 +14,7 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../models/site/config.js';
+import { DEFAULT_CONFIG, validateConfiguration } from '../../models/site/config.js';
 import { DEFAULT_ORGANIZATION_ID } from '../../models/organization.js';
 
 import createSchema from './base.schema.js';
@@ -38,7 +38,6 @@ const OrganizationSchema = createSchema(
         required: true,
         default: DEFAULT_CONFIG,
         validate: (value) => isNonEmptyObject(validateConfiguration(value)),
-        get: (value) => Config(value),
       },
       name: {
         type: 'string',
@@ -57,15 +56,15 @@ const OrganizationSchema = createSchema(
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      byImsOrgId: {
-        index: 'spacecat-data-organization-by-ims-org-id',
+      all: {
+        index: 'spacecat-data-organization-all',
         pk: {
           field: 'gsi1pk',
-          composite: ['imsOrgId'],
+          template: 'ALL_ORGANIZATIONS',
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['updatedAt'],
+          composite: ['imsOrgId'],
         },
       },
     },

@@ -14,10 +14,10 @@ import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import { ElectroValidationError } from 'electrodb';
 
+import { getExecutionOptions } from '../../../../test/it/util/util.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
-import { keyNamesToIndexName } from '../../util/reference.js';
-import { getExecutionOptions, removeElectroProperties } from '../../../../test/it/util/util.js';
+import { keyNamesToIndexName } from '../../util/util.js';
 
 /**
  * BaseCollection - A base class for managing collections of entities in the application.
@@ -108,16 +108,21 @@ class BaseCollection {
     return this.#createInstance(record);
   }
 
-  /**
-   * Finds the top entity in the collection based on the sort order.
-   * @param [options] - Additional options for the query.
-   * @param {string} [options.index='all'] - The index to use for the query.
-   * @param {string} [options.order='desc'] - The sort order to use for the query.
-   * @return {Promise<BaseModel|null>}
-   */
-  async findTop(options = {}) {
+  async _allByIndexKeys(keys, options = {}) {
+    if (!isNonEmptyObject(keys)) {
+      const message = `Failed to get all by index keys [${this.entityName}]: keys are required`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
     const { order = 'desc', index = 'all' } = options;
-    return this.findByIndexKeys({ pk: `all_${this.entityName.toLowerCase()}` }, { order, index });
+    const result = await this.entity.query[index](keys).go({ order });
+
+    if (result.data.length === 0) {
+      return [];
+    }
+
+    return this.#createInstances(result);
   }
 
   async findByIndexKeys(keys, options = {}) {
@@ -219,12 +224,11 @@ class BaseCollection {
     try {
       const validatedItems = [];
       const errorItems = [];
-      const createdItems = [];
 
       newItems.forEach((item) => {
         try {
-          this.entity.put(item).params();
-          validatedItems.push(item);
+          const { Item } = this.entity.put(item).params();
+          validatedItems.push(Item);
         } catch (error) {
           if (error instanceof ElectroValidationError) {
             errorItems.push({ item, error: new ValidationError(error) });
@@ -232,42 +236,24 @@ class BaseCollection {
         }
       });
 
-      /**
-       * ElectroDB does not return the created items in the response for batch write operations.
-       * This listener intercepts the batch write requests and extracts the items before they
-       * are stored in the database.
-       * @param {Object} result - The result of the operation.
-       */
-      const requestItemsListener = (result) => {
-        if (result?.type !== 'query' || result?.method !== 'batchWrite') {
-          return;
-        }
-
-        result.params?.RequestItems[this.entity.model.table].forEach((putRequest) => {
-          createdItems.push(removeElectroProperties(putRequest.PutRequest.Item));
-        });
-      };
-
-      let records = [];
       if (validatedItems.length > 0) {
-        const response = await this.entity.put(validatedItems).go(
-          { listeners: [requestItemsListener] },
-        );
-        records = this.#createInstances({ data: createdItems });
+        const response = await this.entity.put(validatedItems).go();
 
         if (Array.isArray(response.unprocessed) && response.unprocessed.length > 0) {
           this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
         }
       }
 
+      const createdItems = this.#createInstances({ data: validatedItems });
+
       if (parent) {
-        records.forEach((record) => {
+        createdItems.forEach((record) => {
           // eslint-disable-next-line no-underscore-dangle
           record._cacheReference(parent.entity.model.name, parent);
         });
       }
 
-      return { createdItems: records, errorItems };
+      return { createdItems, errorItems };
     } catch (error) {
       this.log.error(`Failed to create many [${this.entityName}]`, error);
       throw error;

@@ -18,7 +18,7 @@ import {
   entityNameToCollectionName,
   entityNameToIdName,
   entityNameToReferenceMethodName, idNameToEntityName,
-} from '../../util/reference.js';
+} from '../../util/util.js';
 
 /**
  * Base - A base class for representing individual entities in the application.
@@ -48,6 +48,7 @@ class BaseModel {
     this.modelFactory = modelFactory;
     this.record = record;
     this.entityName = this.constructor.name.toLowerCase();
+    this.collection = modelFactory.getCollection(entityNameToCollectionName(this.constructor.name));
     this.entity = electroService.entities[this.entityName];
     this.idName = `${this.entityName}Id`;
     this.log = log;

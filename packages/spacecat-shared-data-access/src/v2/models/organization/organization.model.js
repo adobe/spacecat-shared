@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { Config } from '../../../models/site/config.js';
 import BaseModel from '../base/base.model.js';
 
 /**
@@ -21,6 +22,10 @@ import BaseModel from '../base/base.model.js';
  */
 class Organization extends BaseModel {
   // add your custom methods or overrides here
+
+  getConfig() {
+    return Config(this.record.config);
+  }
 }
 
 export default Organization;

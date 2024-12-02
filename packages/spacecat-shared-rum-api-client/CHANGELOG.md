@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.13.1...@adobe/spacecat-shared-rum-api-client-v2.13.2) (2024-12-02)
+
+
+### Bug Fixes
+
+* **cwv:** include organic pageviews in the response ([#464](https://github.com/adobe/spacecat-shared/issues/464)) ([0aaf49f](https://github.com/adobe/spacecat-shared/commit/0aaf49fa82a0ed8ec1ee753eacac64ac6d8625a8))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.13.0...@adobe/spacecat-shared-rum-api-client-v2.13.1) (2024-11-30)
 
 

@@ -19,12 +19,12 @@ import bundlesForPatterns from './fixtures/cwv/bundles-for-url-patterns.json' as
 import resultForPatterns from './fixtures/cwv/result-for-url-patterns.json' assert { type: 'json' };
 
 describe('CWV Queries', () => {
-  it('crunches cwv data', async () => {
+  it('crunches CWV data', async () => {
     const result = cwv.handler(bundlesForUrls.rumBundles);
     expect(result).to.deep.equal(resultForUrls);
   });
 
-  it('should correctly process CWV data with url patterns', async () => {
+  it('crunches CWV data based on url patterns', async () => {
     const groupedURLs = [
       { name: 'Catalog', pattern: 'https://www.aem.live/catalog/*' },
     ];

@@ -4,11 +4,12 @@
     "name": "Catalog",
     "pattern": "https://www.aem.live/catalog/*",
     "pageviews": 1200,
-    "organic": 300,
+    "organic": 400,
     "metrics": [
       {
         "deviceType": "desktop",
         "pageviews": 600,
+        "organic": 200,
         "lcp": 40,
         "lcpCount": 6,
         "cls": 0.3,
@@ -21,6 +22,7 @@
       {
         "deviceType": "mobile",
         "pageviews": 600,
+        "organic": 200,
         "lcp": 40,
         "lcpCount": 6,
         "cls": 0.3,
@@ -41,6 +43,7 @@
       {
         "deviceType": "desktop",
         "pageviews": 500,
+        "organic": 200,
         "lcp": 40,
         "lcpCount": 5,
         "cls": 0.2,
@@ -53,6 +56,7 @@
       {
         "deviceType": "mobile",
         "pageviews": 500,
+        "organic": 100,
         "lcp": 40,
         "lcpCount": 5,
         "cls": 0.2,
@@ -68,11 +72,12 @@
     "type": "url",
     "url": "https://www.aem.live/catalog/product-2",
     "pageviews": 200,
-    "organic": 0,
+    "organic": 100,
     "metrics": [
       {
         "deviceType": "desktop",
         "pageviews": 100,
+        "organic": 0,
         "lcp": 30,
         "lcpCount": 1,
         "cls": 0.3,
@@ -85,6 +90,7 @@
       {
         "deviceType": "mobile",
         "pageviews": 100,
+        "organic": 100,
         "lcp": 30,
         "lcpCount": 1,
         "cls": 0.3,

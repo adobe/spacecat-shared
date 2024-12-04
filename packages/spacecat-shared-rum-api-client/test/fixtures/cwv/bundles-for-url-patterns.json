@@ -159,7 +159,6 @@
         }
       ]
     },
-
     {
       "id": "product_1_mobile_session_1",
       "host": "main--helix-website--adobe.aem.live",
@@ -290,6 +289,12 @@
       "userAgent": "mobile:ios",
       "weight": 100,
       "events": [
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.google.com",
+          "timeDelta": 122
+        },
         {
           "checkpoint": "cwv-lcp",
           "value": 30,

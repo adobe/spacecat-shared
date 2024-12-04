@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import apiKeys from './api-keys.fixtures.js';
 import audits from './audits.fixture.js';
 import configurations from './configurations.fixture.js';
 import experiments from './experiments.fixture.js';
@@ -22,6 +23,7 @@ import sites from './sites.fixture.js';
 import suggestions from './suggestions.fixture.js';
 
 export default {
+  apiKeys,
   audits,
   configurations,
   experiments,

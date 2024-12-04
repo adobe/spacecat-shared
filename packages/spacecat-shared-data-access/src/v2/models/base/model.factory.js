@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import ApiKeyCollection from '../api-key/api-key.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
@@ -22,6 +23,7 @@ import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js'
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
 
 const COLLECTIONS = [
+  ApiKeyCollection,
   AuditCollection,
   ConfigurationCollection,
   ExperimentCollection,

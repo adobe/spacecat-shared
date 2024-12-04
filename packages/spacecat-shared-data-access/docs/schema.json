@@ -39,6 +39,23 @@
         }
       ],
       "GlobalSecondaryIndexes": [
+
+        {
+          "IndexName": "spacecat-data-api-key-all",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-api-key-by-ims-user-id-and-ims-org-id",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
         {
           "IndexName": "spacecat-data-opportunity-by-site",
           "KeyAttributes": {

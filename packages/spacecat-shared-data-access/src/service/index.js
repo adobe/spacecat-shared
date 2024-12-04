@@ -18,6 +18,7 @@ import { Service } from 'electrodb';
 
 import ModelFactory from '../v2/models/base/model.factory.js';
 
+import ApiKeyCollection from '../v2/models/api-key/api-key.collection.js';
 import AuditCollection from '../v2/models/audit/audit.collection.js';
 import ConfigurationCollection from '../v2/models/configuration/configuration.collection.js';
 import ExperimentCollection from '../v2/models/experiment/experiment.collection.js';
@@ -29,6 +30,7 @@ import SiteCollection from '../v2/models/site/site.collection.js';
 import SiteTopPageCollection from '../v2/models/site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../v2/models/suggestion/suggestion.collection.js';
 
+import ApiKeySchema from '../v2/models/api-key/api-key.schema.js';
 import AuditSchema from '../v2/models/audit/audit.schema.js';
 import ConfigurationSchema from '../v2/models/configuration/configuration.schema.js';
 import ExperimentSchema from '../v2/models/experiment/experiment.schema.js';
@@ -71,6 +73,7 @@ const createElectroService = (client, config, log) => {
   /* c8 ignore end */
   return new Service(
     {
+      apiKey: ApiKeySchema,
       audit: AuditSchema,
       configuration: ConfigurationSchema,
       experiment: ExperimentSchema,
@@ -123,6 +126,7 @@ export const createDataAccess = (config, log = console) => {
   const electroService = createElectroService(rawClient, config, log);
   const modelFactory = new ModelFactory(electroService, log);
 
+  const ApiKey = modelFactory.getCollection(ApiKeyCollection.name);
   const Audit = modelFactory.getCollection(AuditCollection.name);
   const Configuration = modelFactory.getCollection(ConfigurationCollection.name);
   const Experiment = modelFactory.getCollection(ExperimentCollection.name);
@@ -147,6 +151,7 @@ export const createDataAccess = (config, log = console) => {
     ...experimentFuncs,
     ...apiKeyFuncs,
     // electro-based data access objects
+    ApiKey,
     Audit,
     Configuration,
     Experiment,

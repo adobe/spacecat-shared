@@ -38,7 +38,7 @@ const checkType = (value, type) => {
       return typeof value === 'number';
     case 'boolean':
       return typeof value === 'boolean';
-    case 'object':
+    case 'map':
       return isObject(value);
     default:
       throw new ValidationError(`Unsupported type: ${type}`);

@@ -93,7 +93,7 @@ function handler(rawBundles, opts = []) {
   // counts metrics per each facet
   METRICS.forEach((metric) => dataChunks.addSeries(metric, series[metric]));
 
-  // count organic traffic per each facet
+  // counts organic traffic per each facet
   dataChunks.addSeries('organic', series.organic);
 
   const patternsResult = dataChunks.facets.patternsDevices.reduce((acc, facet) => {
@@ -109,7 +109,7 @@ function handler(rawBundles, opts = []) {
       metrics: [],
     };
 
-    // Increment the total pageviews for pattern
+    // Increment the total pageviews and organic traffic for pattern
     acc[pattern].pageviews += facet.weight;
     acc[pattern].organic += facet.metrics.organic.sum;
 
@@ -117,6 +117,7 @@ function handler(rawBundles, opts = []) {
     acc[pattern].metrics.push({
       deviceType,
       pageviews: facet.weight, // Pageviews for this device type
+      organic: facet.metrics.organic.sum, // Organic traffic for this device type
       ...calculateMetricsPercentile(facet.metrics),
     });
 
@@ -134,7 +135,7 @@ function handler(rawBundles, opts = []) {
       metrics: [],
     };
 
-    // Increment the total pageviews for url
+    // Increment the total pageviews and organic traffic for url
     acc[url].pageviews += facet.weight;
     acc[url].organic += facet.metrics.organic.sum;
 
@@ -142,6 +143,7 @@ function handler(rawBundles, opts = []) {
     acc[url].metrics.push({
       deviceType,
       pageviews: facet.weight, // Pageviews for this device type
+      organic: facet.metrics.organic.sum, // Organic traffic for this device type
       ...calculateMetricsPercentile(facet.metrics),
     });
 

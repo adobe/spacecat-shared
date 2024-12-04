@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.13.2...@adobe/spacecat-shared-rum-api-client-v2.14.0) (2024-12-04)
+
+
+### Features
+
+* introduce form button clicks in form vitals ([#468](https://github.com/adobe/spacecat-shared/issues/468)) ([3907092](https://github.com/adobe/spacecat-shared/commit/39070920a9472f063e6ee11c867ed047107f001d))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.13.1...@adobe/spacecat-shared-rum-api-client-v2.13.2) (2024-12-02)
 
 

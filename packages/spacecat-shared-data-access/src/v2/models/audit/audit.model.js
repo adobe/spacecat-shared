@@ -81,6 +81,10 @@ export const validateAuditResult = (auditResult, auditType) => {
  */
 class Audit extends BaseModel {
   // add your custom methods or overrides here
+
+  getScores() {
+    return this.getAuditResult()?.scores;
+  }
 }
 
 export default Audit;

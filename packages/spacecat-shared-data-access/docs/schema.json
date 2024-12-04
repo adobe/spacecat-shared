@@ -80,7 +80,7 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-site-by-base-url",
+          "IndexName": "spacecat-data-site-all",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
@@ -116,6 +116,14 @@
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-audit-latest",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
           },
           "Projection": { "ProjectionType": "ALL" }
         },

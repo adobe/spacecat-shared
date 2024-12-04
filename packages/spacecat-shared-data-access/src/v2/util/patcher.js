@@ -16,6 +16,7 @@ import ValidationError from '../errors/validation.error.js';
 
 import {
   guardAny,
+  guardBoolean,
   guardArray,
   guardEnum,
   guardId,
@@ -144,6 +145,9 @@ class Patcher {
       switch (attribute.type) {
         case 'any':
           guardAny(propertyName, value, this.entityName, nullable);
+          break;
+        case 'boolean':
+          guardBoolean(propertyName, value, this.entityName, nullable);
           break;
         case 'enum':
           guardEnum(propertyName, value, attribute.enumArray, this.entityName, nullable);

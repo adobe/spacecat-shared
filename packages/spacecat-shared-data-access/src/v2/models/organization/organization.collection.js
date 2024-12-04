@@ -35,11 +35,11 @@ class OrganizationCollection extends BaseCollection {
   }
 
   async all() {
-    return this._allByIndexKeys({ pk: 'all_organizations' });
+    return this.allByIndexKeys({ pk: 'all_organizations' }, { index: 'all' });
   }
 
   async findByImsOrgId(imsOrgId) {
-    return this.findByIndexKeys({ pk: 'all_organizations', imsOrgId });
+    return this.findByIndexKeys({ pk: 'all_organizations', imsOrgId }, { index: 'all' });
   }
 
   /**

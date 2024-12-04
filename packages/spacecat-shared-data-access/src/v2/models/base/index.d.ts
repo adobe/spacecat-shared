@@ -26,6 +26,7 @@ export interface MultiStatusCreateResult<T> {
 }
 
 export interface QueryOptions {
+  index?: string;
   limit?: number;
   sort?: string;
 }

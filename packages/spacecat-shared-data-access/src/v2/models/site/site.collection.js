@@ -34,11 +34,15 @@ class SiteCollection extends BaseCollection {
     super(service, modelFactory, Site, log);
   }
 
-  async allByBaseURL(baseURL) {
+  async all() {
+    return this.allByIndexKeys({ pk: 'all_sites' }, { index: 'all' });
+  }
+
+  async findByBaseURL(baseURL) {
     if (!isValidUrl(baseURL)) {
       throw new Error('Base URL must be a valid URL');
     }
-    return this.allByIndexKeys({ baseURL });
+    return this.findByIndexKeys({ pk: 'all_sites', baseURL }, { index: 'all' });
   }
 
   async allByDeliveryType(deliveryType) {

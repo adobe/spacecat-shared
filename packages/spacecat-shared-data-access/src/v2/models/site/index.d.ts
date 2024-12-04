@@ -37,7 +37,7 @@ export interface Site extends BaseModel {
 }
 
 export interface SiteCollection extends BaseCollection<Organization> {
-  allByBaseURL(siteId: string): Promise<Site[]>;
+  findByBaseURL(siteId: string): Promise<Site>;
   allByDeliveryType(siteId: string): Promise<Site[]>;
   allByOrganizationId(siteId: string): Promise<Site[]>;
 }

@@ -93,6 +93,51 @@ class BaseCollection {
   }
 
   /**
+   * General method to query entities by index keys.
+   * @private
+   * @param {Object} keys - The index keys to use for the query.
+   * @param {Object} options - Additional options for the query.
+   * @param {boolean} singleResult - Whether to return a single result or all results.
+   * @returns {Promise<BaseModel|Array<BaseModel>|null>} - The query result.
+   */
+  async #queryByIndexKeys(keys, options = {}, singleResult = false) {
+    if (!isNonEmptyObject(keys)) {
+      const message = `Failed to query [${this.entityName}]: keys are required`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    const indexName = options.index || keyNamesToIndexName(Object.keys(keys));
+    const index = this.entity.query[indexName];
+
+    if (!index) {
+      const message = `Failed to query [${this.entityName}]: index [${indexName}] not found`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    const queryOptions = {
+      order: options.order || 'desc',
+      ...getExecutionOptions(options),
+    };
+
+    if (singleResult) {
+      queryOptions.limit = 1;
+    }
+
+    const records = await index(keys).go(queryOptions);
+
+    if (singleResult) {
+      if (records.data.length === 0) {
+        return null;
+      }
+      return this.#createInstance({ data: records.data[0] });
+    } else {
+      return this.#createInstances(records);
+    }
+  }
+
+  /**
    * Finds an entity by its ID.
    * @async
    * @param {string} id - The unique identifier of the entity to be found.
@@ -108,38 +153,15 @@ class BaseCollection {
     return this.#createInstance(record);
   }
 
-  async _allByIndexKeys(keys, options = {}) {
-    if (!isNonEmptyObject(keys)) {
-      const message = `Failed to get all by index keys [${this.entityName}]: keys are required`;
-      this.log.error(message);
-      throw new Error(message);
-    }
-
-    const { order = 'desc', index = 'all' } = options;
-    const result = await this.entity.query[index](keys).go({ order });
-
-    if (result.data.length === 0) {
-      return [];
-    }
-
-    return this.#createInstances(result);
-  }
-
+  /**
+   * Finds a single entity by index keys.
+   * @param {Object} keys - The index keys to use for the query.
+   * @param {Object} options - Additional options for the query.
+   * @returns {Promise<BaseModel|null>} - A promise that resolves to the model instance or null.
+   * @async
+   */
   async findByIndexKeys(keys, options = {}) {
-    if (!isNonEmptyObject(keys)) {
-      const message = `Failed to find by index keys [${this.entityName}]: keys are required`;
-      this.log.error(message);
-      throw new Error(message);
-    }
-
-    const { order = 'desc', index = 'all' } = options;
-    const result = await this.entity.query[index](keys).go({ order, limit: 1 });
-
-    if (result.data.length === 0) {
-      return null;
-    }
-
-    return this.#createInstance({ data: result.data[0] });
+    return this.#queryByIndexKeys(keys, options, true);
   }
 
   /**
@@ -154,24 +176,7 @@ class BaseCollection {
    * @async
    */
   async allByIndexKeys(keys, options = {}) {
-    if (!isNonEmptyObject(keys)) {
-      const message = `Failed to find by index keys [${this.entityName}]: keys are required`;
-      this.log.error(message);
-      throw new Error(message);
-    }
-
-    const indexName = keyNamesToIndexName(Object.keys(keys));
-    const index = this.entity.query[indexName];
-
-    if (!index) {
-      const message = `Failed to find by index keys [${this.entityName}]: index [${indexName}] not found`;
-      this.log.error(message);
-      throw new Error(message);
-    }
-
-    const records = await index(keys).go(getExecutionOptions(options));
-
-    return this.#createInstances(records);
+    return this.#queryByIndexKeys(keys, options, false);
   }
 
   /**
@@ -191,14 +196,36 @@ class BaseCollection {
     }
 
     try {
-      // todo: catch ElectroDB validation errors and re-throws as ValidationError
-      // todo: validate associations
       const record = await this.entity.create(item).go();
       return this.#createInstance(record);
     } catch (error) {
       this.log.error(`Failed to create [${this.entityName}]`, error);
       throw error;
     }
+  }
+
+  /**
+   * Validates and batches items for batch operations.
+   * @private
+   * @param {Array<Object>} items - Items to be validated.
+   * @returns {Object} - An object containing validated items and error items.
+   */
+  #validateItems(items) {
+    const validatedItems = [];
+    const errorItems = [];
+
+    items.forEach((item) => {
+      try {
+        const { Item } = this.entity.put(item).params();
+        validatedItems.push(Item);
+      } catch (error) {
+        if (error instanceof ElectroValidationError) {
+          errorItems.push({ item, error: new ValidationError(error) });
+        }
+      }
+    });
+
+    return { validatedItems, errorItems };
   }
 
   /**
@@ -209,7 +236,7 @@ class BaseCollection {
    * @param {Array<Object>} newItems - An array of data for the entities to be created.
    * @param {BaseModel} [parent] - Optional parent entity that these items are associated with.
    * @return {Promise<{ createdItems: BaseModel[],
-   * errorItems: { item: Object, error: ElectroValidationError }[] }>} - A promise that resolves to
+   * errorItems: { item: Object, error: ValidationError }[] }>} - A promise that resolves to
    * an object containing the created items and any items that failed validation.
    * @throws {ValidationError} - Throws a validation error if any of the items has validation
    * failures.
@@ -222,19 +249,7 @@ class BaseCollection {
     }
 
     try {
-      const validatedItems = [];
-      const errorItems = [];
-
-      newItems.forEach((item) => {
-        try {
-          const { Item } = this.entity.put(item).params();
-          validatedItems.push(Item);
-        } catch (error) {
-          if (error instanceof ElectroValidationError) {
-            errorItems.push({ item, error: new ValidationError(error) });
-          }
-        }
-      });
+      const { validatedItems, errorItems } = this.#validateItems(newItems);
 
       if (validatedItems.length > 0) {
         const response = await this.entity.put(validatedItems).go();

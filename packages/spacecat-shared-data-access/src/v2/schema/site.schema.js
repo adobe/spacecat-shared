@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
@@ -73,7 +73,8 @@ const SiteSchema = createSchema(
       hlxConfig: {
         type: 'any',
         required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
+        default: {},
+        validate: (value) => isObject(value),
       },
       isLive: {
         type: 'boolean',
@@ -84,19 +85,20 @@ const SiteSchema = createSchema(
         type: 'number',
         watch: ['isLive'],
         required: false,
+        set: () => Date.now(),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      byBaseURL: {
-        index: 'spacecat-data-site-by-base-url',
+      all: {
+        index: 'spacecat-data-site-all',
         pk: {
           field: 'gsi1pk',
-          composite: ['baseURL'],
+          template: 'ALL_SITES',
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['updatedAt'],
+          composite: ['baseURL'],
         },
       },
       byDeliveryType: {

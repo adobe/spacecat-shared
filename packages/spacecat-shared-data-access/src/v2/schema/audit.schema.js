@@ -79,7 +79,7 @@ const AuditSchema = createSchema(
           composite: ['auditedAt'],
         },
       },
-      bySiteIdAndType: {
+      bySiteIdAndAuditType: {
         index: 'spacecat-data-audit-by-site-id-and-type',
         pk: {
           field: 'gsi2pk',
@@ -88,6 +88,17 @@ const AuditSchema = createSchema(
         sk: {
           field: 'gsi2sk',
           composite: ['auditedAt'],
+        },
+      },
+      latestAudits: {
+        index: 'spacecat-data-audit-latest',
+        pk: {
+          field: 'gsi3pk',
+          template: 'all_audits',
+        },
+        sk: {
+          field: 'gsi3sk',
+          composite: ['auditType'],
         },
       },
     },

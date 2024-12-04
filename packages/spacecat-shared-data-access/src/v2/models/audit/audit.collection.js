@@ -35,15 +35,26 @@ class AuditCollection extends BaseCollection {
   }
 
   /**
-   * Retrieves all organizations associated with the specified IMS Org ID.
-   * @param {string} imsOrgId - The IMS Org ID.
-   * @return {Promise<Audit[]>}
+   * Retrieves all organizations associated with the specified site.
+   *
+   * @param {string} siteId - The site ID.
+   * @return {Promise<Audit[]>} - A promise that resolves to an array of Audit instances.
    */
-  async allByImsOrgId(imsOrgId) {
-    if (!hasText(imsOrgId)) {
-      throw new Error('IMS Org ID is required');
+  async allBySiteId(siteId) {
+    if (!hasText(siteId)) {
+      throw new Error('Site ID is required');
     }
-    return this.allByIndexKeys({ imsOrgId });
+    return this.allByIndexKeys({ siteId });
+  }
+
+  async allBySiteAndType(siteId, auditType) {
+    if (!hasText(siteId)) {
+      throw new Error('Site ID is required');
+    }
+    if (!hasText(auditType)) {
+      throw new Error('Audit type is required');
+    }
+    return this.allByIndexKeys({ siteId, auditType });
   }
 }
 

@@ -18,6 +18,16 @@ import { BaseModel } from '../base/index.js';
  * @extends BaseModel
  */
 class Site extends BaseModel {
+  getIsLiveToggledAt() {
+    return this.record.isLiveToggledAt ? new Date(this.record.isLiveToggledAt).toISOString() : null;
+  }
+
+  async getLatestAuditByType(auditType) {
+    const collection = this.modelFactory.getCollection('AuditCollection');
+
+    return collection.findByIndexKeys({ siteId: this.getId(), auditType }, { order: 'desc' });
+  }
+
   async toggleLive() {
     const newIsLive = !this.getIsLive();
     this.setIsLive(newIsLive);

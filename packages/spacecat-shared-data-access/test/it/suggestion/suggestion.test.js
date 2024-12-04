@@ -20,11 +20,10 @@ import chaiAsPromised from 'chai-as-promised';
 import { validate as uuidValidate } from 'uuid';
 
 import { ValidationError } from '../../../src/index.js';
+import { sanitizeTimestamps } from '../../../src/v2/util/util.js';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
-import { removeElectroProperties } from '../util/util.js';
-import { sanitizeTimestamps } from '../../../src/v2/util/util.js';
 
 use(chaiAsPromised);
 
@@ -45,7 +44,11 @@ describe('Suggestion IT', async () => {
     const suggestion = await Suggestion.findById(sampleSuggestion.getId());
 
     expect(suggestion).to.be.an('object');
-    expect(suggestion.toJSON()).to.eql(removeElectroProperties(sampleSuggestion.toJSON()));
+    expect(
+      sanitizeTimestamps(suggestion.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleSuggestion.toJSON()),
+    );
 
     const opportunity = await suggestion.getOpportunity();
     expect(opportunity).to.be.an('object');
@@ -74,17 +77,12 @@ describe('Suggestion IT', async () => {
     // validate in-memory updates
     expect(suggestion.getStatus()).to.equal(updates.status);
 
-    // validate unchanged fields
-    const {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      status, updatedAt, ...originalUnchangedFields
-    } = sampleData.suggestions[0].toJSON();
-    const {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      status: _, updatedAt: __, ...actualUnchangedFields
-    } = suggestion.toJSON();
+    const original = sanitizeTimestamps(sampleData.suggestions[0].toJSON());
+    delete original.status;
+    const updated = sanitizeTimestamps(suggestion.toJSON());
+    delete updated.status;
 
-    expect(actualUnchangedFields).to.eql(removeElectroProperties(originalUnchangedFields));
+    expect(updated).to.eql(original);
 
     // validate persistence of updates
     const storedSuggestion = await Suggestion.findById(sampleData.suggestions[0].getId());

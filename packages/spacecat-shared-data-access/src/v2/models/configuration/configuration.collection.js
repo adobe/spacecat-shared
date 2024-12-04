@@ -44,11 +44,11 @@ class ConfigurationCollection extends BaseCollection {
   }
 
   async getLatestConfiguration() {
-    return this.findByIndexKeys({ pk: 'all_configurations' }, { order: 'desc' });
+    return this.findByIndexKeys({ pk: 'all_configurations' }, { index: 'all', order: 'desc' });
   }
 
   async getConfigurationByVersion(version) {
-    return this.findByIndexKeys({ pk: 'all_configurations', version });
+    return this.findByIndexKeys({ pk: 'all_configurations', version }, { index: 'all' });
   }
 }
 

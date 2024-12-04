@@ -36,4 +36,5 @@ export interface Audit extends BaseModel {
 
 export interface AuditCollection extends BaseCollection<Audit> {
   allBySiteId(siteId: string): Promise<Audit[]>;
+  allBySiteAndType(siteId: string, auditType: string): Promise<Audit[]>;
 }

@@ -30,7 +30,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002210310,
     auditResult: {
       scores: {
         performance: 0.58,
@@ -46,7 +46,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002310310,
     auditResult: {
       scores: {
         performance: 0.13,
@@ -62,7 +62,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002410310,
     auditResult: {
       scores: {
         performance: 0.1,
@@ -78,7 +78,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002510310,
     auditResult: {
       scores: {
         performance: 0.51,
@@ -94,7 +94,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002610310,
     auditResult: {
       scores: {
         LCP: 3815,
@@ -109,7 +109,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002710310,
     auditResult: {
       scores: {
         LCP: 1723,
@@ -124,7 +124,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002810310,
     auditResult: {
       scores: {
         LCP: 1485,
@@ -139,7 +139,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002910310,
     auditResult: {
       scores: {
         LCP: 1893,
@@ -154,7 +154,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612003010310,
     auditResult: {
       scores: {
         LCP: 714,
@@ -185,7 +185,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002210310,
     auditResult: {
       scores: {
         performance: 0.19,
@@ -201,7 +201,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002310310,
     auditResult: {
       scores: {
         performance: 0.62,
@@ -217,7 +217,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002410310,
     auditResult: {
       scores: {
         performance: 0.67,
@@ -233,7 +233,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002510310,
     auditResult: {
       scores: {
         performance: 0.41,
@@ -249,7 +249,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002610310,
     auditResult: {
       scores: {
         LCP: 1830,
@@ -264,7 +264,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002710310,
     auditResult: {
       scores: {
         LCP: 1398,
@@ -279,7 +279,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002810310,
     auditResult: {
       scores: {
         LCP: 2543,
@@ -294,7 +294,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612002910310,
     auditResult: {
       scores: {
         LCP: 108,
@@ -309,7 +309,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: 1612003010310,
     auditResult: {
       scores: {
         LCP: 3979,

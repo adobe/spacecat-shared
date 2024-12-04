@@ -59,6 +59,21 @@ export const guardAny = (propertyName, value, entityName, nullable = false) => {
   }
 };
 
+/**
+ * Validates that a given property is a boolean.
+ * @param {String} propertyName - Name of the property being validated.
+ * @param {any} value - The value to validate.
+ * @param {String} entityName - Name of the entity containing this property.
+ * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
+ * @throws Will throw an error if the value is not a valid boolean.
+ */
+export const guardBoolean = (propertyName, value, entityName, nullable = false) => {
+  if (checkNullable(value, nullable)) return;
+  if (typeof value !== 'boolean') {
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a boolean`);
+  }
+};
+
 export const guardArray = (propertyName, value, entityName, type = 'string', nullable = false) => {
   if (checkNullable(value, nullable)) return;
   if (!Array.isArray(value)) {

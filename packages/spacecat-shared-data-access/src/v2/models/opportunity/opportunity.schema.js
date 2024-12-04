@@ -12,13 +12,11 @@
 
 /* c8 ignore start */
 
-import { isInteger, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
-import { DEFAULT_GEO } from '../models/site-top-page/site-top-page.model.js';
-
-import createSchema from './base.schema.js';
+import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -26,8 +24,8 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const SiteTopPageSchema = createSchema(
-  'SiteTopPage',
+const OpportunitySchema = createSchema(
+  'Opportunity',
   '1',
   'SpaceCat',
   {
@@ -39,52 +37,71 @@ const SiteTopPageSchema = createSchema(
         required: true,
         validate: (value) => uuidValidate(value),
       },
-      url: {
+      auditId: {
         type: 'string',
         required: true,
-        validate: (value) => isValidUrl(value),
+        validate: (value) => uuidValidate(value),
       },
-      traffic: {
-        type: 'number',
+      runbook: {
+        type: 'string',
+        validate: (value) => !value || isValidUrl(value),
+      },
+      type: {
+        type: 'string',
+        readOnly: true,
         required: true,
-        validate: (value) => isInteger(value),
       },
-      source: {
+      data: {
+        type: 'any',
+        required: false,
+        validate: (value) => !value || isNonEmptyObject(value),
+      },
+      origin: {
+        type: ['ESS_OPS', 'AI', 'AUTOMATION'],
+        required: true,
+      },
+      title: {
         type: 'string',
         required: true,
       },
-      topKeyword: {
-        type: 'string',
-      },
-      geo: {
+      description: {
         type: 'string',
         required: false,
-        default: DEFAULT_GEO,
       },
-      importedAt: {
-        type: 'number',
+      status: {
+        type: ['NEW', 'IN_PROGRESS', 'IGNORED', 'RESOLVED'],
         required: true,
-        default: () => Date.now(),
+        default: 'NEW',
+      },
+      guidance: {
+        type: 'any',
+        required: false,
+        validate: (value) => !value || isNonEmptyObject(value),
+      },
+      tags: {
+        type: 'set',
+        items: 'string',
+        required: false,
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       bySiteId: {
-        index: 'spacecat-data-site-top-page-by-site-id',
+        index: 'spacecat-data-opportunity-by-site',
         pk: {
           field: 'gsi1pk',
           composite: ['siteId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['updatedAt'],
+          composite: ['opportunityId'],
         },
       },
-      bySiteIdAndSourceAndGeo: {
-        index: 'spacecat-data-site-top-page-by-site-id-and-source-and-geo',
+      bySiteIdAndStatus: {
+        index: 'spacecat-data-opportunity-by-site-and-status',
         pk: {
           field: 'gsi2pk',
-          composite: ['siteId', 'source', 'geo'],
+          composite: ['siteId', 'status'],
         },
         sk: {
           field: 'gsi2sk',
@@ -102,11 +119,15 @@ const SiteTopPageSchema = createSchema(
      * }}
      */
     references: {
+      has_many: [
+        { target: 'Suggestions' },
+      ],
       belongs_to: [
         { target: 'Site' },
+        { target: 'Audit' },
       ],
     },
   },
 );
 
-export default SiteTopPageSchema;
+export default OpportunitySchema;

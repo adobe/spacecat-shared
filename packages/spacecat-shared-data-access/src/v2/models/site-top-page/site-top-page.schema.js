@@ -12,9 +12,13 @@
 
 /* c8 ignore start */
 
+import { isInteger, isValidUrl } from '@adobe/spacecat-shared-utils';
+
 import { validate as uuidValidate } from 'uuid';
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
-import createSchema from './base.schema.js';
+
+import { DEFAULT_GEO } from './site-top-page.model.js';
+
+import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -22,66 +26,69 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const SuggestionSchema = createSchema(
-  'Suggestion',
+const SiteTopPageSchema = createSchema(
+  'SiteTopPage',
   '1',
   'SpaceCat',
   {
     // add your custom attributes here. the primary id and
     // timestamps are created by default via the base schema.
     attributes: {
-      opportunityId: {
+      siteId: {
         type: 'string',
         required: true,
         validate: (value) => uuidValidate(value),
       },
-      type: {
-        type: ['CODE_CHANGE', 'CONTENT_UPDATE', 'REDIRECT_UPDATE', 'METADATA_UPDATE'],
+      url: {
+        type: 'string',
         required: true,
-        readOnly: true,
+        validate: (value) => isValidUrl(value),
       },
-      rank: {
+      traffic: {
         type: 'number',
         required: true,
+        validate: (value) => isInteger(value),
       },
-      data: {
-        type: 'any',
+      source: {
+        type: 'string',
         required: true,
-        validate: (value) => isNonEmptyObject(value),
       },
-      kpiDeltas: {
-        type: 'any',
+      topKeyword: {
+        type: 'string',
+      },
+      geo: {
+        type: 'string',
         required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
+        default: DEFAULT_GEO,
       },
-      status: {
-        type: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'],
+      importedAt: {
+        type: 'number',
         required: true,
-        default: 'NEW',
+        default: () => Date.now(),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      byOpportunityId: {
-        index: 'spacecat-data-suggestion-by-opportunity',
+      bySiteId: {
+        index: 'spacecat-data-site-top-page-by-site-id',
         pk: {
           field: 'gsi1pk',
-          composite: ['opportunityId'],
+          composite: ['siteId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['suggestionId'],
+          composite: ['updatedAt'],
         },
       },
-      byOpportunityIdAndStatus: {
-        index: 'spacecat-data-suggestion-by-opportunity-and-status',
+      bySiteIdAndSourceAndGeo: {
+        index: 'spacecat-data-site-top-page-by-site-id-and-source-and-geo',
         pk: {
           field: 'gsi2pk',
-          composite: ['opportunityId'],
+          composite: ['siteId', 'source', 'geo'],
         },
         sk: {
           field: 'gsi2sk',
-          composite: ['status', 'rank'],
+          composite: ['updatedAt'],
         },
       },
     },
@@ -96,10 +103,10 @@ const SuggestionSchema = createSchema(
      */
     references: {
       belongs_to: [
-        { target: 'Opportunity' },
+        { target: 'Site' },
       ],
     },
   },
 );
 
-export default SuggestionSchema;
+export default SiteTopPageSchema;

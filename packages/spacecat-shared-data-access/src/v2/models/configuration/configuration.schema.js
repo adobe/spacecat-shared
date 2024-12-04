@@ -15,7 +15,7 @@
 import Joi from 'joi';
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
-import createSchema from './base.schema.js';
+import createSchema from '../base/base.schema.js';
 
 const handlerSchema = Joi.object().pattern(Joi.string(), Joi.object(
   {

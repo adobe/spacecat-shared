@@ -14,10 +14,11 @@ import pluralize from 'pluralize';
 import { isInteger } from '@adobe/spacecat-shared-utils';
 
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+const decapitalize = (str) => str.charAt(0).toLowerCase() + str.slice(1);
 const entityNameToCollectionName = (entityName) => `${pluralize.singular(entityName)}Collection`;
-const entityNameToIdName = (collectionName) => `${collectionName.charAt(0).toLowerCase() + collectionName.slice(1)}Id`;
+const entityNameToIdName = (collectionName) => `${decapitalize(collectionName)}Id`;
 const entityNameToReferenceMethodName = (target, type) => {
-  let baseName = target.charAt(0).toUpperCase() + target.slice(1);
+  let baseName = capitalize(target);
   baseName = type === 'has_many'
     ? pluralize.plural(baseName)
     : pluralize.singular(baseName);
@@ -31,6 +32,8 @@ const keyNamesToIndexName = (keyNames) => {
   const capitalizedKeyNames = keyNames.map((keyName) => capitalize(keyName));
   return `by${capitalizedKeyNames.join('And')}`;
 };
+
+const modelNameToEntityName = (modelName) => decapitalize(modelName);
 
 const sanitizeTimestamps = (data) => {
   const sanitizedData = { ...data };
@@ -65,6 +68,7 @@ export {
   idNameToEntityName,
   incrementVersion,
   keyNamesToIndexName,
+  modelNameToEntityName,
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,
 };

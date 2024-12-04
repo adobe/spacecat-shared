@@ -11,7 +11,7 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import SiteCandidate from '../key-event/key-event.model.js';
+import SiteCandidate from './site-candidate.model.js';
 
 /**
  * SiteCandidateCollection - A collection class responsible for managing SiteCandidate entities.

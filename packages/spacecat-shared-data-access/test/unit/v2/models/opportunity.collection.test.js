@@ -19,7 +19,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import Opportunity from '../../../../src/v2/models/opportunity/opportunity.model.js';
 import OpportunityCollection from '../../../../src/v2/models/opportunity/opportunity.collection.js';
-import OpportunitySchema from '../../../../src/v2/schema/opportunity.schema.js';
+import OpportunitySchema from '../../../../src/v2/models/opportunity/opportunity.schema.js';
 
 chaiUse(chaiAsPromised);
 

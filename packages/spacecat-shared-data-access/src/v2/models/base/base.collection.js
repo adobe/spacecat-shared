@@ -17,7 +17,7 @@ import { ElectroValidationError } from 'electrodb';
 import { getExecutionOptions } from '../../../../test/it/util/util.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
-import { keyNamesToIndexName } from '../../util/util.js';
+import { keyNamesToIndexName, modelNameToEntityName } from '../../util/util.js';
 
 /**
  * BaseCollection - A base class for managing collections of entities in the application.
@@ -40,7 +40,7 @@ class BaseCollection {
     this.electroService = electroService;
     this.modelFactory = modelFactory;
     this.clazz = clazz;
-    this.entityName = this.clazz.name.toLowerCase();
+    this.entityName = modelNameToEntityName(this.clazz.name);
     this.entity = electroService.entities[this.entityName];
     this.idName = `${this.entityName}Id`;
     this.log = log;

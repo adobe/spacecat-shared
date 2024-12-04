@@ -12,11 +12,16 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
-import createSchema from './base.schema.js';
+import {
+  DEFAULT_UPDATED_BY,
+  SITE_CANDIDATE_SOURCES,
+  SITE_CANDIDATE_STATUS,
+} from '../../../models/site-candidate.js';
+import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -24,8 +29,8 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const AuditSchema = createSchema(
-  'Audit',
+const SiteCandidateSchema = createSchema(
+  'SiteCandidate',
   '1',
   'SpaceCat',
   {
@@ -34,71 +39,56 @@ const AuditSchema = createSchema(
     attributes: {
       siteId: {
         type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
+        required: false,
+        validate: (value) => !value || uuidValidate(value),
       },
-      auditResult: {
+      baseURL: {
+        type: 'string',
+        required: true,
+        validate: (value) => isValidUrl(value),
+      },
+      hlxConfig: {
         type: 'any',
         required: true,
-        validate: (value) => isNonEmptyObject(value),
+        default: {},
+        validate: (value) => isObject(value),
       },
-      auditType: {
+      source: {
+        type: Object.values(SITE_CANDIDATE_SOURCES),
+        required: false,
+      },
+      status: {
+        type: Object.values(SITE_CANDIDATE_STATUS),
+        required: false,
+      },
+      updatedBy: {
         type: 'string',
         required: true,
-      },
-      fullAuditRef: {
-        type: 'string',
-        required: true,
-      },
-      isLive: {
-        type: 'boolean',
-        required: true,
-        default: false,
-      },
-      isError: {
-        type: 'boolean',
-        required: true,
-        default: false,
-      },
-      auditedAt: {
-        type: 'number',
-        required: true,
-        default: () => Date.now(),
+        default: DEFAULT_UPDATED_BY,
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       bySiteId: {
-        index: 'spacecat-data-audit-by-site-id',
+        index: 'spacecat-data-site-candidate-by-site-id',
         pk: {
           field: 'gsi1pk',
           composite: ['siteId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['auditedAt'],
+          composite: ['updatedAt'],
         },
       },
-      bySiteIdAndAuditType: {
-        index: 'spacecat-data-audit-by-site-id-and-type',
+      bySiteIdAndSiteCandidateIdAndUrl: {
+        index: 'spacecat-data-site-candidate-by-base-url',
         pk: {
           field: 'gsi2pk',
-          composite: ['siteId', 'auditType'],
+          composite: ['baseURL'],
         },
         sk: {
           field: 'gsi2sk',
-          composite: ['auditedAt'],
-        },
-      },
-      latestAudits: {
-        index: 'spacecat-data-audit-latest',
-        pk: {
-          field: 'gsi3pk',
-          template: 'all_audits',
-        },
-        sk: {
-          field: 'gsi3sk',
-          composite: ['auditType'],
+          composite: ['updatedAt'],
         },
       },
     },
@@ -115,11 +105,8 @@ const AuditSchema = createSchema(
       belongs_to: [
         { target: 'Site' },
       ],
-      has_many: [
-        { target: 'Opportunities' },
-      ],
     },
   },
 );
 
-export default AuditSchema;
+export default SiteCandidateSchema;

@@ -12,11 +12,11 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
-import createSchema from './base.schema.js';
+import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -24,8 +24,8 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const OpportunitySchema = createSchema(
-  'Opportunity',
+const AuditSchema = createSchema(
+  'Audit',
   '1',
   'SpaceCat',
   {
@@ -37,75 +37,68 @@ const OpportunitySchema = createSchema(
         required: true,
         validate: (value) => uuidValidate(value),
       },
-      auditId: {
-        type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
-      },
-      runbook: {
-        type: 'string',
-        validate: (value) => !value || isValidUrl(value),
-      },
-      type: {
-        type: 'string',
-        readOnly: true,
-        required: true,
-      },
-      data: {
+      auditResult: {
         type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      origin: {
-        type: ['ESS_OPS', 'AI', 'AUTOMATION'],
         required: true,
+        validate: (value) => isNonEmptyObject(value),
       },
-      title: {
+      auditType: {
         type: 'string',
         required: true,
       },
-      description: {
+      fullAuditRef: {
         type: 'string',
-        required: false,
-      },
-      status: {
-        type: ['NEW', 'IN_PROGRESS', 'IGNORED', 'RESOLVED'],
         required: true,
-        default: 'NEW',
       },
-      guidance: {
-        type: 'any',
-        required: false,
-        validate: (value) => !value || isNonEmptyObject(value),
+      isLive: {
+        type: 'boolean',
+        required: true,
+        default: false,
       },
-      tags: {
-        type: 'set',
-        items: 'string',
-        required: false,
+      isError: {
+        type: 'boolean',
+        required: true,
+        default: false,
+      },
+      auditedAt: {
+        type: 'number',
+        required: true,
+        default: () => Date.now(),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       bySiteId: {
-        index: 'spacecat-data-opportunity-by-site',
+        index: 'spacecat-data-audit-by-site-id',
         pk: {
           field: 'gsi1pk',
           composite: ['siteId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['opportunityId'],
+          composite: ['auditedAt'],
         },
       },
-      bySiteIdAndStatus: {
-        index: 'spacecat-data-opportunity-by-site-and-status',
+      bySiteIdAndAuditType: {
+        index: 'spacecat-data-audit-by-site-id-and-type',
         pk: {
           field: 'gsi2pk',
-          composite: ['siteId', 'status'],
+          composite: ['siteId', 'auditType'],
         },
         sk: {
           field: 'gsi2sk',
-          composite: ['updatedAt'],
+          composite: ['auditedAt'],
+        },
+      },
+      latestAudits: {
+        index: 'spacecat-data-audit-latest',
+        pk: {
+          field: 'gsi3pk',
+          template: 'all_audits',
+        },
+        sk: {
+          field: 'gsi3sk',
+          composite: ['auditType'],
         },
       },
     },
@@ -119,15 +112,14 @@ const OpportunitySchema = createSchema(
      * }}
      */
     references: {
-      has_many: [
-        { target: 'Suggestions' },
-      ],
       belongs_to: [
         { target: 'Site' },
-        { target: 'Audit' },
+      ],
+      has_many: [
+        { target: 'Opportunities' },
       ],
     },
   },
 );
 
-export default OpportunitySchema;
+export default AuditSchema;

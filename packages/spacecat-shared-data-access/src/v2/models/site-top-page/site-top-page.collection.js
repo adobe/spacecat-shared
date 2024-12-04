@@ -11,7 +11,7 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import SiteTopPage from '../key-event/key-event.model.js';
+import SiteTopPage from './site-top-page.model.js';
 
 /**
  * SiteTopPageCollection - A collection class responsible for managing SiteTopPage entities.

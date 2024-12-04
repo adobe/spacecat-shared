@@ -12,13 +12,12 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
-import { DEFAULT_UPDATED_BY } from '../models/experiment/experiment.model.js';
-
-import createSchema from './base.schema.js';
+import { KEY_EVENT_TYPES } from '../../../models/key-event.js';
+import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -26,8 +25,8 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const ExperimentSchema = createSchema(
-  'Experiment',
+const KeyEventSchema = createSchema(
+  'KeyEvent',
   '1',
   'SpaceCat',
   {
@@ -39,73 +38,31 @@ const ExperimentSchema = createSchema(
         required: true,
         validate: (value) => uuidValidate(value),
       },
-      conversionEventName: {
-        type: 'string',
-      },
-      conversionEventValue: {
-        type: 'string',
-      },
-      endDate: {
-        type: 'number',
-      },
-      // naming this expId so that it doesn't conflict
-      // with the experimentId attribute (internal id of this entity)
-      expId: {
-        type: 'string',
-        required: true,
-      },
       name: {
         type: 'string',
-      },
-      startDate: {
-        type: 'number',
-      },
-      status: {
-        type: ['ACTIVE', 'INACTIVE'],
         required: true,
+        validate: (value) => hasText(value),
       },
       type: {
-        type: 'string',
-      },
-      url: {
-        type: 'string',
-        validate: (value) => !value || isValidUrl(value),
-      },
-      updatedBy: {
-        type: 'string',
+        type: Object.values(KEY_EVENT_TYPES),
         required: true,
-        default: DEFAULT_UPDATED_BY,
       },
-      variants: {
-        type: 'list',
-        items: {
-          type: 'any',
-          validate: (value) => isNonEmptyObject(value),
-        },
+      time: {
+        type: 'number',
         required: true,
+        default: () => Date.now(),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       bySiteId: {
-        index: 'spacecat-data-experiment-by-site-id',
+        index: 'spacecat-data-key-event-by-site-id',
         pk: {
           field: 'gsi1pk',
           composite: ['siteId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['updatedAt'],
-        },
-      },
-      bySiteIdAndExpIdAndUrl: {
-        index: 'spacecat-data-experiment-by-site-id-and-experiment-id-and-url',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'expId', 'url'],
-        },
-        sk: {
-          field: 'gsi2sk',
           composite: ['updatedAt'],
         },
       },
@@ -127,4 +84,4 @@ const ExperimentSchema = createSchema(
   },
 );
 
-export default ExperimentSchema;
+export default KeyEventSchema;

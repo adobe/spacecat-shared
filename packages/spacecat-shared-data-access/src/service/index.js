@@ -29,16 +29,16 @@ import SiteCollection from '../v2/models/site/site.collection.js';
 import SiteTopPageCollection from '../v2/models/site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../v2/models/suggestion/suggestion.collection.js';
 
-import AuditSchema from '../v2/schema/audit.schema.js';
-import ConfigurationSchema from '../v2/schema/configuration.schema.js';
-import ExperimentSchema from '../v2/schema/experiment.schema.js';
-import KeyEventSchema from '../v2/schema/key-events.schema.js';
-import OpportunitySchema from '../v2/schema/opportunity.schema.js';
-import OrganizationSchema from '../v2/schema/organization.schema.js';
-import SiteCandidateSchema from '../v2/schema/site-candidate.schema.js';
-import SiteSchema from '../v2/schema/site.schema.js';
-import SiteTopPageSchema from '../v2/schema/site-top-page.schema.js';
-import SuggestionSchema from '../v2/schema/suggestion.schema.js';
+import AuditSchema from '../v2/models/audit/audit.schema.js';
+import ConfigurationSchema from '../v2/models/configuration/configuration.schema.js';
+import ExperimentSchema from '../v2/models/experiment/experiment.schema.js';
+import KeyEventSchema from '../v2/models/key-event/key-event.schema.js';
+import OpportunitySchema from '../v2/models/opportunity/opportunity.schema.js';
+import OrganizationSchema from '../v2/models/organization/organization.schema.js';
+import SiteCandidateSchema from '../v2/models/site-candidate/site-candidate.schema.js';
+import SiteSchema from '../v2/models/site/site.schema.js';
+import SiteTopPageSchema from '../v2/models/site-top-page/site-top-page.schema.js';
+import SuggestionSchema from '../v2/models/suggestion/suggestion.schema.js';
 
 import { auditFunctions } from './audits/index.js';
 import { keyEventFunctions } from './key-events/index.js';

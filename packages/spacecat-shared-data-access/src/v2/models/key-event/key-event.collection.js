@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
 import BaseCollection from '../base/base.collection.js';
 import KeyEvent from './key-event.model.js';
 
@@ -30,6 +32,13 @@ class KeyEventCollection extends BaseCollection {
    */
   constructor(service, modelFactory, log) {
     super(service, modelFactory, KeyEvent, log);
+  }
+
+  async allBySiteId(siteId) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+    return this.allByIndexKeys({ siteId });
   }
 }
 

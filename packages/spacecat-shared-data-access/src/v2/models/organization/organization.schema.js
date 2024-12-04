@@ -14,10 +14,10 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import { DEFAULT_CONFIG, validateConfiguration } from '../../models/site/config.js';
-import { DEFAULT_ORGANIZATION_ID } from '../../models/organization.js';
+import { DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
+import { DEFAULT_ORGANIZATION_ID } from '../../../models/organization.js';
 
-import createSchema from './base.schema.js';
+import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/

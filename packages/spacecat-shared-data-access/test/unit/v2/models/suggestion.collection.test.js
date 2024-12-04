@@ -19,7 +19,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import SuggestionCollection from '../../../../src/v2/models/suggestion/suggestion.collection.js';
 import Suggestion from '../../../../src/v2/models/suggestion/suggestion.model.js';
-import SuggestionSchema from '../../../../src/v2/schema/suggestion.schema.js';
+import SuggestionSchema from '../../../../src/v2/models/suggestion/suggestion.schema.js';
 
 chaiUse(chaiAsPromised);
 

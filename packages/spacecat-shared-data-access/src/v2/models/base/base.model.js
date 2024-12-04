@@ -17,7 +17,7 @@ import {
   capitalize,
   entityNameToCollectionName,
   entityNameToIdName,
-  entityNameToReferenceMethodName, idNameToEntityName,
+  entityNameToReferenceMethodName, idNameToEntityName, modelNameToEntityName,
 } from '../../util/util.js';
 
 /**
@@ -47,7 +47,7 @@ class BaseModel {
   constructor(electroService, modelFactory, record, log) {
     this.modelFactory = modelFactory;
     this.record = record;
-    this.entityName = this.constructor.name.toLowerCase();
+    this.entityName = modelNameToEntityName(this.constructor.name);
     this.collection = modelFactory.getCollection(entityNameToCollectionName(this.constructor.name));
     this.entity = electroService.entities[this.entityName];
     this.idName = `${this.entityName}Id`;

@@ -12,12 +12,9 @@
 
 /* c8 ignore start */
 
-import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
-
 import { validate as uuidValidate } from 'uuid';
-
-import { DEFAULT_UPDATED_BY } from '../models/site-candidate/site-candidate.model.js';
-import createSchema from './base.schema.js';
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -25,66 +22,66 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const SiteCandidateSchema = createSchema(
-  'SiteCandidate',
+const SuggestionSchema = createSchema(
+  'Suggestion',
   '1',
   'SpaceCat',
   {
     // add your custom attributes here. the primary id and
     // timestamps are created by default via the base schema.
     attributes: {
-      siteId: {
-        type: 'string',
-        required: false,
-        validate: (value) => !value || uuidValidate(value),
-      },
-      baseURL: {
+      opportunityId: {
         type: 'string',
         required: true,
-        validate: (value) => isValidUrl(value),
+        validate: (value) => uuidValidate(value),
       },
-      hlxConfig: {
+      type: {
+        type: ['CODE_CHANGE', 'CONTENT_UPDATE', 'REDIRECT_UPDATE', 'METADATA_UPDATE'],
+        required: true,
+        readOnly: true,
+      },
+      rank: {
+        type: 'number',
+        required: true,
+      },
+      data: {
         type: 'any',
         required: true,
-        default: {},
-        validate: (value) => isObject(value),
+        validate: (value) => isNonEmptyObject(value),
       },
-      source: {
-        type: ['CDN', 'RUM'],
-        required: true,
+      kpiDeltas: {
+        type: 'any',
+        required: false,
+        validate: (value) => !value || isNonEmptyObject(value),
       },
       status: {
-        type: ['IGNORED', 'APPROVED'],
-        required: false,
-      },
-      updatedBy: {
-        type: 'string',
+        type: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'],
         required: true,
-        default: DEFAULT_UPDATED_BY,
+        default: 'NEW',
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      bySiteId: {
-        index: 'spacecat-data-site-candidate-by-site-id',
+      byOpportunityId: {
+        index: 'spacecat-data-suggestion-by-opportunity',
         pk: {
           field: 'gsi1pk',
-          composite: ['siteId'],
+          composite: ['opportunityId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['updatedAt'],
+          composite: ['suggestionId'],
         },
       },
-      bySiteIdAndSiteCandidateIdAndUrl: {
-        index: 'spacecat-data-site-candidate-by-base-url',
+      byOpportunityIdAndStatus: {
+        index: 'spacecat-data-suggestion-by-opportunity-and-status',
         pk: {
           field: 'gsi2pk',
-          composite: ['baseURL'],
+          composite: ['opportunityId'],
         },
         sk: {
           field: 'gsi2sk',
-          composite: ['updatedAt'],
+          composite: ['status', 'rank'],
         },
       },
     },
@@ -99,10 +96,10 @@ const SiteCandidateSchema = createSchema(
      */
     references: {
       belongs_to: [
-        { target: 'Site' },
+        { target: 'Opportunity' },
       ],
     },
   },
 );
 
-export default SiteCandidateSchema;
+export default SuggestionSchema;

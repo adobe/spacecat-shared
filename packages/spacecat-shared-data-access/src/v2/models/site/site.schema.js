@@ -16,8 +16,8 @@ import { isNonEmptyObject, isObject, isValidUrl } from '@adobe/spacecat-shared-u
 
 import { validate as uuidValidate } from 'uuid';
 
-import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../models/site/config.js';
-import createSchema from './base.schema.js';
+import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
+import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/

@@ -25,6 +25,7 @@ import {
   guardSet,
   guardString,
 } from './index.js';
+import { modelNameToEntityName } from './util.js';
 
 /**
  * Checks if a property is read-only and throws an error if it is.
@@ -42,7 +43,7 @@ const checkReadOnly = (propertyName, attribute) => {
 class Patcher {
   constructor(entity, record) {
     this.entity = entity;
-    this.entityName = this.entity.model.name.toLowerCase();
+    this.entityName = modelNameToEntityName(this.entity.model.name);
     this.model = entity.model;
     this.idName = `${this.model.name.toLowerCase()}Id`;
     this.record = record;

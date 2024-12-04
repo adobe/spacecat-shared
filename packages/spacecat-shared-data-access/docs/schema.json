@@ -152,18 +152,10 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-site-candidate-by-site-id",
+          "IndexName": "spacecat-data-site-candidate-all",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
-          },
-          "Projection": { "ProjectionType": "ALL" }
-        },
-        {
-          "IndexName": "spacecat-data-site-candidate-by-base-url",
-          "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
           },
           "Projection": { "ProjectionType": "ALL" }
         },
@@ -179,7 +171,7 @@
           "IndexName": "spacecat-data-site-top-page-by-site-id-and-source-and-geo",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+            "SortKey": { "AttributeName": "traffic", "AttributeType": "N" }
           },
           "Projection": { "ProjectionType": "ALL" }
         },

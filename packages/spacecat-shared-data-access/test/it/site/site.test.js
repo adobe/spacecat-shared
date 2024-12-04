@@ -65,6 +65,17 @@ describe('Site IT', async () => {
     }
   });
 
+  it('gets all sites to audit (only id attributes returned)', async () => {
+    const siteIds = await Site.allSitesToAudit();
+
+    expect(siteIds).to.be.an('array');
+    expect(siteIds.length).to.equal(10);
+
+    const ids = sampleData.sites.reverse().map((site) => site.getId());
+
+    expect(siteIds).to.eql(ids);
+  });
+
   it('gets all sites by organization id', async () => {
     const organizationId = sampleData.organizations[0].getId();
     const sites = await Site.allByOrganizationId(organizationId);

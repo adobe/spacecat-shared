@@ -25,7 +25,7 @@ class Site extends BaseModel {
   async getLatestAuditByType(auditType) {
     const collection = this.modelFactory.getCollection('AuditCollection');
 
-    return collection.findByIndexKeys({ siteId: this.getId(), auditType }, { order: 'desc' });
+    return collection.findByIndexKeys({ siteId: this.getId(), auditType });
   }
 
   async toggleLive() {

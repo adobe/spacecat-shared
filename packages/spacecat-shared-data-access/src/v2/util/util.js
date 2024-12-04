@@ -62,6 +62,7 @@ function incrementVersion(version) {
 
 export {
   capitalize,
+  decapitalize,
   entityNameToCollectionName,
   entityNameToIdName,
   entityNameToReferenceMethodName,

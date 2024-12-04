@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import BaseCollection from '../base/base.collection.js';
 import Site from './site.model.js';
@@ -38,25 +38,18 @@ class SiteCollection extends BaseCollection {
     return this.allByIndexKeys({ pk: 'all_sites' }, { index: 'all' });
   }
 
+  async allSitesToAudit() {
+    return (await this.allByIndexKeys(
+      { pk: 'all_sites' },
+      { index: 'all', attributes: ['siteId'] },
+    )).map((site) => site.getId());
+  }
+
   async findByBaseURL(baseURL) {
     if (!isValidUrl(baseURL)) {
       throw new Error('Base URL must be a valid URL');
     }
     return this.findByIndexKeys({ pk: 'all_sites', baseURL }, { index: 'all' });
-  }
-
-  async allByDeliveryType(deliveryType) {
-    if (!hasText(deliveryType)) {
-      throw new Error('Delivery Type is required');
-    }
-    return this.allByIndexKeys({ deliveryType });
-  }
-
-  async allByOrganizationId(organizationId) {
-    if (!hasText(organizationId)) {
-      throw new Error('Organization ID is required');
-    }
-    return this.allByIndexKeys({ organizationId });
   }
 }
 

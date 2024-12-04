@@ -35,7 +35,7 @@ describe('Organization IT', async () => {
 
   it('gets all organizations', async () => {
     const organizations = await Organization.all();
-    // organizations.reverse(); // sort key is descending by default
+    organizations.reverse(); // sort key is descending by default
 
     expect(organizations).to.be.an('array');
     expect(organizations.length).to.equal(sampleData.organizations.length);

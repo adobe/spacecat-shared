@@ -39,8 +39,8 @@ const OpportunitySchema = createSchema(
       },
       auditId: {
         type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
+        required: false,
+        validate: (value) => !value || uuidValidate(value),
       },
       runbook: {
         type: 'string',

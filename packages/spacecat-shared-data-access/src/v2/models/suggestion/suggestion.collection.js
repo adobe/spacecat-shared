@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
 import BaseCollection from '../base/base.collection.js';
 import Suggestion from './suggestion.model.js';
 
@@ -32,41 +30,6 @@ class SuggestionCollection extends BaseCollection {
    */
   constructor(service, modelFactory, log) {
     super(service, modelFactory, Suggestion, log);
-  }
-
-  /**
-   * Retrieves all Suggestion entities by their associated Opportunity ID.
-   * @async
-   * @param {string} opportunityId - The unique identifier of the associated Opportunity.
-   * @returns {Promise<Suggestion[]>} - A promise that resolves to an array of Suggestion
-   * instances related to the given Opportunity ID.
-   * @throws {Error} - Throws an error if the opportunityId is not provided or if the query fails.
-   */
-  async allByOpportunityId(opportunityId) {
-    if (!hasText(opportunityId)) {
-      throw new Error('OpportunityId is required');
-    }
-    return this.allByIndexKeys({ opportunityId });
-  }
-
-  /**
-   * Retrieves all Suggestion entities by their associated Opportunity ID and status.
-   * @param {string} opportunityId - The unique identifier of the associated Opportunity.
-   * @param {string} status - The status of the Suggestion entities
-   * @return {Promise<BaseModel[]>} - A promise that resolves to an array of
-   * Suggestion instances.
-   * @throws {Error} - Throws an error if the opportunityId or status is not provided.
-   */
-  async allByOpportunityIdAndStatus(opportunityId, status) {
-    if (!hasText(opportunityId)) {
-      throw new Error('OpportunityId is required');
-    }
-
-    if (!hasText(status)) {
-      throw new Error('Status is required');
-    }
-
-    return this.allByIndexKeys({ opportunityId, status });
   }
 
   /**

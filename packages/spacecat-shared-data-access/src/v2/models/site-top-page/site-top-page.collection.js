@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
 import BaseCollection from '../base/base.collection.js';
 import SiteTopPage from './site-top-page.model.js';
 
@@ -30,6 +32,24 @@ class SiteTopPageCollection extends BaseCollection {
    */
   constructor(service, modelFactory, log) {
     super(service, modelFactory, SiteTopPage, log);
+  }
+
+  async removeForSiteId(siteId, source, geo) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    let topPagesToRemove;
+
+    if (hasText(source) && hasText(geo)) {
+      topPagesToRemove = await this.allByIndexKeys({ siteId, source, geo });
+    } else {
+      topPagesToRemove = await this.allByIndexKeys({ siteId });
+    }
+
+    const topPageIdsToRemove = topPagesToRemove.map((topPage) => topPage.getId());
+
+    await this.removeByIds(topPageIdsToRemove);
   }
 }
 

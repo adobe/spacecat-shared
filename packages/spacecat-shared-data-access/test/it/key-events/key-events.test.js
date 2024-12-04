@@ -78,7 +78,7 @@ describe('KeyEvent IT', async () => {
     expect(keyEvents).to.be.an('array');
     expect(keyEvents.length).to.equal(11);
 
-    const lastKeyEvent = keyEvents[keyEvents.length - 1];
+    const lastKeyEvent = keyEvents[0];
     checkKeyEvent(lastKeyEvent);
     expect(lastKeyEvent.getId()).to.equal(keyEvent.getId());
   });

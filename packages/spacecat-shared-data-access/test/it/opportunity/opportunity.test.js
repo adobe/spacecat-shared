@@ -156,6 +156,37 @@ describe('Opportunity IT', async () => {
     expect(record).to.eql(data);
   });
 
+  it('creates a new opportunity without auditId', async () => {
+    const data = {
+      siteId,
+      title: 'New Opportunity',
+      description: 'Description',
+      runbook: 'https://example.com',
+      type: 'broken-backlinks',
+      origin: 'AI',
+      status: 'NEW',
+      guidance: { foo: 'bar' },
+      data: { brokenLinks: ['https://example.com'] },
+    };
+
+    const opportunity = await Opportunity.create(data);
+
+    expect(opportunity).to.be.an('object');
+
+    expect(uuidValidate(opportunity.getId())).to.be.true;
+    expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
+    expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
+
+    const record = opportunity.toJSON();
+    delete record.opportunityId;
+    delete record.createdAt;
+    delete record.updatedAt;
+    expect(record).to.eql(data);
+
+    expect(opportunity.getAuditId()).to.be.undefined;
+    await expect(opportunity.getAudit()).to.eventually.be.equal(null);
+  });
+
   it('removes an opportunity', async () => {
     const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
 

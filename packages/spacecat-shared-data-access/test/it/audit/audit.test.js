@@ -62,7 +62,7 @@ describe('Audit IT', async () => {
     const auditType = 'lhs-mobile';
     const site = sampleData.sites[1];
 
-    const audits = await Audit.allBySiteAndType(site.getId(), auditType);
+    const audits = await Audit.allBySiteIdAndAuditType(site.getId(), auditType);
 
     expect(audits).to.be.an('array');
     expect(audits.length).to.equal(5);
@@ -84,7 +84,7 @@ describe('Audit IT', async () => {
 
     expect(audit.getSiteId()).to.equal(site.getId());
     expect(audit.getAuditType()).to.equal(auditType);
-    expect(audit.getAuditedAt()).to.equal(audits[4].getAuditedAt());
+    expect(audit.getAuditedAt()).to.equal(audits[5].getAuditedAt());
   });
 
   it('returns null for non-exiting audit', async () => {

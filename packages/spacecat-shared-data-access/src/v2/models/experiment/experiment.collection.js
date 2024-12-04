@@ -34,25 +34,6 @@ class ExperimentCollection extends BaseCollection {
     super(service, modelFactory, Experiment, log);
   }
 
-  async allBySiteId(siteId) {
-    if (!hasText(siteId)) {
-      throw new Error('SiteId is required');
-    }
-    return this.allByIndexKeys({ siteId });
-  }
-
-  async allBySiteIdAndExpId(siteId, expId) {
-    if (!hasText(siteId)) {
-      throw new Error('SiteId is required');
-    }
-
-    if (!hasText(expId)) {
-      throw new Error('ExpId is required');
-    }
-
-    return this.allByIndexKeys({ siteId, expId });
-  }
-
   async findBySiteIdAndExpId(siteId, expId) {
     if (!hasText(siteId)) {
       throw new Error('SiteId is required');

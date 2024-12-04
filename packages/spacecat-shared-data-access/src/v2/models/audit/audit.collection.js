@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
 import BaseCollection from '../base/base.collection.js';
 import Audit from './audit.model.js';
 
@@ -34,28 +32,7 @@ class AuditCollection extends BaseCollection {
     super(service, modelFactory, Audit, log);
   }
 
-  /**
-   * Retrieves all organizations associated with the specified site.
-   *
-   * @param {string} siteId - The site ID.
-   * @return {Promise<Audit[]>} - A promise that resolves to an array of Audit instances.
-   */
-  async allBySiteId(siteId) {
-    if (!hasText(siteId)) {
-      throw new Error('Site ID is required');
-    }
-    return this.allByIndexKeys({ siteId });
-  }
-
-  async allBySiteAndType(siteId, auditType) {
-    if (!hasText(siteId)) {
-      throw new Error('Site ID is required');
-    }
-    if (!hasText(auditType)) {
-      throw new Error('Audit type is required');
-    }
-    return this.allByIndexKeys({ siteId, auditType });
-  }
+  // add custom methods here
 }
 
 export default AuditCollection;

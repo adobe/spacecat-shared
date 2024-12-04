@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
 import BaseCollection from '../base/base.collection.js';
 import Organization from './organization.model.js';
 
@@ -40,18 +38,6 @@ class OrganizationCollection extends BaseCollection {
 
   async findByImsOrgId(imsOrgId) {
     return this.findByIndexKeys({ pk: 'all_organizations', imsOrgId }, { index: 'all' });
-  }
-
-  /**
-   * Retrieves all organizations associated with the specified IMS Org ID.
-   * @param {string} imsOrgId - The IMS Org ID.
-   * @return {Promise<Organization[]>}
-   */
-  async allByImsOrgId(imsOrgId) {
-    if (!hasText(imsOrgId)) {
-      throw new Error('IMS Org ID is required');
-    }
-    return this.allByIndexKeys({ imsOrgId });
   }
 }
 

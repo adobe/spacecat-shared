@@ -10,14 +10,18 @@
  * governing permissions and limitations under the License.
  */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import { ElectroValidationError } from 'electrodb';
 
-import { getExecutionOptions } from '../../../../test/it/util/util.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
-import { keyNamesToIndexName, modelNameToEntityName } from '../../util/util.js';
+import {
+  capitalize,
+  decapitalize,
+  keyNamesToIndexName,
+  modelNameToEntityName,
+} from '../../util/util.js';
 
 /**
  * BaseCollection - A base class for managing collections of entities in the application.
@@ -27,6 +31,10 @@ import { keyNamesToIndexName, modelNameToEntityName } from '../../util/util.js';
  * @class BaseCollection
  * @abstract
  */
+function indexNameToKeyNames(indexName) {
+  return indexName.slice(2).split('And').map((key) => decapitalize(key));
+}
+
 class BaseCollection {
   /**
    * Constructs an instance of BaseCollection.
@@ -44,6 +52,35 @@ class BaseCollection {
     this.entity = electroService.entities[this.entityName];
     this.idName = `${this.entityName}Id`;
     this.log = log;
+
+    this.#initializeCollectionMethods();
+  }
+
+  #initializeCollectionMethods() {
+    // go through the indexes, and create a method for each index except the primary index
+    Object.keys(this.entity.model.indexes).forEach((indexName) => {
+      if (indexName !== 'primary' && indexName.slice(0, 2) === 'by') {
+        const methodName = `all${capitalize(indexName)}`;
+        const requiredKeyNames = indexNameToKeyNames(indexName);
+        this[methodName] = (...args) => {
+          const keys = {};
+          for (let i = 0; i < requiredKeyNames.length; i += 1) {
+            if (!hasText(args[i])) {
+              throw new Error(`Failed to query [${this.entityName}]: keys are required`);
+            }
+            keys[requiredKeyNames[i]] = args[i];
+          }
+
+          let options = {};
+
+          if (args.length > requiredKeyNames.length) {
+            options = args[requiredKeyNames.length];
+          }
+
+          return this.allByIndexKeys(keys, options);
+        };
+      }
+    });
   }
 
   /**
@@ -118,7 +155,8 @@ class BaseCollection {
 
     const queryOptions = {
       order: options.order || 'desc',
-      ...getExecutionOptions(options),
+      ...options.limit && { limit: options.limit },
+      ...options.attributes && { attributes: options.attributes },
     };
 
     if (singleResult) {
@@ -302,6 +340,16 @@ class BaseCollection {
       this.log.error(`Failed to save many [${this.entityName}]`, error);
       throw error;
     }
+  }
+
+  async removeByIds(ids) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      const message = `Failed to remove [${this.entityName}]: ids must be a non-empty array`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
   }
 }
 

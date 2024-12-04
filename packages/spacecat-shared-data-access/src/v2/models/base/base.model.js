@@ -50,7 +50,7 @@ class BaseModel {
     this.entityName = modelNameToEntityName(this.constructor.name);
     this.collection = modelFactory.getCollection(entityNameToCollectionName(this.constructor.name));
     this.entity = electroService.entities[this.entityName];
-    this.idName = `${this.entityName}Id`;
+    this.idName = entityNameToIdName(this.entityName);
     this.log = log;
     this.referencesCache = {};
 

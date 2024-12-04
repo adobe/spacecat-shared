@@ -17,7 +17,6 @@ import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { validate as uuidValidate } from 'uuid';
 
 import {
-  DEFAULT_UPDATED_BY,
   SITE_CANDIDATE_SOURCES,
   SITE_CANDIDATE_STATUS,
 } from '../../../models/site-candidate.js';
@@ -55,40 +54,28 @@ const SiteCandidateSchema = createSchema(
       },
       source: {
         type: Object.values(SITE_CANDIDATE_SOURCES),
-        required: false,
+        required: true,
       },
       status: {
         type: Object.values(SITE_CANDIDATE_STATUS),
-        required: false,
+        required: true,
       },
       updatedBy: {
         type: 'string',
-        required: true,
-        default: DEFAULT_UPDATED_BY,
+        required: false,
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      bySiteId: {
-        index: 'spacecat-data-site-candidate-by-site-id',
+      all: {
+        index: 'spacecat-data-site-candidate-all',
         pk: {
           field: 'gsi1pk',
-          composite: ['siteId'],
+          template: 'ALL_SITE_CANDIDATES',
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['updatedAt'],
-        },
-      },
-      bySiteIdAndSiteCandidateIdAndUrl: {
-        index: 'spacecat-data-site-candidate-by-base-url',
-        pk: {
-          field: 'gsi2pk',
           composite: ['baseURL'],
-        },
-        sk: {
-          field: 'gsi2sk',
-          composite: ['updatedAt'],
         },
       },
     },

@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
 import BaseCollection from '../base/base.collection.js';
 import Opportunity from './opportunity.model.js';
 
@@ -34,41 +32,7 @@ class OpportunityCollection extends BaseCollection {
     super(service, modelFactory, Opportunity, log);
   }
 
-  /**
-   * Retrieves all Opportunity entities by their associated site ID.
-   * @async
-   * @param {string} siteId - The unique identifier of the site.
-   * @returns {Promise<Array<Opportunity>>} - A promise that resolves to an array of
-   * Opportunity instances related to the given site ID.
-   * @throws {Error} - Throws an error if the siteId is not provided or if the query fails.
-   */
-  async allBySiteId(siteId) {
-    if (!hasText(siteId)) {
-      throw new Error('SiteId is required');
-    }
-    return this.allByIndexKeys({ siteId });
-  }
-
-  /**
-   * Retrieves all Opportunity entities by their associated site ID and status.
-   * @param {string} siteId - The unique identifier of the site.
-   * @param {string} status - The status of the Opportunity entities to retrieve.
-   * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of
-   * Opportunity instances.
-   * @throws {Error} - Throws an error if the siteId or status is not provided or if the
-   * query fails.
-   */
-  async allBySiteIdAndStatus(siteId, status) {
-    if (!hasText(siteId)) {
-      throw new Error('SiteId is required');
-    }
-
-    if (!hasText(status)) {
-      throw new Error('Status is required');
-    }
-
-    return this.allByIndexKeys({ siteId, status });
-  }
+  // add custom methods here
 }
 
 export default OpportunityCollection;

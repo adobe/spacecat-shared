@@ -25,7 +25,7 @@ import {
   guardSet,
   guardString,
 } from './index.js';
-import { modelNameToEntityName } from './util.js';
+import { entityNameToIdName, modelNameToEntityName } from './util.js';
 
 /**
  * Checks if a property is read-only and throws an error if it is.
@@ -45,7 +45,7 @@ class Patcher {
     this.entity = entity;
     this.entityName = modelNameToEntityName(this.entity.model.name);
     this.model = entity.model;
-    this.idName = `${this.model.name.toLowerCase()}Id`;
+    this.idName = entityNameToIdName(this.entityName);
     this.record = record;
     this.updates = {};
 

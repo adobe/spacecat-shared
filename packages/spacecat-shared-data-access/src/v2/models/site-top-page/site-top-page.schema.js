@@ -87,8 +87,9 @@ const SiteTopPageSchema = createSchema(
           composite: ['siteId', 'source', 'geo'],
         },
         sk: {
-          field: 'gsi2sk',
-          composite: ['updatedAt'],
+          field: 'traffic',
+          // eslint-disable-next-line no-template-curly-in-string
+          template: '${traffic}',
         },
       },
     },

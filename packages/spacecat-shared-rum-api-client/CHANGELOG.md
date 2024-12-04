@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.14.1...@adobe/spacecat-shared-rum-api-client-v2.15.0) (2024-12-04)
+
+
+### Features
+
+* Include site level metrics in the CWV response ([#470](https://github.com/adobe/spacecat-shared/issues/470)) ([b465a96](https://github.com/adobe/spacecat-shared/commit/b465a962fc0c010207970e92f4e7b69407ffd6bc))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.14.0...@adobe/spacecat-shared-rum-api-client-v2.14.1) (2024-12-04)
 
 

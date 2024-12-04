@@ -136,7 +136,7 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-experiment-by-site-id-and-exp-id-and-url",
+          "IndexName": "spacecat-data-experiment-by-site-id-and-exp-id",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }

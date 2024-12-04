@@ -63,24 +63,25 @@ class Patcher {
   }
 
   /**
-   * Gets the composite values for a given key from the entity schema.
    * Composite keys have to be provided to ElectroDB in order to update a record across
-   * multiple indexes.
-   * @param {Object} record - The record to get the composite values from.
-   * @param {string} key - The key to get the composite values for.
-   * @return {{}} - An object containing the composite values for the given key.
+   * multiple indexes. This method retrieves the composite values for the entity from
+   * the schema indexes and filters out any values that are being updated.
+   * @return {{}} - An object containing the composite values for the entity.
    * @private
    */
-  #getCompositeValuesForKey(record, key) {
+  #getCompositeValues() {
     const { indexes } = this.model;
     const result = {};
 
     const processComposite = (index, compositeType) => {
       const compositeArray = index[compositeType]?.facets;
-      if (Array.isArray(compositeArray) && compositeArray.includes(key)) {
+      if (Array.isArray(compositeArray)) {
         compositeArray.forEach((compositeKey) => {
-          if (record[compositeKey] !== undefined) {
-            result[compositeKey] = record[compositeKey];
+          if (
+            !Object.keys(this.updates).includes(compositeKey)
+            && this.record[compositeKey] !== undefined
+          ) {
+            result[compositeKey] = this.record[compositeKey];
           }
         });
       }
@@ -96,18 +97,14 @@ class Patcher {
 
   /**
    * Sets a property on the record and updates the patch record.
-   * @param {string} propertyName - The name of the property to set.
+   * @param {string} attribute - The attribute to set.
    * @param {any} value - The value to set for the property.
    * @private
    */
-  #set(propertyName, value) {
-    const compositeValues = this.#getCompositeValuesForKey(this.record, propertyName);
-    this.patchRecord = this.#getPatchRecord().set({
-      ...compositeValues,
-      [propertyName]: value,
-    });
-    this.record[propertyName] = value;
-    this.updates[propertyName] = value;
+  #set(attribute, value) {
+    this.patchRecord = this.#getPatchRecord().set({ [attribute.name]: value });
+    this.record[attribute.name] = value;
+    this.updates[attribute.name] = value;
   }
 
   /**
@@ -173,7 +170,7 @@ class Patcher {
       }
     }
 
-    this.#set(propertyName, value);
+    this.#set(attribute, value);
   }
 
   /**
@@ -185,7 +182,11 @@ class Patcher {
     if (!this.hasUpdates()) {
       return;
     }
-    await this.#getPatchRecord().go();
+
+    const compositeValues = this.#getCompositeValues();
+    await this.#getPatchRecord()
+      .composite(compositeValues)
+      .go();
     this.record.updatedAt = new Date().getTime();
   }
 

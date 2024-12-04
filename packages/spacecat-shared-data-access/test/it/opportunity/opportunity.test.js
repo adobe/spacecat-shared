@@ -96,32 +96,23 @@ describe('Opportunity IT', async () => {
 
     await opportunity.save();
 
-    // validate in-memory updates
     expect(opportunity.getRunbook()).to.equal(updates.runbook);
     expect(opportunity.getStatus()).to.equal(updates.status);
 
-    // validate unchanged fields
-    const {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      runbook, status, updatedAt, ...originalUnchangedFields
-    } = sampleData.opportunities[0].toJSON();
-    const {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      runbook: _, status: __, updatedAt: ___, ...actualUnchangedFields
-    } = opportunity.toJSON();
+    const updated = sanitizeTimestamps(opportunity.toJSON());
+    delete updated.runbook;
+    delete updated.status;
 
-    expect(
-      sanitizeTimestamps(actualUnchangedFields),
-    ).to.eql(
-      sanitizeTimestamps(originalUnchangedFields),
-    );
+    const original = sanitizeTimestamps(sampleData.opportunities[0].toJSON());
+    delete original.runbook;
+    delete original.status;
 
-    // validate persistence of updates
+    expect(updated).to.eql(original);
+
     const storedOpportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
     expect(storedOpportunity.getRunbook()).to.equal(updates.runbook);
     expect(storedOpportunity.getStatus()).to.equal(updates.status);
 
-    // validate persisted record matches in-memory state
     const storedWithoutUpdatedAt = { ...storedOpportunity.toJSON() };
     const inMemoryWithoutUpdatedAt = { ...opportunity.toJSON() };
     delete storedWithoutUpdatedAt.updatedAt;
@@ -165,7 +156,7 @@ describe('Opportunity IT', async () => {
     expect(record).to.eql(data);
   });
 
-  it('deletes an opportunity', async () => {
+  it('removes an opportunity', async () => {
     const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
 
     await opportunity.remove();

@@ -69,7 +69,8 @@ const ExperimentSchema = createSchema(
       },
       url: {
         type: 'string',
-        validate: (value) => !value || isValidUrl(value),
+        required: true,
+        validate: (value) => isValidUrl(value),
       },
       updatedBy: {
         type: 'string',
@@ -98,15 +99,15 @@ const ExperimentSchema = createSchema(
           composite: ['updatedAt'],
         },
       },
-      bySiteIdAndExpIdAndUrl: {
-        index: 'spacecat-data-experiment-by-site-id-and-experiment-id-and-url',
+      bySiteIdAndExpId: {
+        index: 'spacecat-data-experiment-by-site-id-and-exp-id',
         pk: {
           field: 'gsi2pk',
-          composite: ['siteId', 'expId', 'url'],
+          composite: ['siteId', 'expId'],
         },
         sk: {
           field: 'gsi2sk',
-          composite: ['updatedAt'],
+          composite: ['url', 'updatedAt'],
         },
       },
     },

@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
 import BaseCollection from '../base/base.collection.js';
 import Experiment from './experiment.model.js';
 
@@ -30,6 +32,53 @@ class ExperimentCollection extends BaseCollection {
    */
   constructor(service, modelFactory, log) {
     super(service, modelFactory, Experiment, log);
+  }
+
+  async allBySiteId(siteId) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+    return this.allByIndexKeys({ siteId });
+  }
+
+  async allBySiteIdAndExpId(siteId, expId) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    if (!hasText(expId)) {
+      throw new Error('ExpId is required');
+    }
+
+    return this.allByIndexKeys({ siteId, expId });
+  }
+
+  async findBySiteIdAndExpId(siteId, expId) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    if (!hasText(expId)) {
+      throw new Error('ExpId is required');
+    }
+
+    return this.findByIndexKeys({ siteId, expId });
+  }
+
+  async findBySiteIdAndExpIdAndUrl(siteId, expId, url) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    if (!hasText(expId)) {
+      throw new Error('ExpId is required');
+    }
+
+    if (!hasText(url)) {
+      throw new Error('Url is required');
+    }
+
+    return this.findByIndexKeys({ siteId, expId, url }, { index: 'bySiteIdAndExpId' });
   }
 }
 

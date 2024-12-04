@@ -190,4 +190,13 @@ describe('Suggestion IT', async () => {
     expect(results.errorItems[0].error).to.be.an.instanceOf(ValidationError);
     expect(results.errorItems[0].item).to.eql(data[0]);
   });
+
+  it('removes a suggestion', async () => {
+    const suggestion = await Suggestion.findById(sampleData.suggestions[0].getId());
+
+    await suggestion.remove();
+
+    const notFound = await Suggestion.findById(sampleData.suggestions[0].getId());
+    expect(notFound).to.be.null;
+  });
 });

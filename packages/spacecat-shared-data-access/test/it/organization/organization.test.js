@@ -128,4 +128,16 @@ describe('Organization IT', async () => {
       sanitizeIdAndAuditFields('Organization', expectedOrganization),
     );
   });
+
+  it('removes an organization', async () => {
+    const organization = await Organization.findById(sampleData.organizations[0].getId());
+
+    await organization.remove();
+
+    const notFound = await Organization.findById(sampleData.organizations[0].getId());
+    expect(notFound).to.be.null;
+
+    // todo: add test for removing an organization with associated sites once
+    //  that functionality is implemented
+  });
 });

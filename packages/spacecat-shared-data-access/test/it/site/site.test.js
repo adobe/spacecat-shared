@@ -210,4 +210,15 @@ describe('Site IT', async () => {
     expect(updatedSite.getIsLive()).to.equal(updates.isLive);
     expect(updatedSite.getOrganizationId()).to.equal(updates.organizationId);
   });
+
+  it('removes a site', async () => {
+    const site = await Site.findById(sampleData.sites[0].getId());
+
+    await site.remove();
+
+    const notFound = await Site.findById(sampleData.sites[0].getId());
+    expect(notFound).to.be.null;
+
+    // todo: add test for removing a site with associated entities once implemented
+  });
 });

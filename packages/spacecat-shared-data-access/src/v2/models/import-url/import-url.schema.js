@@ -12,10 +12,12 @@
 
 /* c8 ignore start */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import { validate as uuidValidate } from 'uuid';
 
+import { isValidUrl } from '@adobe/spacecat-shared-utils';
 import createSchema from '../base/base.schema.js';
-import { SCOPE_NAMES } from './api-key.model.js';
+import { ImportUrlStatus } from '../import-job/import-job.model.js';
+import { IMPORT_URL_EXPIRES_IN_DAYS } from './import-url.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -23,53 +25,45 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const ApiKeySchema = createSchema(
-  'ApiKey',
+const ImportUrlSchema = createSchema(
+  'ImportUrl',
   '1',
   'SpaceCat',
   {
     // add your custom attributes here. the primary id and
     // timestamps are created by default via the base schema.
     attributes: {
-      hashedApiKey: {
+      importJobId: {
         type: 'string',
         required: true,
-      },
-      imsUserId: {
-        type: 'string',
-      },
-      imsOrgId: {
-        type: 'string',
-      },
-      name: {
-        type: 'string',
-        required: true,
-      },
-      deletedAt: {
-        type: 'number',
+        validate: (value) => uuidValidate(value),
       },
       expiresAt: {
         type: 'number',
-      },
-      revokedAt: {
-        type: 'number',
-      },
-      scopes: {
-        type: 'list',
         required: true,
-        items: {
-          type: 'map',
-          properties: {
-            domains: {
-              type: 'list',
-              items: {
-                type: 'string',
-                validate: (value) => isValidUrl(value),
-              },
-            },
-            name: { type: SCOPE_NAMES },
-          },
+        default: () => {
+          const date = new Date();
+          date.setDate(date.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
+          return date.getTime();
         },
+      },
+      file: {
+        type: 'string',
+      },
+      path: {
+        type: 'string',
+      },
+      reason: {
+        type: 'string',
+      },
+      status: {
+        type: Object.values(ImportUrlStatus),
+        required: true,
+      },
+      url: {
+        type: 'string',
+        required: true,
+        validate: (value) => isValidUrl(value),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
@@ -82,7 +76,7 @@ const ApiKeySchema = createSchema(
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['hashedApiKey'],
+          composite: ['hashedImportUrl'],
         },
       },
       byImsUserIdAndImsOrgId: {
@@ -106,8 +100,12 @@ const ApiKeySchema = createSchema(
      * [has_one]: [{target: string}]
      * }}
      */
-    references: {},
+    references: {
+      belongs_to: [
+        { target: 'ImportJob' },
+      ],
+    },
   },
 );
 
-export default ApiKeySchema;
+export default ImportUrlSchema;

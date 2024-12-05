@@ -13,6 +13,7 @@
 import { createClient } from '@adobe/spacecat-shared-dynamo';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+
 import AWSXray from 'aws-xray-sdk';
 import { Service } from 'electrodb';
 
@@ -23,6 +24,8 @@ import AuditCollection from '../v2/models/audit/audit.collection.js';
 import ConfigurationCollection from '../v2/models/configuration/configuration.collection.js';
 import ExperimentCollection from '../v2/models/experiment/experiment.collection.js';
 import KeyEventCollection from '../v2/models/key-event/key-event.collection.js';
+import ImportJobCollection from '../v2/models/import-job/import-job.collection.js';
+import ImportUrlCollection from '../v2/models/import-url/import-url.collection.js';
 import OpportunityCollection from '../v2/models/opportunity/opportunity.collection.js';
 import OrganizationCollection from '../v2/models/organization/organization.collection.js';
 import SiteCandidateCollection from '../v2/models/site-candidate/site-candidate.collection.js';
@@ -35,6 +38,8 @@ import AuditSchema from '../v2/models/audit/audit.schema.js';
 import ConfigurationSchema from '../v2/models/configuration/configuration.schema.js';
 import ExperimentSchema from '../v2/models/experiment/experiment.schema.js';
 import KeyEventSchema from '../v2/models/key-event/key-event.schema.js';
+import ImportJobSchema from '../v2/models/import-job/import-job.schema.js';
+import ImportUrlSchema from '../v2/models/import-url/import-url.schema.js';
 import OpportunitySchema from '../v2/models/opportunity/opportunity.schema.js';
 import OrganizationSchema from '../v2/models/organization/organization.schema.js';
 import SiteCandidateSchema from '../v2/models/site-candidate/site-candidate.schema.js';
@@ -77,6 +82,8 @@ const createElectroService = (client, config, log) => {
       audit: AuditSchema,
       configuration: ConfigurationSchema,
       experiment: ExperimentSchema,
+      importJob: ImportJobSchema,
+      importUrl: ImportUrlSchema,
       keyEvent: KeyEventSchema,
       opportunity: OpportunitySchema,
       organization: OrganizationSchema,
@@ -130,6 +137,8 @@ export const createDataAccess = (config, log = console) => {
   const Audit = modelFactory.getCollection(AuditCollection.name);
   const Configuration = modelFactory.getCollection(ConfigurationCollection.name);
   const Experiment = modelFactory.getCollection(ExperimentCollection.name);
+  const ImportJob = modelFactory.getCollection(ImportJobCollection.name);
+  const ImportUrl = modelFactory.getCollection(ImportUrlCollection.name);
   const KeyEvent = modelFactory.getCollection(KeyEventCollection.name);
   const Opportunity = modelFactory.getCollection(OpportunityCollection.name);
   const Organization = modelFactory.getCollection(OrganizationCollection.name);
@@ -155,6 +164,8 @@ export const createDataAccess = (config, log = console) => {
     Audit,
     Configuration,
     Experiment,
+    ImportJob,
+    ImportUrl,
     KeyEvent,
     Opportunity,
     Organization,

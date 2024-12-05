@@ -14,6 +14,8 @@ import ApiKeyCollection from '../api-key/api-key.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
+import ImportJobCollection from '../import-job/import-job.collection.js';
+import ImportUrlCollection from '../import-url/import-url.collection.js';
 import KeyEventCollection from '../key-event/key-event.collection.js';
 import OpportunityCollection from '../opportunity/opportunity.collection.js';
 import OrganizationCollection from '../organization/organization.collection.js';
@@ -27,6 +29,8 @@ const COLLECTIONS = [
   AuditCollection,
   ConfigurationCollection,
   ExperimentCollection,
+  ImportJobCollection,
+  ImportUrlCollection,
   KeyEventCollection,
   OpportunityCollection,
   OrganizationCollection,

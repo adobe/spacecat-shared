@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.1...@adobe/spacecat-shared-rum-api-client-v2.15.2) (2024-12-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.13.0 ([#476](https://github.com/adobe/spacecat-shared/issues/476)) ([842df52](https://github.com/adobe/spacecat-shared/commit/842df52872e4519bf1bd6931c5dc9f1d1f185dee)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
 # [@adobe/spacecat-shared-rum-api-client-v2.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.0...@adobe/spacecat-shared-rum-api-client-v2.15.1) (2024-12-05)
 
 

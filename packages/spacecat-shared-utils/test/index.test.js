@@ -39,6 +39,7 @@ describe('Index Exports', () => {
     'logWrapper',
     'prependSchema',
     'resolveCustomerSecretsName',
+    'getRUMDomainKey',
     'resolveSecretsName',
     'sqsEventAdapter',
     's3Wrapper',

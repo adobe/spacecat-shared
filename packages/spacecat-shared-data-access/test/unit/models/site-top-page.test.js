@@ -22,6 +22,10 @@ const validData = {
   topKeyword: 'keyword',
   source: 'rum',
   geo: 'au',
+  previousTopPageResult: {
+    url: 'https://www.example.com',
+    traffic: 1000,
+  },
   importedAt: new Date().toISOString(),
 };
 
@@ -61,6 +65,7 @@ describe('SiteTopPage Model Tests', () => {
       expect(siteTopPage.getSource()).to.equal(validData.source);
       expect(siteTopPage.getGeo()).to.equal(validData.geo);
       expect(siteTopPage.getImportedAt()).to.equal(validData.importedAt);
+      expect(siteTopPage.getPreviousTopPageResult()).to.deep.equal(validData.previousTopPageResult);
     });
 
     it('creates a SiteTopPage object with default geo', () => {

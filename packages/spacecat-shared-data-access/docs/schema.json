@@ -56,7 +56,7 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-opportunity-by-site",
+          "IndexName": "spacecat-data-opportunity-by-site-id",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
@@ -64,26 +64,10 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-opportunity-by-site-and-status",
-          "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
-          },
-          "Projection": { "ProjectionType": "ALL" }
-        },
-        {
-          "IndexName": "spacecat-data-suggestion-by-opportunity",
+          "IndexName": "spacecat-data-suggestion-by-opportunity-id",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
-          },
-          "Projection": { "ProjectionType": "ALL" }
-        },
-        {
-          "IndexName": "spacecat-data-suggestion-by-opportunity-and-status",
-          "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
           },
           "Projection": { "ProjectionType": "ALL" }
         },
@@ -156,14 +140,6 @@
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
-          },
-          "Projection": { "ProjectionType": "ALL" }
-        },
-        {
-          "IndexName": "spacecat-data-site-top-page-by-site-id-and-source-and-geo",
-          "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "traffic", "AttributeType": "N" }
           },
           "Projection": { "ProjectionType": "ALL" }
         },

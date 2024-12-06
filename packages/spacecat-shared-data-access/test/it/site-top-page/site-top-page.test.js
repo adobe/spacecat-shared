@@ -70,7 +70,7 @@ describe('SiteTopPage IT', async () => {
     });
   });
 
-  it('it gets all top pages for a site from a specific source and geo in descending traffic order', async () => {
+  it('gets all top pages for a site from a specific source and geo in descending traffic order', async () => {
     const site = sampleData.sites[0];
     const source = 'ahrefs';
     const geo = 'global';

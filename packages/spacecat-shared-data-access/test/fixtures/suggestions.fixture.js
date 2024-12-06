@@ -31,7 +31,7 @@ const suggestions = [
     },
     type: 'CODE_CHANGE',
     rank: 1,
-    status: 'NEW',
+    status: 'SKIPPED',
   },
   {
     opportunityId: 'd27f4e5a-850c-441e-9c22-8e5e08b1e687',

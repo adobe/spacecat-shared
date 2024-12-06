@@ -55,6 +55,26 @@ describe('Suggestion IT', async () => {
     expect(opportunity.toJSON()).to.eql(sampleData.opportunities[2].toJSON());
   });
 
+  it('gets all suggestions by opportunityId', async () => {
+    const suggestions = await Suggestion.allByOpportunityId(sampleData.opportunities[0].getId());
+
+    expect(suggestions).to.be.an('array').with.length(3);
+  });
+
+  it('gets all suggestions by opportunityId and status', async () => {
+    const suggestions = await Suggestion.allByOpportunityIdAndStatus(
+      sampleData.opportunities[0].getId(),
+      'NEW',
+    );
+
+    expect(suggestions).to.be.an('array').with.length(2);
+
+    suggestions.forEach((suggestion) => {
+      expect(suggestion.getOpportunityId()).to.equal(sampleData.opportunities[0].getId());
+      expect(suggestion.getStatus()).to.equal('NEW');
+    });
+  });
+
   it('partially updates one suggestion by id', async () => {
     // retrieve the suggestion by ID
     const suggestion = await Suggestion.findById(sampleData.suggestions[0].getId());
@@ -100,21 +120,6 @@ describe('Suggestion IT', async () => {
     delete inMemoryWithoutUpdatedAt.updatedAt;
 
     expect(storedWithoutUpdatedAt).to.eql(inMemoryWithoutUpdatedAt);
-  });
-
-  it('finds all suggestions by opportunityId', async () => {
-    const suggestions = await Suggestion.allByOpportunityId(sampleData.opportunities[0].getId());
-
-    expect(suggestions).to.be.an('array').with.length(3);
-  });
-
-  it('finds all suggestions by opportunityId and status', async () => {
-    const suggestions = await Suggestion.allByOpportunityIdAndStatus(
-      sampleData.opportunities[0].getId(),
-      'NEW',
-    );
-
-    expect(suggestions).to.be.an('array').with.length(2);
   });
 
   it('adds many suggestions to an opportunity', async () => {

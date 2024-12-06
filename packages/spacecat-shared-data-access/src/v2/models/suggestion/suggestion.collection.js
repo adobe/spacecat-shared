@@ -10,8 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
+import { ValidationError } from '../../errors/index.js';
 import BaseCollection from '../base/base.collection.js';
-import Suggestion from './suggestion.model.js';
+import Suggestion, { STATUSES } from './suggestion.model.js';
 
 /**
  * SuggestionCollection - A collection class responsible for managing Suggestion entities.
@@ -30,6 +33,18 @@ class SuggestionCollection extends BaseCollection {
    */
   constructor(service, modelFactory, log) {
     super(service, modelFactory, Suggestion, log);
+  }
+
+  async allByOpportunityIdAndStatus(opportunityId, status) {
+    if (!hasText(opportunityId)) {
+      throw new ValidationError('Invalid opportunityId');
+    }
+
+    if (!Object.values(STATUSES).includes(status)) {
+      throw new ValidationError('Invalid status');
+    }
+
+    return this.allByIndexKeys({ opportunityId, status }, { index: 'byOpportunityId' });
   }
 
   /**

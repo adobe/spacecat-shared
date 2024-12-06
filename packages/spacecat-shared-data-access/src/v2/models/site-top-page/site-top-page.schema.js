@@ -78,19 +78,7 @@ const SiteTopPageSchema = createSchema(
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['updatedAt'],
-        },
-      },
-      bySiteIdAndSourceAndGeo: {
-        index: 'spacecat-data-site-top-page-by-site-id-and-source-and-geo',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'source', 'geo'],
-        },
-        sk: {
-          field: 'traffic',
-          // eslint-disable-next-line no-template-curly-in-string
-          template: '${traffic}',
+          composite: ['source', 'geo', 'traffic'],
         },
       },
     },

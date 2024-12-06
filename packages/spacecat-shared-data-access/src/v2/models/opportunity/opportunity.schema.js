@@ -83,25 +83,14 @@ const OpportunitySchema = createSchema(
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       bySiteId: {
-        index: 'spacecat-data-opportunity-by-site',
+        index: 'spacecat-data-opportunity-by-site-id',
         pk: {
           field: 'gsi1pk',
           composite: ['siteId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['opportunityId'],
-        },
-      },
-      bySiteIdAndStatus: {
-        index: 'spacecat-data-opportunity-by-site-and-status',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'status'],
-        },
-        sk: {
-          field: 'gsi2sk',
-          composite: ['updatedAt'],
+          composite: ['status', 'updatedAt'],
         },
       },
     },

@@ -12,6 +12,7 @@
 
 import { hasText } from '@adobe/spacecat-shared-utils';
 
+import { ValidationError } from '../../errors/index.js';
 import BaseCollection from '../base/base.collection.js';
 import SiteTopPage from './site-top-page.model.js';
 
@@ -32,6 +33,22 @@ class SiteTopPageCollection extends BaseCollection {
    */
   constructor(service, modelFactory, log) {
     super(service, modelFactory, SiteTopPage, log);
+  }
+
+  async allBySiteIdAndSourceAndGeo(siteId, source, geo) {
+    if (!hasText(siteId)) {
+      throw new ValidationError('SiteId is required');
+    }
+
+    if (!hasText(source)) {
+      throw new ValidationError('Source is required');
+    }
+
+    if (!hasText(geo)) {
+      throw new ValidationError('Geo is required');
+    }
+
+    return this.allByIndexKeys({ siteId, source, geo }, { index: 'bySiteId' });
   }
 
   async removeForSiteId(siteId, source, geo) {

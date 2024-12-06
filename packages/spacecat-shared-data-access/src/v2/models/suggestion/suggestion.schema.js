@@ -63,24 +63,13 @@ const SuggestionSchema = createSchema(
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       byOpportunityId: {
-        index: 'spacecat-data-suggestion-by-opportunity',
+        index: 'spacecat-data-suggestion-by-opportunity-id',
         pk: {
           field: 'gsi1pk',
           composite: ['opportunityId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['suggestionId'],
-        },
-      },
-      byOpportunityIdAndStatus: {
-        index: 'spacecat-data-suggestion-by-opportunity-and-status',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['opportunityId'],
-        },
-        sk: {
-          field: 'gsi2sk',
           composite: ['status', 'rank'],
         },
       },

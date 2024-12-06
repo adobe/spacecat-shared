@@ -15,7 +15,7 @@ import type { BaseCollection, BaseModel } from '../base';
 export interface ImportJob extends BaseModel {
   getBaseURL(): string,
   getDuration(): number,
-  getEndTime(): number,
+  getEndedAt(): number,
   getFailedCount(): number,
   getHasCustomHeaders(): boolean,
   getHasCustomImportJs(): boolean,
@@ -25,12 +25,12 @@ export interface ImportJob extends BaseModel {
   getOptions(): string,
   getRedirectCount(): number,
   getStatus(): string,
-  getStartTime(): number,
+  getStartedAt(): number,
   getSuccessCount(): number,
   getUrlCount(): number,
   setBaseURL(baseURL: string): void,
   setDuration(duration: number): void,
-  setEndTime(endTime: number): void,
+  setEndedAt(endTime: number): void,
   setFailedCount(failedCount: number): void,
   setHasCustomHeaders(hasCustomHeaders: boolean): void,
   setHasCustomImportJs(hasCustomImportJs: boolean): void,
@@ -40,11 +40,12 @@ export interface ImportJob extends BaseModel {
   setOptions(options: string): void,
   setRedirectCount(redirectCount: number): void,
   setStatus(status: string): void,
-  setStartTime(startTime: number): void,
+  setStartedAt(startTime: number): void,
   setSuccessCount(successCount: number): void,
   setUrlCount(urlCount: number): void,
 }
 
 export interface ImportJobCollection extends BaseCollection<ImportJob> {
-  allByImportQueueId(importQueueId: string): Promise<ImportJob[]>;
+  allByDateRange(startDate: number, endDate: number): Promise<ImportJob[]>;
+  allByStatus(status: string): Promise<ImportJob[]>;
 }

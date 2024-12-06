@@ -12,6 +12,21 @@
 
 import BaseModel from '../base/base.model.js';
 
+export const STATUSES = {
+  NEW: 'NEW',
+  APPROVED: 'APPROVED',
+  SKIPPED: 'SKIPPED',
+  FIXED: 'FIXED',
+  ERROR: 'ERROR',
+};
+
+export const TYPES = {
+  CODE_CHANGE: 'CODE_CHANGE',
+  CONTENT_UPDATE: 'CONTENT_UPDATE',
+  REDIRECT_UPDATE: 'REDIRECT_UPDATE',
+  METADATA_UPDATE: 'METADATA_UPDATE',
+};
+
 /**
  * Suggestion - A class representing a Suggestion entity.
  * Provides methods to access and manipulate Suggestion-specific data,

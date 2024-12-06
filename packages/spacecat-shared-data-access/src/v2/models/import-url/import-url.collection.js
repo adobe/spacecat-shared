@@ -10,8 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
 import BaseCollection from '../base/base.collection.js';
 import ImportUrl from './import-url.model.js';
+import { ValidationError } from '../../errors/index.js';
+import { ImportUrlStatus } from '../import-job/import-job.model.js';
 
 /**
  * ImportUrlCollection - A collection class responsible for managing ImportUrl entities.
@@ -33,6 +36,18 @@ class ImportUrlCollection extends BaseCollection {
   }
 
   // add custom methods here
+
+  async allByImportJobIdAndStatus(importJobId, status) {
+    if (!hasText(importJobId)) {
+      throw new ValidationError('Invalid importJobId');
+    }
+
+    if (!Object.values(ImportUrlStatus).includes(status)) {
+      throw new ValidationError('Invalid status');
+    }
+
+    return this.allByIndexKeys({ importJobId, status }, { index: 'byImportJobId' });
+  }
 }
 
 export default ImportUrlCollection;

@@ -31,4 +31,5 @@ export interface ImportUrl extends BaseModel {
 
 export interface ImportUrlCollection extends BaseCollection<ImportUrl> {
   allByImportJobId(importJobId: string): Promise<ImportUrl[]>;
+  allByImportUrlsByJobIdAndStatus(importJobId: string, status: string): Promise<ImportUrl[]>;
 }

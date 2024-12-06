@@ -39,4 +39,11 @@ export interface Experiment extends BaseModel {
 
 export interface ExperimentCollection extends BaseCollection<Experiment> {
   allBySiteId(siteId: string): Promise<Experiment[]>;
+  allBySiteIdAndExpId(siteId: string, expId: string): Promise<Experiment[]>;
+  findBySiteIdAndExpId(siteId: string, expId: string): Promise<Experiment | null>;
+  findBySiteIdAndExpIdAndUrl(
+    siteId: string,
+    expId: string,
+    url: string,
+  ): Promise<Experiment | null>;
 }

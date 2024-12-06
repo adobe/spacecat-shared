@@ -12,28 +12,28 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import {
+  isIsoDate,
+  isNonEmptyObject,
+  isObject,
+  isValidUrl,
+} from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
 import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
 import createSchema from '../base/base.schema.js';
+import {
+  DEFAULT_DELIVERY_TYPE,
+  DEFAULT_ORGANIZATION_ID,
+  DELIVERY_TYPES,
+} from './site.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
 Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
-
-export const DELIVERY_TYPES = {
-  AEM_CS: 'aem_cs',
-  AEM_EDGE: 'aem_edge',
-  OTHER: 'other',
-};
-
-export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
-
-export const DEFAULT_ORGANIZATION_ID = 'default';
 
 const SiteSchema = createSchema(
   'Site',
@@ -72,7 +72,6 @@ const SiteSchema = createSchema(
       },
       hlxConfig: {
         type: 'any',
-        required: false,
         default: {},
         validate: (value) => isObject(value),
       },
@@ -82,10 +81,10 @@ const SiteSchema = createSchema(
         default: false,
       },
       isLiveToggledAt: {
-        type: 'number',
+        type: 'string',
         watch: ['isLive'],
-        required: false,
-        set: () => Date.now(),
+        set: () => new Date().toISOString(),
+        validate: (value) => !value || isIsoDate(value),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema

@@ -26,7 +26,7 @@ function checkAudit(audit) {
   expect(audit.getId()).to.be.a('string');
   expect(audit.getSiteId()).to.be.a('string');
   expect(audit.getAuditType()).to.be.a('string');
-  expect(audit.getAuditedAt()).to.be.a('number');
+  expect(audit.getAuditedAt()).to.be.a('string');
   expect(audit.getAuditResult()).to.be.an('object');
   expect(audit.getScores()).to.be.an('object');
   expect(audit.getFullAuditRef()).to.be.a('string');

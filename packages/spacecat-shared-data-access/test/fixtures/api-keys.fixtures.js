@@ -13,7 +13,7 @@
 const apiKeys = [
   {
     name: 'Test API Key 1',
-    expiresAt: 1760037715834,
+    expiresAt: '2025-10-09T19:21:55.834Z',
     hashedApiKey: 'some-key-1',
     imsOrgId: 'org-1@AdobeOrg',
     imsUserId: 'user-1',
@@ -27,7 +27,7 @@ const apiKeys = [
   },
   {
     name: 'Test API Key 2',
-    expiresAt: 1760037715834,
+    expiresAt: '2025-10-09T19:21:55.834Z',
     hashedApiKey: 'some-key-2',
     imsOrgId: 'org-2@AdobeOrg',
     imsUserId: 'user-2',
@@ -41,7 +41,7 @@ const apiKeys = [
   },
   {
     name: 'Test API Key 3',
-    expiresAt: 1760037715834,
+    expiresAt: '2025-10-09T19:21:55.834Z',
     hashedApiKey: 'some-key-2',
     imsOrgId: 'org-1@AdobeOrg',
     imsUserId: 'user-1',

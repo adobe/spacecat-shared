@@ -39,9 +39,8 @@
         }
       ],
       "GlobalSecondaryIndexes": [
-
         {
-          "IndexName": "spacecat-data-api-key-all",
+          "IndexName": "spacecat-data-api-key-by-hashed-api-key",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
@@ -129,34 +128,10 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-audit-by-site-id-and-type",
-          "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
-          },
-          "Projection": { "ProjectionType": "ALL" }
-        },
-        {
-          "IndexName": "spacecat-data-audit-latest",
-          "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
-          },
-          "Projection": { "ProjectionType": "ALL" }
-        },
-        {
           "IndexName": "spacecat-data-experiment-by-site-id",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
-          },
-          "Projection": { "ProjectionType": "ALL" }
-        },
-        {
-          "IndexName": "spacecat-data-experiment-by-site-id-and-exp-id",
-          "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
           },
           "Projection": { "ProjectionType": "ALL" }
         },
@@ -197,6 +172,30 @@
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "version", "AttributeType": "N" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-import-job-all",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-import-job-by-status",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-import-url-by-import-job-id",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
           },
           "Projection": { "ProjectionType": "ALL" }
         }

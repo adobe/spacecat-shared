@@ -14,7 +14,7 @@
 
 import { validate as uuidValidate } from 'uuid';
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 import createSchema from '../base/base.schema.js';
 import { ImportUrlStatus } from '../import-job/import-job.model.js';
 import { IMPORT_URL_EXPIRES_IN_DAYS } from './import-url.model.js';
@@ -39,12 +39,13 @@ const ImportUrlSchema = createSchema(
         validate: (value) => uuidValidate(value),
       },
       expiresAt: {
-        type: 'number',
+        type: 'string',
         required: true,
+        validate: (value) => isIsoDate(value),
         default: () => {
           const date = new Date();
           date.setDate(date.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
-          return date.getTime();
+          return date.toISOString();
         },
       },
       file: {
@@ -68,26 +69,15 @@ const ImportUrlSchema = createSchema(
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      all: {
-        index: 'spacecat-data-api-key-all',
+      byImportJobId: {
+        index: 'spacecat-data-import-url-by-import-job-id',
         pk: {
           field: 'gsi1pk',
-          template: 'ALL_API_KEYS',
+          composite: ['importJobId'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['hashedImportUrl'],
-        },
-      },
-      byImsUserIdAndImsOrgId: {
-        index: 'spacecat-data-api-key-by-ims-user-id-and-ims-org-id',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['imsUserId', 'imsOrgId'],
-        },
-        sk: {
-          field: 'gsi2sk',
-          composite: ['updatedAt'],
+          composite: ['status'],
         },
       },
     },

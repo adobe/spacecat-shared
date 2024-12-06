@@ -45,12 +45,10 @@ const OrganizationSchema = createSchema(
       },
       imsOrgId: {
         type: 'string',
-        required: false,
         default: DEFAULT_ORGANIZATION_ID,
       },
       fulfillableItems: {
         type: 'any',
-        required: false,
         validate: (value) => !value || isNonEmptyObject(value),
       },
     },

@@ -10,8 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
 import BaseCollection from '../base/base.collection.js';
 import Audit from './audit.model.js';
+import { ValidationError } from '../../errors/index.js';
 
 /**
  * AuditCollection - A collection class responsible for managing Audit entities.
@@ -33,6 +35,18 @@ class AuditCollection extends BaseCollection {
   }
 
   // add custom methods here
+
+  async allBySiteIdAndAuditType(siteId, auditType) {
+    if (!hasText(siteId)) {
+      throw new ValidationError('siteId is required');
+    }
+
+    if (!hasText(auditType)) {
+      throw new ValidationError('auditType is required');
+    }
+
+    return this.allByIndexKeys({ siteId, auditType }, { index: 'bySiteId' });
+  }
 }
 
 export default AuditCollection;

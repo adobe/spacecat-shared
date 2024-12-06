@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
@@ -61,9 +61,10 @@ const AuditSchema = createSchema(
         default: false,
       },
       auditedAt: {
-        type: 'number',
+        type: 'string',
         required: true,
-        default: () => Date.now(),
+        default: () => new Date().toISOString(),
+        validate: (value) => isIsoDate(value),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
@@ -76,29 +77,7 @@ const AuditSchema = createSchema(
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['auditedAt'],
-        },
-      },
-      bySiteIdAndAuditType: {
-        index: 'spacecat-data-audit-by-site-id-and-type',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'auditType'],
-        },
-        sk: {
-          field: 'gsi2sk',
-          composite: ['auditedAt'],
-        },
-      },
-      latestAudits: {
-        index: 'spacecat-data-audit-latest',
-        pk: {
-          field: 'gsi3pk',
-          template: 'all_audits',
-        },
-        sk: {
-          field: 'gsi3sk',
-          composite: ['auditType'],
+          composite: ['auditType', 'auditedAt'],
         },
       },
     },

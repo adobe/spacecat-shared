@@ -28,18 +28,18 @@ const createSchema = (entity, version, service, schema) => {
       validate: (value) => uuidValidate(value),
     },
     createdAt: {
-      type: 'number',
+      type: 'string',
       readOnly: true,
       required: true,
-      default: () => Date.now(),
-      set: () => Date.now(),
+      default: () => new Date().toISOString(),
     },
     updatedAt: {
-      type: 'number',
-      watch: '*',
+      type: 'string',
       required: true,
-      default: () => Date.now(),
-      set: () => Date.now(),
+      readOnly: true,
+      watch: '*',
+      default: () => new Date().toISOString(),
+      set: () => new Date().toISOString(),
     },
     // todo: add createdBy, updatedBy and auto-set from auth context
   };

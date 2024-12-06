@@ -31,7 +31,7 @@ function checkSiteTopPage(siteTopPage) {
   expect(siteTopPage.getSource()).to.be.a('string');
   expect(siteTopPage.getTopKeyword()).to.be.a('string');
   expect(siteTopPage.getGeo()).to.be.a('string');
-  expect(siteTopPage.getImportedAt()).to.be.a('number');
+  expect(siteTopPage.getImportedAt()).to.be.a('string');
 }
 
 describe('SiteTopPage IT', async () => {
@@ -105,7 +105,7 @@ describe('SiteTopPage IT', async () => {
       source: 'google',
       topKeyword: 'example',
       geo: 'US',
-      importedAt: 1630000000000,
+      importedAt: '2024-12-06T08:35:24.125Z',
     };
     const siteTopPage = await SiteTopPage.create(data);
 
@@ -128,7 +128,7 @@ describe('SiteTopPage IT', async () => {
       source: 'bing',
       topKeyword: 'example2',
       geo: 'CA',
-      importedAt: 1630000000001,
+      importedAt: '2024-12-07T08:35:24.125Z',
     };
 
     siteTopPage

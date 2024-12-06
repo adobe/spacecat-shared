@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
@@ -48,9 +48,9 @@ const KeyEventSchema = createSchema(
         required: true,
       },
       time: {
-        type: 'number',
+        type: 'string',
         required: true,
-        default: () => Date.now(),
+        validate: (value) => isIsoDate(value),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema

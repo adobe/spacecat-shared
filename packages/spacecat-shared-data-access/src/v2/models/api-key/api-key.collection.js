@@ -34,12 +34,24 @@ class ApiKeyCollection extends BaseCollection {
 
   // add custom methods here
 
+  allByImsUserIdAndImsOrgId(imsUserId, imsOrgId) {
+    if (!imsUserId) {
+      throw new Error('ImsUserId is required');
+    }
+
+    if (!imsOrgId) {
+      throw new Error('ImsOrgId is required');
+    }
+
+    return this.allByIndexKeys({ imsUserId, imsOrgId }, { index: 'byHashedApiKey' });
+  }
+
   async findByHashedApiKey(hashedApiKey) {
     if (!hashedApiKey) {
       throw new Error('HashedApiKey is required');
     }
 
-    return this.findByIndexKeys({ pk: 'all_api_keys', hashedApiKey }, { index: 'all' });
+    return this.findByIndexKeys({ hashedApiKey });
   }
 }
 

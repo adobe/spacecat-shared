@@ -12,6 +12,16 @@
 
 import { BaseModel } from '../base/index.js';
 
+export const DELIVERY_TYPES = {
+  AEM_CS: 'aem_cs',
+  AEM_EDGE: 'aem_edge',
+  OTHER: 'other',
+};
+
+export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
+
+export const DEFAULT_ORGANIZATION_ID = 'default';
+
 /**
  * A class representing a Site entity. Provides methods to access and manipulate Site-specific data.
  * @class Site
@@ -25,7 +35,7 @@ class Site extends BaseModel {
   async getLatestAuditByType(auditType) {
     const collection = this.modelFactory.getCollection('AuditCollection');
 
-    return collection.findByIndexKeys({ siteId: this.getId(), auditType });
+    return collection.findByIndexKeys({ siteId: this.getId(), auditType }, { index: 'bySiteId' });
   }
 
   async toggleLive() {

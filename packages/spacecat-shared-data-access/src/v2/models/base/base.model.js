@@ -182,7 +182,7 @@ class BaseModel {
    * @returns {string} - The ISO string representing when the entity was created.
    */
   getCreatedAt() {
-    return new Date(this.record.createdAt).toISOString();
+    return this.record.createdAt;
   }
 
   /**
@@ -190,7 +190,7 @@ class BaseModel {
    * @returns {string} - The ISO string representing when the entity was last updated.
    */
   getUpdatedAt() {
-    return new Date(this.record.updatedAt).toISOString();
+    return this.record.updatedAt;
   }
 
   /**

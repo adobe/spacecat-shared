@@ -29,7 +29,7 @@ function checkKeyEvent(keyEvent) {
   expect(keyEvent.getSiteId()).to.be.a('string');
   expect(keyEvent.getName()).to.be.a('string');
   expect(keyEvent.getType()).to.be.a('string');
-  expect(keyEvent.getTime()).to.be.a('number');
+  expect(keyEvent.getTime()).to.be.a('string');
 }
 
 describe('KeyEvent IT', async () => {
@@ -65,7 +65,7 @@ describe('KeyEvent IT', async () => {
       siteId: site.getId(),
       name: 'keyEventName',
       type: 'PERFORMANCE',
-      time: 1234567890,
+      time: '2024-12-06T08:35:24.125Z',
     });
 
     checkKeyEvent(keyEvent);

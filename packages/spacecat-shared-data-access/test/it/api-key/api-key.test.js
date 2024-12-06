@@ -36,18 +36,13 @@ describe('ApiKey IT', async () => {
   it('adds a new api key', async () => {
     const data = {
       name: 'Test API Key',
-      expiresAt: 1700000000,
+      expiresAt: '2025-12-06T08:35:24.125Z',
       hashedApiKey: '1234',
       imsOrgId: '1234@AdobeOrg',
       imsUserId: '1234',
       scopes: [
-        {
-          name: 'imports.read',
-        },
-        {
-          name: 'imports.write',
-          domains: ['https://example.com'],
-        },
+        { name: 'imports.read' },
+        { name: 'imports.write', domains: ['https://example.com'] },
       ],
     };
 
@@ -110,30 +105,26 @@ describe('ApiKey IT', async () => {
 
     const data = {
       name: 'Updated API Key',
-      expiresAt: 1700012000,
+      expiresAt: '2024-12-06T08:35:24.125Z',
       hashedApiKey: '1234',
       imsOrgId: '1234@AdobeOrg',
       imsUserId: '1234',
       scopes: [
-        {
-          name: 'imports.write',
-        },
-        {
-          name: 'imports.read',
-          domains: ['https://updated-example.com'],
-        },
+        { name: 'imports.write' },
+        { name: 'imports.read', domains: ['https://updated-example.com'] },
       ],
     };
 
-    apiKey
+    const result = await apiKey
       .setName(data.name)
       .setExpiresAt(data.expiresAt)
       .setHashedApiKey(data.hashedApiKey)
       .setImsOrgId(data.imsOrgId)
       .setImsUserId(data.imsUserId)
-      .setScopes(data.scopes);
+      .setScopes(data.scopes)
+      .save();
 
-    await apiKey.save();
+    expect(result).to.be.an('object');
 
     const updatedApiKey = await ApiKey.findById(sampleData.apiKeys[0].getId());
 

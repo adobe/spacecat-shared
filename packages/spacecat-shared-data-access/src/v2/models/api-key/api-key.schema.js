@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import createSchema from '../base/base.schema.js';
 import { SCOPE_NAMES } from './api-key.model.js';
@@ -49,10 +49,12 @@ const ApiKeySchema = createSchema(
         type: 'number',
       },
       expiresAt: {
-        type: 'number',
+        type: 'string',
+        validate: (value) => !value || isIsoDate(value),
       },
       revokedAt: {
-        type: 'number',
+        type: 'string',
+        validate: (value) => !value || isIsoDate(value),
       },
       scopes: {
         type: 'list',
@@ -74,15 +76,15 @@ const ApiKeySchema = createSchema(
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
-      all: {
-        index: 'spacecat-data-api-key-all',
+      byHashedApiKey: {
+        index: 'spacecat-data-api-key-by-hashed-api-key',
         pk: {
           field: 'gsi1pk',
-          template: 'ALL_API_KEYS',
+          composite: ['hashedApiKey'],
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['hashedApiKey'],
+          composite: ['updatedAt'],
         },
       },
       byImsUserIdAndImsOrgId: {

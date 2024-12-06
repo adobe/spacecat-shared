@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject, isObject } from '@adobe/spacecat-shared-utils';
 
 import { ElectroValidationError } from 'electrodb';
 
@@ -22,6 +22,7 @@ import {
   keyNamesToIndexName,
   modelNameToEntityName,
 } from '../../util/util.js';
+import { removeElectroProperties } from '../../../../test/it/util/util.js';
 
 /**
  * BaseCollection - A base class for managing collections of entities in the application.
@@ -163,7 +164,16 @@ class BaseCollection {
       queryOptions.limit = 1;
     }
 
-    const records = await index(keys).go(queryOptions);
+    let query = index(keys);
+
+    if (isObject(options.between)) {
+      query = query.between(
+        { [options.between.attribute]: options.between.start },
+        { [options.between.attribute]: options.between.end },
+      );
+    }
+
+    const records = await query.go(queryOptions);
 
     if (singleResult) {
       if (records.data.length === 0) {
@@ -207,7 +217,7 @@ class BaseCollection {
    * a specific index defined in the entity schema. The index keys must match the
    * fields defined in the index.
    * @param {Object} keys - The index keys to use for the query.
-   * @param {QueryOptions} [options] - Additional options for the query.
+   * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
    * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of model instances.
    * @throws {Error} - Throws an error if the index keys are not provided or if the index
    * is not found.
@@ -255,7 +265,10 @@ class BaseCollection {
     items.forEach((item) => {
       try {
         const { Item } = this.entity.put(item).params();
-        validatedItems.push(Item);
+        validatedItems.push({
+          ...removeElectroProperties(Item),
+          ...item,
+        });
       } catch (error) {
         if (error instanceof ElectroValidationError) {
           errorItems.push({ item, error: new ValidationError(error) });

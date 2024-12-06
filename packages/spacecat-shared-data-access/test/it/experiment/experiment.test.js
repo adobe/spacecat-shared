@@ -27,11 +27,11 @@ function checkExperiment(experiment) {
   expect(experiment.getId()).to.be.a('string');
   expect(experiment.getCreatedAt()).to.be.a('string');
   expect(experiment.getUpdatedAt()).to.be.a('string');
-  expect(experiment.getEndDate()).to.be.a('number');
+  expect(experiment.getEndDate()).to.be.a('string');
   expect(experiment.getExpId()).to.be.a('string');
   expect(experiment.getName()).to.be.a('string');
   expect(experiment.getStatus()).to.be.a('string');
-  expect(experiment.getStartDate()).to.be.a('number');
+  expect(experiment.getStartDate()).to.be.a('string');
   expect(experiment.getType()).to.be.a('string');
   expect(experiment.getUrl()).to.be.a('string');
   expect(experiment.getVariants()).to.be.an('array');
@@ -105,8 +105,8 @@ describe('Experiment IT', async () => {
       url: 'https://example0.com/page-4',
       status: 'ACTIVE',
       type: 'full',
-      startDate: Date.now(),
-      endDate: Date.now() + 1000000,
+      startDate: '2024-12-06T08:35:24.125Z',
+      endDate: '2025-12-06T08:35:24.125Z',
       variants: [
         {
           label: 'Challenger 1',

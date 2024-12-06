@@ -33,6 +33,10 @@ const removeElectroProperties = (record) => { /* eslint-disable no-underscore-da
   delete cleanedRecord.gsi1sk;
   delete cleanedRecord.gsi2pk;
   delete cleanedRecord.gsi2sk;
+  delete cleanedRecord.gsi3pk;
+  delete cleanedRecord.gsi3sk;
+  delete cleanedRecord.gsi4pk;
+  delete cleanedRecord.gsi4sk;
   delete cleanedRecord.__edb_e__;
   delete cleanedRecord.__edb_v__;
 

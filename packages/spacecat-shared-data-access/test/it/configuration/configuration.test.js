@@ -85,8 +85,16 @@ describe('Configuration IT', async () => {
 
     const updatedConfiguration = await Configuration.getLatestConfiguration();
     expect(updatedConfiguration.getId()).to.not.equal(configuration.getId());
-    expect(updatedConfiguration.record.createdAt).to.be.greaterThan(configuration.record.createdAt);
-    expect(updatedConfiguration.record.updatedAt).to.be.greaterThan(configuration.record.updatedAt);
+    expect(
+      Date.parse(updatedConfiguration.record.createdAt),
+    ).to.be.greaterThan(
+      Date.parse(configuration.record.createdAt),
+    );
+    expect(
+      Date.parse(updatedConfiguration.record.updatedAt),
+    ).to.be.greaterThan(
+      Date.parse(configuration.record.updatedAt),
+    );
     expect(
       sanitizeIdAndAuditFields('Configuration', updatedConfiguration.toJSON()),
     ).to.eql(

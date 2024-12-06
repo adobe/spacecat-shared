@@ -34,6 +34,18 @@ class ExperimentCollection extends BaseCollection {
     super(service, modelFactory, Experiment, log);
   }
 
+  async allBySiteIdAndExpId(siteId, expId) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    if (!hasText(expId)) {
+      throw new Error('ExpId is required');
+    }
+
+    return this.allByIndexKeys({ siteId, expId }, { index: 'bySiteId' });
+  }
+
   async findBySiteIdAndExpId(siteId, expId) {
     if (!hasText(siteId)) {
       throw new Error('SiteId is required');
@@ -43,7 +55,7 @@ class ExperimentCollection extends BaseCollection {
       throw new Error('ExpId is required');
     }
 
-    return this.findByIndexKeys({ siteId, expId });
+    return this.findByIndexKeys({ siteId, expId }, { index: 'bySiteId' });
   }
 
   async findBySiteIdAndExpIdAndUrl(siteId, expId, url) {
@@ -59,7 +71,7 @@ class ExperimentCollection extends BaseCollection {
       throw new Error('Url is required');
     }
 
-    return this.findByIndexKeys({ siteId, expId, url }, { index: 'bySiteIdAndExpId' });
+    return this.findByIndexKeys({ siteId, expId, url }, { index: 'bySiteId' });
   }
 }
 

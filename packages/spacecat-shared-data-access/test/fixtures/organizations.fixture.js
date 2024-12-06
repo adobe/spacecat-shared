@@ -15,9 +15,6 @@ const organizations = [
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     imsOrgId: '0-1234@AdobeOrg',
     name: '0-1234Name',
-    GSI1PK: 'ALL_ORGANIZATIONS',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
     config:
       {
         slack:
@@ -48,9 +45,6 @@ const organizations = [
     organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     imsOrgId: '1-1234@AdobeOrg',
     name: '1-1234Name',
-    GSI1PK: 'ALL_ORGANIZATIONS',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
     config:
       {
         slack:
@@ -81,9 +75,6 @@ const organizations = [
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     imsOrgId: '2-1234@AdobeOrg',
     name: '2-1234Name',
-    GSI1PK: 'ALL_ORGANIZATIONS',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
     config:
       {
         slack:

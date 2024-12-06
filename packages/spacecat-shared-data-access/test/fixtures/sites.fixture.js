@@ -18,10 +18,8 @@ const sites = [
     gitHubURL: 'https://github.com/org-0/test-repo',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
     config:
       {
         slack:
@@ -59,10 +57,10 @@ const sites = [
     gitHubURL: 'https://github.com/org-1/test-repo',
     organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
+    createdAt: '2024-11-29T07:45:55.952Z',
+    updatedAt: '2024-11-29T07:45:55.952Z',
     config:
       {
         slack:
@@ -100,10 +98,10 @@ const sites = [
     gitHubURL: 'https://github.com/org-2/test-repo',
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
+    createdAt: '2024-11-29T07:45:55.952Z',
+    updatedAt: '2024-11-29T07:45:55.952Z',
     config:
       {
         slack:
@@ -141,10 +139,10 @@ const sites = [
     gitHubURL: 'https://github.com/org-3/test-repo',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
+    createdAt: '2024-11-29T07:45:55.952Z',
+    updatedAt: '2024-11-29T07:45:55.952Z',
     config:
       {
         slack:
@@ -182,10 +180,10 @@ const sites = [
     gitHubURL: 'https://github.com/org-4/test-repo',
     organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
+    createdAt: '2024-11-29T07:45:55.952Z',
+    updatedAt: '2024-11-29T07:45:55.952Z',
     config:
       {
         slack:
@@ -223,10 +221,10 @@ const sites = [
     gitHubURL: 'https://github.com/org-5/test-repo',
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
+    createdAt: '2024-11-29T07:45:55.952Z',
+    updatedAt: '2024-11-29T07:45:55.952Z',
     config:
       {
         slack:
@@ -264,10 +262,10 @@ const sites = [
     gitHubURL: 'https://github.com/org-6/test-repo',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
+    createdAt: '2024-11-29T07:45:55.952Z',
+    updatedAt: '2024-11-29T07:45:55.952Z',
     config:
       {
         slack:
@@ -305,10 +303,10 @@ const sites = [
     gitHubURL: 'https://github.com/org-7/test-repo',
     organizationId: '757ceb98-05c8-4e07-bb23-bc722115b2b0',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
+    createdAt: '2024-11-29T07:45:55.952Z',
+    updatedAt: '2024-11-29T07:45:55.952Z',
     config:
       {
         slack:
@@ -346,10 +344,10 @@ const sites = [
     gitHubURL: 'https://github.com/org-8/test-repo',
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
+    createdAt: '2024-11-29T07:45:55.952Z',
+    updatedAt: '2024-11-29T07:45:55.952Z',
     config:
       {
         slack:
@@ -387,10 +385,10 @@ const sites = [
     gitHubURL: 'https://github.com/org-9/test-repo',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,
-    isLiveToggledAt: 1732866355952,
+    isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    createdAt: 1732866355952,
-    updatedAt: 1732866355952,
+    createdAt: '2024-11-29T07:45:55.952Z',
+    updatedAt: '2024-11-29T07:45:55.952Z',
     config:
       {
         slack:

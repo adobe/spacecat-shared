@@ -17,6 +17,7 @@ import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { validate as uuidValidate } from 'uuid';
 
 import createSchema from '../base/base.schema.js';
+import { ORIGINS, STATUSES } from './opportunity.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -39,7 +40,6 @@ const OpportunitySchema = createSchema(
       },
       auditId: {
         type: 'string',
-        required: false,
         validate: (value) => !value || uuidValidate(value),
       },
       runbook: {
@@ -53,11 +53,10 @@ const OpportunitySchema = createSchema(
       },
       data: {
         type: 'any',
-        required: false,
         validate: (value) => !value || isNonEmptyObject(value),
       },
       origin: {
-        type: ['ESS_OPS', 'AI', 'AUTOMATION'],
+        type: Object.values(ORIGINS),
         required: true,
       },
       title: {
@@ -66,22 +65,19 @@ const OpportunitySchema = createSchema(
       },
       description: {
         type: 'string',
-        required: false,
       },
       status: {
-        type: ['NEW', 'IN_PROGRESS', 'IGNORED', 'RESOLVED'],
+        type: Object.values(STATUSES),
         required: true,
         default: 'NEW',
       },
       guidance: {
         type: 'any',
-        required: false,
         validate: (value) => !value || isNonEmptyObject(value),
       },
       tags: {
         type: 'set',
         items: 'string',
-        required: false,
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema

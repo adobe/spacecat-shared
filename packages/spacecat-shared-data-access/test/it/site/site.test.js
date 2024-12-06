@@ -156,7 +156,7 @@ describe('Site IT', async () => {
       },
       organizationId: sampleData.organizations[0].getId(),
       isLive: true,
-      isLiveToggledAt: Date.now(),
+      isLiveToggledAt: '2024-12-06T08:35:24.125Z',
       audits: [],
       config: {
         handlers: {

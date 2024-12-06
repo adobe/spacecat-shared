@@ -14,6 +14,8 @@ import apiKeys from './api-keys.fixtures.js';
 import audits from './audits.fixture.js';
 import configurations from './configurations.fixture.js';
 import experiments from './experiments.fixture.js';
+import importJobs from './import-jobs.fixture.js';
+import importUrls from './import-urls.fixture.js';
 import keyEvents from './key-events.fixture.js';
 import opportunities from './opportunities.fixture.js';
 import organizations from './organizations.fixture.js';
@@ -27,6 +29,8 @@ export default {
   audits,
   configurations,
   experiments,
+  importJobs,
+  importUrls,
   keyEvents,
   opportunities,
   organizations,

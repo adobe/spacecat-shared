@@ -29,6 +29,7 @@ export interface QueryOptions {
   index?: string;
   limit?: number;
   sort?: string;
+  attributes?: string[];
 }
 
 export interface BaseCollection<T extends BaseModel> {

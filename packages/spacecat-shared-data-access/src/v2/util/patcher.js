@@ -187,7 +187,7 @@ class Patcher {
     await this.#getPatchRecord()
       .composite(compositeValues)
       .go();
-    this.record.updatedAt = new Date().getTime();
+    this.record.updatedAt = new Date().toISOString();
   }
 
   getUpdates() {

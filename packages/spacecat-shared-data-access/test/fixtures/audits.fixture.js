@@ -14,7 +14,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.01,
@@ -30,7 +30,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002210310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.58,
@@ -46,7 +46,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002310310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.13,
@@ -62,7 +62,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002410310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.1,
@@ -78,7 +78,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002510310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.51,
@@ -94,7 +94,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612002610310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3815,
@@ -109,7 +109,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612002710310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1723,
@@ -124,7 +124,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612002810310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1485,
@@ -139,7 +139,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612002910310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1893,
@@ -154,7 +154,7 @@ const audits = [
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',
     auditType: 'cwv',
-    auditedAt: 1612003010310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 714,
@@ -169,7 +169,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.25,
@@ -185,7 +185,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002210310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.19,
@@ -201,7 +201,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002310310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.62,
@@ -217,7 +217,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002410310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.67,
@@ -233,7 +233,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002510310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.41,
@@ -249,7 +249,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612002610310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1830,
@@ -264,7 +264,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612002710310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1398,
@@ -279,7 +279,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612002810310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 2543,
@@ -294,7 +294,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612002910310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 108,
@@ -309,7 +309,7 @@ const audits = [
   {
     siteId: '56a691db-d32e-4308-ac99-a21de0580557',
     auditType: 'cwv',
-    auditedAt: 1612003010310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3979,
@@ -324,7 +324,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.79,
@@ -340,7 +340,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.57,
@@ -356,7 +356,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.45,
@@ -372,7 +372,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.76,
@@ -388,7 +388,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.28,
@@ -404,7 +404,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1195,
@@ -419,7 +419,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 187,
@@ -434,7 +434,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3294,
@@ -449,7 +449,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3997,
@@ -464,7 +464,7 @@ const audits = [
   {
     siteId: '196fb401-ede2-4607-9d25-7c011a65d143',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3730,
@@ -479,7 +479,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.06,
@@ -495,7 +495,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.26,
@@ -511,7 +511,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.54,
@@ -527,7 +527,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.72,
@@ -543,7 +543,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.63,
@@ -559,7 +559,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1624,
@@ -574,7 +574,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 711,
@@ -589,7 +589,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1213,
@@ -604,7 +604,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 2642,
@@ -619,7 +619,7 @@ const audits = [
   {
     siteId: 'c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 2144,
@@ -634,7 +634,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.1,
@@ -650,7 +650,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.3,
@@ -666,7 +666,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.56,
@@ -682,7 +682,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.04,
@@ -698,7 +698,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.68,
@@ -714,7 +714,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 2550,
@@ -729,7 +729,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 914,
@@ -744,7 +744,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 965,
@@ -759,7 +759,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1957,
@@ -774,7 +774,7 @@ const audits = [
   {
     siteId: 'b1ec63c4-87de-4500-bbc9-276039e4bc10',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 2579,
@@ -789,7 +789,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.87,
@@ -805,7 +805,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.03,
@@ -821,7 +821,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.01,
@@ -837,7 +837,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.16,
@@ -853,7 +853,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.5,
@@ -869,7 +869,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3892,
@@ -884,7 +884,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3471,
@@ -899,7 +899,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3889,
@@ -914,7 +914,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3776,
@@ -929,7 +929,7 @@ const audits = [
   {
     siteId: '3429cedf-06b0-489f-b066-81cada1634fc',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 618,
@@ -944,7 +944,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.59,
@@ -960,7 +960,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.51,
@@ -976,7 +976,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.65,
@@ -992,7 +992,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.99,
@@ -1008,7 +1008,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.49,
@@ -1024,7 +1024,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 279,
@@ -1039,7 +1039,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 699,
@@ -1054,7 +1054,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 2319,
@@ -1069,7 +1069,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3871,
@@ -1084,7 +1084,7 @@ const audits = [
   {
     siteId: '73bd9bba-40bb-4249-bc69-7ea0f130481d',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1480,
@@ -1099,7 +1099,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.25,
@@ -1115,7 +1115,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.64,
@@ -1131,7 +1131,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.93,
@@ -1147,7 +1147,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.01,
@@ -1163,7 +1163,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.33,
@@ -1179,7 +1179,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 380,
@@ -1194,7 +1194,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3996,
@@ -1209,7 +1209,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3317,
@@ -1224,7 +1224,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 729,
@@ -1239,7 +1239,7 @@ const audits = [
   {
     siteId: 'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 496,
@@ -1254,7 +1254,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.12,
@@ -1270,7 +1270,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.27,
@@ -1286,7 +1286,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.33,
@@ -1302,7 +1302,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.31,
@@ -1318,7 +1318,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'lhs-mobile',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         performance: 0.62,
@@ -1334,7 +1334,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 2357,
@@ -1349,7 +1349,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1542,
@@ -1364,7 +1364,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 1996,
@@ -1379,7 +1379,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 3898,
@@ -1394,7 +1394,7 @@ const audits = [
   {
     siteId: 'b197d10e-035e-433b-896f-8e4967c5de6a',
     auditType: 'cwv',
-    auditedAt: 1612002110310,
+    auditedAt: '2024-12-03T08:00:55.754Z',
     auditResult: {
       scores: {
         LCP: 2464,

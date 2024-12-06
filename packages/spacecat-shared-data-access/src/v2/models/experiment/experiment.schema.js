@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
@@ -46,7 +46,8 @@ const ExperimentSchema = createSchema(
         type: 'string',
       },
       endDate: {
-        type: 'number',
+        type: 'string',
+        validate: (value) => !value || isIsoDate(value),
       },
       // naming this expId so that it doesn't conflict
       // with the experimentId attribute (internal id of this entity)
@@ -58,7 +59,8 @@ const ExperimentSchema = createSchema(
         type: 'string',
       },
       startDate: {
-        type: 'number',
+        type: 'string',
+        validate: (value) => !value || isIsoDate(value),
       },
       status: {
         type: ['ACTIVE', 'INACTIVE'],
@@ -96,18 +98,7 @@ const ExperimentSchema = createSchema(
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['updatedAt'],
-        },
-      },
-      bySiteIdAndExpId: {
-        index: 'spacecat-data-experiment-by-site-id-and-exp-id',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['siteId', 'expId'],
-        },
-        sk: {
-          field: 'gsi2sk',
-          composite: ['url', 'updatedAt'],
+          composite: ['expId', 'url', 'updatedAt'],
         },
       },
     },

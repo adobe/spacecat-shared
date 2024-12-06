@@ -13,7 +13,7 @@
 /* c8 ignore start */
 
 import {
-  isInteger,
+  isInteger, isIsoDate,
   isNumber,
   isObject,
   isValidUrl,
@@ -55,6 +55,8 @@ const validateOptions = (options) => {
       ImportOptionTypeValidator[key](options[key]);
     }
   });
+
+  return true;
 };
 
 /*
@@ -78,13 +80,16 @@ const ImportJobSchema = createSchema(
       },
       duration: {
         type: 'number',
+        default: 0,
         validate: (value) => !value || isNumber(value),
       },
-      endTime: {
-        type: 'number',
+      endedAt: {
+        type: 'string',
+        validate: (value) => !value || isIsoDate(value),
       },
       failedCount: {
         type: 'number',
+        default: 0,
         validate: (value) => !value || isInteger(value),
       },
       hasCustomHeaders: {
@@ -103,7 +108,13 @@ const ImportJobSchema = createSchema(
         type: 'string',
       },
       initiatedBy: {
-        type: 'string',
+        type: 'map',
+        properties: {
+          apiKeyName: { type: 'string' },
+          imsOrgId: { type: 'string' },
+          imsUserId: { type: 'string' },
+          userAgent: { type: 'string' },
+        },
       },
       options: {
         type: 'any',
@@ -111,43 +122,49 @@ const ImportJobSchema = createSchema(
       },
       redirectCount: {
         type: 'number',
+        default: 0,
         validate: (value) => !value || isInteger(value),
       },
       status: {
         type: Object.values(ImportJobStatus),
         required: true,
       },
-      startTime: {
-        type: 'number',
-        default: () => Date.now(),
+      startedAt: {
+        type: 'string',
+        required: true,
+        readOnly: true,
+        default: () => new Date().toISOString(),
+        validate: (value) => isIsoDate(value),
       },
       successCount: {
         type: 'number',
+        default: 0,
         validate: (value) => !value || isInteger(value),
       },
       urlCount: {
         type: 'number',
+        default: 0,
         validate: (value) => !value || isInteger(value),
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema
     indexes: {
       all: {
-        index: 'spacecat-data-api-key-all',
+        index: 'spacecat-data-import-job-all',
         pk: {
           field: 'gsi1pk',
-          template: 'ALL_API_KEYS',
+          template: 'ALL_IMPORT_JOBS',
         },
         sk: {
           field: 'gsi1sk',
-          composite: ['hashedImportJob'],
+          composite: ['startedAt'],
         },
       },
-      byImsUserIdAndImsOrgId: {
-        index: 'spacecat-data-api-key-by-ims-user-id-and-ims-org-id',
+      byStatus: {
+        index: 'spacecat-data-import-job-by-status',
         pk: {
           field: 'gsi2pk',
-          composite: ['imsUserId', 'imsOrgId'],
+          composite: ['status'],
         },
         sk: {
           field: 'gsi2sk',

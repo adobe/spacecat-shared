@@ -38,7 +38,6 @@ const SiteCandidateSchema = createSchema(
     attributes: {
       siteId: {
         type: 'string',
-        required: false,
         validate: (value) => !value || uuidValidate(value),
       },
       baseURL: {
@@ -62,7 +61,6 @@ const SiteCandidateSchema = createSchema(
       },
       updatedBy: {
         type: 'string',
-        required: false,
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema

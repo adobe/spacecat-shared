@@ -10,7 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
+
 import BaseCollection from '../base/base.collection.js';
+import { ValidationError } from '../../errors/index.js';
 import ImportJob from './import-job.model.js';
 
 /**
@@ -33,6 +36,25 @@ class ImportJobCollection extends BaseCollection {
   }
 
   // add custom methods here
+
+  async allByDateRange(startDate, endDate) {
+    if (!isIsoDate(startDate)) {
+      throw new ValidationError(`Invalid start date: ${startDate}`);
+    }
+
+    if (!isIsoDate(endDate)) {
+      throw new ValidationError(`Invalid end date: ${endDate}`);
+    }
+
+    return this.allByIndexKeys({ pk: 'all_import_jobs' }, {
+      index: 'all',
+      between: {
+        attribute: 'startedAt',
+        start: startDate,
+        end: endDate,
+      },
+    });
+  }
 }
 
 export default ImportJobCollection;

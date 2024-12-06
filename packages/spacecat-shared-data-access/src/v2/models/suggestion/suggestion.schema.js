@@ -15,6 +15,7 @@
 import { validate as uuidValidate } from 'uuid';
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import createSchema from '../base/base.schema.js';
+import { STATUSES, TYPES } from './suggestion.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -36,7 +37,7 @@ const SuggestionSchema = createSchema(
         validate: (value) => uuidValidate(value),
       },
       type: {
-        type: ['CODE_CHANGE', 'CONTENT_UPDATE', 'REDIRECT_UPDATE', 'METADATA_UPDATE'],
+        type: Object.values(TYPES),
         required: true,
         readOnly: true,
       },
@@ -51,13 +52,12 @@ const SuggestionSchema = createSchema(
       },
       kpiDeltas: {
         type: 'any',
-        required: false,
         validate: (value) => !value || isNonEmptyObject(value),
       },
       status: {
-        type: ['NEW', 'APPROVED', 'SKIPPED', 'FIXED', 'ERROR'],
+        type: Object.values(STATUSES),
         required: true,
-        default: 'NEW',
+        default: STATUSES.NEW,
       },
     },
     // add your custom indexes here. the primary index is created by default via the base schema

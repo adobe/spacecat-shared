@@ -12,6 +12,19 @@
 
 import BaseModel from '../base/base.model.js';
 
+export const ORIGINS = {
+  ESS_OPS: 'ESS_OPS',
+  AI: 'AI',
+  AUTOMATION: 'AUTOMATION',
+};
+
+export const STATUSES = {
+  NEW: 'NEW',
+  IN_PROGRESS: 'IN_PROGRESS',
+  IGNORED: 'IGNORED',
+  RESOLVED: 'RESOLVED',
+};
+
 /**
  * Opportunity - A class representing an Opportunity entity.
  * Provides methods to access and manipulate Opportunity-specific data,

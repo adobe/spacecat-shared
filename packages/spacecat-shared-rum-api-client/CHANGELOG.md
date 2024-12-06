@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.2...@adobe/spacecat-shared-rum-api-client-v2.15.3) (2024-12-06)
+
+
+### Bug Fixes
+
+* **cwv:** Update Core Web Vitals (CWV) in README to reflect newly added functionality. ([#473](https://github.com/adobe/spacecat-shared/issues/473)) ([617539a](https://github.com/adobe/spacecat-shared/commit/617539afe28f68b9c2e3cf9ad052863f6359a811))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.1...@adobe/spacecat-shared-rum-api-client-v2.15.2) (2024-12-06)
 
 

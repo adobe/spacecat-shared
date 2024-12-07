@@ -12,11 +12,10 @@
 
 /* c8 ignore start */
 
-import { validate as uuidValidate } from 'uuid';
-
 import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
-import createSchema from '../base/base.schema.js';
+
 import { ImportUrlStatus } from '../import-job/import-job.model.js';
+import SchemaBuilder from '../base/schema.builder.js';
 import { IMPORT_URL_EXPIRES_IN_DAYS } from './import-url.model.js';
 
 /*
@@ -25,77 +24,35 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const ImportUrlSchema = createSchema(
-  'ImportUrl',
-  '1',
-  'SpaceCat',
-  {
-    // add your custom attributes here. the primary id and
-    // timestamps are created by default via the base schema.
-    attributes: {
-      importJobId: {
-        type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
-      },
-      expiresAt: {
-        type: 'string',
-        required: true,
-        validate: (value) => isIsoDate(value),
-        default: () => {
-          const date = new Date();
-          date.setDate(date.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
-          return date.toISOString();
-        },
-      },
-      file: {
-        type: 'string',
-      },
-      path: {
-        type: 'string',
-      },
-      reason: {
-        type: 'string',
-      },
-      status: {
-        type: Object.values(ImportUrlStatus),
-        required: true,
-      },
-      url: {
-        type: 'string',
-        required: true,
-        validate: (value) => isValidUrl(value),
-      },
+const schema = new SchemaBuilder('ImportUrl', 1, 'SpaceCat')
+  .addReference('belongs_to', 'ImportJob', ['status'])
+  .addAttribute('expiresAt', {
+    type: 'string',
+    required: true,
+    validate: (value) => isIsoDate(value),
+    default: () => {
+      const date = new Date();
+      date.setDate(date.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
+      return date.toISOString();
     },
-    // add your custom indexes here. the primary index is created by default via the base schema
-    indexes: {
-      byImportJobId: {
-        index: 'spacecat-data-import-url-by-import-job-id',
-        pk: {
-          field: 'gsi1pk',
-          composite: ['importJobId'],
-        },
-        sk: {
-          field: 'gsi1sk',
-          composite: ['status'],
-        },
-      },
-    },
-    /**
-     * References to other entities. This is not part of the standard ElectroDB schema, but is used
-     * to define relationships between entities in our data layer API.
-     * @type {{
-     * [belongs_to]: [{target: string}],
-     * [has_many]: [{target: string}],
-     * [has_one]: [{target: string}]
-     * }}
-     */
-    references: {
-      belongs_to: [
-        { target: 'ImportJob' },
-      ],
-    },
-  },
-);
+  })
+  .addAttribute('file', {
+    type: 'string',
+  })
+  .addAttribute('path', {
+    type: 'string',
+  })
+  .addAttribute('reason', {
+    type: 'string',
+  })
+  .addAttribute('status', {
+    type: Object.values(ImportUrlStatus),
+    required: true,
+  })
+  .addAttribute('url', {
+    type: 'string',
+    required: true,
+    validate: (value) => isValidUrl(value),
+  });
 
-export default ImportUrlSchema;
+export default schema.build();

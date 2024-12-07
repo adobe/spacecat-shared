@@ -19,34 +19,6 @@ import { Service } from 'electrodb';
 
 import ModelFactory from '../v2/models/base/model.factory.js';
 
-import ApiKeyCollection from '../v2/models/api-key/api-key.collection.js';
-import AuditCollection from '../v2/models/audit/audit.collection.js';
-import ConfigurationCollection from '../v2/models/configuration/configuration.collection.js';
-import ExperimentCollection from '../v2/models/experiment/experiment.collection.js';
-import KeyEventCollection from '../v2/models/key-event/key-event.collection.js';
-import ImportJobCollection from '../v2/models/import-job/import-job.collection.js';
-import ImportUrlCollection from '../v2/models/import-url/import-url.collection.js';
-import OpportunityCollection from '../v2/models/opportunity/opportunity.collection.js';
-import OrganizationCollection from '../v2/models/organization/organization.collection.js';
-import SiteCandidateCollection from '../v2/models/site-candidate/site-candidate.collection.js';
-import SiteCollection from '../v2/models/site/site.collection.js';
-import SiteTopPageCollection from '../v2/models/site-top-page/site-top-page.collection.js';
-import SuggestionCollection from '../v2/models/suggestion/suggestion.collection.js';
-
-import ApiKeySchema from '../v2/models/api-key/api-key.schema.js';
-import AuditSchema from '../v2/models/audit/audit.schema.js';
-import ConfigurationSchema from '../v2/models/configuration/configuration.schema.js';
-import ExperimentSchema from '../v2/models/experiment/experiment.schema.js';
-import KeyEventSchema from '../v2/models/key-event/key-event.schema.js';
-import ImportJobSchema from '../v2/models/import-job/import-job.schema.js';
-import ImportUrlSchema from '../v2/models/import-url/import-url.schema.js';
-import OpportunitySchema from '../v2/models/opportunity/opportunity.schema.js';
-import OrganizationSchema from '../v2/models/organization/organization.schema.js';
-import SiteCandidateSchema from '../v2/models/site-candidate/site-candidate.schema.js';
-import SiteSchema from '../v2/models/site/site.schema.js';
-import SiteTopPageSchema from '../v2/models/site-top-page/site-top-page.schema.js';
-import SuggestionSchema from '../v2/models/suggestion/suggestion.schema.js';
-
 import { auditFunctions } from './audits/index.js';
 import { keyEventFunctions } from './key-events/index.js';
 import { siteFunctions } from './sites/index.js';
@@ -76,22 +48,9 @@ const createElectroService = (client, config, log) => {
     log.debug(JSON.stringify(event, null, 4));
   };
   /* c8 ignore end */
+
   return new Service(
-    {
-      apiKey: ApiKeySchema,
-      audit: AuditSchema,
-      configuration: ConfigurationSchema,
-      experiment: ExperimentSchema,
-      importJob: ImportJobSchema,
-      importUrl: ImportUrlSchema,
-      keyEvent: KeyEventSchema,
-      opportunity: OpportunitySchema,
-      organization: OrganizationSchema,
-      site: SiteSchema,
-      siteCandidate: SiteCandidateSchema,
-      siteTopPage: SiteTopPageSchema,
-      suggestion: SuggestionSchema,
-    },
+    ModelFactory.getEntities(),
     {
       client,
       table,
@@ -132,20 +91,7 @@ export const createDataAccess = (config, log = console) => {
   const rawClient = createRawClient();
   const electroService = createElectroService(rawClient, config, log);
   const modelFactory = new ModelFactory(electroService, log);
-
-  const ApiKey = modelFactory.getCollection(ApiKeyCollection.name);
-  const Audit = modelFactory.getCollection(AuditCollection.name);
-  const Configuration = modelFactory.getCollection(ConfigurationCollection.name);
-  const Experiment = modelFactory.getCollection(ExperimentCollection.name);
-  const ImportJob = modelFactory.getCollection(ImportJobCollection.name);
-  const ImportUrl = modelFactory.getCollection(ImportUrlCollection.name);
-  const KeyEvent = modelFactory.getCollection(KeyEventCollection.name);
-  const Opportunity = modelFactory.getCollection(OpportunityCollection.name);
-  const Organization = modelFactory.getCollection(OrganizationCollection.name);
-  const Site = modelFactory.getCollection(SiteCollection.name);
-  const SiteCandidate = modelFactory.getCollection(SiteCandidateCollection.name);
-  const SiteTopPage = modelFactory.getCollection(SiteTopPageCollection.name);
-  const Suggestion = modelFactory.getCollection(SuggestionCollection.name);
+  const collections = modelFactory.getCollections();
 
   return {
     ...auditFuncs,
@@ -160,18 +106,6 @@ export const createDataAccess = (config, log = console) => {
     ...experimentFuncs,
     ...apiKeyFuncs,
     // electro-based data access objects
-    ApiKey,
-    Audit,
-    Configuration,
-    Experiment,
-    ImportJob,
-    ImportUrl,
-    KeyEvent,
-    Opportunity,
-    Organization,
-    Site,
-    SiteCandidate,
-    SiteTopPage,
-    Suggestion,
+    ...collections,
   };
 };

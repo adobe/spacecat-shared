@@ -43,3 +43,41 @@ export interface BaseCollection<T extends BaseModel> {
 export interface ModelFactory {
   getCollection<T extends BaseModel>(collectionName: string): BaseCollection<T>;
 }
+
+export interface SchemaBuilder {
+  /**
+   * Add an attribute to the schema. Attributes must be given a name
+   * and a data object that describes the attribute as an ElectroDB attribute definition:
+   * https://electrodb.dev/en/modeling/attributes/
+   * @param name - The name of the attribute
+   * @param data - The attribute definition
+   */
+  addAttribute(name: string, data: object): SchemaBuilder;
+
+  /**
+   * Add an index to the schema. Indexes must be given a name, a partition key, and a sort key.
+   * The partition key and sort key must be defined as per the ElectroDB index definition:
+   * https://electrodb.dev/en/modeling/indexes/
+   * @param name - The name of the index
+   * @param partitionKey - The partition key definition
+   * @param sortKey - The sort key definition
+   */
+  addIndex(name: string, partitionKey: object, sortKey: object): SchemaBuilder;
+
+  /**
+   * Add a reference to the schema. References must be given a reference type, a target entity name,
+   * and an optional array of sort keys. If no sort keys are provided, the reference will be created
+   * with the 'updatedAt' attribute as the sort key.
+   * If the reference type is 'belongs_to', this will also a foreign key attribute to the schema
+   * (<entityName>Id) as well as an index on that attribute.
+   * @param referenceType - The type of reference (belongs_to, has_many, has_one)
+   * @param entityName - The name of the target entity
+   * @param sortKeys - An optional array of sort keys
+   */
+  addReference(referenceType: string, entityName: string, sortKeys?: string[]): SchemaBuilder;
+
+  /**
+   * Build the schema object, returns the ElectroDB schema as an object.
+   */
+  build(): object;
+}

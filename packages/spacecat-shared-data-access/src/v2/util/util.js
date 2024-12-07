@@ -14,6 +14,7 @@ import pluralize from 'pluralize';
 import { isInteger } from '@adobe/spacecat-shared-utils';
 
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+const collectionNameToEntityName = (collectionName) => collectionName.replace('Collection', '');
 const decapitalize = (str) => str.charAt(0).toLowerCase() + str.slice(1);
 const entityNameToCollectionName = (entityName) => `${pluralize.singular(entityName)}Collection`;
 const entityNameToIdName = (collectionName) => `${decapitalize(collectionName)}Id`;
@@ -62,6 +63,7 @@ function incrementVersion(version) {
 
 export {
   capitalize,
+  collectionNameToEntityName,
   decapitalize,
   entityNameToCollectionName,
   entityNameToIdName,

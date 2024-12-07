@@ -24,21 +24,36 @@ import SiteCollection from '../site/site.collection.js';
 import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
 
-const COLLECTIONS = [
-  ApiKeyCollection,
-  AuditCollection,
-  ConfigurationCollection,
-  ExperimentCollection,
-  ImportJobCollection,
-  ImportUrlCollection,
-  KeyEventCollection,
-  OpportunityCollection,
-  OrganizationCollection,
-  SiteCollection,
-  SiteCandidateCollection,
-  SiteTopPageCollection,
-  SuggestionCollection,
-]; // todo: could be established by enumerating files in the schema directory
+import ApiKeySchema from '../api-key/api-key.schema.js';
+import AuditSchema from '../audit/audit.schema.js';
+import ConfigurationSchema from '../configuration/configuration.schema.js';
+import ExperimentSchema from '../experiment/experiment.schema.js';
+import ImportJobSchema from '../import-job/import-job.schema.js';
+import ImportUrlSchema from '../import-url/import-url.schema.js';
+import KeyEventSchema from '../key-event/key-event.schema.js';
+import OpportunitySchema from '../opportunity/opportunity.schema.js';
+import OrganizationSchema from '../organization/organization.schema.js';
+import SiteSchema from '../site/site.schema.js';
+import SiteCandidateSchema from '../site-candidate/site-candidate.schema.js';
+import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
+import SuggestionSchema from '../suggestion/suggestion.schema.js';
+import { collectionNameToEntityName } from '../../util/util.js';
+
+export const ENTITIES = {
+  apiKey: { schema: ApiKeySchema, collection: ApiKeyCollection },
+  audit: { schema: AuditSchema, collection: AuditCollection },
+  configuration: { schema: ConfigurationSchema, collection: ConfigurationCollection },
+  experiment: { schema: ExperimentSchema, collection: ExperimentCollection },
+  importJob: { schema: ImportJobSchema, collection: ImportJobCollection },
+  importUrl: { schema: ImportUrlSchema, collection: ImportUrlCollection },
+  keyEvent: { schema: KeyEventSchema, collection: KeyEventCollection },
+  opportunity: { schema: OpportunitySchema, collection: OpportunityCollection },
+  organization: { schema: OrganizationSchema, collection: OrganizationCollection },
+  site: { schema: SiteSchema, collection: SiteCollection },
+  siteCandidate: { schema: SiteCandidateSchema, collection: SiteCandidateCollection },
+  siteTopPage: { schema: SiteTopPageSchema, collection: SiteTopPageCollection },
+  suggestion: { schema: SuggestionSchema, collection: SuggestionCollection },
+}; // todo: could be established by enumerating files in the schema directory
 
 /**
  * ModelFactory - A factory class responsible for creating and managing collections
@@ -57,7 +72,7 @@ class ModelFactory {
   constructor(service, logger) {
     this.service = service;
     this.logger = logger;
-    this.models = new Map();
+    this.collections = new Map();
 
     this.#initialize();
   }
@@ -68,9 +83,9 @@ class ModelFactory {
    * @private
    */
   #initialize() {
-    COLLECTIONS.forEach((Collection) => {
+    Object.values(ENTITIES).forEach(({ collection: Collection }) => {
       const collection = new Collection(this.service, this, this.logger);
-      this.models.set(Collection.name, collection);
+      this.collections.set(Collection.name, collection);
     });
   }
 
@@ -81,11 +96,26 @@ class ModelFactory {
    * @throws {Error} - Throws an error if the collection with the specified name is not found.
    */
   getCollection(collectionName) {
-    const collection = this.models.get(collectionName);
+    const collection = this.collections.get(collectionName);
     if (!collection) {
       throw new Error(`Collection ${collectionName} not found`);
     }
     return collection;
+  }
+
+  getCollections() {
+    const collections = {};
+    for (const [key, value] of this.collections) {
+      collections[collectionNameToEntityName(key)] = value;
+    }
+    return collections;
+  }
+
+  static getEntities() {
+    return Object.keys(ENTITIES).reduce((acc, key) => {
+      acc[key] = ENTITIES[key].schema;
+      return acc;
+    }, {});
   }
 }
 

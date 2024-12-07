@@ -15,9 +15,7 @@
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import { DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
-import { DEFAULT_ORGANIZATION_ID } from '../../../models/organization.js';
-
-import createSchema from '../base/base.schema.js';
+import SchemaBuilder from '../base/schema.builder.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -25,62 +23,31 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const OrganizationSchema = createSchema(
-  'Organization',
-  '1',
-  'SpaceCat',
-  {
-    // add your custom attributes here. the primary id and
-    // timestamps are created by default via the base schema.
-    attributes: {
-      config: {
-        type: 'any',
-        required: true,
-        default: DEFAULT_CONFIG,
-        validate: (value) => isNonEmptyObject(validateConfiguration(value)),
-      },
-      name: {
-        type: 'string',
-        required: true,
-      },
-      imsOrgId: {
-        type: 'string',
-        default: DEFAULT_ORGANIZATION_ID,
-      },
-      fulfillableItems: {
-        type: 'any',
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-    },
-    // add your custom indexes here. the primary index is created by default via the base schema
-    indexes: {
-      all: {
-        index: 'spacecat-data-organization-all',
-        pk: {
-          field: 'gsi1pk',
-          template: 'ALL_ORGANIZATIONS',
-        },
-        sk: {
-          field: 'gsi1sk',
-          composite: ['imsOrgId'],
-        },
-      },
-    },
-    /**
-     * References to other entities. This is not part of the standard ElectroDB schema, but is used
-     * to define relationships between entities in our data layer API.
-     * @type {{
-     * [belongs_to]: [{target: string}],
-     * [has_many]: [{target: string}],
-     * [has_one]: [{target: string}]
-     * }}
-     */
-    references: {
-      has_many: [
-        { target: 'Sites' },
-      ],
-    },
-  },
-);
+const schema = new SchemaBuilder('Organization', 1, 'SpaceCat')
+  // this will add an attribute 'organizationId' as well as an index 'byOrganizationId'
+  .addReference('has_many', 'Sites')
+  .addAttribute('config', {
+    type: 'any',
+    required: true,
+    default: DEFAULT_CONFIG,
+    validate: (value) => isNonEmptyObject(validateConfiguration(value)),
+  })
+  .addAttribute('name', {
+    type: 'string',
+    required: true,
+  })
+  .addAttribute('imsOrgId', {
+    type: 'string',
+    default: 'default',
+  })
+  .addAttribute('fulfillableItems', {
+    type: 'any',
+    validate: (value) => !value || isNonEmptyObject(value),
+  })
+  .addIndex(
+    'all',
+    { template: 'ALL_ORGANIZATIONS' },
+    { composite: ['imsOrgId'] },
+  );
 
-export default OrganizationSchema;
+export default schema.build();

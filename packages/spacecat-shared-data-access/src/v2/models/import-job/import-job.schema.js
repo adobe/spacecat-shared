@@ -13,13 +13,14 @@
 /* c8 ignore start */
 
 import {
-  isInteger, isIsoDate,
+  isInteger,
+  isIsoDate,
   isNumber,
   isObject,
   isValidUrl,
 } from '@adobe/spacecat-shared-utils';
 
-import createSchema from '../base/base.schema.js';
+import SchemaBuilder from '../base/schema.builder.js';
 import { ImportJobStatus, ImportOptions } from './import-job.model.js';
 
 const ImportOptionTypeValidator = {
@@ -65,128 +66,90 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const ImportJobSchema = createSchema(
-  'ImportJob',
-  '1',
-  'SpaceCat',
-  {
-    // add your custom attributes here. the primary id and
-    // timestamps are created by default via the base schema.
-    attributes: {
-      baseURL: {
-        type: 'string',
-        required: true,
-        validate: (value) => isValidUrl(value),
-      },
-      duration: {
-        type: 'number',
-        default: 0,
-        validate: (value) => !value || isNumber(value),
-      },
-      endedAt: {
-        type: 'string',
-        validate: (value) => !value || isIsoDate(value),
-      },
-      failedCount: {
-        type: 'number',
-        default: 0,
-        validate: (value) => !value || isInteger(value),
-      },
-      hasCustomHeaders: {
-        type: 'boolean',
-        default: false,
-      },
-      hasCustomImportJs: {
-        type: 'boolean',
-        default: false,
-      },
-      hashedApiKey: {
-        type: 'string',
-        required: true,
-      },
-      importQueueId: {
-        type: 'string',
-      },
-      initiatedBy: {
-        type: 'map',
-        properties: {
-          apiKeyName: { type: 'string' },
-          imsOrgId: { type: 'string' },
-          imsUserId: { type: 'string' },
-          userAgent: { type: 'string' },
-        },
-      },
-      options: {
-        type: 'any',
-        validate: (value) => !value || validateOptions(value),
-      },
-      redirectCount: {
-        type: 'number',
-        default: 0,
-        validate: (value) => !value || isInteger(value),
-      },
-      status: {
-        type: Object.values(ImportJobStatus),
-        required: true,
-      },
-      startedAt: {
-        type: 'string',
-        required: true,
-        readOnly: true,
-        default: () => new Date().toISOString(),
-        validate: (value) => isIsoDate(value),
-      },
-      successCount: {
-        type: 'number',
-        default: 0,
-        validate: (value) => !value || isInteger(value),
-      },
-      urlCount: {
-        type: 'number',
-        default: 0,
-        validate: (value) => !value || isInteger(value),
-      },
+const schema = new SchemaBuilder('ImportJob', 1, 'SpaceCat')
+  .addReference('has_many', 'ImportUrl')
+  .addAttribute('baseURL', {
+    type: 'string',
+    required: true,
+    validate: (value) => isValidUrl(value),
+  })
+  .addAttribute('duration', {
+    type: 'number',
+    default: 0,
+    validate: (value) => !value || isNumber(value),
+  })
+  .addAttribute('endedAt', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
+  })
+  .addAttribute('failedCount', {
+    type: 'number',
+    default: 0,
+    validate: (value) => !value || isInteger(value),
+  })
+  .addAttribute('hasCustomHeaders', {
+    type: 'boolean',
+    default: false,
+  })
+  .addAttribute('hasCustomImportJs', {
+    type: 'boolean',
+    default: false,
+  })
+  .addAttribute('hashedApiKey', {
+    type: 'string',
+    required: true,
+  })
+  .addAttribute('importQueueId', {
+    type: 'string',
+  })
+  .addAttribute('initiatedBy', {
+    type: 'map',
+    properties: {
+      apiKeyName: { type: 'string' },
+      imsOrgId: { type: 'string' },
+      imsUserId: { type: 'string' },
+      userAgent: { type: 'string' },
     },
-    // add your custom indexes here. the primary index is created by default via the base schema
-    indexes: {
-      all: {
-        index: 'spacecat-data-import-job-all',
-        pk: {
-          field: 'gsi1pk',
-          template: 'ALL_IMPORT_JOBS',
-        },
-        sk: {
-          field: 'gsi1sk',
-          composite: ['startedAt'],
-        },
-      },
-      byStatus: {
-        index: 'spacecat-data-import-job-by-status',
-        pk: {
-          field: 'gsi2pk',
-          composite: ['status'],
-        },
-        sk: {
-          field: 'gsi2sk',
-          composite: ['updatedAt'],
-        },
-      },
-    },
-    /**
-     * References to other entities. This is not part of the standard ElectroDB schema, but is used
-     * to define relationships between entities in our data layer API.
-     * @type {{
-     * [belongs_to]: [{target: string}],
-     * [has_many]: [{target: string}],
-     * [has_one]: [{target: string}]
-     * }}
-     */
-    references: {
-      has_many: [
-        { target: 'ImportUrls' },
-      ],
-    },
-  },
-);
+  })
+  .addAttribute('options', {
+    type: 'any',
+    validate: (value) => !value || validateOptions(value),
+  })
+  .addAttribute('redirectCount', {
+    type: 'number',
+    default: 0,
+    validate: (value) => !value || isInteger(value),
+  })
+  .addAttribute('status', {
+    type: Object.values(ImportJobStatus),
+    required: true,
+  })
+  .addAttribute('startedAt', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+    default: () => new Date().toISOString(),
+    validate: (value) => isIsoDate(value),
+  })
+  .addAttribute('successCount', {
+    type: 'number',
+    default: 0,
+    validate: (value) => !value || isInteger(value),
+  })
+  .addAttribute('urlCount', {
+    type: 'number',
+    default: 0,
+    validate: (value) => !value || isInteger(value),
+  })
+  .addIndex(
+    'all',
+    { template: 'ALL_IMPORT_JOBS' },
+    { composite: ['startedAt'] },
+  )
+  .addIndex(
+    'byStatus',
+    { composite: ['status'] },
+    { composite: ['updatedAt'] },
+  );
 
-export default ImportJobSchema;
+export default schema.build();

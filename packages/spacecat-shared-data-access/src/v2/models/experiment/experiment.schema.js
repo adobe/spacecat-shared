@@ -14,11 +14,8 @@
 
 import { isIsoDate, isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
-import { validate as uuidValidate } from 'uuid';
-
+import SchemaBuilder from '../base/schema.builder.js';
 import { DEFAULT_UPDATED_BY } from './experiment.model.js';
-
-import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -26,97 +23,47 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const ExperimentSchema = createSchema(
-  'Experiment',
-  '1',
-  'SpaceCat',
-  {
-    // add your custom attributes here. the primary id and
-    // timestamps are created by default via the base schema.
-    attributes: {
-      siteId: {
-        type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
-      },
-      conversionEventName: {
-        type: 'string',
-      },
-      conversionEventValue: {
-        type: 'string',
-      },
-      endDate: {
-        type: 'string',
-        validate: (value) => !value || isIsoDate(value),
-      },
-      // naming this expId so that it doesn't conflict
-      // with the experimentId attribute (internal id of this entity)
-      expId: {
-        type: 'string',
-        required: true,
-      },
-      name: {
-        type: 'string',
-      },
-      startDate: {
-        type: 'string',
-        validate: (value) => !value || isIsoDate(value),
-      },
-      status: {
-        type: ['ACTIVE', 'INACTIVE'],
-        required: true,
-      },
-      type: {
-        type: 'string',
-      },
-      url: {
-        type: 'string',
-        required: true,
-        validate: (value) => isValidUrl(value),
-      },
-      updatedBy: {
-        type: 'string',
-        required: true,
-        default: DEFAULT_UPDATED_BY,
-      },
-      variants: {
-        type: 'list',
-        items: {
-          type: 'any',
-          validate: (value) => isNonEmptyObject(value),
-        },
-        required: true,
-      },
+const schema = new SchemaBuilder('Experiment', 1, 'SpaceCat')
+  .addReference('belongs_to', 'Site', ['expId', 'url', 'updatedAt'])
+  .addAttribute('conversionEventName', {
+    type: 'string',
+  })
+  .addAttribute('conversionEventValue', { type: 'string' })
+  .addAttribute('endDate', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
+  })
+  .addAttribute('expId', {
+    type: 'string',
+    required: true,
+  })
+  .addAttribute('name', { type: 'string' })
+  .addAttribute('startDate', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
+  })
+  .addAttribute('status', {
+    type: ['ACTIVE', 'INACTIVE'],
+    required: true,
+  })
+  .addAttribute('type', { type: 'string' })
+  .addAttribute('url', {
+    type: 'string',
+    required: true,
+    validate: (value) => isValidUrl(value),
+  })
+  .addAttribute('updatedBy', {
+    type: 'string',
+    required: true,
+    default: DEFAULT_UPDATED_BY,
+  })
+  .addAttribute('variants', {
+    type: 'list',
+    items: {
+      type: 'any',
+      validate: (value) => isNonEmptyObject(value),
     },
-    // add your custom indexes here. the primary index is created by default via the base schema
-    indexes: {
-      bySiteId: {
-        index: 'spacecat-data-experiment-by-site-id',
-        pk: {
-          field: 'gsi1pk',
-          composite: ['siteId'],
-        },
-        sk: {
-          field: 'gsi1sk',
-          composite: ['expId', 'url', 'updatedAt'],
-        },
-      },
-    },
-    /**
-     * References to other entities. This is not part of the standard ElectroDB schema, but is used
-     * to define relationships between entities in our data layer API.
-     * @type {{
-     * [belongs_to]: [{target: string}],
-     * [has_many]: [{target: string}],
-     * [has_one]: [{target: string}]
-     * }}
-     */
-    references: {
-      belongs_to: [
-        { target: 'Site' },
-      ],
-    },
-  },
-);
+    required: true,
+  });
 
-export default ExperimentSchema;
+export default schema.build();

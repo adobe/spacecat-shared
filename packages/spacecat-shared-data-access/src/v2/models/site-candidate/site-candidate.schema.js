@@ -16,11 +16,8 @@ import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
-import {
-  SITE_CANDIDATE_SOURCES,
-  SITE_CANDIDATE_STATUS,
-} from '../../../models/site-candidate.js';
-import createSchema from '../base/base.schema.js';
+import SchemaBuilder from '../base/schema.builder.js';
+import { SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from './site-candidate.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -28,70 +25,38 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const SiteCandidateSchema = createSchema(
-  'SiteCandidate',
-  '1',
-  'SpaceCat',
-  {
-    // add your custom attributes here. the primary id and
-    // timestamps are created by default via the base schema.
-    attributes: {
-      siteId: {
-        type: 'string',
-        validate: (value) => !value || uuidValidate(value),
-      },
-      baseURL: {
-        type: 'string',
-        required: true,
-        validate: (value) => isValidUrl(value),
-      },
-      hlxConfig: {
-        type: 'any',
-        required: true,
-        default: {},
-        validate: (value) => isObject(value),
-      },
-      source: {
-        type: Object.values(SITE_CANDIDATE_SOURCES),
-        required: true,
-      },
-      status: {
-        type: Object.values(SITE_CANDIDATE_STATUS),
-        required: true,
-      },
-      updatedBy: {
-        type: 'string',
-      },
-    },
-    // add your custom indexes here. the primary index is created by default via the base schema
-    indexes: {
-      all: {
-        index: 'spacecat-data-site-candidate-all',
-        pk: {
-          field: 'gsi1pk',
-          template: 'ALL_SITE_CANDIDATES',
-        },
-        sk: {
-          field: 'gsi1sk',
-          composite: ['baseURL'],
-        },
-      },
-    },
-    /**
-     * References to other entities. This is not part of the standard ElectroDB schema, but is used
-     * to define relationships between entities in our data layer API.
-     * @type {{
-     * [belongs_to]: [{target: string}],
-     * [has_many]: [{target: string}],
-     * [has_one]: [{target: string}]
-     * }}
-     */
-    references: {
-      belongs_to: [
-        { target: 'Site' },
-      ],
-    },
-  },
-);
+const schema = new SchemaBuilder('SiteCandidate', 1, 'SpaceCat')
+  .addReference('belongs_to', 'Site')
+  .addAttribute('siteId', {
+    type: 'string',
+    validate: (value) => !value || uuidValidate(value),
+  })
+  .addAttribute('baseURL', {
+    type: 'string',
+    required: true,
+    validate: (value) => isValidUrl(value),
+  })
+  .addAttribute('hlxConfig', {
+    type: 'any',
+    required: true,
+    default: {},
+    validate: (value) => isObject(value),
+  })
+  .addAttribute('source', {
+    type: Object.values(SITE_CANDIDATE_SOURCES),
+    required: true,
+  })
+  .addAttribute('status', {
+    type: Object.values(SITE_CANDIDATE_STATUS),
+    required: true,
+  })
+  .addAttribute('updatedBy', {
+    type: 'string',
+  })
+  .addIndex(
+    'all',
+    { template: 'ALL_SITE_CANDIDATES' },
+    { composite: ['baseURL'] },
+  );
 
-export default SiteCandidateSchema;
+export default schema.build();

@@ -12,9 +12,9 @@
 
 /* c8 ignore start */
 
-import { validate as uuidValidate } from 'uuid';
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
-import createSchema from '../base/base.schema.js';
+
+import SchemaBuilder from '../base/schema.builder.js';
 import { STATUSES, TYPES } from './suggestion.model.js';
 
 /*
@@ -23,72 +23,30 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const SuggestionSchema = createSchema(
-  'Suggestion',
-  '1',
-  'SpaceCat',
-  {
-    // add your custom attributes here. the primary id and
-    // timestamps are created by default via the base schema.
-    attributes: {
-      opportunityId: {
-        type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
-      },
-      type: {
-        type: Object.values(TYPES),
-        required: true,
-        readOnly: true,
-      },
-      rank: {
-        type: 'number',
-        required: true,
-      },
-      data: {
-        type: 'any',
-        required: true,
-        validate: (value) => isNonEmptyObject(value),
-      },
-      kpiDeltas: {
-        type: 'any',
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      status: {
-        type: Object.values(STATUSES),
-        required: true,
-        default: STATUSES.NEW,
-      },
-    },
-    // add your custom indexes here. the primary index is created by default via the base schema
-    indexes: {
-      byOpportunityId: {
-        index: 'spacecat-data-suggestion-by-opportunity-id',
-        pk: {
-          field: 'gsi1pk',
-          composite: ['opportunityId'],
-        },
-        sk: {
-          field: 'gsi1sk',
-          composite: ['status', 'rank'],
-        },
-      },
-    },
-    /**
-     * References to other entities. This is not part of the standard ElectroDB schema, but is used
-     * to define relationships between entities in our data layer API.
-     * @type {{
-     * [belongs_to]: [{target: string}],
-     * [has_many]: [{target: string}],
-     * [has_one]: [{target: string}]
-     * }}
-     */
-    references: {
-      belongs_to: [
-        { target: 'Opportunity' },
-      ],
-    },
-  },
-);
+const schema = new SchemaBuilder('Suggestion', 1, 'SpaceCat')
+  .addReference('belongs_to', 'Opportunity', ['status', 'rank'])
+  .addAttribute('type', {
+    type: Object.values(TYPES),
+    required: true,
+    readOnly: true,
+  })
+  .addAttribute('rank', {
+    type: 'number',
+    required: true,
+  })
+  .addAttribute('data', {
+    type: 'any',
+    required: true,
+    validate: (value) => isNonEmptyObject(value),
+  })
+  .addAttribute('kpiDeltas', {
+    type: 'any',
+    validate: (value) => !value || isNonEmptyObject(value),
+  })
+  .addAttribute('status', {
+    type: Object.values(STATUSES),
+    required: true,
+    default: STATUSES.NEW,
+  });
 
-export default SuggestionSchema;
+export default schema.build();

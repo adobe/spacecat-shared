@@ -14,9 +14,7 @@
 
 import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
-import { validate as uuidValidate } from 'uuid';
-
-import createSchema from '../base/base.schema.js';
+import SchemaBuilder from '../base/schema.builder.js';
 import { ORIGINS, STATUSES } from './opportunity.model.js';
 
 /*
@@ -25,94 +23,46 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const OpportunitySchema = createSchema(
-  'Opportunity',
-  '1',
-  'SpaceCat',
-  {
-    // add your custom attributes here. the primary id and
-    // timestamps are created by default via the base schema.
-    attributes: {
-      siteId: {
-        type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
-      },
-      auditId: {
-        type: 'string',
-        validate: (value) => !value || uuidValidate(value),
-      },
-      runbook: {
-        type: 'string',
-        validate: (value) => !value || isValidUrl(value),
-      },
-      type: {
-        type: 'string',
-        readOnly: true,
-        required: true,
-      },
-      data: {
-        type: 'any',
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      origin: {
-        type: Object.values(ORIGINS),
-        required: true,
-      },
-      title: {
-        type: 'string',
-        required: true,
-      },
-      description: {
-        type: 'string',
-      },
-      status: {
-        type: Object.values(STATUSES),
-        required: true,
-        default: 'NEW',
-      },
-      guidance: {
-        type: 'any',
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      tags: {
-        type: 'set',
-        items: 'string',
-      },
-    },
-    // add your custom indexes here. the primary index is created by default via the base schema
-    indexes: {
-      bySiteId: {
-        index: 'spacecat-data-opportunity-by-site-id',
-        pk: {
-          field: 'gsi1pk',
-          composite: ['siteId'],
-        },
-        sk: {
-          field: 'gsi1sk',
-          composite: ['status', 'updatedAt'],
-        },
-      },
-    },
-    /**
-     * References to other entities. This is not part of the standard ElectroDB schema, but is used
-     * to define relationships between entities in our data layer API.
-     * @type {{
-     * [belongs_to]: [{target: string}],
-     * [has_many]: [{target: string}],
-     * [has_one]: [{target: string}]
-     * }}
-     */
-    references: {
-      has_many: [
-        { target: 'Suggestions' },
-      ],
-      belongs_to: [
-        { target: 'Site' },
-        { target: 'Audit' },
-      ],
-    },
-  },
-);
+const schema = new SchemaBuilder('Opportunity', 1, 'SpaceCat')
+  .addReference('belongs_to', 'Site', ['status', 'updatedAt'])
+  .addReference('belongs_to', 'Audit', ['updatedAt'], false)
+  .addReference('has_many', 'Suggestion')
+  .addAttribute('runbook', {
+    type: 'string',
+    validate: (value) => !value || isValidUrl(value),
+  })
+  .addAttribute('type', {
+    type: 'string',
+    readOnly: true,
+    required: true,
+  })
+  .addAttribute('data', {
+    type: 'any',
+    validate: (value) => !value || isNonEmptyObject(value),
+  })
+  .addAttribute('origin', {
+    type: Object.values(ORIGINS),
+    required: true,
+  })
+  .addAttribute('title', {
+    type: 'string',
+    required: true,
+  })
+  .addAttribute('description', {
+    type: 'string',
+  })
+  .addAttribute('status', {
+    type: Object.values(STATUSES),
+    required: true,
+    default: 'NEW',
+  })
+  .addAttribute('guidance', {
+    type: 'any',
+    validate: (value) => !value || isNonEmptyObject(value),
+  })
+  .addAttribute('tags', {
+    type: 'set',
+    items: 'string',
+  });
 
-export default OpportunitySchema;
+export default schema.build();

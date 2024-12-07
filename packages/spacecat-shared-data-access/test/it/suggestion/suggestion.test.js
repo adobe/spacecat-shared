@@ -56,9 +56,24 @@ describe('Suggestion IT', async () => {
   });
 
   it('gets all suggestions by opportunityId', async () => {
-    const suggestions = await Suggestion.allByOpportunityId(sampleData.opportunities[0].getId());
+    const sampleOpportunity = sampleData.opportunities[0];
+    const suggestions = await Suggestion.allByOpportunityId(sampleOpportunity.getId());
 
     expect(suggestions).to.be.an('array').with.length(3);
+
+    suggestions.forEach((suggestion) => {
+      expect(suggestion.getOpportunityId()).to.equal(sampleOpportunity.getId());
+    });
+
+    const opportunity = await suggestions[0].getOpportunity();
+    expect(opportunity).to.be.an('object');
+    expect(opportunity.toJSON()).to.eql(sampleOpportunity.toJSON());
+
+    const suggestionsFromOpportunity = await opportunity.getSuggestions();
+    expect(suggestionsFromOpportunity).to.be.an('array').with.length(3);
+    suggestionsFromOpportunity.forEach((suggestion) => {
+      expect(suggestion.getOpportunityId()).to.equal(sampleOpportunity.getId());
+    });
   });
 
   it('gets all suggestions by opportunityId and status', async () => {
@@ -75,7 +90,7 @@ describe('Suggestion IT', async () => {
     });
   });
 
-  it('partially updates one suggestion by id', async () => {
+  it('updates one suggestion by id', async () => {
     // retrieve the suggestion by ID
     const suggestion = await Suggestion.findById(sampleData.suggestions[0].getId());
     expect(suggestion).to.be.an('object');

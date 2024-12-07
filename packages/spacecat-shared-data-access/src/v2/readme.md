@@ -239,7 +239,7 @@ If references are defined in the schema (e.g., `belongs_to`, `has_many`), `BaseM
          this.logger,
        );
 
-       this.models.set(MyNewEntityCollection.name, myNewEntityCollection);
+       this.collections.set(MyNewEntityCollection.name, myNewEntityCollection);
      }
    }
    ```

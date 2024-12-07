@@ -16,9 +16,8 @@ import { isInteger, isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { validate as uuidValidate } from 'uuid';
 
+import SchemaBuilder from '../base/schema.builder.js';
 import { DEFAULT_GEO } from './site-top-page.model.js';
-
-import createSchema from '../base/base.schema.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -26,77 +25,40 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const SiteTopPageSchema = createSchema(
-  'SiteTopPage',
-  '1',
-  'SpaceCat',
-  {
-    // add your custom attributes here. the primary id and
-    // timestamps are created by default via the base schema.
-    attributes: {
-      siteId: {
-        type: 'string',
-        required: true,
-        validate: (value) => uuidValidate(value),
-      },
-      url: {
-        type: 'string',
-        required: true,
-        validate: (value) => isValidUrl(value),
-      },
-      traffic: {
-        type: 'number',
-        required: true,
-        validate: (value) => isInteger(value),
-      },
-      source: {
-        type: 'string',
-        required: true,
-      },
-      topKeyword: {
-        type: 'string',
-      },
-      geo: {
-        type: 'string',
-        required: false,
-        default: DEFAULT_GEO,
-      },
-      importedAt: {
-        type: 'string',
-        required: true,
-        default: () => new Date().toISOString(),
-        validate: (value) => isIsoDate(value),
-      },
-    },
-    // add your custom indexes here. the primary index is created by default via the base schema
-    indexes: {
-      bySiteId: {
-        index: 'spacecat-data-site-top-page-by-site-id',
-        pk: {
-          field: 'gsi1pk',
-          composite: ['siteId'],
-        },
-        sk: {
-          field: 'gsi1sk',
-          composite: ['source', 'geo', 'traffic'],
-        },
-      },
-    },
-    /**
-     * References to other entities. This is not part of the standard ElectroDB schema, but is used
-     * to define relationships between entities in our data layer API.
-     * @type {{
-     * [belongs_to]: [{target: string}],
-     * [has_many]: [{target: string}],
-     * [has_one]: [{target: string}]
-     * }}
-     */
-    references: {
-      belongs_to: [
-        { target: 'Site' },
-      ],
-    },
-  },
-);
+const schema = new SchemaBuilder('SiteTopPage', 1, 'SpaceCat')
+  .addReference('belongs_to', 'Site', ['source', 'geo', 'traffic'])
+  .addAttribute('siteId', {
+    type: 'string',
+    required: true,
+    validate: (value) => uuidValidate(value),
+  })
+  .addAttribute('url', {
+    type: 'string',
+    required: true,
+    validate: (value) => isValidUrl(value),
+  })
+  .addAttribute('traffic', {
+    type: 'number',
+    required: true,
+    validate: (value) => isInteger(value),
+  })
+  .addAttribute('source', {
+    type: 'string',
+    required: true,
+  })
+  .addAttribute('topKeyword', {
+    type: 'string',
+  })
+  .addAttribute('geo', {
+    type: 'string',
+    required: false,
+    default: DEFAULT_GEO,
+  })
+  .addAttribute('importedAt', {
+    type: 'string',
+    required: true,
+    default: () => new Date().toISOString(),
+    validate: (value) => isIsoDate(value),
+  });
 
-export default SiteTopPageSchema;
+export default schema.build();

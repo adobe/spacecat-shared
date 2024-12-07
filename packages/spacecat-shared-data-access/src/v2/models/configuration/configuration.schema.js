@@ -12,10 +12,11 @@
 
 /* c8 ignore start */
 
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+
 import Joi from 'joi';
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
-import createSchema from '../base/base.schema.js';
+import SchemaBuilder from '../base/schema.builder.js';
 
 const handlerSchema = Joi.object().pattern(Joi.string(), Joi.object(
   {
@@ -64,70 +65,41 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const ConfigurationSchema = createSchema(
-  'Configuration',
-  '1',
-  'SpaceCat',
-  {
-    // add your custom attributes here. the primary id and
-    // timestamps are created by default via the base schema.
-    attributes: {
-      handlers: {
-        type: 'any',
-        validate: (value) => !value || checkConfiguration(value, handlerSchema),
-      },
-      jobs: {
-        type: 'list',
-        items: {
-          type: 'map',
-          properties: {
-            group: { type: ['audits', 'imports', 'reports'] },
-            type: { type: 'string', required: true },
-            interval: { type: ['daily', 'weekly'] },
-          },
-        },
-      },
-      queues: {
-        type: 'any',
-        required: true,
-        validate: (value) => isNonEmptyObject(value),
-      },
-      slackRoles: {
-        type: 'any',
-        validate: (value) => !value || isNonEmptyObject(value),
-      },
-      version: {
-        type: 'number',
-        required: true,
-        readOnly: true,
+const schema = new SchemaBuilder('Configuration', 1, 'SpaceCat')
+  .addAttribute('handlers', {
+    type: 'any',
+    validate: (value) => !value || checkConfiguration(value, handlerSchema),
+  })
+  .addAttribute('jobs', {
+    type: 'list',
+    items: {
+      type: 'map',
+      properties: {
+        group: { type: ['audits', 'imports', 'reports'] },
+        type: { type: 'string', required: true },
+        interval: { type: ['daily', 'weekly'] },
       },
     },
-    // add your custom indexes here. the primary index is created by default via the base schema
-    indexes: {
-      all: {
-        index: 'spacecat-data-configuration-all',
-        pk: {
-          field: 'gsi1pk',
-          template: 'ALL_CONFIGURATIONS',
-        },
-        sk: {
-          field: 'version',
-          // eslint-disable-next-line no-template-curly-in-string
-          template: '${version}',
-        },
-      },
-    },
-    /**
-     * References to other entities. This is not part of the standard ElectroDB schema, but is used
-     * to define relationships between entities in our data layer API.
-     * @type {{
-     * [belongs_to]: [{target: string}],
-     * [has_many]: [{target: string}],
-     * [has_one]: [{target: string}]
-     * }}
-     */
-    references: {},
-  },
-);
+  })
+  .addAttribute('queues', {
+    type: 'any',
+    required: true,
+    validate: (value) => isNonEmptyObject(value),
+  })
+  .addAttribute('slackRoles', {
+    type: 'any',
+    validate: (value) => !value || isNonEmptyObject(value),
+  })
+  .addAttribute('version', {
+    type: 'number',
+    required: true,
+    readOnly: true,
+  })
+  .addIndex(
+    'all',
+    { template: 'ALL_CONFIGURATIONS' },
+    // eslint-disable-next-line no-template-curly-in-string
+    { field: 'version', template: '${version}' },
+  );
 
-export default ConfigurationSchema;
+export default schema.build();

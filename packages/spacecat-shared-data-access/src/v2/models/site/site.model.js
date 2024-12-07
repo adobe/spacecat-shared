@@ -20,8 +20,6 @@ export const DELIVERY_TYPES = {
 
 export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
 
-export const DEFAULT_ORGANIZATION_ID = 'default';
-
 /**
  * A class representing a Site entity. Provides methods to access and manipulate Site-specific data.
  * @class Site

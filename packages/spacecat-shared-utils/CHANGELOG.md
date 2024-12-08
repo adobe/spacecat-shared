@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.23.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.4...@adobe/spacecat-shared-utils-v1.23.5) (2024-12-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.11 ([#478](https://github.com/adobe/spacecat-shared/issues/478)) ([5fb4270](https://github.com/adobe/spacecat-shared/commit/5fb427066dd20b9525ee3420c0546f7bcad2c914))
+
+# [@adobe/spacecat-shared-utils-v1.23.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.3...@adobe/spacecat-shared-utils-v1.23.4) (2024-12-07)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#477](https://github.com/adobe/spacecat-shared/issues/477)) ([53d5c13](https://github.com/adobe/spacecat-shared/commit/53d5c13cd4e14a37b3778518a106f06fef6b90ac))
+
+# [@adobe/spacecat-shared-utils-v1.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.2...@adobe/spacecat-shared-utils-v1.23.3) (2024-12-05)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#471](https://github.com/adobe/spacecat-shared/issues/471)) ([3a66e97](https://github.com/adobe/spacecat-shared/commit/3a66e97e368eb618f4f36f0730f7646eb12b1145))
+
+# [@adobe/spacecat-shared-utils-v1.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.1...@adobe/spacecat-shared-utils-v1.23.2) (2024-11-30)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#465](https://github.com/adobe/spacecat-shared/issues/465)) ([d8ebb23](https://github.com/adobe/spacecat-shared/commit/d8ebb23fbd3d292479a4118dc6a9fb9931a31694))
+
 # [@adobe/spacecat-shared-utils-v1.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.0...@adobe/spacecat-shared-utils-v1.23.1) (2024-11-23)
 
 

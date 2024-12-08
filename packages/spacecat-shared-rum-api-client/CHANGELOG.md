@@ -1,3 +1,101 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.15.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.4...@adobe/spacecat-shared-rum-api-client-v2.15.5) (2024-12-08)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#479](https://github.com/adobe/spacecat-shared/issues/479)) ([a5693a3](https://github.com/adobe/spacecat-shared/commit/a5693a388cfb93e50ba99346f27b64b23c8706ff))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.15.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.3...@adobe/spacecat-shared-rum-api-client-v2.15.4) (2024-12-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.11 ([#478](https://github.com/adobe/spacecat-shared/issues/478)) ([5fb4270](https://github.com/adobe/spacecat-shared/commit/5fb427066dd20b9525ee3420c0546f7bcad2c914))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.2...@adobe/spacecat-shared-rum-api-client-v2.15.3) (2024-12-06)
+
+
+### Bug Fixes
+
+* **cwv:** Update Core Web Vitals (CWV) in README to reflect newly added functionality. ([#473](https://github.com/adobe/spacecat-shared/issues/473)) ([617539a](https://github.com/adobe/spacecat-shared/commit/617539afe28f68b9c2e3cf9ad052863f6359a811))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.1...@adobe/spacecat-shared-rum-api-client-v2.15.2) (2024-12-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.13.0 ([#476](https://github.com/adobe/spacecat-shared/issues/476)) ([842df52](https://github.com/adobe/spacecat-shared/commit/842df52872e4519bf1bd6931c5dc9f1d1f185dee)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
+# [@adobe/spacecat-shared-rum-api-client-v2.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.0...@adobe/spacecat-shared-rum-api-client-v2.15.1) (2024-12-05)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#471](https://github.com/adobe/spacecat-shared/issues/471)) ([3a66e97](https://github.com/adobe/spacecat-shared/commit/3a66e97e368eb618f4f36f0730f7646eb12b1145))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.14.1...@adobe/spacecat-shared-rum-api-client-v2.15.0) (2024-12-04)
+
+
+### Features
+
+* Include site level metrics in the CWV response ([#470](https://github.com/adobe/spacecat-shared/issues/470)) ([b465a96](https://github.com/adobe/spacecat-shared/commit/b465a962fc0c010207970e92f4e7b69407ffd6bc))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.14.0...@adobe/spacecat-shared-rum-api-client-v2.14.1) (2024-12-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.12.0 ([#469](https://github.com/adobe/spacecat-shared/issues/469)) ([d0787b3](https://github.com/adobe/spacecat-shared/commit/d0787b380fccd89f180d86a99a1e7656268a6ca6)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
+# [@adobe/spacecat-shared-rum-api-client-v2.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.13.2...@adobe/spacecat-shared-rum-api-client-v2.14.0) (2024-12-04)
+
+
+### Features
+
+* introduce form button clicks in form vitals ([#468](https://github.com/adobe/spacecat-shared/issues/468)) ([3907092](https://github.com/adobe/spacecat-shared/commit/39070920a9472f063e6ee11c867ed047107f001d))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.13.1...@adobe/spacecat-shared-rum-api-client-v2.13.2) (2024-12-02)
+
+
+### Bug Fixes
+
+* **cwv:** include organic pageviews in the response ([#464](https://github.com/adobe/spacecat-shared/issues/464)) ([0aaf49f](https://github.com/adobe/spacecat-shared/commit/0aaf49fa82a0ed8ec1ee753eacac64ac6d8625a8))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.13.0...@adobe/spacecat-shared-rum-api-client-v2.13.1) (2024-11-30)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#465](https://github.com/adobe/spacecat-shared/issues/465)) ([d8ebb23](https://github.com/adobe/spacecat-shared/commit/d8ebb23fbd3d292479a4118dc6a9fb9931a31694))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.6...@adobe/spacecat-shared-rum-api-client-v2.13.0) (2024-11-28)
+
+
+### Features
+
+* Introduce configurable grouping patterns ([#458](https://github.com/adobe/spacecat-shared/issues/458)) ([6414b13](https://github.com/adobe/spacecat-shared/commit/6414b13ccffdf567460efddb019f8f3de0200b5a))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.12.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.5...@adobe/spacecat-shared-rum-api-client-v2.12.6) (2024-11-27)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.11.1 ([#462](https://github.com/adobe/spacecat-shared/issues/462)) ([4fcfcd0](https://github.com/adobe/spacecat-shared/commit/4fcfcd0b78c2dceed6e2cd517cd4f54dd9c420d5)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
+# [@adobe/spacecat-shared-rum-api-client-v2.12.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.4...@adobe/spacecat-shared-rum-api-client-v2.12.5) (2024-11-27)
+
+
+### Bug Fixes
+
+* exclude bot traffic from page views and opportunities ctr calculations ([#446](https://github.com/adobe/spacecat-shared/issues/446)) ([3d06fb7](https://github.com/adobe/spacecat-shared/commit/3d06fb70b6b20343380c94cefc467f1dc6183cb7))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.12.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.3...@adobe/spacecat-shared-rum-api-client-v2.12.4) (2024-11-26)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.10.0 ([#460](https://github.com/adobe/spacecat-shared/issues/460)) ([f7e82d0](https://github.com/adobe/spacecat-shared/commit/f7e82d04f8b062f15fd8937ed51576ce6d2ad59e)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
 # [@adobe/spacecat-shared-rum-api-client-v2.12.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.12.2...@adobe/spacecat-shared-rum-api-client-v2.12.3) (2024-11-26)
 
 

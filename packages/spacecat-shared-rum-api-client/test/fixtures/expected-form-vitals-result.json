@@ -1,40 +1,82 @@
 [
   {
-    "url": "https://business.adobe.com/se/resources/main.html",
-    "formsubmit": {},
-    "formview": {},
-    "formengagement": {
-      "desktop:windows": 100
-    },
-    "pageview": {
-      "desktop:windows": 100
-    }
-  },
-  {
     "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html",
-    "formsubmit": {},
+    "formsubmit": {
+
+    },
     "formview": {
       "desktop:mac": 100
     },
-    "formengagement": {},
+    "formengagement": {
+
+    },
+    "formbuttonclick": {
+
+    },
     "pageview": {
-      "desktop:mac": 100,
       "desktop:linux": 2200,
+      "desktop:mac": 100,
       "desktop:windows": 100
     }
   },
   {
     "url": "https://business.adobe.com/",
-    "formsubmit": {},
-    "formview": {},
+    "formsubmit": {
+
+    },
+    "formview": {
+
+    },
     "formengagement": {
       "desktop:windows": 100
     },
+    "formbuttonclick": {
+
+    },
     "pageview": {
-      "desktop:mac": 800,
       "desktop:windows": 1900,
-      "mobile:ios": 100,
-      "mobile:android": 300
+      "desktop:mac": 800,
+      "mobile:android": 300,
+      "mobile:ios": 100
+    }
+  },
+  {
+    "url": "https://business.adobe.com/request-consultation/experience-cloud.html",
+    "formsubmit": {
+      "desktop:mac": 100
+    },
+    "formview": {
+
+    },
+    "formengagement": {
+      "desktop:mac": 100
+    },
+    "formbuttonclick": {
+      "desktop:mac": 100
+    },
+    "pageview": {
+      "desktop:linux": 1600,
+      "desktop:mac": 200
+    }
+  },
+  {
+    "url": "https://business.adobe.com/resources/demo/adobe-learning-manager-lms.html",
+    "formsubmit": {
+      "desktop:windows": 100
+    },
+    "formview": {
+
+    },
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "formbuttonclick": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "desktop:windows": 400,
+      "mobile:android": 200,
+      "mobile:ios": 100
     }
   },
   {
@@ -42,8 +84,13 @@
     "formsubmit": {
       "desktop:windows": 200
     },
-    "formview": {},
+    "formview": {
+
+    },
     "formengagement": {
+      "desktop:windows": 200
+    },
+    "formbuttonclick": {
       "desktop:windows": 200
     },
     "pageview": {
@@ -51,11 +98,36 @@
     }
   },
   {
-    "url": "https://business.adobe.com/uk/products/magento/magento-commerce/sem.html",
-    "formsubmit": {},
-    "formview": {},
+    "url": "https://business.adobe.com/se/resources/main.html",
+    "formsubmit": {
+
+    },
+    "formview": {
+
+    },
     "formengagement": {
       "desktop:windows": 100
+    },
+    "formbuttonclick": {
+
+    },
+    "pageview": {
+      "desktop:windows": 100
+    }
+  },
+  {
+    "url": "https://business.adobe.com/uk/products/magento/magento-commerce/sem.html",
+    "formsubmit": {
+
+    },
+    "formview": {
+
+    },
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "formbuttonclick": {
+
     },
     "pageview": {
       "desktop:windows": 100
@@ -66,26 +138,17 @@
     "formsubmit": {
       "desktop:windows": 100
     },
-    "formview": {},
+    "formview": {
+
+    },
     "formengagement": {
+      "desktop:windows": 100
+    },
+    "formbuttonclick": {
       "desktop:windows": 100
     },
     "pageview": {
       "desktop:windows": 100
-    }
-  },
-  {
-    "url": "https://business.adobe.com/request-consultation/experience-cloud.html",
-    "formsubmit": {
-      "desktop:mac": 100
-    },
-    "formview": {},
-    "formengagement": {
-      "desktop:mac": 100
-    },
-    "pageview": {
-      "desktop:mac": 200,
-      "desktop:linux": 1600
     }
   },
   {
@@ -93,27 +156,17 @@
     "formsubmit": {
       "desktop:mac": 100
     },
-    "formview": {},
+    "formview": {
+
+    },
     "formengagement": {
+      "desktop:mac": 100
+    },
+    "formbuttonclick": {
       "desktop:mac": 100
     },
     "pageview": {
       "desktop:mac": 100
-    }
-  },
-  {
-    "url": "https://business.adobe.com/resources/demo/adobe-learning-manager-lms.html",
-    "formsubmit": {
-      "desktop:windows": 100
-    },
-    "formview": {},
-    "formengagement": {
-      "desktop:windows": 100
-    },
-    "pageview": {
-      "mobile:ios": 100,
-      "mobile:android": 200,
-      "desktop:windows": 400
     }
   },
   {
@@ -121,8 +174,13 @@
     "formsubmit": {
       "desktop:windows": 100
     },
-    "formview": {},
+    "formview": {
+
+    },
     "formengagement": {
+      "desktop:windows": 100
+    },
+    "formbuttonclick": {
       "desktop:windows": 100
     },
     "pageview": {
@@ -134,8 +192,13 @@
     "formsubmit": {
       "desktop:mac": 100
     },
-    "formview": {},
+    "formview": {
+
+    },
     "formengagement": {
+      "desktop:mac": 100
+    },
+    "formbuttonclick": {
       "desktop:mac": 100
     },
     "pageview": {

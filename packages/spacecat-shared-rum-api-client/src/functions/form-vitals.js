@@ -14,7 +14,7 @@ import { DataChunks } from '@adobe/rum-distiller';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
-const METRICS = ['formview', 'formengagement', 'formsubmit'];
+const METRICS = ['formview', 'formengagement', 'formsubmit', 'formbuttonclick'];
 
 function initializeResult(url) {
   return {
@@ -22,6 +22,7 @@ function initializeResult(url) {
     formsubmit: {},
     formview: {},
     formengagement: {},
+    formbuttonclick: {},
     pageview: {},
   };
 }
@@ -38,6 +39,12 @@ const metricFns = {
   formsubmit: (bundle) => {
     const formSubmit = bundle.events.find((e) => e.checkpoint === 'formsubmit');
     return formSubmit ? bundle.weight : 0;
+  },
+  formbuttonclick: (bundle) => {
+    const formButtonClick = bundle.events.find((e) => e.checkpoint === 'click' && e.source
+        && /\bform\b/.test(e.source.toLowerCase())
+        && /\bbutton\b/.test(e.source.toLowerCase()));
+    return formButtonClick ? bundle.weight : 0;
   },
 };
 

@@ -26,6 +26,7 @@ const entityNameToReferenceMethodName = (target, type) => {
 
   return `get${baseName}`;
 };
+const entityNameToAllPKValue = (entityName) => `ALL_${pluralize.plural(entityName.toUpperCase())}`;
 
 const idNameToEntityName = (idName) => capitalize(pluralize.singular(idName.replace('Id', '')));
 
@@ -67,6 +68,7 @@ export {
   decapitalize,
   entityNameToCollectionName,
   entityNameToIdName,
+  entityNameToAllPKValue,
   entityNameToReferenceMethodName,
   idNameToEntityName,
   incrementVersion,

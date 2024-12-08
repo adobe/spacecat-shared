@@ -141,11 +141,7 @@ const schema = new SchemaBuilder('ImportJob', 1, 'SpaceCat')
     default: 0,
     validate: (value) => !value || isInteger(value),
   })
-  .addIndex(
-    'all',
-    { template: 'ALL_IMPORT_JOBS' },
-    { composite: ['startedAt'] },
-  )
+  .addAllIndexWithComposite('startedAt')
   .addIndex(
     'byStatus',
     { composite: ['status'] },

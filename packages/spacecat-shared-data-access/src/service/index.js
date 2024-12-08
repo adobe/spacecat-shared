@@ -17,7 +17,7 @@ import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import AWSXray from 'aws-xray-sdk';
 import { Service } from 'electrodb';
 
-import ModelFactory from '../v2/models/base/model.factory.js';
+import EntityRegistry from '../v2/models/base/entity.registry.js';
 
 import { auditFunctions } from './audits/index.js';
 import { keyEventFunctions } from './key-events/index.js';
@@ -50,7 +50,7 @@ const createElectroService = (client, config, log) => {
   /* c8 ignore end */
 
   return new Service(
-    ModelFactory.getEntities(),
+    EntityRegistry.getEntities(),
     {
       client,
       table,
@@ -90,8 +90,8 @@ export const createDataAccess = (config, log = console) => {
   // electro-based data access objects
   const rawClient = createRawClient();
   const electroService = createElectroService(rawClient, config, log);
-  const modelFactory = new ModelFactory(electroService, log);
-  const collections = modelFactory.getCollections();
+  const entityRegistry = new EntityRegistry(electroService, log);
+  const collections = entityRegistry.getCollections();
 
   return {
     ...auditFuncs,

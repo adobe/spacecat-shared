@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
+
 import ApiKeyCollection from '../api-key/api-key.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
@@ -37,34 +39,19 @@ import SiteSchema from '../site/site.schema.js';
 import SiteCandidateSchema from '../site-candidate/site-candidate.schema.js';
 import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
 import SuggestionSchema from '../suggestion/suggestion.schema.js';
-import { collectionNameToEntityName } from '../../util/util.js';
-
-export const ENTITIES = {
-  apiKey: { schema: ApiKeySchema, collection: ApiKeyCollection },
-  audit: { schema: AuditSchema, collection: AuditCollection },
-  configuration: { schema: ConfigurationSchema, collection: ConfigurationCollection },
-  experiment: { schema: ExperimentSchema, collection: ExperimentCollection },
-  importJob: { schema: ImportJobSchema, collection: ImportJobCollection },
-  importUrl: { schema: ImportUrlSchema, collection: ImportUrlCollection },
-  keyEvent: { schema: KeyEventSchema, collection: KeyEventCollection },
-  opportunity: { schema: OpportunitySchema, collection: OpportunityCollection },
-  organization: { schema: OrganizationSchema, collection: OrganizationCollection },
-  site: { schema: SiteSchema, collection: SiteCollection },
-  siteCandidate: { schema: SiteCandidateSchema, collection: SiteCandidateCollection },
-  siteTopPage: { schema: SiteTopPageSchema, collection: SiteTopPageCollection },
-  suggestion: { schema: SuggestionSchema, collection: SuggestionCollection },
-}; // todo: could be established by enumerating files in the schema directory
 
 /**
- * ModelFactory - A factory class responsible for creating and managing collections
+ * EntityRegistry - A factory class responsible for creating and managing collections
  * of different models. This class serves as a centralized point for accessing and
  * instantiating model collections.
  *
- * @class ModelFactory
+ * @class EntityRegistry
  */
-class ModelFactory {
+class EntityRegistry {
+  static entities = {};
+
   /**
-   * Constructs an instance of ModelFactory.
+   * Constructs an instance of EntityRegistry.
    * @constructor
    * @param {Object} service - The ElectroDB service instance used to manage entities.
    * @param {Object} logger - A logger for capturing and logging information.
@@ -78,15 +65,27 @@ class ModelFactory {
   }
 
   /**
-   * Initializes the collections managed by the ModelFactory.
+   * Initializes the collections managed by the EntityRegistry.
    * This method creates instances of each collection and stores them in an internal map.
    * @private
    */
   #initialize() {
-    Object.values(ENTITIES).forEach(({ collection: Collection }) => {
+    Object.values(EntityRegistry.entities).forEach(({ collection: Collection }) => {
       const collection = new Collection(this.service, this, this.logger);
       this.collections.set(Collection.name, collection);
     });
+
+    this.#logIndexes();
+  }
+
+  #logIndexes() {
+    // reduce collection schema indexes into object
+    const indexes = Object.values(EntityRegistry.entities).reduce((acc, { schema }) => {
+      acc[schema.model.entity] = schema.indexes;
+      return acc;
+    }, {});
+
+    this.logger.debug('Indexes:', JSON.stringify(indexes, null, 2));
   }
 
   /**
@@ -112,11 +111,29 @@ class ModelFactory {
   }
 
   static getEntities() {
-    return Object.keys(ENTITIES).reduce((acc, key) => {
-      acc[key] = ENTITIES[key].schema;
+    return Object.keys(this.entities).reduce((acc, key) => {
+      acc[key] = this.entities[key].schema;
       return acc;
     }, {});
   }
+
+  static registerEntity(schema, collection) {
+    this.entities[decapitalize(schema.model.entity)] = { schema, collection };
+  }
 }
 
-export default ModelFactory;
+EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
+EntityRegistry.registerEntity(AuditSchema, AuditCollection);
+EntityRegistry.registerEntity(ConfigurationSchema, ConfigurationCollection);
+EntityRegistry.registerEntity(ExperimentSchema, ExperimentCollection);
+EntityRegistry.registerEntity(ImportJobSchema, ImportJobCollection);
+EntityRegistry.registerEntity(ImportUrlSchema, ImportUrlCollection);
+EntityRegistry.registerEntity(KeyEventSchema, KeyEventCollection);
+EntityRegistry.registerEntity(OpportunitySchema, OpportunityCollection);
+EntityRegistry.registerEntity(OrganizationSchema, OrganizationCollection);
+EntityRegistry.registerEntity(SiteSchema, SiteCollection);
+EntityRegistry.registerEntity(SiteCandidateSchema, SiteCandidateCollection);
+EntityRegistry.registerEntity(SiteTopPageSchema, SiteTopPageCollection);
+EntityRegistry.registerEntity(SuggestionSchema, SuggestionCollection);
+
+export default EntityRegistry;

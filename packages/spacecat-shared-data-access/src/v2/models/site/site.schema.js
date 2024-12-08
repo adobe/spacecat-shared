@@ -80,11 +80,7 @@ const schema = new SchemaBuilder('Site', 1, 'SpaceCat')
     set: () => new Date().toISOString(),
     validate: (value) => !value || isIsoDate(value),
   })
-  .addIndex(
-    'all',
-    { template: 'ALL_SITES' },
-    { composite: ['baseURL'] },
-  )
+  .addAllIndexWithComposite('baseURL')
   .addIndex(
     'byDeliveryType',
     { composite: ['deliveryType'] },

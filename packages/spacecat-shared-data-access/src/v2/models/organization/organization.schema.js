@@ -44,10 +44,6 @@ const schema = new SchemaBuilder('Organization', 1, 'SpaceCat')
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),
   })
-  .addIndex(
-    'all',
-    { template: 'ALL_ORGANIZATIONS' },
-    { composite: ['imsOrgId'] },
-  );
+  .addAllIndexWithComposite('imsOrgId');
 
 export default schema.build();

@@ -46,7 +46,7 @@ class ImportJobCollection extends BaseCollection {
       throw new ValidationError(`Invalid end date: ${endDate}`);
     }
 
-    return this.allByIndexKeys({ pk: 'all_import_jobs' }, {
+    return this.allByIndexKeys({ pk: 'all_importjobs' }, {
       index: 'all',
       between: {
         attribute: 'startedAt',

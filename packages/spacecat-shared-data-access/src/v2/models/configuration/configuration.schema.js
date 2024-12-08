@@ -95,11 +95,7 @@ const schema = new SchemaBuilder('Configuration', 1, 'SpaceCat')
     required: true,
     readOnly: true,
   })
-  .addIndex(
-    'all',
-    { template: 'ALL_CONFIGURATIONS' },
-    // eslint-disable-next-line no-template-curly-in-string
-    { field: 'version', template: '${version}' },
-  );
+  // eslint-disable-next-line no-template-curly-in-string
+  .addAllIndexWithTemplateField('version', '${version}');
 
 export default schema.build();

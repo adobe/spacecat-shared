@@ -53,10 +53,6 @@ const schema = new SchemaBuilder('SiteCandidate', 1, 'SpaceCat')
   .addAttribute('updatedBy', {
     type: 'string',
   })
-  .addIndex(
-    'all',
-    { template: 'ALL_SITE_CANDIDATES' },
-    { composite: ['baseURL'] },
-  );
+  .addAllIndexWithComposite('baseURL');
 
 export default schema.build();

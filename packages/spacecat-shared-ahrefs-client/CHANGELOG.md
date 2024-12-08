@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.5.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.5.15...@adobe/spacecat-shared-ahrefs-client-v1.5.16) (2024-12-08)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#479](https://github.com/adobe/spacecat-shared/issues/479)) ([a5693a3](https://github.com/adobe/spacecat-shared/commit/a5693a388cfb93e50ba99346f27b64b23c8706ff))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.5.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.5.14...@adobe/spacecat-shared-ahrefs-client-v1.5.15) (2024-12-07)
 
 

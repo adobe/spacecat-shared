@@ -52,7 +52,11 @@ describe('Suggestion IT', async () => {
 
     const opportunity = await suggestion.getOpportunity();
     expect(opportunity).to.be.an('object');
-    expect(opportunity.toJSON()).to.eql(sampleData.opportunities[2].toJSON());
+    expect(
+      sanitizeTimestamps(opportunity.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleData.opportunities[2].toJSON()),
+    );
   });
 
   it('gets all suggestions by opportunityId', async () => {
@@ -67,7 +71,11 @@ describe('Suggestion IT', async () => {
 
     const opportunity = await suggestions[0].getOpportunity();
     expect(opportunity).to.be.an('object');
-    expect(opportunity.toJSON()).to.eql(sampleOpportunity.toJSON());
+    expect(
+      sanitizeTimestamps(opportunity.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleOpportunity.toJSON()),
+    );
 
     const suggestionsFromOpportunity = await opportunity.getSuggestions();
     expect(suggestionsFromOpportunity).to.be.an('array').with.length(3);

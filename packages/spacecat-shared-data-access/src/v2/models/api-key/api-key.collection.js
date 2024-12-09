@@ -25,33 +25,21 @@ class ApiKeyCollection extends BaseCollection {
    * Constructs an instance of ApiKeyCollection. Tells the base class which model to use.
    * @constructor
    * @param {Object} service - The ElectroDB service instance used to manage ApiKey entities.
-   * @param {Object} modelFactory - A factory for creating model instances.
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(service, modelFactory, log) {
-    super(service, modelFactory, ApiKey, log);
+  constructor(service, entityRegistry, log) {
+    super(service, entityRegistry, ApiKey, log);
   }
 
   // add custom methods here
-
-  allByImsUserIdAndImsOrgId(imsUserId, imsOrgId) {
-    if (!imsUserId) {
-      throw new Error('ImsUserId is required');
-    }
-
-    if (!imsOrgId) {
-      throw new Error('ImsOrgId is required');
-    }
-
-    return this.allByIndexKeys({}, { imsUserId, imsOrgId }, { index: 'byHashedApiKey' });
-  }
 
   async findByHashedApiKey(hashedApiKey) {
     if (!hashedApiKey) {
       throw new Error('HashedApiKey is required');
     }
 
-    return this.findByIndexKeys({ hashedApiKey });
+    return this.findByIndexKeys({ hashedApiKey }, {});
   }
 }
 

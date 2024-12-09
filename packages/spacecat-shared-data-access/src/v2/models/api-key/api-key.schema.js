@@ -72,8 +72,8 @@ const schema = new SchemaBuilder('ApiKey', 1, 'SpaceCat')
     { composite: ['updatedAt'] },
   )
   .addIndex(
-    'byImsUserIdAndImsOrgId',
-    { composite: ['imsUserId', 'imsOrgId'] },
+    'byImsOrgIdAndImsUserId',
+    { composite: ['imsOrgId', 'imsUserId'] },
     { composite: ['updatedAt'] },
   );
 

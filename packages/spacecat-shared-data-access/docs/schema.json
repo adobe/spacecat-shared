@@ -48,7 +48,7 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-ApiKey-byImsUserIdAndImsOrgId",
+          "IndexName": "spacecat-data-ApiKey-byImsOrgIdAndImsUserId",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }

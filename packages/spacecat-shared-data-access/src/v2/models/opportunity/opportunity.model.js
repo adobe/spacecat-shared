@@ -51,7 +51,7 @@ class Opportunity extends BaseModel {
       ...suggestion,
       [this.idName]: this.getId(),
     }));
-    return this.modelFactory
+    return this.entityRegistry
       .getCollection('SuggestionCollection')
       .createMany(childSuggestions, this);
   }

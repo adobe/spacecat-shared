@@ -27,11 +27,11 @@ class ConfigurationCollection extends BaseCollection {
    * Constructs an instance of ConfigurationCollection. Tells the base class which model to use.
    * @constructor
    * @param {Object} service - The ElectroDB service instance used to manage Configuration entities.
-   * @param {Object} modelFactory - A factory for creating model instances.
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(service, modelFactory, log) {
-    super(service, modelFactory, Configuration, log);
+  constructor(service, entityRegistry, log) {
+    super(service, entityRegistry, Configuration, log);
   }
 
   async create(data) {

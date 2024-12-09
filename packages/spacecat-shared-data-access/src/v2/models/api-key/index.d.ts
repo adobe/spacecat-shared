@@ -32,6 +32,6 @@ export interface ApiKey extends BaseModel {
 }
 
 export interface ApiKeyCollection extends BaseCollection<ApiKey> {
-  allByImsUserIdAndImsOrgId: (imsUserId: string, imsOrgId: string) => Promise<ApiKey[]>;
+  allByImsOrgIdAndImsUserId: (imsUserId: string, imsOrgId: string) => Promise<ApiKey[]>;
   findByHashedApiKey: (hashedApiKey: string) => Promise<ApiKey | null>;
 }

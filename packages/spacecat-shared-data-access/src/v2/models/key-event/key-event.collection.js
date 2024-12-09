@@ -25,11 +25,11 @@ class KeyEventCollection extends BaseCollection {
    * Constructs an instance of KeyEventCollection. Tells the base class which model to use.
    * @constructor
    * @param {Object} service - The ElectroDB service instance used to manage KeyEvent entities.
-   * @param {Object} modelFactory - A factory for creating model instances.
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(service, modelFactory, log) {
-    super(service, modelFactory, KeyEvent, log);
+  constructor(service, entityRegistry, log) {
+    super(service, entityRegistry, KeyEvent, log);
   }
 
   // add custom methods here

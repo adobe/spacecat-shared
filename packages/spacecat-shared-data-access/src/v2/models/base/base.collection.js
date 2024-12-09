@@ -41,7 +41,7 @@ class BaseCollection {
    * Constructs an instance of BaseCollection.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.
-   * @param {Object} entityRegistry - A factory for creating model instances.
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
    * @param {BaseModel} clazz - The model class that represents the entity.
    * @param {Object} log - A logger for capturing logging information.
    */
@@ -134,11 +134,11 @@ class BaseCollection {
    * General method to query entities by index partitionKeys.
    * @private
    * @param {Object} partitionKeys - The index partitionKeys to use for the query.
+   * @param {Object} sortKeys - The index sortKeys to use for the query.
    * @param {Object} options - Additional options for the query.
-   * @param {boolean} singleResult - Whether to return a single result or all results.
    * @returns {Promise<BaseModel|Array<BaseModel>|null>} - The query result.
    */
-  async #queryByIndexKeys(partitionKeys, sortKeys, options = {}, singleResult = false) {
+  async #queryByIndexKeys(partitionKeys, sortKeys, options = {}) {
     if (!isNonEmptyObject(partitionKeys)) {
       const message = `Failed to query [${this.entityName}]: keys are required`;
       this.log.error(message);
@@ -160,10 +160,6 @@ class BaseCollection {
       ...options.attributes && { attributes: options.attributes },
     };
 
-    if (singleResult) {
-      queryOptions.limit = 1;
-    }
-
     let query = index({ ...partitionKeys, ...sortKeys });
 
     if (isObject(options.between)) {
@@ -175,7 +171,7 @@ class BaseCollection {
 
     const records = await query.go(queryOptions);
 
-    if (singleResult) {
+    if (options.limit === 1) {
       if (records.data.length === 0) {
         return null;
       }
@@ -203,20 +199,22 @@ class BaseCollection {
 
   /**
    * Finds a single entity by index keys.
-   * @param {Object} keys - The index keys to use for the query.
+   * @param {Object} partitionKeys - The index keys to use for the query.
+   * @param {Object} sortKeys - The index sort keys to use for the query.
    * @param {Object} options - Additional options for the query.
    * @returns {Promise<BaseModel|null>} - A promise that resolves to the model instance or null.
    * @async
    */
-  async findByIndexKeys(keys, sortKeys, options = {}) {
-    return this.#queryByIndexKeys(keys, sortKeys, options, true);
+  async findByIndexKeys(partitionKeys, sortKeys, options = {}) {
+    return this.#queryByIndexKeys(partitionKeys, sortKeys, { ...options, limit: 1 });
   }
 
   /**
    * Finds entities by a set of index keys. Index keys are used to query entities by
    * a specific index defined in the entity schema. The index keys must match the
    * fields defined in the index.
-   * @param {Object} keys - The index keys to use for the query.
+   * @param {Object} partitionKeys - The index keys to use for the query.
+   * @param {Object} sortKeys - The index sort keys to use for the query.
    * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
    * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of model instances.
    * @throws {Error} - Throws an error if the index keys are not provided or if the index
@@ -224,12 +222,12 @@ class BaseCollection {
    * @async
    */
   async allByIndexKeys(partitionKeys, sortKeys, options = {}) {
-    return this.#queryByIndexKeys(partitionKeys, sortKeys, options, false);
+    return this.#queryByIndexKeys(partitionKeys, sortKeys, options);
   }
 
   async all(sortKeys = {}, options = {}) {
     const partitionKeys = { pk: entityNameToAllPKValue(this.entityName) };
-    return this.#queryByIndexKeys(partitionKeys, sortKeys, options, false);
+    return this.#queryByIndexKeys(partitionKeys, sortKeys, options);
   }
 
   /**

@@ -27,11 +27,11 @@ class AuditCollection extends BaseCollection {
    * Constructs an instance of AuditCollection. Tells the base class which model to use.
    * @constructor
    * @param {Object} service - The ElectroDB service instance used to manage Audit entities.
-   * @param {Object} modelFactory - A factory for creating model instances.
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(service, modelFactory, log) {
-    super(service, modelFactory, Audit, log);
+  constructor(service, entityRegistry, log) {
+    super(service, entityRegistry, Audit, log);
   }
 
   // add custom methods here

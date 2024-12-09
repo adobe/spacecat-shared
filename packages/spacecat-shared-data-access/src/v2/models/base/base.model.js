@@ -40,15 +40,17 @@ class BaseModel {
    * Constructs an instance of BaseModel.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.
-   * @param {Object} modelFactory - A factory for creating model instances.
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
    * @param {Object} record - The initial data for the entity instance.
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(electroService, modelFactory, record, log) {
-    this.modelFactory = modelFactory;
+  constructor(electroService, entityRegistry, record, log) {
+    this.entityRegistry = entityRegistry;
     this.record = record;
     this.entityName = modelNameToEntityName(this.constructor.name);
-    this.collection = modelFactory.getCollection(entityNameToCollectionName(this.constructor.name));
+    this.collection = entityRegistry.getCollection(
+      entityNameToCollectionName(this.constructor.name),
+    );
     this.entity = electroService.entities[this.entityName];
     this.idName = entityNameToIdName(this.entityName);
     this.log = log;
@@ -149,7 +151,7 @@ class BaseModel {
     }
 
     const collectionName = entityNameToCollectionName(targetName);
-    const targetCollection = this.modelFactory.getCollection(collectionName);
+    const targetCollection = this.entityRegistry.getCollection(collectionName);
 
     if (type === 'belongs_to' || type === 'has_one') {
       const foreignKey = entityNameToIdName(targetName);

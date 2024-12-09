@@ -27,11 +27,11 @@ class SiteCollection extends BaseCollection {
    * Constructs an instance of SiteCollection. Tells the base class which model to use.
    * @constructor
    * @param {Object} service - The ElectroDB service instance used to manage Site entities.
-   * @param {Object} modelFactory - A factory for creating model instances.
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(service, modelFactory, log) {
-    super(service, modelFactory, Site, log);
+  constructor(service, entityRegistry, log) {
+    super(service, entityRegistry, Site, log);
   }
 
   async all() {

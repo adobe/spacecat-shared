@@ -60,17 +60,17 @@ describe('ApiKey IT', async () => {
 
   it('gets all api keys by imsUserId and imsOrgId', async () => {
     const sampleApiKey = sampleData.apiKeys[0];
-    const apiKeys = await ApiKey.allByImsUserIdAndImsOrgId(
-      sampleApiKey.getImsUserId(),
+    const apiKeys = await ApiKey.allByImsOrgIdAndImsUserId(
       sampleApiKey.getImsOrgId(),
+      sampleApiKey.getImsUserId(),
     );
 
     expect(apiKeys).to.be.an('array');
     expect(apiKeys.length).to.equal(2);
 
     apiKeys.forEach((apiKey) => {
-      expect(apiKey.getImsUserId()).to.equal(sampleApiKey.getImsUserId());
       expect(apiKey.getImsOrgId()).to.equal(sampleApiKey.getImsOrgId());
+      expect(apiKey.getImsUserId()).to.equal(sampleApiKey.getImsUserId());
     });
   });
 

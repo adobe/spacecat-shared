@@ -41,9 +41,7 @@ import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
 import SuggestionSchema from '../suggestion/suggestion.schema.js';
 
 /**
- * EntityRegistry - A factory class responsible for creating and managing collections
- * of different models. This class serves as a centralized point for accessing and
- * instantiating model collections.
+ * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
  *
  * @class EntityRegistry
  */

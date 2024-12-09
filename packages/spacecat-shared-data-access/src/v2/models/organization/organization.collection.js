@@ -32,9 +32,7 @@ class OrganizationCollection extends BaseCollection {
     super(service, entityRegistry, Organization, log);
   }
 
-  async findByImsOrgId(imsOrgId) {
-    return this.findByAll({ imsOrgId });
-  }
+  // add custom methods here
 }
 
 export default OrganizationCollection;

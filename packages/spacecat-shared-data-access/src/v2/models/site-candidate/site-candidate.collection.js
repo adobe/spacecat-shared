@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
 import BaseCollection from '../base/base.collection.js';
 import SiteCandidate from './site-candidate.model.js';
 
@@ -34,12 +33,7 @@ class SiteCandidateCollection extends BaseCollection {
     super(service, entityRegistry, SiteCandidate, log);
   }
 
-  async findByBaseURL(baseURL) {
-    if (!isValidUrl(baseURL)) {
-      throw new Error('Base URL must be a valid URL');
-    }
-    return this.findByAll({ baseURL });
-  }
+  // add custom methods here
 }
 
 export default SiteCandidateCollection;

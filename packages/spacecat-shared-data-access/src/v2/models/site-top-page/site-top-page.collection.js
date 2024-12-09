@@ -12,7 +12,6 @@
 
 import { hasText } from '@adobe/spacecat-shared-utils';
 
-import { ValidationError } from '../../errors/index.js';
 import BaseCollection from '../base/base.collection.js';
 import SiteTopPage from './site-top-page.model.js';
 
@@ -35,22 +34,6 @@ class SiteTopPageCollection extends BaseCollection {
     super(service, entityRegistry, SiteTopPage, log);
   }
 
-  async allBySiteIdAndSourceAndGeo(siteId, source, geo) {
-    if (!hasText(siteId)) {
-      throw new ValidationError('SiteId is required');
-    }
-
-    if (!hasText(source)) {
-      throw new ValidationError('Source is required');
-    }
-
-    if (!hasText(geo)) {
-      throw new ValidationError('Geo is required');
-    }
-
-    return this.allByIndexKeys({ siteId, source, geo });
-  }
-
   async removeForSiteId(siteId, source, geo) {
     if (!hasText(siteId)) {
       throw new Error('SiteId is required');
@@ -59,9 +42,9 @@ class SiteTopPageCollection extends BaseCollection {
     let topPagesToRemove;
 
     if (hasText(source) && hasText(geo)) {
-      topPagesToRemove = await this.allByIndexKeys({ siteId, source, geo });
+      topPagesToRemove = await this.allBySiteIdAndSourceAndGeo(siteId, source, geo);
     } else {
-      topPagesToRemove = await this.allByIndexKeys({ siteId });
+      topPagesToRemove = await this.allBySiteId(siteId);
     }
 
     const topPageIdsToRemove = topPagesToRemove.map((topPage) => topPage.getId());

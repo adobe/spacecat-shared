@@ -46,10 +46,6 @@ class ConfigurationCollection extends BaseCollection {
   async findLatest() {
     return this.findByAll({}, { order: 'desc' });
   }
-
-  async findByVersion(version) {
-    return this.findByAll({ version });
-  }
 }
 
 export default ConfigurationCollection;

@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isNonEmptyObject, isObject } from '@adobe/spacecat-shared-utils';
+import {
+  hasText, isNonEmptyObject, isNumber, isObject,
+} from '@adobe/spacecat-shared-utils';
 
 import { ElectroValidationError } from 'electrodb';
 
@@ -30,15 +32,22 @@ function keyNamesToMethodName(keyNames, prefix) {
   return prefix + keyNames.map(capitalize).join('And');
 }
 
+function validateValue(context, keyName, value) {
+  const { type } = context.entity.model.schema.attributes[keyName];
+  const validator = type === 'number' ? isNumber : hasText;
+
+  if (!validator(value)) {
+    throw new ValidationError(`${keyName} is required`);
+  }
+}
+
 function parseAccessorArgs(context, requiredKeyNames, args) {
   const keys = {};
   for (let i = 0; i < requiredKeyNames.length; i += 1) {
     const keyName = requiredKeyNames[i];
     const keyValue = args[i];
 
-    if (!hasText(keyValue)) {
-      throw new ValidationError(`${keyName} is required`);
-    }
+    validateValue(context, keyName, keyValue);
 
     keys[keyName] = keyValue;
   }
@@ -140,10 +149,6 @@ class BaseCollection {
 
     Object.keys(indexes).forEach((indexName) => {
       if (indexName === INDEX_TYPES.PRIMARY) {
-        return;
-      }
-
-      if (indexName.slice(0, 2) !== 'by') {
         return;
       }
 
@@ -261,6 +266,45 @@ class BaseCollection {
   }
 
   /**
+   * Finds all entities in the collection. Requires an index named "all" with a partition key
+   * named "pk" with a static value of "ALL_<ENTITYNAME>".
+   * @param {Object} [sortKeys] - The sort keys to use for the query.
+   * @param {Object} [options] - Additional options for the query.
+   * @return {Promise<BaseModel|Array<BaseModel>|null>}
+   */
+  async all(sortKeys = {}, options = {}) {
+    const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
+    return this.#queryByIndexKeys(keys, options);
+  }
+
+  /**
+   * Finds entities by a set of index keys. Index keys are used to query entities by
+   * a specific index defined in the entity schema. The index keys must match the
+   * fields defined in the index.
+   * @param {Object} keys - The index keys to use for the query.
+   * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
+   * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of model instances.
+   * @throws {Error} - Throws an error if the index keys are not provided or if the index
+   * is not found.
+   * @async
+   */
+  async allByIndexKeys(keys, options = {}) {
+    return this.#queryByIndexKeys(keys, options);
+  }
+
+  /**
+   * Finds a single entity from the "all" index. Requires an index named "all" with a partition key
+   * named "pk" with a static value of "ALL_<ENTITYNAME>".
+   * @param {Object} [sortKeys] - The sort keys to use for the query.
+   * @param {Object} [options] - Additional options for the query.
+   * @return {Promise<BaseModel|Array<BaseModel>|null>}
+   */
+  async findByAll(sortKeys = {}, options = {}) {
+    const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
+    return this.#queryByIndexKeys(keys, { ...options, index: INDEX_TYPES.ALL, limit: 1 });
+  }
+
+  /**
    * Finds an entity by its ID.
    * @async
    * @param {string} id - The unique identifier of the entity to be found.
@@ -285,45 +329,6 @@ class BaseCollection {
    */
   async findByIndexKeys(keys, options = {}) {
     return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
-  }
-
-  /**
-   * Finds entities by a set of index keys. Index keys are used to query entities by
-   * a specific index defined in the entity schema. The index keys must match the
-   * fields defined in the index.
-   * @param {Object} keys - The index keys to use for the query.
-   * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
-   * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of model instances.
-   * @throws {Error} - Throws an error if the index keys are not provided or if the index
-   * is not found.
-   * @async
-   */
-  async allByIndexKeys(keys, options = {}) {
-    return this.#queryByIndexKeys(keys, options);
-  }
-
-  /**
-   * Finds all entities in the collection. Requires an index named "all" with a partition key
-   * named "pk" with a static value of "ALL_<ENTITYNAME>".
-   * @param {Object} [sortKeys] - The sort keys to use for the query.
-   * @param {Object} [options] - Additional options for the query.
-   * @return {Promise<BaseModel|Array<BaseModel>|null>}
-   */
-  async all(sortKeys = {}, options = {}) {
-    const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
-    return this.#queryByIndexKeys(keys, options);
-  }
-
-  /**
-   * Finds a single entity from the "all" index. Requires an index named "all" with a partition key
-   * named "pk" with a static value of "ALL_<ENTITYNAME>".
-   * @param {Object} [sortKeys] - The sort keys to use for the query.
-   * @param {Object} [options] - Additional options for the query.
-   * @return {Promise<BaseModel|Array<BaseModel>|null>}
-   */
-  async findByAll(sortKeys = {}, options = {}) {
-    const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
-    return this.#queryByIndexKeys(keys, { ...options, index: INDEX_TYPES.ALL, limit: 1 });
   }
 
   /**

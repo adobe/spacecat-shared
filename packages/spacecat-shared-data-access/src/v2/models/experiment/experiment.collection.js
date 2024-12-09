@@ -31,6 +31,8 @@ class ExperimentCollection extends BaseCollection {
   constructor(service, entityRegistry, log) {
     super(service, entityRegistry, Experiment, log);
   }
+
+  // add custom methods here
 }
 
 export default ExperimentCollection;

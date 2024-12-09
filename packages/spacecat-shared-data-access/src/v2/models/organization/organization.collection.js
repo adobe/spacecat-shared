@@ -32,12 +32,8 @@ class OrganizationCollection extends BaseCollection {
     super(service, entityRegistry, Organization, log);
   }
 
-  async all() {
-    return this.allByIndexKeys({ pk: 'all_organizations' }, {}, { index: 'all' });
-  }
-
   async findByImsOrgId(imsOrgId) {
-    return this.findByIndexKeys({ pk: 'all_organizations' }, { imsOrgId }, { index: 'all' });
+    return this.findByAll({ imsOrgId });
   }
 }
 

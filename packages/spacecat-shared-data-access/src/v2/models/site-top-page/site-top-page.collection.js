@@ -48,7 +48,7 @@ class SiteTopPageCollection extends BaseCollection {
       throw new ValidationError('Geo is required');
     }
 
-    return this.allByIndexKeys({ siteId }, { source, geo });
+    return this.allByIndexKeys({ siteId, source, geo });
   }
 
   async removeForSiteId(siteId, source, geo) {

@@ -38,7 +38,7 @@ class SiteCandidateCollection extends BaseCollection {
     if (!isValidUrl(baseURL)) {
       throw new Error('Base URL must be a valid URL');
     }
-    return this.findByIndexKeys({ pk: 'all_site_candidates' }, { baseURL }, { index: 'all' });
+    return this.findByAll({ baseURL });
   }
 }
 

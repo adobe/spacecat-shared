@@ -33,7 +33,7 @@ class Site extends BaseModel {
   async getLatestAuditByType(auditType) {
     const collection = this.entityRegistry.getCollection('AuditCollection');
 
-    return collection.findByIndexKeys({ siteId: this.getId() }, { auditType });
+    return collection.findByIndexKeys({ siteId: this.getId(), auditType });
   }
 
   async toggleLive() {

@@ -14,15 +14,82 @@ import { hasText, isNonEmptyObject, isObject } from '@adobe/spacecat-shared-util
 
 import { ElectroValidationError } from 'electrodb';
 
+import { removeElectroProperties } from '../../../../test/it/util/util.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
 import {
   capitalize,
-  decapitalize, entityNameToAllPKValue,
+  decapitalize,
+  entityNameToAllPKValue,
   keyNamesToIndexName,
   modelNameToEntityName,
 } from '../../util/util.js';
-import { removeElectroProperties } from '../../../../test/it/util/util.js';
+
+function indexNameToKeyNames(indexName) {
+  return indexName.slice(2).split('And').map((key) => decapitalize(key));
+}
+
+function parseAccessorArgs(context, requiredKeyNames, args) {
+  const keys = {};
+  for (let i = 0; i < requiredKeyNames.length; i += 1) {
+    const keyName = requiredKeyNames[i];
+    const keyValue = args[i];
+
+    if (!hasText(keyValue)) {
+      throw new ValidationError(`${keyName} is required`);
+    }
+
+    keys[keyName] = keyValue;
+  }
+
+  let options = {};
+
+  if (args.length > requiredKeyNames.length) {
+    options = args[requiredKeyNames.length];
+  }
+
+  return { keys, options };
+}
+
+function createAllAccessor(context, requiredKeyNames) {
+  return (...args) => {
+    const { keys, options } = parseAccessorArgs(context, requiredKeyNames, args);
+    return context.allByIndexKeys(keys, options);
+  };
+}
+
+function createFindAccessor(context, requiredKeyNames) {
+  return (...args) => {
+    const { keys, options } = parseAccessorArgs(context, requiredKeyNames, args);
+    return context.findByIndexKeys(keys, options);
+  };
+}
+
+/**
+ * Attempts to find an index name matching a generated name from the given keyNames.
+ * If no exact match is found, it progressively shortens the keyNames by removing the last one
+ * and tries again. If still no match, it tries the "all" index, and then "primary".
+ *
+ * @param {object} indexes - The available indexes, keyed by their names.
+ * @param {object} keys - The keys to find an index name for.
+ * @returns {object} The found index.
+ */
+function findIndexNameByKeys(indexes, keys) {
+  const keyNames = Object.keys(keys);
+  for (let { length } = keyNames; length > 0; length -= 1) {
+    const subKeyNames = keyNames.slice(0, length);
+    const candidateName = keyNamesToIndexName(subKeyNames);
+    if (indexes[candidateName]) {
+      return candidateName;
+    }
+  }
+
+  if (indexes.all) {
+    return 'all';
+  }
+
+  return 'primary';
+}
 
 /**
  * BaseCollection - A base class for managing collections of entities in the application.
@@ -32,10 +99,6 @@ import { removeElectroProperties } from '../../../../test/it/util/util.js';
  * @class BaseCollection
  * @abstract
  */
-function indexNameToKeyNames(indexName) {
-  return indexName.slice(2).split('And').map((key) => decapitalize(key));
-}
-
 class BaseCollection {
   /**
    * Constructs an instance of BaseCollection.
@@ -61,25 +124,12 @@ class BaseCollection {
     // go through the indexes, and create a method for each index except the primary index
     Object.keys(this.entity.model.indexes).forEach((indexName) => {
       if (indexName !== 'primary' && indexName.slice(0, 2) === 'by') {
-        const methodName = `all${capitalize(indexName)}`;
+        const allMethodName = `all${capitalize(indexName)}`;
+        const findMethodName = `find${capitalize(indexName)}`;
         const requiredKeyNames = indexNameToKeyNames(indexName);
-        this[methodName] = (...args) => {
-          const keys = {};
-          for (let i = 0; i < requiredKeyNames.length; i += 1) {
-            if (!hasText(args[i])) {
-              throw new Error(`Failed to query [${this.entityName}]: keys are required`);
-            }
-            keys[requiredKeyNames[i]] = args[i];
-          }
 
-          let options = {};
-
-          if (args.length > requiredKeyNames.length) {
-            options = args[requiredKeyNames.length];
-          }
-
-          return this.allByIndexKeys(keys, options);
-        };
+        this[allMethodName] = createAllAccessor(this, requiredKeyNames);
+        this[findMethodName] = createFindAccessor(this, requiredKeyNames);
       }
     });
   }
@@ -120,32 +170,20 @@ class BaseCollection {
   }
 
   /**
-   * Retrieves the enum values for a field in the entity schema. Useful for validating
-   * enum values prior to creating or updating an entity.
-   * @param {string} fieldName - The name of the field to retrieve enum values for.
-   * @return {string[]} - An array of enum values for the field.
-   * @protected
-   */
-  _getEnumValues(fieldName) {
-    return this.entity.model.schema.attributes[fieldName]?.enumArray;
-  }
-
-  /**
    * General method to query entities by index partitionKeys.
    * @private
-   * @param {Object} partitionKeys - The index partitionKeys to use for the query.
-   * @param {Object} sortKeys - The index sortKeys to use for the query.
+   * @param {Object} keys - The index keys to use for the query.
    * @param {Object} options - Additional options for the query.
    * @returns {Promise<BaseModel|Array<BaseModel>|null>} - The query result.
    */
-  async #queryByIndexKeys(partitionKeys, sortKeys, options = {}) {
-    if (!isNonEmptyObject(partitionKeys)) {
+  async #queryByIndexKeys(keys, options = {}) {
+    if (!isNonEmptyObject(keys)) {
       const message = `Failed to query [${this.entityName}]: keys are required`;
       this.log.error(message);
       throw new Error(message);
     }
 
-    const indexName = options.index || keyNamesToIndexName(Object.keys(partitionKeys));
+    const indexName = options.index || findIndexNameByKeys(this.entity.query, keys);
     const index = this.entity.query[indexName];
 
     if (!index) {
@@ -160,7 +198,7 @@ class BaseCollection {
       ...options.attributes && { attributes: options.attributes },
     };
 
-    let query = index({ ...partitionKeys, ...sortKeys });
+    let query = index(keys);
 
     if (isObject(options.between)) {
       query = query.between(
@@ -199,35 +237,38 @@ class BaseCollection {
 
   /**
    * Finds a single entity by index keys.
-   * @param {Object} partitionKeys - The index keys to use for the query.
-   * @param {Object} sortKeys - The index sort keys to use for the query.
+   * @param {Object} keys - The index keys to use for the query.
    * @param {Object} options - Additional options for the query.
    * @returns {Promise<BaseModel|null>} - A promise that resolves to the model instance or null.
    * @async
    */
-  async findByIndexKeys(partitionKeys, sortKeys, options = {}) {
-    return this.#queryByIndexKeys(partitionKeys, sortKeys, { ...options, limit: 1 });
+  async findByIndexKeys(keys, options = {}) {
+    return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
   }
 
   /**
    * Finds entities by a set of index keys. Index keys are used to query entities by
    * a specific index defined in the entity schema. The index keys must match the
    * fields defined in the index.
-   * @param {Object} partitionKeys - The index keys to use for the query.
-   * @param {Object} sortKeys - The index sort keys to use for the query.
+   * @param {Object} keys - The index keys to use for the query.
    * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
    * @return {Promise<Array<BaseModel>>} - A promise that resolves to an array of model instances.
    * @throws {Error} - Throws an error if the index keys are not provided or if the index
    * is not found.
    * @async
    */
-  async allByIndexKeys(partitionKeys, sortKeys, options = {}) {
-    return this.#queryByIndexKeys(partitionKeys, sortKeys, options);
+  async allByIndexKeys(keys, options = {}) {
+    return this.#queryByIndexKeys(keys, options);
   }
 
   async all(sortKeys = {}, options = {}) {
-    const partitionKeys = { pk: entityNameToAllPKValue(this.entityName) };
-    return this.#queryByIndexKeys(partitionKeys, sortKeys, options);
+    const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
+    return this.#queryByIndexKeys(keys, options);
+  }
+
+  async findByAll(sortKeys = {}, options = {}) {
+    const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
+    return this.#queryByIndexKeys(keys, { ...options, index: 'all', limit: 1 });
   }
 
   /**

@@ -43,16 +43,12 @@ class ConfigurationCollection extends BaseCollection {
     return super.create(sanitizedData);
   }
 
-  async all() {
-    return this.allByIndexKeys({ pk: 'all_configurations' }, {}, { index: 'all' });
-  }
-
   async findLatest() {
-    return this.findByIndexKeys({ pk: 'all_configurations' }, {}, { index: 'all', order: 'desc' });
+    return this.findByAll({}, { order: 'desc' });
   }
 
   async findByVersion(version) {
-    return this.findByIndexKeys({ pk: 'all_configurations' }, { version }, { index: 'all' });
+    return this.findByAll({ version });
   }
 }
 

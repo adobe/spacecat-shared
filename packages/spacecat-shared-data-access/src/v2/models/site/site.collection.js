@@ -34,23 +34,15 @@ class SiteCollection extends BaseCollection {
     super(service, entityRegistry, Site, log);
   }
 
-  async all() {
-    return this.allByIndexKeys({ pk: 'all_sites' }, {}, { index: 'all' });
-  }
-
   async allSitesToAudit() {
-    return (await this.allByIndexKeys(
-      { pk: 'all_sites' },
-      {},
-      { index: 'all', attributes: ['siteId'] },
-    )).map((site) => site.getId());
+    return (await this.all({ attributes: ['siteId'] })).map((site) => site.getId());
   }
 
   async findByBaseURL(baseURL) {
     if (!isValidUrl(baseURL)) {
       throw new Error('Base URL must be a valid URL');
     }
-    return this.findByIndexKeys({ pk: 'all_sites' }, { baseURL }, { index: 'all' });
+    return this.findByAll({ baseURL });
   }
 }
 

@@ -43,7 +43,7 @@ class ExperimentCollection extends BaseCollection {
       throw new Error('ExpId is required');
     }
 
-    return this.allByIndexKeys({ siteId }, { expId });
+    return this.allByIndexKeys({ siteId, expId });
   }
 
   async findBySiteIdAndExpId(siteId, expId) {
@@ -55,7 +55,7 @@ class ExperimentCollection extends BaseCollection {
       throw new Error('ExpId is required');
     }
 
-    return this.findByIndexKeys({ siteId }, { expId });
+    return this.findByIndexKeys({ siteId, expId });
   }
 
   async findBySiteIdAndExpIdAndUrl(siteId, expId, url) {
@@ -71,7 +71,7 @@ class ExperimentCollection extends BaseCollection {
       throw new Error('Url must be a valid URL');
     }
 
-    return this.findByIndexKeys({ siteId }, { expId, url });
+    return this.findByIndexKeys({ siteId, expId, url });
   }
 }
 

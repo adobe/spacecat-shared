@@ -33,14 +33,6 @@ class ApiKeyCollection extends BaseCollection {
   }
 
   // add custom methods here
-
-  async findByHashedApiKey(hashedApiKey) {
-    if (!hashedApiKey) {
-      throw new Error('HashedApiKey is required');
-    }
-
-    return this.findByIndexKeys({ hashedApiKey }, {});
-  }
 }
 
 export default ApiKeyCollection;

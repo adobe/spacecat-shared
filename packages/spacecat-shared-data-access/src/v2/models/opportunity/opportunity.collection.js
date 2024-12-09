@@ -44,7 +44,7 @@ class OpportunityCollection extends BaseCollection {
       throw new ValidationError('Invalid status');
     }
 
-    return this.allByIndexKeys({ siteId }, { status });
+    return this.allByIndexKeys({ siteId, status });
   }
 
   // add custom methods here

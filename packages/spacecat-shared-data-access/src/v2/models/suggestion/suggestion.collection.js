@@ -44,7 +44,7 @@ class SuggestionCollection extends BaseCollection {
       throw new ValidationError('Invalid status');
     }
 
-    return this.allByIndexKeys({ opportunityId }, { status });
+    return this.allByIndexKeys({ opportunityId, status });
   }
 
   /**
@@ -64,9 +64,8 @@ class SuggestionCollection extends BaseCollection {
       throw new Error('Suggestions must be an array');
     }
 
-    const validStatuses = this._getEnumValues('status');
-    if (!validStatuses?.includes(status)) {
-      throw new Error(`Invalid status: ${status}. Must be one of: ${validStatuses.join(', ')}`);
+    if (!Object.values(STATUSES).includes(status)) {
+      throw new Error(`Invalid status: ${status}. Must be one of: ${Object.values(STATUSES).join(', ')}`);
     }
 
     suggestions.forEach((suggestion) => {

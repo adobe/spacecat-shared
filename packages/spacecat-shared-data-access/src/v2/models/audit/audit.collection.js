@@ -45,7 +45,7 @@ class AuditCollection extends BaseCollection {
       throw new ValidationError('auditType is required');
     }
 
-    return this.allByIndexKeys({ siteId }, { auditType });
+    return this.allByIndexKeys({ siteId, auditType });
   }
 }
 

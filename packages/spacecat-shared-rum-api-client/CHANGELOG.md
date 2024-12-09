@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.15.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.5...@adobe/spacecat-shared-rum-api-client-v2.15.6) (2024-12-09)
+
+
+### Bug Fixes
+
+* **rum-api-client:** destructuring of rum bundles causes issues ([#481](https://github.com/adobe/spacecat-shared/issues/481)) ([be5b5d3](https://github.com/adobe/spacecat-shared/commit/be5b5d38432575b1becb6f18fb41f9c1f7316c15))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.15.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.4...@adobe/spacecat-shared-rum-api-client-v2.15.5) (2024-12-08)
 
 

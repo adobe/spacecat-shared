@@ -195,7 +195,7 @@ async function fetchBundles(opts = {}) {
       b.rumBundles
         .filter((bundle) => !filterBotTraffic || !isBotTraffic(bundle))
         .map(filterEvents(checkpoints))
-        .forEach((filteredEvent) => result.push(filteredEvent));
+        .forEach((bundle) => result.push(bundle));
     });
   }
   return mergeBundlesWithSameId(result);

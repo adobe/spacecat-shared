@@ -10,11 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
-import { ValidationError } from '../../errors/index.js';
 import BaseCollection from '../base/base.collection.js';
-import Opportunity, { STATUSES } from './opportunity.model.js';
+import Opportunity from './opportunity.model.js';
 
 /**
  * OpportunityCollection - A collection class responsible for managing Opportunity entities.
@@ -33,18 +30,6 @@ class OpportunityCollection extends BaseCollection {
    */
   constructor(service, entityRegistry, log) {
     super(service, entityRegistry, Opportunity, log);
-  }
-
-  async allBySiteIdAndStatus(siteId, status) {
-    if (!hasText(siteId)) {
-      throw new ValidationError('Site ID required');
-    }
-
-    if (!Object.values(STATUSES).includes(status)) {
-      throw new ValidationError('Invalid status');
-    }
-
-    return this.allByIndexKeys({ siteId, status });
   }
 
   // add custom methods here

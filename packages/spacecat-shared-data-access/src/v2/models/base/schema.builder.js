@@ -62,17 +62,15 @@ const UPDATED_AT_ATTRIBUTE_DATA = {
   set: () => new Date().toISOString(),
 };
 
-const PRIMARY_INDEX_NAME = 'primary';
-
-const INDEX_TYPES = {
-  PRIMARY: PRIMARY_INDEX_NAME,
+export const INDEX_TYPES = {
+  PRIMARY: 'primary',
   ALL: 'all',
   BELONGS_TO: 'belongs_to',
   OTHER: 'other',
 };
 
 /** Certain index names (primary, all) are reserved and cannot be reused. */
-const RESERVED_INDEX_NAMES = [PRIMARY_INDEX_NAME, INDEX_TYPES.ALL];
+const RESERVED_INDEX_NAMES = [INDEX_TYPES.PRIMARY, INDEX_TYPES.ALL];
 
 /**
  * Constructs a fully qualified index name.
@@ -245,7 +243,7 @@ class SchemaBuilder {
     }
 
     this.rawIndexes.all = {
-      index: createdIndexName(this.serviceName, this.entityName, 'all'),
+      index: createdIndexName(this.serviceName, this.entityName, INDEX_TYPES.ALL),
       pk: { field: 'gsi1pk', template: entityNameToAllPKValue(this.entityName) },
       sk: { field: 'gsi1sk', composite: attributeNames },
     };

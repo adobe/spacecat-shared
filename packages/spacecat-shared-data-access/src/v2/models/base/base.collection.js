@@ -19,14 +19,15 @@ import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
 import {
   capitalize,
-  decapitalize,
   entityNameToAllPKValue,
   keyNamesToIndexName,
   modelNameToEntityName,
 } from '../../util/util.js';
 
-function indexNameToKeyNames(indexName) {
-  return indexName.slice(2).split('And').map((key) => decapitalize(key));
+import { INDEX_TYPES } from './schema.builder.js';
+
+function keyNamesToMethodName(keyNames, prefix) {
+  return prefix + keyNames.map(capitalize).join('And');
 }
 
 function parseAccessorArgs(context, requiredKeyNames, args) {
@@ -51,16 +52,14 @@ function parseAccessorArgs(context, requiredKeyNames, args) {
   return { keys, options };
 }
 
-function createAllAccessor(context, requiredKeyNames) {
+function createAccessor(context, requiredKeyNames, all) {
   return (...args) => {
     const { keys, options } = parseAccessorArgs(context, requiredKeyNames, args);
-    return context.allByIndexKeys(keys, options);
-  };
-}
 
-function createFindAccessor(context, requiredKeyNames) {
-  return (...args) => {
-    const { keys, options } = parseAccessorArgs(context, requiredKeyNames, args);
+    if (all) {
+      return context.allByIndexKeys(keys, options);
+    }
+
     return context.findByIndexKeys(keys, options);
   };
 }
@@ -85,10 +84,10 @@ function findIndexNameByKeys(indexes, keys) {
   }
 
   if (indexes.all) {
-    return 'all';
+    return INDEX_TYPES.ALL;
   }
 
-  return 'primary';
+  return INDEX_TYPES.PRIMARY;
 }
 
 /**
@@ -120,16 +119,55 @@ class BaseCollection {
     this.#initializeCollectionMethods();
   }
 
+  /**
+   * Initialize collection methods for each "by..." index defined in the entity schema.
+   * For each index that starts with "by", we:
+   *  1. Retrieve its composite pk and sk arrays from the schema.
+   *  2. Generate convenience methods for every prefix of the composite keys.
+   *     For example, if the index keys are ['opportunityId', 'status', 'createdAt'],
+   *     we create methods:
+   *       - allByOpportunityId(...) / findByOpportunityId(...)
+   *       - allByOpportunityIdAndStatus(...) / findByOpportunityIdAndStatus(...)
+   *       - allByOpportunityIdAndStatusAndCreatedAt(...) /
+   *            findByOpportunityIdAndStatusAndCreatedAt(...)
+   *
+   * Each generated method calls allByIndexKeys() or findByIndexKeys() with the appropriate keys.
+   *
+   * @private
+   */
   #initializeCollectionMethods() {
-    // go through the indexes, and create a method for each index except the primary index
-    Object.keys(this.entity.model.indexes).forEach((indexName) => {
-      if (indexName !== 'primary' && indexName.slice(0, 2) === 'by') {
-        const allMethodName = `all${capitalize(indexName)}`;
-        const findMethodName = `find${capitalize(indexName)}`;
-        const requiredKeyNames = indexNameToKeyNames(indexName);
+    const { indexes } = this.entity.model;
 
-        this[allMethodName] = createAllAccessor(this, requiredKeyNames);
-        this[findMethodName] = createFindAccessor(this, requiredKeyNames);
+    Object.keys(indexes).forEach((indexName) => {
+      if (indexName === INDEX_TYPES.PRIMARY) {
+        return;
+      }
+
+      if (indexName.slice(0, 2) !== 'by') {
+        return;
+      }
+
+      const indexDef = indexes[indexName];
+      const pkKeys = Array.isArray(indexDef.pk?.facets) ? indexDef.pk.facets : [];
+      const skKeys = Array.isArray(indexDef.sk?.facets) ? indexDef.sk.facets : [];
+      const allKeys = [...pkKeys, ...skKeys];
+
+      // generate a method for each prefix of the allKeys array
+      // for example, if allKeys = ['opportunityId', 'status'], we create:
+      //   allByOpportunityId(...)
+      //   findByOpportunityId(...)
+      //   allByOpportunityIdAndStatus(...)
+      //   findByOpportunityIdAndStatus(...)
+      for (let i = 1; i <= allKeys.length; i += 1) {
+        const subset = allKeys.slice(0, i); // prefix of keys
+        const allMethodName = keyNamesToMethodName(subset, 'allBy');
+        const findMethodName = keyNamesToMethodName(subset, 'findBy');
+
+        // create accessor methods using the parsed keys
+        // parseAccessorArgs and createAllAccessor/createFindAccessor will handle
+        // argument validation and calling the correct query methods.
+        this[allMethodName] = createAccessor(this, subset, true);
+        this[findMethodName] = createAccessor(this, subset, false);
       }
     });
   }
@@ -170,7 +208,10 @@ class BaseCollection {
   }
 
   /**
-   * General method to query entities by index partitionKeys.
+   * General method to query entities by index keys. This method is used by other
+   * query methods to perform the actual query operation. It will use the index keys
+   * to find the appropriate index and query the entities. The query result will be
+   * transformed into model instances.
    * @private
    * @param {Object} keys - The index keys to use for the query.
    * @param {Object} options - Additional options for the query.
@@ -261,14 +302,28 @@ class BaseCollection {
     return this.#queryByIndexKeys(keys, options);
   }
 
+  /**
+   * Finds all entities in the collection. Requires an index named "all" with a partition key
+   * named "pk" with a static value of "ALL_<ENTITYNAME>".
+   * @param {Object} [sortKeys] - The sort keys to use for the query.
+   * @param {Object} [options] - Additional options for the query.
+   * @return {Promise<BaseModel|Array<BaseModel>|null>}
+   */
   async all(sortKeys = {}, options = {}) {
     const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
     return this.#queryByIndexKeys(keys, options);
   }
 
+  /**
+   * Finds a single entity from the "all" index. Requires an index named "all" with a partition key
+   * named "pk" with a static value of "ALL_<ENTITYNAME>".
+   * @param {Object} [sortKeys] - The sort keys to use for the query.
+   * @param {Object} [options] - Additional options for the query.
+   * @return {Promise<BaseModel|Array<BaseModel>|null>}
+   */
   async findByAll(sortKeys = {}, options = {}) {
     const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
-    return this.#queryByIndexKeys(keys, { ...options, index: 'all', limit: 1 });
+    return this.#queryByIndexKeys(keys, { ...options, index: INDEX_TYPES.ALL, limit: 1 });
   }
 
   /**

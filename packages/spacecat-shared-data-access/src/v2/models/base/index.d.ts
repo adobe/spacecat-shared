@@ -33,9 +33,11 @@ export interface QueryOptions {
 }
 
 export interface BaseCollection<T extends BaseModel> {
+  all(sortKeys?: object, options?: QueryOptions): Promise<T[]>;
   allByIndexKeys(keys: object, options?: QueryOptions): Promise<T[]>;
   create(item: object): Promise<T>;
   createMany(items: object[]): Promise<MultiStatusCreateResult<T>>;
+  findByAll(sortKeys?: object, options?: QueryOptions): Promise<T>;
   findById(id: string): Promise<T>;
   findByIndexKeys(indexKeys: object): Promise<T>;
 }

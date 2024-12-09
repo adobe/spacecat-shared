@@ -38,6 +38,7 @@ const mockElectroService = {
       query: {
         bySiteId: stub(),
         bySiteIdAndStatus: stub(),
+        bySiteIdAndTypeAndStatus: stub(),
       },
       put: stub(),
     },
@@ -148,6 +149,44 @@ describe('OpportunityCollection', () => {
 
     it('throws an error if status is not provided', async () => {
       await expect(opportunityCollectionInstance.allBySiteIdAndStatus('site67890', ''))
+        .to.be.rejectedWith('Status is required');
+    });
+  });
+
+  describe('allBySiteIdAndTypeAndStatus', () => {
+    it('returns an array of Opportunity instances when opportunities exist', async () => {
+      const mockFindResults = { data: [mockRecord] };
+      mockElectroService.entities.opportunity.query.bySiteIdAndTypeAndStatus.returns(
+        { go: () => Promise.resolve(mockFindResults) },
+      );
+
+      const results = await opportunityCollectionInstance.allBySiteIdAndTypeAndStatus('site67890', 'TYPE', 'IN_PROGRESS');
+      expect(results).to.be.an('array').that.has.length(1);
+      expect(results[0]).to.be.instanceOf(Opportunity);
+      expect(results[0].record).to.deep.include(mockOpportunityModel.record);
+    });
+
+    it('returns an empty array if no opportunities exist for the given site ID, type and status', async () => {
+      mockElectroService.entities.opportunity.query.bySiteIdAndTypeAndStatus.returns(
+        { go: () => Promise.resolve([]) },
+      );
+
+      const results = await opportunityCollectionInstance.allBySiteIdAndTypeAndStatus('site67890', 'TYPE', 'IN_PROGRESS');
+      expect(results).to.be.an('array').that.is.empty;
+    });
+
+    it('throws an error if siteId is not provided', async () => {
+      await expect(opportunityCollectionInstance.allBySiteIdAndTypeAndStatus('', 'TYPE', 'IN_PROGRESS'))
+        .to.be.rejectedWith('SiteId is required');
+    });
+
+    it('throws an error if type is not provided', async () => {
+      await expect(opportunityCollectionInstance.allBySiteIdAndTypeAndStatus('site67890', '', 'IN_PROGRESS'))
+        .to.be.rejectedWith('Type is required');
+    });
+
+    it('throws an error if status is not provided', async () => {
+      await expect(opportunityCollectionInstance.allBySiteIdAndTypeAndStatus('site67890', 'TYPE', ''))
         .to.be.rejectedWith('Status is required');
     });
   });

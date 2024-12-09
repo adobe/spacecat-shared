@@ -138,6 +138,17 @@ const OpportunitySchema = {
         composite: ['updatedAt'],
       },
     },
+    bySiteIdAndTypeAndStatus: {
+      index: 'spacecat-data-opportunity-by-site-and-type-and-status',
+      pk: {
+        field: 'gsi3pk',
+        composite: ['siteId', 'type', 'status'],
+      },
+      sk: {
+        field: 'gsi3sk',
+        composite: ['updatedAt'],
+      },
+    },
   },
 };
 

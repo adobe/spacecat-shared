@@ -18,7 +18,7 @@ import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
 import {
   capitalize,
-  decapitalize,
+  decapitalize, entityNameToAllPKValue,
   keyNamesToIndexName,
   modelNameToEntityName,
 } from '../../util/util.js';
@@ -131,21 +131,21 @@ class BaseCollection {
   }
 
   /**
-   * General method to query entities by index keys.
+   * General method to query entities by index partitionKeys.
    * @private
-   * @param {Object} keys - The index keys to use for the query.
+   * @param {Object} partitionKeys - The index partitionKeys to use for the query.
    * @param {Object} options - Additional options for the query.
    * @param {boolean} singleResult - Whether to return a single result or all results.
    * @returns {Promise<BaseModel|Array<BaseModel>|null>} - The query result.
    */
-  async #queryByIndexKeys(keys, options = {}, singleResult = false) {
-    if (!isNonEmptyObject(keys)) {
+  async #queryByIndexKeys(partitionKeys, sortKeys, options = {}, singleResult = false) {
+    if (!isNonEmptyObject(partitionKeys)) {
       const message = `Failed to query [${this.entityName}]: keys are required`;
       this.log.error(message);
       throw new Error(message);
     }
 
-    const indexName = options.index || keyNamesToIndexName(Object.keys(keys));
+    const indexName = options.index || keyNamesToIndexName(Object.keys(partitionKeys));
     const index = this.entity.query[indexName];
 
     if (!index) {
@@ -164,7 +164,7 @@ class BaseCollection {
       queryOptions.limit = 1;
     }
 
-    let query = index(keys);
+    let query = index({ ...partitionKeys, ...sortKeys });
 
     if (isObject(options.between)) {
       query = query.between(
@@ -209,7 +209,7 @@ class BaseCollection {
    * @async
    */
   async findByIndexKeys(keys, options = {}) {
-    return this.#queryByIndexKeys(keys, options, true);
+    return this.#queryByIndexKeys(keys, {}, options, true);
   }
 
   /**
@@ -223,8 +223,13 @@ class BaseCollection {
    * is not found.
    * @async
    */
-  async allByIndexKeys(keys, options = {}) {
-    return this.#queryByIndexKeys(keys, options, false);
+  async allByIndexKeys(partitionKeys, sortKeys, options = {}) {
+    return this.#queryByIndexKeys(partitionKeys, sortKeys, options, false);
+  }
+
+  async all(sortKeys = {}, options = {}) {
+    const partitionKeys = { pk: entityNameToAllPKValue(this.entityName) };
+    return this.#queryByIndexKeys(partitionKeys, sortKeys, options, false);
   }
 
   /**

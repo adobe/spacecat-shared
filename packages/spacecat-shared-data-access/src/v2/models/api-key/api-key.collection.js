@@ -43,7 +43,7 @@ class ApiKeyCollection extends BaseCollection {
       throw new Error('ImsOrgId is required');
     }
 
-    return this.allByIndexKeys({ imsUserId, imsOrgId }, { index: 'byHashedApiKey' });
+    return this.allByIndexKeys({}, { imsUserId, imsOrgId }, { index: 'byHashedApiKey' });
   }
 
   async findByHashedApiKey(hashedApiKey) {

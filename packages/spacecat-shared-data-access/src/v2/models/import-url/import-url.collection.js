@@ -46,7 +46,7 @@ class ImportUrlCollection extends BaseCollection {
       throw new ValidationError('Invalid status');
     }
 
-    return this.allByIndexKeys({ importJobId, status }, { index: 'byImportJobId' });
+    return this.allByIndexKeys({ importJobId }, { status });
   }
 }
 

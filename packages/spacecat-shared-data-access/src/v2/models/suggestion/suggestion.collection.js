@@ -44,7 +44,7 @@ class SuggestionCollection extends BaseCollection {
       throw new ValidationError('Invalid status');
     }
 
-    return this.allByIndexKeys({ opportunityId, status }, { index: 'byOpportunityId' });
+    return this.allByIndexKeys({ opportunityId }, { status });
   }
 
   /**

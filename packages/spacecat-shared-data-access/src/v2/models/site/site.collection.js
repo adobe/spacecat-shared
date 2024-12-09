@@ -35,12 +35,13 @@ class SiteCollection extends BaseCollection {
   }
 
   async all() {
-    return this.allByIndexKeys({ pk: 'all_sites' }, { index: 'all' });
+    return this.allByIndexKeys({ pk: 'all_sites' }, {}, { index: 'all' });
   }
 
   async allSitesToAudit() {
     return (await this.allByIndexKeys(
       { pk: 'all_sites' },
+      {},
       { index: 'all', attributes: ['siteId'] },
     )).map((site) => site.getId());
   }

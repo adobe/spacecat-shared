@@ -43,7 +43,7 @@ class ExperimentCollection extends BaseCollection {
       throw new Error('ExpId is required');
     }
 
-    return this.allByIndexKeys({ siteId, expId }, { index: 'bySiteId' });
+    return this.allByIndexKeys({ siteId }, { expId });
   }
 
   async findBySiteIdAndExpId(siteId, expId) {

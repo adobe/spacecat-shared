@@ -35,7 +35,7 @@ class ConfigurationCollection extends BaseCollection {
   }
 
   async create(data) {
-    const latestConfiguration = await this.getLatestConfiguration();
+    const latestConfiguration = await this.findLatest();
     const version = latestConfiguration ? incrementVersion(latestConfiguration.getVersion()) : 1;
     const sanitizedData = sanitizeIdAndAuditFields('Organization', data);
     sanitizedData.version = version;
@@ -43,12 +43,16 @@ class ConfigurationCollection extends BaseCollection {
     return super.create(sanitizedData);
   }
 
-  async getLatestConfiguration() {
-    return this.findByIndexKeys({ pk: 'all_configurations' }, { index: 'all', order: 'desc' });
+  async all() {
+    return this.allByIndexKeys({ pk: 'all_configurations' }, {}, { index: 'all' });
   }
 
-  async getConfigurationByVersion(version) {
-    return this.findByIndexKeys({ pk: 'all_configurations', version }, { index: 'all' });
+  async findLatest() {
+    return this.findByIndexKeys({ pk: 'all_configurations' }, {}, { index: 'all', order: 'desc' });
+  }
+
+  async findByVersion(version) {
+    return this.findByIndexKeys({ pk: 'all_configurations' }, { version }, { index: 'all' });
   }
 }
 

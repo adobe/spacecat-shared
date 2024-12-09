@@ -50,7 +50,7 @@ class SiteCollection extends BaseCollection {
     if (!isValidUrl(baseURL)) {
       throw new Error('Base URL must be a valid URL');
     }
-    return this.findByIndexKeys({ pk: 'all_sites', baseURL }, { index: 'all' });
+    return this.findByIndexKeys({ pk: 'all_sites' }, { baseURL }, { index: 'all' });
   }
 }
 

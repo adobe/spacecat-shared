@@ -33,9 +33,23 @@ describe('Configuration IT', async () => {
     Configuration = dataAccess.Configuration;
   });
 
+  it('gets all configurations', async () => {
+    const configurations = await Configuration.all();
+
+    expect(configurations).to.be.an('array');
+    expect(configurations).to.have.lengthOf(sampleData.configurations.length);
+    configurations.forEach((configuration, index) => {
+      expect(
+        sanitizeTimestamps(configuration.toJSON()),
+      ).to.eql(
+        sanitizeTimestamps(sampleData.configurations[index].toJSON()),
+      );
+    });
+  });
+
   it('finds one configuration by version', async () => {
     const sampleConfiguration = sampleData.configurations[1];
-    const configuration = await Configuration.getConfigurationByVersion(
+    const configuration = await Configuration.findByVersion(
       sampleConfiguration.getVersion(),
     );
 
@@ -49,7 +63,7 @@ describe('Configuration IT', async () => {
 
   it('finds the latest configuration', async () => {
     const sampleConfiguration = sampleData.configurations[0];
-    const configuration = await Configuration.getLatestConfiguration();
+    const configuration = await Configuration.findLatest();
 
     expect(configuration).to.be.an('object');
     expect(
@@ -60,7 +74,7 @@ describe('Configuration IT', async () => {
   });
 
   it('updates a configuration', async () => {
-    const configuration = await Configuration.getLatestConfiguration();
+    const configuration = await Configuration.findLatest();
 
     const data = {
       enabledByDefault: true,
@@ -83,7 +97,7 @@ describe('Configuration IT', async () => {
 
     await configuration.save();
 
-    const updatedConfiguration = await Configuration.getLatestConfiguration();
+    const updatedConfiguration = await Configuration.findLatest();
     expect(updatedConfiguration.getId()).to.not.equal(configuration.getId());
     expect(
       Date.parse(updatedConfiguration.record.createdAt),

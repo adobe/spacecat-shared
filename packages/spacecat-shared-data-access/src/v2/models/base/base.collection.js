@@ -41,13 +41,13 @@ class BaseCollection {
    * Constructs an instance of BaseCollection.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.
-   * @param {Object} modelFactory - A factory for creating model instances.
+   * @param {Object} entityRegistry - A factory for creating model instances.
    * @param {BaseModel} clazz - The model class that represents the entity.
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(electroService, modelFactory, clazz, log) {
+  constructor(electroService, entityRegistry, clazz, log) {
     this.electroService = electroService;
-    this.modelFactory = modelFactory;
+    this.entityRegistry = entityRegistry;
     this.clazz = clazz;
     this.entityName = modelNameToEntityName(this.clazz.name);
     this.entity = electroService.entities[this.entityName];
@@ -99,7 +99,7 @@ class BaseCollection {
     // eslint-disable-next-line new-cap
     return new this.clazz(
       this.electroService,
-      this.modelFactory,
+      this.entityRegistry,
       record.data,
       this.log,
     );
@@ -208,8 +208,8 @@ class BaseCollection {
    * @returns {Promise<BaseModel|null>} - A promise that resolves to the model instance or null.
    * @async
    */
-  async findByIndexKeys(keys, options = {}) {
-    return this.#queryByIndexKeys(keys, {}, options, true);
+  async findByIndexKeys(keys, sortKeys, options = {}) {
+    return this.#queryByIndexKeys(keys, sortKeys, options, true);
   }
 
   /**

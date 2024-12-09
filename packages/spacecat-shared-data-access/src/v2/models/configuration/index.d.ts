@@ -99,18 +99,12 @@ export interface ConfigurationCollection extends BaseCollection<Configuration> {
    * Retrieves the latest configuration by version.
    * @returns {Configuration} The configuration.
    */
-  getLatestConfiguration: () => Configuration;
-
-  /**
-   * Retrieves all configurations.
-   * @returns {Array} The configurations.
-   */
-  getConfigurations: () => Array<Configuration>;
+  findLatest: () => Configuration;
 
   /**
    * Retrieves the configuration by version.
    * @param version The configuration version.
    * @returns {Configuration} The configuration.
    */
-  getConfigurationByVersion: (version: number) => Configuration;
+  findByVersion: (version: number) => Configuration;
 }

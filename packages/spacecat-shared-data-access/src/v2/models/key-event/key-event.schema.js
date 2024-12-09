@@ -24,7 +24,7 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
 const schema = new SchemaBuilder('KeyEvent', 1, 'SpaceCat')
-  .addReference('belongs_to', 'Site')
+  .addReference('belongs_to', 'Site', ['time'])
   .addAttribute('name', {
     type: 'string',
     required: true,

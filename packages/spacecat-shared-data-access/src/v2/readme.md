@@ -157,8 +157,8 @@ This guide provides a step-by-step overview for adding a new ElectroDB-based ent
    import BaseModel from './base.model.js';
    
    class MyNewEntity extends BaseModel {
-     constructor(electroService, modelFactory, record, log) {
-       super(electroService, modelFactory, record, log);
+     constructor(electroService, entityRegistry, record, log) {
+       super(electroService, entityRegistry, record, log);
      }
    }
    
@@ -212,8 +212,8 @@ If references are defined in the schema (e.g., `belongs_to`, `has_many`), `BaseM
    import MyNewEntity from '../models/myNewEntity.model.js';
 
    class MyNewEntityCollection extends BaseCollection {
-     constructor(service, modelFactory, log) {
-       super(service, modelFactory, MyNewEntity, log);
+     constructor(service, entityRegistry, log) {
+       super(service, entityRegistry, MyNewEntity, log);
      }
 
      async allByStatus(status) {

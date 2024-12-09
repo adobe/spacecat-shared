@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import BaseCollection from '../base/base.collection.js';
 import Experiment from './experiment.model.js';
@@ -55,7 +55,7 @@ class ExperimentCollection extends BaseCollection {
       throw new Error('ExpId is required');
     }
 
-    return this.findByIndexKeys({ siteId, expId }, { index: 'bySiteId' });
+    return this.findByIndexKeys({ siteId }, { expId });
   }
 
   async findBySiteIdAndExpIdAndUrl(siteId, expId, url) {
@@ -67,11 +67,11 @@ class ExperimentCollection extends BaseCollection {
       throw new Error('ExpId is required');
     }
 
-    if (!hasText(url)) {
-      throw new Error('Url is required');
+    if (!isValidUrl(url)) {
+      throw new Error('Url must be a valid URL');
     }
 
-    return this.findByIndexKeys({ siteId, expId, url }, { index: 'bySiteId' });
+    return this.findByIndexKeys({ siteId }, { expId, url });
   }
 }
 

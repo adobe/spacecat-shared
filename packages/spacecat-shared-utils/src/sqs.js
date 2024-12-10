@@ -96,7 +96,7 @@ export function sqsEventAdapter(fn) {
       message = JSON.parse(records[0]?.body);
       log.info(`Received message with id: ${records[0]?.messageId}`);
     } catch (e) {
-      log.error('Function was not invoked properly, message body is not a valid JSON', e);
+      log.warn('Function was not invoked properly, message body is not a valid JSON', e);
       return new Response('', {
         status: 400,
         headers: {

@@ -17,8 +17,8 @@ import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
-import BaseModel from '../../../../src/v2/models/base/base.model.js';
-import OpportunitySchema from '../../../../src/v2/models/opportunity/opportunity.schema.js';
+import BaseModel from '../../../../../src/v2/models/base/base.model.js';
+import OpportunitySchema from '../../../../../src/v2/models/opportunity/opportunity.schema.js';
 
 chaiUse(chaiAsPromised);
 
@@ -28,10 +28,10 @@ describe('BaseModel', () => {
   let mockElectroService;
   let baseModelInstance;
   let mockLogger;
-  let mockModelFactory;
+  let mockEntityRegistry;
 
   const mockRecord = {
-    basemodelId: '12345',
+    baseModelId: '12345',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -41,13 +41,13 @@ describe('BaseModel', () => {
       error: spy(),
     };
 
-    mockModelFactory = {
+    mockEntityRegistry = {
       getCollection: stub(),
     };
 
     mockElectroService = {
       entities: {
-        basemodel: {
+        baseModel: {
           name: 'basemodel',
           model: {
             name: 'basemodel',
@@ -68,7 +68,12 @@ describe('BaseModel', () => {
       },
     };
 
-    baseModelInstance = new BaseModel(mockElectroService, mockModelFactory, mockRecord, mockLogger);
+    baseModelInstance = new BaseModel(
+      mockElectroService,
+      mockEntityRegistry,
+      mockRecord,
+      mockLogger,
+    );
   });
 
   describe('base', () => {
@@ -77,8 +82,8 @@ describe('BaseModel', () => {
     });
 
     it('returns when initializeAttributes has no attributes', () => {
-      mockElectroService.entities.basemodel.model.schema.attributes = {};
-      const instance = new BaseModel(mockElectroService, mockModelFactory, {}, mockLogger);
+      mockElectroService.entities.baseModel.model.schema.attributes = {};
+      const instance = new BaseModel(mockElectroService, mockEntityRegistry, {}, mockLogger);
       expect(instance).to.be.an.instanceOf(BaseModel);
     });
   });
@@ -106,15 +111,15 @@ describe('BaseModel', () => {
 
   describe('remove', () => {
     it('removes the record and returns the current instance', async () => {
-      mockElectroService.entities.basemodel.remove.returns({ go: () => Promise.resolve() });
+      mockElectroService.entities.baseModel.remove.returns({ go: () => Promise.resolve() });
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
-      expect(mockElectroService.entities.basemodel.remove.calledOnce).to.be.true;
+      expect(mockElectroService.entities.baseModel.remove.calledOnce).to.be.true;
       expect(mockLogger.error.notCalled).to.be.true;
     });
 
     it('logs an error and throws when remove fails', async () => {
       const error = new Error('Remove failed');
-      mockElectroService.entities.basemodel.remove.returns({ go: () => Promise.reject(error) });
+      mockElectroService.entities.baseModel.remove.returns({ go: () => Promise.reject(error) });
 
       await expect(baseModelInstance.remove()).to.be.rejectedWith('Remove failed');
       expect(mockLogger.error.calledOnce).to.be.true;
@@ -151,27 +156,27 @@ describe('BaseModel', () => {
     });
 
     it('returns undefined if the reference does not exist', async () => {
-      mockModelFactory.getCollection.returns({ findByIndexKeys: stub() });
+      mockEntityRegistry.getCollection.returns({ allByIndexKeys: stub() });
       const result = await baseModelInstance._fetchReference('has_many', 'Foo');
       expect(result).to.be.undefined;
     });
 
     it('fetches a belongs_to reference by ID', async () => {
-      mockModelFactory.getCollection.returns({ findById: stub().returns('bar') });
+      mockEntityRegistry.getCollection.returns({ findById: stub().returns('bar') });
       baseModelInstance.record.fooId = '12345';
       const result = await baseModelInstance._fetchReference('belongs_to', 'Foo');
       expect(result).to.equal('bar');
     });
 
     it('fetches a has_one reference by ID', async () => {
-      mockModelFactory.getCollection.returns({ findById: stub().returns('bar') });
+      mockEntityRegistry.getCollection.returns({ findById: stub().returns('bar') });
       baseModelInstance.record.fooId = '12345';
       const result = await baseModelInstance._fetchReference('has_one', 'Foo');
       expect(result).to.equal('bar');
     });
 
     it('fetches a has_many reference by foreign key', async () => {
-      mockModelFactory.getCollection.returns({ findByIndexKeys: stub().returns(['bar']) });
+      mockEntityRegistry.getCollection.returns({ allByIndexKeys: stub().returns(['bar']) });
       const result = await baseModelInstance._fetchReference('has_many', 'Foo');
       expect(result).to.deep.equal(['bar']);
     });

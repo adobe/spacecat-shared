@@ -17,8 +17,8 @@ import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
-import Opportunity from '../../../../src/v2/models/opportunity/opportunity.model.js';
-import OpportunitySchema from '../../../../src/v2/models/opportunity/opportunity.schema.js';
+import Opportunity from '../../../../../src/v2/models/opportunity/opportunity.model.js';
+import OpportunitySchema from '../../../../../src/v2/models/opportunity/opportunity.schema.js';
 
 chaiUse(chaiAsPromised);
 
@@ -51,7 +51,7 @@ const mockElectroService = {
 
 describe('Opportunity', () => {
   let opportunityInstance;
-  let mockModelFactory;
+  let mockEntityRegistry;
   let mockLogger;
 
   const mockRecord = {
@@ -72,7 +72,7 @@ describe('Opportunity', () => {
   };
 
   beforeEach(() => {
-    mockModelFactory = {
+    mockEntityRegistry = {
       getCollection: stub(),
     };
 
@@ -82,7 +82,7 @@ describe('Opportunity', () => {
 
     opportunityInstance = new Opportunity(
       mockElectroService,
-      mockModelFactory,
+      mockEntityRegistry,
       mockRecord,
       mockLogger,
     );
@@ -100,11 +100,11 @@ describe('Opportunity', () => {
       const mockSuggestionCollection = {
         createMany: stub().returns(Promise.resolve({ id: 'suggestion-1' })),
       };
-      mockModelFactory.getCollection.withArgs('SuggestionCollection').returns(mockSuggestionCollection);
+      mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(mockSuggestionCollection);
 
       const suggestion = await opportunityInstance.addSuggestions([{ text: 'Suggestion text' }]);
       expect(suggestion).to.deep.equal({ id: 'suggestion-1' });
-      expect(mockModelFactory.getCollection.calledOnceWith('SuggestionCollection')).to.be.true;
+      expect(mockEntityRegistry.getCollection.calledWith('SuggestionCollection')).to.be.true;
       expect(mockSuggestionCollection.createMany.calledOnceWith([{ text: 'Suggestion text', opportunityId: 'op12345' }])).to.be.true;
     });
   });

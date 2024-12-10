@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.23.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.5...@adobe/spacecat-shared-utils-v1.23.6) (2024-12-10)
+
+
+### Bug Fixes
+
+* **sqs-wrapper:** decrease error log level ([#483](https://github.com/adobe/spacecat-shared/issues/483)) ([2c7bc99](https://github.com/adobe/spacecat-shared/commit/2c7bc998d0d137b24ca84356a4445a76e63053e3))
+
 # [@adobe/spacecat-shared-utils-v1.23.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.4...@adobe/spacecat-shared-utils-v1.23.5) (2024-12-07)
 
 

@@ -10,57 +10,47 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText, isInteger } from '@adobe/spacecat-shared-utils';
 import pluralize from 'pluralize';
-import { isInteger } from '@adobe/spacecat-shared-utils';
 
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+const capitalize = (str) => (hasText(str) ? str[0].toUpperCase() + str.slice(1) : '');
+const decapitalize = (str) => (hasText(str) ? str[0].toLowerCase() + str.slice(1) : '');
+
 const collectionNameToEntityName = (collectionName) => collectionName.replace('Collection', '');
-const decapitalize = (str) => str.charAt(0).toLowerCase() + str.slice(1);
-const entityNameToCollectionName = (entityName) => `${pluralize.singular(entityName)}Collection`;
-const entityNameToIdName = (collectionName) => `${decapitalize(collectionName)}Id`;
-const entityNameToReferenceMethodName = (target, type) => {
-  let baseName = capitalize(target);
-  baseName = type === 'has_many'
-    ? pluralize.plural(baseName)
-    : pluralize.singular(baseName);
 
+const entityNameToCollectionName = (entityName) => `${pluralize.singular(entityName)}Collection`;
+
+const entityNameToIdName = (entityName) => `${decapitalize(entityName)}Id`;
+
+const entityNameToReferenceMethodName = (target, type) => {
+  const baseName = type === 'has_many'
+    ? pluralize.plural(capitalize(target))
+    : pluralize.singular(capitalize(target));
   return `get${baseName}`;
 };
+
 const entityNameToAllPKValue = (entityName) => `ALL_${pluralize.plural(entityName.toUpperCase())}`;
 
 const idNameToEntityName = (idName) => capitalize(pluralize.singular(idName.replace('Id', '')));
 
-const keyNamesToIndexName = (keyNames) => {
-  const capitalizedKeyNames = keyNames.map((keyName) => capitalize(keyName));
-  return `by${capitalizedKeyNames.join('And')}`;
-};
+const keyNamesToIndexName = (keyNames) => `by${keyNames.map(capitalize).join('And')}`;
 
 const modelNameToEntityName = (modelName) => decapitalize(modelName);
 
 const sanitizeTimestamps = (data) => {
-  const sanitizedData = { ...data };
-
-  delete sanitizedData.createdAt;
-  delete sanitizedData.updatedAt;
-
-  return sanitizedData;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { createdAt, updatedAt, ...rest } = data;
+  return rest;
 };
 
 const sanitizeIdAndAuditFields = (entityName, data) => {
   const idName = entityNameToIdName(entityName);
-  const sanitizedData = { ...data };
-
-  delete sanitizedData[idName];
-
-  return sanitizeTimestamps(sanitizedData);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { [idName]: _, ...rest } = data;
+  return sanitizeTimestamps(rest);
 };
 
-function incrementVersion(version) {
-  if (!isInteger(version)) return 1;
-
-  const versionNumber = parseInt(version, 10);
-  return versionNumber + 1;
-}
+const incrementVersion = (version) => (isInteger(version) ? parseInt(version, 10) + 1 : 1);
 
 export {
   capitalize,

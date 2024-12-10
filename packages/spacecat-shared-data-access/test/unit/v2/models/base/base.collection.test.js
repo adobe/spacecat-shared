@@ -17,14 +17,14 @@ import { ElectroValidationError } from 'electrodb';
 import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
-import BaseCollection from '../../../../src/v2/models/base/base.collection.js';
+import BaseCollection from '../../../../../src/v2/models/base/base.collection.js';
 
 chaiUse(chaiAsPromised);
 
 describe('BaseCollection', () => {
   let baseCollectionInstance;
   let mockElectroService;
-  let mockModelFactory;
+  let mockEntityRegistry;
   let mockLogger;
 
   const mockRecord = {
@@ -38,7 +38,7 @@ describe('BaseCollection', () => {
   };
 
   beforeEach(() => {
-    mockModelFactory = {
+    mockEntityRegistry = {
       getCollection: stub(),
     };
 
@@ -49,13 +49,14 @@ describe('BaseCollection', () => {
 
     mockElectroService = {
       entities: {
-        mockentitymodel: {
+        mockEntityModel: {
           get: stub(),
           put: stub(),
           create: stub(),
           query: stub(),
           model: {
             name: 'mockentitymodel',
+            indexes: [],
             table: 'mockentitymodel',
           },
         },
@@ -64,7 +65,7 @@ describe('BaseCollection', () => {
 
     baseCollectionInstance = new BaseCollection(
       mockElectroService,
-      mockModelFactory,
+      mockEntityRegistry,
       class MockEntityModel {
         constructor(service, factory, data) {
           this.data = data;
@@ -80,59 +81,59 @@ describe('BaseCollection', () => {
   describe('findById', () => {
     it('returns the entity if found', async () => {
       const mockFindResult = { data: mockRecord };
-      mockElectroService.entities.mockentitymodel.get.returns(
+      mockElectroService.entities.mockEntityModel.get.returns(
         { go: () => Promise.resolve(mockFindResult) },
       );
 
       const result = await baseCollectionInstance.findById('ef39921f-9a02-41db-b491-02c98987d956');
       expect(result).to.deep.include(mockEntityModel);
-      expect(mockElectroService.entities.mockentitymodel.get.calledOnce).to.be.true;
+      expect(mockElectroService.entities.mockEntityModel.get.calledOnce).to.be.true;
     });
 
     it('returns null if the entity is not found', async () => {
-      mockElectroService.entities.mockentitymodel.get.returns(
+      mockElectroService.entities.mockEntityModel.get.returns(
         { go: () => Promise.resolve(null) },
       );
 
       const result = await baseCollectionInstance.findById('ef39921f-9a02-41db-b491-02c98987d956');
       expect(result).to.be.null;
-      expect(mockElectroService.entities.mockentitymodel.get.calledOnce).to.be.true;
+      expect(mockElectroService.entities.mockEntityModel.get.calledOnce).to.be.true;
     });
   });
 
   describe('findByIndexKeys', () => {
     it('throws error if keys is not provided', async () => {
       await expect(baseCollectionInstance.findByIndexKeys())
-        .to.be.rejectedWith('Failed to find by index keys [mockentitymodel]: keys are required');
+        .to.be.rejectedWith('Failed to query [mockEntityModel]: keys are required');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
 
     it('throws error if index is not found', async () => {
       await expect(baseCollectionInstance.findByIndexKeys({ someKey: 'someValue' }))
-        .to.be.rejectedWith('Failed to find by index keys [mockentitymodel]: index [bySomeKey] not found');
+        .to.be.rejectedWith('Failed to query [mockEntityModel]: index [primary] not found');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
   });
 
   describe('create', () => {
     it('throws an error if the record is empty', async () => {
-      await expect(baseCollectionInstance.create(null)).to.be.rejectedWith('Failed to create [mockentitymodel]');
+      await expect(baseCollectionInstance.create(null)).to.be.rejectedWith('Failed to create [mockEntityModel]');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
 
     it('creates a new entity successfully', async () => {
-      mockElectroService.entities.mockentitymodel.create.returns(
+      mockElectroService.entities.mockEntityModel.create.returns(
         { go: () => Promise.resolve(mockEntityModel) },
       );
 
       const result = await baseCollectionInstance.create(mockRecord);
       expect(result).to.deep.include(mockEntityModel);
-      expect(mockElectroService.entities.mockentitymodel.create.calledOnce).to.be.true;
+      expect(mockElectroService.entities.mockEntityModel.create.calledOnce).to.be.true;
     });
 
     it('logs an error and throws when creation fails', async () => {
       const error = new Error('Create failed');
-      mockElectroService.entities.mockentitymodel.create.returns(
+      mockElectroService.entities.mockEntityModel.create.returns(
         { go: () => Promise.reject(error) },
       );
 
@@ -144,7 +145,7 @@ describe('BaseCollection', () => {
   describe('createMany', () => {
     it('throws an error if the records are empty', async () => {
       await expect(baseCollectionInstance.createMany(null))
-        .to.be.rejectedWith('Failed to create many [mockentitymodel]: items must be a non-empty array');
+        .to.be.rejectedWith('Failed to create many [mockEntityModel]: items must be a non-empty array');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
 
@@ -155,29 +156,24 @@ describe('BaseCollection', () => {
         method: 'batchWrite',
         params: {
           RequestItems: {
-            mockentitymodel: [
+            mockEntityModel: [
               { PutRequest: { Item: mockRecord } },
               { PutRequest: { Item: mockRecord } },
             ],
           },
         },
       };
-      mockElectroService.entities.mockentitymodel.put.returns(
+      mockElectroService.entities.mockEntityModel.put.returns(
         {
-          go: (options) => {
-            options.listeners[0](mockPutResults);
-            options.listeners[0]({ type: 'result' });
-            options.listeners[0]({ type: 'query', method: 'ignore' });
-            return Promise.resolve({ unprocessed: [] });
-          },
-          params: () => {},
+          go: () => Promise.resolve(mockPutResults),
+          params: () => ({ Item: { ...mockRecord } }),
         },
       );
 
       const result = await baseCollectionInstance.createMany(mockRecords);
       expect(result.createdItems).to.be.an('array').that.has.length(2);
       expect(result.createdItems).to.deep.include(mockEntityModel);
-      expect(mockElectroService.entities.mockentitymodel.put.calledThrice).to.be.true;
+      expect(mockElectroService.entities.mockEntityModel.put.calledThrice).to.be.true;
     });
 
     it('creates many with a parent entity', async () => {
@@ -187,67 +183,57 @@ describe('BaseCollection', () => {
         method: 'batchWrite',
         params: {
           RequestItems: {
-            mockentitymodel: [
+            mockEntityModel: [
               { PutRequest: { Item: mockRecord } },
               { PutRequest: { Item: mockRecord } },
             ],
           },
         },
       };
-      mockElectroService.entities.mockentitymodel.put.returns(
+      mockElectroService.entities.mockEntityModel.put.returns(
         {
-          go: (options) => {
-            options.listeners[0](mockPutResults);
-            options.listeners[0]({ type: 'result' });
-            options.listeners[0]({ type: 'query', method: 'ignore' });
-            return Promise.resolve({ unprocessed: [] });
-          },
-          params: () => {},
+          go: () => Promise.resolve(mockPutResults),
+          params: () => ({ Item: { ...mockRecord } }),
         },
       );
 
       const result = await baseCollectionInstance.createMany(
         mockRecords,
-        { entity: { model: { name: 'mockentitymodel' } } },
+        { entity: { model: { name: 'mockEntityModel' } } },
       );
       expect(result.createdItems).to.be.an('array').that.has.length(2);
       expect(result.createdItems).to.deep.include(mockEntityModel);
-      expect(mockElectroService.entities.mockentitymodel.put.calledThrice).to.be.true;
+      expect(mockElectroService.entities.mockEntityModel.put.calledThrice).to.be.true;
     });
 
     it('creates some entities successfully with unprocessed items', async () => {
       const mockRecords = [mockRecord, mockRecord];
-      const mockPutResults = {
-        type: 'query',
-        method: 'batchWrite',
-        params: {
-          RequestItems: {
-            mockentitymodel: [
-              { PutRequest: { Item: mockRecord } },
-            ],
-          },
-        },
-      };
-      mockElectroService.entities.mockentitymodel.put.returns(
+      let itemCount = 0;
+
+      mockElectroService.entities.mockEntityModel.put.returns(
         {
-          go: (options) => {
-            options.listeners[0](mockPutResults);
-            return Promise.resolve({ unprocessed: [mockRecord] });
+          go: () => Promise.resolve({ unprocessed: [mockRecord] }),
+          params: () => {
+            if (itemCount === 0) {
+              itemCount += 1;
+              return { Item: { ...mockRecord } };
+            } else {
+              throw new ElectroValidationError('Validation failed');
+            }
           },
-          params: () => {},
         },
       );
 
       const result = await baseCollectionInstance.createMany(mockRecords);
       expect(result.createdItems).to.be.an('array').that.has.length(1);
       expect(result.createdItems).to.deep.include(mockEntityModel);
-      expect(mockElectroService.entities.mockentitymodel.put.calledThrice).to.be.true;
-      expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockentitymodel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
+      expect(mockElectroService.entities.mockEntityModel.put.calledThrice).to.be.true;
+      expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockEntityModel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
     });
 
     it('fails creating some items due to ValidationError', async () => {
       const error = new ElectroValidationError('Validation failed');
-      mockElectroService.entities.mockentitymodel.put.returns(
+      mockElectroService.entities.mockEntityModel.put.returns(
         { params: () => { throw error; } },
       );
 
@@ -260,10 +246,10 @@ describe('BaseCollection', () => {
     it('logs an error and throws when creation fails', async () => {
       const error = new Error('Create failed');
       const mockRecords = [mockRecord, mockRecord];
-      mockElectroService.entities.mockentitymodel.put.returns(
+      mockElectroService.entities.mockEntityModel.put.returns(
         {
           go: () => Promise.reject(error),
-          params: () => {},
+          params: () => ({ Item: { ...mockRecord } }),
         },
       );
 
@@ -275,22 +261,22 @@ describe('BaseCollection', () => {
   describe('_saveMany', () => { /* eslint-disable no-underscore-dangle */
     it('throws an error if the records are empty', async () => {
       await expect(baseCollectionInstance._saveMany(null))
-        .to.be.rejectedWith('Failed to save many [mockentitymodel]: items must be a non-empty array');
+        .to.be.rejectedWith('Failed to save many [mockEntityModel]: items must be a non-empty array');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
 
     it('saves multiple entities successfully', async () => {
       const mockRecords = [mockRecord, mockRecord];
-      mockElectroService.entities.mockentitymodel.put.returns({ go: () => [] });
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
 
       const result = await baseCollectionInstance._saveMany(mockRecords);
       expect(result).to.be.undefined;
-      expect(mockElectroService.entities.mockentitymodel.put.calledOnce).to.be.true;
+      expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
     });
 
     it('saves some entities successfully with unprocessed items', async () => {
       const mockRecords = [mockRecord, mockRecord];
-      mockElectroService.entities.mockentitymodel.put.returns(
+      mockElectroService.entities.mockEntityModel.put.returns(
         {
           go: () => Promise.resolve({ unprocessed: [mockRecord] }),
         },
@@ -298,14 +284,14 @@ describe('BaseCollection', () => {
 
       const result = await baseCollectionInstance._saveMany(mockRecords);
       expect(result).to.be.undefined;
-      expect(mockElectroService.entities.mockentitymodel.put.calledOnce).to.be.true;
-      expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockentitymodel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
+      expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+      expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockEntityModel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
     });
 
     it('throws error and logs when save fails', async () => {
       const error = new Error('Save failed');
       const mockRecords = [mockRecord, mockRecord];
-      mockElectroService.entities.mockentitymodel.put.returns(
+      mockElectroService.entities.mockEntityModel.put.returns(
         { go: () => Promise.reject(error) },
       );
 

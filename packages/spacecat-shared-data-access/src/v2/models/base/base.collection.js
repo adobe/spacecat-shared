@@ -369,10 +369,7 @@ class BaseCollection {
     items.forEach((item) => {
       try {
         const { Item } = this.entity.put(item).params();
-        validatedItems.push({
-          ...removeElectroProperties(Item),
-          ...item,
-        });
+        validatedItems.push({ ...removeElectroProperties(Item), ...item });
       } catch (error) {
         if (error instanceof ElectroValidationError) {
           errorItems.push({ item, error: new ValidationError(error) });

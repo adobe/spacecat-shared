@@ -160,30 +160,30 @@ echo "Migrated configurations successfully."
 
 # Migrate each experiment
 echo "$EXPERIMENTS" | jq -c '.Items[]' | while read -r experiment; do
-    EXPERIMENT_ID=$(echo $experiment | jq -r '.experimentId.S')
+    EXPERIMENT_ID=$(echo "$experiment" | jq -r '.experimentId.S')
     EXP_ID=$(uuidgen)
-    SITE_ID=$(echo $experiment | jq -r '.siteId.S')
+    SITE_ID=$(echo "$experiment" | jq -r '.siteId.S')
     EXPERIMENT_PK="\$spacecat#experimentId_$EXP_ID"
     EXPERIMENT_SK="\$experiment_1"
     EXPERIMENTS_GSI1PK="\$spacecat#siteid_$SITE_ID"
     EXPERIMENT_GSI1SK="$EXPERIMENT_SK#exp_id_${EXP_ID}#url_${URL}#updatedAt_${UPDATED_AT}"
-    START_DATE=$(echo $experiment | jq -r '.startDate.S')
-    STATUS=$(echo $experiment | jq -r '.status.S')
-    TYPE=$(echo $experiment | jq -r '.type.S')
-    START_DATE=$(echo $experiment | jq -r '.startDate.S')
-    END_DATE=$(echo $experiment | jq -r '.endDate.S')
-    URL=$(echo $experiment | jq -r '.url.S')
-    VARIANTS=$(echo $experiment | jq -r '.variants // {"L": []}')
-    NAME=$(echo $experiment | jq -r '.name.S')
-    CONVERSION_EVENT_NAME=$(echo $experiment | jq -r '.conversionEventName // empty')
-    CONVERSION_EVENT_VALUE=$(echo $experiment | jq -r '.conversionEventValue // empty')
-    CREATED_AT=$(echo $experiment | jq -r '.createdAt.S')
-    UPDATED_AT=$(echo $experiment | jq -r '.updatedAt.S')
-    UPDATED_BY=$(echo $experiment | jq -r '.updatedBy.S')
- MIGRATED_EXPERIMENT=$(cat <<EOF
+    START_DATE=$(echo "$experiment" | jq -r '.startDate.S')
+    STATUS=$(echo "$experiment" | jq -r '.status.S')
+    TYPE=$(echo "$experiment" | jq -r '.type.S')
+    END_DATE=$(echo "$experiment" | jq -r '.endDate.S')
+    URL=$(echo "$experiment" | jq -r '.url.S')
+    VARIANTS=$(echo "$experiment" | jq -r '.variants // {"L": []}')
+    NAME=$(echo "$experiment" | jq -r '.name.S')
+    CONVERSION_EVENT_NAME=$(echo "$experiment" | jq -r '.conversionEventName // empty')
+    CONVERSION_EVENT_VALUE=$(echo "$experiment" | jq -r '.conversionEventValue // empty')
+    CREATED_AT=$(echo "$experiment" | jq -r '.createdAt.S')
+    UPDATED_AT=$(echo "$experiment" | jq -r '.updatedAt.S')
+    UPDATED_BY=$(echo "$experiment" | jq -r '.updatedBy.S')
+
+    MIGRATED_EXPERIMENT=$(cat <<EOF
 {
     "experimentId": {"S": "$EXPERIMENT_ID"},
-    "gsi1pk": {"S": "$EXPERIMENT_GSI1PK"},
+    "gsi1pk": {"S": "$EXPERIMENTS_GSI1PK"},
     "gsi1sk": {"S": "$EXPERIMENT_GSI1SK"},
     "expId": {"S": "$EXP_ID"},
     "siteId": {"S": "$SITE_ID"},
@@ -202,9 +202,8 @@ echo "$EXPERIMENTS" | jq -c '.Items[]' | while read -r experiment; do
     "__edb_v__": {"N": "1"},
     "createdAt": {"S": "$CREATED_AT"},
     "updatedAt": {"S": "$UPDATED_AT"},
-    "config": $CONFIG
+    "updatedBy": {"S": "$UPDATED_BY"}
 }
-
 EOF
 )
 
@@ -212,30 +211,33 @@ EOF
     $AWS_LOCAL_CMD put-item --table-name $DATA_TABLE --item "$MIGRATED_EXPERIMENT"
 
 done
+
 echo "Migrated experiments successfully."
 
 # Migrate each site candidate
 echo "$SITE_CANDIDATES" | jq -c '.Items[]' | while read -r site_candidate; do
+    echo "Migrating site candidate..."
     SITE_CANDIDATE_ID=$(uuidgen)
     SITE_CANDIDATE_PK="\$spacecat#sitecandidateId_$SITE_CANDIDATE_ID"
     SITE_CANDIDATE_SK="\$sitecandidate_1"
-    CREATED_AT=$(echo $site_candidate | jq -r '.createdAt.S')
-    UPDATED_AT=$(echo $site_candidate | jq -r '.updatedAt.S')
-    UPDATED_BY=$(echo $site_candidate | jq -r '.updatedBy.S')
+    SITE_ID=$(echo "$site_candidate" | jq -r '.siteId.S')
+    BASE_URL=$(echo "$site_candidate" | jq -r '.baseURL.S')
+    CREATED_AT=$(echo "$site_candidate" | jq -r '.createdAt.S')
+    UPDATED_AT=$(echo "$site_candidate" | jq -r '.updatedAt.S')
+    UPDATED_BY=$(echo "$site_candidate" | jq -r '.updatedBy.S')
+    SOURCE=$(echo "$site_candidate" | jq -r '.source.S')
+    HLX_CONFIG=$(echo "$site_candidate" | jq -r '.hlxConfig // {"M": {}}')
+    STATUS=$(echo "$site_candidate" | jq -r '.status.S')
     SITE_CANDIDATE_GSI1PK="all_sitecandidates"
     SITE_CANDIDATE_GSI1SK="\$sitecandidate_1#baseurl_${BASE_URL}"
     SITE_CANDIDATE_GSI2PK="\$spacecat#siteid_$SITE_ID"
     SITE_CANDIDATE_GSI2SK="\$sitecandidate_1#updatedat_${UPDATED_AT}"
-    SITE_ID=$(echo $site_candidate | jq -r '.siteId.S')
-    BASE_URL=$(echo $site_candidate | jq -r '.baseURL.S')
-    SOURCE=$(echo $site_candidate | jq -r '.source.S')
-    HLX_CONFIG=$(echo $site_candidate | jq -r '.hlxConfig // {"M": {}}')
-    STATUS=$(echo $site_candidate | jq -r '.status.S')
- MIGRATED_SITE_CANDIDATE=$(cat <<EOF
+
+    MIGRATED_SITE_CANDIDATE=$(cat <<EOF
 {
     "siteCandidateId": {"S": "$SITE_CANDIDATE_ID"},
-    "gsi1pk": {"S": "$SITE_CANDIDATE_PK"},
-    "gsi1sk": {"S": "$SITE_CANDIDATE_SK"},
+    "gsi1pk": {"S": "$SITE_CANDIDATE_GSI1PK"},
+    "gsi1sk": {"S": "$SITE_CANDIDATE_GSI1SK"},
     "gsi2pk": {"S": "$SITE_CANDIDATE_GSI2PK"},
     "gsi2sk": {"S": "$SITE_CANDIDATE_GSI2SK"},
     "siteId": {"S": "$SITE_ID"},
@@ -249,10 +251,8 @@ echo "$SITE_CANDIDATES" | jq -c '.Items[]' | while read -r site_candidate; do
     "__edb_v__": {"N": "1"},
     "createdAt": {"S": "$CREATED_AT"},
     "updatedBy": {"S": "$UPDATED_BY"},
-    "updatedAt": {"S": "$UPDATED_AT"},
-    "config": $CONFIG
+    "updatedAt": {"S": "$UPDATED_AT"}
 }
-
 EOF
 )
 
@@ -265,21 +265,22 @@ echo "Migrated site candidates successfully."
 # Migrate each top page
 echo "$TOP_PAGES" | jq -c '.Items[]' | while read -r top_page; do
     TOP_PAGE_ID=$(uuidgen)
-    SITE_ID=$(echo $top_page | jq -r '.siteId.S')
-    GEOGRAPHY=$(echo $top_page | jq -r '.geo.S')
-    IMPORTED_AT=$(echo $top_page | jq -r '.importedAt.S')
-    SOURCE=$(echo $top_page | jq -r '.source.S')
-    TOP_KEYWORD=$(echo $top_page | jq -r '.topKeyword.S')
-    TRAFFIC=$(echo $top_page | jq -r '.traffic.N')
-    URL=$(echo $top_page | jq -r '.url.S')
+    SITE_ID=$(echo "$top_page" | jq -r '.siteId.S')
+    GEOGRAPHY=$(echo "$top_page" | jq -r '.geo.S')
+    IMPORTED_AT=$(echo "$top_page" | jq -r '.importedAt.S')
+    SOURCE=$(echo "$top_page" | jq -r '.source.S')
+    TOP_KEYWORD=$(echo "$top_page" | jq -r '.topKeyword.S')
+    TRAFFIC=$(echo "$top_page" | jq -r '.traffic.N')
+    URL=$(echo "$top_page" | jq -r '.url.S')
+    CREATED_AT=$(echo "$top_page" | jq -r '.createdAt.S')
+    UPDATED_AT=$(echo "$top_page" | jq -r '.updatedAt.S')
+    CONFIG=$(echo "$top_page" | jq -r '.config // {"M": {}}')
     TOP_PAGE_PK="\$spacecat#sitetoppageId_$TOP_PAGE_ID"
     TOP_PAGE_SK="\$sitetoppage_1"
     TOP_PAGE_GSI1PK="\$spacecat#siteid_$SITE_ID"
     TOP_PAGE_GSI1SK="$TOP_PAGE_SK#source_${SOURCE}#geo_${GEOGRAPHY}#traffic_${TRAFFIC}"
-    CREATED_AT=$(echo $top_page | jq -r '.createdAt.S')
-    UPDATED_AT=$(echo $top_page | jq -r '.updatedAt.S')
-    CONFIG=$(echo $top_page | jq -r '.config // {"M": {}}')
- MIGRATED_TOP_PAGE=$(cat <<EOF
+
+    MIGRATED_TOP_PAGE=$(cat <<EOF
 {
     "siteTopPageId": {"S": "$TOP_PAGE_ID"},
     "siteId": {"S": "$SITE_ID"},
@@ -289,16 +290,16 @@ echo "$TOP_PAGES" | jq -c '.Items[]' | while read -r top_page; do
     "topKeyword": {"S": "$TOP_KEYWORD"},
     "traffic": {"N": "$TRAFFIC"},
     "url": {"S": "$URL"},
-    "gsi1pk": {"S": "$TOP_PAGE_PK"},
-    "gsi1sk": {"S": "$TOP_PAGE_SK"},
+    "gsi1pk": {"S": "$TOP_PAGE_GSI1PK"},
+    "gsi1sk": {"S": "$TOP_PAGE_GSI1SK"},
     "pk": {"S": "$TOP_PAGE_PK"},
     "sk": {"S": "$TOP_PAGE_SK"},
     "__edb_e__": {"S": "SiteTopPage"},
     "__edb_v__": {"N": "1"},
     "createdAt": {"S": "$CREATED_AT"},
     "updatedAt": {"S": "$UPDATED_AT"},
+    "config": $CONFIG
 }
-
 EOF
 )
 
@@ -311,34 +312,33 @@ echo "Migrated top pages successfully."
 # Migrate each key event
 echo "$KEY_EVENTS" | jq -c '.Items[]' | while read -r key_event; do
     KEY_EVENT_ID=$(uuidgen)
-    SITE_ID=$(echo $key_event | jq -r '.siteId.S')
+    SITE_ID=$(echo "$key_event" | jq -r '.siteId.S')
+    NAME=$(echo "$key_event" | jq -r '.name.S')
+    TYPE=$(echo "$key_event" | jq -r '.type.S')
+    TIME=$(echo "$key_event" | jq -r '.time.S')
+    CREATED_AT=$(echo "$key_event" | jq -r '.createdAt.S')
+    UPDATED_AT=$(echo "$key_event" | jq -r '.updatedAt.S')
     KEY_EVENT_PK="\$spacecat#keyeventid_$KEY_EVENT_ID"
     KEY_EVENT_SK="\$keyevent_1"
-    CREATED_AT=$(echo $key_event | jq -r '.createdAt.S')
-    UPDATED_AT=$(echo $key_event | jq -r '.updatedAt.S')
-    NAME=$(echo $key_event | jq -r '.name.S')
-    TYPE=$(echo $key_event | jq -r '.type.S')
-    TIME=$(echo $key_event | jq -r '.time.S')
     KEY_EVENT_GSI1PK="\$spacecat#siteid_$SITE_ID"
     KEY_EVENT_GSI1SK="$KEY_EVENT_SK#time_${TIME}"
+
     MIGRATED_KEY_EVENT=$(cat <<EOF
 {
     "keyEventId": {"S": "$KEY_EVENT_ID"},
-    "gsi1pk": {"S": "$KEY_EVENT_PK"},
-    "gsi1sk": {"S": "$KEY_EVENT_SK"},
+    "gsi1pk": {"S": "$KEY_EVENT_GSI1PK"},
+    "gsi1sk": {"S": "$KEY_EVENT_GSI1SK"},
     "siteId": {"S": "$SITE_ID"},
+    "name": {"S": "$NAME"},
+    "type": {"S": "$TYPE"},
+    "time": {"S": "$TIME"},
     "pk": {"S": "$KEY_EVENT_PK"},
     "sk": {"S": "$KEY_EVENT_SK"},
     "__edb_e__": {"S": "KeyEvent"},
     "__edb_v__": {"N": "1"},
-    "name": {"S": "$NAME"},
-    "type": {"S": "$TYPE"},
-    "time": {"S": "$TIME"},
     "createdAt": {"S": "$CREATED_AT"},
-    "updatedAt": {"S": "$UPDATED_AT"},
-    "config": $CONFIG
+    "updatedAt": {"S": "$UPDATED_AT"}
 }
-
 EOF
 )
 
@@ -346,7 +346,6 @@ EOF
     $AWS_LOCAL_CMD put-item --table-name $DATA_TABLE --item "$MIGRATED_KEY_EVENT"
 
 done
-    })
-
+echo "Migrated key events successfully."
 
 echo "Migration completed successfully."

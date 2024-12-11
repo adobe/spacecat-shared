@@ -11,7 +11,7 @@
  */
 
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, QueryCommandInput } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, QueryCommandInput, ScanCommandInput } from '@aws-sdk/lib-dynamodb';
 
 export declare interface Logger {
   error(message: string, ...args: unknown[]): void;
@@ -24,6 +24,7 @@ export declare interface DynamoDbKey {
 }
 
 export declare interface DynamoDbClient {
+  scan(originalParams: ScanCommandInput): Promise<object[]>;
   query(originalParams: QueryCommandInput): Promise<object[]>;
   getItem(tableName: string, key: DynamoDbKey): Promise<object>;
   putItem(tableName: string, item: object): Promise<{ message: string }>;

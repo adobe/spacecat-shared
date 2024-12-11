@@ -41,6 +41,7 @@ export interface Configuration extends BaseModel {
 
   /**
    * Retrieves the handler configuration for handler type.
+   * @param type The handler type.
    * @returns {object} The handler type configuration.
    */
   getHandler: (type) => object;

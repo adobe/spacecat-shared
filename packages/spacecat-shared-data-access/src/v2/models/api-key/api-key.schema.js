@@ -39,7 +39,8 @@ const schema = new SchemaBuilder('ApiKey', 1, 'SpaceCat')
     required: true,
   })
   .addAttribute('deletedAt', {
-    type: 'number',
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
   })
   .addAttribute('expiresAt', {
     type: 'string',

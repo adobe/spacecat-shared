@@ -13,21 +13,21 @@
 import type { BaseCollection, BaseModel } from '../base';
 
 export interface ApiKey extends BaseModel {
-  getDeletedAt(): number | undefined;
-  getExpiresAt(): number | undefined;
+  getDeletedAt(): string | undefined;
+  getExpiresAt(): string | undefined;
   getHashedApiKey(): string;
   getImsOrgId(): string | undefined;
   getImsUserId(): string | undefined;
   getName(): string;
-  getRevokedAt(): number | undefined;
+  getRevokedAt(): string | undefined;
   getScopes(): string[];
-  setDeletedAt(deletedAt: number): void;
-  setExpiresAt(expiresAt: number): void;
+  setDeletedAt(deletedAt: string): void;
+  setExpiresAt(expiresAt: string): void;
   setHashedApiKey(hashedApiKey: string): void;
   setImsOrgId(imsOrgId: string): void;
   setImsUserId(imsUserId: string): void;
   setName(name: string): void;
-  setRevokedAt(revokedAt: number): void;
+  setRevokedAt(revokedAt: string): void;
   setScopes(scopes: object[]): void;
 }
 

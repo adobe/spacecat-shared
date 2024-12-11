@@ -48,21 +48,21 @@ const schema = new SchemaBuilder('Site', 1, 'SpaceCat')
     required: true,
     validate: (value) => isValidUrl(value),
   })
-  .addAttribute('gitHubURL', {
-    type: 'string',
-    validate: (value) => !value || isValidUrl(value),
-  })
-  .addAttribute('deliveryType', {
-    type: Object.values(DELIVERY_TYPES),
-    default: DEFAULT_DELIVERY_TYPE,
-    required: true,
-  })
   .addAttribute('config', {
     type: 'any',
     required: true,
     default: DEFAULT_CONFIG,
     validate: (value) => isNonEmptyObject(validateConfiguration(value)),
     get: (value) => Config(value),
+  })
+  .addAttribute('deliveryType', {
+    type: Object.values(DELIVERY_TYPES),
+    default: DEFAULT_DELIVERY_TYPE,
+    required: true,
+  })
+  .addAttribute('gitHubURL', {
+    type: 'string',
+    validate: (value) => !value || isValidUrl(value),
   })
   .addAttribute('hlxConfig', {
     type: 'any',

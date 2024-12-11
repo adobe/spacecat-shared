@@ -15,6 +15,7 @@
 import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
+import { validateAuditResult } from './audit.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -29,6 +30,12 @@ const schema = new SchemaBuilder('Audit', 1, 'SpaceCat')
     type: 'any',
     required: true,
     validate: (value) => isNonEmptyObject(value),
+    set: (value, attributes) => {
+      // as the electroDb validate function does not provide access to the model instance
+      // we need to call the validate function from the model on setting the value
+      validateAuditResult(value, attributes.auditType);
+      return value;
+    },
   })
   .addAttribute('auditType', {
     type: 'string',

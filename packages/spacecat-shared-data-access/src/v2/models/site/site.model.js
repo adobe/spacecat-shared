@@ -11,6 +11,7 @@
  */
 
 import { BaseModel } from '../base/index.js';
+import { Config } from '../../../models/site/config.js';
 
 export const DELIVERY_TYPES = {
   AEM_CS: 'aem_cs',
@@ -26,8 +27,8 @@ export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
  * @extends BaseModel
  */
 class Site extends BaseModel {
-  getIsLiveToggledAt() {
-    return this.record.isLiveToggledAt ? new Date(this.record.isLiveToggledAt).toISOString() : null;
+  getConfig() {
+    return Config(this.record.config);
   }
 
   async getLatestAuditByType(auditType) {

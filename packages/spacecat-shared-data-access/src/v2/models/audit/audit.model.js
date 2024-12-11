@@ -12,9 +12,9 @@
 
 import { isObject } from '@adobe/spacecat-shared-utils';
 
+import { ValidationError } from '../../errors/index.js';
 import { BaseModel } from '../base/index.js';
 
-// some of these unused exports are being imported from other projects. Handle with care.
 const AUDIT_TYPES = {
   404: '404',
   BROKEN_BACKLINKS: 'broken-backlinks',
@@ -28,7 +28,6 @@ const AUDIT_TYPES = {
   EXPERIMENTATION_ESS_DAILY: 'experimentation-ess-daily',
 };
 
-// audit type properties for specific types
 const AUDIT_TYPE_PROPERTIES = {
   [AUDIT_TYPES.LHS_DESKTOP]: ['performance', 'seo', 'accessibility', 'best-practices'],
   [AUDIT_TYPES.LHS_MOBILE]: ['performance', 'seo', 'accessibility', 'best-practices'],
@@ -46,17 +45,17 @@ export const AUDIT_CONFIG = {
  * @returns {boolean} - True if valid, false otherwise.
  */
 export const validateAuditResult = (auditResult, auditType) => {
-  if (!isObject(auditResult) || !Array.isArray(auditResult)) {
-    throw new Error('Audit result must be an object or array');
+  if (!isObject(auditResult) && !Array.isArray(auditResult)) {
+    throw new ValidationError('Audit result must be an object or array');
   }
 
   if (isObject(auditResult.runtimeError)) {
     return true;
   }
 
-  if ((auditType === AUDIT_CONFIG.TYPES.LHS_DESKTOP || auditType === AUDIT_CONFIG.TYPES.LHS_DESKTOP)
+  if ((auditType === AUDIT_CONFIG.TYPES.LHS_MOBILE || auditType === AUDIT_CONFIG.TYPES.LHS_DESKTOP)
     && !isObject(auditResult.scores)) {
-    throw new Error(`Missing scores property for audit type '${auditType}'`);
+    throw new ValidationError(`Missing scores property for audit type '${auditType}'`);
   }
 
   const expectedProperties = AUDIT_CONFIG.PROPERTIES[auditType];
@@ -64,7 +63,7 @@ export const validateAuditResult = (auditResult, auditType) => {
   if (expectedProperties) {
     for (const prop of expectedProperties) {
       if (!(prop in auditResult.scores)) {
-        throw new Error(`Missing expected property '${prop}' for audit type '${auditType}'`);
+        throw new ValidationError(`Missing expected property '${prop}' for audit type '${auditType}'`);
       }
     }
   }

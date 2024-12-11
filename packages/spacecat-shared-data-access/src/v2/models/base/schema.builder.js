@@ -238,7 +238,7 @@ class SchemaBuilder {
    * @throws {Error} If no attribute names are provided.
    */
   addAllIndexWithComposite(...attributeNames) {
-    if (!Array.isArray(attributeNames) || attributeNames.length === 0) {
+    if (attributeNames.length === 0) {
       throw new Error('At least one composite attribute name is required.');
     }
 

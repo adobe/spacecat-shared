@@ -62,16 +62,27 @@ const configurations = [
             'fbb8fcba-e7d3-4ed7-8623-19e88b1f0ed5',
             'b197d10e-035e-433b-896f-8e4967c5de6a',
           ],
+          orgs: ['757ceb98-05c8-4e07-bb23-bc722115b2b0'],
         },
       },
       'lhs-mobile': {
-        enabledByDefault: true,
+        enabledByDefault: false,
+        enabled: {
+          sites: ['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe'],
+          orgs: ['757ceb98-05c8-4e07-bb23-bc722115b2b0'],
+        },
       },
     },
     queues: {
       audits: 'sqs://.../spacecat-services-audit-jobs',
       imports: 'sqs://.../spacecat-services-import-jobs',
       reports: 'sqs://.../spacecat-services-report-jobs',
+    },
+    slackRoles: {
+      scrape: [
+        'WSVT1K36Z',
+        'S03CR0FDC2V',
+      ],
     },
     version: 2,
   },

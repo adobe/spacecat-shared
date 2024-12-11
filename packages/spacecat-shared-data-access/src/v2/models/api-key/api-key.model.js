@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { BaseModel } from '../base/index.js';
 
 export const SCOPE_NAMES = [
@@ -40,15 +41,15 @@ class ApiKey extends BaseModel {
   isValid() {
     const now = new Date();
 
-    if (this.getDeletedAt() && this.getDeletedAt() < now) {
+    if (isIsoDate(this.getDeletedAt()) && new Date(this.getDeletedAt()) < now) {
       return false;
     }
 
-    if (this.getRevokedAt() && this.getRevokedAt() < now) {
+    if (isIsoDate(this.getRevokedAt()) && new Date(this.getRevokedAt()) < now) {
       return false;
     }
 
-    if (this.getExpiresAt() && this.getExpiresAt() < now) {
+    if (isIsoDate(this.getExpiresAt()) && new Date(this.getExpiresAt()) < now) {
       return false;
     }
 

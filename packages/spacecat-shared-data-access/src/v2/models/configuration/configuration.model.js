@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
 
@@ -23,6 +24,10 @@ import { sanitizeIdAndAuditFields } from '../../util/util.js';
 class Configuration extends BaseModel {
   // add your custom methods or overrides here
 
+  getHandler(type) {
+    return this.getHandlers()?.[type];
+  }
+
   addHandler = (type, handlerData) => {
     const handlers = this.getHandlers() || {};
     handlers[type] = { ...handlerData };
@@ -31,13 +36,11 @@ class Configuration extends BaseModel {
   };
 
   getSlackRoleMembersByRole(role) {
-    const roles = this.getSlackRoles();
-    return roles ? roles[role] : [];
+    return this.getSlackRoles()?.[role] || [];
   }
 
   getEnabledSiteIdsForHandler(type) {
-    const handler = this.getHandlers()?.[type];
-    return handler?.enabled?.sites || [];
+    return this.getHandler(type)?.enabled?.sites || [];
   }
 
   isHandlerEnabledForSite(type, site) {
@@ -69,62 +72,55 @@ class Configuration extends BaseModel {
     const orgId = org.getId();
 
     if (handler.enabled) {
-      return handler.enabled.orgs.includes(orgId);
+      return handler.enabled.orgs?.includes(orgId);
     }
 
     if (handler.disabled) {
-      return !handler.disabled.orgs.includes(orgId);
+      return !handler.disabled.orgs?.includes(orgId);
     }
 
     return handler.enabledByDefault;
   }
 
-  updateHandlerOrgs(type, orgId, enabled) {
+  #updatedHandler(type, entityId, enabled, entityKey) {
     const handlers = this.getHandlers();
     const handler = handlers?.[type];
 
-    if (!handler) return;
+    if (!isNonEmptyObject(handler)) return;
+
+    if (!isNonEmptyObject(handler.disabled)) {
+      handler.disabled = { orgs: [], sites: [] };
+    }
+
+    if (!isNonEmptyObject(handler.enabled)) {
+      handler.enabled = { orgs: [], sites: [] };
+    }
 
     if (enabled) {
       if (handler.enabledByDefault) {
-        handler.disabled.orgs = handler.disabled.orgs?.filter((id) => id !== orgId) || [];
+        handler.disabled[entityKey] = handler.disabled[entityKey]
+          .filter((id) => id !== entityId) || [];
       } else {
-        handler.enabled = handler.enabled || { orgs: [] };
-        handler.enabled.orgs = Array.from(new Set([...(handler.enabled?.orgs || []), orgId]));
+        handler.enabled[entityKey] = Array
+          .from(new Set([...(handler.enabled[entityKey] || []), entityId]));
       }
     } else if (handler.enabledByDefault) {
-      handler.disabled = handler.disabled || { orgs: [] };
-      handler.disabled.orgs = Array.from(new Set([...(handler.disabled?.orgs || []), orgId]));
+      handler.disabled[entityKey] = Array
+        .from(new Set([...(handler.disabled[entityKey] || []), entityId]));
     } else {
-      handler.enabled.orgs = handler.enabled.orgs?.filter((id) => id !== orgId) || [];
+      handler.enabled[entityKey] = handler.enabled[entityKey].filter((id) => id !== entityId) || [];
     }
 
     handlers[type] = handler;
     this.setHandlers(handlers);
   }
 
+  updateHandlerOrgs(type, orgId, enabled) {
+    this.#updatedHandler(type, orgId, enabled, 'orgs');
+  }
+
   updateHandlerSites(type, siteId, enabled) {
-    const handlers = this.getHandlers();
-    const handler = handlers?.[type];
-
-    if (!handler) return;
-
-    if (enabled) {
-      if (handler.enabledByDefault) {
-        handler.disabled.sites = handler.disabled.sites?.filter((id) => id !== siteId) || [];
-      } else {
-        handler.enabled = handler.enabled || { sites: [] };
-        handler.enabled.sites = Array.from(new Set([...(handler.enabled.sites || []), siteId]));
-      }
-    } else if (handler.enabledByDefault) {
-      handler.disabled = handler.disabled || { sites: [] };
-      handler.disabled.sites = Array.from(new Set([...(handler.disabled.sites || []), siteId]));
-    } else {
-      handler.enabled.sites = handler.enabled.sites?.filter((id) => id !== siteId) || [];
-    }
-
-    handlers[type] = handler;
-    this.setHandlers(handlers);
+    this.#updatedHandler(type, siteId, enabled, 'sites');
   }
 
   enableHandlerForSite(type, site) {

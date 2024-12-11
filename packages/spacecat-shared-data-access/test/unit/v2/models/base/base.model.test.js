@@ -162,10 +162,15 @@ describe('BaseModel', () => {
     });
 
     it('fetches a belongs_to reference by ID', async () => {
-      mockEntityRegistry.getCollection.returns({ findById: stub().returns('bar') });
+      mockEntityRegistry.getCollection.returns({
+        findById: stub().returns('bar'),
+        allByIndexKeys: stub().returns(['bar']),
+      });
       baseModelInstance.record.fooId = '12345';
       const result = await baseModelInstance._fetchReference('belongs_to', 'Foo');
       expect(result).to.equal('bar');
+
+      expect(await baseModelInstance.getSuggestions()).to.not.throw;
     });
 
     it('fetches a has_one reference by ID', async () => {

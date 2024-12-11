@@ -32,14 +32,16 @@ const checkNullable = (value, nullable) => nullable && (value === null || value 
  */
 const checkType = (value, type) => {
   switch (type) {
-    case 'string':
-      return typeof value === 'string';
-    case 'number':
-      return typeof value === 'number';
+    case 'any':
+      return isObject(value);
     case 'boolean':
       return typeof value === 'boolean';
     case 'map':
       return isObject(value);
+    case 'string':
+      return typeof value === 'string';
+    case 'number':
+      return typeof value === 'number';
     default:
       throw new ValidationError(`Unsupported type: ${type}`);
   }

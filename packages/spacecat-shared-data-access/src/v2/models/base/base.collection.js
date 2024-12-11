@@ -62,7 +62,7 @@ function parseAccessorArgs(context, requiredKeyNames, args) {
 }
 
 function createAccessor(context, requiredKeyNames, all) {
-  return (...args) => {
+  return async (...args) => {
     const { keys, options } = parseAccessorArgs(context, requiredKeyNames, args);
 
     if (all) {
@@ -185,7 +185,7 @@ class BaseCollection {
    * otherwise null.
    */
   #createInstance(record) {
-    if (!isNonEmptyObject(record?.data)) {
+    if (!isNonEmptyObject(record)) {
       this.log.warn(`Failed to create instance of [${this.entityName}]: record is empty`);
       return null;
     }
@@ -193,7 +193,7 @@ class BaseCollection {
     return new this.clazz(
       this.electroService,
       this.entityRegistry,
-      record.data,
+      record,
       this.log,
     );
   }
@@ -205,11 +205,7 @@ class BaseCollection {
    * @returns {Array<BaseModel>} - An array of instances of the model class.
    */
   #createInstances(records) {
-    if (!Array.isArray(records?.data)) {
-      this.log.warn(`Failed to create instances of [${this.entityName}]: records are empty`);
-      return [];
-    }
-    return records.data.map((record) => this.#createInstance({ data: record }));
+    return records.map((record) => this.#createInstance(record));
   }
 
   /**
@@ -225,6 +221,12 @@ class BaseCollection {
   async #queryByIndexKeys(keys, options = {}) {
     if (!isNonEmptyObject(keys)) {
       const message = `Failed to query [${this.entityName}]: keys are required`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
+    if (!isObject(options)) {
+      const message = `Failed to query [${this.entityName}]: options must be an object`;
       this.log.error(message);
       throw new Error(message);
     }
@@ -256,12 +258,12 @@ class BaseCollection {
     const records = await query.go(queryOptions);
 
     if (options.limit === 1) {
-      if (records.data.length === 0) {
+      if (records.data?.length === 0) {
         return null;
       }
-      return this.#createInstance({ data: records.data[0] });
+      return this.#createInstance(records.data[0]);
     } else {
-      return this.#createInstances(records);
+      return this.#createInstances(records.data);
     }
   }
 
@@ -300,6 +302,12 @@ class BaseCollection {
    * @return {Promise<BaseModel|Array<BaseModel>|null>}
    */
   async findByAll(sortKeys = {}, options = {}) {
+    if (!isObject(sortKeys)) {
+      const message = `Failed to find by all [${this.entityName}]: sort keys must be an object`;
+      this.log.error(message);
+      throw new Error(message);
+    }
+
     const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
     return this.#queryByIndexKeys(keys, { ...options, index: INDEX_TYPES.ALL, limit: 1 });
   }
@@ -317,7 +325,7 @@ class BaseCollection {
 
     const record = await this.entity.get({ [this.idName]: id }).go();
 
-    return this.#createInstance(record);
+    return this.#createInstance(record?.data);
   }
 
   /**
@@ -349,7 +357,7 @@ class BaseCollection {
 
     try {
       const record = await this.entity.create(item).go();
-      return this.#createInstance(record);
+      return this.#createInstance(record.data);
     } catch (error) {
       this.log.error(`Failed to create [${this.entityName}]`, error);
       throw error;
@@ -406,12 +414,12 @@ class BaseCollection {
       if (validatedItems.length > 0) {
         const response = await this.entity.put(validatedItems).go();
 
-        if (Array.isArray(response.unprocessed) && response.unprocessed.length > 0) {
+        if (Array.isArray(response?.unprocessed) && response?.unprocessed?.length > 0) {
           this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
         }
       }
 
-      const createdItems = this.#createInstances({ data: validatedItems });
+      const createdItems = this.#createInstances(validatedItems);
 
       if (parent) {
         createdItems.forEach((record) => {

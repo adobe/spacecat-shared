@@ -13,6 +13,7 @@
 export {
   guardAny,
   guardArray,
+  guardBoolean,
   guardEnum,
   guardId,
   guardMap,

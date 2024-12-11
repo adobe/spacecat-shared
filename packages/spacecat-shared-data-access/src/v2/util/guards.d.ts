@@ -25,6 +25,13 @@ export function guardAny(
   nullable?: boolean,
 ): void;
 
+export function guardBoolean(
+  propertyName: string,
+  value: never,
+  entityName: string,
+  nullable?: boolean,
+): void;
+
 export function guardEnum(
   propertyName: string,
   value: never,

@@ -24,4 +24,49 @@ const getRandomDecimal = (precision) => parseFloat(Math.random().toFixed(precisi
 // Generates a random integer up to a given maximum
 const getRandomInt = (max) => Math.floor(Math.random() * max);
 
-export { randomDate, getRandomDecimal, getRandomInt };
+const removeElectroProperties = (record) => { /* eslint-disable no-underscore-dangle */
+  const cleanedRecord = { ...record };
+
+  delete cleanedRecord.sk;
+  delete cleanedRecord.pk;
+  delete cleanedRecord.gsi1pk;
+  delete cleanedRecord.gsi1sk;
+  delete cleanedRecord.gsi2pk;
+  delete cleanedRecord.gsi2sk;
+  delete cleanedRecord.gsi3pk;
+  delete cleanedRecord.gsi3sk;
+  delete cleanedRecord.gsi4pk;
+  delete cleanedRecord.gsi4sk;
+  delete cleanedRecord.__edb_e__;
+  delete cleanedRecord.__edb_v__;
+
+  return cleanedRecord;
+};
+
+const sanitizeRecord = (record, idName) => {
+  const sanitizedRecord = removeElectroProperties({ ...record });
+
+  delete sanitizedRecord[idName];
+  delete sanitizedRecord.createdAt;
+  delete sanitizedRecord.updatedAt;
+
+  return sanitizedRecord;
+};
+
+const getExecutionOptions = (options) => {
+  const { limit, order = 'asc' } = options;
+
+  return {
+    ...(limit > 0 && { limit }),
+    order,
+  };
+};
+
+export {
+  getExecutionOptions,
+  getRandomDecimal,
+  getRandomInt,
+  randomDate,
+  removeElectroProperties,
+  sanitizeRecord,
+};

@@ -32,14 +32,16 @@ const checkNullable = (value, nullable) => nullable && (value === null || value 
  */
 const checkType = (value, type) => {
   switch (type) {
+    case 'any':
+      return isObject(value);
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'map':
+      return isObject(value);
     case 'string':
       return typeof value === 'string';
     case 'number':
       return typeof value === 'number';
-    case 'boolean':
-      return typeof value === 'boolean';
-    case 'object':
-      return isObject(value);
     default:
       throw new ValidationError(`Unsupported type: ${type}`);
   }
@@ -56,6 +58,21 @@ const checkType = (value, type) => {
 export const guardAny = (propertyName, value, entityName, nullable = false) => {
   if (!checkNullable(value, nullable) && (value === undefined || value === null)) {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} is required`);
+  }
+};
+
+/**
+ * Validates that a given property is a boolean.
+ * @param {String} propertyName - Name of the property being validated.
+ * @param {any} value - The value to validate.
+ * @param {String} entityName - Name of the entity containing this property.
+ * @param {boolean} [nullable] - Whether the value is nullable. Defaults to false.
+ * @throws Will throw an error if the value is not a valid boolean.
+ */
+export const guardBoolean = (propertyName, value, entityName, nullable = false) => {
+  if (checkNullable(value, nullable)) return;
+  if (typeof value !== 'boolean') {
+    throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a boolean`);
   }
 };
 

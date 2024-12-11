@@ -14,6 +14,8 @@
 
 import { CreateTableCommand, DeleteTableCommand } from '@aws-sdk/client-dynamodb';
 
+import schema from '../../../docs/schema.json' with { type: 'json' };
+
 /**
  * Creates a DynamoDB table based on the provided table definition.
  *
@@ -160,4 +162,40 @@ async function deleteTable(dbClient, tableName) {
   }
 }
 
-export { createTable, deleteTable };
+/**
+ * Creates all tables defined in a schema.
+ *
+ * Iterates over a predefined schema object and creates each table using the createTable function.
+ * The schema object should define all required attributes and configurations for each table.
+ *
+ * @param {AWS.DynamoDB.DocumentClient} dbClient - The DynamoDB client to use for creating tables.
+ */
+async function createTablesFromSchema(dbClient) {
+  const creationPromises = schema.DataModel.map(
+    (tableDefinition) => createTable(dbClient, tableDefinition),
+  );
+  await Promise.all(creationPromises);
+}
+
+/**
+ * Deletes a predefined set of tables from the database.
+ *
+ * Iterates over a list of table names and deletes each one using the deleteTable function.
+ * This is typically used to clean up the database before creating new tables or
+ * generating test data.
+ *
+ * @param {Object} dbClient - The DynamoDB client to use for creating tables.
+ * @param {Array<string>} tableNames - An array of table names to delete.
+ * @returns {Promise<void>} A promise that resolves when all tables have been deleted.
+ */
+async function deleteExistingTables(dbClient, tableNames) {
+  const deletionPromises = tableNames.map((tableName) => deleteTable(dbClient, tableName));
+  await Promise.all(deletionPromises);
+}
+
+export {
+  createTablesFromSchema,
+  deleteExistingTables,
+  createTable,
+  deleteTable,
+};

@@ -40,68 +40,156 @@
       ],
       "GlobalSecondaryIndexes": [
         {
-          "IndexName": "spacecat-data-opportunity-by-site",
+          "IndexName": "spacecat-data-ApiKey-byHashedApiKey",
           "KeyAttributes": {
-            "PartitionKey": {
-              "AttributeName": "gsi1pk",
-              "AttributeType": "S"
-            },
-            "SortKey": {
-              "AttributeName": "gsi1sk",
-              "AttributeType": "S"
-            }
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
           },
-          "Projection": {
-            "ProjectionType": "ALL"
-          }
+          "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-opportunity-by-site-and-status",
+          "IndexName": "spacecat-data-ApiKey-byImsOrgIdAndImsUserId",
           "KeyAttributes": {
-            "PartitionKey": {
-              "AttributeName": "gsi2pk",
-              "AttributeType": "S"
-            },
-            "SortKey": {
-              "AttributeName": "gsi2sk",
-              "AttributeType": "S"
-            }
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
           },
-          "Projection": {
-            "ProjectionType": "ALL"
-          }
+          "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-suggestion-by-opportunity",
+          "IndexName": "spacecat-data-Opportunity-byAuditId",
           "KeyAttributes": {
-            "PartitionKey": {
-              "AttributeName": "gsi1pk",
-              "AttributeType": "S"
-            },
-            "SortKey": {
-              "AttributeName": "gsi1sk",
-              "AttributeType": "S"
-            }
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
           },
-          "Projection": {
-            "ProjectionType": "ALL"
-          }
+          "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-suggestion-by-opportunity-and-status",
+          "IndexName": "spacecat-data-Opportunity-bySiteId",
           "KeyAttributes": {
-            "PartitionKey": {
-              "AttributeName": "gsi2pk",
-              "AttributeType": "S"
-            },
-            "SortKey": {
-              "AttributeName": "gsi2sk",
-              "AttributeType": "S"
-            }
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
           },
-          "Projection": {
-            "ProjectionType": "ALL"
-          }
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-Suggestion-byOpportunityId",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-Site-all",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-Site-byOrganizationId",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-Site-byDeliveryType",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-Organization-all",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-Audit-bySiteId",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-Experiment-bySiteId",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-KeyEvent-bySiteId",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-SiteCandidate-all",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-SiteCandidate-bySiteId",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-SiteTopPage-bySiteId",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-Configuration-all",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "version", "AttributeType": "N" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-ImportJob-all",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-ImportJob-byStatus",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-ImportUrl-byImportJobId",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
         }
       ]
     },

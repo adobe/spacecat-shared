@@ -18,6 +18,7 @@ import chaiAsPromised from 'chai-as-promised';
 import {
   guardAny,
   guardArray,
+  guardBoolean,
   guardEnum,
   guardId,
   guardMap,
@@ -70,18 +71,55 @@ describe('Guards', () => {
     });
 
     it('allows specifying type as object', () => {
-      expect(() => guardArray('testProperty', [{ key: 'value' }, { anotherKey: 'anotherValue' }], 'TestEntity', 'object'))
+      expect(() => guardArray('testProperty', [{ key: 'value' }, { anotherKey: 'anotherValue' }], 'TestEntity', 'map'))
         .not.to.throw();
     });
 
     it('throws an error if array contains wrong type when expecting objects', () => {
-      expect(() => guardArray('testProperty', [{ key: 'value' }, 'notAnObject'], 'TestEntity', 'object'))
-        .to.throw('Validation failed in TestEntity: testProperty must contain items of type object');
+      expect(() => guardArray('testProperty', [{ key: 'value' }, 'notAnObject'], 'TestEntity', 'map'))
+        .to.throw('Validation failed in TestEntity: testProperty must contain items of type map');
     });
 
     it('throws an error if an unsupported type is specified', () => {
       expect(() => guardArray('testProperty', ['value1', 'value2'], 'TestEntity', 'unsupportedType', false))
         .to.throw('Unsupported type: unsupportedType');
+    });
+  });
+
+  describe('guardBoolean', () => {
+    it('throws an error if value is not a boolean', () => {
+      expect(() => guardBoolean('testProperty', 'notABoolean', 'TestEntity'))
+        .to.throw('Validation failed in TestEntity: testProperty must be a boolean');
+    });
+
+    it('does not throw if value is a boolean', () => {
+      expect(() => guardBoolean('testProperty', true, 'TestEntity'))
+        .not.to.throw();
+    });
+
+    it('does not throw if value is null and nullable is true', () => {
+      expect(() => guardBoolean('testProperty', null, 'TestEntity', true))
+        .not.to.throw();
+    });
+
+    it('does not throw if value is undefined and nullable is true', () => {
+      expect(() => guardBoolean('testProperty', undefined, 'TestEntity', true))
+        .not.to.throw();
+    });
+
+    it('throws an error if value is undefined and nullable is false', () => {
+      expect(() => guardBoolean('testProperty', undefined, 'TestEntity', false))
+        .to.throw('Validation failed in TestEntity: testProperty must be a boolean');
+    });
+
+    it('throws an error if value is null and nullable is false', () => {
+      expect(() => guardBoolean('testProperty', null, 'TestEntity', false))
+        .to.throw('Validation failed in TestEntity: testProperty must be a boolean');
+    });
+
+    it('throws an error if value is an empty string and nullable is false', () => {
+      expect(() => guardBoolean('testProperty', '', 'TestEntity', false))
+        .to.throw('Validation failed in TestEntity: testProperty must be a boolean');
     });
   });
 
@@ -139,8 +177,8 @@ describe('Guards', () => {
     });
 
     it('throws an error if array contains wrong type when expecting objects', () => {
-      expect(() => guardSet('testProperty', [{}, { a: 'b' }, 3], 'TestEntity', 'object'))
-        .to.throw('Validation failed in TestEntity: testProperty must contain items of type object');
+      expect(() => guardSet('testProperty', [{}, { a: 'b' }, 3], 'TestEntity', 'map'))
+        .to.throw('Validation failed in TestEntity: testProperty must contain items of type map');
     });
 
     it('throws an error if array contains wrong type when expecting strings', () => {

@@ -1,0 +1,545 @@
+/*
+ * Copyright 2024 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/* eslint-env mocha */
+
+import { expect, use as chaiUse } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { ElectroValidationError } from 'electrodb';
+import { spy, stub } from 'sinon';
+import sinonChai from 'sinon-chai';
+
+import BaseCollection from '../../../../../src/v2/models/base/base.collection.js';
+
+chaiUse(chaiAsPromised);
+chaiUse(sinonChai);
+
+describe('BaseCollection', () => {
+  let baseCollectionInstance;
+  let mockElectroService;
+  let mockEntityRegistry;
+  let mockModel;
+  let mockLogger;
+
+  const mockRecord = {
+    id: 'ef39921f-9a02-41db-b491-02c98987d956',
+    data: {
+      someKey: 'someValue',
+    },
+  };
+  const mockEntityModel = {
+    data: { ...mockRecord },
+  };
+
+  beforeEach(() => {
+    mockEntityRegistry = {
+      getCollection: stub(),
+    };
+
+    mockLogger = {
+      error: spy(),
+      warn: spy(),
+    };
+
+    mockModel = class MockEntityModel {
+      constructor(service, factory, data) {
+        this.data = data;
+      }
+
+      // eslint-disable-next-line class-methods-use-this
+      _cacheReference() {}
+    };
+
+    mockElectroService = {
+      entities: {
+        mockEntityModel: {
+          create: stub(),
+          delete: stub(),
+          get: stub(),
+          put: stub(),
+          query: {
+            all: stub().returns({
+              between: stub().returns({
+                go: () => ({ data: [] }),
+              }),
+              go: () => ({ data: [] }),
+            }),
+            bySomeKey: stub(),
+            primary: stub(),
+          },
+          model: {
+            name: 'mockentitymodel',
+            indexes: {},
+            table: 'mockentitymodel',
+          },
+        },
+      },
+    };
+
+    baseCollectionInstance = new BaseCollection(
+      mockElectroService,
+      mockEntityRegistry,
+      mockModel,
+      mockLogger,
+    );
+  });
+
+  describe('collection methods', () => {
+    const createInstancew = () => new BaseCollection(
+      mockElectroService,
+      mockEntityRegistry,
+      mockModel,
+      mockLogger,
+    );
+
+    it('does not create accessors for the primary index', () => {
+      mockElectroService.entities.mockEntityModel.model.indexes = { primary: {} };
+
+      const instance = createInstancew();
+
+      expect(instance).to.not.have.property('allBy');
+      expect(instance).to.not.have.property('findBy');
+    });
+
+    it('creates accessors for partition key attributes', () => {
+      mockElectroService.entities.mockEntityModel.model.indexes = {
+        bySomeKey: { pk: { facets: ['someKey'] } },
+      };
+
+      const instance = createInstancew();
+
+      expect(instance).to.have.property('allBySomeKey');
+      expect(instance).to.have.property('findBySomeKey');
+    });
+
+    it('creates accessors for sort key attributes', () => {
+      mockElectroService.entities.mockEntityModel.model.indexes = {
+        bySomeKey: { sk: { facets: ['someKey'] } },
+      };
+
+      const instance = createInstancew();
+
+      expect(instance).to.have.property('allBySomeKey');
+      expect(instance).to.have.property('findBySomeKey');
+    });
+
+    it('creates accessors for partition and sort key attributes', () => {
+      mockElectroService.entities.mockEntityModel.model.indexes = {
+        bySomeKey: { pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
+      };
+
+      const instance = createInstancew();
+
+      expect(instance).to.have.property('allBySomeKey');
+      expect(instance).to.have.property('allBySomeKeyAndSomeOtherKey');
+      expect(instance).to.have.property('findBySomeKey');
+      expect(instance).to.have.property('findBySomeKeyAndSomeOtherKey');
+    });
+
+    it('parses accessor arguments correctly', async () => {
+      mockElectroService.entities.mockEntityModel.query.bySomeKey.returns(
+        { go: () => Promise.resolve({ data: [] }) },
+      );
+      mockElectroService.entities.mockEntityModel.model.indexes = {
+        bySomeKey: { pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
+      };
+
+      mockElectroService.entities.mockEntityModel.model.schema = {
+        attributes: {
+          someKey: { type: 'string' },
+          someOtherKey: { type: 'number' },
+        },
+      };
+
+      const instance = createInstancew();
+      const someKey = 'someValue';
+      const someOtherKey = 1;
+      const options = { order: 'desc' };
+
+      await instance.allBySomeKey(someKey);
+      await instance.findBySomeKey(someKey);
+      await instance.allBySomeKeyAndSomeOtherKey(someKey, someOtherKey);
+      await instance.findBySomeKeyAndSomeOtherKey(someKey, someOtherKey);
+      await instance.findBySomeKeyAndSomeOtherKey(someKey, someOtherKey, options);
+
+      await expect(instance.allBySomeKey()).to.be.rejectedWith('someKey is required');
+      await expect(instance.findBySomeKey()).to.be.rejectedWith('someKey is required');
+      await expect(instance.allBySomeKeyAndSomeOtherKey(someKey)).to.be.rejectedWith('someOtherKey is required');
+      await expect(instance.allBySomeKeyAndSomeOtherKey(someKey, '1')).to.be.rejectedWith('someOtherKey is required');
+      await expect(instance.findBySomeKeyAndSomeOtherKey(someKey)).to.be.rejectedWith('someOtherKey is required');
+    });
+  });
+
+  describe('findById', () => {
+    it('returns the entity if found', async () => {
+      const mockFindResult = { data: mockRecord };
+      mockElectroService.entities.mockEntityModel.get.returns(
+        { go: () => Promise.resolve(mockFindResult) },
+      );
+
+      const result = await baseCollectionInstance.findById('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.get.calledOnce).to.be.true;
+    });
+
+    it('returns null if the entity is not found', async () => {
+      mockElectroService.entities.mockEntityModel.get.returns(
+        { go: () => Promise.resolve(null) },
+      );
+
+      const result = await baseCollectionInstance.findById('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(result).to.be.null;
+      expect(mockElectroService.entities.mockEntityModel.get.calledOnce).to.be.true;
+    });
+  });
+
+  describe('findByIndexKeys', () => {
+    it('throws error if keys is not provided', async () => {
+      await expect(baseCollectionInstance.findByIndexKeys())
+        .to.be.rejectedWith('Failed to query [mockEntityModel]: keys are required');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('throws error if index is not found', async () => {
+      await expect(baseCollectionInstance.findByIndexKeys({ someKey: 'someValue' }, { index: 'none' }))
+        .to.be.rejectedWith('Failed to query [mockEntityModel]: index [none] not found');
+      expect(mockLogger.error).to.have.been.calledOnce;
+    });
+  });
+
+  describe('create', () => {
+    it('throws an error if the record is empty', async () => {
+      await expect(baseCollectionInstance.create(null)).to.be.rejectedWith('Failed to create [mockEntityModel]');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('creates a new entity successfully', async () => {
+      mockElectroService.entities.mockEntityModel.create.returns(
+        { go: () => Promise.resolve(mockEntityModel) },
+      );
+
+      const result = await baseCollectionInstance.create(mockRecord);
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.create.calledOnce).to.be.true;
+    });
+
+    it('logs an error and throws when creation fails', async () => {
+      const error = new Error('Create failed');
+      mockElectroService.entities.mockEntityModel.create.returns(
+        { go: () => Promise.reject(error) },
+      );
+
+      await expect(baseCollectionInstance.create(mockRecord.data)).to.be.rejectedWith('Create failed');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+  });
+
+  describe('createMany', () => {
+    it('throws an error if the items are empty', async () => {
+      await expect(baseCollectionInstance.createMany(null))
+        .to.be.rejectedWith('Failed to create many [mockEntityModel]: items must be a non-empty array');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('creates multiple entities successfully', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      const mockPutResults = {
+        type: 'query',
+        method: 'batchWrite',
+        params: {
+          RequestItems: {
+            mockEntityModel: [
+              { PutRequest: { Item: mockRecord } },
+              { PutRequest: { Item: mockRecord } },
+            ],
+          },
+        },
+      };
+      mockElectroService.entities.mockEntityModel.put.returns(
+        {
+          go: () => Promise.resolve(mockPutResults),
+          params: () => ({ Item: { ...mockRecord } }),
+        },
+      );
+
+      const result = await baseCollectionInstance.createMany(mockRecords);
+      expect(result.createdItems).to.be.an('array').that.has.length(2);
+      expect(result.createdItems).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.put.calledThrice).to.be.true;
+    });
+
+    it('creates many with a parent entity', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      const mockPutResults = {
+        type: 'query',
+        method: 'batchWrite',
+        params: {
+          RequestItems: {
+            mockEntityModel: [
+              { PutRequest: { Item: mockRecord } },
+              { PutRequest: { Item: mockRecord } },
+            ],
+          },
+        },
+      };
+      mockElectroService.entities.mockEntityModel.put.returns(
+        {
+          go: () => Promise.resolve(mockPutResults),
+          params: () => ({ Item: { ...mockRecord } }),
+        },
+      );
+
+      const result = await baseCollectionInstance.createMany(
+        mockRecords,
+        { entity: { model: { name: 'mockEntityModel' } } },
+      );
+      expect(result.createdItems).to.be.an('array').that.has.length(2);
+      expect(result.createdItems).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.put.calledThrice).to.be.true;
+    });
+
+    it('creates some entities successfully with unprocessed items', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      let itemCount = 0;
+
+      mockElectroService.entities.mockEntityModel.put.returns(
+        {
+          go: () => Promise.resolve({ unprocessed: [mockRecord] }),
+          params: () => {
+            if (itemCount === 0) {
+              itemCount += 1;
+              return { Item: { ...mockRecord } };
+            } else {
+              throw new ElectroValidationError('Validation failed');
+            }
+          },
+        },
+      );
+
+      const result = await baseCollectionInstance.createMany(mockRecords);
+      expect(result.createdItems).to.be.an('array').that.has.length(1);
+      expect(result.createdItems).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.put.calledThrice).to.be.true;
+      expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockEntityModel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
+    });
+
+    it('fails creating some items due to ValidationError', async () => {
+      const error = new ElectroValidationError('Validation failed');
+      mockElectroService.entities.mockEntityModel.put.returns(
+        { params: () => { throw error; } },
+      );
+
+      const result = await baseCollectionInstance.createMany([mockRecord]);
+      expect(result.createdItems).to.be.an('array').that.has.length(0);
+      expect(result.errorItems).to.be.an('array').that.has.length(1);
+      expect(result.errorItems[0].item).to.deep.include(mockRecord);
+    });
+
+    it('logs an error and throws when creation fails', async () => {
+      const error = new Error('Create failed');
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockEntityModel.put.returns(
+        {
+          go: () => Promise.reject(error),
+          params: () => ({ Item: { ...mockRecord } }),
+        },
+      );
+
+      await expect(baseCollectionInstance.createMany(mockRecords)).to.be.rejectedWith('Create failed');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+  });
+
+  describe('_saveMany', () => { /* eslint-disable no-underscore-dangle */
+    it('throws an error if the records are empty', async () => {
+      await expect(baseCollectionInstance._saveMany(null))
+        .to.be.rejectedWith('Failed to save many [mockEntityModel]: items must be a non-empty array');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('saves multiple entities successfully', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      const result = await baseCollectionInstance._saveMany(mockRecords);
+      expect(result).to.be.undefined;
+      expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+    });
+
+    it('saves some entities successfully with unprocessed items', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockEntityModel.put.returns(
+        {
+          go: () => Promise.resolve({ unprocessed: [mockRecord] }),
+        },
+      );
+
+      const result = await baseCollectionInstance._saveMany(mockRecords);
+      expect(result).to.be.undefined;
+      expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+      expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockEntityModel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
+    });
+
+    it('throws error and logs when save fails', async () => {
+      const error = new Error('Save failed');
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockEntityModel.put.returns(
+        { go: () => Promise.reject(error) },
+      );
+
+      await expect(baseCollectionInstance._saveMany(mockRecords)).to.be.rejectedWith('Save failed');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+  });
+
+  describe('all', () => {
+    it('returns all entities successfully', async () => {
+      const mockFindResult = { data: [mockRecord] };
+      mockElectroService.entities.mockEntityModel.query.all.returns(
+        { go: () => Promise.resolve(mockFindResult) },
+      );
+
+      const result = await baseCollectionInstance.all();
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.query.all)
+        .to.have.been.calledOnceWithExactly({ pk: 'ALL_MOCKENTITYMODELS' });
+    });
+
+    it('applies between filter if provided', async () => {
+      const mockFindResult = { data: [mockRecord] };
+      const mockGo = stub().resolves(mockFindResult);
+      const mockBetween = stub().returns({ go: mockGo });
+      mockElectroService.entities.mockEntityModel.query.all().between = mockBetween;
+
+      const result = await baseCollectionInstance.all(
+        {},
+        { between: { attribute: 'test', start: 'a', end: 'b' } },
+      );
+
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockBetween).to.have.been.calledOnceWithExactly({ test: 'a' }, { test: 'b' });
+      expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc' });
+    });
+
+    it('applies attribute filter if provided', async () => {
+      const mockFindResult = { data: [mockRecord] };
+      const mockGo = stub().resolves(mockFindResult);
+      mockElectroService.entities.mockEntityModel.query.all.returns(
+        { go: mockGo },
+      );
+
+      const result = await baseCollectionInstance.all({}, { attributes: ['test'] });
+
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.query.all)
+        .to.have.been.calledOnceWithExactly({ pk: 'ALL_MOCKENTITYMODELS' });
+      expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc', attributes: ['test'] });
+    });
+  });
+
+  describe('allByIndexKeys', () => {
+    it('throws error if keys is not provided', async () => {
+      await expect(baseCollectionInstance.allByIndexKeys())
+        .to.be.rejectedWith('Failed to query [mockEntityModel]: keys are required');
+      expect(mockLogger.error).to.have.been.calledOnce;
+    });
+
+    it('throws and error if options is not an object', async () => {
+      await expect(baseCollectionInstance.allByIndexKeys({ someKey: 'someValue' }, null))
+        .to.be.rejectedWith('Failed to query [mockEntityModel]: options must be an object');
+      expect(mockLogger.error).to.have.been.calledOnce;
+    });
+
+    it('successfully queries entities by index keys', async () => {
+      const mockFindResult = { data: [mockRecord] };
+      mockElectroService.entities.mockEntityModel.query.bySomeKey.returns(
+        { go: () => Promise.resolve(mockFindResult) },
+      );
+
+      const result = await baseCollectionInstance.allByIndexKeys({ someKey: 'someValue' });
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.query.bySomeKey)
+        .to.have.been.calledOnceWithExactly({ someKey: 'someValue' });
+    });
+
+    it('successfully queries entities by primary index keys', async () => {
+      const mockFindResult = { data: [mockRecord] };
+      delete mockElectroService.entities.mockEntityModel.query.all;
+      delete mockElectroService.entities.mockEntityModel.query.bySomeKey;
+
+      mockElectroService.entities.mockEntityModel.query.primary.returns(
+        { go: () => Promise.resolve(mockFindResult) },
+      );
+
+      const result = await baseCollectionInstance.allByIndexKeys({ someKey: 'someValue' });
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.query.primary)
+        .to.have.been.calledOnceWithExactly({ someKey: 'someValue' });
+    });
+  });
+
+  describe('findByAll', () => {
+    it('throws an error if sortKeys is not an object', async () => {
+      await expect(baseCollectionInstance.findByAll(null))
+        .to.be.rejectedWith('Failed to find by all [mockEntityModel]: sort keys must be an object');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('finds all entities successfully', async () => {
+      const mockFindResult = { data: [mockRecord] };
+      mockElectroService.entities.mockEntityModel.query.all.returns(
+        { go: () => Promise.resolve(mockFindResult) },
+      );
+
+      const result = await baseCollectionInstance.findByAll({ someKey: 'someValue' });
+      expect(result).to.deep.include(mockEntityModel);
+      expect(mockElectroService.entities.mockEntityModel.query.all)
+        .to.have.been.calledOnceWithExactly(
+          { pk: 'ALL_MOCKENTITYMODELS', someKey: 'someValue' },
+        );
+    });
+
+    it('returns null if the entity is not found', async () => {
+      const result = await baseCollectionInstance.findByAll({ someKey: 'someValue' });
+      expect(result).to.be.null;
+      expect(mockElectroService.entities.mockEntityModel.query.all)
+        .to.have.been.calledOnceWithExactly(
+          { pk: 'ALL_MOCKENTITYMODELS', someKey: 'someValue' },
+        );
+    });
+  });
+
+  describe('removeByIds', () => {
+    it('throws an error if the ids are not an array', async () => {
+      await expect(baseCollectionInstance.removeByIds(null))
+        .to.be.rejectedWith('Failed to remove [mockEntityModel]: ids must be a non-empty array');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('throws an error if the ids are empty', async () => {
+      await expect(baseCollectionInstance.removeByIds([]))
+        .to.be.rejectedWith('Failed to remove [mockEntityModel]: ids must be a non-empty array');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('removes entities successfully', async () => {
+      const mockIds = ['ef39921f-9a02-41db-b491-02c98987d956', 'ef39921f-9a02-41db-b491-02c98987d957'];
+      mockElectroService.entities.mockEntityModel.delete.returns({ go: () => Promise.resolve() });
+      await baseCollectionInstance.removeByIds(mockIds);
+      expect(mockElectroService.entities.mockEntityModel.delete)
+        .to.have.been.calledOnceWithExactly([
+          { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+          { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+        ]);
+    });
+  });
+});

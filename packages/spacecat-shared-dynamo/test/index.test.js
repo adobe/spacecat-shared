@@ -25,6 +25,12 @@ describe('createClient', () => {
     docClient = DynamoDBDocumentClient.from(dbClient);
   });
 
+  it('should create a DynamoDB client with scan method', () => {
+    const client = createClient(console, dbClient, docClient);
+    expect(client).to.have.property('scan');
+    expect(client.query).to.be.a('function');
+  });
+
   it('should create a DynamoDB client with query method', () => {
     const client = createClient(console, dbClient, docClient);
     expect(client).to.have.property('query');
@@ -51,6 +57,6 @@ describe('createClient', () => {
 
   it('should use default parameters if none are provided', () => {
     const client = createClient();
-    expect(client).to.have.all.keys('query', 'getItem', 'putItem', 'removeItem');
+    expect(client).to.have.all.keys('scan', 'query', 'getItem', 'putItem', 'removeItem');
   });
 });

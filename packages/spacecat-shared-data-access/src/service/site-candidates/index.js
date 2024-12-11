@@ -11,6 +11,7 @@
  */
 
 import {
+  getSiteCandidates,
   getSiteCandidateByBaseURL,
   upsertSiteCandidate,
   exists,
@@ -18,6 +19,10 @@ import {
 } from './accessPatterns.js';
 
 export const siteCandidateFunctions = (dynamoClient, config, log) => ({
+  getSiteCandidates: () => getSiteCandidates(
+    dynamoClient,
+    config,
+  ),
   getSiteCandidateByBaseURL: (baseURL) => getSiteCandidateByBaseURL(
     dynamoClient,
     config,

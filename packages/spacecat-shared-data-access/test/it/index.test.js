@@ -722,6 +722,11 @@ describe('Legacy Data Model IT', async () => {
     expect(latestAuditAfterRemoval).to.be.null;
   });
 
+  it('get all site candidates', async () => {
+    const siteCandidates = await dataAccess.getSiteCandidates();
+    expect(siteCandidates.length).to.equal(10);
+  });
+
   it('verify a previously added site candidate exists', async () => {
     const exists = await dataAccess.siteCandidateExists('https://example0.com');
     expect(exists).to.be.true;

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.58.2...@adobe/spacecat-shared-data-access-v1.59.0) (2024-12-11)
+
+
+### Features
+
+* **data-access:** get site candidates ([#486](https://github.com/adobe/spacecat-shared/issues/486)) ([f45032d](https://github.com/adobe/spacecat-shared/commit/f45032dbcd3ea1e8cdfc2066f523b4a1690b5da4))
+
 # [@adobe/spacecat-shared-data-access-v1.58.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.58.1...@adobe/spacecat-shared-data-access-v1.58.2) (2024-12-07)
 
 

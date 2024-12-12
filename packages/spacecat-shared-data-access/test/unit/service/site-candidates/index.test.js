@@ -44,6 +44,11 @@ describe('Site Candidate Access Pattern Tests', () => {
     const exportedFunctions = siteCandidateFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
 
     it('exports upsertSiteCandidate function', () => {
+      expect(exportedFunctions).to.have.property('getSiteCandidates');
+      expect(exportedFunctions.getSiteCandidates).to.be.a('function');
+    });
+
+    it('exports upsertSiteCandidate function', () => {
       expect(exportedFunctions).to.have.property('upsertSiteCandidate');
       expect(exportedFunctions.upsertSiteCandidate).to.be.a('function');
     });
@@ -63,11 +68,13 @@ describe('Site Candidate Access Pattern Tests', () => {
     let mockDynamoClient;
     let mockLog = {};
     let exportedFunctions;
+    const siteCandidates = [{ baseURL: 'https://site1.com' }, { baseURL: 'https://site2.com' }];
 
     beforeEach(() => {
       mockDynamoClient = {
         getItem: sinon.stub().returns(Promise.resolve(null)),
         putItem: sinon.stub().returns(Promise.resolve()),
+        scan: sinon.stub().resolves(siteCandidates),
       };
 
       mockLog = {
@@ -75,6 +82,13 @@ describe('Site Candidate Access Pattern Tests', () => {
       };
 
       exportedFunctions = siteCandidateFunctions(mockDynamoClient, TEST_DA_CONFIG, mockLog);
+    });
+
+    it('returns all sitecandidates', async () => {
+      const result = await exportedFunctions.getSiteCandidates();
+
+      expect(result[0].getBaseURL()).to.equal(siteCandidates[0].baseURL);
+      expect(result[1].getBaseURL()).to.equal(siteCandidates[1].baseURL);
     });
 
     it('returns the site candidate by base url', async () => {

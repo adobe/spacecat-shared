@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.51...@adobe/spacecat-shared-dynamo-v1.4.0) (2024-12-11)
+
+
+### Features
+
+* **dynamo:** scan support ([#485](https://github.com/adobe/spacecat-shared/issues/485)) ([3d32b1e](https://github.com/adobe/spacecat-shared/commit/3d32b1e8d2796e8a6a0f1c057845eb63f27eff39))
+
 # [@adobe/spacecat-shared-dynamo-v1.3.51](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.3.50...@adobe/spacecat-shared-dynamo-v1.3.51) (2024-12-07)
 
 

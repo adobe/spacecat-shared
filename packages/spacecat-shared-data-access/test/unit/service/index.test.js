@@ -44,6 +44,7 @@ describe('Data Access Object Tests', () => {
   ];
 
   const siteCandidateFunctions = [
+    'getSiteCandidates',
     'getSiteCandidateByBaseURL',
     'upsertSiteCandidate',
     'siteCandidateExists',

@@ -28,7 +28,7 @@ class ImportJobCollection extends BaseCollection {
    * Constructs an instance of ImportJobCollection. Tells the base class which model to use.
    * @constructor
    * @param {Object} service - The ElectroDB service instance used to manage ImportJob entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection.
    * @param {Object} log - A logger for capturing logging information.
    */
   constructor(service, entityRegistry, log) {

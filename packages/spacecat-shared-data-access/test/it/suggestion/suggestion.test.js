@@ -20,7 +20,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { validate as uuidValidate } from 'uuid';
 
 import { ValidationError } from '../../../src/index.js';
-import { sanitizeTimestamps } from '../../../src/v2/util/util.js';
+import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/v2/util/util.js';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
@@ -176,11 +176,8 @@ describe('Suggestion IT', async () => {
       expect(isIsoDate(suggestion.getCreatedAt())).to.be.true;
       expect(isIsoDate(suggestion.getUpdatedAt())).to.be.true;
 
-      const record = suggestion.toJSON();
+      const record = sanitizeIdAndAuditFields('Suggestion', suggestion.toJSON());
       delete record.opportunityId;
-      delete record.suggestionId;
-      delete record.createdAt;
-      delete record.updatedAt;
 
       expect(record).to.eql(data[index]);
     });

@@ -19,25 +19,28 @@ import { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import BaseCollection from '../../../../../src/v2/models/base/base.collection.js';
+import BaseModel from '../../../../../src/v2/models/base/base.model.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('BaseCollection', () => {
+  const MockModel = class MockEntityModel extends BaseModel {
+    // eslint-disable-next-line class-methods-use-this
+    _cacheReference() {}
+  };
+
   let baseCollectionInstance;
   let mockElectroService;
   let mockEntityRegistry;
-  let mockModel;
   let mockLogger;
 
   const mockRecord = {
-    id: 'ef39921f-9a02-41db-b491-02c98987d956',
+    mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956',
+    mockParentEntityModelId: 'some-parent-id',
     data: {
       someKey: 'someValue',
     },
-  };
-  const mockEntityModel = {
-    data: { ...mockRecord },
   };
 
   beforeEach(() => {
@@ -48,15 +51,6 @@ describe('BaseCollection', () => {
     mockLogger = {
       error: spy(),
       warn: spy(),
-    };
-
-    mockModel = class MockEntityModel {
-      constructor(service, factory, data) {
-        this.data = data;
-      }
-
-      // eslint-disable-next-line class-methods-use-this
-      _cacheReference() {}
     };
 
     mockElectroService = {
@@ -77,9 +71,13 @@ describe('BaseCollection', () => {
             primary: stub(),
           },
           model: {
-            name: 'mockentitymodel',
+            name: 'mockEntityModel',
             indexes: {},
-            table: 'mockentitymodel',
+            table: 'data',
+            original: {},
+            schema: {
+              attributes: {},
+            },
           },
         },
       },
@@ -88,23 +86,23 @@ describe('BaseCollection', () => {
     baseCollectionInstance = new BaseCollection(
       mockElectroService,
       mockEntityRegistry,
-      mockModel,
+      MockModel,
       mockLogger,
     );
   });
 
   describe('collection methods', () => {
-    const createInstancew = () => new BaseCollection(
+    const createInstance = () => new BaseCollection(
       mockElectroService,
       mockEntityRegistry,
-      mockModel,
+      MockModel,
       mockLogger,
     );
 
     it('does not create accessors for the primary index', () => {
       mockElectroService.entities.mockEntityModel.model.indexes = { primary: {} };
 
-      const instance = createInstancew();
+      const instance = createInstance();
 
       expect(instance).to.not.have.property('allBy');
       expect(instance).to.not.have.property('findBy');
@@ -115,7 +113,7 @@ describe('BaseCollection', () => {
         bySomeKey: { pk: { facets: ['someKey'] } },
       };
 
-      const instance = createInstancew();
+      const instance = createInstance();
 
       expect(instance).to.have.property('allBySomeKey');
       expect(instance).to.have.property('findBySomeKey');
@@ -126,7 +124,7 @@ describe('BaseCollection', () => {
         bySomeKey: { sk: { facets: ['someKey'] } },
       };
 
-      const instance = createInstancew();
+      const instance = createInstance();
 
       expect(instance).to.have.property('allBySomeKey');
       expect(instance).to.have.property('findBySomeKey');
@@ -137,7 +135,7 @@ describe('BaseCollection', () => {
         bySomeKey: { pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
       };
 
-      const instance = createInstancew();
+      const instance = createInstance();
 
       expect(instance).to.have.property('allBySomeKey');
       expect(instance).to.have.property('allBySomeKeyAndSomeOtherKey');
@@ -160,7 +158,7 @@ describe('BaseCollection', () => {
         },
       };
 
-      const instance = createInstancew();
+      const instance = createInstance();
       const someKey = 'someValue';
       const someOtherKey = 1;
       const options = { order: 'desc' };
@@ -187,7 +185,8 @@ describe('BaseCollection', () => {
       );
 
       const result = await baseCollectionInstance.findById('ef39921f-9a02-41db-b491-02c98987d956');
-      expect(result).to.deep.include(mockEntityModel);
+
+      expect(result.record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.get.calledOnce).to.be.true;
     });
 
@@ -197,6 +196,7 @@ describe('BaseCollection', () => {
       );
 
       const result = await baseCollectionInstance.findById('ef39921f-9a02-41db-b491-02c98987d956');
+
       expect(result).to.be.null;
       expect(mockElectroService.entities.mockEntityModel.get.calledOnce).to.be.true;
     });
@@ -224,11 +224,11 @@ describe('BaseCollection', () => {
 
     it('creates a new entity successfully', async () => {
       mockElectroService.entities.mockEntityModel.create.returns(
-        { go: () => Promise.resolve(mockEntityModel) },
+        { go: () => Promise.resolve({ data: mockRecord }) },
       );
 
       const result = await baseCollectionInstance.create(mockRecord);
-      expect(result).to.deep.include(mockEntityModel);
+      expect(result.record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.create.calledOnce).to.be.true;
     });
 
@@ -273,7 +273,8 @@ describe('BaseCollection', () => {
 
       const result = await baseCollectionInstance.createMany(mockRecords);
       expect(result.createdItems).to.be.an('array').that.has.length(2);
-      expect(result.createdItems).to.deep.include(mockEntityModel);
+      expect(result.createdItems[0].record).to.deep.include(mockRecord);
+      expect(result.createdItems[1].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.put.calledThrice).to.be.true;
     });
 
@@ -298,13 +299,66 @@ describe('BaseCollection', () => {
         },
       );
 
-      const result = await baseCollectionInstance.createMany(
-        mockRecords,
-        { entity: { model: { name: 'mockEntityModel' } } },
-      );
+      const parent = {
+        record: { mockParentEntityModelId: mockRecord.mockParentEntityModelId },
+        entityName: 'mockParentEntityModel',
+        entity: { model: { name: 'mockParentEntityModel' } },
+      };
+
+      const result = await baseCollectionInstance.createMany(mockRecords, parent);
+
       expect(result.createdItems).to.be.an('array').that.has.length(2);
-      expect(result.createdItems).to.deep.include(mockEntityModel);
+      expect(result.createdItems[0].record).to.deep.include(mockRecord);
+      expect(result.createdItems[1].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.put.calledThrice).to.be.true;
+      expect(mockLogger.warn).to.not.have.been.called;
+    });
+
+    it('logs warning if parent is invalid', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      const mockPutResults = {
+        type: 'query',
+        method: 'batchWrite',
+        params: {
+          RequestItems: {
+            mockEntityModel: [
+              { PutRequest: { Item: mockRecord } },
+              { PutRequest: { Item: mockRecord } },
+            ],
+          },
+        },
+      };
+      mockElectroService.entities.mockEntityModel.put.returns(
+        {
+          go: () => Promise.resolve(mockPutResults),
+          params: () => ({ Item: { ...mockRecord } }),
+        },
+      );
+
+      const idNotMatchingParent = {
+        record: { mockParentEntityModelId: 'invalid-id' },
+        entityName: 'mockParentEntityModel',
+        entity: { model: { name: 'mockParentEntityModel' } },
+      };
+
+      const noEntityParent = {
+        record: { mockParentEntityModelId: 'invalid-id' },
+        entity: { model: { name: 'mockParentEntityModel' } },
+      };
+
+      const r1 = await baseCollectionInstance.createMany(mockRecords, idNotMatchingParent);
+      const r2 = await baseCollectionInstance.createMany(mockRecords, noEntityParent);
+
+      expect(r1.createdItems).to.be.an('array').that.has.length(2);
+      expect(r1.createdItems[0].record).to.deep.include(mockRecord);
+      expect(r1.createdItems[1].record).to.deep.include(mockRecord);
+
+      expect(r2.createdItems).to.be.an('array').that.has.length(2);
+      expect(r2.createdItems[0].record).to.deep.include(mockRecord);
+      expect(r2.createdItems[1].record).to.deep.include(mockRecord);
+
+      expect(mockElectroService.entities.mockEntityModel.put).to.have.callCount(6);
+      expect(mockLogger.warn).to.have.callCount(4);
     });
 
     it('creates some entities successfully with unprocessed items', async () => {
@@ -327,7 +381,7 @@ describe('BaseCollection', () => {
 
       const result = await baseCollectionInstance.createMany(mockRecords);
       expect(result.createdItems).to.be.an('array').that.has.length(1);
-      expect(result.createdItems).to.deep.include(mockEntityModel);
+      expect(result.createdItems[0].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.put.calledThrice).to.be.true;
       expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockEntityModel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
     });
@@ -409,7 +463,8 @@ describe('BaseCollection', () => {
       );
 
       const result = await baseCollectionInstance.all();
-      expect(result).to.deep.include(mockEntityModel);
+      expect(result).to.be.an('array').that.has.length(1);
+      expect(result[0].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.all)
         .to.have.been.calledOnceWithExactly({ pk: 'ALL_MOCKENTITYMODELS' });
     });
@@ -425,7 +480,8 @@ describe('BaseCollection', () => {
         { between: { attribute: 'test', start: 'a', end: 'b' } },
       );
 
-      expect(result).to.deep.include(mockEntityModel);
+      expect(result).to.be.an('array').that.has.length(1);
+      expect(result[0].record).to.deep.include(mockRecord);
       expect(mockBetween).to.have.been.calledOnceWithExactly({ test: 'a' }, { test: 'b' });
       expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc' });
     });
@@ -439,7 +495,8 @@ describe('BaseCollection', () => {
 
       const result = await baseCollectionInstance.all({}, { attributes: ['test'] });
 
-      expect(result).to.deep.include(mockEntityModel);
+      expect(result).to.be.an('array').that.has.length(1);
+      expect(result[0].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.all)
         .to.have.been.calledOnceWithExactly({ pk: 'ALL_MOCKENTITYMODELS' });
       expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc', attributes: ['test'] });
@@ -466,7 +523,8 @@ describe('BaseCollection', () => {
       );
 
       const result = await baseCollectionInstance.allByIndexKeys({ someKey: 'someValue' });
-      expect(result).to.deep.include(mockEntityModel);
+      expect(result).to.be.an('array').that.has.length(1);
+      expect(result[0].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.bySomeKey)
         .to.have.been.calledOnceWithExactly({ someKey: 'someValue' });
     });
@@ -481,7 +539,8 @@ describe('BaseCollection', () => {
       );
 
       const result = await baseCollectionInstance.allByIndexKeys({ someKey: 'someValue' });
-      expect(result).to.deep.include(mockEntityModel);
+      expect(result).to.be.an('array').that.has.length(1);
+      expect(result[0].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.primary)
         .to.have.been.calledOnceWithExactly({ someKey: 'someValue' });
     });
@@ -501,7 +560,7 @@ describe('BaseCollection', () => {
       );
 
       const result = await baseCollectionInstance.findByAll({ someKey: 'someValue' });
-      expect(result).to.deep.include(mockEntityModel);
+      expect(result.record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.all)
         .to.have.been.calledOnceWithExactly(
           { pk: 'ALL_MOCKENTITYMODELS', someKey: 'someValue' },

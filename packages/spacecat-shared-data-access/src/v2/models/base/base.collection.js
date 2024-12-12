@@ -32,6 +32,16 @@ function keyNamesToMethodName(keyNames, prefix) {
   return prefix + keyNames.map(capitalize).join('And');
 }
 
+function isValidParent(parent, child) {
+  if (!hasText(parent.entityName)) {
+    return false;
+  }
+
+  const foreignKey = `${parent.entityName}Id`;
+
+  return child.record?.[foreignKey] === parent.record?.[foreignKey];
+}
+
 function validateValue(context, keyName, value) {
   const { type } = context.entity.model.schema.attributes[keyName];
   const validator = type === 'number' ? isNumber : hasText;
@@ -298,7 +308,7 @@ class BaseCollection {
    * Finds a single entity from the "all" index. Requires an index named "all" with a partition key
    * named "pk" with a static value of "ALL_<ENTITYNAME>".
    * @param {Object} [sortKeys] - The sort keys to use for the query.
-   * @param {Object} [options] - Additional options for the query.
+   * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
    * @return {Promise<BaseModel|Array<BaseModel>|null>}
    */
   async findByAll(sortKeys = {}, options = {}) {
@@ -331,7 +341,7 @@ class BaseCollection {
   /**
    * Finds a single entity by index keys.
    * @param {Object} keys - The index keys to use for the query.
-   * @param {Object} options - Additional options for the query.
+   * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
    * @returns {Promise<BaseModel|null>} - A promise that resolves to the model instance or null.
    * @async
    */
@@ -421,8 +431,12 @@ class BaseCollection {
 
       const createdItems = this.#createInstances(validatedItems);
 
-      if (parent) {
+      if (isNonEmptyObject(parent)) {
         createdItems.forEach((record) => {
+          if (!isValidParent(parent, record)) {
+            this.log.warn(`Failed to associate parent with child [${this.entityName}]: parent is invalid`);
+            return;
+          }
           // eslint-disable-next-line no-underscore-dangle
           record._cacheReference(parent.entity.model.name, parent);
         });
@@ -464,6 +478,13 @@ class BaseCollection {
     }
   }
 
+  /**
+   * Removes all records of this entity based on the provided IDs.
+   * @param {Array<string>} ids - An array of IDs to remove.
+   * @return {Promise<void>} - A promise that resolves when the removal operation is complete.
+   * @throws {Error} - Throws an error if the IDs are not provided or if the
+   * removal operation fails.
+   */
   async removeByIds(ids) {
     if (!Array.isArray(ids) || ids.length === 0) {
       const message = `Failed to remove [${this.entityName}]: ids must be a non-empty array`;

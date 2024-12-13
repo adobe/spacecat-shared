@@ -13,10 +13,10 @@
 
 import { expect } from 'chai';
 import cwv from '../src/functions/cwv.js';
-import bundlesForUrls from './fixtures/bundles.json' assert { type: 'json' };
-import resultForUrls from './fixtures/cwv/result-for-urls.json' assert { type: 'json' };
-import bundlesForPatterns from './fixtures/cwv/bundles-for-url-patterns.json' assert { type: 'json' };
-import resultForPatterns from './fixtures/cwv/result-for-url-patterns.json' assert { type: 'json' };
+import bundlesForUrls from './fixtures/bundles.json' with { type: 'json' };
+import resultForUrls from './fixtures/cwv/result-for-urls.json' with { type: 'json' };
+import bundlesForPatterns from './fixtures/cwv/bundles-for-url-patterns.json' with { type: 'json' };
+import resultForPatterns from './fixtures/cwv/result-for-url-patterns.json' with { type: 'json' };
 
 describe('CWV Queries', () => {
   it('crunches CWV data', async () => {

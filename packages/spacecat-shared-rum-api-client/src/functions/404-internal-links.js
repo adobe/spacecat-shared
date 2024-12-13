@@ -23,7 +23,7 @@ import { DELIMITER, generateKey, loadBundles } from '../utils.js';
  * 4. Returns array of broken link objects with:
  *    - url_to: The 404 target URL that is broken
  *    - url_from: The source URL containing the broken link
- *    - views: Number of pageviews to the broken URL
+ *    - traffic_domain: Number of pageviews to the broken URL
  * @param {Array} bundles - Array of RUM data bundles
  * @returns {Array} Array of broken internal link objects with views
  */
@@ -43,17 +43,17 @@ function handler(bundles) {
   });
 
   // counts pageviews per each group
-  dataChunks.addSeries('views', series.pageViews);
+  dataChunks.addSeries('traffic_domain', series.pageViews);
 
   return dataChunks.facets.uniqueUrlCombinations.map((facet) => {
-      const [urlTo, urlFrom] = facet.value.split(DELIMITER);
-      
-      return {
-         views: facet.metrics.views.sum,
-         url_to: urlTo,
-         url_from: urlFrom,
-      }
-    });
+    const [urlTo, urlFrom] = facet.value.split(DELIMITER);
+
+    return {
+      traffic_domain: facet.metrics.traffic_domain.sum,
+      url_to: urlTo,
+      url_from: urlFrom,
+    };
+  });
 }
 
 export default {

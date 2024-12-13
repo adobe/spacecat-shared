@@ -45,21 +45,15 @@ function handler(bundles) {
   // counts pageviews per each group
   dataChunks.addSeries('views', series.pageViews);
 
-  const brokenInternalLinksViews = dataChunks.facets.uniqueUrlCombinations
-    .reduce((acc, facet) => {
-      const urlCombination = facet.value;
-
-      acc[urlCombination] = acc[urlCombination] || {};
-
-      acc[urlCombination].views = facet.metrics.views.sum;
+  return dataChunks.facets.uniqueUrlCombinations.map((facet) => {
       const [urlTo, urlFrom] = facet.value.split(DELIMITER);
-      acc[urlCombination].url_to = urlTo;
-      acc[urlCombination].url_from = urlFrom;
-
-      return acc;
-    }, {});
-
-  return Object.values(brokenInternalLinksViews);
+      
+      return {
+         views: facet.metrics.views.sum,
+         url_to: urlTo,
+         url_from: urlFrom,
+      }
+    });
 }
 
 export default {

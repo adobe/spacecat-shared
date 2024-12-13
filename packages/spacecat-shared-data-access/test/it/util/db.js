@@ -49,10 +49,49 @@ export const TEST_DA_CONFIG = {
   tableNameSpacecatData: 'spacecat-data',
 };
 
+export const TEST_DA_MIGRATION_CONFIG = {
+  indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
+  indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
+  indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id-dev',
+  indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
+  indexNameAllOrganizations: 'spacecat-services-all-organizations-dev',
+  indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id-dev',
+  indexNameAllSites: 'spacecat-services-all-sites-dev',
+  indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type-dev',
+  indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations-dev',
+  indexNameApiKeyByHashedApiKey: 'spacecat-services-api-key-by-hashed-api-key',
+  indexNameApiKeyByImsUserIdAndImsOrgId: 'spacecat-services-api-key-by-ims-user-id-and-ims-org-id',
+  indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
+  pkAllConfigurations: 'ALL_CONFIGURATIONS',
+  pkAllImportJobs: 'ALL_IMPORT_JOBS',
+  pkAllLatestAudits: 'ALL_LATEST_AUDITS',
+  pkAllOrganizations: 'ALL_ORGANIZATIONS',
+  pkAllSites: 'ALL_SITES',
+  tableNameApiKeys: 'spacecat-services-api-keys-dev',
+  tableNameAudits: 'spacecat-services-audits-dev',
+  tableNameConfigurations: 'spacecat-services-configurations-dev',
+  tableNameData: 'spacecat-services-data-dev',
+  tableNameExperiments: 'spacecat-services-experiments-dev',
+  tableNameImportJobs: 'spacecat-services-import-jobs-dev',
+  tableNameImportUrls: 'spacecat-services-import-urls-dev',
+  tableNameKeyEvents: 'spacecat-services-key-events-dev',
+  tableNameLatestAudits: 'spacecat-services-latest-audits-dev',
+  tableNameOrganizations: 'spacecat-services-organizations-dev',
+  tableNameSiteCandidates: 'spacecat-services-site-candidates-dev',
+  tableNameSiteTopPages: 'spacecat-services-site-top-pages-dev',
+  tableNameSites: 'spacecat-services-sites-dev',
+  tableNameSpacecatData: 'spacecat-services-data-dev',
+};
+
 let dbClient = null;
 let docClient = null;
 
-const getDynamoClients = () => {
+const getDynamoClients = (config = {}) => {
+  if (config?.region && config?.credentials) {
+    dbClient = new DynamoDB(config);
+    docClient = DynamoDBDocument.from(dbClient);
+    return { dbClient, docClient };
+  }
   dbClient = new DynamoDB({
     endpoint: 'http://127.0.0.1:8000',
     region: 'local',
@@ -66,9 +105,9 @@ const getDynamoClients = () => {
   return { dbClient, docClient };
 };
 
-export const getDataAccess = () => {
-  const { client } = getDynamoClients();
-  return createDataAccess(TEST_DA_CONFIG, client);
+export const getDataAccess = (config, isMigration = false) => {
+  const { client } = getDynamoClients(config);
+  return createDataAccess(isMigration ? TEST_DA_MIGRATION_CONFIG : TEST_DA_CONFIG, client);
 };
 
 export { getDynamoClients };

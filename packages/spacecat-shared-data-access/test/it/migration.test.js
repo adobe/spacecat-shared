@@ -22,7 +22,7 @@ describe.skip('Migration Tests', () => {
 
   before(async () => {
     // Get original counts
-    migratedDataAccess = await getDataAccess();
+    migratedDataAccess = await getDataAccess({}, true);
     originalDataAccess = await getDataAccess({
       region: process.env.AWS_REGION,
       credentials: {
@@ -30,7 +30,7 @@ describe.skip('Migration Tests', () => {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
         sessionToken: process.env.AWS_SESSION_TOKEN,
       },
-    });
+    }, true);
     try {
       const sites = await originalDataAccess.getSites();
       originalCounts.Site = sites.length;

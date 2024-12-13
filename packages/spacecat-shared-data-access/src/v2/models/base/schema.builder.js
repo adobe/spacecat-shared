@@ -316,11 +316,15 @@ class SchemaBuilder {
    * @param {string} referenceType - One of 'belongs_to', 'has_many', or 'has_one'.
    * @param {string} entityName - The referenced entity name.
    * @param {Array<string>} [sortKeys=['updatedAt']] - The attributes to form the sort key.
-   * @param {boolean} [required=true] - Whether the foreign key is required.
+   * @param {object} [options] - Additional reference options.
+   * @param {boolean} [options.required=true] - Whether the reference is required. Only applies to
+   * BELONGS_TO references.
+   * @param {boolean} [options.removeDependent=false] - Whether to remove dependent entities
+   * on delete. Only applies to HAS_MANY and HAS_ONE references.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
    * @throws {Error} If referenceType or entityName are invalid.
    */
-  addReference(referenceType, entityName, sortKeys = ['updatedAt'], required = true) {
+  addReference(referenceType, entityName, sortKeys = ['updatedAt'], options = {}) {
     if (!Object.values(SchemaBuilder.REFERENCE_TYPES).includes(referenceType)) {
       throw new Error(`Invalid referenceType: "${referenceType}".`);
     }
@@ -328,29 +332,39 @@ class SchemaBuilder {
     if (!hasText(entityName)) {
       throw new Error('entityName for reference is required and must be a non-empty string.');
     }
+    const reference = { target: entityName };
 
-    this.schema.references[referenceType].push({ target: entityName });
-
-    if (referenceType !== SchemaBuilder.REFERENCE_TYPES.BELONGS_TO) {
-      return this;
+    if ([
+      SchemaBuilder.REFERENCE_TYPES.HAS_MANY,
+      SchemaBuilder.REFERENCE_TYPES.HAS_ONE,
+    ].includes(referenceType)) {
+      reference.removeDependent = options.removeDependent ?? false;
     }
 
-    // for a BELONGS_TO reference, we add a foreign key attribute
-    // and a corresponding "belongs_to" index to facilitate lookups by that foreign key.
-    const foreignKeyName = entityNameToIdName(entityName);
+    if (referenceType === SchemaBuilder.REFERENCE_TYPES.BELONGS_TO) {
+      reference.required = options.required ?? true;
 
-    this.addAttribute(foreignKeyName, {
-      type: 'string',
-      required,
-      validate: (value) => (required ? uuidValidate(value) : !value || uuidValidate(value)),
-    });
+      // for a BELONGS_TO reference, we add a foreign key attribute
+      // and a corresponding "belongs_to" index to facilitate lookups by that foreign key.
+      const foreignKeyName = entityNameToIdName(entityName);
 
-    this.#internalAddIndex(
-      `by${capitalize(foreignKeyName)}`,
-      { composite: [decapitalize(foreignKeyName)] },
-      { composite: sortKeys },
-      INDEX_TYPES.BELONGS_TO,
-    );
+      this.addAttribute(foreignKeyName, {
+        type: 'string',
+        required: reference.required,
+        validate: (value) => (
+          reference.required ? uuidValidate(value) : !value || uuidValidate(value)
+        ),
+      });
+
+      this.#internalAddIndex(
+        `by${capitalize(foreignKeyName)}`,
+        { composite: [decapitalize(foreignKeyName)] },
+        { composite: sortKeys },
+        INDEX_TYPES.BELONGS_TO,
+      );
+    }
+
+    this.schema.references[referenceType].push(reference);
 
     return this;
   }

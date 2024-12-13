@@ -39,24 +39,30 @@ describe('BaseModel', () => {
   beforeEach(() => {
     mockLogger = {
       error: spy(),
+      info: spy(),
     };
 
     mockEntityRegistry = {
-      getCollection: stub(),
+      getCollection: stub().returns({
+        findByIndexKeys: stub().resolves({}),
+        allByIndexKeys: stub().resolves([]),
+      }),
     };
 
     mockElectroService = {
       entities: {
         baseModel: {
-          name: 'basemodel',
+          name: 'baseModel',
           model: {
-            name: 'basemodel',
+            name: 'baseModel',
             schema: opportunityEntity.model.schema,
             original: {
               references: {
-                has_one: [],
+                has_one: [
+                  { target: 'Opportunity', removeDependent: false },
+                ],
                 has_many: [
-                  { type: 'has_many', target: 'Suggestions' },
+                  { target: 'Suggestions', removeDependent: false },
                 ],
                 belongs_to: [],
               },
@@ -110,11 +116,59 @@ describe('BaseModel', () => {
   });
 
   describe('remove', () => {
-    it('removes the record and returns the current instance', async () => {
+    let dependent;
+    let dependents;
+
+    beforeEach(() => {
+      dependent = { remove: stub().resolves() };
+      dependents = [dependent, dependent, dependent];
+
+      mockEntityRegistry.getCollection.returns({
+        findByIndexKeys: stub().resolves(dependent),
+        allByIndexKeys: stub().resolves(dependents),
+      });
       mockElectroService.entities.baseModel.remove.returns({ go: () => Promise.resolve() });
+    });
+
+    it('removes the record and returns the current instance', async () => {
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
+
       expect(mockElectroService.entities.baseModel.remove.calledOnce).to.be.true;
       expect(mockLogger.error.notCalled).to.be.true;
+    });
+
+    it('removes record with dependents', async () => {
+      mockElectroService.entities.baseModel.model.original.references
+        .has_many[0].removeDependent = true;
+      mockElectroService.entities.baseModel.model.original.references
+        .has_one[0].removeDependent = true;
+
+      await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
+      // self remove
+      expect(mockElectroService.entities.baseModel.remove.calledOnce).to.be.true;
+      // dependents remove: 3 = has_many, 1 = has_one
+      expect(dependent.remove.callCount).to.equal(4);
+      expect(mockLogger.error.notCalled).to.be.true;
+    });
+
+    it('does not remove dependents if there aren\'t any', async () => {
+      delete mockElectroService.entities.baseModel.model.original.references.has_many;
+      delete mockElectroService.entities.baseModel.model.original.references.has_one;
+      await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
+      expect(dependent.remove.notCalled).to.be.true;
+    });
+
+    it('does not remove dependents if none are found', async () => {
+      mockElectroService.entities.baseModel.model.original.references
+        .has_many[0].removeDependent = true;
+      mockElectroService.entities.baseModel.model.original.references
+        .has_one[0].removeDependent = true;
+      mockEntityRegistry.getCollection.returns({
+        findByIndexKeys: stub().resolves(null),
+        allByIndexKeys: stub().resolves([]),
+      });
+      await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
+      expect(dependent.remove.notCalled).to.be.true;
     });
 
     it('logs an error and throws when remove fails', async () => {
@@ -174,7 +228,7 @@ describe('BaseModel', () => {
     });
 
     it('fetches a has_one reference by ID', async () => {
-      mockEntityRegistry.getCollection.returns({ findById: stub().returns('bar') });
+      mockEntityRegistry.getCollection.returns({ findByIndexKeys: stub().returns('bar') });
       baseModelInstance.record.fooId = '12345';
       const result = await baseModelInstance._fetchReference('has_one', 'Foo');
       expect(result).to.equal('bar');

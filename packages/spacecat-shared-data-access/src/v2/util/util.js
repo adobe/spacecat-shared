@@ -52,6 +52,8 @@ const sanitizeIdAndAuditFields = (entityName, data) => {
 
 const incrementVersion = (version) => (isInteger(version) ? parseInt(version, 10) + 1 : 1);
 
+const isNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
+
 export {
   capitalize,
   collectionNameToEntityName,
@@ -62,6 +64,7 @@ export {
   entityNameToReferenceMethodName,
   idNameToEntityName,
   incrementVersion,
+  isNonEmptyArray,
   keyNamesToIndexName,
   modelNameToEntityName,
   sanitizeIdAndAuditFields,

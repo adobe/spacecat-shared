@@ -25,7 +25,7 @@ import {
   guardSet,
   guardString,
 } from './index.js';
-import { entityNameToIdName, modelNameToEntityName } from './util.js';
+import { entityNameToIdName, isNonEmptyArray, modelNameToEntityName } from './util.js';
 
 /**
  * Checks if a property is read-only and throws an error if it is.
@@ -75,7 +75,7 @@ class Patcher {
 
     const processComposite = (index, compositeType) => {
       const compositeArray = index[compositeType]?.facets;
-      if (Array.isArray(compositeArray)) {
+      if (isNonEmptyArray(compositeArray)) {
         compositeArray.forEach((compositeKey) => {
           if (
             !Object.keys(this.updates).includes(compositeKey)

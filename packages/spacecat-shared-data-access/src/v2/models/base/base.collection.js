@@ -22,6 +22,7 @@ import { guardId } from '../../util/guards.js';
 import {
   capitalize,
   entityNameToAllPKValue,
+  isNonEmptyArray,
   keyNamesToIndexName,
   modelNameToEntityName,
 } from '../../util/util.js';
@@ -412,7 +413,7 @@ class BaseCollection {
    * failures.
    */
   async createMany(newItems, parent = null) {
-    if (!Array.isArray(newItems) || newItems.length === 0) {
+    if (!isNonEmptyArray(newItems)) {
       const message = `Failed to create many [${this.entityName}]: items must be a non-empty array`;
       this.log.error(message);
       throw new Error(message);
@@ -424,7 +425,7 @@ class BaseCollection {
       if (validatedItems.length > 0) {
         const response = await this.entity.put(validatedItems).go();
 
-        if (Array.isArray(response?.unprocessed) && response?.unprocessed?.length > 0) {
+        if (isNonEmptyArray(response?.unprocessed)) {
           this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
         }
       }
@@ -441,6 +442,8 @@ class BaseCollection {
           record._cacheReference(parent.entity.model.name, parent);
         });
       }
+
+      this.log.info(`Created ${createdItems.length} items for [${this.entityName}]`);
 
       return { createdItems, errorItems };
     } catch (error) {
@@ -459,7 +462,7 @@ class BaseCollection {
    * @protected
    */
   async _saveMany(items) {
-    if (!Array.isArray(items) || items.length === 0) {
+    if (!isNonEmptyArray(items)) {
       const message = `Failed to save many [${this.entityName}]: items must be a non-empty array`;
       this.log.error(message);
       throw new Error(message);
@@ -479,18 +482,22 @@ class BaseCollection {
   }
 
   /**
-   * Removes all records of this entity based on the provided IDs.
+   * Removes all records of this entity based on the provided IDs. This will perform a batch
+   * delete operation. This operation does not remove dependent records.
    * @param {Array<string>} ids - An array of IDs to remove.
    * @return {Promise<void>} - A promise that resolves when the removal operation is complete.
    * @throws {Error} - Throws an error if the IDs are not provided or if the
    * removal operation fails.
    */
   async removeByIds(ids) {
-    if (!Array.isArray(ids) || ids.length === 0) {
+    if (!isNonEmptyArray(ids)) {
       const message = `Failed to remove [${this.entityName}]: ids must be a non-empty array`;
       this.log.error(message);
       throw new Error(message);
     }
+
+    this.log.info(`Removing ${ids.length} items for [${this.entityName}]`);
+    // todo: consider removing dependent records
 
     await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
   }

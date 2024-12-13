@@ -50,6 +50,7 @@ describe('BaseCollection', () => {
 
     mockLogger = {
       error: spy(),
+      info: spy(),
       warn: spy(),
     };
 

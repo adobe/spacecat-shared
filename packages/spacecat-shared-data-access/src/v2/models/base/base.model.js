@@ -10,15 +10,16 @@
  * governing permissions and limitations under the License.
  */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import Patcher from '../../util/patcher.js';
 import {
   capitalize,
   entityNameToCollectionName,
   entityNameToIdName,
-  entityNameToReferenceMethodName, idNameToEntityName, modelNameToEntityName,
+  entityNameToReferenceMethodName, idNameToEntityName, isNonEmptyArray, modelNameToEntityName,
 } from '../../util/util.js';
+import SchemaBuilder from './schema.builder.js';
 
 /**
  * Base - A base class for representing individual entities in the application.
@@ -153,12 +154,15 @@ class BaseModel {
     const collectionName = entityNameToCollectionName(targetName);
     const targetCollection = this.entityRegistry.getCollection(collectionName);
 
-    if (type === 'belongs_to' || type === 'has_one') {
+    if (type === 'belongs_to') {
       const foreignKey = entityNameToIdName(targetName);
       const id = this.record[foreignKey];
       if (!id) return null;
 
       result = await targetCollection.findById(id);
+    } else if (type === 'has_one') {
+      const foreignKey = entityNameToIdName(this.entityName);
+      result = await targetCollection.findByIndexKeys({ [foreignKey]: this.getId() });
     } else if (type === 'has_many') {
       const foreignKey = entityNameToIdName(this.entityName);
       result = await targetCollection.allByIndexKeys({ [foreignKey]: this.getId() });
@@ -169,6 +173,39 @@ class BaseModel {
     }
 
     return result;
+  }
+
+  async #fetchDependents() {
+    const promises = [];
+
+    const relationshipTypes = [
+      SchemaBuilder.REFERENCE_TYPES.HAS_MANY,
+      SchemaBuilder.REFERENCE_TYPES.HAS_ONE,
+    ];
+
+    relationshipTypes.forEach((type) => {
+      const refs = this.entity.model.original.references?.[type] || [];
+      const targets = refs.filter((ref) => hasText(ref.target) && ref.removeDependent);
+
+      targets.forEach((ref) => {
+        const { target } = ref;
+        promises.push(
+          this._fetchReference(type, target)
+            .then((dependent) => {
+              if (isNonEmptyArray(dependent)) {
+                return dependent;
+              } else if (isNonEmptyObject(dependent)) {
+                return [dependent];
+              }
+              return null;
+            }),
+        );
+      });
+    });
+
+    const results = await Promise.all(promises);
+
+    return results.flat().filter((dependent) => dependent !== null);
   }
 
   /**
@@ -196,16 +233,31 @@ class BaseModel {
   }
 
   /**
-   * Removes the current entity from the database.
+   * Removes the current entity from the database. This method also removes any dependent
+   * entities associated with the current entity. For example, if the current entity has
+   * a has_many relationship with another entity, the dependent entity will be removed.
+   * When adding a reference to an entity, the dependent entity will be removed if the
+   * removeDependent flag is set to true in the reference definition.
+   *
+   * Dependents are removed by calling the remove method on each dependent entity, which in turn
+   * will also remove any dependent entities associated with the dependent entity. This may result
+   * in a cascade effect where multiple entities are removed. Consider the destructive
+   * and performance implications before using this method.
    * @async
    * @returns {Promise<BaseModel>} - A promise that resolves to the current instance of the entity
-   * after it has been removed.
+   * after it and its dependents have been removed.
    * @throws {Error} - Throws an error if the removal fails.
    */
   async remove() {
     try {
-      // todo: remove dependents (child associations)
-      await this.entity.remove({ [this.idName]: this.getId() }).go();
+      const dependents = await this.#fetchDependents();
+      const removePromises = dependents.map((dependent) => dependent.remove());
+      removePromises.push(this.entity.remove({ [this.idName]: this.getId() }).go());
+
+      this.log.info(`Removing entity ${this.entityName} with ID ${this.getId()} and ${dependents.length} dependents`);
+
+      await Promise.all(removePromises);
+
       return this;
     } catch (error) {
       this.log.error('Failed to remove record', error);
@@ -224,6 +276,7 @@ class BaseModel {
   async save() {
     // todo: validate associations
     try {
+      this.log.info(`Saving entity ${this.entityName} with ID ${this.getId()}`);
       await this.patcher.save();
       // todo: in case references are updated, clear or refresh references cache
       return this;

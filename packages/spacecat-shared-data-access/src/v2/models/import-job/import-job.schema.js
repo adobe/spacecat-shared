@@ -67,7 +67,7 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
 const schema = new SchemaBuilder('ImportJob', 1, 'SpaceCat')
-  .addReference('has_many', 'ImportUrl')
+  .addReference('has_many', 'ImportUrls')
   .addAttribute('baseURL', {
     type: 'string',
     required: true,

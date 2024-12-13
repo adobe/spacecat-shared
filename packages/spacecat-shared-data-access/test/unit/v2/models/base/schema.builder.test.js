@@ -244,7 +244,18 @@ describe('SchemaBuilder', () => {
       const result = instance.addReference('has_many', 'someEntity');
 
       expect(result).to.equal(instance);
-      expect(instance.schema.references.has_many).to.deep.equal([{ target: 'someEntity' }]);
+      expect(instance.schema.references.has_many)
+        .to.deep.equal([{ target: 'someEntity', removeDependent: false }]);
+      expect(instance.schema.attributes).to.not.have.property('someEntityId');
+      expect(instance.rawIndexes.belongs_to).to.not.have.property('bySomeEntityId');
+    });
+
+    it('successfully adds a has_many reference with removeDependent', () => {
+      const result = instance.addReference('has_many', 'someEntity', [], { removeDependent: true });
+
+      expect(result).to.equal(instance);
+      expect(instance.schema.references.has_many)
+        .to.deep.equal([{ target: 'someEntity', removeDependent: true }]);
       expect(instance.schema.attributes).to.not.have.property('someEntityId');
       expect(instance.rawIndexes.belongs_to).to.not.have.property('bySomeEntityId');
     });
@@ -253,9 +264,28 @@ describe('SchemaBuilder', () => {
       const result = instance.addReference('belongs_to', 'someEntity');
 
       expect(result).to.equal(instance);
-      expect(instance.schema.references.belongs_to).to.deep.equal([{ target: 'someEntity' }]);
+      expect(instance.schema.references.belongs_to)
+        .to.deep.equal([{ target: 'someEntity', required: true }]);
       expect(instance.schema.attributes.someEntityId).to.deep.equal({
         required: true,
+        type: 'string',
+        validate: instance.schema.attributes.someEntityId.validate,
+      });
+      expect(instance.rawIndexes.belongs_to.bySomeEntityId).to.deep.equal({
+        index: 'testservice-data-test-bySomeEntityId',
+        pk: { composite: ['someEntityId'] },
+        sk: { composite: ['updatedAt'] },
+      });
+    });
+
+    it('successfully adds a belongs_to reference which is not required', () => {
+      const result = instance.addReference('belongs_to', 'someEntity', ['updatedAt'], { required: false });
+
+      expect(result).to.equal(instance);
+      expect(instance.schema.references.belongs_to)
+        .to.deep.equal([{ target: 'someEntity', required: false }]);
+      expect(instance.schema.attributes.someEntityId).to.deep.equal({
+        required: false,
         type: 'string',
         validate: instance.schema.attributes.someEntityId.validate,
       });
@@ -290,7 +320,7 @@ describe('SchemaBuilder', () => {
     });
 
     it('validates non-required foreign key attribute', () => {
-      instance.addReference('belongs_to', 'someEntity', [], false);
+      instance.addReference('belongs_to', 'someEntity', [], { required: false });
       expect(instance.schema.attributes.someEntityId.required).to.be.false;
       expect(instance.schema.attributes.someEntityId.validate()).to.be.true;
       expect(instance.schema.attributes.someEntityId.validate('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
@@ -301,7 +331,7 @@ describe('SchemaBuilder', () => {
   describe('build', () => {
     it('returns the built schema', () => {
       instance.addReference('belongs_to', 'Organization');
-      instance.addReference('belongs_to', 'Site', ['someField'], false);
+      instance.addReference('belongs_to', 'Site', ['someField'], { required: false });
       instance.addReference('has_many', 'Audits');
       instance.addAttribute('baseURL', {
         type: 'string',
@@ -387,8 +417,14 @@ describe('SchemaBuilder', () => {
           },
         },
         references: {
-          belongs_to: [{ target: 'Organization' }, { target: 'Site' }],
-          has_many: [{ target: 'Audits' }],
+          belongs_to: [{
+            target: 'Organization',
+            required: true,
+          }, {
+            target: 'Site',
+            required: false,
+          }],
+          has_many: [{ target: 'Audits', removeDependent: false }],
           has_one: [],
         },
       });

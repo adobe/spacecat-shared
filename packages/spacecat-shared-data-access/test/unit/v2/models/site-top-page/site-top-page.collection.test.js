@@ -49,6 +49,7 @@ describe('SiteTopPageCollection', () => {
   beforeEach(() => {
     mockLogger = {
       error: spy(),
+      info: spy(),
       warn: spy(),
     };
 

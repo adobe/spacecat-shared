@@ -11,6 +11,7 @@
  */
 import { fetchBundles } from './common/rum-bundler-client.js';
 import notfound from './functions/404.js';
+import notfoundInternalLinks from './functions/404-internal-links.js';
 import cwv from './functions/cwv.js';
 import formVitals from './functions/form-vitals.js';
 import experiment from './functions/experiment.js';
@@ -22,6 +23,7 @@ import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js
 
 const HANDLERS = {
   404: notfound,
+  '404-internal-links': notfoundInternalLinks,
   cwv,
   'form-vitals': formVitals,
   experiment,

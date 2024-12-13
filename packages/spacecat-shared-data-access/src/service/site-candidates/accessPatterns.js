@@ -23,7 +23,7 @@ import { SiteCandidateDto } from '../../dto/site-candidate.js';
  */
 export const getSiteCandidates = async (dynamoClient, config) => {
   const dynamoItems = await dynamoClient.scan({
-    TableName: config.tableNameSites,
+    TableName: config.tableNameSiteCandidates,
   });
 
   return dynamoItems.map((dynamoItem) => SiteCandidateDto.fromDynamoItem(dynamoItem));

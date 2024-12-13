@@ -72,8 +72,8 @@ const createElectroService = (client, config, log) => {
  * @param {Logger} log logger
  * @returns {object} data access object
  */
-export const createDataAccess = (config, log = console) => {
-  const dynamoClient = createClient(log);
+export const createDataAccess = (config, log = console, client = undefined) => {
+  const dynamoClient = createClient(log, client);
 
   const auditFuncs = auditFunctions(dynamoClient, config, log);
   const keyEventFuncs = keyEventFunctions(dynamoClient, config, log);

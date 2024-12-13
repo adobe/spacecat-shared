@@ -83,10 +83,10 @@ export const TEST_DA_MIGRATION_CONFIG = {
   tableNameSpacecatData: 'spacecat-services-data-dev',
 };
 
-let dbClient = null;
 let docClient = null;
 
 const getDynamoClients = (config = {}) => {
+  let dbClient;
   if (config?.region && config?.credentials) {
     dbClient = new DynamoDB(config);
   } else {
@@ -105,8 +105,10 @@ const getDynamoClients = (config = {}) => {
 };
 
 export const getDataAccess = (config, isMigration = false) => {
-  const { client } = getDynamoClients(config);
-  return createDataAccess(isMigration ? TEST_DA_MIGRATION_CONFIG : TEST_DA_CONFIG, client);
+  const { dbClient } = getDynamoClients(config);
+  return createDataAccess(isMigration
+    ? TEST_DA_MIGRATION_CONFIG
+    : TEST_DA_CONFIG, console, dbClient);
 };
 
 export { getDynamoClients };

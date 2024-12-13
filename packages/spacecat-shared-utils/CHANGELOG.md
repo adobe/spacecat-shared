@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.23.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.6...@adobe/spacecat-shared-utils-v1.23.7) (2024-12-13)
+
+
+### Bug Fixes
+
+* **sqs:** Support both standard and FIFO SQS queues ([#490](https://github.com/adobe/spacecat-shared/issues/490)) ([4a975b0](https://github.com/adobe/spacecat-shared/commit/4a975b0994d2df9fc296cfe900b1500aeb34e44f)), closes [#489](https://github.com/adobe/spacecat-shared/issues/489)
+
 # [@adobe/spacecat-shared-utils-v1.23.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.5...@adobe/spacecat-shared-utils-v1.23.6) (2024-12-10)
 
 

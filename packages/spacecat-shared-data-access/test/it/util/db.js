@@ -89,17 +89,16 @@ let docClient = null;
 const getDynamoClients = (config = {}) => {
   if (config?.region && config?.credentials) {
     dbClient = new DynamoDB(config);
-    docClient = DynamoDBDocument.from(dbClient);
-    return { dbClient, docClient };
+  } else {
+    dbClient = new DynamoDB({
+      endpoint: 'http://127.0.0.1:8000',
+      region: 'local',
+      credentials: {
+        accessKeyId: 'dummy',
+        secretAccessKey: 'dummy',
+      },
+    });
   }
-  dbClient = new DynamoDB({
-    endpoint: 'http://127.0.0.1:8000',
-    region: 'local',
-    credentials: {
-      accessKeyId: 'dummy',
-      secretAccessKey: 'dummy',
-    },
-  });
   docClient = DynamoDBDocument.from(dbClient);
 
   return { dbClient, docClient };

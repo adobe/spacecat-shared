@@ -30,10 +30,13 @@ describe('EntityRegistry', () => {
   const MockSchema = new Schema(
     MockModel,
     MockCollection,
-    { entity: 'test' },
-    {},
-    {},
-    {},
+    {
+      attributes: {},
+      indexes: {},
+      serviceName: 'SpaceDog',
+      schemaVersion: '1',
+      references: {},
+    },
   );
 
   let electroService;
@@ -93,11 +96,13 @@ describe('EntityRegistry', () => {
     expect(entities).to.be.an('object');
     expect(Object.keys(entities)).to.have.lengthOf(1);
     expect(entities).to.deep.equal({
-      test: {
+      mockModel: {
         attributes: {},
         indexes: {},
         model: {
-          entity: 'test',
+          entity: 'MockModel',
+          service: 'SpaceDog',
+          version: '1',
         },
       },
     });

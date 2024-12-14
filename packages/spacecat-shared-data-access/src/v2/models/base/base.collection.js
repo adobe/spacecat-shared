@@ -39,7 +39,7 @@ function isValidParent(parent, child) {
 }
 
 function validateValue(context, keyName, value) {
-  const { type } = context.schema.getAttributes()[keyName];
+  const { type } = context.schema.getAttribute(keyName);
   const validator = type === 'number' ? isNumber : hasText;
 
   if (!validator(value)) {
@@ -437,7 +437,7 @@ class BaseCollection {
             return;
           }
           // eslint-disable-next-line no-underscore-dangle
-          record._cacheReference(parent.entity.model.name, parent);
+          record._cacheReference(parent.schema.getModelName(), parent);
         });
       }
 

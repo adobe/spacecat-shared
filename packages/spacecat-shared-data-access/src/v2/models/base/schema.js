@@ -31,37 +31,46 @@ class Schema {
    * @constructor
    * @param {BaseModel} modelClass - The class representing the model.
    * @param {BaseCollection} collectionClass - The class representing the model collection.
-   * @param {object} model - The ElectroDB model definition (entity, version, service).
-   * @param {object} attributes - The attributes definition.
-   * @param {object} indexes - The indexes definition.
-   * @param {object} references - The custom references object.
+   * @param {object} rawSchema - The raw schema data.
+   * @param {string} rawSchema.serviceName - The name of the service.
+   * @param {string} rawSchema.schemaVersion - The version of the schema.
+   * @param {object} rawSchema.attributes - The attributes of the schema.
+   * @param {object} rawSchema.indexes - The indexes of the schema.
+   * @param {object} [rawSchema.references] - The references of the schema.
    */
   constructor(
     modelClass,
     collectionClass,
-    model,
-    attributes,
-    indexes,
-    references,
+    rawSchema,
   ) {
     this.modelClass = modelClass;
     this.collectionClass = collectionClass;
-    this.model = model;
-    this.attributes = attributes;
-    this.indexes = indexes;
-    this.references = references;
+
+    this.serviceName = rawSchema.serviceName;
+    this.schemaVersion = rawSchema.schemaVersion;
+    this.attributes = rawSchema.attributes;
+    this.indexes = rawSchema.indexes;
+    this.references = rawSchema.references;
+  }
+
+  getAttribute(name) {
+    return this.attributes[name];
   }
 
   getAttributes() {
     return this.attributes;
   }
 
+  getCollectionName() {
+    return this.collectionClass.name;
+  }
+
   getEntityName() {
-    return modelNameToEntityName(this.model.entity);
+    return modelNameToEntityName(this.getModelName());
   }
 
   getIdName() {
-    return entityNameToIdName(this.model.entity);
+    return entityNameToIdName(this.getModelName());
   }
 
   getIndexes() {
@@ -72,15 +81,20 @@ class Schema {
     return this.modelClass;
   }
 
-  getCollectionName() {
-    return this.collectionClass.name;
+  getModelName() {
+    return this.modelClass.name;
   }
 
-  /**
-   * Return the raw references data for internal usage (e.g., in models/collections).
-   */
   getReferences() {
     return this.references;
+  }
+
+  getServiceName() {
+    return this.serviceName;
+  }
+
+  getVersion() {
+    return this.schemaVersion;
   }
 
   /**
@@ -91,11 +105,13 @@ class Schema {
    */
   toElectroDBSchema() {
     return {
-      model: this.model,
+      model: {
+        entity: this.getModelName(),
+        version: String(this.getVersion()),
+        service: this.getServiceName(),
+      },
       attributes: this.attributes,
       indexes: this.indexes,
-      // ElectroDB doesn't require "references", but we keep them here for our app logic.
-      // We might store them separately or just not include them in the returned object.
     };
   }
 }

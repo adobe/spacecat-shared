@@ -32,13 +32,15 @@ const MockCollection = class MockEntityCollection extends BaseCollection {};
 const createSchema = (service, indexes) => new Schema(
   MockModel,
   MockCollection,
-  service.entities.mockEntityModel.model,
   {
-    someKey: { type: 'string' },
-    someOtherKey: { type: 'number' },
+    model: service.entities.mockEntityModel.model,
+    attributes: {
+      someKey: { type: 'string' },
+      someOtherKey: { type: 'number' },
+    },
+    indexes,
+    references: {},
   },
-  indexes,
-  {},
 );
 
 const createInstance = (service, registry, indexes, log) => {
@@ -346,6 +348,7 @@ describe('BaseCollection', () => {
         record: { mockParentEntityModelId: mockRecord.mockParentEntityModelId },
         entityName: 'mockParentEntityModel',
         entity: { model: { name: 'mockParentEntityModel' } },
+        schema: { getModelName: () => 'MockParentEntityModel' },
       };
 
       const result = await baseCollectionInstance.createMany(mockRecords, parent);

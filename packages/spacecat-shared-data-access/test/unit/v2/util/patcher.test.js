@@ -78,10 +78,12 @@ describe('Patcher', () => {
     const schema = new Schema(
       MockModel,
       MockCollection,
-      mockEntity.model,
-      mockEntity.model.schema.attributes,
-      mockEntity.model.indexes,
-      {},
+      {
+        attributes: mockEntity.model.schema.attributes,
+        indexes: mockEntity.model.indexes,
+        model: mockEntity.model,
+        references: {},
+      },
     );
 
     patcher = new Patcher(mockEntity, schema, mockRecord);
@@ -110,7 +112,7 @@ describe('Patcher', () => {
 
   it('throws error for unsupported enum value', () => {
     expect(() => patcher.patchValue('status', 'unknown'))
-      .to.throw('Validation failed in mockModel: status must be one of active,inactive');
+      .to.throw('Validation failed in mockEntityModel: status must be one of active,inactive');
   });
 
   it('patches a reference id with proper validation', () => {
@@ -120,7 +122,7 @@ describe('Patcher', () => {
 
   it('throws error for non-existent property', () => {
     expect(() => patcher.patchValue('nonExistent', 'value'))
-      .to.throw('Property nonExistent does not exist on entity mockModel.');
+      .to.throw('Property nonExistent does not exist on entity mockEntityModel.');
   });
 
   it('tracks updates', () => {
@@ -158,7 +160,7 @@ describe('Patcher', () => {
 
   it('throws error for invalid set attribute', () => {
     expect(() => patcher.patchValue('tags', ['tag1', 123]))
-      .to.throw('Validation failed in mockModel: tags must contain items of type string');
+      .to.throw('Validation failed in mockEntityModel: tags must contain items of type string');
   });
 
   it('validates and patches a number attribute', () => {
@@ -168,7 +170,7 @@ describe('Patcher', () => {
 
   it('throws error for invalid number attribute', () => {
     expect(() => patcher.patchValue('age', 'notANumber'))
-      .to.throw('Validation failed in mockModel: age must be a number');
+      .to.throw('Validation failed in mockEntityModel: age must be a number');
   });
 
   it('validates and patch a map attribute', () => {
@@ -178,7 +180,7 @@ describe('Patcher', () => {
 
   it('throws error for invalid map attribute', () => {
     expect(() => patcher.patchValue('metadata', 'notAMap'))
-      .to.throw('Validation failed in mockModel: metadata must be an object');
+      .to.throw('Validation failed in mockEntityModel: metadata must be an object');
   });
 
   it('validates and patches an any attribute', () => {
@@ -188,12 +190,12 @@ describe('Patcher', () => {
 
   it('throws error for undefined any attribute', () => {
     expect(() => patcher.patchValue('settings', undefined))
-      .to.throw('Validation failed in mockModel: settings is required');
+      .to.throw('Validation failed in mockEntityModel: settings is required');
   });
 
   it('throws error for null any attribute', () => {
     expect(() => patcher.patchValue('settings', null))
-      .to.throw('Validation failed in mockModel: settings is required');
+      .to.throw('Validation failed in mockEntityModel: settings is required');
   });
 
   it('validates and patches a boolean attribute', () => {
@@ -208,11 +210,11 @@ describe('Patcher', () => {
 
   it('throws error for invalid list attribute', () => {
     expect(() => patcher.patchValue('nickNames', 'notAList'))
-      .to.throw('Validation failed in mockModel: nickNames must be an array');
+      .to.throw('Validation failed in mockEntityModel: nickNames must be an array');
   });
 
   it('throws error for invalid list attribute items', () => {
     expect(() => patcher.patchValue('nickNames', ['name1', 123]))
-      .to.throw('Validation failed in mockModel: nickNames must contain items of type string');
+      .to.throw('Validation failed in mockEntityModel: nickNames must contain items of type string');
   });
 });

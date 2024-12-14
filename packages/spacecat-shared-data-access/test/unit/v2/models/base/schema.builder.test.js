@@ -63,37 +63,31 @@ describe('SchemaBuilder', () => {
       expect(instance).to.be.an.instanceOf(SchemaBuilder);
       expect(instance.entityName).to.equal('MockModel');
       expect(instance.serviceName).to.equal('SpaceCat');
-      expect(instance.schema).to.deep.equal({
-        model: {
-          entity: 'MockModel',
-          version: '1',
-          service: 'SpaceCat',
+      expect(instance.schemaVersion).to.equal(1);
+      expect(instance.indexes).to.deep.equal({});
+      expect(instance.references).to.deep.equal({ belongs_to: [], has_many: [], has_one: [] });
+      expect(instance.attributes).to.deep.equal({
+        mockModelId: {
+          default: instance.attributes.mockModelId.default,
+          type: 'string',
+          required: true,
+          readOnly: true,
+          validate: instance.attributes.mockModelId.validate,
         },
-        attributes: {
-          mockModelId: {
-            default: instance.schema.attributes.mockModelId.default,
-            type: 'string',
-            required: true,
-            readOnly: true,
-            validate: instance.schema.attributes.mockModelId.validate,
-          },
-          createdAt: {
-            default: instance.schema.attributes.createdAt.default,
-            type: 'string',
-            readOnly: true,
-            required: true,
-          },
-          updatedAt: {
-            default: instance.schema.attributes.updatedAt.default,
-            type: 'string',
-            required: true,
-            readOnly: true,
-            watch: '*',
-            set: instance.schema.attributes.updatedAt.set,
-          },
+        createdAt: {
+          default: instance.attributes.createdAt.default,
+          type: 'string',
+          readOnly: true,
+          required: true,
         },
-        indexes: {},
-        references: { belongs_to: [], has_many: [], has_one: [] },
+        updatedAt: {
+          default: instance.attributes.updatedAt.default,
+          type: 'string',
+          required: true,
+          readOnly: true,
+          watch: '*',
+          set: instance.attributes.updatedAt.set,
+        },
       });
 
       expect(instance.rawIndexes).to.deep.equal({
@@ -132,11 +126,11 @@ describe('SchemaBuilder', () => {
       });
 
       expect(result).to.equal(instance);
-      expect(instance.schema.attributes.test).to.deep.equal({
+      expect(instance.attributes.test).to.deep.equal({
         type: 'string',
         required: true,
         default: 'test',
-        validate: instance.schema.attributes.test.validate,
+        validate: instance.attributes.test.validate,
       });
     });
   });
@@ -245,9 +239,9 @@ describe('SchemaBuilder', () => {
       const result = instance.addReference('has_many', 'someEntity');
 
       expect(result).to.equal(instance);
-      expect(instance.schema.references.has_many)
+      expect(instance.references.has_many)
         .to.deep.equal([{ target: 'someEntity', removeDependent: false }]);
-      expect(instance.schema.attributes).to.not.have.property('someEntityId');
+      expect(instance.attributes).to.not.have.property('someEntityId');
       expect(instance.rawIndexes.belongs_to).to.not.have.property('bySomeEntityId');
     });
 
@@ -255,9 +249,9 @@ describe('SchemaBuilder', () => {
       const result = instance.addReference('has_many', 'someEntity', [], { removeDependent: true });
 
       expect(result).to.equal(instance);
-      expect(instance.schema.references.has_many)
+      expect(instance.references.has_many)
         .to.deep.equal([{ target: 'someEntity', removeDependent: true }]);
-      expect(instance.schema.attributes).to.not.have.property('someEntityId');
+      expect(instance.attributes).to.not.have.property('someEntityId');
       expect(instance.rawIndexes.belongs_to).to.not.have.property('bySomeEntityId');
     });
 
@@ -265,12 +259,12 @@ describe('SchemaBuilder', () => {
       const result = instance.addReference('belongs_to', 'someEntity');
 
       expect(result).to.equal(instance);
-      expect(instance.schema.references.belongs_to)
+      expect(instance.references.belongs_to)
         .to.deep.equal([{ target: 'someEntity', required: true }]);
-      expect(instance.schema.attributes.someEntityId).to.deep.equal({
+      expect(instance.attributes.someEntityId).to.deep.equal({
         required: true,
         type: 'string',
-        validate: instance.schema.attributes.someEntityId.validate,
+        validate: instance.attributes.someEntityId.validate,
       });
       expect(instance.rawIndexes.belongs_to.bySomeEntityId).to.deep.equal({
         index: 'spacecat-data-MockModel-bySomeEntityId',
@@ -283,12 +277,12 @@ describe('SchemaBuilder', () => {
       const result = instance.addReference('belongs_to', 'someEntity', ['updatedAt'], { required: false });
 
       expect(result).to.equal(instance);
-      expect(instance.schema.references.belongs_to)
+      expect(instance.references.belongs_to)
         .to.deep.equal([{ target: 'someEntity', required: false }]);
-      expect(instance.schema.attributes.someEntityId).to.deep.equal({
+      expect(instance.attributes.someEntityId).to.deep.equal({
         required: false,
         type: 'string',
-        validate: instance.schema.attributes.someEntityId.validate,
+        validate: instance.attributes.someEntityId.validate,
       });
       expect(instance.rawIndexes.belongs_to.bySomeEntityId).to.deep.equal({
         index: 'spacecat-data-MockModel-bySomeEntityId',
@@ -300,32 +294,32 @@ describe('SchemaBuilder', () => {
 
   describe('validate, default, and set', () => {
     it('sets defaults for createdAt and updatedAt', () => {
-      expect(isIsoDate(instance.schema.attributes.createdAt.default())).to.be.true;
-      expect(isIsoDate(instance.schema.attributes.updatedAt.default())).to.be.true;
-      expect(isIsoDate(instance.schema.attributes.updatedAt.set())).to.be.true;
+      expect(isIsoDate(instance.attributes.createdAt.default())).to.be.true;
+      expect(isIsoDate(instance.attributes.updatedAt.default())).to.be.true;
+      expect(isIsoDate(instance.attributes.updatedAt.set())).to.be.true;
     });
 
     it('sets default for id attribute', () => {
-      expect(uuidValidate(instance.schema.attributes.mockModelId.default())).to.be.true;
+      expect(uuidValidate(instance.attributes.mockModelId.default())).to.be.true;
     });
 
     it('validates id attribute', () => {
-      expect(instance.schema.attributes.mockModelId.validate('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
-      expect(instance.schema.attributes.mockModelId.validate('invalid')).to.be.false;
+      expect(instance.attributes.mockModelId.validate('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
+      expect(instance.attributes.mockModelId.validate('invalid')).to.be.false;
     });
 
     it('validates foreign key attribute', () => {
       instance.addReference('belongs_to', 'someEntity');
-      expect(instance.schema.attributes.someEntityId.validate('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
-      expect(instance.schema.attributes.someEntityId.validate('invalid')).to.be.false;
+      expect(instance.attributes.someEntityId.validate('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
+      expect(instance.attributes.someEntityId.validate('invalid')).to.be.false;
     });
 
     it('validates non-required foreign key attribute', () => {
       instance.addReference('belongs_to', 'someEntity', [], { required: false });
-      expect(instance.schema.attributes.someEntityId.required).to.be.false;
-      expect(instance.schema.attributes.someEntityId.validate()).to.be.true;
-      expect(instance.schema.attributes.someEntityId.validate('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
-      expect(instance.schema.attributes.someEntityId.validate('invalid')).to.be.false;
+      expect(instance.attributes.someEntityId.required).to.be.false;
+      expect(instance.attributes.someEntityId.validate()).to.be.true;
+      expect(instance.attributes.someEntityId.validate('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
+      expect(instance.attributes.someEntityId.validate('invalid')).to.be.false;
     });
   });
 
@@ -347,7 +341,8 @@ describe('SchemaBuilder', () => {
       const schema = instance.build();
 
       expect(schema).to.deep.equal({
-        model: { entity: 'MockModel', version: '1', service: 'SpaceCat' },
+        schemaVersion: 1,
+        serviceName: 'SpaceCat',
         modelClass: MockModel,
         collectionClass: MockCollection,
         attributes: {
@@ -355,37 +350,37 @@ describe('SchemaBuilder', () => {
             type: 'string',
             required: true,
             readOnly: true,
-            validate: instance.schema.attributes.mockModelId.validate,
-            default: instance.schema.attributes.mockModelId.default,
+            validate: instance.attributes.mockModelId.validate,
+            default: instance.attributes.mockModelId.default,
           },
           createdAt: {
             type: 'string',
             readOnly: true,
             required: true,
-            default: instance.schema.attributes.createdAt.default,
+            default: instance.attributes.createdAt.default,
           },
           updatedAt: {
             type: 'string',
             required: true,
             readOnly: true,
             watch: '*',
-            default: instance.schema.attributes.updatedAt.default,
-            set: instance.schema.attributes.updatedAt.set,
+            default: instance.attributes.updatedAt.default,
+            set: instance.attributes.updatedAt.set,
           },
           organizationId: {
             type: 'string',
             required: true,
-            validate: instance.schema.attributes.organizationId.validate,
+            validate: instance.attributes.organizationId.validate,
           },
           siteId: {
             type: 'string',
             required: false,
-            validate: instance.schema.attributes.siteId.validate,
+            validate: instance.attributes.siteId.validate,
           },
           baseURL: {
             type: 'string',
             required: true,
-            validate: instance.schema.attributes.baseURL.validate,
+            validate: instance.attributes.baseURL.validate,
           },
         },
         indexes: {

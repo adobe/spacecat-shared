@@ -79,7 +79,7 @@ class EntityRegistry {
   #logIndexes() {
     // reduce collection schema indexes into object
     const indexes = Object.values(EntityRegistry.entities).reduce((acc, { schema }) => {
-      acc[schema.model.entity] = schema.indexes;
+      acc[schema.getEntityName()] = schema.indexes;
       return acc;
     }, {});
 
@@ -116,7 +116,7 @@ class EntityRegistry {
   }
 
   static registerEntity(schema, collection) {
-    this.entities[decapitalize(schema.model.entity)] = { schema, collection };
+    this.entities[decapitalize(schema.getEntityName())] = { schema, collection };
   }
 }
 

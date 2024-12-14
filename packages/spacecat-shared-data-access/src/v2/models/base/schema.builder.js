@@ -149,9 +149,11 @@ class SchemaBuilder {
 
     this.modelClass = modelClass;
     this.collectionClass = collectionClass;
+    this.schemaVersion = schemaVersion;
     this.entityName = modelClass.name;
-    this.idName = entityNameToIdName(this.entityName);
     this.serviceName = DEFAULT_SERVICE_NAME;
+
+    this.idName = entityNameToIdName(this.entityName);
 
     this.rawIndexes = {
       primary: null,
@@ -160,19 +162,13 @@ class SchemaBuilder {
       other: {},
     };
 
-    // ElectroDB schema object
-    this.schema = {
-      model: {
-        entity: this.entityName,
-        version: String(schemaVersion),
-        service: this.serviceName,
-      },
-      attributes: {},
-      // will be populated by build() from rawIndexes
-      indexes: {},
-      // this is not part of the ElectroDB schema spec, but we use it to store reference data
-      references: { belongs_to: [], has_many: [], has_one: [] },
-    };
+    this.attributes = {};
+    // will be populated by build() from rawIndexes
+
+    this.indexes = {};
+
+    // this is not part of the ElectroDB schema spec, but we use it to store reference data
+    this.references = { belongs_to: [], has_many: [], has_one: [] };
 
     this.#initialize();
   }
@@ -220,7 +216,7 @@ class SchemaBuilder {
       throw new Error(`Attribute data for "${name}" is required and must be a non-empty object.`);
     }
 
-    this.schema.attributes[name] = data;
+    this.attributes[name] = data;
 
     return this;
   }
@@ -362,7 +358,7 @@ class SchemaBuilder {
       );
     }
 
-    this.schema.references[referenceType].push(reference);
+    this.references[referenceType].push(reference);
 
     return this;
   }
@@ -386,7 +382,7 @@ class SchemaBuilder {
 
     numberGSIsIndexes(indexes, this.rawIndexes.all);
 
-    this.schema.indexes = {
+    this.indexes = {
       primary: this.rawIndexes.primary,
       ...(this.rawIndexes.all && { all: this.rawIndexes.all }),
       ...indexes,
@@ -404,10 +400,13 @@ class SchemaBuilder {
     return new Schema(
       this.modelClass,
       this.collectionClass,
-      this.schema.model,
-      this.schema.attributes,
-      this.schema.indexes,
-      this.schema.references,
+      {
+        serviceName: this.serviceName,
+        schemaVersion: this.schemaVersion,
+        attributes: this.attributes,
+        indexes: this.indexes,
+        references: this.references,
+      },
     );
   }
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.23.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.7...@adobe/spacecat-shared-utils-v1.23.8) (2024-12-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#492](https://github.com/adobe/spacecat-shared/issues/492)) ([d4daba5](https://github.com/adobe/spacecat-shared/commit/d4daba5686c856f9f0029d805fb2b9f1b9baf777))
+
 # [@adobe/spacecat-shared-utils-v1.23.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.6...@adobe/spacecat-shared-utils-v1.23.7) (2024-12-13)
 
 

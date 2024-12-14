@@ -16,6 +16,8 @@ import { hasText, isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import { KEY_EVENT_TYPES } from '../../../models/key-event.js';
+import KeyEvent from './key-event.model.js';
+import KeyEventCollection from './key-event.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -23,7 +25,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('KeyEvent', 1, 'SpaceCat')
+const schema = new SchemaBuilder(KeyEvent, KeyEventCollection)
   .addReference('belongs_to', 'Site', ['time'])
   .addAttribute('name', {
     type: 'string',

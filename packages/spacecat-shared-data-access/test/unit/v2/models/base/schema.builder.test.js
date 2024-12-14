@@ -13,68 +13,69 @@
 /* eslint-env mocha */
 
 // eslint-disable-next-line max-classes-per-file
-
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
-import { validate as uuidValidate } from 'uuid';
-
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
+import { validate as uuidValidate } from 'uuid';
 
 import SchemaBuilder from '../../../../../src/v2/models/base/schema.builder.js';
+import { BaseCollection, BaseModel } from '../../../../../src/index.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('SchemaBuilder', () => {
+  const MockModel = class MockModel extends BaseModel {};
+  const MockCollection = class MockCollection extends BaseCollection {};
+
   let instance;
 
   beforeEach(() => {
-    instance = new SchemaBuilder('test', 1, 'testService');
+    instance = new SchemaBuilder(MockModel, MockCollection);
   });
 
   describe('constructor', () => {
-    it('throws error if entity name is not provided', () => {
+    it('throws error if invalid model class is provided', () => {
       expect(() => new SchemaBuilder())
-        .to.throw('entityName is required and must be a non-empty string.');
+        .to.throw('modelClass must be a subclass of BaseModel.');
+      expect(() => new SchemaBuilder(Number))
+        .to.throw('modelClass must be a subclass of BaseModel.');
     });
 
-    it('throws error if version is not provided', () => {
-      expect(() => new SchemaBuilder('test'))
-        .to.throw('schemaVersion is required and must be a positive integer.');
+    it('throws error if invalid collection class is provided', () => {
+      expect(() => new SchemaBuilder(MockModel))
+        .to.throw('collectionClass must be a subclass of BaseCollection.');
+      expect(() => new SchemaBuilder(MockModel, Number))
+        .to.throw('collectionClass must be a subclass of BaseCollection.');
     });
 
     it('throws an error if version is not a positive integer', () => {
-      expect(() => new SchemaBuilder('test', -1))
+      expect(() => new SchemaBuilder(MockModel, MockCollection, -1))
         .to.throw('schemaVersion is required and must be a positive integer.');
-      expect(() => new SchemaBuilder('test', '-1'))
+      expect(() => new SchemaBuilder(MockModel, MockCollection, '-1'))
         .to.throw('schemaVersion is required and must be a positive integer.');
-      expect(() => new SchemaBuilder('test', 1.2))
+      expect(() => new SchemaBuilder(MockModel, MockCollection, 1.2))
         .to.throw('schemaVersion is required and must be a positive integer.');
-    });
-
-    it('throws error if service is not provided', () => {
-      expect(() => new SchemaBuilder('test', 1))
-        .to.throw('serviceName is required and must be a non-empty string.');
     });
 
     it('successfully creates an instance', () => {
       expect(instance).to.be.an.instanceOf(SchemaBuilder);
-      expect(instance.entityName).to.equal('test');
-      expect(instance.serviceName).to.equal('testService');
+      expect(instance.entityName).to.equal('MockModel');
+      expect(instance.serviceName).to.equal('SpaceCat');
       expect(instance.schema).to.deep.equal({
         model: {
-          entity: 'test',
+          entity: 'MockModel',
           version: '1',
-          service: 'testService',
+          service: 'SpaceCat',
         },
         attributes: {
-          testId: {
-            default: instance.schema.attributes.testId.default,
+          mockModelId: {
+            default: instance.schema.attributes.mockModelId.default,
             type: 'string',
             required: true,
             readOnly: true,
-            validate: instance.schema.attributes.testId.validate,
+            validate: instance.schema.attributes.mockModelId.validate,
           },
           createdAt: {
             default: instance.schema.attributes.createdAt.default,
@@ -97,7 +98,7 @@ describe('SchemaBuilder', () => {
 
       expect(instance.rawIndexes).to.deep.equal({
         primary: {
-          pk: { composite: ['testId'], field: 'pk' },
+          pk: { composite: ['mockModelId'], field: 'pk' },
           sk: { composite: [], field: 'sk' },
         },
         all: null,
@@ -151,8 +152,8 @@ describe('SchemaBuilder', () => {
 
       expect(result).to.equal(instance);
       expect(instance.rawIndexes.all).to.deep.equal({
-        index: 'testservice-data-test-all',
-        pk: { field: 'gsi1pk', template: 'ALL_TESTS' },
+        index: 'spacecat-data-MockModel-all',
+        pk: { field: 'gsi1pk', template: 'ALL_MOCKMODELS' },
         sk: { composite: ['test'], field: 'gsi1sk' },
       });
     });
@@ -174,8 +175,8 @@ describe('SchemaBuilder', () => {
 
       expect(result).to.equal(instance);
       expect(instance.rawIndexes.all).to.deep.equal({
-        index: 'testservice-data-test-all',
-        pk: { field: 'gsi1pk', template: 'ALL_TESTS' },
+        index: 'spacecat-data-MockModel-all',
+        pk: { field: 'gsi1pk', template: 'ALL_MOCKMODELS' },
         sk: { field: 'test', template: '${test}' },
       });
     });
@@ -217,7 +218,7 @@ describe('SchemaBuilder', () => {
 
       expect(result).to.equal(instance);
       expect(instance.rawIndexes.other.test).to.deep.equal({
-        index: 'testservice-data-test-test',
+        index: 'spacecat-data-MockModel-test',
         pk: { composite: ['test'] },
         sk: { composite: ['test'] },
       });
@@ -272,7 +273,7 @@ describe('SchemaBuilder', () => {
         validate: instance.schema.attributes.someEntityId.validate,
       });
       expect(instance.rawIndexes.belongs_to.bySomeEntityId).to.deep.equal({
-        index: 'testservice-data-test-bySomeEntityId',
+        index: 'spacecat-data-MockModel-bySomeEntityId',
         pk: { composite: ['someEntityId'] },
         sk: { composite: ['updatedAt'] },
       });
@@ -290,7 +291,7 @@ describe('SchemaBuilder', () => {
         validate: instance.schema.attributes.someEntityId.validate,
       });
       expect(instance.rawIndexes.belongs_to.bySomeEntityId).to.deep.equal({
-        index: 'testservice-data-test-bySomeEntityId',
+        index: 'spacecat-data-MockModel-bySomeEntityId',
         pk: { composite: ['someEntityId'] },
         sk: { composite: ['updatedAt'] },
       });
@@ -305,12 +306,12 @@ describe('SchemaBuilder', () => {
     });
 
     it('sets default for id attribute', () => {
-      expect(uuidValidate(instance.schema.attributes.testId.default())).to.be.true;
+      expect(uuidValidate(instance.schema.attributes.mockModelId.default())).to.be.true;
     });
 
     it('validates id attribute', () => {
-      expect(instance.schema.attributes.testId.validate('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
-      expect(instance.schema.attributes.testId.validate('invalid')).to.be.false;
+      expect(instance.schema.attributes.mockModelId.validate('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
+      expect(instance.schema.attributes.mockModelId.validate('invalid')).to.be.false;
     });
 
     it('validates foreign key attribute', () => {
@@ -346,14 +347,16 @@ describe('SchemaBuilder', () => {
       const schema = instance.build();
 
       expect(schema).to.deep.equal({
-        model: { entity: 'test', version: '1', service: 'testService' },
+        model: { entity: 'MockModel', version: '1', service: 'SpaceCat' },
+        modelClass: MockModel,
+        collectionClass: MockCollection,
         attributes: {
-          testId: {
+          mockModelId: {
             type: 'string',
             required: true,
             readOnly: true,
-            validate: instance.schema.attributes.testId.validate,
-            default: instance.schema.attributes.testId.default,
+            validate: instance.schema.attributes.mockModelId.validate,
+            default: instance.schema.attributes.mockModelId.default,
           },
           createdAt: {
             type: 'string',
@@ -387,31 +390,31 @@ describe('SchemaBuilder', () => {
         },
         indexes: {
           primary: {
-            pk: { field: 'pk', composite: ['testId'] },
+            pk: { field: 'pk', composite: ['mockModelId'] },
             sk: { field: 'sk', composite: [] },
           },
           all: {
-            index: 'testservice-data-test-all',
-            pk: { field: 'gsi1pk', template: 'ALL_TESTS' },
+            index: 'spacecat-data-MockModel-all',
+            pk: { field: 'gsi1pk', template: 'ALL_MOCKMODELS' },
             sk: { field: 'test', template: '${test}' },
           },
           byOrganizationId: {
-            index: 'testservice-data-test-byOrganizationId',
+            index: 'spacecat-data-MockModel-byOrganizationId',
             pk: { composite: ['organizationId'], field: 'gsi2pk' },
             sk: { composite: ['updatedAt'], field: 'gsi2sk' },
           },
           bySiteId: {
-            index: 'testservice-data-test-bySiteId',
+            index: 'spacecat-data-MockModel-bySiteId',
             pk: { composite: ['siteId'], field: 'gsi3pk' },
             sk: { composite: ['someField'], field: 'gsi3sk' },
           },
           byDeliveryType: {
-            index: 'testservice-data-test-byDeliveryType',
+            index: 'spacecat-data-MockModel-byDeliveryType',
             pk: { composite: ['deliveryType'], field: 'gsi4pk' },
             sk: { composite: ['updatedAt'], field: 'gsi4sk' },
           },
           bySomeField: {
-            index: 'testservice-data-test-bySomeField',
+            index: 'spacecat-data-MockModel-bySomeField',
             pk: { composite: ['deliveryType'], field: 'someField' },
             sk: { composite: ['updatedAt'], field: 'gsi5sk' },
           },

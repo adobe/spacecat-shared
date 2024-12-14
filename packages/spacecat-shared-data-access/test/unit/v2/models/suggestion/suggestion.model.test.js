@@ -13,144 +13,110 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
+import { stub } from 'sinon';
+import sinonChai from 'sinon-chai';
 
 import Suggestion from '../../../../../src/v2/models/suggestion/suggestion.model.js';
-import SuggestionSchema from '../../../../../src/v2/models/suggestion/suggestion.schema.js';
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
+chaiUse(sinonChai);
 
-const { attributes } = new Entity(SuggestionSchema).model.schema;
+describe('SuggestionModel', () => {
+  let instance;
 
-describe('Suggestion', () => {
-  let suggestionInstance;
   let mockElectroService;
-  let mockModelFactory;
-  let mockLogger;
-
-  const mockRecord = {
-    suggestionId: 'sug12345',
-    opportunityId: 'op67890',
-    type: 'CODE_CHANGE',
-    status: 'NEW',
-    rank: 1,
-    data: {
-      info: 'sample data',
-    },
-    kpiDeltas: {
-      conversionRate: 0.05,
-    },
-  };
+  let mockRecord;
 
   beforeEach(() => {
-    mockElectroService = {
-      entities: {
-        suggestion: {
-          model: {
-            name: 'suggestion',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['suggestionId'],
-                },
-              },
-            },
-          },
-          patch: stub().returns({
-            set: stub(),
-          }),
-        },
+    mockRecord = {
+      suggestionId: 'sug12345',
+      opportunityId: 'op67890',
+      type: 'CODE_CHANGE',
+      status: 'NEW',
+      rank: 1,
+      data: {
+        info: 'sample data',
+      },
+      kpiDeltas: {
+        conversionRate: 0.05,
       },
     };
 
-    mockModelFactory = {
-      getCollection: stub(),
-    };
-
-    mockLogger = {
-      error: spy(),
-    };
-
-    suggestionInstance = new Suggestion(
+    ({
       mockElectroService,
-      mockModelFactory,
-      mockRecord,
-      mockLogger,
-    );
+      model: instance,
+    } = createElectroMocks(Suggestion, mockRecord));
+
+    mockElectroService.entities.patch = stub().returns({ set: stub() });
   });
 
   describe('constructor', () => {
     it('initializes the Suggestion instance correctly', () => {
-      expect(suggestionInstance).to.be.an('object');
-      expect(suggestionInstance.record).to.deep.equal(mockRecord);
+      expect(instance).to.be.an('object');
+      expect(instance.record).to.deep.equal(mockRecord);
     });
   });
 
   describe('getOpportunityId and setOpportunityId', () => {
     it('returns the Opportunity ID of the suggestion', () => {
-      expect(suggestionInstance.getOpportunityId()).to.equal('op67890');
+      expect(instance.getOpportunityId()).to.equal('op67890');
     });
 
     it('sets the Opportunity ID of the suggestion', () => {
-      suggestionInstance.setOpportunityId('ef39921f-9a02-41db-b491-02c98987d956');
-      expect(suggestionInstance.record.opportunityId).to.equal('ef39921f-9a02-41db-b491-02c98987d956');
+      instance.setOpportunityId('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(instance.record.opportunityId).to.equal('ef39921f-9a02-41db-b491-02c98987d956');
     });
   });
 
   describe('getType', () => {
     it('returns the type of the suggestion', () => {
-      expect(suggestionInstance.getType()).to.equal('CODE_CHANGE');
+      expect(instance.getType()).to.equal('CODE_CHANGE');
     });
   });
 
   describe('getStatus and setStatus', () => {
     it('returns the status of the suggestion', () => {
-      expect(suggestionInstance.getStatus()).to.equal('NEW');
+      expect(instance.getStatus()).to.equal('NEW');
     });
 
     it('sets the status of the suggestion', () => {
-      suggestionInstance.setStatus('APPROVED');
-      expect(suggestionInstance.record.status).to.equal('APPROVED');
+      instance.setStatus('APPROVED');
+      expect(instance.record.status).to.equal('APPROVED');
     });
   });
 
   describe('getRank and setRank', () => {
     it('returns the rank of the suggestion', () => {
-      expect(suggestionInstance.getRank()).to.equal(1);
+      expect(instance.getRank()).to.equal(1);
     });
 
     it('sets the rank of the suggestion', () => {
-      suggestionInstance.setRank(5);
-      expect(suggestionInstance.record.rank).to.equal(5);
+      instance.setRank(5);
+      expect(instance.record.rank).to.equal(5);
     });
   });
 
   describe('getData and setData', () => {
     it('returns additional data for the suggestion', () => {
-      expect(suggestionInstance.getData()).to.deep.equal({ info: 'sample data' });
+      expect(instance.getData()).to.deep.equal({ info: 'sample data' });
     });
 
     it('sets additional data for the suggestion', () => {
-      suggestionInstance.setData({ newInfo: 'updated data' });
-      expect(suggestionInstance.record.data).to.deep.equal({ newInfo: 'updated data' });
+      instance.setData({ newInfo: 'updated data' });
+      expect(instance.record.data).to.deep.equal({ newInfo: 'updated data' });
     });
   });
 
   describe('getKpiDeltas and setKpiDeltas', () => {
     it('returns the KPI deltas for the suggestion', () => {
-      expect(suggestionInstance.getKpiDeltas()).to.deep.equal({ conversionRate: 0.05 });
+      expect(instance.getKpiDeltas()).to.deep.equal({ conversionRate: 0.05 });
     });
 
     it('sets the KPI deltas for the suggestion', () => {
-      suggestionInstance.setKpiDeltas({ conversionRate: 0.1 });
-      expect(suggestionInstance.record.kpiDeltas).to.deep.equal({ conversionRate: 0.1 });
+      instance.setKpiDeltas({ conversionRate: 0.1 });
+      expect(instance.record.kpiDeltas).to.deep.equal({ conversionRate: 0.1 });
     });
   });
 });

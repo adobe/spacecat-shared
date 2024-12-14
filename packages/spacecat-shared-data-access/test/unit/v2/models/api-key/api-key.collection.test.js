@@ -14,75 +14,37 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import ApiKeyCollection from '../../../../../src/v2/models/api-key/api-key.collection.js';
 import ApiKey from '../../../../../src/v2/models/api-key/api-key.model.js';
-import ApiKeySchema from '../../../../../src/v2/models/api-key/api-key.schema.js';
+
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(ApiKeySchema).model.schema;
-
-let mockElectroService;
-
 describe('ApiKeyCollection', () => {
   let instance;
-  let mockApiKeyModel;
-  let mockLogger;
+
+  let mockElectroService;
   let mockEntityRegistry;
+  let mockLogger;
+  let model;
+  let schema;
 
   const mockRecord = {
     apiKeyId: 's12345',
   };
 
   beforeEach(() => {
-    mockLogger = {
-      error: spy(),
-      warn: spy(),
-    };
-
-    mockEntityRegistry = {
-      getCollection: stub(),
-    };
-
-    mockElectroService = {
-      entities: {
-        apiKey: {
-          model: {
-            name: 'apiKey',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['apiKeyId'],
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    mockApiKeyModel = new ApiKey(
-      mockElectroService,
-      mockEntityRegistry,
-      mockRecord,
-      mockLogger,
-    );
-
-    instance = new ApiKeyCollection(
+    ({
       mockElectroService,
       mockEntityRegistry,
       mockLogger,
-    );
+      collection: instance,
+      model,
+      schema,
+    } = createElectroMocks(ApiKey, mockRecord));
   });
 
   describe('constructor', () => {
@@ -90,9 +52,10 @@ describe('ApiKeyCollection', () => {
       expect(instance).to.be.an('object');
       expect(instance.electroService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);
+      expect(instance.schema).to.equal(schema);
       expect(instance.log).to.equal(mockLogger);
 
-      expect(mockApiKeyModel).to.be.an('object');
+      expect(model).to.be.an('object');
     });
   });
 });

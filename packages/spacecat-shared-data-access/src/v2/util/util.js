@@ -18,7 +18,7 @@ const decapitalize = (str) => (hasText(str) ? str[0].toLowerCase() + str.slice(1
 
 const collectionNameToEntityName = (collectionName) => collectionName.replace('Collection', '');
 
-const entityNameToCollectionName = (entityName) => `${pluralize.singular(entityName)}Collection`;
+const entityNameToCollectionName = (entityName) => `${capitalize(pluralize.singular(entityName))}Collection`;
 
 const entityNameToIdName = (entityName) => `${decapitalize(entityName)}Id`;
 

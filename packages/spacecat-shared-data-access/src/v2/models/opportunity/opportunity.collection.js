@@ -11,7 +11,6 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import Opportunity from './opportunity.model.js';
 
 /**
  * OpportunityCollection - A collection class responsible for managing Opportunity entities.
@@ -21,17 +20,6 @@ import Opportunity from './opportunity.model.js';
  * @extends BaseCollection
  */
 class OpportunityCollection extends BaseCollection {
-  /**
-   * Constructs an instance of OpportunityCollection. Tells the base class which model to use.
-   * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage Opportunity entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {Object} log - A logger for capturing logging information.
-   */
-  constructor(service, entityRegistry, log) {
-    super(service, entityRegistry, Opportunity, log);
-  }
-
   // add custom methods here
 }
 

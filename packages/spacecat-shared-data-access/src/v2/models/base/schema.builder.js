@@ -21,6 +21,12 @@ import {
   entityNameToIdName,
 } from '../../util/util.js';
 
+import Schema from './schema.js';
+import BaseModel from './base.model.js';
+import BaseCollection from './base.collection.js';
+
+const DEFAULT_SERVICE_NAME = 'SpaceCat';
+
 /**
  * ID attribute configuration object.
  * Ensures a UUID-based "primary key".
@@ -62,15 +68,8 @@ const UPDATED_AT_ATTRIBUTE_DATA = {
   set: () => new Date().toISOString(),
 };
 
-export const INDEX_TYPES = {
-  PRIMARY: 'primary',
-  ALL: 'all',
-  BELONGS_TO: 'belongs_to',
-  OTHER: 'other',
-};
-
 /** Certain index names (primary, all) are reserved and cannot be reused. */
-const RESERVED_INDEX_NAMES = [INDEX_TYPES.PRIMARY, INDEX_TYPES.ALL];
+const RESERVED_INDEX_NAMES = [Schema.INDEX_TYPES.PRIMARY, Schema.INDEX_TYPES.ALL];
 
 /**
  * Constructs a fully qualified index name.
@@ -125,38 +124,34 @@ const numberGSIsIndexes = (indexes, all) => {
  *  - all "other" indexes sorted alphabetically last
  */
 class SchemaBuilder {
-  static REFERENCE_TYPES = {
-    BELONGS_TO: 'belongs_to',
-    HAS_MANY: 'has_many',
-    HAS_ONE: 'has_one',
-  };
-
   /**
    * Creates a new SchemaBuilder instance.
    *
-   * @param {string} entityName - The name of the entity to be modeled.
+   * @param {BaseModel} modelClass - The model class for this entity.
+   * @param {BaseCollection} collectionClass - The collection class for this entity.
    * @param {number} schemaVersion - A positive integer representing the schema's version.
-   * @param {string} serviceName - The name of the service to which this entity belongs.
    * @throws {Error} If entityName is not a non-empty string.
    * @throws {Error} If schemaVersion is not a positive integer.
    * @throws {Error} If serviceName is not a non-empty string.
    */
-  constructor(entityName, schemaVersion, serviceName) {
-    if (!hasText(entityName)) {
-      throw new Error('entityName is required and must be a non-empty string.');
+  constructor(modelClass, collectionClass, schemaVersion = 1) {
+    if (!modelClass || !(modelClass.prototype instanceof BaseModel)) {
+      throw new Error('modelClass must be a subclass of BaseModel.');
+    }
+
+    if (!collectionClass || !(collectionClass.prototype instanceof BaseCollection)) {
+      throw new Error('collectionClass must be a subclass of BaseCollection.');
     }
 
     if (!isInteger(schemaVersion) || schemaVersion < 1) {
       throw new Error('schemaVersion is required and must be a positive integer.');
     }
 
-    if (!hasText(serviceName)) {
-      throw new Error('serviceName is required and must be a non-empty string.');
-    }
-
-    this.entityName = entityName;
-    this.idName = entityNameToIdName(entityName);
-    this.serviceName = serviceName;
+    this.modelClass = modelClass;
+    this.collectionClass = collectionClass;
+    this.entityName = modelClass.name;
+    this.idName = entityNameToIdName(this.entityName);
+    this.serviceName = DEFAULT_SERVICE_NAME;
 
     this.rawIndexes = {
       primary: null,
@@ -165,30 +160,21 @@ class SchemaBuilder {
       other: {},
     };
 
+    // ElectroDB schema object
     this.schema = {
       model: {
-        entity: entityName,
+        entity: this.entityName,
         version: String(schemaVersion),
-        service: serviceName,
+        service: this.serviceName,
       },
       attributes: {},
-      indexes: {}, // will be populated by build() from rawIndexes
+      // will be populated by build() from rawIndexes
+      indexes: {},
+      // this is not part of the ElectroDB schema spec, but we use it to store reference data
       references: { belongs_to: [], has_many: [], has_one: [] },
     };
 
     this.#initialize();
-  }
-
-  #internalAddIndex(name, partitionKey, sortKey, type) {
-    const indexFullName = createdIndexName(this.serviceName, this.entityName, name);
-
-    // store index config without assigning fields yet
-    // the fields will be assigned in build phase based on sorting and presence of "all" index
-    this.rawIndexes[type][name] = {
-      ...(indexFullName && { index: indexFullName }),
-      pk: { ...partitionKey },
-      sk: { ...sortKey },
-    };
   }
 
   #initialize() {
@@ -202,6 +188,18 @@ class SchemaBuilder {
     this.rawIndexes.primary = {
       pk: { field: 'pk', composite: [this.idName] },
       sk: { field: 'sk', composite: [] },
+    };
+  }
+
+  #internalAddIndex(name, partitionKey, sortKey, type) {
+    const indexFullName = createdIndexName(this.serviceName, this.entityName, name);
+
+    // store index config without assigning fields yet
+    // the fields will be assigned in build phase based on sorting and presence of "all" index
+    this.rawIndexes[type][name] = {
+      ...(indexFullName && { index: indexFullName }),
+      pk: { ...partitionKey },
+      sk: { ...sortKey },
     };
   }
 
@@ -243,7 +241,7 @@ class SchemaBuilder {
     }
 
     this.rawIndexes.all = {
-      index: createdIndexName(this.serviceName, this.entityName, INDEX_TYPES.ALL),
+      index: createdIndexName(this.serviceName, this.entityName, Schema.INDEX_TYPES.ALL),
       pk: { field: 'gsi1pk', template: entityNameToAllPKValue(this.entityName) },
       sk: { field: 'gsi1sk', composite: attributeNames },
     };
@@ -305,7 +303,7 @@ class SchemaBuilder {
       throw new Error('Sort key configuration (sk) is required and must be a non-empty object.');
     }
 
-    this.#internalAddIndex(name, partitionKey, sortKey, INDEX_TYPES.OTHER);
+    this.#internalAddIndex(name, partitionKey, sortKey, Schema.INDEX_TYPES.OTHER);
 
     return this;
   }
@@ -325,7 +323,7 @@ class SchemaBuilder {
    * @throws {Error} If referenceType or entityName are invalid.
    */
   addReference(referenceType, entityName, sortKeys = ['updatedAt'], options = {}) {
-    if (!Object.values(SchemaBuilder.REFERENCE_TYPES).includes(referenceType)) {
+    if (!Object.values(Schema.REFERENCE_TYPES).includes(referenceType)) {
       throw new Error(`Invalid referenceType: "${referenceType}".`);
     }
 
@@ -335,13 +333,13 @@ class SchemaBuilder {
     const reference = { target: entityName };
 
     if ([
-      SchemaBuilder.REFERENCE_TYPES.HAS_MANY,
-      SchemaBuilder.REFERENCE_TYPES.HAS_ONE,
+      Schema.REFERENCE_TYPES.HAS_MANY,
+      Schema.REFERENCE_TYPES.HAS_ONE,
     ].includes(referenceType)) {
       reference.removeDependent = options.removeDependent ?? false;
     }
 
-    if (referenceType === SchemaBuilder.REFERENCE_TYPES.BELONGS_TO) {
+    if (referenceType === Schema.REFERENCE_TYPES.BELONGS_TO) {
       reference.required = options.required ?? true;
 
       // for a BELONGS_TO reference, we add a foreign key attribute
@@ -351,16 +349,16 @@ class SchemaBuilder {
       this.addAttribute(foreignKeyName, {
         type: 'string',
         required: reference.required,
-        validate: (value) => (
-          reference.required ? uuidValidate(value) : !value || uuidValidate(value)
-        ),
+        validate: (
+          value,
+        ) => (reference.required ? uuidValidate(value) : !value || uuidValidate(value)),
       });
 
       this.#internalAddIndex(
         `by${capitalize(foreignKeyName)}`,
         { composite: [decapitalize(foreignKeyName)] },
         { composite: sortKeys },
-        INDEX_TYPES.BELONGS_TO,
+        Schema.INDEX_TYPES.BELONGS_TO,
       );
     }
 
@@ -403,7 +401,14 @@ class SchemaBuilder {
   build() {
     this.#buildIndexes();
 
-    return this.schema;
+    return new Schema(
+      this.modelClass,
+      this.collectionClass,
+      this.schema.model,
+      this.schema.attributes,
+      this.schema.indexes,
+      this.schema.references,
+    );
   }
 }
 

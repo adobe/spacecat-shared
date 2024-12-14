@@ -11,7 +11,6 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import Organization from './organization.model.js';
 
 /**
  * OrganizationCollection - A collection class responsible for managing Organization entities.
@@ -21,17 +20,6 @@ import Organization from './organization.model.js';
  * @extends BaseCollection
  */
 class OrganizationCollection extends BaseCollection {
-  /**
-   * Constructs an instance of OrganizationCollection. Tells the base class which model to use.
-   * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage Organization entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {Object} log - A logger for capturing logging information.
-   */
-  constructor(service, entityRegistry, log) {
-    super(service, entityRegistry, Organization, log);
-  }
-
   // add custom methods here
 }
 

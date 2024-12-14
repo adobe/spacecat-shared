@@ -14,59 +14,22 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import Experiment from '../../../../../src/v2/models/experiment/experiment.model.js';
-import ExperimentSchema from '../../../../../src/v2/models/experiment/experiment.schema.js';
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(ExperimentSchema).model.schema;
+describe('ExperimentModel', () => {
+  let instance;
 
-describe('Experiment', () => {
-  let experimentInstance;
   let mockElectroService;
-  let mockModelFactory;
   let mockRecord;
-  let mockLogger;
 
   beforeEach(() => {
-    mockElectroService = {
-      entities: {
-        experiment: {
-          model: {
-            name: 'experiment',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['experimentId'],
-                },
-              },
-            },
-          },
-          patch: stub().returns({
-            set: stub(),
-          }),
-        },
-      },
-    };
-
-    mockModelFactory = {
-      getCollection: stub(),
-    };
-
-    mockLogger = {
-      error: spy(),
-    };
-
     mockRecord = {
       experimentId: 'e12345',
       siteId: 'site67890',
@@ -83,158 +46,158 @@ describe('Experiment', () => {
       variants: [{ someVariant: 'someVariant' }],
     };
 
-    experimentInstance = new Experiment(
+    ({
       mockElectroService,
-      mockModelFactory,
-      mockRecord,
-      mockLogger,
-    );
+      model: instance,
+    } = createElectroMocks(Experiment, mockRecord));
+
+    mockElectroService.entities.patch = stub().returns({ set: stub() });
   });
 
   describe('constructor', () => {
     it('initializes the Experiment instance correctly', () => {
-      expect(experimentInstance).to.be.an('object');
-      expect(experimentInstance.record).to.deep.equal(mockRecord);
+      expect(instance).to.be.an('object');
+      expect(instance.record).to.deep.equal(mockRecord);
     });
   });
 
   describe('experimentId', () => {
     it('gets experimentId', () => {
-      expect(experimentInstance.getId()).to.equal('e12345');
+      expect(instance.getId()).to.equal('e12345');
     });
   });
 
   describe('siteId', () => {
     it('gets siteId', () => {
-      expect(experimentInstance.getSiteId()).to.equal('site67890');
+      expect(instance.getSiteId()).to.equal('site67890');
     });
 
     it('sets siteId', () => {
-      experimentInstance.setSiteId('newSiteId');
-      expect(experimentInstance.getSiteId()).to.equal('newSiteId');
+      instance.setSiteId('2c1f0868-cc2d-4358-ba26-a7b5965ee403');
+      expect(instance.getSiteId()).to.equal('2c1f0868-cc2d-4358-ba26-a7b5965ee403');
     });
   });
 
   describe('conversionEventName', () => {
     it('gets conversionEventName', () => {
-      expect(experimentInstance.getConversionEventName()).to.equal('someConversionEventName');
+      expect(instance.getConversionEventName()).to.equal('someConversionEventName');
     });
 
     it('sets conversionEventName', () => {
-      experimentInstance.setConversionEventName('newConversionEventName');
-      expect(experimentInstance.getConversionEventName()).to.equal('newConversionEventName');
+      instance.setConversionEventName('newConversionEventName');
+      expect(instance.getConversionEventName()).to.equal('newConversionEventName');
     });
   });
 
   describe('conversionEventValue', () => {
     it('gets conversionEventValue', () => {
-      expect(experimentInstance.getConversionEventValue()).to.equal('100');
+      expect(instance.getConversionEventValue()).to.equal('100');
     });
 
     it('sets conversionEventValue', () => {
-      experimentInstance.setConversionEventValue('200');
-      expect(experimentInstance.getConversionEventValue()).to.equal('200');
+      instance.setConversionEventValue('200');
+      expect(instance.getConversionEventValue()).to.equal('200');
     });
   });
 
   describe('endDate', () => {
     it('gets endDate', () => {
-      expect(experimentInstance.getEndDate()).to.equal('2024-01-01T00:00:00.000Z');
+      expect(instance.getEndDate()).to.equal('2024-01-01T00:00:00.000Z');
     });
 
     it('sets endDate', () => {
       const newEndDate = '2024-01-02T00:00:00.000Z';
-      experimentInstance.setEndDate(newEndDate);
-      expect(experimentInstance.getEndDate()).to.equal(newEndDate);
+      instance.setEndDate(newEndDate);
+      expect(instance.getEndDate()).to.equal(newEndDate);
     });
   });
 
   describe('expId', () => {
     it('gets expId', () => {
-      expect(experimentInstance.getExpId()).to.equal('someExpId');
+      expect(instance.getExpId()).to.equal('someExpId');
     });
 
     it('sets expId', () => {
-      experimentInstance.setExpId('newExpId');
-      expect(experimentInstance.getExpId()).to.equal('newExpId');
+      instance.setExpId('newExpId');
+      expect(instance.getExpId()).to.equal('newExpId');
     });
   });
 
   describe('name', () => {
     it('gets name', () => {
-      expect(experimentInstance.getName()).to.equal('someName');
+      expect(instance.getName()).to.equal('someName');
     });
 
     it('sets name', () => {
-      experimentInstance.setName('newName');
-      expect(experimentInstance.getName()).to.equal('newName');
+      instance.setName('newName');
+      expect(instance.getName()).to.equal('newName');
     });
   });
 
   describe('startDate', () => {
     it('gets startDate', () => {
-      expect(experimentInstance.getStartDate()).to.equal('2024-01-01T00:00:00.000Z');
+      expect(instance.getStartDate()).to.equal('2024-01-01T00:00:00.000Z');
     });
 
     it('sets startDate', () => {
       const newStartDate = '2024-01-02T00:00:00.000Z';
-      experimentInstance.setStartDate(newStartDate);
-      expect(experimentInstance.getStartDate()).to.equal(newStartDate);
+      instance.setStartDate(newStartDate);
+      expect(instance.getStartDate()).to.equal(newStartDate);
     });
   });
 
   describe('status', () => {
     it('gets status', () => {
-      expect(experimentInstance.getStatus()).to.equal('ACTIVE');
+      expect(instance.getStatus()).to.equal('ACTIVE');
     });
 
     it('sets status', () => {
-      experimentInstance.setStatus('INACTIVE');
-      expect(experimentInstance.getStatus()).to.equal('INACTIVE');
+      instance.setStatus('INACTIVE');
+      expect(instance.getStatus()).to.equal('INACTIVE');
     });
   });
 
   describe('type', () => {
     it('gets type', () => {
-      expect(experimentInstance.getType()).to.equal('someType');
+      expect(instance.getType()).to.equal('someType');
     });
 
     it('sets type', () => {
-      experimentInstance.setType('newType');
-      expect(experimentInstance.getType()).to.equal('newType');
+      instance.setType('newType');
+      expect(instance.getType()).to.equal('newType');
     });
   });
 
   describe('url', () => {
     it('gets url', () => {
-      expect(experimentInstance.getUrl()).to.equal('someUrl');
+      expect(instance.getUrl()).to.equal('someUrl');
     });
 
     it('sets url', () => {
-      experimentInstance.setUrl('newUrl');
-      expect(experimentInstance.getUrl()).to.equal('newUrl');
+      instance.setUrl('newUrl');
+      expect(instance.getUrl()).to.equal('newUrl');
     });
   });
 
   describe('updatedBy', () => {
     it('gets updatedBy', () => {
-      expect(experimentInstance.getUpdatedBy()).to.equal('someUpdatedBy');
+      expect(instance.getUpdatedBy()).to.equal('someUpdatedBy');
     });
 
     it('sets updatedBy', () => {
-      experimentInstance.setUpdatedBy('newUpdatedBy');
-      expect(experimentInstance.getUpdatedBy()).to.equal('newUpdatedBy');
+      instance.setUpdatedBy('newUpdatedBy');
+      expect(instance.getUpdatedBy()).to.equal('newUpdatedBy');
     });
   });
 
   describe('variants', () => {
     it('gets variants', () => {
-      expect(experimentInstance.getVariants()).to.deep.equal([{ someVariant: 'someVariant' }]);
+      expect(instance.getVariants()).to.deep.equal([{ someVariant: 'someVariant' }]);
     });
 
     it('sets variants', () => {
-      experimentInstance.setVariants([{ newVariant: 'newVariant' }]);
-      expect(experimentInstance.getVariants()).to.deep.equal([{ newVariant: 'newVariant' }]);
+      instance.setVariants([{ newVariant: 'newVariant' }]);
+      expect(instance.getVariants()).to.deep.equal([{ newVariant: 'newVariant' }]);
     });
   });
 });

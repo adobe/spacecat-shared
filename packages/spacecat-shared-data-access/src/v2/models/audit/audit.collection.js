@@ -11,7 +11,6 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import Audit from './audit.model.js';
 
 /**
  * AuditCollection - A collection class responsible for managing Audit entities.
@@ -21,17 +20,6 @@ import Audit from './audit.model.js';
  * @extends BaseCollection
  */
 class AuditCollection extends BaseCollection {
-  /**
-   * Constructs an instance of AuditCollection. Tells the base class which model to use.
-   * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage Audit entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {Object} log - A logger for capturing logging information.
-   */
-  constructor(service, entityRegistry, log) {
-    super(service, entityRegistry, Audit, log);
-  }
-
   // add custom methods here
 }
 

@@ -11,7 +11,6 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import ApiKey from './api-key.model.js';
 
 /**
  * ApiKeyCollection - A collection class responsible for managing ApiKey entities.
@@ -21,17 +20,6 @@ import ApiKey from './api-key.model.js';
  * @extends BaseCollection
  */
 class ApiKeyCollection extends BaseCollection {
-  /**
-   * Constructs an instance of ApiKeyCollection. Tells the base class which model to use.
-   * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage ApiKey entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {Object} log - A logger for capturing logging information.
-   */
-  constructor(service, entityRegistry, log) {
-    super(service, entityRegistry, ApiKey, log);
-  }
-
   // add custom methods here
 }
 

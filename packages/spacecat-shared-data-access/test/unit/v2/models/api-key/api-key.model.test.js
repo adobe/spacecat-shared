@@ -14,59 +14,22 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import ApiKey from '../../../../../src/v2/models/api-key/api-key.model.js';
-import ApiKeySchema from '../../../../../src/v2/models/api-key/api-key.schema.js';
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(ApiKeySchema).model.schema;
+describe('ApiKeyModel', () => {
+  let instance;
 
-describe('ApiKey', () => {
-  let apiKeyInstance;
   let mockElectroService;
-  let mockModelFactory;
   let mockRecord;
-  let mockLogger;
 
   beforeEach(() => {
-    mockElectroService = {
-      entities: {
-        apiKey: {
-          model: {
-            name: 'apiKey',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['apiKeyId'],
-                },
-              },
-            },
-          },
-          patch: stub().returns({
-            set: stub(),
-          }),
-        },
-      },
-    };
-
-    mockModelFactory = {
-      getCollection: stub(),
-    };
-
-    mockLogger = {
-      error: spy(),
-    };
-
     mockRecord = {
       apiKeyId: 'sug12345',
       hashedApiKey: 'someHashedApiKey',
@@ -84,78 +47,78 @@ describe('ApiKey', () => {
       ],
     };
 
-    apiKeyInstance = new ApiKey(
+    ({
       mockElectroService,
-      mockModelFactory,
-      mockRecord,
-      mockLogger,
-    );
+      model: instance,
+    } = createElectroMocks(ApiKey, mockRecord));
+
+    mockElectroService.entities.patch = stub().returns({ set: stub() });
   });
 
   describe('constructor', () => {
     it('initializes the ApiKey instance correctly', () => {
-      expect(apiKeyInstance).to.be.an('object');
-      expect(apiKeyInstance.record).to.deep.equal(mockRecord);
+      expect(instance).to.be.an('object');
+      expect(instance.record).to.deep.equal(mockRecord);
     });
   });
 
   describe('apiKeyId', () => {
     it('gets apiKeyId', () => {
-      expect(apiKeyInstance.getId()).to.equal('sug12345');
+      expect(instance.getId()).to.equal('sug12345');
     });
   });
 
   describe('hashedApiKey', () => {
     it('gets hashedApiKey', () => {
-      expect(apiKeyInstance.getHashedApiKey()).to.equal('someHashedApiKey');
+      expect(instance.getHashedApiKey()).to.equal('someHashedApiKey');
     });
 
     it('sets hashedApiKey', () => {
       const newHashedApiKey = 'newHashedApiKey';
-      apiKeyInstance.setHashedApiKey(newHashedApiKey);
-      expect(apiKeyInstance.getHashedApiKey()).to.equal(newHashedApiKey);
+      instance.setHashedApiKey(newHashedApiKey);
+      expect(instance.getHashedApiKey()).to.equal(newHashedApiKey);
     });
   });
 
   describe('imsUserId', () => {
     it('gets imsUserId', () => {
-      expect(apiKeyInstance.getImsUserId()).to.equal('someImsUserId');
+      expect(instance.getImsUserId()).to.equal('someImsUserId');
     });
 
     it('sets imsUserId', () => {
       const newImsUserId = 'newImsUserId';
-      apiKeyInstance.setImsUserId(newImsUserId);
-      expect(apiKeyInstance.getImsUserId()).to.equal(newImsUserId);
+      instance.setImsUserId(newImsUserId);
+      expect(instance.getImsUserId()).to.equal(newImsUserId);
     });
   });
 
   describe('imsOrgId', () => {
     it('gets imsOrgId', () => {
-      expect(apiKeyInstance.getImsOrgId()).to.equal('someImsOrgId');
+      expect(instance.getImsOrgId()).to.equal('someImsOrgId');
     });
 
     it('sets imsOrgId', () => {
       const newImsOrgId = 'newImsOrgId';
-      apiKeyInstance.setImsOrgId(newImsOrgId);
-      expect(apiKeyInstance.getImsOrgId()).to.equal(newImsOrgId);
+      instance.setImsOrgId(newImsOrgId);
+      expect(instance.getImsOrgId()).to.equal(newImsOrgId);
     });
   });
 
   describe('name', () => {
     it('gets name', () => {
-      expect(apiKeyInstance.getName()).to.equal('someName');
+      expect(instance.getName()).to.equal('someName');
     });
 
     it('sets name', () => {
       const newName = 'newName';
-      apiKeyInstance.setName(newName);
-      expect(apiKeyInstance.getName()).to.equal(newName);
+      instance.setName(newName);
+      expect(instance.getName()).to.equal(newName);
     });
   });
 
   describe('scopes', () => {
     it('gets scopes', () => {
-      expect(apiKeyInstance.getScopes()).to.deep.equal([
+      expect(instance.getScopes()).to.deep.equal([
         {
           domains: ['someDomain'],
           actions: ['someAction'],
@@ -170,65 +133,65 @@ describe('ApiKey', () => {
           actions: ['newAction'],
         },
       ];
-      apiKeyInstance.setScopes(newScopes);
-      expect(apiKeyInstance.getScopes()).to.deep.equal(newScopes);
+      instance.setScopes(newScopes);
+      expect(instance.getScopes()).to.deep.equal(newScopes);
     });
   });
 
   describe('isValid', () => {
     it('returns true when the ApiKey is valid', () => {
-      expect(apiKeyInstance.isValid()).to.equal(true);
+      expect(instance.isValid()).to.equal(true);
     });
 
     it('returns false when the ApiKey is deleted', () => {
-      apiKeyInstance.setDeletedAt('2022-01-01T00:00:00.000Z');
-      expect(apiKeyInstance.isValid()).to.equal(false);
+      instance.setDeletedAt('2022-01-01T00:00:00.000Z');
+      expect(instance.isValid()).to.equal(false);
     });
 
     it('returns false when the ApiKey is revoked', () => {
-      apiKeyInstance.setRevokedAt('2022-01-01T00:00:00.000Z');
-      expect(apiKeyInstance.isValid()).to.equal(false);
+      instance.setRevokedAt('2022-01-01T00:00:00.000Z');
+      expect(instance.isValid()).to.equal(false);
     });
 
     it('returns false when the ApiKey is expired', () => {
-      apiKeyInstance.setExpiresAt('2022-01-01T00:00:00.000Z');
-      expect(apiKeyInstance.isValid()).to.equal(false);
+      instance.setExpiresAt('2022-01-01T00:00:00.000Z');
+      expect(instance.isValid()).to.equal(false);
     });
   });
 
   describe('deletedAt', () => {
     it('gets deletedAt', () => {
-      expect(apiKeyInstance.getDeletedAt()).to.equal(null);
+      expect(instance.getDeletedAt()).to.equal(null);
     });
 
     it('sets deletedAt', () => {
       const deletedAtIsoDate = '2024-01-01T00:00:00.000Z';
-      apiKeyInstance.setDeletedAt(deletedAtIsoDate);
-      expect(apiKeyInstance.getDeletedAt()).to.equal(deletedAtIsoDate);
+      instance.setDeletedAt(deletedAtIsoDate);
+      expect(instance.getDeletedAt()).to.equal(deletedAtIsoDate);
     });
   });
 
   describe('expiresAt', () => {
     it('gets expiresAt', () => {
-      expect(apiKeyInstance.getExpiresAt()).to.equal(null);
+      expect(instance.getExpiresAt()).to.equal(null);
     });
 
     it('sets expiresAt', () => {
       const expiresAtIsoDate = '2024-01-01T00:00:00.000Z';
-      apiKeyInstance.setExpiresAt(expiresAtIsoDate);
-      expect(apiKeyInstance.getExpiresAt()).to.equal(expiresAtIsoDate);
+      instance.setExpiresAt(expiresAtIsoDate);
+      expect(instance.getExpiresAt()).to.equal(expiresAtIsoDate);
     });
   });
 
   describe('revokedAt', () => {
     it('gets revokedAt', () => {
-      expect(apiKeyInstance.getRevokedAt()).to.equal(null);
+      expect(instance.getRevokedAt()).to.equal(null);
     });
 
     it('sets revokedAt', () => {
       const revokedAtIsoDate = '2024-01-01T00:00:00.000Z';
-      apiKeyInstance.setRevokedAt(revokedAtIsoDate);
-      expect(apiKeyInstance.getRevokedAt()).to.equal(revokedAtIsoDate);
+      instance.setRevokedAt(revokedAtIsoDate);
+      expect(instance.getRevokedAt()).to.equal(revokedAtIsoDate);
     });
   });
 });

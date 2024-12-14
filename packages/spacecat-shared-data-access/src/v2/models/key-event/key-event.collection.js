@@ -11,7 +11,6 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import KeyEvent from './key-event.model.js';
 
 /**
  * KeyEventCollection - A collection class responsible for managing KeyEvent entities.
@@ -21,17 +20,6 @@ import KeyEvent from './key-event.model.js';
  * @extends BaseCollection
  */
 class KeyEventCollection extends BaseCollection {
-  /**
-   * Constructs an instance of KeyEventCollection. Tells the base class which model to use.
-   * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage KeyEvent entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {Object} log - A logger for capturing logging information.
-   */
-  constructor(service, entityRegistry, log) {
-    super(service, entityRegistry, KeyEvent, log);
-  }
-
   // add custom methods here
 }
 

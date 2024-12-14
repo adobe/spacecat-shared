@@ -14,75 +14,37 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import OrganizationCollection from '../../../../../src/v2/models/organization/organization.collection.js';
 import Organization from '../../../../../src/v2/models/organization/organization.model.js';
-import OrganizationSchema from '../../../../../src/v2/models/organization/organization.schema.js';
+
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(OrganizationSchema).model.schema;
-
-let mockElectroService;
-
 describe('OrganizationCollection', () => {
   let instance;
-  let mockOrganizationModel;
-  let mockLogger;
+
+  let mockElectroService;
   let mockEntityRegistry;
+  let mockLogger;
+  let model;
+  let schema;
 
   const mockRecord = {
     organizationId: 's12345',
   };
 
   beforeEach(() => {
-    mockLogger = {
-      error: spy(),
-      warn: spy(),
-    };
-
-    mockEntityRegistry = {
-      getCollection: stub(),
-    };
-
-    mockElectroService = {
-      entities: {
-        organization: {
-          model: {
-            name: 'organization',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['organizationId'],
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    mockOrganizationModel = new Organization(
-      mockElectroService,
-      mockEntityRegistry,
-      mockRecord,
-      mockLogger,
-    );
-
-    instance = new OrganizationCollection(
+    ({
       mockElectroService,
       mockEntityRegistry,
       mockLogger,
-    );
+      collection: instance,
+      model,
+      schema,
+    } = createElectroMocks(Organization, mockRecord));
   });
 
   describe('constructor', () => {
@@ -90,9 +52,10 @@ describe('OrganizationCollection', () => {
       expect(instance).to.be.an('object');
       expect(instance.electroService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);
+      expect(instance.schema).to.equal(schema);
       expect(instance.log).to.equal(mockLogger);
 
-      expect(mockOrganizationModel).to.be.an('object');
+      expect(model).to.be.an('object');
     });
   });
 });

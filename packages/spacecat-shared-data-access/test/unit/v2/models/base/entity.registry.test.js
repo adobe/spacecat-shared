@@ -19,26 +19,29 @@ import sinonChai from 'sinon-chai';
 
 import EntityRegistry from '../../../../../src/v2/models/base/entity.registry.js';
 import { BaseCollection, BaseModel } from '../../../../../src/index.js';
+import Schema from '../../../../../src/v2/models/base/schema.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('EntityRegistry', () => {
   const MockModel = class MockModel extends BaseModel {};
-  const MockCollection = class MockCollection extends BaseCollection {
-    constructor(service, registry, log) {
-      super(service, registry, MockModel, log);
-    }
-  };
-  const MockSchema = {
-    model: { entity: 'test' },
-    attributes: {},
-  };
+  const MockCollection = class MockCollection extends BaseCollection {};
+  const MockSchema = new Schema(
+    MockModel,
+    MockCollection,
+    { entity: 'test' },
+    {},
+    {},
+    {},
+  );
 
   let electroService;
   let entityRegistry;
+  let originalEntities;
 
   beforeEach(() => {
+    originalEntities = { ...EntityRegistry.entities };
     EntityRegistry.entities = {};
 
     electroService = {
@@ -59,6 +62,10 @@ describe('EntityRegistry', () => {
     EntityRegistry.registerEntity(MockSchema, MockCollection);
 
     entityRegistry = new EntityRegistry(electroService, console);
+  });
+
+  afterEach(() => {
+    EntityRegistry.entities = originalEntities;
   });
 
   it('gets collection by collection name', () => {
@@ -88,6 +95,7 @@ describe('EntityRegistry', () => {
     expect(entities).to.deep.equal({
       test: {
         attributes: {},
+        indexes: {},
         model: {
           entity: 'test',
         },

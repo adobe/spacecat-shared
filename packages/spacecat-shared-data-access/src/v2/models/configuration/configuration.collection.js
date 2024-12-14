@@ -10,9 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseCollection from '../base/base.collection.js';
-import Configuration from './configuration.model.js';
 import { incrementVersion, sanitizeIdAndAuditFields } from '../../util/util.js';
+import BaseCollection from '../base/base.collection.js';
 
 /**
  * ConfigurationCollection - A collection class responsible for managing Configuration entities.
@@ -23,17 +22,6 @@ import { incrementVersion, sanitizeIdAndAuditFields } from '../../util/util.js';
  * @extends BaseCollection
  */
 class ConfigurationCollection extends BaseCollection {
-  /**
-   * Constructs an instance of ConfigurationCollection. Tells the base class which model to use.
-   * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage Configuration entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {Object} log - A logger for capturing logging information.
-   */
-  constructor(service, entityRegistry, log) {
-    super(service, entityRegistry, Configuration, log);
-  }
-
   async create(data) {
     const latestConfiguration = await this.findLatest();
     const version = latestConfiguration ? incrementVersion(latestConfiguration.getVersion()) : 1;

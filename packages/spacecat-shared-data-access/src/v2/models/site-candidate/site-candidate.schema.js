@@ -17,7 +17,8 @@ import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { validate as uuidValidate } from 'uuid';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import { SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from './site-candidate.model.js';
+import SiteCandidate, { SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from './site-candidate.model.js';
+import SiteCandidateCollection from './site-candidate.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -25,7 +26,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('SiteCandidate', 1, 'SpaceCat')
+const schema = new SchemaBuilder(SiteCandidate, SiteCandidateCollection)
   .addReference('belongs_to', 'Site')
   .addAttribute('siteId', {
     type: 'string',

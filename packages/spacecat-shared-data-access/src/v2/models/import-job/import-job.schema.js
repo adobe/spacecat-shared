@@ -21,7 +21,8 @@ import {
 } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import { ImportJobStatus, ImportOptions } from './import-job.model.js';
+import ImportJob, { ImportJobStatus, ImportOptions } from './import-job.model.js';
+import ImportJobCollection from './import-job.collection.js';
 
 const ImportOptionTypeValidator = {
   [ImportOptions.ENABLE_JAVASCRIPT]: (value) => {
@@ -66,7 +67,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('ImportJob', 1, 'SpaceCat')
+const schema = new SchemaBuilder(ImportJob, ImportJobCollection)
   .addReference('has_many', 'ImportUrls')
   .addAttribute('baseURL', {
     type: 'string',

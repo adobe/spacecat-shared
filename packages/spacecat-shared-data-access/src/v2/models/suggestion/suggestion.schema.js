@@ -15,7 +15,8 @@
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import { STATUSES, TYPES } from './suggestion.model.js';
+import Suggestion, { STATUSES, TYPES } from './suggestion.model.js';
+import SuggestionCollection from './suggestion.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -23,7 +24,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('Suggestion', 1, 'SpaceCat')
+const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
   .addReference('belongs_to', 'Opportunity', ['status', 'rank'])
   .addAttribute('type', {
     type: Object.values(TYPES),

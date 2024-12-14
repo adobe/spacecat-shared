@@ -17,9 +17,12 @@ import {
   capitalize,
   entityNameToCollectionName,
   entityNameToIdName,
-  entityNameToReferenceMethodName, idNameToEntityName, isNonEmptyArray, modelNameToEntityName,
+  entityNameToReferenceMethodName,
+  idNameToEntityName,
+  isNonEmptyArray,
 } from '../../util/util.js';
-import SchemaBuilder from './schema.builder.js';
+
+import Schema from './schema.js';
 
 /**
  * Base - A base class for representing individual entities in the application.
@@ -41,23 +44,28 @@ class BaseModel {
    * Constructs an instance of BaseModel.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
+   * @param {EntityRegistry} entityRegistry - The registry holding entities, their schema
+   * and collection.
+   * @param {Schema} schema - The schema for the entity.
    * @param {Object} record - The initial data for the entity instance.
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(electroService, entityRegistry, record, log) {
+  constructor(electroService, entityRegistry, schema, record, log) {
+    this.electroService = electroService;
     this.entityRegistry = entityRegistry;
+    this.schema = schema;
     this.record = record;
-    this.entityName = modelNameToEntityName(this.constructor.name);
-    this.collection = entityRegistry.getCollection(
-      entityNameToCollectionName(this.constructor.name),
-    );
-    this.entity = electroService.entities[this.entityName];
-    this.idName = entityNameToIdName(this.entityName);
     this.log = log;
+
+    this.entityName = schema.getEntityName();
+    this.idName = entityNameToIdName(this.entityName);
+
+    this.collection = entityRegistry.getCollection(schema.getCollectionName());
+    this.entity = electroService.entities[this.entityName];
+
     this.referencesCache = {};
 
-    this.patcher = new Patcher(this.entity, this.record);
+    this.patcher = new Patcher(this.entity, this.schema, this.record);
 
     this.#initializeReferences();
     this.#initializeAttributes();
@@ -70,7 +78,7 @@ class BaseModel {
    * @private
    */
   #initializeReferences() {
-    const { references } = this.entity.model.original;
+    const references = this.schema.getReferences();
     if (!isNonEmptyObject(references)) {
       return;
     }
@@ -86,7 +94,7 @@ class BaseModel {
   }
 
   #initializeAttributes() {
-    const { attributes } = this.entity.model.schema;
+    const attributes = this.schema.getAttributes();
 
     if (!isNonEmptyObject(attributes)) {
       return;
@@ -96,8 +104,8 @@ class BaseModel {
       const capitalized = capitalize(name);
       const getterMethodName = `get${capitalized}`;
       const setterMethodName = `set${capitalized}`;
-      const isReference = this.entity.model.original
-        .references?.belongs_to?.some((ref) => ref.target === idNameToEntityName(name));
+      const isReference = this.schema.getReferences()
+        .belongs_to?.some((ref) => ref.target === idNameToEntityName(name));
 
       if (!this[getterMethodName] || name === this.idName) {
         this[getterMethodName] = () => this.record[name];
@@ -179,12 +187,12 @@ class BaseModel {
     const promises = [];
 
     const relationshipTypes = [
-      SchemaBuilder.REFERENCE_TYPES.HAS_MANY,
-      SchemaBuilder.REFERENCE_TYPES.HAS_ONE,
+      Schema.REFERENCE_TYPES.HAS_MANY,
+      Schema.REFERENCE_TYPES.HAS_ONE,
     ];
 
     relationshipTypes.forEach((type) => {
-      const refs = this.entity.model.original.references?.[type] || [];
+      const refs = this.schema.getReferences()[type] || [];
       const targets = refs.filter((ref) => hasText(ref.target) && ref.removeDependent);
 
       targets.forEach((ref) => {
@@ -291,7 +299,7 @@ class BaseModel {
    * @returns {Object} - A JSON representation of the entity attributes.
    */
   toJSON() {
-    const { attributes } = this.entity.model.schema;
+    const attributes = this.schema.getAttributes();
 
     return Object.keys(attributes).reduce((json, key) => {
       if (this.record[key] !== undefined) {

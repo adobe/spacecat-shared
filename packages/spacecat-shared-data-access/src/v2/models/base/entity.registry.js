@@ -68,8 +68,8 @@ class EntityRegistry {
    * @private
    */
   #initialize() {
-    Object.values(EntityRegistry.entities).forEach(({ collection: Collection }) => {
-      const collection = new Collection(this.service, this, this.logger);
+    Object.values(EntityRegistry.entities).forEach(({ collection: Collection, schema }) => {
+      const collection = new Collection(this.service, this, schema, this.logger);
       this.collections.set(Collection.name, collection);
     });
 
@@ -110,7 +110,7 @@ class EntityRegistry {
 
   static getEntities() {
     return Object.keys(this.entities).reduce((acc, key) => {
-      acc[key] = this.entities[key].schema;
+      acc[key] = this.entities[key].schema.toElectroDBSchema();
       return acc;
     }, {});
   }

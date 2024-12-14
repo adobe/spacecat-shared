@@ -15,7 +15,8 @@
 import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import { validateAuditResult } from './audit.model.js';
+import Audit, { validateAuditResult } from './audit.model.js';
+import AuditCollection from './audit.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -23,7 +24,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('Audit', 1, 'SpaceCat')
+const schema = new SchemaBuilder(Audit, AuditCollection)
   .addReference('belongs_to', 'Site', ['auditType', 'auditedAt'])
   .addReference('has_many', 'Opportunities')
   .addAttribute('auditResult', {

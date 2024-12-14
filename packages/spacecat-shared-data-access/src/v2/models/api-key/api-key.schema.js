@@ -15,7 +15,8 @@
 import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import { SCOPE_NAMES } from './api-key.model.js';
+import ApiKey from './api-key.model.js';
+import ApiKeyCollection from './api-key.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -23,7 +24,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('ApiKey', 1, 'SpaceCat')
+const schema = new SchemaBuilder(ApiKey, ApiKeyCollection)
   .addAttribute('hashedApiKey', {
     type: 'string',
     required: true,
@@ -63,7 +64,7 @@ const schema = new SchemaBuilder('ApiKey', 1, 'SpaceCat')
             validate: (value) => isValidUrl(value),
           },
         },
-        name: { type: SCOPE_NAMES },
+        name: { type: ApiKey.SCOPE_NAMES },
       },
     },
   })

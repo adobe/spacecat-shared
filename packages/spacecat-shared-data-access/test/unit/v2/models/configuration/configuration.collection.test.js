@@ -14,78 +14,43 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import ConfigurationCollection from '../../../../../src/v2/models/configuration/configuration.collection.js';
 import Configuration from '../../../../../src/v2/models/configuration/configuration.model.js';
-import ConfigurationSchema from '../../../../../src/v2/models/configuration/configuration.schema.js';
+
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(ConfigurationSchema).model.schema;
-
-let mockElectroService;
-
 describe('ConfigurationCollection', () => {
   let instance;
-  let mockConfigurationModel;
-  let mockLogger;
+
+  let mockElectroService;
   let mockEntityRegistry;
+  let mockLogger;
+  let model;
+  let schema;
 
   const mockRecord = {
-    configurationId: 's12345',
+    configurationId: '2e6d24e8-3a1f-4c2c-9f80-696a177ff699',
+    queues: {
+      someQueue: {},
+    },
+    jobs: [],
+    version: 1,
   };
 
   beforeEach(() => {
-    mockLogger = {
-      error: spy(),
-      warn: spy(),
-    };
-
-    mockEntityRegistry = {
-      getCollection: stub(),
-    };
-
-    mockElectroService = {
-      entities: {
-        configuration: {
-          model: {
-            name: 'configuration',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['configurationId'],
-                },
-              },
-            },
-          },
-          create: stub().returns({
-            go: stub().resolves({ data: mockRecord }),
-          }),
-        },
-      },
-    };
-
-    mockConfigurationModel = new Configuration(
-      mockElectroService,
-      mockEntityRegistry,
-      mockRecord,
-      mockLogger,
-    );
-
-    instance = new ConfigurationCollection(
+    ({
       mockElectroService,
       mockEntityRegistry,
       mockLogger,
-    );
+      collection: instance,
+      model,
+      schema,
+    } = createElectroMocks(Configuration, mockRecord));
   });
 
   describe('constructor', () => {
@@ -93,9 +58,10 @@ describe('ConfigurationCollection', () => {
       expect(instance).to.be.an('object');
       expect(instance.electroService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);
+      expect(instance.schema).to.equal(schema);
       expect(instance.log).to.equal(mockLogger);
 
-      expect(mockConfigurationModel).to.be.an('object');
+      expect(model).to.be.an('object');
     });
   });
 

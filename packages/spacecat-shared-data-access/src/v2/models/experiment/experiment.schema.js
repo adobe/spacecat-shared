@@ -15,7 +15,8 @@
 import { isIsoDate, isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import { DEFAULT_UPDATED_BY } from './experiment.model.js';
+import Experiment, { DEFAULT_UPDATED_BY } from './experiment.model.js';
+import ExperimentCollection from './experiment.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -23,7 +24,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('Experiment', 1, 'SpaceCat')
+const schema = new SchemaBuilder(Experiment, ExperimentCollection)
   .addReference('belongs_to', 'Site', ['expId', 'url', 'updatedAt'])
   .addAttribute('conversionEventName', {
     type: 'string',

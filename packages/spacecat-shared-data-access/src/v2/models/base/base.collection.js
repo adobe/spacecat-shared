@@ -20,14 +20,9 @@ import { removeElectroProperties } from '../../../../test/it/util/util.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
 import {
-  capitalize,
-  entityNameToAllPKValue,
-  isNonEmptyArray,
-  keyNamesToIndexName,
-  modelNameToEntityName,
+  capitalize, entityNameToAllPKValue, isNonEmptyArray, keyNamesToIndexName,
 } from '../../util/util.js';
-
-import { INDEX_TYPES } from './schema.builder.js';
+import Schema from './schema.js';
 
 function keyNamesToMethodName(keyNames, prefix) {
   return prefix + keyNames.map(capitalize).join('And');
@@ -44,7 +39,7 @@ function isValidParent(parent, child) {
 }
 
 function validateValue(context, keyName, value) {
-  const { type } = context.entity.model.schema.attributes[keyName];
+  const { type } = context.schema.getAttributes()[keyName];
   const validator = type === 'number' ? isNumber : hasText;
 
   if (!validator(value)) {
@@ -104,10 +99,10 @@ function findIndexNameByKeys(indexes, keys) {
   }
 
   if (indexes.all) {
-    return INDEX_TYPES.ALL;
+    return Schema.INDEX_TYPES.ALL;
   }
 
-  return INDEX_TYPES.PRIMARY;
+  return Schema.INDEX_TYPES.PRIMARY;
 }
 
 /**
@@ -123,18 +118,20 @@ class BaseCollection {
    * Constructs an instance of BaseCollection.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {BaseModel} clazz - The model class that represents the entity.
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection.
+   * @param {Object} schema - The schema for the entity.
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(electroService, entityRegistry, clazz, log) {
+  constructor(electroService, entityRegistry, schema, log) {
     this.electroService = electroService;
     this.entityRegistry = entityRegistry;
-    this.clazz = clazz;
-    this.entityName = modelNameToEntityName(this.clazz.name);
-    this.entity = electroService.entities[this.entityName];
-    this.idName = `${this.entityName}Id`;
+    this.schema = schema;
     this.log = log;
+
+    this.clazz = this.schema.getModelClass();
+    this.entityName = this.schema.getEntityName();
+    this.idName = this.schema.getIdName();
+    this.entity = electroService.entities[this.entityName];
 
     this.#initializeCollectionMethods();
   }
@@ -156,16 +153,16 @@ class BaseCollection {
    * @private
    */
   #initializeCollectionMethods() {
-    const { indexes } = this.entity.model;
+    const indexes = this.schema.getIndexes();
 
     Object.keys(indexes).forEach((indexName) => {
-      if (indexName === INDEX_TYPES.PRIMARY) {
+      if (indexName === Schema.INDEX_TYPES.PRIMARY) {
         return;
       }
 
       const indexDef = indexes[indexName];
       const pkKeys = Array.isArray(indexDef.pk?.facets) ? indexDef.pk.facets : [];
-      const skKeys = Array.isArray(indexDef.sk?.facets) ? indexDef.sk.facets : [];
+      const skKeys = Array.isArray(indexDef.sk?.facets) ? indexDef.sk.facets : [indexDef.sk?.field];
       const allKeys = [...pkKeys, ...skKeys];
 
       // generate a method for each prefix of the allKeys array
@@ -204,6 +201,7 @@ class BaseCollection {
     return new this.clazz(
       this.electroService,
       this.entityRegistry,
+      this.schema,
       record,
       this.log,
     );
@@ -320,7 +318,7 @@ class BaseCollection {
     }
 
     const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
-    return this.#queryByIndexKeys(keys, { ...options, index: INDEX_TYPES.ALL, limit: 1 });
+    return this.#queryByIndexKeys(keys, { ...options, index: Schema.INDEX_TYPES.ALL, limit: 1 });
   }
 
   /**

@@ -22,7 +22,7 @@ import OpportunitySchema from '../../../../../src/v2/models/opportunity/opportun
 
 chaiUse(chaiAsPromised);
 
-const opportunityEntity = new Entity(OpportunitySchema);
+const opportunityEntity = new Entity(OpportunitySchema.toElectroDBSchema());
 
 describe('BaseModel', () => {
   let mockElectroService;
@@ -31,7 +31,7 @@ describe('BaseModel', () => {
   let mockEntityRegistry;
 
   const mockRecord = {
-    baseModelId: '12345',
+    opportunityId: '12345',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -51,25 +51,9 @@ describe('BaseModel', () => {
 
     mockElectroService = {
       entities: {
-        baseModel: {
-          name: 'baseModel',
-          model: {
-            name: 'baseModel',
-            schema: opportunityEntity.model.schema,
-            original: {
-              references: {
-                has_one: [
-                  { target: 'Opportunity', removeDependent: false },
-                ],
-                has_many: [
-                  { target: 'Suggestions', removeDependent: false },
-                ],
-                belongs_to: [],
-              },
-            },
-          },
-          remove: stub(),
-          patch: stub(),
+        opportunity: {
+          entity: opportunityEntity,
+          remove: stub().returns({ go: stub().resolves() }),
         },
       },
     };
@@ -77,6 +61,7 @@ describe('BaseModel', () => {
     baseModelInstance = new BaseModel(
       mockElectroService,
       mockEntityRegistry,
+      OpportunitySchema,
       mockRecord,
       mockLogger,
     );
@@ -88,9 +73,20 @@ describe('BaseModel', () => {
     });
 
     it('returns when initializeAttributes has no attributes', () => {
-      mockElectroService.entities.baseModel.model.schema.attributes = {};
-      const instance = new BaseModel(mockElectroService, mockEntityRegistry, {}, mockLogger);
+      const originalAttributes = { ...OpportunitySchema.attributes };
+      OpportunitySchema.attributes = {};
+
+      const instance = new BaseModel(
+        mockElectroService,
+        mockEntityRegistry,
+        OpportunitySchema,
+        {},
+        mockLogger,
+      );
+
       expect(instance).to.be.an.instanceOf(BaseModel);
+
+      OpportunitySchema.attributes = originalAttributes;
     });
   });
 
@@ -118,62 +114,70 @@ describe('BaseModel', () => {
   describe('remove', () => {
     let dependent;
     let dependents;
+    let schema;
+    let originalReferences;
 
     beforeEach(() => {
       dependent = { remove: stub().resolves() };
       dependents = [dependent, dependent, dependent];
+      originalReferences = { ...OpportunitySchema.references };
+      schema = OpportunitySchema;
 
       mockEntityRegistry.getCollection.returns({
         findByIndexKeys: stub().resolves(dependent),
         allByIndexKeys: stub().resolves(dependents),
       });
-      mockElectroService.entities.baseModel.remove.returns({ go: () => Promise.resolve() });
+      mockElectroService.entities.opportunity.remove.returns({ go: () => Promise.resolve() });
+    });
+
+    afterEach(() => {
+      OpportunitySchema.references = originalReferences;
     });
 
     it('removes the record and returns the current instance', async () => {
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
 
-      expect(mockElectroService.entities.baseModel.remove.calledOnce).to.be.true;
+      expect(mockElectroService.entities.opportunity.remove.calledOnce).to.be.true;
       expect(mockLogger.error.notCalled).to.be.true;
     });
 
     it('removes record with dependents', async () => {
-      mockElectroService.entities.baseModel.model.original.references
-        .has_many[0].removeDependent = true;
-      mockElectroService.entities.baseModel.model.original.references
-        .has_one[0].removeDependent = true;
+      schema.references.has_one.push({ target: 'SomeModel', removeDependent: true });
 
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
+
       // self remove
-      expect(mockElectroService.entities.baseModel.remove.calledOnce).to.be.true;
+      expect(mockElectroService.entities.opportunity.remove.calledOnce).to.be.true;
       // dependents remove: 3 = has_many, 1 = has_one
       expect(dependent.remove.callCount).to.equal(4);
       expect(mockLogger.error.notCalled).to.be.true;
     });
 
     it('does not remove dependents if there aren\'t any', async () => {
-      delete mockElectroService.entities.baseModel.model.original.references.has_many;
-      delete mockElectroService.entities.baseModel.model.original.references.has_one;
+      delete schema.references.has_many;
+      delete schema.references.has_one;
+
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
+
       expect(dependent.remove.notCalled).to.be.true;
     });
 
     it('does not remove dependents if none are found', async () => {
-      mockElectroService.entities.baseModel.model.original.references
-        .has_many[0].removeDependent = true;
-      mockElectroService.entities.baseModel.model.original.references
-        .has_one[0].removeDependent = true;
+      schema.references.has_many[0].removeDependent = true;
+      schema.references.has_one[0].removeDependent = true;
       mockEntityRegistry.getCollection.returns({
         findByIndexKeys: stub().resolves(null),
         allByIndexKeys: stub().resolves([]),
       });
+
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
+
       expect(dependent.remove.notCalled).to.be.true;
     });
 
     it('logs an error and throws when remove fails', async () => {
       const error = new Error('Remove failed');
-      mockElectroService.entities.baseModel.remove.returns({ go: () => Promise.reject(error) });
+      mockElectroService.entities.opportunity.remove.returns({ go: () => Promise.reject(error) });
 
       await expect(baseModelInstance.remove()).to.be.rejectedWith('Remove failed');
       expect(mockLogger.error.calledOnce).to.be.true;

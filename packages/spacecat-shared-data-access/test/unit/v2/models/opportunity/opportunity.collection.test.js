@@ -13,86 +13,63 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
+import sinonChai from 'sinon-chai';
 
 import Opportunity from '../../../../../src/v2/models/opportunity/opportunity.model.js';
-import OpportunityCollection from '../../../../../src/v2/models/opportunity/opportunity.collection.js';
-import OpportunitySchema from '../../../../../src/v2/models/opportunity/opportunity.schema.js';
+
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
+chaiUse(sinonChai);
 
-const opportunityEntity = new Entity(OpportunitySchema);
-
-const mockElectroService = {
-  entities: {
-    opportunity: {
-      model: {
-        name: 'opportunity',
-        indexes: [],
-        schema: opportunityEntity.model.schema,
-        original: {
-          references: {},
-        },
-      },
-      query: {
-        bySiteId: stub(),
-        bySiteIdAndStatus: stub(),
-      },
-      put: stub(),
-    },
-  },
-};
-
-// OpportunityCollection Unit Tests
 describe('OpportunityCollection', () => {
-  let opportunityCollectionInstance;
-  let mockLogger;
+  let instance;
+
+  let mockElectroService;
   let mockEntityRegistry;
-  let mockOpportunityModel;
+  let mockLogger;
+  let model;
+  let schema;
 
   const mockRecord = {
     opportunityId: 'op12345',
     siteId: 'site67890',
+    auditId: 'audit001',
+    title: 'Test Opportunity',
+    description: 'This is a test opportunity.',
+    runbook: 'http://runbook.url',
+    guidance: 'Follow these steps.',
+    type: 'SEO',
+    status: 'NEW',
+    origin: 'ESS_OPS',
+    tags: ['tag1', 'tag2'],
     data: {
-      foo: 'bar',
-      bing: 'batz',
+      additionalInfo: 'info',
     },
+    updatedAt: '2022-01-01T00:00:00.000Z',
   };
 
   beforeEach(() => {
-    mockLogger = {
-      error: spy(),
-      warn: spy(),
-    };
-
-    mockEntityRegistry = {
-      getCollection: stub(),
-    };
-
-    mockOpportunityModel = new Opportunity(
-      mockElectroService,
-      mockEntityRegistry,
-      mockRecord,
-      mockLogger,
-    );
-
-    opportunityCollectionInstance = new OpportunityCollection(
+    ({
       mockElectroService,
       mockEntityRegistry,
       mockLogger,
-    );
+      collection: instance,
+      model,
+      schema,
+    } = createElectroMocks(Opportunity, mockRecord));
   });
 
   describe('constructor', () => {
     it('initializes the OpportunityCollection instance correctly', () => {
-      expect(opportunityCollectionInstance).to.be.an('object');
-      expect(opportunityCollectionInstance.electroService).to.equal(mockElectroService);
-      expect(opportunityCollectionInstance.entityRegistry).to.equal(mockEntityRegistry);
-      expect(opportunityCollectionInstance.log).to.equal(mockLogger);
+      expect(instance).to.be.an('object');
+      expect(instance.electroService).to.equal(mockElectroService);
+      expect(instance.entityRegistry).to.equal(mockEntityRegistry);
+      expect(instance.schema).to.equal(schema);
+      expect(instance.log).to.equal(mockLogger);
 
-      expect(mockOpportunityModel).to.be.an('object');
+      expect(model).to.be.an('object');
     });
   });
 });

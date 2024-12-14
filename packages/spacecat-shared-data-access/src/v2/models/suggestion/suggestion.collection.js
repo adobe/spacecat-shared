@@ -11,7 +11,7 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import Suggestion, { STATUSES } from './suggestion.model.js';
+import { STATUSES } from './suggestion.model.js';
 
 /**
  * SuggestionCollection - A collection class responsible for managing Suggestion entities.
@@ -21,17 +21,6 @@ import Suggestion, { STATUSES } from './suggestion.model.js';
  * @extends BaseCollection
  */
 class SuggestionCollection extends BaseCollection {
-  /**
-   * Constructs an instance of SuggestionCollection. Tells the base class which model to use.
-   * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage Suggestion entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {Object} log - A logger for capturing logging information.
-   */
-  constructor(service, entityRegistry, log) {
-    super(service, entityRegistry, Suggestion, log);
-  }
-
   /**
    * Updates the status of multiple given suggestions. The given status must conform
    * to the status enum defined in the Suggestion schema.

@@ -20,12 +20,6 @@ class Schema {
     OTHER: 'other',
   };
 
-  static REFERENCE_TYPES = {
-    BELONGS_TO: 'belongs_to',
-    HAS_MANY: 'has_many',
-    HAS_ONE: 'has_one',
-  };
-
   /**
    * Constructs a new Schema instance.
    * @constructor
@@ -87,6 +81,10 @@ class Schema {
 
   getReferences() {
     return this.references;
+  }
+
+  getReferencesByType(type) {
+    return this.references.filter((ref) => ref.type === type);
   }
 
   getServiceName() {

@@ -19,6 +19,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import BaseModel from '../../../../../src/v2/models/base/base.model.js';
 import OpportunitySchema from '../../../../../src/v2/models/opportunity/opportunity.schema.js';
+import Reference from '../../../../../src/v2/models/base/reference.js';
 
 chaiUse(chaiAsPromised);
 
@@ -115,12 +116,12 @@ describe('BaseModel', () => {
     let dependent;
     let dependents;
     let schema;
-    let originalReferences;
+    let originalReferences = [];
 
     beforeEach(() => {
       dependent = { remove: stub().resolves() };
       dependents = [dependent, dependent, dependent];
-      originalReferences = { ...OpportunitySchema.references };
+      originalReferences = [...OpportunitySchema.references];
       schema = OpportunitySchema;
 
       mockEntityRegistry.getCollection.returns({
@@ -142,7 +143,13 @@ describe('BaseModel', () => {
     });
 
     it('removes record with dependents', async () => {
-      schema.references.has_one.push({ target: 'SomeModel', removeDependent: true });
+      const reference = Reference.fromJSON({
+        type: Reference.TYPES.HAS_ONE,
+        target: 'SomeModel',
+        options: { removeDependent: true },
+      });
+
+      schema.references.push(reference);
 
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
 
@@ -154,8 +161,7 @@ describe('BaseModel', () => {
     });
 
     it('does not remove dependents if there aren\'t any', async () => {
-      delete schema.references.has_many;
-      delete schema.references.has_one;
+      schema.references = [];
 
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
 
@@ -163,8 +169,8 @@ describe('BaseModel', () => {
     });
 
     it('does not remove dependents if none are found', async () => {
-      schema.references.has_many[0].removeDependent = true;
-      schema.references.has_one[0].removeDependent = true;
+      schema.references[0].options.removeDependent = true;
+      schema.references[1].options.removeDependent = true;
       mockEntityRegistry.getCollection.returns({
         findByIndexKeys: stub().resolves(null),
         allByIndexKeys: stub().resolves([]),

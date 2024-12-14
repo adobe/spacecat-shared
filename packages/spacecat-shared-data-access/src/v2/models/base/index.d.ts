@@ -51,6 +51,11 @@ export interface EntityRegistry {
   registerEntity(schema: object, collection: BaseCollection<BaseModel>): void;
 }
 
+export interface Reference {
+  getType(): string;
+  isRemoveDependents(): boolean;
+}
+
 export interface Schema {
   getAttribute(name: string): object;
   getAttributes(): object;
@@ -60,8 +65,8 @@ export interface Schema {
   getIndexes(): object;
   getModelClass(): object;
   getModelName(): string;
-  getReference(name: string): object;
-  getReferences(): object;
+  getReferences(): Reference[];
+  getReferencesByType(referenceType: string): Reference[];
 }
 
 export interface SchemaBuilder {

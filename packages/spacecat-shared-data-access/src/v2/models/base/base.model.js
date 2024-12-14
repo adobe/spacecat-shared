@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import Patcher from '../../util/patcher.js';
 import {
@@ -22,7 +22,7 @@ import {
   isNonEmptyArray,
 } from '../../util/util.js';
 
-import Schema from './schema.js';
+import Reference from './reference.js';
 
 /**
  * Base - A base class for representing individual entities in the application.
@@ -79,18 +79,14 @@ class BaseModel {
    */
   #initializeReferences() {
     const references = this.schema.getReferences();
-    if (!isNonEmptyObject(references)) {
-      return;
-    }
 
-    for (const [type, refs] of Object.entries(references)) {
-      refs.forEach((ref) => {
-        const { target } = ref;
-        const methodName = entityNameToReferenceMethodName(target, type);
+    references.forEach((ref) => {
+      const target = ref.getTarget();
+      const type = ref.getType();
+      const methodName = entityNameToReferenceMethodName(target, type);
 
-        this[methodName] = async () => this._fetchReference(type, target);
-      });
-    }
+      this[methodName] = async () => this._fetchReference(type, target);
+    });
   }
 
   #initializeAttributes() {
@@ -187,16 +183,16 @@ class BaseModel {
     const promises = [];
 
     const relationshipTypes = [
-      Schema.REFERENCE_TYPES.HAS_MANY,
-      Schema.REFERENCE_TYPES.HAS_ONE,
+      Reference.TYPES.HAS_MANY,
+      Reference.TYPES.HAS_ONE,
     ];
 
     relationshipTypes.forEach((type) => {
-      const refs = this.schema.getReferences()[type] || [];
-      const targets = refs.filter((ref) => hasText(ref.target) && ref.removeDependent);
+      const refs = this.schema.getReferencesByType(type);
+      const targets = refs.filter((ref) => ref.isRemoveDependents());
 
       targets.forEach((ref) => {
-        const { target } = ref;
+        const target = ref.getTarget();
         promises.push(
           this._fetchReference(type, target)
             .then((dependent) => {

@@ -24,6 +24,7 @@ import {
 import Schema from './schema.js';
 import BaseModel from './base.model.js';
 import BaseCollection from './base.collection.js';
+import Reference from './reference.js';
 
 const DEFAULT_SERVICE_NAME = 'SpaceCat';
 
@@ -163,12 +164,12 @@ class SchemaBuilder {
     };
 
     this.attributes = {};
-    // will be populated by build() from rawIndexes
 
+    // will be populated by build() from rawIndexes
     this.indexes = {};
 
     // this is not part of the ElectroDB schema spec, but we use it to store reference data
-    this.references = { belongs_to: [], has_many: [], has_one: [] };
+    this.references = [];
 
     this.#initialize();
   }
@@ -307,7 +308,7 @@ class SchemaBuilder {
   /**
    * Adds a reference to another entity, potentially creating a belongs_to index.
    *
-   * @param {string} referenceType - One of 'belongs_to', 'has_many', or 'has_one'.
+   * @param {string} type - One of Reference.TYPES (BELONGS_TO, HAS_MANY, HAS_ONE).
    * @param {string} entityName - The referenced entity name.
    * @param {Array<string>} [sortKeys=['updatedAt']] - The attributes to form the sort key.
    * @param {object} [options] - Additional reference options.
@@ -316,27 +317,31 @@ class SchemaBuilder {
    * @param {boolean} [options.removeDependent=false] - Whether to remove dependent entities
    * on delete. Only applies to HAS_MANY and HAS_ONE references.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
-   * @throws {Error} If referenceType or entityName are invalid.
+   * @throws {Error} If type or entityName are invalid.
    */
-  addReference(referenceType, entityName, sortKeys = ['updatedAt'], options = {}) {
-    if (!Object.values(Schema.REFERENCE_TYPES).includes(referenceType)) {
-      throw new Error(`Invalid referenceType: "${referenceType}".`);
+  addReference(type, entityName, sortKeys = ['updatedAt'], options = {}) {
+    if (!Reference.isValidType(type)) {
+      throw new Error(`Invalid referenceType: "${type}".`);
     }
 
     if (!hasText(entityName)) {
       throw new Error('entityName for reference is required and must be a non-empty string.');
     }
-    const reference = { target: entityName };
+    const reference = {
+      type,
+      target: entityName,
+      options: {},
+    };
 
     if ([
-      Schema.REFERENCE_TYPES.HAS_MANY,
-      Schema.REFERENCE_TYPES.HAS_ONE,
-    ].includes(referenceType)) {
-      reference.removeDependent = options.removeDependent ?? false;
+      Reference.TYPES.HAS_MANY,
+      Reference.TYPES.HAS_ONE,
+    ].includes(type)) {
+      reference.options.removeDependent = options.removeDependent ?? false;
     }
 
-    if (referenceType === Schema.REFERENCE_TYPES.BELONGS_TO) {
-      reference.required = options.required ?? true;
+    if (type === Reference.TYPES.BELONGS_TO) {
+      reference.options.required = options.required ?? true;
 
       // for a BELONGS_TO reference, we add a foreign key attribute
       // and a corresponding "belongs_to" index to facilitate lookups by that foreign key.
@@ -358,7 +363,7 @@ class SchemaBuilder {
       );
     }
 
-    this.references[referenceType].push(reference);
+    this.references.push(Reference.fromJSON(reference));
 
     return this;
   }

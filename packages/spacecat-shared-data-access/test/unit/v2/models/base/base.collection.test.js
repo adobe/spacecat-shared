@@ -39,7 +39,7 @@ const createSchema = (service, indexes) => new Schema(
       someOtherKey: { type: 'number' },
     },
     indexes,
-    references: {},
+    references: [],
   },
 );
 

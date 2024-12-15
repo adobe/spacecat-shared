@@ -52,6 +52,7 @@ export interface EntityRegistry {
 }
 
 export interface Reference {
+  getTarget(): string;
   getType(): string;
   isRemoveDependents(): boolean;
 }

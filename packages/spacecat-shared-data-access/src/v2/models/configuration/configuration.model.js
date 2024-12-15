@@ -11,8 +11,9 @@
  */
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
-import BaseModel from '../base/base.model.js';
+
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
+import BaseModel from '../base/base.model.js';
 
 /**
  * Configuration - A class representing an Configuration entity.

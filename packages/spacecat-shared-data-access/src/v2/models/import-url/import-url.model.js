@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { BaseModel } from '../base/index.js';
+import BaseModel from '../base/base.model.js';
 
 export const IMPORT_URL_EXPIRES_IN_DAYS = 30;
 

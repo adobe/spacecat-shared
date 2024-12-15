@@ -12,8 +12,16 @@
 
 import BaseModel from './base.model.js';
 import BaseCollection from './base.collection.js';
+import EntityRegistry from './entity.registry.js';
+import Reference from './reference.js';
+import Schema from './schema.js';
+import SchemaBuilder from './schema.builder.js';
 
 export {
   BaseModel,
   BaseCollection,
+  EntityRegistry,
+  Reference,
+  Schema,
+  SchemaBuilder,
 };

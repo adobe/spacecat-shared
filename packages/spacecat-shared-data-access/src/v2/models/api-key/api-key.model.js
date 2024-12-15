@@ -11,7 +11,8 @@
  */
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
-import { BaseModel } from '../base/index.js';
+
+import BaseModel from '../base/base.model.js';
 
 /**
  * ApiKey - A class representing an ApiKey entity.

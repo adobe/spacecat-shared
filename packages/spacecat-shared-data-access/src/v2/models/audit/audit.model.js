@@ -13,7 +13,7 @@
 import { isObject } from '@adobe/spacecat-shared-utils';
 
 import { ValidationError } from '../../errors/index.js';
-import { BaseModel } from '../base/index.js';
+import BaseModel from '../base/base.model.js';
 
 const AUDIT_TYPES = {
   404: '404',

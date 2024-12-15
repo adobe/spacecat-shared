@@ -35,6 +35,8 @@ const idNameToEntityName = (idName) => capitalize(pluralize.singular(idName.repl
 
 const keyNamesToIndexName = (keyNames) => `by${keyNames.map(capitalize).join('And')}`;
 
+const keyNamesToMethodName = (keyNames, prefix) => prefix + keyNames.map(capitalize).join('And');
+
 const modelNameToEntityName = (modelName) => decapitalize(modelName);
 
 const sanitizeTimestamps = (data) => {
@@ -66,6 +68,7 @@ export {
   incrementVersion,
   isNonEmptyArray,
   keyNamesToIndexName,
+  keyNamesToMethodName,
   modelNameToEntityName,
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,

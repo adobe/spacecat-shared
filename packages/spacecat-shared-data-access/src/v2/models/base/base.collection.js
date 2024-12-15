@@ -11,7 +11,10 @@
  */
 
 import {
-  hasText, isNonEmptyObject, isNumber, isObject,
+  hasText,
+  isNonEmptyObject,
+  isNumber,
+  isObject,
 } from '@adobe/spacecat-shared-utils';
 
 import { ElectroValidationError } from 'electrodb';
@@ -20,13 +23,12 @@ import { removeElectroProperties } from '../../../../test/it/util/util.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
 import {
-  capitalize, entityNameToAllPKValue, isNonEmptyArray, keyNamesToIndexName,
+  entityNameToAllPKValue,
+  isNonEmptyArray,
+  keyNamesToIndexName,
+  keyNamesToMethodName,
 } from '../../util/util.js';
 import Schema from './schema.js';
-
-function keyNamesToMethodName(keyNames, prefix) {
-  return prefix + keyNames.map(capitalize).join('And');
-}
 
 function isValidParent(parent, child) {
   if (!hasText(parent.entityName)) {
@@ -153,17 +155,10 @@ class BaseCollection {
    * @private
    */
   #initializeCollectionMethods() {
-    const indexes = this.schema.getIndexes();
+    const indexes = this.schema.getIndexes([Schema.INDEX_TYPES.PRIMARY]);
 
     Object.keys(indexes).forEach((indexName) => {
-      if (indexName === Schema.INDEX_TYPES.PRIMARY) {
-        return;
-      }
-
-      const indexDef = indexes[indexName];
-      const pkKeys = Array.isArray(indexDef.pk?.facets) ? indexDef.pk.facets : [];
-      const skKeys = Array.isArray(indexDef.sk?.facets) ? indexDef.sk.facets : [indexDef.sk?.field];
-      const allKeys = [...pkKeys, ...skKeys];
+      const indexKeys = this.schema.getIndexKeys(indexName);
 
       // generate a method for each prefix of the allKeys array
       // for example, if allKeys = ['opportunityId', 'status'], we create:
@@ -171,8 +166,8 @@ class BaseCollection {
       //   findByOpportunityId(...)
       //   allByOpportunityIdAndStatus(...)
       //   findByOpportunityIdAndStatus(...)
-      for (let i = 1; i <= allKeys.length; i += 1) {
-        const subset = allKeys.slice(0, i); // prefix of keys
+      for (let i = 1; i <= indexKeys.length; i += 1) {
+        const subset = indexKeys.slice(0, i); // prefix of keys
         const allMethodName = keyNamesToMethodName(subset, 'allBy');
         const findMethodName = keyNamesToMethodName(subset, 'findBy');
 

@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+
 import { entityNameToIdName, modelNameToEntityName } from '../../util/util.js';
 
 class Schema {
@@ -67,8 +69,43 @@ class Schema {
     return entityNameToIdName(this.getModelName());
   }
 
-  getIndexes() {
-    return this.indexes;
+  getIndexByName(indexName) {
+    return this.indexes[indexName];
+  }
+
+  /**
+   * Returns the indexes for the schema. By default, this returns all indexes.
+   * You can use the `exclude` parameter to exclude certain indexes.
+   * @param {Array<string>} [exclude] - One of the INDEX_TYPES values.
+   * @return {object} The indexes.
+   */
+  getIndexes(exclude) {
+    if (!Array.isArray(exclude)) {
+      return this.indexes;
+    }
+
+    return Object.keys(this.indexes).reduce((acc, indexName) => {
+      const index = this.indexes[indexName];
+
+      if (!exclude.includes(indexName)) {
+        acc[indexName] = index;
+      }
+
+      return acc;
+    }, {});
+  }
+
+  getIndexKeys(indexName) {
+    const index = this.getIndexByName(indexName);
+
+    if (!isNonEmptyObject(index)) {
+      return [];
+    }
+
+    const pkKeys = Array.isArray(index.pk?.facets) ? index.pk.facets : [];
+    const skKeys = Array.isArray(index.sk?.facets) ? index.sk.facets : [index.sk?.field];
+
+    return [...pkKeys, ...skKeys];
   }
 
   getModelClass() {

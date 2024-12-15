@@ -100,8 +100,9 @@ class BaseModel {
       const capitalized = capitalize(name);
       const getterMethodName = `get${capitalized}`;
       const setterMethodName = `set${capitalized}`;
-      const isReference = this.schema.getReferences()
-        .belongs_to?.some((ref) => ref.target === idNameToEntityName(name));
+      const isReference = this.schema
+        .getReferencesByType(Reference.TYPES.BELONGS_TO)
+        .some((ref) => ref.getTarget() === idNameToEntityName(name));
 
       if (!this[getterMethodName] || name === this.idName) {
         this[getterMethodName] = () => this.record[name];

@@ -64,6 +64,7 @@ export interface Schema {
   getEntityName(): string;
   getIdName(): string;
   getIndexes(): object;
+  getIndexKeys(indexName: string): string[];
   getModelClass(): object;
   getModelName(): string;
   getReferences(): Reference[];

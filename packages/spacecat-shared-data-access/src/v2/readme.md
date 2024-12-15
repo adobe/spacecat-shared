@@ -176,13 +176,20 @@ After defining indexes in the schema, **manually add these indexes to your Dynam
 
 ### 6. Use the Entity
 ```js
-const User = dataAccess.User;
+const { User, Organization } = dataAccess;
 
 // Create a user
 const newUser = await User.create({ email: 'john@example.com', name: 'John Doe' });
 
 // Find user by ID
 const user = await User.findById(newUser.getId());
+
+// Get the user organization
+const org = await user.getOrganization();
+
+// ...or in reverse
+const anOrg = await Organization.findById(user.getOrganizationId());
+const orgUsers = await anOrg.getUsers();
 
 // Update user and save
 user.setName('John X. Doe');

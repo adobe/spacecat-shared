@@ -51,7 +51,7 @@ When you create a schema with `SchemaBuilder`, the following attributes are auto
 2. **createdAt:** A timestamp (ISO string) set at entity creation.
 3. **updatedAt:** A timestamp (ISO string) updated on each modification.
 
-A primary index is also set up, keyed by the `id` attribute, guaranteeing a straightforward way to retrieve entities by their unique ID.
+A primary index is also set up, keyed by the `${entityName}Id` attribute, guaranteeing a straightforward way to retrieve entities by their unique ID.
 
 ## Auto-Generated Methods by `BaseCollection`
 
@@ -109,8 +109,10 @@ Create `user.schema.js`:
 
 ```js
 import SchemaBuilder from '../base/schema.builder.js';
+import User from './user.model.js';
+import UserCollection from './user.collection.js';
 
-const userSchema = new SchemaBuilder('User', 1, 'MyService')
+const userSchema = new SchemaBuilder(User, UserCollection)
   .addAttribute('email', {
     type: 'string',
     required: true,
@@ -146,11 +148,7 @@ import UserModel from './user.model.js';
 import userSchema from './user.schema.js';
 
 class UserCollection extends BaseCollection {
-  constructor(electroService, entityRegistry, log) {
-    super(electroService, entityRegistry, UserModel, log);
-    // Custom query methods can be added here if needed.
-  }
-
+  // Additional domain logic collection methods can be added here if needed.
   async findByEmail(email) {
     return this.findByIndexKeys({ email });
   }

@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v1.59.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.59.1...@adobe/spacecat-shared-data-access-v1.59.2) (2024-12-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#492](https://github.com/adobe/spacecat-shared/issues/492)) ([d4daba5](https://github.com/adobe/spacecat-shared/commit/d4daba5686c856f9f0029d805fb2b9f1b9baf777))
+
+# [@adobe/spacecat-shared-data-access-v1.59.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.59.0...@adobe/spacecat-shared-data-access-v1.59.1) (2024-12-12)
+
+
+### Bug Fixes
+
+* **data-access:** get all site candidates table name ([#487](https://github.com/adobe/spacecat-shared/issues/487)) ([5d62aee](https://github.com/adobe/spacecat-shared/commit/5d62aee7e29a1f78f692ea6802ac1334e884b9a3))
+
 # [@adobe/spacecat-shared-data-access-v1.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.58.2...@adobe/spacecat-shared-data-access-v1.59.0) (2024-12-11)
 
 

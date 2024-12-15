@@ -14,75 +14,37 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import AuditCollection from '../../../../../src/v2/models/audit/audit.collection.js';
 import Audit from '../../../../../src/v2/models/audit/audit.model.js';
-import AuditSchema from '../../../../../src/v2/models/audit/audit.schema.js';
+
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(AuditSchema).model.schema;
-
-let mockElectroService;
-
 describe('AuditCollection', () => {
   let instance;
-  let mockAuditModel;
-  let mockLogger;
+
+  let mockElectroService;
   let mockEntityRegistry;
+  let mockLogger;
+  let model;
+  let schema;
 
   const mockRecord = {
     auditId: 's12345',
   };
 
   beforeEach(() => {
-    mockLogger = {
-      error: spy(),
-      warn: spy(),
-    };
-
-    mockEntityRegistry = {
-      getCollection: stub(),
-    };
-
-    mockElectroService = {
-      entities: {
-        audit: {
-          model: {
-            name: 'audit',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['auditId'],
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    mockAuditModel = new Audit(
-      mockElectroService,
-      mockEntityRegistry,
-      mockRecord,
-      mockLogger,
-    );
-
-    instance = new AuditCollection(
+    ({
       mockElectroService,
       mockEntityRegistry,
       mockLogger,
-    );
+      collection: instance,
+      model,
+      schema,
+    } = createElectroMocks(Audit, mockRecord));
   });
 
   describe('constructor', () => {
@@ -90,9 +52,10 @@ describe('AuditCollection', () => {
       expect(instance).to.be.an('object');
       expect(instance.electroService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);
+      expect(instance.schema).to.equal(schema);
       expect(instance.log).to.equal(mockLogger);
 
-      expect(mockAuditModel).to.be.an('object');
+      expect(model).to.be.an('object');
     });
   });
 });

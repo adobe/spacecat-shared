@@ -25,7 +25,7 @@ import {
   guardSet,
   guardString,
 } from './index.js';
-import { entityNameToIdName, modelNameToEntityName } from './util.js';
+import { isNonEmptyArray } from './util.js';
 
 /**
  * Checks if a property is read-only and throws an error if it is.
@@ -41,12 +41,24 @@ const checkReadOnly = (propertyName, attribute) => {
 };
 
 class Patcher {
-  constructor(entity, record) {
+  /**
+   * Creates a new Patcher instance for an entity.
+   * @param {object} entity - The entity backing the record.
+   * @param {Schema} schema - The schema for the entity.
+   * @param {object} record - The record to patch.
+   */
+  constructor(entity, schema, record) {
     this.entity = entity;
-    this.entityName = modelNameToEntityName(this.entity.model.name);
-    this.model = entity.model;
-    this.idName = entityNameToIdName(this.entityName);
     this.record = record;
+
+    this.entityName = schema.getEntityName();
+    this.model = entity.model;
+    this.idName = schema.getIdName();
+
+    // holds the previous value of updated attributes
+    this.previous = {};
+
+    // holds the updates to the attributes
     this.updates = {};
 
     this.patchRecord = null;
@@ -75,7 +87,7 @@ class Patcher {
 
     const processComposite = (index, compositeType) => {
       const compositeArray = index[compositeType]?.facets;
-      if (Array.isArray(compositeArray)) {
+      if (isNonEmptyArray(compositeArray)) {
         compositeArray.forEach((compositeKey) => {
           if (
             !Object.keys(this.updates).includes(compositeKey)
@@ -103,8 +115,19 @@ class Patcher {
    */
   #set(attribute, value) {
     this.patchRecord = this.#getPatchRecord().set({ [attribute.name]: value });
+
+    const update = {
+      [attribute.name]: {
+        previous: this.record[attribute.name],
+        current: value,
+      },
+    };
+
+    // update the record with the update value for later save
     this.record[attribute.name] = value;
-    this.updates[attribute.name] = value;
+
+    // remember the update operation with the previous and current value
+    this.updates = { ...this.updates, ...update };
   }
 
   /**

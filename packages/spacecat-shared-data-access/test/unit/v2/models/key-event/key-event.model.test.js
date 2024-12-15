@@ -14,59 +14,22 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import KeyEvent from '../../../../../src/v2/models/key-event/key-event.model.js';
-import KeyEventSchema from '../../../../../src/v2/models/key-event/key-event.schema.js';
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(KeyEventSchema).model.schema;
+describe('KeyEventModel', () => {
+  let instance;
 
-describe('KeyEvent', () => {
-  let keyEventInstance;
   let mockElectroService;
-  let mockModelFactory;
   let mockRecord;
-  let mockLogger;
 
   beforeEach(() => {
-    mockElectroService = {
-      entities: {
-        keyEvent: {
-          model: {
-            name: 'keyEvent',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['keyEventId'],
-                },
-              },
-            },
-          },
-          patch: stub().returns({
-            set: stub(),
-          }),
-        },
-      },
-    };
-
-    mockModelFactory = {
-      getCollection: stub(),
-    };
-
-    mockLogger = {
-      error: spy(),
-    };
-
     mockRecord = {
       keyEventId: 'k12345',
       siteId: 's12345',
@@ -75,69 +38,69 @@ describe('KeyEvent', () => {
       time: '2022-01-01T00:00:00.000Z',
     };
 
-    keyEventInstance = new KeyEvent(
+    ({
       mockElectroService,
-      mockModelFactory,
-      mockRecord,
-      mockLogger,
-    );
+      model: instance,
+    } = createElectroMocks(KeyEvent, mockRecord));
+
+    mockElectroService.entities.patch = stub().returns({ set: stub() });
   });
 
   describe('constructor', () => {
     it('initializes the KeyEvent instance correctly', () => {
-      expect(keyEventInstance).to.be.an('object');
-      expect(keyEventInstance.record).to.deep.equal(mockRecord);
+      expect(instance).to.be.an('object');
+      expect(instance.record).to.deep.equal(mockRecord);
     });
   });
 
   describe('keyEventId', () => {
     it('gets keyEventId', () => {
-      expect(keyEventInstance.getId()).to.equal('k12345');
+      expect(instance.getId()).to.equal('k12345');
     });
   });
 
   describe('siteId', () => {
     it('gets siteId', () => {
-      expect(keyEventInstance.getSiteId()).to.equal('s12345');
+      expect(instance.getSiteId()).to.equal('s12345');
     });
 
     it('sets siteId', () => {
-      keyEventInstance.setSiteId('newSiteId');
-      expect(keyEventInstance.getSiteId()).to.equal('newSiteId');
+      instance.setSiteId('51f2eab9-2cd8-47a0-acd0-a2b00d916792');
+      expect(instance.getSiteId()).to.equal('51f2eab9-2cd8-47a0-acd0-a2b00d916792');
     });
   });
 
   describe('name', () => {
     it('gets name', () => {
-      expect(keyEventInstance.getName()).to.equal('someName');
+      expect(instance.getName()).to.equal('someName');
     });
 
     it('sets name', () => {
-      keyEventInstance.setName('newName');
-      expect(keyEventInstance.getName()).to.equal('newName');
+      instance.setName('newName');
+      expect(instance.getName()).to.equal('newName');
     });
   });
 
   describe('type', () => {
     it('gets type', () => {
-      expect(keyEventInstance.getType()).to.equal('CONTENT');
+      expect(instance.getType()).to.equal('CONTENT');
     });
 
     it('sets type', () => {
-      keyEventInstance.setType('STATUS CHANGE');
-      expect(keyEventInstance.getType()).to.equal('STATUS CHANGE');
+      instance.setType('STATUS CHANGE');
+      expect(instance.getType()).to.equal('STATUS CHANGE');
     });
   });
 
   describe('time', () => {
     it('gets time', () => {
-      expect(keyEventInstance.getTime()).to.equal('2022-01-01T00:00:00.000Z');
+      expect(instance.getTime()).to.equal('2022-01-01T00:00:00.000Z');
     });
 
     it('sets time', () => {
       const newTime = '2023-01-01T00:00:00.000Z';
-      keyEventInstance.setTime(newTime);
-      expect(keyEventInstance.getTime()).to.equal(newTime);
+      instance.setTime(newTime);
+      expect(instance.getTime()).to.equal(newTime);
     });
   });
 });

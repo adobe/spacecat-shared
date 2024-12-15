@@ -22,10 +22,11 @@ import {
 import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 
-import {
+import Site, {
   DEFAULT_DELIVERY_TYPE,
   DELIVERY_TYPES,
 } from './site.model.js';
+import SiteCollection from './site.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -33,7 +34,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('Site', 1, 'SpaceCat')
+const schema = new SchemaBuilder(Site, SiteCollection)
   // this will add an attribute 'organizationId' as well as an index 'byOrganizationId'
   .addReference('belongs_to', 'Organization')
   // has_many references do not add attributes or indexes

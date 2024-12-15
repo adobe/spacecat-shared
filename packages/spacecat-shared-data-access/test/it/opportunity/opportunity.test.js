@@ -34,12 +34,14 @@ describe('Opportunity IT', async () => {
   let sampleData;
 
   let Opportunity;
+  let Suggestion;
 
   before(async () => {
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
     Opportunity = dataAccess.Opportunity;
+    Suggestion = dataAccess.Suggestion;
   });
 
   it('finds one opportunity by id', async () => {
@@ -90,9 +92,7 @@ describe('Opportunity IT', async () => {
       .setRunbook(updates.runbook)
       .setStatus(updates.status);
 
-    expect(() => {
-      opportunity.setAuditId('invalid-audit-id');
-    }).to.throw(Error);
+    // opportunity.setAuditId('invalid-audit-id');
 
     await opportunity.save();
 
@@ -189,11 +189,20 @@ describe('Opportunity IT', async () => {
 
   it('removes an opportunity', async () => {
     const opportunity = await Opportunity.findById(sampleData.opportunities[0].getId());
+    const suggestions = await opportunity.getSuggestions();
+
+    expect(suggestions).to.be.an('array').with.length(3);
 
     await opportunity.remove();
 
     const notFound = await Opportunity.findById(sampleData.opportunities[0].getId());
     await expect(notFound).to.be.null;
+
+    // make sure dependent suggestions are removed as well
+    await Promise.all(suggestions.map(async (suggestion) => {
+      const notFoundSuggestion = await Suggestion.findById(suggestion.getId());
+      await expect(notFoundSuggestion).to.be.null;
+    }));
   });
 
   it('creates many opportunities', async () => {

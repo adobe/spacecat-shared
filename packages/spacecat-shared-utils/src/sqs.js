@@ -26,6 +26,15 @@ class SQS {
   }
 
   /**
+   * Check if the queue is a FIFO queue by examining its URL.
+   * @param {string} queueUrl - the URL of the SQS queue
+   * @returns {boolean} true if the queue is a FIFO queue, false otherwise
+   */
+  static #isFifoQueue(queueUrl) {
+    return hasText(queueUrl) && queueUrl.toLowerCase().endsWith('.fifo');
+  }
+
+  /**
    * Send a message to an SQS queue. For FIFO queues, messageGroupId is required.
    * @param {string} queueUrl - The URL of the SQS queue.
    * @param {object} message - The message body to send.
@@ -43,8 +52,8 @@ class SQS {
       QueueUrl: queueUrl,
     };
 
-    if (hasText(messageGroupId)) {
-      // MessageGroupId is required for FIFO queues
+    // Only include MessageGroupId if the queue is a FIFO queue
+    if (SQS.#isFifoQueue(queueUrl) && hasText(messageGroupId)) {
       params.MessageGroupId = messageGroupId;
     }
 

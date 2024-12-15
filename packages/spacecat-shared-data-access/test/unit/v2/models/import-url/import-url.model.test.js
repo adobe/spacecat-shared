@@ -14,59 +14,22 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import ImportUrl from '../../../../../src/v2/models/import-url/import-url.model.js';
-import ImportUrlSchema from '../../../../../src/v2/models/import-url/import-url.schema.js';
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(ImportUrlSchema).model.schema;
+describe('ImportUrlModel', () => {
+  let instance;
 
-describe('ImportUrl', () => {
-  let importUrlInstance;
   let mockElectroService;
-  let mockModelFactory;
   let mockRecord;
-  let mockLogger;
 
   beforeEach(() => {
-    mockElectroService = {
-      entities: {
-        importUrl: {
-          model: {
-            name: 'importUrl',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['importUrlId'],
-                },
-              },
-            },
-          },
-          patch: stub().returns({
-            set: stub(),
-          }),
-        },
-      },
-    };
-
-    mockModelFactory = {
-      getCollection: stub(),
-    };
-
-    mockLogger = {
-      error: spy(),
-    };
-
     mockRecord = {
       importUrlId: 'sug12345',
       importJobId: 'ij12345',
@@ -78,101 +41,101 @@ describe('ImportUrl', () => {
       url: 'https://example.com',
     };
 
-    importUrlInstance = new ImportUrl(
+    ({
       mockElectroService,
-      mockModelFactory,
-      mockRecord,
-      mockLogger,
-    );
+      model: instance,
+    } = createElectroMocks(ImportUrl, mockRecord));
+
+    mockElectroService.entities.patch = stub().returns({ set: stub() });
   });
 
   describe('constructor', () => {
     it('initializes the ImportUrl instance correctly', () => {
-      expect(importUrlInstance).to.be.an('object');
-      expect(importUrlInstance.record).to.deep.equal(mockRecord);
+      expect(instance).to.be.an('object');
+      expect(instance.record).to.deep.equal(mockRecord);
     });
   });
 
   describe('importUrlId', () => {
     it('gets importUrlId', () => {
-      expect(importUrlInstance.getId()).to.equal('sug12345');
+      expect(instance.getId()).to.equal('sug12345');
     });
   });
 
   describe('importJobId', () => {
     it('gets importJobId', () => {
-      expect(importUrlInstance.getImportJobId()).to.equal('ij12345');
+      expect(instance.getImportJobId()).to.equal('ij12345');
     });
 
     it('sets importJobId', () => {
-      importUrlInstance.setImportJobId('ij67890');
-      expect(importUrlInstance.getImportJobId()).to.equal('ij67890');
+      instance.setImportJobId('699120e9-7adb-4c97-b1c2-403b6ea9e057');
+      expect(instance.getImportJobId()).to.equal('699120e9-7adb-4c97-b1c2-403b6ea9e057');
     });
   });
 
   describe('expiresAt', () => {
     it('gets expiresAt', () => {
-      expect(importUrlInstance.getExpiresAt()).to.equal('2022-01-01T00:00:00.000Z');
+      expect(instance.getExpiresAt()).to.equal('2022-01-01T00:00:00.000Z');
     });
 
     it('sets expiresAt', () => {
-      importUrlInstance.setExpiresAt('2024-01-01T00:00:00.000Z');
-      expect(importUrlInstance.getExpiresAt()).to.equal('2024-01-01T00:00:00.000Z');
+      instance.setExpiresAt('2024-01-01T00:00:00.000Z');
+      expect(instance.getExpiresAt()).to.equal('2024-01-01T00:00:00.000Z');
     });
   });
 
   describe('file', () => {
     it('gets file', () => {
-      expect(importUrlInstance.getFile()).to.equal('someFile');
+      expect(instance.getFile()).to.equal('someFile');
     });
 
     it('sets file', () => {
-      importUrlInstance.setFile('newFile');
-      expect(importUrlInstance.getFile()).to.equal('newFile');
+      instance.setFile('newFile');
+      expect(instance.getFile()).to.equal('newFile');
     });
   });
 
   describe('path', () => {
     it('gets path', () => {
-      expect(importUrlInstance.getPath()).to.equal('somePath');
+      expect(instance.getPath()).to.equal('somePath');
     });
 
     it('sets path', () => {
-      importUrlInstance.setPath('newPath');
-      expect(importUrlInstance.getPath()).to.equal('newPath');
+      instance.setPath('newPath');
+      expect(instance.getPath()).to.equal('newPath');
     });
   });
 
   describe('reason', () => {
     it('gets reason', () => {
-      expect(importUrlInstance.getReason()).to.equal('someReason');
+      expect(instance.getReason()).to.equal('someReason');
     });
 
     it('sets reason', () => {
-      importUrlInstance.setReason('newReason');
-      expect(importUrlInstance.getReason()).to.equal('newReason');
+      instance.setReason('newReason');
+      expect(instance.getReason()).to.equal('newReason');
     });
   });
 
   describe('status', () => {
     it('gets status', () => {
-      expect(importUrlInstance.getStatus()).to.equal('PENDING');
+      expect(instance.getStatus()).to.equal('PENDING');
     });
 
     it('sets status', () => {
-      importUrlInstance.setStatus('COMPLETE');
-      expect(importUrlInstance.getStatus()).to.equal('COMPLETE');
+      instance.setStatus('COMPLETE');
+      expect(instance.getStatus()).to.equal('COMPLETE');
     });
   });
 
   describe('url', () => {
     it('gets url', () => {
-      expect(importUrlInstance.getUrl()).to.equal('https://example.com');
+      expect(instance.getUrl()).to.equal('https://example.com');
     });
 
     it('sets url', () => {
-      importUrlInstance.setUrl('https://example.org');
-      expect(importUrlInstance.getUrl()).to.equal('https://example.org');
+      instance.setUrl('https://example.org');
+      expect(instance.getUrl()).to.equal('https://example.org');
     });
   });
 });

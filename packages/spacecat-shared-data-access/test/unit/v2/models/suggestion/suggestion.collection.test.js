@@ -13,56 +13,24 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
+import sinonChai from 'sinon-chai';
 
-import SuggestionCollection from '../../../../../src/v2/models/suggestion/suggestion.collection.js';
 import Suggestion from '../../../../../src/v2/models/suggestion/suggestion.model.js';
-import SuggestionSchema from '../../../../../src/v2/models/suggestion/suggestion.schema.js';
+
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
+chaiUse(sinonChai);
 
-const { attributes } = new Entity(SuggestionSchema).model.schema;
-
-const mockElectroService = {
-  entities: {
-    suggestion: {
-      model: {
-        name: 'suggestion',
-        schema: { attributes },
-        original: {
-          references: {},
-        },
-        indexes: {
-          primary: {
-            pk: {
-              field: 'pk',
-              composite: ['suggestionId'],
-            },
-          },
-        },
-      },
-      query: {
-        byOpportunityId: stub(),
-        byOpportunityIdAndStatus: stub(),
-      },
-      put: stub().returns({
-        go: stub().resolves({}),
-      }),
-      patch: stub().returns({
-        set: stub(),
-      }),
-    },
-  },
-};
-
-// SuggestionCollection Unit Tests
 describe('SuggestionCollection', () => {
   let instance;
-  let mockSuggestionModel;
-  let mockLogger;
+
+  let mockElectroService;
   let mockEntityRegistry;
+  let mockLogger;
+  let model;
+  let schema;
 
   const mockRecord = {
     suggestionId: 's12345',
@@ -74,27 +42,14 @@ describe('SuggestionCollection', () => {
   };
 
   beforeEach(() => {
-    mockLogger = {
-      error: spy(),
-      warn: spy(),
-    };
-
-    mockEntityRegistry = {
-      getCollection: stub(),
-    };
-
-    mockSuggestionModel = new Suggestion(
-      mockElectroService,
-      mockEntityRegistry,
-      mockRecord,
-      mockLogger,
-    );
-
-    instance = new SuggestionCollection(
+    ({
       mockElectroService,
       mockEntityRegistry,
       mockLogger,
-    );
+      collection: instance,
+      model,
+      schema,
+    } = createElectroMocks(Suggestion, mockRecord));
   });
 
   describe('constructor', () => {
@@ -102,15 +57,16 @@ describe('SuggestionCollection', () => {
       expect(instance).to.be.an('object');
       expect(instance.electroService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);
+      expect(instance.schema).to.equal(schema);
       expect(instance.log).to.equal(mockLogger);
 
-      expect(mockSuggestionModel).to.be.an('object');
+      expect(model).to.be.an('object');
     });
   });
 
   describe('bulkUpdateStatus', () => {
     it('updates the status of multiple suggestions', async () => {
-      const mockSuggestions = [mockSuggestionModel];
+      const mockSuggestions = [model];
       const mockStatus = 'NEW';
 
       await instance.bulkUpdateStatus(mockSuggestions, mockStatus);
@@ -133,7 +89,7 @@ describe('SuggestionCollection', () => {
     });
 
     it('throws an error if status is not provided', async () => {
-      await expect(instance.bulkUpdateStatus([mockSuggestionModel], 'foo'))
+      await expect(instance.bulkUpdateStatus([model], 'foo'))
         .to.be.rejectedWith('Invalid status: foo. Must be one of: NEW, APPROVED, SKIPPED, FIXED, ERROR');
     });
   });

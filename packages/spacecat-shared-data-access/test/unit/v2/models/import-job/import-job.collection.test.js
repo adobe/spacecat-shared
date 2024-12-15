@@ -14,75 +14,38 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import ImportJobCollection from '../../../../../src/v2/models/import-job/import-job.collection.js';
 import ImportJob from '../../../../../src/v2/models/import-job/import-job.model.js';
-import ImportJobSchema from '../../../../../src/v2/models/import-job/import-job.schema.js';
+
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(ImportJobSchema).model.schema;
-
-let mockElectroService;
-
 describe('ImportJobCollection', () => {
   let instance;
-  let mockImportJobModel;
-  let mockLogger;
+
+  let mockElectroService;
   let mockEntityRegistry;
+  let mockLogger;
+  let model;
+  let schema;
 
   const mockRecord = {
     importJobId: 's12345',
   };
 
   beforeEach(() => {
-    mockLogger = {
-      error: spy(),
-      warn: spy(),
-    };
-
-    mockEntityRegistry = {
-      getCollection: stub(),
-    };
-
-    mockElectroService = {
-      entities: {
-        importJob: {
-          model: {
-            name: 'importJob',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['importJobId'],
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    mockImportJobModel = new ImportJob(
-      mockElectroService,
-      mockEntityRegistry,
-      mockRecord,
-      mockLogger,
-    );
-
-    instance = new ImportJobCollection(
+    ({
       mockElectroService,
       mockEntityRegistry,
       mockLogger,
-    );
+      collection: instance,
+      model,
+      schema,
+    } = createElectroMocks(ImportJob, mockRecord));
   });
 
   describe('constructor', () => {
@@ -90,9 +53,10 @@ describe('ImportJobCollection', () => {
       expect(instance).to.be.an('object');
       expect(instance.electroService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);
+      expect(instance.schema).to.equal(schema);
       expect(instance.log).to.equal(mockLogger);
 
-      expect(mockImportJobModel).to.be.an('object');
+      expect(model).to.be.an('object');
     });
   });
 

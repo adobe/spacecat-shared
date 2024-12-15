@@ -16,7 +16,8 @@ import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { ImportUrlStatus } from '../import-job/import-job.model.js';
 import SchemaBuilder from '../base/schema.builder.js';
-import { IMPORT_URL_EXPIRES_IN_DAYS } from './import-url.model.js';
+import ImportUrl, { IMPORT_URL_EXPIRES_IN_DAYS } from './import-url.model.js';
+import ImportUrlCollection from './import-url.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -24,7 +25,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('ImportUrl', 1, 'SpaceCat')
+const schema = new SchemaBuilder(ImportUrl, ImportUrlCollection)
   .addReference('belongs_to', 'ImportJob', ['status'])
   .addAttribute('expiresAt', {
     type: 'string',

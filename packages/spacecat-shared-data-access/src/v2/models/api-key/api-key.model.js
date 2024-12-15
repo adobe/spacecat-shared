@@ -11,22 +11,8 @@
  */
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
-import { BaseModel } from '../base/index.js';
 
-export const SCOPE_NAMES = [
-  'sites.read_all',
-  'sites.write_all',
-  'organizations.read_all',
-  'organizations.write_all',
-  'audits.read_all',
-  'audits.write_all',
-  'imports.read',
-  'imports.write',
-  'imports.delete',
-  'imports.read_all',
-  'imports.all_domains',
-  'imports.assistant',
-];
+import BaseModel from '../base/base.model.js';
 
 /**
  * ApiKey - A class representing an ApiKey entity.
@@ -36,7 +22,20 @@ export const SCOPE_NAMES = [
  * @extends BaseModel
  */
 class ApiKey extends BaseModel {
-  // add your custom methods or overrides here
+  static SCOPE_NAMES = [
+    'sites.read_all',
+    'sites.write_all',
+    'organizations.read_all',
+    'organizations.write_all',
+    'audits.read_all',
+    'audits.write_all',
+    'imports.read',
+    'imports.write',
+    'imports.delete',
+    'imports.read_all',
+    'imports.all_domains',
+    'imports.assistant',
+  ];
 
   isValid() {
     const now = new Date();

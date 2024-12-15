@@ -14,11 +14,14 @@ import { hasText, isInteger } from '@adobe/spacecat-shared-utils';
 import pluralize from 'pluralize';
 
 const capitalize = (str) => (hasText(str) ? str[0].toUpperCase() + str.slice(1) : '');
+
+const classExtends = (clazz, base) => (typeof clazz === 'function' && clazz.prototype instanceof base);
+
 const decapitalize = (str) => (hasText(str) ? str[0].toLowerCase() + str.slice(1) : '');
 
 const collectionNameToEntityName = (collectionName) => collectionName.replace('Collection', '');
 
-const entityNameToCollectionName = (entityName) => `${pluralize.singular(entityName)}Collection`;
+const entityNameToCollectionName = (entityName) => `${capitalize(pluralize.singular(entityName))}Collection`;
 
 const entityNameToIdName = (entityName) => `${decapitalize(entityName)}Id`;
 
@@ -33,7 +36,11 @@ const entityNameToAllPKValue = (entityName) => `ALL_${pluralize.plural(entityNam
 
 const idNameToEntityName = (idName) => capitalize(pluralize.singular(idName.replace('Id', '')));
 
+const isPositiveInteger = (value) => isInteger(value) && value > 0;
+
 const keyNamesToIndexName = (keyNames) => `by${keyNames.map(capitalize).join('And')}`;
+
+const keyNamesToMethodName = (keyNames, prefix) => prefix + keyNames.map(capitalize).join('And');
 
 const modelNameToEntityName = (modelName) => decapitalize(modelName);
 
@@ -52,8 +59,11 @@ const sanitizeIdAndAuditFields = (entityName, data) => {
 
 const incrementVersion = (version) => (isInteger(version) ? parseInt(version, 10) + 1 : 1);
 
+const isNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
+
 export {
   capitalize,
+  classExtends,
   collectionNameToEntityName,
   decapitalize,
   entityNameToCollectionName,
@@ -62,7 +72,10 @@ export {
   entityNameToReferenceMethodName,
   idNameToEntityName,
   incrementVersion,
+  isNonEmptyArray,
+  isPositiveInteger,
   keyNamesToIndexName,
+  keyNamesToMethodName,
   modelNameToEntityName,
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,

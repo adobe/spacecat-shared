@@ -11,7 +11,6 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import SiteCandidate from './site-candidate.model.js';
 
 /**
  * SiteCandidateCollection - A collection class responsible for managing SiteCandidate entities.
@@ -22,17 +21,6 @@ import SiteCandidate from './site-candidate.model.js';
  * @extends BaseCollection
  */
 class SiteCandidateCollection extends BaseCollection {
-  /**
-   * Constructs an instance of SiteCandidateCollection. Tells the base class which model to use.
-   * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage SiteCandidate entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection.
-   * @param {Object} log - A logger for capturing logging information.
-   */
-  constructor(service, entityRegistry, log) {
-    super(service, entityRegistry, SiteCandidate, log);
-  }
-
   // add custom methods here
 }
 

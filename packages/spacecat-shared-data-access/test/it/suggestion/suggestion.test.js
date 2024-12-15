@@ -59,6 +59,27 @@ describe('Suggestion IT', async () => {
     );
   });
 
+  it('resolves associations for a suggestion', async () => {
+    const sampleSuggestion = sampleData.suggestions[6];
+
+    const suggestion = await Suggestion.findById(sampleSuggestion.getId(), { resolve: true });
+
+    const opportunity = await suggestion.getOpportunity();
+    expect(opportunity).to.be.an('object');
+    expect(opportunity.getId()).to.equal(suggestion.getOpportunityId());
+    expect(opportunity.getId()).to.equal(sampleData.opportunities[2].getId());
+
+    const site = await opportunity.getSite();
+    expect(site).to.be.an('object');
+    expect(site.getId()).to.equal(opportunity.getSiteId());
+    expect(site.getId()).to.equal(sampleData.sites[0].getId());
+
+    const organization = await site.getOrganization();
+    expect(organization).to.be.an('object');
+    expect(organization.getId()).to.equal(site.getOrganizationId());
+    expect(organization.getId()).to.equal(sampleData.organizations[0].getId());
+  });
+
   it('gets all suggestions by opportunityId', async () => {
     const sampleOpportunity = sampleData.opportunities[0];
     const suggestions = await Suggestion.allByOpportunityId(sampleOpportunity.getId());

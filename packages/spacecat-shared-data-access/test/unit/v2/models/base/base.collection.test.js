@@ -12,6 +12,7 @@
 
 /* eslint-env mocha */
 
+// eslint-disable-next-line max-classes-per-file
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { ElectroValidationError } from 'electrodb';
@@ -19,20 +20,45 @@ import { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import BaseCollection from '../../../../../src/v2/models/base/base.collection.js';
+import Schema from '../../../../../src/v2/models/base/schema.js';
 import BaseModel from '../../../../../src/v2/models/base/base.model.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-describe('BaseCollection', () => {
-  const MockModel = class MockEntityModel extends BaseModel {
-    // eslint-disable-next-line class-methods-use-this
-    _cacheReference() {}
-  };
+const MockModel = class MockEntityModel extends BaseModel {};
+const MockCollection = class MockEntityCollection extends BaseCollection {};
 
+const createSchema = (service, indexes) => new Schema(
+  MockModel,
+  MockCollection,
+  {
+    serviceName: 'service',
+    schemaVersion: 1,
+    attributes: {
+      someKey: { type: 'string' },
+      someOtherKey: { type: 'number' },
+    },
+    indexes,
+    references: [],
+  },
+);
+
+const createInstance = (service, registry, indexes, log) => {
+  const schema = createSchema(service, indexes);
+  return new BaseCollection(
+    service,
+    registry,
+    schema,
+    log,
+  );
+};
+
+describe('BaseCollection', () => {
   let baseCollectionInstance;
   let mockElectroService;
   let mockEntityRegistry;
+  let mockIndexes = { primary: {} };
   let mockLogger;
 
   const mockRecord = {
@@ -50,6 +76,7 @@ describe('BaseCollection', () => {
 
     mockLogger = {
       error: spy(),
+      info: spy(),
       warn: spy(),
     };
 
@@ -71,7 +98,7 @@ describe('BaseCollection', () => {
             primary: stub(),
           },
           model: {
-            name: 'mockEntityModel',
+            entity: 'MockEntityModel',
             indexes: {},
             table: 'data',
             original: {},
@@ -83,59 +110,72 @@ describe('BaseCollection', () => {
       },
     };
 
-    baseCollectionInstance = new BaseCollection(
+    baseCollectionInstance = createInstance(
       mockElectroService,
       mockEntityRegistry,
-      MockModel,
+      mockIndexes,
       mockLogger,
     );
   });
 
   describe('collection methods', () => {
-    const createInstance = () => new BaseCollection(
-      mockElectroService,
-      mockEntityRegistry,
-      MockModel,
-      mockLogger,
-    );
-
     it('does not create accessors for the primary index', () => {
-      mockElectroService.entities.mockEntityModel.model.indexes = { primary: {} };
+      mockIndexes = { primary: {} };
 
-      const instance = createInstance();
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
 
       expect(instance).to.not.have.property('allBy');
       expect(instance).to.not.have.property('findBy');
     });
 
     it('creates accessors for partition key attributes', () => {
-      mockElectroService.entities.mockEntityModel.model.indexes = {
+      mockIndexes = {
         bySomeKey: { pk: { facets: ['someKey'] } },
       };
 
-      const instance = createInstance();
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
 
       expect(instance).to.have.property('allBySomeKey');
       expect(instance).to.have.property('findBySomeKey');
     });
 
     it('creates accessors for sort key attributes', () => {
-      mockElectroService.entities.mockEntityModel.model.indexes = {
+      mockIndexes = {
         bySomeKey: { sk: { facets: ['someKey'] } },
       };
 
-      const instance = createInstance();
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
 
       expect(instance).to.have.property('allBySomeKey');
       expect(instance).to.have.property('findBySomeKey');
     });
 
     it('creates accessors for partition and sort key attributes', () => {
-      mockElectroService.entities.mockEntityModel.model.indexes = {
+      mockIndexes = {
         bySomeKey: { pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
       };
 
-      const instance = createInstance();
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
 
       expect(instance).to.have.property('allBySomeKey');
       expect(instance).to.have.property('allBySomeKeyAndSomeOtherKey');
@@ -147,7 +187,7 @@ describe('BaseCollection', () => {
       mockElectroService.entities.mockEntityModel.query.bySomeKey.returns(
         { go: () => Promise.resolve({ data: [] }) },
       );
-      mockElectroService.entities.mockEntityModel.model.indexes = {
+      mockIndexes = {
         bySomeKey: { pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
       };
 
@@ -158,7 +198,13 @@ describe('BaseCollection', () => {
         },
       };
 
-      const instance = createInstance();
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
       const someKey = 'someValue';
       const someOtherKey = 1;
       const options = { order: 'desc' };
@@ -303,6 +349,7 @@ describe('BaseCollection', () => {
         record: { mockParentEntityModelId: mockRecord.mockParentEntityModelId },
         entityName: 'mockParentEntityModel',
         entity: { model: { name: 'mockParentEntityModel' } },
+        schema: { getModelName: () => 'MockParentEntityModel' },
       };
 
       const result = await baseCollectionInstance.createMany(mockRecords, parent);

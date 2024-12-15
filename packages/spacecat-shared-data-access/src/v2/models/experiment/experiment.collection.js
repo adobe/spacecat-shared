@@ -11,7 +11,6 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import Experiment from './experiment.model.js';
 
 /**
  * ExperimentCollection - A collection class responsible for managing Experiment entities.
@@ -21,17 +20,6 @@ import Experiment from './experiment.model.js';
  * @extends BaseCollection
  */
 class ExperimentCollection extends BaseCollection {
-  /**
-   * Constructs an instance of ExperimentCollection. Tells the base class which model to use.
-   * @constructor
-   * @param {Object} service - The ElectroDB service instance used to manage Experiment entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {Object} log - A logger for capturing logging information.
-   */
-  constructor(service, entityRegistry, log) {
-    super(service, entityRegistry, Experiment, log);
-  }
-
   // add custom methods here
 }
 

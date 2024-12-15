@@ -17,6 +17,8 @@ import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import Joi from 'joi';
 
 import SchemaBuilder from '../base/schema.builder.js';
+import Configuration from './configuration.model.js';
+import ConfigurationCollection from './configuration.collection.js';
 
 const handlerSchema = Joi.object().pattern(Joi.string(), Joi.object(
   {
@@ -65,7 +67,7 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder('Configuration', 1, 'SpaceCat')
+const schema = new SchemaBuilder(Configuration, ConfigurationCollection)
   .addAttribute('handlers', {
     type: 'any',
     validate: (value) => !value || checkConfiguration(value, handlerSchema),

@@ -11,7 +11,10 @@
  */
 
 import {
-  hasText, isNonEmptyObject, isNumber, isObject,
+  hasText,
+  isNonEmptyObject,
+  isNumber,
+  isObject,
 } from '@adobe/spacecat-shared-utils';
 
 import { ElectroValidationError } from 'electrodb';
@@ -20,17 +23,12 @@ import { removeElectroProperties } from '../../../../test/it/util/util.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
 import {
-  capitalize,
   entityNameToAllPKValue,
+  isNonEmptyArray,
   keyNamesToIndexName,
-  modelNameToEntityName,
+  keyNamesToMethodName,
 } from '../../util/util.js';
-
-import { INDEX_TYPES } from './schema.builder.js';
-
-function keyNamesToMethodName(keyNames, prefix) {
-  return prefix + keyNames.map(capitalize).join('And');
-}
+import { INDEX_TYPES } from './constants.js';
 
 function isValidParent(parent, child) {
   if (!hasText(parent.entityName)) {
@@ -43,7 +41,7 @@ function isValidParent(parent, child) {
 }
 
 function validateValue(context, keyName, value) {
-  const { type } = context.entity.model.schema.attributes[keyName];
+  const { type } = context.schema.getAttribute(keyName);
   const validator = type === 'number' ? isNumber : hasText;
 
   if (!validator(value)) {
@@ -122,18 +120,20 @@ class BaseCollection {
    * Constructs an instance of BaseCollection.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
-   * @param {BaseModel} clazz - The model class that represents the entity.
+   * @param {Object} entityRegistry - The registry holding entities, their schema and collection.
+   * @param {Object} schema - The schema for the entity.
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(electroService, entityRegistry, clazz, log) {
+  constructor(electroService, entityRegistry, schema, log) {
     this.electroService = electroService;
     this.entityRegistry = entityRegistry;
-    this.clazz = clazz;
-    this.entityName = modelNameToEntityName(this.clazz.name);
-    this.entity = electroService.entities[this.entityName];
-    this.idName = `${this.entityName}Id`;
+    this.schema = schema;
     this.log = log;
+
+    this.clazz = this.schema.getModelClass();
+    this.entityName = this.schema.getEntityName();
+    this.idName = this.schema.getIdName();
+    this.entity = electroService.entities[this.entityName];
 
     this.#initializeCollectionMethods();
   }
@@ -155,17 +155,10 @@ class BaseCollection {
    * @private
    */
   #initializeCollectionMethods() {
-    const { indexes } = this.entity.model;
+    const indexes = this.schema.getIndexes([INDEX_TYPES.PRIMARY]);
 
     Object.keys(indexes).forEach((indexName) => {
-      if (indexName === INDEX_TYPES.PRIMARY) {
-        return;
-      }
-
-      const indexDef = indexes[indexName];
-      const pkKeys = Array.isArray(indexDef.pk?.facets) ? indexDef.pk.facets : [];
-      const skKeys = Array.isArray(indexDef.sk?.facets) ? indexDef.sk.facets : [];
-      const allKeys = [...pkKeys, ...skKeys];
+      const indexKeys = this.schema.getIndexKeys(indexName);
 
       // generate a method for each prefix of the allKeys array
       // for example, if allKeys = ['opportunityId', 'status'], we create:
@@ -173,8 +166,8 @@ class BaseCollection {
       //   findByOpportunityId(...)
       //   allByOpportunityIdAndStatus(...)
       //   findByOpportunityIdAndStatus(...)
-      for (let i = 1; i <= allKeys.length; i += 1) {
-        const subset = allKeys.slice(0, i); // prefix of keys
+      for (let i = 1; i <= indexKeys.length; i += 1) {
+        const subset = indexKeys.slice(0, i); // prefix of keys
         const allMethodName = keyNamesToMethodName(subset, 'allBy');
         const findMethodName = keyNamesToMethodName(subset, 'findBy');
 
@@ -203,6 +196,7 @@ class BaseCollection {
     return new this.clazz(
       this.electroService,
       this.entityRegistry,
+      this.schema,
       record,
       this.log,
     );
@@ -412,7 +406,7 @@ class BaseCollection {
    * failures.
    */
   async createMany(newItems, parent = null) {
-    if (!Array.isArray(newItems) || newItems.length === 0) {
+    if (!isNonEmptyArray(newItems)) {
       const message = `Failed to create many [${this.entityName}]: items must be a non-empty array`;
       this.log.error(message);
       throw new Error(message);
@@ -424,7 +418,7 @@ class BaseCollection {
       if (validatedItems.length > 0) {
         const response = await this.entity.put(validatedItems).go();
 
-        if (Array.isArray(response?.unprocessed) && response?.unprocessed?.length > 0) {
+        if (isNonEmptyArray(response?.unprocessed)) {
           this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
         }
       }
@@ -438,9 +432,11 @@ class BaseCollection {
             return;
           }
           // eslint-disable-next-line no-underscore-dangle
-          record._cacheReference(parent.entity.model.name, parent);
+          record._cacheReference(parent.schema.getModelName(), parent);
         });
       }
+
+      this.log.info(`Created ${createdItems.length} items for [${this.entityName}]`);
 
       return { createdItems, errorItems };
     } catch (error) {
@@ -459,7 +455,7 @@ class BaseCollection {
    * @protected
    */
   async _saveMany(items) {
-    if (!Array.isArray(items) || items.length === 0) {
+    if (!isNonEmptyArray(items)) {
       const message = `Failed to save many [${this.entityName}]: items must be a non-empty array`;
       this.log.error(message);
       throw new Error(message);
@@ -479,18 +475,22 @@ class BaseCollection {
   }
 
   /**
-   * Removes all records of this entity based on the provided IDs.
+   * Removes all records of this entity based on the provided IDs. This will perform a batch
+   * delete operation. This operation does not remove dependent records.
    * @param {Array<string>} ids - An array of IDs to remove.
    * @return {Promise<void>} - A promise that resolves when the removal operation is complete.
    * @throws {Error} - Throws an error if the IDs are not provided or if the
    * removal operation fails.
    */
   async removeByIds(ids) {
-    if (!Array.isArray(ids) || ids.length === 0) {
+    if (!isNonEmptyArray(ids)) {
       const message = `Failed to remove [${this.entityName}]: ids must be a non-empty array`;
       this.log.error(message);
       throw new Error(message);
     }
+
+    this.log.info(`Removing ${ids.length} items for [${this.entityName}]`);
+    // todo: consider removing dependent records
 
     await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
   }

@@ -10,8 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { BaseModel } from '../base/index.js';
 import { Config } from '../../../models/site/config.js';
+import BaseModel from '../base/base.model.js';
 
 export const DELIVERY_TYPES = {
   AEM_CS: 'aem_cs',

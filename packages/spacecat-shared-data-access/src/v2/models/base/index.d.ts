@@ -18,6 +18,7 @@ export interface BaseModel {
   getUpdatedAt(): string;
   remove(): Promise<this>;
   save(): Promise<this>;
+  toJSON(): object;
 }
 
 export interface MultiStatusCreateResult<T> {
@@ -40,6 +41,7 @@ export interface BaseCollection<T extends BaseModel> {
   findByAll(sortKeys?: object, options?: QueryOptions): Promise<T>;
   findById(id: string): Promise<T>;
   findByIndexKeys(indexKeys: object): Promise<T>;
+  removeByIds(ids: string[]): Promise<void>;
 }
 
 export interface EntityRegistry {
@@ -49,11 +51,31 @@ export interface EntityRegistry {
   registerEntity(schema: object, collection: BaseCollection<BaseModel>): void;
 }
 
+export interface Reference {
+  getTarget(): string;
+  getType(): string;
+  isRemoveDependents(): boolean;
+}
+
+export interface Schema {
+  getAttribute(name: string): object;
+  getAttributes(): object;
+  getCollectionName(): string;
+  getEntityName(): string;
+  getIdName(): string;
+  getIndexes(): object;
+  getIndexKeys(indexName: string): string[];
+  getModelClass(): object;
+  getModelName(): string;
+  getReferences(): Reference[];
+  getReferencesByType(referenceType: string): Reference[];
+}
+
 export interface SchemaBuilder {
   addAttribute(name: string, data: object): SchemaBuilder;
   addAllIndexWithComposite(...attributeNames: string[]): SchemaBuilder
   addAllIndexWithTemplateField(fieldName: string, template: string): SchemaBuilder;
   addIndex(name: string, partitionKey: object, sortKey: object): SchemaBuilder;
   addReference(referenceType: string, entityName: string, sortKeys?: string[]): SchemaBuilder;
-  build(): object;
+  build(): Schema;
 }

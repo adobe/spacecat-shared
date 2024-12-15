@@ -14,75 +14,38 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { Entity } from 'electrodb';
-import { spy, stub } from 'sinon';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import SiteCollection from '../../../../../src/v2/models/site/site.collection.js';
 import Site from '../../../../../src/v2/models/site/site.model.js';
-import SiteSchema from '../../../../../src/v2/models/site/site.schema.js';
+
+import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const { attributes } = new Entity(SiteSchema).model.schema;
-
-let mockElectroService;
-
 describe('SiteCollection', () => {
   let instance;
-  let mockSiteModel;
-  let mockLogger;
+
+  let mockElectroService;
   let mockEntityRegistry;
+  let mockLogger;
+  let model;
+  let schema;
 
   const mockRecord = {
     siteId: 's12345',
   };
 
   beforeEach(() => {
-    mockLogger = {
-      error: spy(),
-      warn: spy(),
-    };
-
-    mockEntityRegistry = {
-      getCollection: stub(),
-    };
-
-    mockElectroService = {
-      entities: {
-        site: {
-          model: {
-            name: 'site',
-            schema: { attributes },
-            original: {
-              references: {},
-            },
-            indexes: {
-              primary: {
-                pk: {
-                  field: 'pk',
-                  composite: ['siteId'],
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-
-    mockSiteModel = new Site(
-      mockElectroService,
-      mockEntityRegistry,
-      mockRecord,
-      mockLogger,
-    );
-
-    instance = new SiteCollection(
+    ({
       mockElectroService,
       mockEntityRegistry,
       mockLogger,
-    );
+      collection: instance,
+      model,
+      schema,
+    } = createElectroMocks(Site, mockRecord));
   });
 
   describe('constructor', () => {
@@ -90,9 +53,10 @@ describe('SiteCollection', () => {
       expect(instance).to.be.an('object');
       expect(instance.electroService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);
+      expect(instance.schema).to.equal(schema);
       expect(instance.log).to.equal(mockLogger);
 
-      expect(mockSiteModel).to.be.an('object');
+      expect(model).to.be.an('object');
     });
   });
 

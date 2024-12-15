@@ -17,8 +17,12 @@ import {
   capitalize,
   entityNameToCollectionName,
   entityNameToIdName,
-  entityNameToReferenceMethodName, idNameToEntityName, modelNameToEntityName,
+  entityNameToReferenceMethodName,
+  idNameToEntityName,
+  isNonEmptyArray,
 } from '../../util/util.js';
+
+import Reference from './reference.js';
 
 /**
  * Base - A base class for representing individual entities in the application.
@@ -40,23 +44,28 @@ class BaseModel {
    * Constructs an instance of BaseModel.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.
-   * @param {Object} entityRegistry - The registry holding entities, their schema and collection..
+   * @param {EntityRegistry} entityRegistry - The registry holding entities, their schema
+   * and collection.
+   * @param {Schema} schema - The schema for the entity.
    * @param {Object} record - The initial data for the entity instance.
    * @param {Object} log - A logger for capturing logging information.
    */
-  constructor(electroService, entityRegistry, record, log) {
+  constructor(electroService, entityRegistry, schema, record, log) {
+    this.electroService = electroService;
     this.entityRegistry = entityRegistry;
+    this.schema = schema;
     this.record = record;
-    this.entityName = modelNameToEntityName(this.constructor.name);
-    this.collection = entityRegistry.getCollection(
-      entityNameToCollectionName(this.constructor.name),
-    );
-    this.entity = electroService.entities[this.entityName];
-    this.idName = entityNameToIdName(this.entityName);
     this.log = log;
+
+    this.entityName = schema.getEntityName();
+    this.idName = entityNameToIdName(this.entityName);
+
+    this.collection = entityRegistry.getCollection(schema.getCollectionName());
+    this.entity = electroService.entities[this.entityName];
+
     this.referencesCache = {};
 
-    this.patcher = new Patcher(this.entity, this.record);
+    this.patcher = new Patcher(this.entity, this.schema, this.record);
 
     this.#initializeReferences();
     this.#initializeAttributes();
@@ -69,23 +78,19 @@ class BaseModel {
    * @private
    */
   #initializeReferences() {
-    const { references } = this.entity.model.original;
-    if (!isNonEmptyObject(references)) {
-      return;
-    }
+    const references = this.schema.getReferences();
 
-    for (const [type, refs] of Object.entries(references)) {
-      refs.forEach((ref) => {
-        const { target } = ref;
-        const methodName = entityNameToReferenceMethodName(target, type);
+    references.forEach((ref) => {
+      const target = ref.getTarget();
+      const type = ref.getType();
+      const methodName = entityNameToReferenceMethodName(target, type);
 
-        this[methodName] = async () => this._fetchReference(type, target);
-      });
-    }
+      this[methodName] = async () => this._fetchReference(type, target);
+    });
   }
 
   #initializeAttributes() {
-    const { attributes } = this.entity.model.schema;
+    const attributes = this.schema.getAttributes();
 
     if (!isNonEmptyObject(attributes)) {
       return;
@@ -95,8 +100,9 @@ class BaseModel {
       const capitalized = capitalize(name);
       const getterMethodName = `get${capitalized}`;
       const setterMethodName = `set${capitalized}`;
-      const isReference = this.entity.model.original
-        .references?.belongs_to?.some((ref) => ref.target === idNameToEntityName(name));
+      const isReference = this.schema
+        .getReferencesByType(Reference.TYPES.BELONGS_TO)
+        .some((ref) => ref.getTarget() === idNameToEntityName(name));
 
       if (!this[getterMethodName] || name === this.idName) {
         this[getterMethodName] = () => this.record[name];
@@ -125,7 +131,7 @@ class BaseModel {
    * fetched references to avoid redundant database queries.
    * @param {string} targetName - The name of the entity to cache.
    * @param {*} reference - The reference to cache.
-   * @private
+   * @protected
    */
   _cacheReference(targetName, reference) {
     this.referencesCache[targetName] = reference;
@@ -153,22 +159,58 @@ class BaseModel {
     const collectionName = entityNameToCollectionName(targetName);
     const targetCollection = this.entityRegistry.getCollection(collectionName);
 
-    if (type === 'belongs_to' || type === 'has_one') {
+    if (type === 'belongs_to') {
       const foreignKey = entityNameToIdName(targetName);
       const id = this.record[foreignKey];
       if (!id) return null;
 
       result = await targetCollection.findById(id);
+    } else if (type === 'has_one') {
+      const foreignKey = entityNameToIdName(this.entityName);
+      result = await targetCollection.findByIndexKeys({ [foreignKey]: this.getId() });
     } else if (type === 'has_many') {
       const foreignKey = entityNameToIdName(this.entityName);
       result = await targetCollection.allByIndexKeys({ [foreignKey]: this.getId() });
     }
 
     if (result) {
-      await this._cacheReference(targetName, result);
+      this._cacheReference(targetName, result);
     }
 
     return result;
+  }
+
+  async #fetchDependents() {
+    const promises = [];
+
+    const relationshipTypes = [
+      Reference.TYPES.HAS_MANY,
+      Reference.TYPES.HAS_ONE,
+    ];
+
+    relationshipTypes.forEach((type) => {
+      const refs = this.schema.getReferencesByType(type);
+      const targets = refs.filter((ref) => ref.isRemoveDependents());
+
+      targets.forEach((ref) => {
+        const target = ref.getTarget();
+        promises.push(
+          this._fetchReference(type, target)
+            .then((dependent) => {
+              if (isNonEmptyArray(dependent)) {
+                return dependent;
+              } else if (isNonEmptyObject(dependent)) {
+                return [dependent];
+              }
+              return null;
+            }),
+        );
+      });
+    });
+
+    const results = await Promise.all(promises);
+
+    return results.flat().filter((dependent) => dependent !== null);
   }
 
   /**
@@ -196,16 +238,31 @@ class BaseModel {
   }
 
   /**
-   * Removes the current entity from the database.
+   * Removes the current entity from the database. This method also removes any dependent
+   * entities associated with the current entity. For example, if the current entity has
+   * a has_many relationship with another entity, the dependent entity will be removed.
+   * When adding a reference to an entity, the dependent entity will be removed if the
+   * removeDependentss flag is set to true in the reference definition.
+   *
+   * Dependents are removed by calling the remove method on each dependent entity, which in turn
+   * will also remove any dependent entities associated with the dependent entity. This may result
+   * in a cascade effect where multiple entities are removed. Consider the destructive
+   * and performance implications before using this method.
    * @async
    * @returns {Promise<BaseModel>} - A promise that resolves to the current instance of the entity
-   * after it has been removed.
+   * after it and its dependents have been removed.
    * @throws {Error} - Throws an error if the removal fails.
    */
   async remove() {
     try {
-      // todo: remove dependents (child associations)
-      await this.entity.remove({ [this.idName]: this.getId() }).go();
+      const dependents = await this.#fetchDependents();
+      const removePromises = dependents.map((dependent) => dependent.remove());
+      removePromises.push(this.entity.remove({ [this.idName]: this.getId() }).go());
+
+      this.log.info(`Removing entity ${this.entityName} with ID ${this.getId()} and ${dependents.length} dependents`);
+
+      await Promise.all(removePromises);
+
       return this;
     } catch (error) {
       this.log.error('Failed to remove record', error);
@@ -224,6 +281,7 @@ class BaseModel {
   async save() {
     // todo: validate associations
     try {
+      this.log.info(`Saving entity ${this.entityName} with ID ${this.getId()}`);
       await this.patcher.save();
       // todo: in case references are updated, clear or refresh references cache
       return this;
@@ -238,7 +296,7 @@ class BaseModel {
    * @returns {Object} - A JSON representation of the entity attributes.
    */
   toJSON() {
-    const { attributes } = this.entity.model.schema;
+    const attributes = this.schema.getAttributes();
 
     return Object.keys(attributes).reduce((json, key) => {
       if (this.record[key] !== undefined) {

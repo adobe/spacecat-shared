@@ -31,11 +31,11 @@ describe('EntityRegistry', () => {
     MockModel,
     MockCollection,
     {
-      attributes: {},
-      indexes: {},
+      attributes: { test: {} },
+      indexes: { test: {} },
       serviceName: 'SpaceDog',
-      schemaVersion: '1',
-      references: {},
+      schemaVersion: 1,
+      references: [],
     },
   );
 
@@ -97,8 +97,12 @@ describe('EntityRegistry', () => {
     expect(Object.keys(entities)).to.have.lengthOf(1);
     expect(entities).to.deep.equal({
       mockModel: {
-        attributes: {},
-        indexes: {},
+        attributes: {
+          test: {},
+        },
+        indexes: {
+          test: {},
+        },
         model: {
           entity: 'MockModel',
           service: 'SpaceDog',

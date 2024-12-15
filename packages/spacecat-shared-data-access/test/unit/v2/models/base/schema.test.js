@@ -43,7 +43,7 @@ const MockCollection = class MockEntityCollection extends BaseCollection {};
 describe('Schema', () => {
   const rawSchema = {
     serviceName: 'service',
-    schemaVersion: '1.0',
+    schemaVersion: 1,
     attributes: {
       id: { type: 'string' },
     },
@@ -67,7 +67,7 @@ describe('Schema', () => {
       expect(schema.modelClass).to.equal(MockModel);
       expect(schema.collectionClass).to.equal(MockCollection);
       expect(schema.serviceName).to.equal('service');
-      expect(schema.schemaVersion).to.equal('1.0');
+      expect(schema.schemaVersion).to.equal(1);
       expect(schema.attributes).to.deep.equal({ id: { type: 'string' } });
       expect(schema.indexes).to.deep.equal(rawSchema.indexes);
       expect(schema.references).to.deep.equal([{
@@ -75,6 +75,44 @@ describe('Schema', () => {
         target: 'Organization',
         type: 'belongs_to',
       }]);
+    });
+
+    it('throws an error if modelClass does not extend BaseModel', () => {
+      expect(() => new Schema({}, MockCollection, rawSchema)).to.throw('Model class must extend BaseModel');
+      expect(() => new Schema(String, MockCollection, rawSchema)).to.throw('Model class must extend BaseModel');
+    });
+
+    it('throws an error if collectionClass does not extend BaseCollection', () => {
+      expect(() => new Schema(MockModel, {}, rawSchema)).to.throw('Collection class must extend BaseCollection');
+      expect(() => new Schema(MockModel, String, rawSchema)).to.throw('Collection class must extend BaseCollection');
+    });
+
+    it('throws an error if schema does not have a service name', () => {
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, serviceName: '' })).to.throw('Schema must have a service name');
+    });
+
+    it('throws an error if schema does not have a positive integer', () => {
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, schemaVersion: 0 })).to.throw('Schema version must be a positive integer');
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, schemaVersion: 'test' })).to.throw('Schema version must be a positive integer');
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, schemaVersion: undefined })).to.throw('Schema version must be a positive integer');
+    });
+
+    it('throws an error if schema does not have attributes', () => {
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, attributes: {} })).to.throw('Schema must have attributes');
+    });
+
+    it('throws an error if schema does not have indexes', () => {
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, indexes: {} })).to.throw('Schema must have indexes');
+    });
+
+    it('throws an error if schema does not have references', () => {
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, references: 'test' })).to.throw('References must be an array');
+    });
+
+    it('references default to an empty array', () => {
+      const schema = new Schema(MockModel, MockCollection, { ...rawSchema, references: undefined });
+
+      expect(schema.references).to.deep.equal([]);
     });
   });
 
@@ -150,7 +188,7 @@ describe('Schema', () => {
     });
 
     it('getVersion', () => {
-      expect(instance.getVersion()).to.equal('1.0');
+      expect(instance.getVersion()).to.equal(1);
     });
   });
 
@@ -159,7 +197,7 @@ describe('Schema', () => {
       expect(instance.toElectroDBSchema()).to.deep.equal({
         model: {
           entity: 'MockEntityModel',
-          version: '1.0',
+          version: '1',
           service: 'service',
         },
         attributes: { id: { type: 'string' } },

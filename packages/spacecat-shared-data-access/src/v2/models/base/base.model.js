@@ -131,7 +131,7 @@ class BaseModel {
    * fetched references to avoid redundant database queries.
    * @param {string} targetName - The name of the entity to cache.
    * @param {*} reference - The reference to cache.
-   * @private
+   * @protected
    */
   _cacheReference(targetName, reference) {
     this.referencesCache[targetName] = reference;
@@ -174,7 +174,7 @@ class BaseModel {
     }
 
     if (result) {
-      await this._cacheReference(targetName, result);
+      this._cacheReference(targetName, result);
     }
 
     return result;

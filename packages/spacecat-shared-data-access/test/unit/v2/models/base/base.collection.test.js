@@ -33,7 +33,8 @@ const createSchema = (service, indexes) => new Schema(
   MockModel,
   MockCollection,
   {
-    model: service.entities.mockEntityModel.model,
+    serviceName: 'service',
+    schemaVersion: 1,
     attributes: {
       someKey: { type: 'string' },
       someOtherKey: { type: 'number' },
@@ -57,7 +58,7 @@ describe('BaseCollection', () => {
   let baseCollectionInstance;
   let mockElectroService;
   let mockEntityRegistry;
-  let mockIndexes = {};
+  let mockIndexes = { primary: {} };
   let mockLogger;
 
   const mockRecord = {

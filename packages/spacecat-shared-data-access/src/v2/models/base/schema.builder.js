@@ -21,10 +21,11 @@ import {
   entityNameToIdName,
 } from '../../util/util.js';
 
-import Schema from './schema.js';
+import { INDEX_TYPES } from './constants.js';
 import BaseModel from './base.model.js';
 import BaseCollection from './base.collection.js';
 import Reference from './reference.js';
+import Schema from './schema.js';
 
 const DEFAULT_SERVICE_NAME = 'SpaceCat';
 
@@ -70,7 +71,7 @@ const UPDATED_AT_ATTRIBUTE_DATA = {
 };
 
 /** Certain index names (primary, all) are reserved and cannot be reused. */
-const RESERVED_INDEX_NAMES = [Schema.INDEX_TYPES.PRIMARY, Schema.INDEX_TYPES.ALL];
+const RESERVED_INDEX_NAMES = [INDEX_TYPES.PRIMARY, INDEX_TYPES.ALL];
 
 /**
  * Constructs a fully qualified index name.
@@ -238,7 +239,7 @@ class SchemaBuilder {
     }
 
     this.rawIndexes.all = {
-      index: createdIndexName(this.serviceName, this.entityName, Schema.INDEX_TYPES.ALL),
+      index: createdIndexName(this.serviceName, this.entityName, INDEX_TYPES.ALL),
       pk: { field: 'gsi1pk', template: entityNameToAllPKValue(this.entityName) },
       sk: { field: 'gsi1sk', composite: attributeNames },
     };
@@ -300,7 +301,7 @@ class SchemaBuilder {
       throw new Error('Sort key configuration (sk) is required and must be a non-empty object.');
     }
 
-    this.#internalAddIndex(name, partitionKey, sortKey, Schema.INDEX_TYPES.OTHER);
+    this.#internalAddIndex(name, partitionKey, sortKey, INDEX_TYPES.OTHER);
 
     return this;
   }
@@ -359,7 +360,7 @@ class SchemaBuilder {
         `by${capitalize(foreignKeyName)}`,
         { composite: [decapitalize(foreignKeyName)] },
         { composite: sortKeys },
-        Schema.INDEX_TYPES.BELONGS_TO,
+        INDEX_TYPES.BELONGS_TO,
       );
     }
 

@@ -14,6 +14,9 @@ import { hasText, isInteger } from '@adobe/spacecat-shared-utils';
 import pluralize from 'pluralize';
 
 const capitalize = (str) => (hasText(str) ? str[0].toUpperCase() + str.slice(1) : '');
+
+const classExtends = (clazz, base) => (typeof clazz === 'function' && clazz.prototype instanceof base);
+
 const decapitalize = (str) => (hasText(str) ? str[0].toLowerCase() + str.slice(1) : '');
 
 const collectionNameToEntityName = (collectionName) => collectionName.replace('Collection', '');
@@ -32,6 +35,8 @@ const entityNameToReferenceMethodName = (target, type) => {
 const entityNameToAllPKValue = (entityName) => `ALL_${pluralize.plural(entityName.toUpperCase())}`;
 
 const idNameToEntityName = (idName) => capitalize(pluralize.singular(idName.replace('Id', '')));
+
+const isPositiveInteger = (value) => isInteger(value) && value > 0;
 
 const keyNamesToIndexName = (keyNames) => `by${keyNames.map(capitalize).join('And')}`;
 
@@ -58,6 +63,7 @@ const isNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
 
 export {
   capitalize,
+  classExtends,
   collectionNameToEntityName,
   decapitalize,
   entityNameToCollectionName,
@@ -67,6 +73,7 @@ export {
   idNameToEntityName,
   incrementVersion,
   isNonEmptyArray,
+  isPositiveInteger,
   keyNamesToIndexName,
   keyNamesToMethodName,
   modelNameToEntityName,

@@ -10,18 +10,19 @@
  * governing permissions and limitations under the License.
  */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import { entityNameToIdName, modelNameToEntityName } from '../../util/util.js';
+import {
+  classExtends,
+  entityNameToIdName,
+  isPositiveInteger,
+  modelNameToEntityName,
+} from '../../util/util.js';
+
+import BaseModel from './base.model.js';
+import BaseCollection from './base.collection.js';
 
 class Schema {
-  static INDEX_TYPES = {
-    PRIMARY: 'primary',
-    ALL: 'all',
-    BELONGS_TO: 'belongs_to',
-    OTHER: 'other',
-  };
-
   /**
    * Constructs a new Schema instance.
    * @constructor
@@ -29,10 +30,10 @@ class Schema {
    * @param {BaseCollection} collectionClass - The class representing the model collection.
    * @param {object} rawSchema - The raw schema data.
    * @param {string} rawSchema.serviceName - The name of the service.
-   * @param {string} rawSchema.schemaVersion - The version of the schema.
+   * @param {number} rawSchema.schemaVersion - The version of the schema.
    * @param {object} rawSchema.attributes - The attributes of the schema.
    * @param {object} rawSchema.indexes - The indexes of the schema.
-   * @param {object} [rawSchema.references] - The references of the schema.
+   * @param {Reference[]} [rawSchema.references] - The references of the schema.
    */
   constructor(
     modelClass,
@@ -46,7 +47,39 @@ class Schema {
     this.schemaVersion = rawSchema.schemaVersion;
     this.attributes = rawSchema.attributes;
     this.indexes = rawSchema.indexes;
-    this.references = rawSchema.references;
+    this.references = rawSchema.references || [];
+
+    this.#validateSchema();
+  }
+
+  #validateSchema() {
+    if (!classExtends(this.modelClass, BaseModel)) {
+      throw new Error('Model class must extend BaseModel');
+    }
+
+    if (!classExtends(this.collectionClass, BaseCollection)) {
+      throw new Error('Collection class must extend BaseCollection');
+    }
+
+    if (!hasText(this.serviceName)) {
+      throw new Error('Schema must have a service name');
+    }
+
+    if (!isPositiveInteger(this.schemaVersion)) {
+      throw new Error('Schema version must be a positive integer');
+    }
+
+    if (!isNonEmptyObject(this.attributes)) {
+      throw new Error('Schema must have attributes');
+    }
+
+    if (!isNonEmptyObject(this.indexes)) {
+      throw new Error('Schema must have indexes');
+    }
+
+    if (!Array.isArray(this.references)) {
+      throw new Error('References must be an array');
+    }
   }
 
   getAttribute(name) {

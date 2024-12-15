@@ -28,7 +28,7 @@ import {
   keyNamesToIndexName,
   keyNamesToMethodName,
 } from '../../util/util.js';
-import Schema from './schema.js';
+import { INDEX_TYPES } from './constants.js';
 
 function isValidParent(parent, child) {
   if (!hasText(parent.entityName)) {
@@ -101,10 +101,10 @@ function findIndexNameByKeys(indexes, keys) {
   }
 
   if (indexes.all) {
-    return Schema.INDEX_TYPES.ALL;
+    return INDEX_TYPES.ALL;
   }
 
-  return Schema.INDEX_TYPES.PRIMARY;
+  return INDEX_TYPES.PRIMARY;
 }
 
 /**
@@ -155,7 +155,7 @@ class BaseCollection {
    * @private
    */
   #initializeCollectionMethods() {
-    const indexes = this.schema.getIndexes([Schema.INDEX_TYPES.PRIMARY]);
+    const indexes = this.schema.getIndexes([INDEX_TYPES.PRIMARY]);
 
     Object.keys(indexes).forEach((indexName) => {
       const indexKeys = this.schema.getIndexKeys(indexName);
@@ -313,7 +313,7 @@ class BaseCollection {
     }
 
     const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
-    return this.#queryByIndexKeys(keys, { ...options, index: Schema.INDEX_TYPES.ALL, limit: 1 });
+    return this.#queryByIndexKeys(keys, { ...options, index: INDEX_TYPES.ALL, limit: 1 });
   }
 
   /**

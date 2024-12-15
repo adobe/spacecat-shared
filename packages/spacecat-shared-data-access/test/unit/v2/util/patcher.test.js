@@ -79,10 +79,12 @@ describe('Patcher', () => {
       MockModel,
       MockCollection,
       {
+        serviceName: 'service',
+        schemaVersion: 1,
         attributes: mockEntity.model.schema.attributes,
         indexes: mockEntity.model.indexes,
         model: mockEntity.model,
-        references: {},
+        references: [],
       },
     );
 

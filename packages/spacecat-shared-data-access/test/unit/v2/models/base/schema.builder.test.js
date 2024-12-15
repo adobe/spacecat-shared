@@ -65,7 +65,7 @@ describe('SchemaBuilder', () => {
       expect(instance.serviceName).to.equal('SpaceCat');
       expect(instance.schemaVersion).to.equal(1);
       expect(instance.indexes).to.deep.equal({});
-      expect(instance.references).to.deep.equal({ belongs_to: [], has_many: [], has_one: [] });
+      expect(instance.references).to.deep.equal([]);
       expect(instance.attributes).to.deep.equal({
         mockModelId: {
           default: instance.attributes.mockModelId.default,
@@ -236,31 +236,50 @@ describe('SchemaBuilder', () => {
     });
 
     it('successfully adds a has_many reference', () => {
-      const result = instance.addReference('has_many', 'someEntity');
+      const result = instance.addReference('has_many', 'SomeEntity');
 
       expect(result).to.equal(instance);
-      expect(instance.references.has_many)
-        .to.deep.equal([{ target: 'someEntity', removeDependent: false }]);
+      expect(instance.references).to.be.an('array').with.length(1);
+      expect(instance.references[0])
+        .to.deep.equal({
+          options: {
+            removeDependents: false,
+          },
+          target: 'SomeEntity',
+          type: 'has_many',
+        });
       expect(instance.attributes).to.not.have.property('someEntityId');
       expect(instance.rawIndexes.belongs_to).to.not.have.property('bySomeEntityId');
     });
 
-    it('successfully adds a has_many reference with removeDependent', () => {
-      const result = instance.addReference('has_many', 'someEntity', [], { removeDependent: true });
+    it('successfully adds a has_many reference with removeDependents', () => {
+      const result = instance.addReference('has_many', 'SomeEntity', [], { removeDependents: true });
 
       expect(result).to.equal(instance);
-      expect(instance.references.has_many)
-        .to.deep.equal([{ target: 'someEntity', removeDependent: true }]);
+      expect(instance.references).to.be.an('array').with.length(1);
+      expect(instance.references[0]).to.deep.equal({
+        options: {
+          removeDependents: true,
+        },
+        target: 'SomeEntity',
+        type: 'has_many',
+      });
       expect(instance.attributes).to.not.have.property('someEntityId');
       expect(instance.rawIndexes.belongs_to).to.not.have.property('bySomeEntityId');
     });
 
     it('successfully adds a belongs_to reference', () => {
-      const result = instance.addReference('belongs_to', 'someEntity');
+      const result = instance.addReference('belongs_to', 'SomeEntity');
 
       expect(result).to.equal(instance);
-      expect(instance.references.belongs_to)
-        .to.deep.equal([{ target: 'someEntity', required: true }]);
+      expect(instance.references).to.be.an('array').with.length(1);
+      expect(instance.references[0]).to.deep.equal({
+        options: {
+          required: true,
+        },
+        target: 'SomeEntity',
+        type: 'belongs_to',
+      });
       expect(instance.attributes.someEntityId).to.deep.equal({
         required: true,
         type: 'string',
@@ -277,8 +296,14 @@ describe('SchemaBuilder', () => {
       const result = instance.addReference('belongs_to', 'someEntity', ['updatedAt'], { required: false });
 
       expect(result).to.equal(instance);
-      expect(instance.references.belongs_to)
-        .to.deep.equal([{ target: 'someEntity', required: false }]);
+      expect(instance.references).to.be.an('array').with.length(1);
+      expect(instance.references[0]).to.deep.equal({
+        options: {
+          required: false,
+        },
+        target: 'someEntity',
+        type: 'belongs_to',
+      });
       expect(instance.attributes.someEntityId).to.deep.equal({
         required: false,
         type: 'string',
@@ -414,17 +439,29 @@ describe('SchemaBuilder', () => {
             sk: { composite: ['updatedAt'], field: 'gsi5sk' },
           },
         },
-        references: {
-          belongs_to: [{
+        references: [
+          {
+            options: {
+              required: true,
+            },
             target: 'Organization',
-            required: true,
-          }, {
+            type: 'belongs_to',
+          },
+          {
+            options: {
+              required: false,
+            },
             target: 'Site',
-            required: false,
-          }],
-          has_many: [{ target: 'Audits', removeDependent: false }],
-          has_one: [],
-        },
+            type: 'belongs_to',
+          },
+          {
+            options: {
+              removeDependents: false,
+            },
+            target: 'Audits',
+            type: 'has_many',
+          },
+        ],
       });
     });
   });

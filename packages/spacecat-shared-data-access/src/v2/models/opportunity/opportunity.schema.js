@@ -27,7 +27,7 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addReference('belongs_to', 'Site', ['status', 'updatedAt'])
   .addReference('belongs_to', 'Audit', ['updatedAt'], { required: false })
-  .addReference('has_many', 'Suggestions', ['updatedAt'], { removeDependent: true })
+  .addReference('has_many', 'Suggestions', ['updatedAt'], { removeDependents: true })
   .addAttribute('runbook', {
     type: 'string',
     validate: (value) => !value || isValidUrl(value),

@@ -314,7 +314,7 @@ class SchemaBuilder {
    * @param {object} [options] - Additional reference options.
    * @param {boolean} [options.required=true] - Whether the reference is required. Only applies to
    * BELONGS_TO references.
-   * @param {boolean} [options.removeDependent=false] - Whether to remove dependent entities
+   * @param {boolean} [options.removeDependents=false] - Whether to remove dependent entities
    * on delete. Only applies to HAS_MANY and HAS_ONE references.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
    * @throws {Error} If type or entityName are invalid.
@@ -337,7 +337,7 @@ class SchemaBuilder {
       Reference.TYPES.HAS_MANY,
       Reference.TYPES.HAS_ONE,
     ].includes(type)) {
-      reference.options.removeDependent = options.removeDependent ?? false;
+      reference.options.removeDependents = options.removeDependents ?? false;
     }
 
     if (type === Reference.TYPES.BELONGS_TO) {
@@ -349,7 +349,7 @@ class SchemaBuilder {
 
       this.addAttribute(foreignKeyName, {
         type: 'string',
-        required: reference.required,
+        required: reference.options.required,
         validate: (
           value,
         ) => (reference.required ? uuidValidate(value) : !value || uuidValidate(value)),

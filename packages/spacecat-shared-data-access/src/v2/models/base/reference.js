@@ -50,7 +50,7 @@ class Reference {
   }
 
   isRemoveDependents() {
-    return this.options.removeDependent;
+    return this.options.removeDependents;
   }
 }
 

@@ -241,7 +241,7 @@ class BaseModel {
    * entities associated with the current entity. For example, if the current entity has
    * a has_many relationship with another entity, the dependent entity will be removed.
    * When adding a reference to an entity, the dependent entity will be removed if the
-   * removeDependent flag is set to true in the reference definition.
+   * removeDependentss flag is set to true in the reference definition.
    *
    * Dependents are removed by calling the remove method on each dependent entity, which in turn
    * will also remove any dependent entities associated with the dependent entity. This may result

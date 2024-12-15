@@ -146,7 +146,7 @@ describe('BaseModel', () => {
       const reference = Reference.fromJSON({
         type: Reference.TYPES.HAS_ONE,
         target: 'SomeModel',
-        options: { removeDependent: true },
+        options: { removeDependents: true },
       });
 
       schema.references.push(reference);
@@ -169,8 +169,8 @@ describe('BaseModel', () => {
     });
 
     it('does not remove dependents if none are found', async () => {
-      schema.references[0].options.removeDependent = true;
-      schema.references[1].options.removeDependent = true;
+      schema.references[0].options.removeDependents = true;
+      schema.references[1].options.removeDependents = true;
       mockEntityRegistry.getCollection.returns({
         findByIndexKeys: stub().resolves(null),
         allByIndexKeys: stub().resolves([]),

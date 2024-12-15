@@ -39,8 +39,8 @@ echo "$SITES" | jq -c '.Items[]' | while read -r site; do
     UPDATED_AT=$(echo $site | jq -r '.updatedAt.S')
     CONFIG=$(echo $site | jq -r '.config // {"M": {}}')
     HLX_CONFIG=$(echo $site | jq -r '.hlxConfig // {"M": {}}')
-    SITE_GSI1PK=$(echo $site | jq -r '.GSI1PK.S')
-    SITE_GSI1SK="$SITE_SK_#baseurl_${BASE_URL}"
+    SITE_GSI1PK="all_sites"
+    SITE_GSI1SK="$SITE_SK#baseurl_${BASE_URL}"
     SITE_GSI2PK="\$spacecat#organizationId_$ORG_ID"
     SITE_GSI2SK="$SITE_SK#updatedat_$UPDATED_AT"
     SITE_GSI3PK="\$spacecat#deliverytype_$DELIVERY_TYPE"
@@ -85,7 +85,7 @@ echo "$ORGANIZATIONS" | jq -c '.Items[]' | while read -r org; do
     ORGANIZATION_SK="\$organization_1"
     IMS_ORG_ID=$(echo $org | jq -r '.imsOrgId.S')
     NAME=$(echo $org | jq -r '.name.S')
-    ORGANIZATION_GSI1PK=$(echo $org | jq -r '.GSI1PK.S')
+    ORGANIZATION_GSI1PK="all_organizations"
     ORGANIZATION_GSI1SK="$ORGANIZATION_SK#imsorgid_${IMS_ORG_ID}"
     CREATED_AT=$(echo $org | jq -r '.createdAt.S')
     UPDATED_AT=$(echo $org | jq -r '.updatedAt.S')
@@ -216,7 +216,6 @@ echo "Migrated experiments successfully."
 
 # Migrate each site candidate
 echo "$SITE_CANDIDATES" | jq -c '.Items[]' | while read -r site_candidate; do
-    echo "Migrating site candidate..."
     SITE_CANDIDATE_ID=$(uuidgen)
     SITE_CANDIDATE_PK="\$spacecat#sitecandidateId_$SITE_CANDIDATE_ID"
     SITE_CANDIDATE_SK="\$sitecandidate_1"

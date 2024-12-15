@@ -13,6 +13,7 @@
 
 import { expect } from 'chai';
 import notfound from '../src/functions/404.js';
+import internalLinks404 from '../src/functions/404-internal-links.js';
 import experiment from '../src/functions/experiment.js';
 import trafficAcquisition from '../src/functions/traffic-acquisition.js';
 import highInorganicHighBounce from '../src/functions/opportunities/high-inorganic-high-bounce-rate.js';
@@ -23,7 +24,9 @@ import bundles from './fixtures/bundles.json' with { type: 'json' };
 import bundlesWithTraffic from './fixtures/bundles-with-traffic-source.json' with { type: 'json' };
 import bundlesWithForm from './fixtures/bundles-for-form-vitals.json' with { type: 'json' };
 import bundlesForVariant from './fixtures/bundles_for_variant.json' with { type: 'json' };
+import bundlesFor404InternalLinks from './fixtures/bundles-for-404-internal-links.json' with { type: 'json' };
 import expected404Result from './fixtures/notfound.json' with { type: 'json' };
+import expected404InternalLinksResult from './fixtures/404-internal-links-result.json' with { type: 'json' };
 import expectedExperimentsResult from './fixtures/experiments.json' with { type: 'json' };
 import expectedTrafficSourcesResult from './fixtures/trafficSources.json' with { type: 'json' };
 import expectedVariantResult from './fixtures/variant.json' with { type: 'json' };
@@ -40,6 +43,11 @@ describe('Query functions', () => {
   it('crunches 404 data', async () => {
     const notfoundResult = notfound.handler(bundles.rumBundles);
     expect(expected404Result).to.eql(notfoundResult);
+  });
+
+  it('crunches 404 internal links data', async () => {
+    const internalLinks404Result = internalLinks404.handler(bundlesFor404InternalLinks.rumBundles);
+    expect(expected404InternalLinksResult).to.eql(internalLinks404Result);
   });
 
   it('crunches experiment data', async () => {

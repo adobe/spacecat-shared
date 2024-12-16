@@ -118,6 +118,12 @@ class BaseModel {
         return;
       }
 
+      // generate a method to access "has_many" references by the foreign key and sort keys
+      // for example, if the relationship is Foo -> has_many -> Bar
+      // and the sort keys are ['status', 'rank'], we create:
+      //   getBarsByStatusAndRank(...)
+      //   getBarsByStatus(...)
+      //   getBars(...) - see above (_fetchReference)
       for (let i = 1; i <= sortKeys.length; i += 1) {
         const subset = sortKeys.slice(0, i);
         const prefix = `${entityNameToReferenceMethodName(target, type)}By`;

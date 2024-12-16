@@ -69,16 +69,36 @@ function parseAccessorArgs(context, requiredKeyNames, args) {
   return { keys, options };
 }
 
-function createAccessor(context, requiredKeyNames, all) {
-  return async (...args) => {
-    const { keys, options } = parseAccessorArgs(context, requiredKeyNames, args);
-
-    if (all) {
-      return context.allByIndexKeys(keys, options);
-    }
-
-    return context.findByIndexKeys(keys, options);
+export function createAccessor(
+  context,
+  collection,
+  name,
+  requiredKeyNames,
+  all,
+  foreignKey,
+) {
+  const foreignKeys = {
+    ...isNonEmptyObject(foreignKey) && { [foreignKey.name]: foreignKey.value },
   };
+  const accessor = async (...args) => {
+    const { keys, options } = parseAccessorArgs(collection, requiredKeyNames, args);
+    const allKeys = { ...foreignKeys, ...keys };
+
+    return all
+      ? collection.allByIndexKeys(allKeys, options)
+      : collection.findByIndexKeys(allKeys, options);
+  };
+
+  Object.defineProperty(
+    context,
+    name,
+    {
+      enumerable: false,
+      configurable: false,
+      writable: true,
+      value: accessor,
+    },
+  );
 }
 
 /**
@@ -174,8 +194,8 @@ class BaseCollection {
         // create accessor methods using the parsed keys
         // parseAccessorArgs and createAllAccessor/createFindAccessor will handle
         // argument validation and calling the correct query methods.
-        this[allMethodName] = createAccessor(this, subset, true);
-        this[findMethodName] = createAccessor(this, subset, false);
+        createAccessor(this, this, allMethodName, subset, true);
+        createAccessor(this, this, findMethodName, subset, false);
       }
     });
   }

@@ -244,6 +244,7 @@ describe('SchemaBuilder', () => {
         .to.deep.equal({
           options: {
             removeDependents: false,
+            sortKeys: [],
           },
           target: 'SomeEntity',
           type: 'has_many',
@@ -260,6 +261,7 @@ describe('SchemaBuilder', () => {
       expect(instance.references[0]).to.deep.equal({
         options: {
           removeDependents: true,
+          sortKeys: [],
         },
         target: 'SomeEntity',
         type: 'has_many',
@@ -276,6 +278,7 @@ describe('SchemaBuilder', () => {
       expect(instance.references[0]).to.deep.equal({
         options: {
           required: true,
+          sortKeys: [],
         },
         target: 'SomeEntity',
         type: 'belongs_to',
@@ -300,6 +303,7 @@ describe('SchemaBuilder', () => {
       expect(instance.references[0]).to.deep.equal({
         options: {
           required: false,
+          sortKeys: ['updatedAt'],
         },
         target: 'someEntity',
         type: 'belongs_to',
@@ -443,6 +447,7 @@ describe('SchemaBuilder', () => {
           {
             options: {
               required: true,
+              sortKeys: [],
             },
             target: 'Organization',
             type: 'belongs_to',
@@ -450,6 +455,7 @@ describe('SchemaBuilder', () => {
           {
             options: {
               required: false,
+              sortKeys: ['someField'],
             },
             target: 'Site',
             type: 'belongs_to',
@@ -457,6 +463,7 @@ describe('SchemaBuilder', () => {
           {
             options: {
               removeDependents: false,
+              sortKeys: [],
             },
             target: 'Audits',
             type: 'has_many',

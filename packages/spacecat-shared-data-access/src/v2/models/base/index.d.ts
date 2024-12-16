@@ -52,6 +52,7 @@ export interface EntityRegistry {
 }
 
 export interface Reference {
+  getSortKeys(): string[];
   getTarget(): string;
   getType(): string;
   isRemoveDependents(): boolean;
@@ -69,6 +70,7 @@ export interface Schema {
   getModelName(): string;
   getReferences(): Reference[];
   getReferencesByType(referenceType: string): Reference[];
+  getReferenceByTypeAndTarget(referenceType: string, target: string): Reference | undefined;
 }
 
 export interface SchemaBuilder {

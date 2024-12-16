@@ -157,6 +157,10 @@ class Schema {
     return this.references.filter((ref) => ref.type === type);
   }
 
+  getReferenceByTypeAndTarget(type, target) {
+    return this.references.find((ref) => ref.type === type && ref.target === target);
+  }
+
   getServiceName() {
     return this.serviceName;
   }

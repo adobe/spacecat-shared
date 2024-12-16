@@ -229,7 +229,53 @@ describe('Site IT', async () => {
 
     const notFound = await Site.findById(sampleData.sites[0].getId());
     expect(notFound).to.be.null;
+  });
 
-    // todo: add test for removing a site with associated entities once implemented
+  it('gets all audits for a site', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audits = await site.getAudits();
+
+    expect(audits).to.be.an('array');
+    expect(audits.length).to.equal(10);
+
+    for (let i = 0; i < audits.length; i += 1) {
+      const audit = audits[i];
+
+      expect(audit.getId()).to.be.a('string');
+      expect(audit.getSiteId()).to.equal(site.getId());
+    }
+  });
+
+  it('gets all audits for a site by type', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audits = await site.getAuditsByAuditType('cwv');
+
+    expect(audits).to.be.an('array');
+    expect(audits.length).to.equal(5);
+
+    for (let i = 0; i < audits.length; i += 1) {
+      const audit = audits[i];
+
+      expect(audit.getId()).to.be.a('string');
+      expect(audit.getSiteId()).to.equal(site.getId());
+      expect(audit.getAuditType()).to.equal('cwv');
+    }
+  });
+
+  it('gets all audits for a site by type and auditAt', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audits = await site.getAuditsByAuditTypeAndAuditedAt('cwv', '2024-12-03T08:00:55.754Z');
+
+    expect(audits).to.be.an('array');
+    expect(audits.length).to.equal(5);
+
+    for (let i = 0; i < audits.length; i += 1) {
+      const audit = audits[i];
+
+      expect(audit.getId()).to.be.a('string');
+      expect(audit.getSiteId()).to.equal(site.getId());
+      expect(audit.getAuditType()).to.equal('cwv');
+      expect(audit.getAuditedAt()).to.equal('2024-12-03T08:00:55.754Z');
+    }
   });
 });

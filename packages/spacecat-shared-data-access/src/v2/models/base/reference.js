@@ -41,6 +41,10 @@ class Reference {
     this.options = options;
   }
 
+  getSortKeys() {
+    return this.options.sortKeys;
+  }
+
   getTarget() {
     return this.target;
   }

@@ -16,6 +16,7 @@ import cwv from './functions/cwv.js';
 import formVitals from './functions/form-vitals.js';
 import experiment from './functions/experiment.js';
 import trafficAcquisition from './functions/traffic-acquisition.js';
+import totalMetrics from './functions/total-metrics.js';
 import variant from './functions/variant.js';
 import rageclick from './functions/opportunities/rageclick.js';
 import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
@@ -30,6 +31,7 @@ const HANDLERS = {
   'traffic-acquisition': trafficAcquisition,
   variant,
   rageclick,
+  totalMetrics,
   'high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
   'high-organic-low-ctr': highOrganicLowCtr,
 };

@@ -27,7 +27,6 @@ const SiteTopPage = (data = {}) => {
   self.getSource = () => self.state.source.toLowerCase();
   self.getGeo = () => self.state.geo;
   self.getImportedAt = () => self.state.importedAt;
-  self.getPreviousTopPageResult = () => self.state.previousTopPageResult;
 
   return Object.freeze(self);
 };

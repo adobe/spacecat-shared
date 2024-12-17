@@ -12,6 +12,7 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
+import { createAccessor } from '../../util/accessor.utils.js';
 import Patcher from '../../util/patcher.js';
 import {
   capitalize,
@@ -20,6 +21,7 @@ import {
   entityNameToReferenceMethodName,
   idNameToEntityName,
   isNonEmptyArray,
+  keyNamesToMethodName,
 } from '../../util/util.js';
 
 import Reference from './reference.js';
@@ -83,9 +85,52 @@ class BaseModel {
     references.forEach((ref) => {
       const target = ref.getTarget();
       const type = ref.getType();
-      const methodName = entityNameToReferenceMethodName(target, type);
+      const baseAccessorName = entityNameToReferenceMethodName(target, type);
 
-      this[methodName] = async () => this._fetchReference(type, target);
+      // the base accessor to the reference, e.g. for a belongs_to reference from Foo to Bar:
+      //   getBar()
+      this[baseAccessorName] = async () => this._fetchReference(type, target);
+
+      if (ref.getType() !== Reference.TYPES.HAS_MANY) {
+        return;
+      }
+
+      // additionally, for has_many references we generate accessor methods by
+      // the foreign key and sort keys for example, if the relationship is Foo -> has_many -> Bar
+      // and the sort keys are ['status', 'rank'], we create:
+      //   getBarsByStatusAndRank(...)
+      //   getBarsByStatus(...)
+      //   getBars(...) - see above (_fetchReference)
+
+      const reciprocalRef = this.schema.getReciprocalReference(this.entityRegistry, ref);
+
+      if (!(reciprocalRef instanceof Reference)) {
+        this.log.warn(`No reciprocal belongs_to found for ${this.schema.getModelName()} -> ${target}`);
+        return;
+      }
+
+      const sortKeys = reciprocalRef.getSortKeys();
+
+      if (!isNonEmptyArray(sortKeys)) {
+        this.log.debug(`No sort keys for ${this.schema.getModelName()} to ${target}`);
+        return;
+      }
+
+      const collectionName = entityNameToCollectionName(target);
+      const targetCollection = this.entityRegistry.getCollection(collectionName);
+
+      const prefix = `${entityNameToReferenceMethodName(target, type)}By`;
+      const targetIdName = entityNameToIdName(target);
+      const foreignKey = { name: this.idName, value: this.getId() };
+
+      for (let i = 1; i <= sortKeys.length; i += 1) {
+        const subset = sortKeys.slice(0, i);
+        const name = keyNamesToMethodName(subset, prefix, [targetIdName]);
+
+        createAccessor(this, targetCollection, name, subset, true, foreignKey);
+
+        this.log.info(`Created accessor ${name} for ${this.schema.getModelName()} to ${target}`);
+      }
     });
   }
 
@@ -145,36 +190,45 @@ class BaseModel {
    * References are defined in the entity model and are used to fetch associated entities.
    * @async
    * @param {string} type - The type of relationship (belongs_to, has_one, has_many).
-   * @param {string} targetName - The name of the entity to fetch.
+   * @param {string} target - The name of the entity to fetch.
    * @return {Promise<*|null>} - A promise that resolves to the fetched reference or null if
    * not found.
    * @private
    */
-  async _fetchReference(type, targetName) { /* eslint-disable no-underscore-dangle */
-    let result = this.#getCachedReference(targetName);
+  async _fetchReference(type, target) { /* eslint-disable no-underscore-dangle */
+    let result = this.#getCachedReference(target);
     if (result) {
       return result;
     }
 
-    const collectionName = entityNameToCollectionName(targetName);
+    const collectionName = entityNameToCollectionName(target);
     const targetCollection = this.entityRegistry.getCollection(collectionName);
 
-    if (type === 'belongs_to') {
-      const foreignKey = entityNameToIdName(targetName);
-      const id = this.record[foreignKey];
-      if (!id) return null;
-
-      result = await targetCollection.findById(id);
-    } else if (type === 'has_one') {
-      const foreignKey = entityNameToIdName(this.entityName);
-      result = await targetCollection.findByIndexKeys({ [foreignKey]: this.getId() });
-    } else if (type === 'has_many') {
-      const foreignKey = entityNameToIdName(this.entityName);
-      result = await targetCollection.allByIndexKeys({ [foreignKey]: this.getId() });
+    let foreignKey;
+    switch (type) {
+      case Reference.TYPES.BELONGS_TO: {
+        foreignKey = entityNameToIdName(target);
+        const id = this.record[foreignKey];
+        if (!id) return null;
+        result = await targetCollection.findById(id);
+        break;
+      }
+      case Reference.TYPES.HAS_ONE: {
+        foreignKey = entityNameToIdName(this.entityName);
+        result = await targetCollection.findByIndexKeys({ [foreignKey]: this.getId() });
+        break;
+      }
+      case Reference.TYPES.HAS_MANY: {
+        foreignKey = entityNameToIdName(this.entityName);
+        result = await targetCollection.allByIndexKeys({ [foreignKey]: this.getId() });
+        break;
+      }
+      default:
+        return null; // Unknown type
     }
 
     if (result) {
-      this._cacheReference(targetName, result);
+      this._cacheReference(target, result);
     }
 
     return result;

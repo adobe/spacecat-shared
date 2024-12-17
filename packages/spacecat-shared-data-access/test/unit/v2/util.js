@@ -60,7 +60,17 @@ export const createElectroMocks = (Model, record) => {
   };
 
   const mockEntityRegistry = {
-    getCollection: stub(),
+    getCollection: stub().returns({
+      schema: {
+        getReferenceByTypeAndTarget: stub().returns(null),
+        indexes: {
+          primaryIndex: {
+            pk: { facets: ['testEntityId'] },
+            sk: { facets: ['name', 'age'] },
+          },
+        },
+      },
+    }),
   };
 
   const mockElectroService = {

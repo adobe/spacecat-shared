@@ -53,7 +53,9 @@ When you create a schema with `SchemaBuilder`, the following attributes are auto
 
 A primary index is also set up, keyed by the `${entityName}Id` attribute, guaranteeing a straightforward way to retrieve entities by their unique ID.
 
-## Auto-Generated Methods by `BaseCollection`
+## Auto-Generated Methods
+
+### `BaseCollection`
 
 `BaseCollection` automatically generates `allBy...` and `findBy...` methods derived from your defined indexes. For example, if your schema defines an index composed of `opportunityId`, `status`, and `createdAt`, `BaseCollection` will generate:
 
@@ -77,14 +79,28 @@ const results = await Suggestion.allByOpportunityId('op-12345');
 const single = await Suggestion.findByOpportunityIdAndStatus('op-12345', 'OPEN');
 ```
 
-## Auto-Generated Methods by `BaseModel`
+### `BaseModel`
 
-For each attribute defined in the schema, `BaseModel` automatically creates getters and setters. For an attribute named `email`, you get:
+`BaseModel` provides methods for CRUD operations and reference handling:
 
-- `getEmail()` to retrieve the email
-- `setEmail(value)` to update the email
+- `save()`: Persists changes to the entity.
+- `remove()`: Deletes the entity from the database.
+- `get...()`: Getters for entity attributes.
+- `set...()`: Setters for entity attributes.
 
-When you define references (e.g., `User` belongs to `Organization`), `BaseModel` creates methods to fetch those referenced entities, e.g., `getOrganization()`.
+Additionally, `BaseModel` generates methods to fetch referenced entities. 
+For example, if `User` belongs to `Organization`, `BaseModel` will create:
+
+- `getOrganization()`: Fetch the referenced `Organization` entity.
+- `getOrganizationId()`: Retrieve the `Organization` ID.
+- `setOrganizationId(organizationId)`: Update the `Organization` reference.
+
+Conversely, the `Organization` entity will have:
+
+- `getUsers()`: Fetch all `User` entities referencing this `Organization`.
+- And with the `User`-Schema's `belongs_to` reciprocal reference expressing filterable sort keys, e.g. "email", "location":
+  - `getUsersByEmail(email)`: Fetch all `User` entities referencing this `Organization` with a specific email."
+  - `getUsersByEmailAndLocation(email, location)`: Fetch all `User` entities referencing this `Organization` with a specific email and location.
 
 **Example:**
 ```js

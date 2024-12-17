@@ -13,13 +13,13 @@
 import {
   hasText,
   isNonEmptyObject,
-  isNumber,
   isObject,
 } from '@adobe/spacecat-shared-utils';
 
 import { ElectroValidationError } from 'electrodb';
 
 import { removeElectroProperties } from '../../../../test/it/util/util.js';
+import { createAccessor } from '../../util/accessor.utils.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
 import {
@@ -38,47 +38,6 @@ function isValidParent(parent, child) {
   const foreignKey = `${parent.entityName}Id`;
 
   return child.record?.[foreignKey] === parent.record?.[foreignKey];
-}
-
-function validateValue(context, keyName, value) {
-  const { type } = context.schema.getAttribute(keyName);
-  const validator = type === 'number' ? isNumber : hasText;
-
-  if (!validator(value)) {
-    throw new ValidationError(`${keyName} is required`);
-  }
-}
-
-function parseAccessorArgs(context, requiredKeyNames, args) {
-  const keys = {};
-  for (let i = 0; i < requiredKeyNames.length; i += 1) {
-    const keyName = requiredKeyNames[i];
-    const keyValue = args[i];
-
-    validateValue(context, keyName, keyValue);
-
-    keys[keyName] = keyValue;
-  }
-
-  let options = {};
-
-  if (args.length > requiredKeyNames.length) {
-    options = args[requiredKeyNames.length];
-  }
-
-  return { keys, options };
-}
-
-function createAccessor(context, requiredKeyNames, all) {
-  return async (...args) => {
-    const { keys, options } = parseAccessorArgs(context, requiredKeyNames, args);
-
-    if (all) {
-      return context.allByIndexKeys(keys, options);
-    }
-
-    return context.findByIndexKeys(keys, options);
-  };
 }
 
 /**
@@ -155,28 +114,24 @@ class BaseCollection {
    * @private
    */
   #initializeCollectionMethods() {
-    const indexes = this.schema.getIndexes([INDEX_TYPES.PRIMARY]);
+    const indexAccessors = this.schema.getIndexAccessors();
 
-    Object.keys(indexes).forEach((indexName) => {
-      const indexKeys = this.schema.getIndexKeys(indexName);
-
-      // generate a method for each prefix of the allKeys array
-      // for example, if allKeys = ['opportunityId', 'status'], we create:
+    indexAccessors.forEach(({ indexName, keySets }) => {
+      // generate a method for each prefix of the keySets array
+      // for example, if keySets = ['opportunityId', 'status'], we create:
       //   allByOpportunityId(...)
       //   findByOpportunityId(...)
       //   allByOpportunityIdAndStatus(...)
       //   findByOpportunityIdAndStatus(...)
-      for (let i = 1; i <= indexKeys.length; i += 1) {
-        const subset = indexKeys.slice(0, i); // prefix of keys
+      keySets.forEach((subset) => {
         const allMethodName = keyNamesToMethodName(subset, 'allBy');
         const findMethodName = keyNamesToMethodName(subset, 'findBy');
 
-        // create accessor methods using the parsed keys
-        // parseAccessorArgs and createAllAccessor/createFindAccessor will handle
-        // argument validation and calling the correct query methods.
-        this[allMethodName] = createAccessor(this, subset, true);
-        this[findMethodName] = createAccessor(this, subset, false);
-      }
+        createAccessor(this, this, allMethodName, subset, true);
+        createAccessor(this, this, findMethodName, subset, false);
+
+        this.log.info(`Created accessors for index [${indexName}] with keys [${subset.join(', ')}]`);
+      });
     });
   }
 

@@ -18,7 +18,7 @@ import {
   capitalize,
   decapitalize,
   entityNameToAllPKValue,
-  entityNameToIdName,
+  entityNameToIdName, isNonEmptyArray,
 } from '../../util/util.js';
 
 import { INDEX_TYPES } from './constants.js';
@@ -320,7 +320,7 @@ class SchemaBuilder {
    * @returns {SchemaBuilder} Returns this builder for method chaining.
    * @throws {Error} If type or entityName are invalid.
    */
-  addReference(type, entityName, sortKeys = ['updatedAt'], options = {}) {
+  addReference(type, entityName, sortKeys = [], options = {}) {
     if (!Reference.isValidType(type)) {
       throw new Error(`Invalid referenceType: "${type}".`);
     }
@@ -331,7 +331,7 @@ class SchemaBuilder {
     const reference = {
       type,
       target: entityName,
-      options: {},
+      options: { sortKeys },
     };
 
     if ([
@@ -359,7 +359,7 @@ class SchemaBuilder {
       this.#internalAddIndex(
         `by${capitalize(foreignKeyName)}`,
         { composite: [decapitalize(foreignKeyName)] },
-        { composite: sortKeys },
+        { composite: isNonEmptyArray(sortKeys) ? sortKeys : ['updatedAt'] },
         INDEX_TYPES.BELONGS_TO,
       );
     }

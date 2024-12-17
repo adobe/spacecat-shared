@@ -13,17 +13,24 @@
 /* eslint-env mocha */
 
 import { expect, use as chaiUse } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import { Entity } from 'electrodb';
 import { spy, stub } from 'sinon';
-import chaiAsPromised from 'chai-as-promised';
+import sinonChai from 'sinon-chai';
 
 import BaseModel from '../../../../../src/v2/models/base/base.model.js';
+import KeyEventSchema from '../../../../../src/v2/models/key-event/key-event.schema.js';
 import OpportunitySchema from '../../../../../src/v2/models/opportunity/opportunity.schema.js';
+import SuggestionSchema from '../../../../../src/v2/models/suggestion/suggestion.schema.js';
 import Reference from '../../../../../src/v2/models/base/reference.js';
+import BaseCollection from '../../../../../src/v2/models/base/base.collection.js';
 
 chaiUse(chaiAsPromised);
+chaiUse(sinonChai);
 
 const opportunityEntity = new Entity(OpportunitySchema.toElectroDBSchema());
+const suggestionEntity = new Entity(SuggestionSchema.toElectroDBSchema());
+const MockCollection = class MockCollection extends BaseCollection {};
 
 describe('BaseModel', () => {
   let mockElectroService;
@@ -39,16 +46,24 @@ describe('BaseModel', () => {
 
   beforeEach(() => {
     mockLogger = {
+      debug: spy(),
       error: spy(),
       info: spy(),
+      warn: spy(),
     };
 
     mockEntityRegistry = {
       getCollection: stub().returns({
-        findByIndexKeys: stub().resolves({}),
-        allByIndexKeys: stub().resolves([]),
+        schema: {
+          getReferenceByTypeAndTarget: stub().returns(null),
+        },
       }),
     };
+
+    mockEntityRegistry.getCollection.withArgs('OpportunityCollection').returns({
+      findByIndexKeys: stub().resolves({}),
+      allByIndexKeys: stub().resolves([]),
+    });
 
     mockElectroService = {
       entities: {
@@ -56,8 +71,24 @@ describe('BaseModel', () => {
           entity: opportunityEntity,
           remove: stub().returns({ go: stub().resolves() }),
         },
+        suggestion: {
+          entity: suggestionEntity,
+          query: stub().returns({ primary: { go: stub().resolves() } }),
+          indexes: {
+            primary: {},
+          },
+        },
       },
     };
+
+    const SuggestionCollection = new MockCollection(
+      mockElectroService,
+      mockEntityRegistry,
+      SuggestionSchema,
+      mockLogger,
+    );
+
+    mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(SuggestionCollection);
 
     baseModelInstance = new BaseModel(
       mockElectroService,
@@ -124,10 +155,13 @@ describe('BaseModel', () => {
       originalReferences = [...OpportunitySchema.references];
       schema = OpportunitySchema;
 
-      mockEntityRegistry.getCollection.returns({
+      const collectionMethods = {
         findByIndexKeys: stub().resolves(dependent),
         allByIndexKeys: stub().resolves(dependents),
-      });
+      };
+
+      mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(collectionMethods);
+      mockEntityRegistry.getCollection.withArgs('SomeModelCollection').returns(collectionMethods);
       mockElectroService.entities.opportunity.remove.returns({ go: () => Promise.resolve() });
     });
 
@@ -156,8 +190,8 @@ describe('BaseModel', () => {
       // self remove
       expect(mockElectroService.entities.opportunity.remove.calledOnce).to.be.true;
       // dependents remove: 3 = has_many, 1 = has_one
-      expect(dependent.remove.callCount).to.equal(4);
-      expect(mockLogger.error.notCalled).to.be.true;
+      expect(dependent.remove).to.have.callCount(4);
+      expect(mockLogger.error).to.not.have.been.called;
     });
 
     it('does not remove dependents if there aren\'t any', async () => {
@@ -171,7 +205,7 @@ describe('BaseModel', () => {
     it('does not remove dependents if none are found', async () => {
       schema.references[0].options.removeDependents = true;
       schema.references[1].options.removeDependents = true;
-      mockEntityRegistry.getCollection.returns({
+      mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns({
         findByIndexKeys: stub().resolves(null),
         allByIndexKeys: stub().resolves([]),
       });
@@ -207,47 +241,89 @@ describe('BaseModel', () => {
     });
   });
 
-  describe('_fetchReference', () => { /* eslint-disable no-underscore-dangle */
-    it('returns a cached reference if it exists', async () => {
-      baseModelInstance._cacheReference('Foo', 'bar');
-      const result = await baseModelInstance._fetchReference('has_many', 'Foo');
-      expect(result).to.equal('bar');
-    });
-
-    it('returns null if belongs_to id is not set', async () => {
-      const result = await baseModelInstance._fetchReference('belongs_to', 'Foo');
-      expect(result).to.be.null;
-    });
-
-    it('returns undefined if the reference does not exist', async () => {
-      mockEntityRegistry.getCollection.returns({ allByIndexKeys: stub() });
-      const result = await baseModelInstance._fetchReference('has_many', 'Foo');
-      expect(result).to.be.undefined;
-    });
-
-    it('fetches a belongs_to reference by ID', async () => {
-      mockEntityRegistry.getCollection.returns({
-        findById: stub().returns('bar'),
-        allByIndexKeys: stub().returns(['bar']),
+  describe('references', () => { /* eslint-disable no-underscore-dangle */
+    describe('_fetchReference', () => { /* eslint-disable no-underscore-dangle */
+      it('returns a cached reference if it exists', async () => {
+        baseModelInstance._cacheReference('Foo', 'bar');
+        const result = await baseModelInstance._fetchReference('has_many', 'Foo');
+        expect(result).to.equal('bar');
       });
-      baseModelInstance.record.fooId = '12345';
-      const result = await baseModelInstance._fetchReference('belongs_to', 'Foo');
-      expect(result).to.equal('bar');
 
-      expect(await baseModelInstance.getSuggestions()).to.not.throw;
+      it('returns null if belongs_to id is not set', async () => {
+        const result = await baseModelInstance._fetchReference('belongs_to', 'Foo');
+        expect(result).to.be.null;
+      });
+
+      it('returns undefined if the reference does not exist', async () => {
+        mockEntityRegistry.getCollection.returns({ allByIndexKeys: stub() });
+        const result = await baseModelInstance._fetchReference('has_many', 'Foo');
+        expect(result).to.be.undefined;
+      });
+
+      it('fetches a belongs_to reference by ID', async () => {
+        mockEntityRegistry.getCollection.withArgs('FooCollection').returns({
+          findById: stub().returns('bar'),
+        });
+        mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns({
+          allByIndexKeys: stub().returns(['bar']),
+        });
+        baseModelInstance.record.fooId = '12345';
+        const result = await baseModelInstance._fetchReference('belongs_to', 'Foo');
+        expect(result).to.equal('bar');
+
+        expect(await baseModelInstance.getSuggestions()).to.not.throw;
+      });
+
+      it('fetches a has_one reference by ID', async () => {
+        mockEntityRegistry.getCollection.returns({ findByIndexKeys: stub().returns('bar') });
+        baseModelInstance.record.fooId = '12345';
+        const result = await baseModelInstance._fetchReference('has_one', 'Foo');
+        expect(result).to.equal('bar');
+      });
+
+      it('fetches a has_many reference by foreign key', async () => {
+        mockEntityRegistry.getCollection.returns({ allByIndexKeys: stub().returns(['bar']) });
+        const result = await baseModelInstance._fetchReference('has_many', 'Foo');
+        expect(result).to.deep.equal(['bar']);
+      });
     });
 
-    it('fetches a has_one reference by ID', async () => {
-      mockEntityRegistry.getCollection.returns({ findByIndexKeys: stub().returns('bar') });
-      baseModelInstance.record.fooId = '12345';
-      const result = await baseModelInstance._fetchReference('has_one', 'Foo');
-      expect(result).to.equal('bar');
-    });
+    describe('reciprocal', () => { /* eslint-disable no-underscore-dangle */
+      it('logs a warning if reference is not found', async () => {
+        mockEntityRegistry.getCollection.withArgs('FooCollection').returns(new MockCollection(
+          mockElectroService,
+          mockEntityRegistry,
+          KeyEventSchema,
+          mockLogger,
+        ));
+        OpportunitySchema.references.push(new Reference('has_many', 'Foos'));
 
-    it('fetches a has_many reference by foreign key', async () => {
-      mockEntityRegistry.getCollection.returns({ allByIndexKeys: stub().returns(['bar']) });
-      const result = await baseModelInstance._fetchReference('has_many', 'Foo');
-      expect(result).to.deep.equal(['bar']);
+        const result = new BaseModel(
+          mockElectroService,
+          mockEntityRegistry,
+          OpportunitySchema,
+          mockRecord,
+          mockLogger,
+        );
+
+        expect(result).to.be.an.instanceOf(BaseModel);
+        expect(mockLogger.warn).to.have.been.calledOnceWithExactly('No reciprocal belongs_to found for Opportunity -> Foos');
+      });
+
+      it('logs a debug message if reference sort keys are empty', async () => {
+        SuggestionSchema.references = [new Reference('belongs_to', 'Opportunity', { sortKeys: [] })];
+
+        const result = new BaseModel(
+          mockElectroService,
+          mockEntityRegistry,
+          OpportunitySchema,
+          mockRecord,
+          mockLogger,
+        );
+
+        expect(result).to.be.an.instanceOf(BaseModel);
+        expect(mockLogger.debug).to.have.been.calledOnceWithExactly('No sort keys for Opportunity to Suggestions');
+      });
     });
   });
 });

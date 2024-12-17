@@ -23,7 +23,7 @@ const collectionNameToEntityName = (collectionName) => collectionName.replace('C
 
 const entityNameToCollectionName = (entityName) => `${capitalize(pluralize.singular(entityName))}Collection`;
 
-const entityNameToIdName = (entityName) => `${decapitalize(entityName)}Id`;
+const entityNameToIdName = (entityName) => `${decapitalize(pluralize.singular(entityName))}Id`;
 
 const entityNameToReferenceMethodName = (target, type) => {
   const baseName = type === 'has_many'

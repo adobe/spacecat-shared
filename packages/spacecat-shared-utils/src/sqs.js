@@ -26,6 +26,15 @@ class SQS {
   }
 
   /**
+   * Check if the queue is a FIFO queue by examining its URL.
+   * @param {string} queueUrl - the URL of the SQS queue
+   * @returns {boolean} true if the queue is a FIFO queue, false otherwise
+   */
+  static #isFifoQueue(queueUrl) {
+    return hasText(queueUrl) && queueUrl.toLowerCase().endsWith('.fifo');
+  }
+
+  /**
    * Send a message to an SQS queue. For FIFO queues, messageGroupId is required.
    * @param {string} queueUrl - The URL of the SQS queue.
    * @param {object} message - The message body to send.
@@ -43,8 +52,8 @@ class SQS {
       QueueUrl: queueUrl,
     };
 
-    if (hasText(messageGroupId)) {
-      // MessageGroupId is required for FIFO queues
+    // Only include MessageGroupId if the queue is a FIFO queue
+    if (SQS.#isFifoQueue(queueUrl) && hasText(messageGroupId)) {
       params.MessageGroupId = messageGroupId;
     }
 
@@ -96,7 +105,7 @@ export function sqsEventAdapter(fn) {
       message = JSON.parse(records[0]?.body);
       log.info(`Received message with id: ${records[0]?.messageId}`);
     } catch (e) {
-      log.error('Function was not invoked properly, message body is not a valid JSON', e);
+      log.warn('Function was not invoked properly, message body is not a valid JSON', e);
       return new Response('', {
         status: 400,
         headers: {

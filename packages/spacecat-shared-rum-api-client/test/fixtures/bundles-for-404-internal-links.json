@@ -1,0 +1,156 @@
+{
+  "rumBundles": [
+    {
+      "id": "56ou",
+      "host": "rum.hlx.page",
+      "time": "2024-11-23T23:00:01.858Z",
+      "timeSlot": "2024-11-23T23:00:00.000Z",
+      "url": "https://www.petplace.com/a01",
+      "userAgent": "mobile:android:blink",
+      "weight": 200,
+      "events": [
+        {
+          "checkpoint": "navigate",
+          "target": "visible",
+          "source": "https://www.petplace.com/a01nf",
+          "timeDelta": 1858
+        },
+        {
+          "checkpoint": "navigate",
+          "target": "visible",
+          "source": "https://www.petplace.com/a01nf",
+          "timeDelta": 1654
+        },
+        {
+          "checkpoint": "404",
+          "target": "",
+          "source": "https://www.petplace.com/a01nf",
+          "timeDelta": 218
+        }
+      ]
+    },
+    {
+      "id": "2no",
+      "host": "rum.hlx.page",
+      "time": "2024-11-22T18:00:00.544Z",
+      "timeSlot": "2024-11-22T18:00:00.000Z",
+      "url": "https://www.petplace.com/a01",
+      "userAgent": "desktop:windows:blink",
+      "weight": 1800,
+      "events": [
+        {
+          "checkpoint": "navigate",
+          "target": "visible",
+          "source": "https://www.petplace.com/a02nf",
+          "timeDelta": 542
+        },
+        {
+          "checkpoint": "404",
+          "target": "xxxx",
+          "source": "https://www.petplace.com/a02nf",
+          "timeDelta": 45
+        }
+      ]
+    },
+    {
+      "id": "4FGLNSev",
+      "host": "rum.hlx.page",
+      "time": "2024-11-23T23:00:33.919Z",
+      "timeSlot": "2024-11-23T23:00:00.000Z",
+      "url": "https://www.petplace.com/a01",
+      "userAgent": "desktop:mac:blink",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "navigate",
+          "target": "hidden",
+          "source": "https://www.petplace.com/a03",
+          "timeDelta": -3599620
+        }
+      ]
+    },
+    {
+      "id": "Hdq",
+      "host": "rum.hlx.page",
+      "time": "2024-11-24T00:00:00.111Z",
+      "timeSlot": "2024-11-24T00:00:00.000Z",
+      "url": "https://www.petplace.com/a01",
+      "userAgent": "mobile:android:blink",
+      "weight": 100,
+      "events": []
+    },
+    {
+      "id": "9DTknv",
+      "host": "rum.hlx.page",
+      "time": "2024-11-24T00:00:14.264Z",
+      "timeSlot": "2024-11-24T00:00:00.000Z",
+      "url": "https://www.petplace.com/a01",
+      "userAgent": "mobile:android:blink",
+      "weight": 100,
+      "events": []
+    },
+    {
+      "id": "9LOQXfu",
+      "host": "rum.hlx.page",
+      "time": "2024-11-22T23:00:00.581Z",
+      "timeSlot": "2024-11-22T23:00:00.000Z",
+      "url": "https://www.petplace.com/a01",
+      "userAgent": "mobile:ios:webkit",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "404",
+          "target": "https://www.petplace.com/a04nf",
+          "source": "",
+          "timeDelta": 198
+        }
+      ]
+    },
+    {
+      "id": "047B",
+      "host": "rum.hlx.page",
+      "time": "2024-11-20T20:00:01.683Z",
+      "timeSlot": "2024-11-20T20:00:00.000Z",
+      "url": "https://www.petplace.com/ax02",
+      "userAgent": "desktop:windows",
+      "weight": 700,
+      "events": [
+        {
+          "checkpoint": "404",
+          "target": "ddd",
+          "source": "https://www.petplace.com/ax02nf",
+          "timeDelta": 259
+        },
+        {
+          "checkpoint": "navigate",
+          "target": "hidden",
+          "source": "https://www.petplace.com/ax02nf",
+          "timeDelta": 1680
+        }
+      ]
+    },
+    {
+      "id": "048C",
+      "host": "rum.hlx.page",
+      "time": "2024-11-20T20:00:01.683Z",
+      "timeSlot": "2024-11-20T20:00:00.000Z",
+      "url": "https://www.petplace.com/ax02",
+      "userAgent": "desktop:windows",
+      "weight": 500,
+      "events": [
+        {
+          "checkpoint": "404",
+          "target": "ddd",
+          "source": "https://www.petplace.com/ax02nf",
+          "timeDelta": 259
+        },
+        {
+          "checkpoint": "navigate",
+          "target": "hidden",
+          "source": "https://www.petplace.com/ax02nf",
+          "timeDelta": 1680
+        }
+      ]
+    }
+  ]
+}

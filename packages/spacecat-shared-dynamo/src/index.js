@@ -14,6 +14,7 @@ import AWSXray from 'aws-xray-sdk';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 
+import scan from './modules/scan.js';
 import query from './modules/query.js';
 import getItem from './modules/getItem.js';
 import putItem from './modules/putItem.js';
@@ -37,6 +38,7 @@ const createClient = (
     },
   }),
 ) => ({
+  scan: (params) => scan(docClient, params, log),
   query: (params) => query(docClient, params, log),
   getItem: (tableName, key) => getItem(docClient, tableName, key, log),
   putItem: (tableName, item) => putItem(docClient, tableName, item, log),

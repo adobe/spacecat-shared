@@ -872,6 +872,7 @@ export interface DataAccess {
   ) => Promise<ApiKey | null>;
 
   // site candidate functions
+  getSiteCandidates: () => Promise<SiteCandidate[]>;
   getSiteCandidateByBaseURL: (baseURL: string) => Promise<SiteCandidate>;
   upsertSiteCandidate: (siteCandidateDate: object) => Promise<SiteCandidate>;
   siteCandidateExists: (baseURL: string) => Promise<boolean>;

@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-utils-v1.23.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.7...@adobe/spacecat-shared-utils-v1.23.8) (2024-12-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#492](https://github.com/adobe/spacecat-shared/issues/492)) ([d4daba5](https://github.com/adobe/spacecat-shared/commit/d4daba5686c856f9f0029d805fb2b9f1b9baf777))
+
+# [@adobe/spacecat-shared-utils-v1.23.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.6...@adobe/spacecat-shared-utils-v1.23.7) (2024-12-13)
+
+
+### Bug Fixes
+
+* **sqs:** Support both standard and FIFO SQS queues ([#490](https://github.com/adobe/spacecat-shared/issues/490)) ([4a975b0](https://github.com/adobe/spacecat-shared/commit/4a975b0994d2df9fc296cfe900b1500aeb34e44f)), closes [#489](https://github.com/adobe/spacecat-shared/issues/489)
+
+# [@adobe/spacecat-shared-utils-v1.23.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.5...@adobe/spacecat-shared-utils-v1.23.6) (2024-12-10)
+
+
+### Bug Fixes
+
+* **sqs-wrapper:** decrease error log level ([#483](https://github.com/adobe/spacecat-shared/issues/483)) ([2c7bc99](https://github.com/adobe/spacecat-shared/commit/2c7bc998d0d137b24ca84356a4445a76e63053e3))
+
+# [@adobe/spacecat-shared-utils-v1.23.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.4...@adobe/spacecat-shared-utils-v1.23.5) (2024-12-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.11 ([#478](https://github.com/adobe/spacecat-shared/issues/478)) ([5fb4270](https://github.com/adobe/spacecat-shared/commit/5fb427066dd20b9525ee3420c0546f7bcad2c914))
+
+# [@adobe/spacecat-shared-utils-v1.23.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.3...@adobe/spacecat-shared-utils-v1.23.4) (2024-12-07)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#477](https://github.com/adobe/spacecat-shared/issues/477)) ([53d5c13](https://github.com/adobe/spacecat-shared/commit/53d5c13cd4e14a37b3778518a106f06fef6b90ac))
+
 # [@adobe/spacecat-shared-utils-v1.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.2...@adobe/spacecat-shared-utils-v1.23.3) (2024-12-05)
 
 

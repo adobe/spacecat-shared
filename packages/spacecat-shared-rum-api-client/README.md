@@ -53,39 +53,77 @@ console.log(`Query result: ${result}`)
 
 ## Available queries
 
-### cwv
+### Core Web Vitals (CWV)
 
-Calculates the CWV data for a given domain within the requested interval. It gets the 
-P75 values for LCP, CLS, INP, TTFB metrics, along with the number of data points available for
-each metric. Additionally, it provides grouping by URL and includes the count of page view data.
+Calculates the CWV data for a given domain within the requested interval. It retrieves the P75 
+values for **LCP**, **CLS**, **INP**, and **TTFB** metrics, along with the number of data points available for 
+each metric. 
+
+Additionally:
+
+- Metrics are **grouped by URL** and by **patterns** for groups of URLs, providing flexibility in analysis for both individual pages and logical collections of pages.
+- Includes a **device-level breakdown**, categorizing metrics separately for **desktop** and **mobile**.
+- Provides **page view counts** (pageviews) and **organic traffic** (organic) metrics, offering insights into user activity and search-driven traffic.
 
 An example response:
 
 ```json
 [
   {
-    "url": "https://www.aem.live/home",
-    "pageviews": 2620,
-    "lcp": 2099.699999988079,
-    "lcpCount": 9,
-    "cls": 0.020660136604802475,
-    "clsCount": 7,
-    "inp": 12,
-    "inpCount": 3,
-    "ttfb": 520.4500000476837,
-    "ttfbCount": 18
+    "type": "group",
+    "name": "Catalog",
+    "pattern": "https://www.aem.live/docs/*",
+    "pageviews": 12000,
+    "organic": 4000,
+    "metrics": [
+      {
+        "deviceType": "desktop",
+        "pageviews": 8000,
+        "organic": 3000,
+        "lcp": 40,
+        "lcpCount": 6,
+        "cls": 0.3,
+        "clsCount": 3,
+        "inp": 30,
+        "inpCount": 3,
+        "ttfb": 30,
+        "ttfbCount": 3
+      },
+      {
+        "deviceType": "mobile",
+        "pageviews": 1000,
+        "organic": 200,
+        "lcp": 40,
+        "lcpCount": 6,
+        "cls": 0.3,
+        "clsCount": 3,
+        "inp": 30,
+        "inpCount": 3,
+        "ttfb": 30,
+        "ttfbCount": 3
+      }
+    ]
   },
   {
-    "url": "https://www.aem.live/developer/block-collection",
-    "pageviews": 2000,
-    "lcp": 512.1249999403954,
-    "lcpCount": 4,
-    "cls": 0.0005409526209424976,
-    "clsCount": 4,
-    "inp": 20,
-    "inpCount": 2,
-    "ttfb": 122.90000003576279,
-    "ttfbCount": 4
+    "type": "url",
+    "url": "https://www.aem.live/home",
+    "pageviews": 2620,
+    "organic": 1900,
+    "metrics": [
+      {
+        "deviceType": "desktop",
+        "pageviews": 2420,
+        "organic": 1700,
+        "lcp": 2099.699999988079,
+        "lcpCount": 8,
+        "cls": 0.011145537287059668,
+        "clsCount": 7,
+        "inp": 8,
+        "inpCount": 5,
+        "ttfb": 548,
+        "ttfbCount": 16
+      }
+    ]
   }
 ]
 ```

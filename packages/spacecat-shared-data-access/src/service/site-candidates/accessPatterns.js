@@ -15,6 +15,21 @@ import { createSiteCandidate } from '../../models/site-candidate.js';
 import { SiteCandidateDto } from '../../dto/site-candidate.js';
 
 /**
+ * Retrieves all site candidates.
+ *
+ * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
+ * @param {DataAccessConfig} config - The data access config.
+ * @returns {Promise<Readonly<Site>[]>} A promise that resolves to an array of all site candidates.
+ */
+export const getSiteCandidates = async (dynamoClient, config) => {
+  const dynamoItems = await dynamoClient.scan({
+    TableName: config.tableNameSiteCandidates,
+  });
+
+  return dynamoItems.map((dynamoItem) => SiteCandidateDto.fromDynamoItem(dynamoItem));
+};
+
+/**
  * Checks if a site candidate exists in site candidates table using base url
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.

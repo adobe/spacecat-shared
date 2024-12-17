@@ -28,7 +28,7 @@ import removeItem from './modules/removeItem.js';
  * @param {DynamoDBDocument} docClient - The AWS SDK DynamoDB Document client instance.
  * @returns {Object} A client object with methods to interact with DynamoDB.
  */
-const createClient = (
+const createClient = async (
   log = console,
   dbClient = AWSXray.captureAWSv3Client(new DynamoDB()),
   docClient = DynamoDBDocument.from(dbClient, {
@@ -37,12 +37,30 @@ const createClient = (
       removeUndefinedValues: true,
     },
   }),
-) => ({
-  scan: (params) => scan(docClient, params, log),
-  query: (params) => query(docClient, params, log),
-  getItem: (tableName, key) => getItem(docClient, tableName, key, log),
-  putItem: (tableName, item) => putItem(docClient, tableName, item, log),
-  removeItem: (tableName, key) => removeItem(docClient, tableName, key, log),
-});
+) => {
+  // Add middleware to log connection details
+  dbClient.middlewareStack.add(
+    (next) => async (args) => {
+      // Resolve the endpoint dynamically
+      const region = await dbClient.config.region();
+      console.log('DynamoDB Connection Details:');
+      console.log('Region:', region);
+
+      // Proceed to the next middleware
+      return next(args);
+    },
+    {
+      step: 'initialize', // Log during the initialization phase
+    },
+  );
+
+  return {
+    scan: (params) => scan(docClient, params, log),
+    query: (params) => query(docClient, params, log),
+    getItem: (tableName, key) => getItem(docClient, tableName, key, log),
+    putItem: (tableName, item) => putItem(docClient, tableName, item, log),
+    removeItem: (tableName, key) => removeItem(docClient, tableName, key, log),
+  };
+};
 
 export { createClient };

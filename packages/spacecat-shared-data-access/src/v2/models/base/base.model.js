@@ -12,6 +12,7 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
+import { createAccessor } from '../../util/accessor.utils.js';
 import Patcher from '../../util/patcher.js';
 import {
   capitalize,
@@ -19,10 +20,10 @@ import {
   entityNameToIdName,
   entityNameToReferenceMethodName,
   idNameToEntityName,
-  isNonEmptyArray, keyNamesToMethodName,
+  isNonEmptyArray,
+  keyNamesToMethodName,
 } from '../../util/util.js';
 
-import BaseCollection, { createAccessor } from './base.collection.js';
 import Reference from './reference.js';
 
 /**
@@ -84,59 +85,49 @@ class BaseModel {
     references.forEach((ref) => {
       const target = ref.getTarget();
       const type = ref.getType();
-      const methodName = entityNameToReferenceMethodName(target, type);
+      const baseAccessorName = entityNameToReferenceMethodName(target, type);
 
-      this[methodName] = async () => this._fetchReference(type, target);
+      // the base accessor to the reference, e.g. for a belongs_to reference from Foo to Bar:
+      //   getBar()
+      this[baseAccessorName] = async () => this._fetchReference(type, target);
 
       if (ref.getType() !== Reference.TYPES.HAS_MANY) {
         return;
       }
 
-      const targetIdName = entityNameToIdName(target);
-      const collectionName = entityNameToCollectionName(target);
-      const targetCollection = this.entityRegistry.getCollection(collectionName);
+      // additionally, for has_many references we generate accessor methods by
+      // the foreign key and sort keys for example, if the relationship is Foo -> has_many -> Bar
+      // and the sort keys are ['status', 'rank'], we create:
+      //   getBarsByStatusAndRank(...)
+      //   getBarsByStatus(...)
+      //   getBars(...) - see above (_fetchReference)
 
-      if (!(targetCollection instanceof BaseCollection)) {
-        this.log.warn(`Collection not found for ${target}`);
+      const reciprocalRef = this.schema.getReciprocalReference(this.entityRegistry, ref);
+
+      if (!(reciprocalRef instanceof Reference)) {
+        this.log.warn(`No reciprocal belongs_to found for ${this.schema.getModelName()} -> ${target}`);
         return;
       }
 
-      const belongsToRef = targetCollection.schema.getReferenceByTypeAndTarget(
-        Reference.TYPES.BELONGS_TO,
-        this.schema.getModelName(),
-      );
-
-      if (!(belongsToRef instanceof Reference)) {
-        this.log.warn(`Reciprocal reference not found for ${this.schema.getModelName()} to ${target}`);
-        return;
-      }
-
-      const sortKeys = belongsToRef.getSortKeys();
+      const sortKeys = reciprocalRef.getSortKeys();
 
       if (!isNonEmptyArray(sortKeys)) {
         this.log.debug(`No sort keys for ${this.schema.getModelName()} to ${target}`);
         return;
       }
 
-      // generate a method to access "has_many" references by the foreign key and sort keys
-      // for example, if the relationship is Foo -> has_many -> Bar
-      // and the sort keys are ['status', 'rank'], we create:
-      //   getBarsByStatusAndRank(...)
-      //   getBarsByStatus(...)
-      //   getBars(...) - see above (_fetchReference)
+      const collectionName = entityNameToCollectionName(target);
+      const targetCollection = this.entityRegistry.getCollection(collectionName);
+
+      const prefix = `${entityNameToReferenceMethodName(target, type)}By`;
+      const targetIdName = entityNameToIdName(target);
+      const foreignKey = { name: this.idName, value: this.getId() };
+
       for (let i = 1; i <= sortKeys.length; i += 1) {
         const subset = sortKeys.slice(0, i);
-        const prefix = `${entityNameToReferenceMethodName(target, type)}By`;
         const name = keyNamesToMethodName(subset, prefix, [targetIdName]);
 
-        createAccessor(
-          this,
-          targetCollection,
-          name,
-          subset,
-          true,
-          { name: this.idName, value: this.getId() },
-        );
+        createAccessor(this, targetCollection, name, subset, true, foreignKey);
 
         this.log.info(`Created accessor ${name} for ${this.schema.getModelName()} to ${target}`);
       }

@@ -13,14 +13,17 @@
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import {
-  classExtends,
+  classExtends, entityNameToCollectionName,
   entityNameToIdName,
+  isNonEmptyArray,
   isPositiveInteger,
   modelNameToEntityName,
 } from '../../util/util.js';
 
 import BaseModel from './base.model.js';
 import BaseCollection from './base.collection.js';
+import { INDEX_TYPES } from './constants.js';
+import Reference from './reference.js';
 
 class Schema {
   /**
@@ -102,6 +105,35 @@ class Schema {
     return entityNameToIdName(this.getModelName());
   }
 
+  /**
+   * Returns a data structure describing all index-based accessors (like allByX, findByX).
+   * This can then be used by BaseCollection to create methods without duplicating logic.
+   * @return {Array<{indexName: string, keySets: string[][]}>}
+   *   Example: [
+   *     { indexName: 'byOpportunityId', keySets: [['opportunityId'], ['opportunityId','status']] },
+   *     { indexName: 'byStatusAndCreatedAt', keySets: [['status'],['status','createdAt']] }
+   *   ]
+   */
+  getIndexAccessors() {
+    const indexes = this.getIndexes([INDEX_TYPES.PRIMARY]);
+    const result = [];
+
+    Object.keys(indexes).forEach((indexName) => {
+      const indexKeys = this.getIndexKeys(indexName);
+
+      if (!isNonEmptyArray(indexKeys)) return;
+
+      const keySets = [];
+      for (let i = 1; i <= indexKeys.length; i += 1) {
+        keySets.push(indexKeys.slice(0, i));
+      }
+
+      result.push({ indexName, keySets });
+    });
+
+    return result;
+  }
+
   getIndexByName(indexName) {
     return this.indexes[indexName];
   }
@@ -147,6 +179,28 @@ class Schema {
 
   getModelName() {
     return this.modelClass.name;
+  }
+
+  /**
+   * Given a type and a target model name, returns the reciprocal reference if it exists.
+   * For example, if we have a has_many reference from Foo to Bar, this method can help find
+   * the belongs_to reference in Bar that points back to Foo.
+   * @param {EntityRegistry} registry - The entity registry.
+   * @param {Reference} reference - The reference to find the reciprocal for.
+   * @return {Reference|null} - The reciprocal reference or null if not found.
+   */
+  getReciprocalReference(registry, reference) {
+    const target = reference.getTarget();
+    const type = reference.getType();
+
+    // for a has_many (Foo -> Bar), we expect Bar to have a belongs_to Foo
+    const reciprocalType = (type === Reference.TYPES.HAS_MANY) ? Reference.TYPES.BELONGS_TO : null;
+
+    if (!reciprocalType) return null;
+
+    const targetSchema = registry.getCollection(entityNameToCollectionName(target)).schema;
+
+    return targetSchema.getReferenceByTypeAndTarget(reciprocalType, this.getModelName());
   }
 
   getReferences() {

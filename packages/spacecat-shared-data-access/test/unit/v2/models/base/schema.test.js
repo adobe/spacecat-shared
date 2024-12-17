@@ -137,6 +137,13 @@ describe('Schema', () => {
       expect(instance.getIdName()).to.equal('mockEntityModelId');
     });
 
+    it('getIndexAccessors', () => {
+      expect(instance.getIndexAccessors()).to.deep.equal([{
+        indexName: 'byOrganizationId',
+        keySets: [['organizationId']],
+      }]);
+    });
+
     it('getIndexByName', () => {
       expect(instance.getIndexByName('primary')).to.deep.equal({ pk: { composite: ['id'] } });
     });
@@ -165,6 +172,20 @@ describe('Schema', () => {
 
     it('getModelName', () => {
       expect(instance.getModelName()).to.equal('MockEntityModel');
+    });
+
+    it('getReciprocalReference', () => {
+      const reciprocalReference = new Reference('belongs_to', 'MockEntityModel');
+      const registry = {
+        getCollection: () => ({
+          schema: { getReferenceByTypeAndTarget: () => reciprocalReference },
+        }),
+      };
+
+      const reference = new Reference('has_many', 'Organization');
+
+      expect(instance.getReciprocalReference(registry, reference))
+        .to.deep.equal(reciprocalReference);
     });
 
     it('getReferences', () => {

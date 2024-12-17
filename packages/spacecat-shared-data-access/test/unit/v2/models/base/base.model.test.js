@@ -53,7 +53,11 @@ describe('BaseModel', () => {
     };
 
     mockEntityRegistry = {
-      getCollection: stub(),
+      getCollection: stub().returns({
+        schema: {
+          getReferenceByTypeAndTarget: stub().returns(null),
+        },
+      }),
     };
 
     mockEntityRegistry.getCollection.withArgs('OpportunityCollection').returns({
@@ -285,21 +289,6 @@ describe('BaseModel', () => {
     });
 
     describe('reciprocal', () => { /* eslint-disable no-underscore-dangle */
-      it('logs a warning target collection does not extend base', async () => {
-        mockEntityRegistry.getCollection = stub();
-
-        const result = new BaseModel(
-          mockElectroService,
-          mockEntityRegistry,
-          OpportunitySchema,
-          mockRecord,
-          mockLogger,
-        );
-
-        expect(result).to.be.an.instanceOf(BaseModel);
-        expect(mockLogger.warn).to.have.been.calledOnceWithExactly('Collection not found for Suggestions');
-      });
-
       it('logs a warning if reference is not found', async () => {
         mockEntityRegistry.getCollection.withArgs('FooCollection').returns(new MockCollection(
           mockElectroService,
@@ -318,7 +307,7 @@ describe('BaseModel', () => {
         );
 
         expect(result).to.be.an.instanceOf(BaseModel);
-        expect(mockLogger.warn).to.have.been.calledOnceWithExactly('Reciprocal reference not found for Opportunity to Foos');
+        expect(mockLogger.warn).to.have.been.calledOnceWithExactly('No reciprocal belongs_to found for Opportunity -> Foos');
       });
 
       it('logs a debug message if reference sort keys are empty', async () => {

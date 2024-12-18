@@ -47,7 +47,7 @@ describe('AbstractHandler', () => {
     expect(() => new AbstractHandler('TestHandler', logStub)).to.throw(TypeError, 'Cannot construct AbstractHandler instances directly');
   });
 
-  it('sets the name and logger properties correctly', () => {
+  it('sets the name and log properties correctly', () => {
     const handler = new ConcreteHandler(logStub);
     expect(handler.name).to.equal('ConcreteHandler');
     expect(handler.logger).to.equal(logStub);

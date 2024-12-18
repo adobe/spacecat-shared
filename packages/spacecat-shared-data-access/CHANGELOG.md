@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v1.60.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.60.0...@adobe/spacecat-shared-data-access-v1.60.1) (2024-12-18)
+
+
+### Bug Fixes
+
+* removeElectroProperties ([#498](https://github.com/adobe/spacecat-shared/issues/498)) ([a21b188](https://github.com/adobe/spacecat-shared/commit/a21b1887d6872092679f9c5d02452e79711955e7))
+
+# [@adobe/spacecat-shared-data-access-v1.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.59.2...@adobe/spacecat-shared-data-access-v1.60.0) (2024-12-18)
+
+
+### Features
+
+* migrate entities to electrodb ([#484](https://github.com/adobe/spacecat-shared/issues/484)) ([e9a6310](https://github.com/adobe/spacecat-shared/commit/e9a6310dbdea4d44562432b794aa1e287ba9428d))
+
 # [@adobe/spacecat-shared-data-access-v1.59.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.59.1...@adobe/spacecat-shared-data-access-v1.59.2) (2024-12-14)
 
 

@@ -21,7 +21,7 @@ import { createAudit } from '../../models/audit.js';
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} siteId - The ID of the site for which audits are being retrieved.
  * @param {string} [auditType] - Optional. The type of audits to retrieve.
  * @param {boolean} [ascending] - Optional. Determines if the audits should be sorted
@@ -61,7 +61,7 @@ export const getAuditsForSite = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} siteId - The ID of the site for which to retrieve the audit.
  * @param {string} auditType - The type of audit to retrieve.
  * @param auditedAt - The ISO 8601 timestamp of the audit.
@@ -88,7 +88,7 @@ export const getAuditForSite = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} auditType - The type of audits to retrieve.
  * @param {boolean} ascending - Determines if the audits should be sorted ascending
  * or descending by scores.
@@ -121,7 +121,7 @@ export const getLatestAudits = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} siteId - The ID of the site for which audits are being retrieved.
  * @returns {Promise<Readonly<Audit>[]>} A promise that resolves to an array of latest audits
  * for the specified site.
@@ -148,7 +148,7 @@ export const getLatestAuditsForSite = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} siteId - The ID of the site for which the latest audit is being retrieved.
  * @param {string} auditType - The type of audit to retrieve the latest instance of.
  * @returns {Promise<Audit|null>} A promise that resolves to the latest audit of the
@@ -174,7 +174,7 @@ export const getLatestAuditForSite = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {object} auditData - The audit data.
  * @returns {Promise<Readonly<Audit>>}
  */
@@ -261,7 +261,7 @@ async function removeAudits(
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} siteId - The ID of the site for which audits are being removed.
  * @returns {Promise<void>}
  */

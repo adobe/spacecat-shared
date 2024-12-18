@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.7.3...@adobe/spacecat-shared-http-utils-v1.8.0) (2024-12-18)
+
+
+### Features
+
+* migrate entities to electrodb ([#484](https://github.com/adobe/spacecat-shared/issues/484)) ([e9a6310](https://github.com/adobe/spacecat-shared/commit/e9a6310dbdea4d44562432b794aa1e287ba9428d))
+
 # [@adobe/spacecat-shared-http-utils-v1.7.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.7.2...@adobe/spacecat-shared-http-utils-v1.7.3) (2024-12-07)
 
 

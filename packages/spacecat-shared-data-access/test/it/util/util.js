@@ -9,6 +9,8 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import { removeElectroProperties } from '../../../src/v2/util/util.js';
+
 const randomDate = (start, end) => {
   if (start.getTime() >= end.getTime()) {
     throw new Error('start must be before end');
@@ -24,4 +26,30 @@ const getRandomDecimal = (precision) => parseFloat(Math.random().toFixed(precisi
 // Generates a random integer up to a given maximum
 const getRandomInt = (max) => Math.floor(Math.random() * max);
 
-export { randomDate, getRandomDecimal, getRandomInt };
+const sanitizeRecord = (record, idName) => {
+  const sanitizedRecord = removeElectroProperties({ ...record });
+
+  delete sanitizedRecord[idName];
+  delete sanitizedRecord.createdAt;
+  delete sanitizedRecord.updatedAt;
+
+  return sanitizedRecord;
+};
+
+const getExecutionOptions = (options) => {
+  const { limit, order = 'asc' } = options;
+
+  return {
+    ...(limit > 0 && { limit }),
+    order,
+  };
+};
+
+export {
+  getExecutionOptions,
+  getRandomDecimal,
+  getRandomInt,
+  randomDate,
+  removeElectroProperties,
+  sanitizeRecord,
+};

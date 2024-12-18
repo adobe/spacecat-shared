@@ -5,7 +5,7 @@
   "type": "module",
   "engines": {
     "node": ">=20.0.0 <23.0.0",
-    "npm": ">=10.0.0 <11.0.0"
+    "npm": ">=10.0.0 <12.0.0"
   },
   "main": "src/example-wrapper.js",
   "types": "src/example-wrapper.d.ts",

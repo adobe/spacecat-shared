@@ -18,7 +18,7 @@ import { KeyEventDto } from '../../dto/key-event.js';
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {object} log - the logger object
+ * @param {object} log - the log object
  * @param {object} keyEventData - The key event data.
  * @returns {Promise<Readonly<KeyEvent>>} newly created key event
  */
@@ -43,7 +43,7 @@ export const addKeyEvent = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} siteId - The ID of the site for which key events are being retrieved.
  * @param {boolean} ascending - Determines if the key events should be sorted ascending
  * or descending by createdAt.
@@ -73,7 +73,7 @@ export const getKeyEventsForSite = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} keyEventId - The ID of the key event to remove.
  * @returns {Promise<void>}
  */

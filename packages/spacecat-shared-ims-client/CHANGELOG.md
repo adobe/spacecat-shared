@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.3.27...@adobe/spacecat-shared-ims-client-v1.4.0) (2024-12-18)
+
+
+### Features
+
+* migrate entities to electrodb ([#484](https://github.com/adobe/spacecat-shared/issues/484)) ([e9a6310](https://github.com/adobe/spacecat-shared/commit/e9a6310dbdea4d44562432b794aa1e287ba9428d))
+
 # [@adobe/spacecat-shared-ims-client-v1.3.27](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.3.26...@adobe/spacecat-shared-ims-client-v1.3.27) (2024-12-08)
 
 

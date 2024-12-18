@@ -1,272 +1,217 @@
-# ElectroDB Model Framework
+# ElectroDB Entity Framework
 
-This repository contains a model framework built using the ElectroDB ORM, designed to manage website improvements in a scalable manner. The system consists of several entities, including Opportunities and Suggestions, which represent potential areas of improvement and the actions to resolve them.
+## Overview
 
-## Table of Contents
+This entity framework streamlines the definition, querying, and manipulation of domain entities in a DynamoDB-based application. Built atop [ElectroDB](https://electrodb.dev/), it provides a consistent layer for schema definition, indexing, and robust CRUD operations, while adding conveniences like automatic indexing methods and reference handling.
 
-1. [Architecture Overview](#architecture-overview)
-2. [Entities and Relationships](#entities-and-relationships)
-3. [Getting Started](#getting-started)
-4. [Adding a New ElectroDB-Based Entity](#adding-a-new-electrodb-based-entity)
-   - [Step 1: Define the Entity Schema](#step-1-define-the-entity-schema)
-   - [Step 2: Add a Model Class](#step-2-add-a-model-class)
-   - [Step 3: Add a Collection Class](#step-3-add-a-collection-class)
-   - [Step 4: Integrate the Entity into Model Factory](#step-4-integrate-the-entity-into-model-factory)
-   - [Step 5: Write Unit and Integration Tests](#step-5-write-unit-and-integration-tests)
-   - [Step 6: Create JSDoc and Update Documentation](#step-6-create-jsdoc-and-update-documentation)
-   - [Step 7: Run Tests and Verify](#step-7-run-tests-and-verify)
+By adhering to this framework’s conventions, you can introduce and manage new entities with minimal boilerplate and complexity.
 
-## Architecture Overview
+## Core Concepts
 
-The architecture follows a collection-management pattern with ElectroDB, enabling efficient handling of DynamoDB entities. The architecture is organized into the following layers:
+### Entities
+An *entity* represents a domain concept (e.g., `User`, `Organization`, `Order`) persisted in the database. Each entity is defined by a schema, specifying attributes, indexes, and references to other entities. The schema integrates with ElectroDB, ensuring a uniform approach to modeling data.
 
-1. **Data Layer**: Uses DynamoDB with ElectroDB to manage schema definitions and data interactions.
-2. **Model Layer**: The `BaseModel` provides methods like `save`, `remove`, and manages associations. Entity classes such as `Opportunity` and `Suggestion` extend `BaseModel` for specific features.
-3. **Collection Layer**: The `BaseCollection` handles CRUD operations for entities. Specialized collections, like `OpportunityCollection` and `SuggestionCollection`, extend `BaseCollection` with tailored methods for specific entities.
-4. **Factory Layer**: The `ModelFactory` centralizes instantiation of models and collections, providing a unified interface for different entity types.
+### Models
+A *Model* is a class representing a single instance of an entity. It provides:
 
-### Architectural Diagram
+- Attribute getters and setters generated based on the schema.
+- Methods for persisting changes (`save()`), and removing entities (`remove()`).
+- Methods to fetch referenced entities (via `belongs_to`, `has_one`, `has_many` references).
 
-```plaintext
-+--------------------+
-|  Data Layer        |
-|--------------------|
-|  DynamoDB + ElectroDB ORM  |
-+--------------------+
-         ↓
-+--------------------+
-|  Collection Layer  |
-|--------------------|
-|  BaseCollection,   |
-|  OpportunityCollection,    |
-|  SuggestionCollection      |
-+--------------------+
-         ↓
-+--------------------+
-|  Model Layer       |
-|--------------------|
-|  BaseModel,        |
-|  Opportunity,      |
-|  Suggestion        |
-+--------------------+
-         ↓
-+--------------------+
-|  Factory Layer     |
-|--------------------|
-|  ModelFactory      |
-+--------------------+
+Models extend `BaseModel`, which handles most of the common logic.
+
+### Collections
+A *Collection* operates on sets of entities. While `Model` focuses on individual records, `Collection` is for batch and query-level operations:
+
+- Query methods like `findById()`, `all()`, and index-derived methods.
+- Batch creation and update methods (`createMany`, `_saveMany`).
+- Automatic generation of `allBy...` and `findBy...` convenience methods based on defined indexes.
+
+Collections extend `BaseCollection`, which generates query methods at runtime based on your schema definitions.
+
+### Schema Builder
+The `SchemaBuilder` is a fluent API to define an entity’s schema:
+
+- **Attributes:** Configure entity fields and their validation.
+- **Indexes:** Specify primary and secondary indexes for common queries.
+- **References:** Define entity relationships (e.g., `User` belongs to `Organization`).
+
+The `SchemaBuilder` enforces naming conventions and sets defaults, reducing repetitive configuration.
+
+**Note on Indexes:** Add indexes thoughtfully. Every extra index adds cost and complexity. Only create indexes for well-understood, frequently-needed query patterns.
+
+### Entity Registry
+The `EntityRegistry` aggregates all entities, their schemas, and their collections. It ensures consistent lookup and retrieval of any registered entity’s collection. When you add a new entity, you must register it with the `EntityRegistry` so the rest of the application can discover it.
+
+## Default Attributes and Indexes
+
+When you create a schema with `SchemaBuilder`, the following attributes are automatically defined:
+
+1. **ID (Primary Key):** A UUID-based primary key (`${entityName}Id`), ensuring unique identification.
+2. **createdAt:** A timestamp (ISO string) set at entity creation.
+3. **updatedAt:** A timestamp (ISO string) updated on each modification.
+
+A primary index is also set up, keyed by the `${entityName}Id` attribute, guaranteeing a straightforward way to retrieve entities by their unique ID.
+
+## Auto-Generated Methods
+
+### `BaseCollection`
+
+`BaseCollection` automatically generates `allBy...` and `findBy...` methods derived from your defined indexes. For example, if your schema defines an index composed of `opportunityId`, `status`, and `createdAt`, `BaseCollection` will generate:
+
+- `allByOpportunityId(opportunityId, options?)`
+- `findByOpportunityId(opportunityId, options?)`
+- `allByOpportunityIdAndStatus(opportunityId, status, options?)`
+- `findByOpportunityIdAndStatus(opportunityId, status, options?)`
+- `allByOpportunityIdAndStatusAndCreatedAt(opportunityId, status, createdAt, options?)`
+- `findByOpportunityIdAndStatusAndCreatedAt(opportunityId, status, createdAt, options?)`
+
+**allBy...** methods return arrays of matching entities, while **findBy...** methods return a single (or the first matching) entity. Both can accept an optional `options` object for filtering, ordering, attribute selection, and pagination.
+
+**Example:**
+```js
+const Suggestion = dataAccess.Suggestion;
+
+// Retrieve all suggestions by `opportunityId`
+const results = await Suggestion.allByOpportunityId('op-12345');
+
+// Retrieve a single suggestion by `opportunityId` and `status`
+const single = await Suggestion.findByOpportunityIdAndStatus('op-12345', 'OPEN');
 ```
 
-## Entities and Relationships
+### `BaseModel`
 
-- **Opportunity**: Represents a specific issue identified on a website. It includes attributes like `title`, `description`, `siteId`, and `status`.
-- **Suggestion**: Represents a proposed fix for an Opportunity. Attributes include `opportunityId`, `type`, `status`, and `rank`.
-- **Relationships**: Opportunities have many Suggestions. This relationship is implemented through `OpportunityCollection` and `SuggestionCollection`, which interact via ElectroDB-managed DynamoDB relationships.
+`BaseModel` provides methods for CRUD operations and reference handling:
 
-## Getting Started
+- `save()`: Persists changes to the entity.
+- `remove()`: Deletes the entity from the database.
+- `get...()`: Getters for entity attributes.
+- `set...()`: Setters for entity attributes.
 
-1. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+Additionally, `BaseModel` generates methods to fetch referenced entities. 
+For example, if `User` belongs to `Organization`, `BaseModel` will create:
 
-2. **Setup DynamoDB**
-   - Ensure AWS credentials are configured and a DynamoDB table is set up.
-   - Configure the DynamoDB table name and related settings in `index.js`.
+- `getOrganization()`: Fetch the referenced `Organization` entity.
+- `getOrganizationId()`: Retrieve the `Organization` ID.
+- `setOrganizationId(organizationId)`: Update the `Organization` reference.
 
-3. **Usage Example**
-   ```javascript
-   import { createDataAccess } from './index.js';
+Conversely, the `Organization` entity will have:
 
-   const config = { tableNameData: 'YOUR_TABLE_NAME' };
-   const log = console;
-   const dao = createDataAccess(config, log);
+- `getUsers()`: Fetch all `User` entities referencing this `Organization`.
+- And with the `User`-Schema's `belongs_to` reciprocal reference expressing filterable sort keys, e.g. "email", "location":
+  - `getUsersByEmail(email)`: Fetch all `User` entities referencing this `Organization` with a specific email."
+  - `getUsersByEmailAndLocation(email, location)`: Fetch all `User` entities referencing this `Organization` with a specific email and location.
 
-   // Create a new Opportunity
-   const opportunityData = { title: 'Broken Links', siteId: 'site123', type: 'broken-backlinks' };
-   const newOpportunity = await dao.Opportunity.create(opportunityData);
-   console.log('New Opportunity Created:', newOpportunity);
-   ```
+**Example:**
+```js
+const user = await User.findById('usr-abc123');
 
-4. **Extending Functionality**
-   - Add new models by extending `BaseModel` and new collections by extending `BaseCollection`.
-   - Register new models in the `ModelFactory` for unified access.
+// Work with attributes
+console.log(user.getEmail());   // e.g. "john@example.com"
+user.setName('John Smith');
+await user.save();
 
-## Adding a New ElectroDB-Based Entity
+// Fetch referenced entity
+const org = await user.getOrganization();
+console.log(org.getName());
+```
 
-This guide provides a step-by-step overview for adding a new ElectroDB-based entity to the application.
+## Step-by-Step: Adding a New Entity
 
-### Step 1: Define the Entity Schema
+Follow these steps to introduce a new entity into the framework.
 
-1. **Create Entity Schema File**: Define the entity schema in a new file (e.g., `myNewEntity.schema.js`) within the `/schemas/` directory.
+### 1. Define the Schema
+Create `user.schema.js`:
 
-   ```javascript
-   export const MyNewEntitySchema = {
-     model: {
-       entity: 'MyNewEntity',
-       service: 'MyService',
-       version: '1',
-     },
-     attributes: {
-       myNewEntityId: {
-         type: 'string',
-         required: true,
-       },
-       name: {
-         type: 'string',
-         required: true,
-       },
-       status: {
-         type: 'string',
-         enum: ['NEW', 'IN_PROGRESS', 'COMPLETED'],
-         required: true,
-       },
-       createdAt: {
-         type: 'string',
-         required: true,
-         default: () => new Date().toISOString(),
-       },
-     },
-     indexes: {
-       myNewEntityIndex: {
-         pk: {
-           field: 'pk',
-           facets: ['myNewEntityId'],
-         },
-         sk: {
-           field: 'sk',
-           facets: ['status'],
-         },
-       },
-     },
-     references: {
-       belongs_to: [
-         { type: 'belongs_to', target: 'Opportunity' },
-       ],
-     },
-   };
-   ```
+```js
+import SchemaBuilder from '../base/schema.builder.js';
+import User from './user.model.js';
+import UserCollection from './user.collection.js';
 
-2. **Declare References**: Use the `references` field to define relationships between entities. This sets up associations for easy fetching and managing of related entities, allowing for automatic generation of reference getter methods.
+const userSchema = new SchemaBuilder(User, UserCollection)
+  .addAttribute('email', {
+    type: 'string',
+    required: true,
+    validate: (value) => value.includes('@'),
+  })
+  .addAttribute('name', { type: 'string', required: true })
+  .addAllIndexWithComposite('email')
+  .addReference('belongs_to', 'Organization') // Adds organizationId and byOrganizationId index
+  .build();
 
-### Step 2: Add a Model Class
+export default userSchema;
+```
 
-1. **Create the Model Class**: In the `/models/` directory, add `myNewEntity.model.js`.
+### 2. Implement the Model
+Create `user.model.js`:
 
-   ```javascript
-   import BaseModel from './base.model.js';
-   
-   class MyNewEntity extends BaseModel {
-     constructor(electroService, modelFactory, record, log) {
-       super(electroService, modelFactory, record, log);
-     }
-   }
-   
-   export default MyNewEntity;
-   ```
+```js
+import BaseModel from '../base/base.model.js';
 
-   Note: By using `BaseModel`, entity classes can remain empty unless there is a need to:
-   - Override automatically generated getters or setters for specific attributes.
-   - Add custom methods specific to the entity.
+class UserModel extends BaseModel {
+  // Additional domain logic methods can be added here if needed.
+}
 
-### Automatic Getter and Setter Methods
+export default UserModel;
+```
 
-The `BaseModel` automatically generates getter and setter methods for each attribute defined in the entity schema:
+### 3. Implement the Collection
+Create `user.collection.js`:
 
-- **Utility Methods**: `BaseModel` provides `getId()`, `getCreatedAt()`, and `getUpdatedAt()` methods out of the box for accessing common entity information like the unique identifier, creation timestamp, and last update timestamp.
+```js
+import BaseCollection from '../base/base.collection.js';
+import UserModel from './user.model.js';
+import userSchema from './user.schema.js';
 
-- **Getters**: Follow the convention `get<AttributeName>()` to access attribute values.
-- **Setters**: Follow the convention `set<AttributeName>(value)` to modify entity values, while handling patching.
+class UserCollection extends BaseCollection {
+  // Additional domain logic collection methods can be added here if needed.
+  async findByEmail(email) {
+    return this.findByIndexKeys({ email });
+  }
+}
 
-Example:
+export default UserCollection;
+```
 
-- If an attribute is named `name`, `BaseModel` will automatically generate:
-   - `getName()`: Retrieve the value of `name`.
-   - `setName(value)`: Update the value of `name`.
+### 4. Register the Entity
+In `entity.registry.js` (or equivalent):
 
-This reduces boilerplate and ensures consistency.
+```js
+import UserSchema from '../user/user.schema.js';
+import UserCollection from '../user/user.collection.js';
 
-### Automatic Reference Getter Methods
+EntityRegistry.registerEntity(UserSchema, UserCollection);
+```
 
-If references are defined in the schema (e.g., `belongs_to`, `has_many`), `BaseModel` generates reference getter methods:
+### 5. Update DynamoDB Configuration and `schema.json`
 
-- **References Getter Naming**:
-   - Methods are named `get<RelatedEntity>()`, where `<RelatedEntity>` corresponds to the target specified in the `references` field.
+After defining indexes in the schema, **manually add these indexes to your DynamoDB table configuration**. DynamoDB does not automatically create GSIs. You must:
 
-  Example:
-  ```javascript
-  references: {
-     belongs_to: [
-        { type: 'belongs_to', target: 'Opportunity' },
-     ],
-  },
-  ```
-  This results in a `getOpportunity()` method for accessing the related `Opportunity` entity.
+- Use the AWS Console, CLI, or CloudFormation/Terraform templates to define these GSIs.
+- Update your `schema.json` or another documentation file to reflect the newly created indexes, so the team knows which indexes exist and what query patterns they support.
 
-### Step 3: Add a Collection Class
+### 6. Use the Entity
+```js
+const { User, Organization } = dataAccess;
 
-1. **Create the Collection Class**: Add `myNewEntity.collection.js` in the `/collections/` directory.
+// Create a user
+const newUser = await User.create({ email: 'john@example.com', name: 'John Doe' });
 
-   ```javascript
-   import BaseCollection from './base.collection.js';
-   import MyNewEntity from '../models/myNewEntity.model.js';
+// Find user by ID
+const user = await User.findById(newUser.getId());
 
-   class MyNewEntityCollection extends BaseCollection {
-     constructor(service, modelFactory, log) {
-       super(service, modelFactory, MyNewEntity, log);
-     }
+// Get the user organization
+const org = await user.getOrganization();
 
-     async allByStatus(status) {
-       return this.findByIndexKeys({ status });
-     }
-   }
+// ...or in reverse
+const anOrg = await Organization.findById(user.getOrganizationId());
+const orgUsers = await anOrg.getUsers();
 
-   export default MyNewEntityCollection;
-   ```
+// Update user and save
+user.setName('John X. Doe');
+await user.save();
+```
 
-### Step 4: Integrate the Entity into Model Factory
+## Consideration for Indexes
 
-1. **Update the Model Factory**: Open `model.factory.js` and add the new entity and collection to the `initialize` method.
-
-   ```javascript
-   import MyNewEntityCollection from './collections/myNewEntity.collection.js';
-
-   class ModelFactory {
-     initialize() {
-       const myNewEntityCollection = new MyNewEntityCollection(
-         this.service,
-         this,
-         this.logger,
-       );
-
-       this.models.set(MyNewEntityCollection.name, myNewEntityCollection);
-     }
-   }
-   ```
-
-### Step 5: Write Unit and Integration Tests
-
-1. **Create Unit Tests**: Add a file named `myNewEntity.model.test.js` in `/tests/unit/models/` to test all getters, setters, and interactions.
-   - Use Mocha, Chai, and Sinon for testing.
-
-2. **Create Collection Tests**: Add `myNewEntity.collection.test.js` to `/tests/unit/collections/`.
-   - Test methods interacting with ElectroDB, like `allByStatus`.
-
-3. **Add Integration Tests**: Create an integration test file named `myNewEntity.integration.test.js` in `/tests/integration/` to test the full lifecycle of the entity.
-
-### Step 6: Create JSDoc and Update Documentation
-
-1. **Generate JSDoc for Entity and Collection**: Add JSDoc comments for each function to describe the API.
-2. **Update Type Definitions**: Modify `index.d.ts` to include new interfaces and types for the entity.
-
-### Step 7: Run Tests and Verify
-
-1. **Run All Tests**:
-   ```bash
-   npm run test && npm run test:it
-   ```
-
-2. **Run Linter**: Check for coding standard violations.
-   ```bash
-   npm run lint
-   ```
+Indexes cost money and complexity. Do not add indexes lightly. Determine which query patterns you truly need and only then introduce additional indexes.

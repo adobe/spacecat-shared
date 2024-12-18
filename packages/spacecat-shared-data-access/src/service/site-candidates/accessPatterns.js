@@ -58,7 +58,7 @@ export const getSiteCandidateByBaseURL = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {object} log - the logger object
+ * @param {object} log - the log object
  * @param {object} siteCandidateData - The site candidate data.
  * @returns {Promise<Readonly<SiteCandidate>>} newly created site candidate if hadn't created before
  */

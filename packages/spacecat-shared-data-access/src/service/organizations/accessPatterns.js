@@ -81,7 +81,7 @@ export const getOrganizationByImsOrgID = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {object} organizationData - The organization data.
  * @returns {Promise<Readonly<Organization>>}
  */
@@ -106,7 +106,7 @@ export const addOrganization = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {Organization} organization - The organization.
  * @returns {Promise<Readonly<Organization>>} - The updated organization.
  */
@@ -139,7 +139,7 @@ export const updateOrganization = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} organizationId - The ID of the organization to remove.
  * @returns {Promise<void>}
  */

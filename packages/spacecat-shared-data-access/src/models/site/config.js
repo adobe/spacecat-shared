@@ -45,7 +45,7 @@ export const DEFAULT_CONFIG = {
 };
 
 // Function to validate incoming configuration
-function validateConfiguration(config) {
+export function validateConfiguration(config) {
   const { error, value } = configSchema.validate(config);
 
   if (error) {

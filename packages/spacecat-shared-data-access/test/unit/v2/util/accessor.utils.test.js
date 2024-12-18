@@ -33,7 +33,7 @@ import { createAccessor } from '../../../../src/v2/util/accessor.utils.js';
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-describe('Accessor Utils', () => {
+describe('Accessor Utils', () => { /* eslint-disable no-underscore-dangle */
   let mockLogger;
   let mockContext;
   let mockCollection;
@@ -93,6 +93,21 @@ describe('Accessor Utils', () => {
 
       expect(mockContext.test).to.be.a('function');
       expect(mockContext.test()).to.be.an('Promise');
+      expect(mockContext._accessorCache).to.deep.equal({});
+    });
+
+    it('does not create an accessor cache if existing', async () => {
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'test',
+        requiredKeys: ['test'],
+      };
+      mockContext._accessorCache = { a: 1 };
+
+      createAccessor(config);
+
+      expect(mockContext._accessorCache).to.deep.equal({ a: 1 });
     });
   });
 
@@ -160,6 +175,48 @@ describe('Accessor Utils', () => {
       await expect(mockContext.test('test')).to.be.eventually.null;
       expect(mockCollection.schema.getAttribute).to.not.have.been.called;
       expect(mockCollection.findById).to.not.have.been.called;
+    });
+
+    it('returns cached result if repeatedly called without args', async () => {
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'test',
+        requiredKeys: [],
+      };
+
+      createAccessor(config);
+
+      expect(mockContext._accessorCache).to.deep.equal({});
+
+      await expect(mockContext.test()).to.be.eventually.deep.equal({});
+
+      expect(mockContext._accessorCache).to.deep.equal({ 'test:_': {} });
+
+      await expect(mockContext.test()).to.be.eventually.deep.equal({});
+      expect(mockCollection.schema.getAttribute).to.not.have.been.called;
+      expect(mockCollection.findByIndexKeys).to.have.been.calledOnceWith({});
+    });
+
+    it('returns cached result if repeatedly called with same args', async () => {
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'test',
+        requiredKeys: ['test'],
+      };
+
+      createAccessor(config);
+
+      expect(mockContext._accessorCache).to.deep.equal({});
+
+      await expect(mockContext.test('test')).to.be.eventually.deep.equal({});
+
+      expect(mockContext._accessorCache).to.deep.equal({ 'test:["test"]': {} });
+
+      await expect(mockContext.test('test')).to.be.eventually.deep.equal({});
+      expect(mockCollection.schema.getAttribute).to.have.been.calledOnceWith('test');
+      expect(mockCollection.findByIndexKeys).to.have.been.calledOnceWith({ test: 'test' });
     });
   });
 });

@@ -82,7 +82,7 @@ function validateConfig(config) {
  * @throws {Error} - If the configuration is invalid.
  * @returns {void}
  */
-export function createAccessor(config) {
+export function createAccessor(config) { /* eslint-disable no-underscore-dangle */
   validateConfig(config);
 
   const {
@@ -94,25 +94,48 @@ export function createAccessor(config) {
     name,
     requiredKeys = [],
   } = config;
+  if (!context._accessorCache) {
+    Object.defineProperty(context, '_accessorCache', {
+      enumerable: false,
+      configurable: true,
+      writable: true,
+      value: {},
+    });
+  }
 
   const foreignKeys = {
     ...isNonEmptyObject(foreignKey) && { [foreignKey.name]: foreignKey.value },
   };
 
   const accessor = async (...args) => {
-    if (byId) {
-      if (!hasText(foreignKey.value)) {
-        return null;
-      }
-      return collection.findById(foreignKey.value);
+    const argsKey = args.length > 0 ? JSON.stringify(args) : '_';
+    const cacheKey = `${name}:${argsKey}`;
+
+    if (context._accessorCache[cacheKey] !== undefined) {
+      return context._accessorCache[cacheKey];
     }
 
-    const { keys, options } = parseAccessorArgs(collection, requiredKeys, args);
-    const allKeys = { ...foreignKeys, ...keys };
+    let result;
 
-    return all
-      ? collection.allByIndexKeys(allKeys, options)
-      : collection.findByIndexKeys(allKeys, options);
+    if (byId) {
+      if (!hasText(foreignKey.value)) {
+        result = null;
+      } else {
+        result = collection.findById(foreignKey.value);
+      }
+    } else {
+      const { keys, options } = parseAccessorArgs(collection, requiredKeys, args);
+      const allKeys = { ...foreignKeys, ...keys };
+
+      result = all
+        ? collection.allByIndexKeys(allKeys, options)
+        : collection.findByIndexKeys(allKeys, options);
+    }
+
+    result = await result;
+    context._accessorCache[cacheKey] = result;
+
+    return result;
   };
 
   Object.defineProperty(

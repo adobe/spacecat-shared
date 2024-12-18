@@ -149,6 +149,10 @@ class BaseCollection {
     return records.map((record) => this.#createInstance(record));
   }
 
+  #invalidateCache() {
+    this._accessorCache = {};
+  }
+
   /**
    * General method to query entities by index keys. This method is used by other
    * query methods to perform the actual query operation. It will use the index keys
@@ -298,7 +302,11 @@ class BaseCollection {
 
     try {
       const record = await this.entity.create(item).go();
-      return this.#createInstance(record.data);
+      const instance = this.#createInstance(record.data);
+
+      this.#invalidateCache();
+
+      return instance;
     } catch (error) {
       this.log.error(`Failed to create [${this.entityName}]`, error);
       throw error;
@@ -368,10 +376,12 @@ class BaseCollection {
             this.log.warn(`Failed to associate parent with child [${this.entityName}]: parent is invalid`);
             return;
           }
-          // eslint-disable-next-line no-underscore-dangle
-          record._cacheReference(parent.schema.getModelName(), parent);
+          // eslint-disable-next-line no-underscore-dangle,no-param-reassign
+          record._accessorCache[`get${parent.schema.getModelName()}`] = parent;
         });
       }
+
+      this.#invalidateCache();
 
       this.log.info(`Created ${createdItems.length} items for [${this.entityName}]`);
 
@@ -402,6 +412,8 @@ class BaseCollection {
       const updates = items.map((item) => item.record);
       const response = await this.entity.put(updates).go();
 
+      this.#invalidateCache();
+
       if (response.unprocessed) {
         this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
       }
@@ -430,6 +442,8 @@ class BaseCollection {
     // todo: consider removing dependent records
 
     await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
+
+    this.#invalidateCache();
   }
 }
 

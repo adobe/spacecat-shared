@@ -62,9 +62,9 @@ class BaseModel {
     this.collection = entityRegistry.getCollection(schema.getCollectionName());
     this.entity = electroService.entities[this.entityName];
 
-    this.referencesCache = {};
-
     this.patcher = new Patcher(this.entity, this.schema, this.record);
+
+    this._accessorCache = {};
 
     this.#initializeReferences();
     this.#initializeAttributes();
@@ -113,15 +113,8 @@ class BaseModel {
     }
   }
 
-  /**
-   * Caches a reference for the specified entity. This method is used to store
-   * fetched references to avoid redundant database queries.
-   * @param {string} targetName - The name of the entity to cache.
-   * @param {*} reference - The reference to cache.
-   * @protected
-   */
-  _cacheReference(targetName, reference) {
-    this.referencesCache[targetName] = reference;
+  #invalidateCache() {
+    this._accessorCache = {};
   }
 
   async #fetchDependents() {
@@ -209,6 +202,8 @@ class BaseModel {
 
       await Promise.all(removePromises);
 
+      this.#invalidateCache();
+
       return this;
     } catch (error) {
       this.log.error('Failed to remove record', error);
@@ -228,8 +223,10 @@ class BaseModel {
     // todo: validate associations
     try {
       this.log.info(`Saving entity ${this.entityName} with ID ${this.getId()}`);
+
       await this.patcher.save();
-      // todo: in case references are updated, clear or refresh references cache
+      this.#invalidateCache();
+
       return this;
     } catch (error) {
       this.log.error('Failed to save record', error);

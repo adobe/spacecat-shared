@@ -73,7 +73,7 @@ describe('ScopedApiKeyHandler', () => {
     expect(handler).to.be.instanceof(AbstractHandler);
   });
 
-  it('should set the name and logger properties correctly', () => {
+  it('should set the name and log properties correctly', () => {
     expect(handler.name).to.equal('scopedApiKey');
     expect(handler.logger).to.equal(logStub);
   });

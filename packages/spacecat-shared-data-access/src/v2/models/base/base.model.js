@@ -12,16 +12,13 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import { createAccessor } from '../../util/accessor.utils.js';
+import { createAccessors } from '../../util/accessor.utils.js';
 import Patcher from '../../util/patcher.js';
 import {
   capitalize,
-  entityNameToCollectionName,
   entityNameToIdName,
-  entityNameToReferenceMethodName,
   idNameToEntityName,
   isNonEmptyArray,
-  keyNamesToMethodName,
 } from '../../util/util.js';
 
 import Reference from './reference.js';
@@ -50,7 +47,7 @@ class BaseModel {
    * and collection.
    * @param {Schema} schema - The schema for the entity.
    * @param {Object} record - The initial data for the entity instance.
-   * @param {Object} log - A logger for capturing logging information.
+   * @param {Object} log - A log for capturing logging information.
    */
   constructor(electroService, entityRegistry, schema, record, log) {
     this.electroService = electroService;
@@ -82,55 +79,9 @@ class BaseModel {
   #initializeReferences() {
     const references = this.schema.getReferences();
 
-    references.forEach((ref) => {
-      const target = ref.getTarget();
-      const type = ref.getType();
-      const baseAccessorName = entityNameToReferenceMethodName(target, type);
-
-      // the base accessor to the reference, e.g. for a belongs_to reference from Foo to Bar:
-      //   getBar()
-      this[baseAccessorName] = async () => this._fetchReference(type, target);
-
-      if (ref.getType() !== Reference.TYPES.HAS_MANY) {
-        return;
-      }
-
-      // additionally, for has_many references we generate accessor methods by
-      // the foreign key and sort keys for example, if the relationship is Foo -> has_many -> Bar
-      // and the sort keys are ['status', 'rank'], we create:
-      //   getBarsByStatusAndRank(...)
-      //   getBarsByStatus(...)
-      //   getBars(...) - see above (_fetchReference)
-
-      const reciprocalRef = this.schema.getReciprocalReference(this.entityRegistry, ref);
-
-      if (!(reciprocalRef instanceof Reference)) {
-        this.log.warn(`No reciprocal belongs_to found for ${this.schema.getModelName()} -> ${target}`);
-        return;
-      }
-
-      const sortKeys = reciprocalRef.getSortKeys();
-
-      if (!isNonEmptyArray(sortKeys)) {
-        this.log.debug(`No sort keys for ${this.schema.getModelName()} to ${target}`);
-        return;
-      }
-
-      const collectionName = entityNameToCollectionName(target);
-      const targetCollection = this.entityRegistry.getCollection(collectionName);
-
-      const prefix = `${entityNameToReferenceMethodName(target, type)}By`;
-      const targetIdName = entityNameToIdName(target);
-      const foreignKey = { name: this.idName, value: this.getId() };
-
-      for (let i = 1; i <= sortKeys.length; i += 1) {
-        const subset = sortKeys.slice(0, i);
-        const name = keyNamesToMethodName(subset, prefix, [targetIdName]);
-
-        createAccessor(this, targetCollection, name, subset, true, foreignKey);
-
-        this.log.info(`Created accessor ${name} for ${this.schema.getModelName()} to ${target}`);
-      }
+    references.forEach((reference) => {
+      const accessorConfigs = reference.toAccessorConfigs(this.entityRegistry, this);
+      createAccessors(accessorConfigs, this.log);
     });
   }
 
@@ -163,15 +114,6 @@ class BaseModel {
   }
 
   /**
-   * Gets a cached reference for the specified entity.
-   * @param {string} targetName - The name of the entity to fetch.
-   * @return {*}
-   */
-  #getCachedReference(targetName) {
-    return this.referencesCache[targetName];
-  }
-
-  /**
    * Caches a reference for the specified entity. This method is used to store
    * fetched references to avoid redundant database queries.
    * @param {string} targetName - The name of the entity to cache.
@@ -180,58 +122,6 @@ class BaseModel {
    */
   _cacheReference(targetName, reference) {
     this.referencesCache[targetName] = reference;
-  }
-
-  /**
-   * Fetches a reference for the specified entity. This method is used to fetch
-   * associated entities based on the type of relationship (belongs_to, has_one, has_many).
-   * The fetched references are cached to avoid redundant database queries. If the reference
-   * is already cached, it will be returned directly.
-   * References are defined in the entity model and are used to fetch associated entities.
-   * @async
-   * @param {string} type - The type of relationship (belongs_to, has_one, has_many).
-   * @param {string} target - The name of the entity to fetch.
-   * @return {Promise<*|null>} - A promise that resolves to the fetched reference or null if
-   * not found.
-   * @private
-   */
-  async _fetchReference(type, target) { /* eslint-disable no-underscore-dangle */
-    let result = this.#getCachedReference(target);
-    if (result) {
-      return result;
-    }
-
-    const collectionName = entityNameToCollectionName(target);
-    const targetCollection = this.entityRegistry.getCollection(collectionName);
-
-    let foreignKey;
-    switch (type) {
-      case Reference.TYPES.BELONGS_TO: {
-        foreignKey = entityNameToIdName(target);
-        const id = this.record[foreignKey];
-        if (!id) return null;
-        result = await targetCollection.findById(id);
-        break;
-      }
-      case Reference.TYPES.HAS_ONE: {
-        foreignKey = entityNameToIdName(this.entityName);
-        result = await targetCollection.findByIndexKeys({ [foreignKey]: this.getId() });
-        break;
-      }
-      case Reference.TYPES.HAS_MANY: {
-        foreignKey = entityNameToIdName(this.entityName);
-        result = await targetCollection.allByIndexKeys({ [foreignKey]: this.getId() });
-        break;
-      }
-      default:
-        return null; // Unknown type
-    }
-
-    if (result) {
-      this._cacheReference(target, result);
-    }
-
-    return result;
   }
 
   async #fetchDependents() {
@@ -243,19 +133,21 @@ class BaseModel {
     ];
 
     relationshipTypes.forEach((type) => {
-      const refs = this.schema.getReferencesByType(type);
-      const targets = refs.filter((ref) => ref.isRemoveDependents());
+      const references = this.schema.getReferencesByType(type);
+      const targets = references.filter((reference) => reference.isRemoveDependents());
 
-      targets.forEach((ref) => {
-        const target = ref.getTarget();
+      targets.forEach((reference) => {
+        const accessors = reference.toAccessorConfigs(this.entityRegistry, this);
+        const methodName = accessors[0].name;
         promises.push(
-          this._fetchReference(type, target)
+          this[methodName]()
             .then((dependent) => {
               if (isNonEmptyArray(dependent)) {
                 return dependent;
               } else if (isNonEmptyObject(dependent)) {
                 return [dependent];
               }
+
               return null;
             }),
         );

@@ -13,15 +13,17 @@
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import {
-  classExtends, entityNameToCollectionName,
+  classExtends,
+  entityNameToCollectionName,
   entityNameToIdName,
   isNonEmptyArray,
   isPositiveInteger,
+  keyNamesToMethodName,
   modelNameToEntityName,
 } from '../../util/util.js';
 
-import BaseModel from './base.model.js';
 import BaseCollection from './base.collection.js';
+import BaseModel from './base.model.js';
 import { INDEX_TYPES } from './constants.js';
 import Reference from './reference.js';
 
@@ -193,14 +195,16 @@ class Schema {
     const target = reference.getTarget();
     const type = reference.getType();
 
-    // for a has_many (Foo -> Bar), we expect Bar to have a belongs_to Foo
-    const reciprocalType = (type === Reference.TYPES.HAS_MANY) ? Reference.TYPES.BELONGS_TO : null;
-
-    if (!reciprocalType) return null;
+    if (type !== Reference.TYPES.HAS_MANY) {
+      return null;
+    }
 
     const targetSchema = registry.getCollection(entityNameToCollectionName(target)).schema;
 
-    return targetSchema.getReferenceByTypeAndTarget(reciprocalType, this.getModelName());
+    return targetSchema.getReferenceByTypeAndTarget(
+      Reference.TYPES.BELONGS_TO,
+      this.getModelName(),
+    );
   }
 
   getReferences() {
@@ -221,6 +225,40 @@ class Schema {
 
   getVersion() {
     return this.schemaVersion;
+  }
+
+  toAccessorConfigs(entity, log) {
+    const indexAccessors = this.getIndexAccessors();
+    const accessorConfigs = [];
+
+    indexAccessors.forEach(({ indexName, keySets }) => {
+      // generate a method for each prefix of the keySets array
+      // for example, if keySets = ['opportunityId', 'status'], we create:
+      //   allByOpportunityId(...)
+      //   findByOpportunityId(...)
+      //   allByOpportunityIdAndStatus(...)
+      //   findByOpportunityIdAndStatus(...)
+      keySets.forEach((subset) => {
+        accessorConfigs.push({
+          context: entity,
+          collection: entity,
+          name: keyNamesToMethodName(subset, 'allBy'),
+          requiredKeys: subset,
+          all: true,
+        });
+
+        accessorConfigs.push({
+          context: entity,
+          collection: entity,
+          name: keyNamesToMethodName(subset, 'findBy'),
+          requiredKeys: subset,
+        });
+
+        log.info(`Created accessors for index [${indexName}] with keys [${subset.join(', ')}]`);
+      });
+    });
+
+    return accessorConfigs;
   }
 
   /**

@@ -19,14 +19,13 @@ import {
 import { ElectroValidationError } from 'electrodb';
 
 import { removeElectroProperties } from '../../../../test/it/util/util.js';
-import { createAccessor } from '../../util/accessor.utils.js';
+import { createAccessors } from '../../util/accessor.utils.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
 import {
   entityNameToAllPKValue,
   isNonEmptyArray,
   keyNamesToIndexName,
-  keyNamesToMethodName,
 } from '../../util/util.js';
 import { INDEX_TYPES } from './constants.js';
 
@@ -81,7 +80,7 @@ class BaseCollection {
    * @param {Object} electroService - The ElectroDB service used for managing entities.
    * @param {Object} entityRegistry - The registry holding entities, their schema and collection.
    * @param {Object} schema - The schema for the entity.
-   * @param {Object} log - A logger for capturing logging information.
+   * @param {Object} log - A log for capturing logging information.
    */
   constructor(electroService, entityRegistry, schema, log) {
     this.electroService = electroService;
@@ -114,25 +113,8 @@ class BaseCollection {
    * @private
    */
   #initializeCollectionMethods() {
-    const indexAccessors = this.schema.getIndexAccessors();
-
-    indexAccessors.forEach(({ indexName, keySets }) => {
-      // generate a method for each prefix of the keySets array
-      // for example, if keySets = ['opportunityId', 'status'], we create:
-      //   allByOpportunityId(...)
-      //   findByOpportunityId(...)
-      //   allByOpportunityIdAndStatus(...)
-      //   findByOpportunityIdAndStatus(...)
-      keySets.forEach((subset) => {
-        const allMethodName = keyNamesToMethodName(subset, 'allBy');
-        const findMethodName = keyNamesToMethodName(subset, 'findBy');
-
-        createAccessor(this, this, allMethodName, subset, true);
-        createAccessor(this, this, findMethodName, subset, false);
-
-        this.log.info(`Created accessors for index [${indexName}] with keys [${subset.join(', ')}]`);
-      });
-    });
+    const accessorConfigs = this.schema.toAccessorConfigs(this, this.log);
+    createAccessors(accessorConfigs, this.log);
   }
 
   /**

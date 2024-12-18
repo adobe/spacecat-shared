@@ -79,7 +79,7 @@ export default class BaseSlackClient {
    * @param {object} opsConfig The ops configuration.
    * @param {string} opsConfig.opsChannelId The ID of the ops channel.
    * @param {string[]} opsConfig.admins The list of admin user IDs.
-   * @param {object} log - logger
+   * @param {object} log - log
    */
   constructor(token, opsConfig, log) {
     this.client = new WebClient(token);

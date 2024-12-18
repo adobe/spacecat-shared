@@ -60,9 +60,11 @@ export const createElectroMocks = (Model, record) => {
   };
 
   const mockEntityRegistry = {
+    log: mockLogger,
     getCollection: stub().returns({
       schema: {
         getReferenceByTypeAndTarget: stub().returns(null),
+        getModelName: stub().returns(Model.name),
         indexes: {
           primaryIndex: {
             pk: { facets: ['testEntityId'] },

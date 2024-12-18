@@ -43,19 +43,71 @@ function parseAccessorArgs(context, requiredKeyNames, args) {
   return { keys, options };
 }
 
-export function createAccessor(
-  context,
-  collection,
-  name,
-  requiredKeyNames,
-  all,
-  foreignKey,
-) {
+function validateConfig(config) {
+  if (!isNonEmptyObject(config)) {
+    throw new Error('Config is required');
+  }
+
+  const {
+    collection, context, name, requiredKeys,
+  } = config;
+
+  if (!isNonEmptyObject(collection)) {
+    throw new Error('Collection is required');
+  }
+
+  if (!isNonEmptyObject(context)) {
+    throw new Error('Context is required');
+  }
+
+  if (!hasText(name)) {
+    throw new Error('Name is required');
+  }
+
+  if (!Array.isArray(requiredKeys)) {
+    throw new Error('Required keys must be an array');
+  }
+}
+
+/**
+ * Create an accessor for a collection. The accessor can be used to query the collection.
+ * @param {object} config - The accessor configuration.
+ * @param {boolean} [config.all=false] - Whether to return all items in the collection.
+ * @param {boolean} [config.byId=false] - Whether to return an item by ID.
+ * @param {object} config.collection - The collection to query.
+ * @param {object} config.context - The context to attach the accessor to.
+ * @param {object} [config.foreignKey] - The foreign key to use when querying by ID.
+ * @param {string} config.name - The name of the accessor.
+ * @param {string[]} [config.requiredKeys] - The required keys for the accessor.
+ * @throws {Error} - If the configuration is invalid.
+ * @returns {void}
+ */
+export function createAccessor(config) {
+  validateConfig(config);
+
+  const {
+    all = false,
+    byId = false,
+    collection,
+    context,
+    foreignKey,
+    name,
+    requiredKeys = [],
+  } = config;
+
   const foreignKeys = {
     ...isNonEmptyObject(foreignKey) && { [foreignKey.name]: foreignKey.value },
   };
+
   const accessor = async (...args) => {
-    const { keys, options } = parseAccessorArgs(collection, requiredKeyNames, args);
+    if (byId) {
+      if (!hasText(foreignKey.value)) {
+        return null;
+      }
+      return collection.findById(foreignKey.value);
+    }
+
+    const { keys, options } = parseAccessorArgs(collection, requiredKeys, args);
     const allKeys = { ...foreignKeys, ...keys };
 
     return all
@@ -73,4 +125,11 @@ export function createAccessor(
       value: accessor,
     },
   );
+}
+
+export function createAccessors(configs, log) {
+  configs.forEach((config) => {
+    createAccessor(config);
+    log.info(`Created accessor ${config.name} for ${config.context.schema.getModelName()} to ${config.collection.schema.getModelName()}`);
+  });
 }

@@ -353,7 +353,7 @@ class SchemaBuilder {
         required: reference.options.required,
         validate: (
           value,
-        ) => (reference.required ? uuidValidate(value) : !value || uuidValidate(value)),
+        ) => (reference.options.required ? uuidValidate(value) : !value || uuidValidate(value)),
       });
 
       this.#internalAddIndex(

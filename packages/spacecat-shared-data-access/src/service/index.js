@@ -69,7 +69,7 @@ const createElectroService = (client, config, log) => {
  * tableNameImportJobs: string, pkAllImportJobs: string, indexNameAllImportJobs: string,
  * tableNameSiteTopPages: string, indexNameAllOrganizations: string,
  * indexNameAllOrganizationsByImsOrgId: string, pkAllOrganizations: string}} config configuration
- * @param {Logger} log logger
+ * @param {Logger} log log
  * @returns {object} data access object
  */
 export const createDataAccess = (config, log = console, client = undefined) => {

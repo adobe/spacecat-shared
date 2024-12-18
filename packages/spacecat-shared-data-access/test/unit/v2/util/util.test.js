@@ -21,18 +21,19 @@ import {
   capitalize,
   collectionNameToEntityName,
   decapitalize,
+  entityNameToAllPKValue,
   entityNameToCollectionName,
   entityNameToIdName,
-  entityNameToAllPKValue,
-  entityNameToReferenceMethodName,
   idNameToEntityName,
   incrementVersion,
   isNonEmptyArray,
   keyNamesToIndexName,
   modelNameToEntityName,
+  referenceToBaseMethodName,
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,
 } from '../../../../src/v2/util/util.js';
+import Reference from '../../../../src/v2/models/base/reference.js';
 
 describe('Utilities', () => {
   describe('capitalize', () => {
@@ -103,17 +104,20 @@ describe('Utilities', () => {
     });
   });
 
-  describe('entityNameToReferenceMethodName', () => {
+  describe('referenceToBaseMethodName', () => {
     it('Generate "get" + pluralized capitalized target if type is has_many', () => {
-      expect(entityNameToReferenceMethodName('user', 'has_many')).to.equal('getUsers');
+      const reference = new Reference('has_many', 'users');
+      expect(referenceToBaseMethodName(reference)).to.equal('getUsers');
     });
 
     it('Generate "get" + singular capitalized target if type is not has_many', () => {
-      expect(entityNameToReferenceMethodName('users', 'has_one')).to.equal('getUser');
+      const reference = new Reference('has_one', 'users');
+      expect(referenceToBaseMethodName(reference)).to.equal('getUser');
     });
 
     it('Handle already capitalized target', () => {
-      expect(entityNameToReferenceMethodName('User', 'has_many')).to.equal('getUsers');
+      const reference = new Reference('has_many', 'User');
+      expect(referenceToBaseMethodName(reference)).to.equal('getUsers');
     });
   });
 

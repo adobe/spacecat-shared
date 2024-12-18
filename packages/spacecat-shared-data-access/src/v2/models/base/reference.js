@@ -11,6 +11,13 @@
  */
 
 import { hasText } from '@adobe/spacecat-shared-utils';
+import {
+  entityNameToCollectionName,
+  entityNameToIdName,
+  isNonEmptyArray,
+  keyNamesToMethodName,
+  referenceToBaseMethodName,
+} from '../../util/util.js';
 
 class Reference {
   static TYPES = {
@@ -55,6 +62,100 @@ class Reference {
 
   isRemoveDependents() {
     return this.options.removeDependents;
+  }
+
+  toAccessorConfigs(registry, entity) {
+    const { log } = registry;
+    const accessorConfigs = [];
+
+    const target = this.getTarget();
+    const type = this.getType();
+
+    const baseMethodName = referenceToBaseMethodName(this);
+    const collectionName = entityNameToCollectionName(target);
+    const targetCollection = registry.getCollection(collectionName);
+
+    switch (type) {
+      case Reference.TYPES.BELONGS_TO: {
+        const foreignKeyName = entityNameToIdName(target);
+        const foreignKeyValue = entity.record[foreignKeyName];
+
+        // belongs_to: direct findById
+        accessorConfigs.push({
+          name: baseMethodName,
+          requiredKeys: [],
+          foreignKey: { name: foreignKeyName, value: foreignKeyValue },
+          byId: true,
+        });
+        break;
+      }
+
+      case Reference.TYPES.HAS_ONE: {
+        const foreignKeyName = entityNameToIdName(entity.entityName);
+        const foreignKeyValue = entity.getId();
+
+        // has_one yields a single record.
+        accessorConfigs.push({
+          name: baseMethodName,
+          requiredKeys: [],
+          foreignKey: { name: foreignKeyName, value: foreignKeyValue },
+        });
+        break;
+      }
+
+      case Reference.TYPES.HAS_MANY: {
+        const foreignKeyName = entityNameToIdName(entity.entityName);
+        const foreignKeyValue = entity.getId();
+
+        // has_many yields multiple records.
+        accessorConfigs.push({
+          name: baseMethodName,
+          requiredKeys: [],
+          all: true,
+          foreignKey: { name: foreignKeyName, value: foreignKeyValue },
+        });
+
+        const belongsToRef = targetCollection.schema.getReferenceByTypeAndTarget(
+          Reference.TYPES.BELONGS_TO,
+          entity.schema.getModelName(),
+        );
+
+        if (!belongsToRef) {
+          log.warn(`Reciprocal reference not found for ${entity.schema.getModelName()} to ${target}`);
+          break;
+        }
+
+        const sortKeys = belongsToRef.getSortKeys();
+        if (!isNonEmptyArray(sortKeys)) {
+          log.debug(`No sort keys defined for ${entity.schema.getModelName()} to ${target}`);
+          break;
+        }
+
+        const prefix = `${baseMethodName}By`;
+        const targetIdName = entityNameToIdName(target);
+
+        for (let i = 1; i <= sortKeys.length; i += 1) {
+          const subset = sortKeys.slice(0, i);
+          accessorConfigs.push({
+            name: keyNamesToMethodName(subset, prefix, [targetIdName]),
+            requiredKeys: subset,
+            all: true,
+            foreignKey: { name: foreignKeyName, value: foreignKeyValue },
+          });
+        }
+
+        break;
+      }
+
+      default:
+        throw new Error(`Unsupported reference type: ${type}`);
+    }
+
+    return accessorConfigs.map((config) => ({
+      ...config,
+      collection: targetCollection,
+      context: entity,
+    }));
   }
 }
 

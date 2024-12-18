@@ -182,10 +182,10 @@ describe('Schema', () => {
         }),
       };
 
-      const reference = new Reference('has_many', 'Organization');
-
-      expect(instance.getReciprocalReference(registry, reference))
+      expect(instance.getReciprocalReference(registry, new Reference('has_many', 'Organization')))
         .to.deep.equal(reciprocalReference);
+      expect(instance.getReciprocalReference(registry, new Reference('belongs_to', 'Organization')))
+        .to.be.null;
     });
 
     it('getReferences', () => {

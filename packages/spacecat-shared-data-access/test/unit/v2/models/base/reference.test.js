@@ -28,12 +28,23 @@ import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
+import { stub } from 'sinon';
 import Reference from '../../../../../src/v2/models/base/reference.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('Reference', () => {
+  let mockLogger;
+
+  beforeEach(() => {
+    mockLogger = {
+      debug: stub(),
+      error: stub(),
+      warn: stub(),
+    };
+  });
+
   describe('constructor', () => {
     it('creates a new reference with the correct properties', () => {
       const reference = new Reference('has_many', 'Test');
@@ -103,6 +114,199 @@ describe('Reference', () => {
       const reference = new Reference('has_many', 'Test', { removeDependents: false });
 
       expect(reference.isRemoveDependents()).to.be.false;
+    });
+  });
+
+  describe('toAccessorConfigs', () => {
+    it('returns accessor configs for has_many', () => {
+      const schema = {
+        getReferenceByTypeAndTarget: stub().returns(new Reference('belongs_to', 'Test')),
+        getModelName: () => 'Test',
+      };
+      const registry = {
+        log: mockLogger,
+        getCollection: stub().returns({
+          name: 'TestCollection',
+          schema,
+        }),
+      };
+      const reference = new Reference('has_many', 'Test');
+      const entity = {
+        entityName: 'Test',
+        getId: () => '123',
+        schema,
+      };
+
+      const accessorConfigs = reference.toAccessorConfigs(registry, entity);
+
+      expect(accessorConfigs).to.be.an('array');
+      expect(accessorConfigs).to.have.lengthOf(1);
+      expect(accessorConfigs[0]).to.deep.equal({
+        all: true,
+        collection: {
+          name: 'TestCollection',
+          schema,
+        },
+        context: {
+          entityName: 'Test',
+          getId: entity.getId,
+          schema,
+        },
+        foreignKey: {
+          name: 'testId',
+          value: '123',
+        },
+        name: 'getTests',
+        requiredKeys: [],
+      });
+    });
+
+    it('returns accessor configs for has_one', () => {
+      const schema = {
+        getReferenceByTypeAndTarget: stub().returns(new Reference('belongs_to', 'Test')),
+        getModelName: () => 'Test',
+      };
+      const registry = {
+        log: mockLogger,
+        getCollection: stub().returns({
+          name: 'TestCollection',
+          schema,
+        }),
+      };
+      const reference = new Reference('has_one', 'Test');
+      const entity = {
+        entityName: 'Test',
+        getId: () => '123',
+        schema,
+      };
+
+      const accessorConfigs = reference.toAccessorConfigs(registry, entity);
+
+      expect(accessorConfigs).to.be.an('array');
+      expect(accessorConfigs).to.have.lengthOf(1);
+      expect(accessorConfigs[0]).to.deep.equal({
+        collection: {
+          name: 'TestCollection',
+          schema,
+        },
+        context: {
+          entityName: 'Test',
+          getId: entity.getId,
+          schema,
+        },
+        foreignKey: {
+          name: 'testId',
+          value: '123',
+        },
+        name: 'getTest',
+        requiredKeys: [],
+      });
+    });
+
+    it('returns accessor configs for belongs_to', () => {
+      const schema = {
+        getReferenceByTypeAndTarget: stub().returns(new Reference('belongs_to', 'Test')),
+        getModelName: () => 'Test',
+      };
+      const registry = {
+        log: mockLogger,
+        getCollection: stub().returns({
+          name: 'TestCollection',
+          schema,
+        }),
+      };
+      const reference = new Reference('belongs_to', 'Test');
+      const entity = {
+        entityName: 'Test',
+        record: { testId: '123' },
+        schema,
+      };
+
+      const accessorConfigs = reference.toAccessorConfigs(registry, entity);
+
+      expect(accessorConfigs).to.be.an('array');
+      expect(accessorConfigs).to.have.lengthOf(1);
+      expect(accessorConfigs[0]).to.deep.equal({
+        collection: {
+          name: 'TestCollection',
+          schema,
+        },
+        context: {
+          entityName: 'Test',
+          record: { testId: '123' },
+          schema,
+        },
+        foreignKey: {
+          name: 'testId',
+          value: '123',
+        },
+        byId: true,
+        name: 'getTest',
+        requiredKeys: [],
+      });
+    });
+
+    it('logs warning for missing reciprocal reference', () => {
+      const schema = {
+        getReferenceByTypeAndTarget: stub().returns(null),
+        getModelName: () => 'Test',
+      };
+      const registry = {
+        log: mockLogger,
+        getCollection: stub().returns({
+          name: 'TestCollection',
+          schema,
+        }),
+      };
+      const reference = new Reference('has_many', 'Test');
+      const entity = {
+        entityName: 'Test',
+        getId: () => '123',
+        schema,
+      };
+
+      reference.toAccessorConfigs(registry, entity);
+
+      expect(mockLogger.warn).to.have.been.calledOnceWithExactly('Reciprocal reference not found for Test to Test');
+    });
+
+    it('logs debug for no sort keys defined', () => {
+      const schema = {
+        getReferenceByTypeAndTarget: stub().returns(new Reference('belongs_to', 'Test')),
+        getModelName: () => 'Test',
+      };
+      const registry = {
+        log: mockLogger,
+        getCollection: stub().returns({
+          name: 'TestCollection',
+          schema,
+        }),
+      };
+      const reference = new Reference('has_many', 'Test');
+      const entity = {
+        entityName: 'Test',
+        getId: () => '123',
+        schema,
+      };
+
+      reference.toAccessorConfigs(registry, entity);
+
+      expect(mockLogger.debug).to.have.been.calledOnceWithExactly('No sort keys defined for Test to Test');
+    });
+
+    it('throws an error for an invalid type', () => {
+      const reference = new Reference('has_many', 'Test');
+      reference.type = 'invalid';
+
+      const registry = {
+        log: mockLogger,
+        getCollection: stub().returns({
+          name: 'TestCollection',
+          schema: {},
+        }),
+      };
+
+      expect(() => reference.toAccessorConfigs(registry, { })).to.throw('Unsupported reference type: invalid');
     });
   });
 });

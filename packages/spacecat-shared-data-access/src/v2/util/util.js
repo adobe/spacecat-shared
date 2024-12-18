@@ -25,10 +25,12 @@ const entityNameToCollectionName = (entityName) => `${capitalize(pluralize.singu
 
 const entityNameToIdName = (entityName) => `${decapitalize(pluralize.singular(entityName))}Id`;
 
-const entityNameToReferenceMethodName = (target, type) => {
-  const baseName = type === 'has_many'
-    ? pluralize.plural(capitalize(target))
-    : pluralize.singular(capitalize(target));
+const referenceToBaseMethodName = (reference) => {
+  const target = capitalize(reference.getTarget());
+  const baseName = reference.getType() === 'has_many'
+    ? pluralize.plural(target)
+    : pluralize.singular(target);
+
   return `get${baseName}`;
 };
 
@@ -66,10 +68,9 @@ export {
   classExtends,
   collectionNameToEntityName,
   decapitalize,
+  entityNameToAllPKValue,
   entityNameToCollectionName,
   entityNameToIdName,
-  entityNameToAllPKValue,
-  entityNameToReferenceMethodName,
   idNameToEntityName,
   incrementVersion,
   isNonEmptyArray,
@@ -77,6 +78,7 @@ export {
   keyNamesToIndexName,
   keyNamesToMethodName,
   modelNameToEntityName,
+  referenceToBaseMethodName,
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,
 };

@@ -52,11 +52,11 @@ class EntityRegistry {
    * Constructs an instance of EntityRegistry.
    * @constructor
    * @param {Object} service - The ElectroDB service instance used to manage entities.
-   * @param {Object} logger - A logger for capturing and logging information.
+   * @param {Object} log - A logger for capturing and logging information.
    */
-  constructor(service, logger) {
+  constructor(service, log) {
     this.service = service;
-    this.logger = logger;
+    this.log = log;
     this.collections = new Map();
 
     this.#initialize();
@@ -69,7 +69,7 @@ class EntityRegistry {
    */
   #initialize() {
     Object.values(EntityRegistry.entities).forEach(({ collection: Collection, schema }) => {
-      const collection = new Collection(this.service, this, schema, this.logger);
+      const collection = new Collection(this.service, this, schema, this.log);
       this.collections.set(Collection.name, collection);
     });
 
@@ -83,7 +83,7 @@ class EntityRegistry {
       return acc;
     }, {});
 
-    this.logger.debug('Indexes:', JSON.stringify(indexes, null, 2));
+    this.log.debug('Indexes:', JSON.stringify(indexes, null, 2));
   }
 
   /**

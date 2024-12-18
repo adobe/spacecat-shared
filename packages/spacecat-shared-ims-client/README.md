@@ -25,7 +25,7 @@ import ImsClient from 'path/to/ImsClient';
 
 ### Creating an ImsClient Instance
 
-To create an instance of the ImsClient, you need to provide a context object containing the necessary environment configurations and an optional logger.
+To create an instance of the ImsClient, you need to provide a context object containing the necessary environment configurations and an optional log.
 
 ```javascript
 const context = {
@@ -35,7 +35,7 @@ const context = {
     IMS_CLIENT_CODE: 'yourClientCode',
     IMS_CLIENT_SECRET: 'yourClientSecret',
   },
-  log: console, // Optional: Custom logger can be provided
+  log: console, // Optional: Custom log can be provided
 };
 
 const imsClient = ImsClient.createFrom(context);

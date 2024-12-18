@@ -24,5 +24,5 @@ function handler(bundles) {
 
 export default {
   handler,
-  checkpoints: ['total-metrics'],
+  checkpoints: ['enter', 'click'],
 };

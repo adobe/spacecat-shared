@@ -16,13 +16,12 @@ import { loadBundles } from '../utils.js';
 function handler(bundles) {
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
-  dataChunks.reduce((acc, [, totals]) => {
-    acc.allTraffic.push(totals.pageViews.sum);
-    return acc;
-  });
+  const totalPageViews = dataChunks.totals.pageViews.sum;
+  return {
+    totalPageViews,
+  };
 }
 
 export default {
   handler,
-  checkpoints: ['enter', 'click'],
 };

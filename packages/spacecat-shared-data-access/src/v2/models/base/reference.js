@@ -131,13 +131,10 @@ class Reference {
           break;
         }
 
-        const prefix = `${baseMethodName}By`;
-        const targetIdName = entityNameToIdName(target);
-
         for (let i = 1; i <= sortKeys.length; i += 1) {
           const subset = sortKeys.slice(0, i);
           accessorConfigs.push({
-            name: keyNamesToMethodName(subset, prefix, [targetIdName]),
+            name: keyNamesToMethodName(subset, `${baseMethodName}By`),
             requiredKeys: subset,
             all: true,
             foreignKey: { name: foreignKeyName, value: foreignKeyValue },

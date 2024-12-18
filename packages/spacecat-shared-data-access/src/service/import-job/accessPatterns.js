@@ -118,7 +118,7 @@ export const updateImportJob = async (dynamoClient, config, log, importJob) => {
  * Removes an Import Job and all associated URLs.
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {ImportJob} importJob - The import job to remove.
  * @return {Promise<void>} A promise that resolves when the import job has been removed.
  */

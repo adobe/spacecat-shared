@@ -89,7 +89,7 @@ export const getSitesToAudit = async (dynamoClient, config) => {
  * the list.
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} auditType - The type of audits to retrieve for the sites.
  * @param {boolean} [sortAuditsAscending=true] - Determines if the audits should be sorted in
  * ascending order.
@@ -138,7 +138,7 @@ export const getSitesWithLatestAudit = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} baseURL - The base URL of the site to retrieve.
  * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object if found,
  * otherwise null.
@@ -168,7 +168,7 @@ export const getSiteByBaseURL = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} baseUrl - The base URL of the site to retrieve.
  * @param {string} auditType - The type of audits to retrieve for the site.
  * @param {boolean} [latestOnly=false] - Determines if only the latest audit should be retrieved.
@@ -215,7 +215,7 @@ export const getSiteByBaseURLWithAuditInfo = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} baseUrl - The base URL of the site to retrieve.
  * @param {string} auditType - The type of audits to retrieve for the site.
  * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object
@@ -234,7 +234,7 @@ export const getSiteByBaseURLWithAudits = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} baseUrl - The base URL of the site to retrieve.
  * @param {string} auditType - The type of the latest audit to retrieve for the site.
  * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object
@@ -272,7 +272,7 @@ export const getSitesByOrganizationID = async (
  * The sortAuditsAscending parameter can be used to change the sort order.
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} auditType - The type of audits to retrieve for the sites.
  * @param {string} organizationId - The organizationId to retrieve the sites.
  * @param {boolean} [sortAuditsAscending=true] - Determines if the audits should be sorted in
@@ -321,7 +321,7 @@ export const getSitesByOrganizationIDWithLatestAudits = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} siteId - The ID of the site to retrieve.
  * @returns {Promise<Readonly<Site>|null>} A promise that resolves to the site object if found,
  * otherwise null.
@@ -341,7 +341,7 @@ export const getSiteByID = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {object} siteData - The site data.
  * @returns {Promise<Readonly<Site>>}
  */
@@ -373,7 +373,7 @@ export const addSite = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {Site} site - The site.
  * @returns {Promise<Readonly<Site>>} - The updated site.
  */
@@ -399,7 +399,7 @@ export const updateSite = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} siteId - The ID of the site to remove.
  * @returns {Promise<void>}
  */
@@ -446,7 +446,7 @@ async function removeSites(
  * Removes all sites for an organization.
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} organizationId - The ID of the organization to remove the sites for.
  * @return {Promise<void>} A promise that resolves when all sites for the organization have been
  * removed.

@@ -13,14 +13,11 @@
 import { createClient } from '@adobe/spacecat-shared-dynamo';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+
 import AWSXray from 'aws-xray-sdk';
 import { Service } from 'electrodb';
 
-import ModelFactory from '../v2/models/model.factory.js';
-import OpportunityCollection from '../v2/models/opportunity.collection.js';
-import SuggestionCollection from '../v2/models/suggestion.collection.js';
-import OpportunitySchema from '../v2/schema/opportunity.schema.js';
-import SuggestionSchema from '../v2/schema/suggestion.schema.js';
+import EntityRegistry from '../v2/models/base/entity.registry.js';
 
 import { auditFunctions } from './audits/index.js';
 import { keyEventFunctions } from './key-events/index.js';
@@ -51,11 +48,9 @@ const createElectroService = (client, config, log) => {
     log.debug(JSON.stringify(event, null, 4));
   };
   /* c8 ignore end */
+
   return new Service(
-    {
-      opportunity: OpportunitySchema,
-      suggestion: SuggestionSchema,
-    },
+    EntityRegistry.getEntities(),
     {
       client,
       table,
@@ -74,11 +69,11 @@ const createElectroService = (client, config, log) => {
  * tableNameImportJobs: string, pkAllImportJobs: string, indexNameAllImportJobs: string,
  * tableNameSiteTopPages: string, indexNameAllOrganizations: string,
  * indexNameAllOrganizationsByImsOrgId: string, pkAllOrganizations: string}} config configuration
- * @param {Logger} log logger
+ * @param {Logger} log log
  * @returns {object} data access object
  */
-export const createDataAccess = (config, log = console) => {
-  const dynamoClient = createClient(log);
+export const createDataAccess = (config, log = console, client = undefined) => {
+  const dynamoClient = createClient(log, client);
 
   const auditFuncs = auditFunctions(dynamoClient, config, log);
   const keyEventFuncs = keyEventFunctions(dynamoClient, config, log);
@@ -95,10 +90,8 @@ export const createDataAccess = (config, log = console) => {
   // electro-based data access objects
   const rawClient = createRawClient();
   const electroService = createElectroService(rawClient, config, log);
-  const modelFactory = new ModelFactory(electroService, log);
-
-  const Opportunity = modelFactory.getCollection(OpportunityCollection.name);
-  const Suggestion = modelFactory.getCollection(SuggestionCollection.name);
+  const entityRegistry = new EntityRegistry(electroService, log);
+  const collections = entityRegistry.getCollections();
 
   return {
     ...auditFuncs,
@@ -113,7 +106,6 @@ export const createDataAccess = (config, log = console) => {
     ...experimentFuncs,
     ...apiKeyFuncs,
     // electro-based data access objects
-    Opportunity,
-    Suggestion,
+    ...collections,
   };
 };

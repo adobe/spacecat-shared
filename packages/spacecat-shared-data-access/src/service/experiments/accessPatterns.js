@@ -44,7 +44,7 @@ export const getExperiment = async (dynamoClient, config, siteId, experimentId, 
  * Retrieves all experiments for a given siteId.
  * @param {*} dynamoClient - The DynamoDB client.
  * @param {*} config - The data access config.
- * @param {*} log  - the logger object
+ * @param {*} log  - the log object
  * @param {*} siteId - siteId of the experiment.
  * @param {*} experimentId - experiment id.
  * @returns {Promise<ReadonlyArray<SiteCandidate>>} A promise that resolves to
@@ -77,7 +77,7 @@ export const getExperiments = async (
  *
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {object} log - the logger object
+ * @param {object} log - the log object
  * @param {object} experimentData - The experiment data.
  * @returns {Promise<Readonly<SiteCandidate>>} A promise that resolves to newly created/updated
  * experiment

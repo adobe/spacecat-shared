@@ -58,7 +58,7 @@ describe('AdobeImsHandler', () => {
     expect(handler).to.be.instanceof(AbstractHandler);
   });
 
-  it('sets the name and logger properties correctly', () => {
+  it('sets the name and log properties correctly', () => {
     expect(handler.name).to.equal('ims');
     expect(handler.logger).to.equal(logStub);
   });

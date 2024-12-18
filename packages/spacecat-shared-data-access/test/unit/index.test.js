@@ -25,7 +25,11 @@ describe('Data Access Wrapper Tests', () => {
     mockFn = sinon.stub().resolves('function response');
     mockContext = {
       env: {},
-      log: sinon.spy(),
+      log: {
+        info: sinon.spy(),
+        debug: sinon.spy(),
+        error: sinon.spy(),
+      },
     };
     mockRequest = {};
   });

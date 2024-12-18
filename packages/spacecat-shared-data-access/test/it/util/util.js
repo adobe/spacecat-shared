@@ -9,6 +9,8 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import { removeElectroProperties } from '../../../src/v2/util/util.js';
+
 const randomDate = (start, end) => {
   if (start.getTime() >= end.getTime()) {
     throw new Error('start must be before end');
@@ -23,25 +25,6 @@ const getRandomDecimal = (precision) => parseFloat(Math.random().toFixed(precisi
 
 // Generates a random integer up to a given maximum
 const getRandomInt = (max) => Math.floor(Math.random() * max);
-
-const removeElectroProperties = (record) => { /* eslint-disable no-underscore-dangle */
-  const cleanedRecord = { ...record };
-
-  delete cleanedRecord.sk;
-  delete cleanedRecord.pk;
-  delete cleanedRecord.gsi1pk;
-  delete cleanedRecord.gsi1sk;
-  delete cleanedRecord.gsi2pk;
-  delete cleanedRecord.gsi2sk;
-  delete cleanedRecord.gsi3pk;
-  delete cleanedRecord.gsi3sk;
-  delete cleanedRecord.gsi4pk;
-  delete cleanedRecord.gsi4sk;
-  delete cleanedRecord.__edb_e__;
-  delete cleanedRecord.__edb_v__;
-
-  return cleanedRecord;
-};
 
 const sanitizeRecord = (record, idName) => {
   const sanitizedRecord = removeElectroProperties({ ...record });

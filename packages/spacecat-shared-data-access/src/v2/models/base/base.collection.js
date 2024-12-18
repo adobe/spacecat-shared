@@ -18,7 +18,6 @@ import {
 
 import { ElectroValidationError } from 'electrodb';
 
-import { removeElectroProperties } from '../../../../test/it/util/util.js';
 import { createAccessors } from '../../util/accessor.utils.js';
 import ValidationError from '../../errors/validation.error.js';
 import { guardId } from '../../util/guards.js';
@@ -26,6 +25,7 @@ import {
   entityNameToAllPKValue,
   isNonEmptyArray,
   keyNamesToIndexName,
+  removeElectroProperties,
 } from '../../util/util.js';
 import { INDEX_TYPES } from './constants.js';
 

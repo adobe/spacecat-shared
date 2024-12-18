@@ -46,6 +46,25 @@ const keyNamesToMethodName = (keyNames, prefix) => prefix + keyNames.map(capital
 
 const modelNameToEntityName = (modelName) => decapitalize(modelName);
 
+const removeElectroProperties = (record) => { /* eslint-disable no-underscore-dangle */
+  const cleanedRecord = { ...record };
+
+  delete cleanedRecord.sk;
+  delete cleanedRecord.pk;
+  delete cleanedRecord.gsi1pk;
+  delete cleanedRecord.gsi1sk;
+  delete cleanedRecord.gsi2pk;
+  delete cleanedRecord.gsi2sk;
+  delete cleanedRecord.gsi3pk;
+  delete cleanedRecord.gsi3sk;
+  delete cleanedRecord.gsi4pk;
+  delete cleanedRecord.gsi4sk;
+  delete cleanedRecord.__edb_e__;
+  delete cleanedRecord.__edb_v__;
+
+  return cleanedRecord;
+};
+
 const sanitizeTimestamps = (data) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { createdAt, updatedAt, ...rest } = data;
@@ -79,6 +98,7 @@ export {
   keyNamesToMethodName,
   modelNameToEntityName,
   referenceToBaseMethodName,
+  removeElectroProperties,
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,
 };

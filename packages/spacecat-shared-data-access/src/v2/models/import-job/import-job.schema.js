@@ -142,9 +142,8 @@ const schema = new SchemaBuilder(ImportJob, ImportJobCollection)
     default: 0,
     validate: (value) => !value || isInteger(value),
   })
-  .addAllIndexWithComposite('startedAt')
+  .addAllIndex(['startedAt'])
   .addIndex(
-    'byStatus',
     { composite: ['status'] },
     { composite: ['updatedAt'] },
   );

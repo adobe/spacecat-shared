@@ -40,7 +40,7 @@
       ],
       "GlobalSecondaryIndexes": [
         {
-          "IndexName": "spacecat-data-ApiKey-byHashedApiKey",
+          "IndexName": "spacecat-data-gsi1pk-gsi1sk",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
@@ -48,7 +48,7 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-ApiKey-byImsOrgIdAndImsUserId",
+          "IndexName": "spacecat-data-gsi2pk-gsi2sk",
           "KeyAttributes": {
             "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
             "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
@@ -56,18 +56,18 @@
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-Opportunity-byAuditId",
+          "IndexName": "spacecat-data-gsi3pk-gsi3sk",
           "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
           },
           "Projection": { "ProjectionType": "ALL" }
         },
         {
-          "IndexName": "spacecat-data-Opportunity-bySiteId",
+          "IndexName": "spacecat-data-gsi4pk-gsi4sk",
           "KeyAttributes": {
-            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
-            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+            "PartitionKey": { "AttributeName": "gsi4pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi4sk", "AttributeType": "S" }
           },
           "Projection": { "ProjectionType": "ALL" }
         },

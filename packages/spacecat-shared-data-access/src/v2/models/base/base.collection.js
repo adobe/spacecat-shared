@@ -24,7 +24,6 @@ import { guardId } from '../../util/guards.js';
 import {
   entityNameToAllPKValue,
   isNonEmptyArray,
-  keyNamesToIndexName,
   removeElectroProperties,
 } from '../../util/util.js';
 import { INDEX_TYPES } from './constants.js';
@@ -39,27 +38,17 @@ function isValidParent(parent, child) {
   return child.record?.[foreignKey] === parent.record?.[foreignKey];
 }
 
-/**
- * Attempts to find an index name matching a generated name from the given keyNames.
- * If no exact match is found, it progressively shortens the keyNames by removing the last one
- * and tries again. If still no match, it tries the "all" index, and then "primary".
- *
- * @param {object} indexes - The available indexes, keyed by their names.
- * @param {object} keys - The keys to find an index name for.
- * @returns {object} The found index.
- */
-function findIndexNameByKeys(indexes, keys) {
+function findIndexNameByKeys(schema, keys) {
   const keyNames = Object.keys(keys);
-  for (let { length } = keyNames; length > 0; length -= 1) {
-    const subKeyNames = keyNames.slice(0, length);
-    const candidateName = keyNamesToIndexName(subKeyNames);
-    if (indexes[candidateName]) {
-      return candidateName;
-    }
+
+  const index = schema.findIndexBySortKeys(keyNames);
+  if (index) {
+    return index.index;
   }
 
-  if (indexes.all) {
-    return INDEX_TYPES.ALL;
+  const allIndex = schema.findIndexByType(INDEX_TYPES.ALL);
+  if (allIndex) {
+    return allIndex.index;
   }
 
   return INDEX_TYPES.PRIMARY;
@@ -176,11 +165,11 @@ class BaseCollection {
       throw new Error(message);
     }
 
-    const indexName = options.index || findIndexNameByKeys(this.entity.query, keys);
+    const indexName = options.index || findIndexNameByKeys(this.schema, keys);
     const index = this.entity.query[indexName];
 
     if (!index) {
-      const message = `Failed to query [${this.entityName}]: index [${indexName}] not found`;
+      const message = `Failed to query [${this.entityName}]: query proxy [${indexName}] not found`;
       this.log.error(message);
       throw new Error(message);
     }
@@ -243,7 +232,8 @@ class BaseCollection {
    * Finds a single entity from the "all" index. Requires an index named "all" with a partition key
    * named "pk" with a static value of "ALL_<ENTITYNAME>".
    * @param {Object} [sortKeys] - The sort keys to use for the query.
-   * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
+   * @param {{index?: string, attributes?: string[], order?: string}} [options] -
+   * Additional options for the query.
    * @return {Promise<BaseModel|Array<BaseModel>|null>}
    */
   async findByAll(sortKeys = {}, options = {}) {
@@ -254,7 +244,7 @@ class BaseCollection {
     }
 
     const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
-    return this.#queryByIndexKeys(keys, { ...options, index: INDEX_TYPES.ALL, limit: 1 });
+    return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
   }
 
   /**

@@ -18,7 +18,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
-import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/v2/util/util.js';
+import { sanitizeIdAndAuditFields, sanitizeTimestamps, zeroPad } from '../../../src/v2/util/util.js';
 
 use(chaiAsPromised);
 
@@ -91,6 +91,7 @@ describe('Configuration IT', async () => {
         test: data,
       },
       version: configuration.getVersion() + 1,
+      versionString: zeroPad(configuration.getVersion() + 1, 10),
     };
 
     configuration.addHandler('test', data);

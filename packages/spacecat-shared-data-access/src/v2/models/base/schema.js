@@ -140,6 +140,31 @@ class Schema {
     return this.indexes[indexName];
   }
 
+  findIndexBySortKeys(sortKeys) {
+    // find index that has same sort keys, then remove the last sort key
+    // and find the index that has the remaining sort keys, etc.
+    for (let { length } = sortKeys; length > 0; length -= 1) {
+      const subKeyNames = sortKeys.slice(0, length);
+      const index = Object.values(this.indexes).find((candidate) => {
+        const { pk, sk } = candidate;
+        const allKeys = [...(pk?.facets || []), ...(sk?.facets || [])];
+
+        // check if all keys in the index are in the sort keys
+        return subKeyNames.every((key) => allKeys.includes(key));
+      });
+
+      if (isNonEmptyObject(index)) {
+        return index;
+      }
+    }
+
+    return null;
+  }
+
+  findIndexByType(type) {
+    return Object.values(this.indexes).find((index) => index.indexType === type);
+  }
+
   /**
    * Returns the indexes for the schema. By default, this returns all indexes.
    * You can use the `exclude` parameter to exclude certain indexes.
@@ -170,7 +195,7 @@ class Schema {
     }
 
     const pkKeys = Array.isArray(index.pk?.facets) ? index.pk.facets : [];
-    const skKeys = Array.isArray(index.sk?.facets) ? index.sk.facets : [index.sk?.field];
+    const skKeys = Array.isArray(index.sk?.facets) ? index.sk.facets : [];
 
     return [...pkKeys, ...skKeys];
   }

@@ -95,9 +95,9 @@ describe('SchemaBuilder', () => {
           pk: { composite: ['mockModelId'], field: 'pk' },
           sk: { composite: [], field: 'sk' },
         },
-        all: null,
-        belongs_to: {},
-        other: {},
+        all: [],
+        belongs_to: [],
+        other: [],
       });
     });
   });
@@ -135,84 +135,40 @@ describe('SchemaBuilder', () => {
     });
   });
 
-  describe('addAllIndexWithComposite', () => {
-    it('throws error if attribute name is not provided', () => {
-      expect(() => instance.addAllIndexWithComposite())
-        .to.throw('At least one composite attribute name is required.');
-    });
-
-    it('successfully adds an all index', () => {
-      const result = instance.addAllIndexWithComposite('test');
-
-      expect(result).to.equal(instance);
-      expect(instance.rawIndexes.all).to.deep.equal({
-        index: 'spacecat-data-MockModel-all',
-        pk: { field: 'gsi1pk', template: 'ALL_MOCKMODELS' },
-        sk: { composite: ['test'], field: 'gsi1sk' },
-      });
-    });
-  });
-
-  describe('addAllIndexWithTemplateField', () => {
-    it('throws error if field name is not provided', () => {
-      expect(() => instance.addAllIndexWithTemplateField())
-        .to.throw('fieldName is required and must be a non-empty string.');
-    });
-
-    it('throws error if template is not provided', () => {
-      expect(() => instance.addAllIndexWithTemplateField('test'))
-        .to.throw('template is required and must be a non-empty string.');
-    });
-
-    it('successfully adds an all index', () => { /* eslint-disable no-template-curly-in-string */
-      const result = instance.addAllIndexWithTemplateField('test', '${test}');
-
-      expect(result).to.equal(instance);
-      expect(instance.rawIndexes.all).to.deep.equal({
-        index: 'spacecat-data-MockModel-all',
-        pk: { field: 'gsi1pk', template: 'ALL_MOCKMODELS' },
-        sk: { field: 'test', template: '${test}' },
-      });
+  describe('addAllIndex', () => {
+    it('throws error if no sort keys are provided', () => {
+      expect(() => instance.addAllIndex())
+        .to.throw('Sort keys are required and must be a non-empty array.');
+      expect(() => instance.addAllIndex('test'))
+        .to.throw('Sort keys are required and must be a non-empty array.');
     });
   });
 
   describe('addIndex', () => {
-    it('throws error if index name is not provided', () => {
-      expect(() => instance.addIndex())
-        .to.throw('Index name is required and must be a non-empty string.');
-    });
-
-    it('throws error if index name is reserved', () => {
-      expect(() => instance.addIndex('all'))
-        .to.throw('Index name "all" is reserved.');
-      expect(() => instance.addIndex('primary'))
-        .to.throw('Index name "primary" is reserved.');
-    });
-
     it('throws error if pk is not provided', () => {
-      expect(() => instance.addIndex('test'))
+      expect(() => instance.addIndex())
         .to.throw('Partition key configuration (pk) is required and must be a non-empty object.');
-      expect(() => instance.addIndex('test', 'pk'))
+      expect(() => instance.addIndex('pk'))
         .to.throw('Partition key configuration (pk) is required and must be a non-empty object.');
-      expect(() => instance.addIndex('test', {}))
+      expect(() => instance.addIndex({}))
         .to.throw('Partition key configuration (pk) is required and must be a non-empty object.');
     });
 
     it('throws error if sk is not provided', () => {
-      expect(() => instance.addIndex('test', { composite: ['test'] }))
+      expect(() => instance.addIndex({ composite: ['test'] }))
         .to.throw('Sort key configuration (sk) is required and must be a non-empty object.');
-      expect(() => instance.addIndex('test', { composite: ['test'] }, 'sk'))
+      expect(() => instance.addIndex({ composite: ['test'] }, 'sk'))
         .to.throw('Sort key configuration (sk) is required and must be a non-empty object.');
-      expect(() => instance.addIndex('test', { composite: ['test'] }, {}))
+      expect(() => instance.addIndex({ composite: ['test'] }, {}))
         .to.throw('Sort key configuration (sk) is required and must be a non-empty object.');
     });
 
     it('successfully adds an index', () => {
-      const result = instance.addIndex('test', { composite: ['test'] }, { composite: ['test'] });
+      const result = instance.addIndex({ composite: ['test'] }, { composite: ['test'] });
 
       expect(result).to.equal(instance);
-      expect(instance.rawIndexes.other.test).to.deep.equal({
-        index: 'spacecat-data-MockModel-test',
+      expect(instance.rawIndexes.other[0]).to.deep.equal({
+        type: 'other',
         pk: { composite: ['test'] },
         sk: { composite: ['test'] },
       });
@@ -288,8 +244,8 @@ describe('SchemaBuilder', () => {
         type: 'string',
         validate: instance.attributes.someEntityId.validate,
       });
-      expect(instance.rawIndexes.belongs_to.bySomeEntityId).to.deep.equal({
-        index: 'spacecat-data-MockModel-bySomeEntityId',
+      expect(instance.rawIndexes.belongs_to[0]).to.deep.equal({
+        type: 'belongs_to',
         pk: { composite: ['someEntityId'] },
         sk: { composite: ['updatedAt'] },
       });
@@ -313,8 +269,8 @@ describe('SchemaBuilder', () => {
         type: 'string',
         validate: instance.attributes.someEntityId.validate,
       });
-      expect(instance.rawIndexes.belongs_to.bySomeEntityId).to.deep.equal({
-        index: 'spacecat-data-MockModel-bySomeEntityId',
+      expect(instance.rawIndexes.belongs_to[0]).to.deep.equal({
+        type: 'belongs_to',
         pk: { composite: ['someEntityId'] },
         sk: { composite: ['updatedAt'] },
       });
@@ -362,10 +318,9 @@ describe('SchemaBuilder', () => {
         required: true,
         validate: () => true,
       });
-      instance.addAllIndexWithComposite('baseURL');
-      instance.addAllIndexWithTemplateField('test', '${test}');
-      instance.addIndex('byDeliveryType', { composite: ['deliveryType'] }, { composite: ['updatedAt'] });
-      instance.addIndex('bySomeField', { field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addAllIndex(['baseURL']);
+      instance.addIndex({ composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
 
       const schema = instance.build();
 
@@ -417,28 +372,33 @@ describe('SchemaBuilder', () => {
             pk: { field: 'pk', composite: ['mockModelId'] },
             sk: { field: 'sk', composite: [] },
           },
-          all: {
-            index: 'spacecat-data-MockModel-all',
+          'spacecat-data-gsi1pk-gsi1sk': {
+            index: 'spacecat-data-gsi1pk-gsi1sk',
+            indexType: 'all',
             pk: { field: 'gsi1pk', template: 'ALL_MOCKMODELS' },
-            sk: { field: 'test', template: '${test}' },
+            sk: { field: 'gsi1sk', composite: ['baseURL'] },
           },
-          byOrganizationId: {
-            index: 'spacecat-data-MockModel-byOrganizationId',
+          'spacecat-data-gsi2pk-gsi2sk': {
+            index: 'spacecat-data-gsi2pk-gsi2sk',
+            indexType: 'belongs_to',
             pk: { composite: ['organizationId'], field: 'gsi2pk' },
             sk: { composite: ['updatedAt'], field: 'gsi2sk' },
           },
-          bySiteId: {
-            index: 'spacecat-data-MockModel-bySiteId',
+          'spacecat-data-gsi3pk-gsi3sk': {
+            index: 'spacecat-data-gsi3pk-gsi3sk',
+            indexType: 'belongs_to',
             pk: { composite: ['siteId'], field: 'gsi3pk' },
             sk: { composite: ['someField'], field: 'gsi3sk' },
           },
-          byDeliveryType: {
-            index: 'spacecat-data-MockModel-byDeliveryType',
+          'spacecat-data-gsi4pk-gsi4sk': {
+            index: 'spacecat-data-gsi4pk-gsi4sk',
+            indexType: 'other',
             pk: { composite: ['deliveryType'], field: 'gsi4pk' },
             sk: { composite: ['updatedAt'], field: 'gsi4sk' },
           },
-          bySomeField: {
-            index: 'spacecat-data-MockModel-bySomeField',
+          'spacecat-data-gsi5pk-gsi5sk': {
+            index: 'spacecat-data-gsi5pk-gsi5sk',
+            indexType: 'other',
             pk: { composite: ['deliveryType'], field: 'someField' },
             sk: { composite: ['updatedAt'], field: 'gsi5sk' },
           },
@@ -470,6 +430,16 @@ describe('SchemaBuilder', () => {
           },
         ],
       });
+    });
+
+    it('throws error if more than 5 indexes are added', () => {
+      instance.addAllIndex(['baseURL']);
+      instance.addIndex({ composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      expect(() => instance.build()).to.throw('Cannot have more than 5 indexes.');
     });
   });
 });

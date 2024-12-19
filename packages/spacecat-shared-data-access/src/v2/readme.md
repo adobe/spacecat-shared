@@ -135,7 +135,7 @@ const userSchema = new SchemaBuilder(User, UserCollection)
     validate: (value) => value.includes('@'),
   })
   .addAttribute('name', { type: 'string', required: true })
-  .addAllIndexWithComposite('email')
+  .addAllIndex(['email'])
   .addReference('belongs_to', 'Organization') // Adds organizationId and byOrganizationId index
   .build();
 

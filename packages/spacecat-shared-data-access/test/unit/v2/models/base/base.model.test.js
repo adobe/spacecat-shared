@@ -80,7 +80,10 @@ describe('BaseModel', () => {
         },
         suggestion: {
           entity: suggestionEntity,
-          query: { primary: stub().returns({ go: stub().resolves({ data: [mockRecord] }) }) },
+          query: {
+            primary: stub().returns({ go: stub().resolves({ data: [mockRecord] }) }),
+            'spacecat-data-gsi1pk-gsi1sk': stub().returns({ go: stub().resolves({ data: [mockRecord] }) }),
+          },
           remove: stub().returns({ go: stub().resolves() }),
           indexes: {
             primary: {},

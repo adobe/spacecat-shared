@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { incrementVersion, sanitizeIdAndAuditFields } from '../../util/util.js';
+import { incrementVersion, sanitizeIdAndAuditFields, zeroPad } from '../../util/util.js';
 import BaseCollection from '../base/base.collection.js';
 
 /**
@@ -29,6 +29,10 @@ class ConfigurationCollection extends BaseCollection {
     sanitizedData.version = version;
 
     return super.create(sanitizedData);
+  }
+
+  async findByVersion(version) {
+    return this.findByAll({ versionString: zeroPad(version, 10) });
   }
 
   async findLatest() {

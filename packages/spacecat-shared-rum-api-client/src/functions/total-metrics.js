@@ -10,13 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import { DataChunks } from '@adobe/rum-distiller';
+import { DataChunks, series } from '@adobe/rum-distiller';
 import { loadBundles } from '../utils.js';
 
 function handler(bundles) {
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
-  const totalPageViews = dataChunks.totals.pageViews.sum;
+  dataChunks.addSeries('traffic_domain', series.pageViews);
+  const totalPageViews = dataChunks?.metrics?.traffic_domain?.sum;
   return {
     totalPageViews,
   };

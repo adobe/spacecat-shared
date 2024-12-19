@@ -81,9 +81,8 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     set: () => new Date().toISOString(),
     validate: (value) => !value || isIsoDate(value),
   })
-  .addAllIndexWithComposite('baseURL')
+  .addAllIndex(['baseURL'])
   .addIndex(
-    'byDeliveryType',
     { composite: ['deliveryType'] },
     { composite: ['updatedAt'] },
   );

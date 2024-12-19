@@ -82,6 +82,13 @@ const incrementVersion = (version) => (isInteger(version) ? parseInt(version, 10
 
 const isNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
 
+const zeroPad = (num, length) => {
+  const str = String(num);
+  return str.length >= length
+    ? str
+    : '0'.repeat(length - str.length) + str;
+};
+
 export {
   capitalize,
   classExtends,
@@ -101,4 +108,5 @@ export {
   removeElectroProperties,
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,
+  zeroPad,
 };

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.60.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.60.1...@adobe/spacecat-shared-data-access-v1.60.2) (2024-12-19)
+
+
+### Bug Fixes
+
+* reduce number of indexes ([#499](https://github.com/adobe/spacecat-shared/issues/499)) ([95601cc](https://github.com/adobe/spacecat-shared/commit/95601cca8ca37f989a650fa841e0dae678cebc25))
+
 # [@adobe/spacecat-shared-data-access-v1.60.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.60.0...@adobe/spacecat-shared-data-access-v1.60.1) (2024-12-18)
 
 

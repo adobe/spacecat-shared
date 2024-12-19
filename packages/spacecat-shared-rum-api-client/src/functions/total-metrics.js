@@ -17,7 +17,7 @@ function handler(bundles) {
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
   dataChunks.addSeries('traffic_domain', series.pageViews);
-  const totalPageViews = dataChunks?.metrics?.traffic_domain?.sum;
+  const totalPageViews = dataChunks?.totals?.traffic_domain?.sum;
   return {
     totalPageViews,
   };

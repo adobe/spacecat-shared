@@ -69,12 +69,10 @@ const schema = new SchemaBuilder(ApiKey, ApiKeyCollection)
     },
   })
   .addIndex(
-    'byHashedApiKey',
     { composite: ['hashedApiKey'] },
     { composite: ['updatedAt'] },
   )
   .addIndex(
-    'byImsOrgIdAndImsUserId',
     { composite: ['imsOrgId', 'imsUserId'] },
     { composite: ['updatedAt'] },
   );

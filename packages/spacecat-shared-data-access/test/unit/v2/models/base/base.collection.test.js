@@ -58,7 +58,7 @@ describe('BaseCollection', () => {
   let baseCollectionInstance;
   let mockElectroService;
   let mockEntityRegistry;
-  let mockIndexes = { primary: {} };
+  let mockIndexes;
   let mockLogger;
 
   const mockRecord = {
@@ -70,6 +70,7 @@ describe('BaseCollection', () => {
   };
 
   beforeEach(() => {
+    mockIndexes = { primary: {}, all: { index: 'all', indexType: 'all' } };
     mockEntityRegistry = {
       getCollection: stub(),
     };
@@ -167,7 +168,7 @@ describe('BaseCollection', () => {
 
     it('creates accessors for partition and sort key attributes', () => {
       mockIndexes = {
-        bySomeKey: { pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
+        bySomeKey: { index: 'bySomeKey', pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
       };
 
       const instance = createInstance(
@@ -188,7 +189,7 @@ describe('BaseCollection', () => {
         { go: () => Promise.resolve({ data: [] }) },
       );
       mockIndexes = {
-        bySomeKey: { pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
+        bySomeKey: { index: 'bySomeKey', pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
       };
 
       mockElectroService.entities.mockEntityModel.model.schema = {
@@ -257,7 +258,7 @@ describe('BaseCollection', () => {
 
     it('throws error if index is not found', async () => {
       await expect(baseCollectionInstance.findByIndexKeys({ someKey: 'someValue' }, { index: 'none' }))
-        .to.be.rejectedWith('Failed to query [mockEntityModel]: index [none] not found');
+        .to.be.rejectedWith('Failed to query [mockEntityModel]: query proxy [none] not found');
       expect(mockLogger.error).to.have.been.calledOnce;
     });
   });
@@ -565,11 +566,24 @@ describe('BaseCollection', () => {
 
     it('successfully queries entities by index keys', async () => {
       const mockFindResult = { data: [mockRecord] };
+
+      mockIndexes = {
+        bySomeKey: { index: 'bySomeKey', pk: { facets: ['someKey'] }, sk: { facets: ['someOtherKey'] } },
+      };
+
       mockElectroService.entities.mockEntityModel.query.bySomeKey.returns(
         { go: () => Promise.resolve(mockFindResult) },
       );
 
-      const result = await baseCollectionInstance.allByIndexKeys({ someKey: 'someValue' });
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      const result = await instance.allByIndexKeys({ someKey: 'someValue' });
+
       expect(result).to.be.an('array').that.has.length(1);
       expect(result[0].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.bySomeKey)
@@ -578,14 +592,24 @@ describe('BaseCollection', () => {
 
     it('successfully queries entities by primary index keys', async () => {
       const mockFindResult = { data: [mockRecord] };
+
       delete mockElectroService.entities.mockEntityModel.query.all;
       delete mockElectroService.entities.mockEntityModel.query.bySomeKey;
+      delete mockIndexes.all;
 
       mockElectroService.entities.mockEntityModel.query.primary.returns(
         { go: () => Promise.resolve(mockFindResult) },
       );
 
-      const result = await baseCollectionInstance.allByIndexKeys({ someKey: 'someValue' });
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      const result = await instance.allByIndexKeys({ someKey: 'someValue' });
+
       expect(result).to.be.an('array').that.has.length(1);
       expect(result[0].record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.query.primary)

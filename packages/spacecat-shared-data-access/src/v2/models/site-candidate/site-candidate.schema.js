@@ -54,6 +54,6 @@ const schema = new SchemaBuilder(SiteCandidate, SiteCandidateCollection)
   .addAttribute('updatedBy', {
     type: 'string',
   })
-  .addAllIndexWithComposite('baseURL');
+  .addAllIndex(['baseURL']);
 
 export default schema.build();

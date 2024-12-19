@@ -32,6 +32,7 @@ import {
   referenceToBaseMethodName,
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,
+  zeroPad,
 } from '../../../../src/v2/util/util.js';
 import Reference from '../../../../src/v2/models/base/reference.js';
 
@@ -215,6 +216,15 @@ describe('Utilities', () => {
     it('Return object unchanged if no ID or timestamps present', () => {
       const data = { foo: 'bar' };
       expect(sanitizeIdAndAuditFields('User', data)).to.deep.equal({ foo: 'bar' });
+    });
+  });
+
+  describe('zeroPad', () => {
+    it('adds leading zeros to a number', () => {
+      expect(zeroPad(123, 5)).to.equal('00123');
+    });
+    it('skips padding when number is longer than length', () => {
+      expect(zeroPad(123, 1)).to.equal('123');
     });
   });
 });

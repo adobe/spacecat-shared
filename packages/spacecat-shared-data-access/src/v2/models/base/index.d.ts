@@ -58,12 +58,20 @@ export interface Reference {
   isRemoveDependents(): boolean;
 }
 
+export interface IndexAccessor {
+  indexName: string;
+  keySets: string[][];
+}
+
 export interface Schema {
+  findIndexBySortKeys(sortKeys: string[]): object | null;
+  findIndexByType(type: string): object | null;
   getAttribute(name: string): object;
   getAttributes(): object;
   getCollectionName(): string;
   getEntityName(): string;
   getIdName(): string;
+  getIndexAccessors(): Array<IndexAccessor>;
   getIndexes(): object;
   getIndexKeys(indexName: string): string[];
   getModelClass(): object;
@@ -75,8 +83,7 @@ export interface Schema {
 
 export interface SchemaBuilder {
   addAttribute(name: string, data: object): SchemaBuilder;
-  addAllIndexWithComposite(...attributeNames: string[]): SchemaBuilder
-  addAllIndexWithTemplateField(fieldName: string, template: string): SchemaBuilder;
+  addAllIndex(sortKeys: string[]): SchemaBuilder;
   addIndex(name: string, partitionKey: object, sortKey: object): SchemaBuilder;
   addReference(referenceType: string, entityName: string, sortKeys?: string[]): SchemaBuilder;
   build(): Schema;

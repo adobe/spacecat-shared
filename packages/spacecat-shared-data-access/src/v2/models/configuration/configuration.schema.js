@@ -19,6 +19,7 @@ import Joi from 'joi';
 import SchemaBuilder from '../base/schema.builder.js';
 import Configuration from './configuration.model.js';
 import ConfigurationCollection from './configuration.collection.js';
+import { zeroPad } from '../../util/util.js';
 
 const handlerSchema = Joi.object().pattern(Joi.string(), Joi.object(
   {
@@ -97,7 +98,13 @@ const schema = new SchemaBuilder(Configuration, ConfigurationCollection)
     required: true,
     readOnly: true,
   })
-  // eslint-disable-next-line no-template-curly-in-string
-  .addAllIndexWithTemplateField('version', '${version}');
+  .addAttribute('versionString', { // used for indexing/sorting
+    type: 'string',
+    required: true,
+    readOnly: true,
+    default: '0', // setting the default forces set() to run, to transform the version number to a string
+    set: (value, all) => zeroPad(all.version, 10),
+  })
+  .addAllIndex(['versionString']);
 
 export default schema.build();

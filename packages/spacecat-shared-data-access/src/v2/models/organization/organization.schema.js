@@ -46,6 +46,6 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),
   })
-  .addAllIndexWithComposite('imsOrgId');
+  .addAllIndex(['imsOrgId']);
 
 export default schema.build();

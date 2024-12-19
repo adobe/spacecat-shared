@@ -38,6 +38,14 @@ function isValidParent(parent, child) {
   return child.record?.[foreignKey] === parent.record?.[foreignKey];
 }
 
+/**
+ * Finds the index name by the keys provided. The index is searched
+ * keys to match the combination of partition and sort keys. If no
+ * index is found, we fall back to the "all" index, then the "primary".
+ * @param {Schema} schema - The schema to search for the index.
+ * @param {Object} keys - The keys to search for.
+ * @return {*|string} - The index name.
+ */
 function findIndexNameByKeys(schema, keys) {
   const keyNames = Object.keys(keys);
 

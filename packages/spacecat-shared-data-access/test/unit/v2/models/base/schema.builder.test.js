@@ -431,5 +431,15 @@ describe('SchemaBuilder', () => {
         ],
       });
     });
+
+    it('throws error if more than 5 indexes are added', () => {
+      instance.addAllIndex(['baseURL']);
+      instance.addIndex({ composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
+      expect(() => instance.build()).to.throw('Cannot have more than 5 indexes.');
+    });
   });
 });

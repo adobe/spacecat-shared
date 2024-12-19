@@ -302,6 +302,10 @@ class SchemaBuilder {
       ...other,
     ];
 
+    if (orderedIndexes.length > 5) {
+      throw new Error('Cannot have more than 5 indexes.');
+    }
+
     this.indexes = { primary: this.rawIndexes.primary };
 
     let indexCounter = 0;

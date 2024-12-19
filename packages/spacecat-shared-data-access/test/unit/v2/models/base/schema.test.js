@@ -49,7 +49,7 @@ describe('Schema', () => {
     },
     indexes: {
       primary: { pk: { composite: ['id'] } },
-      byOrganizationId: { sk: { facets: ['organizationId'] } },
+      byOrganizationId: { sk: { facets: ['organizationId'] }, indexType: 'belongs_to' },
     },
     references: [new Reference('belongs_to', 'Organization')],
   };
@@ -137,6 +137,21 @@ describe('Schema', () => {
       expect(instance.getIdName()).to.equal('mockEntityModelId');
     });
 
+    it('findIndexByType returns null if no index is found', () => {
+      expect(instance.findIndexByType('other')).to.equal(null);
+    });
+
+    it('findIndexByType returns index', () => {
+      expect(instance.findIndexByType('belongs_to')).to.deep.equal({
+        indexType: 'belongs_to',
+        sk: {
+          facets: [
+            'organizationId',
+          ],
+        },
+      });
+    });
+
     it('getIndexAccessors', () => {
       expect(instance.getIndexAccessors()).to.deep.equal([{
         indexName: 'byOrganizationId',
@@ -154,7 +169,7 @@ describe('Schema', () => {
 
     it('getIndexes with exclusion', () => {
       expect(instance.getIndexes(['primary'])).to.deep.equal({
-        byOrganizationId: { sk: { facets: ['organizationId'] } },
+        byOrganizationId: { sk: { facets: ['organizationId'] }, indexType: 'belongs_to' },
       });
     });
 

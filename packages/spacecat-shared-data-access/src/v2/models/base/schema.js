@@ -162,7 +162,7 @@ class Schema {
   }
 
   findIndexByType(type) {
-    return Object.values(this.indexes).find((index) => index.indexType === type);
+    return Object.values(this.indexes).find((index) => index.indexType === type) || null;
   }
 
   /**

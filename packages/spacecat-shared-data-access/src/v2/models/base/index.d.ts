@@ -65,7 +65,7 @@ export interface IndexAccessor {
 
 export interface Schema {
   findIndexBySortKeys(sortKeys: string[]): object | null;
-  findIndexByType(type: string): object | undefined;
+  findIndexByType(type: string): object | null;
   getAttribute(name: string): object;
   getAttributes(): object;
   getCollectionName(): string;

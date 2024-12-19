@@ -309,7 +309,7 @@ class SchemaBuilder {
     this.indexes = { primary: this.rawIndexes.primary };
 
     let indexCounter = 0;
-    Object.values(orderedIndexes).forEach((index) => { /* eslint-disable no-param-reassign */
+    Object.values(orderedIndexes).forEach((index) => {
       indexCounter += 1;
 
       const pkFieldName = `gsi${indexCounter}pk`;

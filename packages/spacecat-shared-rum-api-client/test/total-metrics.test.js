@@ -19,6 +19,7 @@ describe('Total Metrics Queries', () => {
     const result = totalMetrics.handler(bundlesForUrls.rumBundles);
     expect(result).to.deep.equal({
       totalCTR: 0.2027468663384768,
+      totalClicks: 4901,
       totalPageViews: 24173,
     });
   });

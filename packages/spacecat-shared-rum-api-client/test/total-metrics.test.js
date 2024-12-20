@@ -18,7 +18,7 @@ describe('Total Metrics Queries', () => {
   it('crunches CWV data', async () => {
     const result = totalMetrics.handler(bundlesForUrls.rumBundles);
     expect(result).to.deep.equal({
-      totalCTR: 7303,
+      totalCTR: 0.2027468663384768,
       totalPageViews: 24173,
     });
   });

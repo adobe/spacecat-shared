@@ -17,7 +17,9 @@ function handler(bundles) {
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
   dataChunks.addSeries('traffic_domain', series.pageViews);
-  dataChunks.addSeries('ctr', series.engagement);
+  dataChunks.addSeries('ctr', (bundle) => (bundle.events.some((e) => e.checkpoint === 'click')
+    ? bundle.weight
+    : 0));
   const totalPageViews = dataChunks?.totals?.traffic_domain?.sum;
   const totalCTR = dataChunks?.totals?.ctr?.sum;
   return {

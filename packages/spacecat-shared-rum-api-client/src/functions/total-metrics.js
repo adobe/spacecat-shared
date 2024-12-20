@@ -20,7 +20,7 @@ function handler(bundles) {
   dataChunks.addSeries('ctr', (bundle) => (bundle.events.some((e) => e.checkpoint === 'click')
     ? bundle.weight
     : 0));
-  const totalPageViews = dataChunks?.totals?.traffic_domain?.sum;
+  const totalPageViews = dataChunks?.totals?.traffic_domain?.weight;
   const totalCTR = dataChunks?.totals?.ctr?.sum / dataChunks?.totals?.ctr?.weight;
   return {
     totalPageViews,

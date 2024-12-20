@@ -30,4 +30,5 @@ function handler(bundles) {
 
 export default {
   handler,
+  checkpoints: ['click'],
 };

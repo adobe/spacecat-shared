@@ -17,16 +17,17 @@ function handler(bundles) {
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
   dataChunks.addSeries('traffic_domain', series.pageViews);
-  dataChunks.addSeries('ctr', (bundle) => (bundle.events.some((e) => e.checkpoint === 'click')
+  dataChunks.addSeries('clicks', (bundle) => (bundle.events.some((e) => e.checkpoint === 'click')
     ? bundle.weight
     : 0));
   const totalPageViews = dataChunks?.totals?.traffic_domain?.weight;
-  const sum = dataChunks?.totals?.ctr?.sum ?? 0;
-  const weight = dataChunks?.totals?.ctr?.weight ?? 0;
+  const sum = dataChunks?.totals?.clicks?.sum ?? 0;
+  const weight = dataChunks?.totals?.clicks?.weight ?? 0;
   const totalCTR = weight !== 0 ? sum / weight : 0;
   return {
     totalPageViews,
     totalCTR,
+    totalClicks: sum,
   };
 }
 

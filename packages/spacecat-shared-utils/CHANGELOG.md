@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.8...@adobe/spacecat-shared-utils-v1.24.0) (2024-12-20)
+
+
+### Features
+
+* support site metrics overview ([99a7c66](https://github.com/adobe/spacecat-shared/commit/99a7c66f18ff1ba869ffdb07b17b9505d1f00069))
+
 # [@adobe/spacecat-shared-utils-v1.23.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.7...@adobe/spacecat-shared-utils-v1.23.8) (2024-12-14)
 
 

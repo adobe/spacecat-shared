@@ -21,7 +21,7 @@ function handler(bundles) {
     ? bundle.weight
     : 0));
   const totalPageViews = dataChunks?.totals?.traffic_domain?.sum;
-  const totalCTR = dataChunks?.totals?.ctr?.sum;
+  const totalCTR = dataChunks?.totals?.ctr?.sum / dataChunks?.totals?.ctr?.weight;
   return {
     totalPageViews,
     totalCTR,

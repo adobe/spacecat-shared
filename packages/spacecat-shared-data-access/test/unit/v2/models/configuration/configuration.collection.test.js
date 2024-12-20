@@ -92,6 +92,19 @@ describe('ConfigurationCollection', () => {
     });
   });
 
+  describe('findByVersion', () => {
+    it('finds configuration by version', async () => {
+      const mockResult = { configurationId: 's12345' };
+
+      instance.findByAll = stub().resolves(mockResult);
+
+      const result = await instance.findByVersion(3);
+
+      expect(result).to.deep.equal(mockResult);
+      expect(instance.findByAll).to.have.been.calledWithExactly({ versionString: '0000000003' });
+    });
+  });
+
   describe('findLatest', () => {
     it('returns the latest configuration', async () => {
       const mockResult = { configurationId: 's12345' };

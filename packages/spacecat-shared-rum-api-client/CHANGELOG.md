@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.16.0...@adobe/spacecat-shared-rum-api-client-v2.16.1) (2024-12-20)
+
+
+### Bug Fixes
+
+* add totalClicks ([df9a688](https://github.com/adobe/spacecat-shared/commit/df9a688c8d12e10ceb84da2da8a409a74aeddeea))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.7...@adobe/spacecat-shared-rum-api-client-v2.16.0) (2024-12-20)
 
 

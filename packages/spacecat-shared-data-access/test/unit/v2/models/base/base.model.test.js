@@ -32,7 +32,7 @@ const opportunityEntity = new Entity(OpportunitySchema.toElectroDBSchema());
 const suggestionEntity = new Entity(SuggestionSchema.toElectroDBSchema());
 const MockCollection = class MockCollection extends BaseCollection {};
 
-describe('BaseModel', () => {
+describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
   let mockElectroService;
   let baseModelInstance;
   let mockLogger;
@@ -77,6 +77,7 @@ describe('BaseModel', () => {
         opportunity: {
           entity: opportunityEntity,
           remove: stub().returns({ go: stub().resolves() }),
+          _remove: stub().returns({ go: stub().resolves() }),
         },
         suggestion: {
           entity: suggestionEntity,
@@ -85,6 +86,7 @@ describe('BaseModel', () => {
             'spacecat-data-gsi1pk-gsi1sk': stub().returns({ go: stub().resolves({ data: [mockRecord] }) }),
           },
           remove: stub().returns({ go: stub().resolves() }),
+          _remove: stub().returns({ go: stub().resolves() }),
           indexes: {
             primary: {},
           },
@@ -161,7 +163,7 @@ describe('BaseModel', () => {
     let originalReferences = [];
 
     beforeEach(() => {
-      dependent = { remove: stub().resolves() };
+      dependent = { _remove: stub().resolves() };
       dependents = [dependent, dependent, dependent];
       originalReferences = [...OpportunitySchema.references];
       schema = OpportunitySchema;
@@ -207,7 +209,7 @@ describe('BaseModel', () => {
       // self remove
       expect(mockElectroService.entities.opportunity.remove.calledOnce).to.be.true;
       // dependents remove: 3 = has_many, 1 = has_one
-      expect(dependent.remove).to.have.callCount(4);
+      expect(dependent._remove).to.have.callCount(4);
       expect(baseModelInstance.getSomeModel).to.have.been.calledOnce;
       expect(mockLogger.error).to.not.have.been.called;
     });
@@ -217,7 +219,7 @@ describe('BaseModel', () => {
 
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
 
-      expect(dependent.remove.notCalled).to.be.true;
+      expect(dependent._remove.notCalled).to.be.true;
     });
 
     it('does not remove dependents if none are found', async () => {
@@ -241,7 +243,7 @@ describe('BaseModel', () => {
 
       await expect(instance.remove()).to.eventually.equal(instance);
 
-      expect(dependent.remove.notCalled).to.be.true;
+      expect(dependent._remove.notCalled).to.be.true;
     });
 
     it('logs an error and throws when remove fails', async () => {
@@ -250,6 +252,13 @@ describe('BaseModel', () => {
 
       await expect(baseModelInstance.remove()).to.be.rejectedWith('Remove failed');
       expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('throws an error if the schema does not allow removal', async () => {
+      OpportunitySchema.options.allowRemove = false;
+
+      await expect(baseModelInstance.remove()).to.be.rejectedWith('The entity Opportunity does not allow removal');
+      expect(mockElectroService.entities.opportunity.remove.notCalled).to.be.true;
     });
   });
 

@@ -102,6 +102,12 @@ describe('Patcher', () => {
     expect(mockRecord.name).to.equal('UpdatedName');
   });
 
+  it('throws error if schema prhibits updates', () => {
+    patcher.schema.options.allowUpdates = false;
+    expect(() => patcher.patchValue('name', 'UpdatedName'))
+      .to.throw('Updates prohibited by schema for MockEntityModel.');
+  });
+
   it('throws error for read-only property', () => {
     mockEntity.model.schema.attributes.name.readOnly = true;
     expect(() => patcher.patchValue('name', 'NewValue'))
@@ -143,6 +149,12 @@ describe('Patcher', () => {
 
     expect(mockEntity.patch().go.calledOnce).to.be.true;
     expect(isIsoDate(mockRecord.updatedAt)).to.be.true;
+  });
+
+  it('throws error when saving with updates prohibited by schema', async () => {
+    patcher.schema.options.allowUpdates = false;
+
+    expect(patcher.save()).to.be.rejectedWith('Updates prohibited by schema for MockModel.');
   });
 
   it('does not save if there are no updates', async () => {

@@ -95,7 +95,6 @@ class BaseModel {
     for (const [name, attr] of Object.entries(attributes)) {
       const capitalized = capitalize(name);
       const getterMethodName = `get${capitalized}`;
-      const setterMethodName = `set${capitalized}`;
       const isReference = this.schema
         .getReferencesByType(Reference.TYPES.BELONGS_TO)
         .some((ref) => ref.getTarget() === idNameToEntityName(name));
@@ -104,11 +103,15 @@ class BaseModel {
         this[getterMethodName] = () => this.record[name];
       }
 
-      if (!this[setterMethodName] && !attr.readOnly) {
-        this[setterMethodName] = (value) => {
-          this.patcher.patchValue(name, value, isReference);
-          return this;
-        };
+      if (this.schema.allowsUpdates()) {
+        const setterMethodName = `set${capitalized}`;
+
+        if (!this[setterMethodName] && !attr.readOnly) {
+          this[setterMethodName] = (value) => {
+            this.patcher.patchValue(name, value, isReference);
+            return this;
+          };
+        }
       }
     }
   }
@@ -184,18 +187,41 @@ class BaseModel {
    * removeDependentss flag is set to true in the reference definition.
    *
    * Dependents are removed by calling the remove method on each dependent entity, which in turn
-   * will also remove any dependent entities associated with the dependent entity. This may result
-   * in a cascade effect where multiple entities are removed. Consider the destructive
-   * and performance implications before using this method.
+   * will also remove any dependent entities associated with the dependent entity. For dependent
+   * entities the allowRemove flag is ignored.
+   *
+   * Removal of entities with many dependents can be a costly operation, as each dependent entity
+   * will be removed individually. This can result in a large number of database operations, which
+   * can impact performance. It is recommended to use this method with caution, especially when
+   * removing entities with many dependents.
+   *
    * @async
    * @returns {Promise<BaseModel>} - A promise that resolves to the current instance of the entity
    * after it and its dependents have been removed.
-   * @throws {Error} - Throws an error if the removal fails.
+   * @throws {Error} - Throws an error if the schema does not allow removal
+   * or if the removal operation fails.
    */
   async remove() {
+    if (!this.schema.allowsRemove()) {
+      throw new Error(`The entity ${this.schema.getModelName()} does not allow removal`);
+    }
+
+    return this._remove();
+  }
+
+  /**
+   * Internal remove method that removes the current entity from the database and its dependents.
+   * This method does not check if the schema allows removal in order to be able to remove
+   * dependents even if the schema does not allow removal.
+   * @return {Promise<BaseModel>}
+   * @throws {Error} - Throws an error if the removal operation fails.
+   * @private
+   */
+  async _remove() {
     try {
       const dependents = await this.#fetchDependents();
-      const removePromises = dependents.map((dependent) => dependent.remove());
+      // eslint-disable-next-line no-underscore-dangle
+      const removePromises = dependents.map((dependent) => dependent._remove());
       removePromises.push(this.entity.remove({ [this.idName]: this.getId() }).go());
 
       this.log.info(`Removing entity ${this.entityName} with ID ${this.getId()} and ${dependents.length} dependents`);

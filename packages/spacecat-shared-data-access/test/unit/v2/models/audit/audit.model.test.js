@@ -66,23 +66,11 @@ describe('AuditModel', () => {
     it('gets auditResult', () => {
       expect(instance.getAuditResult()).to.deep.equal({ foo: 'bar' });
     });
-
-    it('sets auditResult', () => {
-      const newAuditResult = { bar: 'baz' };
-      instance.setAuditResult(newAuditResult);
-      expect(instance.getAuditResult()).to.deep.equal(newAuditResult);
-    });
   });
 
   describe('auditType', () => {
     it('gets auditType', () => {
       expect(instance.getAuditType()).to.equal('someAuditType');
-    });
-
-    it('sets auditType', () => {
-      const newAuditType = 'someNewAuditType';
-      instance.setAuditType(newAuditType);
-      expect(instance.getAuditType()).to.equal(newAuditType);
     });
   });
 
@@ -90,23 +78,11 @@ describe('AuditModel', () => {
     it('gets auditedAt', () => {
       expect(instance.getAuditedAt()).to.equal('2024-01-01T00:00:00.000Z');
     });
-
-    it('sets auditedAt', () => {
-      const newAuditedAt = '2024-01-02T00:00:00.000Z';
-      instance.setAuditedAt(newAuditedAt);
-      expect(instance.getAuditedAt()).to.equal(newAuditedAt);
-    });
   });
 
   describe('fullAuditRef', () => {
     it('gets fullAuditRef', () => {
       expect(instance.getFullAuditRef()).to.equal('someFullAuditRef');
-    });
-
-    it('sets fullAuditRef', () => {
-      const newFullAuditRef = 'someNewFullAuditRef';
-      instance.setFullAuditRef(newFullAuditRef);
-      expect(instance.getFullAuditRef()).to.equal(newFullAuditRef);
     });
   });
 
@@ -114,33 +90,17 @@ describe('AuditModel', () => {
     it('gets isLive', () => {
       expect(instance.getIsLive()).to.be.true;
     });
-
-    it('sets isLive', () => {
-      instance.setIsLive(false);
-      expect(instance.getIsLive()).to.be.false;
-    });
   });
 
   describe('isError', () => {
     it('gets isError', () => {
       expect(instance.getIsError()).to.be.false;
     });
-
-    it('sets isError', () => {
-      instance.setIsError(true);
-      expect(instance.getIsError()).to.be.true;
-    });
   });
 
   describe('siteId', () => {
     it('gets siteId', () => {
       expect(instance.getSiteId()).to.equal('site12345');
-    });
-
-    it('sets siteId', () => {
-      const newSiteId = '978cbf56-699c-4e91-b719-13e5fd9a0374';
-      instance.setSiteId(newSiteId);
-      expect(instance.getSiteId()).to.equal(newSiteId);
     });
   });
 

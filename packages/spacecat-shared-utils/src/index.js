@@ -32,6 +32,7 @@ export {
 export {
   resolveSecretsName,
   resolveCustomerSecretsName,
+  getRUMDomainKey,
   generateCSVFile,
 } from './helpers.js';
 

@@ -41,6 +41,7 @@ const createSchema = (service, indexes) => new Schema(
     },
     indexes,
     references: [],
+    options: { allowRemove: true, allowUpdates: true },
   },
 );
 

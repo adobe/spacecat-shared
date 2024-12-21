@@ -36,6 +36,7 @@ describe('EntityRegistry', () => {
       serviceName: 'SpaceDog',
       schemaVersion: 1,
       references: [],
+      options: { allowRemove: true, allowUpdates: true },
     },
   );
 

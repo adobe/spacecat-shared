@@ -102,6 +102,64 @@ describe('SchemaBuilder', () => {
     });
   });
 
+  describe('withPrimarySortKeys', () => {
+    it('throws error if sort keys are not provided', () => {
+      expect(() => instance.withPrimarySortKeys())
+        .to.throw('Sort keys are required and must be a non-empty array.');
+      expect(() => instance.withPrimarySortKeys('test'))
+        .to.throw('Sort keys are required and must be a non-empty array.');
+    });
+
+    it('successfully sets primary sort keys', () => {
+      const result = instance.withPrimarySortKeys(['test']);
+
+      expect(result).to.equal(instance);
+      expect(instance.rawIndexes.primary.sk.composite).to.deep.equal(['test']);
+    });
+  });
+
+  describe('allowRemove', () => {
+    it('throws error if allowRemove is not a boolean', () => {
+      expect(() => instance.allowRemove('test'))
+        .to.throw('allow must be a boolean.');
+    });
+
+    it('successfully sets allowRemove to true', () => {
+      const result = instance.allowRemove(true);
+
+      expect(result).to.equal(instance);
+      expect(instance.options.allowRemove).to.be.true;
+    });
+
+    it('successfully sets allowRemove to false', () => {
+      const result = instance.allowRemove(false);
+
+      expect(result).to.equal(instance);
+      expect(instance.options.allowRemove).to.be.false;
+    });
+  });
+
+  describe('allowUpdates', () => {
+    it('throws error if allowUpdates is not a boolean', () => {
+      expect(() => instance.allowUpdates('test'))
+        .to.throw('allow must be a boolean.');
+    });
+
+    it('successfully sets allowUpdates to true', () => {
+      const result = instance.allowUpdates(true);
+
+      expect(result).to.equal(instance);
+      expect(instance.options.allowUpdates).to.be.true;
+    });
+
+    it('successfully sets allowUpdates to false', () => {
+      const result = instance.allowUpdates(false);
+
+      expect(result).to.equal(instance);
+      expect(instance.options.allowUpdates).to.be.false;
+    });
+  });
+
   describe('addAttribute', () => {
     it('throws error if attribute name is not provided', () => {
       expect(() => instance.addAttribute())
@@ -429,6 +487,7 @@ describe('SchemaBuilder', () => {
             type: 'has_many',
           },
         ],
+        options: { allowRemove: true, allowUpdates: true },
       });
     });
 

@@ -86,5 +86,8 @@ export interface SchemaBuilder {
   addAllIndex(sortKeys: string[]): SchemaBuilder;
   addIndex(name: string, partitionKey: object, sortKey: object): SchemaBuilder;
   addReference(referenceType: string, entityName: string, sortKeys?: string[]): SchemaBuilder;
+  allowRemove(allow: boolean): SchemaBuilder;
+  allowUpdate(allow: boolean): SchemaBuilder;
   build(): Schema;
+  withPrimarySortKeys(sortKeys: string[]): SchemaBuilder;
 }

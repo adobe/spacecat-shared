@@ -85,6 +85,7 @@ describe('Patcher', () => {
         indexes: mockEntity.model.indexes,
         model: mockEntity.model,
         references: [],
+        options: { allowRemove: true, allowUpdates: true },
       },
     );
 

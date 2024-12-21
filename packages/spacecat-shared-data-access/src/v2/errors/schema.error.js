@@ -10,7 +10,4 @@
  * governing permissions and limitations under the License.
  */
 
-export type SchemaBuilderError = Error
-export type SchemaError = Error
-export type SchemaValidationError = Error
-export type ValidationError = Error
+export default class SchemaError extends Error {}

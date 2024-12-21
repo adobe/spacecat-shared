@@ -29,6 +29,7 @@ import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
+import { SchemaValidationError } from '../../../../../src/v2/errors/index.js';
 import BaseModel from '../../../../../src/v2/models/base/base.model.js';
 import BaseCollection from '../../../../../src/v2/models/base/base.collection.js';
 import Schema from '../../../../../src/v2/models/base/schema.js';
@@ -52,6 +53,7 @@ describe('Schema', () => {
       byOrganizationId: { sk: { facets: ['organizationId'] }, indexType: 'belongs_to' },
     },
     references: [new Reference('belongs_to', 'Organization')],
+    options: { allowRemove: true, allowUpdates: true },
   };
 
   let instance;
@@ -78,35 +80,39 @@ describe('Schema', () => {
     });
 
     it('throws an error if modelClass does not extend BaseModel', () => {
-      expect(() => new Schema({}, MockCollection, rawSchema)).to.throw('Model class must extend BaseModel');
-      expect(() => new Schema(String, MockCollection, rawSchema)).to.throw('Model class must extend BaseModel');
+      expect(() => new Schema({}, MockCollection, rawSchema)).to.throw(SchemaValidationError, 'Model class must extend BaseModel');
+      expect(() => new Schema(String, MockCollection, rawSchema)).to.throw(SchemaValidationError, 'Model class must extend BaseModel');
     });
 
     it('throws an error if collectionClass does not extend BaseCollection', () => {
-      expect(() => new Schema(MockModel, {}, rawSchema)).to.throw('Collection class must extend BaseCollection');
-      expect(() => new Schema(MockModel, String, rawSchema)).to.throw('Collection class must extend BaseCollection');
+      expect(() => new Schema(MockModel, {}, rawSchema)).to.throw(SchemaValidationError, 'Collection class must extend BaseCollection');
+      expect(() => new Schema(MockModel, String, rawSchema)).to.throw(SchemaValidationError, 'Collection class must extend BaseCollection');
     });
 
     it('throws an error if schema does not have a service name', () => {
-      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, serviceName: '' })).to.throw('Schema must have a service name');
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, serviceName: '' })).to.throw(SchemaValidationError, 'Schema must have a service name');
     });
 
     it('throws an error if schema does not have a positive integer', () => {
-      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, schemaVersion: 0 })).to.throw('Schema version must be a positive integer');
-      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, schemaVersion: 'test' })).to.throw('Schema version must be a positive integer');
-      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, schemaVersion: undefined })).to.throw('Schema version must be a positive integer');
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, schemaVersion: 0 })).to.throw(SchemaValidationError, 'Schema version must be a positive integer');
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, schemaVersion: 'test' })).to.throw(SchemaValidationError, 'Schema version must be a positive integer');
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, schemaVersion: undefined })).to.throw(SchemaValidationError, 'Schema version must be a positive integer');
     });
 
     it('throws an error if schema does not have attributes', () => {
-      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, attributes: {} })).to.throw('Schema must have attributes');
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, attributes: {} })).to.throw(SchemaValidationError, 'Schema must have attributes');
     });
 
     it('throws an error if schema does not have indexes', () => {
-      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, indexes: {} })).to.throw('Schema must have indexes');
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, indexes: {} })).to.throw(SchemaValidationError, 'Schema must have indexes');
     });
 
     it('throws an error if schema does not have references', () => {
-      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, references: 'test' })).to.throw('References must be an array');
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, references: 'test' })).to.throw(SchemaValidationError, 'References must be an array');
+    });
+
+    it('throws an error if schema does not have options', () => {
+      expect(() => new Schema(MockModel, MockCollection, { ...rawSchema, options: {} })).to.throw(SchemaValidationError, 'Schema must have options');
     });
 
     it('references default to an empty array', () => {
@@ -114,9 +120,23 @@ describe('Schema', () => {
 
       expect(schema.references).to.deep.equal([]);
     });
+
+    it('options default to updates and removes allowed', () => {
+      const schema = new Schema(MockModel, MockCollection, { ...rawSchema });
+
+      expect(schema.options).to.deep.equal({ allowRemove: true, allowUpdates: true });
+    });
   });
 
   describe('accessors', () => {
+    it('allowsRemove', () => {
+      expect(instance.allowsRemove()).to.be.true;
+    });
+
+    it('allowsUpdates', () => {
+      expect(instance.allowsUpdates()).to.be.true;
+    });
+
     it('getAttribute', () => {
       expect(instance.getAttribute('id')).to.deep.equal({ type: 'string' });
     });

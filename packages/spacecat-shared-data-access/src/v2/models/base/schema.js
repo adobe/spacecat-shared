@@ -12,6 +12,7 @@
 
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
+import { SchemaValidationError } from '../../errors/index.js';
 import {
   classExtends,
   entityNameToCollectionName,
@@ -38,6 +39,7 @@ class Schema {
    * @param {number} rawSchema.schemaVersion - The version of the schema.
    * @param {object} rawSchema.attributes - The attributes of the schema.
    * @param {object} rawSchema.indexes - The indexes of the schema.
+   * @param {object} rawSchema.options - The options of the schema.
    * @param {Reference[]} [rawSchema.references] - The references of the schema.
    */
   constructor(
@@ -52,6 +54,7 @@ class Schema {
     this.schemaVersion = rawSchema.schemaVersion;
     this.attributes = rawSchema.attributes;
     this.indexes = rawSchema.indexes;
+    this.options = rawSchema.options;
     this.references = rawSchema.references || [];
 
     this.#validateSchema();
@@ -59,32 +62,44 @@ class Schema {
 
   #validateSchema() {
     if (!classExtends(this.modelClass, BaseModel)) {
-      throw new Error('Model class must extend BaseModel');
+      throw new SchemaValidationError('Model class must extend BaseModel');
     }
 
     if (!classExtends(this.collectionClass, BaseCollection)) {
-      throw new Error('Collection class must extend BaseCollection');
+      throw new SchemaValidationError('Collection class must extend BaseCollection');
     }
 
     if (!hasText(this.serviceName)) {
-      throw new Error('Schema must have a service name');
+      throw new SchemaValidationError('Schema must have a service name');
     }
 
     if (!isPositiveInteger(this.schemaVersion)) {
-      throw new Error('Schema version must be a positive integer');
+      throw new SchemaValidationError('Schema version must be a positive integer');
     }
 
     if (!isNonEmptyObject(this.attributes)) {
-      throw new Error('Schema must have attributes');
+      throw new SchemaValidationError('Schema must have attributes');
     }
 
     if (!isNonEmptyObject(this.indexes)) {
-      throw new Error('Schema must have indexes');
+      throw new SchemaValidationError('Schema must have indexes');
     }
 
     if (!Array.isArray(this.references)) {
-      throw new Error('References must be an array');
+      throw new SchemaValidationError('References must be an array');
     }
+
+    if (!isNonEmptyObject(this.options)) {
+      throw new SchemaValidationError('Schema must have options');
+    }
+  }
+
+  allowsRemove() {
+    return this.options?.allowRemove;
+  }
+
+  allowsUpdates() {
+    return this.options?.allowUpdates;
   }
 
   getAttribute(name) {

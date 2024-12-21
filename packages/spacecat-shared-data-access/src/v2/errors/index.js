@@ -10,6 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
+import SchemaBuilderError from './schema.builder.error.js';
+import SchemaError from './schema.error.js';
+import SchemaValidationError from './schema-validation.error.js';
 import ValidationError from './validation.error.js';
 
-export { ValidationError };
+export {
+  SchemaBuilderError,
+  SchemaError,
+  SchemaValidationError,
+  ValidationError,
+};

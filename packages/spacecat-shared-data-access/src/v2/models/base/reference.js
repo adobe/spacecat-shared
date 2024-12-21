@@ -19,6 +19,48 @@ import {
   referenceToBaseMethodName,
 } from '../../util/util.js';
 
+const createSortKeyAccessorConfigs = (
+  entity,
+  baseConfig,
+  baseMethodName,
+  target,
+  targetCollection,
+  foreignKeyName,
+  foreignKeyValue,
+  log,
+) => {
+  const configs = [];
+
+  const belongsToRef = targetCollection.schema.getReferenceByTypeAndTarget(
+    // eslint-disable-next-line no-use-before-define
+    Reference.TYPES.BELONGS_TO,
+    entity.schema.getModelName(),
+  );
+
+  if (!belongsToRef) {
+    log.warn(`Reciprocal reference not found for ${entity.schema.getModelName()} to ${target}`);
+    return configs;
+  }
+
+  const sortKeys = belongsToRef.getSortKeys();
+  if (!isNonEmptyArray(sortKeys)) {
+    log.debug(`No sort keys defined for ${entity.schema.getModelName()} to ${target}`);
+    return configs;
+  }
+
+  for (let i = 1; i <= sortKeys.length; i += 1) {
+    const subset = sortKeys.slice(0, i);
+    configs.push({
+      name: keyNamesToMethodName(subset, `${baseMethodName}By`),
+      requiredKeys: subset,
+      foreignKey: { name: foreignKeyName, value: foreignKeyValue },
+      ...baseConfig,
+    });
+  }
+
+  return configs;
+};
+
 class Reference {
   static TYPES = {
     BELONGS_TO: 'belongs_to',
@@ -100,6 +142,20 @@ class Reference {
           requiredKeys: [],
           foreignKey: { name: foreignKeyName, value: foreignKeyValue },
         });
+
+        accessorConfigs.push(
+          ...createSortKeyAccessorConfigs(
+            entity,
+            {},
+            baseMethodName,
+            target,
+            targetCollection,
+            foreignKeyName,
+            foreignKeyValue,
+            log,
+          ),
+        );
+
         break;
       }
 
@@ -115,31 +171,18 @@ class Reference {
           foreignKey: { name: foreignKeyName, value: foreignKeyValue },
         });
 
-        const belongsToRef = targetCollection.schema.getReferenceByTypeAndTarget(
-          Reference.TYPES.BELONGS_TO,
-          entity.schema.getModelName(),
+        accessorConfigs.push(
+          ...createSortKeyAccessorConfigs(
+            entity,
+            { all: true },
+            baseMethodName,
+            target,
+            targetCollection,
+            foreignKeyName,
+            foreignKeyValue,
+            log,
+          ),
         );
-
-        if (!belongsToRef) {
-          log.warn(`Reciprocal reference not found for ${entity.schema.getModelName()} to ${target}`);
-          break;
-        }
-
-        const sortKeys = belongsToRef.getSortKeys();
-        if (!isNonEmptyArray(sortKeys)) {
-          log.debug(`No sort keys defined for ${entity.schema.getModelName()} to ${target}`);
-          break;
-        }
-
-        for (let i = 1; i <= sortKeys.length; i += 1) {
-          const subset = sortKeys.slice(0, i);
-          accessorConfigs.push({
-            name: keyNamesToMethodName(subset, `${baseMethodName}By`),
-            requiredKeys: subset,
-            all: true,
-            foreignKey: { name: foreignKeyName, value: foreignKeyValue },
-          });
-        }
 
         break;
       }

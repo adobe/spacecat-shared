@@ -15,6 +15,7 @@ export type * from './configuration/index.d.ts';
 export type * from './base/index.d.ts';
 export type * from './experiment/index.d.ts';
 export type * from './key-event/index.d.ts';
+export type * from './latest-audit/index.d.ts';
 export type * from './opportunity/index.d.ts';
 export type * from './organization/index.d.ts';
 export type * from './site/index.d.ts';

@@ -11,23 +11,23 @@
  */
 
 import type {
-  BaseCollection, BaseModel, LatestAudit, Opportunity, Site,
+  BaseCollection, BaseModel, Opportunity, Site,
 } from '../index';
 
-export interface Audit extends BaseModel {
+export interface LatestAudit extends BaseModel {
+  getAuditId(): object;
   getAuditResult(): object;
   getAuditType(): string;
   getAuditedAt(): number;
   getFullAuditRef(): string;
   getIsError(): boolean;
   getIsLive(): boolean;
-  getLatestAudit(): Promise<LatestAudit>;
   getOpportunities(): Promise<Opportunity[]>;
   getSite(): Promise<Site>;
   getSiteId(): string;
 }
 
-export interface AuditCollection extends BaseCollection<Audit> {
-  allBySiteId(siteId: string): Promise<Audit[]>;
-  allBySiteAndType(siteId: string, auditType: string): Promise<Audit[]>;
+export interface LatestAuditCollection extends BaseCollection<LatestAudit> {
+  allBySiteId(siteId: string): Promise<LatestAudit[]>;
+  findBySiteIdAndAuditType(siteId: string, auditType: string): Promise<LatestAudit[]>;
 }

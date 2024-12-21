@@ -11,7 +11,7 @@
  */
 
 import type {
-  Audit, BaseCollection, BaseModel, Organization,
+  Audit, BaseCollection, BaseModel, LatestAudit, Organization,
 } from '../index';
 
 export interface Site extends BaseModel {
@@ -24,6 +24,8 @@ export interface Site extends BaseModel {
   getHlxConfig(): object;
   getIsLive(): boolean;
   getIsLiveToggledAt(): string;
+  getLatestAudits(): Promise<LatestAudit>;
+  getLatestAuditByAuditType(auditType: string): Promise<LatestAudit>;
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
   setConfig(config: object): Site;

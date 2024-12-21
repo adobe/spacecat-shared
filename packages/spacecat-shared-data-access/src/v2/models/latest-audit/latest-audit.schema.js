@@ -14,9 +14,10 @@
 
 import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
+import { validateAuditResult } from '../audit/audit.model.js';
 import SchemaBuilder from '../base/schema.builder.js';
-import Audit, { validateAuditResult } from './audit.model.js';
-import AuditCollection from './audit.collection.js';
+import LatestAudit from './latest-audit.model.js';
+import LatestAuditCollection from './latest-audit.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -24,10 +25,13 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder(Audit, AuditCollection)
-  .addReference('belongs_to', 'Site', ['auditType', 'auditedAt'])
-  .addReference('has_one', 'LatestAudit', ['auditType'], { required: false })
+const schema = new SchemaBuilder(LatestAudit, LatestAuditCollection)
+  .withPrimaryPartitionKeys(['siteId'])
+  .withPrimarySortKeys(['auditType'])
+  .addReference('belongs_to', 'Site', ['auditType'])
+  .addReference('belongs_to', 'Audit', ['auditType'])
   .addReference('has_many', 'Opportunities')
+  .addAllIndex(['auditType'])
   .allowUpdates(false)
   .allowRemove(false)
   .addAttribute('auditResult', {
@@ -62,7 +66,6 @@ const schema = new SchemaBuilder(Audit, AuditCollection)
   .addAttribute('auditedAt', {
     type: 'string',
     required: true,
-    default: () => new Date().toISOString(),
     validate: (value) => isIsoDate(value),
   });
 

@@ -20,7 +20,31 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class AuditCollection extends BaseCollection {
-  // add custom methods here
+  // create a copy of the audit as a LatestAudit entity
+  async _onCreate(item) {
+    const collection = this.entityRegistry.getCollection('LatestAuditCollection');
+    await collection.create(item.toJSON());
+  }
+
+  // of the created audits, find the latest per site and auditType
+  // and create a LatestAudit copy for each
+  async _onCreateMany(items) {
+    const collection = this.entityRegistry.getCollection('LatestAuditCollection');
+    const latestAudits = items.createdItems.reduce((acc, audit) => {
+      const siteId = audit.getSiteId();
+      const auditType = audit.getAuditType();
+      const auditedAt = audit.getAuditedAt();
+      const key = `${siteId}-${auditType}`;
+
+      if (!acc[key] || acc[key].getAuditedAt() < auditedAt) {
+        acc[key] = audit;
+      }
+
+      return acc;
+    }, {});
+
+    await collection.createMany(Object.values(latestAudits).map((audit) => audit.toJSON()));
+  }
 }
 
 export default AuditCollection;

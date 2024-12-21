@@ -157,6 +157,15 @@ class SchemaBuilder {
     });
   }
 
+  withPrimaryPartitionKeys(partitionKeys) {
+    if (!isNonEmptyArray(partitionKeys)) {
+      throw new SchemaBuilderError('Partition keys are required and must be a non-empty array.');
+    }
+    this.rawIndexes.primary.pk.composite = partitionKeys;
+
+    return this;
+  }
+
   /**
    * Sets the sort keys for the primary index (main table). The given sort keys
    * together with the entity id (partition key) will form the primary key. This will
@@ -289,7 +298,7 @@ class SchemaBuilder {
    *
    * @param {string} type - One of Reference.TYPES (BELONGS_TO, HAS_MANY, HAS_ONE).
    * @param {string} entityName - The referenced entity name.
-   * @param {Array<string>} [sortKeys=['updatedAt']] - The attributes to form the sort key.
+   * @param {Array<string>} [sortKeys=[]] - The attributes to form the sort key.
    * @param {object} [options] - Additional reference options.
    * @param {boolean} [options.required=true] - Whether the reference is required. Only applies to
    * BELONGS_TO references.

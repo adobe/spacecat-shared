@@ -118,6 +118,7 @@ describe('Data Access Object Tests', () => {
     'ImportJob',
     'ImportUrl',
     'KeyEvent',
+    'LatestAudit',
     'Opportunity',
     'Organization',
     'Site',

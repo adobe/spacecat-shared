@@ -10,18 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-export * from './api-key/index.js';
-export * from './audit/index.js';
-export * from './base/index.js';
-export * from './configuration/index.js';
-export * from './experiment/index.js';
-export * from './import-job/index.js';
-export * from './import-url/index.js';
-export * from './key-event/index.js';
-export * from './latest-audit/index.js';
-export * from './opportunity/index.js';
-export * from './organization/index.js';
-export * from './site-candidate/index.js';
-export * from './site-top-page/index.js';
-export * from './site/index.js';
-export * from './suggestion/index.js';
+import LatestAudit from './latest-audit.model.js';
+import LatestAuditCollection from './latest-audit.collection.js';
+
+export {
+  LatestAudit,
+  LatestAuditCollection,
+};

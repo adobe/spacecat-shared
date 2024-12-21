@@ -289,6 +289,50 @@ describe('BaseCollection', () => {
       await expect(baseCollectionInstance.create(mockRecord.data)).to.be.rejectedWith('Create failed');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
+
+    it('calls the on-create handler if provided', async () => {
+      mockElectroService.entities.mockEntityModel.create.returns(
+        { go: () => Promise.resolve({ data: mockRecord }) },
+      );
+
+      const onCreate = stub().resolves();
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      // eslint-disable-next-line no-underscore-dangle
+      instance._onCreate = onCreate;
+
+      await instance.create(mockRecord);
+
+      expect(onCreate).to.have.been.calledOnce;
+    });
+
+    it('logs error if onCreate handler fails', async () => {
+      const error = new Error('On-create failed');
+      mockElectroService.entities.mockEntityModel.create.returns(
+        { go: () => Promise.resolve({ data: mockRecord }) },
+      );
+
+      const onCreate = stub().rejects(error);
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      // eslint-disable-next-line no-underscore-dangle
+      instance._onCreate = onCreate;
+
+      await instance.create(mockRecord);
+
+      expect(onCreate).to.have.been.calledOnce;
+      expect(mockLogger.error).to.have.been.calledOnceWith('On-create handler failed');
+    });
   });
 
   describe('createMany', () => {
@@ -459,6 +503,50 @@ describe('BaseCollection', () => {
 
       await expect(baseCollectionInstance.createMany(mockRecords)).to.be.rejectedWith('Create failed');
       expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('calls the on-create-many handler if provided', async () => {
+      mockElectroService.entities.mockEntityModel.put.returns(
+        { go: () => Promise.resolve({ data: mockRecord }) },
+      );
+
+      const onCreateMany = stub().resolves();
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      // eslint-disable-next-line no-underscore-dangle
+      instance._onCreateMany = onCreateMany;
+
+      await instance.createMany([mockRecord]);
+
+      expect(onCreateMany).to.have.been.calledOnce;
+    });
+
+    it('logs error if onCreateMany handler fails', async () => {
+      const error = new Error('On-create-many failed');
+      mockElectroService.entities.mockEntityModel.put.returns(
+        { go: () => Promise.resolve({ data: mockRecord }) },
+      );
+
+      const onCreateMany = stub().rejects(error);
+      const instance = createInstance(
+        mockElectroService,
+        mockEntityRegistry,
+        mockIndexes,
+        mockLogger,
+      );
+
+      // eslint-disable-next-line no-underscore-dangle
+      instance._onCreateMany = onCreateMany;
+
+      await instance.createMany([mockRecord]);
+
+      expect(onCreateMany).to.have.been.calledOnce;
+      expect(mockLogger.error).to.have.been.calledOnceWith('On-create-many handler failed');
     });
   });
 

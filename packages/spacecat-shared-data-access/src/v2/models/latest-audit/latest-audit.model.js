@@ -10,24 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
-import type {
-  BaseCollection, BaseModel, LatestAudit, Opportunity, Site,
-} from '../index';
+import Audit from '../audit/audit.model.js';
 
-export interface Audit extends BaseModel {
-  getAuditResult(): object;
-  getAuditType(): string;
-  getAuditedAt(): number;
-  getFullAuditRef(): string;
-  getIsError(): boolean;
-  getIsLive(): boolean;
-  getLatestAudit(): Promise<LatestAudit>;
-  getOpportunities(): Promise<Opportunity[]>;
-  getSite(): Promise<Site>;
-  getSiteId(): string;
+/**
+ * LatestAudit - A class representing an LatestAudit entity.
+ * Provides methods to access and manipulate Audit-specific data.
+ *
+ * @class LatestAudit
+ * @extends Audit
+ */
+class LatestAudit extends Audit {
+  // add your custom methods or overrides here
 }
 
-export interface AuditCollection extends BaseCollection<Audit> {
-  allBySiteId(siteId: string): Promise<Audit[]>;
-  allBySiteAndType(siteId: string, auditType: string): Promise<Audit[]>;
-}
+export default LatestAudit;

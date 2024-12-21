@@ -51,7 +51,7 @@ function findIndexNameByKeys(schema, keys) {
 
   const index = schema.findIndexBySortKeys(keyNames);
   if (index) {
-    return index.index;
+    return index.index || INDEX_TYPES.PRIMARY;
   }
 
   const allIndex = schema.findIndexByType(INDEX_TYPES.ALL);
@@ -148,6 +148,47 @@ class BaseCollection {
 
   #invalidateCache() {
     this._accessorCache = {};
+  }
+
+  async #onCreate(item) {
+    try {
+      await this._onCreate(item);
+    } catch (error) {
+      this.log.error('On-create handler failed', error);
+    }
+  }
+
+  async #onCreateMany({ createdItems, errorItems }) {
+    try {
+      await this._onCreateMany({ createdItems, errorItems });
+    } catch (error) {
+      this.log.error('On-create-many handler failed', error);
+    }
+  }
+
+  /**
+   * Handler for the create method. This method is
+   * called after the create method has successfully created an entity.
+   * @param {BaseModel} item - The created entity.
+   * @return {Promise<void>}
+   * @protected
+   */
+  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+  async _onCreate(item) {
+    // no-op
+  }
+
+  /**
+   * Handler for the createMany method. This method is
+   * called after the createMany method has successfully created entities.
+   * @param {Array<BaseModel>} createdItems - The created entities.
+   * @param {{ item: Object, error: ValidationError }[]} errorItems - Items that failed validation.
+   * @return {Promise<void>}
+   * @private
+   */
+  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+  async _onCreateMany({ createdItems, errorItems }) {
+    // no-op
   }
 
   /**
@@ -303,6 +344,7 @@ class BaseCollection {
       const instance = this.#createInstance(record.data);
 
       this.#invalidateCache();
+      await this.#onCreate(instance);
 
       return instance;
     } catch (error) {
@@ -382,6 +424,8 @@ class BaseCollection {
       this.#invalidateCache();
 
       this.log.info(`Created ${createdItems.length} items for [${this.entityName}]`);
+
+      this.#onCreateMany({ createdItems, errorItems });
 
       return { createdItems, errorItems };
     } catch (error) {

@@ -102,6 +102,22 @@ describe('SchemaBuilder', () => {
     });
   });
 
+  describe('withPrimaryPartitionKeys', () => {
+    it('throws error if partition keys are not provided', () => {
+      expect(() => instance.withPrimaryPartitionKeys())
+        .to.throw('Partition keys are required and must be a non-empty array.');
+      expect(() => instance.withPrimaryPartitionKeys('test'))
+        .to.throw('Partition keys are required and must be a non-empty array.');
+    });
+
+    it('successfully sets primary partition keys', () => {
+      const result = instance.withPrimaryPartitionKeys(['test']);
+
+      expect(result).to.equal(instance);
+      expect(instance.rawIndexes.primary.pk.composite).to.deep.equal(['test']);
+    });
+  });
+
   describe('withPrimarySortKeys', () => {
     it('throws error if sort keys are not provided', () => {
       expect(() => instance.withPrimarySortKeys())

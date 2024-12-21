@@ -16,6 +16,7 @@ import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
+import { stub } from 'sinon';
 import Audit from '../../../../../src/v2/models/audit/audit.model.js';
 
 import { createElectroMocks } from '../../util.js';
@@ -56,6 +57,65 @@ describe('AuditCollection', () => {
       expect(instance.log).to.equal(mockLogger);
 
       expect(model).to.be.an('object');
+    });
+  });
+
+  describe('onCreate', () => {
+    /*
+    // create a copy of the audit as a LatestAudit entity
+  async _onCreate(item) {
+    const collection = this.entityRegistry.getCollection('LatestAuditCollection');
+    await collection.create(item.toJSON());
+  }
+
+  // of the created audits, find the latest per site and auditType
+  // and create a LatestAudit copy for each
+  async _onCreateMany(items) {
+    const collection = this.entityRegistry.getCollection('LatestAuditCollection');
+    const latestAudits = items.createdItems.reduce((acc, audit) => {
+      const siteId = audit.getSiteId();
+      const auditType = audit.getAuditType();
+      const auditedAt = audit.getAuditedAt();
+      const key = `${siteId}-${auditType}`;
+
+      if (!acc[key] || acc[key].getAuditedAt() < auditedAt) {
+        acc[key] = audit;
+      }
+
+      return acc;
+    }, {});
+
+    await collection.createMany(Object.values(latestAudits).map((audit) => audit.toJSON()));
+  }
+
+  create tests for the above methods
+     */
+
+    it('creates a LatestAudit entity', async () => {
+      const collection = {
+        create: stub().resolves(),
+      };
+      mockEntityRegistry.getCollection.withArgs('LatestAuditCollection').returns(collection);
+
+      // eslint-disable-next-line no-underscore-dangle
+      await instance._onCreate(model);
+
+      expect(collection.create).to.have.been.calledOnce;
+      expect(collection.create).to.have.been.calledWithExactly(model.toJSON());
+    });
+
+    it('creates a LatestAudit entity for each site and auditType', async () => {
+      const collection = {
+        createMany: stub().resolves(),
+      };
+      mockEntityRegistry.getCollection.withArgs('LatestAuditCollection').returns(collection);
+
+      // eslint-disable-next-line no-underscore-dangle
+      await instance._onCreateMany({
+        createdItems: [model, model, model],
+      });
+
+      expect(collection.createMany).to.have.been.calledOnce;
     });
   });
 });

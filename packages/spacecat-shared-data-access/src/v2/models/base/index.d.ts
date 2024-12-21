@@ -12,6 +12,11 @@
 
 import type { ValidationError } from '../../errors';
 
+export interface MultiStatusCreateResult<T> {
+  createdItems: T[],
+  errorItems: { item: object, error: ValidationError }[],
+}
+
 export interface BaseModel {
   getCreatedAt(): string;
   getId(): string;
@@ -19,11 +24,8 @@ export interface BaseModel {
   remove(): Promise<this>;
   save(): Promise<this>;
   toJSON(): object;
-}
-
-export interface MultiStatusCreateResult<T> {
-  createdItems: T[],
-  errorItems: { item: object, error: ValidationError }[],
+  _onCreate(item: BaseModel): void;
+  _onCreateMany(items: MultiStatusCreateResult<BaseModel>): void;
 }
 
 export interface QueryOptions {

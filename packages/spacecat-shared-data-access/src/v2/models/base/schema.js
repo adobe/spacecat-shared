@@ -12,7 +12,7 @@
 
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import { SchemaValidationError } from '../../errors/index.js';
+import { SchemaError, SchemaValidationError } from '../../errors/index.js';
 import {
   classExtends,
   entityNameToCollectionName,
@@ -267,7 +267,23 @@ class Schema {
     return this.schemaVersion;
   }
 
-  toAccessorConfigs(entity, log) {
+  /**
+   * Given an entity, generates accessor configurations for all index-based accessors.
+   * This is useful for creating methods on the entity that can be used to fetch data
+   * based on the index keys. For example, if we have an index by 'opportunityId' and 'status',
+   * this method will generate accessor configurations like allByOpportunityId,
+   * findByOpportunityId, etc. The accessor configurations can then be used to create
+   * accessor methods on the entity using the createAccessors (accessor utils) method.
+   *
+   * @param {BaseModel|BaseCollection} entity - The entity for which to generate accessors.
+   * @param {Object} [log] - The logger to use for logging information
+   * @return {Object[]}
+   */
+  toAccessorConfigs(entity, log = console) {
+    if (!(entity instanceof BaseModel) && !(entity instanceof BaseCollection)) {
+      throw new SchemaError(this, 'Entity must extend BaseModel or BaseCollection');
+    }
+
     const indexAccessors = this.getIndexAccessors();
     const accessorConfigs = [];
 

@@ -10,4 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-export default class ValidationError extends Error {}
+import DataAccessError from './data-access.error.js';
+
+export default class ValidationError extends DataAccessError {}

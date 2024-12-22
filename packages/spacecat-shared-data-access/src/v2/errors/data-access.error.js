@@ -10,18 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
-
-import DataAccessError from './data-access.error.js';
-
-export default class SchemaBuilderError extends DataAccessError {
-  constructor(builder, message) {
-    const { serviceName, entityName } = builder;
-    const prefix = hasText(serviceName) && hasText(entityName)
-      ? `[${serviceName} -> ${entityName}] `
-      : '';
-
-    super(`${prefix}${message}`, { builder });
+export default class DataAccessError extends Error {
+  constructor(message, details = {}) {
+    super(message);
     this.name = this.constructor.name;
+    this.details = details;
   }
 }

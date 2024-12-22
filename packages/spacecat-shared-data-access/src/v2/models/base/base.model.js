@@ -12,6 +12,7 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
+import { DataAccessError } from '../../errors/index.js';
 import { createAccessors } from '../../util/accessor.utils.js';
 import Patcher from '../../util/patcher.js';
 import {
@@ -203,7 +204,7 @@ class BaseModel {
    */
   async remove() {
     if (!this.schema.allowsRemove()) {
-      throw new Error(`The entity ${this.schema.getModelName()} does not allow removal`);
+      throw new DataAccessError(`The entity ${this.schema.getModelName()} does not allow removal`);
     }
 
     return this._remove();

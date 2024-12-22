@@ -29,7 +29,7 @@ import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
-import { SchemaValidationError } from '../../../../../src/v2/errors/index.js';
+import { SchemaError, SchemaValidationError } from '../../../../../src/v2/errors/index.js';
 import BaseModel from '../../../../../src/v2/models/base/base.model.js';
 import BaseCollection from '../../../../../src/v2/models/base/base.collection.js';
 import Schema from '../../../../../src/v2/models/base/schema.js';
@@ -245,6 +245,13 @@ describe('Schema', () => {
 
     it('getVersion', () => {
       expect(instance.getVersion()).to.equal(1);
+    });
+  });
+
+  describe('toAccessorConfigs', () => {
+    it('throws error if entity is not a base model or collection', () => {
+      expect(() => instance.toAccessorConfigs({}, {}))
+        .to.throw(SchemaError, '[MockEntityModel] Entity must extend BaseModel or BaseCollection');
     });
   });
 

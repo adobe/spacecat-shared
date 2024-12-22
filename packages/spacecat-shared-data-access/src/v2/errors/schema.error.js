@@ -10,4 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-export default class SchemaError extends Error {}
+import DataAccessError from './data-access.error.js';
+
+export default class SchemaError extends DataAccessError {
+  constructor(schema, message) {
+    super(`[${schema.getModelName()}] ${message}`, { schema });
+  }
+}

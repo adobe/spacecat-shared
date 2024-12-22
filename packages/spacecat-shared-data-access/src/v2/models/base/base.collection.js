@@ -18,8 +18,9 @@ import {
 
 import { ElectroValidationError } from 'electrodb';
 
-import { createAccessors } from '../../util/accessor.utils.js';
+import { DataAccessError } from '../../errors/index.js';
 import ValidationError from '../../errors/validation.error.js';
+import { createAccessors } from '../../util/accessor.utils.js';
 import { guardId } from '../../util/guards.js';
 import {
   entityNameToAllPKValue,
@@ -205,13 +206,13 @@ class BaseCollection {
     if (!isNonEmptyObject(keys)) {
       const message = `Failed to query [${this.entityName}]: keys are required`;
       this.log.error(message);
-      throw new Error(message);
+      throw new DataAccessError(message);
     }
 
     if (!isObject(options)) {
       const message = `Failed to query [${this.entityName}]: options must be an object`;
       this.log.error(message);
-      throw new Error(message);
+      throw new DataAccessError(message);
     }
 
     const indexName = options.index || findIndexNameByKeys(this.schema, keys);
@@ -220,7 +221,7 @@ class BaseCollection {
     if (!index) {
       const message = `Failed to query [${this.entityName}]: query proxy [${indexName}] not found`;
       this.log.error(message);
-      throw new Error(message);
+      throw new DataAccessError(message);
     }
 
     const queryOptions = {
@@ -289,7 +290,7 @@ class BaseCollection {
     if (!isObject(sortKeys)) {
       const message = `Failed to find by all [${this.entityName}]: sort keys must be an object`;
       this.log.error(message);
-      throw new Error(message);
+      throw new DataAccessError(message);
     }
 
     const keys = { pk: entityNameToAllPKValue(this.entityName), ...sortKeys };
@@ -336,7 +337,7 @@ class BaseCollection {
     if (!isNonEmptyObject(item)) {
       const message = `Failed to create [${this.entityName}]: data is required`;
       this.log.error(message);
-      throw new Error(message);
+      throw new DataAccessError(message);
     }
 
     try {
@@ -394,7 +395,7 @@ class BaseCollection {
     if (!isNonEmptyArray(newItems)) {
       const message = `Failed to create many [${this.entityName}]: items must be a non-empty array`;
       this.log.error(message);
-      throw new Error(message);
+      throw new DataAccessError(message);
     }
 
     try {
@@ -447,7 +448,7 @@ class BaseCollection {
     if (!isNonEmptyArray(items)) {
       const message = `Failed to save many [${this.entityName}]: items must be a non-empty array`;
       this.log.error(message);
-      throw new Error(message);
+      throw new DataAccessError(message);
     }
 
     try {
@@ -477,7 +478,7 @@ class BaseCollection {
     if (!isNonEmptyArray(ids)) {
       const message = `Failed to remove [${this.entityName}]: ids must be a non-empty array`;
       this.log.error(message);
-      throw new Error(message);
+      throw new DataAccessError(message);
     }
 
     this.log.info(`Removing ${ids.length} items for [${this.entityName}]`);

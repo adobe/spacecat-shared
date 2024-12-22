@@ -95,15 +95,15 @@ class SchemaBuilder {
    */
   constructor(modelClass, collectionClass, schemaVersion = 1) {
     if (!modelClass || !(modelClass.prototype instanceof BaseModel)) {
-      throw new SchemaBuilderError('modelClass must be a subclass of BaseModel.');
+      throw new SchemaBuilderError(this, 'modelClass must be a subclass of BaseModel.');
     }
 
     if (!collectionClass || !(collectionClass.prototype instanceof BaseCollection)) {
-      throw new SchemaBuilderError('collectionClass must be a subclass of BaseCollection.');
+      throw new SchemaBuilderError(this, 'collectionClass must be a subclass of BaseCollection.');
     }
 
     if (!isInteger(schemaVersion) || schemaVersion < 1) {
-      throw new SchemaBuilderError('schemaVersion is required and must be a positive integer.');
+      throw new SchemaBuilderError(this, 'schemaVersion is required and must be a positive integer.');
     }
 
     this.modelClass = modelClass;
@@ -159,7 +159,7 @@ class SchemaBuilder {
 
   withPrimaryPartitionKeys(partitionKeys) {
     if (!isNonEmptyArray(partitionKeys)) {
-      throw new SchemaBuilderError('Partition keys are required and must be a non-empty array.');
+      throw new SchemaBuilderError(this, 'Partition keys are required and must be a non-empty array.');
     }
     this.rawIndexes.primary.pk.composite = partitionKeys;
 
@@ -180,7 +180,7 @@ class SchemaBuilder {
    */
   withPrimarySortKeys(sortKeys) {
     if (!isNonEmptyArray(sortKeys)) {
-      throw new SchemaBuilderError('Sort keys are required and must be a non-empty array.');
+      throw new SchemaBuilderError(this, 'Sort keys are required and must be a non-empty array.');
     }
     this.rawIndexes.primary.sk.composite = sortKeys;
 
@@ -200,7 +200,7 @@ class SchemaBuilder {
    */
   allowRemove(allow) {
     if (!isBoolean(allow)) {
-      throw new SchemaBuilderError('allow must be a boolean.');
+      throw new SchemaBuilderError(this, 'allow must be a boolean.');
     }
     this.options.allowRemove = allow;
 
@@ -218,7 +218,7 @@ class SchemaBuilder {
    */
   allowUpdates(allow) {
     if (!isBoolean(allow)) {
-      throw new SchemaBuilderError('allow must be a boolean.');
+      throw new SchemaBuilderError(this, 'allow must be a boolean.');
     }
     this.options.allowUpdates = allow;
 
@@ -235,11 +235,11 @@ class SchemaBuilder {
    */
   addAttribute(name, data) {
     if (!hasText(name)) {
-      throw new SchemaBuilderError('Attribute name is required and must be non-empty.');
+      throw new SchemaBuilderError(this, 'Attribute name is required and must be non-empty.');
     }
 
     if (!isNonEmptyObject(data)) {
-      throw new SchemaBuilderError(`Attribute data for "${name}" is required and must be a non-empty object.`);
+      throw new SchemaBuilderError(this, `Attribute data for "${name}" is required and must be a non-empty object.`);
     }
 
     this.attributes[name] = data;
@@ -258,7 +258,7 @@ class SchemaBuilder {
    */
   addAllIndex(sortKeys) {
     if (!isNonEmptyArray(sortKeys)) {
-      throw new SchemaBuilderError('Sort keys are required and must be a non-empty array.');
+      throw new SchemaBuilderError(this, 'Sort keys are required and must be a non-empty array.');
     }
 
     this.#internalAddIndex(
@@ -281,11 +281,11 @@ class SchemaBuilder {
    */
   addIndex(partitionKey, sortKey) {
     if (!isNonEmptyObject(partitionKey)) {
-      throw new SchemaBuilderError('Partition key configuration (pk) is required and must be a non-empty object.');
+      throw new SchemaBuilderError(this, 'Partition key configuration (pk) is required and must be a non-empty object.');
     }
 
     if (!isNonEmptyObject(sortKey)) {
-      throw new SchemaBuilderError('Sort key configuration (sk) is required and must be a non-empty object.');
+      throw new SchemaBuilderError(this, 'Sort key configuration (sk) is required and must be a non-empty object.');
     }
 
     this.#internalAddIndex(partitionKey, sortKey, INDEX_TYPES.OTHER);
@@ -309,11 +309,11 @@ class SchemaBuilder {
    */
   addReference(type, entityName, sortKeys = [], options = {}) {
     if (!Reference.isValidType(type)) {
-      throw new SchemaBuilderError(`Invalid referenceType: "${type}".`);
+      throw new SchemaBuilderError(this, `Invalid referenceType: "${type}".`);
     }
 
     if (!hasText(entityName)) {
-      throw new SchemaBuilderError('entityName for reference is required and must be a non-empty string.');
+      throw new SchemaBuilderError(this, 'entityName for reference is required and must be a non-empty string.');
     }
     const reference = {
       type,
@@ -375,7 +375,7 @@ class SchemaBuilder {
     ];
 
     if (orderedIndexes.length > 5) {
-      throw new SchemaBuilderError('Cannot have more than 5 indexes.');
+      throw new SchemaBuilderError(this, 'Cannot have more than 5 indexes.');
     }
 
     this.indexes = { primary: this.rawIndexes.primary };

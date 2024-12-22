@@ -10,4 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-export default class SchemaValidationError extends Error {}
+import DataAccessError from './data-access.error.js';
+
+export default class SchemaValidationError extends DataAccessError {}

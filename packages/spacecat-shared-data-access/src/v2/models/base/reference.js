@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+
+import ReferenceError from '../../errors/reference.error.js';
 import {
   entityNameToCollectionName,
   entityNameToIdName,
@@ -78,11 +80,11 @@ class Reference {
 
   constructor(type, target, options = {}) {
     if (!Reference.isValidType(type)) {
-      throw new Error(`Invalid reference type: ${type}`);
+      throw new ReferenceError(this, `Invalid reference type: ${type}`);
     }
 
     if (!hasText(target)) {
-      throw new Error('Invalid target');
+      throw new ReferenceError(this, 'Invalid target');
     }
 
     this.type = type;
@@ -107,6 +109,14 @@ class Reference {
   }
 
   toAccessorConfigs(registry, entity) {
+    if (!isNonEmptyObject(registry)) {
+      throw new ReferenceError(this, 'Invalid registry');
+    }
+
+    if (!isNonEmptyObject(entity)) {
+      throw new ReferenceError(this, 'Invalid entity');
+    }
+
     const { log } = registry;
     const accessorConfigs = [];
 
@@ -188,7 +198,7 @@ class Reference {
       }
 
       default:
-        throw new Error(`Unsupported reference type: ${type}`);
+        throw new ReferenceError(this, `Unsupported reference type: ${type}`);
     }
 
     return accessorConfigs.map((config) => ({

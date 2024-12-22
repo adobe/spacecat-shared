@@ -10,17 +10,18 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel } from '../base';
+import type { BaseCollection, BaseModel, ImportJob } from '../index';
 
 export interface ImportUrl extends BaseModel {
-  getExpiresAt(): number,
+  getExpiresAt(): string,
   getFile(): string,
+  getImportJob(): Promise<ImportJob>,
   getImportJobId(): string,
   getPath(): string,
   getReason(): string,
   getStatus(): string,
   getUrl(): string,
-  setExpiresAt(expiresAt: number): void,
+  setExpiresAt(expiresAt: string): void,
   setFile(file: string): void,
   setImportJobId(importJobId: string): void,
   setPath(path: string): void,
@@ -32,4 +33,6 @@ export interface ImportUrl extends BaseModel {
 export interface ImportUrlCollection extends BaseCollection<ImportUrl> {
   allByImportJobId(importJobId: string): Promise<ImportUrl[]>;
   allByImportUrlsByJobIdAndStatus(importJobId: string, status: string): Promise<ImportUrl[]>;
+  findByImportJobId(importJobId: string): Promise<ImportUrl | null>;
+  findByImportJobIdAndUrl(importJobId: string, url: string): Promise<ImportUrl | null>;
 }

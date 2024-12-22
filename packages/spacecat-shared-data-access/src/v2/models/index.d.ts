@@ -14,6 +14,8 @@ export type * from './audit/index.d.ts';
 export type * from './configuration/index.d.ts';
 export type * from './base/index.d.ts';
 export type * from './experiment/index.d.ts';
+export type * from './import-job/index.d.ts';
+export type * from './import-url/index.d.ts';
 export type * from './key-event/index.d.ts';
 export type * from './latest-audit/index.d.ts';
 export type * from './opportunity/index.d.ts';

@@ -11,35 +11,70 @@
  */
 
 import type {
-  Audit, BaseCollection, BaseModel, LatestAudit, Organization,
+  Audit,
+  BaseCollection,
+  BaseModel,
+  Experiment,
+  KeyEvent,
+  LatestAudit,
+  Opportunity,
+  Organization,
+  SiteCandidate,
+  SiteTopPage,
 } from '../index';
 
 export interface Site extends BaseModel {
   getAudits(): Promise<Audit>;
+  getAuditsByAuditType(auditType: string): Promise<Audit>;
+  getAuditsByAuditTypeAndAuditedAt(auditType: string, auditedAt: string): Promise<Audit>;
   getBaseURL(): string;
   getConfig(): object;
   getDeliveryType(): string;
-  getFulfillableItems(): object;
+  getExperiments(): Promise<Experiment[]>;
+  getExperimentsByExpId(expId: string): Promise<Experiment[]>;
+  getExperimentsByExpIdAndUrl(expId: string, url: string): Promise<Experiment[]>;
+  getExperimentsByExpIdAndUrlAndUpdatedAt(
+    expId: string, url: string, updatedAt: string
+  ): Promise<Experiment[]>;
   getGitHubURL(): string;
   getHlxConfig(): object;
   getIsLive(): boolean;
   getIsLiveToggledAt(): string;
+  getKeyEvents(): Promise<KeyEvent[]>
+  getKeyEventsByTimestamp(timestamp: string): Promise<KeyEvent[]>
+  getLatestAudit(): Promise<LatestAudit>;
+  getLatestAuditByAuditType(auditType: string): Promise<LatestAudit>;
   getLatestAudits(): Promise<LatestAudit>;
   getLatestAuditByAuditType(auditType: string): Promise<LatestAudit>;
+  getOpportunities(): Promise<Opportunity[]>;
+  getOpportunitiesByStatus(status: string): Promise<Opportunity[]>;
+  getOpportunitiesByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<Opportunity[]>;
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
+  getSiteCandidates(): Promise<SiteCandidate[]>;
+  getSiteTopPages(): Promise<SiteTopPage[]>;
+  getSiteTopPagesBySource(source: string): Promise<SiteTopPage[]>;
+  getSiteTopPagesBySourceAndGeo(source: string, geo: string): Promise<SiteTopPage[]>;
+  getSiteTopPagesBySourceAndGeoAndTraffic(
+    source: string, geo: string, traffic: string
+  ): Promise<SiteTopPage[]>;
+  setBaseURL(baseURL: string): Site;
   setConfig(config: object): Site;
   setDeliveryType(deliveryType: string): Site;
-  setFulfillableItems(fulfillableItems: object): Site;
   setGitHubURL(gitHubURL: string): Site;
   setHlxConfig(hlxConfig: object): Site;
   setIsLive(isLive: boolean): Site;
+  setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
   toggleLive(): Site;
 }
 
 export interface SiteCollection extends BaseCollection<Organization> {
-  findByBaseURL(siteId: string): Promise<Site>;
-  allByDeliveryType(siteId: string): Promise<Site[]>;
-  allByOrganizationId(siteId: string): Promise<Site[]>;
+  allByBaseURL(baseURL: string): Promise<Site[]>;
+  allByDeliveryType(deliveryType: string): Promise<Site[]>;
+  allByOrganizationId(organizationId: string): Promise<Site[]>;
+  allSitesToAudit(): Promise<string[]>;
+  findByBaseURL(baseURL: string): Promise<Site | null>;
+  findByDeliveryType(deliveryType: string): Promise<Site | null>;
+  findByOrganizationId(organizationId: string): Promise<Site | null>;
 }

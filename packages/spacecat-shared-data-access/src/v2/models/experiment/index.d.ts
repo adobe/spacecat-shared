@@ -30,20 +30,28 @@ export interface Experiment extends BaseModel {
   setEndDate(endDate: number): Experiment;
   setExpId(expId: string): Experiment;
   setName(name: string): Experiment;
+  setSiteId(siteId: string): Experiment;
   setStartDate(startDate: number): Experiment;
   setStatus(status: string): Experiment;
   setType(type: string): Experiment;
   setUrl(url: string): Experiment;
+  setUpdatedBy(updatedBy: string): Experiment;
   setVariants(variants: object): Experiment;
 }
 
 export interface ExperimentCollection extends BaseCollection<Experiment> {
   allBySiteId(siteId: string): Promise<Experiment[]>;
   allBySiteIdAndExpId(siteId: string, expId: string): Promise<Experiment[]>;
+  allBySiteIdAndExpIdAndUrl(siteId: string, expId: string, url: string): Promise<Experiment[]>;
+  allBySiteIdAndExpIdAndUrlAndUpdatedAt(
+    siteId: string, expId: string, url: string, updatedAt: string
+  ): Promise<Experiment[]>;
+  findBySiteId(siteId: string): Promise<Experiment | null>;
   findBySiteIdAndExpId(siteId: string, expId: string): Promise<Experiment | null>;
   findBySiteIdAndExpIdAndUrl(
-    siteId: string,
-    expId: string,
-    url: string,
+    siteId: string, expId: string, url: string
+  ): Promise<Experiment | null>;
+  findBySiteIdAndExpIdAndUrlAndUpdatedAt(
+    siteId: string, expId: string, url: string, updatedAt: string
   ): Promise<Experiment | null>;
 }

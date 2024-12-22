@@ -60,6 +60,7 @@ export interface Reference {
   getTarget(): string;
   getType(): string;
   isRemoveDependents(): boolean;
+  toAccessorConfigs(): object[];
 }
 
 export interface IndexAccessor {
@@ -68,30 +69,41 @@ export interface IndexAccessor {
 }
 
 export interface Schema {
+  allowsRemove(): boolean;
+  allowsUpdates(): boolean;
   findIndexBySortKeys(sortKeys: string[]): object | null;
   findIndexByType(type: string): object | null;
+  findIndexNameByKeys(keys: object): string;
   getAttribute(name: string): object;
   getAttributes(): object;
   getCollectionName(): string;
   getEntityName(): string;
   getIdName(): string;
   getIndexAccessors(): Array<IndexAccessor>;
-  getIndexes(): object;
+  getIndexByName(indexName: string): object;
   getIndexKeys(indexName: string): string[];
+  getIndexTypes(): string[];
+  getIndexes(): object;
   getModelClass(): object;
   getModelName(): string;
+  getReciprocalReference(registry: EntityRegistry, reference: Reference): Reference | null;
+  getReferenceByTypeAndTarget(referenceType: string, target: string): Reference | undefined;
   getReferences(): Reference[];
   getReferencesByType(referenceType: string): Reference[];
-  getReferenceByTypeAndTarget(referenceType: string, target: string): Reference | undefined;
+  getServiceName(): string;
+  getVersion(): number;
+  toAccessorConfigs(): object[];
+  toElectroDBSchema(): object;
 }
 
 export interface SchemaBuilder {
-  addAttribute(name: string, data: object): SchemaBuilder;
   addAllIndex(sortKeys: string[]): SchemaBuilder;
+  addAttribute(name: string, data: object): SchemaBuilder;
   addIndex(name: string, partitionKey: object, sortKey: object): SchemaBuilder;
   addReference(referenceType: string, entityName: string, sortKeys?: string[]): SchemaBuilder;
   allowRemove(allow: boolean): SchemaBuilder;
   allowUpdate(allow: boolean): SchemaBuilder;
   build(): Schema;
+  withPrimaryPartitionKeys(partitionKeys: string[]): SchemaBuilder
   withPrimarySortKeys(sortKeys: string[]): SchemaBuilder;
 }

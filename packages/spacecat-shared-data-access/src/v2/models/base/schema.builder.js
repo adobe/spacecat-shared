@@ -24,7 +24,6 @@ import {
   isNonEmptyArray,
 } from '../../util/util.js';
 
-import { INDEX_TYPES } from './constants.js';
 import BaseModel from './base.model.js';
 import BaseCollection from './base.collection.js';
 import Reference from './reference.js';
@@ -264,7 +263,7 @@ class SchemaBuilder {
     this.#internalAddIndex(
       { template: entityNameToAllPKValue(this.entityName) },
       { composite: sortKeys },
-      INDEX_TYPES.ALL,
+      Schema.INDEX_TYPES.ALL,
     );
 
     return this;
@@ -288,7 +287,7 @@ class SchemaBuilder {
       throw new SchemaBuilderError(this, 'Sort key configuration (sk) is required and must be a non-empty object.');
     }
 
-    this.#internalAddIndex(partitionKey, sortKey, INDEX_TYPES.OTHER);
+    this.#internalAddIndex(partitionKey, sortKey, Schema.INDEX_TYPES.OTHER);
 
     return this;
   }
@@ -346,7 +345,7 @@ class SchemaBuilder {
       this.#internalAddIndex(
         { composite: [decapitalize(foreignKeyName)] },
         { composite: isNonEmptyArray(sortKeys) ? sortKeys : ['updatedAt'] },
-        INDEX_TYPES.BELONGS_TO,
+        Schema.INDEX_TYPES.BELONGS_TO,
       );
     }
 

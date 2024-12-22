@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { DataAccessError } from '../../errors/index.js';
 import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
 
 import ApiKeyCollection from '../api-key/api-key.collection.js';
@@ -97,7 +98,7 @@ class EntityRegistry {
   getCollection(collectionName) {
     const collection = this.collections.get(collectionName);
     if (!collection) {
-      throw new Error(`Collection ${collectionName} not found`);
+      throw new DataAccessError(`Collection ${collectionName} not found`, this);
     }
     return collection;
   }

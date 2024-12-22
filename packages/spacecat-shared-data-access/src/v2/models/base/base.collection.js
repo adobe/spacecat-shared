@@ -27,7 +27,6 @@ import {
   isNonEmptyArray,
   removeElectroProperties,
 } from '../../util/util.js';
-import { INDEX_TYPES } from './constants.js';
 
 function isValidParent(parent, child) {
   if (!hasText(parent.entityName)) {
@@ -48,19 +47,20 @@ function isValidParent(parent, child) {
  * @return {*|string} - The index name.
  */
 function findIndexNameByKeys(schema, keys) {
+  const { ALL, PRIMARY } = schema.getIndexTypes();
   const keyNames = Object.keys(keys);
 
   const index = schema.findIndexBySortKeys(keyNames);
   if (index) {
-    return index.index || INDEX_TYPES.PRIMARY;
+    return index.index || PRIMARY;
   }
 
-  const allIndex = schema.findIndexByType(INDEX_TYPES.ALL);
+  const allIndex = schema.findIndexByType(ALL);
   if (allIndex) {
     return allIndex.index;
   }
 
-  return INDEX_TYPES.PRIMARY;
+  return PRIMARY;
 }
 
 /**

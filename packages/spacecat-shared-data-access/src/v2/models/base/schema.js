@@ -25,10 +25,16 @@ import {
 
 import BaseCollection from './base.collection.js';
 import BaseModel from './base.model.js';
-import { INDEX_TYPES } from './constants.js';
 import Reference from './reference.js';
 
 class Schema {
+  static INDEX_TYPES = {
+    PRIMARY: 'primary',
+    ALL: 'all',
+    BELONGS_TO: 'belongs_to',
+    OTHER: 'other',
+  };
+
   /**
    * Constructs a new Schema instance.
    * @constructor
@@ -132,7 +138,7 @@ class Schema {
    *   ]
    */
   getIndexAccessors() {
-    const indexes = this.getIndexes([INDEX_TYPES.PRIMARY]);
+    const indexes = this.getIndexes([Schema.INDEX_TYPES.PRIMARY]);
     const result = [];
 
     Object.keys(indexes).forEach((indexName) => {
@@ -174,6 +180,11 @@ class Schema {
     }
 
     return null;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  getIndexTypes() {
+    return Schema.INDEX_TYPES;
   }
 
   findIndexByType(type) {

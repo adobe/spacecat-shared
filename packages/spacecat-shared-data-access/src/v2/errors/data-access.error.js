@@ -11,9 +11,10 @@
  */
 
 export default class DataAccessError extends Error {
-  constructor(message, details = {}) {
+  constructor(message, details = {}, cause = null) {
     super(message);
     this.name = this.constructor.name;
     this.details = details;
+    this.cause = cause;
   }
 }

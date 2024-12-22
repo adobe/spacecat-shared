@@ -13,10 +13,10 @@
 import DataAccessError from './data-access.error.js';
 
 export default class ReferenceError extends DataAccessError {
-  constructor(reference, message) {
+  constructor(reference, message, cause) {
     const { type, target } = reference;
     const prefix = type && target ? `[${type} -> ${target}] ` : '';
 
-    super(`${prefix}${message}`, { reference });
+    super(`${prefix}${message}`, { reference }, cause);
   }
 }

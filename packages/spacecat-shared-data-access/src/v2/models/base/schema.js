@@ -182,6 +182,31 @@ class Schema {
     return null;
   }
 
+  /**
+   * Finds the index name by the keys provided. The index is searched
+   * keys to match the combination of partition and sort keys. If no
+   * index is found, we fall back to the "all" index, then the "primary".
+   *
+   * @param {Object} keys - The keys to search for.
+   * @return {*|string} - The index name.
+   */
+  findIndexNameByKeys(keys) {
+    const { ALL, PRIMARY } = this.getIndexTypes();
+    const keyNames = Object.keys(keys);
+
+    const index = this.findIndexBySortKeys(keyNames);
+    if (index) {
+      return index.index || PRIMARY;
+    }
+
+    const allIndex = this.findIndexByType(ALL);
+    if (allIndex) {
+      return allIndex.index;
+    }
+
+    return PRIMARY;
+  }
+
   // eslint-disable-next-line class-methods-use-this
   getIndexTypes() {
     return Schema.INDEX_TYPES;

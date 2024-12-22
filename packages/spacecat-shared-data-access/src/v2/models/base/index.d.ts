@@ -18,14 +18,13 @@ export interface MultiStatusCreateResult<T> {
 }
 
 export interface BaseModel {
+  _remove(): Promise<this>;
   getCreatedAt(): string;
   getId(): string;
   getUpdatedAt(): string;
   remove(): Promise<this>;
   save(): Promise<this>;
   toJSON(): object;
-  _onCreate(item: BaseModel): void;
-  _onCreateMany(items: MultiStatusCreateResult<BaseModel>): void;
 }
 
 export interface QueryOptions {
@@ -36,12 +35,15 @@ export interface QueryOptions {
 }
 
 export interface BaseCollection<T extends BaseModel> {
+  _onCreate(item: T): void;
+  _onCreateMany(items: MultiStatusCreateResult<T>): void;
+  _saveMany(items: T[]): Promise<T[]>;
   all(sortKeys?: object, options?: QueryOptions): Promise<T[]>;
   allByIndexKeys(keys: object, options?: QueryOptions): Promise<T[]>;
   create(item: object): Promise<T>;
-  createMany(items: object[]): Promise<MultiStatusCreateResult<T>>;
-  findByAll(sortKeys?: object, options?: QueryOptions): Promise<T>;
-  findById(id: string): Promise<T>;
+  createMany(items: object[], parent?: T): Promise<MultiStatusCreateResult<T>>;
+  findByAll(sortKeys?: object, options?: QueryOptions): Promise<T> | null;
+  findById(id: string): Promise<T> | null;
   findByIndexKeys(indexKeys: object): Promise<T>;
   removeByIds(ids: string[]): Promise<void>;
 }

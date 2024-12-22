@@ -86,6 +86,18 @@ class BaseModel {
     });
   }
 
+  /**
+   * Initializes the attributes for the current entity. This method is called during the
+   * construction of the entity instance to set up the getter and setter methods for
+   * accessing and modifying the entity attributes. The getter and setter methods are
+   * automatically generated based on the entity schema. If the schema allows updates,
+   * setter methods are generated for each attribute that is not read-only.
+   *
+   * If the attribute is a reference, the setter method will tell the patcher
+   * to validate that the value is a valid UUID.
+   *
+   * @private
+   */
   #initializeAttributes() {
     const attributes = this.schema.getAttributes();
 
@@ -117,10 +129,22 @@ class BaseModel {
     }
   }
 
+  /**
+   * Clears the accessor cache for the entity. This method is called when the entity is
+   * updated or removed to ensure that the cache is invalidated.
+   * @private
+   */
   #invalidateCache() {
     this._accessorCache = {};
   }
 
+  /**
+   * Fetches the associated entities for the current entity based on the type of relationship.
+   * This is used for the remove operation to remove dependent entities associated with the
+   * current entity.
+   * @return {Promise<FlatArray<Awaited<unknown>[], 1>[]>}
+   * @private
+   */
   async #fetchDependents() {
     const promises = [];
 
@@ -216,7 +240,7 @@ class BaseModel {
    * dependents even if the schema does not allow removal.
    * @return {Promise<BaseModel>}
    * @throws {Error} - Throws an error if the removal operation fails.
-   * @private
+   * @protected
    */
   async _remove() {
     try {

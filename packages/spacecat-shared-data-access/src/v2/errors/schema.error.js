@@ -13,7 +13,7 @@
 import DataAccessError from './data-access.error.js';
 
 export default class SchemaError extends DataAccessError {
-  constructor(schema, message) {
-    super(`[${schema.getModelName()}] ${message}`, { schema });
+  constructor(schema, message, cause) {
+    super(`[${schema.getModelName()}] ${message}`, { schema }, cause);
   }
 }

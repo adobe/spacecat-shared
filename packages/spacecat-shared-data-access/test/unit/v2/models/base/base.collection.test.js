@@ -22,6 +22,7 @@ import sinonChai from 'sinon-chai';
 import BaseCollection from '../../../../../src/v2/models/base/base.collection.js';
 import Schema from '../../../../../src/v2/models/base/schema.js';
 import BaseModel from '../../../../../src/v2/models/base/base.model.js';
+import { DataAccessError } from '../../../../../src/index.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
@@ -253,13 +254,13 @@ describe('BaseCollection', () => {
   describe('findByIndexKeys', () => {
     it('throws error if keys is not provided', async () => {
       await expect(baseCollectionInstance.findByIndexKeys())
-        .to.be.rejectedWith('Failed to query [mockEntityModel]: keys are required');
+        .to.be.rejectedWith(DataAccessError, 'Failed to query [mockEntityModel]: keys are required');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
 
     it('throws error if index is not found', async () => {
       await expect(baseCollectionInstance.findByIndexKeys({ someKey: 'someValue' }, { index: 'none' }))
-        .to.be.rejectedWith('Failed to query [mockEntityModel]: query proxy [none] not found');
+        .to.be.rejectedWith(DataAccessError, 'Failed to query [mockEntityModel]: query proxy [none] not found');
       expect(mockLogger.error).to.have.been.calledOnce;
     });
   });
@@ -286,7 +287,7 @@ describe('BaseCollection', () => {
         { go: () => Promise.reject(error) },
       );
 
-      await expect(baseCollectionInstance.create(mockRecord.data)).to.be.rejectedWith('Create failed');
+      await expect(baseCollectionInstance.create(mockRecord.data)).to.be.rejectedWith(DataAccessError, 'Failed to create');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
 
@@ -501,7 +502,7 @@ describe('BaseCollection', () => {
         },
       );
 
-      await expect(baseCollectionInstance.createMany(mockRecords)).to.be.rejectedWith('Create failed');
+      await expect(baseCollectionInstance.createMany(mockRecords)).to.be.rejectedWith('Failed to create many');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
 
@@ -587,7 +588,7 @@ describe('BaseCollection', () => {
         { go: () => Promise.reject(error) },
       );
 
-      await expect(baseCollectionInstance._saveMany(mockRecords)).to.be.rejectedWith('Save failed');
+      await expect(baseCollectionInstance._saveMany(mockRecords)).to.be.rejectedWith(DataAccessError, 'Failed to save many');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
   });
@@ -650,6 +651,17 @@ describe('BaseCollection', () => {
     it('throws and error if options is not an object', async () => {
       await expect(baseCollectionInstance.allByIndexKeys({ someKey: 'someValue' }, null))
         .to.be.rejectedWith('Failed to query [mockEntityModel]: options must be an object');
+      expect(mockLogger.error).to.have.been.calledOnce;
+    });
+
+    it('throws an error if the query operation fails', async () => {
+      const error = new Error('Query failed');
+      mockElectroService.entities.mockEntityModel.query.all.returns(
+        { go: () => Promise.reject(error) },
+      );
+
+      await expect(baseCollectionInstance.allByIndexKeys({ someKey: 'someValue' }))
+        .to.be.rejectedWith(DataAccessError, 'Failed to query');
       expect(mockLogger.error).to.have.been.calledOnce;
     });
 
@@ -747,6 +759,17 @@ describe('BaseCollection', () => {
     it('throws an error if the ids are empty', async () => {
       await expect(baseCollectionInstance.removeByIds([]))
         .to.be.rejectedWith('Failed to remove [mockEntityModel]: ids must be a non-empty array');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
+    it('throws error if delete operation fails', async () => {
+      const error = new Error('Delete failed');
+      mockElectroService.entities.mockEntityModel.delete.returns(
+        { go: () => Promise.reject(error) },
+      );
+
+      await expect(baseCollectionInstance.removeByIds(['ef39921f-9a02-41db-b491-02c98987d956']))
+        .to.be.rejectedWith(DataAccessError, 'Failed to remove');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
 

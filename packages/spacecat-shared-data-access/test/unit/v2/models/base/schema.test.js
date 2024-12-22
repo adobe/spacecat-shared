@@ -42,23 +42,24 @@ const MockModel = class MockEntityModel extends BaseModel {};
 const MockCollection = class MockEntityCollection extends BaseCollection {};
 
 describe('Schema', () => {
-  const rawSchema = {
-    serviceName: 'service',
-    schemaVersion: 1,
-    attributes: {
-      id: { type: 'string' },
-    },
-    indexes: {
-      primary: { pk: { composite: ['id'] } },
-      byOrganizationId: { sk: { facets: ['organizationId'] }, indexType: 'belongs_to' },
-    },
-    references: [new Reference('belongs_to', 'Organization')],
-    options: { allowRemove: true, allowUpdates: true },
-  };
-
+  let rawSchema;
   let instance;
 
   beforeEach(() => {
+    rawSchema = {
+      serviceName: 'service',
+      schemaVersion: 1,
+      attributes: {
+        id: { type: 'string' },
+      },
+      indexes: {
+        primary: { pk: { composite: ['id'] } },
+        byOrganizationId: { index: 'gsi1pk-gsi1pk', sk: { facets: ['organizationId'] }, indexType: 'belongs_to' },
+      },
+      references: [new Reference('belongs_to', 'Organization')],
+      options: { allowRemove: true, allowUpdates: true },
+    };
+
     instance = new Schema(MockModel, MockCollection, rawSchema);
   });
 
@@ -163,6 +164,7 @@ describe('Schema', () => {
 
     it('findIndexByType returns index', () => {
       expect(instance.findIndexByType('belongs_to')).to.deep.equal({
+        index: 'gsi1pk-gsi1pk',
         indexType: 'belongs_to',
         sk: {
           facets: [
@@ -170,6 +172,25 @@ describe('Schema', () => {
           ],
         },
       });
+    });
+
+    it('findIndexNameByKeys returns primary if no index found', () => {
+      expect(instance.findIndexNameByKeys({ someKey: 'someValue' })).to.equal('primary');
+    });
+
+    it('findIndexNameByKeys returns index if found', () => {
+      expect(instance.findIndexNameByKeys({ organizationId: 'someId' })).to.equal('gsi1pk-gsi1pk');
+    });
+
+    it('findIndexNameByKeys returns primary if index found but no name', () => {
+      delete rawSchema.indexes.byOrganizationId.index;
+      expect(instance.findIndexNameByKeys({ organizationId: 'someId' })).to.equal('primary');
+    });
+
+    it('findIndexNameByKeys returns all index if index not found and all available', () => {
+      delete rawSchema.indexes.byOrganizationId;
+      rawSchema.indexes.all = { index: 'all-index', indexType: 'all', pk: { composite: ['id'] } };
+      expect(instance.findIndexNameByKeys({ organizationId: 'someId' })).to.equal('all-index');
     });
 
     it('getIndexAccessors', () => {
@@ -189,7 +210,7 @@ describe('Schema', () => {
 
     it('getIndexes with exclusion', () => {
       expect(instance.getIndexes(['primary'])).to.deep.equal({
-        byOrganizationId: { sk: { facets: ['organizationId'] }, indexType: 'belongs_to' },
+        byOrganizationId: { index: 'gsi1pk-gsi1pk', sk: { facets: ['organizationId'] }, indexType: 'belongs_to' },
       });
     });
 

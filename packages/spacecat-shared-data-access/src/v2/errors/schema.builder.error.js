@@ -15,13 +15,13 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 import DataAccessError from './data-access.error.js';
 
 export default class SchemaBuilderError extends DataAccessError {
-  constructor(builder, message) {
+  constructor(builder, message, cause) {
     const { serviceName, entityName } = builder;
     const prefix = hasText(serviceName) && hasText(entityName)
       ? `[${serviceName} -> ${entityName}] `
       : '';
 
-    super(`${prefix}${message}`, { builder });
+    super(`${prefix}${message}`, { builder }, cause);
     this.name = this.constructor.name;
   }
 }

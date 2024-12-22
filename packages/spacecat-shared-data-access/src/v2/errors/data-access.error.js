@@ -16,5 +16,9 @@ export default class DataAccessError extends Error {
     this.name = this.constructor.name;
     this.details = details;
     this.cause = cause;
+
+    if (cause?.stack) {
+      this.stack += `\nCaused by: ${cause.stack}`;
+    }
   }
 }

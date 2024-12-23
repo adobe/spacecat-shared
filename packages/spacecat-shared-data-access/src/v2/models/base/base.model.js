@@ -142,7 +142,7 @@ class BaseModel {
    * Fetches the associated entities for the current entity based on the type of relationship.
    * This is used for the remove operation to remove dependent entities associated with the
    * current entity.
-   * @return {Promise<FlatArray<Awaited<unknown>[], 1>[]>}
+   * @return {Promise<Array>}
    * @private
    */
   async #fetchDependents() {

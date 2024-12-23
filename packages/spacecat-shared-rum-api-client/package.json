@@ -38,10 +38,10 @@
     "@adobe/fetch": "4.1.11",
     "@adobe/helix-shared-wrap": "2.0.2",
     "@adobe/helix-universal": "5.0.8",
-    "@adobe/spacecat-shared-utils": "1.22.4",
+    "@adobe/spacecat-shared-utils": "1.24.1",
     "@adobe/rum-distiller": "1.14.0",
     "aws4": "1.13.2",
-    "urijs": "^1.19.11"
+    "urijs": "1.19.11"
   },
   "devDependencies": {
     "chai": "5.1.2",

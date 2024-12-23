@@ -223,7 +223,7 @@ class BaseModel {
    * @async
    * @returns {Promise<BaseModel>} - A promise that resolves to the current instance of the entity
    * after it and its dependents have been removed.
-   * @throws {Error} - Throws an error if the schema does not allow removal
+   * @throws {DataAccessError} - Throws an error if the schema does not allow removal
    * or if the removal operation fails.
    */
   async remove() {
@@ -239,7 +239,7 @@ class BaseModel {
    * This method does not check if the schema allows removal in order to be able to remove
    * dependents even if the schema does not allow removal.
    * @return {Promise<BaseModel>}
-   * @throws {Error} - Throws an error if the removal operation fails.
+   * @throws {DataAccessError} - Throws an error if the removal operation fails.
    * @protected
    */
   async _remove() {
@@ -258,7 +258,11 @@ class BaseModel {
       return this;
     } catch (error) {
       this.log.error('Failed to remove record', error);
-      throw error;
+      throw new DataAccessError(
+        `Failed to remove entity ${this.entityName} with ID ${this.getId()}`,
+        this,
+        error,
+      );
     }
   }
 
@@ -268,7 +272,7 @@ class BaseModel {
    * @async
    * @returns {Promise<BaseModel>} - A promise that resolves to the current instance of the entity
    * after it has been saved.
-   * @throws {Error} - Throws an error if the save operation fails.
+   * @throws {DataAccessError} - Throws an error if the save operation fails.
    */
   async save() {
     // todo: validate associations
@@ -281,7 +285,11 @@ class BaseModel {
       return this;
     } catch (error) {
       this.log.error('Failed to save record', error);
-      throw error;
+      throw new DataAccessError(
+        `Failed to to save entity ${this.entityName} with ID ${this.getId()}`,
+        this,
+        error,
+      );
     }
   }
 

@@ -296,6 +296,7 @@ class BaseCollection {
    * @param {QueryOptions} [options] - Additional options for the query.
    * Additional options for the query.
    * @return {Promise<BaseModel|null>}
+   * @throws {DataAccessError} - Throws an error if the sort keys are not provided.
    */
   async findByAll(sortKeys = {}, options = {}) {
     if (!isObject(sortKeys)) {
@@ -315,7 +316,7 @@ class BaseCollection {
    * @param {string} id - The unique identifier of the entity to be found.
    * @returns {Promise<BaseModel|null>} - A promise that resolves to an instance of
    * the model if found, otherwise null.
-   * @throws {Error} - Throws an error if the ID is not provided.
+   * @throws {ValidationError} - Throws an error if the ID is not provided.
    */
   async findById(id) {
     guardId(this.idName, id, this.entityName);
@@ -330,6 +331,7 @@ class BaseCollection {
    * @param {Object} keys - The index keys to use for the query.
    * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
    * @returns {Promise<BaseModel|null>} - A promise that resolves to the model instance or null.
+   * @throws {DataAccessError} - Throws an error if retrieving the entity fails.
    * @async
    */
   async findByIndexKeys(keys, options = {}) {
@@ -343,7 +345,8 @@ class BaseCollection {
    * @async
    * @param {Object} item - The data for the entity to be created.
    * @returns {Promise<BaseModel>} - A promise that resolves to the created model instance.
-   * @throws {Error} - Throws an error if the data is invalid or if the creation process fails.
+   * @throws {DataAccessError} - Throws an error if the data is invalid or if the
+   * creation process fails.
    */
   async create(item) {
     if (!isNonEmptyObject(item)) {

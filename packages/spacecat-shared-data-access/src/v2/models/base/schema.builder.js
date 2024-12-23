@@ -88,9 +88,9 @@ class SchemaBuilder {
    * @param {BaseModel} modelClass - The model class for this entity.
    * @param {BaseCollection} collectionClass - The collection class for this entity.
    * @param {number} schemaVersion - A positive integer representing the schema's version.
-   * @throws {Error} If entityName is not a non-empty string.
-   * @throws {Error} If schemaVersion is not a positive integer.
-   * @throws {Error} If serviceName is not a non-empty string.
+   * @throws {SchemaBuilderError} If entityName is not a non-empty string.
+   * @throws {SchemaBuilderError} If schemaVersion is not a positive integer.
+   * @throws {SchemaBuilderError} If serviceName is not a non-empty string.
    */
   constructor(modelClass, collectionClass, schemaVersion = 1) {
     if (!modelClass || !(modelClass.prototype instanceof BaseModel)) {
@@ -174,7 +174,7 @@ class SchemaBuilder {
    * This should only be used in special cases.
    *
    * @param {Array<string>} sortKeys - The attributes to form the sort key.
-   * @throws {Error} If sortKeys are not provided or are not a non-empty array.
+   * @throws {SchemaBuilderError} If sortKeys are not provided or are not a non-empty array.
    * @return {SchemaBuilder}
    */
   withPrimarySortKeys(sortKeys) {
@@ -194,7 +194,7 @@ class SchemaBuilder {
    * remove is called implicitly when the entity is removed
    * as part of parent entity remove (dependents).
    * @param {boolean} allow - Whether to allow removes.
-   * @throws {Error} If allow is not a boolean.
+   * @throws {SchemaBuilderError} If allow is not a boolean.
    * @return {SchemaBuilder}
    */
   allowRemove(allow) {
@@ -212,7 +212,7 @@ class SchemaBuilder {
    * not prevent updates at the database level, but rather
    * at the application level.
    * @param {boolean} allow - Whether to allow updates.
-   * @throws {Error} If allow is not a boolean.
+   * @throws {SchemaBuilderError} If allow is not a boolean.
    * @return {SchemaBuilder}
    */
   allowUpdates(allow) {
@@ -230,7 +230,7 @@ class SchemaBuilder {
    * @param {string} name - The attribute name.
    * @param {object} data - The attribute definition (type, required, validation, etc.).
    * @returns {SchemaBuilder} Returns this builder for method chaining.
-   * @throws {Error} If name is not non-empty or data is not an object.
+   * @throws {SchemaBuilderError} If name is not non-empty or data is not an object.
    */
   addAttribute(name, data) {
     if (!hasText(name)) {
@@ -253,7 +253,7 @@ class SchemaBuilder {
    *
    * @param {Array<string>} sortKeys - The attributes to form the sort key.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
-   * @throws {Error} If composite attribute names or template are not provided.
+   * @throws {SchemaBuilderError} If composite attribute names or template are not provided.
    */
   addAllIndex(sortKeys) {
     if (!isNonEmptyArray(sortKeys)) {
@@ -276,7 +276,7 @@ class SchemaBuilder {
    * (e.g., { composite: [attributeName] }).
    * @param {object} sortKey - The sort key definition.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
-   * @throws {Error} If index name is reserved or pk/sk configs are invalid.
+   * @throws {SchemaBuilderError} If index name is reserved or pk/sk configs are invalid.
    */
   addIndex(partitionKey, sortKey) {
     if (!isNonEmptyObject(partitionKey)) {
@@ -304,7 +304,7 @@ class SchemaBuilder {
    * @param {boolean} [options.removeDependents=false] - Whether to remove dependent entities
    * on delete. Only applies to HAS_MANY and HAS_ONE references.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
-   * @throws {Error} If type or entityName are invalid.
+   * @throws {SchemaBuilderError} If type or entityName are invalid.
    */
   addReference(type, entityName, sortKeys = [], options = {}) {
     if (!Reference.isValidType(type)) {

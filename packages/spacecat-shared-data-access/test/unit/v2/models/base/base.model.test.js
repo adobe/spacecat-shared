@@ -250,7 +250,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       const error = new Error('Remove failed');
       mockElectroService.entities.opportunity.remove.returns({ go: () => Promise.reject(error) });
 
-      await expect(baseModelInstance.remove()).to.be.rejectedWith('Remove failed');
+      await expect(baseModelInstance.remove()).to.be.rejectedWith('Failed to remove entity opportunity with ID 12345');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
 
@@ -274,7 +274,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       const error = new Error('Save failed');
       baseModelInstance.patcher.save = stub().returns(Promise.reject(error));
 
-      await expect(baseModelInstance.save()).to.be.rejectedWith('Save failed');
+      await expect(baseModelInstance.save()).to.be.rejectedWith('Failed to to save entity opportunity with ID 12345');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
   });

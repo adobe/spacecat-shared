@@ -93,7 +93,8 @@ class EntityRegistry {
    * Gets a collection instance by its name.
    * @param {string} collectionName - The name of the collection to retrieve.
    * @returns {Object} - The requested collection instance.
-   * @throws {Error} - Throws an error if the collection with the specified name is not found.
+   * @throws {DataAccessError} - Throws an error if the collection with the
+   * specified name is not found.
    */
   getCollection(collectionName) {
     const collection = this.collections.get(collectionName);

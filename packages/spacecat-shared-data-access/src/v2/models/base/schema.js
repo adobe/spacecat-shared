@@ -188,7 +188,7 @@ class Schema {
    * index is found, we fall back to the "all" index, then the "primary".
    *
    * @param {Object} keys - The keys to search for.
-   * @return {*|string} - The index name.
+   * @return {string} - The index name.
    */
   findIndexNameByKeys(keys) {
     const { ALL, PRIMARY } = this.getIndexTypes();
@@ -313,6 +313,7 @@ class Schema {
    *
    * @param {BaseModel|BaseCollection} entity - The entity for which to generate accessors.
    * @param {Object} [log] - The logger to use for logging information
+   * @throws {SchemaError} - Throws an error if the entity is not a BaseModel or BaseCollection.
    * @return {Object[]}
    */
   toAccessorConfigs(entity, log = console) {

@@ -21,7 +21,6 @@ import { guardId, guardString } from '../../util/index.js';
  * @extends AuditCollection
  */
 class LatestAuditCollection extends BaseCollection {
-
   async findById(siteId, auditType) {
     guardId('siteId', siteId, this.entityName);
     guardString('auditType', auditType, this.entityName);

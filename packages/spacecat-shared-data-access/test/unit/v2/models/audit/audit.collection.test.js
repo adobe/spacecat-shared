@@ -61,7 +61,6 @@ describe('AuditCollection', () => {
   });
 
   describe('onCreate', () => {
-
     it('creates a LatestAudit entity', async () => {
       const collection = {
         create: stub().resolves(),

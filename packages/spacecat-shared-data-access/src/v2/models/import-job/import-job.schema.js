@@ -21,18 +21,18 @@ import {
 } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import ImportJob, { ImportJobStatus, ImportOptions } from './import-job.model.js';
+import ImportJob from './import-job.model.js';
 import ImportJobCollection from './import-job.collection.js';
 
 const ImportOptionTypeValidator = {
-  [ImportOptions.ENABLE_JAVASCRIPT]: (value) => {
+  [ImportJob.ImportOptions.ENABLE_JAVASCRIPT]: (value) => {
     if (value !== true && value !== false) {
-      throw new Error(`Invalid value for ${ImportOptions.ENABLE_JAVASCRIPT}: ${value}`);
+      throw new Error(`Invalid value for ${ImportJob.ImportOptions.ENABLE_JAVASCRIPT}: ${value}`);
     }
   },
-  [ImportOptions.PAGE_LOAD_TIMEOUT]: (value) => {
+  [ImportJob.ImportOptions.PAGE_LOAD_TIMEOUT]: (value) => {
     if (!isInteger(value) || value < 0) {
-      throw new Error(`Invalid value for ${ImportOptions.PAGE_LOAD_TIMEOUT}: ${value}`);
+      throw new Error(`Invalid value for ${ImportJob.ImportOptions.PAGE_LOAD_TIMEOUT}: ${value}`);
     }
   },
 };
@@ -43,7 +43,7 @@ const validateOptions = (options) => {
   }
 
   const invalidOptions = Object.keys(options).filter(
-    (key) => !Object.values(ImportOptions)
+    (key) => !Object.values(ImportJob.ImportOptions)
       .some((value) => value.toLowerCase() === key.toLowerCase()),
   );
 
@@ -122,7 +122,7 @@ const schema = new SchemaBuilder(ImportJob, ImportJobCollection)
     validate: (value) => !value || isInteger(value),
   })
   .addAttribute('status', {
-    type: Object.values(ImportJobStatus),
+    type: Object.values(ImportJob.ImportJobStatus),
     required: true,
   })
   .addAttribute('startedAt', {

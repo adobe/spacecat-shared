@@ -12,10 +12,12 @@
 
 /* c8 ignore start */
 
-import { isIsoDate, isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import {
+  isIsoDate, isNonEmptyObject, isString, isValidUrl,
+} from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import Experiment, { DEFAULT_UPDATED_BY } from './experiment.model.js';
+import Experiment from './experiment.model.js';
 import ExperimentCollection from './experiment.collection.js';
 
 /*
@@ -28,8 +30,12 @@ const schema = new SchemaBuilder(Experiment, ExperimentCollection)
   .addReference('belongs_to', 'Site', ['expId', 'url', 'updatedAt'])
   .addAttribute('conversionEventName', {
     type: 'string',
+    validate: (value) => !value || isString(value),
   })
-  .addAttribute('conversionEventValue', { type: 'string' })
+  .addAttribute('conversionEventValue', {
+    type: 'string',
+    validate: (value) => !value || isString(value),
+  })
   .addAttribute('endDate', {
     type: 'string',
     validate: (value) => !value || isIsoDate(value),
@@ -47,7 +53,10 @@ const schema = new SchemaBuilder(Experiment, ExperimentCollection)
     type: ['ACTIVE', 'INACTIVE'],
     required: true,
   })
-  .addAttribute('type', { type: 'string' })
+  .addAttribute('type', {
+    type: 'string',
+    validate: (value) => !value || isString(value),
+  })
   .addAttribute('url', {
     type: 'string',
     required: true,
@@ -56,7 +65,7 @@ const schema = new SchemaBuilder(Experiment, ExperimentCollection)
   .addAttribute('updatedBy', {
     type: 'string',
     required: true,
-    default: DEFAULT_UPDATED_BY,
+    default: Experiment.DEFAULT_UPDATED_BY,
   })
   .addAttribute('variants', {
     type: 'list',

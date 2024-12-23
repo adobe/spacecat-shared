@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+
+import ReferenceError from '../../errors/reference.error.js';
 import {
   entityNameToCollectionName,
   entityNameToIdName,
@@ -18,6 +20,48 @@ import {
   keyNamesToMethodName,
   referenceToBaseMethodName,
 } from '../../util/util.js';
+
+const createSortKeyAccessorConfigs = (
+  entity,
+  baseConfig,
+  baseMethodName,
+  target,
+  targetCollection,
+  foreignKeyName,
+  foreignKeyValue,
+  log,
+) => {
+  const configs = [];
+
+  const belongsToRef = targetCollection.schema.getReferenceByTypeAndTarget(
+    // eslint-disable-next-line no-use-before-define
+    Reference.TYPES.BELONGS_TO,
+    entity.schema.getModelName(),
+  );
+
+  if (!belongsToRef) {
+    log.warn(`Reciprocal reference not found for ${entity.schema.getModelName()} to ${target}`);
+    return configs;
+  }
+
+  const sortKeys = belongsToRef.getSortKeys();
+  if (!isNonEmptyArray(sortKeys)) {
+    log.debug(`No sort keys defined for ${entity.schema.getModelName()} to ${target}`);
+    return configs;
+  }
+
+  for (let i = 1; i <= sortKeys.length; i += 1) {
+    const subset = sortKeys.slice(0, i);
+    configs.push({
+      name: keyNamesToMethodName(subset, `${baseMethodName}By`),
+      requiredKeys: subset,
+      foreignKey: { name: foreignKeyName, value: foreignKeyValue },
+      ...baseConfig,
+    });
+  }
+
+  return configs;
+};
 
 class Reference {
   static TYPES = {
@@ -36,11 +80,11 @@ class Reference {
 
   constructor(type, target, options = {}) {
     if (!Reference.isValidType(type)) {
-      throw new Error(`Invalid reference type: ${type}`);
+      throw new ReferenceError(this, `Invalid reference type: ${type}`);
     }
 
     if (!hasText(target)) {
-      throw new Error('Invalid target');
+      throw new ReferenceError(this, 'Invalid target');
     }
 
     this.type = type;
@@ -65,6 +109,14 @@ class Reference {
   }
 
   toAccessorConfigs(registry, entity) {
+    if (!isNonEmptyObject(registry)) {
+      throw new ReferenceError(this, 'Invalid registry');
+    }
+
+    if (!isNonEmptyObject(entity)) {
+      throw new ReferenceError(this, 'Invalid entity');
+    }
+
     const { log } = registry;
     const accessorConfigs = [];
 
@@ -100,6 +152,20 @@ class Reference {
           requiredKeys: [],
           foreignKey: { name: foreignKeyName, value: foreignKeyValue },
         });
+
+        accessorConfigs.push(
+          ...createSortKeyAccessorConfigs(
+            entity,
+            {},
+            baseMethodName,
+            target,
+            targetCollection,
+            foreignKeyName,
+            foreignKeyValue,
+            log,
+          ),
+        );
+
         break;
       }
 
@@ -115,37 +181,24 @@ class Reference {
           foreignKey: { name: foreignKeyName, value: foreignKeyValue },
         });
 
-        const belongsToRef = targetCollection.schema.getReferenceByTypeAndTarget(
-          Reference.TYPES.BELONGS_TO,
-          entity.schema.getModelName(),
+        accessorConfigs.push(
+          ...createSortKeyAccessorConfigs(
+            entity,
+            { all: true },
+            baseMethodName,
+            target,
+            targetCollection,
+            foreignKeyName,
+            foreignKeyValue,
+            log,
+          ),
         );
-
-        if (!belongsToRef) {
-          log.warn(`Reciprocal reference not found for ${entity.schema.getModelName()} to ${target}`);
-          break;
-        }
-
-        const sortKeys = belongsToRef.getSortKeys();
-        if (!isNonEmptyArray(sortKeys)) {
-          log.debug(`No sort keys defined for ${entity.schema.getModelName()} to ${target}`);
-          break;
-        }
-
-        for (let i = 1; i <= sortKeys.length; i += 1) {
-          const subset = sortKeys.slice(0, i);
-          accessorConfigs.push({
-            name: keyNamesToMethodName(subset, `${baseMethodName}By`),
-            requiredKeys: subset,
-            all: true,
-            foreignKey: { name: foreignKeyName, value: foreignKeyValue },
-          });
-        }
 
         break;
       }
 
       default:
-        throw new Error(`Unsupported reference type: ${type}`);
+        throw new ReferenceError(this, `Unsupported reference type: ${type}`);
     }
 
     return accessorConfigs.map((config) => ({

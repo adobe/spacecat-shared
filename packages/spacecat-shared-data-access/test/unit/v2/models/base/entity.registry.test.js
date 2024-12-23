@@ -18,7 +18,7 @@ import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
 import EntityRegistry from '../../../../../src/v2/models/base/entity.registry.js';
-import { BaseCollection, BaseModel } from '../../../../../src/index.js';
+import { BaseCollection, BaseModel, DataAccessError } from '../../../../../src/index.js';
 import Schema from '../../../../../src/v2/models/base/schema.js';
 
 chaiUse(chaiAsPromised);
@@ -36,6 +36,7 @@ describe('EntityRegistry', () => {
       serviceName: 'SpaceDog',
       schemaVersion: 1,
       references: [],
+      options: { allowRemove: true, allowUpdates: true },
     },
   );
 
@@ -79,7 +80,7 @@ describe('EntityRegistry', () => {
 
   it('throws error when getting a non-existing collection', () => {
     expect(() => entityRegistry.getCollection('NonExistentCollection'))
-      .to.throw('Collection NonExistentCollection not found');
+      .to.throw(DataAccessError, 'Collection NonExistentCollection not found');
   });
 
   it('gets all collections', () => {

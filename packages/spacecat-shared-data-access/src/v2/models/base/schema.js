@@ -12,6 +12,7 @@
 
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
+import { SchemaError, SchemaValidationError } from '../../errors/index.js';
 import {
   classExtends,
   entityNameToCollectionName,
@@ -24,10 +25,16 @@ import {
 
 import BaseCollection from './base.collection.js';
 import BaseModel from './base.model.js';
-import { INDEX_TYPES } from './constants.js';
 import Reference from './reference.js';
 
 class Schema {
+  static INDEX_TYPES = {
+    PRIMARY: 'primary',
+    ALL: 'all',
+    BELONGS_TO: 'belongs_to',
+    OTHER: 'other',
+  };
+
   /**
    * Constructs a new Schema instance.
    * @constructor
@@ -38,6 +45,7 @@ class Schema {
    * @param {number} rawSchema.schemaVersion - The version of the schema.
    * @param {object} rawSchema.attributes - The attributes of the schema.
    * @param {object} rawSchema.indexes - The indexes of the schema.
+   * @param {object} rawSchema.options - The options of the schema.
    * @param {Reference[]} [rawSchema.references] - The references of the schema.
    */
   constructor(
@@ -52,6 +60,7 @@ class Schema {
     this.schemaVersion = rawSchema.schemaVersion;
     this.attributes = rawSchema.attributes;
     this.indexes = rawSchema.indexes;
+    this.options = rawSchema.options;
     this.references = rawSchema.references || [];
 
     this.#validateSchema();
@@ -59,32 +68,44 @@ class Schema {
 
   #validateSchema() {
     if (!classExtends(this.modelClass, BaseModel)) {
-      throw new Error('Model class must extend BaseModel');
+      throw new SchemaValidationError('Model class must extend BaseModel');
     }
 
     if (!classExtends(this.collectionClass, BaseCollection)) {
-      throw new Error('Collection class must extend BaseCollection');
+      throw new SchemaValidationError('Collection class must extend BaseCollection');
     }
 
     if (!hasText(this.serviceName)) {
-      throw new Error('Schema must have a service name');
+      throw new SchemaValidationError('Schema must have a service name');
     }
 
     if (!isPositiveInteger(this.schemaVersion)) {
-      throw new Error('Schema version must be a positive integer');
+      throw new SchemaValidationError('Schema version must be a positive integer');
     }
 
     if (!isNonEmptyObject(this.attributes)) {
-      throw new Error('Schema must have attributes');
+      throw new SchemaValidationError('Schema must have attributes');
     }
 
     if (!isNonEmptyObject(this.indexes)) {
-      throw new Error('Schema must have indexes');
+      throw new SchemaValidationError('Schema must have indexes');
     }
 
     if (!Array.isArray(this.references)) {
-      throw new Error('References must be an array');
+      throw new SchemaValidationError('References must be an array');
     }
+
+    if (!isNonEmptyObject(this.options)) {
+      throw new SchemaValidationError('Schema must have options');
+    }
+  }
+
+  allowsRemove() {
+    return this.options?.allowRemove;
+  }
+
+  allowsUpdates() {
+    return this.options?.allowUpdates;
   }
 
   getAttribute(name) {
@@ -117,7 +138,7 @@ class Schema {
    *   ]
    */
   getIndexAccessors() {
-    const indexes = this.getIndexes([INDEX_TYPES.PRIMARY]);
+    const indexes = this.getIndexes([Schema.INDEX_TYPES.PRIMARY]);
     const result = [];
 
     Object.keys(indexes).forEach((indexName) => {
@@ -159,6 +180,36 @@ class Schema {
     }
 
     return null;
+  }
+
+  /**
+   * Finds the index name by the keys provided. The index is searched
+   * keys to match the combination of partition and sort keys. If no
+   * index is found, we fall back to the "all" index, then the "primary".
+   *
+   * @param {Object} keys - The keys to search for.
+   * @return {string} - The index name.
+   */
+  findIndexNameByKeys(keys) {
+    const { ALL, PRIMARY } = this.getIndexTypes();
+    const keyNames = Object.keys(keys);
+
+    const index = this.findIndexBySortKeys(keyNames);
+    if (index) {
+      return index.index || PRIMARY;
+    }
+
+    const allIndex = this.findIndexByType(ALL);
+    if (allIndex) {
+      return allIndex.index;
+    }
+
+    return PRIMARY;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  getIndexTypes() {
+    return Schema.INDEX_TYPES;
   }
 
   findIndexByType(type) {
@@ -252,7 +303,24 @@ class Schema {
     return this.schemaVersion;
   }
 
-  toAccessorConfigs(entity, log) {
+  /**
+   * Given an entity, generates accessor configurations for all index-based accessors.
+   * This is useful for creating methods on the entity that can be used to fetch data
+   * based on the index keys. For example, if we have an index by 'opportunityId' and 'status',
+   * this method will generate accessor configurations like allByOpportunityId,
+   * findByOpportunityId, etc. The accessor configurations can then be used to create
+   * accessor methods on the entity using the createAccessors (accessor utils) method.
+   *
+   * @param {BaseModel|BaseCollection} entity - The entity for which to generate accessors.
+   * @param {Object} [log] - The logger to use for logging information
+   * @throws {SchemaError} - Throws an error if the entity is not a BaseModel or BaseCollection.
+   * @return {Object[]}
+   */
+  toAccessorConfigs(entity, log = console) {
+    if (!(entity instanceof BaseModel) && !(entity instanceof BaseCollection)) {
+      throw new SchemaError(this, 'Entity must extend BaseModel or BaseCollection');
+    }
+
     const indexAccessors = this.getIndexAccessors();
     const accessorConfigs = [];
 

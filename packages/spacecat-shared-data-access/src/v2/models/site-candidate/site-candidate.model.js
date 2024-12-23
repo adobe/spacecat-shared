@@ -12,21 +12,6 @@
 
 import BaseModel from '../base/base.model.js';
 
-export const DEFAULT_UPDATED_BY = 'spacecat';
-
-export const SITE_CANDIDATE_SOURCES = {
-  SPACECAT_SLACK_BOT: 'SPACECAT_SLACK_BOT',
-  RUM: 'RUM',
-  CDN: 'CDN',
-};
-
-export const SITE_CANDIDATE_STATUS = {
-  PENDING: 'PENDING', // site candidate notification sent and waiting for human input
-  IGNORED: 'IGNORED', // site candidate discarded: not to be added to star catalogue
-  APPROVED: 'APPROVED', // site candidate is added to star catalogue
-  ERROR: 'ERROR', // site candidate is discovered
-};
-
 /**
  * SiteCandidate - A class representing an SiteCandidate entity.
  * Provides methods to access and manipulate SiteCandidate-specific data.
@@ -35,6 +20,21 @@ export const SITE_CANDIDATE_STATUS = {
  * @extends BaseModel
  */
 class SiteCandidate extends BaseModel {
+  static DEFAULT_UPDATED_BY = 'spacecat';
+
+  static SITE_CANDIDATE_SOURCES = {
+    SPACECAT_SLACK_BOT: 'SPACECAT_SLACK_BOT',
+    RUM: 'RUM',
+    CDN: 'CDN',
+  };
+
+  static SITE_CANDIDATE_STATUS = {
+    PENDING: 'PENDING', // site candidate notification sent and waiting for human input
+    IGNORED: 'IGNORED', // site candidate discarded: not to be added to star catalogue
+    APPROVED: 'APPROVED', // site candidate is added to star catalogue
+    ERROR: 'ERROR', // site candidate is discovered
+  };
+
   // add your custom methods or overrides here
 }
 

@@ -29,7 +29,9 @@ import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
 import { stub } from 'sinon';
+
 import Reference from '../../../../../src/v2/models/base/reference.js';
+import ReferenceError from '../../../../../src/v2/errors/reference.error.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
@@ -73,11 +75,13 @@ describe('Reference', () => {
     });
 
     it('throws an error for an invalid type', () => {
-      expect(() => new Reference('invalid', 'Test')).to.throw('Invalid reference type: invalid');
+      expect(() => new Reference('invalid', 'Test'))
+        .to.throw(ReferenceError, 'Invalid reference type: invalid');
     });
 
     it('throws an error for an invalid target', () => {
-      expect(() => new Reference('has_many', '')).to.throw('Invalid target');
+      expect(() => new Reference('has_many', ''))
+        .to.throw(ReferenceError, 'Invalid target');
     });
   });
 
@@ -118,6 +122,20 @@ describe('Reference', () => {
   });
 
   describe('toAccessorConfigs', () => {
+    it('throws an error for an invalid registry', () => {
+      const reference = new Reference('has_many', 'Test');
+
+      expect(() => reference.toAccessorConfigs(null, { }))
+        .to.throw(ReferenceError, '[has_many -> Test] Invalid registry');
+    });
+
+    it('throws an error for an invalid entity', () => {
+      const reference = new Reference('has_many', 'Test');
+
+      expect(() => reference.toAccessorConfigs({ a: 1 }, null))
+        .to.throw(ReferenceError, '[has_many -> Test] Invalid entity');
+    });
+
     it('returns accessor configs for has_many', () => {
       const schema = {
         getReferenceByTypeAndTarget: stub().returns(new Reference('belongs_to', 'Test')),
@@ -306,7 +324,8 @@ describe('Reference', () => {
         }),
       };
 
-      expect(() => reference.toAccessorConfigs(registry, { })).to.throw('Unsupported reference type: invalid');
+      expect(() => reference.toAccessorConfigs(registry, { a: 1 }))
+        .to.throw(ReferenceError, '[invalid -> Test] Unsupported reference type: invalid');
     });
   });
 });

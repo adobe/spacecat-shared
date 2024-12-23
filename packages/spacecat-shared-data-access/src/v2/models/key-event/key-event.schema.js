@@ -15,7 +15,6 @@
 import { hasText, isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import { KEY_EVENT_TYPES } from '../../../models/key-event.js';
 import KeyEvent from './key-event.model.js';
 import KeyEventCollection from './key-event.collection.js';
 
@@ -33,7 +32,7 @@ const schema = new SchemaBuilder(KeyEvent, KeyEventCollection)
     validate: (value) => hasText(value),
   })
   .addAttribute('type', {
-    type: Object.values(KEY_EVENT_TYPES),
+    type: Object.values(KeyEvent.KEY_EVENT_TYPES),
     required: true,
   })
   .addAttribute('time', {

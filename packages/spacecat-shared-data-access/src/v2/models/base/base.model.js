@@ -12,6 +12,7 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
+import { DataAccessError } from '../../errors/index.js';
 import { createAccessors } from '../../util/accessor.utils.js';
 import Patcher from '../../util/patcher.js';
 import {
@@ -85,6 +86,18 @@ class BaseModel {
     });
   }
 
+  /**
+   * Initializes the attributes for the current entity. This method is called during the
+   * construction of the entity instance to set up the getter and setter methods for
+   * accessing and modifying the entity attributes. The getter and setter methods are
+   * automatically generated based on the entity schema. If the schema allows updates,
+   * setter methods are generated for each attribute that is not read-only.
+   *
+   * If the attribute is a reference, the setter method will tell the patcher
+   * to validate that the value is a valid UUID.
+   *
+   * @private
+   */
   #initializeAttributes() {
     const attributes = this.schema.getAttributes();
 
@@ -95,7 +108,6 @@ class BaseModel {
     for (const [name, attr] of Object.entries(attributes)) {
       const capitalized = capitalize(name);
       const getterMethodName = `get${capitalized}`;
-      const setterMethodName = `set${capitalized}`;
       const isReference = this.schema
         .getReferencesByType(Reference.TYPES.BELONGS_TO)
         .some((ref) => ref.getTarget() === idNameToEntityName(name));
@@ -104,19 +116,35 @@ class BaseModel {
         this[getterMethodName] = () => this.record[name];
       }
 
-      if (!this[setterMethodName] && !attr.readOnly) {
-        this[setterMethodName] = (value) => {
-          this.patcher.patchValue(name, value, isReference);
-          return this;
-        };
+      if (this.schema.allowsUpdates()) {
+        const setterMethodName = `set${capitalized}`;
+
+        if (!this[setterMethodName] && !attr.readOnly) {
+          this[setterMethodName] = (value) => {
+            this.patcher.patchValue(name, value, isReference);
+            return this;
+          };
+        }
       }
     }
   }
 
+  /**
+   * Clears the accessor cache for the entity. This method is called when the entity is
+   * updated or removed to ensure that the cache is invalidated.
+   * @private
+   */
   #invalidateCache() {
     this._accessorCache = {};
   }
 
+  /**
+   * Fetches the associated entities for the current entity based on the type of relationship.
+   * This is used for the remove operation to remove dependent entities associated with the
+   * current entity.
+   * @return {Promise<Array>}
+   * @private
+   */
   async #fetchDependents() {
     const promises = [];
 
@@ -177,6 +205,14 @@ class BaseModel {
   }
 
   /**
+   * Gets the expiration timestamp of the current entity.
+   * @returns {string} - The ISO string representing when the entity will expire.
+   */
+  getRecordExpiresAt() {
+    return this.record.recordExpiresAt;
+  }
+
+  /**
    * Removes the current entity from the database. This method also removes any dependent
    * entities associated with the current entity. For example, if the current entity has
    * a has_many relationship with another entity, the dependent entity will be removed.
@@ -184,18 +220,41 @@ class BaseModel {
    * removeDependentss flag is set to true in the reference definition.
    *
    * Dependents are removed by calling the remove method on each dependent entity, which in turn
-   * will also remove any dependent entities associated with the dependent entity. This may result
-   * in a cascade effect where multiple entities are removed. Consider the destructive
-   * and performance implications before using this method.
+   * will also remove any dependent entities associated with the dependent entity. For dependent
+   * entities the allowRemove flag is ignored.
+   *
+   * Removal of entities with many dependents can be a costly operation, as each dependent entity
+   * will be removed individually. This can result in a large number of database operations, which
+   * can impact performance. It is recommended to use this method with caution, especially when
+   * removing entities with many dependents.
+   *
    * @async
    * @returns {Promise<BaseModel>} - A promise that resolves to the current instance of the entity
    * after it and its dependents have been removed.
-   * @throws {Error} - Throws an error if the removal fails.
+   * @throws {DataAccessError} - Throws an error if the schema does not allow removal
+   * or if the removal operation fails.
    */
   async remove() {
+    if (!this.schema.allowsRemove()) {
+      throw new DataAccessError(`The entity ${this.schema.getModelName()} does not allow removal`);
+    }
+
+    return this._remove();
+  }
+
+  /**
+   * Internal remove method that removes the current entity from the database and its dependents.
+   * This method does not check if the schema allows removal in order to be able to remove
+   * dependents even if the schema does not allow removal.
+   * @return {Promise<BaseModel>}
+   * @throws {DataAccessError} - Throws an error if the removal operation fails.
+   * @protected
+   */
+  async _remove() {
     try {
       const dependents = await this.#fetchDependents();
-      const removePromises = dependents.map((dependent) => dependent.remove());
+      // eslint-disable-next-line no-underscore-dangle
+      const removePromises = dependents.map((dependent) => dependent._remove());
       removePromises.push(this.entity.remove({ [this.idName]: this.getId() }).go());
 
       this.log.info(`Removing entity ${this.entityName} with ID ${this.getId()} and ${dependents.length} dependents`);
@@ -207,7 +266,11 @@ class BaseModel {
       return this;
     } catch (error) {
       this.log.error('Failed to remove record', error);
-      throw error;
+      throw new DataAccessError(
+        `Failed to remove entity ${this.entityName} with ID ${this.getId()}`,
+        this,
+        error,
+      );
     }
   }
 
@@ -217,7 +280,7 @@ class BaseModel {
    * @async
    * @returns {Promise<BaseModel>} - A promise that resolves to the current instance of the entity
    * after it has been saved.
-   * @throws {Error} - Throws an error if the save operation fails.
+   * @throws {DataAccessError} - Throws an error if the save operation fails.
    */
   async save() {
     // todo: validate associations
@@ -230,7 +293,11 @@ class BaseModel {
       return this;
     } catch (error) {
       this.log.error('Failed to save record', error);
-      throw error;
+      throw new DataAccessError(
+        `Failed to to save entity ${this.entityName} with ID ${this.getId()}`,
+        this,
+        error,
+      );
     }
   }
 

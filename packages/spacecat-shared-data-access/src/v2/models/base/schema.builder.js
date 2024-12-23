@@ -10,18 +10,20 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isInteger, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import {
+  hasText, isBoolean, isInteger, isNonEmptyObject,
+} from '@adobe/spacecat-shared-utils';
 
 import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
+import { SchemaBuilderError } from '../../errors/index.js';
 import {
   decapitalize,
   entityNameToAllPKValue,
   entityNameToIdName,
-  isNonEmptyArray,
+  isNonEmptyArray, isPositiveInteger,
 } from '../../util/util.js';
 
-import { INDEX_TYPES } from './constants.js';
 import BaseModel from './base.model.js';
 import BaseCollection from './base.collection.js';
 import Reference from './reference.js';
@@ -86,21 +88,21 @@ class SchemaBuilder {
    * @param {BaseModel} modelClass - The model class for this entity.
    * @param {BaseCollection} collectionClass - The collection class for this entity.
    * @param {number} schemaVersion - A positive integer representing the schema's version.
-   * @throws {Error} If entityName is not a non-empty string.
-   * @throws {Error} If schemaVersion is not a positive integer.
-   * @throws {Error} If serviceName is not a non-empty string.
+   * @throws {SchemaBuilderError} If entityName is not a non-empty string.
+   * @throws {SchemaBuilderError} If schemaVersion is not a positive integer.
+   * @throws {SchemaBuilderError} If serviceName is not a non-empty string.
    */
   constructor(modelClass, collectionClass, schemaVersion = 1) {
     if (!modelClass || !(modelClass.prototype instanceof BaseModel)) {
-      throw new Error('modelClass must be a subclass of BaseModel.');
+      throw new SchemaBuilderError(this, 'modelClass must be a subclass of BaseModel.');
     }
 
     if (!collectionClass || !(collectionClass.prototype instanceof BaseCollection)) {
-      throw new Error('collectionClass must be a subclass of BaseCollection.');
+      throw new SchemaBuilderError(this, 'collectionClass must be a subclass of BaseCollection.');
     }
 
     if (!isInteger(schemaVersion) || schemaVersion < 1) {
-      throw new Error('schemaVersion is required and must be a positive integer.');
+      throw new SchemaBuilderError(this, 'schemaVersion is required and must be a positive integer.');
     }
 
     this.modelClass = modelClass;
@@ -118,6 +120,7 @@ class SchemaBuilder {
       other: [],
     };
 
+    this.options = { allowUpdates: true, allowRemove: true };
     this.attributes = {};
 
     // will be populated by build() from rawIndexes
@@ -153,21 +156,112 @@ class SchemaBuilder {
     });
   }
 
+  withPrimaryPartitionKeys(partitionKeys) {
+    if (!isNonEmptyArray(partitionKeys)) {
+      throw new SchemaBuilderError(this, 'Partition keys are required and must be a non-empty array.');
+    }
+    this.rawIndexes.primary.pk.composite = partitionKeys;
+
+    return this;
+  }
+
+  /**
+   * Sets the sort keys for the primary index (main table). The given sort keys
+   * together with the entity id (partition key) will form the primary key. This will
+   * change the behavior of collection methods (like findById) that rely on the main
+   * table primary key.
+   *
+   * This should only be used in special cases.
+   *
+   * @param {Array<string>} sortKeys - The attributes to form the sort key.
+   * @throws {SchemaBuilderError} If sortKeys are not provided or are not a non-empty array.
+   * @return {SchemaBuilder}
+   */
+  withPrimarySortKeys(sortKeys) {
+    if (!isNonEmptyArray(sortKeys)) {
+      throw new SchemaBuilderError(this, 'Sort keys are required and must be a non-empty array.');
+    }
+    this.rawIndexes.primary.sk.composite = sortKeys;
+
+    return this;
+  }
+
+  /**
+   * Sets an expiry time for records in this entity.
+   * The record will be automatically removed by DynamoDB
+   *
+   * @param {number} ttlInDays - The time-to-live (TTL) in days.
+   * @returns {SchemaBuilder}
+   */
+  withRecordExpiry(ttlInDays) {
+    if (!isPositiveInteger(ttlInDays)) {
+      throw new SchemaBuilderError(this, 'TTL must be a positive integer.');
+    }
+
+    this.addAttribute('recordExpiresAt', {
+      type: 'number',
+      required: true,
+      readOnly: true,
+      default: () => Date.now() + ttlInDays * 24 * 60 * 60 * 1000,
+      set: () => Date.now() + ttlInDays * 24 * 60 * 60 * 1000,
+    });
+
+    return this;
+  }
+
+  /**
+   * By default a schema allows removes. This method allows
+   * to disable removes for this entity. Note that this does
+   * not prevent removes at the database level, but rather
+   * at the application level. The flag is ignored when
+   * remove is called implicitly when the entity is removed
+   * as part of parent entity remove (dependents).
+   * @param {boolean} allow - Whether to allow removes.
+   * @throws {SchemaBuilderError} If allow is not a boolean.
+   * @return {SchemaBuilder}
+   */
+  allowRemove(allow) {
+    if (!isBoolean(allow)) {
+      throw new SchemaBuilderError(this, 'allow must be a boolean.');
+    }
+    this.options.allowRemove = allow;
+
+    return this;
+  }
+
+  /**
+   * By default a schema allows updates. This method allows
+   * to disable updates for this entity. Note that this does
+   * not prevent updates at the database level, but rather
+   * at the application level.
+   * @param {boolean} allow - Whether to allow updates.
+   * @throws {SchemaBuilderError} If allow is not a boolean.
+   * @return {SchemaBuilder}
+   */
+  allowUpdates(allow) {
+    if (!isBoolean(allow)) {
+      throw new SchemaBuilderError(this, 'allow must be a boolean.');
+    }
+    this.options.allowUpdates = allow;
+
+    return this;
+  }
+
   /**
    * Adds a new attribute to the schema definition.
    *
    * @param {string} name - The attribute name.
    * @param {object} data - The attribute definition (type, required, validation, etc.).
    * @returns {SchemaBuilder} Returns this builder for method chaining.
-   * @throws {Error} If name is not non-empty or data is not an object.
+   * @throws {SchemaBuilderError} If name is not non-empty or data is not an object.
    */
   addAttribute(name, data) {
     if (!hasText(name)) {
-      throw new Error('Attribute name is required and must be non-empty.');
+      throw new SchemaBuilderError(this, 'Attribute name is required and must be non-empty.');
     }
 
     if (!isNonEmptyObject(data)) {
-      throw new Error(`Attribute data for "${name}" is required and must be a non-empty object.`);
+      throw new SchemaBuilderError(this, `Attribute data for "${name}" is required and must be a non-empty object.`);
     }
 
     this.attributes[name] = data;
@@ -182,17 +276,17 @@ class SchemaBuilder {
    *
    * @param {Array<string>} sortKeys - The attributes to form the sort key.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
-   * @throws {Error} If composite attribute names or template are not provided.
+   * @throws {SchemaBuilderError} If composite attribute names or template are not provided.
    */
   addAllIndex(sortKeys) {
     if (!isNonEmptyArray(sortKeys)) {
-      throw new Error('Sort keys are required and must be a non-empty array.');
+      throw new SchemaBuilderError(this, 'Sort keys are required and must be a non-empty array.');
     }
 
     this.#internalAddIndex(
       { template: entityNameToAllPKValue(this.entityName) },
       { composite: sortKeys },
-      INDEX_TYPES.ALL,
+      Schema.INDEX_TYPES.ALL,
     );
 
     return this;
@@ -205,18 +299,18 @@ class SchemaBuilder {
    * (e.g., { composite: [attributeName] }).
    * @param {object} sortKey - The sort key definition.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
-   * @throws {Error} If index name is reserved or pk/sk configs are invalid.
+   * @throws {SchemaBuilderError} If index name is reserved or pk/sk configs are invalid.
    */
   addIndex(partitionKey, sortKey) {
     if (!isNonEmptyObject(partitionKey)) {
-      throw new Error('Partition key configuration (pk) is required and must be a non-empty object.');
+      throw new SchemaBuilderError(this, 'Partition key configuration (pk) is required and must be a non-empty object.');
     }
 
     if (!isNonEmptyObject(sortKey)) {
-      throw new Error('Sort key configuration (sk) is required and must be a non-empty object.');
+      throw new SchemaBuilderError(this, 'Sort key configuration (sk) is required and must be a non-empty object.');
     }
 
-    this.#internalAddIndex(partitionKey, sortKey, INDEX_TYPES.OTHER);
+    this.#internalAddIndex(partitionKey, sortKey, Schema.INDEX_TYPES.OTHER);
 
     return this;
   }
@@ -226,22 +320,22 @@ class SchemaBuilder {
    *
    * @param {string} type - One of Reference.TYPES (BELONGS_TO, HAS_MANY, HAS_ONE).
    * @param {string} entityName - The referenced entity name.
-   * @param {Array<string>} [sortKeys=['updatedAt']] - The attributes to form the sort key.
+   * @param {Array<string>} [sortKeys=[]] - The attributes to form the sort key.
    * @param {object} [options] - Additional reference options.
    * @param {boolean} [options.required=true] - Whether the reference is required. Only applies to
    * BELONGS_TO references.
    * @param {boolean} [options.removeDependents=false] - Whether to remove dependent entities
    * on delete. Only applies to HAS_MANY and HAS_ONE references.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
-   * @throws {Error} If type or entityName are invalid.
+   * @throws {SchemaBuilderError} If type or entityName are invalid.
    */
   addReference(type, entityName, sortKeys = [], options = {}) {
     if (!Reference.isValidType(type)) {
-      throw new Error(`Invalid referenceType: "${type}".`);
+      throw new SchemaBuilderError(this, `Invalid referenceType: "${type}".`);
     }
 
     if (!hasText(entityName)) {
-      throw new Error('entityName for reference is required and must be a non-empty string.');
+      throw new SchemaBuilderError(this, 'entityName for reference is required and must be a non-empty string.');
     }
     const reference = {
       type,
@@ -274,7 +368,7 @@ class SchemaBuilder {
       this.#internalAddIndex(
         { composite: [decapitalize(foreignKeyName)] },
         { composite: isNonEmptyArray(sortKeys) ? sortKeys : ['updatedAt'] },
-        INDEX_TYPES.BELONGS_TO,
+        Schema.INDEX_TYPES.BELONGS_TO,
       );
     }
 
@@ -303,7 +397,7 @@ class SchemaBuilder {
     ];
 
     if (orderedIndexes.length > 5) {
-      throw new Error('Cannot have more than 5 indexes.');
+      throw new SchemaBuilderError(this, 'Cannot have more than 5 indexes.');
     }
 
     this.indexes = { primary: this.rawIndexes.primary };
@@ -342,6 +436,7 @@ class SchemaBuilder {
         attributes: this.attributes,
         indexes: this.indexes,
         references: this.references,
+        options: this.options,
       },
     );
   }

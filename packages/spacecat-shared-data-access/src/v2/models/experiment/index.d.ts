@@ -15,35 +15,43 @@ import type { BaseCollection, BaseModel, Site } from '../index';
 export interface Experiment extends BaseModel {
   getConversionEventName(): string;
   getConversionEventValue(): string;
-  getEndDate(): number;
+  getEndDate(): string;
   getExpId(): string;
   getName(): string;
   getSite(): Promise<Site>;
   getSiteId(): string;
-  getStartDate(): number;
+  getStartDate(): string;
   getStatus(): string;
   getType(): string;
   getUrl(): string;
   getVariants(): object;
   setConversionEventName(conversionEventName: string): Experiment;
   setConversionEventValue(conversionEventValue: string): Experiment;
-  setEndDate(endDate: number): Experiment;
+  setEndDate(endDate: string): Experiment;
   setExpId(expId: string): Experiment;
   setName(name: string): Experiment;
-  setStartDate(startDate: number): Experiment;
+  setSiteId(siteId: string): Experiment;
+  setStartDate(startDate: string): Experiment;
   setStatus(status: string): Experiment;
   setType(type: string): Experiment;
   setUrl(url: string): Experiment;
+  setUpdatedBy(updatedBy: string): Experiment;
   setVariants(variants: object): Experiment;
 }
 
 export interface ExperimentCollection extends BaseCollection<Experiment> {
   allBySiteId(siteId: string): Promise<Experiment[]>;
   allBySiteIdAndExpId(siteId: string, expId: string): Promise<Experiment[]>;
+  allBySiteIdAndExpIdAndUrl(siteId: string, expId: string, url: string): Promise<Experiment[]>;
+  allBySiteIdAndExpIdAndUrlAndUpdatedAt(
+    siteId: string, expId: string, url: string, updatedAt: string
+  ): Promise<Experiment[]>;
+  findBySiteId(siteId: string): Promise<Experiment | null>;
   findBySiteIdAndExpId(siteId: string, expId: string): Promise<Experiment | null>;
   findBySiteIdAndExpIdAndUrl(
-    siteId: string,
-    expId: string,
-    url: string,
+    siteId: string, expId: string, url: string
+  ): Promise<Experiment | null>;
+  findBySiteIdAndExpIdAndUrlAndUpdatedAt(
+    siteId: string, expId: string, url: string, updatedAt: string
   ): Promise<Experiment | null>;
 }

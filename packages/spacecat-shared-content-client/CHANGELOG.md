@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.2.17...@adobe/spacecat-shared-content-client-v1.3.0) (2024-12-23)
+
+
+### Features
+
+* latest audit entity ([#503](https://github.com/adobe/spacecat-shared/issues/503)) ([2d01b09](https://github.com/adobe/spacecat-shared/commit/2d01b0969c0c046cdbffa480f8e40991e5abf91e))
+
 # [@adobe/spacecat-shared-content-client-v1.2.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.2.16...@adobe/spacecat-shared-content-client-v1.2.17) (2024-12-22)
 
 

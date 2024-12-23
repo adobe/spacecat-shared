@@ -12,8 +12,8 @@
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
 
-import BaseCollection from '../base/base.collection.js';
 import { ValidationError } from '../../errors/index.js';
+import BaseCollection from '../base/base.collection.js';
 
 /**
  * ImportJobCollection - A collection class responsible for managing ImportJob entities.

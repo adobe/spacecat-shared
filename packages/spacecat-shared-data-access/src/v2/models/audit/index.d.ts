@@ -11,30 +11,39 @@
  */
 
 import type {
-  BaseCollection, BaseModel, Opportunity, Site,
+  BaseCollection, BaseModel, LatestAudit, Opportunity, QueryOptions, Site,
 } from '../index';
 
 export interface Audit extends BaseModel {
+  getAuditedAt(): string;
+  getAuditId(): string;
   getAuditResult(): object;
   getAuditType(): string;
-  getAuditedAt(): number;
   getFullAuditRef(): string;
   getIsError(): boolean;
   getIsLive(): boolean;
+  getLatestAudit(): Promise<LatestAudit | null>;
+  getLatestAuditByAuditType(auditType: string): Promise<LatestAudit | null>;
   getOpportunities(): Promise<Opportunity[]>;
+  getOpportunitiesByUpdatedAt(updatedAt: string): Promise<Opportunity[]>;
+  getScores(): object | undefined;
   getSite(): Promise<Site>;
   getSiteId(): string;
-  setAuditResult(auditResult: object): Audit;
-  setAuditType(auditType: string): Audit;
-  setAuditedAt(auditedAt: number): Audit;
-  setFullAuditRef(fullAuditRef: string): Audit;
-  setIsError(isError: boolean): Audit;
-  setIsLive(isLive: boolean): Audit;
-  setSiteId(siteId: string): Audit;
-  toggleLive(): Audit;
 }
 
 export interface AuditCollection extends BaseCollection<Audit> {
   allBySiteId(siteId: string): Promise<Audit[]>;
-  allBySiteAndType(siteId: string, auditType: string): Promise<Audit[]>;
+  allBySiteIdAndAuditType(
+    siteId: string,
+    auditType: string,
+    options?: QueryOptions
+  ): Promise<Audit[]>;
+  allBySiteIdAndAuditTypeAndAuditedAt(
+    siteId: string, auditType: string, auditedAt: string
+  ): Promise<Audit[]>;
+  findBySiteId(siteId: string): Promise<Audit | null>;
+  findBySiteIdAndAuditType(siteId: string, auditType: string): Promise<Audit | null>;
+  findBySiteIdAndAuditTypeAndAuditedAt(
+    siteId: string, auditType: string, auditedAt: string
+  ): Promise<Audit | null>;
 }

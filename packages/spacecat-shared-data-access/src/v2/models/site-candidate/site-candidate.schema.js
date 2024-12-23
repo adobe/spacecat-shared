@@ -17,7 +17,7 @@ import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { validate as uuidValidate } from 'uuid';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import SiteCandidate, { SITE_CANDIDATE_SOURCES, SITE_CANDIDATE_STATUS } from './site-candidate.model.js';
+import SiteCandidate from './site-candidate.model.js';
 import SiteCandidateCollection from './site-candidate.collection.js';
 
 /*
@@ -44,11 +44,11 @@ const schema = new SchemaBuilder(SiteCandidate, SiteCandidateCollection)
     validate: (value) => isObject(value),
   })
   .addAttribute('source', {
-    type: Object.values(SITE_CANDIDATE_SOURCES),
+    type: Object.values(SiteCandidate.SITE_CANDIDATE_SOURCES),
     required: true,
   })
   .addAttribute('status', {
-    type: Object.values(SITE_CANDIDATE_STATUS),
+    type: Object.values(SiteCandidate.SITE_CANDIDATE_STATUS),
     required: true,
   })
   .addAttribute('updatedBy', {

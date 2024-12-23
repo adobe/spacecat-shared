@@ -12,17 +12,6 @@
 
 import BaseModel from '../base/base.model.js';
 
-export const KEY_EVENT_TYPES = {
-  PERFORMANCE: 'PERFORMANCE',
-  SEO: 'SEO',
-  CONTENT: 'CONTENT',
-  CODE: 'CODE',
-  THIRD_PARTY: 'THIRD PARTY',
-  EXPERIMENTATION: 'EXPERIMENTATION',
-  NETWORK: 'NETWORK',
-  STATUS_CHANGE: 'STATUS CHANGE',
-};
-
 /**
  * KeyEvent - A class representing an KeyEvent entity.
  * Provides methods to access and manipulate KeyEvent-specific data.
@@ -31,6 +20,17 @@ export const KEY_EVENT_TYPES = {
  * @extends BaseModel
  */
 class KeyEvent extends BaseModel {
+  static KEY_EVENT_TYPES = {
+    PERFORMANCE: 'PERFORMANCE',
+    SEO: 'SEO',
+    CONTENT: 'CONTENT',
+    CODE: 'CODE',
+    THIRD_PARTY: 'THIRD PARTY',
+    EXPERIMENTATION: 'EXPERIMENTATION',
+    NETWORK: 'NETWORK',
+    STATUS_CHANGE: 'STATUS CHANGE',
+  };
+
   // add your custom methods or overrides here
 }
 

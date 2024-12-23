@@ -12,12 +12,12 @@
 
 /* c8 ignore start */
 
-import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isValidUrl } from '@adobe/spacecat-shared-utils';
 
-import { ImportUrlStatus } from '../import-job/import-job.model.js';
 import SchemaBuilder from '../base/schema.builder.js';
-import ImportUrl, { IMPORT_URL_EXPIRES_IN_DAYS } from './import-url.model.js';
+import ImportUrl from './import-url.model.js';
 import ImportUrlCollection from './import-url.collection.js';
+import { ImportJob } from '../import-job/index.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -26,17 +26,8 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
 const schema = new SchemaBuilder(ImportUrl, ImportUrlCollection)
+  .withRecordExpiry(ImportUrl.IMPORT_URL_EXPIRES_IN_DAYS)
   .addReference('belongs_to', 'ImportJob', ['status'])
-  .addAttribute('expiresAt', {
-    type: 'string',
-    required: true,
-    validate: (value) => isIsoDate(value),
-    default: () => {
-      const date = new Date();
-      date.setDate(date.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
-      return date.toISOString();
-    },
-  })
   .addAttribute('file', {
     type: 'string',
   })
@@ -47,7 +38,7 @@ const schema = new SchemaBuilder(ImportUrl, ImportUrlCollection)
     type: 'string',
   })
   .addAttribute('status', {
-    type: Object.values(ImportUrlStatus),
+    type: Object.values(ImportJob.ImportUrlStatus),
     required: true,
   })
   .addAttribute('url', {

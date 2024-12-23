@@ -11,26 +11,29 @@
  */
 
 import type { BaseCollection, BaseModel } from '../base';
+import type { ImportUrl } from '../import-url';
 
 export interface ImportJob extends BaseModel {
   getBaseURL(): string,
   getDuration(): number,
-  getEndedAt(): number,
+  getEndedAt(): string,
   getFailedCount(): number,
   getHasCustomHeaders(): boolean,
   getHasCustomImportJs(): boolean,
   getHashedApiKey(): string,
   getImportQueueId(): string,
+  getImportUrls(): Promise<ImportUrl[]>,
+  getImportUrlsByStatus(status: string): Promise<ImportUrl[]>,
   getInitiatedBy(): string,
   getOptions(): string,
   getRedirectCount(): number,
+  getStartedAt(): string,
   getStatus(): string,
-  getStartedAt(): number,
   getSuccessCount(): number,
   getUrlCount(): number,
   setBaseURL(baseURL: string): void,
   setDuration(duration: number): void,
-  setEndedAt(endTime: number): void,
+  setEndedAt(endTime: string): void,
   setFailedCount(failedCount: number): void,
   setHasCustomHeaders(hasCustomHeaders: boolean): void,
   setHasCustomImportJs(hasCustomImportJs: boolean): void,
@@ -40,12 +43,16 @@ export interface ImportJob extends BaseModel {
   setOptions(options: string): void,
   setRedirectCount(redirectCount: number): void,
   setStatus(status: string): void,
-  setStartedAt(startTime: number): void,
   setSuccessCount(successCount: number): void,
   setUrlCount(urlCount: number): void,
 }
 
 export interface ImportJobCollection extends BaseCollection<ImportJob> {
-  allByDateRange(startDate: number, endDate: number): Promise<ImportJob[]>;
+  allByDateRange(startDate: string, endDate: string): Promise<ImportJob[]>;
+  allByStartedAt(startDate: string): Promise<ImportJob[]>;
   allByStatus(status: string): Promise<ImportJob[]>;
+  allByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<ImportJob[]>;
+  findByStartedAt(startDate: string): Promise<ImportJob | null>;
+  findByStatus(status: string): Promise<ImportJob | null>;
+  findByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<ImportJob | null>;
 }

@@ -15,7 +15,7 @@
 import { isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import Opportunity, { ORIGINS, STATUSES } from './opportunity.model.js';
+import Opportunity from './opportunity.model.js';
 import OpportunityCollection from './opportunity.collection.js';
 
 /*
@@ -27,6 +27,7 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addReference('belongs_to', 'Site', ['status', 'updatedAt'])
   .addReference('belongs_to', 'Audit', ['updatedAt'], { required: false })
+  .addReference('belongs_to', 'LatestAudit', ['updatedAt'], { required: false })
   .addReference('has_many', 'Suggestions', ['updatedAt'], { removeDependents: true })
   .addAttribute('runbook', {
     type: 'string',
@@ -42,7 +43,7 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
     validate: (value) => !value || isNonEmptyObject(value),
   })
   .addAttribute('origin', {
-    type: Object.values(ORIGINS),
+    type: Object.values(Opportunity.ORIGINS),
     required: true,
   })
   .addAttribute('title', {
@@ -53,7 +54,7 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
     type: 'string',
   })
   .addAttribute('status', {
-    type: Object.values(STATUSES),
+    type: Object.values(Opportunity.STATUSES),
     required: true,
     default: 'NEW',
   })

@@ -31,9 +31,9 @@ describe('ImportUrlModel', () => {
 
   beforeEach(() => {
     mockRecord = {
+      recordExpiresAt: '2022-01-01T00:00:00.000Z',
       importUrlId: 'sug12345',
       importJobId: 'ij12345',
-      expiresAt: '2022-01-01T00:00:00.000Z',
       file: 'someFile',
       path: 'somePath',
       reason: 'someReason',
@@ -73,14 +73,9 @@ describe('ImportUrlModel', () => {
     });
   });
 
-  describe('expiresAt', () => {
-    it('gets expiresAt', () => {
-      expect(instance.getExpiresAt()).to.equal('2022-01-01T00:00:00.000Z');
-    });
-
-    it('sets expiresAt', () => {
-      instance.setExpiresAt('2024-01-01T00:00:00.000Z');
-      expect(instance.getExpiresAt()).to.equal('2024-01-01T00:00:00.000Z');
+  describe('recordExpiresAt', () => {
+    it('gets recordExpiresAt', () => {
+      expect(instance.getRecordExpiresAt()).to.equal('2022-01-01T00:00:00.000Z');
     });
   });
 

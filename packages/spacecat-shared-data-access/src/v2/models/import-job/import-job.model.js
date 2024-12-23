@@ -13,35 +13,6 @@
 import BaseModel from '../base/base.model.js';
 
 /**
- * Supported Import Options.
- */
-export const ImportOptions = {
-  ENABLE_JAVASCRIPT: 'enableJavascript',
-  PAGE_LOAD_TIMEOUT: 'pageLoadTimeout',
-};
-
-/**
- * Import Job Status types.
- * Any changes to this object needs to be reflected in the index.d.ts file as well.
- */
-export const ImportJobStatus = {
-  RUNNING: 'RUNNING',
-  COMPLETE: 'COMPLETE',
-  FAILED: 'FAILED',
-  STOPPED: 'STOPPED',
-};
-
-/**
- * ImportURL Status types.
- * Any changes to this object needs to be reflected in the index.d.ts file as well.
- */
-export const ImportUrlStatus = {
-  PENDING: 'PENDING',
-  REDIRECT: 'REDIRECT',
-  ...ImportJobStatus,
-};
-
-/**
  * ImportJob - A class representing an ImportJob entity.
  * Provides methods to access and manipulate ImportJob-specific data.
  *
@@ -49,6 +20,35 @@ export const ImportUrlStatus = {
  * @extends BaseModel
  */
 class ImportJob extends BaseModel {
+  /**
+   * Import Job Status types.
+   * Any changes to this object needs to be reflected in the index.d.ts file as well.
+   */
+  static ImportJobStatus = {
+    RUNNING: 'RUNNING',
+    COMPLETE: 'COMPLETE',
+    FAILED: 'FAILED',
+    STOPPED: 'STOPPED',
+  };
+
+  /**
+   * ImportURL Status types.
+   * Any changes to this object needs to be reflected in the index.d.ts file as well.
+   */
+  static ImportUrlStatus = {
+    PENDING: 'PENDING',
+    REDIRECT: 'REDIRECT',
+    ...ImportJob.ImportJobStatus,
+  };
+
+  /**
+   * Supported Import Options.
+   */
+  static ImportOptions = {
+    ENABLE_JAVASCRIPT: 'enableJavascript',
+    PAGE_LOAD_TIMEOUT: 'pageLoadTimeout',
+  };
+
   // add your custom methods or overrides here
 }
 

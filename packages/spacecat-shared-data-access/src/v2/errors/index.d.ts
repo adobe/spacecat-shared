@@ -10,4 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-export type ValidationError = Error
+export type DataAccessError = Error
+export type SchemaBuilderError = DataAccessError
+export type SchemaError = DataAccessError
+export type SchemaValidationError = DataAccessError
+export type ValidationError = DataAccessError

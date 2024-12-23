@@ -15,7 +15,7 @@
 import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import Audit, { validateAuditResult } from './audit.model.js';
+import Audit from './audit.model.js';
 import AuditCollection from './audit.collection.js';
 
 /*
@@ -26,7 +26,10 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 
 const schema = new SchemaBuilder(Audit, AuditCollection)
   .addReference('belongs_to', 'Site', ['auditType', 'auditedAt'])
+  .addReference('has_one', 'LatestAudit', ['auditType'], { required: false })
   .addReference('has_many', 'Opportunities')
+  .allowUpdates(false)
+  .allowRemove(false)
   .addAttribute('auditResult', {
     type: 'any',
     required: true,
@@ -34,7 +37,7 @@ const schema = new SchemaBuilder(Audit, AuditCollection)
     set: (value, attributes) => {
       // as the electroDb validate function does not provide access to the model instance
       // we need to call the validate function from the model on setting the value
-      validateAuditResult(value, attributes.auditType);
+      Audit.validateAuditResult(value, attributes.auditType);
       return value;
     },
   })

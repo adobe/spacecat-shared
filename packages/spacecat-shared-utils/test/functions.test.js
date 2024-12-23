@@ -17,22 +17,23 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import {
-  hasText,
-  isBoolean,
-  isArray,
-  isInteger,
-  isValidDate,
-  isIsoDate,
-  isIsoTimeOffsetsDate,
-  isNumber,
-  isObject,
-  isNonEmptyObject,
-  isString,
-  toBoolean,
   arrayEquals,
-  isValidUrl,
   dateAfterDays,
   deepEqual,
+  hasText,
+  isArray,
+  isBoolean,
+  isInteger,
+  isIsoDate,
+  isIsoTimeOffsetsDate,
+  isNonEmptyArray,
+  isNonEmptyObject,
+  isNumber,
+  isObject,
+  isString,
+  isValidDate,
+  isValidUrl,
+  toBoolean,
 } from '../src/index.js';
 
 describe('Shared functions', () => {
@@ -102,6 +103,24 @@ describe('Shared functions', () => {
       invalidArrays.forEach((value) => expect(isArray(value)).to.be.false);
       expect(isArray([])).to.be.true;
       expect(isArray(['abc'])).to.be.true;
+    });
+
+    it('is non-empty array', () => {
+      const invalidArrays = [
+        true,
+        {},
+        { asd: 'dsa' },
+        '',
+        'dasd',
+        NaN,
+        Infinity,
+        -Infinity,
+        123,
+        [],
+      ];
+
+      invalidArrays.forEach((value) => expect(isNonEmptyArray(value)).to.be.false);
+      expect(isNonEmptyArray(['abc'])).to.be.true;
     });
 
     it('is boolean', () => {

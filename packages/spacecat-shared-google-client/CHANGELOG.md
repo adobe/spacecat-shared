@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.3.7...@adobe/spacecat-shared-google-client-v1.4.0) (2024-12-23)
+
+
+### Features
+
+* latest audit entity ([#503](https://github.com/adobe/spacecat-shared/issues/503)) ([2d01b09](https://github.com/adobe/spacecat-shared/commit/2d01b0969c0c046cdbffa480f8e40991e5abf91e))
+
 # [@adobe/spacecat-shared-google-client-v1.3.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.3.6...@adobe/spacecat-shared-google-client-v1.3.7) (2024-12-22)
 
 

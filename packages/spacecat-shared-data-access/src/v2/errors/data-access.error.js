@@ -9,9 +9,16 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-export const INDEX_TYPES = {
-  PRIMARY: 'primary',
-  ALL: 'all',
-  BELONGS_TO: 'belongs_to',
-  OTHER: 'other',
-};
+
+export default class DataAccessError extends Error {
+  constructor(message, details = {}, cause = null) {
+    super(message);
+    this.name = this.constructor.name;
+    this.details = details;
+    this.cause = cause;
+
+    if (cause?.stack) {
+      this.stack += `\nCaused by: ${cause.stack}`;
+    }
+  }
+}

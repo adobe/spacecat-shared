@@ -26,7 +26,10 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 
 const schema = new SchemaBuilder(Audit, AuditCollection)
   .addReference('belongs_to', 'Site', ['auditType', 'auditedAt'])
+  .addReference('has_one', 'LatestAudit', ['auditType'], { required: false })
   .addReference('has_many', 'Opportunities')
+  .allowUpdates(false)
+  .allowRemove(false)
   .addAttribute('auditResult', {
     type: 'any',
     required: true,

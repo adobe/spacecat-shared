@@ -10,12 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel } from '../index';
+import type { BaseCollection, BaseModel, Site } from '../index';
 
 export interface SiteCandidate extends BaseModel {
   getBaseURL(): string;
   getHlxConfig(): object;
-  getSite(): object;
+  getSite(): Promise<Site>;
   getSiteId(): string;
   getSource(): string;
   getStatus(): string;
@@ -29,10 +29,8 @@ export interface SiteCandidate extends BaseModel {
 }
 
 export interface SiteCandidateCollection extends BaseCollection<SiteCandidate> {
+  allByBaseURL(baseURL: string): Promise<SiteCandidate[]>;
   allBySiteId(siteId: string): Promise<SiteCandidate[]>;
-  allBySiteIdAndSiteCandidateIdAndUrl(
-    siteId: string,
-    siteCandidateId: string,
-    url: string,
-  ): Promise<SiteCandidate[]>;
+  findByBaseURL(baseURL: string): Promise<SiteCandidate | null>;
+  findBySiteId(siteId: string): Promise<SiteCandidate | null>;
 }

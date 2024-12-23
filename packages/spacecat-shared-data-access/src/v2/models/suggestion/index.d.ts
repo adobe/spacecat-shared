@@ -31,4 +31,6 @@ export interface SuggestionCollection extends BaseCollection<Suggestion> {
   allByOpportunityId(opportunityId: string): Promise<Suggestion[]>;
   allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion[]>;
   bulkUpdateStatus(suggestions: Suggestion[], status: string): Promise<Suggestion[]>;
+  findByOpportunityId(opportunityId: string): Promise<Suggestion | null>;
+  findByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion | null>;
 }

@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { DataAccessError } from '../../errors/index.js';
 import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
 
 import ApiKeyCollection from '../api-key/api-key.collection.js';
@@ -19,6 +20,7 @@ import ExperimentCollection from '../experiment/experiment.collection.js';
 import ImportJobCollection from '../import-job/import-job.collection.js';
 import ImportUrlCollection from '../import-url/import-url.collection.js';
 import KeyEventCollection from '../key-event/key-event.collection.js';
+import LatestAuditCollection from '../latest-audit/latest-audit.collection.js';
 import OpportunityCollection from '../opportunity/opportunity.collection.js';
 import OrganizationCollection from '../organization/organization.collection.js';
 import SiteCandidateCollection from '../site-candidate/site-candidate.collection.js';
@@ -33,6 +35,7 @@ import ExperimentSchema from '../experiment/experiment.schema.js';
 import ImportJobSchema from '../import-job/import-job.schema.js';
 import ImportUrlSchema from '../import-url/import-url.schema.js';
 import KeyEventSchema from '../key-event/key-event.schema.js';
+import LatestAuditSchema from '../latest-audit/latest-audit.schema.js';
 import OpportunitySchema from '../opportunity/opportunity.schema.js';
 import OrganizationSchema from '../organization/organization.schema.js';
 import SiteSchema from '../site/site.schema.js';
@@ -90,12 +93,13 @@ class EntityRegistry {
    * Gets a collection instance by its name.
    * @param {string} collectionName - The name of the collection to retrieve.
    * @returns {Object} - The requested collection instance.
-   * @throws {Error} - Throws an error if the collection with the specified name is not found.
+   * @throws {DataAccessError} - Throws an error if the collection with the
+   * specified name is not found.
    */
   getCollection(collectionName) {
     const collection = this.collections.get(collectionName);
     if (!collection) {
-      throw new Error(`Collection ${collectionName} not found`);
+      throw new DataAccessError(`Collection ${collectionName} not found`, this);
     }
     return collection;
   }
@@ -127,6 +131,7 @@ EntityRegistry.registerEntity(ExperimentSchema, ExperimentCollection);
 EntityRegistry.registerEntity(ImportJobSchema, ImportJobCollection);
 EntityRegistry.registerEntity(ImportUrlSchema, ImportUrlCollection);
 EntityRegistry.registerEntity(KeyEventSchema, KeyEventCollection);
+EntityRegistry.registerEntity(LatestAuditSchema, LatestAuditCollection);
 EntityRegistry.registerEntity(OpportunitySchema, OpportunityCollection);
 EntityRegistry.registerEntity(OrganizationSchema, OrganizationCollection);
 EntityRegistry.registerEntity(SiteSchema, SiteCollection);

@@ -12,18 +12,19 @@
 
 import type { ValidationError } from '../../errors';
 
+export interface MultiStatusCreateResult<T> {
+  createdItems: T[],
+  errorItems: { item: object, error: ValidationError }[],
+}
+
 export interface BaseModel {
+  _remove(): Promise<this>;
   getCreatedAt(): string;
   getId(): string;
   getUpdatedAt(): string;
   remove(): Promise<this>;
   save(): Promise<this>;
   toJSON(): object;
-}
-
-export interface MultiStatusCreateResult<T> {
-  createdItems: T[],
-  errorItems: { item: object, error: ValidationError }[],
 }
 
 export interface QueryOptions {
@@ -34,12 +35,15 @@ export interface QueryOptions {
 }
 
 export interface BaseCollection<T extends BaseModel> {
+  _onCreate(item: T): void;
+  _onCreateMany(items: MultiStatusCreateResult<T>): void;
+  _saveMany(items: T[]): Promise<T[]>;
   all(sortKeys?: object, options?: QueryOptions): Promise<T[]>;
   allByIndexKeys(keys: object, options?: QueryOptions): Promise<T[]>;
   create(item: object): Promise<T>;
-  createMany(items: object[]): Promise<MultiStatusCreateResult<T>>;
-  findByAll(sortKeys?: object, options?: QueryOptions): Promise<T>;
-  findById(id: string): Promise<T>;
+  createMany(items: object[], parent?: T): Promise<MultiStatusCreateResult<T>>;
+  findByAll(sortKeys?: object, options?: QueryOptions): Promise<T> | null;
+  findById(id: string): Promise<T> | null;
   findByIndexKeys(indexKeys: object): Promise<T>;
   removeByIds(ids: string[]): Promise<void>;
 }
@@ -56,6 +60,7 @@ export interface Reference {
   getTarget(): string;
   getType(): string;
   isRemoveDependents(): boolean;
+  toAccessorConfigs(): object[];
 }
 
 export interface IndexAccessor {
@@ -64,27 +69,41 @@ export interface IndexAccessor {
 }
 
 export interface Schema {
+  allowsRemove(): boolean;
+  allowsUpdates(): boolean;
   findIndexBySortKeys(sortKeys: string[]): object | null;
   findIndexByType(type: string): object | null;
+  findIndexNameByKeys(keys: object): string;
   getAttribute(name: string): object;
   getAttributes(): object;
   getCollectionName(): string;
   getEntityName(): string;
   getIdName(): string;
   getIndexAccessors(): Array<IndexAccessor>;
-  getIndexes(): object;
+  getIndexByName(indexName: string): object;
   getIndexKeys(indexName: string): string[];
+  getIndexTypes(): string[];
+  getIndexes(): object;
   getModelClass(): object;
   getModelName(): string;
+  getReciprocalReference(registry: EntityRegistry, reference: Reference): Reference | null;
+  getReferenceByTypeAndTarget(referenceType: string, target: string): Reference | undefined;
   getReferences(): Reference[];
   getReferencesByType(referenceType: string): Reference[];
-  getReferenceByTypeAndTarget(referenceType: string, target: string): Reference | undefined;
+  getServiceName(): string;
+  getVersion(): number;
+  toAccessorConfigs(): object[];
+  toElectroDBSchema(): object;
 }
 
 export interface SchemaBuilder {
-  addAttribute(name: string, data: object): SchemaBuilder;
   addAllIndex(sortKeys: string[]): SchemaBuilder;
+  addAttribute(name: string, data: object): SchemaBuilder;
   addIndex(name: string, partitionKey: object, sortKey: object): SchemaBuilder;
   addReference(referenceType: string, entityName: string, sortKeys?: string[]): SchemaBuilder;
+  allowRemove(allow: boolean): SchemaBuilder;
+  allowUpdate(allow: boolean): SchemaBuilder;
   build(): Schema;
+  withPrimaryPartitionKeys(partitionKeys: string[]): SchemaBuilder
+  withPrimarySortKeys(sortKeys: string[]): SchemaBuilder;
 }

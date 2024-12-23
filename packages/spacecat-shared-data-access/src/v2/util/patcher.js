@@ -40,6 +40,12 @@ const checkReadOnly = (propertyName, attribute) => {
   }
 };
 
+const checkUpdatesAllowed = (schema) => {
+  if (!schema.allowsUpdates()) {
+    throw new ValidationError(`Updates prohibited by schema for ${schema.getModelName()}.`);
+  }
+};
+
 class Patcher {
   /**
    * Creates a new Patcher instance for an entity.
@@ -49,6 +55,7 @@ class Patcher {
    */
   constructor(entity, schema, record) {
     this.entity = entity;
+    this.schema = schema;
     this.record = record;
 
     this.entityName = schema.getEntityName();
@@ -151,6 +158,8 @@ class Patcher {
    * @param {boolean} [isReference=false] - Whether the value is a reference to another entity.
    */
   patchValue(propertyName, value, isReference = false) {
+    checkUpdatesAllowed(this.schema);
+
     const attribute = this.model.schema?.attributes[propertyName];
     if (!isObject(attribute)) {
       throw new ValidationError(`Property ${propertyName} does not exist on entity ${this.entityName}.`);
@@ -202,6 +211,8 @@ class Patcher {
    * @throws {Error} - Throws an error if the save operation fails.
    */
   async save() {
+    checkUpdatesAllowed(this.schema);
+
     if (!this.hasUpdates()) {
       return;
     }

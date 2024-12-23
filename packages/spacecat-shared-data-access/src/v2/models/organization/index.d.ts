@@ -10,13 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel } from '../index';
+import type { BaseCollection, BaseModel, Site } from '../index';
 
 export interface Organization extends BaseModel {
   getConfig(): object;
   getFulfillableItems(): object;
   getImsOrgId(): string;
   getName(): string;
+  getSites(): Promise<Site[]>;
   setConfig(config: object): Organization;
   setFulfillableItems(fulfillableItems: object): Organization;
   setImsOrgId(imsOrgId: string): Organization;
@@ -25,4 +26,5 @@ export interface Organization extends BaseModel {
 
 export interface OrganizationCollection extends BaseCollection<Organization> {
   allByImsOrgId(imsOrgId: string): Promise<Organization[]>;
+  findByImsOrgId(imsOrgId: string): Promise<Organization | null>;
 }

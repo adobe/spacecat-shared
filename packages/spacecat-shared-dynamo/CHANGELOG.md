@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-dynamo-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.4.2...@adobe/spacecat-shared-dynamo-v1.5.0) (2024-12-23)
+
+
+### Features
+
+* latest audit entity ([#503](https://github.com/adobe/spacecat-shared/issues/503)) ([2d01b09](https://github.com/adobe/spacecat-shared/commit/2d01b0969c0c046cdbffa480f8e40991e5abf91e))
+
 # [@adobe/spacecat-shared-dynamo-v1.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-dynamo-v1.4.1...@adobe/spacecat-shared-dynamo-v1.4.2) (2024-12-22)
 
 

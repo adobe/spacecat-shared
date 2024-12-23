@@ -11,20 +11,24 @@
  */
 
 import type {
-  BaseCollection, BaseModel, MultiStatusCreateResult, Suggestion,
+  Audit, BaseCollection, BaseModel, MultiStatusCreateResult, Site, Suggestion,
 } from '../index';
 
 export interface Opportunity extends BaseModel {
   addSuggestions(suggestions: object[]): Promise<MultiStatusCreateResult<Suggestion>>;
+  getAudit(): Promise<Audit>;
   getAuditId(): string;
   getData(): object;
   getDescription(): string;
   getGuidance(): string;
   getOrigin(): string;
   getRunbook(): string;
+  getSite(): Promise<Site>;
   getSiteId(): string;
   getStatus(): string;
   getSuggestions(): Promise<Suggestion[]>;
+  getSuggestionsByStatus(status: string): Promise<Suggestion[]>;
+  getSuggestionsByStatusAndRank(status: string, rank: string): Promise<Suggestion[]>;
   getTags(): string[];
   getTitle(): string;
   getType(): string;
@@ -41,6 +45,18 @@ export interface Opportunity extends BaseModel {
 }
 
 export interface OpportunityCollection extends BaseCollection<Opportunity> {
+  allByAuditId(auditId: string): Promise<Opportunity[]>;
+  allByAuditIdAndUpdatedAt(auditId: string, updatedAt: string): Promise<Opportunity[]>;
   allBySiteId(siteId: string): Promise<Opportunity[]>;
   allBySiteIdAndStatus(siteId: string, status: string): Promise<Opportunity[]>;
+  allBySiteIdAndStatusAndUpdatedAt(
+    siteId: string, status: string, updatedAt: string
+  ): Promise<Opportunity[]>;
+  findByAuditId(auditId: string): Promise<Opportunity | null>;
+  findByAuditIdAndUpdatedAt(auditId: string, updatedAt: string): Promise<Opportunity | null>;
+  findBySiteId(siteId: string): Promise<Opportunity | null>;
+  findBySiteIdAndStatus(siteId: string, status: string): Promise<Opportunity | null>;
+  findBySiteIdAndStatusAndUpdatedAt(
+    siteId: string, status: string, updatedAt: string
+  ): Promise<Opportunity | null>;
 }

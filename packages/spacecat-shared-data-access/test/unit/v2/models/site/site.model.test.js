@@ -143,29 +143,6 @@ describe('SiteModel', () => {
     });
   });
 
-  describe('getLatestAuditByType', () => {
-    it('returns the latest audit by type', async () => {
-      const mockAudit = {
-        auditType: 'someAuditType',
-        auditedAt: '2024-01-01T00:00:00.000Z',
-      };
-
-      const mockFind = stub().returns(mockAudit);
-
-      instance.entityRegistry = {
-        getCollection: stub().returns({ findByIndexKeys: mockFind }),
-      };
-
-      const latestAudit = await instance.getLatestAuditByType('someAuditType');
-
-      expect(latestAudit).to.deep.equal(mockAudit);
-      expect(instance.entityRegistry.getCollection).to.have.been.calledOnceWithExactly('AuditCollection');
-      expect(mockFind).to.have.been.calledOnceWithExactly(
-        { siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52', auditType: 'someAuditType' },
-      );
-    });
-  });
-
   describe('toggleLive', () => {
     it('toggles the site live status', async () => {
       expect(instance.getIsLive()).to.equal(false);

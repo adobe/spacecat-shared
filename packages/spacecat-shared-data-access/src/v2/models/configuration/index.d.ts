@@ -15,97 +15,31 @@ import type {
 } from '../index';
 
 export interface Configuration extends BaseModel {
-  /**
-   * Retrieves the configuration version.
-   * @returns {number} The configuration version.
-   */
-  getVersion: () => number;
-
-  /**
-   * Retrieves the queues configuration.
-   * @returns {object} The queues configuration.
-   */
-  getQueues: () => object;
-
-  /**
-   * Retrieves the jobs configuration.
-   * @returns {Array} The jobs configurations.
-   */
-  getJobs: () => Array<object>;
-
-  /**
-   * Retrieves the handlers configuration.
-   * @returns {object} The handlers configuration.
-   */
-  getHandlers: () => object;
-
-  /**
-   * Retrieves the handler configuration for handler type.
-   * @param type The handler type.
-   * @returns {object} The handler type configuration.
-   */
-  getHandler: (type) => object;
-
-  /**
-   * Retrieves the slack roles configuration.
-   * @returns {object} The slack roles configuration.
-   */
-  getSlackRoles: () => object;
-
-  /**
-   * Return true if a handler type is enabled for an organization.
-   * @param type handler type
-   * @param org organization
-   */
-  isHandlerEnabledForOrg: (type: string, org: Organization) => boolean;
-
-  /**
-   * Return true if a handler type is enabled for a site.
-   * @param type handler type
-   * @param site site
-   */
-  isHandlerEnabledForSite: (type: string, site: Site) => boolean;
-
-  /**
-   * Enables a handler type for an site.
-   * @param type handler type
-   * @param site site
-   */
-  enableHandlerForSite: (type: string, site: Site) => void;
-
-  /**
-   * Enables a handler type for an organization.
-   * @param type handler type
-   * @param org organization
-   */
-  enableHandlerForOrg: (type: string, org: Organization) => void;
-
-  /**
-   * Disables a handler type for an site.
-   * @param type handler type
-   * @param site site
-   */
-  disableHandlerForSite: (type: string, site: Site) => void;
-
-  /**
-   * Disables a handler type for an organization.
-   * @param type handler type
-   * @param org organization
-   */
-  disableHandlerForOrg: (type:string, org: Organization) => void;
+  addHandler(type: string, handler: object): void;
+  disableHandlerForOrganization(type: string, organization: Organization): void;
+  disableHandlerForSite(type: string, site: Site): void;
+  enableHandlerForOrganization(type: string, organization: Organization): void;
+  enableHandlerForSite(type: string, site: Site): void;
+  getConfigurationId(): string;
+  getEnabledSiteIdsForHandler(type: string): string[];
+  getHandler(type: string): object | undefined;
+  getHandlers(): object;
+  getJobs(): object;
+  getQueues(): object;
+  getSlackRoleMembersByRole(role: string): string[];
+  getSlackRoles(): object;
+  getVersion(): number;
+  isHandlerEnabledForOrg(type: string, organization: Organization): boolean;
+  isHandlerEnabledForSite(type: string, site: Site): boolean;
+  setHandlers(handlers: object): void;
+  setJobs(jobs: object): void;
+  setQueues(queues: object): void;
+  setSlackRoles(slackRoles: object): void;
+  updateHandlerOrgs(type: string, orgId: string, enabled: boolean): void;
+  updateHandlerSites(type: string, siteId: string, enabled: boolean): void;
 }
 
 export interface ConfigurationCollection extends BaseCollection<Configuration> {
-  /**
-   * Retrieves the latest configuration by version.
-   * @returns {Configuration} The configuration.
-   */
-  findLatest: () => Configuration;
-
-  /**
-   * Retrieves the configuration by version.
-   * @param version The configuration version.
-   * @returns {Configuration} The configuration.
-   */
-  findByVersion: (version: number) => Configuration;
+  findByVersion(version: number): Promise<Configuration | null>;
+  findLatest(): Promise<Configuration | null>;
 }

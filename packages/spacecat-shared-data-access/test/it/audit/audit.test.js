@@ -74,26 +74,8 @@ describe('Audit IT', async () => {
     });
   });
 
-  it('gets latest audit of type lhs-mobile for a site', async () => {
-    const auditType = 'lhs-mobile';
-    const site = sampleData.sites[1];
-    const audits = await site.getAudits();
-    const audit = await site.getLatestAuditByType(auditType);
-
-    checkAudit(audit);
-
-    expect(audit.getSiteId()).to.equal(site.getId());
-    expect(audit.getAuditType()).to.equal(auditType);
-    expect(audit.getAuditedAt()).to.equal(audits[5].getAuditedAt());
-  });
-
   it('returns null for non-existing audit', async () => {
-    let audit = await Audit.findById('78fec9c7-2141-4600-b7b1-ea4c78752b91');
-
-    expect(audit).to.be.null;
-
-    const site = sampleData.sites[1];
-    audit = await site.getLatestAuditByType('non-existing-type');
+    const audit = await Audit.findById('78fec9c7-2141-4600-b7b1-ea4c78752b91');
 
     expect(audit).to.be.null;
   });

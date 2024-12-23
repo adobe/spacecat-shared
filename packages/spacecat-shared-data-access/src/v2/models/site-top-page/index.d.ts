@@ -10,11 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel } from '../index';
+import type { BaseCollection, BaseModel, Site } from '../index';
 
 export interface SiteTopPage extends BaseModel {
   getGeo(): string;
-  getImportedAt(): number;
+  getImportedAt(): string;
+  getSite(): Promise<Site>;
   getSiteId(): string;
   getSource(): string;
   getTopKeyword(): string;
@@ -31,5 +32,18 @@ export interface SiteTopPage extends BaseModel {
 
 export interface SiteTopPageCollection extends BaseCollection<SiteTopPage> {
   allBySiteId(siteId: string): Promise<SiteTopPage[]>;
+  allBySiteIdAndSource(siteId: string, source: string): Promise<SiteTopPage[]>;
   allBySiteIdAndSourceAndGeo(siteId: string, source: string, geo: string): Promise<SiteTopPage[]>;
+  allBySiteIdAndSourceAndGeoAndTraffic(
+    siteId: string, source: string, geo: string, traffic: number
+  ): Promise<SiteTopPage[]>;
+  findBySiteId(siteId: string): Promise<SiteTopPage | null>;
+  findBySiteIdAndSource(siteId: string, source: string): Promise<SiteTopPage | null>;
+  findBySiteIdAndSourceAndGeo(
+    siteId: string, source: string, geo: string
+  ): Promise<SiteTopPage | null>;
+  findBySiteIdAndSourceAndGeoAndTraffic(
+    siteId: string, source: string, geo: string, traffic: number
+  ): Promise<SiteTopPage | null>;
+  removeForSiteId(siteId: string, source: string, geo: string): Promise<void>;
 }

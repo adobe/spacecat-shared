@@ -20,7 +20,7 @@ import sinonChai from 'sinon-chai';
 import { validate as uuidValidate } from 'uuid';
 
 import SchemaBuilder from '../../../../../src/v2/models/base/schema.builder.js';
-import { BaseCollection, BaseModel } from '../../../../../src/index.js';
+import { BaseCollection, BaseModel, SchemaBuilderError } from '../../../../../src/index.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
@@ -38,25 +38,25 @@ describe('SchemaBuilder', () => {
   describe('constructor', () => {
     it('throws error if invalid model class is provided', () => {
       expect(() => new SchemaBuilder())
-        .to.throw('modelClass must be a subclass of BaseModel.');
+        .to.throw(SchemaBuilderError, 'modelClass must be a subclass of BaseModel.');
       expect(() => new SchemaBuilder(Number))
-        .to.throw('modelClass must be a subclass of BaseModel.');
+        .to.throw(SchemaBuilderError, 'modelClass must be a subclass of BaseModel.');
     });
 
     it('throws error if invalid collection class is provided', () => {
       expect(() => new SchemaBuilder(MockModel))
-        .to.throw('collectionClass must be a subclass of BaseCollection.');
+        .to.throw(SchemaBuilderError, 'collectionClass must be a subclass of BaseCollection.');
       expect(() => new SchemaBuilder(MockModel, Number))
-        .to.throw('collectionClass must be a subclass of BaseCollection.');
+        .to.throw(SchemaBuilderError, 'collectionClass must be a subclass of BaseCollection.');
     });
 
     it('throws an error if version is not a positive integer', () => {
       expect(() => new SchemaBuilder(MockModel, MockCollection, -1))
-        .to.throw('schemaVersion is required and must be a positive integer.');
+        .to.throw(SchemaBuilderError, 'schemaVersion is required and must be a positive integer.');
       expect(() => new SchemaBuilder(MockModel, MockCollection, '-1'))
-        .to.throw('schemaVersion is required and must be a positive integer.');
+        .to.throw(SchemaBuilderError, 'schemaVersion is required and must be a positive integer.');
       expect(() => new SchemaBuilder(MockModel, MockCollection, 1.2))
-        .to.throw('schemaVersion is required and must be a positive integer.');
+        .to.throw(SchemaBuilderError, 'schemaVersion is required and must be a positive integer.');
     });
 
     it('successfully creates an instance', () => {
@@ -102,19 +102,93 @@ describe('SchemaBuilder', () => {
     });
   });
 
+  describe('withPrimaryPartitionKeys', () => {
+    it('throws error if partition keys are not provided', () => {
+      expect(() => instance.withPrimaryPartitionKeys())
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Partition keys are required and must be a non-empty array.');
+      expect(() => instance.withPrimaryPartitionKeys('test'))
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Partition keys are required and must be a non-empty array.');
+    });
+
+    it('successfully sets primary partition keys', () => {
+      const result = instance.withPrimaryPartitionKeys(['test']);
+
+      expect(result).to.equal(instance);
+      expect(instance.rawIndexes.primary.pk.composite).to.deep.equal(['test']);
+    });
+  });
+
+  describe('withPrimarySortKeys', () => {
+    it('throws error if sort keys are not provided', () => {
+      expect(() => instance.withPrimarySortKeys())
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Sort keys are required and must be a non-empty array.');
+      expect(() => instance.withPrimarySortKeys('test'))
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Sort keys are required and must be a non-empty array.');
+    });
+
+    it('successfully sets primary sort keys', () => {
+      const result = instance.withPrimarySortKeys(['test']);
+
+      expect(result).to.equal(instance);
+      expect(instance.rawIndexes.primary.sk.composite).to.deep.equal(['test']);
+    });
+  });
+
+  describe('allowRemove', () => {
+    it('throws error if allowRemove is not a boolean', () => {
+      expect(() => instance.allowRemove('test'))
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] allow must be a boolean.');
+    });
+
+    it('successfully sets allowRemove to true', () => {
+      const result = instance.allowRemove(true);
+
+      expect(result).to.equal(instance);
+      expect(instance.options.allowRemove).to.be.true;
+    });
+
+    it('successfully sets allowRemove to false', () => {
+      const result = instance.allowRemove(false);
+
+      expect(result).to.equal(instance);
+      expect(instance.options.allowRemove).to.be.false;
+    });
+  });
+
+  describe('allowUpdates', () => {
+    it('throws error if allowUpdates is not a boolean', () => {
+      expect(() => instance.allowUpdates('test'))
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] allow must be a boolean.');
+    });
+
+    it('successfully sets allowUpdates to true', () => {
+      const result = instance.allowUpdates(true);
+
+      expect(result).to.equal(instance);
+      expect(instance.options.allowUpdates).to.be.true;
+    });
+
+    it('successfully sets allowUpdates to false', () => {
+      const result = instance.allowUpdates(false);
+
+      expect(result).to.equal(instance);
+      expect(instance.options.allowUpdates).to.be.false;
+    });
+  });
+
   describe('addAttribute', () => {
     it('throws error if attribute name is not provided', () => {
       expect(() => instance.addAttribute())
-        .to.throw('Attribute name is required and must be non-empty.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Attribute name is required and must be non-empty.');
     });
 
     it('throws error if attribute definition is not provided', () => {
       expect(() => instance.addAttribute('test'))
-        .to.throw('Attribute data for "test" is required and must be a non-empty object.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Attribute data for "test" is required and must be a non-empty object.');
       expect(() => instance.addAttribute('test', 'test'))
-        .to.throw('Attribute data for "test" is required and must be a non-empty object.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Attribute data for "test" is required and must be a non-empty object.');
       expect(() => instance.addAttribute('test', {}))
-        .to.throw('Attribute data for "test" is required and must be a non-empty object.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Attribute data for "test" is required and must be a non-empty object.');
     });
 
     it('successfully adds an attribute', () => {
@@ -138,29 +212,29 @@ describe('SchemaBuilder', () => {
   describe('addAllIndex', () => {
     it('throws error if no sort keys are provided', () => {
       expect(() => instance.addAllIndex())
-        .to.throw('Sort keys are required and must be a non-empty array.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Sort keys are required and must be a non-empty array.');
       expect(() => instance.addAllIndex('test'))
-        .to.throw('Sort keys are required and must be a non-empty array.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Sort keys are required and must be a non-empty array.');
     });
   });
 
   describe('addIndex', () => {
     it('throws error if pk is not provided', () => {
       expect(() => instance.addIndex())
-        .to.throw('Partition key configuration (pk) is required and must be a non-empty object.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Partition key configuration (pk) is required and must be a non-empty object.');
       expect(() => instance.addIndex('pk'))
-        .to.throw('Partition key configuration (pk) is required and must be a non-empty object.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Partition key configuration (pk) is required and must be a non-empty object.');
       expect(() => instance.addIndex({}))
-        .to.throw('Partition key configuration (pk) is required and must be a non-empty object.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Partition key configuration (pk) is required and must be a non-empty object.');
     });
 
     it('throws error if sk is not provided', () => {
       expect(() => instance.addIndex({ composite: ['test'] }))
-        .to.throw('Sort key configuration (sk) is required and must be a non-empty object.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Sort key configuration (sk) is required and must be a non-empty object.');
       expect(() => instance.addIndex({ composite: ['test'] }, 'sk'))
-        .to.throw('Sort key configuration (sk) is required and must be a non-empty object.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Sort key configuration (sk) is required and must be a non-empty object.');
       expect(() => instance.addIndex({ composite: ['test'] }, {}))
-        .to.throw('Sort key configuration (sk) is required and must be a non-empty object.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Sort key configuration (sk) is required and must be a non-empty object.');
     });
 
     it('successfully adds an index', () => {
@@ -178,17 +252,17 @@ describe('SchemaBuilder', () => {
   describe('addReference', () => {
     it('throws error if reference type is not provided', () => {
       expect(() => instance.addReference())
-        .to.throw('Invalid referenceType: "undefined"');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Invalid referenceType: "undefined"');
     });
 
     it('throws error if reference type is invalid', () => {
       expect(() => instance.addReference('test'))
-        .to.throw('Invalid referenceType: "test"');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Invalid referenceType: "test"');
     });
 
     it('throws error if entity name is not provided', () => {
       expect(() => instance.addReference('belongs_to'))
-        .to.throw('entityName for reference is required and must be a non-empty string.');
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] entityName for reference is required and must be a non-empty string.');
     });
 
     it('successfully adds a has_many reference', () => {
@@ -429,6 +503,7 @@ describe('SchemaBuilder', () => {
             type: 'has_many',
           },
         ],
+        options: { allowRemove: true, allowUpdates: true },
       });
     });
 
@@ -439,7 +514,7 @@ describe('SchemaBuilder', () => {
       instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
       instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
       instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
-      expect(() => instance.build()).to.throw('Cannot have more than 5 indexes.');
+      expect(() => instance.build()).to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] Cannot have more than 5 indexes.');
     });
   });
 });

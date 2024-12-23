@@ -14,17 +14,17 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import { stub } from 'sinon';
-import Audit from '../../../../../src/v2/models/audit/audit.model.js';
+import LatestAudit from '../../../../../src/v2/models/latest-audit/latest-audit.model.js';
 
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-describe('AuditCollection', () => {
+describe('LatestAuditCollection', () => {
   let instance;
 
   let mockElectroService;
@@ -34,7 +34,7 @@ describe('AuditCollection', () => {
   let schema;
 
   const mockRecord = {
-    auditId: 's12345',
+    latestAuditId: 's12345',
   };
 
   beforeEach(() => {
@@ -45,11 +45,11 @@ describe('AuditCollection', () => {
       collection: instance,
       model,
       schema,
-    } = createElectroMocks(Audit, mockRecord));
+    } = createElectroMocks(LatestAudit, mockRecord));
   });
 
   describe('constructor', () => {
-    it('initializes the AuditCollection instance correctly', () => {
+    it('initializes the LatestAuditCollection instance correctly', () => {
       expect(instance).to.be.an('object');
       expect(instance.electroService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);
@@ -60,32 +60,17 @@ describe('AuditCollection', () => {
     });
   });
 
-  describe('onCreate', () => {
-    it('creates a LatestAudit entity', async () => {
-      const collection = {
-        create: stub().resolves(),
-      };
-      mockEntityRegistry.getCollection.withArgs('LatestAuditCollection').returns(collection);
+  describe('findById', () => {
+    it('finds latest audit by id', async () => {
+      const siteId = '78fec9c7-2141-4600-b7b1-ea5c78752b91';
+      const auditType = 'lhs-mobile';
 
-      // eslint-disable-next-line no-underscore-dangle
-      await instance._onCreate(model);
+      instance.findByIndexKeys = stub().returns({ go: stub().resolves({ data: [mockRecord] }) });
 
-      expect(collection.create).to.have.been.calledOnce;
-      expect(collection.create).to.have.been.calledWithExactly(model.toJSON());
-    });
+      const audit = await instance.findById(siteId, auditType);
 
-    it('creates a LatestAudit entity for each site and auditType', async () => {
-      const collection = {
-        createMany: stub().resolves(),
-      };
-      mockEntityRegistry.getCollection.withArgs('LatestAuditCollection').returns(collection);
-
-      // eslint-disable-next-line no-underscore-dangle
-      await instance._onCreateMany({
-        createdItems: [model, model, model],
-      });
-
-      expect(collection.createMany).to.have.been.calledOnce;
+      expect(audit).to.be.an('object');
+      expect(instance.findByIndexKeys).to.have.been.calledWithExactly({ siteId, auditType });
     });
   });
 });

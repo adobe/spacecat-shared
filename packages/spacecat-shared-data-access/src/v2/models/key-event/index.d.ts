@@ -10,10 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel } from '../index';
+import type { BaseCollection, BaseModel, Site } from '../index';
 
 export interface KeyEvent extends BaseModel {
   getName(): string;
+  getSite(): Promise<Site>;
   getSiteId(): string;
   getTime(): number;
   getType(): string;
@@ -25,4 +26,7 @@ export interface KeyEvent extends BaseModel {
 
 export interface KeyEventCollection extends BaseCollection<KeyEvent> {
   allBySiteId(siteId: string): Promise<KeyEvent[]>;
+  allBySiteIdAndTime(siteId: string, time: string): Promise<KeyEvent[]>;
+  findBySiteId(siteId: string): Promise<KeyEvent | null>;
+  findBySiteIdAndTime(siteId: string, time: string): Promise<KeyEvent | null>;
 }

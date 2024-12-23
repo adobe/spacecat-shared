@@ -10,8 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-export type DataAccessError = Error
-export type SchemaBuilderError = DataAccessError
-export type SchemaError = DataAccessError
-export type SchemaValidationError = DataAccessError
-export type ValidationError = DataAccessError
+import LatestAudit from './latest-audit.model.js';
+import LatestAuditCollection from './latest-audit.collection.js';
+
+export {
+  LatestAudit,
+  LatestAuditCollection,
+};

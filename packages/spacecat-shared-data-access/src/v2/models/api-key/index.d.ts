@@ -13,6 +13,7 @@
 import type { BaseCollection, BaseModel } from '../base';
 
 export interface ApiKey extends BaseModel {
+  getApiKeyId(): string;
   getDeletedAt(): string | undefined;
   getExpiresAt(): string | undefined;
   getHashedApiKey(): string;
@@ -32,6 +33,18 @@ export interface ApiKey extends BaseModel {
 }
 
 export interface ApiKeyCollection extends BaseCollection<ApiKey> {
-  allByImsOrgIdAndImsUserId: (imsUserId: string, imsOrgId: string) => Promise<ApiKey[]>;
-  findByHashedApiKey: (hashedApiKey: string) => Promise<ApiKey | null>;
+  allByHashedApiKey(hashedApiKey: string): Promise<ApiKey[]>;
+  allByHashedApiKeyAndUpdatedAt(hashedApiKey: string, updatedAt: string): Promise<ApiKey[]>;
+  allByImsOrgId(imsOrgId: string): Promise<ApiKey[]>;
+  allByImsOrgIdAndImsUserId(imsOrgId: string, imsUserId: string): Promise<ApiKey[]>;
+  allByImsOrgIdAndImsUserIdAndUpdatedAt(
+    imsOrgId: string, imsUserId: string, updatedAt: string
+  ): Promise<ApiKey[]>;
+  findByHashedApiKey(hashedApiKey: string): Promise<ApiKey | null>;
+  findByHashedApiKeyAndUpdatedAt(hashedApiKey: string, updatedAt: string): Promise<ApiKey | null>;
+  findByImsOrgId(imsOrgId: string): Promise<ApiKey | null>;
+  findByImsOrgIdAndImsUserId(imsOrgId: string, imsUserId: string): Promise<ApiKey | null>;
+  findByImsOrgIdAndImsUserIdAndUpdatedAt(
+    imsOrgId: string, imsUserId: string, updatedAt: string
+  ): Promise<ApiKey | null>;
 }

@@ -17,13 +17,13 @@ import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import Audit, { validateAuditResult } from '../../../../../src/v2/models/audit/audit.model.js';
+import LatestAudit from '../../../../../src/v2/models/latest-audit/latest-audit.model.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-describe('AuditModel', () => {
+describe('LatestAuditModel', () => {
   let instance;
 
   let mockElectroService;
@@ -31,7 +31,8 @@ describe('AuditModel', () => {
 
   beforeEach(() => {
     mockRecord = {
-      auditId: 'a12345',
+      latestAuditId: 'a12345',
+      auditId: 'x12345',
       auditResult: { foo: 'bar' },
       auditType: 'someAuditType',
       auditedAt: '2024-01-01T00:00:00.000Z',
@@ -44,19 +45,19 @@ describe('AuditModel', () => {
     ({
       mockElectroService,
       model: instance,
-    } = createElectroMocks(Audit, mockRecord));
+    } = createElectroMocks(LatestAudit, mockRecord));
 
     mockElectroService.entities.patch = stub().returns({ set: stub() });
   });
 
   describe('constructor', () => {
-    it('initializes the Audit instance correctly', () => {
+    it('initializes the Latest instance correctly', () => {
       expect(instance).to.be.an('object');
       expect(instance.record).to.deep.equal(mockRecord);
     });
   });
 
-  describe('auditId', () => {
+  describe('latestAuditId', () => {
     it('gets auditId', () => {
       expect(instance.getId()).to.equal('a12345');
     });
@@ -98,6 +99,12 @@ describe('AuditModel', () => {
     });
   });
 
+  describe('auditId', () => {
+    it('gets auditId', () => {
+      expect(instance.getAuditId()).to.equal('x12345');
+    });
+  });
+
   describe('siteId', () => {
     it('gets siteId', () => {
       expect(instance.getSiteId()).to.equal('site12345');
@@ -108,38 +115,6 @@ describe('AuditModel', () => {
     it('returns the scores from the audit result', () => {
       mockRecord.auditResult = { scores: { foo: 'bar' } };
       expect(instance.getScores()).to.deep.equal({ foo: 'bar' });
-    });
-  });
-
-  describe('validateAuditResult', () => {
-    it('throws an error if auditResult is not an object or array', () => {
-      expect(() => validateAuditResult(null, 'someAuditType'))
-        .to.throw('Audit result must be an object or array');
-    });
-
-    it('throws an error if auditResult is an object and does not contain scores', () => {
-      expect(() => validateAuditResult({ foo: 'bar' }, 'lhs-mobile'))
-        .to.throw("Missing scores property for audit type 'lhs-mobile'");
-    });
-
-    it('throws an error if auditResult is an object and does not contain expected properties', () => {
-      mockRecord.auditResult = { scores: { foo: 'bar' } };
-      expect(() => validateAuditResult(mockRecord.auditResult, 'lhs-desktop'))
-        .to.throw("Missing expected property 'performance' for audit type 'lhs-desktop'");
-    });
-
-    it('returns true if the auditResult represents a runtime error', () => {
-      mockRecord.auditResult = { runtimeError: { code: 'someErrorCode' } };
-      expect(validateAuditResult(mockRecord.auditResult, 'someAuditType')).to.be.true;
-    });
-
-    it('returns true if auditResult is an object and contains expected properties', () => {
-      mockRecord.auditResult = {
-        scores: {
-          performance: 1, seo: 1, accessibility: 1, 'best-practices': 1,
-        },
-      };
-      expect(validateAuditResult(mockRecord.auditResult, 'lhs-mobile')).to.be.true;
     });
   });
 });

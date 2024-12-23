@@ -10,8 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-export type DataAccessError = Error
-export type SchemaBuilderError = DataAccessError
-export type SchemaError = DataAccessError
-export type SchemaValidationError = DataAccessError
-export type ValidationError = DataAccessError
+import DataAccessError from './data-access.error.js';
+
+export default class ReferenceError extends DataAccessError {
+  constructor(reference, message, cause) {
+    const { type, target } = reference;
+    const prefix = type && target ? `[${type} -> ${target}] ` : '';
+
+    super(`${prefix}${message}`, { reference }, cause);
+  }
+}

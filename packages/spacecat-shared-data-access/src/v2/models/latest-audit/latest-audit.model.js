@@ -10,32 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
-import { Config } from '../../../models/site/config.js';
-import BaseModel from '../base/base.model.js';
-
-export const DELIVERY_TYPES = {
-  AEM_CS: 'aem_cs',
-  AEM_EDGE: 'aem_edge',
-  OTHER: 'other',
-};
-
-export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
+import Audit from '../audit/audit.model.js';
 
 /**
- * A class representing a Site entity. Provides methods to access and manipulate Site-specific data.
- * @class Site
- * @extends BaseModel
+ * LatestAudit - A class representing an LatestAudit entity.
+ * Provides methods to access and manipulate Audit-specific data.
+ *
+ * @class LatestAudit
+ * @extends Audit
  */
-class Site extends BaseModel {
-  getConfig() {
-    return Config(this.record.config);
-  }
-
-  async toggleLive() {
-    const newIsLive = !this.getIsLive();
-    this.setIsLive(newIsLive);
-    return this;
-  }
+class LatestAudit extends Audit {
+  // add your custom methods or overrides here
 }
 
-export default Site;
+export default LatestAudit;

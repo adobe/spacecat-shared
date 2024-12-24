@@ -31,9 +31,11 @@ const schema = new SchemaBuilder(ApiKey, ApiKeyCollection)
   })
   .addAttribute('imsUserId', {
     type: 'string',
+    default: 'default',
   })
   .addAttribute('imsOrgId', {
     type: 'string',
+    default: 'default',
   })
   .addAttribute('name', {
     type: 'string',

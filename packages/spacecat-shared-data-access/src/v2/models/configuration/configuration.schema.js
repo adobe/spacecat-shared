@@ -78,9 +78,9 @@ const schema = new SchemaBuilder(Configuration, ConfigurationCollection)
     items: {
       type: 'map',
       properties: {
-        group: { type: ['audits', 'imports', 'reports'] },
+        group: { type: ['audits', 'imports', 'reports', 'scrapes'] },
         type: { type: 'string', required: true },
-        interval: { type: ['daily', 'weekly'] },
+        interval: { type: ['daily', 'weekly', 'every-saturday', 'every-sunday', 'fortnightly', 'monthly'] },
       },
     },
   })

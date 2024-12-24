@@ -31,8 +31,8 @@ import { importUrlFunctions } from './import-url/index.js';
 import { experimentFunctions } from './experiments/index.js';
 import { apiKeyFunctions } from './api-key/index.js';
 
-const createRawClient = () => {
-  const dbClient = AWSXray.captureAWSv3Client(new DynamoDB());
+const createRawClient = (client = undefined) => {
+  const dbClient = client || AWSXray.captureAWSv3Client(new DynamoDB());
   return DynamoDBDocument.from(dbClient, {
     marshallOptions: {
       convertEmptyValues: true,
@@ -70,6 +70,7 @@ const createElectroService = (client, config, log) => {
  * tableNameSiteTopPages: string, indexNameAllOrganizations: string,
  * indexNameAllOrganizationsByImsOrgId: string, pkAllOrganizations: string}} config configuration
  * @param {Logger} log log
+ * @param client custom dynamo client
  * @returns {object} data access object
  */
 export const createDataAccess = (config, log = console, client = undefined) => {
@@ -88,7 +89,7 @@ export const createDataAccess = (config, log = console, client = undefined) => {
   const apiKeyFuncs = apiKeyFunctions(dynamoClient, config, log);
 
   // electro-based data access objects
-  const rawClient = createRawClient();
+  const rawClient = createRawClient(client);
   const electroService = createElectroService(rawClient, config, log);
   const entityRegistry = new EntityRegistry(electroService, log);
   const collections = entityRegistry.getCollections();

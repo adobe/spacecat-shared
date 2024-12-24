@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.61.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.0...@adobe/spacecat-shared-data-access-v1.61.1) (2024-12-24)
+
+
+### Bug Fixes
+
+* schema and db init ([#505](https://github.com/adobe/spacecat-shared/issues/505)) ([9b67b9a](https://github.com/adobe/spacecat-shared/commit/9b67b9a9f40f643c648cc5043018bfbc1d2a9c12))
+
 # [@adobe/spacecat-shared-data-access-v1.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.60.3...@adobe/spacecat-shared-data-access-v1.61.0) (2024-12-23)
 
 

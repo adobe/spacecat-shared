@@ -11,7 +11,7 @@
  */
 
 import type {
-  BaseCollection, BaseModel, LatestAudit, Opportunity, Site,
+  BaseCollection, BaseModel, LatestAudit, Opportunity, QueryOptions, Site,
 } from '../index';
 
 export interface Audit extends BaseModel {
@@ -33,7 +33,11 @@ export interface Audit extends BaseModel {
 
 export interface AuditCollection extends BaseCollection<Audit> {
   allBySiteId(siteId: string): Promise<Audit[]>;
-  allBySiteIdAndAuditType(siteId: string, auditType: string): Promise<Audit[]>;
+  allBySiteIdAndAuditType(
+    siteId: string,
+    auditType: string,
+    options?: QueryOptions
+  ): Promise<Audit[]>;
   allBySiteIdAndAuditTypeAndAuditedAt(
     siteId: string, auditType: string, auditedAt: string
   ): Promise<Audit[]>;

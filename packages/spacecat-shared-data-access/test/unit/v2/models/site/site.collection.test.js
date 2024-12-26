@@ -33,9 +33,7 @@ describe('SiteCollection', () => {
   let model;
   let schema;
 
-  const mockRecord = {
-    siteId: 's12345',
-  };
+  const mockRecord = { siteId: 's12345' };
 
   beforeEach(() => {
     ({
@@ -68,6 +66,51 @@ describe('SiteCollection', () => {
 
       expect(result).to.deep.equal(['s12345']);
       expect(instance.all).to.have.been.calledOnceWithExactly({ attributes: ['siteId'] });
+    });
+  });
+
+  describe('allWithLatestAudit', () => {
+    const mockAudit = {
+      getId: () => 's12345',
+      getSiteId: () => 's12345',
+    };
+
+    const mockSite = {
+      getId: () => 's12345',
+      _accessorCache: { getLatestAuditByAuditType: null },
+    };
+
+    const mockSiteNoAudit = {
+      getId: () => 'x12345',
+      _accessorCache: { getLatestAuditByAuditType: null },
+    };
+
+    beforeEach(() => {
+      mockEntityRegistry.getCollection = stub().returns({
+        all: stub().resolves([mockAudit]),
+      });
+    });
+
+    it('throws error if audit type is not provided', async () => {
+      await expect(instance.allWithLatestAudit()).to.be.rejectedWith('auditType is required');
+    });
+
+    it('returns all sites with latest audit', async () => {
+      instance.all = stub().resolves([mockSite]);
+
+      const result = await instance.allWithLatestAudit('cwv');
+
+      expect(result).to.deep.equal([mockSite]);
+      expect(instance.all).to.have.been.calledOnce;
+    });
+
+    it('returns all sites with latest audit by delivery type', async () => {
+      instance.allByDeliveryType = stub().resolves([mockSite, mockSiteNoAudit]);
+
+      const result = await instance.allWithLatestAudit('cwv', 'asc', 'aem_cs');
+
+      expect(result).to.deep.equal([mockSite, mockSiteNoAudit]);
+      expect(instance.allByDeliveryType).to.have.been.calledOnce;
     });
   });
 });

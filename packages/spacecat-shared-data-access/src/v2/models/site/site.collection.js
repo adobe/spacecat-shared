@@ -10,7 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+
+import DataAccessError from '../../errors/data-access.error.js';
 import BaseCollection from '../base/base.collection.js';
+
+import { DELIVERY_TYPES } from './site.model.js';
 
 /**
  * SiteCollection - A collection class responsible for managing Site entities.
@@ -22,6 +27,47 @@ import BaseCollection from '../base/base.collection.js';
 class SiteCollection extends BaseCollection {
   async allSitesToAudit() {
     return (await this.all({ attributes: ['siteId'] })).map((site) => site.getId());
+  }
+
+  async allWithLatestAudit(auditType, order = 'asc', deliveryType = null) {
+    if (!hasText(auditType)) {
+      throw new DataAccessError('auditType is required', this);
+    }
+
+    const latestAuditCollection = this.entityRegistry.getCollection('LatestAuditCollection');
+
+    const sitesQuery = Object.values(DELIVERY_TYPES)
+      .includes(deliveryType)
+      ? this.allByDeliveryType(deliveryType)
+      : this.all();
+
+    const [sites, latestAudits] = await Promise.all([
+      sitesQuery,
+      latestAuditCollection.all([auditType], { order }),
+    ]);
+
+    const sitesMap = new Map(sites.map((site) => [site.getId(), site]));
+    const orderedSites = [];
+
+    // First, append sites with a latest audit in the sorted order
+    latestAudits.forEach((audit) => {
+      const site = sitesMap.get(audit.getSiteId());
+      if (site) {
+        // eslint-disable-next-line no-underscore-dangle
+        site._accessorCache.getLatestAuditByAuditType = audit;
+        orderedSites.push(site);
+        sitesMap.delete(site.getId()); // Remove the site from the map to avoid adding it again
+      }
+    });
+
+    // Then, append the remaining sites (without a latest audit)
+    sitesMap.forEach((site) => {
+      // eslint-disable-next-line no-underscore-dangle,no-param-reassign
+      site._accessorCache.getLatestAuditByAuditType = null;
+      orderedSites.push(site);
+    });
+
+    return orderedSites;
   }
 }
 

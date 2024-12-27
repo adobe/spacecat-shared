@@ -251,6 +251,31 @@ describe('BaseCollection', () => {
     });
   });
 
+  describe('existsById', () => {
+    it('returns true if entity exists', async () => {
+      const mockFindResult = { data: mockRecord };
+      mockElectroService.entities.mockEntityModel.get.returns(
+        { go: () => Promise.resolve(mockFindResult) },
+      );
+
+      const result = await baseCollectionInstance.existsById('ef39921f-9a02-41db-b491-02c98987d956');
+
+      expect(result).to.be.true;
+      expect(mockElectroService.entities.mockEntityModel.get.calledOnce).to.be.true;
+    });
+
+    it('returns false if entity does not exist', async () => {
+      mockElectroService.entities.mockEntityModel.get.returns(
+        { go: () => Promise.resolve(null) },
+      );
+
+      const result = await baseCollectionInstance.existsById('ef39921f-9a02-41db-b491-02c98987d956');
+
+      expect(result).to.be.false;
+      expect(mockElectroService.entities.mockEntityModel.get.calledOnce).to.be.true;
+    });
+  });
+
   describe('findByIndexKeys', () => {
     it('throws error if keys is not provided', async () => {
       await expect(baseCollectionInstance.findByIndexKeys())

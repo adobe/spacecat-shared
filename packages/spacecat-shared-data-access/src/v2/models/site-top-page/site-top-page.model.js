@@ -12,8 +12,6 @@
 
 import BaseModel from '../base/base.model.js';
 
-export const DEFAULT_GEO = 'global';
-
 /**
  * SiteTopPage - A class representing an SiteTopPage entity.
  * Provides methods to access and manipulate SiteTopPage-specific data.
@@ -22,6 +20,8 @@ export const DEFAULT_GEO = 'global';
  * @extends BaseModel
  */
 class SiteTopPage extends BaseModel {
+  static DEFAULT_GEO = 'global';
+
   // add your custom methods or overrides here
 }
 

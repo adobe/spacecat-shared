@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { ImportJobStatus, ImportOptions } from '../../src/index.js';
+import { ImportJob } from '../../src/index.js';
 
 const importJobs = [
   {
@@ -19,12 +19,12 @@ const importJobs = [
     hashedApiKey: '1234',
     baseURL: 'https://example-1.com/cars',
     startedAt: '2023-12-06T08:17:41.467Z',
-    status: ImportJobStatus.RUNNING,
+    status: ImportJob.ImportJobStatus.RUNNING,
     initiatedBy: {
       apiKeyName: 'K-123',
     },
     options: {
-      [ImportOptions.ENABLE_JAVASCRIPT]: true,
+      [ImportJob.ImportOptions.ENABLE_JAVASCRIPT]: true,
     },
     hasCustomImportJs: true,
     hasCustomHeaders: false,
@@ -35,12 +35,12 @@ const importJobs = [
     hashedApiKey: '4321',
     baseURL: 'https://example-2.com/cars',
     startedAt: '2023-11-15T01:22:05.000Z',
-    status: ImportJobStatus.FAILED,
+    status: ImportJob.ImportJobStatus.FAILED,
     initiatedBy: {
       apiKeyName: 'K-321',
     },
     options: {
-      [ImportOptions.ENABLE_JAVASCRIPT]: false,
+      [ImportJob.ImportOptions.ENABLE_JAVASCRIPT]: false,
     },
     hasCustomImportJs: false,
     hasCustomHeaders: true,
@@ -52,12 +52,12 @@ const importJobs = [
     baseURL: 'https://example-3.com/',
     startedAt: '2023-11-15T03:46:40.000Z',
     endedAt: '2023-11-15T03:49:13.000Z',
-    status: ImportJobStatus.COMPLETE,
+    status: ImportJob.ImportJobStatus.COMPLETE,
     initiatedBy: {
       apiKeyName: 'K-322',
     },
     options: {
-      [ImportOptions.ENABLE_JAVASCRIPT]: false,
+      [ImportJob.ImportOptions.ENABLE_JAVASCRIPT]: false,
     },
     hasCustomImportJs: false,
     hasCustomHeaders: true,

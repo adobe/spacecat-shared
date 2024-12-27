@@ -327,6 +327,23 @@ class BaseCollection {
   }
 
   /**
+   * Checks if an entity exists by its ID.
+   * @param {string} id - The UUID of the entity to check.
+   * @return {Promise<boolean>} - A promise that resolves to true if the entity exists,
+   * otherwise false.
+   * @throws {ValidationError} - Throws an error if the ID is not provided.
+   */
+  async existsById(id) {
+    guardId(this.idName, id, this.entityName);
+
+    const record = await this.entity.get({ [this.idName]: id }).go({
+      attributes: [this.idName],
+    });
+
+    return isNonEmptyObject(record?.data);
+  }
+
+  /**
    * Finds a single entity by index keys.
    * @param {Object} keys - The index keys to use for the query.
    * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.

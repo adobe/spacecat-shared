@@ -17,7 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
-import Audit, { validateAuditResult } from '../../../../../src/v2/models/audit/audit.model.js';
+import Audit from '../../../../../src/v2/models/audit/audit.model.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -113,24 +113,24 @@ describe('AuditModel', () => {
 
   describe('validateAuditResult', () => {
     it('throws an error if auditResult is not an object or array', () => {
-      expect(() => validateAuditResult(null, 'someAuditType'))
+      expect(() => Audit.validateAuditResult(null, 'someAuditType'))
         .to.throw('Audit result must be an object or array');
     });
 
     it('throws an error if auditResult is an object and does not contain scores', () => {
-      expect(() => validateAuditResult({ foo: 'bar' }, 'lhs-mobile'))
+      expect(() => Audit.validateAuditResult({ foo: 'bar' }, 'lhs-mobile'))
         .to.throw("Missing scores property for audit type 'lhs-mobile'");
     });
 
     it('throws an error if auditResult is an object and does not contain expected properties', () => {
       mockRecord.auditResult = { scores: { foo: 'bar' } };
-      expect(() => validateAuditResult(mockRecord.auditResult, 'lhs-desktop'))
+      expect(() => Audit.validateAuditResult(mockRecord.auditResult, 'lhs-desktop'))
         .to.throw("Missing expected property 'performance' for audit type 'lhs-desktop'");
     });
 
     it('returns true if the auditResult represents a runtime error', () => {
       mockRecord.auditResult = { runtimeError: { code: 'someErrorCode' } };
-      expect(validateAuditResult(mockRecord.auditResult, 'someAuditType')).to.be.true;
+      expect(Audit.validateAuditResult(mockRecord.auditResult, 'someAuditType')).to.be.true;
     });
 
     it('returns true if auditResult is an object and contains expected properties', () => {
@@ -139,7 +139,7 @@ describe('AuditModel', () => {
           performance: 1, seo: 1, accessibility: 1, 'best-practices': 1,
         },
       };
-      expect(validateAuditResult(mockRecord.auditResult, 'lhs-mobile')).to.be.true;
+      expect(Audit.validateAuditResult(mockRecord.auditResult, 'lhs-mobile')).to.be.true;
     });
   });
 });

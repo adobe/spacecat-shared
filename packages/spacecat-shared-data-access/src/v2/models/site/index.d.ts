@@ -43,7 +43,6 @@ export interface Site extends BaseModel {
   getKeyEvents(): Promise<KeyEvent[]>
   getKeyEventsByTimestamp(timestamp: string): Promise<KeyEvent[]>
   getLatestAudit(): Promise<LatestAudit>;
-  getLatestAuditByAuditType(auditType: string): Promise<LatestAudit>;
   getLatestAudits(): Promise<LatestAudit>;
   getLatestAuditByAuditType(auditType: string): Promise<LatestAudit>;
   getOpportunities(): Promise<Opportunity[]>;
@@ -74,6 +73,7 @@ export interface SiteCollection extends BaseCollection<Organization> {
   allByDeliveryType(deliveryType: string): Promise<Site[]>;
   allByOrganizationId(organizationId: string): Promise<Site[]>;
   allSitesToAudit(): Promise<string[]>;
+  allWithLatestAudit(auditType: string, order?: string, deliveryType?: string): Promise<Site[]>;
   findByBaseURL(baseURL: string): Promise<Site | null>;
   findByDeliveryType(deliveryType: string): Promise<Site | null>;
   findByOrganizationId(organizationId: string): Promise<Site | null>;

@@ -13,20 +13,20 @@
 import { Config } from '../../../models/site/config.js';
 import BaseModel from '../base/base.model.js';
 
-export const DELIVERY_TYPES = {
-  AEM_CS: 'aem_cs',
-  AEM_EDGE: 'aem_edge',
-  OTHER: 'other',
-};
-
-export const DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
-
 /**
  * A class representing a Site entity. Provides methods to access and manipulate Site-specific data.
  * @class Site
  * @extends BaseModel
  */
 class Site extends BaseModel {
+  static DELIVERY_TYPES = {
+    AEM_CS: 'aem_cs',
+    AEM_EDGE: 'aem_edge',
+    OTHER: 'other',
+  };
+
+  static DEFAULT_DELIVERY_TYPE = Site.DELIVERY_TYPES.AEM_EDGE;
+
   getConfig() {
     return Config(this.record.config);
   }

@@ -12,19 +12,6 @@
 
 import BaseModel from '../base/base.model.js';
 
-export const ORIGINS = {
-  ESS_OPS: 'ESS_OPS',
-  AI: 'AI',
-  AUTOMATION: 'AUTOMATION',
-};
-
-export const STATUSES = {
-  NEW: 'NEW',
-  IN_PROGRESS: 'IN_PROGRESS',
-  IGNORED: 'IGNORED',
-  RESOLVED: 'RESOLVED',
-};
-
 /**
  * Opportunity - A class representing an Opportunity entity.
  * Provides methods to access and manipulate Opportunity-specific data,
@@ -35,6 +22,19 @@ export const STATUSES = {
  */
 
 class Opportunity extends BaseModel {
+  static ORIGINS = {
+    ESS_OPS: 'ESS_OPS',
+    AI: 'AI',
+    AUTOMATION: 'AUTOMATION',
+  };
+
+  static STATUSES = {
+    NEW: 'NEW',
+    IN_PROGRESS: 'IN_PROGRESS',
+    IGNORED: 'IGNORED',
+    RESOLVED: 'RESOLVED',
+  };
+
   /**
    * Adds the given suggestions to this Opportunity. Sets this opportunity as the parent
    * of each suggestion, as such the opportunity ID does not need to be provided.

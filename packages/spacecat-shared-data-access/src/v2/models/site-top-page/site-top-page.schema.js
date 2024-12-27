@@ -17,7 +17,7 @@ import { isInteger, isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { validate as uuidValidate } from 'uuid';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import SiteTopPage, { DEFAULT_GEO } from './site-top-page.model.js';
+import SiteTopPage from './site-top-page.model.js';
 import SiteTopPageCollection from './site-top-page.collection.js';
 
 /*
@@ -53,7 +53,7 @@ const schema = new SchemaBuilder(SiteTopPage, SiteTopPageCollection)
   .addAttribute('geo', {
     type: 'string',
     required: false,
-    default: DEFAULT_GEO,
+    default: SiteTopPage.DEFAULT_GEO,
   })
   .addAttribute('importedAt', {
     type: 'string',

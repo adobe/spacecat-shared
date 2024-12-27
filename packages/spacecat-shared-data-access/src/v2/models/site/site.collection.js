@@ -15,7 +15,7 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 import DataAccessError from '../../errors/data-access.error.js';
 import BaseCollection from '../base/base.collection.js';
 
-import { DELIVERY_TYPES } from './site.model.js';
+import Site from './site.model.js';
 
 /**
  * SiteCollection - A collection class responsible for managing Site entities.
@@ -36,7 +36,7 @@ class SiteCollection extends BaseCollection {
 
     const latestAuditCollection = this.entityRegistry.getCollection('LatestAuditCollection');
 
-    const sitesQuery = Object.values(DELIVERY_TYPES)
+    const sitesQuery = Object.values(Site.DELIVERY_TYPES)
       .includes(deliveryType)
       ? this.allByDeliveryType(deliveryType)
       : this.all();

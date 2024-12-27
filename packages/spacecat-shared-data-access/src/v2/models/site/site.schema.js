@@ -22,10 +22,7 @@ import {
 import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 
-import Site, {
-  DEFAULT_DELIVERY_TYPE,
-  DELIVERY_TYPES,
-} from './site.model.js';
+import Site from './site.model.js';
 import SiteCollection from './site.collection.js';
 
 /*
@@ -59,8 +56,8 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     get: (value) => Config(value),
   })
   .addAttribute('deliveryType', {
-    type: Object.values(DELIVERY_TYPES),
-    default: DEFAULT_DELIVERY_TYPE,
+    type: Object.values(Site.DELIVERY_TYPES),
+    default: Site.DEFAULT_DELIVERY_TYPE,
     required: true,
   })
   .addAttribute('gitHubURL', {

@@ -11,7 +11,7 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import { STATUSES } from './suggestion.model.js';
+import Suggestion from './suggestion.model.js';
 
 /**
  * SuggestionCollection - A collection class responsible for managing Suggestion entities.
@@ -38,8 +38,8 @@ class SuggestionCollection extends BaseCollection {
       throw new Error('Suggestions must be an array');
     }
 
-    if (!Object.values(STATUSES).includes(status)) {
-      throw new Error(`Invalid status: ${status}. Must be one of: ${Object.values(STATUSES).join(', ')}`);
+    if (!Object.values(Suggestion.STATUSES).includes(status)) {
+      throw new Error(`Invalid status: ${status}. Must be one of: ${Object.values(Suggestion.STATUSES).join(', ')}`);
     }
 
     suggestions.forEach((suggestion) => {

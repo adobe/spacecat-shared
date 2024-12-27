@@ -17,7 +17,7 @@ import {
 } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import Experiment, { DEFAULT_UPDATED_BY } from './experiment.model.js';
+import Experiment from './experiment.model.js';
 import ExperimentCollection from './experiment.collection.js';
 
 /*
@@ -65,7 +65,7 @@ const schema = new SchemaBuilder(Experiment, ExperimentCollection)
   .addAttribute('updatedBy', {
     type: 'string',
     required: true,
-    default: DEFAULT_UPDATED_BY,
+    default: Experiment.DEFAULT_UPDATED_BY,
   })
   .addAttribute('variants', {
     type: 'list',

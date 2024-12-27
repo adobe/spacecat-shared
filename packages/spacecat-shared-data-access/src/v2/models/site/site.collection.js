@@ -54,7 +54,7 @@ class SiteCollection extends BaseCollection {
       const site = sitesMap.get(audit.getSiteId());
       if (site) {
         // eslint-disable-next-line no-underscore-dangle
-        site._accessorCache.getLatestAuditByAuditType = audit;
+        site._accessorCache['getLatestAuditByAuditType:_'] = audit;
         orderedSites.push(site);
         sitesMap.delete(site.getId()); // Remove the site from the map to avoid adding it again
       }
@@ -63,7 +63,7 @@ class SiteCollection extends BaseCollection {
     // Then, append the remaining sites (without a latest audit)
     sitesMap.forEach((site) => {
       // eslint-disable-next-line no-underscore-dangle,no-param-reassign
-      site._accessorCache.getLatestAuditByAuditType = null;
+      site._accessorCache['getLatestAuditByAuditType:_'] = null;
       orderedSites.push(site);
     });
 

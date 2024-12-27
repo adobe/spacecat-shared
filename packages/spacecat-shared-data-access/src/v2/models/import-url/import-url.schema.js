@@ -14,10 +14,10 @@
 
 import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
 
-import { ImportUrlStatus } from '../import-job/import-job.model.js';
 import SchemaBuilder from '../base/schema.builder.js';
-import ImportUrl, { IMPORT_URL_EXPIRES_IN_DAYS } from './import-url.model.js';
+import ImportUrl from './import-url.model.js';
 import ImportUrlCollection from './import-url.collection.js';
+import { ImportJob } from '../import-job/index.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -33,7 +33,7 @@ const schema = new SchemaBuilder(ImportUrl, ImportUrlCollection)
     validate: (value) => isIsoDate(value),
     default: () => {
       const date = new Date();
-      date.setDate(date.getDate() + IMPORT_URL_EXPIRES_IN_DAYS);
+      date.setDate(date.getDate() + ImportUrl.IMPORT_URL_EXPIRES_IN_DAYS);
       return date.toISOString();
     },
   })
@@ -47,7 +47,7 @@ const schema = new SchemaBuilder(ImportUrl, ImportUrlCollection)
     type: 'string',
   })
   .addAttribute('status', {
-    type: Object.values(ImportUrlStatus),
+    type: Object.values(ImportJob.ImportUrlStatus),
     required: true,
   })
   .addAttribute('url', {

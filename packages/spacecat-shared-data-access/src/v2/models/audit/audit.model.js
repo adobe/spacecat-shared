@@ -15,62 +15,6 @@ import { isObject } from '@adobe/spacecat-shared-utils';
 import { ValidationError } from '../../errors/index.js';
 import BaseModel from '../base/base.model.js';
 
-const AUDIT_TYPES = {
-  404: '404',
-  BROKEN_BACKLINKS: 'broken-backlinks',
-  EXPERIMENTATION: 'experimentation',
-  ORGANIC_KEYWORDS: 'organic-keywords',
-  ORGANIC_TRAFFIC: 'organic-traffic',
-  CWV: 'cwv',
-  LHS_DESKTOP: 'lhs-desktop',
-  LHS_MOBILE: 'lhs-mobile',
-  EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
-  EXPERIMENTATION_ESS_DAILY: 'experimentation-ess-daily',
-};
-
-const AUDIT_TYPE_PROPERTIES = {
-  [AUDIT_TYPES.LHS_DESKTOP]: ['performance', 'seo', 'accessibility', 'best-practices'],
-  [AUDIT_TYPES.LHS_MOBILE]: ['performance', 'seo', 'accessibility', 'best-practices'],
-};
-
-export const AUDIT_CONFIG = {
-  TYPES: AUDIT_TYPES,
-  PROPERTIES: AUDIT_TYPE_PROPERTIES,
-};
-
-/**
- * Validates if the auditResult contains the required properties for the given audit type.
- * @param {object} auditResult - The audit result to validate.
- * @param {string} auditType - The type of the audit.
- * @returns {boolean} - True if valid, false otherwise.
- */
-export const validateAuditResult = (auditResult, auditType) => {
-  if (!isObject(auditResult) && !Array.isArray(auditResult)) {
-    throw new ValidationError('Audit result must be an object or array');
-  }
-
-  if (isObject(auditResult.runtimeError)) {
-    return true;
-  }
-
-  if ((auditType === AUDIT_CONFIG.TYPES.LHS_MOBILE || auditType === AUDIT_CONFIG.TYPES.LHS_DESKTOP)
-    && !isObject(auditResult.scores)) {
-    throw new ValidationError(`Missing scores property for audit type '${auditType}'`);
-  }
-
-  const expectedProperties = AUDIT_CONFIG.PROPERTIES[auditType];
-
-  if (expectedProperties) {
-    for (const prop of expectedProperties) {
-      if (!(prop in auditResult.scores)) {
-        throw new ValidationError(`Missing expected property '${prop}' for audit type '${auditType}'`);
-      }
-    }
-  }
-
-  return true;
-};
-
 /**
  * Audit - A class representing an Audit entity.
  * Provides methods to access and manipulate Audit-specific data.
@@ -79,7 +23,64 @@ export const validateAuditResult = (auditResult, auditType) => {
  * @extends BaseModel
  */
 class Audit extends BaseModel {
-  // add your custom methods or overrides here
+  static AUDIT_TYPES = {
+    404: '404',
+    BROKEN_BACKLINKS: 'broken-backlinks',
+    EXPERIMENTATION: 'experimentation',
+    ORGANIC_KEYWORDS: 'organic-keywords',
+    ORGANIC_TRAFFIC: 'organic-traffic',
+    CWV: 'cwv',
+    LHS_DESKTOP: 'lhs-desktop',
+    LHS_MOBILE: 'lhs-mobile',
+    EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
+    EXPERIMENTATION_ESS_DAILY: 'experimentation-ess-daily',
+  };
+
+  static AUDIT_TYPE_PROPERTIES = {
+    [Audit.AUDIT_TYPES.LHS_DESKTOP]: ['performance', 'seo', 'accessibility', 'best-practices'],
+    [Audit.AUDIT_TYPES.LHS_MOBILE]: ['performance', 'seo', 'accessibility', 'best-practices'],
+  };
+
+  static AUDIT_CONFIG = {
+    TYPES: Audit.AUDIT_TYPES,
+    PROPERTIES: Audit.AUDIT_TYPE_PROPERTIES,
+  };
+
+  /**
+   * Validates if the auditResult contains the required properties for the given audit type.
+   * @param {object} auditResult - The audit result to validate.
+   * @param {string} auditType - The type of the audit.
+   * @returns {boolean} - True if valid, false otherwise.
+   */
+  static validateAuditResult = (auditResult, auditType) => {
+    if (!isObject(auditResult) && !Array.isArray(auditResult)) {
+      throw new ValidationError('Audit result must be an object or array');
+    }
+
+    if (isObject(auditResult.runtimeError)) {
+      return true;
+    }
+
+    if ((
+      auditType === Audit.AUDIT_CONFIG.TYPES.LHS_MOBILE
+        || auditType === Audit.AUDIT_CONFIG.TYPES.LHS_DESKTOP
+    )
+      && !isObject(auditResult.scores)) {
+      throw new ValidationError(`Missing scores property for audit type '${auditType}'`);
+    }
+
+    const expectedProperties = Audit.AUDIT_CONFIG.PROPERTIES[auditType];
+
+    if (expectedProperties) {
+      for (const prop of expectedProperties) {
+        if (!(prop in auditResult.scores)) {
+          throw new ValidationError(`Missing expected property '${prop}' for audit type '${auditType}'`);
+        }
+      }
+    }
+
+    return true;
+  };
 
   getScores() {
     return this.getAuditResult()?.scores;

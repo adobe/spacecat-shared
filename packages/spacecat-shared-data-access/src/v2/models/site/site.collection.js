@@ -48,13 +48,15 @@ class SiteCollection extends BaseCollection {
 
     const sitesMap = new Map(sites.map((site) => [site.getId(), site]));
     const orderedSites = [];
+    const cacheKey = `getLatestAuditByAuditType:["${auditType}"]`;
+    // getLatestAuditByAuditType:["cwv"]
 
     // First, append sites with a latest audit in the sorted order
     latestAudits.forEach((audit) => {
       const site = sitesMap.get(audit.getSiteId());
       if (site) {
         // eslint-disable-next-line no-underscore-dangle
-        site._accessorCache['getLatestAuditByAuditType:_'] = audit;
+        site._accessorCache[cacheKey] = audit;
         orderedSites.push(site);
         sitesMap.delete(site.getId()); // Remove the site from the map to avoid adding it again
       }
@@ -63,7 +65,7 @@ class SiteCollection extends BaseCollection {
     // Then, append the remaining sites (without a latest audit)
     sitesMap.forEach((site) => {
       // eslint-disable-next-line no-underscore-dangle,no-param-reassign
-      site._accessorCache['getLatestAuditByAuditType:_'] = null;
+      site._accessorCache[cacheKey] = null;
       orderedSites.push(site);
     });
 

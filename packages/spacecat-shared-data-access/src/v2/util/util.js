@@ -80,8 +80,6 @@ const sanitizeIdAndAuditFields = (entityName, data) => {
 
 const incrementVersion = (version) => (isInteger(version) ? parseInt(version, 10) + 1 : 1);
 
-const isNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
-
 const zeroPad = (num, length) => {
   const str = String(num);
   return str.length >= length
@@ -99,7 +97,6 @@ export {
   entityNameToIdName,
   idNameToEntityName,
   incrementVersion,
-  isNonEmptyArray,
   isPositiveInteger,
   keyNamesToIndexName,
   keyNamesToMethodName,

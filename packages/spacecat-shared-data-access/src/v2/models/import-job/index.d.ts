@@ -16,7 +16,7 @@ import type { ImportUrl } from '../import-url';
 export interface ImportJob extends BaseModel {
   getBaseURL(): string,
   getDuration(): number,
-  getEndedAt(): number,
+  getEndedAt(): string,
   getFailedCount(): number,
   getHasCustomHeaders(): boolean,
   getHasCustomImportJs(): boolean,
@@ -33,7 +33,7 @@ export interface ImportJob extends BaseModel {
   getUrlCount(): number,
   setBaseURL(baseURL: string): void,
   setDuration(duration: number): void,
-  setEndedAt(endTime: number): void,
+  setEndedAt(endTime: string): void,
   setFailedCount(failedCount: number): void,
   setHasCustomHeaders(hasCustomHeaders: boolean): void,
   setHasCustomImportJs(hasCustomImportJs: boolean): void,

@@ -22,7 +22,7 @@ export interface SiteTopPage extends BaseModel {
   getTraffic(): number;
   getUrl(): string;
   setGeo(geo: string): SiteTopPage;
-  setImportedAt(importedAt: number): SiteTopPage;
+  setImportedAt(importedAt: string): SiteTopPage;
   setSiteId(siteId: string): SiteTopPage;
   setSource(source: string): SiteTopPage;
   setTopKeyword(topKeyword: string): SiteTopPage;

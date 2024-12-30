@@ -24,6 +24,10 @@ function isArray(value) {
   return Array.isArray(value);
 }
 
+function isNonEmptyArray(value) {
+  return isArray(value) && value.length > 0;
+}
+
 /**
  * Determines case-insensitively if the given value is a boolean or a string
  * representation of a boolean.
@@ -233,19 +237,20 @@ function dateAfterDays(days, dateString) {
 
 export {
   arrayEquals,
+  dateAfterDays,
+  deepEqual,
   hasText,
   isArray,
   isBoolean,
   isInteger,
-  isValidDate,
   isIsoDate,
   isIsoTimeOffsetsDate,
+  isNonEmptyArray,
+  isNonEmptyObject,
   isNumber,
   isObject,
-  isNonEmptyObject,
   isString,
-  toBoolean,
+  isValidDate,
   isValidUrl,
-  dateAfterDays,
-  deepEqual,
+  toBoolean,
 };

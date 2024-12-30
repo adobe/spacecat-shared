@@ -12,21 +12,22 @@
 
 export {
   arrayEquals,
+  dateAfterDays,
+  deepEqual,
   hasText,
   isArray,
   isBoolean,
   isInteger,
-  isValidDate,
   isIsoDate,
   isIsoTimeOffsetsDate,
+  isNonEmptyArray,
+  isNonEmptyObject,
   isNumber,
   isObject,
-  isNonEmptyObject,
   isString,
-  toBoolean,
+  isValidDate,
   isValidUrl,
-  dateAfterDays,
-  deepEqual,
+  toBoolean,
 } from './functions.js';
 
 export {

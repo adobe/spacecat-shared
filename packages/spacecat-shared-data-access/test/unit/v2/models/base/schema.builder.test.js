@@ -134,6 +134,12 @@ describe('SchemaBuilder', () => {
     });
   });
 
+  describe('withRecordExpiry', () => {
+    it('throws an error if ttl is not a positive integer', () => {
+      expect(() => instance.withRecordExpiry(-1)).to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] TTL must be a positive integer.');
+    });
+  });
+
   describe('allowRemove', () => {
     it('throws error if allowRemove is not a boolean', () => {
       expect(() => instance.allowRemove('test'))

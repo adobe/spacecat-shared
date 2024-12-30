@@ -21,6 +21,7 @@ export interface BaseModel {
   _remove(): Promise<this>;
   getCreatedAt(): string;
   getId(): string;
+  getRecordExpiresAt(): string;
   getUpdatedAt(): string;
   remove(): Promise<this>;
   save(): Promise<this>;

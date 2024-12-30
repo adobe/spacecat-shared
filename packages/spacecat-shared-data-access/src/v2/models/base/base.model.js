@@ -205,6 +205,14 @@ class BaseModel {
   }
 
   /**
+   * Gets the expiration timestamp of the current entity.
+   * @returns {string} - The ISO string representing when the entity will expire.
+   */
+  getRecordExpiresAt() {
+    return this.record.recordExpiresAt;
+  }
+
+  /**
    * Removes the current entity from the database. This method also removes any dependent
    * entities associated with the current entity. For example, if the current entity has
    * a has_many relationship with another entity, the dependent entity will be removed.

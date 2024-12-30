@@ -13,7 +13,6 @@
 import type { BaseCollection, BaseModel, ImportJob } from '../index';
 
 export interface ImportUrl extends BaseModel {
-  getExpiresAt(): string,
   getFile(): string,
   getImportJob(): Promise<ImportJob>,
   getImportJobId(): string,
@@ -21,7 +20,6 @@ export interface ImportUrl extends BaseModel {
   getReason(): string,
   getStatus(): string,
   getUrl(): string,
-  setExpiresAt(expiresAt: string): void,
   setFile(file: string): void,
   setImportJobId(importJobId: string): void,
   setPath(path: string): void,

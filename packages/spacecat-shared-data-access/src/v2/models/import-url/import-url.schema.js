@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import ImportUrl from './import-url.model.js';
@@ -26,17 +26,8 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
 const schema = new SchemaBuilder(ImportUrl, ImportUrlCollection)
+  .withRecordExpiry(ImportUrl.IMPORT_URL_EXPIRES_IN_DAYS)
   .addReference('belongs_to', 'ImportJob', ['status'])
-  .addAttribute('expiresAt', {
-    type: 'string',
-    required: true,
-    validate: (value) => isIsoDate(value),
-    default: () => {
-      const date = new Date();
-      date.setDate(date.getDate() + ImportUrl.IMPORT_URL_EXPIRES_IN_DAYS);
-      return date.toISOString();
-    },
-  })
   .addAttribute('file', {
     type: 'string',
   })

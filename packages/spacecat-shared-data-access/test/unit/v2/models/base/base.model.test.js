@@ -42,6 +42,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
     opportunityId: '12345',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    recordExpiresAt: new Date().toISOString(),
   };
 
   beforeEach(() => {
@@ -139,6 +140,13 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
     it('returns the ID of the entity', () => {
       const id = baseModelInstance.getId();
       expect(id).to.equal('12345');
+    });
+  });
+
+  describe('recordExpiresAt', () => {
+    it('gets recordExpiresAt', () => {
+      const recordExpiresAt = baseModelInstance.getRecordExpiresAt();
+      expect(recordExpiresAt).to.equal(mockRecord.recordExpiresAt);
     });
   });
 

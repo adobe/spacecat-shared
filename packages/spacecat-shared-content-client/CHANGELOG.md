@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.3.0...@adobe/spacecat-shared-content-client-v1.3.1) (2024-12-30)
+
+
+### Bug Fixes
+
+* isNonEmptyArray from utils ([#512](https://github.com/adobe/spacecat-shared/issues/512)) ([21b87ed](https://github.com/adobe/spacecat-shared/commit/21b87edc507f20285355becd5d51a9b7010e9651))
+
 # [@adobe/spacecat-shared-content-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.2.17...@adobe/spacecat-shared-content-client-v1.3.0) (2024-12-23)
 
 

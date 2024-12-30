@@ -11,7 +11,7 @@
  */
 
 import {
-  hasText, isBoolean, isInteger, isNonEmptyObject,
+  hasText, isBoolean, isInteger, isNonEmptyArray, isNonEmptyObject,
 } from '@adobe/spacecat-shared-utils';
 
 import { v4 as uuid, validate as uuidValidate } from 'uuid';
@@ -21,7 +21,6 @@ import {
   decapitalize,
   entityNameToAllPKValue,
   entityNameToIdName,
-  isNonEmptyArray,
   isPositiveInteger,
 } from '../../util/util.js';
 

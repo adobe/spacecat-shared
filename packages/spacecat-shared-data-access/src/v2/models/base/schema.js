@@ -10,14 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyArray, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import { SchemaError, SchemaValidationError } from '../../errors/index.js';
 import {
   classExtends,
   entityNameToCollectionName,
   entityNameToIdName,
-  isNonEmptyArray,
   isPositiveInteger,
   keyNamesToMethodName,
   modelNameToEntityName,

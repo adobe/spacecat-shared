@@ -12,6 +12,7 @@
 
 import {
   hasText,
+  isNonEmptyArray,
   isNonEmptyObject,
   isObject,
 } from '@adobe/spacecat-shared-utils';
@@ -24,7 +25,6 @@ import { createAccessors } from '../../util/accessor.utils.js';
 import { guardId } from '../../util/guards.js';
 import {
   entityNameToAllPKValue,
-  isNonEmptyArray,
   removeElectroProperties,
 } from '../../util/util.js';
 

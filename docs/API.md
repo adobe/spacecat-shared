@@ -95,6 +95,9 @@ following UTC time offsets format.</p>
 <dt><a href="#resolveCustomerSecretsName">resolveCustomerSecretsName(baseURL, ctx)</a> ⇒ <code>string</code></dt>
 <dd><p>Resolves the name of the customer secrets based on the baseURL.</p>
 </dd>
+<dt><a href="#getRUMDomainKey">getRUMDomainKey(baseURL, context)</a> ⇒ <code>Promise.&lt;string&gt;</code></dt>
+<dd><p>Retrieves the RUM domain key for the specified base URL from the customer secrets.</p>
+</dd>
 <dt><a href="#generateCSVFile">generateCSVFile(data)</a> ⇒ <code>Buffer</code></dt>
 <dd><p>Generates a CSV file from the provided JSON data.</p>
 <p>Each key-value pair in the JSON objects
@@ -112,6 +115,9 @@ logging will remain unchanged.</p>
 </dd>
 <dt><a href="#s3Wrapper">s3Wrapper(fn)</a> ⇒ <code>function</code></dt>
 <dd><p>Adds an S3Client instance and bucket to the context.</p>
+</dd>
+<dt><a href="#SQS.">SQS.(queueUrl)</a> ⇒ <code>boolean</code></dt>
+<dd><p>Check if the queue is a FIFO queue by examining its URL.</p>
 </dd>
 <dt><a href="#sqsEventAdapter">sqsEventAdapter(fn)</a> ⇒ <code>function</code></dt>
 <dd><p>Wrapper to turn an SQS record into a function param
@@ -520,6 +526,23 @@ Resolves the name of the customer secrets based on the baseURL.
 | baseURL | <code>string</code> | The base URL to resolve the customer secrets name from. |
 | ctx | <code>Object</code> | The context object containing the function version. |
 
+<a name="getRUMDomainKey"></a>
+
+## getRUMDomainKey(baseURL, context) ⇒ <code>Promise.&lt;string&gt;</code>
+Retrieves the RUM domain key for the specified base URL from the customer secrets.
+
+**Kind**: global function  
+**Returns**: <code>Promise.&lt;string&gt;</code> - - A promise that resolves to the RUM domain key.  
+**Throws**:
+
+- <code>Error</code> Throws an error if no domain key is found for the specified base URL.
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| baseURL | <code>string</code> | The base URL for which the RUM domain key is to be retrieved. |
+| context | <code>UniversalContext</code> | Helix Universal Context. See https://github.com/adobe/helix-universal/blob/main/src/adapter.d.ts#L120 |
+
 <a name="generateCSVFile"></a>
 
 ## generateCSVFile(data) ⇒ <code>Buffer</code>
@@ -569,6 +592,18 @@ Adds an S3Client instance and bucket to the context.
 | Param | Type |
 | --- | --- |
 | fn | <code>UniversalAction</code> | 
+
+<a name="SQS."></a>
+
+## SQS.(queueUrl) ⇒ <code>boolean</code>
+Check if the queue is a FIFO queue by examining its URL.
+
+**Kind**: global function  
+**Returns**: <code>boolean</code> - true if the queue is a FIFO queue, false otherwise  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| queueUrl | <code>string</code> | the URL of the SQS queue |
 
 <a name="sqsEventAdapter"></a>
 

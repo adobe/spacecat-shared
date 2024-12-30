@@ -36,7 +36,7 @@
   "dependencies": {
     "@adobe/fetch": "4.1.11",
     "@adobe/helix-universal": "5.0.8",
-    "@adobe/spacecat-shared-utils": "1.24.1"
+    "@adobe/spacecat-shared-utils": "1.25.1"
   },
   "devDependencies": {
     "chai": "5.1.2",

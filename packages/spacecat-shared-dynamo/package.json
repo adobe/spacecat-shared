@@ -35,7 +35,7 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.716.0",
     "@aws-sdk/lib-dynamodb": "3.716.0",
-    "@adobe/spacecat-shared-utils": "1.24.1",
+    "@adobe/spacecat-shared-utils": "1.25.1",
     "aws-xray-sdk": "3.10.2"
   },
   "devDependencies": {

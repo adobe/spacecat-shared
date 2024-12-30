@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.17.0...@adobe/spacecat-shared-rum-api-client-v2.17.1) (2024-12-30)
+
+
+### Bug Fixes
+
+* isNonEmptyArray from utils ([#512](https://github.com/adobe/spacecat-shared/issues/512)) ([21b87ed](https://github.com/adobe/spacecat-shared/commit/21b87edc507f20285355becd5d51a9b7010e9651))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.16.2...@adobe/spacecat-shared-rum-api-client-v2.17.0) (2024-12-23)
 
 

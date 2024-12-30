@@ -16,7 +16,7 @@ import type {
 
 export interface LatestAudit extends BaseModel {
   getAudit(): Promise<Audit>
-  getAuditedAt(): number;
+  getAuditedAt(): string;
   getAuditId(): object;
   getAuditResult(): object;
   getAuditType(): string;

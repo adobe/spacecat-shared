@@ -27,7 +27,7 @@ export interface ImportJob extends BaseModel {
   getInitiatedBy(): string,
   getOptions(): string,
   getRedirectCount(): number,
-  getStartedAt(): number,
+  getStartedAt(): string,
   getStatus(): string,
   getSuccessCount(): number,
   getUrlCount(): number,

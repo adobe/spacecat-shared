@@ -24,6 +24,11 @@ function isArray(value) {
   return Array.isArray(value);
 }
 
+/**
+ * Determines whether the given value is a non-empty array (length greater than zero).
+ * @param {*} value - The value to check.
+ * @return {boolean} True if the value is a non-empty array, false otherwise.
+ */
 function isNonEmptyArray(value) {
   return isArray(value) && value.length > 0;
 }

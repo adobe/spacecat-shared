@@ -22,6 +22,7 @@ export interface BaseModel {
   getCreatedAt(): string;
   getId(): string;
   getUpdatedAt(): string;
+  getRecordExpiresAt(): string;
   remove(): Promise<this>;
   save(): Promise<this>;
   toJSON(): object;

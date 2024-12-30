@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.61.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.4...@adobe/spacecat-shared-data-access-v1.61.5) (2024-12-30)
+
+
+### Bug Fixes
+
+* replace expiresAt with recordExporesAt in ImportUrl ([#511](https://github.com/adobe/spacecat-shared/issues/511)) ([7349c9c](https://github.com/adobe/spacecat-shared/commit/7349c9c66659fae4b62edb27e2e03a83a0af2e13))
+
 # [@adobe/spacecat-shared-data-access-v1.61.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.3...@adobe/spacecat-shared-data-access-v1.61.4) (2024-12-30)
 
 

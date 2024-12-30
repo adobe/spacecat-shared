@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.61.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.5...@adobe/spacecat-shared-data-access-v1.61.6) (2024-12-30)
+
+
+### Bug Fixes
+
+* isNonEmptyArray from utils ([#512](https://github.com/adobe/spacecat-shared/issues/512)) ([21b87ed](https://github.com/adobe/spacecat-shared/commit/21b87edc507f20285355becd5d51a9b7010e9651))
+
 # [@adobe/spacecat-shared-data-access-v1.61.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.4...@adobe/spacecat-shared-data-access-v1.61.5) (2024-12-30)
 
 

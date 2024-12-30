@@ -21,7 +21,8 @@ import {
   decapitalize,
   entityNameToAllPKValue,
   entityNameToIdName,
-  isNonEmptyArray, isPositiveInteger,
+  isNonEmptyArray,
+  isPositiveInteger,
 } from '../../util/util.js';
 
 import BaseModel from './base.model.js';

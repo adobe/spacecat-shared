@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.25.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.2...@adobe/spacecat-shared-utils-v1.25.3) (2024-12-31)
+
+
+### Bug Fixes
+
+* job groups & schedules, engine version ([#514](https://github.com/adobe/spacecat-shared/issues/514)) ([995f81e](https://github.com/adobe/spacecat-shared/commit/995f81eedb76d45a09cfd2ae3952f3676033a235))
+
 # [@adobe/spacecat-shared-utils-v1.25.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.1...@adobe/spacecat-shared-utils-v1.25.2) (2024-12-30)
 
 

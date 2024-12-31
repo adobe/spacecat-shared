@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-example-v1.2.20](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.19...@adobe/spacecat-shared-example-v1.2.20) (2024-12-31)
+
+
+### Bug Fixes
+
+* job groups & schedules, engine version ([#514](https://github.com/adobe/spacecat-shared/issues/514)) ([995f81e](https://github.com/adobe/spacecat-shared/commit/995f81eedb76d45a09cfd2ae3952f3676033a235))
+
 # [@adobe/spacecat-shared-example-v1.2.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.18...@adobe/spacecat-shared-example-v1.2.19) (2024-12-08)
 
 

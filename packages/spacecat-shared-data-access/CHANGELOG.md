@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.61.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.6...@adobe/spacecat-shared-data-access-v1.61.7) (2024-12-31)
+
+
+### Bug Fixes
+
+* job groups & schedules, engine version ([#514](https://github.com/adobe/spacecat-shared/issues/514)) ([995f81e](https://github.com/adobe/spacecat-shared/commit/995f81eedb76d45a09cfd2ae3952f3676033a235))
+
 # [@adobe/spacecat-shared-data-access-v1.61.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.5...@adobe/spacecat-shared-data-access-v1.61.6) (2024-12-30)
 
 

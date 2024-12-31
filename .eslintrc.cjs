@@ -38,7 +38,9 @@ module.exports = {
       files: ['*.test.js'],
       rules: {
         '@typescript-eslint/no-unused-expressions': 'off',
-      }
-    }
+        'no-console': 'off',
+        'func-names': 'off',
+      },
+    },
   ],
 };

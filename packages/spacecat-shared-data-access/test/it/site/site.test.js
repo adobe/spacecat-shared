@@ -210,6 +210,13 @@ describe('Site IT', async () => {
     expect(audit.getAuditType()).to.equal('cwv');
   });
 
+  it('returns null for latest audit for a site by type if not found', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audit = await site.getLatestAuditByAuditType('does not exist');
+
+    expect(audit).to.be.null;
+  });
+
   it('gets all latest audits for a site', async () => {
     const site = await Site.findById(sampleData.sites[1].getId());
     const audits = await site.getLatestAudits();
@@ -250,6 +257,10 @@ describe('Site IT', async () => {
       expect(audit).to.be.an('object');
       expect(audit.getSiteId()).to.equal(site.getId());
       expect(audit.getAuditType()).to.equal('cwv');
+
+      const nonExistingAudit = await site.getLatestAuditByAuditType('does not exist');
+
+      expect(nonExistingAudit).to.be.null;
     }
   });
 

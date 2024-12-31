@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.61.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.11...@adobe/spacecat-shared-data-access-v1.61.12) (2024-12-31)
+
+
+### Bug Fixes
+
+* calling all wrong args ([#520](https://github.com/adobe/spacecat-shared/issues/520)) ([b727e50](https://github.com/adobe/spacecat-shared/commit/b727e50e8375c8b6a33bac101d0a2ecaf8fc8b7e))
+
 # [@adobe/spacecat-shared-data-access-v1.61.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.10...@adobe/spacecat-shared-data-access-v1.61.11) (2024-12-31)
 
 

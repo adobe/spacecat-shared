@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.12.0'
-      - run: npm -g install npm@11.9.2
+      - run: npm -g install npm@10.9.2
       - name: Install Dependencies
         run: npm ci
       - name: Linting
@@ -52,7 +52,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.12.0'
-      - run: npm -g install npm@11.9.2
+      - run: npm -g install npm@10.9.2
       - run: npm ci
       - name: Semantic Release
         run: npm run semantic-release

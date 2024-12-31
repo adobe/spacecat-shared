@@ -346,7 +346,7 @@ class Schema {
           requiredKeys: subset,
         });
 
-        log.info(`Created accessors for index [${indexName}] with keys [${subset.join(', ')}]`);
+        log.debug(`Created accessors for index [${indexName}] with keys [${subset.join(', ')}]`);
       });
     });
 

@@ -79,6 +79,7 @@ describe('BaseCollection', () => {
 
     mockLogger = {
       error: spy(),
+      debug: spy(),
       info: spy(),
       warn: spy(),
     };

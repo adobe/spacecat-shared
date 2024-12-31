@@ -153,6 +153,6 @@ export function createAccessor(config) { /* eslint-disable no-underscore-dangle 
 export function createAccessors(configs, log) {
   configs.forEach((config) => {
     createAccessor(config);
-    log.info(`Created accessor ${config.name} for ${config.context.schema.getModelName()} to ${config.collection.schema.getModelName()}`);
+    log.debug(`Created accessor ${config.name} for ${config.context.schema.getModelName()} to ${config.collection.schema.getModelName()}`);
   });
 }

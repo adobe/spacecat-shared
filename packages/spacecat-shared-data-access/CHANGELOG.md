@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.61.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.9...@adobe/spacecat-shared-data-access-v1.61.10) (2024-12-31)
+
+
+### Bug Fixes
+
+* get org config ([#517](https://github.com/adobe/spacecat-shared/issues/517)) ([2878f31](https://github.com/adobe/spacecat-shared/commit/2878f31ad502272c645d634fe0796e43ee001cde))
+
 # [@adobe/spacecat-shared-data-access-v1.61.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.8...@adobe/spacecat-shared-data-access-v1.61.9) (2024-12-31)
 
 

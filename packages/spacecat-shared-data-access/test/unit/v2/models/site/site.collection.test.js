@@ -65,7 +65,7 @@ describe('SiteCollection', () => {
       const result = await instance.allSitesToAudit();
 
       expect(result).to.deep.equal(['s12345']);
-      expect(instance.all).to.have.been.calledOnceWithExactly({ attributes: ['siteId'] });
+      expect(instance.all).to.have.been.calledOnceWithExactly({}, { attributes: ['siteId'] });
     });
   });
 

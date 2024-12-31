@@ -377,6 +377,9 @@ class BaseCollection {
       const instance = this.#createInstance(record.data);
 
       this.#invalidateCache();
+
+      this.log.info(`Created item for [${this.entityName}]`);
+
       await this.#onCreate(instance);
 
       return instance;
@@ -491,6 +494,8 @@ class BaseCollection {
         this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
       }
 
+      this.log.info(`Updated ${items.length} items for [${this.entityName}]`);
+
       return this.#invalidateCache();
     } catch (error) {
       return this.#logAndThrowError('Failed to save many', error);
@@ -513,10 +518,11 @@ class BaseCollection {
     }
 
     try {
-      this.log.info(`Removing ${ids.length} items for [${this.entityName}]`);
       // todo: consider removing dependent records
 
       await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
+
+      this.log.info(`Removed ${ids.length} items for [${this.entityName}]`);
 
       return this.#invalidateCache();
     } catch (error) {

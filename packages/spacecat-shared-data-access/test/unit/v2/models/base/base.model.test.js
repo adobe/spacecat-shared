@@ -322,7 +322,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
         );
 
         expect(result).to.be.an.instanceOf(BaseModel);
-        expect(mockLogger.debug).to.have.been.calledOnceWithExactly('No sort keys defined for Opportunity to Suggestions');
+        expect(mockLogger.debug).to.have.been.calledWithExactly('No sort keys defined for Opportunity to Suggestions');
       });
     });
   });

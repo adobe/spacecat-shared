@@ -26,7 +26,7 @@ import Site from './site.model.js';
  */
 class SiteCollection extends BaseCollection {
   async allSitesToAudit() {
-    return (await this.all({ attributes: ['siteId'] })).map((site) => site.getId());
+    return (await this.all({}, { attributes: ['siteId'] })).map((site) => site.getId());
   }
 
   async allWithLatestAudit(auditType, order = 'asc', deliveryType = null) {
@@ -43,7 +43,7 @@ class SiteCollection extends BaseCollection {
 
     const [sites, latestAudits] = await Promise.all([
       sitesQuery,
-      latestAuditCollection.all([auditType], { order }),
+      latestAuditCollection.all({ auditType }, { order }),
     ]);
 
     const sitesMap = new Map(sites.map((site) => [site.getId(), site]));

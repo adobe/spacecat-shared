@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { Config } from '../../../models/site/config.js';
 import BaseModel from '../base/base.model.js';
 
 /**
@@ -26,10 +25,6 @@ class Site extends BaseModel {
   };
 
   static DEFAULT_DELIVERY_TYPE = Site.DELIVERY_TYPES.AEM_EDGE;
-
-  getConfig() {
-    return Config(this.record.config);
-  }
 
   async toggleLive() {
     const newIsLive = !this.getIsLive();

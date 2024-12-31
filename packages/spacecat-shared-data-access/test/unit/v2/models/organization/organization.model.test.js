@@ -19,7 +19,6 @@ import sinonChai from 'sinon-chai';
 
 import Organization from '../../../../../src/v2/models/organization/organization.model.js';
 import organizationFixtures from '../../../../fixtures/organizations.fixture.js';
-import { Config } from '../../../../../src/models/site/config.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -59,7 +58,7 @@ describe('OrganizationModel', () => {
 
   describe('config', () => {
     it('gets config', () => {
-      const config = Config.toDynamoItem(instance.getConfig());
+      const config = instance.getConfig();
       delete config.imports;
       expect(config).to.deep.equal(sampleOrganization.config);
     });

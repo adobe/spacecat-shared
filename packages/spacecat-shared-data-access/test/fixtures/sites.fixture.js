@@ -20,35 +20,61 @@ const sites = [
     isLive: true,
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
-    config:
-      {
-        slack:
-          {
-            workspace: '0-workspace',
-            channel: '0-channel',
+    config: {
+      handlers: {
+        404: {
+          mentions: {
+            slack: [],
           },
-        handlers:
-          {
-            404:
-              {
-                byOrg: true,
-                mentions:
-                  {
-                    slack:
-                      [
-                        '0-slackId',
-                      ],
-                  },
-              },
-            'lhs-mobile':
-              {
-                excludedURLs:
-                  [
-                    'https://example.com/excluded',
-                  ],
-              },
+        },
+        'broken-backlinks': {
+          excludedURLs: [],
+          manualOverwrites: [],
+          fixedURLs: [],
+          mentions: {
+            slack: [],
           },
+        },
       },
+      slack: {
+        channel: 'some-channel',
+      },
+      imports: [
+        {
+          type: 'rum-to-aa',
+          mapper: {
+            mapping: {
+              pageURL: {
+                rumField: 'url',
+              },
+              userAgent: {
+                default: 'rum/1.0.0',
+              },
+              eVars: {
+                eVar4: {
+                  default: 'RUM',
+                },
+                eVar3: {
+                  rumField: 'url',
+                },
+              },
+              events: {
+                event4: {
+                  rumField: 'pageviews',
+                },
+              },
+              reportSuiteID: {
+                default: 'ageo1xxpnwdemoexpleugue',
+              },
+              visitorID: {
+                default: '000',
+              },
+            },
+            timezone: 'UTC-07:00',
+          },
+        },
+      ],
+    },
   },
   {
     siteId: '78fec9c7-2141-4600-b7b1-ea5c78752b91',

@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v1.61.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.10...@adobe/spacecat-shared-data-access-v1.61.11) (2024-12-31)
+
+
+### Bug Fixes
+
+* org config access ([#518](https://github.com/adobe/spacecat-shared/issues/518)) ([8ef162d](https://github.com/adobe/spacecat-shared/commit/8ef162d85a2086d9029010b4e93b20404d39c38c))
+
+# [@adobe/spacecat-shared-data-access-v1.61.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.9...@adobe/spacecat-shared-data-access-v1.61.10) (2024-12-31)
+
+
+### Bug Fixes
+
+* get org config ([#517](https://github.com/adobe/spacecat-shared/issues/517)) ([2878f31](https://github.com/adobe/spacecat-shared/commit/2878f31ad502272c645d634fe0796e43ee001cde))
+
+# [@adobe/spacecat-shared-data-access-v1.61.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.8...@adobe/spacecat-shared-data-access-v1.61.9) (2024-12-31)
+
+
+### Bug Fixes
+
+* return proper config object ([#516](https://github.com/adobe/spacecat-shared/issues/516)) ([84a393a](https://github.com/adobe/spacecat-shared/commit/84a393ac636f287089f4862365fe9305381c9afd))
+
 # [@adobe/spacecat-shared-data-access-v1.61.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.7...@adobe/spacecat-shared-data-access-v1.61.8) (2024-12-31)
 
 

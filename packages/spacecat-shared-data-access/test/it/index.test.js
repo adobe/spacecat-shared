@@ -11,7 +11,6 @@
  */
 
 /* eslint-env mocha */
-/* eslint-disable no-console */
 
 import { isIsoDate } from '@adobe/spacecat-shared-utils';
 

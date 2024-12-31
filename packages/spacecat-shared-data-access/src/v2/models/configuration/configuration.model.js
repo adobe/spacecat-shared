@@ -23,6 +23,24 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Configuration extends BaseModel {
+  static JOB_GROUPS = {
+    AUDITS: 'audits',
+    IMPORTS: 'imports',
+    REPORTS: 'reports',
+    SCRAPES: 'scrapes',
+  };
+
+  static JOB_INTERVALS = {
+    EVERY_HOUR: 'every-hour',
+    DAILY: 'daily',
+    WEEKLY: 'weekly',
+    EVERY_SATURDAY: 'every-saturday',
+    EVERY_SUNDAY: 'every-sunday',
+    FORTNIGHTLY: 'fortnightly',
+    FORTNIGHTLY_SATURDAY: 'fortnightly-saturday',
+    FORTNIGHTLY_SUNDAY: 'fortnightly-sunday',
+    MONTHLY: 'monthly',
+  };
   // add your custom methods or overrides here
 
   getHandler(type) {

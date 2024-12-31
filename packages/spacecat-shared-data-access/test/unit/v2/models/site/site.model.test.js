@@ -19,7 +19,6 @@ import sinonChai from 'sinon-chai';
 
 import Site from '../../../../../src/v2/models/site/site.model.js';
 import siteFixtures from '../../../../fixtures/sites.fixture.js';
-import { Config } from '../../../../../src/models/site/config.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -81,9 +80,9 @@ describe('SiteModel', () => {
 
   describe('config', () => {
     it('gets config', () => {
-      const config = Config.toDynamoItem(instance.getConfig());
+      const config = instance.getConfig();
       delete config.imports;
-      expect(config).to.deep.equal(sampleSite.config);
+      expect(config).to.deep.equal(siteFixtures[0].config);
     });
   });
 

@@ -17,6 +17,7 @@ import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
+import siteFixtures from '../../fixtures/sites.fixture.js';
 import { sanitizeTimestamps } from '../../../src/v2/util/util.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
@@ -337,6 +338,14 @@ describe('Site IT', async () => {
     expect(updatedSite.getGitHubURL()).to.equal(updates.gitHubURL);
     expect(updatedSite.getIsLive()).to.equal(updates.isLive);
     expect(updatedSite.getOrganizationId()).to.equal(updates.organizationId);
+  });
+
+  it('reads config of a site', async () => {
+    const { config: configFixture } = siteFixtures[0];
+    const site = await Site.findById('5d6d4439-6659-46c2-b646-92d110fa5a52');
+    const config = site.getConfig();
+    expect(config).to.be.an('object');
+    expect(config.state).to.deep.equals(configFixture);
   });
 
   it('removes a site', async () => {

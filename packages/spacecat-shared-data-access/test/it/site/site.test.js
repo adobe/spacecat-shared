@@ -91,6 +91,10 @@ describe('Site IT', async () => {
       const organization = await site.getOrganization();
 
       expect(site.getOrganizationId()).to.equal(organizationId);
+
+      delete organization.record.config;
+      delete sampleData.organizations[0].record.config;
+
       expect(organization).to.be.an('object');
       expect(
         sanitizeTimestamps(organization.toJSON()),

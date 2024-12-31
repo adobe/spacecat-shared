@@ -14,7 +14,7 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import { DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
+import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 import Organization from './organization.model.js';
 import OrganizationCollection from './organization.collection.js';
@@ -33,6 +33,7 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
     required: true,
     default: DEFAULT_CONFIG,
     validate: (value) => isNonEmptyObject(validateConfiguration(value)),
+    get: (value) => Config(value),
   })
   .addAttribute('name', {
     type: 'string',

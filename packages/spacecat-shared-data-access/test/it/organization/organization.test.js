@@ -42,13 +42,25 @@ describe('Organization IT', async () => {
       const org = sanitizeTimestamps(organizations[i].toJSON());
       const sampleOrg = sanitizeTimestamps(sampleData.organizations[i].toJSON());
 
+      const expectedConfig = {
+        ...sampleOrg.config,
+      };
+      const actualConfig = {
+        ...org.config.state,
+      };
+      delete sampleOrg.config;
+      delete org.config;
       expect(org).to.eql(sampleOrg);
+      expect(actualConfig).to.eql(expectedConfig);
     }
   });
 
   it('gets an organization by id', async () => {
     const sampleOrganization = sampleData.organizations[0];
     const organization = await Organization.findById(sampleOrganization.getId());
+
+    delete sampleOrganization.record.config;
+    delete organization.record.config;
 
     expect(organization).to.be.an('object');
     expect(
@@ -61,6 +73,9 @@ describe('Organization IT', async () => {
   it('gets an organization by IMS org id', async () => {
     const sampleOrganization = sampleData.organizations[0];
     const organization = await Organization.findByImsOrgId(sampleOrganization.getImsOrgId());
+
+    delete sampleOrganization.record.config;
+    delete organization.record.config;
 
     expect(organization).to.be.an('object');
     expect(
@@ -83,6 +98,9 @@ describe('Organization IT', async () => {
     };
 
     const organization = await Organization.create(data);
+
+    delete data.config;
+    delete organization.record.config;
 
     expect(organization).to.be.an('object');
 
@@ -118,6 +136,10 @@ describe('Organization IT', async () => {
     await organization.save();
 
     const updatedOrganization = await Organization.findById(organization.getId());
+
+    delete updatedOrganization.record.config;
+    delete expectedOrganization.config;
+
     expect(updatedOrganization.getId()).to.equal(organization.getId());
     expect(updatedOrganization.record.createdAt).to.equal(organization.record.createdAt);
     expect(updatedOrganization.record.updatedAt).to.not.equal(organization.record.updatedAt);

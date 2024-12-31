@@ -11,7 +11,6 @@
  */
 
 /* eslint-env mocha */
-/* eslint-disable no-console */
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';

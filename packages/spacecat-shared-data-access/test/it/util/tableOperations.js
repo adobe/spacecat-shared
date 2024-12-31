@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-console */
-
 import { CreateTableCommand, DeleteTableCommand } from '@aws-sdk/client-dynamodb';
 
 import schema from '../../../docs/schema.json' with { type: 'json' };

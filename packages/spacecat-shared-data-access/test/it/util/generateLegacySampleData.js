@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-console */
-
 import { v4 as uuidv4 } from 'uuid';
 
 import { SITE_CANDIDATE_STATUS } from '../../../src/models/site-candidate.js';

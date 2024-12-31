@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-/* eslint-disable no-console */
-
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { spawn } from 'dynamo-db-local';
 
@@ -29,7 +27,6 @@ async function waitForDynamoDBStartup(url, timeout = 20000, interval = 500) {
         return;
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.log('DynamoDB Local not yet started', error.message);
     }
     // eslint-disable-next-line no-await-in-loop

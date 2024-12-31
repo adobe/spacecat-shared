@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyArray, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import { DataAccessError } from '../../errors/index.js';
 import { createAccessors } from '../../util/accessor.utils.js';
@@ -19,7 +19,6 @@ import {
   capitalize,
   entityNameToIdName,
   idNameToEntityName,
-  isNonEmptyArray,
 } from '../../util/util.js';
 
 import Reference from './reference.js';
@@ -202,6 +201,14 @@ class BaseModel {
    */
   getUpdatedAt() {
     return this.record.updatedAt;
+  }
+
+  /**
+   * Gets the expiration timestamp of the current entity.
+   * @returns {string} - The ISO string representing when the entity will expire.
+   */
+  getRecordExpiresAt() {
+    return this.record.recordExpiresAt;
   }
 
   /**

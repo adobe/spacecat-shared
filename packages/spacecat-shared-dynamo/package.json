@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-dynamo",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Shared modules of the Spacecat Services - DynamoDB client",
   "type": "module",
   "engines": {
@@ -35,7 +35,7 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "3.716.0",
     "@aws-sdk/lib-dynamodb": "3.716.0",
-    "@adobe/spacecat-shared-utils": "1.24.1",
+    "@adobe/spacecat-shared-utils": "1.25.2",
     "aws-xray-sdk": "3.10.2"
   },
   "devDependencies": {

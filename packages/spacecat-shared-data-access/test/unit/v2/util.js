@@ -56,6 +56,9 @@ export const createElectroMocks = (Model, record) => {
       primary: stub(),
       byOpportunityId: stub(),
       byOpportunityIdAndStatus: stub(),
+      'spacecat-data-gsi1pk-gsi1sk': stub().returns({
+        go: () => ({ data: [] }),
+      }),
     },
   };
 

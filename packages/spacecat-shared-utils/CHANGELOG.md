@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.25.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.1...@adobe/spacecat-shared-utils-v1.25.2) (2024-12-30)
+
+
+### Bug Fixes
+
+* isNonEmptyArray from utils ([#512](https://github.com/adobe/spacecat-shared/issues/512)) ([21b87ed](https://github.com/adobe/spacecat-shared/commit/21b87edc507f20285355becd5d51a9b7010e9651))
+
+# [@adobe/spacecat-shared-utils-v1.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.0...@adobe/spacecat-shared-utils-v1.25.1) (2024-12-30)
+
+
+### Bug Fixes
+
+* types & deps ([#510](https://github.com/adobe/spacecat-shared/issues/510)) ([d162c1d](https://github.com/adobe/spacecat-shared/commit/d162c1d75a2052fc07da844923762e9397016b90))
+
 # [@adobe/spacecat-shared-utils-v1.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.24.1...@adobe/spacecat-shared-utils-v1.25.0) (2024-12-23)
 
 

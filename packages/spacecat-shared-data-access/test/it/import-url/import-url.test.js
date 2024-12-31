@@ -23,7 +23,7 @@ use(chaiAsPromised);
 
 function checkImportUrl(importUrl) {
   expect(importUrl).to.be.an('object');
-  expect(importUrl.getExpiresAt()).to.be.a('string');
+  expect(importUrl.getRecordExpiresAt()).to.be.a('number');
   expect(importUrl.getImportJobId()).to.be.a('string');
   expect(importUrl.getStatus()).to.be.a('string');
   expect(importUrl.getUrl()).to.be.a('string');

@@ -12,6 +12,7 @@
 
 import {
   hasText,
+  isNonEmptyArray,
   isNonEmptyObject,
   isObject,
 } from '@adobe/spacecat-shared-utils';
@@ -24,7 +25,6 @@ import { createAccessors } from '../../util/accessor.utils.js';
 import { guardId } from '../../util/guards.js';
 import {
   entityNameToAllPKValue,
-  isNonEmptyArray,
   removeElectroProperties,
 } from '../../util/util.js';
 
@@ -324,6 +324,23 @@ class BaseCollection {
     const record = await this.entity.get({ [this.idName]: id }).go();
 
     return this.#createInstance(record?.data);
+  }
+
+  /**
+   * Checks if an entity exists by its ID.
+   * @param {string} id - The UUID of the entity to check.
+   * @return {Promise<boolean>} - A promise that resolves to true if the entity exists,
+   * otherwise false.
+   * @throws {ValidationError} - Throws an error if the ID is not provided.
+   */
+  async existsById(id) {
+    guardId(this.idName, id, this.entityName);
+
+    const record = await this.entity.get({ [this.idName]: id }).go({
+      attributes: [this.idName],
+    });
+
+    return isNonEmptyObject(record?.data);
   }
 
   /**

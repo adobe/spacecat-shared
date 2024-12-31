@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyArray, isObject } from '@adobe/spacecat-shared-utils';
 
 import ValidationError from '../errors/validation.error.js';
 
@@ -25,7 +25,6 @@ import {
   guardSet,
   guardString,
 } from './index.js';
-import { isNonEmptyArray } from './util.js';
 
 /**
  * Checks if a property is read-only and throws an error if it is.

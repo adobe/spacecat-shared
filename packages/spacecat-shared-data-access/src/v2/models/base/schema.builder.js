@@ -11,7 +11,7 @@
  */
 
 import {
-  hasText, isBoolean, isInteger, isNonEmptyObject,
+  hasText, isBoolean, isInteger, isNonEmptyArray, isNonEmptyObject,
 } from '@adobe/spacecat-shared-utils';
 
 import { v4 as uuid, validate as uuidValidate } from 'uuid';
@@ -21,7 +21,7 @@ import {
   decapitalize,
   entityNameToAllPKValue,
   entityNameToIdName,
-  isNonEmptyArray,
+  isPositiveInteger,
 } from '../../util/util.js';
 
 import BaseModel from './base.model.js';
@@ -182,6 +182,29 @@ class SchemaBuilder {
       throw new SchemaBuilderError(this, 'Sort keys are required and must be a non-empty array.');
     }
     this.rawIndexes.primary.sk.composite = sortKeys;
+
+    return this;
+  }
+
+  /**
+   * Sets an expiry time for records in this entity.
+   * The record will be automatically removed by DynamoDB
+   *
+   * @param {number} ttlInDays - The time-to-live (TTL) in days.
+   * @returns {SchemaBuilder}
+   */
+  withRecordExpiry(ttlInDays) {
+    if (!isPositiveInteger(ttlInDays)) {
+      throw new SchemaBuilderError(this, 'TTL must be a positive integer.');
+    }
+
+    this.addAttribute('recordExpiresAt', {
+      type: 'number',
+      required: true,
+      readOnly: true,
+      default: () => Date.now() + ttlInDays * 24 * 60 * 60 * 1000,
+      set: () => Date.now() + ttlInDays * 24 * 60 * 60 * 1000,
+    });
 
     return this;
   }

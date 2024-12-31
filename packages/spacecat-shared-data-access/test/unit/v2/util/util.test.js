@@ -26,7 +26,6 @@ import {
   entityNameToIdName,
   idNameToEntityName,
   incrementVersion,
-  isNonEmptyArray,
   keyNamesToIndexName,
   modelNameToEntityName,
   referenceToBaseMethodName,
@@ -143,20 +142,6 @@ describe('Utilities', () => {
 
     it('Return 1 if version is undefined', () => {
       expect(incrementVersion(undefined)).to.equal(1);
-    });
-  });
-
-  describe('isNonEmptyArray', () => {
-    it('Return true if value is a non-empty array', () => {
-      expect(isNonEmptyArray([1, 2, 3])).to.be.true;
-    });
-
-    it('Return false if value is an empty array', () => {
-      expect(isNonEmptyArray([])).to.be.false;
-    });
-
-    it('Return false if value is not an array', () => {
-      expect(isNonEmptyArray({})).to.be.false;
     });
   });
 

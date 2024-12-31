@@ -12,8 +12,6 @@
 
 import BaseModel from '../base/base.model.js';
 
-export const DEFAULT_UPDATED_BY = 'spacecat';
-
 /**
  * Experiment - A class representing an Experiment entity.
  * Provides methods to access and manipulate Experiment-specific data.
@@ -22,6 +20,8 @@ export const DEFAULT_UPDATED_BY = 'spacecat';
  * @extends BaseModel
  */
 class Experiment extends BaseModel {
+  static DEFAULT_UPDATED_BY = 'spacecat';
+
   // add your custom methods or overrides here
 }
 

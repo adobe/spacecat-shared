@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-data-access-v1.61.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.5...@adobe/spacecat-shared-data-access-v1.61.6) (2024-12-30)
+
+
+### Bug Fixes
+
+* isNonEmptyArray from utils ([#512](https://github.com/adobe/spacecat-shared/issues/512)) ([21b87ed](https://github.com/adobe/spacecat-shared/commit/21b87edc507f20285355becd5d51a9b7010e9651))
+
+# [@adobe/spacecat-shared-data-access-v1.61.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.4...@adobe/spacecat-shared-data-access-v1.61.5) (2024-12-30)
+
+
+### Bug Fixes
+
+* replace expiresAt with recordExporesAt in ImportUrl ([#511](https://github.com/adobe/spacecat-shared/issues/511)) ([7349c9c](https://github.com/adobe/spacecat-shared/commit/7349c9c66659fae4b62edb27e2e03a83a0af2e13))
+
+# [@adobe/spacecat-shared-data-access-v1.61.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.3...@adobe/spacecat-shared-data-access-v1.61.4) (2024-12-30)
+
+
+### Bug Fixes
+
+* types & deps ([#510](https://github.com/adobe/spacecat-shared/issues/510)) ([d162c1d](https://github.com/adobe/spacecat-shared/commit/d162c1d75a2052fc07da844923762e9397016b90))
+
+# [@adobe/spacecat-shared-data-access-v1.61.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.2...@adobe/spacecat-shared-data-access-v1.61.3) (2024-12-28)
+
+
+### Bug Fixes
+
+* cache key ([#507](https://github.com/adobe/spacecat-shared/issues/507)) ([7146bfd](https://github.com/adobe/spacecat-shared/commit/7146bfd908e1bc13076bd58b3c24ca89b7f4c531))
+
+# [@adobe/spacecat-shared-data-access-v1.61.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.1...@adobe/spacecat-shared-data-access-v1.61.2) (2024-12-27)
+
+
+### Bug Fixes
+
+* various missing ([#506](https://github.com/adobe/spacecat-shared/issues/506)) ([8fc72f0](https://github.com/adobe/spacecat-shared/commit/8fc72f0545eb17fb9ccdf0caa35872734f518883))
+
+# [@adobe/spacecat-shared-data-access-v1.61.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.0...@adobe/spacecat-shared-data-access-v1.61.1) (2024-12-24)
+
+
+### Bug Fixes
+
+* schema and db init ([#505](https://github.com/adobe/spacecat-shared/issues/505)) ([9b67b9a](https://github.com/adobe/spacecat-shared/commit/9b67b9a9f40f643c648cc5043018bfbc1d2a9c12))
+
 # [@adobe/spacecat-shared-data-access-v1.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.60.3...@adobe/spacecat-shared-data-access-v1.61.0) (2024-12-23)
 
 

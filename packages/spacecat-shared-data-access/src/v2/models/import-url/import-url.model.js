@@ -12,8 +12,6 @@
 
 import BaseModel from '../base/base.model.js';
 
-export const IMPORT_URL_EXPIRES_IN_DAYS = 30;
-
 /**
  * ImportUrl - A class representing an ImportUrl entity.
  * Provides methods to access and manipulate ImportUrl-specific data.
@@ -22,6 +20,8 @@ export const IMPORT_URL_EXPIRES_IN_DAYS = 30;
  * @extends BaseModel
  */
 class ImportUrl extends BaseModel {
+  static IMPORT_URL_EXPIRES_IN_DAYS = 30;
+
   // add your custom methods or overrides here
 }
 

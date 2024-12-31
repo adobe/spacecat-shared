@@ -11,12 +11,12 @@
  */
 
 import type {
-  Audit, BaseCollection, BaseModel, Opportunity, Site,
+  Audit, BaseCollection, BaseModel, Opportunity, QueryOptions, Site,
 } from '../index';
 
 export interface LatestAudit extends BaseModel {
   getAudit(): Promise<Audit>
-  getAuditedAt(): number;
+  getAuditedAt(): string;
   getAuditId(): object;
   getAuditResult(): object;
   getAuditType(): string;
@@ -32,7 +32,7 @@ export interface LatestAudit extends BaseModel {
 export interface LatestAuditCollection extends BaseCollection<LatestAudit> {
   allByAuditId(auditId: string): Promise<LatestAudit[]>;
   allByAuditIdAndAuditType(auditId: string, auditType: string): Promise<LatestAudit[]>;
-  allByAuditType(auditType: string): Promise<LatestAudit[]>;
+  allByAuditType(auditType: string, options?: QueryOptions): Promise<LatestAudit[]>;
   allBySiteId(siteId: string): Promise<LatestAudit[]>;
   allBySiteIdAndAuditType(siteId: string, auditType: string): Promise<LatestAudit[]>;
   findByAuditId(auditId: string): Promise<LatestAudit | null>;

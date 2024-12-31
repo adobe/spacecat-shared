@@ -21,6 +21,7 @@ export interface BaseModel {
   _remove(): Promise<this>;
   getCreatedAt(): string;
   getId(): string;
+  getRecordExpiresAt(): string;
   getUpdatedAt(): string;
   remove(): Promise<this>;
   save(): Promise<this>;
@@ -30,7 +31,7 @@ export interface BaseModel {
 export interface QueryOptions {
   index?: string;
   limit?: number;
-  sort?: string;
+  order?: string;
   attributes?: string[];
 }
 
@@ -42,6 +43,7 @@ export interface BaseCollection<T extends BaseModel> {
   allByIndexKeys(keys: object, options?: QueryOptions): Promise<T[]>;
   create(item: object): Promise<T>;
   createMany(items: object[], parent?: T): Promise<MultiStatusCreateResult<T>>;
+  existsById(id: string): Promise<boolean>;
   findByAll(sortKeys?: object, options?: QueryOptions): Promise<T> | null;
   findById(id: string): Promise<T> | null;
   findByIndexKeys(indexKeys: object): Promise<T>;

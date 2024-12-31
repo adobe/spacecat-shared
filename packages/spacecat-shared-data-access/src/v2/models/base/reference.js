@@ -10,13 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyArray, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import ReferenceError from '../../errors/reference.error.js';
 import {
   entityNameToCollectionName,
   entityNameToIdName,
-  isNonEmptyArray,
   keyNamesToMethodName,
   referenceToBaseMethodName,
 } from '../../util/util.js';

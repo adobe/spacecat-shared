@@ -131,6 +131,124 @@ describe('Site IT', async () => {
     expect(site.getId()).to.equal(sampleData.sites[0].getId());
   });
 
+  it('returns true when a site exists by id', async () => {
+    const exists = await Site.existsById(sampleData.sites[0].getId());
+    expect(exists).to.be.true;
+  });
+
+  it('returns false when a site does not exist by id', async () => {
+    const exists = await Site.existsById('adddd03e-bde1-4340-88ef-904070457745');
+    expect(exists).to.be.false;
+  });
+
+  it('gets all audits for a site', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audits = await site.getAudits();
+
+    expect(audits).to.be.an('array');
+    expect(audits.length).to.equal(10);
+
+    for (let i = 0; i < audits.length; i += 1) {
+      const audit = audits[i];
+
+      expect(audit.getId()).to.be.a('string');
+      expect(audit.getSiteId()).to.equal(site.getId());
+    }
+  });
+
+  it('gets all audits for a site by type', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audits = await site.getAuditsByAuditType('cwv');
+
+    expect(audits).to.be.an('array');
+    expect(audits.length).to.equal(5);
+
+    for (let i = 0; i < audits.length; i += 1) {
+      const audit = audits[i];
+
+      expect(audit.getId()).to.be.a('string');
+      expect(audit.getSiteId()).to.equal(site.getId());
+      expect(audit.getAuditType()).to.equal('cwv');
+    }
+  });
+
+  it('gets all audits for a site by type and auditAt', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audits = await site.getAuditsByAuditTypeAndAuditedAt('cwv', '2024-12-03T08:00:55.754Z');
+
+    expect(audits).to.be.an('array');
+    expect(audits.length).to.equal(5);
+
+    for (let i = 0; i < audits.length; i += 1) {
+      const audit = audits[i];
+
+      expect(audit.getId()).to.be.a('string');
+      expect(audit.getSiteId()).to.equal(site.getId());
+      expect(audit.getAuditType()).to.equal('cwv');
+      expect(audit.getAuditedAt()).to.equal('2024-12-03T08:00:55.754Z');
+    }
+  });
+
+  it('gets latest audit for a site', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audit = await site.getLatestAudit();
+
+    expect(audit.getId()).to.be.a('string');
+    expect(audit.getSiteId()).to.equal(site.getId());
+  });
+
+  it('gets latest audit for a site by type', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audit = await site.getLatestAuditByAuditType('cwv');
+
+    expect(audit.getId()).to.be.a('string');
+    expect(audit.getSiteId()).to.equal(site.getId());
+    expect(audit.getAuditType()).to.equal('cwv');
+  });
+
+  it('gets all latest audits for a site', async () => {
+    const site = await Site.findById(sampleData.sites[1].getId());
+    const audits = await site.getLatestAudits();
+
+    expect(audits).to.be.an('array');
+    expect(audits.length).to.equal(2);
+
+    for (let i = 0; i < audits.length; i += 1) {
+      const audit = audits[i];
+
+      expect(audit.getId()).to.be.a('string');
+      expect(audit.getSiteId()).to.equal(site.getId());
+    }
+  });
+
+  it('gets all sites with latest audit by type', async () => {
+    const sites = await Site.allWithLatestAudit('cwv');
+
+    expect(sites).to.be.an('array');
+    expect(sites.length).to.equal(10);
+
+    const siteWithoutAudits = await Site.findById('5d6d4439-6659-46c2-b646-92d110fa5a52');
+    await checkSite(siteWithoutAudits);
+    await expect(siteWithoutAudits.getLatestAuditByAuditType('cwv')).to.eventually.be.null;
+
+    for (let i = 0; i < 10; i += 1) {
+      // eslint-disable-next-line no-loop-func
+      const site = sites[i];
+      if (site.getId() === siteWithoutAudits.getId()) {
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
+      await checkSite(site);
+
+      const audit = await site.getLatestAuditByAuditType('cwv');
+
+      expect(audit).to.be.an('object');
+      expect(audit.getSiteId()).to.equal(site.getId());
+      expect(audit.getAuditType()).to.equal('cwv');
+    }
+  });
+
   it('adds a new site', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',
@@ -229,53 +347,5 @@ describe('Site IT', async () => {
 
     const notFound = await Site.findById(sampleData.sites[0].getId());
     expect(notFound).to.be.null;
-  });
-
-  it('gets all audits for a site', async () => {
-    const site = await Site.findById(sampleData.sites[1].getId());
-    const audits = await site.getAudits();
-
-    expect(audits).to.be.an('array');
-    expect(audits.length).to.equal(10);
-
-    for (let i = 0; i < audits.length; i += 1) {
-      const audit = audits[i];
-
-      expect(audit.getId()).to.be.a('string');
-      expect(audit.getSiteId()).to.equal(site.getId());
-    }
-  });
-
-  it('gets all audits for a site by type', async () => {
-    const site = await Site.findById(sampleData.sites[1].getId());
-    const audits = await site.getAuditsByAuditType('cwv');
-
-    expect(audits).to.be.an('array');
-    expect(audits.length).to.equal(5);
-
-    for (let i = 0; i < audits.length; i += 1) {
-      const audit = audits[i];
-
-      expect(audit.getId()).to.be.a('string');
-      expect(audit.getSiteId()).to.equal(site.getId());
-      expect(audit.getAuditType()).to.equal('cwv');
-    }
-  });
-
-  it('gets all audits for a site by type and auditAt', async () => {
-    const site = await Site.findById(sampleData.sites[1].getId());
-    const audits = await site.getAuditsByAuditTypeAndAuditedAt('cwv', '2024-12-03T08:00:55.754Z');
-
-    expect(audits).to.be.an('array');
-    expect(audits.length).to.equal(5);
-
-    for (let i = 0; i < audits.length; i += 1) {
-      const audit = audits[i];
-
-      expect(audit.getId()).to.be.a('string');
-      expect(audit.getSiteId()).to.equal(site.getId());
-      expect(audit.getAuditType()).to.equal('cwv');
-      expect(audit.getAuditedAt()).to.equal('2024-12-03T08:00:55.754Z');
-    }
   });
 });

@@ -14,7 +14,7 @@ import { DataChunks } from '@adobe/rum-distiller';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
-const METRICS = ['formview', 'formengagement', 'formsubmit', 'formbuttonclick'];
+const METRICS = ['formview', 'formengagement', 'formsubmit', 'formbuttonclick', 'bounces'];
 
 function initializeResult(url) {
   return {
@@ -24,6 +24,7 @@ function initializeResult(url) {
     formengagement: {},
     formbuttonclick: {},
     pageview: {},
+    bounces: {},
   };
 }
 
@@ -46,8 +47,14 @@ const metricFns = {
         && /\bbutton\b/.test(e.source.toLowerCase()));
     return formButtonClick ? bundle.weight : 0;
   },
+  bounces: (bundle) => {
+    const bounces = (bundle.visit && !bundle.events.find(({ checkpoint }) => checkpoint === 'click')
+      ? bundle.weight : 0);
+    return bounces;
+  },
 };
 
+// TODO : do not consider bounces in this, modify code for this
 function containsFormVitals(row) {
   return METRICS.some((metric) => Object.keys(row[metric]).length > 0);
 }

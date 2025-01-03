@@ -17,7 +17,7 @@ import type {
 export interface Audit extends BaseModel {
   getAuditedAt(): string;
   getAuditId(): string;
-  getAuditResult(): object;
+  getAuditResult(): object | [];
   getAuditType(): string;
   getFullAuditRef(): string;
   getIsError(): boolean;

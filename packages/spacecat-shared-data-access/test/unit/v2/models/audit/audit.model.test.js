@@ -141,5 +141,10 @@ describe('AuditModel', () => {
       };
       expect(Audit.validateAuditResult(mockRecord.auditResult, 'lhs-mobile')).to.be.true;
     });
+
+    it('returns true if auditResult is an array', () => {
+      mockRecord.auditResult = [{ scores: { foo: 'bar' } }];
+      expect(Audit.validateAuditResult(mockRecord.auditResult, 'experimentation')).to.be.true;
+    });
   });
 });

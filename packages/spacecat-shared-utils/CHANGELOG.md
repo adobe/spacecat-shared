@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.25.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.3...@adobe/spacecat-shared-utils-v1.25.4) (2025-01-03)
+
+
+### Bug Fixes
+
+* audit result to validate array ([#522](https://github.com/adobe/spacecat-shared/issues/522)) ([a6978d5](https://github.com/adobe/spacecat-shared/commit/a6978d54c52e668ea2336e68c9dcb000ba1a45a3))
+
 # [@adobe/spacecat-shared-utils-v1.25.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.2...@adobe/spacecat-shared-utils-v1.25.3) (2024-12-31)
 
 

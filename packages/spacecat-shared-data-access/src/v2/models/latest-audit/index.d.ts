@@ -18,7 +18,7 @@ export interface LatestAudit extends BaseModel {
   getAudit(): Promise<Audit>
   getAuditedAt(): string;
   getAuditId(): object;
-  getAuditResult(): object;
+  getAuditResult(): object | [];
   getAuditType(): string;
   getFullAuditRef(): string;
   getIsError(): boolean;

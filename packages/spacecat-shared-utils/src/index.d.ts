@@ -31,6 +31,8 @@ export function isNumber(value: unknown): boolean;
 
 export function isObject(value: unknown): boolean;
 
+export function isArray(value: unknown): boolean;
+
 export function isNonEmptyArray(value: unknown): boolean;
 
 export function isNonEmptyObject(value: unknown): boolean;

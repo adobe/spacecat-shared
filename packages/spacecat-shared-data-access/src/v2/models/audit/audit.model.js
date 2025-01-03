@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject } from '@adobe/spacecat-shared-utils';
+import { isArray, isObject } from '@adobe/spacecat-shared-utils';
 
 import { ValidationError } from '../../errors/index.js';
 import BaseModel from '../base/base.model.js';
@@ -53,7 +53,7 @@ class Audit extends BaseModel {
    * @returns {boolean} - True if valid, false otherwise.
    */
   static validateAuditResult = (auditResult, auditType) => {
-    if (!isObject(auditResult) && !Array.isArray(auditResult)) {
+    if (!isObject(auditResult) && !isArray(auditResult)) {
       throw new ValidationError('Audit result must be an object or array');
     }
 

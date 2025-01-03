@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isArray, isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import Audit from '../audit/audit.model.js';
 import SchemaBuilder from '../base/schema.builder.js';
@@ -37,7 +37,7 @@ const schema = new SchemaBuilder(LatestAudit, LatestAuditCollection)
   .addAttribute('auditResult', {
     type: 'any',
     required: true,
-    validate: (value) => isNonEmptyObject(value),
+    validate: (value) => isNonEmptyObject(value) || isArray(value),
     set: (value, attributes) => {
       // as the electroDb validate function does not provide access to the model instance
       // we need to call the validate function from the model on setting the value

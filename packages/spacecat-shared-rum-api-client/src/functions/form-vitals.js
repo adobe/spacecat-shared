@@ -54,9 +54,9 @@ const metricFns = {
   },
 };
 
-// TODO : do not consider bounces in this, modify code for this
 function containsFormVitals(row) {
-  return METRICS.some((metric) => Object.keys(row[metric]).length > 0);
+  return METRICS.filter((metric) => metric !== 'bounces')
+    .some((metric) => Object.keys(row[metric]).length > 0);
 }
 
 function handler(bundles) {

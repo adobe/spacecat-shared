@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.61.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.12...@adobe/spacecat-shared-data-access-v1.61.13) (2025-01-03)
+
+
+### Bug Fixes
+
+* audit result to validate array ([#522](https://github.com/adobe/spacecat-shared/issues/522)) ([a6978d5](https://github.com/adobe/spacecat-shared/commit/a6978d54c52e668ea2336e68c9dcb000ba1a45a3))
+
 # [@adobe/spacecat-shared-data-access-v1.61.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.11...@adobe/spacecat-shared-data-access-v1.61.12) (2024-12-31)
 
 

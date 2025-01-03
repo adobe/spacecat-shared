@@ -17,6 +17,9 @@
       "desktop:linux": 2200,
       "desktop:mac": 100,
       "desktop:windows": 100
+    },
+    "bounces": {
+      "desktop:linux": 100
     }
   },
   {
@@ -38,6 +41,9 @@
       "desktop:mac": 800,
       "mobile:android": 300,
       "mobile:ios": 100
+    },
+    "bounces": {
+
     }
   },
   {
@@ -57,6 +63,9 @@
     "pageview": {
       "desktop:linux": 1600,
       "desktop:mac": 200
+    },
+    "bounces": {
+
     }
   },
   {
@@ -77,6 +86,9 @@
       "desktop:windows": 400,
       "mobile:android": 200,
       "mobile:ios": 100
+    },
+    "bounces": {
+
     }
   },
   {
@@ -95,6 +107,9 @@
     },
     "pageview": {
       "desktop:windows": 200
+    },
+    "bounces": {
+
     }
   },
   {
@@ -113,6 +128,9 @@
     },
     "pageview": {
       "desktop:windows": 100
+    },
+    "bounces": {
+
     }
   },
   {
@@ -131,6 +149,9 @@
     },
     "pageview": {
       "desktop:windows": 100
+    },
+    "bounces": {
+
     }
   },
   {
@@ -149,6 +170,9 @@
     },
     "pageview": {
       "desktop:windows": 100
+    },
+    "bounces": {
+
     }
   },
   {
@@ -167,6 +191,9 @@
     },
     "pageview": {
       "desktop:mac": 100
+    },
+    "bounces": {
+
     }
   },
   {
@@ -185,6 +212,9 @@
     },
     "pageview": {
       "desktop:windows": 100
+    },
+    "bounces": {
+
     }
   },
   {
@@ -203,6 +233,9 @@
     },
     "pageview": {
       "desktop:mac": 100
+    },
+    "bounces": {
+
     }
   }
 ]

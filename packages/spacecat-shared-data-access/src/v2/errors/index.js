@@ -10,6 +10,16 @@
  * governing permissions and limitations under the License.
  */
 
+import DataAccessError from './data-access.error.js';
+import SchemaBuilderError from './schema.builder.error.js';
+import SchemaError from './schema.error.js';
+import SchemaValidationError from './schema-validation.error.js';
 import ValidationError from './validation.error.js';
 
-export { ValidationError };
+export {
+  DataAccessError,
+  SchemaBuilderError,
+  SchemaError,
+  SchemaValidationError,
+  ValidationError,
+};

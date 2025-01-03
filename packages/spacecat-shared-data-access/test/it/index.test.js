@@ -11,20 +11,18 @@
  */
 
 /* eslint-env mocha */
-/* eslint-disable no-console */
+
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import Joi from 'joi';
-
-import { isIsoDate } from '@adobe/spacecat-shared-utils';
 import { v4 as uuidv4 } from 'uuid';
-import { sleep } from '../unit/util.js';
-import { createDataAccess } from '../../src/service/index.js';
+
 import { configSchema } from '../../src/models/site/config.js';
 import { AUDIT_TYPE_LHS_MOBILE } from '../../src/models/audit.js';
+import { sleep } from '../unit/util.js';
 
-import generateSampleData from './util/generateSampleData.js';
 import {
   createSiteCandidate,
   SITE_CANDIDATE_SOURCES,
@@ -34,7 +32,8 @@ import { KEY_EVENT_TYPES } from '../../src/models/key-event.js';
 import { ConfigurationDto } from '../../src/dto/configuration.js';
 import { ImportJobStatus, ImportOptions, ImportUrlStatus } from '../../src/index.js';
 import { IMPORT_URL_EXPIRES_IN_DAYS } from '../../src/models/importer/import-url.js';
-import { closeDynamoClients } from './util/db.js';
+import { getDataAccess } from './util/db.js';
+import { seedDatabase } from './util/seed.js';
 
 use(chaiAsPromised);
 
@@ -96,74 +95,20 @@ function checkSiteTopPage(siteTopPage) {
   expect(isIsoDate(siteTopPage.getImportedAt())).to.be.true;
 }
 
-export const TEST_DA_CONFIG = {
-  tableNameAudits: 'spacecat-services-audits',
-  tableNameKeyEvents: 'spacecat-services-key-events',
-  tableNameLatestAudits: 'spacecat-services-latest-audits',
-  tableNameOrganizations: 'spacecat-services-organizations',
-  tableNameSites: 'spacecat-services-sites',
-  tableNameSiteCandidates: 'spacecat-services-site-candidates',
-  tableNameConfigurations: 'spacecat-services-configurations',
-  tableNameSiteTopPages: 'spacecat-services-site-top-pages',
-  tableNameExperiments: 'spacecat-services-experiments',
-  tableNameApiKeys: 'spacecat-services-api-keys',
-  tableNameImportJobs: 'spacecat-services-import-jobs',
-  tableNameImportUrls: 'spacecat-services-import-urls',
-  tableNameSpacecatData: 'spacecat-data',
-  indexNameAllSites: 'spacecat-services-all-sites',
-  indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
-  indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations',
-  indexNameAllOrganizations: 'spacecat-services-all-organizations',
-  indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id',
-  indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type',
-  indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores',
-  indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
-  indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
-  indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
-  indexNameApiKeyByHashedApiKey: 'spacecat-services-api-key-by-hashed-api-key',
-  indexNameApiKeyByImsUserIdAndImsOrgId: 'spacecat-services-api-key-by-ims-user-id-and-ims-org-id',
-  pkAllSites: 'ALL_SITES',
-  pkAllOrganizations: 'ALL_ORGANIZATIONS',
-  pkAllLatestAudits: 'ALL_LATEST_AUDITS',
-  pkAllConfigurations: 'ALL_CONFIGURATIONS',
-  pkAllImportJobs: 'ALL_IMPORT_JOBS',
-};
+const NUMBER_OF_SITES = 10;
+const NUMBER_OF_ORGANIZATIONS = 3;
+const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 5;
+const NUMBER_OF_TOP_PAGES_PER_SITE = 5;
+const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
+const NUMBER_OF_EXPERIMENTS = 3;
 
 // eslint-disable-next-line func-names
-describe('Legacy Data Model IT', function () {
-  this.timeout(30000);
-
+describe('Legacy Data Model IT', async () => {
   let dataAccess;
 
-  const NUMBER_OF_SITES = 10;
-  const NUMBER_OF_SITES_CANDIDATES = 10;
-  const NUMBER_OF_ORGANIZATIONS = 3;
-  const NUMBER_OF_AUDITS_PER_TYPE_AND_SITE = 3;
-  const NUMBER_OF_TOP_PAGES_PER_SITE = 5;
-  const NUMBER_OF_TOP_PAGES_FOR_SITE = NUMBER_OF_SITES * NUMBER_OF_TOP_PAGES_PER_SITE;
-  const NUMBER_OF_KEY_EVENTS_PER_SITE = 10;
-  const NUMBER_OF_EXPERIMENTS = 3;
-
   before(async () => {
-    try {
-      await generateSampleData(
-        TEST_DA_CONFIG,
-        NUMBER_OF_ORGANIZATIONS,
-        NUMBER_OF_SITES,
-        NUMBER_OF_SITES_CANDIDATES,
-        NUMBER_OF_AUDITS_PER_TYPE_AND_SITE,
-        NUMBER_OF_TOP_PAGES_FOR_SITE,
-        NUMBER_OF_KEY_EVENTS_PER_SITE,
-      );
-    } catch (e) {
-      console.error('Error generating sample data', e);
-    }
-
-    dataAccess = createDataAccess(TEST_DA_CONFIG, console);
-  });
-
-  after(async () => {
-    await closeDynamoClients();
+    await seedDatabase();
+    dataAccess = getDataAccess();
   });
 
   it('get all key events for a site', async () => {

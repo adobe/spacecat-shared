@@ -10,12 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyArray, isObject } from '@adobe/spacecat-shared-utils';
 
 import ValidationError from '../errors/validation.error.js';
 
 import {
   guardAny,
+  guardBoolean,
   guardArray,
   guardEnum,
   guardId,
@@ -38,13 +39,32 @@ const checkReadOnly = (propertyName, attribute) => {
   }
 };
 
+const checkUpdatesAllowed = (schema) => {
+  if (!schema.allowsUpdates()) {
+    throw new ValidationError(`Updates prohibited by schema for ${schema.getModelName()}.`);
+  }
+};
+
 class Patcher {
-  constructor(entity, record) {
+  /**
+   * Creates a new Patcher instance for an entity.
+   * @param {object} entity - The entity backing the record.
+   * @param {Schema} schema - The schema for the entity.
+   * @param {object} record - The record to patch.
+   */
+  constructor(entity, schema, record) {
     this.entity = entity;
-    this.entityName = this.entity.model.name.toLowerCase();
-    this.model = entity.model;
-    this.idName = `${this.model.name.toLowerCase()}Id`;
+    this.schema = schema;
     this.record = record;
+
+    this.entityName = schema.getEntityName();
+    this.model = entity.model;
+    this.idName = schema.getIdName();
+
+    // holds the previous value of updated attributes
+    this.previous = {};
+
+    // holds the updates to the attributes
     this.updates = {};
 
     this.patchRecord = null;
@@ -61,24 +81,25 @@ class Patcher {
   }
 
   /**
-   * Gets the composite values for a given key from the entity schema.
    * Composite keys have to be provided to ElectroDB in order to update a record across
-   * multiple indexes.
-   * @param {Object} record - The record to get the composite values from.
-   * @param {string} key - The key to get the composite values for.
-   * @return {{}} - An object containing the composite values for the given key.
+   * multiple indexes. This method retrieves the composite values for the entity from
+   * the schema indexes and filters out any values that are being updated.
+   * @return {{}} - An object containing the composite values for the entity.
    * @private
    */
-  #getCompositeValuesForKey(record, key) {
+  #getCompositeValues() {
     const { indexes } = this.model;
     const result = {};
 
     const processComposite = (index, compositeType) => {
       const compositeArray = index[compositeType]?.facets;
-      if (Array.isArray(compositeArray) && compositeArray.includes(key)) {
+      if (isNonEmptyArray(compositeArray)) {
         compositeArray.forEach((compositeKey) => {
-          if (record[compositeKey] !== undefined) {
-            result[compositeKey] = record[compositeKey];
+          if (
+            !Object.keys(this.updates).includes(compositeKey)
+            && this.record[compositeKey] !== undefined
+          ) {
+            result[compositeKey] = this.record[compositeKey];
           }
         });
       }
@@ -94,18 +115,25 @@ class Patcher {
 
   /**
    * Sets a property on the record and updates the patch record.
-   * @param {string} propertyName - The name of the property to set.
+   * @param {string} attribute - The attribute to set.
    * @param {any} value - The value to set for the property.
    * @private
    */
-  #set(propertyName, value) {
-    const compositeValues = this.#getCompositeValuesForKey(this.record, propertyName);
-    this.patchRecord = this.#getPatchRecord().set({
-      ...compositeValues,
-      [propertyName]: value,
-    });
-    this.record[propertyName] = value;
-    this.updates[propertyName] = value;
+  #set(attribute, value) {
+    this.patchRecord = this.#getPatchRecord().set({ [attribute.name]: value });
+
+    const update = {
+      [attribute.name]: {
+        previous: this.record[attribute.name],
+        current: value,
+      },
+    };
+
+    // update the record with the update value for later save
+    this.record[attribute.name] = value;
+
+    // remember the update operation with the previous and current value
+    this.updates = { ...this.updates, ...update };
   }
 
   /**
@@ -129,6 +157,8 @@ class Patcher {
    * @param {boolean} [isReference=false] - Whether the value is a reference to another entity.
    */
   patchValue(propertyName, value, isReference = false) {
+    checkUpdatesAllowed(this.schema);
+
     const attribute = this.model.schema?.attributes[propertyName];
     if (!isObject(attribute)) {
       throw new ValidationError(`Property ${propertyName} does not exist on entity ${this.entityName}.`);
@@ -144,6 +174,9 @@ class Patcher {
       switch (attribute.type) {
         case 'any':
           guardAny(propertyName, value, this.entityName, nullable);
+          break;
+        case 'boolean':
+          guardBoolean(propertyName, value, this.entityName, nullable);
           break;
         case 'enum':
           guardEnum(propertyName, value, attribute.enumArray, this.entityName, nullable);
@@ -168,7 +201,7 @@ class Patcher {
       }
     }
 
-    this.#set(propertyName, value);
+    this.#set(attribute, value);
   }
 
   /**
@@ -177,11 +210,17 @@ class Patcher {
    * @throws {Error} - Throws an error if the save operation fails.
    */
   async save() {
+    checkUpdatesAllowed(this.schema);
+
     if (!this.hasUpdates()) {
       return;
     }
-    await this.#getPatchRecord().go();
-    this.record.updatedAt = new Date().getTime();
+
+    const compositeValues = this.#getCompositeValues();
+    await this.#getPatchRecord()
+      .composite(compositeValues)
+      .go();
+    this.record.updatedAt = new Date().toISOString();
   }
 
   getUpdates() {

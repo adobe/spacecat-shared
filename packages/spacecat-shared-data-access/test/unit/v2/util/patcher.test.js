@@ -12,13 +12,22 @@
 
 /* eslint-env mocha */
 
+// eslint-disable-next-line max-classes-per-file
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
+
 import { expect, use as chaiUse } from 'chai';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
 import Patcher from '../../../../src/v2/util/patcher.js';
+import Schema from '../../../../src/v2/models/base/schema.js';
+import BaseModel from '../../../../src/v2/models/base/base.model.js';
+import BaseCollection from '../../../../src/v2/models/base/base.collection.js';
 
 chaiUse(chaiAsPromised);
+
+const MockModel = class MockEntityModel extends BaseModel {};
+const MockCollection = class MockEntityCollection extends BaseCollection {};
 
 describe('Patcher', () => {
   let patcher;
@@ -28,18 +37,19 @@ describe('Patcher', () => {
   beforeEach(() => {
     mockEntity = {
       model: {
-        name: 'TestEntity',
+        entity: 'MockModel',
         schema: {
           attributes: {
-            name: { type: 'string' },
-            age: { type: 'number' },
-            tags: { type: 'set', items: { type: 'string' } },
-            status: { type: 'enum', enumArray: ['active', 'inactive'] },
-            referenceId: { type: 'string' },
-            metadata: { type: 'map' },
-            profile: { type: 'any' },
-            nickNames: { type: 'list', items: { type: 'string' } },
-            settings: { type: 'any', required: true },
+            name: { type: 'string', name: 'name' },
+            age: { type: 'number', name: 'age' },
+            tags: { type: 'set', name: 'tags', items: { type: 'string' } },
+            status: { type: 'enum', name: 'status', enumArray: ['active', 'inactive'] },
+            referenceId: { type: 'string', name: 'referenceId' },
+            metadata: { type: 'map', name: 'metadata' },
+            profile: { type: 'any', name: 'profile' },
+            nickNames: { type: 'list', name: 'nickNames', items: { type: 'string' } },
+            settings: { type: 'any', name: 'settings', required: true },
+            isActive: { type: 'boolean', name: 'isActive' },
           },
         },
         indexes: {
@@ -50,6 +60,7 @@ describe('Patcher', () => {
         },
       },
       patch: sinon.stub().returns({
+        composite: sinon.stub().returnsThis(),
         set: sinon.stub().returnsThis(),
         go: sinon.stub().resolves(),
       }),
@@ -64,7 +75,21 @@ describe('Patcher', () => {
       referenceId: '456',
     };
 
-    patcher = new Patcher(mockEntity, mockRecord);
+    const schema = new Schema(
+      MockModel,
+      MockCollection,
+      {
+        serviceName: 'service',
+        schemaVersion: 1,
+        attributes: mockEntity.model.schema.attributes,
+        indexes: mockEntity.model.indexes,
+        model: mockEntity.model,
+        references: [],
+        options: { allowRemove: true, allowUpdates: true },
+      },
+    );
+
+    patcher = new Patcher(mockEntity, schema, mockRecord);
   });
 
   afterEach(() => {
@@ -73,8 +98,14 @@ describe('Patcher', () => {
 
   it('patches a string value', () => {
     patcher.patchValue('name', 'UpdatedName');
-    expect(mockEntity.patch().set.calledWith({ name: 'UpdatedName', age: 25 })).to.be.true;
+    expect(mockEntity.patch().set.calledWith({ name: 'UpdatedName' })).to.be.true;
     expect(mockRecord.name).to.equal('UpdatedName');
+  });
+
+  it('throws error if schema prhibits updates', () => {
+    patcher.schema.options.allowUpdates = false;
+    expect(() => patcher.patchValue('name', 'UpdatedName'))
+      .to.throw('Updates prohibited by schema for MockEntityModel.');
   });
 
   it('throws error for read-only property', () => {
@@ -90,7 +121,7 @@ describe('Patcher', () => {
 
   it('throws error for unsupported enum value', () => {
     expect(() => patcher.patchValue('status', 'unknown'))
-      .to.throw('Validation failed in testentity: status must be one of active,inactive');
+      .to.throw('Validation failed in mockEntityModel: status must be one of active,inactive');
   });
 
   it('patches a reference id with proper validation', () => {
@@ -100,14 +131,15 @@ describe('Patcher', () => {
 
   it('throws error for non-existent property', () => {
     expect(() => patcher.patchValue('nonExistent', 'value'))
-      .to.throw('Property nonExistent does not exist on entity testentity.');
+      .to.throw('Property nonExistent does not exist on entity mockEntityModel.');
   });
 
   it('tracks updates', () => {
     patcher.patchValue('name', 'UpdatedName');
 
     expect(patcher.hasUpdates()).to.be.true;
-    expect(patcher.getUpdates()).to.deep.equal({ name: 'UpdatedName' });
+    expect(patcher.getUpdates().name.previous).to.deep.equal('Test');
+    expect(patcher.getUpdates().name.current).to.deep.equal('UpdatedName');
   });
 
   it('saves the record', async () => {
@@ -116,7 +148,13 @@ describe('Patcher', () => {
     await patcher.save();
 
     expect(mockEntity.patch().go.calledOnce).to.be.true;
-    expect(mockRecord.updatedAt).to.be.a('number');
+    expect(isIsoDate(mockRecord.updatedAt)).to.be.true;
+  });
+
+  it('throws error when saving with updates prohibited by schema', async () => {
+    patcher.schema.options.allowUpdates = false;
+
+    expect(patcher.save()).to.be.rejectedWith('Updates prohibited by schema for MockModel.');
   });
 
   it('does not save if there are no updates', async () => {
@@ -137,7 +175,7 @@ describe('Patcher', () => {
 
   it('throws error for invalid set attribute', () => {
     expect(() => patcher.patchValue('tags', ['tag1', 123]))
-      .to.throw('Validation failed in testentity: tags must contain items of type string');
+      .to.throw('Validation failed in mockEntityModel: tags must contain items of type string');
   });
 
   it('validates and patches a number attribute', () => {
@@ -147,7 +185,7 @@ describe('Patcher', () => {
 
   it('throws error for invalid number attribute', () => {
     expect(() => patcher.patchValue('age', 'notANumber'))
-      .to.throw('Validation failed in testentity: age must be a number');
+      .to.throw('Validation failed in mockEntityModel: age must be a number');
   });
 
   it('validates and patch a map attribute', () => {
@@ -157,7 +195,7 @@ describe('Patcher', () => {
 
   it('throws error for invalid map attribute', () => {
     expect(() => patcher.patchValue('metadata', 'notAMap'))
-      .to.throw('Validation failed in testentity: metadata must be an object');
+      .to.throw('Validation failed in mockEntityModel: metadata must be an object');
   });
 
   it('validates and patches an any attribute', () => {
@@ -167,12 +205,17 @@ describe('Patcher', () => {
 
   it('throws error for undefined any attribute', () => {
     expect(() => patcher.patchValue('settings', undefined))
-      .to.throw('Validation failed in testentity: settings is required');
+      .to.throw('Validation failed in mockEntityModel: settings is required');
   });
 
   it('throws error for null any attribute', () => {
     expect(() => patcher.patchValue('settings', null))
-      .to.throw('Validation failed in testentity: settings is required');
+      .to.throw('Validation failed in mockEntityModel: settings is required');
+  });
+
+  it('validates and patches a boolean attribute', () => {
+    patcher.patchValue('isActive', true);
+    expect(mockRecord.isActive).to.be.true;
   });
 
   it('validates and patches a list attribute', () => {
@@ -182,11 +225,11 @@ describe('Patcher', () => {
 
   it('throws error for invalid list attribute', () => {
     expect(() => patcher.patchValue('nickNames', 'notAList'))
-      .to.throw('Validation failed in testentity: nickNames must be an array');
+      .to.throw('Validation failed in mockEntityModel: nickNames must be an array');
   });
 
   it('throws error for invalid list attribute items', () => {
     expect(() => patcher.patchValue('nickNames', ['name1', 123]))
-      .to.throw('Validation failed in testentity: nickNames must contain items of type string');
+      .to.throw('Validation failed in mockEntityModel: nickNames must contain items of type string');
   });
 });

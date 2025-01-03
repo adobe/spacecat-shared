@@ -1,16 +1,16 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "1.59.2",
+  "version": "1.61.12",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0 <23.0.0",
-    "npm": ">=10.0.0 <11.0.0"
+    "node": ">=22.0.0 <23.0.0",
+    "npm": ">=10.9.0 <12.0.0"
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test:it": "mocha --spec \"test/it/**/*.test.js\"",
+    "test:it": "mocha --require ./test/it/fixtures.js --spec \"test/it/**/*.test.js\"",
     "test": "c8 mocha --spec \"test/unit/**/*.test.js\"",
     "lint": "eslint .",
     "clean": "rm -rf package-lock.json node_modules"
@@ -34,10 +34,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-dynamo": "1.4.0",
-    "@adobe/spacecat-shared-utils": "1.23.1",
-    "@aws-sdk/client-dynamodb": "3.712.0",
-    "@aws-sdk/lib-dynamodb": "3.712.0",
+    "@adobe/spacecat-shared-dynamo": "1.5.1",
+    "@adobe/spacecat-shared-utils": "1.25.2",
+    "@aws-sdk/client-dynamodb": "3.716.0",
+    "@aws-sdk/lib-dynamodb": "3.716.0",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.10.2",
     "electrodb": "3.0.1",

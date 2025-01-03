@@ -21,6 +21,7 @@ export default function example(func, opts = {}) {
   const { name } = opts;
   return async (request, context) => {
     const x = 10 * 3;
+    // eslint-disable-next-line no-console
     console.log(`Hello world, ${name} [${x}]!`);
     return func(request, context);
   };

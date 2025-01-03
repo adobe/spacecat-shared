@@ -31,6 +31,8 @@ export function isNumber(value: unknown): boolean;
 
 export function isObject(value: unknown): boolean;
 
+export function isNonEmptyArray(value: unknown): boolean;
+
 export function isNonEmptyObject(value: unknown): boolean;
 
 export function isString(value: unknown): boolean;
@@ -114,6 +116,16 @@ declare function resolveSecretsName(opts: object, ctx: object, defaultPath: stri
  * @returns {string} - The resolved secret name.
  */
 declare function resolveCustomerSecretsName(baseURL: string, ctx: object): string;
+
+/**
+ * Retrieves the RUM domain key for the specified base URL from the customer secrets.
+ *
+ * @param {string} baseURL - The base URL for which the RUM domain key is to be retrieved.
+ * @param {object} ctx - Helix Universal Context. See https://github.com/adobe/helix-universal/blob/main/src/adapter.d.ts#L120
+ * @returns {Promise<string>} - A promise that resolves to the RUM domain key.
+ * @throws {Error} Throws an error if no domain key is found for the specified base URL.
+ */
+declare function getRUMDomainKey(baseURL: string, ctx: object): Promise<string>;
 
 /**
  * Generates a CSV file from the provided JSON data.

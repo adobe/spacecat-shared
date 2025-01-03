@@ -72,7 +72,7 @@ export default class AuthenticationManager {
   /**
    * Create an instance of AuthenticationManager.
    * @param {Array<AbstractHandler>} handlers - The handlers to be used for authentication
-   * @param {Object} log - The logger object
+   * @param {Object} log - The log object
    * @return {AuthenticationManager} The authentication manager
    */
   static create(handlers, log) {

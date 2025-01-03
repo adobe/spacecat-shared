@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.17.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.17.1...@adobe/spacecat-shared-rum-api-client-v2.17.2) (2024-12-31)
+
+
+### Bug Fixes
+
+* job groups & schedules, engine version ([#514](https://github.com/adobe/spacecat-shared/issues/514)) ([995f81e](https://github.com/adobe/spacecat-shared/commit/995f81eedb76d45a09cfd2ae3952f3676033a235))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.17.0...@adobe/spacecat-shared-rum-api-client-v2.17.1) (2024-12-30)
+
+
+### Bug Fixes
+
+* isNonEmptyArray from utils ([#512](https://github.com/adobe/spacecat-shared/issues/512)) ([21b87ed](https://github.com/adobe/spacecat-shared/commit/21b87edc507f20285355becd5d51a9b7010e9651))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.16.2...@adobe/spacecat-shared-rum-api-client-v2.17.0) (2024-12-23)
+
+
+### Features
+
+* latest audit entity ([#503](https://github.com/adobe/spacecat-shared/issues/503)) ([2d01b09](https://github.com/adobe/spacecat-shared/commit/2d01b0969c0c046cdbffa480f8e40991e5abf91e))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.16.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.16.1...@adobe/spacecat-shared-rum-api-client-v2.16.2) (2024-12-22)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#501](https://github.com/adobe/spacecat-shared/issues/501)) ([7638fe7](https://github.com/adobe/spacecat-shared/commit/7638fe7d9433e1541fc2d41d0ef5bf1545abd281)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
+# [@adobe/spacecat-shared-rum-api-client-v2.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.16.0...@adobe/spacecat-shared-rum-api-client-v2.16.1) (2024-12-20)
+
+
+### Bug Fixes
+
+* add totalClicks ([df9a688](https://github.com/adobe/spacecat-shared/commit/df9a688c8d12e10ceb84da2da8a409a74aeddeea))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.7...@adobe/spacecat-shared-rum-api-client-v2.16.0) (2024-12-20)
+
+
+### Features
+
+* support site metrics overview ([99a7c66](https://github.com/adobe/spacecat-shared/commit/99a7c66f18ff1ba869ffdb07b17b9505d1f00069))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.15.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.15.6...@adobe/spacecat-shared-rum-api-client-v2.15.7) (2024-12-16)
 
 

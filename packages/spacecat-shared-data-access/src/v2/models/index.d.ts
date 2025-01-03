@@ -10,102 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
-import type { ValidationError } from '../index.d.ts';
-
-/**
- * Interface representing a base model for interacting with a data entity.
- */
-export interface BaseModel {
-  getId(): string;
-  getCreatedAt(): string;
-  getUpdatedAt(): string;
-  remove(): Promise<this>;
-  save(): Promise<this>;
-}
-
-export interface MultiStatusCreateResult<T> {
-  createdItems: T[],
-  errorItems: { item: object, error: ValidationError }[],
-}
-
-/**
- * Interface representing an Opportunity model, extending BaseModel.
- */
-export interface Opportunity extends BaseModel { /* eslint-disable no-use-before-define */
-  addSuggestions(suggestions: object[]): Promise<MultiStatusCreateResult<Suggestion>>;
-  // eslint-disable-next-line no-use-before-define
-  getSuggestions(): Promise<Suggestion[]>;
-  getSiteId(): string;
-  setSiteId(siteId: string): Opportunity;
-  getAuditId(): string;
-  setAuditId(auditId: string): Opportunity;
-  getRunbook(): string;
-  setRunbook(runbook: string): Opportunity;
-  getGuidance(): string;
-  setGuidance(guidance: string): Opportunity;
-  getTitle(): string;
-  setTitle(title: string): Opportunity;
-  getDescription(): string;
-  setDescription(description: string): Opportunity;
-  getType(): string;
-  getStatus(): string;
-  setStatus(status: string): Opportunity;
-  getOrigin(): string;
-  setOrigin(origin: string): Opportunity;
-  getTags(): string[];
-  setTags(tags: string[]): Opportunity;
-  getData(): object;
-  setData(data: object): Opportunity;
-}
-
-/**
- * Interface representing a Suggestion model, extending BaseModel.
- */
-export interface Suggestion extends BaseModel {
-  getOpportunity(): Promise<Opportunity>;
-  getOpportunityId(): string;
-  setOpportunityId(opportunityId: string): Suggestion;
-  getType(): string;
-  getStatus(): string;
-  setStatus(status: string): Suggestion;
-  getRank(): number;
-  setRank(rank: number): Suggestion;
-  getData(): object;
-  setData(data: object): Suggestion;
-  getKpiDeltas(): object;
-  setKpiDeltas(kpiDeltas: object): Suggestion;
-}
-
-/**
- * Interface representing a base collection for interacting with data entities.
- */
-export interface BaseCollection<T extends BaseModel> {
-  findById(id: string): Promise<T>;
-  findByIndexKeys(indexKeys: object): Promise<T[]>;
-  create(item: object): Promise<T>;
-  createMany(items: object[]): Promise<MultiStatusCreateResult<T>>;
-}
-
-/**
- * Interface representing the Opportunity collection, extending BaseCollection.
- */
-export interface OpportunityCollection extends BaseCollection<Opportunity> {
-  allBySiteId(siteId: string): Promise<Opportunity[]>;
-  allBySiteIdAndStatus(siteId: string, status: string): Promise<Opportunity[]>;
-}
-
-/**
- * Interface representing the Suggestion collection, extending BaseCollection.
- */
-export interface SuggestionCollection extends BaseCollection<Suggestion> {
-  allByOpportunityId(opportunityId: string): Promise<Suggestion[]>;
-  allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion[]>;
-  bulkUpdateStatus(suggestions: Suggestion[], status: string): Promise<Suggestion[]>;
-}
-
-/**
- * Interface representing the Model Factory for creating and managing model collections.
- */
-export interface ModelFactory {
-  getCollection<T extends BaseModel>(collectionName: string): BaseCollection<T>;
-}
+export type * from './audit/index.d.ts';
+export type * from './configuration/index.d.ts';
+export type * from './base/index.d.ts';
+export type * from './experiment/index.d.ts';
+export type * from './import-job/index.d.ts';
+export type * from './import-url/index.d.ts';
+export type * from './key-event/index.d.ts';
+export type * from './latest-audit/index.d.ts';
+export type * from './opportunity/index.d.ts';
+export type * from './organization/index.d.ts';
+export type * from './site/index.d.ts';
+export type * from './site-candidate/index.d.ts';
+export type * from './site-top-page/index.d.ts';
+export type * from './suggestion/index.d.ts';

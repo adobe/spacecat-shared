@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-utils-v1.25.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.2...@adobe/spacecat-shared-utils-v1.25.3) (2024-12-31)
+
+
+### Bug Fixes
+
+* job groups & schedules, engine version ([#514](https://github.com/adobe/spacecat-shared/issues/514)) ([995f81e](https://github.com/adobe/spacecat-shared/commit/995f81eedb76d45a09cfd2ae3952f3676033a235))
+
+# [@adobe/spacecat-shared-utils-v1.25.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.1...@adobe/spacecat-shared-utils-v1.25.2) (2024-12-30)
+
+
+### Bug Fixes
+
+* isNonEmptyArray from utils ([#512](https://github.com/adobe/spacecat-shared/issues/512)) ([21b87ed](https://github.com/adobe/spacecat-shared/commit/21b87edc507f20285355becd5d51a9b7010e9651))
+
+# [@adobe/spacecat-shared-utils-v1.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.0...@adobe/spacecat-shared-utils-v1.25.1) (2024-12-30)
+
+
+### Bug Fixes
+
+* types & deps ([#510](https://github.com/adobe/spacecat-shared/issues/510)) ([d162c1d](https://github.com/adobe/spacecat-shared/commit/d162c1d75a2052fc07da844923762e9397016b90))
+
+# [@adobe/spacecat-shared-utils-v1.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.24.1...@adobe/spacecat-shared-utils-v1.25.0) (2024-12-23)
+
+
+### Features
+
+* latest audit entity ([#503](https://github.com/adobe/spacecat-shared/issues/503)) ([2d01b09](https://github.com/adobe/spacecat-shared/commit/2d01b0969c0c046cdbffa480f8e40991e5abf91e))
+
+# [@adobe/spacecat-shared-utils-v1.24.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.24.0...@adobe/spacecat-shared-utils-v1.24.1) (2024-12-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#502](https://github.com/adobe/spacecat-shared/issues/502)) ([6ea4ef2](https://github.com/adobe/spacecat-shared/commit/6ea4ef2889ac665160adc9ebdad38b41b67d0782))
+
+# [@adobe/spacecat-shared-utils-v1.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.8...@adobe/spacecat-shared-utils-v1.24.0) (2024-12-20)
+
+
+### Features
+
+* support site metrics overview ([99a7c66](https://github.com/adobe/spacecat-shared/commit/99a7c66f18ff1ba869ffdb07b17b9505d1f00069))
+
 # [@adobe/spacecat-shared-utils-v1.23.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.23.7...@adobe/spacecat-shared-utils-v1.23.8) (2024-12-14)
 
 

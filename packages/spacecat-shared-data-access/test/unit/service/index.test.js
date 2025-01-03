@@ -111,7 +111,19 @@ describe('Data Access Object Tests', () => {
   ];
 
   const electroServiceFunctions = [
+    'ApiKey',
+    'Audit',
+    'Configuration',
+    'Experiment',
+    'ImportJob',
+    'ImportUrl',
+    'KeyEvent',
+    'LatestAudit',
     'Opportunity',
+    'Organization',
+    'Site',
+    'SiteCandidate',
+    'SiteTopPage',
     'Suggestion',
   ];
 

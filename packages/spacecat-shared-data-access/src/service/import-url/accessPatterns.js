@@ -101,7 +101,7 @@ export const getImportUrlsByJobIdAndStatus = async (dynamoClient, config, log, j
  * Get Import Urls by Job ID, if no urls exist an empty array is returned.
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} jobId - The ID of the import job.
  * @returns {Promise<ImportUrl[]>}
  */
@@ -138,7 +138,7 @@ async function removeUrls(dynamoClient, config, urls) {
  * Remove all URLs associated with an import job.
  * @param {DynamoDbClient} dynamoClient - The DynamoDB client.
  * @param {DataAccessConfig} config - The data access config.
- * @param {Logger} log - The logger.
+ * @param {Logger} log - The log.
  * @param {string} jobId - The ID of the import job.
  * @return {Promise<void>} A promise that resolves when all URLs have been removed.
  */

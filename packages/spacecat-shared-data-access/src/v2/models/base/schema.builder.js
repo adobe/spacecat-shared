@@ -210,6 +210,34 @@ class SchemaBuilder {
   }
 
   /**
+   * By default createdAt and updatedAt are readOnly. This method allows
+   * to disable this behavior and allow upserts.
+   *
+   * @param {boolean} allow - Whether to allow upserts.
+   * @returns {SchemaBuilder}
+   */
+  withUpsertable(allow) {
+    if (!isBoolean(allow)) {
+      throw new SchemaBuilderError(this, 'allow must be a boolean.');
+    }
+    // createdAt and updatedAt are not readOnly
+    if (allow) {
+      this.addAttribute('createdAt', {
+        type: 'string',
+        required: true,
+        default: () => new Date().toISOString(),
+      });
+      this.addAttribute('updatedAt', {
+        type: 'string',
+        required: true,
+        default: () => new Date().toISOString(),
+      });
+    }
+
+    return this;
+  }
+
+  /**
    * By default a schema allows removes. This method allows
    * to disable removes for this entity. Note that this does
    * not prevent removes at the database level, but rather

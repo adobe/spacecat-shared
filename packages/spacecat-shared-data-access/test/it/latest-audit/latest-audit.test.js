@@ -133,4 +133,29 @@ describe('LatestAudit IT', async () => {
 
     expect(audit).to.be.null;
   });
+
+  it('creates a latest audit upon audit creation', async () => {
+    const auditType = 'lhs-mobile';
+    const site = sampleData.sites[1];
+    const audit = await Audit.create({
+      siteId: site.getId(),
+      isLive: true,
+      auditedAt: '2025-01-06T10:11:51.833Z',
+      auditType,
+      auditResult: {
+        scores: {
+          performance: 0.4,
+          seo: 0.47,
+          accessibility: 0.27,
+          'best-practices': 0.55,
+        },
+      },
+      fullAuditRef: 'https://example.com/audit',
+    });
+    checkAudit(audit);
+    const latestAudit = await site.getLatestAuditByAuditType(auditType);
+    checkAudit(latestAudit);
+    expect(latestAudit.getSiteId()).to.equal(site.getId());
+    expect(latestAudit.getAuditType()).to.equal(auditType);
+  });
 });

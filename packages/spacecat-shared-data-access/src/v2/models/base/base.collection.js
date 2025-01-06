@@ -361,11 +361,13 @@ class BaseCollection {
    * the entity.
    * @async
    * @param {Object} item - The data for the entity to be created.
+    * @param {Object} [options] - Additional options for the creation process.
+   * @param {boolean} [options.upsert=false] - Whether to perform an upsert operation.
    * @returns {Promise<BaseModel>} - A promise that resolves to the created model instance.
    * @throws {DataAccessError} - Throws an error if the data is invalid or if the
    * creation process fails.
    */
-  async create(item) {
+  async create(item, { upsert = false } = {}) {
     if (!isNonEmptyObject(item)) {
       const message = `Failed to create [${this.entityName}]: data is required`;
       this.log.error(message);
@@ -373,7 +375,10 @@ class BaseCollection {
     }
 
     try {
-      const record = await this.entity.create(item).go();
+      const record = upsert
+        ? await this.entity.upsert(item).go()
+        : await this.entity.create(item).go();
+
       const instance = this.#createInstance(record.data);
 
       this.#invalidateCache();

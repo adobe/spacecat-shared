@@ -36,6 +36,9 @@ export const createElectroMocks = (Model, record) => {
     create: stub().returns({
       go: stub().resolves({ data: record }),
     }),
+    upsert: stub().returns({
+      go: stub().resolves({ data: record }),
+    }),
     delete: stub().returns({
       go: stub().resolves({}),
     }),

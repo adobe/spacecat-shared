@@ -88,6 +88,7 @@ describe('BaseCollection', () => {
       entities: {
         mockEntityModel: {
           create: stub(),
+          upsert: stub(),
           delete: stub(),
           get: stub(),
           put: stub(),
@@ -305,6 +306,15 @@ describe('BaseCollection', () => {
       const result = await baseCollectionInstance.create(mockRecord);
       expect(result.record).to.deep.include(mockRecord);
       expect(mockElectroService.entities.mockEntityModel.create.calledOnce).to.be.true;
+    });
+
+    it('upserts an existing entity successfully', async () => {
+      mockElectroService.entities.mockEntityModel.upsert.returns(
+        { go: () => Promise.resolve({ data: mockRecord }) },
+      );
+      const result = await baseCollectionInstance.create(mockRecord, { upsert: true });
+      expect(result.record).to.deep.include(mockRecord);
+      expect(mockElectroService.entities.mockEntityModel.upsert.calledOnce).to.be.true;
     });
 
     it('logs an error and throws when creation fails', async () => {

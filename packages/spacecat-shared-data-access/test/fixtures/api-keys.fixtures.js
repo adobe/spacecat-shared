@@ -42,7 +42,7 @@ const apiKeys = [
   {
     name: 'Test API Key 3',
     expiresAt: '2025-10-09T19:21:55.834Z',
-    hashedApiKey: 'some-key-2',
+    hashedApiKey: 'some-key-3',
     imsOrgId: 'org-1@AdobeOrg',
     imsUserId: 'user-1',
     scopes: [{

@@ -220,7 +220,7 @@ class SchemaBuilder {
     if (!isBoolean(allow)) {
       throw new SchemaBuilderError(this, 'allow must be a boolean.');
     }
-    // createdAt and updatedAt are not readOnly
+
     if (allow) {
       this.addAttribute('createdAt', {
         type: 'string',

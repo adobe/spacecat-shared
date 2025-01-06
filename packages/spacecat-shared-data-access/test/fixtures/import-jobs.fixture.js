@@ -16,7 +16,7 @@ const importJobs = [
   {
     importJobId: '021cbb7d-0772-45c6-967c-86a0a598b7dd',
     importQueueId: 'Q-123',
-    hashedApiKey: '1234',
+    hashedApiKey: 'some-key-1',
     baseURL: 'https://example-1.com/cars',
     startedAt: '2023-12-06T08:17:41.467Z',
     status: ImportJob.ImportJobStatus.RUNNING,
@@ -32,7 +32,7 @@ const importJobs = [
   {
     importJobId: '72113a4d-ca45-4c35-bd2e-29bb0ec03435',
     importQueueId: 'Q-321',
-    hashedApiKey: '4321',
+    hashedApiKey: 'some-key-1',
     baseURL: 'https://example-2.com/cars',
     startedAt: '2023-11-15T01:22:05.000Z',
     status: ImportJob.ImportJobStatus.FAILED,
@@ -48,7 +48,7 @@ const importJobs = [
   {
     importJobId: '78e1f8de-661a-418b-bd80-24589a10b5ce',
     importQueueId: 'Q-213',
-    hashedApiKey: '4231',
+    hashedApiKey: 'some-key-2',
     baseURL: 'https://example-3.com/',
     startedAt: '2023-11-15T03:46:40.000Z',
     endedAt: '2023-11-15T03:49:13.000Z',

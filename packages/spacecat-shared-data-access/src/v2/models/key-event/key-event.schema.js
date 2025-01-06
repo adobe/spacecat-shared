@@ -38,6 +38,7 @@ const schema = new SchemaBuilder(KeyEvent, KeyEventCollection)
   .addAttribute('time', {
     type: 'string',
     required: true,
+    default: () => new Date().toISOString(),
     validate: (value) => isIsoDate(value),
   });
 

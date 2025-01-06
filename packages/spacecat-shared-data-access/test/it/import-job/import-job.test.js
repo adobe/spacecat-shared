@@ -17,6 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { ImportJobStatus } from '../../../src/index.js';
 
 use(chaiAsPromised);
 
@@ -121,13 +122,14 @@ describe('ImportJob IT', async () => {
   });
 
   it('gets all import jobs by status', async () => {
-    const sampleImportJob = sampleData.importJobs[0];
-    const importJobs = await ImportJob.allByStatus(sampleImportJob.getStatus());
+    const importJobs = await ImportJob.allByStatus(ImportJobStatus.COMPLETE);
 
     expect(importJobs).to.be.an('array');
+    expect(importJobs.length).to.equal(2);
+    expect(importJobs[0].getId()).to.equal(sampleData.importJobs[0].getId());
     importJobs.forEach((importJob) => {
       checkImportJob(importJob);
-      expect(importJob.getStatus()).to.equal(sampleImportJob.getStatus());
+      expect(importJob.getStatus()).to.equal(ImportJobStatus.COMPLETE);
     });
   });
 

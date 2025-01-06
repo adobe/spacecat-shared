@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.25.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.4...@adobe/spacecat-shared-utils-v1.25.5) (2025-01-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#524](https://github.com/adobe/spacecat-shared/issues/524)) ([ae50dad](https://github.com/adobe/spacecat-shared/commit/ae50dad8e6e31f53350fc411122a8aed0b715279))
+
 # [@adobe/spacecat-shared-utils-v1.25.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.3...@adobe/spacecat-shared-utils-v1.25.4) (2025-01-03)
 
 

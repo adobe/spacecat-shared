@@ -33,8 +33,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "3.716.0",
-    "@aws-sdk/lib-dynamodb": "3.716.0",
+    "@aws-sdk/client-dynamodb": "3.721.0",
+    "@aws-sdk/lib-dynamodb": "3.721.0",
     "@adobe/spacecat-shared-utils": "1.25.2",
     "aws-xray-sdk": "3.10.2"
   },

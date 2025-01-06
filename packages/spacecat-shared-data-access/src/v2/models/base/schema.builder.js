@@ -210,7 +210,7 @@ class SchemaBuilder {
   }
 
   /**
-   * By default, createdAt is readOnly. This method allows
+   * By default createdAt and updatedAt are readOnly. This method allows
    * to disable this behavior and allow upserts.
    *
    * @param {boolean} allow - Whether to allow upserts.
@@ -223,6 +223,11 @@ class SchemaBuilder {
 
     if (allow) {
       this.addAttribute('createdAt', {
+        type: 'string',
+        required: true,
+        default: () => new Date().toISOString(),
+      });
+      this.addAttribute('updatedAt', {
         type: 'string',
         required: true,
         default: () => new Date().toISOString(),

@@ -284,7 +284,8 @@ class BaseCollection {
    * is not found.
    * @async
    */
-  async allByIndexKeys(keys, options = {}) {
+  async allByIndexKeys(indexKeys, options = {}) {
+    const keys = { pk: entityNameToAllPKValue(this.entityName), ...indexKeys };
     return this.#queryByIndexKeys(keys, options);
   }
 

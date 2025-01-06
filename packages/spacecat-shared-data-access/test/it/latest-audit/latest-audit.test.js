@@ -98,6 +98,17 @@ describe('LatestAudit IT', async () => {
     });
   });
 
+  it('gets all latest audits of a type', async () => {
+    const audits = await LatestAudit.allByAuditType('cwv');
+
+    expect(audits).to.be.an('array');
+    expect(audits.length).to.equal(9);
+    audits.forEach((audit) => {
+      expect(audit.getAuditType()).to.equal('cwv');
+      checkAudit(audit);
+    });
+  });
+
   it('gets latest audits of type for a site', async () => {
     const auditType = 'lhs-mobile';
     const site = sampleData.sites[1];

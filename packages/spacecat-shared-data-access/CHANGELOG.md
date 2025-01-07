@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.61.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.16...@adobe/spacecat-shared-data-access-v1.61.17) (2025-01-07)
+
+
+### Bug Fixes
+
+* update latest audit and allByIndexQuery ([#528](https://github.com/adobe/spacecat-shared/issues/528)) ([ff2c5c9](https://github.com/adobe/spacecat-shared/commit/ff2c5c9bfeae1d38c505653818184e5a040bb09c))
+
 # [@adobe/spacecat-shared-data-access-v1.61.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.15...@adobe/spacecat-shared-data-access-v1.61.16) (2025-01-06)
 
 

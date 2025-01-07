@@ -28,11 +28,11 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 const schema = new SchemaBuilder(LatestAudit, LatestAuditCollection)
   .withPrimaryPartitionKeys(['siteId'])
   .withPrimarySortKeys(['auditType'])
+  .withUpsertable(true)
   .addReference('belongs_to', 'Site', ['auditType'])
   .addReference('belongs_to', 'Audit', ['auditType'])
   .addReference('has_many', 'Opportunities')
   .addAllIndex(['auditType'])
-  .allowUpdates(false)
   .allowRemove(false)
   .addAttribute('auditResult', {
     type: 'any',

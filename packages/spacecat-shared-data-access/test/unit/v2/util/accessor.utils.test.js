@@ -109,6 +109,20 @@ describe('Accessor Utils', () => { /* eslint-disable no-underscore-dangle */
 
       expect(mockContext._accessorCache).to.deep.equal({ a: 1 });
     });
+
+    it('does not create accessor if context already has a function with the same name', async () => {
+      const config = {
+        collection: mockCollection,
+        context: { test: () => {} },
+        name: 'test',
+        requiredKeys: ['test'],
+      };
+
+      createAccessor(config);
+
+      expect(mockCollection.schema.getAttribute).to.not.have.been.called;
+      expect(mockCollection.findByIndexKeys).to.not.have.been.called;
+    });
   });
 
   describe('call accessor', () => {

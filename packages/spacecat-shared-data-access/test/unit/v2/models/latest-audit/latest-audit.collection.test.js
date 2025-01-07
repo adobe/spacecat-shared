@@ -60,6 +60,29 @@ describe('LatestAuditCollection', () => {
     });
   });
 
+  describe('create', () => {
+    it('creates a new latest audit', async () => {
+      const result = await instance.create(mockRecord);
+
+      expect(result).to.be.an('object');
+      expect(result.record.latestAuditId).to.equal(mockRecord.latestAuditId);
+    });
+  });
+
+  describe('allByAuditType', () => {
+    it('returns all latest audits by audit type', async () => {
+      const auditType = 'lhs-mobile';
+
+      instance.all = stub().resolves([mockRecord]);
+
+      const audits = await instance.allByAuditType(auditType);
+
+      expect(audits).to.be.an('array');
+      expect(audits.length).to.equal(1);
+      expect(instance.all).to.have.been.calledWithExactly({ auditType });
+    });
+  });
+
   describe('findById', () => {
     it('finds latest audit by id', async () => {
       const siteId = '78fec9c7-2141-4600-b7b1-ea5c78752b91';

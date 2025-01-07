@@ -38,11 +38,12 @@ describe('LatestAudit IT', async () => {
   let sampleData;
   let LatestAudit;
   let Audit;
+  let dataAccess;
 
   before(async () => {
     sampleData = await seedDatabase();
 
-    const dataAccess = getDataAccess();
+    dataAccess = getDataAccess();
     LatestAudit = dataAccess.LatestAudit;
     Audit = dataAccess.Audit;
   });
@@ -98,6 +99,17 @@ describe('LatestAudit IT', async () => {
     });
   });
 
+  it('gets all latest audits of a type', async () => {
+    const audits = await LatestAudit.allByAuditType('cwv');
+
+    expect(audits).to.be.an('array');
+    expect(audits.length).to.equal(9);
+    audits.forEach((audit) => {
+      expect(audit.getAuditType()).to.equal('cwv');
+      checkAudit(audit);
+    });
+  });
+
   it('gets latest audits of type for a site', async () => {
     const auditType = 'lhs-mobile';
     const site = sampleData.sites[1];
@@ -132,5 +144,65 @@ describe('LatestAudit IT', async () => {
     const audit = await site.getLatestAuditByAuditType('non-existing-type');
 
     expect(audit).to.be.null;
+  });
+
+  it('updates a latest audit upon audit creation', async () => {
+    const auditType = 'lhs-mobile';
+    const site = sampleData.sites[1];
+    const previousLatestAudit = await site.getLatestAuditByAuditType(auditType);
+    const audit = await Audit.create({
+      siteId: site.getId(),
+      isLive: true,
+      auditedAt: '2025-01-06T10:11:51.833Z',
+      auditType,
+      auditResult: {
+        scores: {
+          performance: 0.4,
+          seo: 0.47,
+          accessibility: 0.27,
+          'best-practices': 0.55,
+        },
+      },
+      fullAuditRef: 'https://example.com/audit',
+    });
+    checkAudit(audit);
+    const updatedSite = await dataAccess.Site.findById(site.getId());
+    const latestAudit = await updatedSite.getLatestAuditByAuditType(auditType);
+    checkAudit(latestAudit);
+    expect(latestAudit.getSiteId()).to.equal(site.getId());
+    expect(latestAudit.getAuditType()).to.equal(auditType);
+    expect(latestAudit.getAuditedAt()).to.equal(audit.getAuditedAt());
+    expect(latestAudit.getAuditedAt()).to.not.equal(previousLatestAudit.getAuditedAt());
+    expect(latestAudit.getUpdatedAt()).to.not.equal(previousLatestAudit.getUpdatedAt());
+  });
+
+  it('creates a latest audit upon audit creation', async () => {
+    const auditType = 'broken-backlinks';
+    const site = sampleData.sites[0];
+    const previousLatestAudit = await site.getLatestAuditByAuditType(auditType);
+
+    const audit = await Audit.create({
+      siteId: site.getId(),
+      isLive: true,
+      auditedAt: '2025-01-06T10:11:51.833Z',
+      auditType,
+      auditResult: {
+        scores: {
+          performance: 0.4,
+          seo: 0.47,
+          accessibility: 0.27,
+          'best-practices': 0.55,
+        },
+      },
+      fullAuditRef: 'https://example.com/audit',
+    });
+    checkAudit(audit);
+    const updatedSite = await dataAccess.Site.findById(site.getId());
+    const latestAudit = await updatedSite.getLatestAuditByAuditType(auditType);
+    checkAudit(latestAudit);
+    expect(previousLatestAudit).to.be.null;
+    expect(latestAudit.getSiteId()).to.equal(site.getId());
+    expect(latestAudit.getAuditType()).to.equal(auditType);
+    expect(latestAudit.getAuditedAt()).to.equal(audit.getAuditedAt());
   });
 });

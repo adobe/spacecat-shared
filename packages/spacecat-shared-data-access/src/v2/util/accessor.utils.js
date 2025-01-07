@@ -103,6 +103,10 @@ export function createAccessor(config) { /* eslint-disable no-underscore-dangle 
     });
   }
 
+  if (context[name]) {
+    return;
+  }
+
   const foreignKeys = {
     ...isNonEmptyObject(foreignKey) && { [foreignKey.name]: foreignKey.value },
   };
@@ -150,9 +154,8 @@ export function createAccessor(config) { /* eslint-disable no-underscore-dangle 
   );
 }
 
-export function createAccessors(configs, log) {
+export function createAccessors(configs) {
   configs.forEach((config) => {
     createAccessor(config);
-    log.debug(`Created accessor ${config.name} for ${config.context.schema.getModelName()} to ${config.collection.schema.getModelName()}`);
   });
 }

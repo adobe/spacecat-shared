@@ -38,11 +38,12 @@ describe('LatestAudit IT', async () => {
   let sampleData;
   let LatestAudit;
   let Audit;
+  let dataAccess;
 
   before(async () => {
     sampleData = await seedDatabase();
 
-    const dataAccess = getDataAccess();
+    dataAccess = getDataAccess();
     LatestAudit = dataAccess.LatestAudit;
     Audit = dataAccess.Audit;
   });
@@ -134,9 +135,10 @@ describe('LatestAudit IT', async () => {
     expect(audit).to.be.null;
   });
 
-  it('creates a latest audit upon audit creation', async () => {
+  it('updates a latest audit upon audit creation', async () => {
     const auditType = 'lhs-mobile';
     const site = sampleData.sites[1];
+    const previousLatestAudit = await site.getLatestAuditByAuditType(auditType);
     const audit = await Audit.create({
       siteId: site.getId(),
       isLive: true,
@@ -153,9 +155,43 @@ describe('LatestAudit IT', async () => {
       fullAuditRef: 'https://example.com/audit',
     });
     checkAudit(audit);
-    const latestAudit = await site.getLatestAuditByAuditType(auditType);
+    const updatedSite = await dataAccess.Site.findById(site.getId());
+    const latestAudit = await updatedSite.getLatestAuditByAuditType(auditType);
     checkAudit(latestAudit);
     expect(latestAudit.getSiteId()).to.equal(site.getId());
     expect(latestAudit.getAuditType()).to.equal(auditType);
+    expect(latestAudit.getAuditedAt()).to.equal(audit.getAuditedAt());
+    expect(latestAudit.getAuditedAt()).to.not.equal(previousLatestAudit.getAuditedAt());
+    expect(latestAudit.getUpdatedAt()).to.not.equal(previousLatestAudit.getUpdatedAt());
+  });
+
+  it('creates a latest audit upon audit creation', async () => {
+    const auditType = 'broken-backlinks';
+    const site = sampleData.sites[0];
+    const previousLatestAudit = await site.getLatestAuditByAuditType(auditType);
+
+    const audit = await Audit.create({
+      siteId: site.getId(),
+      isLive: true,
+      auditedAt: '2025-01-06T10:11:51.833Z',
+      auditType,
+      auditResult: {
+        scores: {
+          performance: 0.4,
+          seo: 0.47,
+          accessibility: 0.27,
+          'best-practices': 0.55,
+        },
+      },
+      fullAuditRef: 'https://example.com/audit',
+    });
+    checkAudit(audit);
+    const updatedSite = await dataAccess.Site.findById(site.getId());
+    const latestAudit = await updatedSite.getLatestAuditByAuditType(auditType);
+    checkAudit(latestAudit);
+    expect(previousLatestAudit).to.be.null;
+    expect(latestAudit.getSiteId()).to.equal(site.getId());
+    expect(latestAudit.getAuditType()).to.equal(auditType);
+    expect(latestAudit.getAuditedAt()).to.equal(audit.getAuditedAt());
   });
 });

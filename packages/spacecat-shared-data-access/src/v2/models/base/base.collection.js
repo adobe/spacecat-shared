@@ -376,7 +376,7 @@ class BaseCollection {
 
     try {
       const record = upsert
-        ? await this.entity.upsert(item).go()
+        ? await this.entity.put(item).go()
         : await this.entity.create(item).go();
 
       const instance = this.#createInstance(record.data);

@@ -227,11 +227,6 @@ class SchemaBuilder {
         required: true,
         default: () => new Date().toISOString(),
       });
-      this.addAttribute('updatedAt', {
-        type: 'string',
-        required: true,
-        default: () => new Date().toISOString(),
-      });
     }
 
     return this;

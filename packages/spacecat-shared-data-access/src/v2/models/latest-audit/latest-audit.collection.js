@@ -21,6 +21,10 @@ import { guardId, guardString } from '../../util/index.js';
  * @extends AuditCollection
  */
 class LatestAuditCollection extends BaseCollection {
+  async create(item) {
+    return super.create(item, { upsert: true });
+  }
+
   async allByAuditType(auditType) {
     guardString('auditType', auditType, this.entityName);
 

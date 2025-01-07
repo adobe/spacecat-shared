@@ -140,6 +140,13 @@ describe('SchemaBuilder', () => {
     });
   });
 
+  describe('withUpsertable', () => {
+    it('throws error if upsertable is not a boolean', () => {
+      expect(() => instance.withUpsertable('test'))
+        .to.throw(SchemaBuilderError, '[SpaceCat -> MockModel] allow must be a boolean.');
+    });
+  });
+
   describe('allowRemove', () => {
     it('throws error if allowRemove is not a boolean', () => {
       expect(() => instance.allowRemove('test'))

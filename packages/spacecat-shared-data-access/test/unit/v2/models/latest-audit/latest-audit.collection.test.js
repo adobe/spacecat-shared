@@ -60,6 +60,15 @@ describe('LatestAuditCollection', () => {
     });
   });
 
+  describe('create', () => {
+    it('creates a new latest audit', async () => {
+      const result = await instance.create(mockRecord);
+
+      expect(result).to.be.an('object');
+      expect(result.record.latestAuditId).to.equal(mockRecord.latestAuditId);
+    });
+  });
+
   describe('allByAuditType', () => {
     it('returns all latest audits by audit type', async () => {
       const auditType = 'lhs-mobile';

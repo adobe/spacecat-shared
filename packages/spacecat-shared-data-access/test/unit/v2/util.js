@@ -43,7 +43,7 @@ export const createElectroMocks = (Model, record) => {
       set: stub(),
     }),
     put: stub().returns({
-      go: stub().resolves({}),
+      go: stub().resolves({ data: record }),
     }),
     query: {
       all: stub().returns({

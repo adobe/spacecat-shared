@@ -307,6 +307,15 @@ describe('BaseCollection', () => {
       expect(mockElectroService.entities.mockEntityModel.create.calledOnce).to.be.true;
     });
 
+    it('upserts an existing entity successfully', async () => {
+      mockElectroService.entities.mockEntityModel.put.returns(
+        { go: () => Promise.resolve({ data: mockRecord }) },
+      );
+      const result = await baseCollectionInstance.create(mockRecord, { upsert: true });
+      expect(result.record).to.deep.include(mockRecord);
+      expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+    });
+
     it('logs an error and throws when creation fails', async () => {
       const error = new Error('Create failed');
       mockElectroService.entities.mockEntityModel.create.returns(

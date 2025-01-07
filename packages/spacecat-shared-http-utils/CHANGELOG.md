@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.2...@adobe/spacecat-shared-http-utils-v1.9.3) (2025-01-06)
+
+
+### Bug Fixes
+
+* api-key v2 data access ([#526](https://github.com/adobe/spacecat-shared/issues/526)) ([d13f8ae](https://github.com/adobe/spacecat-shared/commit/d13f8aea8f5f1822efd9073b4b4f0b50df6ef5c3))
+
 # [@adobe/spacecat-shared-http-utils-v1.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.1...@adobe/spacecat-shared-http-utils-v1.9.2) (2024-12-31)
 
 

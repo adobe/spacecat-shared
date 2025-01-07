@@ -30,6 +30,8 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
       throw new Error('Data access is required');
     }
 
+    const { ApiKey } = dataAccess;
+
     const apiKeyFromHeader = headers['x-api-key'];
     if (!hasText(apiKeyFromHeader)) {
       return null;
@@ -37,7 +39,7 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
 
     // Keys are stored by their hash, so we need to hash the key to look it up
     const hashedApiKey = hashWithSHA256(apiKeyFromHeader);
-    const apiKeyEntity = await dataAccess.getApiKeyByHashedApiKey(hashedApiKey);
+    const apiKeyEntity = await ApiKey.findByHashedApiKey(hashedApiKey);
 
     if (!apiKeyEntity) {
       this.log(`No API key entity found in the data layer for the provided API key: ${apiKeyFromHeader}`, 'error');

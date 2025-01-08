@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.17.2...@adobe/spacecat-shared-rum-api-client-v2.18.0) (2025-01-08)
+
+
+### Features
+
+* **rum-api-client:** log fetches bundles length ([#530](https://github.com/adobe/spacecat-shared/issues/530)) ([b7011d9](https://github.com/adobe/spacecat-shared/commit/b7011d99da894fe340d4abcd26aec64c0faeb1c5))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.17.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.17.1...@adobe/spacecat-shared-rum-api-client-v2.17.2) (2024-12-31)
 
 

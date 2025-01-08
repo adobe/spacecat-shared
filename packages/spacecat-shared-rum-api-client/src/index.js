@@ -38,11 +38,17 @@ const HANDLERS = {
 
 export default class RUMAPIClient {
   static createFrom(context) {
+    const { log = console } = context;
+
     if (context.rumApiClient) return context.rumApiClient;
 
-    const client = new RUMAPIClient();
+    const client = new RUMAPIClient(log);
     context.rumApiClient = client;
     return client;
+  }
+
+  constructor(log) {
+    this.log = log;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -55,6 +61,8 @@ export default class RUMAPIClient {
         ...opts,
         checkpoints,
       });
+
+      this.log.info(`Query "${query}" fetched ${bundles.length} bundles`);
 
       return handler(bundles, opts);
     } catch (e) {
@@ -86,6 +94,8 @@ export default class RUMAPIClient {
       });
 
       const results = {};
+
+      this.log.info(`Multi query ${JSON.stringify(queries.join(', '))} fetched ${bundles.length} bundles`);
 
       // Execute each query handler sequentially
       for (const { query, handler } of queryHandlers) {

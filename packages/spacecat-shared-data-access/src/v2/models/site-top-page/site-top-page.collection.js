@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 
 import BaseCollection from '../base/base.collection.js';
 
@@ -37,7 +37,9 @@ class SiteTopPageCollection extends BaseCollection {
 
     const topPageIdsToRemove = topPagesToRemove.map((topPage) => topPage.getId());
 
-    await this.removeByIds(topPageIdsToRemove);
+    if (isNonEmptyArray(topPageIdsToRemove)) {
+      await this.removeByIds(topPageIdsToRemove);
+    }
   }
 }
 

@@ -77,6 +77,17 @@ describe('SiteTopPageCollection', () => {
         .to.be.true;
     });
 
+    it('does not call remove when there are no SiteTopPages for a given siteId', async () => {
+      const siteId = 'site12345';
+
+      instance.allBySiteId = stub().resolves([]);
+
+      await instance.removeForSiteId(siteId);
+
+      expect(instance.allBySiteId.calledOnceWith(siteId)).to.be.true;
+      expect(mockElectroService.entities.siteTopPage.delete).to.not.have.been.called;
+    });
+
     it('remove all SiteTopPages for a given siteId, source and geo', async () => {
       const siteId = 'site12345';
       const source = 'ahrefs';

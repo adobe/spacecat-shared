@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v1.61.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.17...@adobe/spacecat-shared-data-access-v1.61.18) (2025-01-08)
+
+
+### Bug Fixes
+
+* import top pages ([c68b563](https://github.com/adobe/spacecat-shared/commit/c68b563e45b3af5810a569ab52f317751b2df847))
+
 # [@adobe/spacecat-shared-data-access-v1.61.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.16...@adobe/spacecat-shared-data-access-v1.61.17) (2025-01-07)
 
 

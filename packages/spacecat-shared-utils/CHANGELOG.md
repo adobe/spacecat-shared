@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.5...@adobe/spacecat-shared-utils-v1.26.0) (2025-01-09)
+
+
+### Features
+
+* isValidUUID ([#531](https://github.com/adobe/spacecat-shared/issues/531)) ([30bb19b](https://github.com/adobe/spacecat-shared/commit/30bb19bf47937a33ea8beb47d420a68a4bd1cd8b))
+
 # [@adobe/spacecat-shared-utils-v1.25.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.25.4...@adobe/spacecat-shared-utils-v1.25.5) (2025-01-06)
 
 

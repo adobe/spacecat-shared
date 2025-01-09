@@ -49,6 +49,7 @@
     "@aws-sdk/client-secrets-manager": "3.721.0",
     "@aws-sdk/client-sqs": "3.721.0",
     "@json2csv/plainjs": "7.0.6",
-    "aws-xray-sdk": "3.10.2"
+    "aws-xray-sdk": "3.10.2",
+    "uuid": "11.0.4"
   }
 }

@@ -27,6 +27,7 @@ export {
   isString,
   isValidDate,
   isValidUrl,
+  isValidUUID,
   toBoolean,
 } from './functions.js';
 

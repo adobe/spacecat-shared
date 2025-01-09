@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { validate as uuidValidate } from 'uuid';
+
 // Precompile regular expressions
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
@@ -195,6 +197,15 @@ function isValidUrl(urlString) {
 }
 
 /**
+ * Validates whether the given string is a valid UUID.
+ * @param {string} uuid - The string to validate.
+ * @return {boolean} True if the given string is a valid UUID.
+ */
+function isValidUUID(uuid) {
+  return uuidValidate(uuid);
+}
+
+/**
  * Converts a given value to a boolean. Throws an error if the value is not a boolean.
  *
  * @param {*} value - The value to convert.
@@ -257,5 +268,6 @@ export {
   isString,
   isValidDate,
   isValidUrl,
+  isValidUUID,
   toBoolean,
 };

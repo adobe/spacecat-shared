@@ -43,6 +43,8 @@ export function toBoolean(value: unknown): boolean;
 
 export function isValidUrl(urlString: string): boolean;
 
+export function isValidUUID(uuid: string): boolean;
+
 export function dateAfterDays(days: number, dateString: string): Date;
 
 export function deepEqual(a: unknown, b: unknown): boolean;

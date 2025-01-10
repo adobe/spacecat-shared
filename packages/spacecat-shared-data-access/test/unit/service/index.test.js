@@ -123,6 +123,7 @@ describe('Data Access Object Tests', () => {
     'Organization',
     'Site',
     'SiteCandidate',
+    'SiteCompetitor',
     'SiteTopPage',
     'Suggestion',
   ];

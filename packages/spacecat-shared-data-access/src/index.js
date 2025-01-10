@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { createDataAccess } from './v2/index.js';
+import { createDataAccess } from './service/index.js';
+
+export * from './service/index.js';
 
 const TABLE_NAME_DATA = 'spacecat-services-data-dev';
 
@@ -31,5 +33,3 @@ export default function dataAccessWrapper(fn) {
     return fn(request, context);
   };
 }
-
-export * from './v2/index.js';

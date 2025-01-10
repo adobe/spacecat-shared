@@ -13,7 +13,7 @@
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
-import { createDataAccess } from '../../../src/v2/index.js';
+import { createDataAccess } from '../../../src/service/index.js';
 
 export const TEST_DA_CONFIG = {
   indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',

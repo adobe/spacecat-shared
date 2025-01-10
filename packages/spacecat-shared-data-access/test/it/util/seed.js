@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { idNameToEntityName } from '../../../src/v2/util/util.js';
+import { idNameToEntityName } from '../../../src/util/util.js';
 import fixtures from '../../fixtures/index.fixtures.js';
 
 import { getDataAccess, getDynamoClients, TEST_DA_CONFIG } from './db.js';

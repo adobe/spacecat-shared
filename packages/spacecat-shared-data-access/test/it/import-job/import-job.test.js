@@ -15,7 +15,7 @@
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import ImportJobModel from '../../../src/v2/models/import-job/import-job.model.js';
+import ImportJobModel from '../../../src/models/import-job/import-job.model.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 

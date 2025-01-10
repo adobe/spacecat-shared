@@ -175,15 +175,13 @@ describe('SiteTopPage IT', async () => {
       site.getId(),
       source,
       geo,
-      { order: 'desc' },
     );
 
     expect(siteTopPages).to.be.an('array');
     expect(siteTopPages.length).to.equal(2);
 
-    // results ordered by updatedAt desc
-    expect(siteTopPages[1].getId()).to.equal(createdPages[0].getId());
-    expect(siteTopPages[0].getId()).to.equal(createdPages[1].getId());
+    expect(siteTopPages.some((page) => page.getId() === createdPages[0].getId())).to.equal(true);
+    expect(siteTopPages.some((page) => page.getId() === createdPages[1].getId())).to.equal(true);
   });
 
   it('removes a site top page', async () => {

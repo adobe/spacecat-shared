@@ -14,7 +14,7 @@
 
 import { expect } from 'chai';
 
-import { Config } from '../../../../src/models/site/config.js';
+import { Config } from '../../../../../src/v2/models/site/config.js';
 
 describe('Config Tests', () => {
   describe('Config Creation', () => {

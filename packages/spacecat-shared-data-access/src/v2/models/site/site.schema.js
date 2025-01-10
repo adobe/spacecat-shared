@@ -19,7 +19,7 @@ import {
   isValidUrl,
 } from '@adobe/spacecat-shared-utils';
 
-import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
+import { Config, DEFAULT_CONFIG, validateConfiguration } from './config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 
 import Site from './site.model.js';

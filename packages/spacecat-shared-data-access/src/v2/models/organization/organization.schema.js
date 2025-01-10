@@ -14,7 +14,7 @@
 
 import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
-import { Config, DEFAULT_CONFIG, validateConfiguration } from '../../../models/site/config.js';
+import { Config, DEFAULT_CONFIG, validateConfiguration } from '../site/config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 import Organization from './organization.model.js';
 import OrganizationCollection from './organization.collection.js';

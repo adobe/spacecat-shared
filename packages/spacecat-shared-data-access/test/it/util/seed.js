@@ -13,7 +13,6 @@
 import { idNameToEntityName } from '../../../src/v2/util/util.js';
 import fixtures from '../../fixtures/index.fixtures.js';
 
-import generateLegacySampleData from './generateLegacySampleData.js';
 import { getDataAccess, getDynamoClients, TEST_DA_CONFIG } from './db.js';
 import { createTablesFromSchema, deleteExistingTables } from './tableOperations.js';
 
@@ -73,6 +72,5 @@ const seedV2Fixtures = async () => {
 
 export const seedDatabase = async () => {
   await resetDatabase();
-  await generateLegacySampleData(TEST_DA_CONFIG);
   return seedV2Fixtures();
 };

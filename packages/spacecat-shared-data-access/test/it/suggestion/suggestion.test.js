@@ -19,7 +19,7 @@ import chaiAsPromised from 'chai-as-promised';
 import { validate as uuidValidate } from 'uuid';
 
 import { ValidationError } from '../../../src/index.js';
-import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/v2/util/util.js';
+import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/util.js';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';

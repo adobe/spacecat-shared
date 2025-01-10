@@ -25,7 +25,7 @@ import { ValidationError } from '../../../src/index.js';
 import fixtures from '../../fixtures/index.fixtures.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
-import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/v2/util/util.js';
+import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/util.js';
 
 use(chaiAsPromised);
 use(sinonChai);

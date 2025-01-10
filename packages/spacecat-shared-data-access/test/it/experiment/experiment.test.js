@@ -17,7 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
-import { sanitizeIdAndAuditFields } from '../../../src/v2/util/util.js';
+import { sanitizeIdAndAuditFields } from '../../../src/util/util.js';
 
 use(chaiAsPromised);
 

@@ -24,6 +24,25 @@ export class FirefallClient {
    * Sends the given prompt to the Firefall GPT API and returns the response.
    * @param {string} prompt The prompt to send to the Firefall GPT API.
    * @returns {Promise<string>} The response from the Firefall GPT API.
+   * @deprecated since version 1.2.19. Use fetchCapabilityExecution instead.
    */
   fetch(prompt: string): Promise<string>;
+
+  /**
+   * Fetches data from Firefall Chat Completion API.
+   * @param prompt The text prompt to provide to Firefall
+   * @param options The options for the call, with optional properties:
+   *          - imageUrls: An array of URLs of the images to provide to Firefall
+   *          - model: LLM Model to use (default: gpt-4-turbo).  Use 'gpt-4-vision' with images.
+   *          - responseFormat: The response format to request from Firefall (accepts: json_object)
+   * @returns {Object} - AI response
+   */
+  fetchChatCompletion(prompt: string, options?: object): object;
+
+  /**
+   * Fetches data from Firefall API.
+   * @param prompt The text prompt to provide to Firefall
+   * @returns {string} - AI response
+   */
+  fetchCapabilityExecution(prompt: string): string;
 }

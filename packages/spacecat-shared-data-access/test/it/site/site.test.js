@@ -18,7 +18,7 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import siteFixtures from '../../fixtures/sites.fixture.js';
-import { sanitizeTimestamps } from '../../../src/v2/util/util.js';
+import { sanitizeTimestamps } from '../../../src/util/util.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
 

@@ -17,7 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
-import { sanitizeTimestamps } from '../../../src/v2/util/util.js';
+import { sanitizeTimestamps } from '../../../src/util/util.js';
 
 use(chaiAsPromised);
 
@@ -148,6 +148,40 @@ describe('SiteTopPage IT', async () => {
     expect(updatedSiteTopPage.getTopKeyword()).to.equal(updates.topKeyword);
     expect(updatedSiteTopPage.getGeo()).to.equal(updates.geo);
     expect(updatedSiteTopPage.getImportedAt()).to.equal(updates.importedAt);
+  });
+
+  it('stores and returns multiple top pages with identical source, geo and traffic', async () => {
+    const site = sampleData.sites[0];
+    const source = 'some-source';
+    const geo = 'APAC';
+    const traffic = 1000;
+    const createdPages = [];
+
+    for (let i = 0; i < 2; i += 1) {
+      const data = {
+        siteId: site.getId(),
+        url: `https://www.example.com/page${i}`,
+        traffic,
+        source,
+        topKeyword: 'example',
+        geo,
+      };
+
+      // eslint-disable-next-line no-await-in-loop
+      createdPages.push(await SiteTopPage.create(data));
+    }
+
+    const siteTopPages = await SiteTopPage.allBySiteIdAndSourceAndGeo(
+      site.getId(),
+      source,
+      geo,
+    );
+
+    expect(siteTopPages).to.be.an('array');
+    expect(siteTopPages.length).to.equal(2);
+
+    expect(siteTopPages.some((page) => page.getId() === createdPages[0].getId())).to.equal(true);
+    expect(siteTopPages.some((page) => page.getId() === createdPages[1].getId())).to.equal(true);
   });
 
   it('removes a site top page', async () => {

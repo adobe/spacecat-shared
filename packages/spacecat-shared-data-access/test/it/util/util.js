@@ -9,7 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { removeElectroProperties } from '../../../src/v2/util/util.js';
+import { removeElectroProperties } from '../../../src/util/util.js';
 
 const randomDate = (start, end) => {
   if (start.getTime() >= end.getTime()) {

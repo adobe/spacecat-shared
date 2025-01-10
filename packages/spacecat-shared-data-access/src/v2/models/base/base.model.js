@@ -252,13 +252,26 @@ class BaseModel {
   async _remove() {
     try {
       const dependents = await this.#fetchDependents();
-      // eslint-disable-next-line no-underscore-dangle
-      const removePromises = dependents.map((dependent) => dependent._remove());
-      removePromises.push(this.entity.remove({ [this.idName]: this.getId() }).go());
+
+      const removePromises = dependents.map(async (dependent) => {
+        try {
+          // eslint-disable-next-line no-underscore-dangle
+          await dependent._remove();
+        } catch (e) {
+          this.log.error(`Failed to remove dependent entity ${dependent.entityName} with ID ${dependent.getId()}`, e);
+          throw new DataAccessError(
+            `Failed to remove dependent entity ${dependent.entityName} with ID ${dependent.getId()}`,
+            dependent,
+            e,
+          );
+        }
+      });
 
       this.log.info(`Removing entity ${this.entityName} with ID ${this.getId()} and ${dependents.length} dependents`);
 
       await Promise.all(removePromises);
+
+      await this.entity.remove({ [this.idName]: this.getId() }).go();
 
       this.#invalidateCache();
 

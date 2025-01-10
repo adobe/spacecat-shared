@@ -70,9 +70,9 @@ const getDynamoClients = (config = {}) => {
   return { dbClient, docClient };
 };
 
-export const getDataAccess = (config) => {
+export const getDataAccess = (config, logger = console) => {
   const { dbClient } = getDynamoClients(config);
-  return createDataAccess(TEST_DA_CONFIG, console, dbClient);
+  return createDataAccess(TEST_DA_CONFIG, logger, dbClient);
 };
 
 export { getDynamoClients };

@@ -35,14 +35,14 @@ export class FirefallClient {
    *          - imageUrls: An array of URLs of the images to provide to Firefall
    *          - model: LLM Model to use (default: gpt-4-turbo).  Use 'gpt-4-vision' with images.
    *          - responseFormat: The response format to request from Firefall (accepts: json_object)
-   * @returns {Object} - AI response
+    * @returns {Promise<Object>} - AI response
    */
-  fetchChatCompletion(prompt: string, options?: object): object;
+  fetchChatCompletion(prompt: string, options?: object): Promise<object>;
 
   /**
    * Fetches data from Firefall API.
    * @param prompt The text prompt to provide to Firefall
-   * @returns {string} - AI response
+   * @returns {Promise<string>} - AI response
    */
-  fetchCapabilityExecution(prompt: string): string;
+  fetchCapabilityExecution(prompt: string): Promise<string>;
 }

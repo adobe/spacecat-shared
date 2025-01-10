@@ -150,6 +150,42 @@ describe('SiteTopPage IT', async () => {
     expect(updatedSiteTopPage.getImportedAt()).to.equal(updates.importedAt);
   });
 
+  it('stores and returns multiple top pages with identical source, geo and traffic', async () => {
+    const site = sampleData.sites[0];
+    const source = 'some-source';
+    const geo = 'APAC';
+    const traffic = 1000;
+    const createdPages = [];
+
+    for (let i = 0; i < 2; i += 1) {
+      const data = {
+        siteId: site.getId(),
+        url: `https://www.example.com/page${i}`,
+        traffic,
+        source,
+        topKeyword: 'example',
+        geo,
+      };
+
+      // eslint-disable-next-line no-await-in-loop
+      createdPages.push(await SiteTopPage.create(data));
+    }
+
+    const siteTopPages = await SiteTopPage.allBySiteIdAndSourceAndGeo(
+      site.getId(),
+      source,
+      geo,
+      { order: 'desc' },
+    );
+
+    expect(siteTopPages).to.be.an('array');
+    expect(siteTopPages.length).to.equal(2);
+
+    // results ordered by updatedAt desc
+    expect(siteTopPages[1].getId()).to.equal(createdPages[0].getId());
+    expect(siteTopPages[0].getId()).to.equal(createdPages[1].getId());
+  });
+
   it('removes a site top page', async () => {
     const siteTopPage = await SiteTopPage.findById(sampleData.siteTopPages[0].getId());
 

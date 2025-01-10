@@ -254,6 +254,25 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       expect(dependent._remove.notCalled).to.be.true;
     });
 
+    it('logs an error and throws if removal of a dependent fails', async () => {
+      const reference = Reference.fromJSON({
+        type: Reference.TYPES.HAS_ONE,
+        target: 'SomeModel',
+        options: { removeDependents: true },
+      });
+
+      baseModelInstance.getSomeModel = stub().resolves(dependent);
+      baseModelInstance.getSuggestions = stub().resolves(dependents);
+
+      schema.references.push(reference);
+
+      const error = new Error('Remove failed');
+      dependent._remove = stub().returns(Promise.reject(error));
+
+      await expect(baseModelInstance.remove()).to.be.rejectedWith('Failed to remove entity opportunity with ID 12345');
+      expect(mockLogger.error.calledOnce).to.be.true;
+    });
+
     it('logs an error and throws when remove fails', async () => {
       const error = new Error('Remove failed');
       mockElectroService.entities.opportunity.remove.returns({ go: () => Promise.reject(error) });

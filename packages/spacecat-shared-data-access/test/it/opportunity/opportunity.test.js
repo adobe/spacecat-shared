@@ -16,6 +16,8 @@ import { isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
 import { ValidationError } from '../../../src/index.js';
@@ -26,21 +28,36 @@ import { seedDatabase } from '../util/seed.js';
 import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/v2/util/util.js';
 
 use(chaiAsPromised);
+use(sinonChai);
 
 describe('Opportunity IT', async () => {
   const { siteId } = fixtures.sites[0];
 
   let sampleData;
+  let mockLogger;
 
   let Opportunity;
   let Suggestion;
 
   before(async () => {
     sampleData = await seedDatabase();
+  });
 
-    const dataAccess = getDataAccess();
+  beforeEach(() => {
+    mockLogger = {
+      debug: sinon.stub(),
+      error: sinon.stub(),
+      info: sinon.stub(),
+      warn: sinon.stub(),
+    };
+
+    const dataAccess = getDataAccess({}, mockLogger);
     Opportunity = dataAccess.Opportunity;
     Suggestion = dataAccess.Suggestion;
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 
   it('finds one opportunity by id', async () => {
@@ -202,6 +219,31 @@ describe('Opportunity IT', async () => {
       const notFoundSuggestion = await Suggestion.findById(suggestion.getId());
       await expect(notFoundSuggestion).to.be.null;
     }));
+  });
+
+  it('throws when removing a dependent fails', async () => { /* eslint-disable no-underscore-dangle */
+    const opportunity = await Opportunity.findById(sampleData.opportunities[1].getId());
+    const suggestions = await opportunity.getSuggestions();
+
+    expect(suggestions).to.be.an('array').with.length(3);
+
+    // make one suggestion fail to remove
+    suggestions[0]._remove = sinon.stub().rejects(new Error('Failed to remove suggestion'));
+
+    opportunity.getSuggestions = sinon.stub().resolves(suggestions);
+
+    await expect(opportunity.remove()).to.be.rejectedWith(`Failed to remove entity opportunity with ID ${opportunity.getId()}`);
+    expect(suggestions[0]._remove).to.have.been.calledOnce;
+    expect(mockLogger.error).to.have.been.calledWith(`Failed to remove dependent entity suggestion with ID ${suggestions[0].getId()}`);
+
+    // make sure the opportunity is still there
+    const stillThere = await Opportunity.findById(sampleData.opportunities[1].getId());
+    expect(stillThere).to.be.an('object');
+
+    // make sure the other suggestions are removed
+    const remainingSuggestions = await Suggestion.allByOpportunityId(opportunity.getId());
+    expect(remainingSuggestions).to.be.an('array').with.length(1);
+    expect(remainingSuggestions[0].getId()).to.equal(suggestions[0].getId());
   });
 
   it('creates many opportunities', async () => {

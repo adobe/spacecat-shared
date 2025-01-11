@@ -15,7 +15,6 @@ import {
   composeBaseURL, hasText, isObject, tracingFetch,
 } from '@adobe/spacecat-shared-utils';
 import { Graph, hasCycle } from 'graph-data-structure';
-import { SiteDto } from '@adobe/spacecat-shared-data-access/src/dto/site.js';
 
 const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
@@ -213,7 +212,10 @@ export default class ContentClient {
         throw new Error(`Failed to fetch ${domain}`);
       }
       site = await response.json();
-      const siteDto = SiteDto.fromDynamoItem(site);
+      const siteDto = {
+        getId: () => site.siteId,
+        getHlxConfig: () => site.hlxConfig,
+      };
       return ContentClient.createFrom({ log, env }, siteDto);
     } catch (e) {
       log.error(`Failed to fetch ${domain}: ${e.message}`);

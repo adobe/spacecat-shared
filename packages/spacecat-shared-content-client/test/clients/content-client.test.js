@@ -17,7 +17,6 @@ import chaiAsPromised from 'chai-as-promised';
 import esmock from 'esmock';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.js';
 import nock from 'nock';
 
 use(chaiAsPromised);
@@ -33,21 +32,17 @@ describe('ContentClient', () => {
 
   let ContentClient;
 
-  const siteConfigGoogleDrive = createSite(
-    {
-      id: 'test-site',
-      hlxConfig: { content: { source: { type: 'drive.google' } } },
-      baseURL: 'https://base.spacecat',
-    },
-  );
+  const siteConfigGoogleDrive = {
+    getId: () => 'test-site',
+    getHlxConfig: () => ({ content: { source: { type: 'drive.google' } } }),
+    getBaseURL: () => 'https://base.spacecat',
+  };
 
-  const siteConfigOneDrive = createSite(
-    {
-      id: 'test-site',
-      hlxConfig: { content: { source: { type: 'onedrive' } } },
-      baseURL: 'https://base.spacecat',
-    },
-  );
+  const siteConfigOneDrive = {
+    getId: () => 'test-site',
+    getHlxConfig: () => ({ content: { source: { type: 'onedrive' } } }),
+    getBaseURL: () => 'https://base.spacecat',
+  };
 
   const sampleMetadata = new Map(
     [['title', { value: 'Test Page', type: 'text' }],

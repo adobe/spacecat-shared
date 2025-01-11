@@ -44,6 +44,6 @@
     "sinon": "19.0.2",
     "sinon-chai": "4.0.0",
     "slack-block-builder": "2.8.0",
-    "typescript": "5.7.2"
+    "typescript": "5.7.3"
   }
 }

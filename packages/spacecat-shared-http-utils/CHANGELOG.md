@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.9.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.3...@adobe/spacecat-shared-http-utils-v1.9.4) (2025-01-11)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.15.0 ([#536](https://github.com/adobe/spacecat-shared/issues/536)) ([ff70837](https://github.com/adobe/spacecat-shared/commit/ff70837e4cfb5fda6b7ba4b1369bbfaeb4c30b49)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
 # [@adobe/spacecat-shared-http-utils-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.2...@adobe/spacecat-shared-http-utils-v1.9.3) (2025-01-06)
 
 

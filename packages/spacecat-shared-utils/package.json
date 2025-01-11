@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.26.0",
+  "version": "1.26.1",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "engines": {
@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "@adobe/spacecat-shared-data-access": "1.61.6",
+    "@adobe/spacecat-shared-data-access": "2.0.0",
     "chai": "5.1.2",
     "chai-as-promised": "8.0.1",
     "husky": "9.1.7",

@@ -1,3 +1,15 @@
+# [@adobe/spacecat-shared-data-access-v2.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.19...@adobe/spacecat-shared-data-access-v2.0.0) (2025-01-10)
+
+
+### Code Refactoring
+
+* **data-access:** remove legacy data access ([#534](https://github.com/adobe/spacecat-shared/issues/534)) ([5d42c77](https://github.com/adobe/spacecat-shared/commit/5d42c77abfcd4e70284b438c5232dd9d74da03a7))
+
+
+### BREAKING CHANGES
+
+* **data-access:** the V1 data-access API has been removed
+
 # [@adobe/spacecat-shared-data-access-v1.61.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.61.18...@adobe/spacecat-shared-data-access-v1.61.19) (2025-01-10)
 
 

@@ -3,7 +3,6 @@ Shared modules for Spacecat Services
 
 ## Modules
 - `spacecat-shared-data-access` - Models and data access layer
-- `spacecat-shared-dynamodb` - DynamoDB client for basic access
 - `spacecat-shared-http-utils` - HTTP utility functions
 - `spacecat-shared-utils` - Utility functions
 - `spacecat-shared-rum-api-client` - Client for RUM Bundler API: [DOCS](https://github.com/adobe/spacecat-shared/blob/main/packages/spacecat-shared-rum-api-client/README.md)
@@ -11,7 +10,6 @@ Shared modules for Spacecat Services
 ## Installation
 ```bash
 $ npm install @adobe/spacecat-shared-data-access
-$ npm install @adobe/spacecat-shared-dynamodb
 $ npm install @adobe/spacecat-shared-http-utils
 $ npm install @adobe/spacecat-shared-utils
 ```

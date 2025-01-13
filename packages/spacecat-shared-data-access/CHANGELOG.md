@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.0.1...@adobe/spacecat-shared-data-access-v2.0.2) (2025-01-13)
+
+
+### Bug Fixes
+
+* patcher should use schema getter, schema omissions ([#539](https://github.com/adobe/spacecat-shared/issues/539)) ([b14b469](https://github.com/adobe/spacecat-shared/commit/b14b469d3714795c6291ddcf742c38abd94250e6))
+
 # [@adobe/spacecat-shared-data-access-v2.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.0.0...@adobe/spacecat-shared-data-access-v2.0.1) (2025-01-12)
 
 

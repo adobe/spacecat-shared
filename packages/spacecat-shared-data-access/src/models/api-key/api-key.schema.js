@@ -59,6 +59,12 @@ const schema = new SchemaBuilder(ApiKey, ApiKeyCollection)
     items: {
       type: 'map',
       properties: {
+        actions: {
+          type: 'list',
+          items: {
+            type: 'string',
+          },
+        },
         domains: {
           type: 'list',
           items: {

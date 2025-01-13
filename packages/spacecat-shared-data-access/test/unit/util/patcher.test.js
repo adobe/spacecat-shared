@@ -40,16 +40,24 @@ describe('Patcher', () => {
         entity: 'MockModel',
         schema: {
           attributes: {
-            name: { type: 'string', name: 'name' },
-            age: { type: 'number', name: 'age' },
-            tags: { type: 'set', name: 'tags', items: { type: 'string' } },
-            status: { type: 'enum', name: 'status', enumArray: ['active', 'inactive'] },
-            referenceId: { type: 'string', name: 'referenceId' },
-            metadata: { type: 'map', name: 'metadata' },
-            profile: { type: 'any', name: 'profile' },
-            nickNames: { type: 'list', name: 'nickNames', items: { type: 'string' } },
-            settings: { type: 'any', name: 'settings', required: true },
-            isActive: { type: 'boolean', name: 'isActive' },
+            name: { type: 'string', name: 'name', get: (value) => value },
+            age: { type: 'number', name: 'age', get: (value) => value },
+            tags: {
+              type: 'set', name: 'tags', items: { type: 'string' }, get: (value) => value,
+            },
+            status: {
+              type: 'enum', name: 'status', enumArray: ['active', 'inactive'], get: (value) => value,
+            },
+            referenceId: { type: 'string', name: 'referenceId', get: (value) => value },
+            metadata: { type: 'map', name: 'metadata', get: (value) => value },
+            profile: { type: 'any', name: 'profile', get: (value) => value },
+            nickNames: {
+              type: 'list', name: 'nickNames', items: { type: 'string' }, get: (value) => value,
+            },
+            settings: {
+              type: 'any', name: 'settings', required: true, get: (value) => value,
+            },
+            isActive: { type: 'boolean', name: 'isActive', get: (value) => value },
           },
         },
         indexes: {

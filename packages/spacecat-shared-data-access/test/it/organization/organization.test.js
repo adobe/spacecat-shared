@@ -150,6 +150,17 @@ describe('Organization IT', async () => {
     );
   });
 
+  it('updates an organization with a new config', async () => {
+    const organization = await Organization.findById(sampleData.organizations[2].getId());
+    const data = { config: { some: 'updated' } };
+
+    organization.setConfig(data.config);
+
+    const updatedOrganization = await organization.save();
+
+    expect(updatedOrganization.getConfig().state).to.eql(data.config);
+  });
+
   it('removes an organization', async () => {
     const organization = await Organization.findById(sampleData.organizations[0].getId());
 

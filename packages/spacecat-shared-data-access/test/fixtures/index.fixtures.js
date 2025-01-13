@@ -20,6 +20,7 @@ import keyEvents from './key-events.fixture.js';
 import opportunities from './opportunities.fixture.js';
 import organizations from './organizations.fixture.js';
 import siteCandidates from './site-candidates.fixture.js';
+import siteCompetitors from './site-competitor.fixture.js';
 import siteTopPages from './site-top-pages.fixture.js';
 import sites from './sites.fixture.js';
 import suggestions from './suggestions.fixture.js';
@@ -35,6 +36,7 @@ export default {
   opportunities,
   organizations,
   siteCandidates,
+  siteCompetitors,
   siteTopPages,
   sites,
   suggestions,

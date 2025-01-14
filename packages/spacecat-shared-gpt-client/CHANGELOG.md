@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.4.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.4.3...@adobe/spacecat-shared-gpt-client-v1.4.4) (2025-01-14)
+
+
+### Bug Fixes
+
+* firefall interface missing functions ([#533](https://github.com/adobe/spacecat-shared/issues/533)) ([d62db11](https://github.com/adobe/spacecat-shared/commit/d62db11aaab8ad04c561d03e79b2eb25a7d0c34b))
+
 # [@adobe/spacecat-shared-gpt-client-v1.4.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.4.2...@adobe/spacecat-shared-gpt-client-v1.4.3) (2025-01-12)
 
 

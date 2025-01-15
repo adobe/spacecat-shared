@@ -28,6 +28,10 @@ export const trafficSeriesFn = (memo, type) => (bundle) => {
   return type === memo[key] ? bundle.weight : 0;
 };
 
+export const eventCountFn = (type) => (bundle) => bundle.events.filter(
+  (e) => e.checkpoint === type,
+).length;
+
 export const loadBundles = (bundles, dataChunks) => {
   dataChunks.load([{ rumBundles: bundles.map(utils.addCalculatedProps) }]);
 };

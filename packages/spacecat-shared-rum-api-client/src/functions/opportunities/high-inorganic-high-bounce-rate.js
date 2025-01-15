@@ -11,7 +11,7 @@
  */
 
 import { DataChunks, facets } from '@adobe/rum-distiller';
-import { loadBundles, trafficSeriesFn } from '../../utils.js';
+import { loadBundles, trafficSeriesFn, eventCountFn } from '../../utils.js';
 
 const HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.8;
 const NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.5;
@@ -68,6 +68,20 @@ function handler(bundles, opts = {}) {
   dataChunks.addSeries('earned', trafficSeriesFn(memo, 'earned'));
   dataChunks.addSeries('owned', trafficSeriesFn(memo, 'owned'));
   dataChunks.addSeries('paid', trafficSeriesFn(memo, 'paid'));
+
+  // add viewmedia and viewblock series
+  dataChunks.addSeries('viewblock', eventCountFn('viewblock'));
+  dataChunks.addSeries('viewmedia', eventCountFn('viewmedia'));
+
+  dataChunks.urls.forEach((url) => {
+    const scrollDepthViewblock = (url.metrics.viewblock.sum / url.metrics.viewblock.count)
+    / url.metrics.viewblock.max;
+    console.log(`scrollDepth using viewblock for ${url.value}: ${scrollDepthViewblock}`);
+    const scrollDepthViewmedia = (url.metrics.viewmedia.sum / url.metrics.viewmedia.count)
+    / url.metrics.viewmedia.max;
+    console.log(`scrollDepth using viewmedia for ${url.value}: ${scrollDepthViewmedia}`);
+    console.log(`${url.value} viewblock: ${scrollDepthViewblock} viewmedia: ${scrollDepthViewmedia}`);
+  });
 
   return dataChunks.facets.urls
     .filter((url) => url.metrics.views.sum > interval * DAILY_PAGEVIEW_THRESHOLD)

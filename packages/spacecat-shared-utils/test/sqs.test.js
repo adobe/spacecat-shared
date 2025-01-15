@@ -148,6 +148,28 @@ describe('SQS', () => {
       const response = await handler(emptyRequest, contextNoRecords);
 
       expect(response.status).to.equal(400);
+      expect(response.headers.get('x-error')).to.equal('Event does not contain any records');
+    });
+
+    it('returns bad request when record is not valid JSON', async () => {
+      const ctx = {
+        log: console,
+        invocation: {
+          event: {
+            Records: [
+              {
+                body: 'not a valid JSON',
+                messageId: 'abcd',
+              },
+            ],
+          },
+        },
+      };
+
+      const handler = sqsEventAdapter(exampleHandler);
+      const response = await handler(emptyRequest, ctx);
+
+      expect(response.status).to.equal(400);
       expect(response.headers.get('x-error')).to.equal('Event does not contain a valid message body');
     });
 

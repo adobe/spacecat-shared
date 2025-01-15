@@ -73,7 +73,7 @@ function handler(bundles, opts = {}) {
   dataChunks.addSeries('viewblock', eventCountFn('viewblock'));
   dataChunks.addSeries('viewmedia', eventCountFn('viewmedia'));
 
-  dataChunks.urls.forEach((url) => {
+  dataChunks.facets.urls.forEach((url) => {
     const scrollDepthViewblock = (url.metrics.viewblock.sum / url.metrics.viewblock.count)
     / url.metrics.viewblock.max;
     console.log(`scrollDepth using viewblock for ${url.value}: ${scrollDepthViewblock}`);

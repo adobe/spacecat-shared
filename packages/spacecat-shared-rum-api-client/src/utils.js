@@ -31,7 +31,7 @@ export const trafficSeriesFn = (memo, type) => (bundle) => {
 export const eventCountFn = (type) => (bundle) => {
   const eventCount = bundle.events.filter(
     (e) => e.checkpoint === type,
-  ).length;
+  ).length * bundle.weight;
   console.log(`eventCount for ${bundle.url} ${type}: ${eventCount}`);
   return eventCount;
 };

@@ -110,5 +110,5 @@ function handler(bundles, opts = {}) {
 
 export default {
   handler,
-  checkpoints: ['email', 'enter', 'paid', 'utm', 'click', 'experiment'],
+  checkpoints: ['email', 'enter', 'paid', 'utm', 'click', 'experiment', 'viewblock', 'viewmedia'],
 };

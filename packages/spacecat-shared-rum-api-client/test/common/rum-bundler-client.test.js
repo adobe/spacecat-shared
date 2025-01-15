@@ -20,7 +20,7 @@ import { generateDailyDates, generateHourlyDates, generateRumBundles } from '../
 
 use(chaiAsPromised);
 
-const BASE_URL = 'https://rum.fastly-aem.page';
+const BASE_URL = 'https://bundles.aem.page';
 describe('Rum bundler client', () => {
   let sandbox;
 

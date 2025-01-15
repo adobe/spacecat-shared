@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.26.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.2...@adobe/spacecat-shared-utils-v1.26.3) (2025-01-15)
+
+
+### Bug Fixes
+
+* improve sqs event adapter error handling ([#541](https://github.com/adobe/spacecat-shared/issues/541)) ([2e9fca8](https://github.com/adobe/spacecat-shared/commit/2e9fca89e327b9b680b20a6105088f0e844eb54a))
+
 # [@adobe/spacecat-shared-utils-v1.26.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.1...@adobe/spacecat-shared-utils-v1.26.2) (2025-01-12)
 
 

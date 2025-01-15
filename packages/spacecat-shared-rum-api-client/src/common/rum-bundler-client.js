@@ -15,7 +15,7 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 import { fetch } from '../utils.js';
 import { GRANULARITY } from './constants.js';
 
-const BASE_URL = 'https://rum.fastly-aem.page/bundles';
+const BASE_URL = 'https://bundles.aem.page/bundles';
 const HOURS_IN_DAY = 24;
 const ONE_HOUR = 1000 * 60 * 60;
 const ONE_DAY = ONE_HOUR * HOURS_IN_DAY;

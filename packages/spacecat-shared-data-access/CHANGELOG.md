@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.0.2...@adobe/spacecat-shared-data-access-v2.0.3) (2025-01-16)
+
+
+### Bug Fixes
+
+* branch protection / npm cache / deps ([#545](https://github.com/adobe/spacecat-shared/issues/545)) ([004de60](https://github.com/adobe/spacecat-shared/commit/004de60b05b5039590f92ed8f7117725f6e4df41))
+
 # [@adobe/spacecat-shared-data-access-v2.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.0.1...@adobe/spacecat-shared-data-access-v2.0.2) (2025-01-13)
 
 

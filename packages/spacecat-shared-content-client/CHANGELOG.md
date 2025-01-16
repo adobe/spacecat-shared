@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.3.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.3.7...@adobe/spacecat-shared-content-client-v1.3.8) (2025-01-16)
+
+
+### Bug Fixes
+
+* branch protection / npm cache / deps ([#545](https://github.com/adobe/spacecat-shared/issues/545)) ([004de60](https://github.com/adobe/spacecat-shared/commit/004de60b05b5039590f92ed8f7117725f6e4df41))
+
 # [@adobe/spacecat-shared-content-client-v1.3.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.3.6...@adobe/spacecat-shared-content-client-v1.3.7) (2025-01-14)
 
 

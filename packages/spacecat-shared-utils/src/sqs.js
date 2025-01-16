@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { Response } from '@adobe/fetch';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import AWSXray from 'aws-xray-sdk';
 

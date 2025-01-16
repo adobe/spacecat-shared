@@ -11,6 +11,7 @@
  */
 
 import { DataChunks } from '@adobe/rum-distiller';
+import trafficAcquisition from './traffic-acquisition.js';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
@@ -24,6 +25,7 @@ function initializeResult(url) {
     formengagement: {},
     formbuttonclick: {},
     pageview: {},
+    forminternalnavigation: [],
   };
 }
 
@@ -48,6 +50,23 @@ const metricFns = {
   },
 };
 
+function populateFormsInternalNavigation(bundles, formVitals) {
+  const dataChunks = new DataChunks();
+  loadBundles(bundles, dataChunks);
+  dataChunks.filter = { checkpoint: ['navigate'] };
+  dataChunks.filtered.forEach((bundle) => {
+    const forminternalnavigation = bundle.events.find((e) => e.checkpoint === 'navigate');
+    if (forminternalnavigation
+        && !formVitals[bundle.url].forminternalnavigation
+          .some((e) => e.url === forminternalnavigation.source)) {
+      formVitals[bundle.url].forminternalnavigation.push({
+        url: forminternalnavigation.source,
+        pageview: formVitals[forminternalnavigation.source]?.pageview || null,
+      });
+    }
+  });
+}
+
 function containsFormVitals(row) {
   return METRICS.some((metric) => Object.keys(row[metric]).length > 0);
 }
@@ -62,12 +81,19 @@ function handler(bundles) {
   // counts metrics per each group
   METRICS.forEach((metric) => dataChunks.addSeries(metric, metricFns[metric]));
 
+  // traffic acquisition data per url
+  const trafficByUrl = trafficAcquisition.handler(bundles);
+  const trafficByUrlMap = Object.fromEntries(
+    trafficByUrl.map(({ url, ...item }) => [url, item]),
+  );
+
   // aggregates metrics per group (url and user agent)
   const formVitals = dataChunks.facets.urlUserAgents.reduce((acc, { value, metrics, weight }) => {
     const [url, userAgent] = value.split(DELIMITER);
 
     acc[url] = acc[url] || initializeResult(url);
     acc[url].pageview[userAgent] = weight;
+    acc[url].trafficacquisition = trafficByUrlMap[url];
 
     METRICS.filter((metric) => metrics[metric].sum) // filter out user-agents with no form vitals
       .forEach((metric) => {
@@ -77,11 +103,13 @@ function handler(bundles) {
     return acc;
   }, {});
 
-  return Object.values(formVitals)
-    .filter(containsFormVitals); // filter out pages with no form vitals
+  // populate internal navigation data
+  populateFormsInternalNavigation(bundles, formVitals);
+  // filter out pages with no form vitals
+  return Object.values(formVitals).filter(containsFormVitals);
 }
 
 export default {
   handler,
-  checkpoints: ['viewblock', 'formsubmit', 'click'],
+  checkpoints: ['viewblock', 'formsubmit', 'click', 'navigate'],
 };

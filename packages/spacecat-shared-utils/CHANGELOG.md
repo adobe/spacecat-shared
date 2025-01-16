@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.26.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.3...@adobe/spacecat-shared-utils-v1.26.4) (2025-01-16)
+
+
+### Bug Fixes
+
+* missing Response import ([#543](https://github.com/adobe/spacecat-shared/issues/543)) ([6e82332](https://github.com/adobe/spacecat-shared/commit/6e82332fcadb504def553268ff36228d864bcfef))
+
 # [@adobe/spacecat-shared-utils-v1.26.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.2...@adobe/spacecat-shared-utils-v1.26.3) (2025-01-15)
 
 

@@ -19,6 +19,8 @@ import RUMAPIClient from '../src/index.js';
 
 use(chaiAsPromised);
 
+const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
+
 describe('RUMAPIClient', () => {
   const context = {};
   const rumApiClient = RUMAPIClient.createFrom(context);
@@ -42,7 +44,7 @@ describe('RUMAPIClient', () => {
 
     const queryUrl = `/bundles${constructUrl('space.cat', new Date(), 'some-domain-key')}`;
 
-    nock('https://rum.fastly-aem.page')
+    nock(RUM_BUNDLER_API_HOST)
       .get(queryUrl)
       .reply(200, { rumBundles: [] });
 
@@ -75,7 +77,7 @@ describe('RUMAPIClient', () => {
 
     const queryUrl = `/bundles${constructUrl('space.cat', new Date(), 'some-domain-key')}`;
 
-    nock('https://rum.fastly-aem.page')
+    nock(RUM_BUNDLER_API_HOST)
       .get(queryUrl)
       .reply(200, { rumBundles: [] });
 

@@ -79,12 +79,10 @@ function handler(bundles, opts = {}) {
     if (url.metrics.viewblock.max > 0) {
       scrollDepthViewblock = (url.metrics.viewblock.sum / url.metrics.viewblock.count)
       / url.metrics.viewblock.max;
-      console.log(`scrollDepth using viewblock for ${url.value}: ${scrollDepthViewblock}`);
     }
     if (url.metrics.viewmedia.max > 0) {
       scrollDepthViewmedia = (url.metrics.viewmedia.sum / url.metrics.viewmedia.count)
       / url.metrics.viewmedia.max;
-      console.log(`scrollDepth using viewmedia for ${url.value}: ${scrollDepthViewmedia}`);
     }
     console.log(`${url.value} viewblock: ${scrollDepthViewblock} viewmedia: ${scrollDepthViewmedia}`);
   });

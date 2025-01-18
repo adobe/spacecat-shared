@@ -32,7 +32,6 @@ export const eventCountFn = (type) => (bundle) => {
   const eventCount = bundle.events.filter(
     (e) => e.checkpoint === type,
   ).length * bundle.weight;
-  console.log(`eventCount for ${bundle.url} ${type}: ${eventCount}`);
   return eventCount;
 };
 

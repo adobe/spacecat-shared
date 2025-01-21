@@ -12,6 +12,7 @@
 
 import { Parser } from '@json2csv/plainjs';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import { promises as fs } from 'fs';
 import { isString } from './functions.js';
 
 /**
@@ -109,4 +110,24 @@ export function replacePlaceholders(content, placeholders) {
       return match;
     }
   });
+}
+
+/**
+ * Reads the content of a prompt file asynchronously and replaces any placeholders
+ * with the corresponding values. Logs the error and returns null in case of an error.
+ *
+ * @param {Object} placeholders - A JSON object containing values to replace in the prompt content.
+ * @param {String} filename - The filename of the prompt file.
+ * @param {Object} log - The logger
+ * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content,
+ * or null if an error occurs.
+ */
+export async function getPrompt(placeholders, filename, log = console) {
+  try {
+    const promptContent = await fs.readFile(`./static/prompts/${filename}.prompt`, { encoding: 'utf8' });
+    return replacePlaceholders(promptContent, placeholders);
+  } catch (error) {
+    log.error('Error reading prompt file:', error.message);
+    return null;
+  }
 }

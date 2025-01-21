@@ -92,3 +92,21 @@ export function generateCSVFile(data) {
   const json2csvParser = new Parser();
   return Buffer.from(json2csvParser.parse(data), 'utf-8');
 }
+
+/**
+ * Replaces placeholders in the prompt content with their corresponding values.
+ *
+ * @param {string} content - The prompt content with placeholders.
+ * @param {Object} placeholders - The placeholders and their values.
+ * @returns {string} - The content with placeholders replaced.
+ */
+export function replacePlaceholders(content, placeholders) {
+  return content.replace(/{{(.*?)}}/g, (match, key) => {
+    if (key in placeholders) {
+      const value = placeholders[key];
+      return typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
+    } else {
+      return match;
+    }
+  });
+}

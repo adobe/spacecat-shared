@@ -144,6 +144,15 @@ declare function getRUMDomainKey(baseURL: string, ctx: object): Promise<string>;
 declare function generateCSVFile(data: object[]): Buffer;
 
 /**
+ * Replaces placeholders in the prompt content with their corresponding values.
+ *
+ * @param {string} content - The prompt content with placeholders.
+ * @param {Object} placeholders - The placeholders and their values.
+ * @returns {string} - The content with placeholders replaced.
+ */
+declare function replacePlaceholders(content: string, placeholders: object): string;
+
+/**
  * Retrieves stored metrics from S3.
  * @param config - Configuration object
  * @param config.siteId - The site ID.

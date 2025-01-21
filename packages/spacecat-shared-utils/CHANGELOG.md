@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.27.0...@adobe/spacecat-shared-utils-v1.28.0) (2025-01-21)
+
+
+### Features
+
+* introduce get prompt from static files ([#552](https://github.com/adobe/spacecat-shared/issues/552)) ([0ae7392](https://github.com/adobe/spacecat-shared/commit/0ae739243722812c6b895fe5d843424d23b7f29c))
+
 # [@adobe/spacecat-shared-utils-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.6...@adobe/spacecat-shared-utils-v1.27.0) (2025-01-21)
 
 

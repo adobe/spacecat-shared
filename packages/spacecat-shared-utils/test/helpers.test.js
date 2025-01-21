@@ -18,7 +18,9 @@ import nock from 'nock';
 import {
   generateCSVFile,
   resolveSecretsName,
-  resolveCustomerSecretsName, getRUMDomainKey,
+  resolveCustomerSecretsName,
+  getRUMDomainKey,
+  replacePlaceholders,
 } from '../src/helpers.js';
 
 describe('resolveSecretsName', () => {
@@ -186,5 +188,42 @@ describe('generateCSVFile', () => {
     const csvString = csvFile.toString('utf-8');
 
     expect(csvString).to.equal(expectedCsv);
+  });
+});
+
+describe('replacePlaceholders', () => {
+  it('replaces placeholders with corresponding values', () => {
+    const content = 'Hello, {{name}}!';
+    const placeholders = { name: 'John' };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, John!');
+  });
+
+  it('does not replace placeholders if key is not found in placeholders object', () => {
+    const content = 'Hello, {{name}}!';
+    const placeholders = { age: 30 };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, {{name}}!');
+  });
+
+  it('replaces multiple placeholders with corresponding values', () => {
+    const content = 'Hello, {{name}}! You are {{age}} years old.';
+    const placeholders = { name: 'John', age: 30 };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, John! You are 30 years old.');
+  });
+
+  it('replaces placeholders with stringified objects if value is an object', () => {
+    const content = 'User: {{user}}';
+    const placeholders = { user: { name: 'John', age: 30 } };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('User: {"name":"John","age":30}');
+  });
+
+  it('leaves placeholders unchanged if they are not found in placeholders object', () => {
+    const content = 'Hello, {{name}}! You are {{age}} years old.';
+    const placeholders = { name: 'John' };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, John! You are {{age}} years old.');
   });
 });

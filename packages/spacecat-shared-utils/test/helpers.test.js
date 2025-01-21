@@ -15,12 +15,14 @@
 import { expect } from 'chai';
 
 import nock from 'nock';
+import { promises as fs } from 'fs';
+import sinon from 'sinon';
 import {
   generateCSVFile,
   resolveSecretsName,
   resolveCustomerSecretsName,
   getRUMDomainKey,
-  replacePlaceholders,
+  replacePlaceholders, getPrompt,
 } from '../src/helpers.js';
 
 describe('resolveSecretsName', () => {
@@ -225,5 +227,54 @@ describe('replacePlaceholders', () => {
     const placeholders = { name: 'John' };
     const result = replacePlaceholders(content, placeholders);
     expect(result).to.equal('Hello, John! You are {{age}} years old.');
+  });
+});
+
+describe('getPrompt', () => {
+  let readFileStub;
+  let logStub;
+
+  beforeEach(() => {
+    readFileStub = sinon.stub(fs, 'readFile');
+    logStub = { error: sinon.stub() };
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('reads the prompt file and replace placeholders', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, John!');
+    expect(readFileStub.calledOnceWith(`./static/prompts/${filename}.prompt`, { encoding: 'utf8' })).to.be.true;
+  });
+
+  it('returns null and log an error if reading the file fails', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const errorMessage = 'File not found';
+    readFileStub.rejects(new Error(errorMessage));
+
+    const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.be.null;
+    expect(logStub.error.calledOnceWith('Error reading prompt file:', errorMessage)).to.be.true;
+  });
+
+  it('handles empty placeholder object and return content as is', async () => {
+    const placeholders = {};
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, {{name}}!');
   });
 });

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.6...@adobe/spacecat-shared-utils-v1.27.0) (2025-01-21)
+
+
+### Features
+
+* introduce replace placeholders for prompts ([#551](https://github.com/adobe/spacecat-shared/issues/551)) ([d3b542c](https://github.com/adobe/spacecat-shared/commit/d3b542cf1b546256b3108f989220d07410cdc87d))
+
 # [@adobe/spacecat-shared-utils-v1.26.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.5...@adobe/spacecat-shared-utils-v1.26.6) (2025-01-18)
 
 

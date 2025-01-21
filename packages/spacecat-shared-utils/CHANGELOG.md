@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.28.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.0...@adobe/spacecat-shared-utils-v1.28.1) (2025-01-21)
+
+
+### Bug Fixes
+
+* getPrompt and replacePlaceholders not properly exported ([#553](https://github.com/adobe/spacecat-shared/issues/553)) ([236839c](https://github.com/adobe/spacecat-shared/commit/236839ca9785f77576889e768cb1707c49bb1fb4))
+
 # [@adobe/spacecat-shared-utils-v1.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.27.0...@adobe/spacecat-shared-utils-v1.28.0) (2025-01-21)
 
 

@@ -26,6 +26,8 @@ describe('Index Exports', () => {
     'generateCSVFile',
     'getRUMDomainKey',
     'getStoredMetrics',
+    'replacePlaceholders',
+    'getPrompt',
     'hasText',
     'isArray',
     'isBoolean',

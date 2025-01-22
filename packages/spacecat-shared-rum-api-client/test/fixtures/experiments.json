@@ -5,16 +5,14 @@
       "variants": [
         {
           "name": "challenger-1",
-          "views": 1300,
-          "samples": 13,
           "click": {
-            ".hero": {
-              "value": 100,
-              "samples": 1
-            },
             "*": {
               "value": 400,
               "samples": 4
+            },
+            ".hero": {
+              "value": 100,
+              "samples": 1
             },
             ".header #navmenu-0": {
               "value": 100,
@@ -29,19 +27,15 @@
               "samples": 1
             }
           },
-          "convert": {},
           "formsubmit": {},
-          "interactionsCount": 400
+          "convert": {},
+          "interactionsCount": 400,
+          "samples": 13,
+          "views": 1300
         },
         {
           "name": "control",
-          "views": 800,
-          "samples": 8,
           "click": {
-            ".hero .button": {
-              "value": 100,
-              "samples": 1
-            },
             "*": {
               "value": 500,
               "samples": 5
@@ -53,11 +47,17 @@
             ".header #navmenu-0": {
               "value": 200,
               "samples": 2
+            },
+            ".hero .button": {
+              "value": 100,
+              "samples": 1
             }
           },
-          "convert": {},
           "formsubmit": {},
-          "interactionsCount": 500
+          "convert": {},
+          "interactionsCount": 500,
+          "samples": 8,
+          "views": 800
         }
       ],
       "inferredStartDate": "2024-05-26T03:00:02.380Z",
@@ -66,19 +66,29 @@
   ],
   "https://www.aem.live/new-exp-page": [
     {
-      "experiment": "",
+      "experiment": "new-exp",
       "variants": [
         {
-          "name": "https://www.aem.live/some-other-page",
-          "views": 100,
-          "samples": 1,
+          "name": "challenger-1",
           "click": {},
+          "formsubmit": {},
           "convert": {},
-          "formsubmit": {}
+          "interactionsCount": 0,
+          "samples": 1,
+          "views": 100
+        },
+        {
+          "name": "challenger-2",
+          "click": {},
+          "formsubmit": {},
+          "convert": {},
+          "interactionsCount": 0,
+          "samples": 1,
+          "views": 100
         }
       ],
-      "inferredStartDate": "2024-05-07T06:00:00.001Z",
-      "inferredEndDate": "2024-05-07T06:00:00.001Z"
+      "inferredStartDate": "2024-01-01T00:00:00.111Z",
+      "inferredEndDate": "2024-01-31T00:00:00.999Z"
     }
   ]
 }

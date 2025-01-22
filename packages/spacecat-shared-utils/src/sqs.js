@@ -10,9 +10,18 @@
  * governing permissions and limitations under the License.
  */
 
+import { Response } from '@adobe/fetch';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import AWSXray from 'aws-xray-sdk';
-import { hasText } from './functions.js';
+
+import { hasText, isNonEmptyArray } from './functions.js';
+
+function badRequest(message) {
+  return new Response('', {
+    status: 400,
+    headers: { 'x-error': message },
+  });
+}
 
 /**
  * @class SQS utility to send messages to SQS
@@ -23,6 +32,15 @@ class SQS {
   constructor(region, log) {
     this.sqsClient = AWSXray.captureAWSv3Client(new SQSClient({ region }));
     this.log = log;
+  }
+
+  /**
+   * Check if the queue is a FIFO queue by examining its URL.
+   * @param {string} queueUrl - the URL of the SQS queue
+   * @returns {boolean} true if the queue is a FIFO queue, false otherwise
+   */
+  static #isFifoQueue(queueUrl) {
+    return hasText(queueUrl) && queueUrl.toLowerCase().endsWith('.fifo');
   }
 
   /**
@@ -43,8 +61,8 @@ class SQS {
       QueueUrl: queueUrl,
     };
 
-    if (hasText(messageGroupId)) {
-      // MessageGroupId is required for FIFO queues
+    // Only include MessageGroupId if the queue is a FIFO queue
+    if (SQS.#isFifoQueue(queueUrl) && hasText(messageGroupId)) {
       params.MessageGroupId = messageGroupId;
     }
 
@@ -85,24 +103,24 @@ export function sqsEventAdapter(fn) {
     const { log } = context;
     let message;
 
-    try {
-      // currently not publishing batch messages
-      const records = context.invocation?.event?.Records;
-      if (!Array.isArray(records) || records.length === 0) {
-        throw new Error('No records found');
-      }
+    // currently not processing batch messages
+    const records = context.invocation?.event?.Records;
 
-      log.info(`Received ${records.length} records. ID of the first message in the batch: ${records[0]?.messageId}`);
-      message = JSON.parse(records[0]?.body);
-      log.info(`Received message with id: ${records[0]?.messageId}`);
+    if (!isNonEmptyArray(records)) {
+      log.warn('Function was not invoked properly, event does not contain any records');
+      return badRequest('Event does not contain any records');
+    }
+
+    const record = records[0];
+
+    log.info(`Received ${records.length} records. ID of the first message in the batch: ${record.messageId}`);
+
+    try {
+      message = JSON.parse(record.body);
+      log.info(`Received message with id: ${record.messageId}`);
     } catch (e) {
-      log.error('Function was not invoked properly, message body is not a valid JSON', e);
-      return new Response('', {
-        status: 400,
-        headers: {
-          'x-error': 'Event does not contain a valid message body',
-        },
-      });
+      log.warn('Function was not invoked properly, message body is not a valid JSON', e);
+      return badRequest('Event does not contain a valid message body');
     }
     return fn(message, context);
   };

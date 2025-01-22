@@ -17,8 +17,6 @@ import chaiAsPromised from 'chai-as-promised';
 import esmock from 'esmock';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { createSite } from '@adobe/spacecat-shared-data-access/src/models/site.js';
-import { Mdast } from '@adobe/spacecat-helix-content-sdk/src/mdast.js';
 import nock from 'nock';
 
 use(chaiAsPromised);
@@ -30,24 +28,21 @@ describe('ContentClient', () => {
   let context;
   let log;
   let documentSdk;
+  let redirectsSdk;
 
   let ContentClient;
 
-  const siteConfigGoogleDrive = createSite(
-    {
-      id: 'test-site',
-      hlxConfig: { content: { source: { type: 'drive.google' } } },
-      baseURL: 'https://base.spacecat',
-    },
-  );
+  const siteConfigGoogleDrive = {
+    getId: () => 'test-site',
+    getHlxConfig: () => ({ content: { source: { type: 'drive.google' } } }),
+    getBaseURL: () => 'https://base.spacecat',
+  };
 
-  const siteConfigOneDrive = createSite(
-    {
-      id: 'test-site',
-      hlxConfig: { content: { source: { type: 'onedrive' } } },
-      baseURL: 'https://base.spacecat',
-    },
-  );
+  const siteConfigOneDrive = {
+    getId: () => 'test-site',
+    getHlxConfig: () => ({ content: { source: { type: 'onedrive' } } }),
+    getBaseURL: () => 'https://base.spacecat',
+  };
 
   const sampleMetadata = new Map(
     [['title', { value: 'Test Page', type: 'text' }],
@@ -63,12 +58,11 @@ describe('ContentClient', () => {
 
   const createContentClient = async (getPageMetadata) => {
     documentSdk = {
-      getMetadata: sinon.stub().returns(getPageMetadata),
-      updateMetadata: sinon.stub().resolves(),
+      getMetadata: sinon.stub().resolves(getPageMetadata),
+      updateMetadata: sinon.stub().resolves({ status: 200 }),
     };
     const contentSDK = sinon.stub().returns({
-      read: sinon.stub().resolves(documentSdk),
-      save: sinon.stub().resolves({ status: 200 }),
+      getDocument: sinon.stub().returns(documentSdk),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -78,90 +72,19 @@ describe('ContentClient', () => {
 
   const createErrorContentClient = async (getError, updateError, errorMessage) => {
     const contentSDK = sinon.stub().returns({
-      read: getError ? sinon.stub().rejects(new Error(errorMessage))
-        : sinon.stub().resolves(new Mdast({
-          type: 'root',
-          children: [
-            {
-              type: 'heading',
-              depth: 1,
-              children: [
-                { type: 'text', value: 'Document Title' },
-              ],
-            },
-            {
-              type: 'paragraph',
-              children: [
-                { type: 'text', value: 'This is an introductory paragraph.' },
-              ],
-            },
-            {
-              type: 'thematicBreak',
-            },
-            {
-              type: 'table',
-              children: [
-                {
-                  type: 'tableRow',
-                  children: [
-                    {
-                      type: 'tableCell',
-                      children: [
-                        {
-                          type: 'paragraph',
-                          children: [
-                            {
-                              type: 'text',
-                              value: 'metadata',
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                    { type: 'tableCell', children: [{ type: 'text', value: ' ' }] },
-                  ],
-                },
-                {
-                  type: 'tableRow',
-                  children: [
-                    {
-                      type: 'tableCell',
-                      children: [
-                        {
-                          type: 'paragraph',
-                          children: [
-                            {
-                              type: 'text',
-                              value: 'Title',
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                    {
-                      type: 'tableCell',
-                      children: [
-                        {
-                          type: 'paragraph',
-                          children: [
-                            {
-                              type: 'text',
-                              value: 'TestTitle',
-                            },
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                }],
-            },
-          ],
-        })),
-      save: updateError ? sinon.stub().resolves({ status: 500 })
-        : sinon.stub().resolves({ status: 200 }),
-      getRedirects: getError
-        ? sinon.stub().rejects(new Error(errorMessage)) : sinon.stub().resolves(existingRedirects),
-      appendRedirects: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
+      getDocument: sinon.stub().returns({
+        updateMetadata: updateError ? sinon.stub().resolves({ status: 500 })
+          : sinon.stub().resolves({ status: 200 }),
+        getMetadata: getError
+          ? sinon.stub().rejects(new Error(errorMessage))
+          : sinon.stub().resolves(new Map()),
+      }),
+      getRedirects: sinon.stub().returns({
+        get: getError
+          ? sinon.stub().rejects(new Error(errorMessage))
+          : sinon.stub().resolves(existingRedirects),
+        append: sinon.stub().resolves(updateError ? { status: 500 } : { status: 200 }),
+      }),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -170,9 +93,12 @@ describe('ContentClient', () => {
   };
 
   const createContentClientForRedirects = async (getRedirects) => {
+    redirectsSdk = {
+      get: sinon.stub().resolves(getRedirects),
+      append: sinon.stub().resolves({ status: 200 }),
+    };
     const contentSDK = sinon.stub().returns({
-      getRedirects: sinon.stub().resolves(getRedirects),
-      appendRedirects: sinon.stub().resolves({ status: 200 }),
+      getRedirects: sinon.stub().returns(redirectsSdk),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -354,7 +280,7 @@ describe('ContentClient', () => {
 
       expect(metadata).to.deep.equal(sampleMetadata);
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
-      expect(client.rawClient.read.calledOnceWith('/test-path')).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
       expect(documentSdk.getMetadata.calledOnce).to.be.true;
       expect(log.debug.calledOnce).to.be.true;
     });
@@ -366,7 +292,7 @@ describe('ContentClient', () => {
 
       expect(metadata).to.deep.equal(sampleMetadata);
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
-      expect(client.rawClient.read.calledOnceWith('/test-path.docx')).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
       expect(documentSdk.getMetadata.calledOnce).to.be.true;
       expect(log.debug.calledOnce).to.be.true;
     });
@@ -384,13 +310,13 @@ describe('ContentClient', () => {
     it('correctly resolves paths ending with / for Google Drive', async () => {
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.getPageMetadata('/test-path/');
-      expect(client.rawClient.read.calledOnceWith('/test-path/index')).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path/index')).to.be.true;
     });
 
     it('correctly resolves paths ending with / for OneDrive', async () => {
       const client = ContentClient.createFrom(context, siteConfigOneDrive);
       await client.getPageMetadata('/test-path/');
-      expect(client.rawClient.read.calledOnceWith('/test-path/index.docx')).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path/index.docx')).to.be.true;
     });
   });
 
@@ -420,9 +346,8 @@ describe('ContentClient', () => {
       const updatedMetadata = await client.updatePageMetadata(path, metadata);
 
       expect(updatedMetadata).to.deep.equal(expectedMetadata);
-      expect(client.rawClient.read.calledOnceWith('/test-path')).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
       expect(documentSdk.updateMetadata.calledOnceWith(expectedMetadata)).to.be.true;
-      expect(client.rawClient.save.calledOnce).to.be.true;
       expect(log.info.calledOnce).to.be.true;
       expect(log.info.firstCall.args[0]).to.equal(`Updating page metadata for test-site and path ${path}`);
     });
@@ -478,7 +403,7 @@ describe('ContentClient', () => {
       const updatedMetadata = await client.updatePageMetadata(path, newMetadata);
 
       expect(updatedMetadata).to.deep.equal(expectedMetadata);
-      expect(client.rawClient.read.calledOnceWith('/test-path')).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
       expect(documentSdk.updateMetadata.calledOnceWith(expectedMetadata)).to.be.true;
     });
 
@@ -503,8 +428,42 @@ describe('ContentClient', () => {
       });
 
       expect(updatedMetadata).to.deep.equal(expectedMetadata);
-      expect(client.rawClient.read.calledOnceWith('/test-path')).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
       expect(documentSdk.updateMetadata.calledOnceWith(expectedMetadata)).to.be.true;
+    });
+  });
+
+  describe('getRedirects', () => {
+    it('successfully retrieves redirects', async () => {
+      const expectedRedirects = [
+        { from: '/old-path', to: '/new-path' },
+        { from: '/another-old-path', to: '/another-new-path' },
+      ];
+      ContentClient = await createContentClientForRedirects(expectedRedirects);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+
+      const redirects = await client.getRedirects();
+
+      expect(redirects).to.deep.equal(expectedRedirects);
+      expect(log.info.calledOnceWith('Getting redirects for test-site')).to.be.true;
+      expect(redirectsSdk.get.calledOnce).to.be.true;
+      expect(log.debug.calledOnce).to.be.true;
+    });
+
+    it('returns an empty array when there are no redirects', async () => {
+      ContentClient = await createContentClientForRedirects([]);
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+
+      const redirects = await client.getRedirects();
+
+      expect(redirects).to.be.an('array').that.is.empty;
+    });
+
+    it('throws an error if raw client throws an error', async () => {
+      ContentClient = await createErrorContentClient(true, false, 'Error getting redirects');
+      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+
+      await expect(client.getRedirects()).to.be.rejectedWith('Error getting redirects');
     });
   });
 
@@ -539,7 +498,7 @@ describe('ContentClient', () => {
       ContentClient = await createContentClientForRedirects(existingRedirects);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
-      await expect(client.rawClient.appendRedirects.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
+      await expect(redirectsSdk.append.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
     });
     it('update success ignores duplicates', async () => {
       const newRedirects = [
@@ -552,7 +511,7 @@ describe('ContentClient', () => {
       ContentClient = await createContentClientForRedirects(existingRedirects);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
-      await expect(client.rawClient.appendRedirects.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
+      await expect(redirectsSdk.append.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
     });
     it('detect cycles in new redirects', async () => {
       const newRedirects = [
@@ -562,7 +521,7 @@ describe('ContentClient', () => {
       ContentClient = await createContentClientForRedirects(existingRedirects);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
-      await expect(client.rawClient.appendRedirects.calledOnceWith(sinon.match([{ from: '/test-C', to: '/test-E' }]))).to.be.true;
+      await expect(redirectsSdk.append.calledOnceWith(sinon.match([{ from: '/test-C', to: '/test-E' }]))).to.be.true;
     });
     it('detect cycles in current redirects', async () => {
       const newRedirects = [
@@ -585,7 +544,7 @@ describe('ContentClient', () => {
       ContentClient = await createContentClientForRedirects(existingRedirects);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
-      await expect(client.rawClient.appendRedirects).to.not.have.been.called;
+      await expect(redirectsSdk.append).to.not.have.been.called;
     });
     it('does not call rawClient when there are no valid redirects', async () => {
       const newRedirects = [
@@ -594,7 +553,7 @@ describe('ContentClient', () => {
       ContentClient = await createContentClientForRedirects(existingRedirects);
       const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
-      await expect(client.rawClient.appendRedirects).to.not.have.been.called;
+      await expect(redirectsSdk.append).to.not.have.been.called;
     });
   });
 });

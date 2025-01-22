@@ -17,22 +17,24 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 
 import {
-  hasText,
-  isBoolean,
-  isArray,
-  isInteger,
-  isValidDate,
-  isIsoDate,
-  isIsoTimeOffsetsDate,
-  isNumber,
-  isObject,
-  isNonEmptyObject,
-  isString,
-  toBoolean,
   arrayEquals,
-  isValidUrl,
   dateAfterDays,
   deepEqual,
+  hasText,
+  isArray,
+  isBoolean,
+  isInteger,
+  isIsoDate,
+  isIsoTimeOffsetsDate,
+  isNonEmptyArray,
+  isNonEmptyObject,
+  isNumber,
+  isObject,
+  isString,
+  isValidDate,
+  isValidUrl,
+  isValidUUID,
+  toBoolean,
 } from '../src/index.js';
 
 describe('Shared functions', () => {
@@ -102,6 +104,24 @@ describe('Shared functions', () => {
       invalidArrays.forEach((value) => expect(isArray(value)).to.be.false);
       expect(isArray([])).to.be.true;
       expect(isArray(['abc'])).to.be.true;
+    });
+
+    it('is non-empty array', () => {
+      const invalidArrays = [
+        true,
+        {},
+        { asd: 'dsa' },
+        '',
+        'dasd',
+        NaN,
+        Infinity,
+        -Infinity,
+        123,
+        [],
+      ];
+
+      invalidArrays.forEach((value) => expect(isNonEmptyArray(value)).to.be.false);
+      expect(isNonEmptyArray(['abc'])).to.be.true;
     });
 
     it('is boolean', () => {
@@ -298,6 +318,25 @@ describe('Shared functions', () => {
       expect(isValidDate(new Date())).to.be.true;
       expect(isValidDate(new Date('2022-01-01T01:23:45.678-00:00'))).to.be.true;
       expect(isValidDate(new Date('2022-01-01T01:23:45.678Z'))).to.be.true;
+    });
+  });
+
+  describe('isValidUUID', () => {
+    it('returns false for invalid UUID', async () => {
+      const invalidUUIDs = [
+        null,
+        undefined,
+        1234,
+        true,
+        'invalid uuid',
+        '123e4567-e89b-12d3-a456-42661417',
+      ];
+
+      invalidUUIDs.forEach((uuid) => expect(isValidUUID(uuid)).to.be.false);
+    });
+
+    it('returns true for valid UUID', async () => {
+      expect(isValidUUID('123e4567-e89b-12d3-a456-426614174000')).to.be.true;
     });
   });
 

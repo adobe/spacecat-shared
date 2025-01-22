@@ -11,9 +11,12 @@
  */
 import { fetchBundles } from './common/rum-bundler-client.js';
 import notfound from './functions/404.js';
+import notfoundInternalLinks from './functions/404-internal-links.js';
 import cwv from './functions/cwv.js';
+import formVitals from './functions/form-vitals.js';
 import experiment from './functions/experiment.js';
 import trafficAcquisition from './functions/traffic-acquisition.js';
+import totalMetrics from './functions/total-metrics.js';
 import variant from './functions/variant.js';
 import rageclick from './functions/opportunities/rageclick.js';
 import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
@@ -21,22 +24,31 @@ import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js
 
 const HANDLERS = {
   404: notfound,
+  '404-internal-links': notfoundInternalLinks,
   cwv,
+  'form-vitals': formVitals,
   experiment,
   'traffic-acquisition': trafficAcquisition,
   variant,
   rageclick,
+  totalMetrics,
   'high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
   'high-organic-low-ctr': highOrganicLowCtr,
 };
 
 export default class RUMAPIClient {
   static createFrom(context) {
+    const { log = console } = context;
+
     if (context.rumApiClient) return context.rumApiClient;
 
-    const client = new RUMAPIClient();
+    const client = new RUMAPIClient(log);
     context.rumApiClient = client;
     return client;
+  }
+
+  constructor(log) {
+    this.log = log;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -50,7 +62,9 @@ export default class RUMAPIClient {
         checkpoints,
       });
 
-      return handler(bundles);
+      this.log.info(`Query "${query}" fetched ${bundles.length} bundles`);
+
+      return handler(bundles, opts);
     } catch (e) {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(opts)}. Reason: ${e.message}`);
     }
@@ -80,6 +94,8 @@ export default class RUMAPIClient {
       });
 
       const results = {};
+
+      this.log.info(`Multi query ${JSON.stringify(queries.join(', '))} fetched ${bundles.length} bundles`);
 
       // Execute each query handler sequentially
       for (const { query, handler } of queryHandlers) {

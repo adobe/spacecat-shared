@@ -1,11 +1,11 @@
 {
   "name": "@adobe/spacecat-shared-google-client",
-  "version": "1.2.21",
+  "version": "1.4.6",
   "description": "Shared modules of the Spacecat Services - Google Client",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0 <23.0.0",
-    "npm": ">=10.0.0 <11.0.0"
+    "node": ">=22.0.0 <23.0.0",
+    "npm": ">=10.9.0 <12.0.0"
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -34,21 +34,21 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.1.9",
-    "@adobe/helix-universal": "5.0.6",
-    "@adobe/spacecat-shared-http-utils": "1.6.17",
-    "@adobe/spacecat-shared-utils": "1.22.4",
-    "@aws-sdk/client-secrets-manager": "3.687.0",
-    "aws-xray-sdk": "3.10.1",
-    "google-auth-library": "9.14.2",
+    "@adobe/fetch": "4.1.11",
+    "@adobe/helix-universal": "5.0.8",
+    "@adobe/spacecat-shared-http-utils": "1.9.4",
+    "@adobe/spacecat-shared-utils": "1.26.4",
+    "@aws-sdk/client-secrets-manager": "3.731.1",
+    "aws-xray-sdk": "3.10.2",
+    "google-auth-library": "9.15.0",
     "googleapis": "144.0.0"
   },
   "devDependencies": {
     "chai": "5.1.2",
-    "chai-as-promised": "8.0.0",
+    "chai-as-promised": "8.0.1",
     "nock": "13.5.6",
     "sinon": "19.0.2",
     "sinon-chai": "4.0.0",
-    "typescript": "5.6.3"
+    "typescript": "5.7.3"
   }
 }

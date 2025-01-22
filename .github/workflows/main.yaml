@@ -1,4 +1,10 @@
 name: Build
+
+permissions:
+  id-token: write
+  contents: write
+  issues: read
+
 on: [push]
 
 env:
@@ -10,27 +16,23 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: 'false'
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Use Node.js 20.16.0 (LTS)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.16.0'
-      - name: Install Dependencies
-        run: npm ci
-      - name: Linting
-        run: npm run lint
-      - name: Unit Tests
-        run: npm test
-      - name: Integration Tests
-        run: npm run --prefix packages/spacecat-shared-data-access test:it
-      - uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Setup Node & NPM
+        uses: ./.github/actions/setup-node-npm
+
+      - name: Lint, Test, Coverage Upload
+        uses: ./.github/actions/lint-test-coverage
+
       - name: Semantic Release (Dry Run)
         if: github.ref != 'refs/heads/main'
         run: npm run semantic-release-dry
@@ -44,14 +46,14 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@v4
         with:
-          persist-credentials: false
-      - name: Use Node.js 20.16.0 (LTS)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.16.0'
-      - run: npm ci
+          persist-credentials: 'false'
+
+      - name: Setup Node & NPM
+        uses: ./.github/actions/setup-node-npm
+
       - name: Semantic Release
         run: npm run semantic-release
         env:

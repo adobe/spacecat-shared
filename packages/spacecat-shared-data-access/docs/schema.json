@@ -1,14 +1,86 @@
 {
   "ModelName": "StarCatalogue",
   "ModelMetadata": {
-    "Author": "Dominique Jäggi",
+    "Author": "SpaceCat Team",
     "DateCreated": "Nov 23, 2023, 07:00 AM",
-    "DateLastModified": "Jul 11, 2024, 04:18 PM",
-    "Description": "",
+    "DateLastModified": "Nov 15, 2024, 2:00 PM",
     "AWSService": "Amazon DynamoDB",
     "Version": "3.0"
   },
   "DataModel": [
+    {
+      "TableName": "spacecat-services-data",
+      "KeyAttributes": {
+        "PartitionKey": {
+          "AttributeName": "pk",
+          "AttributeType": "S"
+        },
+        "SortKey": {
+          "AttributeName": "sk",
+          "AttributeType": "S"
+        }
+      },
+      "AttributeDefinitions": [
+        {
+          "AttributeName": "gsi1pk",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "gsi1sk",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "gsi2pk",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "gsi2sk",
+          "AttributeType": "S"
+        }
+      ],
+      "GlobalSecondaryIndexes": [
+        {
+          "IndexName": "spacecat-data-gsi1pk-gsi1sk",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi1pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi1sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-gsi2pk-gsi2sk",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi2pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi2sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-gsi3pk-gsi3sk",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi3pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi3sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-gsi4pk-gsi4sk",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi4pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi4sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        },
+        {
+          "IndexName": "spacecat-data-gsi5pk-gsi5sk",
+          "KeyAttributes": {
+            "PartitionKey": { "AttributeName": "gsi5pk", "AttributeType": "S" },
+            "SortKey": { "AttributeName": "gsi5sk", "AttributeType": "S" }
+          },
+          "Projection": { "ProjectionType": "ALL" }
+        }
+      ]
+    },
     {
       "TableName": "spacecat-services-sites",
       "KeyAttributes": {

@@ -14,10 +14,15 @@
 
 import { expect } from 'chai';
 
+import nock from 'nock';
+import { promises as fs } from 'fs';
+import sinon from 'sinon';
 import {
   generateCSVFile,
   resolveSecretsName,
   resolveCustomerSecretsName,
+  getRUMDomainKey,
+  replacePlaceholders, getPrompt,
 } from '../src/helpers.js';
 
 describe('resolveSecretsName', () => {
@@ -90,6 +95,56 @@ describe('resolveCustomerSecretsName', () => {
   });
 });
 
+describe('rum utils', () => {
+  let context;
+  let processEnvCopy;
+  beforeEach('setup', () => {
+    context = {
+      env: {
+        AWS_REGION: 'us-east-1',
+        AWS_ACCESS_KEY_ID: 'some-key-id',
+        AWS_SECRET_ACCESS_KEY: 'some-secret-key',
+        AWS_SESSION_TOKEN: 'some-secret-token',
+      },
+      runtime: { name: 'aws-lambda', region: 'us-east-1' },
+      func: { package: 'spacecat-services', version: 'ci', name: 'test' },
+    };
+    processEnvCopy = { ...process.env };
+    process.env = {
+      ...process.env,
+      ...context.env,
+    };
+  });
+
+  afterEach('clean up', () => {
+    process.env = processEnvCopy;
+    nock.cleanAll();
+  });
+
+  it('throws error when domain key does not exist', async () => {
+    const scope = nock('https://secretsmanager.us-east-1.amazonaws.com/')
+      .post('/', (body) => body.SecretId === '/helix-deploy/spacecat-services/customer-secrets/some_domain_com/ci')
+      .replyWithError('Some error');
+
+    await expect(getRUMDomainKey('https://some-domain.com', context)).to.be.rejectedWith('Error retrieving the domain key for https://some-domain.com. Error: Some error');
+    scope.done();
+  });
+
+  it('retrieves the domain key', async () => {
+    const scope = nock('https://secretsmanager.us-east-1.amazonaws.com/')
+      .post('/', (body) => body.SecretId === '/helix-deploy/spacecat-services/customer-secrets/some_domain_com/ci')
+      .reply(200, {
+        SecretString: JSON.stringify({
+          RUM_DOMAIN_KEY: '42',
+        }),
+      });
+
+    const rumDomainkey = await getRUMDomainKey('https://some-domain.com', context);
+    expect(rumDomainkey).to.equal('42');
+    scope.done();
+  });
+});
+
 describe('generateCSVFile', () => {
   it('should convert the JSON data to CSV', () => {
     const data = [
@@ -135,5 +190,91 @@ describe('generateCSVFile', () => {
     const csvString = csvFile.toString('utf-8');
 
     expect(csvString).to.equal(expectedCsv);
+  });
+});
+
+describe('replacePlaceholders', () => {
+  it('replaces placeholders with corresponding values', () => {
+    const content = 'Hello, {{name}}!';
+    const placeholders = { name: 'John' };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, John!');
+  });
+
+  it('does not replace placeholders if key is not found in placeholders object', () => {
+    const content = 'Hello, {{name}}!';
+    const placeholders = { age: 30 };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, {{name}}!');
+  });
+
+  it('replaces multiple placeholders with corresponding values', () => {
+    const content = 'Hello, {{name}}! You are {{age}} years old.';
+    const placeholders = { name: 'John', age: 30 };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, John! You are 30 years old.');
+  });
+
+  it('replaces placeholders with stringified objects if value is an object', () => {
+    const content = 'User: {{user}}';
+    const placeholders = { user: { name: 'John', age: 30 } };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('User: {"name":"John","age":30}');
+  });
+
+  it('leaves placeholders unchanged if they are not found in placeholders object', () => {
+    const content = 'Hello, {{name}}! You are {{age}} years old.';
+    const placeholders = { name: 'John' };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, John! You are {{age}} years old.');
+  });
+});
+
+describe('getPrompt', () => {
+  let readFileStub;
+  let logStub;
+
+  beforeEach(() => {
+    readFileStub = sinon.stub(fs, 'readFile');
+    logStub = { error: sinon.stub() };
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('reads the prompt file and replace placeholders', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, John!');
+    expect(readFileStub.calledOnceWith(`./static/prompts/${filename}.prompt`, { encoding: 'utf8' })).to.be.true;
+  });
+
+  it('returns null and log an error if reading the file fails', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const errorMessage = 'File not found';
+    readFileStub.rejects(new Error(errorMessage));
+
+    const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.be.null;
+    expect(logStub.error.calledOnceWith('Error reading prompt file:', errorMessage)).to.be.true;
+  });
+
+  it('handles empty placeholder object and return content as is', async () => {
+    const placeholders = {};
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, {{name}}!');
   });
 });

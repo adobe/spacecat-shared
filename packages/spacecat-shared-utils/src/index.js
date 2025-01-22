@@ -12,27 +12,32 @@
 
 export {
   arrayEquals,
+  dateAfterDays,
+  deepEqual,
   hasText,
   isArray,
   isBoolean,
   isInteger,
-  isValidDate,
   isIsoDate,
   isIsoTimeOffsetsDate,
+  isNonEmptyArray,
+  isNonEmptyObject,
   isNumber,
   isObject,
-  isNonEmptyObject,
   isString,
-  toBoolean,
+  isValidDate,
   isValidUrl,
-  dateAfterDays,
-  deepEqual,
+  isValidUUID,
+  toBoolean,
 } from './functions.js';
 
 export {
   resolveSecretsName,
   resolveCustomerSecretsName,
+  getRUMDomainKey,
   generateCSVFile,
+  replacePlaceholders,
+  getPrompt,
 } from './helpers.js';
 
 export { sqsWrapper } from './sqs.js';

@@ -16,7 +16,6 @@ import { expect, use } from 'chai';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 
-import { createApiKey } from '@adobe/spacecat-shared-data-access/src/models/api-key/api-key.js';
 import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
 import ScopedApiKeyHandler from '../../../src/auth/handlers/scoped-api-key.js';
@@ -30,10 +29,12 @@ describe('ScopedApiKeyHandler', () => {
   let mockContext;
 
   const baseApiKeyData = {
-    hashedApiKey: '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
-    id: '1C4ED8DE-8ECD-42E1-9812-AF34082FB1B4',
-    name: 'Test api key',
-    scopes: [
+    getHashedApiKey: () => '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
+    getId: () => '1C4ED8DE-8ECD-42E1-9812-AF34082FB1B4',
+    getName: () => 'Test api key',
+    getExpiresAt: () => null,
+    getRevokedAt: () => null,
+    getScopes: () => [
       {
         name: 'imports.write',
         domains: ['https://example.com'],
@@ -55,7 +56,7 @@ describe('ScopedApiKeyHandler', () => {
 
     mockContext = {
       dataAccess: {
-        getApiKeyByHashedApiKey: sinon.stub().resolves(createApiKey(baseApiKeyData)),
+        ApiKey: { findByHashedApiKey: sinon.stub().resolves(baseApiKeyData) },
       },
       pathInfo: {
         headers: {
@@ -73,7 +74,7 @@ describe('ScopedApiKeyHandler', () => {
     expect(handler).to.be.instanceof(AbstractHandler);
   });
 
-  it('should set the name and logger properties correctly', () => {
+  it('should set the name and log properties correctly', () => {
     expect(handler.name).to.equal('scopedApiKey');
     expect(handler.logger).to.equal(logStub);
   });
@@ -104,7 +105,7 @@ describe('ScopedApiKeyHandler', () => {
     const context = {
       ...mockContext,
       dataAccess: {
-        getApiKeyByHashedApiKey: sinon.stub().resolves(null),
+        ApiKey: { findByHashedApiKey: sinon.stub().resolves(null) },
       },
     };
 
@@ -114,10 +115,10 @@ describe('ScopedApiKeyHandler', () => {
   });
 
   it('should return null if the API key has expired', async () => {
-    mockContext.dataAccess.getApiKeyByHashedApiKey = sinon.stub().resolves(createApiKey({
+    mockContext.dataAccess.ApiKey.findByHashedApiKey = sinon.stub().resolves({
       ...baseApiKeyData,
-      expiresAt: '2024-01-01T16:23:00.000Z',
-    }));
+      getExpiresAt: () => '2024-01-01T16:23:00.000Z',
+    });
 
     const result = await handler.checkAuth({}, mockContext);
     expect(result).to.be.instanceof(AuthInfo);
@@ -127,10 +128,10 @@ describe('ScopedApiKeyHandler', () => {
   });
 
   it('should return null if the API key has been revoked', async () => {
-    mockContext.dataAccess.getApiKeyByHashedApiKey = sinon.stub().resolves(createApiKey({
+    mockContext.dataAccess.ApiKey.findByHashedApiKey = sinon.stub().resolves({
       ...baseApiKeyData,
-      revokedAt: '2024-08-01T10:00:00.000Z',
-    }));
+      getRevokedAt: () => '2024-08-01T10:00:00.000Z',
+    });
 
     const result = await handler.checkAuth({}, mockContext);
     expect(result).to.be.instanceof(AuthInfo);

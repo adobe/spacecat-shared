@@ -148,6 +148,28 @@ describe('SQS', () => {
       const response = await handler(emptyRequest, contextNoRecords);
 
       expect(response.status).to.equal(400);
+      expect(response.headers.get('x-error')).to.equal('Event does not contain any records');
+    });
+
+    it('returns bad request when record is not valid JSON', async () => {
+      const ctx = {
+        log: console,
+        invocation: {
+          event: {
+            Records: [
+              {
+                body: 'not a valid JSON',
+                messageId: 'abcd',
+              },
+            ],
+          },
+        },
+      };
+
+      const handler = sqsEventAdapter(exampleHandler);
+      const response = await handler(emptyRequest, ctx);
+
+      expect(response.status).to.equal(400);
       expect(response.headers.get('x-error')).to.equal('Event does not contain a valid message body');
     });
 
@@ -189,9 +211,9 @@ describe('SQS', () => {
       ]);
     });
 
-    it('should include a MessageGroupId when provided', async () => {
+    it('should include a MessageGroupId when the queue is a FIFO queue', async () => {
       const action = wrap(async (req, ctx) => {
-        await ctx.sqs.sendMessage('queue-url', { key: 'value' }, 'job-id');
+        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/fifo-queue.fifo', { key: 'value' }, 'job-id');
       }).with(sqsWrapper);
 
       await action({}, context);
@@ -203,6 +225,38 @@ describe('SQS', () => {
         'MessageGroupId',
       ]);
       expect(firstSendArg.input.MessageGroupId).to.equal('job-id');
+    });
+
+    it('should not include a MessageGroupId when the queue is standard queue', async () => {
+      const action = wrap(async (req, ctx) => {
+        // Note: no .fifo suffix
+        await ctx.sqs.sendMessage('https://sqs.us-east-1.amazonaws.com/123456789012/standard-queue', { key: 'value' }, 'job-id');
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      expect(Object.keys(firstSendArg.input)).to.deep.equal([
+        'MessageBody',
+        'QueueUrl',
+      ]);
+      expect(firstSendArg.input.MessageGroupId).to.be.undefined;
+    });
+
+    it('should not include a MessageGroupId when the queue URL is undefined', async () => {
+      const action = wrap(async (req, ctx) => {
+        // Edge case: no queue URL
+        await ctx.sqs.sendMessage(undefined, { key: 'value' }, 'job-id');
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      expect(Object.keys(firstSendArg.input)).to.deep.equal([
+        'MessageBody',
+        'QueueUrl',
+      ]);
+      expect(firstSendArg.input.MessageGroupId).to.be.undefined;
     });
   });
 });

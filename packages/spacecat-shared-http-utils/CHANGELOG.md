@@ -1,3 +1,87 @@
+# [@adobe/spacecat-shared-http-utils-v1.9.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.5...@adobe/spacecat-shared-http-utils-v1.9.6) (2025-01-16)
+
+
+### Bug Fixes
+
+* branch protection / npm cache / deps ([#545](https://github.com/adobe/spacecat-shared/issues/545)) ([004de60](https://github.com/adobe/spacecat-shared/commit/004de60b05b5039590f92ed8f7117725f6e4df41))
+
+# [@adobe/spacecat-shared-http-utils-v1.9.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.4...@adobe/spacecat-shared-http-utils-v1.9.5) (2025-01-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#538](https://github.com/adobe/spacecat-shared/issues/538)) ([a3bddf6](https://github.com/adobe/spacecat-shared/commit/a3bddf6cb2a9b60db8f8c3450e81205cd10c0b23))
+
+# [@adobe/spacecat-shared-http-utils-v1.9.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.3...@adobe/spacecat-shared-http-utils-v1.9.4) (2025-01-11)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.15.0 ([#536](https://github.com/adobe/spacecat-shared/issues/536)) ([ff70837](https://github.com/adobe/spacecat-shared/commit/ff70837e4cfb5fda6b7ba4b1369bbfaeb4c30b49)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
+# [@adobe/spacecat-shared-http-utils-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.2...@adobe/spacecat-shared-http-utils-v1.9.3) (2025-01-06)
+
+
+### Bug Fixes
+
+* api-key v2 data access ([#526](https://github.com/adobe/spacecat-shared/issues/526)) ([d13f8ae](https://github.com/adobe/spacecat-shared/commit/d13f8aea8f5f1822efd9073b4b4f0b50df6ef5c3))
+
+# [@adobe/spacecat-shared-http-utils-v1.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.1...@adobe/spacecat-shared-http-utils-v1.9.2) (2024-12-31)
+
+
+### Bug Fixes
+
+* job groups & schedules, engine version ([#514](https://github.com/adobe/spacecat-shared/issues/514)) ([995f81e](https://github.com/adobe/spacecat-shared/commit/995f81eedb76d45a09cfd2ae3952f3676033a235))
+
+# [@adobe/spacecat-shared-http-utils-v1.9.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.0...@adobe/spacecat-shared-http-utils-v1.9.1) (2024-12-30)
+
+
+### Bug Fixes
+
+* isNonEmptyArray from utils ([#512](https://github.com/adobe/spacecat-shared/issues/512)) ([21b87ed](https://github.com/adobe/spacecat-shared/commit/21b87edc507f20285355becd5d51a9b7010e9651))
+
+# [@adobe/spacecat-shared-http-utils-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.8.0...@adobe/spacecat-shared-http-utils-v1.9.0) (2024-12-23)
+
+
+### Features
+
+* latest audit entity ([#503](https://github.com/adobe/spacecat-shared/issues/503)) ([2d01b09](https://github.com/adobe/spacecat-shared/commit/2d01b0969c0c046cdbffa480f8e40991e5abf91e))
+
+# [@adobe/spacecat-shared-http-utils-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.7.3...@adobe/spacecat-shared-http-utils-v1.8.0) (2024-12-18)
+
+
+### Features
+
+* migrate entities to electrodb ([#484](https://github.com/adobe/spacecat-shared/issues/484)) ([e9a6310](https://github.com/adobe/spacecat-shared/commit/e9a6310dbdea4d44562432b794aa1e287ba9428d))
+
+# [@adobe/spacecat-shared-http-utils-v1.7.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.7.2...@adobe/spacecat-shared-http-utils-v1.7.3) (2024-12-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.1.11 ([#478](https://github.com/adobe/spacecat-shared/issues/478)) ([5fb4270](https://github.com/adobe/spacecat-shared/commit/5fb427066dd20b9525ee3420c0546f7bcad2c914))
+
+# [@adobe/spacecat-shared-http-utils-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.7.1...@adobe/spacecat-shared-http-utils-v1.7.2) (2024-12-05)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#471](https://github.com/adobe/spacecat-shared/issues/471)) ([3a66e97](https://github.com/adobe/spacecat-shared/commit/3a66e97e368eb618f4f36f0730f7646eb12b1145))
+
+# [@adobe/spacecat-shared-http-utils-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.7.0...@adobe/spacecat-shared-http-utils-v1.7.1) (2024-11-30)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#465](https://github.com/adobe/spacecat-shared/issues/465)) ([d8ebb23](https://github.com/adobe/spacecat-shared/commit/d8ebb23fbd3d292479a4118dc6a9fb9931a31694))
+
+# [@adobe/spacecat-shared-http-utils-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.18...@adobe/spacecat-shared-http-utils-v1.7.0) (2024-11-14)
+
+
+### Features
+
+* Add unauthorized and forbidden to https status codes ([#441](https://github.com/adobe/spacecat-shared/issues/441)) ([ffaa981](https://github.com/adobe/spacecat-shared/commit/ffaa981dd94b834ce164730ef1072b1fe601446d)), closes [/github.com/adobe/spacecat-api-service/pull/569/files#r1841073366](https://github.com//github.com/adobe/spacecat-api-service/pull/569/files/issues/r1841073366)
+
 # [@adobe/spacecat-shared-http-utils-v1.6.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.6.17...@adobe/spacecat-shared-http-utils-v1.6.18) (2024-11-11)
 
 

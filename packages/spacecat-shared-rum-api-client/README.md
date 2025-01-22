@@ -53,39 +53,77 @@ console.log(`Query result: ${result}`)
 
 ## Available queries
 
-### cwv
+### Core Web Vitals (CWV)
 
-Calculates the CWV data for a given domain within the requested interval. It gets the 
-P75 values for LCP, CLS, INP, TTFB metrics, along with the number of data points available for
-each metric. Additionally, it provides grouping by URL and includes the count of page view data.
+Calculates the CWV data for a given domain within the requested interval. It retrieves the P75 
+values for **LCP**, **CLS**, **INP**, and **TTFB** metrics, along with the number of data points available for 
+each metric. 
+
+Additionally:
+
+- Metrics are **grouped by URL** and by **patterns** for groups of URLs, providing flexibility in analysis for both individual pages and logical collections of pages.
+- Includes a **device-level breakdown**, categorizing metrics separately for **desktop** and **mobile**.
+- Provides **page view counts** (pageviews) and **organic traffic** (organic) metrics, offering insights into user activity and search-driven traffic.
 
 An example response:
 
 ```json
 [
   {
-    "url": "https://www.aem.live/home",
-    "pageviews": 2620,
-    "lcp": 2099.699999988079,
-    "lcpCount": 9,
-    "cls": 0.020660136604802475,
-    "clsCount": 7,
-    "inp": 12,
-    "inpCount": 3,
-    "ttfb": 520.4500000476837,
-    "ttfbCount": 18
+    "type": "group",
+    "name": "Catalog",
+    "pattern": "https://www.aem.live/docs/*",
+    "pageviews": 12000,
+    "organic": 4000,
+    "metrics": [
+      {
+        "deviceType": "desktop",
+        "pageviews": 8000,
+        "organic": 3000,
+        "lcp": 40,
+        "lcpCount": 6,
+        "cls": 0.3,
+        "clsCount": 3,
+        "inp": 30,
+        "inpCount": 3,
+        "ttfb": 30,
+        "ttfbCount": 3
+      },
+      {
+        "deviceType": "mobile",
+        "pageviews": 1000,
+        "organic": 200,
+        "lcp": 40,
+        "lcpCount": 6,
+        "cls": 0.3,
+        "clsCount": 3,
+        "inp": 30,
+        "inpCount": 3,
+        "ttfb": 30,
+        "ttfbCount": 3
+      }
+    ]
   },
   {
-    "url": "https://www.aem.live/developer/block-collection",
-    "pageviews": 2000,
-    "lcp": 512.1249999403954,
-    "lcpCount": 4,
-    "cls": 0.0005409526209424976,
-    "clsCount": 4,
-    "inp": 20,
-    "inpCount": 2,
-    "ttfb": 122.90000003576279,
-    "ttfbCount": 4
+    "type": "url",
+    "url": "https://www.aem.live/home",
+    "pageviews": 2620,
+    "organic": 1900,
+    "metrics": [
+      {
+        "deviceType": "desktop",
+        "pageviews": 2420,
+        "organic": 1700,
+        "lcp": 2099.699999988079,
+        "lcpCount": 8,
+        "cls": 0.011145537287059668,
+        "clsCount": 7,
+        "inp": 8,
+        "inpCount": 5,
+        "ttfb": 548,
+        "ttfbCount": 16
+      }
+    ]
   }
 ]
 ```
@@ -141,53 +179,72 @@ Lists all the experiments for a specified domain within the requested interval. 
 An example response:
 
 ```json
-{
-  "https://www.aem.live/home": [
-    {
-      "experiment": "short-home",
-      "variants": [
-        {
-          "name": "challenger-1",
-          "views": 1300,
-          "click": {
-            ".hero": 100,
-            ".header #navmenu-0": 100,
-            ".roi-calculator .button": 100,
-            ".hero .button": 100
-          },
-          "convert": {},
-          "formsubmit": {}
-        },
-        {
-          "name": "control",
-          "views": 800,
-          "click": {
-            ".hero .button": 100,
-            ".header .button": 200,
-            ".header #navmenu-0": 200
-          },
-          "convert": {},
-          "formsubmit": {}
-        }
-      ]
-    }
-  ],
-
-  "https://www.aem.live/new-exp-page": [
-    {
-      "experiment": "visitor-behavior",
-      "variants": [
-        {
-          "name": "https://www.aem.live/some-other-page",
-          "views": 500,
-          "click": {},
-          "convert": {},
-          "formsubmit": {}
-        }
-      ]
-    }
-  ]
-}
+[
+  {
+    "type": "url",
+    "url": "https://www.aem.live/home",
+    "pageviews": 2620,
+    "organic": 1900,
+    "metrics": [
+      {
+        "deviceType": "desktop",
+        "pageviews": 2420,
+        "lcp": 2099.699999988079,
+        "lcpCount": 8,
+        "cls": 0.011145537287059668,
+        "clsCount": 7,
+        "inp": 8,
+        "inpCount": 5,
+        "ttfb": 548,
+        "ttfbCount": 16
+      },
+      {
+        "deviceType": "mobile",
+        "pageviews": 100,
+        "lcp": 2454.2,
+        "lcpCount": 1,
+        "cls": 0.26956930913977606,
+        "clsCount": 1,
+        "inp": null,
+        "inpCount": 0,
+        "ttfb": 807.2999999858439,
+        "ttfbCount": 1
+      }
+    ]
+  },
+  {
+    "type": "url",
+    "url": "https://www.aem.live/docs/",
+    "pageviews": 1910,
+    "organic": 602,
+    "metrics": [
+      {
+        "deviceType": "desktop",
+        "pageviews": 1804,
+        "lcp": 665.9000000059605,
+        "lcpCount": 11,
+        "cls": 0.012401669733174766,
+        "clsCount": 11,
+        "inp": 32,
+        "inpCount": 8,
+        "ttfb": 253.20000000298023,
+        "ttfbCount": 12
+      },
+      {
+        "deviceType": "mobile",
+        "pageviews": 106,
+        "lcp": 26276.5,
+        "lcpCount": 4,
+        "cls": null,
+        "clsCount": 5,
+        "inp": 48,
+        "inpCount": 1,
+        "ttfb": 86,
+        "ttfbCount": 5
+      }
+    ]
+  }
+]
 
 ```
 
@@ -296,6 +353,48 @@ Calculates the amount of non-inorganic (earned and owned) traffic and the click-
   }
 ]
 
+```
+
+### form-vitals
+
+Collects form vitals for a specified domain within a given time interval. Identifies whether each URL has embedded forms and counts form views/submission/engagement. This data can infer opportunities, such as URLs with low CTR and limited form engagement, URLs with high page views but fewer form submissions etc.
+An example response:
+
+```json
+[
+  {
+    "url": "https://business.adobe.com/",
+    "formsubmit": {},
+    "formview": {
+      "desktop:mac": 800,
+      "desktop:windows": 1900,
+      "mobile:ios": 100,
+      "mobile:android": 300
+    },
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "desktop:mac": 800,
+      "desktop:windows": 1900,
+      "mobile:ios": 100,
+      "mobile:android": 300
+    }
+  },
+  {
+    "url": "https://business.adobe.com/se/resources/main.html",
+    "formsubmit": {      
+      "desktop:windows": 100
+    },
+    "formview": {},
+    "formengagement": {
+      "desktop:windows": 100
+    },
+    "pageview": {
+      "desktop:windows": 100
+    }
+  }
+]
 ```
 
 ## Linting

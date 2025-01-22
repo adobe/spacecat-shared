@@ -10,66 +10,162 @@
  * governing permissions and limitations under the License.
  */
 
-import { quantile } from 'd3-array';
-import { pageviewsByUrl } from '../common/aggregateFns.js';
-import { FlatBundle } from '../common/flat-bundle.js';
+import {
+  DataChunks, series, facets,
+} from '@adobe/rum-distiller';
+import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
-const CWV_METRICS = ['lcp', 'cls', 'inp', 'ttfb'].map((metric) => `cwv-${metric}`);
+const METRICS = ['lcp', 'cls', 'inp', 'ttfb'];
 
-function collectCWVs(groupedByUrlIdTime) {
-  const { url, items: itemsByUrl } = groupedByUrlIdTime;
+const USER_AGENT_DELIMITER = ':';
 
-  // first level: grouped by url
-  const CWVs = itemsByUrl.reduce((acc, { items: itemsById }) => {
-    // second level: grouped by id
-    const itemsByTime = itemsById.flatMap((itemById) => itemById.items);
-    // third level: grouped by time
-    const maximums = itemsByTime.reduce((values, item) => {
-      // each session (id-time) can contain multiple measurement for the same metric
-      // we need to find the maximum per metric type
-      // eslint-disable-next-line no-param-reassign
-      values[item.checkpoint] = Math.max(values[item.checkpoint] || 0, item.value);
-      return values;
-    }, {});
+const FACET_TYPE = {
+  GROUP: 'group',
+  URL: 'url',
+};
 
-    // max values per id for each metric type are collected into an array
-    CWV_METRICS.forEach((metric) => {
-      if (!acc[metric]) acc[metric] = [];
-      if (maximums[metric]) {
-        acc[metric].push(maximums[metric]);
+const findMatchedPattern = (url, urlPatterns) => {
+  for (const urlPattern of urlPatterns) {
+    const regex = new RegExp(`^${urlPattern.pattern.replace(/\*/g, '.*')}$`);
+    if (regex.test(url)) {
+      return urlPattern;
+    }
+  }
+  return null;
+};
+
+const mapUrlsToPatterns = (bundles, patterns) => {
+  const urlToPatternMap = {};
+  if (!patterns || patterns.length === 0) {
+    return urlToPatternMap;
+  }
+
+  for (const bundle of bundles) {
+    const matchedPattern = findMatchedPattern(bundle.url, patterns);
+
+    if (matchedPattern) {
+      // Check if any cwv metric exists in bundle.events
+      const hasMetrics = bundle.events.some((event) => METRICS.some((metric) => event.checkpoint.includes(`cwv-${metric}`)));
+
+      if (hasMetrics) {
+        urlToPatternMap[bundle.url] = matchedPattern;
       }
+    }
+  }
+  return urlToPatternMap;
+};
+
+const calculateMetricsPercentile = (metrics) => ({
+  lcp: metrics.lcp.percentile(75) || null,
+  lcpCount: metrics.lcp.count || 0,
+  cls: metrics.cls.percentile(75) || null,
+  clsCount: metrics.cls.count || 0,
+  inp: metrics.inp.percentile(75) || null,
+  inpCount: metrics.inp.count || 0,
+  ttfb: metrics.ttfb.percentile(75) || null,
+  ttfbCount: metrics.ttfb.count || 0,
+});
+
+function handler(rawBundles, opts = []) {
+  const bundles = rawBundles.map((bundle) => ({
+    ...bundle,
+    url: facets.url(bundle), // URL without ids, hashes, and other encoded data
+  }));
+  const urlToPatternMap = mapUrlsToPatterns(bundles, opts.groupedURLs);
+
+  const dataChunks = new DataChunks();
+  loadBundles(bundles, dataChunks);
+
+  // groups by url and device
+  dataChunks.addFacet(
+    'urlsDevices',
+    (bundle) => generateKey(bundle.url, bundle.userAgent.split(USER_AGENT_DELIMITER)[0]),
+  );
+
+  // groups by pattern and device
+  dataChunks.addFacet('patternsDevices', (bundle) => {
+    const device = bundle.userAgent.split(USER_AGENT_DELIMITER)[0];
+    return urlToPatternMap[bundle.url]?.pattern
+      ? generateKey(urlToPatternMap[bundle.url].pattern, device)
+      : null;
+  });
+
+  // counts metrics per each facet
+  METRICS.forEach((metric) => dataChunks.addSeries(metric, series[metric]));
+
+  // counts organic traffic per each facet
+  dataChunks.addSeries('organic', series.organic);
+
+  const patternsResult = dataChunks.facets.patternsDevices.reduce((acc, facet) => {
+    const [pattern, deviceType] = facet.value.split(DELIMITER);
+    const patternData = Object.values(urlToPatternMap).find((p) => p.pattern === pattern);
+
+    acc[pattern] = acc[pattern] || {
+      type: FACET_TYPE.GROUP,
+      name: patternData.name,
+      pattern,
+      pageviews: 0,
+      organic: 0,
+      metrics: [],
+    };
+
+    // Increment the total pageviews and organic traffic for pattern
+    acc[pattern].pageviews += facet.weight;
+    acc[pattern].organic += facet.metrics.organic.sum;
+
+    // Add metrics for the specific device type
+    acc[pattern].metrics.push({
+      deviceType,
+      pageviews: facet.weight, // Pageviews for this device type
+      organic: facet.metrics.organic.sum, // Organic traffic for this device type
+      ...calculateMetricsPercentile(facet.metrics),
     });
+
     return acc;
   }, {});
 
-  return {
-    url,
-    lcp: quantile(CWVs['cwv-lcp'], 0.75) || null,
-    lcpCount: CWVs['cwv-lcp'].length,
-    cls: quantile(CWVs['cwv-cls'], 0.75) || null,
-    clsCount: CWVs['cwv-cls'].length,
-    inp: quantile(CWVs['cwv-inp'], 0.75) || null,
-    inpCount: CWVs['cwv-inp'].length,
-    ttfb: quantile(CWVs['cwv-ttfb'], 0.75) || null,
-    ttfbCount: CWVs['cwv-ttfb'].length,
-  };
-}
+  const urlsResult = dataChunks.facets.urlsDevices.reduce((acc, facet) => {
+    const [url, deviceType] = facet.value.split(DELIMITER);
 
-function handler(bundles) {
-  const pageviews = pageviewsByUrl(bundles);
+    acc[url] = acc[url] || {
+      type: FACET_TYPE.URL,
+      url,
+      pageviews: 0,
+      organic: 0,
+      metrics: [],
+    };
 
-  return FlatBundle.fromArray(bundles)
-    .groupBy('url', 'id', 'time')
-    .map(collectCWVs)
-    .filter((row) => row.lcp || row.cls || row.inp || row.ttfb) // filter out pages with no cwv data
-    .map((acc) => {
-      acc.pageviews = pageviews[acc.url];
-      return acc;
-    })
-    .sort((a, b) => b.pageviews - a.pageviews); // sort desc by pageviews
+    // Increment the total pageviews and organic traffic for url
+    acc[url].pageviews += facet.weight;
+    acc[url].organic += facet.metrics.organic.sum;
+
+    // Add metrics for the specific device type
+    acc[url].metrics.push({
+      deviceType,
+      pageviews: facet.weight, // Pageviews for this device type
+      organic: facet.metrics.organic.sum, // Organic traffic for this device type
+      ...calculateMetricsPercentile(facet.metrics),
+    });
+
+    return acc;
+  }, {});
+
+  const result = [...Object.values(patternsResult), ...Object.values(urlsResult)]
+    // filter out pages with no cwv data
+    .filter((row) => METRICS.some((metric) => row.metrics.some((entry) => entry[metric])))
+    // sort desc by pageviews
+    .sort((a, b) => b.metrics.pageviews - a.metrics.pageviews);
+
+  return result;
 }
 
 export default {
   handler,
-  checkpoints: ['cwv-lcp', 'cwv-cls', 'cwv-inp', 'cwv-ttfb'],
+  checkpoints: [
+    ...METRICS.map((metric) => `cwv-${metric}`),
+    'utm',
+    'paid',
+    'email',
+    'enter',
+  ],
 };

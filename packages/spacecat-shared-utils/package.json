@@ -1,11 +1,11 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.22.5",
+  "version": "1.28.1",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0 <23.0.0",
-    "npm": ">=10.0.0 <11.0.0"
+    "node": ">=22.0.0 <23.0.0",
+    "npm": ">=10.9.0 <12.0.0"
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -35,19 +35,21 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "@adobe/spacecat-shared-data-access": "1.50.0",
+    "@adobe/spacecat-shared-data-access": "2.0.2",
     "chai": "5.1.2",
-    "chai-as-promised": "8.0.0",
-    "husky": "9.1.6",
+    "chai-as-promised": "8.0.1",
+    "husky": "9.1.7",
     "nock": "13.5.6",
     "sinon": "19.0.2",
     "sinon-chai": "4.0.0"
   },
   "dependencies": {
-    "@adobe/fetch": "4.1.9",
-    "@aws-sdk/client-s3": "3.688.0",
-    "@aws-sdk/client-sqs": "3.687.0",
+    "@adobe/fetch": "4.1.11",
+    "@aws-sdk/client-s3": "3.731.1",
+    "@aws-sdk/client-secrets-manager": "3.731.1",
+    "@aws-sdk/client-sqs": "3.731.1",
     "@json2csv/plainjs": "7.0.6",
-    "aws-xray-sdk": "3.10.1"
+    "aws-xray-sdk": "3.10.2",
+    "uuid": "11.0.5"
   }
 }

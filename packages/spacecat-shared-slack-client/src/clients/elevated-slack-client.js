@@ -59,7 +59,7 @@ export default class ElevatedSlackClient extends BaseSlackClient {
    * @param {object} opsConfig The ops configuration.
    * @param {string} opsConfig.opsChannelId The ID of the ops channel.
    * @param {string[]} opsConfig.admins The list of admin user IDs.
-   * @param {Object} log The logger object.
+   * @param {Object} log The log object.
    */
   constructor(token, opsConfig, log) {
     super(token, opsConfig, log);

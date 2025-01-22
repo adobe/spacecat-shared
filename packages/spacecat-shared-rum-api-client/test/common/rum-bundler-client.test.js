@@ -20,7 +20,7 @@ import { generateDailyDates, generateHourlyDates, generateRumBundles } from '../
 
 use(chaiAsPromised);
 
-const BASE_URL = 'https://rum.fastly-aem.page';
+const BASE_URL = 'https://bundles.aem.page';
 describe('Rum bundler client', () => {
   let sandbox;
 
@@ -72,7 +72,67 @@ describe('Rum bundler client', () => {
     const containsCorrectData = result.every((item) => item.events.length === 1 && item.events[0].checkpoint === 'good');
 
     expect(result.length).to.equal(dates.length);
+    // eslint-disable-next-line no-unused-expressions
     expect(containsCorrectData).to.be.true;
+  });
+
+  it('should filter bot traffic by default', async () => {
+    const domain = 'some-domain.com';
+    const domainkey = 'testkey';
+    const granularity = 'HOURLY';
+    const interval = 7;
+    const allCheckpoints = ['good', 'bad'];
+
+    const dates = generateHourlyDates(7);
+    const rumBundles = generateRumBundles(dates, allCheckpoints);
+    // make the first bundle a bot traffic
+    rumBundles[Object.keys(rumBundles)[0]].rumBundles[0].userAgent = 'bot';
+
+    for (const date of dates) {
+      nock(BASE_URL)
+        .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}/${date[3]}?domainkey=${domainkey}`)
+        .reply(200, rumBundles[date.join()]);
+    }
+
+    const result = await fetchBundles({
+      domain,
+      domainkey,
+      granularity,
+      interval,
+      checkpoints: ['good'],
+    });
+
+    expect(result.length).to.equal(dates.length - 1);
+  });
+
+  it('should not filter bot traffic when disabled', async () => {
+    const domain = 'some-domain.com';
+    const domainkey = 'testkey';
+    const granularity = 'HOURLY';
+    const interval = 7;
+    const allCheckpoints = ['good', 'bad'];
+
+    const dates = generateHourlyDates(7);
+    const rumBundles = generateRumBundles(dates, allCheckpoints);
+    // make the first bundle a bot traffic
+    rumBundles[Object.keys(rumBundles)[0]].rumBundles[0].userAgent = 'bot';
+
+    for (const date of dates) {
+      nock(BASE_URL)
+        .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}/${date[3]}?domainkey=${domainkey}`)
+        .reply(200, rumBundles[date.join()]);
+    }
+
+    const result = await fetchBundles({
+      domain,
+      domainkey,
+      granularity,
+      interval,
+      checkpoints: ['good'],
+      filterBotTraffic: false,
+    });
+
+    expect(result.length).to.equal(dates.length);
   });
 
   it('should fetch correct daily bundles and filter by checkpoint', async () => {
@@ -102,6 +162,7 @@ describe('Rum bundler client', () => {
     const containsCorrectData = result.every((item) => item.events.length === 1 && item.events[0].checkpoint === 'good');
 
     expect(result.length).to.equal(dates.length);
+    // eslint-disable-next-line no-unused-expressions
     expect(containsCorrectData).to.be.true;
   });
 
@@ -132,6 +193,7 @@ describe('Rum bundler client', () => {
     const containsCorrectData = result.every((item) => item.events.length === 2);
 
     expect(result.length).to.equal(dates.length);
+    // eslint-disable-next-line no-unused-expressions
     expect(containsCorrectData).to.be.true;
   });
 });

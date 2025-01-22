@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { validate as uuidValidate } from 'uuid';
+
 // Precompile regular expressions
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
@@ -22,6 +24,15 @@ const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]
  */
 function isArray(value) {
   return Array.isArray(value);
+}
+
+/**
+ * Determines whether the given value is a non-empty array (length greater than zero).
+ * @param {*} value - The value to check.
+ * @return {boolean} True if the value is a non-empty array, false otherwise.
+ */
+function isNonEmptyArray(value) {
+  return isArray(value) && value.length > 0;
 }
 
 /**
@@ -186,6 +197,15 @@ function isValidUrl(urlString) {
 }
 
 /**
+ * Validates whether the given string is a valid UUID.
+ * @param {string} uuid - The string to validate.
+ * @return {boolean} True if the given string is a valid UUID.
+ */
+function isValidUUID(uuid) {
+  return uuidValidate(uuid);
+}
+
+/**
  * Converts a given value to a boolean. Throws an error if the value is not a boolean.
  *
  * @param {*} value - The value to convert.
@@ -233,19 +253,21 @@ function dateAfterDays(days, dateString) {
 
 export {
   arrayEquals,
+  dateAfterDays,
+  deepEqual,
   hasText,
   isArray,
   isBoolean,
   isInteger,
-  isValidDate,
   isIsoDate,
   isIsoTimeOffsetsDate,
+  isNonEmptyArray,
+  isNonEmptyObject,
   isNumber,
   isObject,
-  isNonEmptyObject,
   isString,
-  toBoolean,
+  isValidDate,
   isValidUrl,
-  dateAfterDays,
-  deepEqual,
+  isValidUUID,
+  toBoolean,
 };

@@ -56,7 +56,7 @@ describe('LegacyApiKeyHandler', () => {
     expect(handler).to.be.instanceof(AbstractHandler);
   });
 
-  it('should set the name and logger properties correctly', () => {
+  it('should set the name and log properties correctly', () => {
     expect(handler.name).to.equal('legacyApiKey');
     expect(handler.logger).to.equal(logStub);
   });

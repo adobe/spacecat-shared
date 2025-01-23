@@ -60,7 +60,7 @@ export default class RUMAPIClient {
       const bundles = await fetchBundles({
         ...opts,
         checkpoints,
-      });
+      }, this.log);
 
       this.log.info(`Query "${query}" fetched ${bundles.length} bundles`);
 
@@ -91,7 +91,7 @@ export default class RUMAPIClient {
       const bundles = await fetchBundles({
         ...opts,
         checkpoints: [...allCheckpoints],
-      });
+      }, this.log);
 
       const results = {};
 

@@ -157,7 +157,7 @@ async function mergeBundlesWithSameId(bundles) {
 }
 /* c8 ignore end */
 
-async function fetchBundles(opts = {}) {
+async function fetchBundles(opts, log) {
   const {
     domain,
     domainkey,
@@ -188,7 +188,10 @@ async function fetchBundles(opts = {}) {
 
   const result = [];
   for (const chunk of chunks) {
-    const responses = await Promise.all(chunk.map((url) => fetch(url)));
+    const responses = await Promise.all(chunk.map((url) => {
+      log.info(`Retrieving RUM bundles. Granularity: ${granularity}. Domain: ${domain}`);
+      return fetch(url);
+    }));
     const bundles = await Promise.all(responses.map((response) => response.json()));
 
     bundles.forEach((b) => {

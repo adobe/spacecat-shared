@@ -32,6 +32,7 @@ async function checkSite(site) {
   expect(site.getGitHubURL()).to.be.a('string');
   expect(site.getHlxConfig()).to.be.an('object');
   expect(site.getOrganizationId()).to.be.a('string');
+  expect(site.getSiteCompetitors()).to.be.an('array');
   expect(isIsoDate(site.getCreatedAt())).to.be.true;
   expect(isIsoDate(site.getUpdatedAt())).to.be.true;
 
@@ -287,6 +288,7 @@ describe('Site IT', async () => {
         },
         hlxVersion: 5,
       },
+      siteCompetitors: ['https://competitor1.com', 'https://competitor2.com'],
       organizationId: sampleData.organizations[0].getId(),
       isLive: true,
       isLiveToggledAt: '2024-12-06T08:35:24.125Z',
@@ -304,6 +306,7 @@ describe('Site IT', async () => {
     await checkSite(newSite);
 
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
+    expect(newSite.getSiteCompetitors()).to.deep.equal(newSiteData.siteCompetitors);
   });
 
   it('updates a site', async () => {

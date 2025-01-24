@@ -71,6 +71,33 @@ class SiteCollection extends BaseCollection {
 
     return orderedSites;
   }
+
+  async addSiteCompetitorBySiteId(siteId, siteCompetitorBaseURL) {
+    const site = await this.findById(siteId);
+    if (!site) {
+      throw new DataAccessError(`Site with id ${siteId} not found`, this);
+    }
+    const currentSiteCompetitors = site.getSiteCompetitors();
+    if (!currentSiteCompetitors.includes(siteCompetitorBaseURL)) {
+      currentSiteCompetitors.push(siteCompetitorBaseURL);
+      await site.save();
+    }
+    return site;
+  }
+
+  async removeSiteCompetitorBySiteId(siteId, siteCompetitorBaseURL) {
+    const site = await this.findById(siteId);
+    if (!site) {
+      throw new DataAccessError(`Site with id ${siteId} not found`, this);
+    }
+    const currentSiteCompetitors = site.getSiteCompetitors();
+    const indexOfSiteCompetitor = currentSiteCompetitors.indexOf(siteCompetitorBaseURL);
+    if (indexOfSiteCompetitor !== -1) {
+      currentSiteCompetitors.splice(indexOfSiteCompetitor, 1);
+      await site.save();
+    }
+    return site;
+  }
 }
 
 export default SiteCollection;

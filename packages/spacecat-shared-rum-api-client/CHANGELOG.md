@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.18.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.18.6...@adobe/spacecat-shared-rum-api-client-v2.18.7) (2025-01-23)
+
+
+### Bug Fixes
+
+* **rum-api-client:** log RUM Bundler requests ([#555](https://github.com/adobe/spacecat-shared/issues/555)) ([9b3ed87](https://github.com/adobe/spacecat-shared/commit/9b3ed87d12d0838ef922d6f373a287b4782dd197))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.18.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.18.5...@adobe/spacecat-shared-rum-api-client-v2.18.6) (2025-01-20)
 
 

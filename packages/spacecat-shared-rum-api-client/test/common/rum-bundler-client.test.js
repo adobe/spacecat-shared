@@ -42,7 +42,7 @@ describe('Rum bundler client', () => {
   });
 
   it('should throw an error if required parameters are missing', async () => {
-    await expect(fetchBundles({})).to.be.rejectedWith('Missing required parameters');
+    await expect(fetchBundles({}, console)).to.be.rejectedWith('Missing required parameters');
   });
 
   it('should fetch correct hourly bundles and filter by checkpoint', async () => {
@@ -67,7 +67,7 @@ describe('Rum bundler client', () => {
       granularity,
       interval,
       checkpoints: ['good'],
-    });
+    }, console);
 
     const containsCorrectData = result.every((item) => item.events.length === 1 && item.events[0].checkpoint === 'good');
 
@@ -100,7 +100,7 @@ describe('Rum bundler client', () => {
       granularity,
       interval,
       checkpoints: ['good'],
-    });
+    }, console);
 
     expect(result.length).to.equal(dates.length - 1);
   });
@@ -130,7 +130,7 @@ describe('Rum bundler client', () => {
       interval,
       checkpoints: ['good'],
       filterBotTraffic: false,
-    });
+    }, console);
 
     expect(result.length).to.equal(dates.length);
   });
@@ -157,7 +157,7 @@ describe('Rum bundler client', () => {
       granularity,
       interval,
       checkpoints: ['good'],
-    });
+    }, console);
 
     const containsCorrectData = result.every((item) => item.events.length === 1 && item.events[0].checkpoint === 'good');
 
@@ -188,7 +188,7 @@ describe('Rum bundler client', () => {
       granularity,
       interval,
       // no checkpoints param
-    });
+    }, console);
 
     const containsCorrectData = result.every((item) => item.events.length === 2);
 

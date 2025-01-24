@@ -69,6 +69,11 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     default: {},
     validate: (value) => isObject(value),
   })
+  .addAttribute('siteCompetitors', {
+    type: 'list',
+    default: [],
+    validate: (value) => Array.isArray(value),
+  })
   .addAttribute('isLive', {
     type: 'boolean',
     required: true,

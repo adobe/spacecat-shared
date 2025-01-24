@@ -113,4 +113,67 @@ describe('SiteCollection', () => {
       expect(instance.allByDeliveryType).to.have.been.calledOnce;
     });
   });
+  describe('addSiteCompetitorBySiteId', () => {
+    it('adds a site competitor by site ID', async () => {
+      const siteId = 's12345';
+      const siteCompetitorBaseURL = 'https://competitor.com';
+      const siteCompetitors = [];
+      const mockSite = {
+        siteCompetitors: {},
+        getId: () => siteId,
+        getSiteCompetitors: () => (siteCompetitors),
+        save: stub().resolves(),
+      };
+
+      instance.findById = stub().resolves(mockSite);
+
+      const result = await instance.addSiteCompetitorBySiteId(siteId, siteCompetitorBaseURL);
+
+      expect(result).to.equal(mockSite);
+      expect(mockSite.getSiteCompetitors()).to.have.deep.equal([siteCompetitorBaseURL]);
+      expect(mockSite.save).to.have.been.calledOnce;
+    });
+
+    it('throws an error if site is not found', async () => {
+      const siteId = 's12345';
+      const siteCompetitorBaseURL = 'https://competitor.com';
+
+      instance.findById = stub().resolves(null);
+
+      await expect(instance.addSiteCompetitorBySiteId(siteId, siteCompetitorBaseURL))
+        .to.be.rejectedWith(`Site with id ${siteId} not found`);
+    });
+  });
+
+  describe('removeSiteCompetitorBySiteId', () => {
+    it('removes a site competitor by site ID', async () => {
+      const siteId = 's12345';
+      const siteCompetitorBaseURL1 = 'https://competitor1.com';
+      const siteCompetitorBaseURL2 = 'https://competitor2.com';
+      const siteCompetitors = [siteCompetitorBaseURL1, siteCompetitorBaseURL2];
+      const mockSite = {
+        getId: () => siteId,
+        getSiteCompetitors: () => (siteCompetitors),
+        save: stub().resolves(),
+      };
+
+      instance.findById = stub().resolves(mockSite);
+
+      const result = await instance.removeSiteCompetitorBySiteId(siteId, siteCompetitorBaseURL1);
+
+      expect(result).to.equal(mockSite);
+      expect(mockSite.getSiteCompetitors()).to.deep.equal([siteCompetitorBaseURL2]);
+      expect(mockSite.save).to.have.been.calledOnce;
+    });
+
+    it('throws an error if site is not found', async () => {
+      const siteId = 's12345';
+      const siteCompetitorBaseURL = 'https://competitor.com';
+
+      instance.findById = stub().resolves(null);
+
+      await expect(instance.removeSiteCompetitorBySiteId(siteId, siteCompetitorBaseURL))
+        .to.be.rejectedWith(`Site with id ${siteId} not found`);
+    });
+  });
 });

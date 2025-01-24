@@ -51,6 +51,7 @@ export interface Site extends BaseModel {
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
   getSiteCandidates(): Promise<SiteCandidate[]>;
+  getSiteCompetitors(): Promise<object>;
   getSiteTopPages(): Promise<SiteTopPage[]>;
   getSiteTopPagesBySource(source: string): Promise<SiteTopPage[]>;
   getSiteTopPagesBySourceAndGeo(source: string, geo: string): Promise<SiteTopPage[]>;
@@ -65,6 +66,7 @@ export interface Site extends BaseModel {
   setIsLive(isLive: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
+  setSiteCompetitors(siteCompetitors: object): Site;
   toggleLive(): Site;
 }
 
@@ -77,4 +79,6 @@ export interface SiteCollection extends BaseCollection<Organization> {
   findByBaseURL(baseURL: string): Promise<Site | null>;
   findByDeliveryType(deliveryType: string): Promise<Site | null>;
   findByOrganizationId(organizationId: string): Promise<Site | null>;
+  addSiteCompetitorBySiteId(siteId: string, siteCompetitorBaseUrl: string): Promise<void>;
+  removeSiteCompetitorBySiteId(siteId: string, siteCompetitorBaseUrl: string): Promise<void>;
 }

@@ -102,7 +102,7 @@ The module provides the following DAOs:
 ## Integrating Data Access in AWS Lambda Functions
 
 Our `spacecat-shared-data-access` module includes a wrapper that can be easily integrated into AWS Lambda functions using `@adobe/helix-shared-wrap`.
-This integration allows your Lambda functions to access and manipulate data seamlessly.
+This integration allows your Lambda functions to access and manipulate data.
 
 ### Steps for Integration
 
@@ -111,10 +111,19 @@ This integration allows your Lambda functions to access and manipulate data seam
    Along with other wrappers and utilities, import the `dataAccessWrapper`.
 
    ```javascript
-   import dataAccessWrapper from '@adobe/spacecat-shared-data-access/wrapper';
+   import dataAccessWrapper from '@adobe/spacecat-shared-data-access';
    ```
 
-2. **Modify Your Lambda Wrapper Script**
+2. **Provide Required Environment Variables**
+
+   The `dataAccessWrapper` requires the `DYNAMO_TABLE_NAME_DATA` environment variable to be set via AWS
+   secret assigned to your Lambda function.
+
+   ```javascript
+   const { DYNAMO_TABLE_NAME_DATA } = context.env;
+   ```
+
+3. **Modify Your Lambda Wrapper Script**
 
    Include `dataAccessWrapper` in the chain of wrappers when defining your Lambda handler.
 
@@ -127,7 +136,7 @@ This integration allows your Lambda functions to access and manipulate data seam
      .with(helixStatus);
    ```
 
-3. **Access Data in Your Lambda Function**
+4. **Access Data in Your Lambda Function**
 
    Use the `dataAccess` object from the context to interact with your data layer.
 
@@ -136,7 +145,7 @@ This integration allows your Lambda functions to access and manipulate data seam
      const { dataAccess } = context;
      
      // Example: Retrieve all sites
-     const sites = await dataAccess.getSites();
+     const sites = await dataAccess.Site.getSites();
      // ... more logic ...
    }
    ```
@@ -147,7 +156,7 @@ Here's a complete example of a Lambda function utilizing the data access wrapper
 
 ```javascript
 import wrap from '@adobe/helix-shared-wrap';
-import dataAccessWrapper from '@adobe/spacecat-shared-data-access/wrapper';
+import dataAccessWrapper from '@adobe/spacecat-shared-data-access';
 import sqsEventAdapter from './sqsEventAdapter';
 import sqs from './sqs';
 import secrets from '@adobe/helix-shared-secrets';
@@ -156,7 +165,7 @@ import helixStatus from '@adobe/helix-status';
 async function run(message, context) {
   const { dataAccess } = context;
   try {
-    const sites = await dataAccess.getSites();
+    const sites = await dataAccess.Site.getSites();
     // Function logic here
   } catch (error) {
     // Error handling

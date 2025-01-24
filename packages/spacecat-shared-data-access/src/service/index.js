@@ -50,18 +50,12 @@ const createElectroService = (client, config, log) => {
 };
 
 /**
- * Creates a data access object.
+ * Creates a data access layer for interacting with DynamoDB using ElectroDB.
  *
- * @param {{pkAllSites: string, pkAllLatestAudits: string, indexNameAllLatestAuditScores: string,
- * tableNameAudits: string,tableNameLatestAudits: string, indexNameAllSitesOrganizations: string,
- * tableNameSites: string, tableNameOrganizations: string, tableNameExperiments: string,
- * indexNameAllSites: string,
- * tableNameImportJobs: string, pkAllImportJobs: string, indexNameAllImportJobs: string,
- * tableNameSiteTopPages: string, indexNameAllOrganizations: string,
- * indexNameAllOrganizationsByImsOrgId: string, pkAllOrganizations: string}} config configuration
- * @param {Logger} log log
- * @param client custom dynamo client
- * @returns {object} data access object
+ * @param {{tableNameData: string}} config - Configuration object containing table name
+ * @param {object} log - Logger instance, defaults to console
+ * @param {DynamoDB} [client] - Optional custom DynamoDB client instance
+ * @returns {object} Data access collections for interacting with entities
  */
 export const createDataAccess = (config, log = console, client = undefined) => {
   const rawClient = createRawClient(client);

@@ -215,3 +215,19 @@ await user.save();
 ## Consideration for Indexes
 
 Indexes cost money and complexity. Do not add indexes lightly. Determine which query patterns you truly need and only then introduce additional indexes.
+
+## Data Access Service
+
+You can use the data layer by obtaining a service instance through the `createDataAccess` function:
+
+```javascript
+const { createDataAccess } = require('@adobe/spacecat-shared-data-access');
+
+const dataAccess = createDataAccess({
+  tableNameData: 'spacecat-services-data-dev',
+});
+
+// You can now use the dataAccess object to interact with the data layer
+const sites = await dataAccess.Site.getSites();
+```
+

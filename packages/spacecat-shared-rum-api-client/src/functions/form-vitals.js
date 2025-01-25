@@ -91,13 +91,11 @@ function findFormCTAForInternalNavigation(bundles, formVitals) {
           });
 
           // Convert CTAs Map to an array and store it in the nav object
-          return {
-            ...nav,
-            CTAs: Array.from(CTAs.values()),
-            totalClickOnPage,
-          };
+          // eslint-disable-next-line no-param-reassign
+          nav.CTAs = Array.from(CTAs.values());
+          // eslint-disable-next-line no-param-reassign
+          nav.totalClicksOnPage = totalClickOnPage;
         }
-        return nav;
       });
     }
   });

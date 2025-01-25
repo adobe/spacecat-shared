@@ -61376,6 +61376,30 @@
       ]
     },
     {
+      "id": "fx4g",
+      "host": "rum.hlx.page",
+      "time": "2024-10-29T08:00:00.865Z",
+      "timeSlot": "2024-10-29T08:00:00.000Z",
+      "url": "https://business.adobe.com/products/marketo.html",
+      "userAgent": "desktop:linux",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "click",
+          "source": "#tab-features-2",
+          "target": "https://business.adobe.com/jp/products/magento/magento-commerce.html"
+        },
+        {
+          "checkpoint": "viewblock",
+          "timeDelta": 883
+        },
+        {
+          "checkpoint": "viewblock",
+          "timeDelta": 882
+        }
+      ]
+    },
+    {
       "id": "g3jr",
       "host": "rum.hlx.page",
       "time": "2024-10-29T08:00:33.406Z",

@@ -56,12 +56,56 @@ function populateFormsInternalNavigation(bundles, formVitals) {
   dataChunks.filter = { checkpoint: ['navigate'] };
   dataChunks.filtered.forEach((bundle) => {
     const forminternalnavigation = bundle.events.find((e) => e.checkpoint === 'navigate');
-    if (forminternalnavigation
+    if (forminternalnavigation && formVitals[bundle.url]
         && !formVitals[bundle.url].forminternalnavigation
           .some((e) => e.url === forminternalnavigation.source)) {
       formVitals[bundle.url].forminternalnavigation.push({
         url: forminternalnavigation.source,
         pageview: formVitals[forminternalnavigation.source]?.pageview || null,
+      });
+    }
+  });
+}
+
+function findFormCTAForInternalNavigation(bundles, formVitals) {
+  formVitals.forEach((item) => {
+    const { url, forminternalnavigation } = item;
+    if (forminternalnavigation && Array.isArray(forminternalnavigation)) {
+      forminternalnavigation.forEach((nav) => {
+        if (nav.url) {
+          let totalClickOnPage = 0;
+          const CTAs = new Map();
+          const clickCheckpointBundles = bundles.filter((bundle) => bundle.url === nav.url && bundle.events.find((e) => e.checkpoint === 'click'));
+          clickCheckpointBundles.forEach((bundle) => {
+            totalClickOnPage += bundle.weight;
+            const clickCheckpoint = bundle.events.find((e) => e.checkpoint === 'click' && e.target === url);
+
+            if (clickCheckpoint) {
+              const { source } = clickCheckpoint;
+              // Retrieves the existing CTA object if it exists; otherwise,
+              // initializes a new one with default values.
+              const existingCTA = CTAs.get(source) || { source, clicks: 0 };
+              existingCTA.clicks += bundle.weight;
+              CTAs.set(source, existingCTA);
+            }
+            // if (clickCheckpoint) {
+            //   const { source } = clickCheckpoint;
+            //   if (CTAs.has(source)) {
+            //     let { clicks } = CTAs.get(source);
+            //     clicks += bundle.weight;
+            //     CTAs.set(source, { source, clicks });
+            //   } else {
+            //     CTAs.set(source, { source, clicks: bundle.weight });
+            //   }
+            // }
+          });
+
+          // Convert CTAs Map to an array and store it in the nav object
+          // eslint-disable-next-line no-param-reassign
+          nav.CTAs = Array.from(CTAs.values());
+          // eslint-disable-next-line no-param-reassign
+          nav.totalClicksOnPage = totalClickOnPage;
+        }
       });
     }
   });
@@ -106,7 +150,9 @@ function handler(bundles) {
   // populate internal navigation data
   populateFormsInternalNavigation(bundles, formVitals);
   // filter out pages with no form vitals
-  return Object.values(formVitals).filter(containsFormVitals);
+  const filteredFormVitals = Object.values(formVitals).filter(containsFormVitals);
+  findFormCTAForInternalNavigation(bundles, filteredFormVitals);
+  return filteredFormVitals;
 }
 
 export default {

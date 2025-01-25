@@ -88,24 +88,16 @@ function findFormCTAForInternalNavigation(bundles, formVitals) {
               existingCTA.clicks += bundle.weight;
               CTAs.set(source, existingCTA);
             }
-            // if (clickCheckpoint) {
-            //   const { source } = clickCheckpoint;
-            //   if (CTAs.has(source)) {
-            //     let { clicks } = CTAs.get(source);
-            //     clicks += bundle.weight;
-            //     CTAs.set(source, { source, clicks });
-            //   } else {
-            //     CTAs.set(source, { source, clicks: bundle.weight });
-            //   }
-            // }
           });
 
           // Convert CTAs Map to an array and store it in the nav object
-          // eslint-disable-next-line no-param-reassign
-          nav.CTAs = Array.from(CTAs.values());
-          // eslint-disable-next-line no-param-reassign
-          nav.totalClicksOnPage = totalClickOnPage;
+          return {
+            ...nav,
+            CTAs: Array.from(CTAs.values()),
+            totalClickOnPage,
+          };
         }
+        return nav;
       });
     }
   });

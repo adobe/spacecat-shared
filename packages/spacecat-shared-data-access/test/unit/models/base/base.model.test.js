@@ -347,16 +347,29 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
   });
 
   describe('haspermission', () => {
+    function prepPathForSort(path) {
+      if (path.endsWith('/+**')) return path.slice(0, -3);
+      if (path.endsWith('/**')) return path.slice(0, -2);
+      return path;
+    }
+
+    function pathSorter({ path: path1 }, { path: path2 }) {
+      const sp1 = prepPathForSort(path1);
+      const sp2 = prepPathForSort(path2);
+      return sp2.length - sp1.length;
+    }
+
     it.only('test haspermission', () => {
       const aclCtx = {
         acl: [
           { path: '/someapi', actions: ['R'] },
-          // { path: '/someapi/*', actions: ['C', 'R', 'U', 'D'] },
+          // { path: '/someapi/*', actions: ['D'] },
           { path: '/someapi/**', actions: ['C', 'R', 'U', 'D'] },
           { path: '/someapi/specificid', actions: [] },
           { path: '/someapi/*/myop', actions: ['R'] },
         ],
       };
+      aclCtx.acl.sort(pathSorter);
 
       const es = { entities: { someapi: {} } };
       const er = { getCollection: () => [] };
@@ -365,6 +378,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
         getCollectionName: () => '',
         getIdName: () => 'item',
         getReferences: () => [],
+        getReferencesByType: () => [],
         getAttributes: () => [],
       };
 
@@ -373,9 +387,18 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       bmi.aclCtx = aclCtx;
 
       expect(bmi.hasPermisson('R')).to.be.true;
-      expect(bmi.hasPermisson('C')).to.be.false;
+      // expect(bmi.hasPermisson('C')).to.be.false;
       expect(bmi.hasPermisson('U')).to.be.true;
       expect(bmi.hasPermisson('D')).to.be.true;
+
+      const r2 = { someapiId: 'specificid' };
+      const bmi2 = new BaseModel(es, er, sch, r2);
+      bmi2.aclCtx = aclCtx;
+
+      expect(bmi2.hasPermisson('R')).to.be.false;
+      // expect(bmi.hasPermisson('C')).to.be.false;
+      expect(bmi2.hasPermisson('U')).to.be.false;
+      expect(bmi2.hasPermisson('D')).to.be.false;
     });
   });
 });

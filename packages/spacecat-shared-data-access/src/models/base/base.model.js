@@ -17,6 +17,7 @@ import { createAccessors } from '../../util/accessor.utils.js';
 import Patcher from '../../util/patcher.js';
 import {
   capitalize,
+  decapitalize,
   entityNameToIdName,
   idNameToEntityName,
 } from '../../util/util.js';
@@ -86,19 +87,46 @@ class BaseModel {
     });
   }
 
+  constructPath() {
+    const refs = this.schema.getReferencesByType(Reference.TYPES.BELONGS_TO);
+    if (refs.length !== 1) {
+      return `/${this.entityName}/${this.getId()}`;
+    }
+    const ownerID = this.record[entityNameToIdName(refs[0].target)];
+    return `/${decapitalize(refs[0].target)}/${ownerID}/${this.entityName}/${this.getId()}`;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  prepSingleStarWildcard(entityPath, permPath) {
+    if (!permPath.includes('/*')) {
+      return entityPath;
+    }
+
+    const epa = entityPath.split('/');
+    const ppa = permPath.split('/');
+    if (epa.length < ppa.length) {
+      return entityPath;
+    }
+
+    const indexes = ppa.reduce((a, e, i) => ((e === '*') ? a.concat(i) : a), []);
+    indexes.forEach((idx) => {
+      epa[idx] = '*';
+    });
+    return epa.join('/');
+  }
+
   hasPermisson(perm) {
-    const entityPath = perm === 'C' ? `/${this.entityName}` : `/${this.entityName}/${this.getId()}`;
+    const entityPath = this.constructPath();
     const permissions = this.aclCtx.acl;
 
     const match = permissions.find((p) => {
-      if (p.path.endsWith('/**')) {
-        return entityPath.startsWith(p.path.slice(0, -2));
+      const pp = p.path;
+      const ep = this.prepSingleStarWildcard(entityPath, pp);
+
+      if (pp.endsWith('/**')) {
+        return ep.startsWith(pp.slice(0, -2));
       }
-      if (p.path.endsWith('/*')) {
-        return entityPath.startsWith(p.path.slice(0, -1))
-          && entityPath.split('/').length === p.path.split('/').length;
-      }
-      return entityPath === p.path;
+      return ep === pp;
     });
 
     return match !== undefined && match.actions.includes(perm);
@@ -137,7 +165,10 @@ class BaseModel {
         .some((ref) => ref.getTarget() === idNameToEntityName(name));
 
       if (!this[getterMethodName] || name === this.idName) {
-        this[getterMethodName] = () => this.record[name];
+        this[getterMethodName] = () => {
+          this.ensurePermission('R');
+          return this.record[name];
+        };
       }
 
       if (this.schema.allowsUpdates()) {

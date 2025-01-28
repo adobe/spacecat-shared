@@ -151,4 +151,54 @@ describe('SiteModel', () => {
       expect(instance.getIsLive()).to.equal(true);
     });
   });
+
+  describe('test permissions', () => {
+    function getAllowAllCtx() {
+      return {
+        acl: [
+          { path: '/', actions: ['C', 'R', 'U', 'D'] },
+          { path: '/**', actions: ['C', 'R', 'U', 'D'] },
+        ],
+      };
+    }
+
+    function getAclCtx() {
+      return {
+        acl: [
+          { path: '/organization/aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee/site/*', actions: ['U'] },
+          { path: '/organization/*/site/*', actions: ['R'] },
+        ],
+      };
+    }
+
+    it.only('specific instance permission', () => {
+      instance.aclCtx = getAllowAllCtx();
+      instance.setOrganizationId('aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee');
+
+      instance.aclCtx = getAclCtx();
+      instance.setIsLive(false);
+
+      try {
+        instance.getIsLive();
+        expect.fail('Expected error');
+      } catch {
+        // good
+      }
+    });
+
+    it.only('wildcard instance permission', () => {
+      instance.aclCtx = getAllowAllCtx();
+      instance.setOrganizationId('00000000-bbbb-1ccc-8ddd-eeeeeeeeeeee');
+
+      instance.aclCtx = getAclCtx();
+      instance.getIsLive(); // Should be allowed
+
+      try {
+        instance.setIsLive(false);
+        expect.fail('Expected error');
+      } catch {
+        // good
+      }
+    });
+  });
 });

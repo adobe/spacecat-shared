@@ -49,12 +49,13 @@ class BaseModel {
    * @param {Object} record - The initial data for the entity instance.
    * @param {Object} log - A log for capturing logging information.
    */
-  constructor(electroService, entityRegistry, schema, record, log) {
+  constructor(electroService, entityRegistry, schema, record, log, aclCtx) {
     this.electroService = electroService;
     this.entityRegistry = entityRegistry;
     this.schema = schema;
     this.record = record;
     this.log = log;
+    this.aclCtx = aclCtx;
 
     this.entityName = schema.getEntityName();
     this.idName = entityNameToIdName(this.entityName);
@@ -83,6 +84,30 @@ class BaseModel {
       const accessorConfigs = reference.toAccessorConfigs(this.entityRegistry, this);
       createAccessors(accessorConfigs, this.log);
     });
+  }
+
+  hasPermisson(perm) {
+    const entityPath = perm === 'C' ? `/${this.entityName}` : `/${this.entityName}/${this.getId()}`;
+    const permissions = this.aclCtx.acl;
+
+    const match = permissions.find((p) => {
+      if (p.path.endsWith('/**')) {
+        return entityPath.startsWith(p.path.slice(0, -2));
+      }
+      if (p.path.endsWith('/*')) {
+        return entityPath.startsWith(p.path.slice(0, -1))
+          && entityPath.split('/').length === p.path.split('/').length;
+      }
+      return entityPath === p.path;
+    });
+
+    return match !== undefined && match.actions.includes(perm);
+  }
+
+  ensurePermission(perm) {
+    if (!this.hasPermisson(perm)) {
+      throw new Error('Permission denied');
+    }
   }
 
   /**
@@ -120,6 +145,7 @@ class BaseModel {
 
         if (!this[setterMethodName] && !attr.readOnly) {
           this[setterMethodName] = (value) => {
+            this.ensurePermission('U');
             this.patcher.patchValue(name, value, isReference);
             return this;
           };

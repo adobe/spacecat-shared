@@ -96,4 +96,46 @@ describe('OrganizationModel', () => {
       expect(instance.getFulfillableItems()).to.deep.equal(['item3', 'item4']);
     });
   });
+
+  describe('access control', () => {
+    function getAclCtx1() {
+      return {
+        user: {
+          id: 'joe@foo.org',
+        },
+        acl: [
+          { path: '/organization/**', actions: ['C', 'R', 'U', 'D'] },
+        ],
+      };
+    }
+
+    it.only('allowed to set name', () => {
+      instance.aclCtx = getAclCtx1();
+
+      instance.setName('My Name');
+      expect(instance.record.name).to.equal('My Name');
+    });
+
+    function getAclCtx2() {
+      return {
+        user: {
+          id: 'joe@foo.org',
+        },
+        acl: [
+          { path: '/organization/**', actions: ['R'] },
+        ],
+      };
+    }
+
+    it.only('not allowed to set name', () => {
+      instance.aclCtx = getAclCtx2();
+
+      try {
+        instance.setName('My Name');
+        expect.fail('Should have thrown an error');
+      } catch {
+        // good
+      }
+    });
+  });
 });

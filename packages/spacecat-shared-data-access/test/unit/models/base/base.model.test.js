@@ -30,7 +30,7 @@ chaiUse(sinonChai);
 
 const opportunityEntity = new Entity(OpportunitySchema.toElectroDBSchema());
 const suggestionEntity = new Entity(SuggestionSchema.toElectroDBSchema());
-const MockCollection = class MockCollection extends BaseCollection {};
+const MockCollection = class MockCollection extends BaseCollection { };
 
 describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
   let mockElectroService;
@@ -343,6 +343,39 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
         expect(result).to.be.an.instanceOf(BaseModel);
         expect(mockLogger.debug).to.have.been.calledWithExactly('No sort keys defined for Opportunity to Suggestions');
       });
+    });
+  });
+
+  describe('haspermission', () => {
+    it.only('test haspermission', () => {
+      const aclCtx = {
+        acl: [
+          { path: '/someapi', actions: ['R'] },
+          // { path: '/someapi/*', actions: ['C', 'R', 'U', 'D'] },
+          { path: '/someapi/**', actions: ['C', 'R', 'U', 'D'] },
+          { path: '/someapi/specificid', actions: [] },
+          { path: '/someapi/*/myop', actions: ['R'] },
+        ],
+      };
+
+      const es = { entities: { someapi: {} } };
+      const er = { getCollection: () => [] };
+      const sch = {
+        getEntityName: () => 'someapi',
+        getCollectionName: () => '',
+        getIdName: () => 'item',
+        getReferences: () => [],
+        getAttributes: () => [],
+      };
+
+      const r = { someapiId: 'xyz123' };
+      const bmi = new BaseModel(es, er, sch, r);
+      bmi.aclCtx = aclCtx;
+
+      expect(bmi.hasPermisson('R')).to.be.true;
+      expect(bmi.hasPermisson('C')).to.be.false;
+      expect(bmi.hasPermisson('U')).to.be.true;
+      expect(bmi.hasPermisson('D')).to.be.true;
     });
   });
 });

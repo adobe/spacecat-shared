@@ -361,15 +361,24 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
 
     it.only('test haspermission', () => {
       const aclCtx = {
-        acl: [
-          { path: '/someapi', actions: ['R'] },
-          // { path: '/someapi/*', actions: ['D'] },
-          { path: '/someapi/**', actions: ['C', 'R', 'U', 'D'] },
-          { path: '/someapi/specificid', actions: [] },
-          { path: '/someapi/*/myop', actions: ['R'] },
+        user: { ident: 'AA@BB.e' },
+        acls: [
+          {
+            ident: 'AA@BB.e',
+            identType: 'ident',
+            acl: [
+              { path: '/someapi', actions: ['R'] },
+              // { path: '/someapi/*', actions: ['D'] },
+              { path: '/someapi/**', actions: ['C', 'R', 'U', 'D'] },
+              { path: '/someapi/specificid', actions: [] },
+              { path: '/someapi/*/myop', actions: ['R'] },
+            ],
+          },
         ],
       };
-      aclCtx.acl.sort(pathSorter);
+
+      // Ensure the paths are sorted with the longest first
+      aclCtx.acls.forEach((a) => a.acl.sort(pathSorter));
 
       const es = { entities: { someapi: {} } };
       const er = { getCollection: () => [] };

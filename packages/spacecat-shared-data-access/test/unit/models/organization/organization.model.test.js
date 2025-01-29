@@ -101,10 +101,30 @@ describe('OrganizationModel', () => {
     function getAclCtx1() {
       return {
         user: {
-          id: 'joe@foo.org',
+          email: 'joe@bloggs.org',
+          ident: '18ABAA98@BBA90AB.e',
+          org: { name: 'IMS-ORG-1', ident: 'AFAA9891' },
+          groups: [
+            { name: 'staff', ident: 1289110921 },
+            { name: 'editor', ident: 1289110922 },
+          ],
         },
-        acl: [
-          { path: '/organization/**', actions: ['C', 'R', 'U', 'D'] },
+        acls: [
+          {
+            ident: 'joe@bloggs.org',
+            identType: 'email',
+            acl: [
+              { path: '/organization/**', actions: ['C', 'R', 'U', 'D'] },
+              { path: '/configuration/*', actions: ['R', 'U'] },
+            ],
+          },
+          {
+            ident: 'AFAA9891/editor',
+            identType: 'orgID/group',
+            acl: [
+              { path: '/import-job/**', actions: ['C'] },
+            ],
+          },
         ],
       };
     }
@@ -113,16 +133,28 @@ describe('OrganizationModel', () => {
       instance.aclCtx = getAclCtx1();
 
       instance.setName('My Name');
-      expect(instance.record.name).to.equal('My Name');
+      expect(instance.getName()).to.equal('My Name');
     });
 
     function getAclCtx2() {
       return {
         user: {
-          id: 'joe@foo.org',
+          email: 'joe@bloggs.org',
+          ident: '18ABAA98@BBA90AB.e',
+          org: { name: 'IMS-ORG-1', ident: 'AFAA9891' },
+          groups: [
+            { name: 'staff', ident: 1289110921 },
+            { name: 'editor', ident: 1289110922 },
+          ],
         },
-        acl: [
-          { path: '/organization/**', actions: ['R'] },
+        acls: [
+          {
+            ident: 'AFAA9891/editor',
+            identType: 'orgID/group',
+            acl: [
+              { path: '/organization/**', actions: ['R'] },
+            ],
+          },
         ],
       };
     }
@@ -130,6 +162,7 @@ describe('OrganizationModel', () => {
     it.only('not allowed to set name', () => {
       instance.aclCtx = getAclCtx2();
 
+      instance.getName();
       try {
         instance.setName('My Name');
         expect.fail('Should have thrown an error');

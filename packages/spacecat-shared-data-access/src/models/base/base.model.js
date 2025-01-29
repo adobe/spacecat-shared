@@ -115,9 +115,10 @@ class BaseModel {
     return epa.join('/');
   }
 
-  hasPermisson(perm) {
-    const entityPath = this.constructPath();
-    const permissions = this.aclCtx.acl;
+  getPermissions(entityPath, permissions) {
+    if (!permissions) {
+      return [];
+    }
 
     const match = permissions.find((p) => {
       const pp = p.path;
@@ -129,7 +130,38 @@ class BaseModel {
       return ep === pp;
     });
 
-    return match !== undefined && match.actions.includes(perm);
+    if (!match) {
+      return [];
+    }
+    return match.actions;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  identStr(prefix, val) {
+    if (!val) {
+      return undefined;
+    }
+    return prefix.concat(val);
+  }
+
+  hasPermisson(perm) {
+    const entityPath = this.constructPath();
+
+    const { user } = this.aclCtx;
+    const org = user.org?.ident;
+    const idents = (user.groups || [])
+      .map((g) => `orgID/group:${org}/${g.name}`)
+      .concat(this.identStr('email:', user.email))
+      .concat(this.identStr('ident:', user.ident))
+      .concat(this.identStr('orgID:', org))
+      .filter((e) => e !== undefined);
+
+    const permissions = new Map();
+    this.aclCtx.acls.forEach((a) => permissions.set(`${a.identType}:${a.ident}`, a.acl));
+
+    const actions = [];
+    idents.forEach((i) => actions.push(...this.getPermissions(entityPath, permissions.get(i))));
+    return actions.includes(perm);
   }
 
   ensurePermission(perm) {

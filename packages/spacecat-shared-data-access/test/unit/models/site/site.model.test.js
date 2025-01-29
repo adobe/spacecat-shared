@@ -155,19 +155,29 @@ describe('SiteModel', () => {
   describe('test permissions', () => {
     function getAllowAllCtx() {
       return {
-        acl: [
-          { path: '/', actions: ['C', 'R', 'U', 'D'] },
-          { path: '/**', actions: ['C', 'R', 'U', 'D'] },
-        ],
+        user: { email: 'foo@bar.org' },
+        acls: [{
+          ident: 'foo@bar.org',
+          identType: 'email',
+          acl: [
+            { path: '/', actions: ['C', 'R', 'U', 'D'] },
+            { path: '/**', actions: ['C', 'R', 'U', 'D'] },
+          ],
+        }],
       };
     }
 
     function getAclCtx() {
       return {
-        acl: [
-          { path: '/organization/aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee/site/*', actions: ['U'] },
-          { path: '/organization/*/site/*', actions: ['R'] },
-        ],
+        user: { email: 'foo@bar.org' },
+        acls: [{
+          ident: 'foo@bar.org',
+          identType: 'email',
+          acl: [
+            { path: '/organization/aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee/site/*', actions: ['U'] },
+            { path: '/organization/*/site/*', actions: ['R'] },
+          ],
+        }],
       };
     }
 

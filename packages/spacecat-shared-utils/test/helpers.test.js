@@ -15,10 +15,14 @@
 import { expect } from 'chai';
 
 import nock from 'nock';
+import { promises as fs } from 'fs';
+import sinon from 'sinon';
 import {
   generateCSVFile,
   resolveSecretsName,
-  resolveCustomerSecretsName, getRUMDomainKey,
+  resolveCustomerSecretsName,
+  getRUMDomainKey,
+  replacePlaceholders, getPrompt,
 } from '../src/helpers.js';
 
 describe('resolveSecretsName', () => {
@@ -186,5 +190,91 @@ describe('generateCSVFile', () => {
     const csvString = csvFile.toString('utf-8');
 
     expect(csvString).to.equal(expectedCsv);
+  });
+});
+
+describe('replacePlaceholders', () => {
+  it('replaces placeholders with corresponding values', () => {
+    const content = 'Hello, {{name}}!';
+    const placeholders = { name: 'John' };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, John!');
+  });
+
+  it('does not replace placeholders if key is not found in placeholders object', () => {
+    const content = 'Hello, {{name}}!';
+    const placeholders = { age: 30 };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, {{name}}!');
+  });
+
+  it('replaces multiple placeholders with corresponding values', () => {
+    const content = 'Hello, {{name}}! You are {{age}} years old.';
+    const placeholders = { name: 'John', age: 30 };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, John! You are 30 years old.');
+  });
+
+  it('replaces placeholders with stringified objects if value is an object', () => {
+    const content = 'User: {{user}}';
+    const placeholders = { user: { name: 'John', age: 30 } };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('User: {"name":"John","age":30}');
+  });
+
+  it('leaves placeholders unchanged if they are not found in placeholders object', () => {
+    const content = 'Hello, {{name}}! You are {{age}} years old.';
+    const placeholders = { name: 'John' };
+    const result = replacePlaceholders(content, placeholders);
+    expect(result).to.equal('Hello, John! You are {{age}} years old.');
+  });
+});
+
+describe('getPrompt', () => {
+  let readFileStub;
+  let logStub;
+
+  beforeEach(() => {
+    readFileStub = sinon.stub(fs, 'readFile');
+    logStub = { error: sinon.stub() };
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('reads the prompt file and replace placeholders', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, John!');
+    expect(readFileStub.calledOnceWith(`./static/prompts/${filename}.prompt`, { encoding: 'utf8' })).to.be.true;
+  });
+
+  it('returns null and log an error if reading the file fails', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const errorMessage = 'File not found';
+    readFileStub.rejects(new Error(errorMessage));
+
+    const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.be.null;
+    expect(logStub.error.calledOnceWith('Error reading prompt file:', errorMessage)).to.be.true;
+  });
+
+  it('handles empty placeholder object and return content as is', async () => {
+    const placeholders = {};
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, {{name}}!');
   });
 });

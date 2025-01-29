@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-google-client-v1.4.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.6...@adobe/spacecat-shared-google-client-v1.4.7) (2025-01-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#561](https://github.com/adobe/spacecat-shared/issues/561)) ([e922c1d](https://github.com/adobe/spacecat-shared/commit/e922c1df3b9a7bfcf6a5699d65bcb02dc130393a))
+
+# [@adobe/spacecat-shared-google-client-v1.4.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.5...@adobe/spacecat-shared-google-client-v1.4.6) (2025-01-18)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#547](https://github.com/adobe/spacecat-shared/issues/547)) ([5a1a3bb](https://github.com/adobe/spacecat-shared/commit/5a1a3bbf0327dd8f66995629d8878db1f8050616))
+
+# [@adobe/spacecat-shared-google-client-v1.4.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.4...@adobe/spacecat-shared-google-client-v1.4.5) (2025-01-16)
+
+
+### Bug Fixes
+
+* branch protection / npm cache / deps ([#545](https://github.com/adobe/spacecat-shared/issues/545)) ([004de60](https://github.com/adobe/spacecat-shared/commit/004de60b05b5039590f92ed8f7117725f6e4df41))
+
 # [@adobe/spacecat-shared-google-client-v1.4.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.3...@adobe/spacecat-shared-google-client-v1.4.4) (2025-01-12)
 
 

@@ -15,7 +15,7 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 import { fetch } from '../utils.js';
 import { GRANULARITY } from './constants.js';
 
-const BASE_URL = 'https://rum.fastly-aem.page/bundles';
+const BASE_URL = 'https://bundles.aem.page/bundles';
 const HOURS_IN_DAY = 24;
 const ONE_HOUR = 1000 * 60 * 60;
 const ONE_DAY = ONE_HOUR * HOURS_IN_DAY;
@@ -157,7 +157,7 @@ async function mergeBundlesWithSameId(bundles) {
 }
 /* c8 ignore end */
 
-async function fetchBundles(opts = {}) {
+async function fetchBundles(opts, log) {
   const {
     domain,
     domainkey,
@@ -186,9 +186,18 @@ async function fetchBundles(opts = {}) {
 
   const chunks = getUrlChunks(urls, CHUNK_SIZE);
 
+  let totalTransferSize = 0;
+
   const result = [];
   for (const chunk of chunks) {
-    const responses = await Promise.all(chunk.map((url) => fetch(url)));
+    // eslint-disable-next-line no-loop-func
+    const responses = await Promise.all(chunk.map(async (url) => {
+      const response = await fetch(url);
+      const xCache = response.headers.get('x-cache')?.toLowerCase().includes('hit');
+      log.info(`Retrieving RUM bundles. Source: ${xCache ? 'CDN' : 'ORIGIN'}. Granularity: ${granularity}. Domain: ${domain}`);
+      totalTransferSize += parseInt(response.headers.get('content-length'), 10);
+      return response;
+    }));
     const bundles = await Promise.all(responses.map((response) => response.json()));
 
     bundles.forEach((b) => {
@@ -198,6 +207,7 @@ async function fetchBundles(opts = {}) {
         .forEach((bundle) => result.push(bundle));
     });
   }
+  log.info(`Retrieved RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
   return mergeBundlesWithSameId(result);
 }
 

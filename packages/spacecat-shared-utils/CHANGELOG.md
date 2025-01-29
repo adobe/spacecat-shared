@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-utils-v1.28.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.1...@adobe/spacecat-shared-utils-v1.28.2) (2025-01-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#561](https://github.com/adobe/spacecat-shared/issues/561)) ([e922c1d](https://github.com/adobe/spacecat-shared/commit/e922c1df3b9a7bfcf6a5699d65bcb02dc130393a))
+
+# [@adobe/spacecat-shared-utils-v1.28.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.0...@adobe/spacecat-shared-utils-v1.28.1) (2025-01-21)
+
+
+### Bug Fixes
+
+* getPrompt and replacePlaceholders not properly exported ([#553](https://github.com/adobe/spacecat-shared/issues/553)) ([236839c](https://github.com/adobe/spacecat-shared/commit/236839ca9785f77576889e768cb1707c49bb1fb4))
+
+# [@adobe/spacecat-shared-utils-v1.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.27.0...@adobe/spacecat-shared-utils-v1.28.0) (2025-01-21)
+
+
+### Features
+
+* introduce get prompt from static files ([#552](https://github.com/adobe/spacecat-shared/issues/552)) ([0ae7392](https://github.com/adobe/spacecat-shared/commit/0ae739243722812c6b895fe5d843424d23b7f29c))
+
+# [@adobe/spacecat-shared-utils-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.6...@adobe/spacecat-shared-utils-v1.27.0) (2025-01-21)
+
+
+### Features
+
+* introduce replace placeholders for prompts ([#551](https://github.com/adobe/spacecat-shared/issues/551)) ([d3b542c](https://github.com/adobe/spacecat-shared/commit/d3b542cf1b546256b3108f989220d07410cdc87d))
+
+# [@adobe/spacecat-shared-utils-v1.26.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.5...@adobe/spacecat-shared-utils-v1.26.6) (2025-01-18)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#547](https://github.com/adobe/spacecat-shared/issues/547)) ([5a1a3bb](https://github.com/adobe/spacecat-shared/commit/5a1a3bbf0327dd8f66995629d8878db1f8050616))
+
+# [@adobe/spacecat-shared-utils-v1.26.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.4...@adobe/spacecat-shared-utils-v1.26.5) (2025-01-16)
+
+
+### Bug Fixes
+
+* branch protection / npm cache / deps ([#545](https://github.com/adobe/spacecat-shared/issues/545)) ([004de60](https://github.com/adobe/spacecat-shared/commit/004de60b05b5039590f92ed8f7117725f6e4df41))
+
 # [@adobe/spacecat-shared-utils-v1.26.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.26.3...@adobe/spacecat-shared-utils-v1.26.4) (2025-01-16)
 
 

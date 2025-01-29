@@ -12,6 +12,7 @@
 
 import { Parser } from '@json2csv/plainjs';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import { promises as fs } from 'fs';
 import { isString } from './functions.js';
 
 /**
@@ -91,4 +92,42 @@ export async function getRUMDomainKey(baseURL, context) {
 export function generateCSVFile(data) {
   const json2csvParser = new Parser();
   return Buffer.from(json2csvParser.parse(data), 'utf-8');
+}
+
+/**
+ * Replaces placeholders in the prompt content with their corresponding values.
+ *
+ * @param {string} content - The prompt content with placeholders.
+ * @param {Object} placeholders - The placeholders and their values.
+ * @returns {string} - The content with placeholders replaced.
+ */
+export function replacePlaceholders(content, placeholders) {
+  return content.replace(/{{(.*?)}}/g, (match, key) => {
+    if (key in placeholders) {
+      const value = placeholders[key];
+      return typeof value === 'object' && value !== null ? JSON.stringify(value) : value;
+    } else {
+      return match;
+    }
+  });
+}
+
+/**
+ * Reads the content of a prompt file asynchronously and replaces any placeholders
+ * with the corresponding values. Logs the error and returns null in case of an error.
+ *
+ * @param {Object} placeholders - A JSON object containing values to replace in the prompt content.
+ * @param {String} filename - The filename of the prompt file.
+ * @param {Object} log - The logger
+ * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content,
+ * or null if an error occurs.
+ */
+export async function getPrompt(placeholders, filename, log = console) {
+  try {
+    const promptContent = await fs.readFile(`./static/prompts/${filename}.prompt`, { encoding: 'utf8' });
+    return replacePlaceholders(promptContent, placeholders);
+  } catch (error) {
+    log.error('Error reading prompt file:', error.message);
+    return null;
+  }
 }

@@ -36,6 +36,8 @@ export {
   resolveCustomerSecretsName,
   getRUMDomainKey,
   generateCSVFile,
+  replacePlaceholders,
+  getPrompt,
 } from './helpers.js';
 
 export { sqsWrapper } from './sqs.js';

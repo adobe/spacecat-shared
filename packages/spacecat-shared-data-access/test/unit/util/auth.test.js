@@ -12,21 +12,9 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { hasPermisson } from '../../../src/util/auth.js';
+import { hasPermisson, pathSorter } from '../../../src/util/auth.js';
 
 describe('haspermission', () => {
-  function prepPathForSort(path) {
-    if (path.endsWith('/+**')) return path.slice(0, -3);
-    if (path.endsWith('/**')) return path.slice(0, -2);
-    return path;
-  }
-
-  function pathSorter({ path: path1 }, { path: path2 }) {
-    const sp1 = prepPathForSort(path1);
-    const sp2 = prepPathForSort(path2);
-    return sp2.length - sp1.length;
-  }
-
   it.only('test haspermission', () => {
     const aclCtx = {
       user: { ident: 'AA@BB.e' },

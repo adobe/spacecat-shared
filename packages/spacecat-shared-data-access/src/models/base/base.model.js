@@ -14,6 +14,7 @@ import { isNonEmptyArray, isNonEmptyObject } from '@adobe/spacecat-shared-utils'
 
 import { DataAccessError } from '../../errors/index.js';
 import { createAccessors } from '../../util/accessor.utils.js';
+import { ensurePermission } from '../../util/auth.js';
 import Patcher from '../../util/patcher.js';
 import {
   capitalize,
@@ -87,87 +88,17 @@ class BaseModel {
     });
   }
 
-  constructPath() {
+  /**
+   * Provide a path representation of the current instance for ACL purposes.
+   * @returns The path representation. Always absolute, so starts with a '/'.
+   */
+  getACLPath() {
     const refs = this.schema.getReferencesByType(Reference.TYPES.BELONGS_TO);
     if (refs.length !== 1) {
       return `/${this.entityName}/${this.getId()}`;
     }
     const ownerID = this.record[entityNameToIdName(refs[0].target)];
     return `/${decapitalize(refs[0].target)}/${ownerID}/${this.entityName}/${this.getId()}`;
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  prepSingleStarWildcard(entityPath, permPath) {
-    if (!permPath.includes('/*')) {
-      return entityPath;
-    }
-
-    const epa = entityPath.split('/');
-    const ppa = permPath.split('/');
-    if (epa.length < ppa.length) {
-      return entityPath;
-    }
-
-    const indexes = ppa.reduce((a, e, i) => ((e === '*') ? a.concat(i) : a), []);
-    indexes.forEach((idx) => {
-      epa[idx] = '*';
-    });
-    return epa.join('/');
-  }
-
-  getPermissions(entityPath, permissions) {
-    if (!permissions) {
-      return [];
-    }
-
-    const match = permissions.find((p) => {
-      const pp = p.path;
-      const ep = this.prepSingleStarWildcard(entityPath, pp);
-
-      if (pp.endsWith('/**')) {
-        return ep.startsWith(pp.slice(0, -2));
-      }
-      return ep === pp;
-    });
-
-    if (!match) {
-      return [];
-    }
-    return match.actions;
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  identStr(prefix, val) {
-    if (!val) {
-      return undefined;
-    }
-    return prefix.concat(val);
-  }
-
-  hasPermisson(perm) {
-    const entityPath = this.constructPath();
-
-    const { user } = this.aclCtx;
-    const org = user.org?.ident;
-    const idents = (user.groups || [])
-      .map((g) => `orgID/group:${org}/${g.name}`)
-      .concat(this.identStr('email:', user.email))
-      .concat(this.identStr('ident:', user.ident))
-      .concat(this.identStr('orgID:', org))
-      .filter((e) => e !== undefined);
-
-    const permissions = new Map();
-    this.aclCtx.acls.forEach((a) => permissions.set(`${a.identType}:${a.ident}`, a.acl));
-
-    const actions = [];
-    idents.forEach((i) => actions.push(...this.getPermissions(entityPath, permissions.get(i))));
-    return actions.includes(perm);
-  }
-
-  ensurePermission(perm) {
-    if (!this.hasPermisson(perm)) {
-      throw new Error('Permission denied');
-    }
   }
 
   /**
@@ -198,7 +129,7 @@ class BaseModel {
 
       if (!this[getterMethodName] || name === this.idName) {
         this[getterMethodName] = () => {
-          this.ensurePermission('R');
+          ensurePermission(this.getACLPath(), this.aclCtx, 'R');
           return this.record[name];
         };
       }
@@ -208,7 +139,7 @@ class BaseModel {
 
         if (!this[setterMethodName] && !attr.readOnly) {
           this[setterMethodName] = (value) => {
-            this.ensurePermission('U');
+            ensurePermission(this.getACLPath(), this.aclCtx, 'U');
             this.patcher.patchValue(name, value, isReference);
             return this;
           };

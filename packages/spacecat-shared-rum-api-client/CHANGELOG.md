@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.18.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.18.8...@adobe/spacecat-shared-rum-api-client-v2.18.9) (2025-01-30)
+
+
+### Bug Fixes
+
+* **rum-api-client:** only consider earned traffic in hi-org-lo-ctr ([#565](https://github.com/adobe/spacecat-shared/issues/565)) ([f7a2019](https://github.com/adobe/spacecat-shared/commit/f7a20193844f40938032a4236f55241fcdefb8d4))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.18.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.18.7...@adobe/spacecat-shared-rum-api-client-v2.18.8) (2025-01-24)
 
 

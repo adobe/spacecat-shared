@@ -56,6 +56,7 @@ describe('Index Exports', () => {
     'stripWWW',
     'toBoolean',
     'tracingFetch',
+    'getHighFormViewsLowConversionMetrics',
   ];
 
   it('exports all expected functions', () => {

@@ -15,13 +15,14 @@ import { classifyTraffic } from '../common/traffic.js';
 const MAIN_TYPES = ['total', 'paid', 'earned', 'owned'];
 
 function collectByUrlAndTrafficSource(acc, {
-  url, weight, trafficSource,
+  url, weight, trafficSource, maxTimeDelta,
 }) {
   acc[url] = acc[url] || {
-    total: 0, owned: 0, earned: 0, paid: 0,
+    total: 0, owned: 0, earned: 0, paid: 0, maxTimeDelta: 0,
   };
   acc[url][trafficSource] = (acc[url][trafficSource] || 0) + weight;
   acc[url].total += weight;
+  acc[url].maxTimeDelta = maxTimeDelta;
   const trafficType = trafficSource.split(':')[0];
   acc[url][trafficType] += weight;
   return acc;
@@ -34,26 +35,35 @@ function transformFormat(trafficSources) {
     earned: value.earned,
     owned: value.owned,
     paid: value.paid,
+    maxTimeDelta: value.maxTimeDelta,
     sources: Object.entries(value)
-      .filter(([source]) => !MAIN_TYPES.includes(source))
+      .filter(([source]) => !MAIN_TYPES.includes(source) && source !== 'maxTimeDelta')
       .map(([source, views]) => ({ type: source, views })),
   }));
 }
 
 function formatTraffic(row) {
   const {
-    url, weight, type, category, vendor,
+    url, weight, type, category, vendor, events = [],
   } = row;
+
+  const timeDeltas = events.map((event) => event.timeDelta);
+  const maxTimeDelta = Math.max(...timeDeltas, 0);
+
   return {
     url,
     weight,
     trafficSource: vendor ? `${type}:${category}:${vendor}` : `${type}:${category}`,
+    maxTimeDelta,
   };
 }
 
 function handler(bundles) {
   const trafficSources = bundles
-    .map(classifyTraffic)
+    .map((bundle) => ({
+      ...classifyTraffic(bundle),
+      events: bundle.events,
+    }))
     .map(formatTraffic)
     .reduce(collectByUrlAndTrafficSource, {});
 
@@ -63,5 +73,4 @@ function handler(bundles) {
 
 export default {
   handler,
-  checkpoints: ['email', 'enter', 'paid', 'utm', 'experiment'],
 };

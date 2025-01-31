@@ -22,7 +22,7 @@ const MAIN_TYPES = ['paid', 'earned', 'owned'];
 
 function convertToOpportunity(traffic) {
   const {
-    url, total, ctr, paid, owned, earned, sources, siteAvgCTR, ctrByUrlAndVendor,
+    url, total, ctr, paid, owned, earned, sources, siteAvgCTR, ctrByUrlAndVendor, pageOnTime,
   } = traffic;
 
   const vendors = sources.reduce((acc, { type, views }) => {
@@ -66,6 +66,12 @@ function convertToOpportunity(traffic) {
       value: {
         page: ctr,
       },
+    }, {
+      type: 'pageOnTime',
+      vendor: '*',
+      value: {
+        time: pageOnTime,
+      },
     }],
   };
   opportunity.metrics.push(...topVendors.flatMap(([vendor, {
@@ -88,7 +94,14 @@ function convertToOpportunity(traffic) {
         page: ctrByUrlAndVendor[vendor],
       },
     };
-    return [trafficMetrics, ctrMetrics];
+    const pageOnTimeMetrics = {
+      type: 'pageOnTime',
+      vendor,
+      value: {
+        time: pageOnTime,
+      },
+    };
+    return [trafficMetrics, ctrMetrics, pageOnTimeMetrics];
   }));
   return opportunity;
 }
@@ -117,11 +130,11 @@ function handler(bundles, opts = {}) {
       ctr: ctrByUrlAndVendor[traffic.url].value,
       siteAvgCTR,
       ctrByUrlAndVendor: ctrByUrlAndVendor[traffic.url].vendors,
+      pageOnTime: traffic.maxTimeDelta,
     }))
     .map(convertToOpportunity);
 }
 
 export default {
   handler,
-  checkpoints: ['email', 'enter', 'paid', 'utm', 'click', 'experiment'],
 };

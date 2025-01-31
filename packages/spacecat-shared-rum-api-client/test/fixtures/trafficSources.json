@@ -3,6 +3,7 @@
     "url": "https://www.aem.live/home",
     "total": 2620,
     "earned": 400,
+    "maxTimeDelta": 181477.60009765625,
     "owned": 2120,
     "paid": 100,
     "sources": [
@@ -24,6 +25,7 @@
     "url": "https://www.aem.live/developer/block-collection",
     "total": 2000,
     "earned": 0,
+    "maxTimeDelta": 312424.5,
     "owned": 2000,
     "paid": 0,
     "sources": [
@@ -37,6 +39,7 @@
     "url": "https://www.aem.live/docs/",
     "total": 1910,
     "earned": 100,
+    "maxTimeDelta": 7819.199951171875,
     "owned": 1810,
     "paid": 0,
     "sources": [
@@ -54,6 +57,7 @@
     "url": "https://www.aem.live/tools/rum/explorer.html",
     "total": 1600,
     "earned": 100,
+    "maxTimeDelta": 8331,
     "owned": 1500,
     "paid": 0,
     "sources": [
@@ -71,6 +75,7 @@
     "url": "https://www.aem.live/developer/tutorial",
     "total": 1600,
     "earned": 200,
+    "maxTimeDelta": 1556,
     "owned": 1400,
     "paid": 0,
     "sources": [
@@ -88,6 +93,7 @@
     "url": "https://www.aem.live/developer/anatomy-of-a-franklin-project",
     "total": 1200,
     "earned": 0,
+    "maxTimeDelta": 21284.5,
     "owned": 1200,
     "paid": 0,
     "sources": [
@@ -101,6 +107,7 @@
     "url": "https://www.aem.live/developer/indexing",
     "total": 1000,
     "earned": 0,
+    "maxTimeDelta": 206.89990234375,
     "owned": 1000,
     "paid": 0,
     "sources": [
@@ -114,6 +121,7 @@
     "url": "https://www.aem.live/docs/custom-headers",
     "total": 900,
     "earned": 0,
+    "maxTimeDelta": 3549.800048828125,
     "owned": 900,
     "paid": 0,
     "sources": [
@@ -127,6 +135,7 @@
     "url": "https://www.aem.live/developer/spreadsheets",
     "total": 900,
     "earned": 0,
+    "maxTimeDelta": 4488.89990234375,
     "owned": 900,
     "paid": 0,
     "sources": [
@@ -140,6 +149,7 @@
     "url": "https://www.aem.live/docs/dev-collab-and-good-practices",
     "total": 700,
     "earned": 0,
+    "maxTimeDelta": 3486.60009765625,
     "owned": 700,
     "paid": 0,
     "sources": [
@@ -153,6 +163,7 @@
     "url": "https://www.aem.live/docs/go-live-checklist",
     "total": 600,
     "earned": 0,
+    "maxTimeDelta": 59183.5,
     "owned": 600,
     "paid": 0,
     "sources": [
@@ -166,6 +177,7 @@
     "url": "https://www.aem.live/developer/markup-sections-blocks",
     "total": 510,
     "earned": 0,
+    "maxTimeDelta": 8839,
     "owned": 510,
     "paid": 0,
     "sources": [
@@ -179,6 +191,7 @@
     "url": "https://www.aem.live/developer/favicon",
     "total": 500,
     "earned": 0,
+    "maxTimeDelta": 3611.10009765625,
     "owned": 500,
     "paid": 0,
     "sources": [
@@ -192,6 +205,7 @@
     "url": "https://www.aem.live/developer/keeping-it-100",
     "total": 500,
     "earned": 0,
+    "maxTimeDelta": 4382,
     "owned": 500,
     "paid": 0,
     "sources": [
@@ -205,6 +219,7 @@
     "url": "https://www.aem.live/tools/sidekick/",
     "total": 410,
     "earned": 0,
+    "maxTimeDelta": 1735.199951171875,
     "owned": 410,
     "paid": 0,
     "sources": [
@@ -218,6 +233,7 @@
     "url": "https://www.aem.live/docs/placeholders",
     "total": 403,
     "earned": 0,
+    "maxTimeDelta": 4695.39990234375,
     "owned": 403,
     "paid": 0,
     "sources": [
@@ -231,6 +247,7 @@
     "url": "https://www.aem.live/docs/byo-cdn-cloudflare-worker-setup",
     "total": 400,
     "earned": 0,
+    "maxTimeDelta": 4766458,
     "owned": 400,
     "paid": 0,
     "sources": [
@@ -244,6 +261,7 @@
     "url": "https://www.aem.live/docs/byo-dns",
     "total": 400,
     "earned": 0,
+    "maxTimeDelta": 4055.699951171875,
     "owned": 400,
     "paid": 0,
     "sources": [
@@ -257,6 +275,7 @@
     "url": "https://www.aem.live/docs/byo-cdn-fastly-setup",
     "total": 300,
     "earned": 0,
+    "maxTimeDelta": 631.5,
     "owned": 300,
     "paid": 0,
     "sources": [
@@ -270,6 +289,7 @@
     "url": "https://www.aem.live/docs/davidsmodel",
     "total": 300,
     "earned": 200,
+    "maxTimeDelta": 133718.30004882812,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -287,6 +307,7 @@
     "url": "https://www.aem.live/docs/setup-customer-sharepoint",
     "total": 300,
     "earned": 0,
+    "maxTimeDelta": 5043.699951171875,
     "owned": 300,
     "paid": 0,
     "sources": [
@@ -300,6 +321,7 @@
     "url": "https://www.aem.live/developer/sitemap",
     "total": 300,
     "earned": 0,
+    "maxTimeDelta": 4023,
     "owned": 300,
     "paid": 0,
     "sources": [
@@ -313,6 +335,7 @@
     "url": "https://www.aem.live/docs/byo-cdn-akamai-setup",
     "total": 300,
     "earned": 0,
+    "maxTimeDelta": 3496.10009765625,
     "owned": 300,
     "paid": 0,
     "sources": [
@@ -326,6 +349,7 @@
     "url": "https://www.aem.live/docs/redirects",
     "total": 300,
     "earned": 0,
+    "maxTimeDelta": 3976.699951171875,
     "owned": 300,
     "paid": 0,
     "sources": [
@@ -339,6 +363,7 @@
     "url": "https://www.aem.live/docs/bulk-metadata",
     "total": 300,
     "earned": 0,
+    "maxTimeDelta": 4422.39990234375,
     "owned": 300,
     "paid": 0,
     "sources": [
@@ -352,6 +377,7 @@
     "url": "https://www.aem.live/some-other-page",
     "total": 300,
     "earned": 0,
+    "maxTimeDelta": 541,
     "owned": 300,
     "paid": 0,
     "sources": [
@@ -365,6 +391,7 @@
     "url": "https://www.aem.live/docs/authoring",
     "total": 210,
     "earned": 0,
+    "maxTimeDelta": 1480.39990234375,
     "owned": 210,
     "paid": 0,
     "sources": [
@@ -378,6 +405,7 @@
     "url": "https://www.aem.live/docs/sidekick",
     "total": 200,
     "earned": 0,
+    "maxTimeDelta": 6397.39990234375,
     "owned": 200,
     "paid": 0,
     "sources": [
@@ -391,6 +419,7 @@
     "url": "https://www.aem.live/developer/web-components",
     "total": 200,
     "earned": 0,
+    "maxTimeDelta": 4203.89990234375,
     "owned": 200,
     "paid": 0,
     "sources": [
@@ -404,6 +433,7 @@
     "url": "https://www.aem.live/docs/authentication-setup-site",
     "total": 200,
     "earned": 100,
+    "maxTimeDelta": 114833.89990234375,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -421,6 +451,7 @@
     "url": "https://www.aem.live/developer/rum",
     "total": 200,
     "earned": 100,
+    "maxTimeDelta": 9822,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -438,6 +469,7 @@
     "url": "https://www.aem.live/docs/faq",
     "total": 200,
     "earned": 0,
+    "maxTimeDelta": 4825.300048828125,
     "owned": 200,
     "paid": 0,
     "sources": [
@@ -451,6 +483,7 @@
     "url": "https://www.aem.live/developer/placeholders",
     "total": 200,
     "earned": 0,
+    "maxTimeDelta": 5443070.800048828,
     "owned": 200,
     "paid": 0,
     "sources": [
@@ -464,6 +497,7 @@
     "url": "https://www.aem.live/developer/block-collection/section-metadata",
     "total": 200,
     "earned": 0,
+    "maxTimeDelta": 1260712.1000976562,
     "owned": 200,
     "paid": 0,
     "sources": [
@@ -477,6 +511,7 @@
     "url": "https://www.aem.live/vip/intake",
     "total": 200,
     "earned": 0,
+    "maxTimeDelta": 7679769,
     "owned": 200,
     "paid": 0,
     "sources": [
@@ -490,6 +525,7 @@
     "url": "https://www.aem.live/new-exp-page",
     "total": 200,
     "earned": 0,
+    "maxTimeDelta": 521,
     "owned": 200,
     "paid": 0,
     "sources": [
@@ -503,6 +539,7 @@
     "url": "https://www.aem.live/docs/sidekick-extension",
     "total": 110,
     "earned": 100,
+    "maxTimeDelta": 5000,
     "owned": 10,
     "paid": 0,
     "sources": [
@@ -520,6 +557,7 @@
     "url": "https://www.aem.live/docs/rum",
     "total": 110,
     "earned": 0,
+    "maxTimeDelta": 41000,
     "owned": 110,
     "paid": 0,
     "sources": [
@@ -533,6 +571,7 @@
     "url": "https://www.aem.live/developer/target-integration",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 56729,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -546,6 +585,7 @@
     "url": "https://www.aem.live/docs/architecture",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 29030,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -559,6 +599,7 @@
     "url": "https://www.aem.live/developer/block-collection/breadcrumbs",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 1572776.8000488281,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -572,6 +613,7 @@
     "url": "https://www.aem.live/developer/block-collection/headings",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 4044,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -585,6 +627,7 @@
     "url": "https://www.aem.live/docs/cdn-guide",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 9,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -598,6 +641,7 @@
     "url": "https://www.aem.live/tools/bot/setup",
     "total": 100,
     "earned": 100,
+    "maxTimeDelta": 5931.60009765625,
     "owned": 0,
     "paid": 0,
     "sources": [
@@ -611,6 +655,7 @@
     "url": "https://www.aem.live/developer/github-actions",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 4104.300048828125,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -624,6 +669,7 @@
     "url": "https://www.aem.live/developer/importer",
     "total": 100,
     "earned": 100,
+    "maxTimeDelta": 10204132.600097656,
     "owned": 0,
     "paid": 0,
     "sources": [
@@ -637,6 +683,7 @@
     "url": "https://www.aem.live/developer/configuring-aem-assets-sidekick-plugin",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 3133,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -650,6 +697,7 @@
     "url": "https://www.aem.live/tools/rum/list.html",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 36587,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -663,6 +711,7 @@
     "url": "https://www.aem.live/docs/setup-byo-cdn-push-invalidation",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 74.89990234375,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -676,6 +725,7 @@
     "url": "https://www.aem.live/developer/forms",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 6751.800048828125,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -689,6 +739,7 @@
     "url": "https://www.aem.live/developer/",
     "total": 100,
     "earned": 0,
+    "maxTimeDelta": 127,
     "owned": 100,
     "paid": 0,
     "sources": [
@@ -702,6 +753,7 @@
     "url": "https://www.aem.live/docs/admin.html",
     "total": 20,
     "earned": 0,
+    "maxTimeDelta": 22000,
     "owned": 20,
     "paid": 0,
     "sources": [
@@ -715,6 +767,7 @@
     "url": "https://www.aem.live/community-feeds.json",
     "total": 10,
     "earned": 0,
+    "maxTimeDelta": 33000,
     "owned": 10,
     "paid": 0,
     "sources": [
@@ -728,6 +781,7 @@
     "url": "https://www.aem.live/docs/global",
     "total": 10,
     "earned": 0,
+    "maxTimeDelta": 10000,
     "owned": 10,
     "paid": 0,
     "sources": [
@@ -741,6 +795,7 @@
     "url": "https://www.aem.live/developer/franklin-video-series-advanced",
     "total": 10,
     "earned": 0,
+    "maxTimeDelta": 35000,
     "owned": 10,
     "paid": 0,
     "sources": [
@@ -754,6 +809,7 @@
     "url": "https://www.aem.live/developer/markup-reference",
     "total": 10,
     "earned": 0,
+    "maxTimeDelta": 11000,
     "owned": 10,
     "paid": 0,
     "sources": [
@@ -767,6 +823,7 @@
     "url": "https://www.aem.live/docs/byo-cdn-cloudflare-setup",
     "total": 10,
     "earned": 0,
+    "maxTimeDelta": 44000,
     "owned": 10,
     "paid": 0,
     "sources": [
@@ -780,6 +837,7 @@
     "url": "https://www.aem.live/developer/franklin-video-series",
     "total": 10,
     "earned": 0,
+    "maxTimeDelta": 48000,
     "owned": 10,
     "paid": 0,
     "sources": [
@@ -793,6 +851,7 @@
     "url": "https://www.aem.live/docs/aem-assets-sidekick-plugin",
     "total": 10,
     "earned": 0,
+    "maxTimeDelta": 55000,
     "owned": 10,
     "paid": 0,
     "sources": [

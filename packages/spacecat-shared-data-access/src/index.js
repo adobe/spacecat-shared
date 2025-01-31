@@ -21,7 +21,7 @@ const TABLE_NAME_DATA = 'spacecat-services-data-dev';
  * @param {function} fn - The function to wrap
  * @returns {function} - The wrapped function
  */
-export default function dataAccessWrapper(fn) {
+export default function dataAccessWrapper(fn /* , opts = {} */) {
   /**
    * Wrapper for data access layer. This wrapper will create a data access layer if it is not
    * already created. It requires the context to have a log object. It will also use the
@@ -39,8 +39,11 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
       } = context.env;
 
+      console.log('§§§ Calling createDataAccess with tableNameData:', DYNAMO_TABLE_NAME_DATA);
+      console.log('§§§ Calling createDataAccess with context.attributes.authInfo', context.attributes.authInfo);
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
+        // aclCtx, e.g. from context.attributes.authInfo
       }, log);
     }
 

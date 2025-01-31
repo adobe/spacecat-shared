@@ -57,6 +57,7 @@ const getBearerToken = (context) => {
 };
 
 const transformProfile = (payload) => {
+  console.log('§§§ IMS payload pure:', payload);
   const profile = { ...payload };
 
   profile.email = payload.user_id;

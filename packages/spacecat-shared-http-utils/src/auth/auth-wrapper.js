@@ -29,9 +29,17 @@ export function authWrapper(fn, opts = {}) {
 
     const route = `${method.toUpperCase()} ${suffix}`;
 
+    /* */
+    // context.dataAccess = createDataAccess({
+    //   tableNameData: DYNAMO_TABLE_NAME_DATA, opts= root
+    //   // aclCtx, e.g. from context.attributes.authInfo
+    // }, log);
+    /* */
+    console.log('§§§ Would call createDataAccess with here');
+
     if (ANONYMOUS_ENDPOINTS.includes(route)
-        || route.startsWith('POST /hooks/site-detection/')
-        || method.toUpperCase() === 'OPTIONS') {
+      || route.startsWith('POST /hooks/site-detection/')
+      || method.toUpperCase() === 'OPTIONS') {
       return fn(request, context);
     }
 

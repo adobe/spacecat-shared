@@ -16,7 +16,21 @@ export * from './service/index.js';
 
 const TABLE_NAME_DATA = 'spacecat-services-data-dev';
 
+/**
+ * Wrapper for data access layer
+ * @param {function} fn - The function to wrap
+ * @returns {function} - The wrapped function
+ */
 export default function dataAccessWrapper(fn) {
+  /**
+   * Wrapper for data access layer. This wrapper will create a data access layer if it is not
+   * already created. It requires the context to have a log object. It will also use the
+   * DYNAMO_TABLE_NAME_DATA environment variable to create the data access layer.
+   *
+   * @param {object} request - The request object
+   * @param {object} context - The context object
+   * @returns {Promise<object>} - The wrapped function
+   */
   return async (request, context) => {
     if (!context.dataAccess) {
       const { log } = context;

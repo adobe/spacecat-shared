@@ -4,26 +4,43 @@
     "page": "https://www.spacecat.com/about-us",
     "screenshot": "",
     "trackedPageKPIName": "Click Through Rate",
-    "trackedPageKPIValue": 0.14316702819956617,
-    "pageViews": 46100,
-    "samples": 46100,
-    "trackedKPISiteAverage": 0.40828402366863903,
+    "trackedPageKPIValue": 0.09850746268656717,
+    "trackedKPISiteAverage": 0.3701385784532856,
+    "pageViews": 67000,
+    "samples": 67000,
     "metrics": [
       {
         "type": "traffic",
         "vendor": "*",
         "value": {
-          "total": 46100,
+          "total": 67000,
           "paid": 300,
-          "owned": 45800,
-          "earned": 0
+          "owned": 45700,
+          "earned": 21000
         }
       },
       {
         "type": "ctr",
         "vendor": "*",
         "value": {
-          "page": 0.14316702819956617
+          "page": 0.09850746268656717
+        }
+      },
+      {
+        "type": "traffic",
+        "vendor": "google",
+        "value": {
+          "total": 21000,
+          "owned": 0,
+          "earned": 21000,
+          "paid": 0
+        }
+      },
+      {
+        "type": "ctr",
+        "vendor": "google",
+        "value": {
+          "page": 0
         }
       },
       {

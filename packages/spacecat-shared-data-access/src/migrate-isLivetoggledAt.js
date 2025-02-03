@@ -40,16 +40,18 @@ for (const site of originalSites) {
   const params = {
     TableName: 'spacecat-services-sites-dev',
     IndexName: 'spacecat-services-all-sites-dev',
-    KeyConditionExpression: 'baseURL = :baseURL',
+    KeyConditionExpression: 'GSI1PK = :gsi1pk AND baseURL = :baseURL',
     ExpressionAttributeValues: {
+      ':gsi1pk': 'ALL_SITES',
       ':baseURL': site.getBaseURL(),
     },
+    Limit: 1,
   };
 
   try {
     // Directly await the promise returned by query
     // eslint-disable-next-line no-await-in-loop
-    const originalSite = await docClient.query(params);
+    const originalSite = (await docClient.query(params))?.Items?.[0];
     console.log('Query succeeded.');
     console.log(originalSite);
     if (!originalSite) {
@@ -58,7 +60,7 @@ for (const site of originalSites) {
       // eslint-disable-next-line no-continue
       continue;
     }
-    const liveToggledAt = originalSite.getIsLiveToggledAt();
+    const liveToggledAt = originalSite.isLiveToggledAt;
 
     if (liveToggledAt && isIsoDate(liveToggledAt)) {
       site.setIsLiveToggledAt(liveToggledAt);

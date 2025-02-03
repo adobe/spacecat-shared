@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.28.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.3...@adobe/spacecat-shared-utils-v1.28.4) (2025-02-03)
+
+
+### Bug Fixes
+
+* use Mozilla user agent ([7d95872](https://github.com/adobe/spacecat-shared/commit/7d95872a7e9c1a5ec6b0413ccca4b1d901dfdad4))
+
 # [@adobe/spacecat-shared-utils-v1.28.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.2...@adobe/spacecat-shared-utils-v1.28.3) (2025-02-01)
 
 

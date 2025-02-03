@@ -9,6 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import { hasText } from '@adobe/spacecat-shared-utils';
 import { fetchBundles } from './common/rum-bundler-client.js';
 import notfound from './functions/404.js';
 import notfoundInternalLinks from './functions/404-internal-links.js';
@@ -36,6 +37,14 @@ const HANDLERS = {
   'high-organic-low-ctr': highOrganicLowCtr,
 };
 
+function sanitize(opts) {
+  return {
+    ...opts,
+    /* c8 ignore next 1 */
+    ...(hasText(opts.domainkey) && { domainkey: `${opts.domainkey.slice(0, 3)}***` }),
+  };
+}
+
 export default class RUMAPIClient {
   static createFrom(context) {
     const { log = console } = context;
@@ -60,13 +69,13 @@ export default class RUMAPIClient {
       const bundles = await fetchBundles({
         ...opts,
         checkpoints,
-      });
+      }, this.log);
 
       this.log.info(`Query "${query}" fetched ${bundles.length} bundles`);
 
       return handler(bundles, opts);
     } catch (e) {
-      throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(opts)}. Reason: ${e.message}`);
+      throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
     }
   }
 
@@ -91,7 +100,7 @@ export default class RUMAPIClient {
       const bundles = await fetchBundles({
         ...opts,
         checkpoints: [...allCheckpoints],
-      });
+      }, this.log);
 
       const results = {};
 
@@ -105,7 +114,7 @@ export default class RUMAPIClient {
 
       return results;
     } catch (e) {
-      throw new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(opts)}. Reason: ${e.message}`);
+      throw new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
     }
   }
 }

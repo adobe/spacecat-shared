@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.19.0...@adobe/spacecat-shared-rum-api-client-v2.19.1) (2025-01-31)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.16.2 ([#568](https://github.com/adobe/spacecat-shared/issues/568)) ([bfaa326](https://github.com/adobe/spacecat-shared/commit/bfaa3266e5760a031f3234b1bd60c95844cf17b6)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
+# [@adobe/spacecat-shared-rum-api-client-v2.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.18.9...@adobe/spacecat-shared-rum-api-client-v2.19.0) (2025-01-30)
+
+
+### Features
+
+* introduce navigation and traffic acquisition data in form audit ([#544](https://github.com/adobe/spacecat-shared/issues/544)) ([550f917](https://github.com/adobe/spacecat-shared/commit/550f9174b21c346938a353feef347d160e194e70))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.18.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.18.8...@adobe/spacecat-shared-rum-api-client-v2.18.9) (2025-01-30)
+
+
+### Bug Fixes
+
+* **rum-api-client:** only consider earned traffic in hi-org-lo-ctr ([#565](https://github.com/adobe/spacecat-shared/issues/565)) ([f7a2019](https://github.com/adobe/spacecat-shared/commit/f7a20193844f40938032a4236f55241fcdefb8d4))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.18.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.18.7...@adobe/spacecat-shared-rum-api-client-v2.18.8) (2025-01-24)
+
+
+### Bug Fixes
+
+* **rum-api-client:** extra RUM Bundler requests logging ([#558](https://github.com/adobe/spacecat-shared/issues/558)) ([b80160a](https://github.com/adobe/spacecat-shared/commit/b80160a84feea4247db25172f023e3f8132b4d13))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.18.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.18.6...@adobe/spacecat-shared-rum-api-client-v2.18.7) (2025-01-23)
+
+
+### Bug Fixes
+
+* **rum-api-client:** log RUM Bundler requests ([#555](https://github.com/adobe/spacecat-shared/issues/555)) ([9b3ed87](https://github.com/adobe/spacecat-shared/commit/9b3ed87d12d0838ef922d6f373a287b4782dd197))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.18.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.18.5...@adobe/spacecat-shared-rum-api-client-v2.18.6) (2025-01-20)
 
 

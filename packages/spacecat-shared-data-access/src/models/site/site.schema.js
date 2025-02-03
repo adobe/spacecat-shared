@@ -75,9 +75,8 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     default: false,
   })
   .addAttribute('isLiveToggledAt', {
-    type: 'string',
+    type: 'any',
     watch: ['isLive'],
-    set: () => new Date().toISOString(),
     validate: (value) => !value || isIsoDate(value),
   })
   .addAllIndex(['baseURL'])

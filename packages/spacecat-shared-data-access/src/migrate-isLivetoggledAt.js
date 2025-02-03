@@ -65,7 +65,7 @@ for (const site of originalSites) {
     if (liveToggledAt && isIsoDate(liveToggledAt)) {
       site.setIsLiveToggledAt(liveToggledAt);
     } else {
-      site.setIsLiveToggledAt(undefined);
+      site.setIsLiveToggledAt(null);
     }
     // eslint-disable-next-line no-await-in-loop
     const entity = await site.save();

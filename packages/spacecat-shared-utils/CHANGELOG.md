@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.4...@adobe/spacecat-shared-utils-v1.29.0) (2025-02-03)
+
+
+### Features
+
+* add utility api for forms metrics ([#566](https://github.com/adobe/spacecat-shared/issues/566)) ([a7365b6](https://github.com/adobe/spacecat-shared/commit/a7365b6eaabf6178a7febd2f25a4083e60d0156b))
+
 # [@adobe/spacecat-shared-utils-v1.28.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.3...@adobe/spacecat-shared-utils-v1.28.4) (2025-02-03)
 
 

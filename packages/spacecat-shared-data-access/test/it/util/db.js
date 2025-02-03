@@ -13,7 +13,41 @@
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 
-import { createDataAccess } from '../../../src/service/index.js';
+import { createDataAccess } from '../../../src/index.js';
+
+export const TEST_DA_CONFIG_DEV = {
+  indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range-dev',
+  indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status-dev',
+  indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id-dev',
+  indexNameAllLatestAuditScores: 'spacecat-services-all-latest-audit-scores-dev',
+  indexNameAllOrganizations: 'spacecat-services-all-organizations-dev',
+  indexNameAllOrganizationsByImsOrgId: 'spacecat-services-all-organizations-by-ims-org-id-dev',
+  indexNameAllSites: 'spacecat-services-all-sites-dev',
+  indexNameAllSitesByDeliveryType: 'spacecat-services-all-sites-by-delivery-type-dev',
+  indexNameAllSitesOrganizations: 'spacecat-services-all-sites-organizations-dev',
+  indexNameApiKeyByHashedApiKey: 'spacecat-services-api-key-by-hashed-api-key-dev',
+  indexNameApiKeyByImsUserIdAndImsOrgId: 'spacecat-services-api-key-by-ims-user-id-and-ims-org-id-dev',
+  indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status-dev',
+  pkAllConfigurations: 'ALL_CONFIGURATIONS-dev',
+  pkAllImportJobs: 'ALL_IMPORT_JOBS-dev',
+  pkAllLatestAudits: 'ALL_LATEST_AUDITS-dev',
+  pkAllOrganizations: 'ALL_ORGANIZATIONS',
+  pkAllSites: 'ALL_SITES',
+  tableNameApiKeys: 'spacecat-services-api-keys-dev',
+  tableNameAudits: 'spacecat-services-audits-dev',
+  tableNameConfigurations: 'spacecat-services-configurations-dev',
+  tableNameData: 'spacecat-services-data-dev',
+  tableNameExperiments: 'spacecat-services-experiments-dev',
+  tableNameImportJobs: 'spacecat-services-import-jobs-dev',
+  tableNameImportUrls: 'spacecat-services-import-urls-dev',
+  tableNameKeyEvents: 'spacecat-services-key-events-dev',
+  tableNameLatestAudits: 'spacecat-services-latest-audits-dev',
+  tableNameOrganizations: 'spacecat-services-organizations-dev',
+  tableNameSiteCandidates: 'spacecat-services-site-candidates-dev',
+  tableNameSiteTopPages: 'spacecat-services-site-top-pages-dev',
+  tableNameSites: 'spacecat-services-sites-dev',
+  tableNameSpacecatData: 'spacecat-data-dev',
+};
 
 export const TEST_DA_CONFIG = {
   indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
@@ -70,9 +104,13 @@ const getDynamoClients = (config = {}) => {
   return { dbClient, docClient };
 };
 
-export const getDataAccess = (config, logger = console) => {
+export const getDataAccess = (config, logger = console, env = 'dev') => {
   const { dbClient } = getDynamoClients(config);
-  return createDataAccess(TEST_DA_CONFIG, logger, dbClient);
+  if (env === 'prod') {
+    return createDataAccess(TEST_DA_CONFIG, logger, dbClient);
+  } else {
+    return createDataAccess(TEST_DA_CONFIG_DEV, logger, dbClient);
+  }
 };
 
 export { getDynamoClients };

@@ -53,5 +53,8 @@
   },
   "lint-staged": {
     "*.js": "eslint"
+  },
+  "dependencies": {
+    "@adobe/spacecat-shared-splunk-client": "^1.6.4"
   }
 }

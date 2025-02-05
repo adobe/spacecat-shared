@@ -24,7 +24,7 @@ import BaseModel from '../base/base.model.js';
  */
 class Audit extends BaseModel {
   static AUDIT_TYPES = {
-    404: '404',
+    NOT_FOUND: '404',
     BROKEN_BACKLINKS: 'broken-backlinks',
     EXPERIMENTATION: 'experimentation',
     ORGANIC_KEYWORDS: 'organic-keywords',
@@ -34,6 +34,11 @@ class Audit extends BaseModel {
     LHS_MOBILE: 'lhs-mobile',
     EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
     EXPERIMENTATION_ESS_DAILY: 'experimentation-ess-daily',
+    HIGH_ORGANIC_LOW_CTR: 'high-organic-low-ctr',
+    BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+    META_TAGS: 'meta-tags',
+    SITEMAP: 'sitemap',
+    STRUCTURED_DATA: 'structured-data',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

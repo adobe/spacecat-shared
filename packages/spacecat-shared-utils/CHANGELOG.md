@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-utils-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.4...@adobe/spacecat-shared-utils-v1.29.0) (2025-02-03)
+
+
+### Features
+
+* add utility api for forms metrics ([#566](https://github.com/adobe/spacecat-shared/issues/566)) ([a7365b6](https://github.com/adobe/spacecat-shared/commit/a7365b6eaabf6178a7febd2f25a4083e60d0156b))
+
+# [@adobe/spacecat-shared-utils-v1.28.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.3...@adobe/spacecat-shared-utils-v1.28.4) (2025-02-03)
+
+
+### Bug Fixes
+
+* use Mozilla user agent ([7d95872](https://github.com/adobe/spacecat-shared/commit/7d95872a7e9c1a5ec6b0413ccca4b1d901dfdad4))
+
+# [@adobe/spacecat-shared-utils-v1.28.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.2...@adobe/spacecat-shared-utils-v1.28.3) (2025-02-01)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#569](https://github.com/adobe/spacecat-shared/issues/569)) ([b266e8f](https://github.com/adobe/spacecat-shared/commit/b266e8ff57fd574818dc807e6114f708be624d41))
+
 # [@adobe/spacecat-shared-utils-v1.28.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.1...@adobe/spacecat-shared-utils-v1.28.2) (2025-01-25)
 
 

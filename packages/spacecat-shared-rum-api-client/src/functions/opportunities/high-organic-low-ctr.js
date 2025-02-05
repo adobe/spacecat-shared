@@ -13,7 +13,7 @@
 import trafficAcquisition from '../traffic-acquisition.js';
 import { getCTRByUrlAndVendor, getSiteAvgCTR } from '../../common/aggregateFns.js';
 
-const DAILY_EARNED_THRESHOLD = 5000;
+const DAILY_EARNED_THRESHOLD = 3000;
 const CTR_THRESHOLD_RATIO = 0.95;
 const DAILY_PAGEVIEW_THRESHOLD = 1000;
 const VENDORS_TO_CONSIDER = 5;
@@ -94,8 +94,8 @@ function convertToOpportunity(traffic) {
 }
 
 function hasHighOrganicTraffic(interval, traffic) {
-  const { earned, owned } = traffic;
-  return earned + owned > DAILY_EARNED_THRESHOLD * interval;
+  const { earned } = traffic;
+  return earned >= DAILY_EARNED_THRESHOLD * interval;
 }
 
 function hasLowerCTR(ctr, siteAvgCTR) {

@@ -47,6 +47,12 @@ class ImportJob extends BaseModel {
   static ImportOptions = {
     ENABLE_JAVASCRIPT: 'enableJavascript',
     PAGE_LOAD_TIMEOUT: 'pageLoadTimeout',
+    TYPE: 'type',
+  };
+
+  static ImportOptionTypes = {
+    DOC: 'doc',
+    XWALK: 'xwalk',
   };
 
   // add your custom methods or overrides here

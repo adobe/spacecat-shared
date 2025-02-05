@@ -17,6 +17,7 @@ import {
   isIsoDate,
   isNumber,
   isObject,
+  isString,
   isValidUrl,
 } from '@adobe/spacecat-shared-utils';
 
@@ -33,6 +34,14 @@ const ImportOptionTypeValidator = {
   [ImportJob.ImportOptions.PAGE_LOAD_TIMEOUT]: (value) => {
     if (!isInteger(value) || value < 0) {
       throw new Error(`Invalid value for ${ImportJob.ImportOptions.PAGE_LOAD_TIMEOUT}: ${value}`);
+    }
+  },
+  [ImportJob.ImportOptions.TYPE]: (value) => {
+    if (!isString(value)) {
+      throw new Error(`Invalid value for ${ImportJob.ImportOptions.TYPE}: ${value}`);
+    }
+    if (!Object.values(ImportJob.ImportOptionTypes).includes(value)) {
+      throw new Error(`Invalid value for ${ImportJob.ImportOptions.TYPE}: ${value}`);
     }
   },
 };

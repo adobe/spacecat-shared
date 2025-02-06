@@ -108,6 +108,14 @@ describe('ImportJob IT', async () => {
       expect(err.cause).to.be.instanceOf(ElectroValidationError);
       expect(err.cause.message).to.contain('Invalid value for data: not-an-object');
     });
+
+    // test to make sure data is not an empty object
+    data = { ...newJobData, options: { data: { } } };
+    await ImportJob.create(data).catch((err) => {
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.cause).to.be.instanceOf(ElectroValidationError);
+      expect(err.cause.message).to.contain('Invalid value for data');
+    });
   });
 
   it('throws an error when adding a new import job with invalid options', async () => {

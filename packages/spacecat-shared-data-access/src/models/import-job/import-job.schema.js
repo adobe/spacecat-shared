@@ -15,6 +15,7 @@
 import {
   isInteger,
   isIsoDate,
+  isNonEmptyObject,
   isNumber,
   isObject,
   isValidUrl,
@@ -41,7 +42,7 @@ const ImportOptionTypeValidator = {
     }
   },
   [ImportJob.ImportOptions.DATA]: (value) => {
-    if (!isObject(value)) {
+    if (value && !isNonEmptyObject(value)) {
       throw new Error(`Invalid value for ${ImportJob.ImportOptions.DATA}: ${value}`);
     }
   },

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.19.1...@adobe/spacecat-shared-rum-api-client-v2.20.0) (2025-02-06)
+
+
+### Features
+
+* add timeOnPage data for HOTLC ([#567](https://github.com/adobe/spacecat-shared/issues/567)) ([e055eb9](https://github.com/adobe/spacecat-shared/commit/e055eb9d035d0191cbd1fa521918796f584e99b6))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.19.0...@adobe/spacecat-shared-rum-api-client-v2.19.1) (2025-01-31)
 
 

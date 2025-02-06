@@ -57,6 +57,8 @@ describe('Index Exports', () => {
     'toBoolean',
     'tracingFetch',
     'getHighFormViewsLowConversionMetrics',
+    'getHighPageViewsLowFormViewsMetrics',
+    'getHighPageViewsLowFormCtrMetrics',
   ];
 
   it('exports all expected functions', () => {

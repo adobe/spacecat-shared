@@ -27,6 +27,13 @@
         }
       },
       {
+        "type": "pageOnTime",
+        "value": {
+          "time": 0
+        },
+        "vendor": "*"
+      },
+      {
         "type": "traffic",
         "vendor": "google",
         "value": {
@@ -44,6 +51,13 @@
         }
       },
       {
+        "type": "pageOnTime",
+        "value": {
+          "time": 0
+        },
+        "vendor": "google"
+      },
+      {
         "type": "traffic",
         "vendor": "tiktok",
         "value": {
@@ -59,6 +73,13 @@
         "value": {
           "page": 0.3333333333333333
         }
+      },
+      {
+        "type": "pageOnTime",
+        "value": {
+          "time": 0
+        },
+        "vendor": "tiktok"
       }
     ]
   }

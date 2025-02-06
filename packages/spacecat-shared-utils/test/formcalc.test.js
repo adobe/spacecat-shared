@@ -35,7 +35,7 @@ describe('Form Calc functions', () => {
   });
 
   it('getHighPageViewsLowFormViews', () => {
-    const result = getHighPageViewsLowFormViewsMetrics(formVitalsCollection);
+    const result = getHighPageViewsLowFormViewsMetrics(formVitalsCollection, 30);
     expect(result).to.eql([
       {
         url: 'https://www.surest.com/info/win',
@@ -53,7 +53,7 @@ describe('Form Calc functions', () => {
   });
 
   it('getHighPageViewsLowFormCtr', () => {
-    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection);
+    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection, 30);
     expect(result).to.eql([
       {
         url: 'https://www.surest.com/newsletter',
@@ -69,7 +69,7 @@ describe('Form Calc functions', () => {
   });
 
   it('getHighPageViewsLowFormCtr-2', () => {
-    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection2);
+    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection2, 30);
     expect(result).to.eql([]);
   });
 });

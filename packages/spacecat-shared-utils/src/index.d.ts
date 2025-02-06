@@ -179,7 +179,7 @@ declare function getHighFormViewsLowConversionMetrics(formVitals: object[], inte
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-page-view-low-form-view metrics.
  */
-declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[]):
+declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[], interval: number):
     object[];
 
 /**
@@ -187,7 +187,7 @@ declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[]):
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-page-view-low-form-ctr metrics.
  */
-declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[]):
+declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[], interval: number):
     object[];
 
 /**

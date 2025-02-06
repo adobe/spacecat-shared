@@ -68,6 +68,16 @@ function hasLowerConversionRate(formSubmit, formViews) {
   return formSubmit / formViews < CR_THRESHOLD_RATIO;
 }
 
+function hasLowFormViews(pageViews, formViews) {
+  return formViews > 0 && (formViews / pageViews) < 0.7;
+}
+
+function hasHighPageViewLowFormCtr(ctaPageViews, ctaClicks, ctaPageTotalClicks, formPageViews) {
+  return ctaPageTotalClicks > 0
+      && (ctaClicks / ctaPageTotalClicks) < 0.4
+      && (formPageViews / ctaPageViews) < 0.1;
+}
+
 /**
  * Returns the form urls with high form views and low conversion rate
  *
@@ -103,7 +113,7 @@ export function getHighFormViewsLowConversionMetrics(formVitalsCollection, inter
  * @param resultMap
  * @returns {*[]}
  */
-export function getHighPageViewsLowFormViewsMetrics(formVitalsCollection) {
+export function getHighPageViewsLowFormViewsMetrics(formVitalsCollection, interval) {
   const urls = [];
   const resultMap = aggregateFormVitalsByDevice(formVitalsCollection);
   resultMap.forEach((metrics, url) => {
@@ -111,7 +121,7 @@ export function getHighPageViewsLowFormViewsMetrics(formVitalsCollection) {
     const { total: formViews } = metrics.formview;
     const { total: formEngagement } = metrics.formengagement;
 
-    if (pageViews > 8000 && formViews > 0 && (formViews / pageViews) < 0.7) {
+    if (hasHighPageViews(interval, pageViews) && hasLowFormViews(pageViews, formViews)) {
       urls.push({
         url,
         pageViews,
@@ -129,7 +139,7 @@ export function getHighPageViewsLowFormViewsMetrics(formVitalsCollection) {
  * @param formVitalsByDevice
  * @returns {*[]}
  */
-export function getHighPageViewsLowFormCtrMetrics(formVitalsCollection) {
+export function getHighPageViewsLowFormCtrMetrics(formVitalsCollection, interval) {
   const urls = [];
   const formVitalsByDevice = aggregateFormVitalsByDevice(formVitalsCollection);
   formVitalsCollection.forEach((entry) => {
@@ -164,10 +174,9 @@ export function getHighPageViewsLowFormCtrMetrics(formVitalsCollection) {
     const z = maxPageviewUrl.totalClicksOnPage || 0;
     // Calculate `f`: sum of `pageview` for `formengagement`
     const f = Object.values(pageview).reduce((sum, val) => sum + val, 0);
-    // const f = pageview ? Object.values(pageview).reduce((sum, val) => sum + val, 0) : 0;
 
     // Evaluate conditions and add URL to the result if all are met
-    if (x > 8000 && (y.clicks / z) < 0.4 && (f / x) < 0.1) {
+    if (hasHighPageViews(interval, x) && hasHighPageViewLowFormCtr(x, y.clicks, z, f)) {
       const deviceData = formVitalsByDevice.get(entry.url);
       if (deviceData != null) {
         urls.push({

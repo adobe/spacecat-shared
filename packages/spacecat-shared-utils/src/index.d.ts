@@ -99,10 +99,11 @@ declare function composeBaseURL(domain: string): string;
 
 /**
  * Composes an audit URL by applying a series of transformations to the given url.
- * @param url - The url to compose the audit URL from.
+ * @param {string} url - The url to compose the audit URL from.
+ * @param {string} [userAgent] - Optional user agent to use in the audit URL.
  * @returns a promise that resolves the composed audit URL.
  */
-declare function composeAuditURL(url: string): Promise<string>;
+declare function composeAuditURL(url: string, userAgent: string): Promise<string>;
 
 /**
  * Resolves the name of the secret based on the function version.
@@ -173,6 +174,22 @@ declare function getPrompt(placeholders: object, filename: string, log: object):
  */
 declare function getHighFormViewsLowConversionMetrics(formVitals: object[], interval: number):
   object[];
+
+/**
+ * Retrieves the high-page-view-low-form-view metrics from the provided array of form vitals.
+ * @param {Object[]} formVitals - An array of form vitals.
+ * @returns {Object[]} - An array of high-page-view-low-form-view metrics.
+ */
+declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[], interval: number):
+    object[];
+
+/**
+ * Retrieves the high-page-view-low-form-ctr metrics from the provided array of form vitals.
+ * @param {Object[]} formVitals - An array of form vitals.
+ * @returns {Object[]} - An array of high-page-view-low-form-ctr metrics.
+ */
+declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[], interval: number):
+    object[];
 
 /**
  * Retrieves stored metrics from S3.

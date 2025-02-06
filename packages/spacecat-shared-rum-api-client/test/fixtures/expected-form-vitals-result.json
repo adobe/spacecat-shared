@@ -34,6 +34,7 @@
     "trafficacquisition": {
       "total": 2400,
       "earned": 0,
+      "maxTimeDelta": 33324,
       "owned": 2400,
       "paid": 0,
       "sources": [
@@ -62,6 +63,7 @@
     "trafficacquisition": {
       "total": 3100,
       "earned": 0,
+      "maxTimeDelta": 0,
       "owned": 3100,
       "paid": 0,
       "sources": [
@@ -92,6 +94,7 @@
     "trafficacquisition": {
       "total": 1800,
       "earned": 0,
+      "maxTimeDelta": 841,
       "owned": 1800,
       "paid": 0,
       "sources": [
@@ -123,6 +126,7 @@
     "trafficacquisition": {
       "total": 700,
       "earned": 0,
+      "maxTimeDelta": 18637,
       "owned": 700,
       "paid": 0,
       "sources": [
@@ -152,6 +156,7 @@
     "trafficacquisition": {
       "total": 200,
       "earned": 0,
+      "maxTimeDelta": 38409,
       "owned": 200,
       "paid": 0,
       "sources": [
@@ -177,6 +182,7 @@
     "trafficacquisition": {
       "total": 100,
       "earned": 0,
+      "maxTimeDelta": 18813,
       "owned": 100,
       "paid": 0,
       "sources": [
@@ -202,6 +208,7 @@
     "trafficacquisition": {
       "total": 100,
       "earned": 0,
+      "maxTimeDelta": 24548,
       "owned": 100,
       "paid": 0,
       "sources": [
@@ -231,6 +238,7 @@
     "trafficacquisition": {
       "total": 100,
       "earned": 0,
+      "maxTimeDelta": 83321,
       "owned": 100,
       "paid": 0,
       "sources": [
@@ -260,6 +268,7 @@
     "trafficacquisition": {
       "total": 100,
       "earned": 0,
+      "maxTimeDelta": 80312,
       "owned": 100,
       "paid": 0,
       "sources": [
@@ -289,6 +298,7 @@
     "trafficacquisition": {
       "total": 100,
       "earned": 0,
+      "maxTimeDelta": 34204,
       "owned": 100,
       "paid": 0,
       "sources": [
@@ -318,6 +328,7 @@
     "trafficacquisition": {
       "total": 100,
       "earned": 0,
+      "maxTimeDelta": 50435,
       "owned": 100,
       "paid": 0,
       "sources": [

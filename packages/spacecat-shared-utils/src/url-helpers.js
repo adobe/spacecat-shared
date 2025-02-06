@@ -83,13 +83,23 @@ function composeBaseURL(domain) {
   return baseURL;
 }
 
-async function composeAuditURL(url) {
+/**
+ * Composes an audit URL by applying a series of transformations to the given url.
+ * @param {string} url - The url to compose the audit URL from.
+ * @param {string} [userAgent] - Optional user agent to use in the audit URL.
+ * @returns a promise that resolves the composed audit URL.
+ */
+async function composeAuditURL(url, userAgent) {
   const urlWithScheme = prependSchema(url);
+
+  const headers = {};
+  if (userAgent) {
+    headers['User-Agent'] = userAgent;
+  }
+
   const resp = await fetch(urlWithScheme, {
     method: 'GET',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    },
+    headers,
   });
   const finalUrl = resp.url.split('://')[1];
   return stripTrailingSlash(finalUrl);

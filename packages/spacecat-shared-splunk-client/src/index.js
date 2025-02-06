@@ -106,6 +106,7 @@ export default class SplunkAPIClient {
     if (loginObj && loginObj.error) {
       // failed login, do not proceed
       returnObj = loginObj;
+      return returnObj;
     } else {
       // successful login, prepare query
       try {

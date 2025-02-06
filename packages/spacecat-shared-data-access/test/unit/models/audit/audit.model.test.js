@@ -149,29 +149,34 @@ describe('AuditModel', () => {
   });
 
   describe('AuditTypes', () => {
-    const auditTypes = Object.values(Audit.AUDIT_TYPES);
-    const expectedAuditTypes = [
-      '404',
-      'broken-backlinks',
-      'experimentation',
-      'organic-keywords',
-      'organic-traffic',
-      'cwv',
-      'lhs-desktop',
-      'lhs-mobile',
-      'experimentation-ess-monthly',
-      'experimentation-ess-daily',
-      'high-organic-low-ctr',
-      'broken-internal-links',
-      'meta-tags',
-      'sitemap',
-      'structured-data',
-    ];
+    const auditTypes = Audit.AUDIT_TYPES;
+    const expectedAuditTypes = {
+      404: '404',
+      BROKEN_BACKLINKS: 'broken-backlinks',
+      EXPERIMENTATION: 'experimentation',
+      ORGANIC_KEYWORDS: 'organic-keywords',
+      ORGANIC_TRAFFIC: 'organic-traffic',
+      CWV: 'cwv',
+      LHS_DESKTOP: 'lhs-desktop',
+      LHS_MOBILE: 'lhs-mobile',
+      EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
+      EXPERIMENTATION_ESS_DAILY: 'experimentation-ess-daily',
+      HIGH_ORGANIC_LOW_CTR: 'high-organic-low-ctr',
+      BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+      META_TAGS: 'meta-tags',
+      SITEMAP: 'sitemap',
+      STRUCTURED_DATA: 'structured-data',
+    };
 
-    it('no unexpected audit types are present in AUDIT_TYPES', () => {
-      const unexpectedAuditTypes = ['unexpected1', 'unexpected2'];
-      expect(auditTypes).to.have.members(expectedAuditTypes);
-      expect(auditTypes).to.not.have.members(unexpectedAuditTypes);
+    it('should have all audit types present in AUDIT_TYPES', () => {
+      expect(auditTypes).to.eql(expectedAuditTypes);
+    });
+
+    it('should not have unexpected audit types in AUDIT_TYPES', () => {
+      const unexpectedAuditTypes = { UNEXPECTED: 'unexpected', UNEXPECTED2: 'unexpected2' };
+      expect(auditTypes).to.eql(expectedAuditTypes);
+      expect(auditTypes).to.not.have.keys(unexpectedAuditTypes);
+      expect(Object.values(auditTypes)).to.not.have.members(Object.values(unexpectedAuditTypes));
     });
   });
 });

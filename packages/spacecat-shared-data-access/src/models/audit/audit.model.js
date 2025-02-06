@@ -24,16 +24,27 @@ import BaseModel from '../base/base.model.js';
  */
 class Audit extends BaseModel {
   static AUDIT_TYPES = {
+    APEX: 'apex',
+    CWV: 'cwv',
+    LHS_MOBILE: 'lhs-mobile',
+    LHS_DESKTOP: 'lhs-desktop',
     404: '404',
+    SITEMAP: 'sitemap',
+    CANONICAL: 'canonical',
     BROKEN_BACKLINKS: 'broken-backlinks',
+    BROKEN_INTERNAL_LINKS: 'broken-internal-links',
     EXPERIMENTATION: 'experimentation',
+    CONVERSION: 'conversion',
     ORGANIC_KEYWORDS: 'organic-keywords',
     ORGANIC_TRAFFIC: 'organic-traffic',
-    CWV: 'cwv',
-    LHS_DESKTOP: 'lhs-desktop',
-    LHS_MOBILE: 'lhs-mobile',
-    EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
     EXPERIMENTATION_ESS_DAILY: 'experimentation-ess-daily',
+    EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
+    EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
+    META_TAGS: 'meta-tags',
+    COSTS: 'costs',
+    STRUCTURED_DATA: 'structured-data',
+    FORMS_OPPORTUNITIES: 'forms-opportunities',
+    SITE_DETECTION: 'site-detection',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

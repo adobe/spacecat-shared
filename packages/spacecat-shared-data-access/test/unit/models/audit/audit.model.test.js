@@ -147,4 +147,43 @@ describe('AuditModel', () => {
       expect(Audit.validateAuditResult(mockRecord.auditResult, 'experimentation')).to.be.true;
     });
   });
+
+  describe('AuditTypes', () => {
+    const auditTypes = Audit.AUDIT_TYPES;
+    const expectedAuditTypes = {
+      APEX: 'apex',
+      CWV: 'cwv',
+      LHS_MOBILE: 'lhs-mobile',
+      LHS_DESKTOP: 'lhs-desktop',
+      404: '404',
+      SITEMAP: 'sitemap',
+      CANONICAL: 'canonical',
+      BROKEN_BACKLINKS: 'broken-backlinks',
+      BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+      EXPERIMENTATION: 'experimentation',
+      CONVERSION: 'conversion',
+      ORGANIC_KEYWORDS: 'organic-keywords',
+      ORGANIC_TRAFFIC: 'organic-traffic',
+      EXPERIMENTATION_ESS_DAILY: 'experimentation-ess-daily',
+      EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
+      EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
+      META_TAGS: 'meta-tags',
+      COSTS: 'costs',
+      STRUCTURED_DATA: 'structured-data',
+      FORMS_OPPORTUNITIES: 'forms-opportunities',
+      SITE_DETECTION: 'site-detection',
+    };
+
+    it('should have all audit types present in AUDIT_TYPES', () => {
+      expect(auditTypes).to.eql(expectedAuditTypes);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(21);
+    });
+
+    it('should not have unexpected audit types in AUDIT_TYPES', () => {
+      const unexpectedAuditTypes = { UNEXPECTED: 'unexpected', UNEXPECTED2: 'unexpected2' };
+      expect(auditTypes).to.eql(expectedAuditTypes);
+      expect(auditTypes).to.not.have.keys(unexpectedAuditTypes);
+      expect(Object.values(auditTypes)).to.not.have.members(Object.values(unexpectedAuditTypes));
+    });
+  });
 });

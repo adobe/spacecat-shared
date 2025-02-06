@@ -96,3 +96,92 @@ export function getHighFormViewsLowConversionMetrics(formVitalsCollection, inter
   });
   return urls;
 }
+
+/**
+ * Returns the form urls with high page views and low form views
+ *
+ * @param resultMap
+ * @returns {*[]}
+ */
+export function getHighPageViewsLowFormViewsMetrics(formVitalsCollection) {
+  const urls = [];
+  const resultMap = aggregateFormVitalsByDevice(formVitalsCollection);
+  resultMap.forEach((metrics, url) => {
+    const { total: pageViews } = metrics.pageview;
+    const { total: formViews } = metrics.formview;
+    const { total: formEngagement } = metrics.formengagement;
+
+    if (pageViews > 8000 && formViews > 0 && (formViews / pageViews) < 0.7) {
+      urls.push({
+        url,
+        pageViews,
+        formViews,
+        formEngagement,
+      });
+    }
+  });
+  return urls;
+}
+
+/**
+ * Returns the form urls with high page views containing ctr and low form views
+ * @param formVitalsCollection
+ * @param formVitalsByDevice
+ * @returns {*[]}
+ */
+export function getHighPageViewsLowFormCtrMetrics(formVitalsCollection) {
+  const urls = [];
+  const formVitalsByDevice = aggregateFormVitalsByDevice(formVitalsCollection);
+  formVitalsCollection.forEach((entry) => {
+    const { forminternalnavigation, pageview } = entry;
+    // Calculate `x`: sum of pageview for the URL with the highest sum
+    let x = 0;
+    let maxPageviewUrl = null;
+    if (forminternalnavigation) {
+      forminternalnavigation.forEach((nav) => {
+        if (nav.pageview) {
+          const pageviewSum = Object.values(nav.pageview).reduce((sum, val) => sum + val, 0);
+          if (pageviewSum > x) {
+            x = pageviewSum;
+            maxPageviewUrl = nav;
+          }
+        }
+      });
+    }
+
+    // Skip entry if no valid maxPageviewUrl is found
+    if (!maxPageviewUrl) return;
+
+    // Calculate `y`: find the CTA with the highest clicks and include the source
+    const y = maxPageviewUrl.CTAs.reduce((maxCta, cta) => {
+      if (cta.clicks > (maxCta.clicks || 0)) {
+        return cta;
+      }
+      return maxCta;
+    }, { clicks: 0, source: '' });
+
+    // Get `z`: totalClicksOnPage for the matched URL
+    const z = maxPageviewUrl.totalClicksOnPage || 0;
+    // Calculate `f`: sum of `pageview` for `formengagement`
+    const f = Object.values(pageview).reduce((sum, val) => sum + val, 0);
+    // const f = pageview ? Object.values(pageview).reduce((sum, val) => sum + val, 0) : 0;
+
+    // Evaluate conditions and add URL to the result if all are met
+    if (x > 8000 && (y.clicks / z) < 0.4 && (f / x) < 0.1) {
+      const deviceData = formVitalsByDevice.get(entry.url);
+      if (deviceData != null) {
+        urls.push({
+          url: entry.url,
+          pageViews: deviceData.pageview.total,
+          formViews: deviceData.formview.total,
+          formEngagement: deviceData.formengagement.total,
+          CTA: {
+            url: maxPageviewUrl.url,
+            source: y.source,
+          },
+        });
+      }
+    }
+  });
+  return urls;
+}

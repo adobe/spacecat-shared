@@ -13,44 +13,15 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
+import { formVitalsCollection, formVitalsCollection2 } from './fixtures/formcalcaudit.js';
 import {
   getHighFormViewsLowConversionMetrics,
+  getHighPageViewsLowFormCtrMetrics,
+  getHighPageViewsLowFormViewsMetrics,
 } from '../src/index.js';
 
 describe('Form Calc functions', () => {
   it('getHighFormViewsLowConversion', () => {
-    const formVitalsCollection = [
-      {
-        url: 'https://www.surest.com/contact-us',
-        formsubmit: {
-          'desktop:windows': 100,
-        },
-        formview: {},
-        formengagement: {
-          'desktop:windows': 700,
-          'mobile:ios': 300,
-        },
-        pageview: {
-          'desktop:windows': 5690,
-          'mobile:ios': 1000,
-        },
-      },
-      {
-        url: 'https://www.surest.com/info/win',
-        formsubmit: {
-        },
-        formview: {},
-        formengagement: {
-          'desktop:windows': 4000,
-          'mobile:ios': 300,
-        },
-        pageview: {
-          'desktop:windows': 4670,
-          'mobile:ios': 1000,
-        },
-      },
-    ];
-
     const result = getHighFormViewsLowConversionMetrics(formVitalsCollection, 7);
     expect(result).to.eql([
       {
@@ -61,5 +32,44 @@ describe('Form Calc functions', () => {
         formSubmit: 100,
       },
     ]);
+  });
+
+  it('getHighPageViewsLowFormViews', () => {
+    const result = getHighPageViewsLowFormViewsMetrics(formVitalsCollection);
+    expect(result).to.eql([
+      {
+        url: 'https://www.surest.com/info/win',
+        pageViews: 8670,
+        formViews: 300,
+        formEngagement: 4300,
+      },
+      {
+        url: 'https://www.surest.com/newsletter',
+        pageViews: 8670,
+        formViews: 300,
+        formEngagement: 300,
+      },
+    ]);
+  });
+
+  it('getHighPageViewsLowFormCtr', () => {
+    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection);
+    expect(result).to.eql([
+      {
+        url: 'https://www.surest.com/newsletter',
+        pageViews: 8670,
+        formViews: 300,
+        formEngagement: 300,
+        CTA: {
+          url: 'https://www.surest.com/about-us',
+          source: '#teaser-related02 .cmp-teaser__action-link',
+        },
+      },
+    ]);
+  });
+
+  it('getHighPageViewsLowFormCtr-2', () => {
+    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection2);
+    expect(result).to.eql([]);
   });
 });

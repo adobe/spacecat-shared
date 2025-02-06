@@ -147,4 +147,18 @@ describe('AuditModel', () => {
       expect(Audit.validateAuditResult(mockRecord.auditResult, 'experimentation')).to.be.true;
     });
   });
+
+  describe('AuditTypes', () => {
+    it('should have all audit types present in AUDIT_TYPES', () => {
+      const expectedAuditTypes = ['404', 'broken-backlinks', 'experimentation', 'organic-keywords', 'organic-traffic', 'cwv', 'lhs-desktop', 'lhs-mobile', 'experimentation-ess-monthly', 'experimentation-ess-daily', 'high-organic-low-ctr', 'broken-internal-links', 'meta-tags', 'sitemap', 'structured-data'];
+      const auditTypes = Object.values(Audit.AUDIT_TYPES);
+      expect(auditTypes).to.have.members(expectedAuditTypes);
+    });
+
+    it('no unexpected audit types are present in AUDIT_TYPES', () => {
+      const unexpectedAuditTypes = ['unexpected1', 'unexpected2'];
+      const auditTypes = Object.values(Audit.AUDIT_TYPES);
+      expect(auditTypes).to.not.have.members(unexpectedAuditTypes);
+    });
+  });
 });

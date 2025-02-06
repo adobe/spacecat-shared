@@ -151,21 +151,27 @@ describe('AuditModel', () => {
   describe('AuditTypes', () => {
     const auditTypes = Audit.AUDIT_TYPES;
     const expectedAuditTypes = {
+      APEX: 'apex',
+      CWV: 'cwv',
+      LHS_MOBILE: 'lhs-mobile',
+      LHS_DESKTOP: 'lhs-desktop',
       404: '404',
+      SITEMAP: 'sitemap',
+      CANONICAL: 'canonical',
       BROKEN_BACKLINKS: 'broken-backlinks',
+      BROKEN_INTERNAL_LINKS: 'broken-internal-links',
       EXPERIMENTATION: 'experimentation',
+      CONVERSION: 'conversion',
       ORGANIC_KEYWORDS: 'organic-keywords',
       ORGANIC_TRAFFIC: 'organic-traffic',
-      CWV: 'cwv',
-      LHS_DESKTOP: 'lhs-desktop',
-      LHS_MOBILE: 'lhs-mobile',
-      EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
       EXPERIMENTATION_ESS_DAILY: 'experimentation-ess-daily',
-      HIGH_ORGANIC_LOW_CTR: 'high-organic-low-ctr',
-      BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+      EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
+      EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
       META_TAGS: 'meta-tags',
-      SITEMAP: 'sitemap',
+      COSTS: 'costs',
       STRUCTURED_DATA: 'structured-data',
+      FORMS_OPPORTUNITIES: 'forms-opportunities',
+      SITE_DETECTION: 'site-detection',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

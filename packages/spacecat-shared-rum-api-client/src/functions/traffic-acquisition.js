@@ -47,8 +47,7 @@ function formatTraffic(row) {
     url, weight, type, category, vendor, events = [],
   } = row;
 
-  const timeDeltas = events.map((event) => event.timeDelta);
-  const maxTimeDelta = Math.max(...timeDeltas, 0);
+  const maxTimeDelta = events.reduce((max, e) => Math.max(max, e.timeDelta), 0);
 
   return {
     url,

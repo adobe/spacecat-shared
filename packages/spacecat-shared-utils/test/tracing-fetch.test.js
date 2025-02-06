@@ -186,12 +186,12 @@ describe('tracing fetch function', () => {
 
     nock('https://example.com')
       .get('/api/data')
-      .reply(200, 'OK', { 'content-length': '42' });
+      .reply(200, 'OK', { 'Content-Length': (req, res, body) => body.length });
 
     await tracingFetch(url, options);
 
     expect(subSegment.close.calledOnce).to.be.true;
-    expect(subSegment.http.response.content_length).to.equal(42);
+    expect(subSegment.http.response.content_length).to.equal(2);
   });
 
   it('adds proper annotations for HTTP 4xx and 5xx responses', async () => {

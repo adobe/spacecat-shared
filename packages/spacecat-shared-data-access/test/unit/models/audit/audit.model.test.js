@@ -168,10 +168,6 @@ describe('AuditModel', () => {
       'structured-data',
     ];
 
-    it('should have all audit types present in AUDIT_TYPES', () => {
-      expect(auditTypes).to.have.members(expectedAuditTypes);
-    });
-
     it('no unexpected audit types are present in AUDIT_TYPES', () => {
       const unexpectedAuditTypes = ['unexpected1', 'unexpected2'];
       expect(auditTypes).to.have.members(expectedAuditTypes);

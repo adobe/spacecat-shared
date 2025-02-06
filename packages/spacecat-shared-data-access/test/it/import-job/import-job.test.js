@@ -81,17 +81,33 @@ describe('ImportJob IT', async () => {
   });
 
   it('adds a new import job with valid options', async () => {
-    let data = { ...newJobData, options: { type: 'xwalk' } };
+    const options = {
+      type: 'xwalk',
+      data: {
+        siteName: 'xwalk',
+        assetFolder: 'xwalk',
+      },
+    };
+
+    let data = { ...newJobData, options };
     let importJob = await ImportJob.create(data);
 
     checkImportJob(importJob);
-    expect(importJob.getOptions()).to.eql({ type: 'xwalk' });
+    expect(importJob.getOptions()).to.equal(data.options);
 
     data = { ...newJobData, options: { type: 'doc' } };
     importJob = await ImportJob.create(data);
 
     checkImportJob(importJob);
     expect(importJob.getOptions()).to.eql({ type: 'doc' });
+
+    // test to make sure data error is thrown if data is not an object
+    data = { ...newJobData, options: { data: 'not-an-object' } };
+    await ImportJob.create(data).catch((err) => {
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.cause).to.be.instanceOf(ElectroValidationError);
+      expect(err.cause.message).to.contain('Invalid value for data: not-an-object');
+    });
   });
 
   it('throws an error when adding a new import job with invalid options', async () => {

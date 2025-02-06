@@ -40,6 +40,11 @@ const ImportOptionTypeValidator = {
       throw new Error(`Invalid value for ${ImportJob.ImportOptions.TYPE}: ${value}`);
     }
   },
+  [ImportJob.ImportOptions.DATA]: (value) => {
+    if (!isObject(value)) {
+      throw new Error(`Invalid value for ${ImportJob.ImportOptions.DATA}: ${value}`);
+    }
+  },
 };
 
 const validateOptions = (options) => {

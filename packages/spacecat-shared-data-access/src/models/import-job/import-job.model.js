@@ -48,6 +48,7 @@ class ImportJob extends BaseModel {
     ENABLE_JAVASCRIPT: 'enableJavascript',
     PAGE_LOAD_TIMEOUT: 'pageLoadTimeout',
     TYPE: 'type',
+    DATA: 'data',
   };
 
   static ImportOptionTypes = {

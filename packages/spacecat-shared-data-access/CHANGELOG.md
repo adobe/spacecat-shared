@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.0.6...@adobe/spacecat-shared-data-access-v2.1.0) (2025-02-06)
+
+
+### Features
+
+* add multiple missing audit types ([#575](https://github.com/adobe/spacecat-shared/issues/575)) ([48dcbee](https://github.com/adobe/spacecat-shared/commit/48dcbeed3eecf231e9da204121921d0c395b0401))
+
 # [@adobe/spacecat-shared-data-access-v2.0.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.0.5...@adobe/spacecat-shared-data-access-v2.0.6) (2025-02-01)
 
 

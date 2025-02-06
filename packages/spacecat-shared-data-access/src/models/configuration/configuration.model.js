@@ -145,13 +145,34 @@ class Configuration extends BaseModel {
   enableHandlerForSite(type, site) {
     const siteId = site.getId();
     if (this.isHandlerEnabledForSite(type, site)) return;
+    if (!this.isHandlerDependencyMetForSite(type, site)) return;
 
     this.updateHandlerSites(type, siteId, true);
+  }
+
+  // TODO: Return array of unmet dependencies for error message later
+  isHandlerDependencyMetForOrg(type, org) {
+    const handler = this.getHandler(type);
+
+    if (!handler || !handler.dependencies) return true;
+
+    return handler.dependencies
+      .every(({ handler: depHandler }) => this.isHandlerEnabledForOrg(depHandler, org));
+  }
+
+  // TODO: Return array of unmet dependencies for error message later
+  isHandlerDependencyMetForSite(type, site) {
+    const handler = this.getHandler(type);
+    if (!handler || !handler.dependencies) return true;
+
+    return handler.dependencies
+      .every(({ handler: depHandler }) => this.isHandlerEnabledForSite(depHandler, site));
   }
 
   enableHandlerForOrg(type, org) {
     const orgId = org.getId();
     if (this.isHandlerEnabledForOrg(type, org)) return;
+    if (!this.isHandlerDependencyMetForOrg(type, org)) return;
 
     this.updateHandlerOrgs(type, orgId, true);
   }

@@ -53,6 +53,17 @@ describe('ConfigurationModel', () => {
   });
 
   describe('constructor', () => {
+    beforeEach(() => {
+      mockRecord = { ...sampleConfiguration };
+
+      ({
+        mockElectroService,
+        model: instance,
+      } = createElectroMocks(Configuration, mockRecord));
+
+      mockElectroService.entities.patch = stub().returns({ set: stub() });
+    });
+
     it('initializes the Configuration instance correctly', () => {
       expect(instance).to.be.an('object');
       expect(instance.record).to.deep.equal(mockRecord);
@@ -177,6 +188,31 @@ describe('ConfigurationModel', () => {
       expect(instance.getHandler('organic-keywords').enabled.sites).to.include(site.getId());
     });
 
+    it('tries to enable a handler for a site with un-met dependencies', () => {
+      instance.disableHandlerForSite('organic-keywords', site);
+      expect(instance.getHandler('organic-keywords').enabled?.sites || []).to.not.include(site.getId());
+      instance.addHandler('new-handler', {
+        enabledByDefault: false,
+        dependencies: [{ handler: 'organic-keywords', actions: ['action'] }],
+        enabled: { sites: [], orgs: [] },
+      });
+      console.log('organic-keywords', JSON.stringify(instance.getHandler('organic-keywords')));
+      instance.enableHandlerForSite('new-handler', site);
+      expect(instance.getHandler('new-handler').enabled.sites).to.not.include(site.getId());
+    });
+
+    it('enables a handler for a site with met dependencies', () => {
+      instance.addHandler('new-handler', {
+        enabledByDefault: false,
+        dependencies: [{ handler: 'organic-keywords', actions: ['action'] }],
+        enabled: { sites: [], orgs: [] },
+      });
+      instance.enableHandlerForSite('organic-keywords', site);
+      expect(instance.getHandler('organic-keywords').enabled.sites).to.include(site.getId());
+      instance.enableHandlerForSite('new-handler', site);
+      expect(instance.getHandler('new-handler').enabled.sites).to.include(site.getId());
+    });
+
     it('disables a handler for a site', () => {
       instance.enableHandlerForSite('organic-keywords', site);
       instance.disableHandlerForSite('organic-keywords', site);
@@ -186,6 +222,29 @@ describe('ConfigurationModel', () => {
     it('enables a handler for an organization', () => {
       instance.enableHandlerForOrg('404', org);
       expect(instance.getHandler('404').disabled.orgs).to.not.include(org.getId());
+    });
+
+    it('tries to enable a handler for an organization with un-met dependencies', () => {
+      expect(instance.getHandler('organic-keywords').enabled.orgs).to.not.include(org.getId());
+      instance.addHandler('new-handler', {
+        enabledByDefault: false,
+        dependencies: [{ handler: 'organic-keywords', actions: ['action'] }],
+        enabled: { sites: [], orgs: [] },
+      });
+      instance.enableHandlerForOrg('new-handler', org);
+      expect(instance.getHandler('new-handler').enabled.orgs).to.not.include(org.getId());
+    });
+
+    it('enables a handler for an organization with met dependencies', () => {
+      instance.addHandler('new-handler', {
+        enabledByDefault: false,
+        dependencies: [{ handler: 'organic-keywords', actions: ['action'] }],
+        enabled: { sites: [], orgs: [] },
+      });
+      instance.enableHandlerForOrg('organic-keywords', org);
+      expect(instance.getHandler('organic-keywords').enabled.orgs).to.include(org.getId());
+      instance.enableHandlerForOrg('new-handler', org);
+      expect(instance.getHandler('new-handler').enabled.orgs).to.include(org.getId());
     });
 
     it('disables a handler for an organization', () => {

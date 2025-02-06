@@ -24,7 +24,7 @@ import BaseModel from '../base/base.model.js';
  */
 class Audit extends BaseModel {
   static AUDIT_TYPES = {
-    NOT_FOUND: '404',
+    404: '404',
     BROKEN_BACKLINKS: 'broken-backlinks',
     EXPERIMENTATION: 'experimentation',
     ORGANIC_KEYWORDS: 'organic-keywords',

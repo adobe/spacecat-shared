@@ -39,14 +39,21 @@
       ]
     },
     {
-      "id": "o8ry1b3bn1m",
+      "id": "di1t6o5gws7",
       "host": "rum.hlx.page",
-      "time": "2024-09-01T17:16:10.490Z",
-      "timeSlot": "2024-09-01T17:16:10.490Z",
+      "time": "2024-09-01T00:47:41.199Z",
+      "timeSlot": "2024-09-01T00:47:41.199Z",
       "url": "https://www.spacecat.com/about-us",
-      "userAgent": "mobile:android",
-      "weight": 100,
-      "events": []
+      "userAgent": "desktop:mac",
+      "weight": 21000,
+      "events": [
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "https://www.google.com/",
+          "timeDelta": 1007
+        }
+      ]
     },
     {
       "id": "kg72hvqb21",

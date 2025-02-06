@@ -163,7 +163,16 @@ declare function replacePlaceholders(content: string, placeholders: object): str
  * or null if an error occurs.
  */
 declare function getPrompt(placeholders: object, filename: string, log: object):
-  Promise<string|null>;
+  Promise<string | null>;
+
+/**
+ * Retrieves the high-form-view-low-form-conversion metrics from the provided array of form vitals.
+ * @param {Object[]} formVitals - An array of form vitals.
+ * @param {number} interval - The interval in days.
+ * @returns {Object[]} - An array of high-form-view-low-form-conversion metrics.
+ */
+declare function getHighFormViewsLowConversionMetrics(formVitals: object[], interval: number):
+  object[];
 
 /**
  * Retrieves stored metrics from S3.
@@ -179,7 +188,7 @@ declare function getPrompt(placeholders: object, filename: string, log: object):
  * @returns {Promise<any|*[]>} - The stored metrics
  */
 export function getStoredMetrics(config: object, context: object):
-    Promise<Array<object>>;
+  Promise<Array<object>>;
 
 /**
  * Stores metrics in S3.
@@ -198,8 +207,8 @@ export function getStoredMetrics(config: object, context: object):
 export function storeMetrics(content: object, config: object, context: object): Promise<string>;
 
 export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
-    (request: object, context: object) => Promise<Response>;
+  (request: object, context: object) => Promise<Response>;
 
-export function fetch(url: string|Request, options?: RequestOptions): Promise<Response>;
+export function fetch(url: string | Request, options?: RequestOptions): Promise<Response>;
 
-export function tracingFetch(url: string|Request, options?: RequestOptions): Promise<Response>;
+export function tracingFetch(url: string | Request, options?: RequestOptions): Promise<Response>;

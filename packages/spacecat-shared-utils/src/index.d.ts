@@ -175,6 +175,22 @@ declare function getHighFormViewsLowConversionMetrics(formVitals: object[], inte
   object[];
 
 /**
+ * Retrieves the high-page-view-low-form-view metrics from the provided array of form vitals.
+ * @param {Object[]} formVitals - An array of form vitals.
+ * @returns {Object[]} - An array of high-page-view-low-form-view metrics.
+ */
+declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[], interval: number):
+    object[];
+
+/**
+ * Retrieves the high-page-view-low-form-ctr metrics from the provided array of form vitals.
+ * @param {Object[]} formVitals - An array of form vitals.
+ * @returns {Object[]} - An array of high-page-view-low-form-ctr metrics.
+ */
+declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[], interval: number):
+    object[];
+
+/**
  * Retrieves stored metrics from S3.
  * @param config - Configuration object
  * @param config.siteId - The site ID.

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.20.0...@adobe/spacecat-shared-rum-api-client-v2.20.1) (2025-02-08)
+
+
+### Bug Fixes
+
+* **rum-api-client:** suppress rum logs ([#586](https://github.com/adobe/spacecat-shared/issues/586)) ([7cfe551](https://github.com/adobe/spacecat-shared/commit/7cfe55138c89bb21c8e16c59a7bfa26ff2cf8e80))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.19.1...@adobe/spacecat-shared-rum-api-client-v2.20.0) (2025-02-06)
 
 

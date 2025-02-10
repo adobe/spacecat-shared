@@ -9,7 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, fetch } from '@adobe/spacecat-shared-utils';
 import { fetchBundles } from './common/rum-bundler-client.js';
 import notfound from './functions/404.js';
 import notfoundInternalLinks from './functions/404-internal-links.js';
@@ -22,6 +22,9 @@ import variant from './functions/variant.js';
 import rageclick from './functions/opportunities/rageclick.js';
 import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
 import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
+
+// exported for tests
+export const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
 
 const HANDLERS = {
   404: notfound,
@@ -47,17 +50,48 @@ function sanitize(opts) {
 
 export default class RUMAPIClient {
   static createFrom(context) {
-    const { log = console } = context;
+    const { env, log = console } = context;
+    const { RUM_ADMIN_KEY: rumAdminKey } = env;
 
     if (context.rumApiClient) return context.rumApiClient;
 
-    const client = new RUMAPIClient(log);
+    const client = new RUMAPIClient({ rumAdminKey }, log);
     context.rumApiClient = client;
     return client;
   }
 
-  constructor(log) {
+  constructor({ rumAdminKey }, log) {
     this.log = log;
+    this.rumAdminKey = rumAdminKey;
+  }
+
+  async _getDomainkey(opts) {
+    const { domain, domainkey } = opts;
+
+    if (!hasText(domainkey) && !hasText(this.rumAdminKey)) {
+      throw new Error('You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable');
+    }
+
+    if (hasText(domainkey)) {
+      return domainkey;
+    }
+
+    const resp = await fetch(`${RUM_BUNDLER_API_HOST}/domainkey/${domain}`, {
+      headers: {
+        Authorization: `Bearer ${this.rumAdminKey}`,
+      },
+    });
+
+    if (!resp.ok) {
+      throw new Error(`Error during fetching domainkey for domain '${domain} using admin key. Status: ${resp.status}`);
+    }
+
+    try {
+      const json = await resp.json();
+      return json.domainkey;
+    } catch (e) {
+      throw new Error(`Error during fetching domainkey for domain '${domain} using admin key. Error: ${e.message}`);
+    }
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -66,8 +100,11 @@ export default class RUMAPIClient {
     if (!handler) throw new Error(`Unknown query ${query}`);
 
     try {
+      const domainkey = await this._getDomainkey(opts);
+
       const bundles = await fetchBundles({
         ...opts,
+        domainkey,
         checkpoints,
       }, this.log);
 
@@ -96,9 +133,12 @@ export default class RUMAPIClient {
     }
 
     try {
+      const domainkey = await this._getDomainkey(opts);
+
       // Fetch bundles with deduplicated checkpoints
       const bundles = await fetchBundles({
         ...opts,
+        domainkey,
         checkpoints: [...allCheckpoints],
       }, this.log);
 

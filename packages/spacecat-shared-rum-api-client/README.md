@@ -12,18 +12,22 @@ npm install @adobe/spacecat-shared-rum-api-client
 
 ## Usage
 
-#### Creating and instance from Helix UniversalContext
+#### Creating an instance from Helix UniversalContext
 
 ```js
-const context = {}; // Your AWS Lambda context object
+// The context must include an 'env' property so that the client can use RUM_ADMIN_KEY if needed.
+const context = { env: process.env };
 const rumApiClient = RUMAPIClient.createFrom(context);
-
 ```
 
-#### From constructor
+#### Using the constructor
 
 ```js
-const rumApiClient = new RUMAPIClient();
+// Optionally, pass a configuration and a logger objects to the constructor.
+// If you want the client to automatically fetch the domainkey for a domain,
+// provide the admin key as 'rumAdminKey'. If omitted, you must provide the domainkey
+// in the query options.
+const rumApiClient = new RUMAPIClient({ rumAdminKey: '<admin-key>' }, logger);
 ```
 
 ### Running a query
@@ -31,25 +35,28 @@ const rumApiClient = new RUMAPIClient();
 ```js
 const opts = {
   domain: 'www.aem.live',
+  // Either provide the domainkey directly...
   domainkey: '<domain-key>',
+  // ...or omit it to let the client auto-fetch it if an admin key is configured.
   granularity: 'hourly',
   interval: 10
-}
+};
 
 const result = await rumApiClient.query('cwv', opts);
-console.log(`Query result: ${result}`)
+console.log(`Query result: ${result}`);
 ```
 
-**Note**: all queries must be lowercase
+**Note**: All query names must be lowercase.
 
 ### Query Options: the 'opts' object
 
-| option      | required | default | remarks             |
-|-------------|----------|---------|---------------------|
-| domain      | yes      |         |                     |
-| domainkey   | yes      |         |                     |
-| interval    | no       | 7       | days in integer     |
-| granularity | no       | daily   | 'daily' or 'hourly' |
+| Option      | Required | Default | Remarks                                                  |
+|-------------|----------|---------|----------------------------------------------------------|
+| domain      | yes      |         | The domain for which to fetch data.                      |
+| domainkey   | no       |         | Provide directly or omit to auto-fetch using `RUM_ADMIN_KEY`. |
+| interval    | no       | 7       | Interval in days (integer).                              |
+| granularity | no       | daily   | 'daily' or 'hourly'.                                     |
+
 
 ## Available queries
 

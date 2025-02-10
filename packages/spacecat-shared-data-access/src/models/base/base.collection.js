@@ -115,6 +115,7 @@ class BaseCollection {
       this.schema,
       record,
       this.log,
+      this.aclCtx,
     );
   }
 

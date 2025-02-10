@@ -25,8 +25,8 @@ chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('EntityRegistry', () => {
-  const MockModel = class MockModel extends BaseModel {};
-  const MockCollection = class MockCollection extends BaseCollection {};
+  const MockModel = class MockModel extends BaseModel { };
+  const MockCollection = class MockCollection extends BaseCollection { };
   const MockSchema = new Schema(
     MockModel,
     MockCollection,
@@ -65,7 +65,8 @@ describe('EntityRegistry', () => {
 
     EntityRegistry.registerEntity(MockSchema, MockCollection);
 
-    entityRegistry = new EntityRegistry(electroService, console);
+    const config = {}; // TODO
+    entityRegistry = new EntityRegistry(electroService, config, console);
   });
 
   afterEach(() => {

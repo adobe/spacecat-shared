@@ -141,6 +141,21 @@ describe('RUMAPIClient with admin key for external domainkey fetch', () => {
       .to.be.rejectedWith("Error during fetching domainkey for domain 'example.com using admin key. Status: 500");
   });
 
+  it('throws error when external domainkey fetch returns unexpected response', async () => {
+    nock(RUM_BUNDLER_API_HOST)
+      .get('/domainkey/example.com')
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(200, '{"some-key": "some-value"}');
+
+    const opts = {
+      domain: 'example.com',
+      interval: 0,
+    };
+
+    await expect(client.query('404', opts))
+      .to.be.rejectedWith("Query '404' failed. Opts: {\"domain\":\"example.com\",\"interval\":0}. Reason: Error during fetching domainkey for domain 'example.com using admin key. Error: Unexpected response: {\"some-key\":\"some-value\"}");
+  });
+
   it('throws error when external domainkey fetch returns invalid JSON', async () => {
     nock(RUM_BUNDLER_API_HOST)
       .get('/domainkey/example.com')

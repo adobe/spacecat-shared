@@ -88,6 +88,9 @@ export default class RUMAPIClient {
 
     try {
       const json = await resp.json();
+      if (!hasText(json.domainkey)) {
+        throw new Error(`Unexpected response: ${JSON.stringify(json)}`);
+      }
       return json.domainkey;
     } catch (e) {
       throw new Error(`Error during fetching domainkey for domain '${domain} using admin key. Error: ${e.message}`);

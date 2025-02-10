@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.3.24](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.3.23...@adobe/spacecat-shared-content-client-v1.3.24) (2025-02-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.3.33 ([#592](https://github.com/adobe/spacecat-shared/issues/592)) ([9f06549](https://github.com/adobe/spacecat-shared/commit/9f06549aa5fb232a347434e63663266c9540dbc1))
+
 # [@adobe/spacecat-shared-content-client-v1.3.23](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.3.22...@adobe/spacecat-shared-content-client-v1.3.23) (2025-02-08)
 
 

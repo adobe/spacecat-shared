@@ -22,7 +22,9 @@ import {
   resolveSecretsName,
   resolveCustomerSecretsName,
   getRUMDomainKey,
-  replacePlaceholders, getPrompt,
+  replacePlaceholders,
+  getPrompt,
+  getQuery,
 } from '../src/helpers.js';
 
 describe('resolveSecretsName', () => {
@@ -274,6 +276,55 @@ describe('getPrompt', () => {
     readFileStub.resolves(fileContent);
 
     const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, {{name}}!');
+  });
+});
+
+describe('getQuery', () => {
+  let readFileStub;
+  let logStub;
+
+  beforeEach(() => {
+    readFileStub = sinon.stub(fs, 'readFile');
+    logStub = { error: sinon.stub() };
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('reads the query file and replace placeholders', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getQuery(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, John!');
+    expect(readFileStub.calledOnceWith(`./static/queries/${filename}.query`, { encoding: 'utf8' })).to.be.true;
+  });
+
+  it('returns null and log an error if reading the file fails', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const errorMessage = 'File not found';
+    readFileStub.rejects(new Error(errorMessage));
+
+    const result = await getQuery(placeholders, filename, logStub);
+
+    expect(result).to.be.null;
+    expect(logStub.error.calledOnceWith('Error reading query file:', errorMessage)).to.be.true;
+  });
+
+  it('handles empty placeholder object and return content as is', async () => {
+    const placeholders = {};
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getQuery(placeholders, filename, logStub);
 
     expect(result).to.equal('Hello, {{name}}!');
   });

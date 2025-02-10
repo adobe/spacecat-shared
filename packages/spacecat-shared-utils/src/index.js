@@ -38,6 +38,7 @@ export {
   generateCSVFile,
   replacePlaceholders,
   getPrompt,
+  getQuery,
 } from './helpers.js';
 
 export { sqsWrapper } from './sqs.js';

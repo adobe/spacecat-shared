@@ -131,3 +131,23 @@ export async function getPrompt(placeholders, filename, log = console) {
     return null;
   }
 }
+
+/**
+ * Reads the content of a query file asynchronously and replaces any placeholders
+ * with the corresponding values. Logs the error and returns null in case of an error.
+ *
+ * @param {Object} placeholders - A JSON object containing values to replace in the query content.
+ * @param {String} filename - The filename of the query file.
+ * @param {Object} log - The logger
+ * @returns {Promise<string|null>} - A promise that resolves to a string with the query content,
+ * or null if an error occurs.
+ */
+export async function getQuery(placeholders, filename, log = console) {
+  try {
+    const queryContent = await fs.readFile(`./static/queries/${filename}.query`, { encoding: 'utf8' });
+    return replacePlaceholders(queryContent, placeholders);
+  } catch (error) {
+    log.error('Error reading query file:', error.message);
+    return null;
+  }
+}

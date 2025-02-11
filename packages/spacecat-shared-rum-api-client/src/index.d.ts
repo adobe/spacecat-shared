@@ -73,11 +73,10 @@ export default class RUMAPIClient {
   query(query: string, opts: RUMAPIOptions): Promise<object>;
 
   /**
-   * Asynchronous method to run multiple queries against the data fetched from the
-   * RUM Bundler API.
+   * Asynchronous method to run multiple queries against the data fetched from the RUM Bundler API.
    *
    * This method makes a single call to the RUM Bundler API to fetch the raw data, then applies
-   * all the requested queries to this data. The results are returned in an object where each
+   * all the requested queries to this raw data. The results are returned in an object where each
    * key corresponds to a query name and each value contains the result of that query.
    *
    * @param queries - An array of query names to execute.

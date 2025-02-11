@@ -58,6 +58,16 @@ console.log(`Query result: ${result}`);
 | granularity | no       | daily   | 'daily' or 'hourly'.                                     |
 
 
+### Retrieving and Caching the Domainkey
+
+You can also retrieve the domainkey for a given domain directly using the new `retrieveDomainkey` method.
+This method will fetch the domainkey using the admin key (if necessary) and cache it for subsequent calls.
+
+```js
+const domainKey = await rumApiClient.retrieveDomainkey('www.example.com');
+console.log(`Domain key: ${domainKey}`);
+```
+
 ## Available queries
 
 ### Core Web Vitals (CWV)

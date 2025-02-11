@@ -63,17 +63,12 @@ export default class RUMAPIClient {
   constructor({ rumAdminKey }, log) {
     this.log = log;
     this.rumAdminKey = rumAdminKey;
+    this.domainkeyCache = {};
   }
 
-  async _getDomainkey(opts) {
-    const { domain, domainkey } = opts;
-
-    if (!hasText(domainkey) && !hasText(this.rumAdminKey)) {
-      throw new Error('You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable');
-    }
-
-    if (hasText(domainkey)) {
-      return domainkey;
+  async _exchangeDomainkey(domain) {
+    if (hasText(this.domainkeyCache[domain])) {
+      return this.domainkeyCache[domain];
     }
 
     const resp = await fetch(`${RUM_BUNDLER_API_HOST}/domainkey/${domain}`, {
@@ -91,10 +86,29 @@ export default class RUMAPIClient {
       if (!hasText(json.domainkey)) {
         throw new Error(`Unexpected response: ${JSON.stringify(json)}`);
       }
+      this.domainkeyCache[domain] = json.domainkey;
       return json.domainkey;
     } catch (e) {
       throw new Error(`Error during fetching domainkey for domain '${domain} using admin key. Error: ${e.message}`);
     }
+  }
+
+  async _getDomainkey(opts) {
+    const { domain, domainkey } = opts;
+
+    if (!hasText(domainkey) && !hasText(this.rumAdminKey)) {
+      throw new Error('You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable');
+    }
+
+    if (hasText(domainkey)) {
+      return domainkey;
+    }
+
+    return this._exchangeDomainkey(domain);
+  }
+
+  async retrieveDomainkey(domain) {
+    return this._exchangeDomainkey(domain);
   }
 
   // eslint-disable-next-line class-methods-use-this

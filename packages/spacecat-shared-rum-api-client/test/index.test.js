@@ -171,3 +171,31 @@ describe('RUMAPIClient with admin key for external domainkey fetch', () => {
       .to.be.rejectedWith("Error during fetching domainkey for domain 'example.com using admin key. Error:");
   });
 });
+
+describe('RUMAPIClient retrieveDomainkey method', () => {
+  let context;
+  let client;
+  beforeEach(() => {
+    context = { env: { RUM_ADMIN_KEY: 'admin-key' } };
+    delete context.rumApiClient;
+    client = RUMAPIClient.createFrom(context);
+  });
+
+  it('retrieves and caches the domainkey', async () => {
+    const domain = 'example.com';
+
+    const domainKeyScope = nock(RUM_BUNDLER_API_HOST)
+      .get(`/domainkey/${domain}`)
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(200, { domainkey: 'cached-domain-key' });
+
+    // first call triggers an external fetch
+    const dk1 = await client.retrieveDomainkey(domain);
+    expect(dk1).to.equal('cached-domain-key');
+    expect(domainKeyScope.isDone()).to.be.true;
+
+    // second call should return the cached value (no new HTTP request)
+    const dk2 = await client.retrieveDomainkey(domain);
+    expect(dk2).to.equal('cached-domain-key');
+  });
+});

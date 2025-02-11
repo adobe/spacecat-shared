@@ -24,7 +24,6 @@ describe('Index Exports', () => {
     'deepEqual',
     'fetch',
     'generateCSVFile',
-    'getRUMDomainKey',
     'getStoredMetrics',
     'replacePlaceholders',
     'getPrompt',

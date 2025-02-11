@@ -34,7 +34,6 @@ export {
 export {
   resolveSecretsName,
   resolveCustomerSecretsName,
-  getRUMDomainKey,
   generateCSVFile,
   replacePlaceholders,
   getPrompt,

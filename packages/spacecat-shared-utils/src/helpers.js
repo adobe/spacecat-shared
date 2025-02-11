@@ -88,6 +88,19 @@ export function replacePlaceholders(content, placeholders) {
 }
 
 /**
+ * Internal function to support reading static file
+ * and replace placeholder strings with values.
+ *
+ * @param {Object} placeholders - A JSON object containing values to replace in the prompt content.
+ * @param {String} filename - The path of the prompt file.
+ * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content.
+ */
+async function getStaticContent(placeholders, filename) {
+  const fileContent = await fs.readFile(filename, { encoding: 'utf8' });
+  return replacePlaceholders(fileContent, placeholders);
+}
+
+/**
  * Reads the content of a prompt file asynchronously and replaces any placeholders
  * with the corresponding values. Logs the error and returns null in case of an error.
  *
@@ -99,8 +112,7 @@ export function replacePlaceholders(content, placeholders) {
  */
 export async function getPrompt(placeholders, filename, log = console) {
   try {
-    const promptContent = await fs.readFile(`./static/prompts/${filename}.prompt`, { encoding: 'utf8' });
-    return replacePlaceholders(promptContent, placeholders);
+    return await getStaticContent(placeholders, `./static/prompts/${filename}.prompt`);
   } catch (error) {
     log.error('Error reading prompt file:', error.message);
     return null;
@@ -119,8 +131,7 @@ export async function getPrompt(placeholders, filename, log = console) {
  */
 export async function getQuery(placeholders, filename, log = console) {
   try {
-    const queryContent = await fs.readFile(`./static/queries/${filename}.query`, { encoding: 'utf8' });
-    return replacePlaceholders(queryContent, placeholders);
+    return await getStaticContent(placeholders, `./static/queries/${filename}.query`);
   } catch (error) {
     log.error('Error reading query file:', error.message);
     return null;

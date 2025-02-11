@@ -11,7 +11,6 @@
  */
 
 import { Parser } from '@json2csv/plainjs';
-import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { promises as fs } from 'fs';
 import { isString } from './functions.js';
 
@@ -53,30 +52,6 @@ export function resolveCustomerSecretsName(baseURL, ctx) {
     throw new Error('Invalid baseURL: must be a valid URL');
   }
   return resolveSecretsName({}, ctx, `${basePath}/${customer}`);
-}
-
-/**
- * Retrieves the RUM domain key for the specified base URL from the customer secrets.
- *
- * @param {string} baseURL - The base URL for which the RUM domain key is to be retrieved.
- * @param {UniversalContext} context - Helix Universal Context. See https://github.com/adobe/helix-universal/blob/main/src/adapter.d.ts#L120
- * @returns {Promise<string>} - A promise that resolves to the RUM domain key.
- * @throws {Error} Throws an error if no domain key is found for the specified base URL.
- */
-export async function getRUMDomainKey(baseURL, context) {
-  const customerSecretName = resolveCustomerSecretsName(baseURL, context);
-  const { runtime } = context;
-
-  try {
-    const client = new SecretsManagerClient({ region: runtime.region });
-    const command = new GetSecretValueCommand({
-      SecretId: customerSecretName,
-    });
-    const response = await client.send(command);
-    return JSON.parse(response.SecretString)?.RUM_DOMAIN_KEY;
-  } catch (error) {
-    throw new Error(`Error retrieving the domain key for ${baseURL}. Error: ${error.message}`);
-  }
 }
 
 /**

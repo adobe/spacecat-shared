@@ -20,7 +20,8 @@ import {
   generateCSVFile,
   resolveSecretsName,
   resolveCustomerSecretsName,
-  replacePlaceholders, getPrompt, getQuery,
+  replacePlaceholders, getPrompt,
+  getQuery,
 } from '../src/helpers.js';
 
 describe('resolveSecretsName', () => {

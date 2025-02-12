@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.9.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.6...@adobe/spacecat-shared-http-utils-v1.9.7) (2025-02-12)
+
+
+### Bug Fixes
+
+* log level adjustments ([#597](https://github.com/adobe/spacecat-shared/issues/597)) ([22cc302](https://github.com/adobe/spacecat-shared/commit/22cc302bd1d9d52f6f172748ef8be66dceff599b))
+
 # [@adobe/spacecat-shared-http-utils-v1.9.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.5...@adobe/spacecat-shared-http-utils-v1.9.6) (2025-01-16)
 
 

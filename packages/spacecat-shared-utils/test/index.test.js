@@ -27,6 +27,7 @@ describe('Index Exports', () => {
     'getStoredMetrics',
     'replacePlaceholders',
     'getPrompt',
+    'getQuery',
     'hasText',
     'isArray',
     'isBoolean',

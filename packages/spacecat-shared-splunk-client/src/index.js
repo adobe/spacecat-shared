@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isValidUrl, getQuery } from '@adobe/spacecat-shared-utils';
 import { context as h2, h1 } from '@adobe/fetch';
 import { xml2json } from 'xml-js';
 
@@ -113,18 +113,7 @@ export default class SplunkAPIClient {
         // query looks for error pages which return a status code of 200
         // which means customers are charged content requests
         // and we can recommend an optimization to change the status code
-        const query = 'search (index="dx_aem_engineering" OR index="dx_aem_edge_prod") '
-          + `earliest=-${minutes}m@m `
-          + 'latest=@m '
-          + 'status<300 '
-          + 'sourcetype=cdn '
-          + 'request!="HEAD" '
-          + 'aem_tier=publish '
-          + 'aem_envtype IN ("prod",  "") '
-          + 'content_type IN ("*html*", "*json*") '
-          + 'url IN ("*/403*", "*/404*", "*/error-404", "*/erro-404", "*notfound*", "*not-found*") '
-          + '| stats count by aem_service, request_x_forwarded_host, url '
-          + '| sort by count desc';
+        const query = await getQuery({ minutes }, 'notfounds');
 
         const queryBody = new URLSearchParams({
           search: query,

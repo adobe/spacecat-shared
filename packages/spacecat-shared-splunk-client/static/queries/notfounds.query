@@ -1,0 +1,12 @@
+search (index="dx_aem_engineering" OR index="dx_aem_edge_prod")
+earliest=-{{minutes}}m@m
+latest=@m
+status<300
+sourcetype=cdn
+request!="HEAD"
+aem_tier=publish
+aem_envtype IN ("prod",  "")
+content_type IN ("*html*", "*json*")
+url IN ("*/403*", "*/404*", "*/error-404", "*/erro-404", "*notfound*", "*not-found*")
+| stats count by aem_service, request_x_forwarded_host, url
+| sort by count desc

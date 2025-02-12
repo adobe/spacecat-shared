@@ -117,7 +117,7 @@ export function sqsEventAdapter(fn) {
 
     try {
       message = JSON.parse(record.body);
-      log.info(`Received message with id: ${record.messageId}`);
+      log.debug(`Received message with id: ${record.messageId}`);
     } catch (e) {
       log.warn('Function was not invoked properly, message body is not a valid JSON', e);
       return badRequest('Event does not contain a valid message body');

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.1.2...@adobe/spacecat-shared-data-access-v2.2.0) (2025-02-12)
+
+
+### Features
+
+* add delivery configuration object to site object  ([fc1dbd3](https://github.com/adobe/spacecat-shared/commit/fc1dbd341b4f22058e38f90122dd7691b6f5ff8c))
+
 # [@adobe/spacecat-shared-data-access-v2.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.1.1...@adobe/spacecat-shared-data-access-v2.1.2) (2025-02-08)
 
 

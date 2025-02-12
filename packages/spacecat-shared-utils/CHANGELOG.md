@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.4...@adobe/spacecat-shared-utils-v1.31.0) (2025-02-12)
+
+
+### Features
+
+* util for reading .query static files, modeled after getPrompt ([#591](https://github.com/adobe/spacecat-shared/issues/591)) ([af3700d](https://github.com/adobe/spacecat-shared/commit/af3700d4a3d1953a312138f0ca46547eaa31eaac)), closes [#579](https://github.com/adobe/spacecat-shared/issues/579) [#579](https://github.com/adobe/spacecat-shared/issues/579)
+
 # [@adobe/spacecat-shared-utils-v1.30.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.3...@adobe/spacecat-shared-utils-v1.30.4) (2025-02-12)
 
 

@@ -1,7 +1,6 @@
 # Spacecat Shared - GPT Client
 
 ## Firefall
-
 The `FirefallClient` library offers a streamlined way to interact with the Firefall API, enabling applications to fetch insights, recommendations, and codes based on provided prompts. Designed with simplicity and efficiency in mind, this client handles all aspects of communication with the Firefall API, including request authentication, error handling, and response parsing.
 
 ### Configuration

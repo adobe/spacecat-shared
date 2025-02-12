@@ -45,6 +45,7 @@ export default class SplunkAPIClient {
     this.apiPass = apiPass;
     this.fetchAPI = fetchAPI;
     this.log = log;
+    this.loginObj = null;
   }
 
   async login(username = this.apiUser, password = this.apiPass) {
@@ -86,6 +87,8 @@ export default class SplunkAPIClient {
           sessionId,
           cookie,
         };
+
+        this.loginObj = returnObj;
       }
     } catch (err) {
       returnObj = { error: err };
@@ -100,12 +103,16 @@ export default class SplunkAPIClient {
   async getNotFounds(minutes = 10, username = this.apiUser, password = this.apiPass) {
     let returnObj = {};
 
-    // login
-    const loginObj = await this.login(username, password);
+    // reuse login token if applicable
+    if (!this.loginObj) {
+      this.loginObj = await this.login(username, password);
+    }
+    // const loginObj = await this.login(username, password);
 
-    if (loginObj && loginObj.error) {
+    if (this.loginObj && this.loginObj.error) {
       // failed login, do not proceed
-      returnObj = loginObj;
+      returnObj = this.loginObj;
+      this.loginObj = null;
       return returnObj;
     } else {
       // successful login, prepare query
@@ -127,8 +134,8 @@ export default class SplunkAPIClient {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Splunk ${loginObj.sessionId}`,
-            Cookie: loginObj.cookie,
+            Authorization: `Splunk ${this.loginObj.sessionId}`,
+            Cookie: this.loginObj.cookie,
           },
           body: queryBody,
         });

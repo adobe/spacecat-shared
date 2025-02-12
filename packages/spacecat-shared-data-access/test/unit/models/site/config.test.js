@@ -133,6 +133,17 @@ describe('Config Tests', () => {
       expect(updatedImports).to.deep.equal(imports);
     });
 
+    it('correctly updates the fetchConfig option', () => {
+      const config = Config();
+      const fetchConfig = {
+        headers: {
+          'User-Agent': 'custom-agent',
+        },
+      };
+      config.updateFetchConfig(fetchConfig);
+      expect(config.getFetchConfig()).to.deep.equal(fetchConfig);
+    });
+
     it('should fail gracefully if handler is not present in the configuration', () => {
       const config = Config();
       expect(config.getSlackMentions('404')).to.be.undefined;

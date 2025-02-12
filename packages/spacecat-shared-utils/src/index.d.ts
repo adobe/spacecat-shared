@@ -103,7 +103,7 @@ declare function composeBaseURL(domain: string): string;
  * @param {string} [userAgent] - Optional user agent to use in the audit URL.
  * @returns a promise that resolves the composed audit URL.
  */
-declare function composeAuditURL(url: string, userAgent: string): Promise<string>;
+declare function composeAuditURL(url: string, userAgent?: string): Promise<string>;
 
 /**
  * Resolves the name of the secret based on the function version.

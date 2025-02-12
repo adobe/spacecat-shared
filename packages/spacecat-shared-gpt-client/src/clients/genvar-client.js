@@ -151,7 +151,7 @@ export default class GenvarClient {
       const startTime = process.hrtime.bigint();
 
       const jobSubmissionResponse = await this.#submitJob(body, path);
-      const jobStatusResponse = await this.#pollJobStatus(jobSubmissionResponse.job_id, path);
+      const jobStatusResponse = await this.#pollJobStatus(jobSubmissionResponse.jobId, path);
       this.#logDuration('Genvar API Execution call took ms: ', startTime);
 
       const { result } = jobStatusResponse;

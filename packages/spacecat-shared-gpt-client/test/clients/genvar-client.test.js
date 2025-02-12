@@ -119,7 +119,7 @@ describe('GenvarClient', () => {
 
       nock(mockContext.env.GENVAR_HOST)
         .post(endpoint)
-        .reply(200, { job_id: mockJobId });
+        .reply(200, { jobId: mockJobId });
 
       nock(mockContext.env.GENVAR_HOST)
         .get(`${endpoint}?jobId=${mockJobId}`)
@@ -147,7 +147,7 @@ describe('GenvarClient', () => {
       const mockJobId = '12345';
       nock(mockContext.env.GENVAR_HOST)
         .post(endpoint)
-        .reply(200, { job_id: mockJobId });
+        .reply(200, { jobId: mockJobId });
 
       nock(mockContext.env.GENVAR_HOST)
         .get(`${endpoint}?jobId=12345`)
@@ -162,7 +162,7 @@ describe('GenvarClient', () => {
       const mockJobId = 'job-failure';
       nock(mockContext.env.GENVAR_HOST)
         .post(endpoint)
-        .reply(200, { job_id: mockJobId });
+        .reply(200, { jobId: mockJobId });
 
       nock(mockContext.env.GENVAR_HOST)
         .get(`${endpoint}?jobId=job-failure`)
@@ -177,7 +177,7 @@ describe('GenvarClient', () => {
       const mockJobId = 'no-output';
       nock(mockContext.env.GENVAR_HOST)
         .post(endpoint)
-        .reply(200, { job_id: mockJobId });
+        .reply(200, { jobId: mockJobId });
 
       nock(mockContext.env.GENVAR_HOST)
         .get(`${endpoint}?jobId=${mockJobId}`)

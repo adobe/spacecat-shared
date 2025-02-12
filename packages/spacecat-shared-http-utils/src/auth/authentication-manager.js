@@ -54,7 +54,7 @@ export default class AuthenticationManager {
       }
 
       if (isObject(authInfo)) {
-        this.log.info(`Authenticated with ${handler.name}`);
+        this.log.debug(`Authenticated with ${handler.name}`);
 
         context.attributes = context.attributes || {};
         context.attributes.authInfo = authInfo;

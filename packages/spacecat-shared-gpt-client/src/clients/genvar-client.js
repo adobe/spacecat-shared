@@ -22,7 +22,6 @@ export default class GenvarClient {
     const imsClient = ImsClient.createFrom(context);
     const {
       GENVAR_HOST: genvarHost,
-      IMS_CLIENT_ID: imsClientId,
       GENVAR_IMS_ORG_ID: genvarImsOrgId,
       GENVAR_API_POLL_INTERVAL: pollInterval = 3000,
       GENVAR_METATAGS_API_ENDPOINT: metatagsApiEndpoint = '/api/v1/web/aem-genai-variations-appbuilder/metatags',
@@ -35,7 +34,7 @@ export default class GenvarClient {
     return new GenvarClient({
       genvarHost,
       imsClient,
-      imsOrg: genvarImsOrgId || imsClientId,
+      imsOrg: genvarImsOrgId,
       pollInterval,
       metatagsApiEndpoint,
     }, log);
@@ -78,7 +77,6 @@ export default class GenvarClient {
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiAuth}`,
-      'x-api-key': this.config.apiKey,
       'x-gw-ims-org-id': this.config.imsOrg,
     };
 
@@ -157,7 +155,7 @@ export default class GenvarClient {
       if (!isObject(result)) {
         throw new Error('Job completed but no output was found');
       }
-      return result.text;
+      return result;
     } catch (error) {
       this.log.error('Error while calling Genvar API: ', error.message);
       throw error;

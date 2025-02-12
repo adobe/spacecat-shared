@@ -14,15 +14,14 @@
 
 import { expect } from 'chai';
 
-import nock from 'nock';
 import { promises as fs } from 'fs';
 import sinon from 'sinon';
 import {
   generateCSVFile,
   resolveSecretsName,
   resolveCustomerSecretsName,
-  getRUMDomainKey,
   replacePlaceholders, getPrompt,
+  getQuery,
 } from '../src/helpers.js';
 
 describe('resolveSecretsName', () => {
@@ -92,56 +91,6 @@ describe('resolveCustomerSecretsName', () => {
   it('throws error when baseURL is not a valid url', () => {
     const ctx = { func: { version: '1.0.0' } };
     expect(() => resolveCustomerSecretsName('not a valid url', ctx)).to.throw('Invalid baseURL: must be a valid URL');
-  });
-});
-
-describe('rum utils', () => {
-  let context;
-  let processEnvCopy;
-  beforeEach('setup', () => {
-    context = {
-      env: {
-        AWS_REGION: 'us-east-1',
-        AWS_ACCESS_KEY_ID: 'some-key-id',
-        AWS_SECRET_ACCESS_KEY: 'some-secret-key',
-        AWS_SESSION_TOKEN: 'some-secret-token',
-      },
-      runtime: { name: 'aws-lambda', region: 'us-east-1' },
-      func: { package: 'spacecat-services', version: 'ci', name: 'test' },
-    };
-    processEnvCopy = { ...process.env };
-    process.env = {
-      ...process.env,
-      ...context.env,
-    };
-  });
-
-  afterEach('clean up', () => {
-    process.env = processEnvCopy;
-    nock.cleanAll();
-  });
-
-  it('throws error when domain key does not exist', async () => {
-    const scope = nock('https://secretsmanager.us-east-1.amazonaws.com/')
-      .post('/', (body) => body.SecretId === '/helix-deploy/spacecat-services/customer-secrets/some_domain_com/ci')
-      .replyWithError('Some error');
-
-    await expect(getRUMDomainKey('https://some-domain.com', context)).to.be.rejectedWith('Error retrieving the domain key for https://some-domain.com. Error: Some error');
-    scope.done();
-  });
-
-  it('retrieves the domain key', async () => {
-    const scope = nock('https://secretsmanager.us-east-1.amazonaws.com/')
-      .post('/', (body) => body.SecretId === '/helix-deploy/spacecat-services/customer-secrets/some_domain_com/ci')
-      .reply(200, {
-        SecretString: JSON.stringify({
-          RUM_DOMAIN_KEY: '42',
-        }),
-      });
-
-    const rumDomainkey = await getRUMDomainKey('https://some-domain.com', context);
-    expect(rumDomainkey).to.equal('42');
-    scope.done();
   });
 });
 
@@ -274,6 +223,55 @@ describe('getPrompt', () => {
     readFileStub.resolves(fileContent);
 
     const result = await getPrompt(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, {{name}}!');
+  });
+});
+
+describe('getQuery', () => {
+  let readFileStub;
+  let logStub;
+
+  beforeEach(() => {
+    readFileStub = sinon.stub(fs, 'readFile');
+    logStub = { error: sinon.stub() };
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('reads the query file and replace placeholders', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getQuery(placeholders, filename, logStub);
+
+    expect(result).to.equal('Hello, John!');
+    expect(readFileStub.calledOnceWith(`./static/queries/${filename}.query`, { encoding: 'utf8' })).to.be.true;
+  });
+
+  it('returns null and log an error if reading the file fails', async () => {
+    const placeholders = { name: 'John' };
+    const filename = 'test';
+    const errorMessage = 'File not found';
+    readFileStub.rejects(new Error(errorMessage));
+
+    const result = await getQuery(placeholders, filename, logStub);
+
+    expect(result).to.be.null;
+    expect(logStub.error.calledOnceWith('Error reading query file:', errorMessage)).to.be.true;
+  });
+
+  it('handles empty placeholder object and return content as is', async () => {
+    const placeholders = {};
+    const filename = 'test';
+    const fileContent = 'Hello, {{name}}!';
+    readFileStub.resolves(fileContent);
+
+    const result = await getQuery(placeholders, filename, logStub);
 
     expect(result).to.equal('Hello, {{name}}!');
   });

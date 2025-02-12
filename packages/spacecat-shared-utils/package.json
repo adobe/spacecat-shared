@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.30.2",
+  "version": "1.30.4",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "engines": {
@@ -46,7 +46,6 @@
   "dependencies": {
     "@adobe/fetch": "4.1.11",
     "@aws-sdk/client-s3": "3.744.0",
-    "@aws-sdk/client-secrets-manager": "3.744.0",
     "@aws-sdk/client-sqs": "3.744.0",
     "@json2csv/plainjs": "7.0.6",
     "aws-xray-sdk": "3.10.3",

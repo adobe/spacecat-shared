@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.20.2...@adobe/spacecat-shared-rum-api-client-v2.21.0) (2025-02-11)
+
+
+### Features
+
+* **rum-api-client:** admin key support ([#590](https://github.com/adobe/spacecat-shared/issues/590)) ([0213fa3](https://github.com/adobe/spacecat-shared/commit/0213fa3697cfc006c9edb5038a10ecc896cb6b6e))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.20.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.20.1...@adobe/spacecat-shared-rum-api-client-v2.20.2) (2025-02-08)
 
 

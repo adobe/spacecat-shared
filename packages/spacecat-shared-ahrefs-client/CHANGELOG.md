@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.6.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.5...@adobe/spacecat-shared-ahrefs-client-v1.6.6) (2025-02-12)
+
+
+### Bug Fixes
+
+* **ahrefs-client:** enhance organic keywords query to use in HOTLCTR opportunity ([#589](https://github.com/adobe/spacecat-shared/issues/589)) ([23aef2e](https://github.com/adobe/spacecat-shared/commit/23aef2eef7a2e44b3d68ec8ba64378e8d4a3b605))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.6.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.4...@adobe/spacecat-shared-ahrefs-client-v1.6.5) (2025-02-08)
 
 

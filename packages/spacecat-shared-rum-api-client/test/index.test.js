@@ -15,14 +15,12 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 
-import RUMAPIClient from '../src/index.js';
+import RUMAPIClient, { RUM_BUNDLER_API_HOST } from '../src/index.js';
 
 use(chaiAsPromised);
 
-const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
-
 describe('RUMAPIClient', () => {
-  const context = {};
+  const context = { env: {} };
   const rumApiClient = RUMAPIClient.createFrom(context);
 
   it('throws error when unknown query is requested', async () => {
@@ -30,7 +28,7 @@ describe('RUMAPIClient', () => {
   });
 
   it('throws error when query fails', async () => {
-    await expect(rumApiClient.query('404', {})).to.be.rejectedWith('Query \'404\' failed. Opts: {}. Reason: Missing required parameters');
+    await expect(rumApiClient.query('404', {})).to.be.rejectedWith('Query \'404\' failed. Opts: {}. Reason: You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable');
   });
 
   it('runs the query', async () => {
@@ -62,8 +60,10 @@ describe('RUMAPIClient', () => {
     await expect(rumApiClient.queryMulti(['unknown-query'], {})).to.be.rejectedWith('Unknown query: unknown-query');
   });
 
-  it('throws error when a query fails during multi query', async () => {
-    await expect(rumApiClient.queryMulti(['404'], {})).to.be.rejectedWith('Multi query failed. Queries: ["404"], Opts: {}. Reason: Missing required parameters');
+  it('throws error when a query fails during multi query due to missing domainkey/admin key', async () => {
+    await expect(rumApiClient.queryMulti(['404'], {})).to.be.rejectedWith(
+      'Multi query failed. Queries: ["404"], Opts: {}. Reason: You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable',
+    );
   });
 
   it('runs multiple queries', async () => {
@@ -95,5 +95,107 @@ describe('RUMAPIClient', () => {
     const newClient = RUMAPIClient.createFrom(context);
 
     expect(newClient).to.equal(rumApiClient);
+  });
+});
+
+describe('RUMAPIClient with admin key for external domainkey fetch', () => {
+  let context;
+  let client;
+  beforeEach(() => {
+    context = { env: { RUM_ADMIN_KEY: 'admin-key' } };
+    delete context.rumApiClient;
+    client = RUMAPIClient.createFrom(context);
+  });
+
+  it('fetches domainkey externally when not provided in opts', async () => {
+    nock(RUM_BUNDLER_API_HOST)
+      .get('/domainkey/example.com')
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(200, { domainkey: 'external-domain-key' });
+
+    nock(RUM_BUNDLER_API_HOST)
+      .get((uri) => uri.includes('/bundles/'))
+      .reply(200, { rumBundles: [] });
+
+    const opts = {
+      domain: 'example.com',
+      interval: 0,
+    };
+
+    const result = await client.query('404', opts);
+    expect(result).to.be.empty;
+  });
+
+  it('throws error when external domainkey fetch returns non-ok status', async () => {
+    nock(RUM_BUNDLER_API_HOST)
+      .get('/domainkey/example.com')
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(500);
+
+    const opts = {
+      domain: 'example.com',
+      interval: 0,
+    };
+
+    await expect(client.query('404', opts))
+      .to.be.rejectedWith("Error during fetching domainkey for domain 'example.com using admin key. Status: 500");
+  });
+
+  it('throws error when external domainkey fetch returns unexpected response', async () => {
+    nock(RUM_BUNDLER_API_HOST)
+      .get('/domainkey/example.com')
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(200, '{"some-key": "some-value"}');
+
+    const opts = {
+      domain: 'example.com',
+      interval: 0,
+    };
+
+    await expect(client.query('404', opts))
+      .to.be.rejectedWith("Query '404' failed. Opts: {\"domain\":\"example.com\",\"interval\":0}. Reason: Error during fetching domainkey for domain 'example.com using admin key. Error: Unexpected response: {\"some-key\":\"some-value\"}");
+  });
+
+  it('throws error when external domainkey fetch returns invalid JSON', async () => {
+    nock(RUM_BUNDLER_API_HOST)
+      .get('/domainkey/example.com')
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(200, 'invalid json');
+
+    const opts = {
+      domain: 'example.com',
+      interval: 0,
+    };
+
+    await expect(client.query('404', opts))
+      .to.be.rejectedWith("Error during fetching domainkey for domain 'example.com using admin key. Error:");
+  });
+});
+
+describe('RUMAPIClient retrieveDomainkey method', () => {
+  let context;
+  let client;
+  beforeEach(() => {
+    context = { env: { RUM_ADMIN_KEY: 'admin-key' } };
+    delete context.rumApiClient;
+    client = RUMAPIClient.createFrom(context);
+  });
+
+  it('retrieves and caches the domainkey', async () => {
+    const domain = 'example.com';
+
+    const domainKeyScope = nock(RUM_BUNDLER_API_HOST)
+      .get(`/domainkey/${domain}`)
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(200, { domainkey: 'cached-domain-key' });
+
+    // first call triggers an external fetch
+    const dk1 = await client.retrieveDomainkey(domain);
+    expect(dk1).to.equal('cached-domain-key');
+    expect(domainKeyScope.isDone()).to.be.true;
+
+    // second call should return the cached value (no new HTTP request)
+    const dk2 = await client.retrieveDomainkey(domain);
+    expect(dk2).to.equal('cached-domain-key');
   });
 });

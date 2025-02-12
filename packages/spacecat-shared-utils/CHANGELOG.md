@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.30.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.3...@adobe/spacecat-shared-utils-v1.30.4) (2025-02-12)
+
+
+### Bug Fixes
+
+* log level adjustments ([#597](https://github.com/adobe/spacecat-shared/issues/597)) ([22cc302](https://github.com/adobe/spacecat-shared/commit/22cc302bd1d9d52f6f172748ef8be66dceff599b))
+
+# [@adobe/spacecat-shared-utils-v1.30.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.2...@adobe/spacecat-shared-utils-v1.30.3) (2025-02-11)
+
+
+### Bug Fixes
+
+* **shared-utils:** remove legacy rum domain key retrieval ([#594](https://github.com/adobe/spacecat-shared/issues/594)) ([1a093c4](https://github.com/adobe/spacecat-shared/commit/1a093c4226a966098dfa2207f5652ffac13e38b5))
+
 # [@adobe/spacecat-shared-utils-v1.30.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.1...@adobe/spacecat-shared-utils-v1.30.2) (2025-02-08)
 
 

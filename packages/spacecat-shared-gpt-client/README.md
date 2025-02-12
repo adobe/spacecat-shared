@@ -1,8 +1,10 @@
 # Spacecat Shared - GPT Client
 
+## Firefall
+
 The `FirefallClient` library offers a streamlined way to interact with the Firefall API, enabling applications to fetch insights, recommendations, and codes based on provided prompts. Designed with simplicity and efficiency in mind, this client handles all aspects of communication with the Firefall API, including request authentication, error handling, and response parsing.
 
-## Configuration
+### Configuration
 
 To use the `FirefallClient`, you need to configure it with the following parameters:
 
@@ -24,9 +26,9 @@ Additionally, the configuration for the `@adobe/spacecat-shared-ims-client` libr
 - `IMS_CLIENT_CODE`: Your IMS client code, used for authentication.
 - `IMS_CLIENT_SECRET`: Your IMS client secret, used for authentication.
 
-## Usage Examples
+### Usage Examples
 
-### Instantiating the Firefall Client
+#### Instantiating the Firefall Client
 
 ```javascript
 import FirefallClient from 'path/to/firefall-client';
@@ -45,9 +47,9 @@ try {
 }
 ```
 
-### Fetching Insights
+#### Fetching Insights
 
-#### Via Capability Execution endpoint
+1.  Via Capability Execution endpoint
 
 ```javascript
 /**
@@ -78,7 +80,7 @@ async function fetchInsights(prompt) {
 fetchInsights('How can we improve customer satisfaction?');
 ```
 
-#### Via Chat Completions endpoint
+2.  Via Chat Completions endpoint
 
 ```javascript
 /**
@@ -114,6 +116,78 @@ fetchCompletions('Identify all food items in this image', { imageUrls: ['data:im
 ```
 
 Ensure that you replace `'path/to/firefall-client'` with the actual path to the `FirefallClient` class in your project and adjust the configuration parameters according to your Firefall API credentials.
+
+## Genvar Client
+
+The `Genvar client` library provides a convenient way to interact with the Genvar APIs.
+
+### Configuration
+To use the `GenvarClient`, you need to configure it with the following parameters:
+
+- `GENVAR_HOST`: The hostname for Genvar API.
+- `GENVAR_IMS_ORG_ID`: The IMS ORG ID to use when calling the Genvar APIs and tracking the request.
+
+These parameters can be set through environment variables or passed directly to the `GenvarClient.createFrom` method.
+
+Additionally, the configuration for the `@adobe/spacecat-shared-ims-client` library is required to fetch the service access token from the IMS API:
+
+- `IMS_HOST`: The hostname of the IMS API.
+- `IMS_CLIENT_ID`: Your IMS client ID.
+- `IMS_CLIENT_CODE`: Your IMS client code, used for authentication.
+- `IMS_CLIENT_SECRET`: Your IMS client secret, used for authentication.
+
+### Usage Examples
+
+#### Instantiating the Genvar Client
+```javascript
+import GenvarClient from 'path/to/genvar-client';
+
+// Assuming environment variables are set
+const context = {
+  env: process.env,
+  log: console, // Using console for logging in this example
+};
+
+try {
+  const client = GenvarClient.createFrom(context);
+  console.log('GenvarClient created successfully.');
+} catch (error) {
+  console.error('Error creating GenvarClient:', error.message);
+}
+```
+
+#### Calling Genvar API
+
+- Using `generateSuggestions` method which first submits the job and then polls the job status
+```javascript
+/**
+ *  Call Genvar API with generate suggestions method 
+ */
+async function generateAISuggestions() {
+  try {
+    const client = GenvarClient.createFrom({
+      env: {
+        GENVAR_HOST: 'https://12345-genvarapi-seotest.adobeioruntime.net',
+        GENVAR_IMS_ORG_ID: 'abcd@AdobeOrg',
+        IMS_HOST: 'ims.example.com',
+        IMS_CLIENT_ID: 'yourClientId',
+        IMS_CLIENT_CODE: 'yourClientCode',
+        IMS_CLIENT_SECRET: 'yourClientSecret',
+      },
+      log: console,
+    });
+
+    const requestBody = {
+      param1: 'some-value',
+    };
+    const endpoint = '/some-endpoint';
+    const response = await client.generateSuggestions(requestBody, endpoint);
+    console.log('Genvar API response:', response);
+  } catch (error) {
+    console.error('Failed to call genvar API:', error.message);
+  }
+}
+```
 
 ## Testing
 

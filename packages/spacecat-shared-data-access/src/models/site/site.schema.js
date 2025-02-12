@@ -64,6 +64,11 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     type: 'string',
     validate: (value) => !value || isValidUrl(value),
   })
+  .addAttribute('deliveryConfig', {
+    type: 'any',
+    default: {},
+    validate: (value) => isObject(value),
+  })
   .addAttribute('hlxConfig', {
     type: 'any',
     default: {},

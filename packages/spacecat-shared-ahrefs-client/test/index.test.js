@@ -87,11 +87,19 @@ describe('AhrefsAPIClient', () => {
         keyword: 'keyword1',
         sum_traffic: 100,
         best_position_url: 'url1',
+        best_position: 1,
+        volume: 61000,
+        cpc: 423,
+        is_branded: true,
       },
       {
         keyword: 'keyword2',
         sum_traffic: 200,
         best_position_url: 'url2',
+        best_position: 7,
+        volume: 89000,
+        cpc: 34,
+        is_branded: false,
       },
     ],
   };
@@ -326,11 +334,14 @@ describe('AhrefsAPIClient', () => {
           select: [
             'keyword',
             'sum_traffic',
-            'best_position_url',
+            'volume',
+            'best_position',
+            'cpc',
+            'is_branded',
           ].join(','),
           order_by: 'sum_traffic:desc',
           target: 'test-site.com',
-          limit: 200,
+          limit: 100,
           mode: 'prefix',
           output: 'json',
           where: JSON.stringify({
@@ -342,15 +353,12 @@ describe('AhrefsAPIClient', () => {
         })
         .reply(200, organicKeywordsResponse);
 
-      const result = await client.getOrganicKeywords('test-site.com', 'us', ['keyword1', 'keyword2']);
+      const result = await client.getOrganicKeywords('test-site.com', 'us', ['keyword1', 'keyword2'], 100);
 
-      expect(result)
-        .to
-        .deep
-        .equal({
-          result: organicKeywordsResponse,
-          fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cbest_position_url&order_by=sum_traffic%3Adesc&target=test-site.com&limit=200&mode=prefix&output=json&where=%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D',
-        });
+      expect(result).to.deep.equal({
+        result: organicKeywordsResponse,
+        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=100&mode=prefix&output=json&where=%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D',
+      });
     });
 
     it('sends API request with no keyword filter if none are specified', async () => {
@@ -362,11 +370,14 @@ describe('AhrefsAPIClient', () => {
           select: [
             'keyword',
             'sum_traffic',
-            'best_position_url',
+            'volume',
+            'best_position',
+            'cpc',
+            'is_branded',
           ].join(','),
           order_by: 'sum_traffic:desc',
           target: 'test-site.com',
-          limit: 200,
+          limit: 10,
           mode: 'prefix',
           output: 'json',
         })
@@ -374,13 +385,70 @@ describe('AhrefsAPIClient', () => {
 
       const result = await client.getOrganicKeywords('test-site.com');
 
-      expect(result)
-        .to
-        .deep
-        .equal({
-          result: organicKeywordsResponse,
-          fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cbest_position_url&order_by=sum_traffic%3Adesc&target=test-site.com&limit=200&mode=prefix&output=json',
-        });
+      expect(result).to.deep.equal({
+        result: organicKeywordsResponse,
+        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=10&mode=prefix&output=json',
+      });
+    });
+
+    it('sends API request with exact mode when specified', async () => {
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/organic-keywords')
+        .query({
+          country: 'us',
+          date: new Date().toISOString().split('T')[0],
+          select: [
+            'keyword',
+            'sum_traffic',
+            'volume',
+            'best_position',
+            'cpc',
+            'is_branded',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          target: 'test-site.com',
+          limit: 50,
+          mode: 'exact',
+          output: 'json',
+        })
+        .reply(200, organicKeywordsResponse);
+
+      const result = await client.getOrganicKeywords('test-site.com', 'us', [], 50, 'exact');
+
+      expect(result).to.deep.equal({
+        result: organicKeywordsResponse,
+        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=50&mode=exact&output=json',
+      });
+    });
+
+    it('sends API request with upper limit when a limit > upper limit is specified', async () => {
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/organic-keywords')
+        .query({
+          country: 'us',
+          date: new Date().toISOString().split('T')[0],
+          select: [
+            'keyword',
+            'sum_traffic',
+            'volume',
+            'best_position',
+            'cpc',
+            'is_branded',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          target: 'test-site.com',
+          limit: 100,
+          mode: 'prefix',
+          output: 'json',
+        })
+        .reply(200, organicKeywordsResponse);
+
+      const result = await client.getOrganicKeywords('test-site.com', 'us', [], 5000);
+
+      expect(result).to.deep.equal({
+        result: organicKeywordsResponse,
+        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=100&mode=prefix&output=json',
+      });
     });
 
     it('throws error when keyword filter does not contain appropriate keyword items', async () => {
@@ -406,6 +474,11 @@ describe('AhrefsAPIClient', () => {
     it('throws error when limit is not an integer', async () => {
       const result = client.getOrganicKeywords('test-site.com', 'us', [], 1.5);
       await expect(result).to.be.rejectedWith('Invalid limit: 1.5');
+    });
+
+    it('throws error when mode is invalid', async () => {
+      const result = client.getOrganicKeywords('test-site.com', 'us', [], 200, 'invalid-mode');
+      await expect(result).to.be.rejectedWith('Invalid mode: invalid-mode');
     });
   });
 

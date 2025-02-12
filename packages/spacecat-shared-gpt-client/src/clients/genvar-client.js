@@ -12,7 +12,7 @@
 
 import { createUrl } from '@adobe/fetch';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
-import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import { fetch as httpFetch } from '../utils.js';
 
@@ -24,11 +24,14 @@ export default class GenvarClient {
       GENVAR_HOST: genvarHost,
       GENVAR_IMS_ORG_ID: genvarImsOrgId,
       GENVAR_API_POLL_INTERVAL: pollInterval = 3000,
-      GENVAR_METATAGS_API_ENDPOINT: metatagsApiEndpoint = '/api/v1/web/aem-genai-variations-appbuilder/metatags',
     } = context.env;
 
     if (!isValidUrl(genvarHost)) {
       throw new Error('Missing Genvar API endpoint');
+    }
+
+    if (!hasText(genvarImsOrgId)) {
+      throw new Error('Missing Genvar Ims org');
     }
 
     return new GenvarClient({
@@ -36,7 +39,6 @@ export default class GenvarClient {
       imsClient,
       imsOrg: genvarImsOrgId,
       pollInterval,
-      metatagsApiEndpoint,
     }, log);
   }
 
@@ -88,7 +90,8 @@ export default class GenvarClient {
       body,
     });
     if (!response.ok) {
-      throw new Error(`Job submission failed with status code ${response.status}`);
+      const errorMessage = await response.text();
+      throw new Error(`Job submission failed with status code ${response.status} and error: ${errorMessage}`);
     }
     return response.json();
   }

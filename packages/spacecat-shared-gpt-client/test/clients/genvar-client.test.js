@@ -68,6 +68,11 @@ describe('GenvarClient', () => {
       mockContext.env.GENVAR_HOST = '';
       expect(() => GenvarClient.createFrom(mockContext)).to.throw('Missing Genvar API endpoint');
     });
+
+    it('throws an error if the Genvar org is invalid', () => {
+      mockContext.env.GENVAR_IMS_ORG_ID = '';
+      expect(() => GenvarClient.createFrom(mockContext)).to.throw('Missing Genvar Ims org');
+    });
   });
 
   // eslint-disable-next-line func-names

@@ -138,7 +138,7 @@ describe('GenvarClient', () => {
         .post(endpoint)
         .reply(400);
 
-      mockLog.expects('error').once();
+      mockLog.expects('error').twice();
       await expect(client.generateSuggestions(requestBody, endpoint)).to.be.rejected;
       mockLog.verify();
     });

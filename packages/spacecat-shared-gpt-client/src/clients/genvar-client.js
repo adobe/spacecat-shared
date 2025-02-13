@@ -12,9 +12,11 @@
 
 import { createUrl } from '@adobe/fetch';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
-import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
-
-import { fetch as httpFetch } from '../utils.js';
+import {
+  hasText, isNonEmptyObject,
+  isValidUrl,
+  tracingFetch,
+} from '@adobe/spacecat-shared-utils';
 
 export default class GenvarClient {
   static createFrom(context) {
@@ -84,16 +86,24 @@ export default class GenvarClient {
 
     this.log.info(`[Genvar API Call] URL: ${url}, Headers: ${JSON.stringify({ ...headers, Authorization: '***' })}`);
 
-    const response = await httpFetch(url, {
-      method: 'POST',
-      headers,
-      body,
-    });
-    if (!response.ok) {
-      const errorMessage = await response.text();
-      throw new Error(`Job submission failed with status code ${response.status} and error: ${errorMessage}`);
+    let response;
+    let responseJsonObj;
+    try {
+      response = await tracingFetch(url, {
+        method: 'POST',
+        headers,
+        body,
+      });
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        throw new Error(`Job submission failed with status code ${response.status} and error: ${errorMessage}`);
+      }
+      responseJsonObj = await response.json();
+    } catch (err) {
+      this.log.error(`Genvar Job submit failed with error: ${err.message}`);
+      throw err;
     }
-    return response.json();
+    return responseJsonObj;
   }
 
   /* eslint-disable no-await-in-loop */
@@ -113,13 +123,19 @@ export default class GenvarClient {
 
       this.log.info(`[Genvar API Call] URL: ${url}, Headers: ${JSON.stringify({ ...headers, Authorization: '***' })}`);
 
-      const response = await httpFetch(
-        createUrl(url),
-        {
-          method: 'GET',
-          headers,
-        },
-      );
+      let response;
+      try {
+        response = await tracingFetch(
+          createUrl(url),
+          {
+            method: 'GET',
+            headers,
+          },
+        );
+      } catch (err) {
+        this.log.error(`Genvar Job poll failed with error: ${err.message}`);
+        throw err;
+      }
 
       if (!response.ok) {
         throw new Error(`Job polling failed with status code ${response.status}`);
@@ -155,7 +171,7 @@ export default class GenvarClient {
       this.#logDuration('Genvar API Execution call took ms: ', startTime);
 
       const { result } = jobStatusResponse;
-      if (!isObject(result)) {
+      if (!isNonEmptyObject(result)) {
         throw new Error('Job completed but no output was found');
       }
       return result;

@@ -132,15 +132,14 @@ export default class GenvarClient {
             headers,
           },
         );
+        if (!response.ok) {
+          throw new Error(`Job polling failed with status code ${response.status}`);
+        }
+        jobStatusResponse = await response.json();
       } catch (err) {
         this.log.error(`Genvar Job poll failed with error: ${err.message}`);
         throw err;
       }
-
-      if (!response.ok) {
-        throw new Error(`Job polling failed with status code ${response.status}`);
-      }
-      jobStatusResponse = await response.json();
     } while (jobStatusResponse.status === 'running');
 
     if (jobStatusResponse.status !== 'completed') {

@@ -153,7 +153,7 @@ describe('GenvarClient', () => {
         .get(`${endpoint}?jobId=12345`)
         .reply(400);
 
-      mockLog.expects('error').once();
+      mockLog.expects('error').twice();
       await expect(client.generateSuggestions(requestBody, endpoint)).to.be.rejected;
       mockLog.verify();
     });

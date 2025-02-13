@@ -10,14 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { isValidUrl, getQuery } from '@adobe/spacecat-shared-utils';
-import { context as h2, h1 } from '@adobe/fetch';
+import { isValidUrl, getQuery, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { xml2json } from 'xml-js';
-
-/* c8 ignore next 3 */
-export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
-  ? h1()
-  : h2();
 
 export default class SplunkAPIClient {
   static createFrom(context) {
@@ -71,7 +65,6 @@ export default class SplunkAPIClient {
         const responseJson = xml2json(responseXML, { compact: true });
         // eslint-disable-next-line no-underscore-dangle
         error = JSON.parse(responseJson).response.messages.msg._text;
-        // this.log.error(`${loginBody}::${responseXML}`);
         returnObj = { error };
       } else {
         // successful login

@@ -15,8 +15,8 @@
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
-
-import SplunkAPIClient, { fetch } from '../src/index.js';
+import { tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
+import SplunkAPIClient from '../src/index.js';
 
 use(chaiAsPromised);
 

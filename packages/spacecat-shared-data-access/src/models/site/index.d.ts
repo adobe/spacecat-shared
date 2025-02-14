@@ -38,6 +38,7 @@ export interface Site extends BaseModel {
   ): Promise<Experiment[]>;
   getGitHubURL(): string;
   getHlxConfig(): object;
+  getDeliveryConfig(): object;
   getIsLive(): boolean;
   getIsLiveToggledAt(): string;
   getKeyEvents(): Promise<KeyEvent[]>
@@ -62,6 +63,7 @@ export interface Site extends BaseModel {
   setDeliveryType(deliveryType: string): Site;
   setGitHubURL(gitHubURL: string): Site;
   setHlxConfig(hlxConfig: object): Site;
+  setDeliveryConfig(deliveryConfig: object): Site;
   setIsLive(isLive: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;

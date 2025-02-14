@@ -70,9 +70,9 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     validate: (value) => isObject(value),
     properties: {
       programId: { type: 'string' },
-      environmentId: { type: 'string'},
+      environmentId: { type: 'string' },
       authorURL: { type: 'string', validate: (value) => isValidUrl(value) },
-      siteId: { type: 'string'},
+      siteId: { type: 'string' },
     },
   })
   .addAttribute('hlxConfig', {

@@ -41,7 +41,7 @@
     "graph-data-structure": "4.3.1"
   },
   "devDependencies": {
-    "chai": "5.1.2",
+    "chai": "5.2.0",
     "chai-as-promised": "8.0.1",
     "esmock": "2.7.0",
     "nock": "14.0.1",

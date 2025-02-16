@@ -48,6 +48,9 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     required: true,
     validate: (value) => isValidUrl(value),
   })
+  .addAttribute('name', {
+    type: 'string',
+  })
   .addAttribute('config', {
     type: 'any',
     required: true,

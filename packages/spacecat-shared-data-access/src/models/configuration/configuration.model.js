@@ -148,7 +148,7 @@ class Configuration extends BaseModel {
 
     const deps = this.isHandlerDependencyMetForSite(type, site);
     if (deps !== true) {
-      throw new Error(`Cannot disable handler ${type} for site ${siteId} because of missing dependencies: ${deps}`);
+      throw new Error(`Cannot enable handler ${type} for site ${siteId} because of missing dependencies: ${deps}`);
     }
 
     this.updateHandlerSites(type, siteId, true);

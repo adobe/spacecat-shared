@@ -143,7 +143,7 @@ const getAcls = async (profile) => {
   return {
     acls,
     aclEntities: {
-      model: ['organization'],
+      model: ['organization', 'site'],
     },
   };
 };
@@ -207,6 +207,7 @@ export default class AdobeImsHandler extends AbstractHandler {
   }
 
   async checkAuth(request, context) {
+    console.log('§§§ context in ims:', JSON.stringify(context));
     const token = getBearerToken(context);
     if (!hasText(token)) {
       this.log('No bearer token provided', 'debug');
@@ -218,6 +219,13 @@ export default class AdobeImsHandler extends AbstractHandler {
       const payload = await this.#validateToken(token, config);
       const profile = transformProfile(payload);
       const acls = await getAcls(profile);
+
+      try {
+        const imspr = await context.imsClient.getImsUserProfile(token);
+        console.log('§§§ ims profile:', imspr);
+      } catch (e) {
+        console.log('§§§ ims profile error:', e);
+      }
 
       return new AuthInfo()
         .withType(this.name)

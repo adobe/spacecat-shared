@@ -102,7 +102,7 @@ class BaseModel {
   }
 
   ensurePermission(action) {
-    if (this.aclCtx.aclEntities.model.includes(this.entityName)) {
+    if (this.aclCtx?.aclEntities?.model?.includes(this.entityName)) {
       ensurePermission(this.getACLPath(), this.aclCtx, action);
     } else {
       console.log('Entity ', this.entityName, 'is excluded from ACL checking');
@@ -138,7 +138,6 @@ class BaseModel {
       if (!this[getterMethodName] || name === this.idName) {
         this[getterMethodName] = () => {
           this.ensurePermission('R');
-          ensurePermission(this.getACLPath(), this.aclCtx, 'R');
           return this.record[name];
         };
       }

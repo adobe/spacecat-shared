@@ -62,7 +62,6 @@ class EntityRegistry {
     this.aclCtx = config.aclCtx;
     this.log = log;
     this.collections = new Map();
-
     this.#initialize();
   }
 

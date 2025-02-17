@@ -40,6 +40,9 @@ function getPermissions(entityPath, permissions) {
     if (pp.endsWith('/**')) {
       return ep.startsWith(pp.slice(0, -2));
     }
+    if (pp.endsWith('/+**')) {
+      return ep.concat('/').startsWith(pp.slice(0, -3));
+    }
     return ep === pp;
   });
 
@@ -75,6 +78,8 @@ export function ensurePermission(path, aclCtx, perm) {
     JSON.stringify(aclCtx),
     'perm:',
     perm,
+    'response:',
+    hasPermisson(path, aclCtx, perm),
   );
   if (!hasPermisson(path, aclCtx, perm)) {
     throw new Error('Permission denied');

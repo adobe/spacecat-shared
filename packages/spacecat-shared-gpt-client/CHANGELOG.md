@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.4.7...@adobe/spacecat-shared-gpt-client-v1.5.0) (2025-02-17)
+
+
+### Features
+
+* add Client to interact with Genvar APIs ([#596](https://github.com/adobe/spacecat-shared/issues/596)) ([cd69beb](https://github.com/adobe/spacecat-shared/commit/cd69beb153b543c59f70ea702c0d0c72c458515d))
+
 # [@adobe/spacecat-shared-gpt-client-v1.4.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.4.6...@adobe/spacecat-shared-gpt-client-v1.4.7) (2025-02-16)
 
 

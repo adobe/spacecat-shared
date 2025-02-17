@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.2.2...@adobe/spacecat-shared-data-access-v2.3.0) (2025-02-17)
+
+
+### Features
+
+* audit step destinations ([#602](https://github.com/adobe/spacecat-shared/issues/602)) ([9aa9a8a](https://github.com/adobe/spacecat-shared/commit/9aa9a8a98aeeccd16e665140beae114bdd12924b))
+
 # [@adobe/spacecat-shared-data-access-v2.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.2.1...@adobe/spacecat-shared-data-access-v2.2.2) (2025-02-16)
 
 

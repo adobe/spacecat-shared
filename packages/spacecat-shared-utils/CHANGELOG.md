@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.31.0...@adobe/spacecat-shared-utils-v1.31.1) (2025-02-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#603](https://github.com/adobe/spacecat-shared/issues/603)) ([b58d4c7](https://github.com/adobe/spacecat-shared/commit/b58d4c7237fb2522bba9b722e9eed7b0ae9e5f70))
+
+# [@adobe/spacecat-shared-utils-v1.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.4...@adobe/spacecat-shared-utils-v1.31.0) (2025-02-12)
+
+
+### Features
+
+* util for reading .query static files, modeled after getPrompt ([#591](https://github.com/adobe/spacecat-shared/issues/591)) ([af3700d](https://github.com/adobe/spacecat-shared/commit/af3700d4a3d1953a312138f0ca46547eaa31eaac)), closes [#579](https://github.com/adobe/spacecat-shared/issues/579) [#579](https://github.com/adobe/spacecat-shared/issues/579)
+
+# [@adobe/spacecat-shared-utils-v1.30.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.3...@adobe/spacecat-shared-utils-v1.30.4) (2025-02-12)
+
+
+### Bug Fixes
+
+* log level adjustments ([#597](https://github.com/adobe/spacecat-shared/issues/597)) ([22cc302](https://github.com/adobe/spacecat-shared/commit/22cc302bd1d9d52f6f172748ef8be66dceff599b))
+
+# [@adobe/spacecat-shared-utils-v1.30.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.2...@adobe/spacecat-shared-utils-v1.30.3) (2025-02-11)
+
+
+### Bug Fixes
+
+* **shared-utils:** remove legacy rum domain key retrieval ([#594](https://github.com/adobe/spacecat-shared/issues/594)) ([1a093c4](https://github.com/adobe/spacecat-shared/commit/1a093c4226a966098dfa2207f5652ffac13e38b5))
+
 # [@adobe/spacecat-shared-utils-v1.30.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.1...@adobe/spacecat-shared-utils-v1.30.2) (2025-02-08)
 
 

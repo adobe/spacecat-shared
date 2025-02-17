@@ -167,6 +167,19 @@ declare function getPrompt(placeholders: object, filename: string, log: object):
   Promise<string | null>;
 
 /**
+ * Reads the content of a query file asynchronously and replaces any placeholders
+ * with the corresponding values. Logs the error and returns null in case of an error.
+ *
+ * @param {Object} placeholders - A JSON object containing values to replace in the query content.
+ * @param {String} filename - The filename of the query file.
+ * @param {Object} log - The logger
+ * @returns {Promise<string|null>} - A promise that resolves to a string with the query content,
+ * or null if an error occurs.
+ */
+declare function getQuery(placeholders: object, filename: string, log: object):
+  Promise<string | null>;
+
+/**
  * Retrieves the high-form-view-low-form-conversion metrics from the provided array of form vitals.
  * @param {Object[]} formVitals - An array of form vitals.
  * @param {number} interval - The interval in days.
@@ -181,7 +194,7 @@ declare function getHighFormViewsLowConversionMetrics(formVitals: object[], inte
  * @returns {Object[]} - An array of high-page-view-low-form-view metrics.
  */
 declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[], interval: number):
-    object[];
+  object[];
 
 /**
  * Retrieves the high-page-view-low-form-ctr metrics from the provided array of form vitals.
@@ -189,7 +202,7 @@ declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[], inter
  * @returns {Object[]} - An array of high-page-view-low-form-ctr metrics.
  */
 declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[], interval: number):
-    object[];
+  object[];
 
 /**
  * Retrieves stored metrics from S3.

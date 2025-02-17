@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.21.0...@adobe/spacecat-shared-rum-api-client-v2.21.1) (2025-02-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#603](https://github.com/adobe/spacecat-shared/issues/603)) ([b58d4c7](https://github.com/adobe/spacecat-shared/commit/b58d4c7237fb2522bba9b722e9eed7b0ae9e5f70))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.20.2...@adobe/spacecat-shared-rum-api-client-v2.21.0) (2025-02-11)
+
+
+### Features
+
+* **rum-api-client:** admin key support ([#590](https://github.com/adobe/spacecat-shared/issues/590)) ([0213fa3](https://github.com/adobe/spacecat-shared/commit/0213fa3697cfc006c9edb5038a10ecc896cb6b6e))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.20.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.20.1...@adobe/spacecat-shared-rum-api-client-v2.20.2) (2025-02-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#587](https://github.com/adobe/spacecat-shared/issues/587)) ([14cce0a](https://github.com/adobe/spacecat-shared/commit/14cce0aa900b4a1b3bbec2d48e6d37766c7769ee))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.20.0...@adobe/spacecat-shared-rum-api-client-v2.20.1) (2025-02-08)
+
+
+### Bug Fixes
+
+* **rum-api-client:** suppress rum logs ([#586](https://github.com/adobe/spacecat-shared/issues/586)) ([7cfe551](https://github.com/adobe/spacecat-shared/commit/7cfe55138c89bb21c8e16c59a7bfa26ff2cf8e80))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.19.1...@adobe/spacecat-shared-rum-api-client-v2.20.0) (2025-02-06)
+
+
+### Features
+
+* add timeOnPage data for HOTLC ([#567](https://github.com/adobe/spacecat-shared/issues/567)) ([e055eb9](https://github.com/adobe/spacecat-shared/commit/e055eb9d035d0191cbd1fa521918796f584e99b6))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.19.0...@adobe/spacecat-shared-rum-api-client-v2.19.1) (2025-01-31)
 
 

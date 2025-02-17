@@ -34,10 +34,10 @@ export {
 export {
   resolveSecretsName,
   resolveCustomerSecretsName,
-  getRUMDomainKey,
   generateCSVFile,
   replacePlaceholders,
   getPrompt,
+  getQuery,
 } from './helpers.js';
 
 export { sqsWrapper } from './sqs.js';
@@ -61,4 +61,4 @@ export { s3Wrapper } from './s3.js';
 
 export { fetch } from './adobe-fetch.js';
 export { tracingFetch } from './tracing-fetch.js';
-export { getHighFormViewsLowConversionMetrics } from './formcalc.js';
+export { getHighFormViewsLowConversionMetrics, getHighPageViewsLowFormViewsMetrics, getHighPageViewsLowFormCtrMetrics } from './formcalc.js';

@@ -193,8 +193,6 @@ async function fetchBundles(opts, log) {
     // eslint-disable-next-line no-loop-func
     const responses = await Promise.all(chunk.map(async (url) => {
       const response = await fetch(url);
-      const xCache = response.headers.get('x-cache')?.toLowerCase().includes('hit');
-      log.info(`Retrieving RUM bundles. Source: ${xCache ? 'CDN' : 'ORIGIN'}. Granularity: ${granularity}. Domain: ${domain}`);
       totalTransferSize += parseInt(response.headers.get('content-length'), 10);
       return response;
     }));

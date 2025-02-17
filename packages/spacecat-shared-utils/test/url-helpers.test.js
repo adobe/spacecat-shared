@@ -118,6 +118,18 @@ describe('URL Utility Functions', () => {
       await expect(composeAuditURL('https://abc.com')).to.eventually.equal('abc.com');
       await expect(composeAuditURL('https://abc.com/us/en/')).to.eventually.equal('abc.com/us/en/');
     });
+
+    it('should compose audit URL with customed user agent', async () => {
+      nock('https://abc.com', {
+        reqheaders: {
+          'User-Agent': 'customed user agent',
+        },
+      })
+        .get('/')
+        .reply(200);
+      await expect(composeAuditURL('https://abc.com', 'customed user agent')).to.eventually.equal('abc.com');
+    });
+
     it('should follow redirect when composing audit URL', async () => {
       nock('https://abc.com')
         .get('/')

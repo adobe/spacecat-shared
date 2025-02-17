@@ -11,7 +11,6 @@
  */
 
 import { Parser } from '@json2csv/plainjs';
-import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { promises as fs } from 'fs';
 import { isString } from './functions.js';
 
@@ -56,30 +55,6 @@ export function resolveCustomerSecretsName(baseURL, ctx) {
 }
 
 /**
- * Retrieves the RUM domain key for the specified base URL from the customer secrets.
- *
- * @param {string} baseURL - The base URL for which the RUM domain key is to be retrieved.
- * @param {UniversalContext} context - Helix Universal Context. See https://github.com/adobe/helix-universal/blob/main/src/adapter.d.ts#L120
- * @returns {Promise<string>} - A promise that resolves to the RUM domain key.
- * @throws {Error} Throws an error if no domain key is found for the specified base URL.
- */
-export async function getRUMDomainKey(baseURL, context) {
-  const customerSecretName = resolveCustomerSecretsName(baseURL, context);
-  const { runtime } = context;
-
-  try {
-    const client = new SecretsManagerClient({ region: runtime.region });
-    const command = new GetSecretValueCommand({
-      SecretId: customerSecretName,
-    });
-    const response = await client.send(command);
-    return JSON.parse(response.SecretString)?.RUM_DOMAIN_KEY;
-  } catch (error) {
-    throw new Error(`Error retrieving the domain key for ${baseURL}. Error: ${error.message}`);
-  }
-}
-
-/**
  * Generates a CSV file from the provided JSON data.
  *
  * Each key-value pair in the JSON objects
@@ -113,6 +88,19 @@ export function replacePlaceholders(content, placeholders) {
 }
 
 /**
+ * Internal function to support reading static file
+ * and replace placeholder strings with values.
+ *
+ * @param {Object} placeholders - A JSON object containing values to replace in the prompt content.
+ * @param {String} filename - The path of the prompt file.
+ * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content.
+ */
+async function getStaticContent(placeholders, filename) {
+  const fileContent = await fs.readFile(filename, { encoding: 'utf8' });
+  return replacePlaceholders(fileContent, placeholders);
+}
+
+/**
  * Reads the content of a prompt file asynchronously and replaces any placeholders
  * with the corresponding values. Logs the error and returns null in case of an error.
  *
@@ -124,10 +112,28 @@ export function replacePlaceholders(content, placeholders) {
  */
 export async function getPrompt(placeholders, filename, log = console) {
   try {
-    const promptContent = await fs.readFile(`./static/prompts/${filename}.prompt`, { encoding: 'utf8' });
-    return replacePlaceholders(promptContent, placeholders);
+    return await getStaticContent(placeholders, `./static/prompts/${filename}.prompt`);
   } catch (error) {
     log.error('Error reading prompt file:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Reads the content of a query file asynchronously and replaces any placeholders
+ * with the corresponding values. Logs the error and returns null in case of an error.
+ *
+ * @param {Object} placeholders - A JSON object containing values to replace in the query content.
+ * @param {String} filename - The filename of the query file.
+ * @param {Object} log - The logger
+ * @returns {Promise<string|null>} - A promise that resolves to a string with the query content,
+ * or null if an error occurs.
+ */
+export async function getQuery(placeholders, filename, log = console) {
+  try {
+    return await getStaticContent(placeholders, `./static/queries/${filename}.query`);
+  } catch (error) {
+    log.error('Error reading query file:', error.message);
     return null;
   }
 }

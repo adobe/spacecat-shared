@@ -172,7 +172,7 @@ export default class AhrefsAPIClient {
     return this.sendRequest('/site-explorer/metrics-history', queryParams);
   }
 
-  async getOrganicKeywords(url, country = 'us', keywordFilter = [], limit = 200) {
+  async getOrganicKeywords(url, country = 'us', keywordFilter = [], limit = 10, mode = 'prefix') {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -185,18 +185,25 @@ export default class AhrefsAPIClient {
     if (!Number.isInteger(limit) || limit < 1) {
       throw new Error(`Invalid limit: ${limit}`);
     }
+    if (!['prefix', 'exact'].includes(mode)) {
+      throw new Error(`Invalid mode: ${mode}`);
+    }
+
     const queryParams = {
       country,
       date: new Date().toISOString().split('T')[0],
       select: [
         'keyword',
         'sum_traffic',
-        'best_position_url',
+        'volume',
+        'best_position',
+        'cpc',
+        'is_branded',
       ].join(','),
       order_by: 'sum_traffic:desc',
       target: url,
-      limit: getLimit(limit, 2000),
-      mode: 'prefix',
+      limit: getLimit(limit, 100),
+      mode,
       output: 'json',
     };
     if (keywordFilter.length > 0) {

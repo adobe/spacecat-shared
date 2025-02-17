@@ -24,10 +24,10 @@ describe('Index Exports', () => {
     'deepEqual',
     'fetch',
     'generateCSVFile',
-    'getRUMDomainKey',
     'getStoredMetrics',
     'replacePlaceholders',
     'getPrompt',
+    'getQuery',
     'hasText',
     'isArray',
     'isBoolean',
@@ -57,6 +57,8 @@ describe('Index Exports', () => {
     'toBoolean',
     'tracingFetch',
     'getHighFormViewsLowConversionMetrics',
+    'getHighPageViewsLowFormViewsMetrics',
+    'getHighPageViewsLowFormCtrMetrics',
   ];
 
   it('exports all expected functions', () => {

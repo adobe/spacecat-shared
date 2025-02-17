@@ -73,7 +73,13 @@ export default class AhrefsAPIClient {
 
   /**
    * Asynchronous method to get organic keywords.
+   * @param url
+   * @param country
+   * @param keywordFilter
+   * @param limit
+   * @param mode
    */
-  getOrganicKeywords(url: string, country?: string, keywordFilter?: string[], limit?: number):
+  getOrganicKeywords(url: string, country?: string, keywordFilter?: string[],
+                     limit?: number, mode?: string):
       Promise<{ result: object, fullAuditRef: string }>;
 }

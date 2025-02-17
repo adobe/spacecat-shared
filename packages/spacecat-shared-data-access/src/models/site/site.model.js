@@ -21,6 +21,7 @@ class Site extends BaseModel {
   static DELIVERY_TYPES = {
     AEM_CS: 'aem_cs',
     AEM_EDGE: 'aem_edge',
+    AEM_AMS: 'aem_ams',
     OTHER: 'other',
   };
 

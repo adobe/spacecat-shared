@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.3.0...@adobe/spacecat-shared-data-access-v2.3.1) (2025-02-17)
+
+
+### Bug Fixes
+
+* add aem_ams delivery type ([#601](https://github.com/adobe/spacecat-shared/issues/601)) ([a6a08cf](https://github.com/adobe/spacecat-shared/commit/a6a08cf7c13678a682e564447b6662db5970ea06))
+
 # [@adobe/spacecat-shared-data-access-v2.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.2.2...@adobe/spacecat-shared-data-access-v2.3.0) (2025-02-17)
 
 

@@ -14,7 +14,7 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { stub } from 'sinon';
+import sinon, { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import Audit from '../../../../src/models/audit/audit.model.js';
@@ -184,6 +184,81 @@ describe('AuditModel', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
       expect(auditTypes).to.not.have.keys(unexpectedAuditTypes);
       expect(Object.values(auditTypes)).to.not.have.members(Object.values(unexpectedAuditTypes));
+    });
+  });
+
+  describe('Audit Destination Configs', () => {
+    const auditStepDestinations = Audit.AUDIT_STEP_DESTINATIONS;
+    const auditStepDestinationConfigs = Audit.AUDIT_STEP_DESTINATION_CONFIGS;
+
+    it('has all audit step destinations present in AUDIT_STEP_DESTINATIONS', () => {
+      const expectedAuditStepDestinations = {
+        CONTENT_SCRAPER: 'content-scraper',
+        IMPORT_WORKER: 'import-worker',
+      };
+
+      expect(auditStepDestinations).to.eql(expectedAuditStepDestinations);
+      expect(Object.keys(auditStepDestinations)).to.have.lengthOf(2);
+    });
+
+    it('does not have unexpected audit step destinations in AUDIT_STEP_DESTINATIONS', () => {
+      const unexpectedAuditStepDestinations = { UNEXPECTED: 'unexpected', UNEXPECTED2: 'unexpected2' };
+      expect(auditStepDestinations).to.not.have.keys(unexpectedAuditStepDestinations);
+      expect(Object.values(auditStepDestinations))
+        .to.not.have.members(Object.values(unexpectedAuditStepDestinations));
+    });
+
+    it('has all audit step destination configs present in AUDIT_STEP_DESTINATION_CONFIGS', () => {
+      const expectedAuditStepDestinationConfigs = {
+        [auditStepDestinations.CONTENT_SCRAPER]: {
+          queueUrl: process.env.CONTENT_SCRAPER_QUEUE_URL,
+          formatPayload: sinon.match.func,
+        },
+        [auditStepDestinations.IMPORT_WORKER]: {
+          queueUrl: process.env.IMPORT_WORKER_QUEUE_URL,
+          formatPayload: sinon.match.func,
+        },
+      };
+
+      sinon.assert.match(auditStepDestinationConfigs, expectedAuditStepDestinationConfigs);
+    });
+
+    it('does not have unexpected audit step destination configs in AUDIT_STEP_DESTINATION_CONFIGS', () => {
+      const unexpectedAuditStepDestinationConfigs = { UNEXPECTED: 'unexpected', UNEXPECTED2: 'unexpected2' };
+      expect(auditStepDestinationConfigs).to.not.have.keys(unexpectedAuditStepDestinationConfigs);
+      expect(Object.values(auditStepDestinationConfigs))
+        .to.not.have.members(Object.values(unexpectedAuditStepDestinationConfigs));
+    });
+
+    it('formats import worker payload correctly', () => {
+      const stepResult = { type: 'someType', siteId: 'someSiteId' };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.IMPORT_WORKER]
+        .formatPayload(stepResult, auditContext);
+
+      expect(formattedPayload).to.deep.equal({
+        type: 'someType',
+        siteId: 'someSiteId',
+        auditContext: { some: 'context' },
+      });
+    });
+
+    it('formats content scraper payload correctly', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, auditContext);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: [{ url: 'someUrl' }],
+        jobId: 'someSiteId',
+        processingType: 'someProcessingType',
+        auditContext: { some: 'context' },
+      });
     });
   });
 });

@@ -88,6 +88,8 @@ class Audit extends BaseModel {
        * @param {string} auditContext.auditId - The audit ID.
        * @param {string} auditContext.auditType - The audit type.
        * @param {string} auditContext.fullAuditRef - The full audit reference.
+       * @param {string} auditContext.<string> - Optional. Any additional context properties
+       * as needed by the audit type.
        *
        * @returns {object} - The formatted payload.
        */

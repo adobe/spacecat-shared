@@ -196,8 +196,7 @@ describe('ConfigurationModel', () => {
         dependencies: [{ handler: 'organic-keywords', actions: ['action'] }],
         enabled: { sites: [], orgs: [] },
       });
-      console.log('organic-keywords', JSON.stringify(instance.getHandler('organic-keywords')));
-      instance.enableHandlerForSite('new-handler', site);
+      expect(() => instance.enableHandlerForSite('new-handler', site)).to.throw(Error, 'Cannot disable handler new-handler for site c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe because of missing dependencies: organic-keywords');
       expect(instance.getHandler('new-handler').enabled.sites).to.not.include(site.getId());
     });
 
@@ -231,7 +230,7 @@ describe('ConfigurationModel', () => {
         dependencies: [{ handler: 'organic-keywords', actions: ['action'] }],
         enabled: { sites: [], orgs: [] },
       });
-      instance.enableHandlerForOrg('new-handler', org);
+      expect(() => instance.enableHandlerForOrg('new-handler', org)).to.throw(Error, 'Cannot enable handler new-handler for org 757ceb98-05c8-4e07-bb23-bc722115b2b0 because of missing dependencies: organic-keywords');
       expect(instance.getHandler('new-handler').enabled.orgs).to.not.include(org.getId());
     });
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.31.1...@adobe/spacecat-shared-utils-v1.32.0) (2025-02-17)
+
+
+### Features
+
+* introduce fetch config for site to use custom headers ([#585](https://github.com/adobe/spacecat-shared/issues/585)) ([10a2892](https://github.com/adobe/spacecat-shared/commit/10a28928c3946ea05c4644f16971ccff8d43e994))
+
 # [@adobe/spacecat-shared-utils-v1.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.31.0...@adobe/spacecat-shared-utils-v1.31.1) (2025-02-16)
 
 

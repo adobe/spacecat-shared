@@ -11,7 +11,9 @@
  */
 
 import FirefallClient from './clients/firefall-client.js';
+import GenvarClient from './clients/genvar-client.js';
 
 export {
   FirefallClient,
+  GenvarClient,
 };

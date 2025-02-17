@@ -23,7 +23,7 @@ Additionally, the configuration for the `@adobe/spacecat-shared-ims-client` libr
 - `IMS_HOST`: The hostname of the IMS API.
 - `IMS_CLIENT_ID`: Your IMS client ID.
 - `IMS_CLIENT_CODE`: Your IMS client code, used for authentication.
-- `IMS_CLIENT_SECRET`: Your IMS client secret, used for authentication.
+- `IMS_CLIENT_SECRET`: Your IMS client secret, used for authentication. 
 
 ### Usage Examples
 

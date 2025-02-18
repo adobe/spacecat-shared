@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.6.0...@adobe/spacecat-shared-data-access-v2.7.0) (2025-02-18)
+
+
+### Features
+
+* Implement dependency check for handlers ([#608](https://github.com/adobe/spacecat-shared/issues/608)) ([0ada515](https://github.com/adobe/spacecat-shared/commit/0ada5157a3cf50bf67129e296e719a14ee2c451c)), closes [/github.com/adobe/spacecat-shared/blob/main/packages/spacecat-shared-data-access/src/models/configuration/configuration.schema.js#L35-L39](https://github.com//github.com/adobe/spacecat-shared/blob/main/packages/spacecat-shared-data-access/src/models/configuration/configuration.schema.js/issues/L35-L39)
+
 # [@adobe/spacecat-shared-data-access-v2.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.5.0...@adobe/spacecat-shared-data-access-v2.6.0) (2025-02-18)
 
 

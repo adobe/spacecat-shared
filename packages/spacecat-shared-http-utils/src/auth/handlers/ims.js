@@ -233,7 +233,7 @@ export default class AdobeImsHandler extends AbstractHandler {
         .withType(this.name)
         .withAuthenticated(true)
         .withProfile(profile)
-        .withACLs(acls);
+        .withRBAC(acls);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
       console.log('§§§ ims error:', e);

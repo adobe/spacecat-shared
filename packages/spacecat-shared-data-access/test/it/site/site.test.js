@@ -268,6 +268,7 @@ describe('Site IT', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',
       gitHubURL: 'https://github.com/some-org/test-repo',
+      name: 'new-site',
       hlxConfig: {
         cdnProdHost: 'www.another-example.com',
         code: {
@@ -304,6 +305,7 @@ describe('Site IT', async () => {
     await checkSite(newSite);
 
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
+    expect(newSite.getName()).to.equal(newSiteData.name);
   });
 
   it('updates a site', async () => {
@@ -314,6 +316,7 @@ describe('Site IT', async () => {
       gitHubURL: 'https://updated-github.com',
       isLive: false,
       organizationId: sampleData.organizations[1].getId(),
+      name: 'updated-site',
       hlxConfig: {
         cdnProdHost: 'www.another-example.com',
         code: {
@@ -336,6 +339,7 @@ describe('Site IT', async () => {
     };
 
     site.setBaseURL(updates.baseURL);
+    site.setName(updates.name);
     site.setDeliveryType(updates.deliveryType);
     site.setGitHubURL(updates.gitHubURL);
     site.setHlxConfig(updates.hlxConfig);
@@ -353,6 +357,7 @@ describe('Site IT', async () => {
     expect(updatedSite.getGitHubURL()).to.equal(updates.gitHubURL);
     expect(updatedSite.getIsLive()).to.equal(updates.isLive);
     expect(updatedSite.getOrganizationId()).to.equal(updates.organizationId);
+    expect(updatedSite.getName()).to.equal(updates.name);
   });
 
   it('reads config of a site', async () => {
@@ -370,5 +375,34 @@ describe('Site IT', async () => {
 
     const notFound = await Site.findById(sampleData.sites[0].getId());
     expect(notFound).to.be.null;
+  });
+
+  it('gets latest metrics for a site', async () => {
+    const site = await Site.findById('5d6d4439-6659-46c2-b646-92d110fa5a52');
+    const latestMetrics = site.getConfig().getLatestMetrics('latest-metrics');
+
+    expect(latestMetrics).to.be.an('object');
+    expect(latestMetrics.pageViewsChange).to.equal(10);
+    expect(latestMetrics.ctrChange).to.equal(5);
+    expect(latestMetrics.projectedTrafficValue).to.equal(1000);
+  });
+
+  it('updates latest metrics for a site', async () => {
+    const site = await Site.findById('5d6d4439-6659-46c2-b646-92d110fa5a52');
+    const config = site.getConfig();
+
+    const latestMetrics = {
+      pageViewsChange: 20,
+      ctrChange: 10,
+      projectedTrafficValue: 2000,
+    };
+
+    config.updateLatestMetrics('latest-metrics', latestMetrics);
+
+    const updatedMetrics = config.getLatestMetrics('latest-metrics');
+
+    expect(updatedMetrics.pageViewsChange).to.equal(20);
+    expect(updatedMetrics.ctrChange).to.equal(10);
+    expect(updatedMetrics.projectedTrafficValue).to.equal(2000);
   });
 });

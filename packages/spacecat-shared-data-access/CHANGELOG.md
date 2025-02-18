@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.5.0...@adobe/spacecat-shared-data-access-v2.6.0) (2025-02-18)
+
+
+### Features
+
+* **latest-metrics:** add latest metrics handling to config ([#607](https://github.com/adobe/spacecat-shared/issues/607)) ([0233958](https://github.com/adobe/spacecat-shared/commit/0233958f782e1cef24cc3df3c7445520697c1efa))
+
+# [@adobe/spacecat-shared-data-access-v2.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.4.0...@adobe/spacecat-shared-data-access-v2.5.0) (2025-02-18)
+
+
+### Features
+
+* adds site name ([#605](https://github.com/adobe/spacecat-shared/issues/605)) ([f066c3d](https://github.com/adobe/spacecat-shared/commit/f066c3da12e72ee85a97120ac8bb4b5deeca93fa))
+
 # [@adobe/spacecat-shared-data-access-v2.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.3.1...@adobe/spacecat-shared-data-access-v2.4.0) (2025-02-17)
 
 

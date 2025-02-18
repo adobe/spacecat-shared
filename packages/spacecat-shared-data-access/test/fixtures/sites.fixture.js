@@ -14,6 +14,7 @@ const sites = [
   {
     siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
     baseURL: 'https://example0.com',
+    name: 'test-site',
     deliveryType: 'aem_edge',
     gitHubURL: 'https://github.com/org-0/test-repo',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
@@ -33,6 +34,19 @@ const sites = [
           fixedURLs: [],
           mentions: {
             slack: [],
+          },
+        },
+        'latest-metrics': {
+          excludedURLs: [],
+          manualOverwrites: [],
+          fixedURLs: [],
+          mentions: {
+            slack: [],
+          },
+          latestMetrics: {
+            pageViewsChange: 10,
+            ctrChange: 5,
+            projectedTrafficValue: 1000,
           },
         },
       },

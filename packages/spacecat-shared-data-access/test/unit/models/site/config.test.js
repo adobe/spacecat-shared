@@ -227,6 +227,61 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('Latest Metrics', () => {
+    it('should return undefined for latestMetrics if not provided', () => {
+      const config = Config();
+      expect(config.getLatestMetrics('latest-metrics')).to.be.undefined;
+    });
+
+    it('should return the correct latestMetrics if provided', () => {
+      const data = {
+        handlers: {
+          'latest-metrics': {
+            latestMetrics: {
+              pageViewsChange: 10,
+              ctrChange: 5,
+              projectedTrafficValue: 1000,
+            },
+          },
+        },
+      };
+      const config = Config(data);
+      const latestMetrics = config.getLatestMetrics('latest-metrics');
+      expect(latestMetrics.pageViewsChange).to.equal(10);
+      expect(latestMetrics.ctrChange).to.equal(5);
+      expect(latestMetrics.projectedTrafficValue).to.equal(1000);
+    });
+
+    it('should update the latestMetrics correctly', () => {
+      const config = Config();
+      const latestMetrics = {
+        pageViewsChange: 15,
+        ctrChange: 7,
+        projectedTrafficValue: 1500,
+      };
+      config.updateLatestMetrics('latest-metrics', latestMetrics);
+      const updatedMetrics = config.getLatestMetrics('latest-metrics');
+      expect(updatedMetrics.pageViewsChange).to.equal(15);
+      expect(updatedMetrics.ctrChange).to.equal(7);
+      expect(updatedMetrics.projectedTrafficValue).to.equal(1500);
+    });
+
+    it('should throw an error if latestMetrics is invalid', () => {
+      const data = {
+        handlers: {
+          'latest-metrics': {
+            latestMetrics: {
+              pageViewsChange: 'invalid',
+              ctrChange: 5,
+              projectedTrafficValue: 1000,
+            },
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.latest-metrics.latestMetrics.pageViewsChange" must be a number');
+    });
+  });
+
   describe('fromDynamoItem Static Method', () => {
     it('correctly converts from DynamoDB item', () => {
       const dynamoItem = {

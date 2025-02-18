@@ -376,4 +376,33 @@ describe('Site IT', async () => {
     const notFound = await Site.findById(sampleData.sites[0].getId());
     expect(notFound).to.be.null;
   });
+
+  it('gets latest metrics for a site', async () => {
+    const site = await Site.findById('5d6d4439-6659-46c2-b646-92d110fa5a52');
+    const latestMetrics = site.getConfig().getLatestMetrics('latest-metrics');
+
+    expect(latestMetrics).to.be.an('object');
+    expect(latestMetrics.pageViewsChange).to.equal(10);
+    expect(latestMetrics.ctrChange).to.equal(5);
+    expect(latestMetrics.projectedTrafficValue).to.equal(1000);
+  });
+
+  it('updates latest metrics for a site', async () => {
+    const site = await Site.findById('5d6d4439-6659-46c2-b646-92d110fa5a52');
+    const config = site.getConfig();
+
+    const latestMetrics = {
+      pageViewsChange: 20,
+      ctrChange: 10,
+      projectedTrafficValue: 2000,
+    };
+
+    config.updateLatestMetrics('latest-metrics', latestMetrics);
+
+    const updatedMetrics = config.getLatestMetrics('latest-metrics');
+
+    expect(updatedMetrics.pageViewsChange).to.equal(20);
+    expect(updatedMetrics.ctrChange).to.equal(10);
+    expect(updatedMetrics.projectedTrafficValue).to.equal(2000);
+  });
 });

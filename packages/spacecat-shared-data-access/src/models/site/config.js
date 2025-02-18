@@ -38,6 +38,11 @@ export const configSchema = Joi.object({
       name: Joi.string(),
       pattern: Joi.string(),
     })).optional(),
+    latestMetrics: Joi.object({
+      pageViewsChange: Joi.number(),
+      ctrChange: Joi.number(),
+      projectedTrafficValue: Joi.number(),
+    }),
   }).unknown(true)).unknown(true),
 }).unknown(true);
 
@@ -73,6 +78,7 @@ export const Config = (data = {}) => {
   self.getFixedURLs = (type) => state?.handlers?.[type]?.fixedURLs;
   self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
   self.getGroupedURLs = (type) => state?.handlers?.[type]?.groupedURLs;
+  self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
   self.getFetchConfig = () => state?.fetchConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
@@ -118,6 +124,12 @@ export const Config = (data = {}) => {
     state.handlers[type].groupedURLs = groupedURLs;
 
     validateConfiguration(state);
+  };
+
+  self.updateLatestMetrics = (type, latestMetrics) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].latestMetrics = latestMetrics;
   };
 
   self.updateFetchConfig = (fetchConfig) => {

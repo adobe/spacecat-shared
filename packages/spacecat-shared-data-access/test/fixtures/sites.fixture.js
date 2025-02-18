@@ -36,6 +36,19 @@ const sites = [
             slack: [],
           },
         },
+        'latest-metrics': {
+          excludedURLs: [],
+          manualOverwrites: [],
+          fixedURLs: [],
+          mentions: {
+            slack: [],
+          },
+          latestMetrics: {
+            pageViewsChange: 10,
+            ctrChange: 5,
+            projectedTrafficValue: 1000,
+          },
+        },
       },
       slack: {
         channel: 'some-channel',

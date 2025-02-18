@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.4.0...@adobe/spacecat-shared-data-access-v2.5.0) (2025-02-18)
+
+
+### Features
+
+* adds site name ([#605](https://github.com/adobe/spacecat-shared/issues/605)) ([f066c3d](https://github.com/adobe/spacecat-shared/commit/f066c3da12e72ee85a97120ac8bb4b5deeca93fa))
+
 # [@adobe/spacecat-shared-data-access-v2.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.3.1...@adobe/spacecat-shared-data-access-v2.4.0) (2025-02-17)
 
 

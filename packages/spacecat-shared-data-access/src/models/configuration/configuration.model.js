@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
 import BaseModel from '../base/base.model.js';
@@ -164,13 +164,13 @@ class Configuration extends BaseModel {
   isHandlerDependencyMetForOrg(type, org) {
     const handler = this.getHandler(type);
 
-    if (!handler || !handler.dependencies) return true;
+    if (!handler || !isNonEmptyArray(handler?.dependencies)) return true;
 
     const unmetDependencies = handler.dependencies
       .filter(({ handler: depHandler }) => !this.isHandlerEnabledForOrg(depHandler, org))
       .map(({ handler: depHandler }) => depHandler);
 
-    return unmetDependencies.length === 0 ? true : unmetDependencies;
+    return isNonEmptyArray(unmetDependencies) ? unmetDependencies : true;
   }
 
   /**
@@ -182,13 +182,13 @@ class Configuration extends BaseModel {
    */
   isHandlerDependencyMetForSite(type, site) {
     const handler = this.getHandler(type);
-    if (!handler || !handler.dependencies) return true;
+    if (!handler || !isNonEmptyArray(handler?.dependencies)) return true;
 
     const unmetDependencies = handler.dependencies
       .filter(({ handler: depHandler }) => !this.isHandlerEnabledForSite(depHandler, site))
       .map(({ handler: depHandler }) => depHandler);
 
-    return unmetDependencies.length === 0 ? true : unmetDependencies;
+    return isNonEmptyArray(unmetDependencies) ? unmetDependencies : true;
   }
 
   enableHandlerForOrg(type, org) {

@@ -314,6 +314,32 @@ export default class ImsClient {
       return [...new Set(roles.map((roleEntry) => roleEntry.organization))];
     }
 
+    function accessProp(obj, prop, defVal) {
+      if (prop === undefined) return undefined;
+
+      if (!obj[prop]) {
+        // eslint-disable-next-line no-param-reassign
+        obj[prop] = defVal;
+      }
+
+      return obj[prop];
+    }
+
+    function getOrgDetails(roles, prodCtx) {
+      const details = {};
+
+      prodCtx?.forEach((ctx) => {
+        const d = accessProp(details, ctx.prodCtx?.owningEntity, {});
+        const groupList = accessProp(d, 'groups', []);
+
+        groupList.push({
+          groupid: ctx.prodCtx?.groupid,
+          user_visible_name: ctx.prodCtx?.user_visible_name,
+        });
+      });
+      return details;
+    }
+
     try {
       const startTime = process.hrtime.bigint();
 
@@ -330,7 +356,9 @@ export default class ImsClient {
         throw new Error(`IMS getImsUserProfile request failed with status: ${profileResponse.status}`);
       }
 
-      const { userId, email, roles } = await profileResponse.json();
+      const {
+        userId, email, roles, projectedProductContext: prodCtx,
+      } = await profileResponse.json();
 
       this.#logDuration('IMS getImsUserProfile request', startTime);
 
@@ -338,6 +366,7 @@ export default class ImsClient {
         userId,
         email,
         organizations: getOrganizationList(roles),
+        orgDetails: getOrgDetails(roles, prodCtx),
       };
     } catch (error) {
       this.log.error('Error fetching user profile data from IMS: ', error.message);

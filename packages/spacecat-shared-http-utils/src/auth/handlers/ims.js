@@ -36,11 +36,12 @@ const IGNORED_PROFILE_PROPS = [
   'rtea',
   'user_id',
   'fg',
+  'aa_id',
 ];
 
 const loadConfig = (context) => {
   const funcVersion = context.func?.version;
-  const isDev = /^ci\d*$/i.test(funcVersion);
+  const isDev = /^(ci\d*|david)$/i.test(funcVersion); // TODO revert back
   context.log.debug(`Function version: ${funcVersion} (isDev: ${isDev})`);
   /* c8 ignore next */
   return isDev ? configDev : configProd;
@@ -128,18 +129,23 @@ const getDBRoles = async (dbClient, { imsUserId, imsOrgId }) => {
 };
 
 const getAcls = async (profile) => {
-  // Strangely the ID is in profile.email, because that's not an email at all
-  const imsUserId = profile.email;
-  const imsOrgIdEmail = profile.aa_id;
-  const imsOrgId = imsOrgIdEmail?.split('@')[0];
-
+  const imsUserId = profile.userId;
   const dbClient = new DynamoDBClient();
-  const roles = await getDBRoles(dbClient, { imsUserId, imsOrgId });
-  if (roles === undefined || roles.size === 0) {
-    return {};
-  }
 
-  const acls = await getDBAcls(dbClient, imsOrgId, roles);
+  const acls = [];
+  // Generally there is only 1 organization, but the API returns an array so
+  // we'll iterate over it and use all the ACLs we find.
+  profile.organizations.forEach(async (orgid) => {
+    const imsOrgId = orgid.split('@')[0];
+    const roles = await getDBRoles(dbClient, { imsUserId, imsOrgId });
+    if (roles === undefined || roles.size === 0) {
+      return;
+    }
+
+    const aclList = await getDBAcls(dbClient, imsOrgId, roles);
+    acls.push(...aclList);
+  });
+
   return {
     acls,
     aclEntities: {
@@ -215,17 +221,13 @@ export default class AdobeImsHandler extends AbstractHandler {
     }
 
     try {
+      const imsProfile = await context.imsClient.getImsUserProfile(token);
+      console.log('§§§ ims profile:', JSON.stringify(imsProfile));
+      const acls = await getAcls(imsProfile);
+
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);
       const profile = transformProfile(payload);
-      const acls = await getAcls(profile);
-
-      try {
-        const imspr = await context.imsClient.getImsUserProfile(token);
-        console.log('§§§ ims profile:', imspr);
-      } catch (e) {
-        console.log('§§§ ims profile error:', e);
-      }
 
       return new AuthInfo()
         .withType(this.name)

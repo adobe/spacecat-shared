@@ -154,7 +154,7 @@ describe('ImsClient', () => {
 
     it('should handle IMS service token request v3', async () => {
       nock(`https://${DUMMY_HOST}`)
-      // Mock the token request, with a 500 server error response
+        // Mock the token request, with a 500 server error response
         .post('/ims/token/v3')
         .query(true)
         .reply(200, {
@@ -186,7 +186,7 @@ describe('ImsClient', () => {
 
     it('should handle IMS service token v3 request failures', async () => {
       nock(`https://${DUMMY_HOST}`)
-      // Mock the token request, with a 500 server error response
+        // Mock the token request, with a 500 server error response
         .post('/ims/token/v3')
         .query(true)
         .reply(500);
@@ -327,10 +327,76 @@ describe('ImsClient', () => {
 
     it('should succeed for a valid token', async () => {
       const result = await client.getImsUserProfile(testAccessToken);
-      await expect(result).to.deep.equal({
+      expect(result).to.deep.equal({
         email: 'example-user@example.com',
         userId: '9876547890ABCDEF12345678@abcdef123456789.e',
         organizations: ['1234567890ABCDEF12345678@AdobeOrg'],
+        orgDetails: {},
+      });
+    });
+  });
+
+  describe('getImsUserProfile 2', () => {
+    const testAccessToken = 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjEyMzQ1IiwidHlwZSI6ImFjY2Vzc190b2tlbiIsImNsaWVudF9pZCI6ImV4YW1wbGVfYXBwIiwidXNlcl9pZCI6Ijk4NzY1NDc4OTBBQkNERUYxMjM0NTY3OEBhYmNkZWYxMjM0NTY3ODkuZSIsImFzIjoiaW1zLW5hMSIsImFhX2lkIjoiMTIzNDU2Nzg5MEFCQ0RFRjEyMzQ1Njc4QGFkb2JlLmNvbSIsImNyZWF0ZWRfYXQiOiIxNzEwMjQ3MDAwMDAwIn0.MRDpxgxSHDj4DmA182hPnjMAnKkly-VUJ_bXpQ-J8EQ';
+    let client;
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/profile/v1')
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(200, {
+          displayName: 'Example User',
+          roles: [
+            {
+              organization: 'F00FEEFAA123@AdobeOrg',
+              named_role: 'some_role',
+            },
+          ],
+          projectedProductContext: [{
+            prodCtx: {
+              owningEntity: 'F00FEEFAA123@AdobeOrg',
+              groupid: '348994793',
+              user_visible_name: 'MY_ROLE_PROFILE',
+            },
+          }, {
+            prodCtx: {
+              owningEntity: 'F00FEEFAA123@AdobeOrg',
+              groupid: '348994794',
+              user_visible_name: 'YOUR_ROLE_PROFILE',
+            },
+          }],
+          userId: '111@aaa.e',
+          email: 'foo@blah.org',
+        });
+
+      // Fallback
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/profile/v1')
+        .reply(401, {
+          error: 'invalid_token',
+          error_description: 'Invalid or expired token.',
+        });
+    });
+
+    it('should report groups from product context', async () => {
+      const result = await client.getImsUserProfile(testAccessToken);
+      expect(result).to.deep.equal({
+        email: 'foo@blah.org',
+        userId: '111@aaa.e',
+        organizations: ['F00FEEFAA123@AdobeOrg'],
+        orgDetails: {
+          'F00FEEFAA123@AdobeOrg': {
+            groups: [{
+              groupid: '348994793',
+              user_visible_name: 'MY_ROLE_PROFILE',
+            }, {
+              groupid: '348994794',
+              user_visible_name: 'YOUR_ROLE_PROFILE',
+            }],
+          },
+        },
       });
     });
   });

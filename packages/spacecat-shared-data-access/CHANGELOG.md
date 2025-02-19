@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.7.0...@adobe/spacecat-shared-data-access-v2.7.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* get queue url ([#612](https://github.com/adobe/spacecat-shared/issues/612)) ([232af0a](https://github.com/adobe/spacecat-shared/commit/232af0af829289214826275f81504ce6bdae5467))
+
 # [@adobe/spacecat-shared-data-access-v2.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.6.0...@adobe/spacecat-shared-data-access-v2.7.0) (2025-02-18)
 
 

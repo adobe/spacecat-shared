@@ -45,6 +45,7 @@ class Audit extends BaseModel {
     STRUCTURED_DATA: 'structured-data',
     FORMS_OPPORTUNITIES: 'forms-opportunities',
     SITE_DETECTION: 'site-detection',
+    ALT_TEXT: 'alt-text',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.7.1...@adobe/spacecat-shared-data-access-v2.8.0) (2025-02-19)
+
+
+### Features
+
+* add alt-text audit type constant ([#613](https://github.com/adobe/spacecat-shared/issues/613)) ([cc1bbdb](https://github.com/adobe/spacecat-shared/commit/cc1bbdbfcb0884d1a56f7dacfc360dfaf80a7942))
+
 # [@adobe/spacecat-shared-data-access-v2.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.7.0...@adobe/spacecat-shared-data-access-v2.7.1) (2025-02-19)
 
 

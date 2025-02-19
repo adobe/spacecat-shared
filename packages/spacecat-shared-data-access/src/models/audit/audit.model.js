@@ -71,13 +71,19 @@ class Audit extends BaseModel {
    * The configurations for the audit step destinations. Used with AuditBuilder to configure
    * the destination queue URL and payload formatting.
    * @type {{
-   *   [Audit.AUDIT_STEP_DESTINATIONS.CONTENT_SCRAPER]: {queueUrl: string, formatPayload: function},
-   *   [Audit.AUDIT_STEP_DESTINATIONS.IMPORT_WORKER]: {queueUrl: string, formatPayload: function}
+   *   [Audit.AUDIT_STEP_DESTINATIONS.CONTENT_SCRAPER]: {
+   *     getQueueUrl: function,
+   *     formatPayload: function
+   *   },
+   *   [Audit.AUDIT_STEP_DESTINATIONS.IMPORT_WORKER]: {
+   *     getQueueUrl: function,
+   *     formatPayload: function
+   *   }
    * }}
    */
   static AUDIT_STEP_DESTINATION_CONFIGS = {
     [Audit.AUDIT_STEP_DESTINATIONS.IMPORT_WORKER]: {
-      queueUrl: process.env.IMPORT_WORKER_QUEUE_URL,
+      getQueueUrl: (context) => context.env?.IMPORT_WORKER_QUEUE_URL,
       /**
        * Formats the payload for the import worker queue.
        * @param {object} stepResult - The result of the audit step.
@@ -100,7 +106,7 @@ class Audit extends BaseModel {
       }),
     },
     [Audit.AUDIT_STEP_DESTINATIONS.CONTENT_SCRAPER]: {
-      queueUrl: process.env.CONTENT_SCRAPER_QUEUE_URL,
+      getQueueUrl: (context) => context.env?.CONTENT_SCRAPER_QUEUE_URL,
       /**
        * Formats the payload for the content scraper queue.
        * @param {object} stepResult - The result of the audit step.

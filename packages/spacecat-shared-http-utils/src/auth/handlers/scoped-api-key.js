@@ -14,6 +14,7 @@ import { hasText, isIsoDate } from '@adobe/spacecat-shared-utils';
 import AbstractHandler from './abstract.js';
 import { hashWithSHA256 } from '../generate-hash.js';
 import AuthInfo from '../auth-info.js';
+import getAcls from '../rbac/acls.js';
 
 /**
  * Handler to support API keys which include scope details. These API keys are stored in the data
@@ -33,12 +34,14 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
     const { ApiKey } = dataAccess;
 
     const apiKeyFromHeader = headers['x-api-key'];
+    console.log('§§§ apiKeyFromHeader:', apiKeyFromHeader);
     if (!hasText(apiKeyFromHeader)) {
       return null;
     }
 
     // Keys are stored by their hash, so we need to hash the key to look it up
     const hashedApiKey = hashWithSHA256(apiKeyFromHeader);
+    console.log('§§§ hashedApiKey:', hashedApiKey);
     const apiKeyEntity = await ApiKey.findByHashedApiKey(hashedApiKey);
 
     if (!apiKeyEntity) {
@@ -64,9 +67,18 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
       return authInfo.withReason('API key has been revoked');
     }
 
+    console.log('§§§ About to call getAcls()');
+    const acls = await getAcls({
+      userId: apiKeyEntity.getImsUserId(),
+      imsOrgs: [apiKeyEntity.getImsOrgId()],
+      apiKey: apiKeyEntity.getApiKeyId(),
+    });
+    console.log('§§§ Done calling getAcls()');
+
     // API key is valid: return auth info with scope details from the API key entity
     return authInfo
       .withAuthenticated(true)
-      .withScopes(apiKeyEntity.getScopes());
+      .withScopes(apiKeyEntity.getScopes())
+      .withRBAC(acls);
   }
 }

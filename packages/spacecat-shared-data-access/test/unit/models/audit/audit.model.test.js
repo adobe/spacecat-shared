@@ -172,11 +172,12 @@ describe('AuditModel', () => {
       STRUCTURED_DATA: 'structured-data',
       FORMS_OPPORTUNITIES: 'forms-opportunities',
       SITE_DETECTION: 'site-detection',
+      ALT_TEXT: 'alt-text',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(21);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(22);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

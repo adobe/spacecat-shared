@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.0...@adobe/spacecat-shared-data-access-v2.8.1) (2025-02-20)
+
+
+### Bug Fixes
+
+* log fields affected by validation error ([#614](https://github.com/adobe/spacecat-shared/issues/614)) ([e7b91bd](https://github.com/adobe/spacecat-shared/commit/e7b91bdc1d3f2a28b5755ccdbacfdb651411611e))
+
 # [@adobe/spacecat-shared-data-access-v2.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.7.1...@adobe/spacecat-shared-data-access-v2.8.0) (2025-02-19)
 
 

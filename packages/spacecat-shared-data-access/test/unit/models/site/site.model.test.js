@@ -170,6 +170,7 @@ describe('SiteModel', () => {
         acls: [{
           role: 'foo@bar.org',
           acl: [
+            { path: '/organization/12345678-bbbb-1ccc-8ddd-eeeeeeeeeeee/site/88888888-7777-1ccc-8ddd-666666666666', actions: ['D'] },
             { path: '/organization/aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee/site/*', actions: ['U'] },
             { path: '/organization/*/site/*', actions: ['R'] },
           ],
@@ -180,11 +181,54 @@ describe('SiteModel', () => {
       };
     }
 
+    it('delete permission', async () => {
+      const removed = [];
+      instance.entity.remove = (el) => ({
+        go: () => removed.push(el),
+      });
+
+      // Prepare the instance
+      instance.aclCtx = getAllowAllCtx();
+      instance.setOrganizationId('12345678-bbbb-1ccc-8ddd-eeeeeeeeeeee');
+      instance.record[instance.idName] = '88888888-7777-1ccc-8ddd-666666666666';
+      instance.aclCtx = getAclCtx();
+
+      // Test the instance
+      await instance.remove();
+      expect(removed).to.have.length(1);
+      expect(removed[0].siteId).to.equal('88888888-7777-1ccc-8ddd-666666666666');
+    });
+
+    it('no delete permission', async () => {
+      const removed = [];
+      instance.entity.remove = (el) => ({
+        go: () => removed.push(el),
+      });
+
+      // Prepare the instance
+      instance.aclCtx = getAllowAllCtx();
+      instance.setOrganizationId('00000000-1111-1ccc-8ddd-222222222222');
+      instance.aclCtx = getAclCtx();
+
+      // Test the instance
+      try {
+        await instance.remove();
+      } catch (e) {
+        expect(e.message).to.equal('Permission denied');
+        expect(removed).to.have.length(0);
+        // good
+        return;
+      }
+      expect.fail('Expected error as delete shouldnt be allowed');
+    });
+
     it('specific instance permission', () => {
+      // Prepare the instance
       instance.aclCtx = getAllowAllCtx();
       instance.setOrganizationId('aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee');
-
       instance.aclCtx = getAclCtx();
+
+      // Test the instance
       instance.setIsLive(false);
 
       try {
@@ -197,10 +241,12 @@ describe('SiteModel', () => {
     });
 
     it('wildcard instance permission', () => {
+      // Prepare the instance
       instance.aclCtx = getAllowAllCtx();
-      instance.setOrganizationId('00000000-bbbb-1ccc-8ddd-eeeeeeeeeeee');
-
+      instance.setOrganizationId('00000000-1111-1ccc-8ddd-222222222222');
       instance.aclCtx = getAclCtx();
+
+      // Test the instance
       instance.getIsLive(); // Should be allowed
 
       try {

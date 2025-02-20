@@ -105,7 +105,7 @@ class BaseModel {
     if (this.aclCtx?.aclEntities?.model?.includes(this.entityName)) {
       ensurePermission(this.getACLPath(), this.aclCtx, action);
     } else {
-      console.log('Entity ', this.entityName, 'is excluded from ACL checking');
+      console.log('Entity [', this.entityName, '] is excluded from ACL checking');
     }
   }
 
@@ -262,6 +262,8 @@ class BaseModel {
    * or if the removal operation fails.
    */
   async remove() {
+    this.ensurePermission('D');
+
     if (!this.schema.allowsRemove()) {
       throw new DataAccessError(`The entity ${this.schema.getModelName()} does not allow removal`);
     }

@@ -377,6 +377,8 @@ class BaseCollection {
 
     try {
       const instance = this.#createInstance(item);
+
+      // Check that the current user has permission to create the entity
       instance.ensurePermission('C');
 
       if (upsert) {
@@ -444,6 +446,10 @@ class BaseCollection {
     try {
       const { validatedItems, errorItems } = this.#validateItems(newItems);
 
+      const createdItems = this.#createInstances(validatedItems);
+      // Check that the current user has permission to create each entity
+      createdItems.forEach((item) => item.ensurePermission('C'));
+
       if (validatedItems.length > 0) {
         const response = await this.entity.put(validatedItems).go();
 
@@ -451,8 +457,6 @@ class BaseCollection {
           this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
         }
       }
-
-      const createdItems = this.#createInstances(validatedItems);
 
       if (isNonEmptyObject(parent)) {
         createdItems.forEach((record) => {

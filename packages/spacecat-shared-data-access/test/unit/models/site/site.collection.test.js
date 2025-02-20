@@ -18,8 +18,10 @@ import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import Site from '../../../../src/models/site/site.model.js';
+import SiteCollection from '../../../../src/models/site/site.collection.js';
 
 import { createElectroMocks } from '../../util.js';
+import EntityRegistry from '../../../../src/models/base/entity.registry.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
@@ -111,6 +113,43 @@ describe('SiteCollection', () => {
 
       expect(result).to.deep.equal([mockSite, mockSiteNoAudit]);
       expect(instance.allByDeliveryType).to.have.been.calledOnce;
+    });
+  });
+
+  describe('permissions', () => {
+    it('checks permissions on create entities', async () => {
+      function getAclCtx() {
+        return {
+          acls: [{
+            acl: [
+              { path: '/organization/o123/site/s12345', actions: ['C', 'R'] },
+            ],
+          }],
+          aclEntities: { model: ['site', 'organization'] },
+        };
+      }
+
+      const called = [];
+      const entity = {
+        create: (el) => ({
+          go: () => {
+            called.push(`create:${JSON.stringify(el)}`);
+            return { data: el };
+          },
+        }),
+      };
+
+      const ml = { debug: () => { }, info: () => { } };
+      const es = { entities: { site: entity } };
+      const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, ml);
+      const sc = new SiteCollection(es, er, schema, ml);
+
+      const siteData = { organizationId: 'o123', siteId: 's12345' };
+
+      const site = await sc.create(siteData);
+      expect(site.getId()).to.equal('s12345');
+      expect(site.getOrganizationId()).to.equal('o123');
+      expect(called).to.deep.equal(['create:{"organizationId":"o123","siteId":"s12345"}']);
     });
   });
 });

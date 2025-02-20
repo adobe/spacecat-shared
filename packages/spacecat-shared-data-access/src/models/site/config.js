@@ -19,6 +19,9 @@ export const configSchema = Joi.object({
     invitedUserCount: Joi.number().integer().min(0),
   }),
   imports: Joi.array().items(Joi.object({ type: Joi.string() }).unknown(true)),
+  fetchConfig: Joi.object({
+    headers: Joi.object().pattern(Joi.string(), Joi.string()),
+  }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),
@@ -35,13 +38,17 @@ export const configSchema = Joi.object({
       name: Joi.string(),
       pattern: Joi.string(),
     })).optional(),
+    latestMetrics: Joi.object({
+      pageViewsChange: Joi.number(),
+      ctrChange: Joi.number(),
+      projectedTrafficValue: Joi.number(),
+    }),
   }).unknown(true)).unknown(true),
 }).unknown(true);
 
 export const DEFAULT_CONFIG = {
   slack: {},
-  handlers: {
-  },
+  handlers: {},
 };
 
 // Function to validate incoming configuration
@@ -71,6 +78,8 @@ export const Config = (data = {}) => {
   self.getFixedURLs = (type) => state?.handlers?.[type]?.fixedURLs;
   self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
   self.getGroupedURLs = (type) => state?.handlers?.[type]?.groupedURLs;
+  self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
+  self.getFetchConfig = () => state?.fetchConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -117,6 +126,16 @@ export const Config = (data = {}) => {
     validateConfiguration(state);
   };
 
+  self.updateLatestMetrics = (type, latestMetrics) => {
+    state.handlers = state.handlers || {};
+    state.handlers[type] = state.handlers[type] || {};
+    state.handlers[type].latestMetrics = latestMetrics;
+  };
+
+  self.updateFetchConfig = (fetchConfig) => {
+    state.fetchConfig = fetchConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -126,4 +145,5 @@ Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
   handlers: config.getHandlers(),
   imports: config.getImports(),
+  fetchConfig: config.getFetchConfig(),
 });

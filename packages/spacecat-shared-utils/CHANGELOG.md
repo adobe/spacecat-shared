@@ -1,3 +1,73 @@
+# [@adobe/spacecat-shared-utils-v1.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.31.1...@adobe/spacecat-shared-utils-v1.32.0) (2025-02-17)
+
+
+### Features
+
+* introduce fetch config for site to use custom headers ([#585](https://github.com/adobe/spacecat-shared/issues/585)) ([10a2892](https://github.com/adobe/spacecat-shared/commit/10a28928c3946ea05c4644f16971ccff8d43e994))
+
+# [@adobe/spacecat-shared-utils-v1.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.31.0...@adobe/spacecat-shared-utils-v1.31.1) (2025-02-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#603](https://github.com/adobe/spacecat-shared/issues/603)) ([b58d4c7](https://github.com/adobe/spacecat-shared/commit/b58d4c7237fb2522bba9b722e9eed7b0ae9e5f70))
+
+# [@adobe/spacecat-shared-utils-v1.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.4...@adobe/spacecat-shared-utils-v1.31.0) (2025-02-12)
+
+
+### Features
+
+* util for reading .query static files, modeled after getPrompt ([#591](https://github.com/adobe/spacecat-shared/issues/591)) ([af3700d](https://github.com/adobe/spacecat-shared/commit/af3700d4a3d1953a312138f0ca46547eaa31eaac)), closes [#579](https://github.com/adobe/spacecat-shared/issues/579) [#579](https://github.com/adobe/spacecat-shared/issues/579)
+
+# [@adobe/spacecat-shared-utils-v1.30.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.3...@adobe/spacecat-shared-utils-v1.30.4) (2025-02-12)
+
+
+### Bug Fixes
+
+* log level adjustments ([#597](https://github.com/adobe/spacecat-shared/issues/597)) ([22cc302](https://github.com/adobe/spacecat-shared/commit/22cc302bd1d9d52f6f172748ef8be66dceff599b))
+
+# [@adobe/spacecat-shared-utils-v1.30.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.2...@adobe/spacecat-shared-utils-v1.30.3) (2025-02-11)
+
+
+### Bug Fixes
+
+* **shared-utils:** remove legacy rum domain key retrieval ([#594](https://github.com/adobe/spacecat-shared/issues/594)) ([1a093c4](https://github.com/adobe/spacecat-shared/commit/1a093c4226a966098dfa2207f5652ffac13e38b5))
+
+# [@adobe/spacecat-shared-utils-v1.30.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.1...@adobe/spacecat-shared-utils-v1.30.2) (2025-02-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#587](https://github.com/adobe/spacecat-shared/issues/587)) ([14cce0a](https://github.com/adobe/spacecat-shared/commit/14cce0aa900b4a1b3bbec2d48e6d37766c7769ee))
+
+# [@adobe/spacecat-shared-utils-v1.30.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.30.0...@adobe/spacecat-shared-utils-v1.30.1) (2025-02-06)
+
+
+### Bug Fixes
+
+* composeAuditURL user agent failing for some sites ([#583](https://github.com/adobe/spacecat-shared/issues/583)) ([81bd136](https://github.com/adobe/spacecat-shared/commit/81bd136693ded29130b73b1c0258b6727104f5e1))
+
+# [@adobe/spacecat-shared-utils-v1.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.29.0...@adobe/spacecat-shared-utils-v1.30.0) (2025-02-06)
+
+
+### Features
+
+* adding more opportunities utils for forms ([#580](https://github.com/adobe/spacecat-shared/issues/580)) ([4cb7d5d](https://github.com/adobe/spacecat-shared/commit/4cb7d5d94ff887932809416b3cf918fc3b56a58d))
+
+# [@adobe/spacecat-shared-utils-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.4...@adobe/spacecat-shared-utils-v1.29.0) (2025-02-03)
+
+
+### Features
+
+* add utility api for forms metrics ([#566](https://github.com/adobe/spacecat-shared/issues/566)) ([a7365b6](https://github.com/adobe/spacecat-shared/commit/a7365b6eaabf6178a7febd2f25a4083e60d0156b))
+
+# [@adobe/spacecat-shared-utils-v1.28.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.3...@adobe/spacecat-shared-utils-v1.28.4) (2025-02-03)
+
+
+### Bug Fixes
+
+* use Mozilla user agent ([7d95872](https://github.com/adobe/spacecat-shared/commit/7d95872a7e9c1a5ec6b0413ccca4b1d901dfdad4))
+
 # [@adobe/spacecat-shared-utils-v1.28.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.28.2...@adobe/spacecat-shared-utils-v1.28.3) (2025-02-01)
 
 

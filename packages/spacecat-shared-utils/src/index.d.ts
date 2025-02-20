@@ -99,10 +99,11 @@ declare function composeBaseURL(domain: string): string;
 
 /**
  * Composes an audit URL by applying a series of transformations to the given url.
- * @param url - The url to compose the audit URL from.
+ * @param {string} url - The url to compose the audit URL from.
+ * @param {string} [userAgent] - Optional user agent to use in the audit URL.
  * @returns a promise that resolves the composed audit URL.
  */
-declare function composeAuditURL(url: string): Promise<string>;
+declare function composeAuditURL(url: string, userAgent?: string): Promise<string>;
 
 /**
  * Resolves the name of the secret based on the function version.
@@ -163,7 +164,45 @@ declare function replacePlaceholders(content: string, placeholders: object): str
  * or null if an error occurs.
  */
 declare function getPrompt(placeholders: object, filename: string, log: object):
-  Promise<string|null>;
+  Promise<string | null>;
+
+/**
+ * Reads the content of a query file asynchronously and replaces any placeholders
+ * with the corresponding values. Logs the error and returns null in case of an error.
+ *
+ * @param {Object} placeholders - A JSON object containing values to replace in the query content.
+ * @param {String} filename - The filename of the query file.
+ * @param {Object} log - The logger
+ * @returns {Promise<string|null>} - A promise that resolves to a string with the query content,
+ * or null if an error occurs.
+ */
+declare function getQuery(placeholders: object, filename: string, log: object):
+  Promise<string | null>;
+
+/**
+ * Retrieves the high-form-view-low-form-conversion metrics from the provided array of form vitals.
+ * @param {Object[]} formVitals - An array of form vitals.
+ * @param {number} interval - The interval in days.
+ * @returns {Object[]} - An array of high-form-view-low-form-conversion metrics.
+ */
+declare function getHighFormViewsLowConversionMetrics(formVitals: object[], interval: number):
+  object[];
+
+/**
+ * Retrieves the high-page-view-low-form-view metrics from the provided array of form vitals.
+ * @param {Object[]} formVitals - An array of form vitals.
+ * @returns {Object[]} - An array of high-page-view-low-form-view metrics.
+ */
+declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[], interval: number):
+  object[];
+
+/**
+ * Retrieves the high-page-view-low-form-ctr metrics from the provided array of form vitals.
+ * @param {Object[]} formVitals - An array of form vitals.
+ * @returns {Object[]} - An array of high-page-view-low-form-ctr metrics.
+ */
+declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[], interval: number):
+  object[];
 
 /**
  * Retrieves stored metrics from S3.
@@ -179,7 +218,7 @@ declare function getPrompt(placeholders: object, filename: string, log: object):
  * @returns {Promise<any|*[]>} - The stored metrics
  */
 export function getStoredMetrics(config: object, context: object):
-    Promise<Array<object>>;
+  Promise<Array<object>>;
 
 /**
  * Stores metrics in S3.
@@ -198,8 +237,8 @@ export function getStoredMetrics(config: object, context: object):
 export function storeMetrics(content: object, config: object, context: object): Promise<string>;
 
 export function s3Wrapper(fn: (request: object, context: object) => Promise<Response>):
-    (request: object, context: object) => Promise<Response>;
+  (request: object, context: object) => Promise<Response>;
 
-export function fetch(url: string|Request, options?: RequestOptions): Promise<Response>;
+export function fetch(url: string | Request, options?: RequestOptions): Promise<Response>;
 
-export function tracingFetch(url: string|Request, options?: RequestOptions): Promise<Response>;
+export function tracingFetch(url: string | Request, options?: RequestOptions): Promise<Response>;

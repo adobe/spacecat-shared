@@ -28,6 +28,7 @@ export interface Site extends BaseModel {
   getAuditsByAuditType(auditType: string): Promise<Audit>;
   getAuditsByAuditTypeAndAuditedAt(auditType: string, auditedAt: string): Promise<Audit>;
   getBaseURL(): string;
+  getName(): string;
   getConfig(): object;
   getDeliveryType(): string;
   getExperiments(): Promise<Experiment[]>;
@@ -38,6 +39,7 @@ export interface Site extends BaseModel {
   ): Promise<Experiment[]>;
   getGitHubURL(): string;
   getHlxConfig(): object;
+  getDeliveryConfig(): object;
   getIsLive(): boolean;
   getIsLiveToggledAt(): string;
   getKeyEvents(): Promise<KeyEvent[]>
@@ -58,10 +60,12 @@ export interface Site extends BaseModel {
     source: string, geo: string, traffic: string
   ): Promise<SiteTopPage[]>;
   setBaseURL(baseURL: string): Site;
+  setName(name: string): Site;
   setConfig(config: object): Site;
   setDeliveryType(deliveryType: string): Site;
   setGitHubURL(gitHubURL: string): Site;
   setHlxConfig(hlxConfig: object): Site;
+  setDeliveryConfig(deliveryConfig: object): Site;
   setIsLive(isLive: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;

@@ -97,6 +97,17 @@ describe('SiteModel', () => {
     });
   });
 
+  describe('name', () => {
+    it('gets name', () => {
+      expect(instance.getName()).to.equal('test-site');
+    });
+
+    it('sets name', () => {
+      instance.setName('new-site');
+      expect(instance.getName()).to.equal('new-site');
+    });
+  });
+
   describe('deliveryType', () => {
     it('gets deliveryType', () => {
       expect(instance.getDeliveryType()).to.equal('aem_edge');

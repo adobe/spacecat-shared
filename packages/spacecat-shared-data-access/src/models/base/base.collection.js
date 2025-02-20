@@ -376,8 +376,8 @@ class BaseCollection {
     }
 
     try {
-      // This method will fail if there is no permission to create the entity
       const instance = this.#createInstance(item);
+      instance.ensurePermission('C');
 
       if (upsert) {
         await this.entity.put(item).go();

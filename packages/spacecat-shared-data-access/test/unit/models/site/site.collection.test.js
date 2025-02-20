@@ -189,5 +189,57 @@ describe('SiteCollection', () => {
       }
       expect.fail('Should have thrown an error');
     });
+
+    it('can find by it with permission', async () => {
+      function getAclCtx() {
+        return {
+          acls: [{
+            acl: [
+              { path: '/organization/11111111-bbbb-1ccc-8ddd-111111111111/site/aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee', actions: ['R'] },
+            ],
+          }],
+          aclEntities: { model: ['site', 'organization'] },
+        };
+      }
+
+      const entity = {
+        get: (id) => ({
+          go: () => ({ data: { organizationId: '11111111-bbbb-1ccc-8ddd-111111111111', ...id } }),
+        }),
+      };
+
+      const ml = { debug: () => { }, info: () => { } };
+      const es = { entities: { site: entity } };
+      const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, ml);
+      const sc = new SiteCollection(es, er, schema, ml);
+      const site = await sc.findById('aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee');
+      expect(site.getId()).to.equal('aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee');
+      expect(site.getOrganizationId()).to.equal('11111111-bbbb-1ccc-8ddd-111111111111');
+    });
+
+    it('can find by it with no permission', async () => {
+      function getAclCtx() {
+        return {
+          acls: [{
+            acl: [],
+          }],
+          aclEntities: { model: ['site', 'organization'] },
+        };
+      }
+
+      const entity = {
+        get: (id) => ({
+          go: () => ({ data: { organizationId: '11111111-bbbb-1ccc-8ddd-111111111111', ...id } }),
+        }),
+      };
+
+      const ml = { debug: () => { }, info: () => { } };
+      const es = { entities: { site: entity } };
+      const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, ml);
+      const sc = new SiteCollection(es, er, schema, ml);
+      const site = await sc.findById('aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee');
+      expect(site.getId()).to.equal('aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee');
+      expect(() => site.getOrganizationId()).to.throw('Permission denied');
+    });
   });
 });

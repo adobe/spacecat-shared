@@ -71,8 +71,6 @@ class BaseModel {
 
     this.#initializeReferences();
     this.#initializeAttributes();
-
-    this.#ensurePermission('C');
   }
 
   /**
@@ -103,7 +101,7 @@ class BaseModel {
     return `/${decapitalize(refs[0].target)}/${ownerID}/${this.entityName}/${this.getId()}`;
   }
 
-  #ensurePermission(action) {
+  ensurePermission(action) {
     if (this.aclCtx?.aclEntities?.model?.includes(this.entityName)) {
       ensurePermission(this.#getACLPath(), this.aclCtx, action);
     } else {
@@ -139,7 +137,7 @@ class BaseModel {
 
       if (!this[getterMethodName] || name === this.idName) {
         this[getterMethodName] = () => {
-          this.#ensurePermission('R');
+          this.ensurePermission('R');
           return this.record[name];
         };
       }
@@ -149,7 +147,7 @@ class BaseModel {
 
         if (!this[setterMethodName] && !attr.readOnly) {
           this[setterMethodName] = (value) => {
-            this.#ensurePermission('U');
+            this.ensurePermission('U');
             this.patcher.patchValue(name, value, isReference);
             return this;
           };
@@ -264,7 +262,7 @@ class BaseModel {
    * or if the removal operation fails.
    */
   async remove() {
-    this.#ensurePermission('D');
+    this.ensurePermission('D');
 
     if (!this.schema.allowsRemove()) {
       throw new DataAccessError(`The entity ${this.schema.getModelName()} does not allow removal`);

@@ -199,7 +199,7 @@ describe('SiteModel', () => {
       expect(site.getId()).to.equal('123456789');
     });
 
-    it('no create permission', () => {
+    it('no create permission allows to create a model instance', () => {
       // Prepare dep objects
       const es = { entities: { site: {} } };
       const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, { debug: () => { } });
@@ -209,8 +209,10 @@ describe('SiteModel', () => {
         organizationId: 'aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee',
       };
 
-      // Try to create the instance
-      expect(() => new Site(es, er, schema, record, {})).to.throw('Permission denied');
+      // Create the instance should succeed as the create permission checking is done
+      // when the database record is created from the collection.
+      const site = new Site(es, er, schema, record, {});
+      expect(site.getId()).to.equal('123456789');
     });
 
     it('specific instance permission', () => {

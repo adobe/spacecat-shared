@@ -72,6 +72,9 @@ class BaseCollection {
   #logAndThrowError(message, cause) {
     const error = new DataAccessError(message, this, cause);
     this.log.error(`Base Collection Error [${this.entityName}]`, error);
+    if (isNonEmptyArray(error.cause?.fields)) {
+      this.log.error(`Validation errors: ${JSON.stringify(error.cause.fields)}`);
+    }
     throw error;
   }
 

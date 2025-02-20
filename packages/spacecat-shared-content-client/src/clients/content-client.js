@@ -266,7 +266,7 @@ export default class ContentClient {
     this.log.info(`Getting page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const document = this.rawClient.getDocument(docPath);
+    const document = await this.rawClient.getDocument(docPath);
     const metadata = await document.getMetadata();
 
     this.#logDuration('getPageMetadata', startTime);
@@ -286,7 +286,7 @@ export default class ContentClient {
     this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const document = this.rawClient.getDocument(docPath);
+    const document = await this.rawClient.getDocument(docPath);
     const originalMetadata = await document.getMetadata();
 
     let mergedMetadata;
@@ -312,7 +312,7 @@ export default class ContentClient {
 
     this.log.info(`Getting redirects for ${this.site.getId()}`);
 
-    const redirectsFile = this.rawClient.getRedirects();
+    const redirectsFile = await this.rawClient.getRedirects();
     const redirects = await redirectsFile.get();
     this.#logDuration('getRedirects', startTime);
 
@@ -328,7 +328,7 @@ export default class ContentClient {
 
     this.log.info(`Updating redirects for ${this.site.getId()}`);
 
-    const redirectsFile = this.rawClient.getRedirects();
+    const redirectsFile = await this.rawClient.getRedirects();
     const currentRedirects = await redirectsFile.get();
     // validate combination of existing and new redirects
     const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects, this.log);

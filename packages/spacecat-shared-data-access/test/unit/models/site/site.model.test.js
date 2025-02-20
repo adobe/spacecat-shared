@@ -210,15 +210,7 @@ describe('SiteModel', () => {
       };
 
       // Try to create the instance
-      try {
-        // eslint-disable-next-line no-new
-        new Site(es, er, schema, record, {});
-      } catch (e) {
-        expect(e.message).to.equal('Permission denied');
-        // good
-        return;
-      }
-      expect.fail('Expected error');
+      expect(() => new Site(es, er, schema, record, {})).to.throw('Permission denied');
     });
 
     it('specific instance permission', () => {
@@ -230,13 +222,7 @@ describe('SiteModel', () => {
       // Test the instance
       instance.setIsLive(false);
 
-      try {
-        instance.getIsLive();
-      } catch {
-        // good
-        return;
-      }
-      expect.fail('Expected error');
+      expect(() => instance.getIsLive()).to.throw('Permission denied');
     });
 
     it('wildcard instance permission', () => {
@@ -248,13 +234,7 @@ describe('SiteModel', () => {
       // Test the instance
       instance.getIsLive(); // Should be allowed
 
-      try {
-        instance.setIsLive(false);
-      } catch {
-        // good
-        return;
-      }
-      expect.fail('Expected error');
+      expect(() => instance.setIsLive(false)).to.throw('Permission denied');
     });
 
     it('delete permission', async () => {

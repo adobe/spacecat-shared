@@ -117,12 +117,12 @@ describe('SiteCollection', () => {
   });
 
   describe('permissions', () => {
-    it('checks permissions on create entities', async () => {
+    it('checks permissions on create site', async () => {
       function getAclCtx() {
         return {
           acls: [{
             acl: [
-              { path: '/organization/o123/site/s12345', actions: ['C', 'R'] },
+              { path: '/organization/o123/site/s12345', actions: ['C'] },
             ],
           }],
           aclEntities: { model: ['site', 'organization'] },
@@ -148,8 +148,46 @@ describe('SiteCollection', () => {
 
       const site = await sc.create(siteData);
       expect(site.getId()).to.equal('s12345');
-      expect(site.getOrganizationId()).to.equal('o123');
       expect(called).to.deep.equal(['create:{"organizationId":"o123","siteId":"s12345"}']);
+      expect(() => site.getOrganizationId()).to.throw('Permission denied');
+    });
+
+    it('cannot create site due to lack of permission', async () => {
+      // No permissions at all
+      function getAclCtx() {
+        return {
+          acls: [],
+          aclEntities: { model: ['site', 'organization'] },
+        };
+      }
+
+      const called = [];
+      const entity = {
+        create: (el) => ({
+          go: () => {
+            called.push(`create:${JSON.stringify(el)}`);
+            return { data: el };
+          },
+        }),
+      };
+
+      const ml = { debug: () => { }, info: () => { }, error: () => { } };
+      const es = { entities: { site: entity } };
+      const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, ml);
+      const sc = new SiteCollection(es, er, schema, ml);
+
+      const siteData = { organizationId: 'o123', siteId: 's12345' };
+
+      try {
+        // Cannot use expect.to.throw on async function
+        await sc.create(siteData);
+      } catch {
+        // good
+        expect(called).to.be.empty;
+
+        return;
+      }
+      expect.fail('Should have thrown an error');
     });
   });
 });

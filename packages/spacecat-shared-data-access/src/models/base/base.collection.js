@@ -376,11 +376,14 @@ class BaseCollection {
     }
 
     try {
-      const record = upsert
-        ? await this.entity.put(item).go()
-        : await this.entity.create(item).go();
+      // This method will fail if there is no permission to create the entity
+      const instance = this.#createInstance(item);
 
-      const instance = this.#createInstance(record.data);
+      if (upsert) {
+        await this.entity.put(item).go();
+      } else {
+        await this.entity.create(item).go();
+      }
 
       this.#invalidateCache();
 

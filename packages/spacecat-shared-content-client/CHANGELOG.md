@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.3.32](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.3.31...@adobe/spacecat-shared-content-client-v1.3.32) (2025-02-20)
+
+
+### Bug Fixes
+
+* async call to content client ([#616](https://github.com/adobe/spacecat-shared/issues/616)) ([97479f9](https://github.com/adobe/spacecat-shared/commit/97479f90bff6b51bb122ad260a97b3b72abb3d2c))
+
 # [@adobe/spacecat-shared-content-client-v1.3.31](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.3.30...@adobe/spacecat-shared-content-client-v1.3.31) (2025-02-20)
 
 

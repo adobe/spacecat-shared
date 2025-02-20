@@ -71,6 +71,8 @@ class BaseModel {
 
     this.#initializeReferences();
     this.#initializeAttributes();
+
+    this.ensurePermission('C');
   }
 
   /**

@@ -17,7 +17,9 @@ import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
+import EntityRegistry from '../../../../src/models/base/entity.registry.js';
 import Site from '../../../../src/models/site/site.model.js';
+import schema from '../../../../src/models/site/site.schema.js';
 import siteFixtures from '../../../fixtures/sites.fixture.js';
 import { createElectroMocks } from '../../util.js';
 
@@ -172,6 +174,7 @@ describe('SiteModel', () => {
           acl: [
             { path: '/organization/12345678-bbbb-1ccc-8ddd-eeeeeeeeeeee/site/88888888-7777-1ccc-8ddd-666666666666', actions: ['D'] },
             { path: '/organization/aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee/site/*', actions: ['U'] },
+            { path: '/organization/ffffffff-bbbb-1ccc-8ddd-eeeeeeeeeeee/site/*', actions: ['C'] },
             { path: '/organization/*/site/*', actions: ['R'] },
           ],
         }],
@@ -180,6 +183,79 @@ describe('SiteModel', () => {
         },
       };
     }
+
+    it('create permission', () => {
+      // Prepare dep objects
+      const es = { entities: { site: {} } };
+      const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, { debug: () => { } });
+
+      const record = {
+        siteId: '123456789',
+        organizationId: 'ffffffff-bbbb-1ccc-8ddd-eeeeeeeeeeee',
+      };
+
+      // Create the instance
+      const site = new Site(es, er, schema, record, {});
+      expect(site.getId()).to.equal('123456789');
+    });
+
+    it('no create permission', () => {
+      // Prepare dep objects
+      const es = { entities: { site: {} } };
+      const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, { debug: () => { } });
+
+      const record = {
+        siteId: '123456789',
+        organizationId: 'aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee',
+      };
+
+      // Try to create the instance
+      try {
+        // eslint-disable-next-line no-new
+        new Site(es, er, schema, record, {});
+      } catch (e) {
+        expect(e.message).to.equal('Permission denied');
+        // good
+        return;
+      }
+      expect.fail('Expected error');
+    });
+
+    it('specific instance permission', () => {
+      // Prepare the instance
+      instance.aclCtx = getAllowAllCtx();
+      instance.setOrganizationId('aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee');
+      instance.aclCtx = getAclCtx();
+
+      // Test the instance
+      instance.setIsLive(false);
+
+      try {
+        instance.getIsLive();
+      } catch {
+        // good
+        return;
+      }
+      expect.fail('Expected error');
+    });
+
+    it('wildcard instance permission', () => {
+      // Prepare the instance
+      instance.aclCtx = getAllowAllCtx();
+      instance.setOrganizationId('00000000-1111-1ccc-8ddd-222222222222');
+      instance.aclCtx = getAclCtx();
+
+      // Test the instance
+      instance.getIsLive(); // Should be allowed
+
+      try {
+        instance.setIsLive(false);
+      } catch {
+        // good
+        return;
+      }
+      expect.fail('Expected error');
+    });
 
     it('delete permission', async () => {
       const removed = [];
@@ -220,42 +296,6 @@ describe('SiteModel', () => {
         return;
       }
       expect.fail('Expected error as delete shouldnt be allowed');
-    });
-
-    it('specific instance permission', () => {
-      // Prepare the instance
-      instance.aclCtx = getAllowAllCtx();
-      instance.setOrganizationId('aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee');
-      instance.aclCtx = getAclCtx();
-
-      // Test the instance
-      instance.setIsLive(false);
-
-      try {
-        instance.getIsLive();
-      } catch {
-        // good
-        return;
-      }
-      expect.fail('Expected error');
-    });
-
-    it('wildcard instance permission', () => {
-      // Prepare the instance
-      instance.aclCtx = getAllowAllCtx();
-      instance.setOrganizationId('00000000-1111-1ccc-8ddd-222222222222');
-      instance.aclCtx = getAclCtx();
-
-      // Test the instance
-      instance.getIsLive(); // Should be allowed
-
-      try {
-        instance.setIsLive(false);
-      } catch {
-        // good
-        return;
-      }
-      expect.fail('Expected error');
     });
   });
 });

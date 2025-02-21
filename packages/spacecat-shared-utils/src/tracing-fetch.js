@@ -13,7 +13,9 @@ import { Request } from '@adobe/fetch';
 import AWSXRay from 'aws-xray-sdk';
 
 import { fetch as adobeFetch } from './adobe-fetch.js';
-import { isNumber } from './functions.js';
+import { isNumber, isObject } from './functions.js';
+
+export const SPACECAT_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Spacecat/1.0';
 
 /**
  * Creates a subsegment for a given hostname based on whether the parent segment is traced or not.
@@ -113,6 +115,21 @@ const handleSubSegmentError = (subSegment, request, error) => {
  */
 export async function tracingFetch(url, options) {
   const parentSegment = AWSXRay.getSegment();
+
+  options = isObject(options) ? options : {};
+  options.headers = isObject(options.headers) ? options.headers : new Headers();
+
+  // find user-agent header in headers case insensitively
+  let hasUserAgent = false;
+  Object.keys(options.headers).forEach((key) => {
+    if (key.toLowerCase() === 'user-agent') {
+      hasUserAgent = true;
+    }
+  });
+
+  if (!hasUserAgent) {
+    options.headers['User-Agent'] = SPACECAT_USER_AGENT;
+  }
 
   if (!parentSegment) {
     return adobeFetch(url, options);

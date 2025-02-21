@@ -52,7 +52,7 @@ function getPermissions(entityPath, permissions) {
   return { actions: match.actions, trace: match };
 }
 
-export function hasPermisson(entityPath, aclCtx, perm) {
+export function hasPermisson(entityPath, perm, aclCtx) {
   const allActions = [];
   const traces = [];
   aclCtx.acls.forEach((a) => {
@@ -70,7 +70,14 @@ export function hasPermisson(entityPath, aclCtx, perm) {
   return permission;
 }
 
-export function ensurePermission(path, aclCtx, perm) {
+/**
+ * Ensure that the path has the required permission given the acls in the ACL context.
+ * TODO finish this desc
+ * @param {string} path - the path for which the permission is needed.
+ * @param {string} perm - the requested permission.
+ * @param {Object} aclCtx - the ACL context
+ */
+export function ensurePermission(path, perm, aclCtx) {
   console.log(
     '§§§ Calling ensurePermission with path:',
     path,
@@ -79,9 +86,9 @@ export function ensurePermission(path, aclCtx, perm) {
     'perm:',
     perm,
     'response:',
-    hasPermisson(path, aclCtx, perm),
+    hasPermisson(path, perm, aclCtx),
   );
-  if (!hasPermisson(path, aclCtx, perm)) {
+  if (!hasPermisson(path, perm, aclCtx)) {
     throw new Error('Permission denied');
   }
 }

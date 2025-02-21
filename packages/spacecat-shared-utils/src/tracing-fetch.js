@@ -15,7 +15,7 @@ import AWSXRay from 'aws-xray-sdk';
 import { fetch as adobeFetch } from './adobe-fetch.js';
 import { isNumber, isObject } from './functions.js';
 
-export const SPACECAT_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Spacecat/1.0';
+export const SPACECAT_USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36 Spacecat/1.0';
 
 /**
  * Creates a subsegment for a given hostname based on whether the parent segment is traced or not.

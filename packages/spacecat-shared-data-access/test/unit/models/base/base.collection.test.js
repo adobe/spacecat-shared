@@ -318,12 +318,13 @@ describe('BaseCollection', () => {
 
     it('logs an error and throws when creation fails', async () => {
       const error = new Error('Create failed');
+      error.fields = [{ field: 'someKey', message: 'Some key is required' }];
       mockElectroService.entities.mockEntityModel.create.returns(
         { go: () => Promise.reject(error) },
       );
 
       await expect(baseCollectionInstance.create(mockRecord.data)).to.be.rejectedWith(DataAccessError, 'Failed to create');
-      expect(mockLogger.error.calledOnce).to.be.true;
+      expect(mockLogger.error.calledTwice).to.be.true;
     });
 
     it('calls the on-create handler if provided', async () => {

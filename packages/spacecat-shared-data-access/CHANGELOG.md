@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.1...@adobe/spacecat-shared-data-access-v2.8.2) (2025-02-21)
+
+
+### Bug Fixes
+
+* validate IMS Org ID ([#618](https://github.com/adobe/spacecat-shared/issues/618)) ([aa79853](https://github.com/adobe/spacecat-shared/commit/aa79853bddea717281f38984ec0cc88c10d12128))
+
+# [@adobe/spacecat-shared-data-access-v2.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.0...@adobe/spacecat-shared-data-access-v2.8.1) (2025-02-20)
+
+
+### Bug Fixes
+
+* log fields affected by validation error ([#614](https://github.com/adobe/spacecat-shared/issues/614)) ([e7b91bd](https://github.com/adobe/spacecat-shared/commit/e7b91bdc1d3f2a28b5755ccdbacfdb651411611e))
+
+# [@adobe/spacecat-shared-data-access-v2.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.7.1...@adobe/spacecat-shared-data-access-v2.8.0) (2025-02-19)
+
+
+### Features
+
+* add alt-text audit type constant ([#613](https://github.com/adobe/spacecat-shared/issues/613)) ([cc1bbdb](https://github.com/adobe/spacecat-shared/commit/cc1bbdbfcb0884d1a56f7dacfc360dfaf80a7942))
+
+# [@adobe/spacecat-shared-data-access-v2.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.7.0...@adobe/spacecat-shared-data-access-v2.7.1) (2025-02-19)
+
+
+### Bug Fixes
+
+* get queue url ([#612](https://github.com/adobe/spacecat-shared/issues/612)) ([232af0a](https://github.com/adobe/spacecat-shared/commit/232af0af829289214826275f81504ce6bdae5467))
+
 # [@adobe/spacecat-shared-data-access-v2.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.6.0...@adobe/spacecat-shared-data-access-v2.7.0) (2025-02-18)
 
 

@@ -242,3 +242,5 @@ export function s3Wrapper(fn: (request: object, context: object) => Promise<Resp
 export function fetch(url: string | Request, options?: RequestOptions): Promise<Response>;
 
 export function tracingFetch(url: string | Request, options?: RequestOptions): Promise<Response>;
+
+export const SPACECAT_USER_AGENT: string;

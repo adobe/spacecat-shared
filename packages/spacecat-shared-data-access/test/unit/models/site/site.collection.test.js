@@ -180,16 +180,8 @@ describe('SiteCollection permissions', () => {
 
     const siteData = { organizationId: 'o123', siteId: 's12345' };
 
-    try {
-      // Cannot use expect.to.throw on async function
-      await sc.create(siteData);
-    } catch {
-      // good
-      expect(called).to.be.empty;
-
-      return;
-    }
-    expect.fail('Should have thrown an error');
+    await expect(sc.create(siteData)).to.be.rejected;
+    expect(called).to.be.empty;
   });
 
   it('test create batch permission', async () => {
@@ -273,14 +265,8 @@ describe('SiteCollection permissions', () => {
     const siteData2 = { organizationId: 'o123', siteId: 's67890' };
     const items = [siteData1, siteData2];
 
-    try {
-      await sc.createMany(items);
-    } catch {
-      expect(called).to.be.empty;
-      // good
-      return;
-    }
-    expect.fail('Should have thrown an error');
+    await expect(sc.createMany(items)).to.be.rejected;
+    expect(called).to.be.empty;
   });
 
   it('can find by it with permission', async () => {
@@ -397,13 +383,8 @@ describe('SiteCollection permissions', () => {
     const sc = new SiteCollection(es, er, schema, ml);
 
     // Only 1 of these has permission, reject the whole request
-    try {
-      await sc.removeByIds(['aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee', 'bbbbbbbb-bbbb-1ccc-8ddd-eeeeeeeeeeee']);
-    } catch {
-      expect(deleted).to.be.empty;
-      // good
-      return;
-    }
-    expect.fail('Should have thrown an error');
+    await expect(sc.removeByIds(['aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee', 'bbbbbbbb-bbbb-1ccc-8ddd-eeeeeeeeeeee']))
+      .to.be.rejectedWith('Permission denied');
+    expect(deleted).to.be.empty;
   });
 });

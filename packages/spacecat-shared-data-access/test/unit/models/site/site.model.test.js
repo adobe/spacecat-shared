@@ -269,15 +269,8 @@ describe('SiteModel', () => {
       instance.aclCtx = getAclCtx();
 
       // Test the instance
-      try {
-        await instance.remove();
-      } catch (e) {
-        expect(e.message).to.equal('Permission denied');
-        expect(removed).to.have.length(0);
-        // good
-        return;
-      }
-      expect.fail('Expected error as delete shouldnt be allowed');
+      await expect(instance.remove()).to.be.rejectedWith('Permission denied');
+      expect(removed).to.have.length(0);
     });
   });
 });

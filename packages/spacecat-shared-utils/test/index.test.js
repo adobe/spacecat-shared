@@ -59,6 +59,7 @@ describe('Index Exports', () => {
     'getHighFormViewsLowConversionMetrics',
     'getHighPageViewsLowFormViewsMetrics',
     'getHighPageViewsLowFormCtrMetrics',
+    'DEFAULT_USER_AGENT',
   ];
 
   it('exports all expected functions', () => {

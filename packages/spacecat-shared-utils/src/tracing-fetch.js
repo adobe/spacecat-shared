@@ -12,6 +12,7 @@
 import { Request } from '@adobe/fetch';
 import AWSXRay from 'aws-xray-sdk';
 
+import { DEFAULT_USER_AGENT } from './helpers.js';
 import { fetch as adobeFetch } from './adobe-fetch.js';
 import { isNumber } from './functions.js';
 
@@ -115,10 +116,22 @@ export async function tracingFetch(url, options) {
   const parentSegment = AWSXRay.getSegment();
 
   if (!parentSegment) {
-    return adobeFetch(url, options);
+    return adobeFetch(url, {
+      ...options,
+      headers: {
+        ...options?.headers,
+        'User-Agent': DEFAULT_USER_AGENT,
+      },
+    });
   }
 
-  const request = new Request(url, options);
+  const request = new Request(url, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      'User-Agent': DEFAULT_USER_AGENT,
+    },
+  });
   const { hostname } = new URL(request.url);
   const subSegment = createSubsegment(parentSegment, hostname);
 

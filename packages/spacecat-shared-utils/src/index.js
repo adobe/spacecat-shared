@@ -38,6 +38,7 @@ export {
   replacePlaceholders,
   getPrompt,
   getQuery,
+  DEFAULT_USER_AGENT,
 } from './helpers.js';
 
 export { sqsWrapper } from './sqs.js';

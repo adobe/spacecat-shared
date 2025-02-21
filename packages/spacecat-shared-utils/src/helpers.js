@@ -14,6 +14,9 @@ import { Parser } from '@json2csv/plainjs';
 import { promises as fs } from 'fs';
 import { isString } from './functions.js';
 
+// Default user agent for the fetch requests
+export const DEFAULT_USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36 Spacecat/1.0';
+
 /**
  * Resolves the name of the secret based on the function version.
  * @param {Object} opts - The options object, not used in this implementation.

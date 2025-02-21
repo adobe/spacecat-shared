@@ -14,10 +14,10 @@
 
 import { expect } from 'chai';
 
-import { getDBRoles } from '../../../src/auth/rbac/acls.js';
+import { getDBAcls, getDBRoles } from '../../../src/auth/rbac/acls.js';
 
 describe('Get Roles', () => {
-  it.only('get roles from DB', async () => {
+  it('get roles from DB', async () => {
     const commands = [];
     const client = {
       send(c) {
@@ -91,5 +91,68 @@ describe('Get Roles', () => {
     expect(commands[0].input.ExpressionAttributeNames).to.deep.equal(
       { '#roles': 'roles' },
     );
+  });
+});
+
+describe('Get ACLs', async () => {
+  it('get acls from DB', async () => {
+    const commands = [];
+    const client = {
+      send(c) {
+        commands.push(c);
+        return {
+          Items: [
+            {
+              role: {
+                S: 'role1',
+              },
+              acl: {
+                L: [{
+                  M: {
+                    actions: { SS: ['C', 'R', 'U', 'D'] },
+                    path: { S: '/**' },
+                  },
+                }, {
+                  M: {
+                    actions: { SS: ['R'] },
+                    path: { S: '/a' },
+                  },
+                }, {
+                  M: {
+                    actions: { SS: ['D'] },
+                    path: { S: '/some/*/long/path/*' },
+                  },
+                }],
+              },
+            },
+          ],
+        };
+      },
+    };
+
+    const orgId = 'FEEFAAF00';
+    const roles = ['role1', 'role2'];
+    const acls = await getDBAcls(client, orgId, roles);
+    expect(acls).to.have.length(1);
+    expect(acls[0].role).to.equal('role1');
+    expect(acls[0].acl).to.have.length(3);
+    expect(acls[0].acl[0].path).to.equal('/some/*/long/path/*');
+    expect(acls[0].acl[0].actions).to.deep.equal(['D']);
+    expect(acls[0].acl[1].path).to.equal('/a');
+    expect(acls[0].acl[1].actions).to.deep.equal(['R']);
+    expect(acls[0].acl[2].path).to.equal('/**');
+    expect(acls[0].acl[2].actions).to.deep.equal(['C', 'R', 'U', 'D']);
+
+    expect(commands).to.have.length(1);
+    const { input } = commands[0];
+    expect(input.KeyConditionExpression).to.equal('imsorgid = :orgid');
+    expect(input.ExpressionAttributeValues).to.deep.equal({
+      ':orgid': { S: orgId },
+      ':role0': { S: 'role1' },
+      ':role1': { S: 'role2' },
+    });
+    expect(input.FilterExpression).to.equal('#role IN (:role0, :role1)');
+    expect(input.ProjectionExpression).to.equal('acl, #role');
+    expect(input.ExpressionAttributeNames).to.deep.equal({ '#role': 'role' });
   });
 });

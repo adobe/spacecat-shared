@@ -101,6 +101,13 @@ class BaseModel {
     return `/${decapitalize(refs[0].target)}/${ownerID}/${this.entityName}/${this.getId()}`;
   }
 
+  /**
+   * Checks if the specified action is allowed for the current entity, given the
+   * current ACL context. If the action is permitted, then the method returns.
+   * If the action is not permitted, an error is thrown.
+   * @param {string} action - The action to check permission for.
+   * @throws {Error} - Throws an error if the action is not permitted.
+   */
   ensurePermission(action) {
     if (this.aclCtx?.aclEntities?.model?.includes(this.entityName)) {
       ensurePermission(this.#getACLPath(), this.aclCtx, action);
@@ -348,6 +355,8 @@ class BaseModel {
    * @returns {Object} - A JSON representation of the entity attributes.
    */
   toJSON() {
+    this.ensurePermission('R');
+
     const attributes = this.schema.getAttributes();
 
     return Object.keys(attributes).reduce((json, key) => {

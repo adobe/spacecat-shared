@@ -85,15 +85,3 @@ export function ensurePermission(path, aclCtx, perm) {
     throw new Error('Permission denied');
   }
 }
-
-function prepPathForSort(path) {
-  if (path.endsWith('/+**')) return path.slice(0, -3);
-  if (path.endsWith('/**')) return path.slice(0, -2);
-  return path;
-}
-
-export function pathSorter({ path: path1 }, { path: path2 }) {
-  const sp1 = prepPathForSort(path1);
-  const sp2 = prepPathForSort(path2);
-  return sp2.length - sp1.length;
-}

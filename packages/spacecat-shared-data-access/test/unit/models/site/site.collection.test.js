@@ -193,7 +193,94 @@ describe('SiteCollection permissions', () => {
   });
 
   it('test create batch permission', async () => {
-    expect.fail('Not implemented');
+    function getAclCtx() {
+      return {
+        acls: [{
+          acl: [
+            { path: '/organization/o123/site/s67890', actions: ['C', 'R'] },
+            { path: '/organization/*/site/**', actions: ['C'] },
+          ],
+        }],
+        aclEntities: { model: ['site', 'organization'] },
+      };
+    }
+
+    const called = [];
+    const entity = {
+      put: (el) => ({
+        params: () => ({
+          Item: el,
+        }),
+        go: () => {
+          called.push(`put:${JSON.stringify(el)}`);
+          return { data: el };
+        },
+      }),
+    };
+
+    const ml = { debug: () => { }, info: () => { }, error: () => { } };
+    const es = { entities: { site: entity } };
+    const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, ml);
+    const sc = new SiteCollection(es, er, schema, ml);
+
+    const siteData1 = { organizationId: 'o123', siteId: 's12345' };
+    const siteData2 = { organizationId: 'o123', siteId: 's67890' };
+    const items = [siteData1, siteData2];
+    const { createdItems } = await sc.createMany(items);
+    expect(createdItems).to.have.length(2);
+    expect(called).to.have.length(1);
+    expect(called[0]).to.equal('put:[{"organizationId":"o123","siteId":"s12345"},{"organizationId":"o123","siteId":"s67890"}]');
+
+    const idx1 = createdItems.findIndex((i) => i.getId() === 's12345');
+    expect(createdItems[idx1].getId()).to.equal('s12345');
+    expect(() => createdItems[idx1].getOrganizationId()).to.throw('Permission denied');
+    expect(createdItems[1 - idx1].getId()).to.equal('s67890');
+    expect(createdItems[1 - idx1].getOrganizationId()).to.equal('o123');
+  });
+
+  it('test create batch no permission', async () => {
+    // no create permissions
+    function getAclCtx() {
+      return {
+        acls: [{
+          acl: [
+            { path: '/organization/o123/site/s67890', actions: ['R'] },
+          ],
+        }],
+        aclEntities: { model: ['site', 'organization'] },
+      };
+    }
+
+    const called = [];
+    const entity = {
+      put: (el) => ({
+        params: () => ({
+          Item: el,
+        }),
+        go: () => {
+          called.push(`put:${JSON.stringify(el)}`);
+          return { data: el };
+        },
+      }),
+    };
+
+    const ml = { debug: () => { }, info: () => { }, error: () => { } };
+    const es = { entities: { site: entity } };
+    const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, ml);
+    const sc = new SiteCollection(es, er, schema, ml);
+
+    const siteData1 = { organizationId: 'o123', siteId: 's12345' };
+    const siteData2 = { organizationId: 'o123', siteId: 's67890' };
+    const items = [siteData1, siteData2];
+
+    try {
+      await sc.createMany(items);
+    } catch {
+      expect(called).to.be.empty;
+      // good
+      return;
+    }
+    expect.fail('Should have thrown an error');
   });
 
   it('can find by it with permission', async () => {

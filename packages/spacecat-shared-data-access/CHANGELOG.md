@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.1...@adobe/spacecat-shared-data-access-v2.8.2) (2025-02-21)
+
+
+### Bug Fixes
+
+* validate IMS Org ID ([#618](https://github.com/adobe/spacecat-shared/issues/618)) ([aa79853](https://github.com/adobe/spacecat-shared/commit/aa79853bddea717281f38984ec0cc88c10d12128))
+
 # [@adobe/spacecat-shared-data-access-v2.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.0...@adobe/spacecat-shared-data-access-v2.8.1) (2025-02-20)
 
 

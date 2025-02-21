@@ -119,8 +119,8 @@ export async function tracingFetch(url, options) {
     return adobeFetch(url, {
       ...options,
       headers: {
-        ...options?.headers,
         'User-Agent': DEFAULT_USER_AGENT,
+        ...options?.headers,
       },
     });
   }
@@ -128,8 +128,8 @@ export async function tracingFetch(url, options) {
   const request = new Request(url, {
     ...options,
     headers: {
-      ...options?.headers,
       'User-Agent': DEFAULT_USER_AGENT,
+      ...options?.headers,
     },
   });
   const { hostname } = new URL(request.url);

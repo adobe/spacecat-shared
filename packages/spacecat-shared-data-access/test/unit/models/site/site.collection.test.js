@@ -334,4 +334,76 @@ describe('SiteCollection permissions', () => {
     expect(site.getId()).to.equal('aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee');
     expect(() => site.getOrganizationId()).to.throw('Permission denied');
   });
+
+  it('remove by ids with permission', async () => {
+    function getAclCtx() {
+      return {
+        acls: [{
+          acl: [
+            { path: '/organization/11111111-bbbb-1ccc-8ddd-111111111111/site/aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee', actions: ['D'] },
+          ],
+        }],
+        aclEntities: { model: ['site', 'organization'] },
+      };
+    }
+
+    const deleted = [];
+    const entity = {
+      delete: (id) => ({
+        go: () => {
+          deleted.push(id);
+        },
+      }),
+      get: (id) => ({
+        go: () => ({ data: { organizationId: '11111111-bbbb-1ccc-8ddd-111111111111', ...id } }),
+      }),
+    };
+
+    const ml = { debug: () => { }, info: () => { } };
+    const es = { entities: { site: entity } };
+    const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, ml);
+    const sc = new SiteCollection(es, er, schema, ml);
+    await sc.removeByIds(['aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee']);
+    expect(deleted).to.deep.equal([[{ siteId: 'aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee' }]]);
+  });
+
+  it('remove by ids with no permission', async () => {
+    function getAclCtx() {
+      return {
+        acls: [{
+          acl: [
+            { path: '/organization/11111111-bbbb-1ccc-8ddd-111111111111/site/aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee', actions: ['D'] },
+          ],
+        }],
+        aclEntities: { model: ['site', 'organization'] },
+      };
+    }
+
+    const deleted = [];
+    const entity = {
+      delete: (id) => ({
+        go: () => {
+          deleted.push(id);
+        },
+      }),
+      get: (id) => ({
+        go: () => ({ data: { organizationId: '11111111-bbbb-1ccc-8ddd-111111111111', ...id } }),
+      }),
+    };
+
+    const ml = { debug: () => { }, info: () => { } };
+    const es = { entities: { site: entity } };
+    const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, ml);
+    const sc = new SiteCollection(es, er, schema, ml);
+
+    // Only 1 of these has permission, reject the whole request
+    try {
+      await sc.removeByIds(['aaaaaaaa-bbbb-1ccc-8ddd-eeeeeeeeeeee', 'bbbbbbbb-bbbb-1ccc-8ddd-eeeeeeeeeeee']);
+    } catch {
+      expect(deleted).to.be.empty;
+      // good
+      return;
+    }
+    expect.fail('Should have thrown an error');
+  });
 });

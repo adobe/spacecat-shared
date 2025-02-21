@@ -530,6 +530,13 @@ class BaseCollection {
       throw new DataAccessError(message);
     }
 
+    // TODO this is quite inefficient, consider a batch lookup
+    for (const id of ids) {
+      // eslint-disable-next-line no-await-in-loop
+      const inst = await this.findById(id);
+      inst?.ensurePermission('D');
+    }
+
     try {
       // todo: consider removing dependent records
 

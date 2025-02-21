@@ -93,7 +93,6 @@ describe('haspermission', () => {
             { path: '/someapi/specificid', actions: [] },
             { path: '/someapi/someid/*', actions: ['D'] },
             { path: '/someapi/*/myop', actions: ['R'] },
-            { path: '/someapi/test/+**', actions: ['R', 'U'] },
           ],
         },
       ],
@@ -101,20 +100,6 @@ describe('haspermission', () => {
 
     // Ensure the paths are sorted with the longest first
     aclCtx.acls.forEach((a) => a.acl.sort(pathSorter));
-
-    // matching rule: /someapi/test/+**
-    expect(hasPermisson('/someapi/test', 'R', aclCtx)).to.be.true;
-    expect(hasPermisson('/someapi/test', 'U', aclCtx)).to.be.true;
-    expect(hasPermisson('/someapi/test', 'C', aclCtx)).to.be.false;
-    expect(hasPermisson('/someapi/test', 'D', aclCtx)).to.be.false;
-    expect(hasPermisson('/someapi/test/123', 'R', aclCtx)).to.be.true;
-    expect(hasPermisson('/someapi/test/123', 'U', aclCtx)).to.be.true;
-    expect(hasPermisson('/someapi/test/123', 'C', aclCtx)).to.be.false;
-    expect(hasPermisson('/someapi/test/123', 'D', aclCtx)).to.be.false;
-    expect(hasPermisson('/someapi/test/123/foo', 'R', aclCtx)).to.be.true;
-    expect(hasPermisson('/someapi/test/123/foo', 'U', aclCtx)).to.be.true;
-    expect(hasPermisson('/someapi/test/123/foo', 'C', aclCtx)).to.be.false;
-    expect(hasPermisson('/someapi/test/123/foo', 'D', aclCtx)).to.be.false;
 
     // matching rule: /someapi/**
     expect(hasPermisson('/someapi/xyz123', 'C', aclCtx)).to.be.true;

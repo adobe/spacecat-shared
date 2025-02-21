@@ -55,9 +55,6 @@ function getPermissions(path, acl) {
     if (pp.endsWith('/**')) {
       return ep.startsWith(pp.slice(0, -2));
     }
-    if (pp.endsWith('/+**')) { // TODO we can remove this
-      return ep.concat('/').startsWith(pp.slice(0, -3));
-    }
     return ep === pp;
   });
 

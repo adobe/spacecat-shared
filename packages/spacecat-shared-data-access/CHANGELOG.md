@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.4...@adobe/spacecat-shared-data-access-v2.9.0) (2025-02-25)
+
+
+### Features
+
+* import config schema ([#626](https://github.com/adobe/spacecat-shared/issues/626)) ([df147d8](https://github.com/adobe/spacecat-shared/commit/df147d8c8f83cc45f373b1d89823229afe035129))
+
 # [@adobe/spacecat-shared-data-access-v2.8.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.3...@adobe/spacecat-shared-data-access-v2.8.4) (2025-02-25)
 
 

@@ -12,13 +12,75 @@
 
 import Joi from 'joi';
 
+export const IMPORT_TYPES = {
+  ORGANIC_KEYWORDS: 'organic-keywords',
+  ORGANIC_TRAFFIC: 'organic-traffic',
+  TOP_PAGES: 'top-pages',
+};
+
+export const IMPORT_DESTINATIONS = {
+  DEFAULT: 'default',
+};
+
+export const IMPORT_SOURCES = {
+  AHREFS: 'ahrefs',
+  GSC: 'google',
+};
+
+const IMPORT_BASE_KEYS = {
+  destinations: Joi.array().items(Joi.string().valid(IMPORT_DESTINATIONS.DEFAULT)).required(),
+  sources: Joi.array().items(Joi.string().valid(...Object.values(IMPORT_SOURCES))).required(),
+  enabled: Joi.boolean().required().default(true),
+};
+
+export const IMPORT_TYPE_SCHEMAS = {
+  [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
+    ...IMPORT_BASE_KEYS,
+    pageUrl: Joi.string().uri(),
+  }),
+  [IMPORT_TYPES.ORGANIC_TRAFFIC]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_TRAFFIC).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
+  [IMPORT_TYPES.TOP_PAGES]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.TOP_PAGES).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string(),
+  }),
+};
+
+export const DEFAULT_IMPORT_CONFIGS = {
+  'organic-keywords': {
+    type: 'organic-keywords',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
+  'organic-traffic': {
+    type: 'organic-traffic',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
+  'top-pages': {
+    type: 'top-pages',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+    geo: 'global',
+  },
+};
+
 export const configSchema = Joi.object({
   slack: Joi.object({
     workspace: Joi.string(),
     channel: Joi.string(),
     invitedUserCount: Joi.number().integer().min(0),
   }),
-  imports: Joi.array().items(Joi.object({ type: Joi.string() }).unknown(true)),
+  imports: Joi.array().items(
+    Joi.alternatives().try(...Object.values(IMPORT_TYPE_SCHEMAS)),
+  ),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
   }).optional(),
@@ -134,6 +196,47 @@ export const Config = (data = {}) => {
 
   self.updateFetchConfig = (fetchConfig) => {
     state.fetchConfig = fetchConfig;
+  };
+
+  self.enableImport = (type, config = {}) => {
+    if (!IMPORT_TYPE_SCHEMAS[type]) {
+      throw new Error(`Unknown import type: ${type}`);
+    }
+
+    const defaultConfig = DEFAULT_IMPORT_CONFIGS[type];
+    const newConfig = {
+      ...defaultConfig, ...config, type, enabled: true,
+    };
+
+    // Validate the new config against its schema
+    const { error } = IMPORT_TYPE_SCHEMAS[type].validate(newConfig);
+    if (error) {
+      throw new Error(`Invalid import config: ${error.message}`);
+    }
+
+    state.imports = state.imports || [];
+    // Remove existing import of same type if present
+    state.imports = state.imports.filter((imp) => imp.type !== type);
+    state.imports.push(newConfig);
+
+    validateConfiguration(state);
+  };
+
+  self.disableImport = (type) => {
+    if (!state.imports) return;
+
+    state.imports = state.imports.map(
+      (imp) => (imp.type === type ? { ...imp, enabled: false } : imp),
+    );
+
+    validateConfiguration(state);
+  };
+
+  self.getImportConfig = (type) => state.imports?.find((imp) => imp.type === type);
+
+  self.isImportEnabled = (type) => {
+    const config = self.getImportConfig(type);
+    return config?.enabled ?? false;
   };
 
   return Object.freeze(self);

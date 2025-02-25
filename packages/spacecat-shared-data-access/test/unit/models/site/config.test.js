@@ -382,14 +382,14 @@ describe('Config Tests', () => {
         const config = Config();
         config.enableImport('organic-keywords', {
           pageUrl: 'https://example.com',
-          sources: ['gsc'],
+          sources: ['google'],
         });
 
         const importConfig = config.getImportConfig('organic-keywords');
         expect(importConfig).to.deep.equal({
           type: 'organic-keywords',
           destinations: ['default'],
-          sources: ['gsc'],
+          sources: ['google'],
           enabled: true,
           pageUrl: 'https://example.com',
         });
@@ -419,12 +419,12 @@ describe('Config Tests', () => {
         });
 
         config.enableImport('organic-keywords', {
-          sources: ['gsc'],
+          sources: ['google'],
         });
 
         const imports = config.getImports();
         expect(imports).to.have.length(1);
-        expect(imports[0].sources).to.deep.equal(['gsc']);
+        expect(imports[0].sources).to.deep.equal(['google']);
       });
     });
 

@@ -18,13 +18,13 @@ export const IMPORT_TYPES = {
   TOP_PAGES: 'top-pages',
 };
 
-const IMPORT_DESTINATIONS = {
+export const IMPORT_DESTINATIONS = {
   DEFAULT: 'default',
 };
 
-const IMPORT_SOURCES = {
+export const IMPORT_SOURCES = {
   AHREFS: 'ahrefs',
-  GSC: 'gsc',
+  GSC: 'google',
 };
 
 const IMPORT_BASE_KEYS = {
@@ -51,22 +51,22 @@ export const IMPORT_TYPE_SCHEMAS = {
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
-  [IMPORT_TYPES.ORGANIC_KEYWORDS]: {
-    type: IMPORT_TYPES.ORGANIC_KEYWORDS,
-    destinations: [IMPORT_DESTINATIONS.DEFAULT],
-    sources: [IMPORT_SOURCES.AHREFS],
+  'organic-keywords': {
+    type: 'organic-keywords',
+    destinations: ['default'],
+    sources: ['ahrefs'],
     enabled: true,
   },
-  [IMPORT_TYPES.ORGANIC_TRAFFIC]: {
-    type: IMPORT_TYPES.ORGANIC_TRAFFIC,
-    destinations: [IMPORT_DESTINATIONS.DEFAULT],
-    sources: [IMPORT_SOURCES.AHREFS],
+  'organic-traffic': {
+    type: 'organic-traffic',
+    destinations: ['default'],
+    sources: ['ahrefs'],
     enabled: true,
   },
-  [IMPORT_TYPES.TOP_PAGES]: {
-    type: IMPORT_TYPES.TOP_PAGES,
-    destinations: [IMPORT_DESTINATIONS.DEFAULT],
-    sources: [IMPORT_SOURCES.AHREFS],
+  'top-pages': {
+    type: 'top-pages',
+    destinations: ['default'],
+    sources: ['ahrefs'],
     enabled: true,
     geo: 'global',
   },

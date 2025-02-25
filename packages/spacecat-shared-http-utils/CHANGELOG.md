@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.9.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.9...@adobe/spacecat-shared-http-utils-v1.9.10) (2025-02-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency jose to v6 ([#624](https://github.com/adobe/spacecat-shared/issues/624)) ([8ae468a](https://github.com/adobe/spacecat-shared/commit/8ae468abfd9b05ae9ed83d52e98d2510a0499236))
+
 # [@adobe/spacecat-shared-http-utils-v1.9.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.8...@adobe/spacecat-shared-http-utils-v1.9.9) (2025-02-22)
 
 

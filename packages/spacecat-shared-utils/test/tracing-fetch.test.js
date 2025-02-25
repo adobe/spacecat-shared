@@ -16,7 +16,7 @@ import { AbortController } from '@adobe/fetch';
 import sinon from 'sinon';
 import nock from 'nock';
 import AWSXRay from 'aws-xray-sdk';
-import { tracingFetch } from '../src/index.js';
+import { tracingFetch, SPACECAT_USER_AGENT } from '../src/index.js';
 
 describe('tracing fetch function', () => {
   let sandbox;
@@ -57,6 +57,40 @@ describe('tracing fetch function', () => {
   afterEach(() => {
     sandbox.restore();
     nock.cleanAll();
+  });
+
+  it('exports the correct SPACECAT_USER_AGENT', () => {
+    expect(SPACECAT_USER_AGENT).to.match(/Spacecat\/\d+\.\d+/);
+  });
+
+  it('sets spacecat user agent if not already set', async () => {
+    getSegmentStub.returns(parentSegment);
+
+    const url = 'https://example.com/api/data';
+    const options = { method: 'GET' };
+
+    nock('https://example.com')
+      .get('/api/data')
+      .reply(200, 'OK');
+
+    await tracingFetch(url, options);
+
+    expect(options.headers['User-Agent']).to.equal(SPACECAT_USER_AGENT);
+  });
+
+  it('does not overwrite existing user agent', async () => {
+    getSegmentStub.returns(parentSegment);
+
+    const url = 'https://example.com/api/data';
+    const options = { method: 'GET', headers: { 'User-Agent': 'Custom-Agent' } };
+
+    nock('https://example.com')
+      .get('/api/data')
+      .reply(200, 'OK');
+
+    await tracingFetch(url, options);
+
+    expect(options.headers['User-Agent']).to.equal('Custom-Agent');
   });
 
   it('calls adobeFetch and returns response when there is no parent segment', async () => {

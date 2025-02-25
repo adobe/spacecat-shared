@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.33.0...@adobe/spacecat-shared-utils-v1.33.1) (2025-02-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#622](https://github.com/adobe/spacecat-shared/issues/622)) ([6552a61](https://github.com/adobe/spacecat-shared/commit/6552a61ebd8b83c0a1dec51d50d44cf3b97819c1))
+
+# [@adobe/spacecat-shared-utils-v1.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.32.0...@adobe/spacecat-shared-utils-v1.33.0) (2025-02-21)
+
+
+### Features
+
+* set default fetch user-agent ([#620](https://github.com/adobe/spacecat-shared/issues/620)) ([bd4b38c](https://github.com/adobe/spacecat-shared/commit/bd4b38c84ba4e85ec4d375a3e110de8845688d2a))
+
 # [@adobe/spacecat-shared-utils-v1.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.31.1...@adobe/spacecat-shared-utils-v1.32.0) (2025-02-17)
 
 

@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v2.8.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.2...@adobe/spacecat-shared-data-access-v2.8.3) (2025-02-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#622](https://github.com/adobe/spacecat-shared/issues/622)) ([6552a61](https://github.com/adobe/spacecat-shared/commit/6552a61ebd8b83c0a1dec51d50d44cf3b97819c1))
+
+# [@adobe/spacecat-shared-data-access-v2.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.1...@adobe/spacecat-shared-data-access-v2.8.2) (2025-02-21)
+
+
+### Bug Fixes
+
+* validate IMS Org ID ([#618](https://github.com/adobe/spacecat-shared/issues/618)) ([aa79853](https://github.com/adobe/spacecat-shared/commit/aa79853bddea717281f38984ec0cc88c10d12128))
+
+# [@adobe/spacecat-shared-data-access-v2.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.0...@adobe/spacecat-shared-data-access-v2.8.1) (2025-02-20)
+
+
+### Bug Fixes
+
+* log fields affected by validation error ([#614](https://github.com/adobe/spacecat-shared/issues/614)) ([e7b91bd](https://github.com/adobe/spacecat-shared/commit/e7b91bdc1d3f2a28b5755ccdbacfdb651411611e))
+
 # [@adobe/spacecat-shared-data-access-v2.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.7.1...@adobe/spacecat-shared-data-access-v2.8.0) (2025-02-19)
 
 

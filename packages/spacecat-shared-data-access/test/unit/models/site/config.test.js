@@ -328,4 +328,216 @@ describe('Config Tests', () => {
       expect(slackMentions[0]).to.equal('id1');
     });
   });
+
+  describe('Import Configuration', () => {
+    it('validates import types against schemas', () => {
+      const data = {
+        imports: [{
+          type: 'organic-keywords',
+          destinations: ['default'],
+          sources: ['ahrefs'],
+          enabled: true,
+          pageUrl: 'https://example.com',
+        }],
+      };
+      const config = Config(data);
+      expect(config.getImports()).to.deep.equal(data.imports);
+    });
+
+    it('throws error for unknown import type', () => {
+      expect(() => Config({
+        imports: [{
+          type: 'unknown-type',
+          destinations: ['default'],
+          sources: ['ahrefs'],
+        }],
+      })).to.throw('Configuration validation error');
+    });
+
+    it('throws error for invalid import configuration', () => {
+      expect(() => Config({
+        imports: [{
+          type: 'organic-keywords',
+          destinations: ['invalid'],
+          sources: ['invalid'],
+        }],
+      })).to.throw('Configuration validation error');
+    });
+
+    describe('enableImport method', () => {
+      it('enables import with default config', () => {
+        const config = Config();
+        config.enableImport('organic-keywords');
+
+        const importConfig = config.getImportConfig('organic-keywords');
+        expect(importConfig).to.deep.equal({
+          type: 'organic-keywords',
+          destinations: ['default'],
+          sources: ['ahrefs'],
+          enabled: true,
+        });
+      });
+
+      it('enables import with custom config', () => {
+        const config = Config();
+        config.enableImport('organic-keywords', {
+          pageUrl: 'https://example.com',
+          sources: ['gsc'],
+        });
+
+        const importConfig = config.getImportConfig('organic-keywords');
+        expect(importConfig).to.deep.equal({
+          type: 'organic-keywords',
+          destinations: ['default'],
+          sources: ['gsc'],
+          enabled: true,
+          pageUrl: 'https://example.com',
+        });
+      });
+
+      it('throws error for unknown import type', () => {
+        const config = Config();
+        expect(() => config.enableImport('unknown-type'))
+          .to.throw('Unknown import type: unknown-type');
+      });
+
+      it('throws error for invalid config', () => {
+        const config = Config();
+        expect(() => config.enableImport('organic-keywords', {
+          sources: ['invalid-source'],
+        })).to.throw('Invalid import config');
+      });
+
+      it('replaces existing import of same type', () => {
+        const config = Config({
+          imports: [{
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+          }],
+        });
+
+        config.enableImport('organic-keywords', {
+          sources: ['gsc'],
+        });
+
+        const imports = config.getImports();
+        expect(imports).to.have.length(1);
+        expect(imports[0].sources).to.deep.equal(['gsc']);
+      });
+    });
+
+    describe('disableImport method', () => {
+      it('disables existing import', () => {
+        const config = Config({
+          imports: [{
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+          }],
+        });
+
+        config.disableImport('organic-keywords');
+        expect(config.isImportEnabled('organic-keywords')).to.be.false;
+      });
+
+      it('handles disabling non-existent import', () => {
+        const config = Config();
+        config.disableImport('organic-keywords');
+        expect(config.isImportEnabled('organic-keywords')).to.be.false;
+      });
+
+      it('preserves other imports when disabling one import', () => {
+        const config = Config({
+          imports: [
+            {
+              type: 'organic-keywords',
+              destinations: ['default'],
+              sources: ['ahrefs'],
+              enabled: true,
+            },
+            {
+              type: 'organic-traffic',
+              destinations: ['default'],
+              sources: ['ahrefs'],
+              enabled: true,
+            },
+          ],
+        });
+
+        config.disableImport('organic-keywords');
+
+        const imports = config.getImports();
+        expect(imports).to.have.length(2);
+        expect(imports).to.deep.equal([
+          {
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: false,
+          },
+          {
+            type: 'organic-traffic',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+          },
+        ]);
+      });
+    });
+
+    describe('getImportConfig method', () => {
+      it('returns config for existing import', () => {
+        const importConfig = {
+          type: 'organic-keywords',
+          destinations: ['default'],
+          sources: ['ahrefs'],
+          enabled: true,
+        };
+        const config = Config({
+          imports: [importConfig],
+        });
+
+        expect(config.getImportConfig('organic-keywords')).to.deep.equal(importConfig);
+      });
+
+      it('returns undefined for non-existent import', () => {
+        const config = Config();
+        expect(config.getImportConfig('organic-keywords')).to.be.undefined;
+      });
+    });
+
+    describe('isImportEnabled method', () => {
+      it('returns true for enabled import', () => {
+        const config = Config({
+          imports: [{
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+          }],
+        });
+        expect(config.isImportEnabled('organic-keywords')).to.be.true;
+      });
+
+      it('returns false for disabled import', () => {
+        const config = Config({
+          imports: [{
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: false,
+          }],
+        });
+        expect(config.isImportEnabled('organic-keywords')).to.be.false;
+      });
+
+      it('returns false for non-existent import', () => {
+        const config = Config();
+        expect(config.isImportEnabled('organic-keywords')).to.be.false;
+      });
+    });
+  });
 });

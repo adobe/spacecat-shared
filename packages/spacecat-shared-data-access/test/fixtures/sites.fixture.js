@@ -55,37 +55,10 @@ const sites = [
       },
       imports: [
         {
-          type: 'rum-to-aa',
-          mapper: {
-            mapping: {
-              pageURL: {
-                rumField: 'url',
-              },
-              userAgent: {
-                default: 'rum/1.0.0',
-              },
-              eVars: {
-                eVar4: {
-                  default: 'RUM',
-                },
-                eVar3: {
-                  rumField: 'url',
-                },
-              },
-              events: {
-                event4: {
-                  rumField: 'pageviews',
-                },
-              },
-              reportSuiteID: {
-                default: 'ageo1xxpnwdemoexpleugue',
-              },
-              visitorID: {
-                default: '000',
-              },
-            },
-            timezone: 'UTC-07:00',
-          },
+          type: 'organic-traffic',
+          destinations: ['default'],
+          sources: ['gsc'],
+          enabled: true,
         },
       ],
     },

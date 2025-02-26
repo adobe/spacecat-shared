@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v2.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.1...@adobe/spacecat-shared-data-access-v2.9.2) (2025-02-26)
+
+
+### Bug Fixes
+
+* add limit param ([#631](https://github.com/adobe/spacecat-shared/issues/631)) ([72faa3c](https://github.com/adobe/spacecat-shared/commit/72faa3cb0a0037558a6dd11372b923562c884668))
+
+# [@adobe/spacecat-shared-data-access-v2.9.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.0...@adobe/spacecat-shared-data-access-v2.9.1) (2025-02-26)
+
+
+### Bug Fixes
+
+* import-schema backwards compatibility ([#630](https://github.com/adobe/spacecat-shared/issues/630)) ([9ef74bf](https://github.com/adobe/spacecat-shared/commit/9ef74bfc89b0ccb9d27d34e5a10eef182b9ee527)), closes [#626](https://github.com/adobe/spacecat-shared/issues/626)
+
+# [@adobe/spacecat-shared-data-access-v2.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.4...@adobe/spacecat-shared-data-access-v2.9.0) (2025-02-25)
+
+
+### Features
+
+* import config schema ([#626](https://github.com/adobe/spacecat-shared/issues/626)) ([df147d8](https://github.com/adobe/spacecat-shared/commit/df147d8c8f83cc45f373b1d89823229afe035129))
+
 # [@adobe/spacecat-shared-data-access-v2.8.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.8.3...@adobe/spacecat-shared-data-access-v2.8.4) (2025-02-25)
 
 

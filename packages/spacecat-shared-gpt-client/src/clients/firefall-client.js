@@ -134,7 +134,8 @@ export default class FirefallClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Job submission failed with status code ${response.status}`);
+      const errorBody = await response.text();
+      throw new Error(`Job submission failed with status code ${response.status} and body: ${errorBody}`);
     }
 
     return response.json();

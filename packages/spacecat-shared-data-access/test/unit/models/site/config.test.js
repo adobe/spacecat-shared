@@ -14,7 +14,7 @@
 
 import { expect } from 'chai';
 
-import { Config } from '../../../../src/models/site/config.js';
+import { Config, validateConfiguration } from '../../../../src/models/site/config.js';
 
 describe('Config Tests', () => {
   describe('Config Creation', () => {
@@ -326,6 +326,428 @@ describe('Config Tests', () => {
       expect(slackConfig.workspace).to.equal('external');
       expect(data.isInternalCustomer()).to.equal(false);
       expect(slackMentions[0]).to.equal('id1');
+    });
+  });
+
+  describe('Import Configuration', () => {
+    it('validates import types against schemas', () => {
+      const data = {
+        imports: [{
+          type: 'organic-keywords',
+          destinations: ['default'],
+          sources: ['ahrefs'],
+          enabled: true,
+          pageUrl: 'https://example.com',
+        }],
+      };
+      const config = Config(data);
+      expect(config.getImports()).to.deep.equal(data.imports);
+    });
+
+    it('throws error for unknown import type', () => {
+      expect(() => Config({
+        imports: [{
+          type: 'unknown-type',
+          destinations: ['default'],
+          sources: ['ahrefs'],
+        }],
+      })).to.throw('Configuration validation error');
+    });
+
+    it('throws error for invalid import configuration', () => {
+      expect(() => Config({
+        imports: [{
+          type: 'organic-keywords',
+          destinations: ['invalid'],
+          sources: ['invalid'],
+        }],
+      })).to.throw('Configuration validation error');
+    });
+
+    describe('enableImport method', () => {
+      it('enables import with default config', () => {
+        const config = Config();
+        config.enableImport('organic-keywords');
+
+        const importConfig = config.getImportConfig('organic-keywords');
+        expect(importConfig).to.deep.equal({
+          type: 'organic-keywords',
+          destinations: ['default'],
+          sources: ['ahrefs'],
+          enabled: true,
+        });
+      });
+
+      it('enables import with custom config', () => {
+        const config = Config();
+        config.enableImport('organic-keywords', {
+          pageUrl: 'https://example.com',
+          sources: ['google'],
+        });
+
+        const importConfig = config.getImportConfig('organic-keywords');
+        expect(importConfig).to.deep.equal({
+          type: 'organic-keywords',
+          destinations: ['default'],
+          sources: ['google'],
+          enabled: true,
+          pageUrl: 'https://example.com',
+        });
+      });
+
+      it('throws error for unknown import type', () => {
+        const config = Config();
+        expect(() => config.enableImport('unknown-type'))
+          .to.throw('Unknown import type: unknown-type');
+      });
+
+      it('throws error for invalid config', () => {
+        const config = Config();
+        expect(() => config.enableImport('organic-keywords', {
+          sources: ['invalid-source'],
+        })).to.throw('Invalid import config');
+      });
+
+      it('replaces existing import of same type', () => {
+        const config = Config({
+          imports: [{
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+          }],
+        });
+
+        config.enableImport('organic-keywords', {
+          sources: ['google'],
+        });
+
+        const imports = config.getImports();
+        expect(imports).to.have.length(1);
+        expect(imports[0].sources).to.deep.equal(['google']);
+      });
+    });
+
+    describe('disableImport method', () => {
+      it('disables existing import', () => {
+        const config = Config({
+          imports: [{
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+          }],
+        });
+
+        config.disableImport('organic-keywords');
+        expect(config.isImportEnabled('organic-keywords')).to.be.false;
+      });
+
+      it('handles disabling non-existent import', () => {
+        const config = Config();
+        config.disableImport('organic-keywords');
+        expect(config.isImportEnabled('organic-keywords')).to.be.false;
+      });
+
+      it('preserves other imports when disabling one import', () => {
+        const config = Config({
+          imports: [
+            {
+              type: 'organic-keywords',
+              destinations: ['default'],
+              sources: ['ahrefs'],
+              enabled: true,
+            },
+            {
+              type: 'organic-traffic',
+              destinations: ['default'],
+              sources: ['ahrefs'],
+              enabled: true,
+            },
+          ],
+        });
+
+        config.disableImport('organic-keywords');
+
+        const imports = config.getImports();
+        expect(imports).to.have.length(2);
+        expect(imports).to.deep.equal([
+          {
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: false,
+          },
+          {
+            type: 'organic-traffic',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+          },
+        ]);
+      });
+    });
+
+    describe('getImportConfig method', () => {
+      it('returns config for existing import', () => {
+        const importConfig = {
+          type: 'organic-keywords',
+          destinations: ['default'],
+          sources: ['ahrefs'],
+          enabled: true,
+        };
+        const config = Config({
+          imports: [importConfig],
+        });
+
+        expect(config.getImportConfig('organic-keywords')).to.deep.equal(importConfig);
+      });
+
+      it('returns undefined for non-existent import', () => {
+        const config = Config();
+        expect(config.getImportConfig('organic-keywords')).to.be.undefined;
+      });
+    });
+
+    describe('isImportEnabled method', () => {
+      it('returns true for enabled import', () => {
+        const config = Config({
+          imports: [{
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+          }],
+        });
+        expect(config.isImportEnabled('organic-keywords')).to.be.true;
+      });
+
+      it('returns false for disabled import', () => {
+        const config = Config({
+          imports: [{
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: false,
+          }],
+        });
+        expect(config.isImportEnabled('organic-keywords')).to.be.false;
+      });
+
+      it('returns false for non-existent import', () => {
+        const config = Config();
+        expect(config.isImportEnabled('organic-keywords')).to.be.false;
+      });
+    });
+  });
+
+  describe('validateConfiguration Function', () => {
+    it('validates a minimal configuration', () => {
+      const config = {
+        slack: {},
+        handlers: {},
+      };
+      const validated = validateConfiguration(config);
+      expect(validated).to.deep.equal(config);
+    });
+
+    it('validates a complete configuration with all options', () => {
+      const config = {
+        slack: {
+          channel: 'test-channel',
+          workspace: 'test-workspace',
+          invitedUserCount: 5,
+        },
+        handlers: {
+          404: {
+            mentions: { slack: ['user1', 'user2'] },
+            excludedURLs: ['https://example.com/excluded'],
+            manualOverwrites: [{ brokenTargetURL: 'old', targetURL: 'new' }],
+            fixedURLs: [{ brokenTargetURL: 'broken', targetURL: 'fixed' }],
+            includedURLs: ['https://example.com/included'],
+            groupedURLs: [{ name: 'group1', pattern: '/pattern/' }],
+            latestMetrics: {
+              pageViewsChange: 10,
+              ctrChange: 5,
+              projectedTrafficValue: 1000,
+            },
+          },
+        },
+        imports: [
+          {
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            pageUrl: 'https://example.com',
+            enabled: false,
+          },
+          {
+            type: 'organic-traffic',
+            destinations: ['default'],
+            sources: ['ahrefs', 'google'],
+            enabled: true,
+          },
+          {
+            type: 'top-pages',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+            geo: 'us',
+          },
+        ],
+        fetchConfig: {
+          headers: {
+            'User-Agent': 'test-agent',
+          },
+        },
+      };
+      const validated = validateConfiguration(config);
+      expect(validated).to.deep.equal(config);
+    });
+
+    it('throws error for invalid slack configuration', () => {
+      const config = {
+        slack: {
+          invitedUserCount: 'not-a-number',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "slack.invitedUserCount" must be a number');
+    });
+
+    it('throws error for invalid handler configuration', () => {
+      const config = {
+        handlers: {
+          404: {
+            mentions: 'not-an-object',
+          },
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "handlers.404.mentions" must be of type object');
+    });
+
+    it('throws error for invalid import configuration', () => {
+      const config = {
+        imports: [
+          {
+            type: 'organic-keywords',
+            destinations: ['invalid'],
+            sources: ['invalid-source'],
+            enabled: true,
+          },
+        ],
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw().and.satisfy((error) => {
+          expect(error.message).to.include('Configuration validation error');
+          expect(error.cause.details[0].context.message)
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [top-pages]');
+          expect(error.cause.details[0].context.details)
+            .to.eql([
+              {
+                message: '"imports[0].destinations[0]" must be [default]',
+                path: [
+                  'imports',
+                  0,
+                  'destinations',
+                  0,
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'default',
+                  ],
+                  label: 'imports[0].destinations[0]',
+                  value: 'invalid',
+                  key: 0,
+                },
+              },
+              {
+                message: '"imports[0].type" must be [organic-traffic]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'organic-traffic',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [top-pages]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'top-pages',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+            ]);
+          return true;
+        });
+    });
+
+    it('throws error for invalid fetchConfig', () => {
+      const config = {
+        fetchConfig: {
+          headers: 'not-an-object',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "fetchConfig.headers" must be of type object');
+    });
+
+    it('validates multiple import types with different configurations', () => {
+      const config = {
+        imports: [
+          {
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+            limit: 100,
+            pageUrl: 'https://example.com',
+          },
+          {
+            type: 'top-pages',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: false,
+            geo: 'global',
+          },
+        ],
+      };
+      const validated = validateConfiguration(config);
+      expect(validated).to.deep.equal(config);
+    });
+
+    it('throws error for missing required import fields', () => {
+      const config = {
+        imports: [
+          {
+            type: 'organic-keywords',
+            // missing required destinations and sources
+            enabled: true,
+          },
+        ],
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "imports[0]" does not match any of the allowed types');
     });
   });
 });

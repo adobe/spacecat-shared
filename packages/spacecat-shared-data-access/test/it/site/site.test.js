@@ -363,6 +363,7 @@ describe('Site IT', async () => {
 
   it('reads config of a site', async () => {
     const { config: configFixture } = siteFixtures[0];
+    configFixture.imports[0].enabled = true; // set by joi schema default
     const site = await Site.findById('5d6d4439-6659-46c2-b646-92d110fa5a52');
     const config = site.getConfig();
     expect(config).to.be.an('object');
@@ -457,7 +458,7 @@ describe('Site IT', async () => {
       // Update import configuration
       const config = site.getConfig();
       config.enableImport('organic-traffic', {
-        sources: ['gsc'],
+        sources: ['google'],
       });
       config.disableImport('organic-keywords');
 
@@ -476,7 +477,7 @@ describe('Site IT', async () => {
       expect(updatedConfig.getImportConfig('organic-traffic')).to.deep.equal({
         type: 'organic-traffic',
         destinations: ['default'],
-        sources: ['gsc'],
+        sources: ['google'],
         enabled: true,
       });
     });
@@ -498,7 +499,7 @@ describe('Site IT', async () => {
         pageUrl: 'https://multi-import-example.com/blog',
       });
       config.enableImport('organic-traffic', {
-        sources: ['gsc'],
+        sources: ['google'],
       });
       config.enableImport('top-pages', {
         geo: 'us',
@@ -517,7 +518,7 @@ describe('Site IT', async () => {
       expect(updatedConfig.getImportConfig('organic-keywords').pageUrl)
         .to.equal('https://multi-import-example.com/blog');
       expect(updatedConfig.getImportConfig('organic-traffic').sources)
-        .to.deep.equal(['gsc']);
+        .to.deep.equal(['google']);
       expect(updatedConfig.getImportConfig('top-pages').geo)
         .to.equal('us');
     });

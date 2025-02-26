@@ -30,13 +30,15 @@ export const IMPORT_SOURCES = {
 const IMPORT_BASE_KEYS = {
   destinations: Joi.array().items(Joi.string().valid(IMPORT_DESTINATIONS.DEFAULT)).required(),
   sources: Joi.array().items(Joi.string().valid(...Object.values(IMPORT_SOURCES))).required(),
-  enabled: Joi.boolean().required().default(true),
+  // not required for now due backward compatibility
+  enabled: Joi.boolean().default(true),
 };
 
 export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
     ...IMPORT_BASE_KEYS,
+    limit: Joi.number().integer().min(1).max(100),
     pageUrl: Joi.string().uri(),
   }),
   [IMPORT_TYPES.ORGANIC_TRAFFIC]: Joi.object({
@@ -118,7 +120,7 @@ export function validateConfiguration(config) {
   const { error, value } = configSchema.validate(config);
 
   if (error) {
-    throw new Error(`Configuration validation error: ${error.message}`);
+    throw new Error(`Configuration validation error: ${error.message}`, { cause: error });
   }
 
   return value; // Validated and sanitized configuration

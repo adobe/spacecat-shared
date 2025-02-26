@@ -229,6 +229,15 @@ describe('FirefallClient', () => {
       expect(result.model).to.equal('hello');
     });
 
+    it.only('should handle a bad json response', async () => {
+      nock(mockContext.env.FIREFALL_API_ENDPOINT)
+        .post(chatPath)
+        .reply(400, { message: 'Bad request was provided' });
+
+      await expect(client.fetchChatCompletion('Test prompt'))
+        .to.be.rejectedWith('Job submission failed with status code 400 and message: Bad request was provided');
+    });
+
     it('should handle a bad response code', async () => {
       nock(mockContext.env.FIREFALL_API_ENDPOINT)
         .post(chatPath)

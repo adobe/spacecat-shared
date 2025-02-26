@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.2...@adobe/spacecat-shared-data-access-v2.9.3) (2025-02-26)
+
+
+### Bug Fixes
+
+* adds OUTDATED suggestion status ([#611](https://github.com/adobe/spacecat-shared/issues/611)) ([51ca3a7](https://github.com/adobe/spacecat-shared/commit/51ca3a711036a7c1e41396c27fc81aa077a0b307))
+
 # [@adobe/spacecat-shared-data-access-v2.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.1...@adobe/spacecat-shared-data-access-v2.9.2) (2025-02-26)
 
 

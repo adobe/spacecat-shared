@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.1...@adobe/spacecat-shared-data-access-v2.9.2) (2025-02-26)
+
+
+### Bug Fixes
+
+* add limit param ([#631](https://github.com/adobe/spacecat-shared/issues/631)) ([72faa3c](https://github.com/adobe/spacecat-shared/commit/72faa3cb0a0037558a6dd11372b923562c884668))
+
 # [@adobe/spacecat-shared-data-access-v2.9.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.0...@adobe/spacecat-shared-data-access-v2.9.1) (2025-02-26)
 
 

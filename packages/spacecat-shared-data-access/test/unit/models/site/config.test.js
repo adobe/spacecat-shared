@@ -720,6 +720,7 @@ describe('Config Tests', () => {
             destinations: ['default'],
             sources: ['ahrefs'],
             enabled: true,
+            limit: 100,
             pageUrl: 'https://example.com',
           },
           {

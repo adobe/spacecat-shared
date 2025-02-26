@@ -30,7 +30,8 @@ export const IMPORT_SOURCES = {
 const IMPORT_BASE_KEYS = {
   destinations: Joi.array().items(Joi.string().valid(IMPORT_DESTINATIONS.DEFAULT)).required(),
   sources: Joi.array().items(Joi.string().valid(...Object.values(IMPORT_SOURCES))).required(),
-  enabled: Joi.boolean().required().default(true),
+  // not required for now due backward compatibility
+  enabled: Joi.boolean().default(true),
 };
 
 export const IMPORT_TYPE_SCHEMAS = {
@@ -118,7 +119,7 @@ export function validateConfiguration(config) {
   const { error, value } = configSchema.validate(config);
 
   if (error) {
-    throw new Error(`Configuration validation error: ${error.message}`);
+    throw new Error(`Configuration validation error: ${error.message}`, { cause: error });
   }
 
   return value; // Validated and sanitized configuration

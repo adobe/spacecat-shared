@@ -38,6 +38,7 @@ export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
     ...IMPORT_BASE_KEYS,
+    limit: Joi.number().integer().min(1).max(100),
     pageUrl: Joi.string().uri(),
   }),
   [IMPORT_TYPES.ORGANIC_TRAFFIC]: Joi.object({

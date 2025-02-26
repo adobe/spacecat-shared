@@ -139,6 +139,7 @@ describe('Config Tests', () => {
         headers: {
           'User-Agent': 'custom-agent',
         },
+        overrideBaseURL: 'https://example.com',
       };
       config.updateFetchConfig(fetchConfig);
       expect(config.getFetchConfig()).to.deep.equal(fetchConfig);
@@ -599,6 +600,7 @@ describe('Config Tests', () => {
           headers: {
             'User-Agent': 'test-agent',
           },
+          overrideBaseURL: 'https://example.com',
         },
       };
       const validated = validateConfiguration(config);
@@ -702,7 +704,7 @@ describe('Config Tests', () => {
         });
     });
 
-    it('throws error for invalid fetchConfig', () => {
+    it('throws error for invalid fetchConfig headers', () => {
       const config = {
         fetchConfig: {
           headers: 'not-an-object',
@@ -710,6 +712,16 @@ describe('Config Tests', () => {
       };
       expect(() => validateConfiguration(config))
         .to.throw('Configuration validation error: "fetchConfig.headers" must be of type object');
+    });
+
+    it('throws error for invalid fetchConfig overrideBaseUrl', () => {
+      const config = {
+        fetchConfig: {
+          overrideBaseURL: 'not-a-url',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "fetchConfig.overrideBaseURL" must be a valid uri');
     });
 
     it('validates multiple import types with different configurations', () => {

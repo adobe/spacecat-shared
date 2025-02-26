@@ -49,6 +49,7 @@ export const IMPORT_TYPE_SCHEMAS = {
     type: Joi.string().valid(IMPORT_TYPES.TOP_PAGES).required(),
     ...IMPORT_BASE_KEYS,
     geo: Joi.string(),
+    limit: Joi.number().integer().min(1).max(2000),
   }),
 };
 
@@ -85,6 +86,7 @@ export const configSchema = Joi.object({
   ),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
+    overrideBaseURL: Joi.string().uri(),
   }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),

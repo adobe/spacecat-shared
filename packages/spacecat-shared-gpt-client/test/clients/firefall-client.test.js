@@ -229,7 +229,7 @@ describe('FirefallClient', () => {
       expect(result.model).to.equal('hello');
     });
 
-    it.only('should handle a bad json response', async () => {
+    it('should handle a bad json response', async () => {
       nock(mockContext.env.FIREFALL_API_ENDPOINT)
         .post(chatPath)
         .reply(400, { message: 'Bad request was provided' });

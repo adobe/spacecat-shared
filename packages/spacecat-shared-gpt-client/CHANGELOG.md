@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.0...@adobe/spacecat-shared-gpt-client-v1.5.1) (2025-02-26)
+
+
+### Bug Fixes
+
+* improves logs for Firefall client failures ([#632](https://github.com/adobe/spacecat-shared/issues/632)) ([eeac857](https://github.com/adobe/spacecat-shared/commit/eeac8575ceab5b5b086dd8daaf46dc07430fe5a4))
+
 # [@adobe/spacecat-shared-gpt-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.4.7...@adobe/spacecat-shared-gpt-client-v1.5.0) (2025-02-17)
 
 

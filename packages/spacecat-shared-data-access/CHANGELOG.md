@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.9.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.3...@adobe/spacecat-shared-data-access-v2.9.4) (2025-02-27)
+
+
+### Bug Fixes
+
+* url override in import-schema ([#634](https://github.com/adobe/spacecat-shared/issues/634)) ([39b76fa](https://github.com/adobe/spacecat-shared/commit/39b76facbd215100370cd6c2d9ed19c32fd6f9e7))
+
+# [@adobe/spacecat-shared-data-access-v2.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.2...@adobe/spacecat-shared-data-access-v2.9.3) (2025-02-26)
+
+
+### Bug Fixes
+
+* adds OUTDATED suggestion status ([#611](https://github.com/adobe/spacecat-shared/issues/611)) ([51ca3a7](https://github.com/adobe/spacecat-shared/commit/51ca3a711036a7c1e41396c27fc81aa077a0b307))
+
 # [@adobe/spacecat-shared-data-access-v2.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.1...@adobe/spacecat-shared-data-access-v2.9.2) (2025-02-26)
 
 

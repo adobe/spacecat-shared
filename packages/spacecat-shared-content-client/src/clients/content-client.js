@@ -350,7 +350,7 @@ export default class ContentClient {
 
   async updateBrokenInternalLinks(path, brokenLinks) {
     const startTime = process.hrtime.bigint();
-    const urlRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/
+    const urlRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
 
     validateRedirects(brokenLinks, urlRegex);
     validatePath(path);
@@ -363,9 +363,8 @@ export default class ContentClient {
     const document = await this.rawClient.getDocument(docPath);
 
     const updateLinkPromises = brokenLinks.map(async (brokenLink) => {
-      let response;
       this.log.info('Updating link from', brokenLink, 'to', brokenLink.to);
-      response = await document.updateLink(brokenLink.from, brokenLink.to);
+      const response = await document.updateLink(brokenLink.from, brokenLink.to);
 
       if (response.status !== 200) {
         throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);

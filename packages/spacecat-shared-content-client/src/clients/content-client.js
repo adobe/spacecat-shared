@@ -11,6 +11,7 @@
  */
 
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
+import { updateLink } from '@adobe/spacecat-helix-content-sdk';
 import {
   composeBaseURL, hasText, isObject, tracingFetch,
 } from '@adobe/spacecat-shared-utils';
@@ -135,6 +136,31 @@ const validateRedirects = (redirects) => {
       throw new Error('Redirect from and to paths must be different');
     }
   }
+};
+
+const validateURLs = (urls) => {
+  const urlRegex =  /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
+    if (!Array.isArray(urls)) {
+      throw new Error('URLs must be an array');
+    }
+
+    if (!urls.length) {
+      throw new Error('URLs must not be empty');
+    }
+
+    for (const url of urls) {
+      if (!hasText(url)) {
+          throw new Error('URL must be a string');
+      }
+
+      if (!urlRegex.test(url)) {
+          throw new Error(`Invalid URL: ${url}`);
+      }
+
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        throw new Error(`Invalid URL: ${url}`);
+      }
+    }
 };
 
 const removeDuplicatedRedirects = (currentRedirects, newRedirects, log) => {
@@ -348,5 +374,29 @@ export default class ContentClient {
     }
 
     this.#logDuration('updateRedirects', startTime);
+  }
+
+
+  async updateBrokenInternalLinks(path, brokenLinks) {
+    const startTime = process.hrtime.bigint();
+
+    validateURLs(brokenLinks);
+    validatePath(path);
+
+    await this.#initClient();
+
+    this.log.info(`Updating page links for ${this.site.getId()} and path ${path}`);
+
+    const docPath = this.#resolveDocPath(path);
+    const document = await this.rawClient.getDocument(docPath);
+
+    for (const brokenLink of brokenLinks) {
+      const response = await document.updateLink(brokenLink.from, brokenLink.to);
+      if (response.status !== 200) {
+        throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to}`);
+      }
+    }
+
+    this.#logDuration('updateBrokenInternalLinks', startTime);
   }
 }

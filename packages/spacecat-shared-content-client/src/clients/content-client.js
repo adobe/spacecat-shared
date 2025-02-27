@@ -137,7 +137,7 @@ const validateRedirects = (redirects) => {
 };
 
 const validateURLs = (urls) => {
-  const urlRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
+  const urlRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
   if (!Array.isArray(urls)) {
     throw new Error('URLs must be an array');
   }
@@ -146,17 +146,25 @@ const validateURLs = (urls) => {
     throw new Error('URLs must not be empty');
   }
 
-  for (const url of urls) {
-    if (!hasText(url)) {
-      throw new Error('URL must be a string');
+  for (const urlObj of urls) {
+    if (!isObject(urlObj) || !hasText(urlObj.from) || !hasText(urlObj.to)) {
+      throw new Error('Each URL must be an object with "from" and "to" properties');
     }
 
-    if (!urlRegex.test(url)) {
-      throw new Error(`Invalid URL: ${url}`);
+    if (!urlRegex.test(urlObj.from)) {
+      throw new Error(`Invalid URL: ${urlObj.from}`);
     }
 
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      throw new Error(`Invalid URL: ${url}`);
+    if (!urlRegex.test(urlObj.to)) {
+      throw new Error(`Invalid URL: ${urlObj.to}`);
+    }
+
+    if (!urlObj.from.startsWith('http://') && !urlObj.from.startsWith('https://')) {
+      throw new Error(`Invalid URL: ${urlObj.from}`);
+    }
+
+    if (!urlObj.to.startsWith('http://') && !urlObj.to.startsWith('https://')) {
+      throw new Error(`Invalid URL: ${urlObj.to}`);
     }
   }
 };
@@ -401,7 +409,7 @@ export default class ContentClient {
       }
 
       if (response.status !== 200) {
-        throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to}`);
+        throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);
       }
     });
 

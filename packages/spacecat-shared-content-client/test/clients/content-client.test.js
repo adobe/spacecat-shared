@@ -556,4 +556,86 @@ describe('ContentClient', () => {
       await expect(redirectsSdk.append).to.not.have.been.called;
     });
   });
+
+  describe('validateURLs', () => {
+    let client;
+
+    beforeEach(() => {
+      client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+    });
+
+    it('should throw an error if URLs is not an array', () => {
+      expect(() => client.validateURLs('not-an-array')).to.throw('URLs must be an array');
+    });
+
+    it('should throw an error if URLs array is empty', () => {
+      expect(() => client.validateURLs([])).to.throw('URLs must not be empty');
+    });
+
+    it('should throw an error if any URL is not a string', () => {
+      expect(() => client.validateURLs([123])).to.throw('URL must be a string');
+    });
+
+    it('should throw an error if any URL is invalid', () => {
+      expect(() => client.validateURLs(['/invalid-url'])).to.throw('Invalid URL: /invalid-url');
+    });
+
+    it('should throw an error if any URL does not start with http:// or https://', () => {
+      expect(() => client.validateURLs(['/valid-url'])).to.throw('Invalid URL: /valid-url');
+    });
+
+    it('should not throw an error for valid URLs', () => {
+      expect(() => client.validateURLs(['http://valid-url', 'https://another-valid-url'])).to.not.throw();
+    });
+  });
+
+  describe('updateBrokenInternalLinks', () => {
+    let client;
+
+    beforeEach(async () => {
+      client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await client.getPageMetadata('/test-path'); // This will initialize the rawClient
+    });
+
+    it('should throw an error if brokenLinks is not an array', async () => {
+      await expect(client.updateBrokenInternalLinks('/test-path', 'not-an-array')).to.be.rejectedWith('URLs must be an array');
+    });
+
+    it('should throw an error if brokenLinks array is empty', async () => {
+      await expect(client.updateBrokenInternalLinks('/test-path', [])).to.be.rejectedWith('URLs must not be empty');
+    });
+
+    it('should throw an error if any brokenLink is invalid', async () => {
+      const brokenLinks = [{ from: '/invalid-url', to: 'https://valid-url' }];
+      await expect(client.updateBrokenInternalLinks('/test-path', brokenLinks)).to.be.rejectedWith('Invalid URL: /invalid-url');
+    });
+
+    it('should update broken internal links for Google Drive', async () => {
+      const brokenLinks = [{ from: 'http://old-link', to: 'https://new-link' }];
+      client.rawClient.getDocument = sinon.stub().returns({
+        updateLink: sinon.stub().resolves({ status: 200 }),
+      });
+      await client.updateBrokenInternalLinks('/test-path', brokenLinks);
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
+    });
+
+    it('should update broken internal links for OneDrive', async () => {
+      const brokenLinks = [{ from: 'http://old-link', to: 'https://new-link' }];
+      client = ContentClient.createFrom(context, siteConfigOneDrive);
+      await client.getPageMetadata('/test-path'); // This will initialize the rawClient
+      client.rawClient.getDocument = sinon.stub().returns({
+        updateLink: sinon.stub().resolves({ status: 200 }),
+      });
+      await client.updateBrokenInternalLinks('/test-path', brokenLinks);
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
+    });
+
+    it('should throw an error if updateLink fails', async () => {
+      const brokenLinks = [{ from: 'http://old-link', to: 'https://new-link' }];
+      client.rawClient.getDocument = sinon.stub().returns({
+        updateLink: sinon.stub().resolves({ status: 500 }),
+      });
+      await expect(client.updateBrokenInternalLinks('/test-path', brokenLinks)).to.be.rejectedWith('Failed to update link from http://old-link to https://new-link');
+    });
+  });
 });

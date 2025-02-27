@@ -32,6 +32,7 @@ const IMPORT_BASE_KEYS = {
   sources: Joi.array().items(Joi.string().valid(...Object.values(IMPORT_SOURCES))).required(),
   // not required for now due backward compatibility
   enabled: Joi.boolean().default(true),
+  url: Joi.string().uri().optional(), // optional url to override
 };
 
 export const IMPORT_TYPE_SCHEMAS = {

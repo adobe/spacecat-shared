@@ -751,6 +751,22 @@ describe('Config Tests', () => {
       expect(validated).to.deep.equal(config);
     });
 
+    it('validates optional url in the import configuration', () => {
+      const config = {
+        imports: [
+          {
+            type: 'organic-keywords',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+            url: 'https://example.com',
+          },
+        ],
+      };
+      const validated = validateConfiguration(config);
+      expect(validated).to.deep.equal(config);
+    });
+
     it('throws error for missing required import fields', () => {
       const config = {
         imports: [

@@ -18,6 +18,7 @@ import esmock from 'esmock';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
+import { validateURLs } from '../../src/clients/content-client.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -558,34 +559,51 @@ describe('ContentClient', () => {
   });
 
   describe('validateURLs', () => {
-    let client;
-
-    beforeEach(() => {
-      client = ContentClient.createFrom(context, siteConfigGoogleDrive);
-    });
-
     it('should throw an error if URLs is not an array', () => {
-      expect(() => client.validateURLs('not-an-array')).to.throw('URLs must be an array');
+      expect(() => validateURLs('not-an-array')).to.throw('URLs must be an array');
     });
 
     it('should throw an error if URLs array is empty', () => {
-      expect(() => client.validateURLs([])).to.throw('URLs must not be empty');
+      expect(() => validateURLs([])).to.throw('URLs must not be empty');
     });
 
-    it('should throw an error if any URL is not a string', () => {
-      expect(() => client.validateURLs([123])).to.throw('URL must be a string');
+    it('should throw an error if any URL is not an object with from and to properties', () => {
+      expect(() => validateURLs([123])).to.throw('Each URL must be an object with "from" and "to" properties');
     });
 
     it('should throw an error if any URL is invalid', () => {
-      expect(() => client.validateURLs(['/invalid-url'])).to.throw('Invalid URL: /invalid-url');
+      const invalidURLs = [{ from: '/invalid-url', to: 'https://valid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: /invalid-url');
     });
 
     it('should throw an error if any URL does not start with http:// or https://', () => {
-      expect(() => client.validateURLs(['/valid-url'])).to.throw('Invalid URL: /valid-url');
+      const invalidURLs = [{ from: 'ftp://invalid-url', to: 'https://valid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: ftp://invalid-url');
+    });
+
+    it('should throw an error if any "to" URL does not match the regex pattern', () => {
+      const invalidURLs = [{ from: 'http://valid-url', to: 'invalid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: invalid-url');
+    });
+
+    it('should throw an error if any "from" URL does not match the regex pattern', () => {
+      const invalidURLs = [{ from: 'invalid-url', to: 'https://valid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: invalid-url');
+    });
+
+    it('should throw an error if any "from" URL does not start with http:// or https://', () => {
+      const invalidURLs = [{ from: 'invalid-url', to: 'https://valid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: invalid-url');
+    });
+
+    it('should throw an error if any "to" URL does not start with http:// or https://', () => {
+      const invalidURLs = [{ from: 'http://valid-url', to: 'invalid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: invalid-url');
     });
 
     it('should not throw an error for valid URLs', () => {
-      expect(() => client.validateURLs(['http://valid-url', 'https://another-valid-url'])).to.not.throw();
+      const validURLs = [{ from: 'http://valid-url', to: 'https://another-valid-url' }];
+      expect(() => validateURLs(validURLs)).to.not.throw();
     });
   });
 

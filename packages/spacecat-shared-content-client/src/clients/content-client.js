@@ -99,8 +99,7 @@ const validateMetadata = (metadata) => {
   }
 };
 
-const validateRedirects = (redirects) => {
-  const pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
+const validateRedirects = (redirects, pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/) => {
   if (!Array.isArray(redirects)) {
     throw new Error('Redirects must be an array');
   }
@@ -132,39 +131,6 @@ const validateRedirects = (redirects) => {
 
     if (redirect.from === redirect.to) {
       throw new Error('Redirect from and to paths must be different');
-    }
-  }
-};
-
-const validateURLs = (urls) => {
-  const urlRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
-  if (!Array.isArray(urls)) {
-    throw new Error('URLs must be an array');
-  }
-
-  if (!urls.length) {
-    throw new Error('URLs must not be empty');
-  }
-
-  for (const urlObj of urls) {
-    if (!isObject(urlObj) || !hasText(urlObj.from) || !hasText(urlObj.to)) {
-      throw new Error('Each URL must be an object with "from" and "to" properties');
-    }
-
-    if (!urlRegex.test(urlObj.from)) {
-      throw new Error(`Invalid URL: ${urlObj.from}`);
-    }
-
-    if (!urlRegex.test(urlObj.to)) {
-      throw new Error(`Invalid URL: ${urlObj.to}`);
-    }
-
-    if (!urlObj.from.startsWith('http://') && !urlObj.from.startsWith('https://')) {
-      throw new Error(`Invalid URL: ${urlObj.from}`);
-    }
-
-    if (!urlObj.to.startsWith('http://') && !urlObj.to.startsWith('https://')) {
-      throw new Error(`Invalid URL: ${urlObj.to}`);
     }
   }
 };
@@ -384,8 +350,9 @@ export default class ContentClient {
 
   async updateBrokenInternalLinks(path, brokenLinks) {
     const startTime = process.hrtime.bigint();
+    const urlRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/
 
-    validateURLs(brokenLinks);
+    validateRedirects(brokenLinks, urlRegex);
     validatePath(path);
 
     await this.#initClient();
@@ -397,16 +364,8 @@ export default class ContentClient {
 
     const updateLinkPromises = brokenLinks.map(async (brokenLink) => {
       let response;
-      // the if else might not be necessary except for logging
-      if (this.contentSource.type === CONTENT_SOURCE_TYPE_DRIVE_GOOGLE) {
-        this.log.info('Updating link for Google Drive document');
-        response = await document
-          .updateLink(brokenLink.from, brokenLink.to);
-      } else if (this.contentSource.type === CONTENT_SOURCE_TYPE_ONEDRIVE) {
-        this.log.info('Updating link for SharePoint document');
-        response = await document
-          .updateLink(brokenLink.from, brokenLink.to);
-      }
+      this.log.info('Updating link from', brokenLink, 'to', brokenLink.to);
+      response = await document.updateLink(brokenLink.from, brokenLink.to);
 
       if (response.status !== 200) {
         throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);

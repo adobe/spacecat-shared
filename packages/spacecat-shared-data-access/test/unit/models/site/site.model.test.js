@@ -165,15 +165,20 @@ describe('SiteModel', () => {
   });
 
   describe('resolveFinalURL', () => {
+    beforeEach(() => {
+      nock.cleanAll();
+    });
+
     afterEach(() => {
       nock.cleanAll();
     });
 
     it('resolves the final URL using the base URL', async () => {
+      instance.setBaseURL('https://spacecat.com');
       const config = instance.getConfig();
       config.fetchConfig = {};
 
-      nock('https://example0.com')
+      nock(instance.getBaseURL())
         .get('/')
         .reply(301, undefined, { Location: 'https://redirected.com' });
       nock('https://redirected.com')
@@ -195,11 +200,12 @@ describe('SiteModel', () => {
     });
 
     it('resolves the final URL using the User-Agent header', async () => {
+      instance.setBaseURL('https://spacecat.com');
       const userAgent = 'Mozilla/5.0';
       const config = instance.getConfig();
       config.fetchConfig = { headers: { 'User-Agent': userAgent } };
 
-      nock('https://example0.com', {
+      nock(instance.getBaseURL(), {
         reqheaders: {
           'User-Agent': userAgent,
         },
@@ -209,7 +215,7 @@ describe('SiteModel', () => {
 
       const finalURL = await instance.resolveFinalURL();
 
-      expect(finalURL).to.equal('example0.com');
+      expect(finalURL).to.equal(instance.getBaseURL().replace(/^https?:\/\//, ''));
     });
   });
 });

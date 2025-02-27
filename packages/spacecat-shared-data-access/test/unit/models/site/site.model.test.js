@@ -165,10 +165,6 @@ describe('SiteModel', () => {
   });
 
   describe('resolveFinalURL', () => {
-    beforeEach(() => {
-      nock.cleanAll();
-    });
-
     afterEach(() => {
       nock.cleanAll();
     });

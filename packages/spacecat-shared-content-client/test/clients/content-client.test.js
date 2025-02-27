@@ -486,8 +486,8 @@ describe('ContentClient', () => {
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, 'malformed-redirect'])).to.be.rejectedWith('Redirect must be an object');
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '', to: '/B' }])).to.be.rejectedWith('Redirect must have a valid from path');
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '/A', to: '' }])).to.be.rejectedWith('Redirect must have a valid to path');
-      await expect(client.updateRedirects([{ from: 'A', to: '/B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Invalid redirect from path: A');
-      await expect(client.updateRedirects([{ from: '/A', to: 'B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Invalid redirect to path: B');
+      await expect(client.updateRedirects([{ from: 'A', to: '/B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Invalid Redirect from path: A');
+      await expect(client.updateRedirects([{ from: '/A', to: 'B' }, { from: '/A', to: '/C' }])).to.be.rejectedWith('Invalid Redirect to path: B');
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '/A', to: '/A' }])).to.be.rejectedWith('Redirect from and to paths must be different');
     });
     it('update success', async () => {
@@ -566,16 +566,16 @@ describe('ContentClient', () => {
     });
 
     it('should throw an error if brokenLinks is not an array', async () => {
-      await expect(client.updateBrokenInternalLinks('/test-path', 'not-an-array')).to.be.rejectedWith('Redirects must be an array');
+      await expect(client.updateBrokenInternalLinks('/test-path', 'not-an-array')).to.be.rejectedWith('URLs must be an array');
     });
 
     it('should throw an error if brokenLinks array is empty', async () => {
-      await expect(client.updateBrokenInternalLinks('/test-path', [])).to.be.rejectedWith('Redirects must not be empty');
+      await expect(client.updateBrokenInternalLinks('/test-path', [])).to.be.rejectedWith('URLs must not be empty');
     });
 
     it('should throw an error if any brokenLink is invalid', async () => {
       const brokenLinks = [{ from: '/invalid-url', to: 'https://valid-url' }];
-      await expect(client.updateBrokenInternalLinks('/test-path', brokenLinks)).to.be.rejectedWith('Invalid redirect from path: /invalid-url');
+      await expect(client.updateBrokenInternalLinks('/test-path', brokenLinks)).to.be.rejectedWith('Invalid URL from path: /invalid-url');
     });
 
     it('should update broken internal links for Google Drive', async () => {

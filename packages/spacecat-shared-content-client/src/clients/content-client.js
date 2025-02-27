@@ -99,38 +99,45 @@ const validateMetadata = (metadata) => {
   }
 };
 
-const validateRedirects = (redirects, pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/) => {
-  if (!Array.isArray(redirects)) {
-    throw new Error('Redirects must be an array');
+const validateLinks = (links, type) => {
+  let pathRegex;
+  if (type === 'URL') {
+    pathRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
+  } else if (type === 'Redirect') {
+    pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
   }
 
-  if (!redirects.length) {
-    throw new Error('Redirects must not be empty');
+  if (!Array.isArray(links)) {
+    throw new Error(`${type}s must be an array`);
   }
 
-  for (const redirect of redirects) {
-    if (!isObject(redirect)) {
-      throw new Error('Redirect must be an object');
+  if (!links.length) {
+    throw new Error(`${type}s must not be empty`);
+  }
+
+  for (const link of links) {
+    if (!isObject(link)) {
+      throw new Error(`${type} must be an object`);
     }
 
-    if (!hasText(redirect.from)) {
-      throw new Error('Redirect must have a valid from path');
+    if (!hasText(link.from)) {
+      throw new Error(`${type} must have a valid from path`);
     }
 
-    if (!hasText(redirect.to)) {
-      throw new Error('Redirect must have a valid to path');
+    if (!hasText(link.to)) {
+      throw new Error(`${type} must have a valid to path`);
     }
 
-    if (!pathRegex.test(redirect.from)) {
-      throw new Error(`Invalid redirect from path: ${redirect.from}`);
+    if (!pathRegex.test(link.from)) {
+      throw new Error(`Invalid ${type} from path: ${link.from}`);
     }
 
-    if (!pathRegex.test(redirect.to)) {
-      throw new Error(`Invalid redirect to path: ${redirect.to}`);
+    if (!pathRegex.test(link.to)) {
+      throw new Error(`Invalid ${type} to path: ${link.to}`);
     }
 
-    if (redirect.from === redirect.to) {
-      throw new Error('Redirect from and to paths must be different');
+    if (link.from === link.to) {
+      throw new Error(`${type} from and to paths must be different`);
     }
   }
 };
@@ -320,7 +327,7 @@ export default class ContentClient {
   async updateRedirects(redirects) {
     const startTime = process.hrtime.bigint();
 
-    validateRedirects(redirects);
+    validateLinks(redirects, 'Redirect');
 
     await this.#initClient();
 
@@ -350,9 +357,8 @@ export default class ContentClient {
 
   async updateBrokenInternalLinks(path, brokenLinks) {
     const startTime = process.hrtime.bigint();
-    const urlRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
 
-    validateRedirects(brokenLinks, urlRegex);
+    validateLinks(brokenLinks, 'URL');
     validatePath(path);
 
     await this.#initClient();

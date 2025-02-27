@@ -43,6 +43,7 @@ class Audit extends BaseModel {
     META_TAGS: 'meta-tags',
     COSTS: 'costs',
     STRUCTURED_DATA: 'structured-data',
+    STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
     FORMS_OPPORTUNITIES: 'forms-opportunities',
     SITE_DETECTION: 'site-detection',
     ALT_TEXT: 'alt-text',

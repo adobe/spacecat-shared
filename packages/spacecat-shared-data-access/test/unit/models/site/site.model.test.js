@@ -16,6 +16,7 @@ import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
+import nock from 'nock';
 
 import Site from '../../../../src/models/site/site.model.js';
 import siteFixtures from '../../../fixtures/sites.fixture.js';
@@ -160,6 +161,55 @@ describe('SiteModel', () => {
       instance.toggleLive();
 
       expect(instance.getIsLive()).to.equal(true);
+    });
+  });
+
+  describe('resolveFinalURL', () => {
+    afterEach(() => {
+      nock.cleanAll();
+    });
+
+    it('resolves the final URL using the base URL', async () => {
+      const config = instance.getConfig();
+      config.fetchConfig = {};
+
+      nock('https://example0.com')
+        .get('/')
+        .reply(301, undefined, { Location: 'https://redirected.com' });
+      nock('https://redirected.com')
+        .get('/')
+        .reply(200);
+
+      const finalURL = await instance.resolveFinalURL();
+
+      expect(finalURL).to.equal('redirected.com');
+    });
+
+    it('resolves the final URL using the overrideBaseURL', async () => {
+      const config = instance.getConfig();
+      config.fetchConfig = { overrideBaseURL: 'http://override.com' };
+
+      const finalURL = await instance.resolveFinalURL();
+
+      expect(finalURL).to.equal('override.com');
+    });
+
+    it('resolves the final URL using the User-Agent header', async () => {
+      const userAgent = 'Mozilla/5.0';
+      const config = instance.getConfig();
+      config.fetchConfig = { headers: { 'User-Agent': userAgent } };
+
+      nock('https://example0.com', {
+        reqheaders: {
+          'User-Agent': userAgent,
+        },
+      })
+        .get('/')
+        .reply(200);
+
+      const finalURL = await instance.resolveFinalURL();
+
+      expect(finalURL).to.equal('example0.com');
     });
   });
 });

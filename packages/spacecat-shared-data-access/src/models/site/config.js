@@ -11,7 +11,6 @@
  */
 
 import Joi from 'joi';
-import { composeAuditURL, hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
@@ -39,8 +38,10 @@ export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
     ...IMPORT_BASE_KEYS,
-    limit: Joi.number().integer().min(1).max(100),
-    pageUrl: Joi.string().uri(),
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+    pageUrl: Joi.string().uri().optional(),
   }),
   [IMPORT_TYPES.ORGANIC_TRAFFIC]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_TRAFFIC).required(),
@@ -49,8 +50,9 @@ export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.TOP_PAGES]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.TOP_PAGES).required(),
     ...IMPORT_BASE_KEYS,
-    geo: Joi.string(),
-    limit: Joi.number().integer().min(1).max(2000),
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(2000)
+      .optional(),
   }),
 };
 
@@ -87,7 +89,7 @@ export const configSchema = Joi.object({
   ),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
-    overrideBaseURL: Joi.string().uri(),
+    overrideBaseURL: Joi.string().uri().optional(),
   }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
@@ -242,34 +244,6 @@ export const Config = (data = {}) => {
   self.isImportEnabled = (type) => {
     const config = self.getImportConfig(type);
     return config?.enabled ?? false;
-  };
-
-  /**
-   * Resolves the site's base URL to a  final URL by fetching the URL,
-   * following the redirects and returning the final URL.
-   *
-   * If the site has a configured overrideBaseURL, that one will be returned.
-   * Otherwise, the site's base URL will be used.
-   *
-   * If the site has a configured User-Agent, it will be used to resolve the URL.
-   *
-   * @param {Object} site - The site to resolve the final URL for.
-   * @returns a promise that resolves the final URL.
-   * @throws {Error} if the final URL cannot be resolved.
-   */
-  self.resolveFinalURL = () => {
-    const overrideBaseURL = self.getConfig()?.getFetchConfig()?.overrideBaseURL;
-    if (isValidUrl(overrideBaseURL)) {
-      return overrideBaseURL;
-    }
-
-    const userAgentConfigured = self.getConfig()
-      ?.getFetchConfig()?.headers?.['User-Agent'];
-    if (hasText(userAgentConfigured)) {
-      return composeAuditURL(self.getBaseURL(), userAgentConfigured);
-    }
-
-    return composeAuditURL(self.getBaseURL());
   };
 
   return Object.freeze(self);

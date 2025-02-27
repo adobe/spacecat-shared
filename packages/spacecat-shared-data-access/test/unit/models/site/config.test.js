@@ -581,6 +581,8 @@ describe('Config Tests', () => {
             sources: ['ahrefs'],
             pageUrl: 'https://example.com',
             enabled: false,
+            geo: 'us',
+            limit: 5,
           },
           {
             type: 'organic-traffic',
@@ -594,6 +596,7 @@ describe('Config Tests', () => {
             sources: ['ahrefs'],
             enabled: true,
             geo: 'us',
+            limit: 100,
           },
         ],
         fetchConfig: {

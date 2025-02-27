@@ -11,6 +11,7 @@
  */
 
 import Joi from 'joi';
+import { composeAuditURL, hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
@@ -241,6 +242,34 @@ export const Config = (data = {}) => {
   self.isImportEnabled = (type) => {
     const config = self.getImportConfig(type);
     return config?.enabled ?? false;
+  };
+
+  /**
+   * Resolves the site's base URL to a  final URL by fetching the URL,
+   * following the redirects and returning the final URL.
+   *
+   * If the site has a configured overrideBaseURL, that one will be returned.
+   * Otherwise, the site's base URL will be used.
+   *
+   * If the site has a configured User-Agent, it will be used to resolve the URL.
+   *
+   * @param {Object} site - The site to resolve the final URL for.
+   * @returns a promise that resolves the final URL.
+   * @throws {Error} if the final URL cannot be resolved.
+   */
+  self.resolveFinalURL = () => {
+    const overrideBaseURL = self.getConfig()?.getFetchConfig()?.overrideBaseURL;
+    if (isValidUrl(overrideBaseURL)) {
+      return overrideBaseURL;
+    }
+
+    const userAgentConfigured = self.getConfig()
+      ?.getFetchConfig()?.headers?.['User-Agent'];
+    if (hasText(userAgentConfigured)) {
+      return composeAuditURL(self.getBaseURL(), userAgentConfigured);
+    }
+
+    return composeAuditURL(self.getBaseURL());
   };
 
   return Object.freeze(self);

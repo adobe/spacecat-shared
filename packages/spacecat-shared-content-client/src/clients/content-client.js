@@ -136,7 +136,7 @@ const validateRedirects = (redirects) => {
   }
 };
 
-const validateURLs = (urls) => {
+export const validateURLs = (urls) => {
   const urlRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
   if (!Array.isArray(urls)) {
     throw new Error('URLs must be an array');

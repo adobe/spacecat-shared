@@ -9,9 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
-import { updateLink } from '@adobe/spacecat-helix-content-sdk';
 import {
   composeBaseURL, hasText, isObject, tracingFetch,
 } from '@adobe/spacecat-shared-utils';
@@ -139,28 +137,28 @@ const validateRedirects = (redirects) => {
 };
 
 const validateURLs = (urls) => {
-  const urlRegex =  /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
-    if (!Array.isArray(urls)) {
-      throw new Error('URLs must be an array');
+  const urlRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
+  if (!Array.isArray(urls)) {
+    throw new Error('URLs must be an array');
+  }
+
+  if (!urls.length) {
+    throw new Error('URLs must not be empty');
+  }
+
+  for (const url of urls) {
+    if (!hasText(url)) {
+      throw new Error('URL must be a string');
     }
 
-    if (!urls.length) {
-      throw new Error('URLs must not be empty');
+    if (!urlRegex.test(url)) {
+      throw new Error(`Invalid URL: ${url}`);
     }
 
-    for (const url of urls) {
-      if (!hasText(url)) {
-          throw new Error('URL must be a string');
-      }
-
-      if (!urlRegex.test(url)) {
-          throw new Error(`Invalid URL: ${url}`);
-      }
-
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        throw new Error(`Invalid URL: ${url}`);
-      }
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      throw new Error(`Invalid URL: ${url}`);
     }
+  }
 };
 
 const removeDuplicatedRedirects = (currentRedirects, newRedirects, log) => {
@@ -376,7 +374,6 @@ export default class ContentClient {
     this.#logDuration('updateRedirects', startTime);
   }
 
-
   async updateBrokenInternalLinks(path, brokenLinks) {
     const startTime = process.hrtime.bigint();
 
@@ -390,12 +387,25 @@ export default class ContentClient {
     const docPath = this.#resolveDocPath(path);
     const document = await this.rawClient.getDocument(docPath);
 
-    for (const brokenLink of brokenLinks) {
-      const response = await document.updateLink(brokenLink.from, brokenLink.to);
+    const updateLinkPromises = brokenLinks.map(async (brokenLink) => {
+      let response;
+      // the if else might not be necessary except for logging
+      if (this.contentSource.type === CONTENT_SOURCE_TYPE_DRIVE_GOOGLE) {
+        this.log.info('Updating link for Google Drive document');
+        response = await document
+          .updateLink(brokenLink.from, brokenLink.to);
+      } else if (this.contentSource.type === CONTENT_SOURCE_TYPE_ONEDRIVE) {
+        this.log.info('Updating link for SharePoint document');
+        response = await document
+          .updateLink(brokenLink.from, brokenLink.to);
+      }
+
       if (response.status !== 200) {
         throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to}`);
       }
-    }
+    });
+
+    await Promise.all(updateLinkPromises);
 
     this.#logDuration('updateBrokenInternalLinks', startTime);
   }

@@ -106,5 +106,6 @@ export class ContentClient {
 
   /**
    */
-  updateBrokenInternalLinks(path: string, brokenLinks: Array<{ from: string, to: string }>): Promise<void>;
+  updateBrokenInternalLinks(path: string, brokenLinks: Array<{ from: string, to: string }>):
+      Promise<void>;
 }

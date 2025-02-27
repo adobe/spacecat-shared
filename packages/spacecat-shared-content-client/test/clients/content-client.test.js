@@ -581,6 +581,26 @@ describe('ContentClient', () => {
       expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: ftp://invalid-url');
     });
 
+    it('should throw an error if any "to" URL does not match the regex pattern', () => {
+      const invalidURLs = [{ from: 'http://valid-url', to: 'invalid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: invalid-url');
+    });
+
+    it('should throw an error if any "from" URL does not match the regex pattern', () => {
+      const invalidURLs = [{ from: 'invalid-url', to: 'https://valid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: invalid-url');
+    });
+
+    it('should throw an error if any "from" URL does not start with http:// or https://', () => {
+      const invalidURLs = [{ from: 'invalid-url', to: 'https://valid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: invalid-url');
+    });
+
+    it('should throw an error if any "to" URL does not start with http:// or https://', () => {
+      const invalidURLs = [{ from: 'http://valid-url', to: 'invalid-url' }];
+      expect(() => validateURLs(invalidURLs)).to.throw('Invalid URL: invalid-url');
+    });
+
     it('should not throw an error for valid URLs', () => {
       const validURLs = [{ from: 'http://valid-url', to: 'https://another-valid-url' }];
       expect(() => validateURLs(validURLs)).to.not.throw();

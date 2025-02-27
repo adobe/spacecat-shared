@@ -158,14 +158,6 @@ export const validateURLs = (urls) => {
     if (!urlRegex.test(urlObj.to)) {
       throw new Error(`Invalid URL: ${urlObj.to}`);
     }
-
-    if (!urlObj.from.startsWith('http://') && !urlObj.from.startsWith('https://')) {
-      throw new Error(`Invalid URL: ${urlObj.from}`);
-    }
-
-    if (!urlObj.to.startsWith('http://') && !urlObj.to.startsWith('https://')) {
-      throw new Error(`Invalid URL: ${urlObj.to}`);
-    }
   }
 };
 

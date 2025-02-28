@@ -32,6 +32,8 @@ const handlerSchema = Joi.object().pattern(Joi.string(), Joi.object(
       orgs: Joi.array().items(Joi.string()),
     }),
     enabledByDefault: Joi.boolean().required(),
+    movingAvgThreshold: Joi.number().min(0).optional(),
+    percentageChangeThreshold: Joi.number().min(0).optional(),
     dependencies: Joi.array().items(Joi.object(
       {
         handler: Joi.string(),

@@ -47,13 +47,12 @@ class Site extends BaseModel {
    * @throws {Error} if the final URL cannot be resolved.
    */
   async resolveFinalURL() {
-    const overrideBaseURL = this.getConfig()?.fetchConfig?.overrideBaseURL;
+    const overrideBaseURL = this.getConfig()?.getFetchConfig()?.overrideBaseURL;
     if (isValidUrl(overrideBaseURL)) {
       return overrideBaseURL.replace(/^https?:\/\//, '');
     }
 
-    const userAgentConfigured = this.getConfig()
-      ?.fetchConfig?.headers?.['User-Agent'];
+    const userAgentConfigured = this.getConfig()?.getFetchConfig()?.headers?.['User-Agent'];
     if (hasText(userAgentConfigured)) {
       return composeAuditURL(this.getBaseURL(), userAgentConfigured);
     }

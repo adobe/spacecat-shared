@@ -172,7 +172,7 @@ describe('SiteModel', () => {
     it('resolves the final URL using the base URL', async () => {
       instance.setBaseURL('https://spacecat.com');
       const config = instance.getConfig();
-      config.fetchConfig = {};
+      config.getFetchConfig = () => ({});
 
       nock(instance.getBaseURL())
         .get('/')
@@ -188,7 +188,7 @@ describe('SiteModel', () => {
 
     it('resolves the final URL using the overrideBaseURL', async () => {
       const config = instance.getConfig();
-      config.fetchConfig = { overrideBaseURL: 'http://override.com' };
+      config.getFetchConfig = () => ({ overrideBaseURL: 'http://override.com' });
 
       const finalURL = await instance.resolveFinalURL();
 
@@ -199,7 +199,7 @@ describe('SiteModel', () => {
       instance.setBaseURL('https://spacecat.com');
       const userAgent = 'Mozilla/5.0';
       const config = instance.getConfig();
-      config.fetchConfig = { headers: { 'User-Agent': userAgent } };
+      config.getFetchConfig = () => ({ headers: { 'User-Agent': userAgent } });
 
       nock(instance.getBaseURL(), {
         reqheaders: {

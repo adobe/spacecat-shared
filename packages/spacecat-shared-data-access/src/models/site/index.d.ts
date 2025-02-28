@@ -105,7 +105,6 @@ export interface SiteConfig {
   getLatestMetrics(type: string):
     { pageViewsChange: number; ctrChange: number; projectedTrafficValue: number } | undefined;
   getFetchConfig(): { headers?: Record<string, string>, overrideBaseURL?: string } | undefined;
-  getOverrideBaseURL(): string | undefined;
 }
 
 export interface Site extends BaseModel {

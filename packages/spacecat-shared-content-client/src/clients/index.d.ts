@@ -103,4 +103,18 @@ export class ContentClient {
    * is an issue updating the redirects.
    */
   updateRedirects(redirects: Array<{ from: string, to: string }>): Promise<void>
+
+  /**
+   * Updates the broken internal links for the given page path.
+   *
+   * @param {string} path The path to the page.
+   * @param {Array<{ from: string, to: string }>} brokenLinks The array of broken link objects to
+   * update.
+   * @returns {Promise<void>} A promise that resolves when the broken links have been updated.
+   * @throws {Error} If the path is not a string, empty or does not start with a "/"
+   * @throws {Error} If the brokenLinks array is not valid or if there is an issue updating the
+   * links.
+   */
+  updateBrokenInternalLinks(path: string, brokenLinks: Array<{ from: string, to: string }>):
+      Promise<void>;
 }

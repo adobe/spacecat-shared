@@ -355,10 +355,10 @@ export default class ContentClient {
     this.#logDuration('updateRedirects', startTime);
   }
 
-  async updateBrokenInternalLinks(path, brokenLinks) {
+  async updateBrokenInternalLinks(path, brokenLink) {
     const startTime = process.hrtime.bigint();
 
-    validateLinks(brokenLinks, 'URL');
+    validateLinks(brokenLink, 'URL');
     validatePath(path);
 
     await this.#initClient();
@@ -368,16 +368,12 @@ export default class ContentClient {
     const docPath = this.#resolveDocPath(path);
     const document = await this.rawClient.getDocument(docPath);
 
-    const updateLinkPromises = brokenLinks.map(async (brokenLink) => {
-      this.log.info('Updating link from', brokenLink, 'to', brokenLink.to);
-      const response = await document.updateLink(brokenLink.from, brokenLink.to);
+    this.log.info('Updating link from', brokenLink.from, 'to', brokenLink.to);
+    const response = await document.updateLink(brokenLink.from, brokenLink.to);
 
-      if (response.status !== 200) {
-        throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);
-      }
-    });
-
-    await Promise.all(updateLinkPromises);
+    if (response.status !== 200) {
+      throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);
+    }
 
     this.#logDuration('updateBrokenInternalLinks', startTime);
   }

@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { extractTrafficHints, classifyVendor, getSecondLevelDomain } from './traffic.js';
+import {
+  extractTrafficHints, classifyVendor, getSecondLevelDomain, classifyTrafficSource,
+} from './traffic.js';
 
 /**
  * Calculates the Click-Through Rate (CTR) by URL and Referrer.
@@ -65,6 +67,55 @@ function getCTRByUrlAndVendor(bundles) {
     }, {});
 }
 
+function getCTRByUrlAndType(bundles) {
+  const aggregated = bundles.reduce((acc, bundle) => {
+    const { url } = bundle;
+    const trafficHints = extractTrafficHints(bundle);
+    const { type } = classifyTrafficSource(
+      url,
+      trafficHints.referrer,
+      trafficHints.utmSource,
+      trafficHints.utmMedium,
+      trafficHints.trackingParams,
+    );
+    if (!acc[url]) {
+      acc[url] = { sessionsWithClick: 0, totalPageviews: 0, types: {} };
+    }
+    const hasClick = bundle.events.some((event) => event.checkpoint === 'click');
+
+    acc[url].totalPageviews += bundle.weight;
+    if (hasClick) {
+      acc[url].sessionsWithClick += bundle.weight;
+    }
+    if (type) {
+      if (!acc[url].types[type]) {
+        acc[url].types[type] = { sessionsWithClick: 0, totalPageviews: 0 };
+      }
+      acc[url].types[type].totalPageviews += bundle.weight;
+      if (hasClick) {
+        acc[url].types[type].sessionsWithClick += bundle.weight;
+      }
+    }
+    return acc;
+  }, {});
+  return Object.entries(aggregated)
+    .reduce((acc, [url, { sessionsWithClick, totalPageviews, types }]) => {
+      if (!acc[url]) {
+        acc[url] = { value: 0, types: {} };
+      }
+      acc[url].value = (sessionsWithClick / totalPageviews);
+      acc[url].types = Object.entries(types)
+        .reduce((_acc, [type, {
+          sessionsWithClick: _sessionsWithClick, totalPageviews: _totalPageviews,
+        }]) => {
+          // eslint-disable-next-line no-param-reassign
+          _acc[type] = (_sessionsWithClick / _totalPageviews).toFixed(2);
+          return _acc;
+        }, {});
+      return acc;
+    }, {});
+}
+
 /**
  * Calculates the Click-Through Rate (CTR) average for the entire site.
  * CTR is defined as the total number of sessions with at least one click event
@@ -91,4 +142,5 @@ function getSiteAvgCTR(bundles) {
 export {
   getSiteAvgCTR,
   getCTRByUrlAndVendor,
+  getCTRByUrlAndType,
 };

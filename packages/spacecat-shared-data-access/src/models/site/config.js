@@ -88,6 +88,9 @@ export const configSchema = Joi.object({
   imports: Joi.array().items(
     Joi.alternatives().try(...Object.values(IMPORT_TYPE_SCHEMAS)),
   ),
+  brandConfig: Joi.object({
+    brandId: Joi.string().optional(),
+  }).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),

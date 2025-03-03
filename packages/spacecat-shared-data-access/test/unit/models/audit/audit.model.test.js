@@ -170,6 +170,7 @@ describe('AuditModel', () => {
       META_TAGS: 'meta-tags',
       COSTS: 'costs',
       STRUCTURED_DATA: 'structured-data',
+      STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
       FORMS_OPPORTUNITIES: 'forms-opportunities',
       SITE_DETECTION: 'site-detection',
       ALT_TEXT: 'alt-text',
@@ -177,7 +178,7 @@ describe('AuditModel', () => {
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(22);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(23);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

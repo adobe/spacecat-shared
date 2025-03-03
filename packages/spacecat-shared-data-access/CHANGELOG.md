@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.9.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.4...@adobe/spacecat-shared-data-access-v2.9.5) (2025-02-28)
+
+
+### Bug Fixes
+
+* **override-base-url:** add overrideBaseURL in site.config.fetchConfig ([#633](https://github.com/adobe/spacecat-shared/issues/633)) ([526874f](https://github.com/adobe/spacecat-shared/commit/526874f8665e7bae94ca8968f1cb834cd424ae9f))
+
 # [@adobe/spacecat-shared-data-access-v2.9.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.3...@adobe/spacecat-shared-data-access-v2.9.4) (2025-02-27)
 
 

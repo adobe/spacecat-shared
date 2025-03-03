@@ -39,8 +39,10 @@ export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
     ...IMPORT_BASE_KEYS,
-    limit: Joi.number().integer().min(1).max(100),
-    pageUrl: Joi.string().uri(),
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+    pageUrl: Joi.string().uri().optional(),
   }),
   [IMPORT_TYPES.ORGANIC_TRAFFIC]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_TRAFFIC).required(),
@@ -49,7 +51,9 @@ export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.TOP_PAGES]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.TOP_PAGES).required(),
     ...IMPORT_BASE_KEYS,
-    geo: Joi.string(),
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(2000)
+      .optional(),
   }),
 };
 
@@ -86,6 +90,7 @@ export const configSchema = Joi.object({
   ),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
+    overrideBaseURL: Joi.string().uri().optional(),
   }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),

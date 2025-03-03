@@ -59,9 +59,9 @@ export default class AhrefsAPIClient {
       },
     });
 
-    this.log.info(`Ahrefs API ${endpoint} response has number of rows: ${response.headers.get('x-api-rows')}, 
-      cost per row: ${response.headers.get('x-api-units-cost-row')},
-      total cost: ${response.headers.get('x-api-units-cost-total-actual')}`);
+    this.log.info(`Ahrefs API ${endpoint} response has number of rows: ${response.headers.get('x-api-rows')}, `
+      + `cost per row: ${response.headers.get('x-api-units-cost-row')}, `
+      + `total cost: ${response.headers.get('x-api-units-cost-total-actual')}`);
 
     if (!response.ok) {
       this.log.error(`Ahrefs API request failed with status: ${response.status}`);

@@ -22,6 +22,17 @@ const sites = [
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
     config: {
+      imports: [
+        {
+          sources: [
+            'ahrefs',
+          ],
+          type: 'top-pages',
+          destinations: [
+            'default',
+          ],
+        },
+      ],
       handlers: {
         404: {
           mentions: {
@@ -53,41 +64,6 @@ const sites = [
       slack: {
         channel: 'some-channel',
       },
-      imports: [
-        {
-          type: 'rum-to-aa',
-          mapper: {
-            mapping: {
-              pageURL: {
-                rumField: 'url',
-              },
-              userAgent: {
-                default: 'rum/1.0.0',
-              },
-              eVars: {
-                eVar4: {
-                  default: 'RUM',
-                },
-                eVar3: {
-                  rumField: 'url',
-                },
-              },
-              events: {
-                event4: {
-                  rumField: 'pageviews',
-                },
-              },
-              reportSuiteID: {
-                default: 'ageo1xxpnwdemoexpleugue',
-              },
-              visitorID: {
-                default: '000',
-              },
-            },
-            timezone: 'UTC-07:00',
-          },
-        },
-      ],
     },
   },
   {

@@ -23,13 +23,97 @@ import type {
   SiteTopPage,
 } from '../index';
 
+export type IMPORT_TYPES = {
+  readonly ORGANIC_KEYWORDS: 'organic-keywords';
+  readonly ORGANIC_TRAFFIC: 'organic-traffic';
+  readonly TOP_PAGES: 'top-pages';
+};
+
+export type IMPORT_DESTINATIONS = {
+  readonly DEFAULT: 'default';
+};
+
+export type IMPORT_SOURCES = {
+  readonly AHREFS: 'ahrefs';
+  readonly GSC: 'google';
+};
+
+export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages';
+export type ImportDestination = 'default';
+export type ImportSource = 'ahrefs' | 'google';
+
+export interface ImportConfig {
+  type: ImportType;
+  destinations: ImportDestination[];
+  sources: ImportSource[];
+  enabled: boolean;
+  pageUrl?: string;
+  geo?: string;
+  limit?: number;
+}
+
+export interface SiteConfig {
+  state: {
+    slack?: {
+      workspace?: string;
+      channel?: string;
+      invitedUserCount?: number;
+    };
+    imports?: ImportConfig[];
+    handlers?: Record<string, {
+      mentions?: Record<string, string[]>;
+      excludedURLs?: string[];
+      manualOverwrites?: Array<{
+        brokenTargetURL?: string;
+        targetURL?: string;
+      }>;
+      fixedURLs?: Array<{
+        brokenTargetURL?: string;
+        targetURL?: string;
+      }>;
+      includedURLs?: string[];
+      groupedURLs?: Array<{
+        name: string;
+        pattern: string;
+      }>;
+      latestMetrics?: {
+        pageViewsChange: number;
+        ctrChange: number;
+        projectedTrafficValue: number;
+      };
+    }>;
+    fetchConfig?: {
+      headers?: Record<string, string>;
+      overrideBaseURL?: string;
+    };
+  };
+  getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
+  getImports(): ImportConfig[];
+  getImportConfig(type: ImportType): ImportConfig | undefined;
+  isImportEnabled(type: ImportType): boolean;
+  enableImport(type: ImportType, config?: Partial<ImportConfig>): void;
+  disableImport(type: ImportType): void;
+  getHandlers(): Record<string, object>;
+  getHandlerConfig(type: string): object;
+  getSlackMentions(type: string): string[] | undefined;
+  getExcludedURLs(type: string): string[] | undefined;
+  getManualOverwrites(type: string):
+    Array<{ brokenTargetURL?: string; targetURL?: string }> | undefined;
+  getFixedURLs(type: string): Array<{ brokenTargetURL?: string; targetURL?: string }> | undefined;
+  getIncludedURLs(type: string): string[] | undefined;
+  getGroupedURLs(type: string): Array<{ name: string; pattern: string }> | undefined;
+  getLatestMetrics(type: string):
+    { pageViewsChange: number; ctrChange: number; projectedTrafficValue: number } | undefined;
+  getFetchConfig(): { headers?: Record<string, string>, overrideBaseURL?: string } | undefined;
+}
+
 export interface Site extends BaseModel {
   getAudits(): Promise<Audit>;
   getAuditsByAuditType(auditType: string): Promise<Audit>;
   getAuditsByAuditTypeAndAuditedAt(auditType: string, auditedAt: string): Promise<Audit>;
   getBaseURL(): string;
   getName(): string;
-  getConfig(): object;
+  getConfig(): SiteConfig;
   getDeliveryType(): string;
   getExperiments(): Promise<Experiment[]>;
   getExperimentsByExpId(expId: string): Promise<Experiment[]>;

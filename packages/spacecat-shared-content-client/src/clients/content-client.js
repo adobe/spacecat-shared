@@ -355,30 +355,26 @@ export default class ContentClient {
     this.#logDuration('updateRedirects', startTime);
   }
 
-  async updateBrokenInternalLinks(path, brokenLinks) {
+  async updateBrokenInternalLink(path, brokenLink) {
     const startTime = process.hrtime.bigint();
 
-    validateLinks(brokenLinks, 'URL');
+    validateLinks([brokenLink], 'URL');
     validatePath(path);
 
     await this.#initClient();
 
-    this.log.info(`Updating page links for ${this.site.getId()} and path ${path}`);
+    this.log.info(`Updating page link for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
     const document = await this.rawClient.getDocument(docPath);
 
-    const updateLinkPromises = brokenLinks.map(async (brokenLink) => {
-      this.log.info('Updating link from', brokenLink, 'to', brokenLink.to);
-      const response = await document.updateLink(brokenLink.from, brokenLink.to);
+    this.log.info('Updating link from', brokenLink.from, 'to', brokenLink.to);
+    const response = await document.updateLink(brokenLink.from, brokenLink.to);
 
-      if (response.status !== 200) {
-        throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);
-      }
-    });
+    if (response.status !== 200) {
+      throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);
+    }
 
-    await Promise.all(updateLinkPromises);
-
-    this.#logDuration('updateBrokenInternalLinks', startTime);
+    this.#logDuration('updateBrokenInternalLink', startTime);
   }
 }

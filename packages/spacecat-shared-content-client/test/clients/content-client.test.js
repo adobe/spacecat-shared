@@ -557,7 +557,7 @@ describe('ContentClient', () => {
     });
   });
 
-  describe('updateBrokenInternalLinks', () => {
+  describe('updateBrokenInternalLink', () => {
     let client;
 
     beforeEach(async () => {
@@ -565,45 +565,58 @@ describe('ContentClient', () => {
       await client.getPageMetadata('/test-path'); // This will initialize the rawClient
     });
 
-    it('should throw an error if brokenLinks is not an array', async () => {
-      await expect(client.updateBrokenInternalLinks('/test-path', 'not-an-array')).to.be.rejectedWith('URLs must be an array');
+    it('should throw an error if brokenLink is not an object', async () => {
+      await expect(client.updateBrokenInternalLink('/test-path', 'not-an-object')).to.be.rejectedWith('URL must be an object');
     });
 
-    it('should throw an error if brokenLinks array is empty', async () => {
-      await expect(client.updateBrokenInternalLinks('/test-path', [])).to.be.rejectedWith('URLs must not be empty');
+    it('should throw an error if brokenLink is missing from path', async () => {
+      const brokenLink = { to: 'https://new-link' };
+      await expect(client.updateBrokenInternalLink('/test-path', brokenLink)).to.be.rejectedWith('URL must have a valid from path');
     });
 
-    it('should throw an error if any brokenLink is invalid', async () => {
-      const brokenLinks = [{ from: '/invalid-url', to: 'https://valid-url' }];
-      await expect(client.updateBrokenInternalLinks('/test-path', brokenLinks)).to.be.rejectedWith('Invalid URL from path: /invalid-url');
+    it('should throw an error if brokenLink is missing to path', async () => {
+      const brokenLink = { from: 'http://old-link' };
+      await expect(client.updateBrokenInternalLink('/test-path', brokenLink)).to.be.rejectedWith('URL must have a valid to path');
     });
 
-    it('should update broken internal links for Google Drive', async () => {
-      const brokenLinks = [{ from: 'http://old-link', to: 'https://new-link' }];
+    it('should throw an error if brokenLink from path is invalid', async () => {
+      const brokenLink = { from: 'invalid-url', to: 'https://new-link' };
+      await expect(client.updateBrokenInternalLink('/test-path', brokenLink)).to.be.rejectedWith('Invalid URL from path: invalid-url');
+    });
+
+    it('should throw an error if brokenLink to path is invalid', async () => {
+      const brokenLink = { from: 'http://old-link', to: 'invalid-url' };
+      await expect(client.updateBrokenInternalLink('/test-path', brokenLink)).to.be.rejectedWith('Invalid URL to path: invalid-url');
+    });
+
+    it('should update broken internal link for Google Drive', async () => {
+      const brokenLink = { from: 'http://old-link', to: 'https://new-link' };
       client.rawClient.getDocument = sinon.stub().returns({
         updateLink: sinon.stub().resolves({ status: 200 }),
       });
-      await client.updateBrokenInternalLinks('/test-path', brokenLinks);
+      await client.updateBrokenInternalLink('/test-path', brokenLink);
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
+      expect(client.rawClient.getDocument().updateLink.calledOnceWith('http://old-link', 'https://new-link')).to.be.true;
     });
 
-    it('should update broken internal links for OneDrive', async () => {
-      const brokenLinks = [{ from: 'http://old-link', to: 'https://new-link' }];
+    it('should update broken internal link for OneDrive', async () => {
+      const brokenLink = { from: 'http://old-link', to: 'https://new-link' };
       client = ContentClient.createFrom(context, siteConfigOneDrive);
       await client.getPageMetadata('/test-path'); // This will initialize the rawClient
       client.rawClient.getDocument = sinon.stub().returns({
         updateLink: sinon.stub().resolves({ status: 200 }),
       });
-      await client.updateBrokenInternalLinks('/test-path', brokenLinks);
+      await client.updateBrokenInternalLink('/test-path', brokenLink);
       expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
+      expect(client.rawClient.getDocument().updateLink.calledOnceWith('http://old-link', 'https://new-link')).to.be.true;
     });
 
     it('should throw an error if updateLink fails', async () => {
-      const brokenLinks = [{ from: 'http://old-link', to: 'https://new-link' }];
+      const brokenLink = { from: 'http://old-link', to: 'https://new-link' };
       client.rawClient.getDocument = sinon.stub().returns({
         updateLink: sinon.stub().resolves({ status: 500 }),
       });
-      await expect(client.updateBrokenInternalLinks('/test-path', brokenLinks)).to.be.rejectedWith('Failed to update link from http://old-link to https://new-link');
+      await expect(client.updateBrokenInternalLink('/test-path', brokenLink)).to.be.rejectedWith('Failed to update link from http://old-link to https://new-link // [object Object]');
     });
   });
 });

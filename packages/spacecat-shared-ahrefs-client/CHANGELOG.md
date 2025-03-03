@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.6.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.8...@adobe/spacecat-shared-ahrefs-client-v1.6.9) (2025-03-03)
+
+
+### Bug Fixes
+
+* **ahrefs-client:** log ahrefs costs on a single line ([#642](https://github.com/adobe/spacecat-shared/issues/642)) ([9b12042](https://github.com/adobe/spacecat-shared/commit/9b120429fde96382516f9387c719e8d6592be496))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.6.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.7...@adobe/spacecat-shared-ahrefs-client-v1.6.8) (2025-03-03)
 
 

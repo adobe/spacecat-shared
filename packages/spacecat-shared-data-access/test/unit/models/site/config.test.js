@@ -591,6 +591,12 @@ describe('Config Tests', () => {
             enabled: true,
           },
           {
+            type: 'all-traffic',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
             type: 'top-pages',
             destinations: ['default'],
             sources: ['ahrefs'],
@@ -647,7 +653,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [top-pages]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -679,6 +685,23 @@ describe('Config Tests', () => {
                 context: {
                   valids: [
                     'organic-traffic',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [all-traffic]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'all-traffic',
                   ],
                   label: 'imports[0].type',
                   value: 'organic-keywords',

@@ -16,6 +16,7 @@ export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
+  ALL_TRAFFIC: 'all-traffic',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -25,6 +26,7 @@ export const IMPORT_DESTINATIONS = {
 export const IMPORT_SOURCES = {
   AHREFS: 'ahrefs',
   GSC: 'google',
+  RUM: 'rum',
 };
 
 const IMPORT_BASE_KEYS = {
@@ -48,6 +50,10 @@ export const IMPORT_TYPE_SCHEMAS = {
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_TRAFFIC).required(),
     ...IMPORT_BASE_KEYS,
   }),
+  [IMPORT_TYPES.ALL_TRAFFIC]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ALL_TRAFFIC).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
   [IMPORT_TYPES.TOP_PAGES]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.TOP_PAGES).required(),
     ...IMPORT_BASE_KEYS,
@@ -68,6 +74,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     type: 'organic-traffic',
     destinations: ['default'],
     sources: ['ahrefs'],
+    enabled: true,
+  },
+  'all-traffic': {
+    type: 'all-traffic',
+    destinations: ['default'],
+    sources: ['rum'],
     enabled: true,
   },
   'top-pages': {

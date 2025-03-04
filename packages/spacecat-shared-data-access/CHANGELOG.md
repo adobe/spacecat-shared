@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.6...@adobe/spacecat-shared-data-access-v2.10.0) (2025-03-04)
+
+
+### Features
+
+* introduce getEnabledAuditsForSite in the configuration model ([#643](https://github.com/adobe/spacecat-shared/issues/643)) ([c4b60f5](https://github.com/adobe/spacecat-shared/commit/c4b60f519b75a7482856c7e1b35a1e087d2f1731))
+
 # [@adobe/spacecat-shared-data-access-v2.9.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.5...@adobe/spacecat-shared-data-access-v2.9.6) (2025-03-03)
 
 

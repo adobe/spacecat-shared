@@ -80,7 +80,7 @@ export default class BrandClient {
     }
     const headers = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${imsAccessToken}`,
+      Authorization: `${imsAccessToken}`,
       'x-api-key': this.apiKey,
     };
     const response = await fetch(`${this.apiBaseUrl}${API_GET_BRANDS}`, {

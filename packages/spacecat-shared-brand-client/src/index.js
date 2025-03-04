@@ -49,12 +49,24 @@ export default class BrandClient {
 
   // eslint-disable-next-line class-methods-use-this
   mapToBrand(library) {
+    let createdAt = '';
+    let updatedAt = '';
+    try {
+      createdAt = new Date(library.created_date)?.toISOString();
+    } catch (e) {
+      this.log.error(`Error converting createdAt for brand ${library.library_urn}: ${e.message}`);
+    }
+    try {
+      updatedAt = new Date(library.modified_date)?.toISOString();
+    } catch (e) {
+      this.log.error(`Error converting updatedAt for brand ${library.library_urn}: ${e.message}`);
+    }
     return {
       id: library.library_urn,
       name: library.name,
       imsOrgId: library.org_id,
-      createdAt: new Date(library.created_date)?.toISOString(),
-      updatedAt: new Date(library.updated_date)?.toISOString(),
+      createdAt,
+      updatedAt,
     };
   }
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.10.1...@adobe/spacecat-shared-data-access-v2.10.2) (2025-03-04)
+
+
+### Bug Fixes
+
+* add all-traffic to import schema ([#647](https://github.com/adobe/spacecat-shared/issues/647)) ([9fb3ee5](https://github.com/adobe/spacecat-shared/commit/9fb3ee56b332d095ff73b8dda235192d6ef31aa7))
+
 # [@adobe/spacecat-shared-data-access-v2.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.10.0...@adobe/spacecat-shared-data-access-v2.10.1) (2025-03-04)
 
 

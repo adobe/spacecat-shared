@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.4.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.12...@adobe/spacecat-shared-google-client-v1.4.13) (2025-03-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency googleapis to v146 ([#641](https://github.com/adobe/spacecat-shared/issues/641)) ([94be368](https://github.com/adobe/spacecat-shared/commit/94be368afd7925afef69de0a98d6e1fa7db2e5fc))
+
 # [@adobe/spacecat-shared-google-client-v1.4.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.11...@adobe/spacecat-shared-google-client-v1.4.12) (2025-03-03)
 
 

@@ -103,7 +103,7 @@ export default class BrandClient {
     };
     const imsClient = ImsClient.createFrom(imsContext);
     const response = await imsClient.getServiceAccessToken();
-    if (!response.ok) {
+    if (!response.access_token) {
       throw new Error(`Error getting IMS Access Token: ${response.status}`);
     }
     return response.access_token;

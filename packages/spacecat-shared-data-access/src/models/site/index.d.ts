@@ -81,6 +81,8 @@ export interface SiteConfig {
         ctrChange: number;
         projectedTrafficValue: number;
       };
+      movingAvgThreshold?: number;
+      percentageChangeThreshold?: number;
     }>;
     fetchConfig?: {
       headers?: Record<string, string>;

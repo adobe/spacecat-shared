@@ -120,6 +120,8 @@ export const configSchema = Joi.object({
       name: Joi.string(),
       pattern: Joi.string(),
     })).optional(),
+    movingAvgThreshold: Joi.number().min(1).optional(),
+    percentageChangeThreshold: Joi.number().min(1).optional(),
     latestMetrics: Joi.object({
       pageViewsChange: Joi.number(),
       ctrChange: Joi.number(),

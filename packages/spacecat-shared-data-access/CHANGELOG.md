@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v2.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.10.1...@adobe/spacecat-shared-data-access-v2.10.2) (2025-03-04)
+
+
+### Bug Fixes
+
+* add all-traffic to import schema ([#647](https://github.com/adobe/spacecat-shared/issues/647)) ([9fb3ee5](https://github.com/adobe/spacecat-shared/commit/9fb3ee56b332d095ff73b8dda235192d6ef31aa7))
+
+# [@adobe/spacecat-shared-data-access-v2.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.10.0...@adobe/spacecat-shared-data-access-v2.10.1) (2025-03-04)
+
+
+### Bug Fixes
+
+* getEnabledAuditsForSite not part of Configuration interface ([#646](https://github.com/adobe/spacecat-shared/issues/646)) ([33d7d03](https://github.com/adobe/spacecat-shared/commit/33d7d03ab52069aacb4f6c97fdfdc971a1eb8f1e))
+
+# [@adobe/spacecat-shared-data-access-v2.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.6...@adobe/spacecat-shared-data-access-v2.10.0) (2025-03-04)
+
+
+### Features
+
+* introduce getEnabledAuditsForSite in the configuration model ([#643](https://github.com/adobe/spacecat-shared/issues/643)) ([c4b60f5](https://github.com/adobe/spacecat-shared/commit/c4b60f519b75a7482856c7e1b35a1e087d2f1731))
+
 # [@adobe/spacecat-shared-data-access-v2.9.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.5...@adobe/spacecat-shared-data-access-v2.9.6) (2025-03-03)
 
 

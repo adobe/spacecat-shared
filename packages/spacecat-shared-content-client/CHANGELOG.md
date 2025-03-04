@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.3.40...@adobe/spacecat-shared-content-client-v1.4.0) (2025-03-04)
+
+
+### Features
+
+* Broken internal links autofix ([40764fb](https://github.com/adobe/spacecat-shared/commit/40764fbb88da9760ecfbb008fc4ea27cfe27e823))
+
 # [@adobe/spacecat-shared-content-client-v1.3.40](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.3.39...@adobe/spacecat-shared-content-client-v1.3.40) (2025-03-03)
 
 

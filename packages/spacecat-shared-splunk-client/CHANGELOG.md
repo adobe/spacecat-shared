@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-splunk-client-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.2...@adobe/spacecat-shared-splunk-client-v1.0.3) (2025-03-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.0 ([#645](https://github.com/adobe/spacecat-shared/issues/645)) ([7c97dc4](https://github.com/adobe/spacecat-shared/commit/7c97dc4c4853aa183553ed90f4b0d6dc9f49b656))
+
 # [@adobe/spacecat-shared-splunk-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.1...@adobe/spacecat-shared-splunk-client-v1.0.2) (2025-03-03)
 
 

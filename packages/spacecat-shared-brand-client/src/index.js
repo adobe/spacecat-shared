@@ -26,6 +26,7 @@ export default class BrandClient {
   static createFrom(context) {
     const { env, log = console } = context;
     const { BRAND_API_BASE_URL: apiBaseUrl, BRAND_API_KEY: apiKey } = env;
+    log.info(`Creating BrandClient with apiBaseUrl: ${apiBaseUrl} and apiKey: ${apiKey}`);
 
     if (context.brandClient) return context.brandClient;
 
@@ -70,7 +71,7 @@ export default class BrandClient {
       Authorization: `Bearer ${imsAccessToken}`,
       'x-api-key': this.apiKey,
     };
-    const response = await fetch(API_GET_BRANDS, {
+    const response = await fetch(`${this.apiBaseUrl}${API_GET_BRANDS}`, {
       headers,
     });
 
@@ -123,7 +124,7 @@ export default class BrandClient {
       Authorization: `Bearer ${imsAccessToken}`,
       'x-api-key': this.apiKey,
     };
-    const response = await fetch(API_GET_BRAND_GUIDELINES(brandId), {
+    const response = await fetch(`${this.apiBaseUrl}${API_GET_BRAND_GUIDELINES(brandId)}`, {
       headers,
     });
     if (!response.ok) {

@@ -34,6 +34,7 @@ import {
   isValidDate,
   isValidUrl,
   isValidUUID,
+  isValidIMSOrgId,
   toBoolean,
 } from '../src/index.js';
 
@@ -297,6 +298,16 @@ describe('Shared functions', () => {
     it('returns true for valid url', async () => {
       expect(isValidUrl('http://abc.xyz')).to.be.true;
       expect(isValidUrl('https://abc.xyz')).to.be.true;
+    });
+  });
+
+  describe('isValidIMSOrgId', () => {
+    it('returns false for invalid IMS Org Id', async () => {
+      expect(isValidIMSOrgId('invalid-ims-org-id')).to.be.false;
+    });
+
+    it('returns true for valid IMS Org Id', async () => {
+      expect(isValidIMSOrgId('36231B56669DEACD0A49402F@AdobeOrg')).to.be.true;
     });
   });
 

@@ -42,6 +42,7 @@ describe('Index Exports', () => {
     'isValidDate',
     'isValidUrl',
     'isValidUUID',
+    'isValidIMSOrgId',
     'logWrapper',
     'prependSchema',
     'resolveCustomerSecretsName',

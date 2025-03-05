@@ -145,6 +145,15 @@ describe('Config Tests', () => {
       expect(config.getFetchConfig()).to.deep.equal(fetchConfig);
     });
 
+    it('correctly updates the brandConfig option', () => {
+      const config = Config();
+      const brandConfig = {
+        brandId: 'test-brand',
+      };
+      config.updateBrandConfig(brandConfig);
+      expect(config.getBrandConfig()).to.deep.equal(brandConfig);
+    });
+
     it('should fail gracefully if handler is not present in the configuration', () => {
       const config = Config();
       expect(config.getSlackMentions('404')).to.be.undefined;
@@ -611,6 +620,9 @@ describe('Config Tests', () => {
           },
           overrideBaseURL: 'https://example.com',
         },
+        brandConfig: {
+          brandId: 'test-brand',
+        },
       };
       const validated = validateConfiguration(config);
       expect(validated).to.deep.equal(config);
@@ -738,6 +750,14 @@ describe('Config Tests', () => {
       };
       expect(() => validateConfiguration(config))
         .to.throw('Configuration validation error: "fetchConfig.headers" must be of type object');
+    });
+
+    it('throws error for invalid brandConfig', () => {
+      const config = {
+        brandConfig: {},
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "brandConfig.brandId" is required');
     });
 
     it('throws error for invalid fetchConfig overrideBaseUrl', () => {

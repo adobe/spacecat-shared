@@ -100,6 +100,9 @@ export const configSchema = Joi.object({
   imports: Joi.array().items(
     Joi.alternatives().try(...Object.values(IMPORT_TYPE_SCHEMAS)),
   ),
+  brandConfig: Joi.object({
+    brandId: Joi.string().required(),
+  }).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
@@ -164,6 +167,7 @@ export const Config = (data = {}) => {
   self.getGroupedURLs = (type) => state?.handlers?.[type]?.groupedURLs;
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
   self.getFetchConfig = () => state?.fetchConfig;
+  self.getBrandConfig = () => state?.brandConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -220,6 +224,10 @@ export const Config = (data = {}) => {
     state.fetchConfig = fetchConfig;
   };
 
+  self.updateBrandConfig = (brandConfig) => {
+    state.brandConfig = brandConfig;
+  };
+
   self.enableImport = (type, config = {}) => {
     if (!IMPORT_TYPE_SCHEMAS[type]) {
       throw new Error(`Unknown import type: ${type}`);
@@ -271,4 +279,5 @@ Config.toDynamoItem = (config) => ({
   handlers: config.getHandlers(),
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
+  brandConfig: config.getBrandConfig(),
 });

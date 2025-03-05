@@ -10,13 +10,10 @@
  * governing permissions and limitations under the License.
  */
 /* c8 ignore start */
-import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
+import {
+  isValidIMSOrgId, hasText, isValidUrl, tracingFetch as fetch,
+} from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
-import { context as h2, h1 } from '@adobe/fetch';
-
-export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
-  ? h1()
-  : h2();
 
 const PUBLISHED_BRANDS_FILTER = 'roles=BRAND&itemFilter=publishedBrands';
 const API_GET_BRANDS = `/api/v1/libraries?${PUBLISHED_BRANDS_FILTER}`;
@@ -45,10 +42,11 @@ export default class BrandClient {
     this.apiBaseUrl = apiBaseUrl;
     this.apiKey = apiKey;
     this.log = log;
+    this.serviceAccessToken = null;
   }
 
   // eslint-disable-next-line class-methods-use-this
-  mapToBrand(library) {
+  #mapToBrand(library) {
     let createdAt = '';
     let updatedAt = '';
     try {
@@ -71,7 +69,7 @@ export default class BrandClient {
   }
 
   async getBrandsForOrganization(imsOrgId, imsAccessToken) {
-    if (!hasText(imsOrgId)) {
+    if (!isValidIMSOrgId(imsOrgId)) {
       throw new Error(`Invalid IMS Org ID: ${imsOrgId}`);
     }
 
@@ -88,19 +86,24 @@ export default class BrandClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Error getting brands for organization ${imsOrgId}: ${response.status}`);
+      throw new Error(`Error getting brands for organization ${imsOrgId}: ${response.statusText}`);
     }
     try {
       const result = await response.json();
-      return result.libraries.filter((library) => library.org_id === imsOrgId).map(this.mapToBrand);
+      return result.libraries?.filter(
+        (library) => library.org_id === imsOrgId,
+      )?.map(this.#mapToBrand);
     } catch (e) {
-      this.log.error(`Error getting brands for organization: ${e.message}`);
-      throw new Error(`Error getting brands for organization: ${e.message}`);
+      this.log.error(`Error getting brands for organization ${imsOrgId} with imsAccessToken. ${e.message}`);
+      throw new Error(`Error getting brands for organization ${imsOrgId} with imsAccessToken. ${e.message}`);
     }
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async getImsAccessToken(imsConfig) {
+  async #getImsAccessToken(imsConfig) {
+    if (this.serviceAccessToken) {
+      return this.serviceAccessToken;
+    }
     const {
       host, clientId, clientCode, clientSecret,
     } = imsConfig;
@@ -116,14 +119,18 @@ export default class BrandClient {
     const imsClient = ImsClient.createFrom(imsContext);
     const response = await imsClient.getServiceAccessToken();
     if (!response.access_token) {
-      throw new Error(`Error getting IMS Access Token: ${response.status}`);
+      throw new Error('Error getting IMS Access Token');
     }
-    return response.access_token;
+    this.serviceAccessToken = response.access_token;
+    return this.serviceAccessToken;
   }
 
   async getBrandGuidelines(brandId, imsOrgId, imsConfig = {}) {
     if (!hasText(brandId)) {
       throw new Error(`Invalid brand ID: ${brandId}`);
+    }
+    if (!isValidIMSOrgId(imsOrgId)) {
+      throw new Error(`Invalid IMS Org ID: ${imsOrgId}`);
     }
     const {
       host, clientId, clientCode, clientSecret,
@@ -131,7 +138,7 @@ export default class BrandClient {
     if (!hasText(host) || !hasText(clientId) || !hasText(clientCode) || !hasText(clientSecret)) {
       throw new Error(`Invalid IMS Config: ${JSON.stringify(imsConfig)}`);
     }
-    const imsAccessToken = await this.getImsAccessToken(imsConfig);
+    const imsAccessToken = await this.#getImsAccessToken(imsConfig);
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${imsAccessToken}`,
@@ -148,7 +155,7 @@ export default class BrandClient {
       if (result.org_id !== imsOrgId) {
         throw new Error(`Brand ${brandId} not found for org ${imsOrgId}`);
       }
-      const brandGuidelines = this.mapToBrand(result);
+      const brandGuidelines = this.#mapToBrand(result);
       const guidelines = result.details?.['brand#copyGuidelines'];
       if (guidelines) {
         brandGuidelines.toneOfVoice = guidelines.toneOfVoice || [];

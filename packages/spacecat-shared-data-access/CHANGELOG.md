@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.10.2...@adobe/spacecat-shared-data-access-v2.11.0) (2025-03-05)
+
+
+### Features
+
+* Brand client ([#640](https://github.com/adobe/spacecat-shared/issues/640)) ([8d82f45](https://github.com/adobe/spacecat-shared/commit/8d82f45349ea9be2b1359fe5ebebf5a350f52666))
+
 # [@adobe/spacecat-shared-data-access-v2.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.10.1...@adobe/spacecat-shared-data-access-v2.10.2) (2025-03-04)
 
 

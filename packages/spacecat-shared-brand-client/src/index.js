@@ -9,7 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-/* c8 ignore start */
 import {
   isValidIMSOrgId, hasText, isValidUrl, tracingFetch as fetch,
 } from '@adobe/spacecat-shared-utils';
@@ -118,10 +117,7 @@ export default class BrandClient {
     };
     const imsClient = ImsClient.createFrom(imsContext);
     const response = await imsClient.getServiceAccessToken();
-    if (!response.access_token) {
-      throw new Error('Error getting IMS Access Token');
-    }
-    this.serviceAccessToken = response.access_token;
+    this.serviceAccessToken = response?.access_token;
     return this.serviceAccessToken;
   }
 
@@ -158,11 +154,11 @@ export default class BrandClient {
       const brandGuidelines = this.#mapToBrand(result);
       const guidelines = result.details?.['brand#copyGuidelines'];
       if (guidelines) {
-        brandGuidelines.toneOfVoice = guidelines.toneOfVoice || [];
-        brandGuidelines.coreValues = guidelines.coreValues || [];
-        brandGuidelines.guidelines = guidelines.guidelines || [];
-        brandGuidelines.restrictions = guidelines.restrictions || [];
-        brandGuidelines.additionalGuidelines = guidelines.additionalGuidelines || [];
+        brandGuidelines.toneOfVoice = guidelines.toneOfVoice;
+        brandGuidelines.coreValues = guidelines.coreValues;
+        brandGuidelines.guidelines = guidelines.guidelines;
+        brandGuidelines.restrictions = guidelines.restrictions;
+        brandGuidelines.additionalGuidelines = guidelines.additionalGuidelines;
       }
       return brandGuidelines;
     } catch (e) {
@@ -171,4 +167,3 @@ export default class BrandClient {
     }
   }
 }
-/* c8 ignore stop */

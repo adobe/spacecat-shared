@@ -121,6 +121,16 @@ describe('BrandClient', () => {
       await expect(client.getBrandsForOrganization(validImsOrgId, validImsAccessToken))
         .to.be.rejectedWith(`Error getting brands for organization ${validImsOrgId}: Internal Server Error`);
     });
+
+    it('handles JSON parsing error', async () => {
+      const client = new BrandClient({ apiBaseUrl: validApiBaseUrl, apiKey: validApiKey }, mockLog);
+      nock(validApiBaseUrl)
+        .get('/api/v1/libraries?roles=BRAND&itemFilter=publishedBrands')
+        .reply(200, 'invalid json');
+
+      await expect(client.getBrandsForOrganization(validImsOrgId, validImsAccessToken))
+        .to.be.rejectedWith(`Error getting brands for organization ${validImsOrgId} with imsAccessToken`);
+    });
   });
 
   describe('getBrandGuidelines', () => {

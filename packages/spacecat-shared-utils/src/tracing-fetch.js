@@ -9,7 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { Request } from '@adobe/fetch';
+import { Request, timeoutSignal, AbortError } from '@adobe/fetch';
 import AWSXRay from 'aws-xray-sdk';
 
 import { fetch as adobeFetch } from './adobe-fetch.js';
@@ -110,14 +110,22 @@ const handleSubSegmentError = (subSegment, request, error) => {
 /**
  * Performs a fetch request and adds AWS X-Ray tracing, including request/response tracking.
  * @param {string} url - The URL for the request.
- * @param {Object} options - Options to be passed to the fetch call.
+ * @param {Object} [options] - Optional options to be passed to the fetch call.
+ * @param {number} [options.timeout=10000] - Timeout in milliseconds (defaults to 10 seconds).
  * @returns {Promise<Response>} The response from the fetch request.
  */
 export async function tracingFetch(url, options) {
   const parentSegment = AWSXRay.getSegment();
 
-  options = isObject(options) ? options : {};
-  options.headers = isObject(options.headers) ? options.headers : new Headers();
+  options = isObject(options) ? { ...options } : {};
+  options.headers = isObject(options.headers) ? options.headers : { };
+
+  // Set default timeout of 10 seconds if not specified
+  const timeout = options.timeout || 10000;
+  delete options.timeout; // Remove from options as we'll handle it separately
+
+  // Create a timeout signal
+  const signal = timeoutSignal(timeout);
 
   // find user-agent header in headers case insensitively
   let hasUserAgent = false;
@@ -132,7 +140,18 @@ export async function tracingFetch(url, options) {
   }
 
   if (!parentSegment) {
-    return adobeFetch(url, options);
+    try {
+      return await adobeFetch(url, { ...options, signal });
+    } catch (error) {
+      if (error instanceof AbortError) {
+        const timeoutError = new Error(`Request timeout after ${timeout}ms`);
+        timeoutError.code = 'ETIMEOUT';
+        throw timeoutError;
+      }
+      throw error;
+    } finally {
+      signal.clear(); // Clean up the signal
+    }
   }
 
   const request = new Request(url, options);
@@ -145,13 +164,25 @@ export async function tracingFetch(url, options) {
     setTraceHeaders(request, parentSegment, subSegment);
   }
 
+  subSegment.addAnnotation('timeout_ms', timeout);
+
   const capturedAdobeFetch = async () => {
     let response = null;
     try {
-      response = await adobeFetch(request);
+      // Create a new request with the signal
+      const requestWithSignal = new Request(request, { signal });
+      response = await adobeFetch(requestWithSignal);
     } catch (e) {
+      if (e instanceof AbortError) {
+        const timeoutError = new Error(`Request timeout after ${timeout}ms`);
+        timeoutError.code = 'ETIMEOUT';
+        handleSubSegmentError(subSegment, request, timeoutError);
+        throw timeoutError;
+      }
       handleSubSegmentError(subSegment, request, e);
       throw e;
+    } finally {
+      signal.clear(); // Clean up the signal
     }
 
     setSubSegmentFlagsByStatusCode(subSegment, response.status);

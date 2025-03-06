@@ -14,6 +14,10 @@ import {
 } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 
+const HTTP_BAD_REQUEST = 400;
+const HTTP_NOT_FOUND = 404;
+const HTTP_INTERNAL_SERVER_ERROR = 500;
+
 const PUBLISHED_BRANDS_FILTER = 'roles=BRAND&itemFilter=publishedBrands';
 const API_GET_BRANDS = `/api/v1/libraries?${PUBLISHED_BRANDS_FILTER}`;
 const API_GET_BRAND_GUIDELINES = (brandId) => `/api/v1/libraries/${brandId}?selector=details`;
@@ -32,16 +36,22 @@ export default class BrandClient {
   }
 
   constructor({ apiBaseUrl, apiKey }, log) {
+    this.log = log;
     if (!isValidUrl(apiBaseUrl)) {
-      throw new Error(`Invalid Brand API Base URL: ${apiBaseUrl}`);
+      throw this.#createError(`Invalid Brand API Base URL: ${apiBaseUrl}`, HTTP_BAD_REQUEST);
     }
     if (!hasText(apiKey)) {
-      throw new Error(`Invalid Brand API Key: ${apiKey}`);
+      throw this.#createError(`Invalid Brand API Key: ${apiKey}`, HTTP_BAD_REQUEST);
     }
     this.apiBaseUrl = apiBaseUrl;
     this.apiKey = apiKey;
-    this.log = log;
     this.serviceAccessToken = null;
+  }
+
+  #createError(message, status) {
+    const error = Object.assign(new Error(message), { status });
+    this.log.error(error.message);
+    return error;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -69,11 +79,11 @@ export default class BrandClient {
 
   async getBrandsForOrganization(imsOrgId, imsAccessToken) {
     if (!isValidIMSOrgId(imsOrgId)) {
-      throw new Error(`Invalid IMS Org ID: ${imsOrgId}`);
+      throw this.#createError(`Invalid IMS Org ID: ${imsOrgId}`, HTTP_BAD_REQUEST);
     }
 
     if (!hasText(imsAccessToken)) {
-      throw new Error(`Invalid IMS Access Token: ${imsAccessToken}`);
+      throw this.#createError(`Invalid IMS Access Token: ${imsAccessToken}`, HTTP_BAD_REQUEST);
     }
     const headers = {
       'Content-Type': 'application/json',
@@ -85,7 +95,7 @@ export default class BrandClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Error getting brands for organization ${imsOrgId}: ${response.statusText}`);
+      throw this.#createError(`Error getting brands for organization ${imsOrgId}: ${response.statusText}`, response.status);
     }
     try {
       const result = await response.json();
@@ -93,8 +103,7 @@ export default class BrandClient {
         (library) => library.org_id === imsOrgId,
       )?.map(this.#mapToBrand);
     } catch (e) {
-      this.log.error(`Error getting brands for organization ${imsOrgId} with imsAccessToken. ${e.message}`);
-      throw new Error(`Error getting brands for organization ${imsOrgId} with imsAccessToken. ${e.message}`);
+      throw this.#createError(`Error getting brands for organization ${imsOrgId} with imsAccessToken. ${e.message}`, HTTP_INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -123,16 +132,16 @@ export default class BrandClient {
 
   async getBrandGuidelines(brandId, imsOrgId, imsConfig = {}) {
     if (!hasText(brandId)) {
-      throw new Error(`Invalid brand ID: ${brandId}`);
+      throw this.#createError(`Invalid brand ID: ${brandId}`, HTTP_BAD_REQUEST);
     }
     if (!isValidIMSOrgId(imsOrgId)) {
-      throw new Error(`Invalid IMS Org ID: ${imsOrgId}`);
+      throw this.#createError(`Invalid IMS Org ID: ${imsOrgId}`, HTTP_BAD_REQUEST);
     }
     const {
       host, clientId, clientCode, clientSecret,
     } = imsConfig;
     if (!hasText(host) || !hasText(clientId) || !hasText(clientCode) || !hasText(clientSecret)) {
-      throw new Error(`Invalid IMS Config: ${JSON.stringify(imsConfig)}`);
+      throw this.#createError(`Invalid IMS Config: ${JSON.stringify(imsConfig)}`, HTTP_BAD_REQUEST);
     }
     const imsAccessToken = await this.#getImsAccessToken(imsConfig);
     const headers = {
@@ -144,12 +153,12 @@ export default class BrandClient {
       headers,
     });
     if (!response.ok) {
-      throw new Error(`Error getting brand guidelines for brand ${brandId}: ${response.status}`);
+      throw this.#createError(`Error getting brand guidelines for brand ${brandId}: ${response.status}`, response.status);
     }
     try {
       const result = await response.json();
       if (result.org_id !== imsOrgId) {
-        throw new Error(`Brand ${brandId} not found for org ${imsOrgId}`);
+        throw this.#createError(`Brand ${brandId} not found for org ${imsOrgId}`, HTTP_NOT_FOUND);
       }
       const brandGuidelines = this.#mapToBrand(result);
       const guidelines = result.details?.['brand#copyGuidelines'];
@@ -162,8 +171,7 @@ export default class BrandClient {
       }
       return brandGuidelines;
     } catch (e) {
-      this.log.error(`Error getting brand guidelines for brand ${brandId}: ${e.message}`);
-      throw new Error(`Error getting brand guidelines for brand ${brandId}: ${e.message}`);
+      throw this.#createError(`Error getting brand guidelines for brand ${brandId}: ${e.message}`, HTTP_INTERNAL_SERVER_ERROR);
     }
   }
 }

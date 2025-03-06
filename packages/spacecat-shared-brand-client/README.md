@@ -23,7 +23,7 @@ const config = {
   apiBaseUrl: '<API_BASE_URL>',
 };
 
-const client = new BrandClient(config, console);
+const client = new BrandClient(config, log);
 ```
 
 ### Creating an instance from Helix UniversalContext

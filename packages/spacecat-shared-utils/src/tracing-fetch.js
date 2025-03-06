@@ -197,7 +197,7 @@ export async function tracingFetch(url, options) {
     const requestWithSignal = new Request(request, { signal });
 
     // Use the same fetchWithTimeout function but catch errors to handle subsegment
-    const response = await fetchWithTimeout(requestWithSignal, null, signal);
+    const response = await fetchWithTimeout(requestWithSignal, { }, signal);
 
     setSubSegmentFlagsByStatusCode(subSegment, response.status);
     addFetchRequestDataToSegment(subSegment, request, response);

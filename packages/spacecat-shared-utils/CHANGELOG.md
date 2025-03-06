@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.34.0...@adobe/spacecat-shared-utils-v1.35.0) (2025-03-06)
+
+
+### Features
+
+* tracing fetch timeout ([#657](https://github.com/adobe/spacecat-shared/issues/657)) ([67335e3](https://github.com/adobe/spacecat-shared/commit/67335e32b7cceeb500ca58dc05518876589a108a))
+
 # [@adobe/spacecat-shared-utils-v1.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.33.3...@adobe/spacecat-shared-utils-v1.34.0) (2025-03-05)
 
 

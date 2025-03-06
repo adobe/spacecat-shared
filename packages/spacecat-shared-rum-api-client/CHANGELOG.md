@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.21.5...@adobe/spacecat-shared-rum-api-client-v2.22.0) (2025-03-06)
+
+
+### Features
+
+* **rum-api-client:** pageviews query ([#656](https://github.com/adobe/spacecat-shared/issues/656)) ([349cf1d](https://github.com/adobe/spacecat-shared/commit/349cf1dc716f61ba08921a04726e9a50393893e9))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.21.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.21.4...@adobe/spacecat-shared-rum-api-client-v2.21.5) (2025-03-05)
 
 

@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-utils-v1.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.33.3...@adobe/spacecat-shared-utils-v1.34.0) (2025-03-05)
+
+
+### Features
+
+* Brand client ([#640](https://github.com/adobe/spacecat-shared/issues/640)) ([8d82f45](https://github.com/adobe/spacecat-shared/commit/8d82f45349ea9be2b1359fe5ebebf5a350f52666))
+
+# [@adobe/spacecat-shared-utils-v1.33.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.33.2...@adobe/spacecat-shared-utils-v1.33.3) (2025-03-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.0 ([#645](https://github.com/adobe/spacecat-shared/issues/645)) ([7c97dc4](https://github.com/adobe/spacecat-shared/commit/7c97dc4c4853aa183553ed90f4b0d6dc9f49b656))
+
+# [@adobe/spacecat-shared-utils-v1.33.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.33.1...@adobe/spacecat-shared-utils-v1.33.2) (2025-03-03)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#638](https://github.com/adobe/spacecat-shared/issues/638)) ([64625c2](https://github.com/adobe/spacecat-shared/commit/64625c24f1b3b7bc4a26b576155bb6bc8529ef45))
+
 # [@adobe/spacecat-shared-utils-v1.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.33.0...@adobe/spacecat-shared-utils-v1.33.1) (2025-02-22)
 
 

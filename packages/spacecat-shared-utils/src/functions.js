@@ -15,6 +15,7 @@ import { validate as uuidValidate } from 'uuid';
 // Precompile regular expressions
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
+const IMS_ORG_ID_REGEX = /[a-z0-9]{24}@AdobeOrg/i;
 
 /**
  * Determines if the given parameter is an array.
@@ -251,6 +252,15 @@ function dateAfterDays(days, dateString) {
   return currentDate;
 }
 
+/**
+ * Validates whether the given string is a valid IMS Org ID.
+ * @param {string} imsOrgId - The string to validate.
+ * @returns {boolean} True if the given string is a valid IMS Org ID, false otherwise.
+ */
+function isValidIMSOrgId(imsOrgId) {
+  return IMS_ORG_ID_REGEX.test(imsOrgId);
+}
+
 export {
   arrayEquals,
   dateAfterDays,
@@ -269,5 +279,6 @@ export {
   isValidDate,
   isValidUrl,
   isValidUUID,
+  isValidIMSOrgId,
   toBoolean,
 };

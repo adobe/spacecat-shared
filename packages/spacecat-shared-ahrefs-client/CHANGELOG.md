@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.6.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.11...@adobe/spacecat-shared-ahrefs-client-v1.6.12) (2025-03-07)
+
+
+### Bug Fixes
+
+* **ahrefs-client:** log error message for not ok responses ([#658](https://github.com/adobe/spacecat-shared/issues/658)) ([4dc106a](https://github.com/adobe/spacecat-shared/commit/4dc106afaef19045636dd83d447d78e5af548f0d))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.6.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.10...@adobe/spacecat-shared-ahrefs-client-v1.6.11) (2025-03-04)
 
 

@@ -257,7 +257,7 @@ class BaseCollection {
       if (options.fetchAllPages && options.limit !== 1) {
         while (result.lastEvaluatedKey) {
           // update queryOptions with the start key to fetch the next page
-          queryOptions.startKey = result.lastEvaluatedKey;
+          queryOptions.ExclusiveStartKey = result.lastEvaluatedKey;
           // eslint-disable-next-line no-await-in-loop
           result = await query.go(queryOptions);
           allData = allData.concat(result.data);

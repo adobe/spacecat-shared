@@ -697,7 +697,7 @@ describe('BaseCollection', () => {
       expect(goStub.callCount).to.equal(2);
 
       const secondCallArgs = goStub.secondCall.args[0];
-      expect(secondCallArgs).to.deep.include({ order: 'desc', startKey: 'key1' });
+      expect(secondCallArgs).to.deep.include({ order: 'desc', ExclusiveStartKey: 'key1' });
     });
   });
 

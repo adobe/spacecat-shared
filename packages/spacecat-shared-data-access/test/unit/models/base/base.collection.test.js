@@ -677,7 +677,7 @@ describe('BaseCollection', () => {
     });
 
     it('handles pagination with fetchAllPages option', async () => {
-      const firstResult = { data: [mockRecord], lastEvaluatedKey: 'key1' };
+      const firstResult = { data: [mockRecord], cursor: 'key1' };
       const secondRecord = { id: '2', foo: 'bar' };
       const secondResult = { data: [secondRecord] };
 
@@ -697,7 +697,7 @@ describe('BaseCollection', () => {
       expect(goStub.callCount).to.equal(2);
 
       const secondCallArgs = goStub.secondCall.args[0];
-      expect(secondCallArgs).to.deep.include({ order: 'desc', ExclusiveStartKey: 'key1' });
+      expect(secondCallArgs).to.deep.include({ order: 'desc', cursor: 'key1' });
     });
   });
 

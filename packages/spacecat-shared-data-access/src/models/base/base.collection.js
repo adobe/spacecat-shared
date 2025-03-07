@@ -253,11 +253,10 @@ class BaseCollection {
       let allData = result.data;
 
       // if the caller requests ALL pages and we're not using limit: 1,
-      // continue to fetch until there is no LastEvaluatedKey.
+      // continue to fetch until there is no cursor.
       if (options.fetchAllPages && options.limit !== 1) {
-        while (result.lastEvaluatedKey) {
-          // update queryOptions with the start key to fetch the next page
-          queryOptions.ExclusiveStartKey = result.lastEvaluatedKey;
+        while (result.cursor) {
+          queryOptions.cursor = result.cursor;
           // eslint-disable-next-line no-await-in-loop
           result = await query.go(queryOptions);
           allData = allData.concat(result.data);

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.12.0...@adobe/spacecat-shared-data-access-v2.13.0) (2025-03-07)
+
+
+### Features
+
+* **data-access:** fetch all records on demand ([#659](https://github.com/adobe/spacecat-shared/issues/659)) ([a424f47](https://github.com/adobe/spacecat-shared/commit/a424f4763399ceaa1fb2d09bee454e8d5d0923f9))
+
 # [@adobe/spacecat-shared-data-access-v2.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.11.0...@adobe/spacecat-shared-data-access-v2.12.0) (2025-03-06)
 
 

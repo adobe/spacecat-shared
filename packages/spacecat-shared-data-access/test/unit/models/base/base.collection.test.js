@@ -675,6 +675,30 @@ describe('BaseCollection', () => {
         .to.have.been.calledOnceWithExactly({ pk: 'ALL_MOCKENTITYMODELS' });
       expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc', attributes: ['test'] });
     });
+
+    it('handles pagination with fetchAllPages option', async () => {
+      const firstResult = { data: [mockRecord], lastEvaluatedKey: 'key1' };
+      const secondRecord = { id: '2', foo: 'bar' };
+      const secondResult = { data: [secondRecord] };
+
+      const goStub = stub();
+      goStub.onFirstCall().resolves(firstResult);
+      goStub.onSecondCall().resolves(secondResult);
+
+      mockElectroService.entities.mockEntityModel.query.all.returns({
+        go: goStub,
+      });
+
+      const result = await baseCollectionInstance.all({}, { fetchAllPages: true });
+      expect(result).to.be.an('array').that.has.length(2);
+      expect(result[0].record).to.deep.include(mockRecord);
+      expect(result[1].record).to.deep.include(secondRecord);
+
+      expect(goStub.callCount).to.equal(2);
+
+      const secondCallArgs = goStub.secondCall.args[0];
+      expect(secondCallArgs).to.deep.include({ order: 'desc', ExclusiveStartKey: 'key1' });
+    });
   });
 
   describe('allByIndexKeys', () => {

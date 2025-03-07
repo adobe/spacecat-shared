@@ -176,7 +176,15 @@ describe('AhrefsAPIClient', () => {
     it('throw error when API response is not ok', async () => {
       nock(config.apiBaseUrl)
         .get(/.*/)
-        .reply(400, 'Bad Request');
+        .reply(400, { error: 'bad where: invalid filter expression' });
+
+      await expect(client.sendRequest('/some-endpoint')).to.be.rejectedWith('Ahrefs API request failed with status: 400 - bad where: invalid filter expression');
+    });
+
+    it('throw error when API error response body cannot be parsed as JSON', async () => {
+      nock(config.apiBaseUrl)
+        .get(/.*/)
+        .reply(400, 'invalid-json');
 
       await expect(client.sendRequest('/some-endpoint')).to.be.rejectedWith('Ahrefs API request failed with status: 400');
     });

@@ -64,8 +64,17 @@ export default class AhrefsAPIClient {
       + `total cost: ${response.headers.get('x-api-units-cost-total-actual')}`);
 
     if (!response.ok) {
-      this.log.error(`Ahrefs API request failed with status: ${response.status}`);
-      throw new Error(`Ahrefs API request failed with status: ${response.status}`);
+      let errorMessage = `Ahrefs API request failed with status: ${response.status}`;
+      try {
+        const errorBody = await response.json();
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error}`;
+        }
+      } catch (e) {
+        this.log.error(`Error parsing Ahrefs API error response: ${e.message}`);
+      }
+      this.log.error(errorMessage);
+      throw new Error(errorMessage);
     }
 
     try {

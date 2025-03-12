@@ -145,6 +145,15 @@ describe('Config Tests', () => {
       expect(config.getFetchConfig()).to.deep.equal(fetchConfig);
     });
 
+    it('correctly updates the brandConfig option', () => {
+      const config = Config();
+      const brandConfig = {
+        brandId: 'test-brand',
+      };
+      config.updateBrandConfig(brandConfig);
+      expect(config.getBrandConfig()).to.deep.equal(brandConfig);
+    });
+
     it('should fail gracefully if handler is not present in the configuration', () => {
       const config = Config();
       expect(config.getSlackMentions('404')).to.be.undefined;
@@ -591,6 +600,12 @@ describe('Config Tests', () => {
             enabled: true,
           },
           {
+            type: 'all-traffic',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
             type: 'top-pages',
             destinations: ['default'],
             sources: ['ahrefs'],
@@ -604,6 +619,9 @@ describe('Config Tests', () => {
             'User-Agent': 'test-agent',
           },
           overrideBaseURL: 'https://example.com',
+        },
+        brandConfig: {
+          brandId: 'test-brand',
         },
       };
       const validated = validateConfiguration(config);
@@ -647,7 +665,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [top-pages]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -686,6 +704,23 @@ describe('Config Tests', () => {
                 },
               },
               {
+                message: '"imports[0].type" must be [all-traffic]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'all-traffic',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
                 message: '"imports[0].type" must be [top-pages]',
                 path: [
                   'imports',
@@ -715,6 +750,14 @@ describe('Config Tests', () => {
       };
       expect(() => validateConfiguration(config))
         .to.throw('Configuration validation error: "fetchConfig.headers" must be of type object');
+    });
+
+    it('throws error for invalid brandConfig', () => {
+      const config = {
+        brandConfig: {},
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "brandConfig.brandId" is required');
     });
 
     it('throws error for invalid fetchConfig overrideBaseUrl', () => {
@@ -779,6 +822,96 @@ describe('Config Tests', () => {
       };
       expect(() => validateConfiguration(config))
         .to.throw('Configuration validation error: "imports[0]" does not match any of the allowed types');
+    });
+  });
+
+  describe('Threshold Configuration', () => {
+    it('should accept valid movingAvgThreshold and percentageChangeThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            movingAvgThreshold: 10,
+            percentageChangeThreshold: 20,
+          },
+        },
+      };
+      const config = Config(data);
+      const handlerConfig = config.getHandlerConfig('organic-traffic-internal');
+      expect(handlerConfig.movingAvgThreshold).to.equal(10);
+      expect(handlerConfig.percentageChangeThreshold).to.equal(20);
+    });
+
+    it('should reject negative movingAvgThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            movingAvgThreshold: -5,
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.movingAvgThreshold" must be greater than or equal to 1');
+    });
+
+    it('should reject zero movingAvgThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            movingAvgThreshold: 0,
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.movingAvgThreshold" must be greater than or equal to 1');
+    });
+
+    it('should reject negative percentageChangeThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            percentageChangeThreshold: -10,
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.percentageChangeThreshold" must be greater than or equal to 1');
+    });
+
+    it('should reject zero percentageChangeThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            percentageChangeThreshold: 0,
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.percentageChangeThreshold" must be greater than or equal to 1');
+    });
+
+    it('should allow updating threshold values', () => {
+      // Create a config with an initial empty handlers object
+      const config = Config({
+        handlers: {
+          'organic-traffic-internal': {},
+        },
+      });
+      const handlerType = 'organic-traffic-internal';
+      // Initially handler config exists but without thresholds
+      const initialConfig = config.getHandlerConfig(handlerType);
+      expect(initialConfig).to.exist;
+      expect(initialConfig.movingAvgThreshold).to.be.undefined;
+      expect(initialConfig.percentageChangeThreshold).to.be.undefined;
+      // We need to create a new config with the thresholds
+      // since we can't modify the existing one directly
+      const updatedConfig = Config({
+        handlers: {
+          'organic-traffic-internal': {
+            movingAvgThreshold: 15,
+            percentageChangeThreshold: 25,
+          },
+        },
+      });
+      // Verify thresholds were set in the new config
+      const handlerConfig = updatedConfig.getHandlerConfig(handlerType);
+      expect(handlerConfig.movingAvgThreshold).to.equal(15);
+      expect(handlerConfig.percentageChangeThreshold).to.equal(25);
     });
   });
 });

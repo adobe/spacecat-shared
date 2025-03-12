@@ -16,6 +16,7 @@ export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
+  ALL_TRAFFIC: 'all-traffic',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -25,6 +26,7 @@ export const IMPORT_DESTINATIONS = {
 export const IMPORT_SOURCES = {
   AHREFS: 'ahrefs',
   GSC: 'google',
+  RUM: 'rum',
 };
 
 const IMPORT_BASE_KEYS = {
@@ -46,6 +48,10 @@ export const IMPORT_TYPE_SCHEMAS = {
   }),
   [IMPORT_TYPES.ORGANIC_TRAFFIC]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_TRAFFIC).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
+  [IMPORT_TYPES.ALL_TRAFFIC]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ALL_TRAFFIC).required(),
     ...IMPORT_BASE_KEYS,
   }),
   [IMPORT_TYPES.TOP_PAGES]: Joi.object({
@@ -70,6 +76,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['ahrefs'],
     enabled: true,
   },
+  'all-traffic': {
+    type: 'all-traffic',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
   'top-pages': {
     type: 'top-pages',
     destinations: ['default'],
@@ -88,6 +100,9 @@ export const configSchema = Joi.object({
   imports: Joi.array().items(
     Joi.alternatives().try(...Object.values(IMPORT_TYPE_SCHEMAS)),
   ),
+  brandConfig: Joi.object({
+    brandId: Joi.string().required(),
+  }).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
@@ -108,6 +123,8 @@ export const configSchema = Joi.object({
       name: Joi.string(),
       pattern: Joi.string(),
     })).optional(),
+    movingAvgThreshold: Joi.number().min(1).optional(),
+    percentageChangeThreshold: Joi.number().min(1).optional(),
     latestMetrics: Joi.object({
       pageViewsChange: Joi.number(),
       ctrChange: Joi.number(),
@@ -150,6 +167,7 @@ export const Config = (data = {}) => {
   self.getGroupedURLs = (type) => state?.handlers?.[type]?.groupedURLs;
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
   self.getFetchConfig = () => state?.fetchConfig;
+  self.getBrandConfig = () => state?.brandConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -206,6 +224,10 @@ export const Config = (data = {}) => {
     state.fetchConfig = fetchConfig;
   };
 
+  self.updateBrandConfig = (brandConfig) => {
+    state.brandConfig = brandConfig;
+  };
+
   self.enableImport = (type, config = {}) => {
     if (!IMPORT_TYPE_SCHEMAS[type]) {
       throw new Error(`Unknown import type: ${type}`);
@@ -257,4 +279,5 @@ Config.toDynamoItem = (config) => ({
   handlers: config.getHandlers(),
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
+  brandConfig: config.getBrandConfig(),
 });

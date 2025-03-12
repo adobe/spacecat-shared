@@ -9,7 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
 import {
   composeBaseURL, hasText, isObject, tracingFetch,
@@ -100,39 +99,45 @@ const validateMetadata = (metadata) => {
   }
 };
 
-const validateRedirects = (redirects) => {
-  const pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
-  if (!Array.isArray(redirects)) {
-    throw new Error('Redirects must be an array');
+const validateLinks = (links, type) => {
+  let pathRegex;
+  if (type === 'URL') {
+    pathRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
+  } else if (type === 'Redirect') {
+    pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
   }
 
-  if (!redirects.length) {
-    throw new Error('Redirects must not be empty');
+  if (!Array.isArray(links)) {
+    throw new Error(`${type}s must be an array`);
   }
 
-  for (const redirect of redirects) {
-    if (!isObject(redirect)) {
-      throw new Error('Redirect must be an object');
+  if (!links.length) {
+    throw new Error(`${type}s must not be empty`);
+  }
+
+  for (const link of links) {
+    if (!isObject(link)) {
+      throw new Error(`${type} must be an object`);
     }
 
-    if (!hasText(redirect.from)) {
-      throw new Error('Redirect must have a valid from path');
+    if (!hasText(link.from)) {
+      throw new Error(`${type} must have a valid from path`);
     }
 
-    if (!hasText(redirect.to)) {
-      throw new Error('Redirect must have a valid to path');
+    if (!hasText(link.to)) {
+      throw new Error(`${type} must have a valid to path`);
     }
 
-    if (!pathRegex.test(redirect.from)) {
-      throw new Error(`Invalid redirect from path: ${redirect.from}`);
+    if (!pathRegex.test(link.from)) {
+      throw new Error(`Invalid ${type} from path: ${link.from}`);
     }
 
-    if (!pathRegex.test(redirect.to)) {
-      throw new Error(`Invalid redirect to path: ${redirect.to}`);
+    if (!pathRegex.test(link.to)) {
+      throw new Error(`Invalid ${type} to path: ${link.to}`);
     }
 
-    if (redirect.from === redirect.to) {
-      throw new Error('Redirect from and to paths must be different');
+    if (link.from === link.to) {
+      throw new Error(`${type} from and to paths must be different`);
     }
   }
 };
@@ -322,7 +327,7 @@ export default class ContentClient {
   async updateRedirects(redirects) {
     const startTime = process.hrtime.bigint();
 
-    validateRedirects(redirects);
+    validateLinks(redirects, 'Redirect');
 
     await this.#initClient();
 
@@ -348,5 +353,28 @@ export default class ContentClient {
     }
 
     this.#logDuration('updateRedirects', startTime);
+  }
+
+  async updateBrokenInternalLink(path, brokenLink) {
+    const startTime = process.hrtime.bigint();
+
+    validateLinks([brokenLink], 'URL');
+    validatePath(path);
+
+    await this.#initClient();
+
+    this.log.info(`Updating page link for ${this.site.getId()} and path ${path}`);
+
+    const docPath = this.#resolveDocPath(path);
+    const document = await this.rawClient.getDocument(docPath);
+
+    this.log.info('Updating link from', brokenLink.from, 'to', brokenLink.to);
+    const response = await document.updateLink(brokenLink.from, brokenLink.to);
+
+    if (response.status !== 200) {
+      throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);
+    }
+
+    this.#logDuration('updateBrokenInternalLink', startTime);
   }
 }

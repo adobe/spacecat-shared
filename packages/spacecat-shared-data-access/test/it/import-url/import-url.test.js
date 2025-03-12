@@ -118,6 +118,21 @@ describe('ImportUrl IT', async () => {
     expect(importUrl.getId()).to.equal(sampleImportUrl.getId());
   });
 
+  // create a test that adds a report to the import url
+  it('add report to import url', async () => {
+    const sampleImportUrl = sampleData.importUrls[0];
+    const importUrl = await ImportUrl.findById(sampleImportUrl.getId());
+    const report = '{"fieldX":"fieldX Value","fieldY":"fieldY Value"}';
+    importUrl.setReport(report);
+    await importUrl.save();
+
+    const updatedImportUrl = await ImportUrl.findById(sampleImportUrl.getId());
+    expect(updatedImportUrl.getReport()).to.equal(report);
+  });
+
+  // NOTE: This test will remove the import url from the database
+  // Any tests that depend on this import url will fail and should be placed
+  // before this test
   it('removes an import url', async () => {
     const sampleImportUrl = sampleData.importUrls[0];
     const importUrl = await ImportUrl.findById(sampleImportUrl.getId());

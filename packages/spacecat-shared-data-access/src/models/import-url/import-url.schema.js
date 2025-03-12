@@ -45,6 +45,9 @@ const schema = new SchemaBuilder(ImportUrl, ImportUrlCollection)
     type: 'string',
     required: true,
     validate: (value) => isValidUrl(value),
+  })
+  .addAttribute('report', {
+    type: 'string',
   });
 
 export default schema.build();

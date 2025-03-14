@@ -29,6 +29,7 @@ function sanitizeURL(url) {
       parsedUrl.searchParams.set('domainkey', 'redacted');
     }
     return parsedUrl.toString();
+    /* c8 ignore next 4 */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     return url;

@@ -13,7 +13,8 @@
     "test": "c8 mocha 'test/**/*.test.js'",
     "lint": "eslint .",
     "clean": "rm -rf package-lock.json node_modules",
-    "run": "node src/test.js"
+    "run": "node src/test.js",
+    "tester": "node src/tester.js"
   },
   "mocha": {
     "require": "test/setup-env.js",

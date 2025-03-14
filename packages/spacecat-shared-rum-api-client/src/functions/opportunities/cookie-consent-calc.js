@@ -11,7 +11,7 @@
  */
 
 import { DataChunks } from '@adobe/rum-distiller';
-import { loadBundles } from '../../utils.js';
+import { DELIMITER, generateKey, loadBundles } from '../../utils.js';
 
 const cookieEngagementSources = [
   '#reject-all-cookies',
@@ -32,7 +32,14 @@ function handler(bundles) {
 
     if (bundle.weight === 1) return null; // ignore debugging bundles
 
-    return experiment.target;
+    if (bundle.url.includes('en-us/product')) {
+      return generateKey(experiment.target, 'product');
+    }
+    if (bundle.url === 'https://www.wilson.com/en-us/') {
+      return generateKey(experiment.target, 'home');
+    }
+
+    return generateKey(experiment.target, 'listing');
   });
 
   dataChunks.addSeries('cookieEngaged', (bundle) => {
@@ -54,12 +61,13 @@ function handler(bundles) {
   });
 
   const result = dataChunks.facets.variants.map((facet) => {
-    const variant = facet.value;
+    const [variant, pageType] = facet.value.split(DELIMITER);
 
     const { cookieEngaged, cookieAccepted } = facet.metrics;
 
     return {
       variant,
+      pageType,
       acceptedRatio: cookieAccepted.sum / facet.count,
       acceptedCount: cookieAccepted.sum,
       engagedRatio: cookieEngaged.sum / facet.count,

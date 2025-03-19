@@ -91,13 +91,13 @@ async function copySecrets() {
         return false;
       }
 
-      // Exclude secrets ending with "v1"
-      if (name.endsWith('/v1')) {
+      // Exclude secrets ending with "ci"
+      if (name.endsWith('/ci')) {
         return false;
       }
 
-      // Include secrets that end with "ci", but we'll rename them
-      if (name.endsWith('/ci')) {
+      // Include secrets that end with "v1", but we'll rename them
+      if (name.endsWith('/v1')) {
         return true;
       }
 
@@ -115,9 +115,9 @@ async function copySecrets() {
     for (const secret of filteredSecrets) {
       let secretName = secret.Name;
 
-      // Rename secrets ending with "ci" to "latest"
-      if (secretName.endsWith('/ci')) {
-        secretName = secretName.replace(/ci$/, 'latest');
+      // Rename secrets ending with "v1" to "latest"
+      if (secretName.endsWith('/v1')) {
+        secretName = secretName.replace(/v1$/, 'latest');
         console.log(`🔄 Renaming secret: ${secret.Name} → ${secretName}`);
       }
 
@@ -192,4 +192,4 @@ async function copySecrets() {
 }
 
 // Run the script
-copySecrets();
+await copySecrets();

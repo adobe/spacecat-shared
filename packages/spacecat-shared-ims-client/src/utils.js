@@ -23,6 +23,7 @@ export const IMS_TOKEN_ENDPOINT_V3 = '/ims/token/v3';
 export const IMS_PRODUCT_CONTEXT_BY_ORG_ENDPOINT = '/ims/fetch_pc_by_org/v1';
 export const IMS_ORGANIZATIONS_ENDPOINT = '/ims/organizations';
 export const IMS_PROFILE_ENDPOINT = '/ims/profile/v1';
+export const IMS_INVALIDATE_TOKEN_ENDPOINT = '/ims/invalidate_token/v2';
 
 /**
  * Creates and populates a FormData object from key-value pairs.

@@ -10,8 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import type { ImsClient } from './clients';
+import type { ImsClient, ImsPromiseClient } from './clients';
 
 export {
   ImsClient,
+  ImsPromiseClient,
 };

@@ -10,13 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import { createUrl } from '@adobe/fetch';
 import {
-  hasText, isNonEmptyObject, isObject, tracingFetch,
+  hasText, isNonEmptyObject,
 } from '@adobe/spacecat-shared-utils';
 
+import ImsBaseClient from './ims-base-client.js';
 import {
-  createFormData,
   emailAddressIsAllowed,
   extractIdAndAuthSource,
   getGroupMembersEndpoint,
@@ -29,7 +28,7 @@ import {
   IMS_VALIDATE_TOKEN_ENDPOINT,
 } from '../utils.js';
 
-export default class ImsClient {
+export default class ImsClient extends ImsBaseClient {
   static createFrom(context) {
     const { log = console } = context;
     const {
@@ -66,98 +65,13 @@ export default class ImsClient {
    * @returns {ImsClient} - the Ims client.
    */
   constructor(config, log) {
-    this.config = config;
-    this.log = log;
+    super(config, log);
     this.serviceAccessToken = null;
     this.serviceAccessTokenV3 = null;
   }
 
-  #logDuration(message, startTime) {
-    const endTime = process.hrtime.bigint();
-    const duration = (endTime - startTime) / BigInt(1e6);
-    this.log.debug(`${message}: took ${duration}ms`);
-  }
-
-  /**
-   * Prepares the headers for an IMS API request
-   *
-   * @param {Object} options - Options for header preparation
-   * @param {boolean} options.noContentType - If true, no Content-Type header will be added
-   * @param {boolean} options.noAuth - If true, no Authorization header will be added
-   * @param {string} options.accessToken - Optional access token to use instead of the service token
-   * @param {Object} options.headers - Additional headers to include
-   * @returns {Promise<Object>} The prepared headers
-   */
-  async #prepareImsRequestHeaders(options = {}) {
-    const {
-      noContentType = false, noAuth = false, accessToken, headers = {},
-    } = options;
-
-    const result = {
-      ...(noContentType ? {} : { 'Content-Type': 'application/json' }),
-      ...headers,
-    };
-
-    if (!noAuth) {
-      if (hasText(accessToken)) {
-        // Use the provided access token
-        result.Authorization = `Bearer ${accessToken}`;
-      } else {
-        // Use the service token
-        const imsToken = await this.getServiceAccessToken();
-        result.Authorization = `Bearer ${imsToken.access_token}`;
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Makes an API call to IMS endpoints
-   *
-   * @param {string} endpoint - The IMS endpoint path
-   * @param {Object} queryString - Query parameters
-   * @param {Object|null} body - Body parameters for POST requests
-   * @param {Object} [options] - Optional parameters
-   * @param {string} [options.accessToken] - Optional access token to use instead of the
-   * service token
-   * @param {boolean} [options.noAuth] - If true, no Authorization header will be added
-   * @param {boolean} [options.noContentType] - If true, no Content-Type header will be added
-   * @param {Object} [options.headers] - Optional additional headers to include
-   * @returns {Promise<Response>} - The fetch response
-   */
-  async #imsApiCall(
-    endpoint,
-    queryString = {},
-    body = null,
-    options = {},
-  ) {
-    const startTime = process.hrtime.bigint();
-
-    const headers = await this.#prepareImsRequestHeaders(options);
-
-    try {
-      const response = await tracingFetch(
-        createUrl(`https://${this.config.imsHost}${endpoint}`, queryString),
-        {
-          ...(isObject(body) ? { method: 'POST' } : { method: 'GET' }),
-          headers,
-          ...(isObject(body) ? { body: createFormData(body) } : {}),
-        },
-      );
-
-      const callerName = new Error().stack.split('\n')[2].trim().split(' ')[1];
-      this.#logDuration(`IMS ${callerName} request`, startTime);
-
-      return response;
-    } catch (error) {
-      this.log.error('Error while fetching data from IMS API: ', error.message);
-      throw error;
-    }
-  }
-
   async #getImsOrgDetails(imsOrgId) {
-    const orgDetailsResponse = await this.#imsApiCall(
+    const orgDetailsResponse = await this.imsApiCall(
       getImsOrgsApiPath(imsOrgId),
       { client_id: this.config.clientId },
     );
@@ -172,7 +86,7 @@ export default class ImsClient {
   async #getProductContextByImsOrgId(imsOrgId) {
     const { orgId, authSource } = extractIdAndAuthSource(imsOrgId);
 
-    const pcResponse = await this.#imsApiCall(
+    const pcResponse = await this.imsApiCall(
       IMS_PRODUCT_CONTEXT_BY_ORG_ENDPOINT,
       {},
       {
@@ -196,7 +110,7 @@ export default class ImsClient {
   async #getUsersByImsGroupId(imsOrgId, groupId) {
     // This endpoint is paginated, but the default page limit is 50 entries — more than enough
     // for our use case
-    const groupResponse = await this.#imsApiCall(
+    const groupResponse = await this.imsApiCall(
       getGroupMembersEndpoint(imsOrgId, groupId),
       { client_id: this.config.clientId },
     );
@@ -249,7 +163,7 @@ export default class ImsClient {
       return this.serviceAccessToken;
     }
 
-    const tokenResponse = await this.#imsApiCall(
+    const tokenResponse = await this.imsApiCall(
       IMS_TOKEN_ENDPOINT,
       {},
       {
@@ -282,7 +196,7 @@ export default class ImsClient {
       return this.serviceAccessTokenV3;
     }
 
-    const tokenResponse = await this.#imsApiCall(
+    const tokenResponse = await this.imsApiCall(
       IMS_TOKEN_ENDPOINT_V3,
       {},
       {
@@ -354,7 +268,7 @@ export default class ImsClient {
       return [...new Set(roles.map((roleEntry) => roleEntry.organization))];
     }
 
-    const profileResponse = await this.#imsApiCall(
+    const profileResponse = await this.imsApiCall(
       IMS_PROFILE_ENDPOINT,
       {},
       null,
@@ -382,7 +296,7 @@ export default class ImsClient {
       throw new Error('imsAccessToken param is required.');
     }
 
-    const organizationsResponse = await this.#imsApiCall(
+    const organizationsResponse = await this.imsApiCall(
       IMS_ALL_ORGANIZATIONS_ENDPOINT,
       {},
       null,
@@ -407,7 +321,7 @@ export default class ImsClient {
       throw new Error('imsAccessToken param is required.');
     }
 
-    const validationResponse = await this.#imsApiCall(
+    const validationResponse = await this.imsApiCall(
       IMS_VALIDATE_TOKEN_ENDPOINT,
       {},
       {

@@ -12,13 +12,12 @@
 
 import { hasText } from '@adobe/spacecat-shared-utils';
 import {
-  createFormData,
-  fetch as httpFetch,
   IMS_INVALIDATE_TOKEN_ENDPOINT,
   IMS_TOKEN_ENDPOINT,
 } from '../utils.js';
+import ImsBaseClient from './ims-base-client.js';
 
-export default class ImsPromiseClient {
+export default class ImsPromiseClient extends ImsBaseClient {
   static CLIENT_TYPE = {
     EMITTER: 'emitter',
     CONSUMER: 'consumer',
@@ -59,7 +58,7 @@ export default class ImsPromiseClient {
       clientId,
       clientSecret,
       promiseDefinitionId,
-    }, type, log);
+    }, log, type);
   }
 
   /**
@@ -70,20 +69,13 @@ export default class ImsPromiseClient {
    * @param {string} config.clientId - The IMS client ID.
    * @param {string} config.clientSecret - The IMS client secret.
    * @param {string} config.promiseDefinitionId - The IMS promise definition ID.
-   * @param {string} type - The client type.
    * @param {Object} log - The Logger.
+   * @param {string} type - The client type.
    * @returns {ImsPromiseClient} - the Ims promise client.
    */
-  constructor(config, type, log) {
-    this.config = config;
+  constructor(config, log, type) {
+    super(config, log);
     this.type = type;
-    this.log = log;
-  }
-
-  #logDuration(message, startTime) {
-    const endTime = process.hrtime.bigint();
-    const duration = (endTime - startTime) / BigInt(1e6);
-    this.log.debug(`${message}: took ${duration}ms`);
   }
 
   async getPromiseToken(accessToken) {
@@ -92,23 +84,18 @@ export default class ImsPromiseClient {
     }
 
     try {
-      const startTime = process.hrtime.bigint();
-
-      const tokenResponse = await httpFetch(
-        `https://${this.config.imsHost}${IMS_TOKEN_ENDPOINT}`,
+      const tokenResponse = await this.imsApiCall(
+        IMS_TOKEN_ENDPOINT,
+        {},
         {
-          method: 'POST',
-          body: createFormData({
-            client_id: this.config.clientId,
-            client_secret: this.config.clientSecret,
-            grant_type: 'promise',
-            promise_definition_id: this.config.promiseDefinitionId,
-            authenticating_token: accessToken,
-          }),
+          client_id: this.config.clientId,
+          client_secret: this.config.clientSecret,
+          grant_type: 'promise',
+          promise_definition_id: this.config.promiseDefinitionId,
+          authenticating_token: accessToken,
         },
+        { noAuth: true, noContentType: true },
       );
-
-      this.#logDuration('IMS getPromiseToken request', startTime);
 
       if (!tokenResponse.ok) {
         throw new Error(`IMS getPromiseToken request failed with status: ${tokenResponse.status}`);
@@ -134,22 +121,17 @@ export default class ImsPromiseClient {
     }
 
     try {
-      const startTime = process.hrtime.bigint();
-
-      const tokenResponse = await httpFetch(
-        `https://${this.config.imsHost}${IMS_TOKEN_ENDPOINT}`,
+      const tokenResponse = await this.imsApiCall(
+        IMS_TOKEN_ENDPOINT,
+        {},
         {
-          method: 'POST',
-          body: createFormData({
-            client_id: this.config.clientId,
-            client_secret: this.config.clientSecret,
-            grant_type: 'promise_exchange',
-            promise_token: promiseToken,
-          }),
+          client_id: this.config.clientId,
+          client_secret: this.config.clientSecret,
+          grant_type: 'promise_exchange',
+          promise_token: promiseToken,
         },
+        { noAuth: true, noContentType: true },
       );
-
-      this.#logDuration('IMS exchangeToken request', startTime);
 
       if (!tokenResponse.ok) {
         throw new Error(`IMS exchangeToken request failed with status: ${tokenResponse.status}`);
@@ -175,22 +157,17 @@ export default class ImsPromiseClient {
 
   async invalidatePromiseToken(promiseToken) {
     try {
-      const startTime = process.hrtime.bigint();
-
-      const invalidateResponse = await httpFetch(
-        `https://${this.config.imsHost}${IMS_INVALIDATE_TOKEN_ENDPOINT}`,
+      const invalidateResponse = await this.imsApiCall(
+        IMS_INVALIDATE_TOKEN_ENDPOINT,
+        {},
         {
-          method: 'POST',
-          body: createFormData({
-            client_id: this.config.clientId,
-            client_secret: this.config.clientSecret,
-            token_type: 'promise_token',
-            token: promiseToken,
-          }),
+          client_id: this.config.clientId,
+          client_secret: this.config.clientSecret,
+          token_type: 'promise_token',
+          token: promiseToken,
         },
+        { noAuth: true, noContentType: true },
       );
-
-      this.#logDuration('IMS invalidatePromiseToken request', startTime);
 
       if (!invalidateResponse.ok) {
         throw new Error(`IMS invalidatePromiseToken request failed with status: ${invalidateResponse.status}`);

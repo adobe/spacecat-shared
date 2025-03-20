@@ -29,6 +29,6 @@ Generated files:
   - server-key-public.pem.b64 (base64 of public key)
 ```
 
-## Tes fixtures
+## Test fixtures
 
 The keys in `./test/fixtures/auth/jwt/` are generated using the above script. The `private_key.pem` is encrypted with the password `test`.

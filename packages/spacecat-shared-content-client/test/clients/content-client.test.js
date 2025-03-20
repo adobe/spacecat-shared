@@ -18,6 +18,7 @@ import esmock from 'esmock';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
+import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -127,7 +128,13 @@ describe('ContentClient', () => {
       ONEDRIVE_CLIENT_SECRET: 'onedrive-client-secret',
       SPACECAT_API_ENDPOINT: 'https://spacecat.experiencecloud.live/api/v1',
     };
-    context = { env, log };
+    context = {
+      env,
+      log,
+      func: {
+        version: 'v1',
+      },
+    };
 
     ContentClient = await createContentClient(sampleMetadata);
   });
@@ -137,8 +144,8 @@ describe('ContentClient', () => {
   });
 
   describe('createFrom', () => {
-    it('creates a new ContentClient instance', () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+    it('creates a new ContentClient instance', async () => {
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       expect(client).to.be.an.instanceof(ContentClient);
     });
   });
@@ -159,7 +166,7 @@ describe('ContentClient', () => {
       const client = await ContentClient.createFromDomain(
         domain,
         env,
-        log = { info: sinon.spy(), error: sinon.spy() },
+        log = { info: sinon.spy(), error: sinon.spy(), debug: sinon.spy() },
       );
       expect(client).to.be.an.instanceof(ContentClient);
     });
@@ -204,8 +211,8 @@ describe('ContentClient', () => {
   });
 
   describe('constructor', () => {
-    it('validates and sets config, site, and rawClient for Google Drive', () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+    it('validates and sets config, site, and rawClient for Google Drive', async () => {
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       expect(client.log).to.eql(log);
       expect(client.config).to.eql({
         auth_provider_x509_cert_url: 'https://auth-provider.uri',
@@ -225,8 +232,8 @@ describe('ContentClient', () => {
       expect(client.site).to.eql(siteConfigGoogleDrive);
     });
 
-    it('validate and sets config, site, and rawClient for OneDrive', () => {
-      const client = ContentClient.createFrom(context, siteConfigOneDrive);
+    it('validate and sets config, site, and rawClient for OneDrive', async () => {
+      const client = await ContentClient.createFrom(context, siteConfigOneDrive);
       expect(client.log).to.eql(log);
       expect(client.config).to.eql({
         authority: 'https://authority.uri',
@@ -254,9 +261,9 @@ describe('ContentClient', () => {
       expect(() => new ContentClient(env, invalidSite, log)).to.throw('Unsupported content source type: undefined');
     });
 
-    it('throws an error if required config parameters are missing for Google Drive', () => {
+    it('throws an error if required config parameters are missing for Google Drive', async () => {
       context.env = { GOOGLE_DRIVE_CLIENT_ID: 'drive-client-id' };
-      expect(() => ContentClient.createFrom(context, siteConfigGoogleDrive)).to.throw('Configuration parameter auth_provider_x509_cert_url is required for content source drive.google');
+      await expect(ContentClient.createFrom(context, siteConfigGoogleDrive)).to.eventually.be.rejectedWith('Configuration parameter auth_provider_x509_cert_url is required for content source drive.google');
     });
 
     it('throws an error if required config parameters are missing for OneDrive', () => {
@@ -268,13 +275,13 @@ describe('ContentClient', () => {
   describe('getPageMetadata', () => {
     it('throws an error if raw client throws an error', async () => {
       ContentClient = await createErrorContentClient(true, true, 'Error getting page metadata');
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       const path = '/test-path';
       await expect(client.getPageMetadata(path)).to.be.rejectedWith('Error getting page metadata');
     });
 
     it('gets page metadata and logs duration for Google Drive', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       const path = '/test-path';
       const metadata = await client.getPageMetadata(path);
 
@@ -282,11 +289,11 @@ describe('ContentClient', () => {
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
       expect(documentSdk.getMetadata.calledOnce).to.be.true;
-      expect(log.debug.calledOnce).to.be.true;
+      expect(log.debug.calledTwice).to.be.true;
     });
 
     it('gets page metadata and logs duration for OneDrive', async () => {
-      const client = ContentClient.createFrom(context, siteConfigOneDrive);
+      const client = await ContentClient.createFrom(context, siteConfigOneDrive);
       const path = '/test-path';
       const metadata = await client.getPageMetadata(path);
 
@@ -294,27 +301,27 @@ describe('ContentClient', () => {
       expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
       expect(documentSdk.getMetadata.calledOnce).to.be.true;
-      expect(log.debug.calledOnce).to.be.true;
+      expect(log.debug.calledTwice).to.be.true;
     });
 
     it('throws an error if path is invalid', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.getPageMetadata('')).to.be.rejectedWith('Path must be a string');
     });
 
     it('throws an error if path does not start with a slash', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.getPageMetadata('test-path')).to.be.rejectedWith('Path must start with a slash');
     });
 
     it('correctly resolves paths ending with / for Google Drive', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.getPageMetadata('/test-path/');
       expect(client.rawClient.getDocument.calledOnceWith('/test-path/index')).to.be.true;
     });
 
     it('correctly resolves paths ending with / for OneDrive', async () => {
-      const client = ContentClient.createFrom(context, siteConfigOneDrive);
+      const client = await ContentClient.createFrom(context, siteConfigOneDrive);
       await client.getPageMetadata('/test-path/');
       expect(client.rawClient.getDocument.calledOnceWith('/test-path/index.docx')).to.be.true;
     });
@@ -327,7 +334,7 @@ describe('ContentClient', () => {
         ['lang', { value: 'en', type: 'text' }],
         ['keywords', { value: 'test, metadata', type: 'text' }],
       ]);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       const path = '/test-path';
       await expect(client.updatePageMetadata(path, metadata)).to.be.rejectedWith('Failed to update metadata for path /test-path');
     });
@@ -340,7 +347,7 @@ describe('ContentClient', () => {
       const expectedMetadata = new Map([...sampleMetadata, ...metadata]);
 
       ContentClient = await createContentClient(sampleMetadata);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       const path = '/test-path';
       const updatedMetadata = await client.updatePageMetadata(path, metadata);
@@ -353,21 +360,21 @@ describe('ContentClient', () => {
     });
 
     it('throws an error if metadata is not a Map', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       const metadata = { description: 'Test description' }; // Not a Map
 
       await expect(client.updatePageMetadata('/test-path', metadata)).to.be.rejectedWith('Metadata must be a map');
     });
 
     it('throws an error if metadata Map is empty', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       const metadata = new Map();
 
       await expect(client.updatePageMetadata('/test-path', metadata)).to.be.rejectedWith('Metadata must not be empty');
     });
 
     it('throws an error if metadata key is invalid', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       const metadata = new Map([
         ['', 'Test description'], // Invalid key
       ]);
@@ -376,7 +383,7 @@ describe('ContentClient', () => {
     });
 
     it('throws an error if metadata value is invalid', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       const metadata = new Map([
         ['description', ''], // Invalid value
       ]);
@@ -397,7 +404,7 @@ describe('ContentClient', () => {
       ]);
 
       ContentClient = await createContentClient(sampleMetadata);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       const path = '/test-path';
       const updatedMetadata = await client.updatePageMetadata(path, newMetadata);
@@ -420,7 +427,7 @@ describe('ContentClient', () => {
       ]);
 
       ContentClient = await createContentClient(sampleMetadata);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       const path = '/test-path';
       const updatedMetadata = await client.updatePageMetadata(path, newMetadata, {
@@ -440,19 +447,19 @@ describe('ContentClient', () => {
         { from: '/another-old-path', to: '/another-new-path' },
       ];
       ContentClient = await createContentClientForRedirects(expectedRedirects);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       const redirects = await client.getRedirects();
 
       expect(redirects).to.deep.equal(expectedRedirects);
       expect(log.info.calledOnceWith('Getting redirects for test-site')).to.be.true;
       expect(redirectsSdk.get.calledOnce).to.be.true;
-      expect(log.debug.calledOnce).to.be.true;
+      expect(log.debug.calledTwice).to.be.true;
     });
 
     it('returns an empty array when there are no redirects', async () => {
       ContentClient = await createContentClientForRedirects([]);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       const redirects = await client.getRedirects();
 
@@ -461,7 +468,7 @@ describe('ContentClient', () => {
 
     it('throws an error if raw client throws an error', async () => {
       ContentClient = await createErrorContentClient(true, false, 'Error getting redirects');
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
 
       await expect(client.getRedirects()).to.be.rejectedWith('Error getting redirects');
     });
@@ -470,19 +477,19 @@ describe('ContentClient', () => {
   describe('updateRedirects', () => {
     it('throws an error if raw client has non-200 status', async () => {
       ContentClient = await createErrorContentClient(false, true, 'Error updating redirects');
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }])).to.be.rejectedWith('Failed to update redirects');
     });
     it('throws an error if new redirects are not an array', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.updateRedirects({})).to.be.rejectedWith('Redirects must be an array');
     });
     it('throws an error if new redirects are an empty array', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.updateRedirects([])).to.be.rejectedWith('Redirects must not be empty');
     });
     it('throws an error if new redirects contains an invalid entry', async () => {
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, 'malformed-redirect'])).to.be.rejectedWith('Redirect must be an object');
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '', to: '/B' }])).to.be.rejectedWith('Redirect must have a valid from path');
       await expect(client.updateRedirects([{ from: '/A', to: '/B' }, { from: '/A', to: '' }])).to.be.rejectedWith('Redirect must have a valid to path');
@@ -495,8 +502,14 @@ describe('ContentClient', () => {
         { from: '/test-X', to: '/test-Y' },
       ];
 
+      sinon.stub(SecretsManagerClient.prototype, 'send').resolves({
+        SecretString: JSON.stringify({
+          onedrive_domain_id: 'onedrive-domain-id',
+        }),
+      });
+
       ContentClient = await createContentClientForRedirects(existingRedirects);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
       await expect(redirectsSdk.append.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
     });
@@ -509,7 +522,7 @@ describe('ContentClient', () => {
       ];
 
       ContentClient = await createContentClientForRedirects(existingRedirects);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
       await expect(redirectsSdk.append.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
     });
@@ -519,7 +532,7 @@ describe('ContentClient', () => {
         { from: '/test-C', to: '/test-E' },
       ];
       ContentClient = await createContentClientForRedirects(existingRedirects);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
       await expect(redirectsSdk.append.calledOnceWith(sinon.match([{ from: '/test-C', to: '/test-E' }]))).to.be.true;
     });
@@ -533,7 +546,7 @@ describe('ContentClient', () => {
         { from: '/test-E', to: '/test-A' },
       ];
       ContentClient = await createContentClientForRedirects(cycleRedirects);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await expect(client.updateRedirects(newRedirects)).to.be.rejectedWith('Redirect cycle detected');
     });
     it('does not call rawClient when all redirects are duplicates', async () => {
@@ -542,7 +555,7 @@ describe('ContentClient', () => {
         { from: '/test-C', to: '/test-D' },
       ];
       ContentClient = await createContentClientForRedirects(existingRedirects);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
       await expect(redirectsSdk.append).to.not.have.been.called;
     });
@@ -551,7 +564,7 @@ describe('ContentClient', () => {
         { from: '/test-D', to: '/test-A' },
       ];
       ContentClient = await createContentClientForRedirects(existingRedirects);
-      const client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.updateRedirects(newRedirects);
       await expect(redirectsSdk.append).to.not.have.been.called;
     });
@@ -561,7 +574,7 @@ describe('ContentClient', () => {
     let client;
 
     beforeEach(async () => {
-      client = ContentClient.createFrom(context, siteConfigGoogleDrive);
+      client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
       await client.getPageMetadata('/test-path'); // This will initialize the rawClient
     });
 
@@ -601,7 +614,7 @@ describe('ContentClient', () => {
 
     it('should update broken internal link for OneDrive', async () => {
       const brokenLink = { from: 'http://old-link', to: 'https://new-link' };
-      client = ContentClient.createFrom(context, siteConfigOneDrive);
+      client = await ContentClient.createFrom(context, siteConfigOneDrive);
       await client.getPageMetadata('/test-path'); // This will initialize the rawClient
       client.rawClient.getDocument = sinon.stub().returns({
         updateLink: sinon.stub().resolves({ status: 200 }),

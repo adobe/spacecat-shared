@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.5.9...@adobe/spacecat-shared-ims-client-v1.6.0) (2025-03-20)
+
+
+### Features
+
+* ims user validate ([#668](https://github.com/adobe/spacecat-shared/issues/668)) ([b3db9ab](https://github.com/adobe/spacecat-shared/commit/b3db9abb154277376ff34213c556e3b7491e696b))
+
 # [@adobe/spacecat-shared-ims-client-v1.5.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.5.8...@adobe/spacecat-shared-ims-client-v1.5.9) (2025-03-04)
 
 

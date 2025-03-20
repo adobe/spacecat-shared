@@ -20,6 +20,7 @@ import {
 
 import configProd from './config/ims.js';
 import configDev from './config/ims-stg.js';
+import { getBearerToken } from './utils/bearer.js';
 
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
@@ -46,16 +47,6 @@ const loadConfig = (context) => {
   return isDev ? configDev : configProd;
 };
 
-const getBearerToken = (context) => {
-  const authorizationHeader = context.pathInfo?.headers?.authorization || '';
-
-  if (!authorizationHeader.startsWith('Bearer ')) {
-    return null;
-  }
-
-  return authorizationHeader.replace('Bearer ', '');
-};
-
 const transformProfile = (payload) => {
   const profile = { ...payload };
 
@@ -65,6 +56,9 @@ const transformProfile = (payload) => {
   return profile;
 };
 
+/**
+ * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
+ */
 export default class AdobeImsHandler extends AbstractHandler {
   constructor(log) {
     super('ims', log);
@@ -83,9 +77,9 @@ export default class AdobeImsHandler extends AbstractHandler {
   }
 
   async #validateToken(token, config) {
-    const decoded = await decodeJwt(token);
-    if (config.name !== decoded.as) {
-      throw new Error(`Token not issued by expected idp: ${config.name} != ${decoded.as}`);
+    const claims = await decodeJwt(token);
+    if (config.name !== claims.as) {
+      throw new Error(`Token not issued by expected idp: ${config.name} != ${claims.as}`);
     }
 
     const jwks = await this.#getJwksUri(config);

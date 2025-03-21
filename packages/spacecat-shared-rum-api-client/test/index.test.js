@@ -28,7 +28,8 @@ describe('RUMAPIClient', () => {
   });
 
   it('throws error when query fails', async () => {
-    await expect(rumApiClient.query('404', {})).to.be.rejectedWith('Query \'404\' failed. Opts: {}. Reason: You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable');
+    await expect(rumApiClient.query('404', {})).to.be.rejectedWith('Query \'404\' failed. Opts: {}.\n'
+      + '--> Reason: You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable');
   });
 
   it('runs the query', async () => {
@@ -61,9 +62,8 @@ describe('RUMAPIClient', () => {
   });
 
   it('throws error when a query fails during multi query due to missing domainkey/admin key', async () => {
-    await expect(rumApiClient.queryMulti(['404'], {})).to.be.rejectedWith(
-      'Multi query failed. Queries: ["404"], Opts: {}. Reason: You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable',
-    );
+    await expect(rumApiClient.queryMulti(['404'], {})).to.be.rejectedWith('Multi query failed. Queries: ["404"], Opts: {}.\n'
+      + '--> Reason: You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable');
   });
 
   it('runs multiple queries', async () => {
@@ -153,7 +153,8 @@ describe('RUMAPIClient with admin key for external domainkey fetch', () => {
     };
 
     await expect(client.query('404', opts))
-      .to.be.rejectedWith("Query '404' failed. Opts: {\"domain\":\"example.com\",\"interval\":0}. Reason: Error during fetching domainkey for domain 'example.com using admin key. Error: Unexpected response: {\"some-key\":\"some-value\"}");
+      .to.be.rejectedWith("Query '404' failed. Opts: {\"domain\":\"example.com\",\"interval\":0}.\n"
+        + "--> Reason: Error during fetching domainkey for domain 'example.com using admin key. Error: Unexpected response: {\"some-key\":\"some-value\"}");
   });
 
   it('throws error when external domainkey fetch returns invalid JSON', async () => {

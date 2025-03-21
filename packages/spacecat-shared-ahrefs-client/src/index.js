@@ -59,13 +59,22 @@ export default class AhrefsAPIClient {
       },
     });
 
-    this.log.info(`Ahrefs API ${endpoint} response has number of rows: ${response.headers.get('x-api-rows')}, 
-      cost per row: ${response.headers.get('x-api-units-cost-row')},
-      total cost: ${response.headers.get('x-api-units-cost-total-actual')}`);
+    this.log.info(`Ahrefs API ${endpoint} response has number of rows: ${response.headers.get('x-api-rows')}, `
+      + `cost per row: ${response.headers.get('x-api-units-cost-row')}, `
+      + `total cost: ${response.headers.get('x-api-units-cost-total-actual')}`);
 
     if (!response.ok) {
-      this.log.error(`Ahrefs API request failed with status: ${response.status}`);
-      throw new Error(`Ahrefs API request failed with status: ${response.status}`);
+      let errorMessage = `Ahrefs API request failed with status: ${response.status}`;
+      try {
+        const errorBody = await response.json();
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error}`;
+        }
+      } catch (e) {
+        this.log.error(`Error parsing Ahrefs API error response: ${e.message}`);
+      }
+      this.log.error(errorMessage);
+      throw new Error(errorMessage);
     }
 
     try {

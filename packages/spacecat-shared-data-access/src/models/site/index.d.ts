@@ -49,6 +49,7 @@ export interface ImportConfig {
   enabled: boolean;
   pageUrl?: string;
   geo?: string;
+  limit?: number;
 }
 
 export interface SiteConfig {
@@ -80,9 +81,12 @@ export interface SiteConfig {
         ctrChange: number;
         projectedTrafficValue: number;
       };
+      movingAvgThreshold?: number;
+      percentageChangeThreshold?: number;
     }>;
     fetchConfig?: {
       headers?: Record<string, string>;
+      overrideBaseURL?: string;
     };
   };
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
@@ -102,7 +106,7 @@ export interface SiteConfig {
   getGroupedURLs(type: string): Array<{ name: string; pattern: string }> | undefined;
   getLatestMetrics(type: string):
     { pageViewsChange: number; ctrChange: number; projectedTrafficValue: number } | undefined;
-  getFetchConfig(): { headers?: Record<string, string> } | undefined;
+  getFetchConfig(): { headers?: Record<string, string>, overrideBaseURL?: string } | undefined;
 }
 
 export interface Site extends BaseModel {

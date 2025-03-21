@@ -22,6 +22,17 @@ const sites = [
     isLiveToggledAt: '2024-11-29T07:45:55.952Z',
     GSI1PK: 'ALL_SITES',
     config: {
+      imports: [
+        {
+          sources: [
+            'ahrefs',
+          ],
+          type: 'top-pages',
+          destinations: [
+            'default',
+          ],
+        },
+      ],
       handlers: {
         404: {
           mentions: {
@@ -53,14 +64,6 @@ const sites = [
       slack: {
         channel: 'some-channel',
       },
-      imports: [
-        {
-          type: 'organic-traffic',
-          destinations: ['default'],
-          sources: ['gsc'],
-          enabled: true,
-        },
-      ],
     },
   },
   {

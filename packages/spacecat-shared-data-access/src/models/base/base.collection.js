@@ -248,15 +248,25 @@ class BaseCollection {
         );
       }
 
-      const records = await query.go(queryOptions);
+      // execute the initial query
+      let result = await query.go(queryOptions);
+      let allData = result.data;
+
+      // if the caller requests ALL pages and we're not using limit: 1,
+      // continue to fetch until there is no cursor.
+      if (options.fetchAllPages && options.limit !== 1) {
+        while (result.cursor) {
+          queryOptions.cursor = result.cursor;
+          // eslint-disable-next-line no-await-in-loop
+          result = await query.go(queryOptions);
+          allData = allData.concat(result.data);
+        }
+      }
 
       if (options.limit === 1) {
-        if (records.data?.length === 0) {
-          return null;
-        }
-        return this.#createInstance(records.data[0]);
+        return allData.length ? this.#createInstance(allData[0]) : null;
       } else {
-        return this.#createInstances(records.data);
+        return this.#createInstances(allData);
       }
     } catch (error) {
       return this.#logAndThrowError('Failed to query', error);

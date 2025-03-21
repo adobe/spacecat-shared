@@ -145,6 +145,12 @@ describe('ConfigurationModel', () => {
       delete instance.record.handlers;
       expect(instance.getEnabledSiteIdsForHandler('lhs-mobile')).to.deep.equal([]);
     });
+
+    it('gets all enabled audits for a site', () => {
+      expect(Object.keys(instance.getHandlers() || {})
+        .filter((handler) => instance.isHandlerEnabledForSite(handler, site))).to.deep.equal(['404', 'rum-ingest', 'lhs-mobile']);
+      expect(instance.getEnabledAuditsForSite(site)).to.deep.equal(['lhs-mobile', '404']);
+    });
   });
 
   describe('manage handlers', () => {

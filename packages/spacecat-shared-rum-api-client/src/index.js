@@ -23,6 +23,7 @@ import rageclick from './functions/opportunities/rageclick.js';
 import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
 import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
 import cookieConsent from './functions/opportunities/cookie-consent-calc.js';
+import noContentAboveFold from './functions/opportunities/no-content-above-fold.js';
 
 // exported for tests
 export const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
@@ -40,6 +41,7 @@ const HANDLERS = {
   'high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
   'high-organic-low-ctr': highOrganicLowCtr,
   'cookie-consent': cookieConsent,
+  'no-content-above-fold': noContentAboveFold,
 };
 
 function sanitize(opts) {

@@ -16,9 +16,10 @@ import { loadBundles } from '../../utils.js';
 const cookieEngagementSources = [
   '#reject-all-cookies',
   'save-preference-btn-handler',
-  'onetrust-accept-btn-handler',
+  'onetrust',
 ];
 
+const ctaSource = '#hero-component button';
 const recipesSource = '#reeses-caramel-recipes';
 
 function handler(bundles) {
@@ -40,10 +41,13 @@ function handler(bundles) {
     return experiment.target;
   });
 
-  dataChunks.addSeries('ctr', (bundle) => {
+  dataChunks.addSeries('ctaCtr', (bundle) => {
     const isEngaged = bundle.events
       .filter((e) => e.checkpoint === 'click')
-      .filter((e) => !cookieEngagementSources.some((s) => e.source?.includes(s)));
+      .filter((e) => e.source?.includes(ctaSource));
+    if (isEngaged.length > 0) {
+      console.log();
+    }
     return isEngaged.length > 0 ? 1 : 0;
   });
 
@@ -51,6 +55,10 @@ function handler(bundles) {
     const isEngaged = bundle.events
       .filter((e) => e.checkpoint === 'click')
       .filter((e) => cookieEngagementSources.some((s) => e.source?.includes(s)));
+
+    if (isEngaged.length > 0) {
+      console.log();
+    }
     return isEngaged.length > 0 ? 1 : 0;
   });
 
@@ -63,8 +71,8 @@ function handler(bundles) {
 
   const result = dataChunks.facets.variants.map((facet) => ({
     variant: facet.value,
-    nonCookieClicks: facet.metrics.ctr.sum,
-    nonCookieCTR: (facet.metrics.ctr.sum / facet.count).toFixed(4),
+    ctaClicks: facet.metrics.ctaCtr.sum,
+    ctaCTR: (facet.metrics.ctaCtr.sum / facet.count).toFixed(4),
     cookieClicks: facet.metrics.cookieCtr.sum,
     cookieCtr: (facet.metrics.cookieCtr.sum / facet.count).toFixed(4),
     recipesSeen: (facet.metrics.recipesSeen.sum / facet.count).toFixed(4),

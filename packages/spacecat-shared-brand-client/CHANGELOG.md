@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-brand-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.0.2...@adobe/spacecat-shared-brand-client-v1.1.0) (2025-03-20)
+
+
+### Features
+
+* ims user validate ([#668](https://github.com/adobe/spacecat-shared/issues/668)) ([b3db9ab](https://github.com/adobe/spacecat-shared/commit/b3db9abb154277376ff34213c556e3b7491e696b))
+
 # [@adobe/spacecat-shared-brand-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.0.1...@adobe/spacecat-shared-brand-client-v1.0.2) (2025-03-06)
 
 

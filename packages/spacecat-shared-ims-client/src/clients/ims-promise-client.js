@@ -12,6 +12,8 @@
 
 import { hasText } from '@adobe/spacecat-shared-utils';
 import {
+  encrypt,
+  decrypt,
   IMS_INVALIDATE_TOKEN_ENDPOINT,
   IMS_TOKEN_ENDPOINT,
 } from '../utils.js';
@@ -30,6 +32,7 @@ export default class ImsPromiseClient extends ImsBaseClient {
     let clientId;
     let clientSecret;
     let promiseDefinitionId;
+    const encryption = {};
 
     if (type === ImsPromiseClient.CLIENT_TYPE.EMITTER) {
       ({
@@ -37,12 +40,16 @@ export default class ImsPromiseClient extends ImsBaseClient {
         IMS_PROMISE_EMITTER_CLIENT_ID: clientId,
         IMS_PROMISE_EMITTER_CLIENT_SECRET: clientSecret,
         IMS_PROMISE_EMITTER_DEFINITION_ID: promiseDefinitionId,
+        AUTOFIX_CRYPT_SECRET: encryption.secret,
+        AUTOFIX_CRYPT_SALT: encryption.salt,
       } = context.env);
     } else if (type === ImsPromiseClient.CLIENT_TYPE.CONSUMER) {
       ({
         IMS_HOST: imsHost,
         IMS_PROMISE_CONSUMER_CLIENT_ID: clientId,
         IMS_PROMISE_CONSUMER_CLIENT_SECRET: clientSecret,
+        AUTOFIX_CRYPT_SECRET: encryption.secret,
+        AUTOFIX_CRYPT_SALT: encryption.salt,
       } = context.env);
     } else {
       throw new Error('Unknown IMS promise client type.');
@@ -58,6 +65,7 @@ export default class ImsPromiseClient extends ImsBaseClient {
       clientId,
       clientSecret,
       promiseDefinitionId,
+      encryption,
     }, log, type);
   }
 
@@ -78,7 +86,7 @@ export default class ImsPromiseClient extends ImsBaseClient {
     this.type = type;
   }
 
-  async getPromiseToken(accessToken) {
+  async getPromiseToken(accessToken, enableEncryption = false) {
     if (this.type === ImsPromiseClient.CLIENT_TYPE.CONSUMER) {
       throw new Error('Consumer type does not support getPromiseToken method.');
     }
@@ -104,6 +112,20 @@ export default class ImsPromiseClient extends ImsBaseClient {
       /* eslint-disable camelcase */
       const { promise_token, token_type, expires_in } = await tokenResponse.json();
 
+      // symmetrically encrypt the promise token if secrets are configured. Note that the promise
+      // token is not considered a secret, so encryption is optional.
+      if (enableEncryption) {
+        if (!this.config?.encryption?.secret
+          || !this.config?.encryption?.salt) {
+          throw new Error('Encryption requested, but missing required environment variables: AUTOFIX_CRYPT_SECRET and AUTOFIX_CRYPT_SALT');
+        }
+        return {
+          promise_token: await encrypt(this.config.encryption, promise_token),
+          expires_in,
+          token_type,
+        };
+      }
+
       return {
         promise_token,
         expires_in,
@@ -115,9 +137,18 @@ export default class ImsPromiseClient extends ImsBaseClient {
     }
   }
 
-  async exchangeToken(promiseToken) {
+  async exchangeToken(promiseToken, enableEncryption = false) {
     if (this.type === ImsPromiseClient.CLIENT_TYPE.EMITTER) {
       throw new Error('Emitter type does not support exchangeToken method.');
+    }
+
+    let decryptedPromiseToken = promiseToken;
+    if (enableEncryption) {
+      if (!this.config?.encryption?.secret
+        || !this.config?.encryption?.salt) {
+        throw new Error('Encryption requested, but missing required environment variables: AUTOFIX_CRYPT_SECRET and AUTOFIX_CRYPT_SALT');
+      }
+      decryptedPromiseToken = await decrypt(this.config.encryption, promiseToken);
     }
 
     try {
@@ -128,7 +159,7 @@ export default class ImsPromiseClient extends ImsBaseClient {
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
           grant_type: 'promise_exchange',
-          promise_token: promiseToken,
+          promise_token: decryptedPromiseToken,
         },
         { noAuth: true, noContentType: true },
       );
@@ -141,6 +172,16 @@ export default class ImsPromiseClient extends ImsBaseClient {
       const {
         access_token, token_type, expires_in, promise_token, promise_token_expires_in,
       } = await tokenResponse.json();
+
+      if (enableEncryption) {
+        return {
+          access_token,
+          expires_in,
+          token_type,
+          promise_token: await encrypt(this.config.encryption, promise_token),
+          promise_token_expires_in,
+        };
+      }
 
       return {
         access_token,
@@ -155,8 +196,17 @@ export default class ImsPromiseClient extends ImsBaseClient {
     }
   }
 
-  async invalidatePromiseToken(promiseToken) {
+  async invalidatePromiseToken(promiseToken, enableEncryption = false) {
     try {
+      let decryptedPromiseToken = promiseToken;
+      if (enableEncryption) {
+        if (!this.config?.encryption?.secret
+          || !this.config?.encryption?.salt) {
+          throw new Error('Encryption requested, but missing required environment variables: AUTOFIX_CRYPT_SECRET and AUTOFIX_CRYPT_SALT');
+        }
+        decryptedPromiseToken = await decrypt(this.config.encryption, promiseToken);
+      }
+
       const invalidateResponse = await this.imsApiCall(
         IMS_INVALIDATE_TOKEN_ENDPOINT,
         {},
@@ -164,7 +214,7 @@ export default class ImsPromiseClient extends ImsBaseClient {
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
           token_type: 'promise_token',
-          token: promiseToken,
+          token: decryptedPromiseToken,
         },
         { noAuth: true, noContentType: true },
       );

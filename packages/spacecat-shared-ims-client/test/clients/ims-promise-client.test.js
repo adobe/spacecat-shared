@@ -18,7 +18,7 @@ import nock from 'nock';
 import sinon from 'sinon';
 
 import ImsPromiseClient from '../../src/clients/ims-promise-client.js';
-import { IMS_INVALIDATE_TOKEN_ENDPOINT, IMS_TOKEN_ENDPOINT } from '../../src/utils.js';
+import { encrypt, IMS_INVALIDATE_TOKEN_ENDPOINT, IMS_TOKEN_ENDPOINT } from '../../src/utils.js';
 
 use(chaiAsPromised);
 
@@ -146,6 +146,26 @@ describe('ImsPromiseClient', () => {
       const invalidToken = 'invalidToken';
       await expect(emitterClient.getPromiseToken(invalidToken)).to.be.rejectedWith('IMS getPromiseToken request failed with status: 401');
     });
+
+    it('should fail with encryption enabled', async () => {
+      await expect(emitterClient.getPromiseToken(testAccessToken, true)).to.be.rejectedWith('Encryption requested, but missing required environment variables: AUTOFIX_CRYPT_SECRET and AUTOFIX_CRYPT_SALT');
+    });
+
+    it('should succeed for a valid token with encryption', async () => {
+      mockContext.env.AUTOFIX_CRYPT_SECRET = 'secret';
+      mockContext.env.AUTOFIX_CRYPT_SALT = 'salt';
+
+      const emitterClientWithEncryption = ImsPromiseClient.createFrom(
+        mockContext,
+        ImsPromiseClient.CLIENT_TYPE.EMITTER,
+      );
+
+      const result = await emitterClientWithEncryption.getPromiseToken(testAccessToken, true);
+      expect(result).to.have.property('promise_token');
+      expect(result.promise_token).to.match(/^[0-9a-f]*::[0-9a-f]*::[0-9a-f]*$/);
+      expect(result).to.have.property('expires_in', 14399);
+      expect(result).to.have.property('token_type', 'promise_token');
+    });
   });
 
   describe('exchangeToken', () => {
@@ -207,6 +227,33 @@ describe('ImsPromiseClient', () => {
       const invalidToken = 'invalidToken';
       await expect(consumerClient.exchangeToken(invalidToken)).to.be.rejectedWith('IMS exchangeToken request failed with status: 401');
     });
+
+    it('should fail with encryption enabled', async () => {
+      await expect(consumerClient.exchangeToken(testToken, true)).to.be.rejectedWith('Encryption requested, but missing required environment variables: AUTOFIX_CRYPT_SECRET and AUTOFIX_CRYPT_SALT');
+    });
+
+    it('should succeed for a valid token with encryption', async () => {
+      mockContext.env.AUTOFIX_CRYPT_SECRET = 'secret';
+      mockContext.env.AUTOFIX_CRYPT_SALT = 'salt';
+
+      const consumerClientWithEncryption = ImsPromiseClient.createFrom(
+        mockContext,
+        ImsPromiseClient.CLIENT_TYPE.CONSUMER,
+      );
+
+      const encryptedTestToken = await encrypt({
+        secret: mockContext.env.AUTOFIX_CRYPT_SECRET,
+        salt: mockContext.env.AUTOFIX_CRYPT_SALT,
+      }, testToken);
+
+      const result = await consumerClientWithEncryption.exchangeToken(encryptedTestToken, true);
+      expect(result).to.have.property('promise_token');
+      expect(result.promise_token).to.match(/^[0-9a-f]*::[0-9a-f]*::[0-9a-f]*$/);
+      expect(result).to.have.property('access_token', 'accessTokenExample');
+      expect(result).to.have.property('expires_in', 299);
+      expect(result).to.have.property('token_type', 'access_token');
+      expect(result).to.have.property('promise_token_expires_in', 14399);
+    });
   });
 
   describe('invalidatePromiseToken', () => {
@@ -244,6 +291,28 @@ describe('ImsPromiseClient', () => {
     it('should fail for an invalid token', async () => {
       const invalidToken = 'invalidToken';
       await expect(consumerClient.invalidatePromiseToken(invalidToken)).to.be.rejectedWith('IMS invalidatePromiseToken request failed with status: 400');
+    });
+
+    it('should fail with encryption enabled', async () => {
+      await expect(consumerClient.invalidatePromiseToken(testToken, true)).to.be.rejectedWith('Encryption requested, but missing required environment variables: AUTOFIX_CRYPT_SECRET and AUTOFIX_CRYPT_SALT');
+    });
+
+    it('should succeed for a valid token with encryption', async () => {
+      mockContext.env.AUTOFIX_CRYPT_SECRET = 'secret';
+      mockContext.env.AUTOFIX_CRYPT_SALT = 'salt';
+
+      const clientWithEncryption = ImsPromiseClient.createFrom(
+        mockContext,
+        ImsPromiseClient.CLIENT_TYPE.CONSUMER,
+      );
+
+      const encryptedTestToken = await encrypt({
+        secret: mockContext.env.AUTOFIX_CRYPT_SECRET,
+        salt: mockContext.env.AUTOFIX_CRYPT_SALT,
+      }, testToken);
+
+      const result = clientWithEncryption.invalidatePromiseToken(encryptedTestToken, true);
+      expect(result).to.be.eventually.fulfilled;
     });
   });
 });

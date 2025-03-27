@@ -26,17 +26,23 @@ export class ImsPromiseClient {
   /**
    * Returns a promise token for the given access token.
    * @param {string} accessToken The access token to get a promise token for.
+   * @param {boolean} enableEncryption Whether to enable encryption of the promise
+   *                                   token, default false.
+   * @throws Error when encryption is enabled and the encryption secret and salt is not set.
    * @returns {Promise<{
    *        promise_token: string,
    *        token_type: string,
    *        expires_in: number,
    *    }>} The promise token.
    */
-  getPromiseToken(accessToken: string): Promise<object>;
+  getPromiseToken(accessToken: string, enableEncryption?: boolean): Promise<object>;
 
   /**
    * Exchanges a promise token for an access token.
    * @param {string} promiseToken The promise token to exchange for an access token.
+   * @param {boolean} enableEncryption Whether to enable encryption of the promise
+   *                                   token, default false.
+   * @throws Error when encryption is enabled and the encryption secret and salt is not set.
    * @returns {Promise<{
    *        access_token: string,
    *        token_type: string,
@@ -45,12 +51,15 @@ export class ImsPromiseClient {
    *        promise_token_expires_in: number,
    *    }>} The access token and a possibly refreshed promise token.
    */
-  exchangeToken(promiseToken: string): Promise<object>;
+  exchangeToken(promiseToken: string, enableEncryption?: boolean): Promise<object>;
 
   /**
    * Invalidates a promise token.
    * @param {string} promiseToken The promise token to invalidate.
+   * @param {boolean} enableEncryption Whether to enable encryption of the promise
+   *                                   token, default false.
+   * @throws Error when encryption is enabled and the encryption secret and salt is not set.
    * @returns {Promise<void>} A promise that resolves when the token is invalidated.
    */
-  invalidatePromiseToken(promiseToken: string): Promise<void>;
+  invalidatePromiseToken(promiseToken: string, enableEncryption?: boolean): Promise<void>;
 }

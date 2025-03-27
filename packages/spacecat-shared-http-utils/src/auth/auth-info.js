@@ -79,4 +79,6 @@ export default class AuthInfo {
   getReason() { return this.reason; }
 
   isAuthenticated() { return this.authenticated; }
+
+  isAdmin() { return this.profile?.is_admin; }
 }

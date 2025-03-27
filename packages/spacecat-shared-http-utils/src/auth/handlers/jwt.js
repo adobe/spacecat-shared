@@ -69,10 +69,17 @@ export default class JwtHandler extends AbstractHandler {
 
       const payload = await this.#validateToken(token);
 
+      const scopes = payload.is_admin ? [{ name: 'admin' }] : [];
+
+      scopes.push(...payload.tenants.map(
+        (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
+      ));
+
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
-        .withProfile(payload);
+        .withProfile(payload)
+        .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
       authInfo.withReason(e.message);

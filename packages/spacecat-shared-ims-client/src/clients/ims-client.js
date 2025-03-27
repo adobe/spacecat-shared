@@ -10,9 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import {
-  hasText, isNonEmptyObject,
-} from '@adobe/spacecat-shared-utils';
+import { hasText } from '@adobe/spacecat-shared-utils';
 
 import ImsBaseClient from './ims-base-client.js';
 import {
@@ -313,7 +311,7 @@ export default class ImsClient extends ImsBaseClient {
   /**
    * Validates an IMS access token.
    * @param {string} imsAccessToken The IMS access token to validate.
-   * @returns {Promise<boolean>} True if the token is valid, false otherwise.
+   * @returns {Promise<object>} The validation result.
    * @throws {Error} If the token validation fails.
    */
   async validateAccessToken(imsAccessToken) {
@@ -336,7 +334,6 @@ export default class ImsClient extends ImsBaseClient {
       throw new Error(`IMS validateAccessToken request failed with status: ${validationResponse.status}`);
     }
 
-    const result = await validationResponse.json();
-    return result.valid && isNonEmptyObject(result.token);
+    return validationResponse.json();
   }
 }

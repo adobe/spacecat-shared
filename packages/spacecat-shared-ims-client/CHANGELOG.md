@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.6.0...@adobe/spacecat-shared-ims-client-v1.6.1) (2025-03-27)
+
+
+### Bug Fixes
+
+* return full ims token validation result ([#670](https://github.com/adobe/spacecat-shared/issues/670)) ([ac45037](https://github.com/adobe/spacecat-shared/commit/ac45037cc9eb37269de1f51d8f6d6ebb3edab1e0))
+
 # [@adobe/spacecat-shared-ims-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.5.9...@adobe/spacecat-shared-ims-client-v1.6.0) (2025-03-20)
 
 

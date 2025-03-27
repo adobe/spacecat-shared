@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.12...@adobe/spacecat-shared-http-utils-v1.10.0) (2025-03-20)
+
+
+### Features
+
+* jwt auth handler (WIP) ([#669](https://github.com/adobe/spacecat-shared/issues/669)) ([f3c8d84](https://github.com/adobe/spacecat-shared/commit/f3c8d84a724e9664cac995fe67af7af65800b16f))
+
 # [@adobe/spacecat-shared-http-utils-v1.9.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.11...@adobe/spacecat-shared-http-utils-v1.9.12) (2025-03-04)
 
 

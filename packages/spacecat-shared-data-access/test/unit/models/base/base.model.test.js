@@ -30,7 +30,7 @@ chaiUse(sinonChai);
 
 const opportunityEntity = new Entity(OpportunitySchema.toElectroDBSchema());
 const suggestionEntity = new Entity(SuggestionSchema.toElectroDBSchema());
-const MockCollection = class MockCollection extends BaseCollection {};
+const MockCollection = class MockCollection extends BaseCollection { };
 
 describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
   let mockElectroService;
@@ -54,6 +54,12 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
     };
 
     mockEntityRegistry = {
+      aclCtx: {
+        aclEntities: {
+          // Exclude the opportunity entity (which is used by these mocks) from ACL checks
+          exclude: ['opportunity'],
+        },
+      },
       log: mockLogger,
       getCollection: stub().returns({
         schema: {

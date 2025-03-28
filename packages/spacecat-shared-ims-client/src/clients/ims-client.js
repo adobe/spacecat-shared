@@ -351,6 +351,7 @@ export default class ImsClient {
 
     // Helper to pull the unique organization ID values from an array of role entries
     function getOrganizationList(roles) {
+      if (!roles) return [];
       return [...new Set(roles.map((roleEntry) => roleEntry.organization))];
     }
 

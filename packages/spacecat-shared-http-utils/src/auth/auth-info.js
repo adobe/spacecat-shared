@@ -81,4 +81,12 @@ export default class AuthInfo {
   isAuthenticated() { return this.authenticated; }
 
   isAdmin() { return this.profile?.is_admin; }
+
+  // todo: check for correct orgId
+  hasOrganization(orgId) { return this.profile?.organization_id === orgId; }
+
+  hasScope(name, subScope) {
+    return this.scopes.some((scope) => scope.name === name
+      && (!subScope || scope.subScopes?.includes(subScope)));
+  }
 }

@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import FixEntity from './fix-entity.model.js';
@@ -32,6 +32,14 @@ const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
   })
   .addAttribute('executedBy', {
     type: 'string',
+  })
+  .addAttribute('executedAt', {
+    type: 'string',
+    validate: (value) => isIsoDate(value),
+  })
+  .addAttribute('publishedAt', {
+    type: 'string',
+    validate: (value) => isIsoDate(value),
   })
   .addAttribute('changeDetails', {
     type: 'any',

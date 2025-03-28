@@ -17,6 +17,8 @@ import type {
 export interface FixEntity extends BaseModel {
   getChangeDetails(): object;
   getExecutedBy(): string;
+  getExecutedAt(): string;
+  getPublishedAt(): string;
   getSuggestion(): Promise<Suggestion>;
   getSuggestionId(): string;
   getStatus(): string;

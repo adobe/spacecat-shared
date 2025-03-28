@@ -241,14 +241,11 @@ describe('SiteModel', () => {
             { path: '/organization/*/site/*', actions: ['R'] },
           ],
         }],
-        aclEntities: {
-          model: ['organization', 'site'],
-        },
+        aclEntities: {},
       };
     }
 
     it('create permission', () => {
-      // Prepare dep objects
       const es = { entities: { site: {} } };
       const er = new EntityRegistry(es, { aclCtx: getAclCtx() }, { debug: () => { } });
 

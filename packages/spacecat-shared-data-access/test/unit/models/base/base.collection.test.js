@@ -103,6 +103,9 @@ describe('BaseCollection', () => {
                 go: () => ({ data: [] }),
               }),
               go: () => ({ data: [] }),
+              where: stub().returns({
+                go: () => ({ data: [] }),
+              }),
             }),
             bySomeKey: stub(),
             primary: stub(),
@@ -680,6 +683,20 @@ describe('BaseCollection', () => {
       expect(mockElectroService.entities.mockEntityModel.query.all)
         .to.have.been.calledOnceWithExactly({ pk: 'ALL_MOCKENTITYMODELS' });
       expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc', attributes: ['test'] });
+    });
+
+    it('applies where filter function if provided', async () => {
+      const mockFindResult = { data: [mockRecord] };
+      const mockGo = stub().resolves(mockFindResult);
+      const mockWhere = stub().returns({ go: mockGo });
+      mockElectroService.entities.mockEntityModel.query.all().where = mockWhere;
+
+      const filterFunc = () => {
+        // A sample filter function
+      };
+
+      await baseCollectionInstance.all({}, { filter: filterFunc });
+      expect(mockWhere).to.have.been.calledOnceWithExactly(filterFunc);
     });
 
     it('handles pagination with fetchAllPages option', async () => {

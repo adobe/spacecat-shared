@@ -436,28 +436,20 @@ describe('ImsClient', () => {
           valid: false,
         });
 
-      await expect(client.validateAccessToken('some-token')).to.eventually.be.false;
+      await expect(client.validateAccessToken('some-token')).to.eventually.eql({ valid: false });
     });
 
-    it('returns false if token is valid but token is not present', async () => {
+    it('returns result if token is valid', async () => {
+      const expectedResult = {
+        valid: true,
+        token: { sub: '1234567890ABCDEF12345678@AdobeOrg' },
+      };
+
       nock(`https://${DUMMY_HOST}`)
         .post('/ims/validate_token/v1')
-        .reply(200, {
-          valid: true,
-        });
+        .reply(200, expectedResult);
 
-      await expect(client.validateAccessToken('some-token')).to.eventually.be.false;
-    });
-
-    it('returns true if token is valid', async () => {
-      nock(`https://${DUMMY_HOST}`)
-        .post('/ims/validate_token/v1')
-        .reply(200, {
-          valid: true,
-          token: { sub: '1234567890ABCDEF12345678@AdobeOrg' },
-        });
-
-      await expect(client.validateAccessToken('some-token')).to.eventually.be.true;
+      await expect(client.validateAccessToken('some-token')).to.eventually.eql(expectedResult);
     });
   });
 });

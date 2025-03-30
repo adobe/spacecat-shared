@@ -12,7 +12,7 @@
 
 const DAILY_PAGEVIEW_THRESHOLD = 200;
 const CR_THRESHOLD_RATIO = 0.3;
-//audit interval
+// audit interval
 const INTERVAL = 15;
 const MOBILE = 'mobile';
 const DESKTOP = 'desktop';
@@ -63,7 +63,8 @@ function aggregateFormVitalsByDevice(formVitalsCollection) {
 }
 
 function hasHighPageViews(interval, pageViews) {
-  return pageViews > DAILY_PAGEVIEW_THRESHOLD * interval;
+  const effectiveInterval = interval ?? INTERVAL;
+  return pageViews > DAILY_PAGEVIEW_THRESHOLD * effectiveInterval;
 }
 
 function hasLowerConversionRate(formSubmit, formViews) {

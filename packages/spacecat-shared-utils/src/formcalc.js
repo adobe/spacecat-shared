@@ -11,7 +11,9 @@
  */
 
 const DAILY_PAGEVIEW_THRESHOLD = 200;
-const CR_THRESHOLD_RATIO = 0.2;
+const CR_THRESHOLD_RATIO = 0.3;
+//audit interval
+const INTERVAL = 15;
 const MOBILE = 'mobile';
 const DESKTOP = 'desktop';
 

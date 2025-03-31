@@ -82,8 +82,7 @@ export default class AuthInfo {
 
   isAdmin() { return this.profile?.is_admin; }
 
-  // todo: check for correct orgId
-  hasOrganization(orgId) { return this.profile?.organization_id === orgId; }
+  hasOrganization(orgId) { return this.profile?.tenants?.some((tenant) => tenant.id === orgId); }
 
   hasScope(name, subScope) {
     return this.scopes.some((scope) => scope.name === name

@@ -56,10 +56,6 @@ export default class JwtHandler extends AbstractHandler {
   }
 
   async checkAuth(request, context) {
-    const authInfo = new AuthInfo()
-      .withType(this.name)
-      .withAuthenticated(false);
-
     try {
       await this.#setup(context);
 
@@ -67,8 +63,7 @@ export default class JwtHandler extends AbstractHandler {
 
       if (!hasText(token)) {
         this.log('No bearer token provided', 'debug');
-        authInfo.withReason('No bearer token provided');
-        return authInfo;
+        return null;
       }
 
       const payload = await this.#validateToken(token);
@@ -86,9 +81,8 @@ export default class JwtHandler extends AbstractHandler {
         .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
-      authInfo.withReason(e.message);
     }
 
-    return authInfo;
+    return null;
   }
 }

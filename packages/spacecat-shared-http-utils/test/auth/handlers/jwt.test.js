@@ -26,6 +26,7 @@ import AuthInfo from '../../../src/auth/auth-info.js';
 use(chaiAsPromised);
 
 const publicKey = fs.readFileSync('test/fixtures/auth/jwt/public_key.pem', 'utf8');
+const publicKeyB64 = Buffer.from(publicKey, 'utf-8').toString('base64');
 
 const privateKeyEncrypted = fs.readFileSync('test/fixtures/auth/jwt/private_key.pem', 'utf8');
 const decryptedPrivateKey = crypto.createPrivateKey({
@@ -85,7 +86,7 @@ describe('SpacecatJWTHandler', () => {
 
   it('returns null when there is no authorization header', async () => {
     const context = {
-      env: { AUTH_PUBLIC_KEY: publicKey },
+      env: { AUTH_PUBLIC_KEY_B64: publicKeyB64 },
     };
     const result = await handler.checkAuth({}, context);
 
@@ -96,7 +97,7 @@ describe('SpacecatJWTHandler', () => {
 
   it('returns null when "Bearer " is missing from the authorization header', async () => {
     const context = {
-      env: { AUTH_PUBLIC_KEY: publicKey },
+      env: { AUTH_PUBLIC_KEY_B64: publicKeyB64 },
       pathInfo: { headers: { authorization: 'some-token' } },
     };
     const result = await handler.checkAuth({}, context);
@@ -108,7 +109,7 @@ describe('SpacecatJWTHandler', () => {
 
   it('returns null when the token is empty', async () => {
     const context = {
-      env: { AUTH_PUBLIC_KEY: publicKey },
+      env: { AUTH_PUBLIC_KEY_B64: publicKeyB64 },
       pathInfo: { headers: { authorization: 'Bearer ' } },
     };
     const result = await handler.checkAuth({}, context);
@@ -123,7 +124,7 @@ describe('SpacecatJWTHandler', () => {
 
     beforeEach(() => {
       context = {
-        env: { AUTH_PUBLIC_KEY: publicKey },
+        env: { AUTH_PUBLIC_KEY_B64: publicKeyB64 },
         func: { version: 'ci' },
         log: logStub,
       };

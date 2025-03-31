@@ -26,11 +26,13 @@ export default class JwtHandler extends AbstractHandler {
   }
 
   async #setup(context) {
-    const authPublicKey = context.env?.AUTH_PUBLIC_KEY;
+    const authPublicKeyB64 = context.env?.AUTH_PUBLIC_KEY_B64;
 
-    if (!hasText(authPublicKey)) {
+    if (!hasText(authPublicKeyB64)) {
       throw new Error('No public key provided');
     }
+
+    const authPublicKey = Buffer.from(authPublicKeyB64, 'base64').toString('utf-8');
 
     this.authPublicKey = await importSPKI(authPublicKey, ALGORITHM_ES256);
   }
@@ -47,6 +49,8 @@ export default class JwtHandler extends AbstractHandler {
         issuer: ISSUER, // validate issuer
       },
     );
+
+    verifiedToken.payload.tenants = verifiedToken.payload.tenants || [];
 
     return verifiedToken.payload;
   }

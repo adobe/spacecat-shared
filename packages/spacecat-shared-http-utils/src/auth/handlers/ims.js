@@ -37,7 +37,7 @@ const IGNORED_PROFILE_PROPS = [
   'aa_id',
 ];
 
-const loadConfig = (context) => context.env.AUTH_HANDLER_IMS;
+const loadConfig = (context) => JSON.parse(context.env.AUTH_HANDLER_IMS);
 
 const transformProfile = (payload) => {
   const profile = { ...payload };

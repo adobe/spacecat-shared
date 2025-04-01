@@ -11,7 +11,9 @@
  */
 
 const DAILY_PAGEVIEW_THRESHOLD = 200;
-const CR_THRESHOLD_RATIO = 0.2;
+const CR_THRESHOLD_RATIO = 0.3;
+// audit interval
+const INTERVAL = 15;
 const MOBILE = 'mobile';
 const DESKTOP = 'desktop';
 
@@ -60,8 +62,8 @@ function aggregateFormVitalsByDevice(formVitalsCollection) {
   return resultMap;
 }
 
-function hasHighPageViews(interval, pageViews) {
-  return pageViews > DAILY_PAGEVIEW_THRESHOLD * interval;
+function hasHighPageViews(pageViews) {
+  return pageViews > DAILY_PAGEVIEW_THRESHOLD * INTERVAL;
 }
 
 function hasLowerConversionRate(formSubmit, formViews) {
@@ -84,7 +86,7 @@ function hasHighPageViewLowFormCtr(ctaPageViews, ctaClicks, ctaPageTotalClicks, 
  * @param {*} formVitalsCollection - form vitals collection
  * @returns {Array} - urls with high form views and low conversion rate
  */
-export function getHighFormViewsLowConversionMetrics(formVitalsCollection, interval) {
+export function getHighFormViewsLowConversionMetrics(formVitalsCollection) {
   const resultMap = aggregateFormVitalsByDevice(formVitalsCollection);
   const urls = [];
   resultMap.forEach((metrics, url) => {
@@ -94,7 +96,7 @@ export function getHighFormViewsLowConversionMetrics(formVitalsCollection, inter
     const formEngagement = metrics.formengagement.total;
     const formSubmit = metrics.formsubmit.total || formEngagement;
 
-    if (hasHighPageViews(interval, pageViews) && hasLowerConversionRate(formSubmit, formViews)) {
+    if (hasHighPageViews(pageViews) && hasLowerConversionRate(formSubmit, formViews)) {
       urls.push({
         url,
         pageViews,
@@ -113,7 +115,7 @@ export function getHighFormViewsLowConversionMetrics(formVitalsCollection, inter
  * @param resultMap
  * @returns {*[]}
  */
-export function getHighPageViewsLowFormViewsMetrics(formVitalsCollection, interval) {
+export function getHighPageViewsLowFormViewsMetrics(formVitalsCollection) {
   const urls = [];
   const resultMap = aggregateFormVitalsByDevice(formVitalsCollection);
   resultMap.forEach((metrics, url) => {
@@ -121,7 +123,7 @@ export function getHighPageViewsLowFormViewsMetrics(formVitalsCollection, interv
     const { total: formViews } = metrics.formview;
     const { total: formEngagement } = metrics.formengagement;
 
-    if (hasHighPageViews(interval, pageViews) && hasLowFormViews(pageViews, formViews)) {
+    if (hasHighPageViews(pageViews) && hasLowFormViews(pageViews, formViews)) {
       urls.push({
         url,
         pageViews,
@@ -139,7 +141,7 @@ export function getHighPageViewsLowFormViewsMetrics(formVitalsCollection, interv
  * @param formVitalsByDevice
  * @returns {*[]}
  */
-export function getHighPageViewsLowFormCtrMetrics(formVitalsCollection, interval) {
+export function getHighPageViewsLowFormCtrMetrics(formVitalsCollection) {
   const urls = [];
   const formVitalsByDevice = aggregateFormVitalsByDevice(formVitalsCollection);
   formVitalsCollection.forEach((entry) => {
@@ -176,7 +178,7 @@ export function getHighPageViewsLowFormCtrMetrics(formVitalsCollection, interval
     const f = Object.values(pageview).reduce((sum, val) => sum + val, 0);
 
     // Evaluate conditions and add URL to the result if all are met
-    if (hasHighPageViews(interval, x) && hasHighPageViewLowFormCtr(x, y.clicks, z, f)) {
+    if (hasHighPageViews(x) && hasHighPageViewLowFormCtr(x, y.clicks, z, f)) {
       const deviceData = formVitalsByDevice.get(entry.url);
       if (deviceData != null) {
         urls.push({

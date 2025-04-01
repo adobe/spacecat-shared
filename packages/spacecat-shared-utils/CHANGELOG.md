@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.35.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.35.0...@adobe/spacecat-shared-utils-v1.35.1) (2025-04-01)
+
+
+### Bug Fixes
+
+* adding forms constants at common place ([#672](https://github.com/adobe/spacecat-shared/issues/672)) ([4b8254d](https://github.com/adobe/spacecat-shared/commit/4b8254d32112e4921ae63396733101fa1f3bbed7))
+
 # [@adobe/spacecat-shared-utils-v1.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.34.0...@adobe/spacecat-shared-utils-v1.35.0) (2025-03-06)
 
 

@@ -18,8 +18,6 @@ import {
   jwtVerify,
 } from 'jose';
 
-import configProd from './config/ims.js';
-import configDev from './config/ims-stg.js';
 import { getBearerToken } from './utils/bearer.js';
 
 import AbstractHandler from './abstract.js';
@@ -39,13 +37,7 @@ const IGNORED_PROFILE_PROPS = [
   'aa_id',
 ];
 
-const loadConfig = (context) => {
-  const funcVersion = context.func?.version;
-  const isDev = /^ci\d*$/i.test(funcVersion);
-  context.log.debug(`Function version: ${funcVersion} (isDev: ${isDev})`);
-  /* c8 ignore next */
-  return isDev ? configDev : configProd;
-};
+const loadConfig = (context) => context.env.AUTH_HANDLER_IMS;
 
 const transformProfile = (payload) => {
   const profile = { ...payload };

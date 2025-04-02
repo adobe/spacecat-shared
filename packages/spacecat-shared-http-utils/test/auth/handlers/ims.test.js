@@ -125,7 +125,7 @@ describe('AdobeImsHandler', () => {
     const result = await handler.checkAuth({}, context);
 
     expect(result).to.be.null;
-    expect(logStub.error.calledWithMatch('[ims] Failed to validate token: Token not issued by expected idp: ims-na1-stg1 != ims-na1')).to.be.true;
+    expect(logStub.error.calledWith('[ims] Failed to validate token: Token not issued by expected idp: ims-na1-stg1 != ims-na1')).to.be.true;
   });
 
   describe('token validation', () => {

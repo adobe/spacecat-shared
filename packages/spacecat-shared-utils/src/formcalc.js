@@ -10,10 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
+export const FORMS_AUDIT_INTERVAL = 15;
 const DAILY_PAGEVIEW_THRESHOLD = 200;
 const CR_THRESHOLD_RATIO = 0.3;
-// audit interval
-const INTERVAL = 15;
 const MOBILE = 'mobile';
 const DESKTOP = 'desktop';
 
@@ -63,7 +62,7 @@ function aggregateFormVitalsByDevice(formVitalsCollection) {
 }
 
 function hasHighPageViews(pageViews) {
-  return pageViews > DAILY_PAGEVIEW_THRESHOLD * INTERVAL;
+  return pageViews > DAILY_PAGEVIEW_THRESHOLD * FORMS_AUDIT_INTERVAL;
 }
 
 function hasLowerConversionRate(formSubmit, formViews) {

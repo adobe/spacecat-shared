@@ -72,6 +72,8 @@ export default class AuthInfo {
     return this;
   }
 
+  getType() { return this.type; }
+
   getScopes() { return this.scopes; }
 
   getProfile() { return this.profile; }

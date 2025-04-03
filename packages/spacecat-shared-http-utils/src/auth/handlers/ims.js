@@ -82,10 +82,6 @@ export default class AdobeImsHandler extends AbstractHandler {
       throw new Error(`Token not issued by expected idp: ${config.name} != ${claims.as}`);
     }
 
-    if (!claims.user_id?.endsWith('@AdobeService')) {
-      throw new Error(`Token not issued for service: ${claims.user_id}`);
-    }
-
     const jwks = await this.#getJwksUri(config);
     const { payload } = await jwtVerify(token, jwks);
 

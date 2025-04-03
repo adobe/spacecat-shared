@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-http-utils",
-  "version": "1.10.0",
+  "version": "1.10.2",
   "description": "Shared modules of the Spacecat Services - HTTP Utils",
   "type": "module",
   "engines": {
@@ -42,6 +42,6 @@
     "@adobe/helix-shared-wrap": "2.0.2",
     "chai": "5.2.0",
     "chai-as-promised": "8.0.1",
-    "sinon": "19.0.2"
+    "sinon": "20.0.0"
   }
 }

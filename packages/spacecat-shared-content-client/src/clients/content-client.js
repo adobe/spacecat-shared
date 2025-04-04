@@ -206,9 +206,8 @@ export default class ContentClient {
       const response = await client.send(command);
       const secrets = JSON.parse(response.SecretString);
       config.domainId = secrets.onedrive_domain_id;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      log.debug(`Customer ${site.getBaseURL()} secrets containing onedrive domain id not configured`);
+      log.debug(`Customer ${site.getBaseURL()} secrets containing onedrive domain id not configured: ${e.message}`);
     }
     return new ContentClient(config, site, log);
   }

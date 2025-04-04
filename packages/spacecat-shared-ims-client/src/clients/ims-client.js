@@ -10,23 +10,23 @@
  * governing permissions and limitations under the License.
  */
 
-import { createUrl } from '@adobe/fetch';
-import { hasText, isObject } from '@adobe/spacecat-shared-utils';
+import { hasText } from '@adobe/spacecat-shared-utils';
 
+import ImsBaseClient from './ims-base-client.js';
 import {
-  createFormData,
   emailAddressIsAllowed,
   extractIdAndAuthSource,
-  fetch as httpFetch,
   getGroupMembersEndpoint,
   getImsOrgsApiPath,
+  IMS_ALL_ORGANIZATIONS_ENDPOINT,
   IMS_PRODUCT_CONTEXT_BY_ORG_ENDPOINT,
   IMS_PROFILE_ENDPOINT,
   IMS_TOKEN_ENDPOINT,
   IMS_TOKEN_ENDPOINT_V3,
+  IMS_VALIDATE_TOKEN_ENDPOINT,
 } from '../utils.js';
 
-export default class ImsClient {
+export default class ImsClient extends ImsBaseClient {
   static createFrom(context) {
     const { log = console } = context;
     const {
@@ -63,45 +63,13 @@ export default class ImsClient {
    * @returns {ImsClient} - the Ims client.
    */
   constructor(config, log) {
-    this.config = config;
-    this.log = log;
+    super(config, log);
     this.serviceAccessToken = null;
     this.serviceAccessTokenV3 = null;
   }
 
-  #logDuration(message, startTime) {
-    const endTime = process.hrtime.bigint();
-    const duration = (endTime - startTime) / BigInt(1e6);
-    this.log.debug(`${message}: took ${duration}ms`);
-  }
-
-  async #prepareImsRequestHeaders(noContentType = false) {
-    const imsToken = await this.getServiceAccessToken();
-    return {
-      ...(noContentType ? {} : { 'Content-Type': 'application/json' }),
-      Authorization: `Bearer ${imsToken.access_token}`,
-    };
-  }
-
-  async #imsApiCall(
-    endpoint,
-    queryString = {},
-    body = null,
-    noContentType = false,
-  ) {
-    const headers = await this.#prepareImsRequestHeaders(noContentType);
-    return httpFetch(
-      createUrl(`https://${this.config.imsHost}${endpoint}`, queryString),
-      {
-        ...(isObject(body) ? { method: 'POST' } : { method: 'GET' }),
-        headers,
-        ...(isObject(body) ? { body: createFormData(body) } : {}),
-      },
-    );
-  }
-
   async #getImsOrgDetails(imsOrgId) {
-    const orgDetailsResponse = await this.#imsApiCall(
+    const orgDetailsResponse = await this.imsApiCall(
       getImsOrgsApiPath(imsOrgId),
       { client_id: this.config.clientId },
     );
@@ -116,7 +84,7 @@ export default class ImsClient {
   async #getProductContextByImsOrgId(imsOrgId) {
     const { orgId, authSource } = extractIdAndAuthSource(imsOrgId);
 
-    const pcResponse = await this.#imsApiCall(
+    const pcResponse = await this.imsApiCall(
       IMS_PRODUCT_CONTEXT_BY_ORG_ENDPOINT,
       {},
       {
@@ -124,7 +92,7 @@ export default class ImsClient {
         auth_src: authSource,
         client_id: this.config.clientId,
       },
-      true,
+      { noContentType: true },
     );
 
     if (!pcResponse.ok) {
@@ -140,7 +108,7 @@ export default class ImsClient {
   async #getUsersByImsGroupId(imsOrgId, groupId) {
     // This endpoint is paginated, but the default page limit is 50 entries — more than enough
     // for our use case
-    const groupResponse = await this.#imsApiCall(
+    const groupResponse = await this.imsApiCall(
       getGroupMembersEndpoint(imsOrgId, groupId),
       { client_id: this.config.clientId },
     );
@@ -193,42 +161,32 @@ export default class ImsClient {
       return this.serviceAccessToken;
     }
 
-    try {
-      const startTime = process.hrtime.bigint();
+    const tokenResponse = await this.imsApiCall(
+      IMS_TOKEN_ENDPOINT,
+      {},
+      {
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        code: this.config.clientCode,
+        grant_type: 'authorization_code',
+      },
+      { noContentType: true, noAuth: true },
+    );
 
-      const tokenResponse = await httpFetch(
-        `https://${this.config.imsHost}${IMS_TOKEN_ENDPOINT}`,
-        {
-          method: 'POST',
-          body: createFormData({
-            client_id: this.config.clientId,
-            client_secret: this.config.clientSecret,
-            code: this.config.clientCode,
-            grant_type: 'authorization_code',
-          }),
-        },
-      );
-
-      this.#logDuration('IMS getServiceAccessToken request', startTime);
-
-      if (!tokenResponse.ok) {
-        throw new Error(`IMS getServiceAccessToken request failed with status: ${tokenResponse.status}`);
-      }
-
-      /* eslint-disable camelcase */
-      const { access_token, token_type, expires_in } = await tokenResponse.json();
-
-      this.serviceAccessToken = {
-        access_token,
-        expires_in,
-        token_type,
-      };
-
-      return this.serviceAccessToken;
-    } catch (error) {
-      this.log.error('Error while fetching data from Ims API: ', error.message);
-      throw error;
+    if (!tokenResponse.ok) {
+      throw new Error(`IMS getServiceAccessToken request failed with status: ${tokenResponse.status}`);
     }
+
+    /* eslint-disable camelcase */
+    const { access_token, token_type, expires_in } = await tokenResponse.json();
+
+    this.serviceAccessToken = {
+      access_token,
+      expires_in,
+      token_type,
+    };
+
+    return this.serviceAccessToken;
   }
 
   async getServiceAccessTokenV3() {
@@ -236,42 +194,32 @@ export default class ImsClient {
       return this.serviceAccessTokenV3;
     }
 
-    try {
-      const startTime = process.hrtime.bigint();
+    const tokenResponse = await this.imsApiCall(
+      IMS_TOKEN_ENDPOINT_V3,
+      {},
+      {
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        scope: this.config.scope,
+        grant_type: 'client_credentials',
+      },
+      { noContentType: true, noAuth: true },
+    );
 
-      const tokenResponse = await httpFetch(
-        `https://${this.config.imsHost}${IMS_TOKEN_ENDPOINT_V3}`,
-        {
-          method: 'POST',
-          body: createFormData({
-            client_id: this.config.clientId,
-            client_secret: this.config.clientSecret,
-            scope: this.config.scope,
-            grant_type: 'client_credentials',
-          }),
-        },
-      );
-
-      this.#logDuration('IMS getServiceAccessTokenV3 request', startTime);
-
-      if (!tokenResponse.ok) {
-        throw new Error(`IMS getServiceAccessTokenV3 request failed with status: ${tokenResponse.status}`);
-      }
-
-      /* eslint-disable camelcase */
-      const { access_token, token_type, expires_in } = await tokenResponse.json();
-
-      this.serviceAccessTokenV3 = {
-        access_token,
-        expires_in,
-        token_type,
-      };
-
-      return this.serviceAccessTokenV3;
-    } catch (error) {
-      this.log.error('Error while fetching data from Ims API: ', error.message);
-      throw error;
+    if (!tokenResponse.ok) {
+      throw new Error(`IMS getServiceAccessTokenV3 request failed with status: ${tokenResponse.status}`);
     }
+
+    /* eslint-disable camelcase */
+    const { access_token, token_type, expires_in } = await tokenResponse.json();
+
+    this.serviceAccessTokenV3 = {
+      access_token,
+      expires_in,
+      token_type,
+    };
+
+    return this.serviceAccessTokenV3;
   }
 
   async getImsOrganizationDetails(imsOrgId) {
@@ -304,44 +252,88 @@ export default class ImsClient {
   }
 
   /**
-   * Fetch a subset of properties from a user's IMS profile, given their access token.
+   * Fetch the IMS profile of a user given the IMS access token.
    * @param {string} imsAccessToken A valid IMS user access token
    * @returns {Promise<{userId, email, organizations: string[]}>} Fields from the user's profile
    */
   async getImsUserProfile(imsAccessToken) {
+    if (!hasText(imsAccessToken)) {
+      throw new Error('imsAccessToken param is required.');
+    }
+
     // Helper to pull the unique organization ID values from an array of role entries
     function getOrganizationList(roles) {
       return [...new Set(roles.map((roleEntry) => roleEntry.organization))];
     }
 
-    try {
-      const startTime = process.hrtime.bigint();
+    const profileResponse = await this.imsApiCall(
+      IMS_PROFILE_ENDPOINT,
+      {},
+      null,
+      { accessToken: imsAccessToken },
+    );
 
-      const profileResponse = await httpFetch(
-        `https://${this.config.imsHost}${IMS_PROFILE_ENDPOINT}`,
-        {
-          headers: {
-            Authorization: `Bearer ${imsAccessToken}`,
-          },
-        },
-      );
-
-      if (!profileResponse.ok) {
-        throw new Error(`IMS getImsUserProfile request failed with status: ${profileResponse.status}`);
-      }
-
-      const { userId, email, roles } = await profileResponse.json();
-
-      this.#logDuration('IMS getImsUserProfile request', startTime);
-
-      return {
-        userId,
-        email,
-        organizations: getOrganizationList(roles),
-      };
-    } catch (error) {
-      this.log.error('Error fetching user profile data from IMS: ', error.message);
-      throw error;
+    if (!profileResponse.ok) {
+      throw new Error(`IMS getImsUserProfile request failed with status: ${profileResponse.status}`);
     }
+
+    const profile = await profileResponse.json();
+    return {
+      ...profile,
+      organizations: getOrganizationList(profile.roles),
+    };
+  }
+
+  /**
+   * Fetch the IMS organizations of a user given the IMS access token.
+   * @param {string} imsAccessToken A valid IMS user access token
+   * @returns {Promise<(string|*)[]>} The list of organization IDs
+   */
+  async getImsUserOrganizations(imsAccessToken) {
+    if (!hasText(imsAccessToken)) {
+      throw new Error('imsAccessToken param is required.');
+    }
+
+    const organizationsResponse = await this.imsApiCall(
+      IMS_ALL_ORGANIZATIONS_ENDPOINT,
+      {},
+      null,
+      { accessToken: imsAccessToken },
+    );
+
+    if (!organizationsResponse.ok) {
+      throw new Error(`IMS getImsUserOrganizations request failed with status: ${organizationsResponse.status}`);
+    }
+
+    return organizationsResponse.json();
+  }
+
+  /**
+   * Validates an IMS access token.
+   * @param {string} imsAccessToken The IMS access token to validate.
+   * @returns {Promise<object>} The validation result.
+   * @throws {Error} If the token validation fails.
+   */
+  async validateAccessToken(imsAccessToken) {
+    if (!hasText(imsAccessToken)) {
+      throw new Error('imsAccessToken param is required.');
+    }
+
+    const validationResponse = await this.imsApiCall(
+      IMS_VALIDATE_TOKEN_ENDPOINT,
+      {},
+      {
+        token: imsAccessToken,
+        client_id: this.config.clientId,
+        type: 'access_token',
+      },
+      { noContentType: true, noAuth: true },
+    );
+
+    if (!validationResponse.ok) {
+      throw new Error(`IMS validateAccessToken request failed with status: ${validationResponse.status}`);
+    }
+
+    return validationResponse.json();
   }
 }

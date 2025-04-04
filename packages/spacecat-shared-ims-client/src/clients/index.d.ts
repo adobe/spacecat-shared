@@ -10,43 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import type { UniversalContext } from '@adobe/helix-universal';
+import type { ImsClient } from './ImsClient.d.ts';
+import type { ImsPromiseClient } from './ImsPromiseClient.d.ts';
 
-export class ImsClient {
-  /**
-   * Creates a new ImsClient instance from the given UniversalContext.
-   * @param {UniversalContext} context The UniversalContext to use for creating the ImsClient.
-   * @returns {ImsClient} The ImsClient instance.
-   */
-  static createFrom(context: UniversalContext): ImsClient;
-
-  /**
-   * Returns an access token for the scopes associated with the IMS client ID.
-   * @returns {Promise<{ access_token: string }>} The access token.
-   */
-  getServiceAccessToken(): Promise<string>;
-
-  /**
-   * Returns an access token for the scopes associated with the IMS client ID using the v3 APIs.
-   * @returns {Promise<{ access_token: string }>} The access token.
-   */
-  getServiceAccessTokenV3(): Promise<string>;
-
-  /**
-   * Returns the organization details for the given IMS organization ID.
-   * @param {string} imsOrgId The IMS organization ID.
-   * @returns {Promise<{
-   *       imsOrgId: string,
-   *       tenantId: string,
-   *       orgName: string,
-   *       orgType: string,
-   *       countryCode: string,
-   *       admins: {
-   *               email: string,
-   *               firstName: string,
-   *               lastName: string,
-   *             }[],
-   *     }>} The organization details.
-   */
-  getImsOrganizationDetails(imsOrgId: string): Promise<object>;
-}
+export { ImsClient, ImsPromiseClient };

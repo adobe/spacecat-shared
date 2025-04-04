@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-http-utils-v1.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.1...@adobe/spacecat-shared-http-utils-v1.10.2) (2025-04-02)
+
+
+### Bug Fixes
+
+* fix auth for dev ([#676](https://github.com/adobe/spacecat-shared/issues/676)) ([1508d58](https://github.com/adobe/spacecat-shared/commit/1508d5843a753685a7f35c0d18a020a991b94d25))
+
+# [@adobe/spacecat-shared-http-utils-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.0...@adobe/spacecat-shared-http-utils-v1.10.1) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#674](https://github.com/adobe/spacecat-shared/issues/674)) ([285b37d](https://github.com/adobe/spacecat-shared/commit/285b37de9df42adb6a23694bcc699608e3b5b8fe))
+
+# [@adobe/spacecat-shared-http-utils-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.12...@adobe/spacecat-shared-http-utils-v1.10.0) (2025-03-20)
+
+
+### Features
+
+* jwt auth handler (WIP) ([#669](https://github.com/adobe/spacecat-shared/issues/669)) ([f3c8d84](https://github.com/adobe/spacecat-shared/commit/f3c8d84a724e9664cac995fe67af7af65800b16f))
+
 # [@adobe/spacecat-shared-http-utils-v1.9.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.11...@adobe/spacecat-shared-http-utils-v1.9.12) (2025-03-04)
 
 

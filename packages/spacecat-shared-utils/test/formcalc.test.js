@@ -22,7 +22,7 @@ import {
 
 describe('Form Calc functions', () => {
   it('getHighFormViewsLowConversion', () => {
-    const result = getHighFormViewsLowConversionMetrics(formVitalsCollection, 7);
+    const result = getHighFormViewsLowConversionMetrics(formVitalsCollection);
     expect(result).to.eql([
       {
         url: 'https://www.surest.com/contact-us',
@@ -35,7 +35,7 @@ describe('Form Calc functions', () => {
   });
 
   it('getHighPageViewsLowFormViews', () => {
-    const result = getHighPageViewsLowFormViewsMetrics(formVitalsCollection, 30);
+    const result = getHighPageViewsLowFormViewsMetrics(formVitalsCollection);
     expect(result).to.eql([
       {
         url: 'https://www.surest.com/info/win',
@@ -53,7 +53,7 @@ describe('Form Calc functions', () => {
   });
 
   it('getHighPageViewsLowFormCtr', () => {
-    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection, 30);
+    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection);
     expect(result).to.eql([
       {
         url: 'https://www.surest.com/newsletter',
@@ -69,7 +69,7 @@ describe('Form Calc functions', () => {
   });
 
   it('getHighPageViewsLowFormCtr-2', () => {
-    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection2, 30);
+    const result = getHighPageViewsLowFormCtrMetrics(formVitalsCollection2);
     expect(result).to.eql([]);
   });
 });

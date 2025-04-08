@@ -9,11 +9,13 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import AWSXray from 'aws-xray-sdk';
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
 import {
-  composeBaseURL, hasText, isObject, tracingFetch,
+  composeBaseURL, hasText, isObject, resolveCustomerSecretsName, tracingFetch,
 } from '@adobe/spacecat-shared-utils';
 import { Graph, hasCycle } from 'graph-data-structure';
+import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 
 const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
@@ -184,7 +186,7 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
 };
 
 export default class ContentClient {
-  static createFrom(context, site) {
+  static async createFrom(context, site) {
     const { log = console, env } = context;
 
     const config = {};
@@ -197,6 +199,16 @@ export default class ContentClient {
       }
     }
 
+    try {
+      const customerSecret = resolveCustomerSecretsName(site.getBaseURL(), context);
+      const client = AWSXray.captureAWSv3Client(new SecretsManagerClient({}));
+      const command = new GetSecretValueCommand({ SecretId: customerSecret });
+      const response = await client.send(command);
+      const secrets = JSON.parse(response.SecretString);
+      config.domainId = secrets.onedrive_domain_id;
+    } catch (e) {
+      log.debug(`Customer ${site.getBaseURL()} secrets containing onedrive domain id not configured: ${e.message}`);
+    }
     return new ContentClient(config, site, log);
   }
 
@@ -220,6 +232,7 @@ export default class ContentClient {
       const siteDto = {
         getId: () => site.siteId,
         getHlxConfig: () => site.hlxConfig,
+        getBaseURL: () => site.baseURL,
       };
       return ContentClient.createFrom({ log, env }, siteDto);
     } catch (e) {

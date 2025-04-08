@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-ims-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.6.3...@adobe/spacecat-shared-ims-client-v1.7.0) (2025-04-03)
+
+
+### Features
+
+* add IMS client for handling promise token ([#667](https://github.com/adobe/spacecat-shared/issues/667)) ([ba89df5](https://github.com/adobe/spacecat-shared/commit/ba89df534aab5bdc49bf5c42e2af8f201f9e1fb9))
+
+# [@adobe/spacecat-shared-ims-client-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.6.2...@adobe/spacecat-shared-ims-client-v1.6.3) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#674](https://github.com/adobe/spacecat-shared/issues/674)) ([285b37d](https://github.com/adobe/spacecat-shared/commit/285b37de9df42adb6a23694bcc699608e3b5b8fe))
+
 # [@adobe/spacecat-shared-ims-client-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.6.1...@adobe/spacecat-shared-ims-client-v1.6.2) (2025-04-01)
 
 

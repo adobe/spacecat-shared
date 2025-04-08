@@ -66,7 +66,7 @@ function hasHighPageViews(pageViews) {
 }
 
 function hasLowerConversionRate(formSubmit, formViews) {
-  return formSubmit / formViews < CR_THRESHOLD_RATIO;
+  return formSubmit > 0 && formSubmit / formViews < CR_THRESHOLD_RATIO;
 }
 
 function hasLowFormViews(pageViews, formViews) {
@@ -93,7 +93,7 @@ export function getHighFormViewsLowConversionMetrics(formVitalsCollection) {
     // Default to pageViews if formViews are not available
     const formViews = metrics.formview.total || pageViews;
     const formEngagement = metrics.formengagement.total;
-    const formSubmit = metrics.formsubmit.total || formEngagement;
+    const formSubmit = metrics.formsubmit.total;
 
     if (hasHighPageViews(pageViews) && hasLowerConversionRate(formSubmit, formViews)) {
       urls.push({

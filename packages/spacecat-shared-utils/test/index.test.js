@@ -60,6 +60,7 @@ describe('Index Exports', () => {
     'getHighFormViewsLowConversionMetrics',
     'getHighPageViewsLowFormViewsMetrics',
     'getHighPageViewsLowFormCtrMetrics',
+    'FORMS_AUDIT_INTERVAL',
     'SPACECAT_USER_AGENT',
   ];
 

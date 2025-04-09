@@ -62,4 +62,9 @@ export { s3Wrapper } from './s3.js';
 
 export { fetch } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';
-export { getHighFormViewsLowConversionMetrics, getHighPageViewsLowFormViewsMetrics, getHighPageViewsLowFormCtrMetrics } from './formcalc.js';
+export {
+  getHighFormViewsLowConversionMetrics,
+  getHighPageViewsLowFormViewsMetrics,
+  getHighPageViewsLowFormCtrMetrics,
+  FORMS_AUDIT_INTERVAL,
+} from './formcalc.js';

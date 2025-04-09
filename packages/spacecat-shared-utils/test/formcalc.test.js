@@ -26,10 +26,32 @@ describe('Form Calc functions', () => {
     expect(result).to.eql([
       {
         url: 'https://www.surest.com/contact-us',
-        pageViews: 6690,
-        formViews: 6690,
-        formEngagement: 1000,
-        formSubmit: 100,
+        pageViews: {
+          desktop: 5690,
+          mobile: 1000,
+          total: 6690,
+        },
+        formViews: {
+          desktop: 5690,
+          mobile: 1000,
+          total: 6690,
+        },
+        formEngagement: {
+          desktop: 700,
+          mobile: 300,
+          total: 1000,
+        },
+        formSubmit: {
+          desktop: 100,
+          mobile: 0,
+          total: 100,
+        },
+        trafficacquisition: {
+          total: 1000,
+          paid: 500,
+          owned: 500,
+          earned: 100,
+        },
       },
     ]);
   });
@@ -57,9 +79,32 @@ describe('Form Calc functions', () => {
     expect(result).to.eql([
       {
         url: 'https://www.surest.com/newsletter',
-        pageViews: 8670,
-        formViews: 300,
-        formEngagement: 300,
+        pageViews: {
+          desktop: 4670,
+          mobile: 4000,
+          total: 8670,
+        },
+        formViews: {
+          desktop: 0,
+          mobile: 300,
+          total: 300,
+        },
+        formEngagement: {
+          desktop: 0,
+          mobile: 300,
+          total: 300,
+        },
+        formSubmit: {
+          desktop: 0,
+          mobile: 0,
+          total: 0,
+        },
+        trafficacquisition: {
+          total: null,
+          paid: null,
+          owned: null,
+          earned: null,
+        },
         CTA: {
           url: 'https://www.surest.com/about-us',
           source: '#teaser-related02 .cmp-teaser__action-link',

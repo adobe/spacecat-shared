@@ -28,6 +28,7 @@ function aggregateFormVitalsByDevice(formVitalsCollection) {
   formVitalsCollection.forEach((item) => {
     const {
       url, formview = {}, formengagement = {}, pageview = {}, formsubmit = {},
+      trafficacquisition = {},
     } = item;
 
     const totals = {
@@ -54,7 +55,13 @@ function aggregateFormVitalsByDevice(formVitalsCollection) {
     totals.formengagement = calculateSums(formengagement, totals.formengagement);
     totals.pageview = calculateSums(pageview, totals.pageview);
     totals.formsubmit = calculateSums(formsubmit, totals.formsubmit);
-
+    // Traffic Acquisition is not aggregated by device type
+    totals.trafficacquisition = {
+      total: trafficacquisition.total ? trafficacquisition.total : null,
+      paid: trafficacquisition.paid ? trafficacquisition.paid : null,
+      earned: trafficacquisition.earned ? trafficacquisition.earned : null,
+      owned: trafficacquisition.owned ? trafficacquisition.owned : null,
+    };
     resultMap.set(url, totals);
   });
 
@@ -90,18 +97,53 @@ export function getHighFormViewsLowConversionMetrics(formVitalsCollection) {
   const urls = [];
   resultMap.forEach((metrics, url) => {
     const pageViews = metrics.pageview.total;
+    const mobilePageViews = metrics.pageview.mobile;
+    const desktopPageViews = metrics.pageview.desktop;
     // Default to pageViews if formViews are not available
-    const formViews = metrics.formview.total || pageViews;
+    let formViews = metrics.formview.total;
+    let mobileFormViews = metrics.formview.mobile;
+    let desktopFormViews = metrics.formview.desktop;
+    if (!formViews) {
+      formViews = pageViews;
+      mobileFormViews = mobilePageViews;
+      desktopFormViews = desktopPageViews;
+    }
     const formEngagement = metrics.formengagement.total;
-    const formSubmit = metrics.formsubmit.total || formEngagement;
+    const mobileFormEngagement = metrics.formengagement.mobile;
+    const desktopFormEngagement = metrics.formengagement.desktop;
+    let formSubmit = metrics.formsubmit.total;
+    let mobileFormSubmit = metrics.formsubmit.mobile;
+    let desktopFormSubmit = metrics.formsubmit.desktop;
+    if (!formSubmit) {
+      formSubmit = formEngagement;
+      mobileFormSubmit = mobileFormEngagement;
+      desktopFormSubmit = desktopFormEngagement;
+    }
 
     if (hasHighPageViews(pageViews) && hasLowerConversionRate(formSubmit, formViews)) {
       urls.push({
         url,
-        pageViews,
-        formViews,
-        formEngagement,
-        formSubmit,
+        pageViews: {
+          total: pageViews,
+          mobile: mobilePageViews,
+          desktop: desktopPageViews,
+        },
+        formEngagement: {
+          total: formEngagement,
+          mobile: mobileFormEngagement,
+          desktop: desktopFormEngagement,
+        },
+        formViews: {
+          total: formViews,
+          mobile: mobileFormViews,
+          desktop: desktopFormViews,
+        },
+        formSubmit: {
+          total: formSubmit,
+          mobile: mobileFormSubmit,
+          desktop: desktopFormSubmit,
+        },
+        trafficacquisition: metrics.trafficacquisition,
       });
     }
   });
@@ -182,13 +224,15 @@ export function getHighPageViewsLowFormCtrMetrics(formVitalsCollection) {
       if (deviceData != null) {
         urls.push({
           url: entry.url,
-          pageViews: deviceData.pageview.total,
-          formViews: deviceData.formview.total,
-          formEngagement: deviceData.formengagement.total,
+          pageViews: deviceData.pageview,
+          formViews: deviceData.formview,
+          formEngagement: deviceData.formengagement,
+          formSubmit: deviceData.formsubmit,
           CTA: {
             url: maxPageviewUrl.url,
             source: y.source,
           },
+          trafficacquisition: deviceData.trafficacquisition,
         });
       }
     }

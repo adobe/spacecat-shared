@@ -24,6 +24,12 @@ export const formVitalsCollection = [
       'desktop:windows': 5690,
       'mobile:ios': 1000,
     },
+    trafficacquisition: {
+      total: 1000,
+      paid: 500,
+      owned: 500,
+      earned: 100,
+    },
   },
   {
     url: 'https://www.surest.com/info/win',

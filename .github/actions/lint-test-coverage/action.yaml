@@ -29,7 +29,6 @@ runs:
       shell: bash
 
     - name: Run Integration Tests
-      if: steps.check_it_tests.outputs.has_it_tests == 'true'
       run: npm run test:it
       shell: bash
 

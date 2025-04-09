@@ -11,7 +11,8 @@
  */
 
 import type {
-  BaseCollection, BaseModel, Suggestion,
+  BaseCollection,
+  BaseModel, MultiStatusCreateResult, Opportunity, Suggestion,
 } from '../index';
 
 export interface FixEntity extends BaseModel {
@@ -19,8 +20,10 @@ export interface FixEntity extends BaseModel {
   getExecutedBy(): string;
   getExecutedAt(): string;
   getPublishedAt(): string;
-  getSuggestion(): Promise<Suggestion>;
-  getSuggestionId(): string;
+  addSuggestions(suggestions: object[]): Promise<MultiStatusCreateResult<Suggestion>>;
+  getSuggestions(): Promise<Suggestion>;
+  getOpportunityId(): string;
+  getOpportunity(): Promise<Opportunity>;
   getStatus(): string;
   getType(): string;
   setChangeDetails(changeDetails: object): FixEntity;
@@ -30,8 +33,6 @@ export interface FixEntity extends BaseModel {
 }
 
 export interface FixEntityCollection extends BaseCollection<FixEntity> {
-  allBySuggestionId(suggestionId: string): Promise<[FixEntity]>;
-  allBySuggestionIdAndStatus(suggestionId: string, status: string): Promise<FixEntity[]>;
-  findBySuggestionId(suggestionId: string): Promise<FixEntity | null>;
-  findBySuggestionIdAndStatus(suggestionId: string, status: string): Promise<FixEntity | null>;
+  allByOpportunityId(opportunityId: string): Promise<FixEntity[]>;
+  findByOpportunityId(opportunityId: string): Promise<FixEntity | null>;
 }

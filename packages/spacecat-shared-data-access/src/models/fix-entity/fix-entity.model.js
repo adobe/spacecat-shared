@@ -24,7 +24,7 @@ class FixEntity extends BaseModel {
   static STATUSES = {
     PENDING: 'PENDING', // the fix is pending to be deployed
     DEPLOYED: 'DEPLOYED', // the fix was successfully applied
-    COMPLETED: 'COMPLETED', // the fix was published
+    PUBLISHED: 'PUBLISHED', // the fix is live in production
     FAILED: 'FAILED', // failed to apply the fix
     ROLLED_BACK: 'ROLLED_BACK', // the fix has been rolled_back
   };

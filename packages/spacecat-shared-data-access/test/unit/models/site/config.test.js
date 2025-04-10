@@ -164,6 +164,37 @@ describe('Config Tests', () => {
       expect(config.getIncludedURLs('404')).to.be.undefined;
       expect(config.getGroupedURLs('404')).to.be.undefined;
     });
+
+    it('creates a Config with contentAiConfig property', () => {
+      const data = {
+        contentAiConfig: {
+          key: 'test-key',
+          index: 'test-index',
+        },
+      };
+      const config = Config(data);
+      expect(config.getContentAiConfig()).to.deep.equal(data.contentAiConfig);
+    });
+
+    it('throws an error for invalid contentAi configuration', () => {
+      const data = {
+        contentAiConfig: {
+          key: 'test-key',
+          // missing required index
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "contentAiConfig.index" is required');
+    });
+
+    it('has empty contentAiConfig in default config', () => {
+      const config = Config();
+      expect(config.getContentAiConfig()).to.deep.equal(undefined);
+    });
+
+    it('should return undefined for contentAiConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getContentAiConfig()).to.be.undefined;
+    });
   });
 
   describe('Grouped URLs option', () => {
@@ -336,6 +367,17 @@ describe('Config Tests', () => {
       expect(slackConfig.workspace).to.equal('external');
       expect(data.isInternalCustomer()).to.equal(false);
       expect(slackMentions[0]).to.equal('id1');
+    });
+
+    it('includes contentAiConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        contentAiConfig: {
+          key: 'test-key',
+          index: 'test-index',
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.contentAiConfig).to.deep.equal(data.getContentAiConfig());
     });
   });
 

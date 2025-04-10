@@ -107,6 +107,10 @@ export const configSchema = Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
   }).optional(),
+  contentAiConfig: Joi.object({
+    key: Joi.string().required(),
+    index: Joi.string().required(),
+  }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),
@@ -136,6 +140,7 @@ export const configSchema = Joi.object({
 export const DEFAULT_CONFIG = {
   slack: {},
   handlers: {},
+  contentAiConfig: {},
 };
 
 // Function to validate incoming configuration
@@ -158,6 +163,7 @@ export const Config = (data = {}) => {
   self.isInternalCustomer = () => state?.slack?.workspace === 'internal';
   self.getSlackMentions = (type) => state?.handlers?.[type]?.mentions?.slack;
   self.getHandlerConfig = (type) => state?.handlers?.[type];
+  self.getContentAiConfig = () => state?.contentAiConfig;
   self.getHandlers = () => state.handlers;
   self.getImports = () => state.imports;
   self.getExcludedURLs = (type) => state?.handlers?.[type]?.excludedURLs;
@@ -277,6 +283,7 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
   handlers: config.getHandlers(),
+  contentAiConfig: config.getContentAiConfig(),
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),

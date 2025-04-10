@@ -63271,6 +63271,59 @@
       "userAgent": "desktop:windows",
       "weight": 10,
       "events": []
+    },
+    {
+      "id": "fafa",
+      "host": "rum.hlx.page",
+      "time": "2024-10-29T20:00:03.990Z",
+      "timeSlot": "2024-10-29T20:00:00.000Z",
+      "url": "https://business.adobe.com/request-consultation/aem-forms.html",
+      "userAgent": "desktop:mac",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "fill",
+          "source": "form input[type='search']#header-global-search-searchfield",
+          "timeDelta": 25212
+        },
+        {
+          "checkpoint": "formsubmit",
+          "source": "nav form.globalsearch-widget--site",
+          "target": "https://business.adobe.com/request-consultation/aem-forms.html",
+          "timeDelta": 31398
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "#container-1234 form.cmp-quicksearch__search-container",
+          "timeDelta": 1021
+        },
+        {
+          "checkpoint": "click",
+          "source": "form input[type='search']#header-global-search-searchfield",
+          "timeDelta": 6983
+        },
+        {
+          "checkpoint": "click",
+          "source": "form button[type='submit'].cmp-search-button",
+          "timeDelta": 30000
+        }
+      ]
+    },
+    {
+      "id": "fafb",
+      "host": "rum.hlx.page",
+      "time": "2024-10-29T20:00:03.990Z",
+      "timeSlot": "2024-10-29T20:00:00.000Z",
+      "url": "https://business.adobe.com/request-consultation/aem-forms.html",
+      "userAgent": "desktop:mac",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "viewblock",
+          "source": "#container-1234 form.cmp-quicksearch__search-container",
+          "timeDelta": 1021
+        }
+      ]
     }
   ]
 }

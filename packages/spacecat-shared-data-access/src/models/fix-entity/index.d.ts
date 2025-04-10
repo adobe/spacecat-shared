@@ -34,5 +34,7 @@ export interface FixEntity extends BaseModel {
 
 export interface FixEntityCollection extends BaseCollection<FixEntity> {
   allByOpportunityId(opportunityId: string): Promise<FixEntity[]>;
+  allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<FixEntity[]>;
   findByOpportunityId(opportunityId: string): Promise<FixEntity | null>;
+  findByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<FixEntity | null>;
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.1...@adobe/spacecat-shared-http-utils-v1.10.2) (2025-04-02)
+
+
+### Bug Fixes
+
+* fix auth for dev ([#676](https://github.com/adobe/spacecat-shared/issues/676)) ([1508d58](https://github.com/adobe/spacecat-shared/commit/1508d5843a753685a7f35c0d18a020a991b94d25))
+
 # [@adobe/spacecat-shared-http-utils-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.0...@adobe/spacecat-shared-http-utils-v1.10.1) (2025-04-01)
 
 

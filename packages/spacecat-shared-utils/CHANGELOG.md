@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.36.0...@adobe/spacecat-shared-utils-v1.36.1) (2025-04-10)
+
+
+### Bug Fixes
+
+* enhance form calculations for view and submit ([#684](https://github.com/adobe/spacecat-shared/issues/684)) ([c7124b6](https://github.com/adobe/spacecat-shared/commit/c7124b680e0491150a489ecaf3e1d0e29d1f0946))
+
+# [@adobe/spacecat-shared-utils-v1.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.35.2...@adobe/spacecat-shared-utils-v1.36.0) (2025-04-02)
+
+
+### Features
+
+* changing forms api signature ([#677](https://github.com/adobe/spacecat-shared/issues/677)) ([30b4825](https://github.com/adobe/spacecat-shared/commit/30b48250c492d1611503cb701c6acd0126a6c057))
+
 # [@adobe/spacecat-shared-utils-v1.35.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.35.1...@adobe/spacecat-shared-utils-v1.35.2) (2025-04-01)
 
 

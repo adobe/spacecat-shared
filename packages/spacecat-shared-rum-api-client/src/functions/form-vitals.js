@@ -16,6 +16,8 @@ import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
 const METRICS = ['formview', 'formengagement', 'formsubmit', 'formbuttonclick'];
+const FILTER_EVENTS_CHECKPOINT = ['click', 'viewblock', 'formsubmit', 'fill'];
+const KEYWORDS_TO_FILTER = ['search'];
 
 function initializeResult(url) {
   return {
@@ -31,7 +33,8 @@ function initializeResult(url) {
 
 const metricFns = {
   formview: (bundle) => {
-    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock' && FORM_SOURCE.includes(e.source));
+    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock'
+        && (FORM_SOURCE.includes(e.source) || /\bform\b/.test(e.source?.toLowerCase() || '')));
     return formView ? bundle.weight : 0;
   },
   formengagement: (bundle) => {
@@ -106,8 +109,22 @@ function containsFormVitals(row) {
 }
 
 function handler(bundles) {
+  // Filter out search related events
+  const filteredBundles = bundles.map((bundle) => ({
+    ...bundle,
+    events: bundle.events.filter((event) => {
+      if (!FILTER_EVENTS_CHECKPOINT.includes(event.checkpoint)) {
+        return true;
+      }
+
+      const isFormRelatedEvent = event.source && /\bform\b/.test(event.source.toLowerCase());
+      return !isFormRelatedEvent
+          || !KEYWORDS_TO_FILTER.some((keyword) => event.source.toLowerCase().includes(keyword));
+    }),
+  }));
+
   const dataChunks = new DataChunks();
-  loadBundles(bundles, dataChunks);
+  loadBundles(filteredBundles, dataChunks);
 
   // groups by url and user agent
   dataChunks.addFacet('urlUserAgents', (bundle) => generateKey(bundle.url, bundle.userAgent));

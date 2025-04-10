@@ -10,9 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-const fixEntityFixtures = [
+const fixEntities = [
   {
-    opportunityId: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    opportunityId: '742c49a7-d61f-4c62-9f7c-3207f520ed1e',
     status: 'PENDING',
     type: 'CONTENT_UPDATE',
     changeDetails: {
@@ -22,11 +22,11 @@ const fixEntityFixtures = [
       ],
     },
     executedBy: 'developer123',
-    executedAt: '2025-01-01T12:00:00Z',
-    publishedAt: '2025-01-02T12:00:00Z',
+    executedAt: '2025-01-09T25:21:55.834Z',
+    publishedAt: '2025-01-10T25:21:55.834Z',
   },
   {
-    opportunityId: '1c2f3e4d-5f6a-7b8c-9d0e-1f2a3b4c5d6e',
+    opportunityId: 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4',
     status: 'DEPLOYED',
     type: 'REDIRECT_UPDATE',
     changeDetails: {
@@ -36,11 +36,11 @@ const fixEntityFixtures = [
       ],
     },
     executedBy: 'developer456',
-    executedAt: '2025-02-01T10:00:00Z',
-    publishedAt: '2025-02-02T10:00:00Z',
+    executedAt: '2025-01-09T25:21:55.834Z',
+    publishedAt: '2025-02-09T25:21:55.834Z',
   },
   {
-    opportunityId: '2b3c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q',
+    opportunityId: 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4',
     status: 'FAILED',
     type: 'METADATA_UPDATE',
     changeDetails: {
@@ -52,9 +52,9 @@ const fixEntityFixtures = [
       ],
     },
     executedBy: 'developer789',
-    executedAt: '2025-03-01T08:00:00Z',
-    publishedAt: null,
+    executedAt: '2025-02-09T25:21:55.834Z',
+    publishedAt: '2025-03-09T25:21:55.834Z',
   },
 ];
 
-export default fixEntityFixtures;
+export default fixEntities;

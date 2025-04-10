@@ -23,12 +23,14 @@ import siteCandidates from './site-candidates.fixture.js';
 import siteTopPages from './site-top-pages.fixture.js';
 import sites from './sites.fixture.js';
 import suggestions from './suggestions.fixture.js';
+import fixEntities from './fix-entity.fixture.js';
 
 export default {
   apiKeys,
   audits,
   configurations,
   experiments,
+  fixEntities,
   importJobs,
   importUrls,
   keyEvents,

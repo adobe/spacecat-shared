@@ -25,6 +25,10 @@ export declare function internalServerError(message?: string, headers?: object):
 
 export declare function found(location: string): Response;
 
+export declare function unauthorized(message?: string, headers?: object): Response;
+
+export declare function forbidden(message?: string, headers?: object): Response;
+
 /**
  * Utility functions
  */

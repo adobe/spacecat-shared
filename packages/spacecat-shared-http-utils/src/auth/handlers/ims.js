@@ -122,7 +122,8 @@ export default class AdobeImsHandler extends AbstractHandler {
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
-        .withProfile(profile);
+        .withProfile(profile)
+        .withScopes([{ name: 'admin' }]);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
     }

@@ -29,7 +29,7 @@ runs:
       shell: bash
 
     - name: Run Integration Tests
-      run: npm run test:it
+      run:  npm run --prefix packages/spacecat-shared-data-access test:it
       shell: bash
 
     - name: Run Unit Tests

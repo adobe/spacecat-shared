@@ -251,14 +251,21 @@ describe('AuditModel', () => {
         siteId: 'someSiteId',
         processingType: 'someProcessingType',
       };
+      const context = {
+        env: {
+          AUDIT_RESULTS_QUEUE_URL: 'audit-results-queue-url',
+        },
+      };
       const auditContext = { some: 'context' };
       const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
-        .formatPayload(stepResult, auditContext);
+        .formatPayload(stepResult, auditContext, context);
 
       expect(formattedPayload).to.deep.equal({
         urls: [{ url: 'someUrl' }],
         jobId: 'someSiteId',
         processingType: 'someProcessingType',
+        completionQueueUrl: 'audit-results-queue-url',
+        skipMessage: false,
         auditContext: { some: 'context' },
       });
     });

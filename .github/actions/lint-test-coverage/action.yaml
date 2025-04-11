@@ -18,18 +18,18 @@ runs:
       run: npm run lint
       shell: bash
 
-    - name: Check for IT Tests
-      id: check_it_tests
-      run: |
-        if grep -q "\"test:it\":" package.json; then
-          echo "has_it_tests=true" >> $GITHUB_OUTPUT
-        else
-          echo "has_it_tests=false" >> $GITHUB_OUTPUT
-        fi
+    - name: Check if spacecat-shared-data-access changed
+      id: changes
+      uses: dorny/paths-filter@v3
+      with:
+        filters: |
+          spacecat-shared:
+            - 'packages/spacecat-shared-data-access/**'
       shell: bash
 
     - name: Run Integration Tests
-      run:  npm run --prefix packages/spacecat-shared-data-access test:it
+      if: steps.changes.outputs.spacecat-shared == 'true'
+      run: npm run --prefix packages/spacecat-shared-data-access test:it
       shell: bash
 
     - name: Run Unit Tests

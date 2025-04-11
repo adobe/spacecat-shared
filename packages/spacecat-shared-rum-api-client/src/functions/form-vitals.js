@@ -14,9 +14,9 @@ import { DataChunks } from '@adobe/rum-distiller';
 import trafficAcquisition from './traffic-acquisition.js';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
-const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
+const FORM_SOURCE = [/\bform\b/, /\.marketo/];
 const METRICS = ['formview', 'formengagement', 'formsubmit', 'formbuttonclick'];
-const FILTER_EVENTS_CHECKPOINT = ['click', 'viewblock', 'formsubmit', 'fill'];
+const CHECKPOINTS_TO_FILTER_KEYWORDS = ['viewblock', 'click', 'fill', 'formsubmit'];
 const KEYWORDS_TO_FILTER = ['search'];
 
 function initializeResult(url) {
@@ -31,10 +31,24 @@ function initializeResult(url) {
   };
 }
 
+function filterSearchEvents(bundles) {
+  return bundles.map((bundle) => ({
+    ...bundle,
+    events: bundle.events.filter((event) => {
+      if (!CHECKPOINTS_TO_FILTER_KEYWORDS.includes(event.checkpoint)) {
+        return true;
+      }
+
+      const isFormRelatedEvent = event.source && /\bform\b/.test(event.source.toLowerCase());
+      return !isFormRelatedEvent
+          || !KEYWORDS_TO_FILTER.some((keyword) => event.source.toLowerCase().includes(keyword));
+    }),
+  }));
+}
+
 const metricFns = {
   formview: (bundle) => {
-    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock'
-        && (FORM_SOURCE.includes(e.source) || /\bform\b/.test(e.source?.toLowerCase() || '')));
+    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock' && FORM_SOURCE.some((regex) => regex.test(e.source)));
     return formView ? bundle.weight : 0;
   },
   formengagement: (bundle) => {
@@ -110,21 +124,10 @@ function containsFormVitals(row) {
 
 function handler(bundles) {
   // Filter out search related events
-  const filteredBundles = bundles.map((bundle) => ({
-    ...bundle,
-    events: bundle.events.filter((event) => {
-      if (!FILTER_EVENTS_CHECKPOINT.includes(event.checkpoint)) {
-        return true;
-      }
-
-      const isFormRelatedEvent = event.source && /\bform\b/.test(event.source.toLowerCase());
-      return !isFormRelatedEvent
-          || !KEYWORDS_TO_FILTER.some((keyword) => event.source.toLowerCase().includes(keyword));
-    }),
-  }));
+  const bundlesWithFilteredSearchEvents = filterSearchEvents(bundles);
 
   const dataChunks = new DataChunks();
-  loadBundles(filteredBundles, dataChunks);
+  loadBundles(bundlesWithFilteredSearchEvents, dataChunks);
 
   // groups by url and user agent
   dataChunks.addFacet('urlUserAgents', (bundle) => generateKey(bundle.url, bundle.userAgent));
@@ -164,5 +167,5 @@ function handler(bundles) {
 
 export default {
   handler,
-  checkpoints: ['viewblock', 'formsubmit', 'click', 'navigate'],
+  checkpoints: ['viewblock', 'formsubmit', 'click', 'navigate', 'fill'],
 };

@@ -25,7 +25,6 @@ runs:
         filters: |
           spacecat-shared:
             - 'packages/spacecat-shared-data-access/**'
-      shell: bash
 
     - name: Run Integration Tests
       if: steps.changes.outputs.spacecat-shared == 'true'

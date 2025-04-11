@@ -27,9 +27,9 @@ export interface FixEntity extends BaseModel {
   getStatus(): string;
   getType(): string;
   setChangeDetails(changeDetails: object): FixEntity;
-  setSuggestionId(suggestionId: string): FixEntity;
   setType(rank: number): FixEntity;
   setStatus(status: string): FixEntity;
+  setExecutedBy(executedBy: string): FixEntity;
 }
 
 export interface FixEntityCollection extends BaseCollection<FixEntity> {

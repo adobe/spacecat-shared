@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.22.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.3...@adobe/spacecat-shared-rum-api-client-v2.22.4) (2025-04-11)
+
+
+### Bug Fixes
+
+* filter search form events ([#689](https://github.com/adobe/spacecat-shared/issues/689)) ([abde8cd](https://github.com/adobe/spacecat-shared/commit/abde8cd47f98f4aa5753a3105e8a54df4caffa07))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.22.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.2...@adobe/spacecat-shared-rum-api-client-v2.22.3) (2025-04-11)
 
 

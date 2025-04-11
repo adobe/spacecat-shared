@@ -14,8 +14,10 @@ import { DataChunks } from '@adobe/rum-distiller';
 import trafficAcquisition from './traffic-acquisition.js';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
-const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
+const FORM_SOURCE = [/\bform\b/, /\.marketo/];
 const METRICS = ['formview', 'formengagement', 'formsubmit', 'formbuttonclick'];
+const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate'];
+const KEYWORDS_TO_FILTER = ['search'];
 
 function initializeResult(url) {
   return {
@@ -29,9 +31,29 @@ function initializeResult(url) {
   };
 }
 
+function filterEvents(bundles) {
+  return bundles.map((bundle) => ({
+    ...bundle,
+    events: bundle.events.filter((event) => {
+      if (!CHECKPOINTS.includes(event.checkpoint)) {
+        return false;
+      }
+
+      if (event.checkpoint === 'navigate') {
+        return true;
+      }
+
+      const isFormRelatedEvent = ['fill', 'formsubmit'].includes(event.checkpoint)
+          || /\bform\b/.test(event.source);
+      return isFormRelatedEvent && !KEYWORDS_TO_FILTER.some((keyword) => event.source
+          && event.source.toLowerCase().includes(keyword));
+    }),
+  }));
+}
+
 const metricFns = {
   formview: (bundle) => {
-    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock' && FORM_SOURCE.includes(e.source));
+    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock' && FORM_SOURCE.some((regex) => regex.test(e.source)));
     return formView ? bundle.weight : 0;
   },
   formengagement: (bundle) => {
@@ -106,8 +128,11 @@ function containsFormVitals(row) {
 }
 
 function handler(bundles) {
+  // Filter out search related events
+  const bundlesWithFilteredEvents = filterEvents(bundles);
+
   const dataChunks = new DataChunks();
-  loadBundles(bundles, dataChunks);
+  loadBundles(bundlesWithFilteredEvents, dataChunks);
 
   // groups by url and user agent
   dataChunks.addFacet('urlUserAgents', (bundle) => generateKey(bundle.url, bundle.userAgent));
@@ -147,5 +172,5 @@ function handler(bundles) {
 
 export default {
   handler,
-  checkpoints: ['viewblock', 'formsubmit', 'click', 'navigate'],
+  checkpoints: CHECKPOINTS,
 };

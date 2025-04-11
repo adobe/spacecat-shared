@@ -31,6 +31,20 @@ describe('Form Calc functions', () => {
         formEngagement: 1000,
         formSubmit: 100,
       },
+      {
+        formEngagement: 4300,
+        formSubmit: 0,
+        formViews: 300,
+        pageViews: 8670,
+        url: 'https://www.surest.com/info/win',
+      },
+      {
+        formEngagement: 300,
+        formSubmit: 0,
+        formViews: 300,
+        pageViews: 8670,
+        url: 'https://www.surest.com/newsletter',
+      },
     ]);
   });
 

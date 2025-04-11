@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.3...@adobe/spacecat-shared-data-access-v2.14.0) (2025-04-11)
+
+
+### Features
+
+* add FixEntity for keeping track of the suggestion fixes ([#671](https://github.com/adobe/spacecat-shared/issues/671)) ([3be02da](https://github.com/adobe/spacecat-shared/commit/3be02da115cbb2d106e863ee715a5904aa2c75d2))
+
+# [@adobe/spacecat-shared-data-access-v2.13.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.2...@adobe/spacecat-shared-data-access-v2.13.3) (2025-04-08)
+
+
+### Bug Fixes
+
+* configuration shouldn't check for enabled if audit is enabledByDefault ([#675](https://github.com/adobe/spacecat-shared/issues/675)) ([0d8538a](https://github.com/adobe/spacecat-shared/commit/0d8538ac967e2a69a08ebc462530985780584f0e))
+
 # [@adobe/spacecat-shared-data-access-v2.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.1...@adobe/spacecat-shared-data-access-v2.13.2) (2025-04-01)
 
 

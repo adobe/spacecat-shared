@@ -11,11 +11,12 @@
  */
 
 import type {
-  Audit, BaseCollection, BaseModel, MultiStatusCreateResult, Site, Suggestion,
+  Audit, BaseCollection, BaseModel, FixEntity, MultiStatusCreateResult, Site, Suggestion,
 } from '../index';
 
 export interface Opportunity extends BaseModel {
   addSuggestions(suggestions: object[]): Promise<MultiStatusCreateResult<Suggestion>>;
+  addFixEntities(fixEntities: object[]): Promise<MultiStatusCreateResult<FixEntity>>;
   getAudit(): Promise<Audit>;
   getAuditId(): string;
   getData(): object;
@@ -26,6 +27,7 @@ export interface Opportunity extends BaseModel {
   getSite(): Promise<Site>;
   getSiteId(): string;
   getStatus(): string;
+  getFixEntities(): Promise<FixEntity[]>;
   getSuggestions(): Promise<Suggestion[]>;
   getSuggestionsByStatus(status: string): Promise<Suggestion[]>;
   getSuggestionsByStatusAndRank(status: string, rank: string): Promise<Suggestion[]>;

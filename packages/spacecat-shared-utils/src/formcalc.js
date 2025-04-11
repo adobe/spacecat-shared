@@ -93,7 +93,7 @@ export function getHighFormViewsLowConversionMetrics(formVitalsCollection) {
     // Default to pageViews if formViews are not available
     const formViews = metrics.formview.total || pageViews;
     const formEngagement = metrics.formengagement.total;
-    const formSubmit = metrics.formsubmit.total || formEngagement;
+    const formSubmit = metrics.formsubmit.total;
 
     if (hasHighPageViews(pageViews) && hasLowerConversionRate(formSubmit, formViews)) {
       urls.push({

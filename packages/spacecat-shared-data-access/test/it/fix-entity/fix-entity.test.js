@@ -27,22 +27,22 @@ function checkFixEntity(fixEntity) {
   expect(fixEntity.getStatus()).to.be.a('string');
   expect(fixEntity.getType()).to.be.a('string');
   expect(fixEntity.getChangeDetails()).to.be.an('object');
-  expect(fixEntity.getExecutedBy()).to.be.a('string');
-  expect(fixEntity.getExecutedAt()).to.be.a('string');
 }
 
 describe('FixEntity IT', async () => {
   let FixEntity;
+  let sampleData;
 
   before(async () => {
-    await seedDatabase();
+    sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
     FixEntity = dataAccess.FixEntity;
   });
 
   it('finds one fix entity by id', async () => {
-    const fixEntity = await FixEntity.findById(fixEntityFixtures[0].id);
+    const sampleFixEntity = sampleData.fixEntities[0];
+    const fixEntity = await FixEntity.findById(sampleFixEntity.getId());
 
     expect(fixEntity).to.be.an('object');
     expect(fixEntity.getOpportunityId()).to.equal(fixEntityFixtures[0].opportunityId);
@@ -62,17 +62,30 @@ describe('FixEntity IT', async () => {
     });
   });
 
+  it('gets all fix entities for an opportunity by status', async () => {
+    const { opportunityId } = fixEntityFixtures[1];
+
+    const fixEntities = await FixEntity.allByOpportunityIdAndStatus(opportunityId, 'FAILED');
+
+    expect(fixEntities).to.be.an('array');
+    expect(fixEntities.length).to.be.greaterThan(0);
+
+    fixEntities.forEach((fixEntity) => {
+      checkFixEntity(fixEntity);
+      expect(fixEntity.getOpportunityId()).to.equal(opportunityId);
+      expect(fixEntity.getStatus()).to.equal('FAILED');
+    });
+  });
+
   it('creates a fix entity', async () => {
     const data = {
-      opportunityId: 'new-opportunity-id',
+      opportunityId: 'd27f4e5a-850c-441e-9c22-8e5e08b1e687',
       status: 'PENDING',
       type: 'CONTENT_UPDATE',
       changeDetails: {
         description: 'Fixes a typo in the content',
         changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
       },
-      executedBy: 'developer123',
-      executedAt: '2025-04-01T10:00:00Z',
     };
 
     const fixEntity = await FixEntity.create(data);
@@ -85,31 +98,29 @@ describe('FixEntity IT', async () => {
   });
 
   it('updates a fix entity', async () => {
-    const fixEntity = await FixEntity.findById(fixEntityFixtures[0].id);
+    const fixEntity = await FixEntity.findById(sampleData.fixEntities[0].getId());
 
     const updates = {
       status: 'DEPLOYED',
-      executedAt: '2025-04-02T10:00:00Z',
     };
 
-    fixEntity.setStatus(updates.status).setExecutedAt(updates.executedAt);
+    fixEntity.setStatus(updates.status);
 
     await fixEntity.save();
 
-    const updatedFixEntity = await FixEntity.findById(fixEntityFixtures[0].id);
+    const updatedFixEntity = await FixEntity.findById(sampleData.fixEntities[0].getId());
 
     checkFixEntity(updatedFixEntity);
 
     expect(updatedFixEntity.getStatus()).to.equal(updates.status);
-    expect(updatedFixEntity.getExecutedAt()).to.equal(updates.executedAt);
   });
 
   it('removes a fix entity', async () => {
-    const fixEntity = await FixEntity.findById(fixEntityFixtures[0].id);
+    const fixEntity = await FixEntity.findById(sampleData.fixEntities[0].getId());
 
     await fixEntity.remove();
 
-    const notFound = await FixEntity.findById(fixEntityFixtures[0].id);
+    const notFound = await FixEntity.findById(sampleData.fixEntities[0].getId());
     expect(notFound).to.equal(null);
   });
 });

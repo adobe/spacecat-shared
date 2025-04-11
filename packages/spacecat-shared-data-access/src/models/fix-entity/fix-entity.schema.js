@@ -36,11 +36,11 @@ const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
   })
   .addAttribute('executedAt', {
     type: 'string',
-    validate: (value) => isIsoDate(value),
+    validate: (value) => !value || isIsoDate(value),
   })
   .addAttribute('publishedAt', {
     type: 'string',
-    validate: (value) => isIsoDate(value),
+    validate: (value) => !value || isIsoDate(value),
   })
   .addAttribute('changeDetails', {
     type: 'any',

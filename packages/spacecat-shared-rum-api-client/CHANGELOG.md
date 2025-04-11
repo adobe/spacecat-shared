@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.22.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.2...@adobe/spacecat-shared-rum-api-client-v2.22.3) (2025-04-11)
+
+
+### Bug Fixes
+
+* earned threshold update ([#691](https://github.com/adobe/spacecat-shared/issues/691)) ([65defd0](https://github.com/adobe/spacecat-shared/commit/65defd0ee344f0e38d4559342d7fb5212dda178e))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.1...@adobe/spacecat-shared-rum-api-client-v2.22.2) (2025-04-01)
 
 

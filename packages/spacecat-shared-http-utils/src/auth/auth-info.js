@@ -84,7 +84,12 @@ export default class AuthInfo {
 
   isAdmin() { return this.profile?.is_admin; }
 
-  hasOrganization(orgId) { return this.profile?.tenants?.some((tenant) => tenant.id === orgId); }
+  hasOrganization(orgId) {
+    const [id] = orgId.split('@');
+    return this.profile?.tenants?.some(
+      (tenant) => tenant.id === id,
+    );
+  }
 
   hasScope(name, subScope) {
     return this.scopes.some((scope) => scope.name === name

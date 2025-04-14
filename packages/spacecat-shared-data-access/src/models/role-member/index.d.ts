@@ -13,10 +13,10 @@
 import type { BaseCollection, BaseModel } from '../base';
 
 export interface RoleMember extends BaseModel {
-  // TODO is this correct?
   getImsOrgId(): string;
   getIdentity(): string;
   getRoleId(): string;
+  getRoleMemberId(): string;
   getRole(): Promise<Role>;
   setImsOrgId(id: string): RoleMember;
   setIdentity(identity: string): RoleMember;
@@ -25,4 +25,10 @@ export interface RoleMember extends BaseModel {
 
 export interface RoleMemberCollection extends BaseCollection<RoleMember> {
   allRoleMembershipByIdentities(imsOrgId: string, identities: string[]): Promise<RoleMember[]>;
+  allByImsOrgId(imsOrgId: string): Promise<RoleMember[]>;
+  allByImsOrgIdAndIdentity(imsOrgId: string, identity: string): Promise<RoleMember[]>;
+  allByRoleId(roleId: string): Promise<RoleMember[]>;
+  findByImsOrgId(imsOrgId: string): Promise<RoleMember | null>;
+  findByImsOrgIdAndIdentity(imsOrgId: string, identity: string): Promise<RoleMember | null>;
+  findByRoleId(roleId: string): Promise<RoleMember | null>;
 }

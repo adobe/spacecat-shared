@@ -12,15 +12,27 @@
 import type { BaseCollection, BaseModel } from '../base';
 
 export interface Role extends BaseModel {
-  // TODO is this correct?
+  /**
+   * @returns the ACL (Access Control List) for the role.
+   * Each object in the array has a path property, which may contain single '*' wildcards
+   * to represent a wildcard in a path segment, or a souble '**' wildcard at the end to
+   * represent anything starting with the specified path.
+   * The object also contains an actions property, which is an array of strings each
+   * representing a permitted action. Typically 'C', 'R', 'U', 'D', but could also be other
+   * values, not restricted to a single letter.
+   */
+  getAcl(): object[];
   getImsOrgId(): string;
   getName(): string;
-  getAcl(): object;
+  getRoleId(): string;
   setImsOrgId(id: string): Role;
   setName(name: string): Role;
-  setAcl(acl: object): Role;
+  setAcl(acl: object[]): Role;
 }
 
 export interface RoleCollection extends BaseCollection<Role> {
-  // TODO what to add here?
+  allByImsOrgId(imsOrgId: string): Promise<Role[]>;
+  allByImsOrgIdAndName(imsOrgId: string, name: string): Promise<Role[]>;
+  findByImsOrgId(imsOrgId: string): Promise<Role | null>;
+  findByImsOrgIdAndName(imsOrgId: string, name: string): Promise<Role | null>;
 }

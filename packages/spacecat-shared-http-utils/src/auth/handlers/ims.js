@@ -43,7 +43,7 @@ const IGNORED_PROFILE_PROPS = [
 
 const loadConfig = (context) => {
   const funcVersion = context.func?.version;
-  const isDev = /^(ci\d*|david)$/i.test(funcVersion); // TODO revert back
+  const isDev = /^ci\d*$/i.test(funcVersion);
   context.log.debug(`Function version: ${funcVersion} (isDev: ${isDev})`);
   /* c8 ignore next */
   return isDev ? configDev : configProd;
@@ -251,7 +251,7 @@ export default class AdobeImsHandler extends AbstractHandler {
   }
 
   async checkAuth(request, context) {
-    // This is only temporarily to put some things in the database
+    // TODO This is only temporarily to put some things in the database
     /* */
     // console.log('§§§ Get ACL Access via model');
     // const aclAccess = await this.#getAclAccess(context);
@@ -272,8 +272,7 @@ export default class AdobeImsHandler extends AbstractHandler {
       const acls = await getAcls({
         imsUserId: imsProfile.userId,
         imsOrgs: [imsProfile.ownerOrg],
-        // imsGroups: imsProfile.orgDetails, TODO?
-      }, context.log); // TODO pass config
+      }, context.log);
 
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);

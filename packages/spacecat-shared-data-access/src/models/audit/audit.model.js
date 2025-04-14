@@ -104,6 +104,7 @@ class Audit extends BaseModel {
       formatPayload: (stepResult, auditContext) => ({
         type: stepResult.type,
         siteId: stepResult.siteId,
+        allowCache: true,
         auditContext,
       }),
     },
@@ -130,6 +131,7 @@ class Audit extends BaseModel {
         jobId: stepResult.siteId,
         processingType: stepResult.processingType || 'default',
         skipMessage: false,
+        allowCache: true,
         completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_RESULTS_QUEUE_URL,
         auditContext,
       }),

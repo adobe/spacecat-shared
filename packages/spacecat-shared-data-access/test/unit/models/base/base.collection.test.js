@@ -76,7 +76,7 @@ describe('BaseCollection', () => {
     mockEntityRegistry = {
       aclCtx: {
         aclEntities: {
-          // Exclude the opportunity entity (which is used by these mocks) from ACL checks
+          // Exclude the mockEntityModel from ACL checks
           exclude: ['mockEntityModel'],
         },
       },
@@ -862,10 +862,24 @@ describe('BaseCollection', () => {
     it('removes entities successfully', async () => {
       const mockIds = ['ef39921f-9a02-41db-b491-02c98987d956', 'ef39921f-9a02-41db-b491-02c98987d957'];
       mockElectroService.entities.mockEntityModel.delete.returns({ go: () => Promise.resolve() });
-      mockElectroService.entities.mockEntityModel.get.returns({
-        // TODO fix! Instead of the mockRecord it should return the record for the ID passed in
-        go: () => Promise.resolve({ data: mockRecord }),
-      });
+      mockElectroService.entities.mockEntityModel.get
+        .withArgs({ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' })
+        .returns({
+          go: () => Promise.resolve({ data: mockRecord }),
+        });
+
+      const mockRecord2 = {
+        mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957',
+        mockParentEntityModelId: 'some-parent-id',
+        data: {},
+      };
+
+      mockElectroService.entities.mockEntityModel.get
+        .withArgs({ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' })
+        .returns({
+          go: () => Promise.resolve({ data: mockRecord2 }),
+        });
+
       await baseCollectionInstance.removeByIds(mockIds);
       expect(mockElectroService.entities.mockEntityModel.delete)
         .to.have.been.calledOnceWithExactly([

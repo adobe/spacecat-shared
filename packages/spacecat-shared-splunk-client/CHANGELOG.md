@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-splunk-client-v1.0.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.7...@adobe/spacecat-shared-splunk-client-v1.0.8) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.0 ([#694](https://github.com/adobe/spacecat-shared/issues/694)) ([55883c5](https://github.com/adobe/spacecat-shared/commit/55883c597c61c891fc17ed39d0aab1c33af5b90c))
+
 # [@adobe/spacecat-shared-splunk-client-v1.0.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.6...@adobe/spacecat-shared-splunk-client-v1.0.7) (2025-04-15)
 
 

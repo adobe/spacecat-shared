@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.5.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.7...@adobe/spacecat-shared-gpt-client-v1.5.8) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.0 ([#694](https://github.com/adobe/spacecat-shared/issues/694)) ([55883c5](https://github.com/adobe/spacecat-shared/commit/55883c597c61c891fc17ed39d0aab1c33af5b90c))
+
 # [@adobe/spacecat-shared-gpt-client-v1.5.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.6...@adobe/spacecat-shared-gpt-client-v1.5.7) (2025-04-15)
 
 

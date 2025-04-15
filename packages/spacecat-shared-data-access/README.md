@@ -184,6 +184,28 @@ export const main = wrap(run)
 
 Contributions to `spacecat-shared-data-access` are welcome. Please adhere to the standard Git workflow and submit pull requests for proposed changes.
 
+## Local Development and Testing
+
+### Testing with Dependent Projects Before Merging
+
+When making changes to this package, you can test them in dependent projects (like `spacecat-api-service`) before merging using the following approach:
+
+1. Commit and push your changes to a branch in this repository
+2. Get the commit ID of your push
+3. In your dependent project, temporarily modify the package.json dependency:
+
+   ```json
+   // From:
+   "@adobe/spacecat-shared-data-access": "2.13.1",
+   
+   // To:
+   "@adobe/spacecat-shared-data-access": "https://gitpkg.now.sh/adobe/spacecat-shared/packages/spacecat-shared-data-access?YOUR_COMMIT_ID",
+   ```
+
+4. Run `npm install` in your dependent project
+5. Test your changes
+6. Once testing is complete and your PR is merged, update the dependent project to use the released version
+
 ## License
 
 Licensed under the Apache-2.0 License.

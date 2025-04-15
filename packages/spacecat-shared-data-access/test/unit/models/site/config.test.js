@@ -606,6 +606,18 @@ describe('Config Tests', () => {
             enabled: true,
           },
           {
+            type: 'cwv-daily',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
+            type: 'cwv-weekly',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
             type: 'top-pages',
             destinations: ['default'],
             sources: ['ahrefs'],
@@ -665,7 +677,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -731,6 +743,24 @@ describe('Config Tests', () => {
                 context: {
                   valids: [
                     'top-pages',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [cwv-daily]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'cwv-daily',
+                    'cwv-weekly',
                   ],
                   label: 'imports[0].type',
                   value: 'organic-keywords',

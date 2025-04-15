@@ -241,6 +241,7 @@ describe('AuditModel', () => {
       expect(formattedPayload).to.deep.equal({
         type: 'someType',
         siteId: 'someSiteId',
+        allowCache: true,
         auditContext: { some: 'context' },
       });
     });
@@ -266,6 +267,7 @@ describe('AuditModel', () => {
         processingType: 'someProcessingType',
         completionQueueUrl: 'audit-results-queue-url',
         skipMessage: false,
+        allowCache: true,
         auditContext: { some: 'context' },
       });
     });

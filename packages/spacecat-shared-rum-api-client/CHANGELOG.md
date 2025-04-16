@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.6...@adobe/spacecat-shared-rum-api-client-v2.23.0) (2025-04-16)
+
+
+### Features
+
+* formsource wise segregation of audit result ([#692](https://github.com/adobe/spacecat-shared/issues/692)) ([0f4f503](https://github.com/adobe/spacecat-shared/commit/0f4f503facbd81538a0d445a462735766e7bfffa))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.22.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.5...@adobe/spacecat-shared-rum-api-client-v2.22.6) (2025-04-15)
 
 

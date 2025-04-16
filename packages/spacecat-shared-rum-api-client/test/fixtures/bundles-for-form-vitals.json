@@ -1649,7 +1649,17 @@
         },
         {
           "checkpoint": "viewblock",
+          "source": "form#abc",
+          "timeDelta": 2662
+        },
+        {
+          "checkpoint": "viewblock",
           "timeDelta": 4671
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "form.xyz",
+          "timeDelta": 2662
         },
         {
           "checkpoint": "viewblock",
@@ -2346,6 +2356,11 @@
         {
           "checkpoint": "viewblock",
           "timeDelta": 711
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "form#abc",
+          "timeDelta": 2662
         }
       ]
     },
@@ -2361,6 +2376,21 @@
         {
           "checkpoint": "viewblock",
           "timeDelta": 3006
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "form.xyz",
+          "timeDelta": 2662
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "form#abc",
+          "timeDelta": 2662
+        },
+        {
+          "checkpoint": "fill",
+          "source": "form#abc input[type=number] age",
+          "timeDelta": 2662
         }
       ]
     },
@@ -61492,6 +61522,16 @@
         {
           "checkpoint": "click",
           "source": "#tab-1-アドビ製品との連携",
+          "timeDelta": 19802
+        },
+        {
+          "checkpoint": "click",
+          "source": "form#abc input[type=text] firstName",
+          "timeDelta": 19802
+        },
+        {
+          "checkpoint": "formsubmit",
+          "source": "form#abc",
           "timeDelta": 19802
         }
       ]

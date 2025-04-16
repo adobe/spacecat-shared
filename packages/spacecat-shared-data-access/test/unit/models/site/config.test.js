@@ -168,7 +168,6 @@ describe('Config Tests', () => {
     it('creates a Config with contentAiConfig property', () => {
       const data = {
         contentAiConfig: {
-          key: 'test-key',
           index: 'test-index',
         },
       };
@@ -179,7 +178,6 @@ describe('Config Tests', () => {
     it('throws an error for invalid contentAi configuration', () => {
       const data = {
         contentAiConfig: {
-          key: 'test-key',
           // missing required index
         },
       };
@@ -372,7 +370,6 @@ describe('Config Tests', () => {
     it('includes contentAiConfig in toDynamoItem conversion', () => {
       const data = Config({
         contentAiConfig: {
-          key: 'test-key',
           index: 'test-index',
         },
       });

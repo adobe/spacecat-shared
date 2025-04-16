@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,13 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-/* c8 ignore start */
-
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
-import Suggestion from './suggestion.model.js';
-import SuggestionCollection from './suggestion.collection.js';
+import FixEntity from './fix-entity.model.js';
+import FixEntityCollection from './fix-entity.collection.js';
+import { Suggestion } from '../suggestion/index.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -24,31 +23,34 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
-  .addReference('belongs_to', 'Opportunity', ['status', 'rank'])
-  .addReference('belongs_to', 'FixEntity', ['updatedAt'], { required: false })
+const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
+  .addReference('has_many', 'Suggestion', ['status'])
+  .addReference('belongs_to', 'Opportunity', ['status'])
   .addAttribute('type', {
     type: Object.values(Suggestion.TYPES),
     required: true,
     readOnly: true,
   })
-  .addAttribute('rank', {
-    type: 'number',
-    required: true,
+  .addAttribute('executedBy', {
+    type: 'string',
   })
-  .addAttribute('data', {
+  .addAttribute('executedAt', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
+  })
+  .addAttribute('publishedAt', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
+  })
+  .addAttribute('changeDetails', {
     type: 'any',
     required: true,
     validate: (value) => isNonEmptyObject(value),
   })
-  .addAttribute('kpiDeltas', {
-    type: 'any',
-    validate: (value) => !value || isNonEmptyObject(value),
-  })
   .addAttribute('status', {
-    type: Object.values(Suggestion.STATUSES),
+    type: Object.values(FixEntity.STATUSES),
     required: true,
-    default: Suggestion.STATUSES.NEW,
+    default: FixEntity.STATUSES.PENDING,
   });
 
 export default schema.build();

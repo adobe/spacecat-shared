@@ -55,6 +55,27 @@ class Opportunity extends BaseModel {
       .getCollection('SuggestionCollection')
       .createMany(childSuggestions, this);
   }
+
+  /**
+   * Adds the given fixEntities to this Opportunity. Sets this opportunity as the parent
+   * of each fixEntity, as such the opportunity ID does not need to be provided.
+   *
+   * @async
+   * @param {Array<Object>} fixEntities - An array of fixEntities objects to add.
+   * @return {Promise<{ createdItems: BaseModel[],
+   * errorItems: { item: Object, error: ValidationError }[] }>} - A promise that
+   * resolves to an object containing the created fixEntities items and any
+   * errors that occurred.
+   */
+  async addFixEntities(fixEntities) {
+    const childFixEntities = fixEntities.map((fixEntity) => ({
+      ...fixEntity,
+      [this.idName]: this.getId(),
+    }));
+    return this.entityRegistry
+      .getCollection('FixEntityCollection')
+      .createMany(childFixEntities, this);
+  }
 }
 
 export default Opportunity;

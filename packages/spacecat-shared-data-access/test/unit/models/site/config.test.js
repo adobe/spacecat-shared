@@ -388,6 +388,32 @@ describe('Config Tests', () => {
         });
       });
 
+      it('enables cwv-daily import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-daily');
+
+        const importConfig = config.getImportConfig('cwv-daily');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-daily',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
+
+      it('enables cwv-weekly import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-weekly');
+
+        const importConfig = config.getImportConfig('cwv-weekly');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-weekly',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
+
       it('enables import with custom config', () => {
         const config = Config();
         config.enableImport('organic-keywords', {
@@ -606,6 +632,14 @@ describe('Config Tests', () => {
             enabled: true,
           },
           {
+            type: 'top-pages',
+            destinations: ['default'],
+            sources: ['ahrefs'],
+            enabled: true,
+            geo: 'us',
+            limit: 100,
+          },
+          {
             type: 'cwv-daily',
             destinations: ['default'],
             sources: ['rum'],
@@ -616,14 +650,6 @@ describe('Config Tests', () => {
             destinations: ['default'],
             sources: ['rum'],
             enabled: true,
-          },
-          {
-            type: 'top-pages',
-            destinations: ['default'],
-            sources: ['ahrefs'],
-            enabled: true,
-            geo: 'us',
-            limit: 100,
           },
         ],
         fetchConfig: {
@@ -760,6 +786,22 @@ describe('Config Tests', () => {
                 context: {
                   valids: [
                     'cwv-daily',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [cwv-weekly]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
                     'cwv-weekly',
                   ],
                   label: 'imports[0].type',

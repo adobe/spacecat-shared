@@ -139,7 +139,6 @@ export const configSchema = Joi.object({
 export const DEFAULT_CONFIG = {
   slack: {},
   handlers: {},
-  contentAiConfig: {},
 };
 
 // Function to validate incoming configuration

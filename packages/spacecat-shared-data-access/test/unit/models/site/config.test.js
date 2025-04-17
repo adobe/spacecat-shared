@@ -177,6 +177,7 @@ describe('Config Tests', () => {
 
     it('accepts an empty contentAiConfig object', () => {
       const data = {
+        // empty object
         contentAiConfig: {},
       };
       const config = Config(data);

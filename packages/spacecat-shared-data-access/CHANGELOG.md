@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.15.0...@adobe/spacecat-shared-data-access-v2.15.1) (2025-04-17)
+
+
+### Bug Fixes
+
+* completion queue url for audit jobs ([#697](https://github.com/adobe/spacecat-shared/issues/697)) ([5987a4c](https://github.com/adobe/spacecat-shared/commit/5987a4cda6f682e12270e202d5bfd262b156d104))
+
 # [@adobe/spacecat-shared-data-access-v2.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.14.1...@adobe/spacecat-shared-data-access-v2.15.0) (2025-04-17)
 
 

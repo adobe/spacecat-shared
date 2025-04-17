@@ -39,10 +39,8 @@ const IGNORED_PROFILE_PROPS = [
 
 const loadConfig = (context) => {
   try {
-    const config = context.env.AUTH_HANDLER_IMS;
-    context.log.info(`Loaded config from context: ${JSON.stringify(context.env.AUTH_HANDLER_IMS)}`);
-    context.log.info(`Loaded config from context PLAIN: ${context.env.AUTH_HANDLER_IMS}`);
-    context.log.info(`Loaded config name: ${context.name}`);
+    const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
+    context.log.info(`Loaded config name: ${config.name}`);
     return config;
   } catch (e) {
     context.log.error(`Failed to load config from context: ${e.message}`);

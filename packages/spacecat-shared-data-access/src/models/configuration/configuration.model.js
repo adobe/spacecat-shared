@@ -80,19 +80,24 @@ class Configuration extends BaseModel {
     const siteId = site.getId();
     const orgId = site.getOrganizationId();
 
+    if (handler.disabled) {
+      const sites = handler.disabled.sites || [];
+      const orgs = handler.disabled.orgs || [];
+      if (sites.includes(siteId) || orgs.includes(orgId)) {
+        return false;
+      }
+    }
+
+    if (handler.enabledByDefault) {
+      return true;
+    }
     if (handler.enabled) {
       const sites = handler.enabled.sites || [];
       const orgs = handler.enabled.orgs || [];
       return sites.includes(siteId) || orgs.includes(orgId);
     }
 
-    if (handler.disabled) {
-      const sites = handler.disabled.sites || [];
-      const orgs = handler.disabled.orgs || [];
-      return !(sites.includes(siteId) || orgs.includes(orgId));
-    }
-
-    return handler.enabledByDefault;
+    return false;
   }
 
   isHandlerEnabledForOrg(type, org) {
@@ -101,15 +106,19 @@ class Configuration extends BaseModel {
 
     const orgId = org.getId();
 
+    if (handler.disabled && handler.disabled.orgs?.includes(orgId)) {
+      return false;
+    }
+
+    if (handler.enabledByDefault) {
+      return true;
+    }
+
     if (handler.enabled) {
       return handler.enabled.orgs?.includes(orgId);
     }
 
-    if (handler.disabled) {
-      return !handler.disabled.orgs?.includes(orgId);
-    }
-
-    return handler.enabledByDefault;
+    return false;
   }
 
   #updatedHandler(type, entityId, enabled, entityKey) {

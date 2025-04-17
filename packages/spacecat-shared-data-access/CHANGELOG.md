@@ -1,3 +1,50 @@
+# [@adobe/spacecat-shared-data-access-v2.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.15.0...@adobe/spacecat-shared-data-access-v2.15.1) (2025-04-17)
+
+
+### Bug Fixes
+
+* completion queue url for audit jobs ([#697](https://github.com/adobe/spacecat-shared/issues/697)) ([5987a4c](https://github.com/adobe/spacecat-shared/commit/5987a4cda6f682e12270e202d5bfd262b156d104))
+
+# [@adobe/spacecat-shared-data-access-v2.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.14.1...@adobe/spacecat-shared-data-access-v2.15.0) (2025-04-17)
+
+
+### Bug Fixes
+
+* completionUrl not sent to content scraper and introduce skip property ([#685](https://github.com/adobe/spacecat-shared/issues/685)) ([4d89a29](https://github.com/adobe/spacecat-shared/commit/4d89a297495fa69ebbcc0429ed879b2edafbd760))
+
+
+### Features
+
+* Add contentAiConfig validation to Config class ([#686](https://github.com/adobe/spacecat-shared/issues/686)) ([077fbbd](https://github.com/adobe/spacecat-shared/commit/077fbbd583f5567c265fe47e724ea5ce9f1a722d))
+
+# [@adobe/spacecat-shared-data-access-v2.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.14.0...@adobe/spacecat-shared-data-access-v2.14.1) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#679](https://github.com/adobe/spacecat-shared/issues/679)) ([a41bf0c](https://github.com/adobe/spacecat-shared/commit/a41bf0cd488efa0f72af0933992edb256302af18))
+
+# [@adobe/spacecat-shared-data-access-v2.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.3...@adobe/spacecat-shared-data-access-v2.14.0) (2025-04-11)
+
+
+### Features
+
+* add FixEntity for keeping track of the suggestion fixes ([#671](https://github.com/adobe/spacecat-shared/issues/671)) ([3be02da](https://github.com/adobe/spacecat-shared/commit/3be02da115cbb2d106e863ee715a5904aa2c75d2))
+
+# [@adobe/spacecat-shared-data-access-v2.13.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.2...@adobe/spacecat-shared-data-access-v2.13.3) (2025-04-08)
+
+
+### Bug Fixes
+
+* configuration shouldn't check for enabled if audit is enabledByDefault ([#675](https://github.com/adobe/spacecat-shared/issues/675)) ([0d8538a](https://github.com/adobe/spacecat-shared/commit/0d8538ac967e2a69a08ebc462530985780584f0e))
+
+# [@adobe/spacecat-shared-data-access-v2.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.1...@adobe/spacecat-shared-data-access-v2.13.2) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#674](https://github.com/adobe/spacecat-shared/issues/674)) ([285b37d](https://github.com/adobe/spacecat-shared/commit/285b37de9df42adb6a23694bcc699608e3b5b8fe))
+
 # [@adobe/spacecat-shared-data-access-v2.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.0...@adobe/spacecat-shared-data-access-v2.13.1) (2025-03-07)
 
 

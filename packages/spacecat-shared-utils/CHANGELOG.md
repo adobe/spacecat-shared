@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-utils-v1.36.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.36.1...@adobe/spacecat-shared-utils-v1.36.2) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#679](https://github.com/adobe/spacecat-shared/issues/679)) ([a41bf0c](https://github.com/adobe/spacecat-shared/commit/a41bf0cd488efa0f72af0933992edb256302af18))
+
+# [@adobe/spacecat-shared-utils-v1.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.36.0...@adobe/spacecat-shared-utils-v1.36.1) (2025-04-10)
+
+
+### Bug Fixes
+
+* enhance form calculations for view and submit ([#684](https://github.com/adobe/spacecat-shared/issues/684)) ([c7124b6](https://github.com/adobe/spacecat-shared/commit/c7124b680e0491150a489ecaf3e1d0e29d1f0946))
+
+# [@adobe/spacecat-shared-utils-v1.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.35.2...@adobe/spacecat-shared-utils-v1.36.0) (2025-04-02)
+
+
+### Features
+
+* changing forms api signature ([#677](https://github.com/adobe/spacecat-shared/issues/677)) ([30b4825](https://github.com/adobe/spacecat-shared/commit/30b48250c492d1611503cb701c6acd0126a6c057))
+
+# [@adobe/spacecat-shared-utils-v1.35.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.35.1...@adobe/spacecat-shared-utils-v1.35.2) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#674](https://github.com/adobe/spacecat-shared/issues/674)) ([285b37d](https://github.com/adobe/spacecat-shared/commit/285b37de9df42adb6a23694bcc699608e3b5b8fe))
+
+# [@adobe/spacecat-shared-utils-v1.35.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.35.0...@adobe/spacecat-shared-utils-v1.35.1) (2025-04-01)
+
+
+### Bug Fixes
+
+* adding forms constants at common place ([#672](https://github.com/adobe/spacecat-shared/issues/672)) ([4b8254d](https://github.com/adobe/spacecat-shared/commit/4b8254d32112e4921ae63396733101fa1f3bbed7))
+
 # [@adobe/spacecat-shared-utils-v1.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.34.0...@adobe/spacecat-shared-utils-v1.35.0) (2025-03-06)
 
 

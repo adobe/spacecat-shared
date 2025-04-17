@@ -11,6 +11,7 @@
  */
 
 export type * from './audit';
+export type * from './async-job';
 export type * from './configuration';
 export type * from './base';
 export type * from './fix-entity';

@@ -14,6 +14,7 @@ import { DataAccessError } from '../../errors/index.js';
 import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
 
 import ApiKeyCollection from '../api-key/api-key.collection.js';
+import AsyncJobCollection from '../async-job/async-job.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
@@ -30,6 +31,7 @@ import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js'
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
+import AsyncJobSchema from '../async-job/async-job.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
 import ConfigurationSchema from '../configuration/configuration.schema.js';
 import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
@@ -127,6 +129,7 @@ class EntityRegistry {
 }
 
 EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
+EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(ConfigurationSchema, ConfigurationCollection);
 EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);

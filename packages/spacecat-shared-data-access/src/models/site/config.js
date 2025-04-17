@@ -108,7 +108,7 @@ export const configSchema = Joi.object({
     overrideBaseURL: Joi.string().uri().optional(),
   }).optional(),
   contentAiConfig: Joi.object({
-    index: Joi.string().required(),
+    index: Joi.string().optional(),
   }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),

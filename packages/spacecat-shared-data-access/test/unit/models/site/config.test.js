@@ -175,13 +175,13 @@ describe('Config Tests', () => {
       expect(config.getContentAiConfig()).to.deep.equal(data.contentAiConfig);
     });
 
-    it('throws an error for invalid contentAi configuration', () => {
+    it('accepts an empty contentAiConfig object', () => {
       const data = {
-        contentAiConfig: {
-          // missing required index
-        },
+        contentAiConfig: {},
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "contentAiConfig.index" is required');
+      const config = Config(data);
+      expect(config.getContentAiConfig()).to.be.an('object');
+      expect(config.getContentAiConfig()).to.deep.equal({});
     });
 
     it('has empty contentAiConfig in default config', () => {

@@ -90,9 +90,7 @@ describe('SpacecatJWTHandler', () => {
     };
     const result = await handler.checkAuth({}, context);
 
-    expect(result).to.be.instanceof(AuthInfo);
-    expect(result.authenticated).to.be.false;
-    expect(result.reason).to.equal('No bearer token provided');
+    expect(result).to.be.null;
   });
 
   it('returns null when "Bearer " is missing from the authorization header', async () => {
@@ -102,9 +100,7 @@ describe('SpacecatJWTHandler', () => {
     };
     const result = await handler.checkAuth({}, context);
 
-    expect(result).to.be.instanceof(AuthInfo);
-    expect(result.authenticated).to.be.false;
-    expect(result.reason).to.equal('No bearer token provided');
+    expect(result).to.be.null;
   });
 
   it('returns null when the token is empty', async () => {
@@ -114,9 +110,7 @@ describe('SpacecatJWTHandler', () => {
     };
     const result = await handler.checkAuth({}, context);
 
-    expect(result).to.be.instanceof(AuthInfo);
-    expect(result.authenticated).to.be.false;
-    expect(result.reason).to.equal('No bearer token provided');
+    expect(result).to.be.null;
   });
 
   describe('token validation', () => {
@@ -133,25 +127,22 @@ describe('SpacecatJWTHandler', () => {
     afterEach(() => {
     });
 
-    it('sets authenticated false when no public key is provided', async () => {
+    it('returns null when no public key is provided', async () => {
       context = { env: {} };
 
       const result = await handler.checkAuth({}, context);
 
-      expect(result).to.be.instanceof(AuthInfo);
-      expect(result.authenticated).to.be.false;
-      expect(result.reason).to.equal('No public key provided');
+      expect(result).to.be.null;
+      expect(logStub.error.calledWith('[jwt] Failed to validate token: No public key provided')).to.be.true;
     });
 
-    it('sets authenticated false when the token was created by an unexpected issuer', async () => {
+    it('returns null when the token was created by an unexpected issuer', async () => {
       const token = await createToken(createTokenPayload({ iss: 'wrong' }));
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
 
       const result = await handler.checkAuth({}, context);
 
-      expect(result).to.be.instanceof(AuthInfo);
-      expect(result.authenticated).to.be.false;
-      expect(result.reason).to.equal('unexpected "iss" claim value');
+      expect(result).to.be.null;
       expect(logStub.error.calledWith('[jwt] Failed to validate token: unexpected "iss" claim value')).to.be.true;
     });
 
@@ -171,14 +162,23 @@ describe('SpacecatJWTHandler', () => {
       // Restore real timers
       clock.restore();
 
-      expect(result).to.be.instanceof(AuthInfo);
-      expect(result.authenticated).to.be.false;
-      expect(result.reason).to.equal('"exp" claim timestamp check failed');
+      expect(result).to.be.null;
       expect(logStub.error.calledWith('[jwt] Failed to validate token: "exp" claim timestamp check failed')).to.be.true;
     });
 
     it('successfully validates a token and returns the profile', async () => {
-      const token = await createToken(createTokenPayload({ user_id: 'test-user' }));
+      const orgId = 'org-id';
+      const scope = 'test_scope';
+      const token = await createToken(createTokenPayload({
+        user_id: 'test-user',
+        is_admin: true,
+        tenants: [
+          {
+            id: orgId,
+            subServices: [scope],
+          },
+        ],
+      }));
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
 
       const result = await handler.checkAuth({}, context);
@@ -188,6 +188,10 @@ describe('SpacecatJWTHandler', () => {
       expect(result.profile).to.be.an('object');
       expect(result.profile).to.have.property('iss', 'https://spacecat.experiencecloud.live');
       expect(result.profile).to.have.property('user_id', 'test-user');
+      expect(result.getType()).to.equal('jwt');
+      expect(result.isAdmin()).to.be.true;
+      expect(result.hasOrganization(`${orgId}@AdobeId`)).to.be.true;
+      expect(result.hasScope('user', scope)).to.be.true;
     });
   });
 });

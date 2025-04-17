@@ -254,7 +254,7 @@ describe('AuditModel', () => {
       };
       const context = {
         env: {
-          AUDIT_RESULTS_QUEUE_URL: 'audit-results-queue-url',
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
         },
       };
       const auditContext = { some: 'context' };
@@ -265,7 +265,7 @@ describe('AuditModel', () => {
         urls: [{ url: 'someUrl' }],
         jobId: 'someSiteId',
         processingType: 'someProcessingType',
-        completionQueueUrl: 'audit-results-queue-url',
+        completionQueueUrl: 'audit-jobs-queue-url',
         skipMessage: false,
         allowCache: true,
         auditContext: { some: 'context' },

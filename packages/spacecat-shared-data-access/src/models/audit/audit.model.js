@@ -132,7 +132,7 @@ class Audit extends BaseModel {
         processingType: stepResult.processingType || 'default',
         skipMessage: false,
         allowCache: true,
-        completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_RESULTS_QUEUE_URL,
+        completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
         auditContext,
       }),
     },

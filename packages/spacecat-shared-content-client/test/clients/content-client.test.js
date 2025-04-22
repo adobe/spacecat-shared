@@ -19,6 +19,7 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
+import { resolveCustomerSecretsName } from '@adobe/spacecat-shared-utils';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -33,16 +34,18 @@ describe('ContentClient', () => {
 
   let ContentClient;
 
+  const hlxConfigGoogle = { content: { source: { type: 'drive.google' } } };
+  const baseUrl = 'https://base.spacecat';
   const siteConfigGoogleDrive = {
     getId: () => 'test-site',
-    getHlxConfig: () => ({ content: { source: { type: 'drive.google' } } }),
-    getBaseURL: () => 'https://base.spacecat',
+    getHlxConfig: () => hlxConfigGoogle,
+    getBaseURL: () => baseUrl,
   };
 
   const siteConfigOneDrive = {
     getId: () => 'test-site',
     getHlxConfig: () => ({ content: { source: { type: 'onedrive' } } }),
-    getBaseURL: () => 'https://base.spacecat',
+    getBaseURL: () => baseUrl,
   };
 
   const sampleMetadata = new Map(
@@ -141,6 +144,7 @@ describe('ContentClient', () => {
 
   afterEach(() => {
     sandbox.restore();
+    nock.cleanAll();
   });
 
   describe('createFrom', () => {
@@ -502,14 +506,19 @@ describe('ContentClient', () => {
         { from: '/test-X', to: '/test-Y' },
       ];
 
-      sinon.stub(SecretsManagerClient.prototype, 'send').resolves({
+      const secretsManagerClient = new SecretsManagerClient({});
+      sinon.stub(secretsManagerClient, 'send').resolves({
         SecretString: JSON.stringify({
-          onedrive_domain_id: 'onedrive-domain-id',
+          onedrive_domain_id: 'onedrive-domain-id-secret',
         }),
       });
 
       ContentClient = await createContentClientForRedirects(existingRedirects);
-      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
+      const client = await ContentClient.createFrom(
+        context,
+        siteConfigGoogleDrive,
+        secretsManagerClient,
+      );
       await client.updateRedirects(newRedirects);
       await expect(redirectsSdk.append.calledOnceWith(sinon.match([{ from: '/test-X', to: '/test-Y' }]))).to.be.true;
     });
@@ -630,6 +639,79 @@ describe('ContentClient', () => {
         updateLink: sinon.stub().resolves({ status: 500 }),
       });
       await expect(client.updateBrokenInternalLink('/test-path', brokenLink)).to.be.rejectedWith('Failed to update link from http://old-link to https://new-link // [object Object]');
+    });
+  });
+
+  describe('getResourcePath', () => {
+    let client;
+
+    function getHlxConfig() {
+      return {
+        ...hlxConfigGoogle,
+        rso: {
+          owner: 'owner',
+          site: 'repo',
+          ref: 'main',
+        },
+      };
+    }
+
+    const helixAdminToken = 'test-token';
+    /** @type {SecretsManagerClient} */
+    let secretsManagerClient;
+    /** @type
+     * {sinon.SinonStub<
+     *    Parameters<SecretsManagerClient['send']>,
+     *    ReturnType<SecretsManagerClient['send']>>
+     * } */
+    let sendStub;
+    beforeEach(async () => {
+      secretsManagerClient = new SecretsManagerClient();
+      sendStub = sinon.stub(secretsManagerClient, 'send');
+      sendStub.resolves({ SecretString: JSON.stringify({ helix_admin_token: helixAdminToken }) });
+
+      client = await ContentClient.createFrom(
+        context,
+        { ...siteConfigGoogleDrive, getHlxConfig },
+        secretsManagerClient,
+      );
+    });
+
+    it('should return the document path on success', async () => {
+      const path = 'example/path';
+
+      nock('https://admin.hlx.page', {
+        reqheaders: {
+          authorization: `token ${helixAdminToken}`,
+        },
+      })
+        .get('/status/owner/repo/main/example/path')
+        .reply(200, { resourcePath: '/mocked/resource/path' });
+
+      expect(sendStub).to.have.been.calledWithMatch(
+        {
+          input: {
+            SecretId: resolveCustomerSecretsName(baseUrl, context),
+          },
+        },
+      );
+      const result = await client.getResourcePath(path);
+
+      expect(result).to.equal('/mocked/resource/path');
+    });
+
+    it('should throw an error on failure', async () => {
+      const path = '/example-path';
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path')
+        .reply(500, { message: 'Internal Server Error' });
+
+      try {
+        await client.getResourcePath(path);
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch document path for /example-path: {"message":"Internal Server Error"}');
+      }
     });
   });
 });

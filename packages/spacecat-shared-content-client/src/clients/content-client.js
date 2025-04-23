@@ -298,6 +298,7 @@ export default class ContentClient {
    */
   async getResourcePath(path) {
     const { rso } = this.site.getHlxConfig();
+    // https://www.aem.live/docs/admin.html#tag/status
     const adminEndpointUrl = `https://admin.hlx.page/status/${rso.owner}/${rso.site}/${rso.ref}/${path.replace(/^\/+/, '')}`;
     const response = await fetch(adminEndpointUrl, {
       headers: {

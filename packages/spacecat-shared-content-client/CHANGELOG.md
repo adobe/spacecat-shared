@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.5.6...@adobe/spacecat-shared-content-client-v1.6.0) (2025-04-23)
+
+
+### Features
+
+* Add `ContentClient.prototype.getResourcePath` ([#702](https://github.com/adobe/spacecat-shared/issues/702)) ([639036e](https://github.com/adobe/spacecat-shared/commit/639036ef4c165e6faa9dc83320f62e2927ca9619))
+
 # [@adobe/spacecat-shared-content-client-v1.5.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.5.5...@adobe/spacecat-shared-content-client-v1.5.6) (2025-04-22)
 
 

@@ -428,6 +428,32 @@ describe('Config Tests', () => {
         });
       });
 
+      it('enables cwv-daily import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-daily');
+
+        const importConfig = config.getImportConfig('cwv-daily');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-daily',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
+
+      it('enables cwv-weekly import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-weekly');
+
+        const importConfig = config.getImportConfig('cwv-weekly');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-weekly',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
+
       it('enables import with custom config', () => {
         const config = Config();
         config.enableImport('organic-keywords', {
@@ -653,6 +679,18 @@ describe('Config Tests', () => {
             geo: 'us',
             limit: 100,
           },
+          {
+            type: 'cwv-daily',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
+            type: 'cwv-weekly',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
         ],
         fetchConfig: {
           headers: {
@@ -705,7 +743,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -771,6 +809,40 @@ describe('Config Tests', () => {
                 context: {
                   valids: [
                     'top-pages',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [cwv-daily]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'cwv-daily',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [cwv-weekly]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'cwv-weekly',
                   ],
                   label: 'imports[0].type',
                   value: 'organic-keywords',

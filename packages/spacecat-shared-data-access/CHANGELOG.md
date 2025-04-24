@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.15.2...@adobe/spacecat-shared-data-access-v2.16.0) (2025-04-24)
+
+
+### Features
+
+* Added cwv-daily and cwv-weekly import types ([#693](https://github.com/adobe/spacecat-shared/issues/693)) ([659826b](https://github.com/adobe/spacecat-shared/commit/659826b37cea03aa08f2db36a0ff7a43437c03a7))
+
 # [@adobe/spacecat-shared-data-access-v2.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.15.1...@adobe/spacecat-shared-data-access-v2.15.2) (2025-04-17)
 
 

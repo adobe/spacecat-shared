@@ -30,19 +30,6 @@
         "totalClicksOnPage": 800
       }
     ],
-    "trafficacquisition": {
-      "total": 2400,
-      "earned": 0,
-      "owned": 2400,
-      "paid": 0,
-      "maxTimeDelta": 33324,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 2400
-        }
-      ]
-    },
     "formsource": ".form"
   },
   {
@@ -59,19 +46,6 @@
       "mobile:ios": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 3100,
-      "earned": 0,
-      "owned": 3100,
-      "paid": 0,
-      "maxTimeDelta": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 3100
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -86,19 +60,6 @@
       "desktop:mac": 200
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 1800,
-      "earned": 0,
-      "owned": 1800,
-      "paid": 0,
-      "maxTimeDelta": 841,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 1800
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -114,19 +75,6 @@
       "mobile:ios": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 700,
-      "earned": 0,
-      "owned": 700,
-      "paid": 0,
-      "maxTimeDelta": 18637,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 700
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -140,19 +88,6 @@
       "desktop:windows": 200
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 200,
-      "earned": 0,
-      "owned": 200,
-      "paid": 0,
-      "maxTimeDelta": 38409,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 200
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -166,19 +101,6 @@
       "desktop:windows": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "owned": 100,
-      "paid": 0,
-      "maxTimeDelta": 18813,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -192,19 +114,6 @@
       "desktop:windows": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "owned": 100,
-      "paid": 0,
-      "maxTimeDelta": 24548,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -218,19 +127,6 @@
       "desktop:windows": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "owned": 100,
-      "paid": 0,
-      "maxTimeDelta": 83321,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -244,19 +140,6 @@
       "desktop:mac": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "owned": 100,
-      "paid": 0,
-      "maxTimeDelta": 80312,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -270,19 +153,6 @@
       "desktop:windows": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "owned": 100,
-      "paid": 0,
-      "maxTimeDelta": 34204,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -296,19 +166,6 @@
       "desktop:mac": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "owned": 100,
-      "paid": 0,
-      "maxTimeDelta": 50435,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    },
     "formsource": "form.xyz"
   },
   {
@@ -330,19 +187,6 @@
       "desktop:windows": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 2400,
-      "earned": 0,
-      "owned": 2400,
-      "paid": 0,
-      "maxTimeDelta": 33324,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 2400
-        }
-      ]
-    },
     "formsource": "form#abc"
   },
   {
@@ -357,19 +201,6 @@
       "desktop:windows": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 1500,
-      "earned": 0,
-      "owned": 1500,
-      "paid": 0,
-      "maxTimeDelta": 497,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 1500
-        }
-      ]
-    },
     "formsource": "form#abc"
   },
   {
@@ -386,19 +217,6 @@
       "desktop:windows": 100
     },
     "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 2400,
-      "earned": 0,
-      "owned": 2400,
-      "paid": 0,
-      "maxTimeDelta": 33324,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 2400
-        }
-      ]
-    },
     "formsource": "form.xyz"
   }
 ]

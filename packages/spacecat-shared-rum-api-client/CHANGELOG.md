@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.0...@adobe/spacecat-shared-rum-api-client-v2.23.1) (2025-04-25)
+
+
+### Bug Fixes
+
+* eliminating unnecessary data from forms vitals ([#704](https://github.com/adobe/spacecat-shared/issues/704)) ([29be01e](https://github.com/adobe/spacecat-shared/commit/29be01e5d77d41b728a013a4b5532d06a08f7b2c))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.6...@adobe/spacecat-shared-rum-api-client-v2.23.0) (2025-04-16)
 
 

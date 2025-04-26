@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.4.20](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.19...@adobe/spacecat-shared-google-client-v1.4.20) (2025-04-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#708](https://github.com/adobe/spacecat-shared/issues/708)) ([57535ac](https://github.com/adobe/spacecat-shared/commit/57535ac8c636de229cec7c5cee83dead07ac09fb))
+
 # [@adobe/spacecat-shared-google-client-v1.4.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.18...@adobe/spacecat-shared-google-client-v1.4.19) (2025-04-15)
 
 

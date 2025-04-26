@@ -17,7 +17,7 @@ import {
   decodeJwt,
   jwtVerify,
 } from 'jose';
-
+import imsClient from '../ims-client.js';
 import { getBearerToken } from './utils/bearer.js';
 
 import AbstractHandler from './abstract.js';
@@ -83,6 +83,11 @@ export default class AdobeImsHandler extends AbstractHandler {
       throw new Error(`Token not issued by expected idp: ${config.name} != ${claims.as}`);
     }
 
+    const imsProfile = await imsClient.getImsUserProfile(token);
+    const organizations = await imsClient.getImsUserOrganizations(token);
+
+    const tenants = getTenants(imsProfile, organizations);
+
     const jwks = await this.#getJwksUri(config);
     const { payload } = await jwtVerify(token, jwks);
 
@@ -104,9 +109,41 @@ export default class AdobeImsHandler extends AbstractHandler {
     }
 
     payload.ttl = ttl;
+    payload.tenants = tenants || [];
 
     return payload;
   }
+
+  getTenants(profile, organizations) {
+    const contexts = profile.projectedProductContext;
+    if (!isNonEmptyArray(contexts)) {
+      return [];
+    }
+  
+    const filteredContexts = contexts
+      .filter((context) => context.prodCtx.serviceCode === SERVICE_CODE)
+      // remove duplicates
+      .filter((context, index, array) => array.findIndex(
+        (tenant) => (context.prodCtx.owningEntity
+          && tenant.prodCtx.owningEntity === context.prodCtx.owningEntity),
+      ) === index)
+      // remove the auth source from the id (<id>@<auth-src>)
+      .map((context) => ({
+        id: context.prodCtx.owningEntity.split('@')[0],
+        subServices: context.prodCtx.enable_sub_service?.split(',').filter((subService) => subService.startsWith(SERVICE_CODE)),
+      }));
+  
+    // for every organization the user has, find whether
+    // we have a filtered product context with the same id,
+    // then map organization to simple tenant object
+    return organizations.filter(
+      (org) => filteredContexts.findIndex((ctx) => ctx.id === org.orgRef.ident) !== -1,
+    ).map((org) => ({
+      id: org.orgRef.ident,
+      name: org.orgName,
+      subServices: filteredContexts.find((ctx) => ctx.id === org.orgRef.ident)?.subServices,
+    }));
+  };
 
   async checkAuth(request, context) {
     const token = getBearerToken(context);
@@ -120,11 +157,19 @@ export default class AdobeImsHandler extends AbstractHandler {
       const payload = await this.#validateToken(token, config);
       const profile = transformProfile(payload);
 
+      const scopes = [{ name: 'admin' }];
+      
+      if(!profile.email?.endsWith('@adobe.com')) {
+        scopes.push(...payload.tenants.map(
+          (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
+        ));
+      }
+
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
         .withProfile(profile)
-        .withScopes([{ name: 'admin' }]);
+        .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
     }

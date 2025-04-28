@@ -41,6 +41,10 @@ export {
   getQuery,
 } from './helpers.js';
 
+export {
+  RUNTIMES,
+} from './constants.js';
+
 export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';
 

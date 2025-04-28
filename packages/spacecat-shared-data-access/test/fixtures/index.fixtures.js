@@ -11,6 +11,7 @@
  */
 
 import apiKeys from './api-keys.fixtures.js';
+import asyncJobs from './async-jobs.fixture.js';
 import audits from './audits.fixture.js';
 import configurations from './configurations.fixture.js';
 import experiments from './experiments.fixture.js';
@@ -27,6 +28,7 @@ import fixEntities from './fix-entity.fixture.js';
 
 export default {
   apiKeys,
+  asyncJobs,
   audits,
   configurations,
   experiments,

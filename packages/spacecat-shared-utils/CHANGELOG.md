@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.36.3...@adobe/spacecat-shared-utils-v1.37.0) (2025-04-28)
+
+
+### Features
+
+* **xray:** non-aws ie local friendly xray instrumentation ([#710](https://github.com/adobe/spacecat-shared/issues/710)) ([5184b4d](https://github.com/adobe/spacecat-shared/commit/5184b4dc3ddff8a6e44d12129475fa323533be2c))
+
 # [@adobe/spacecat-shared-utils-v1.36.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.36.2...@adobe/spacecat-shared-utils-v1.36.3) (2025-04-26)
 
 

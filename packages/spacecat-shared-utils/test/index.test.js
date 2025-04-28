@@ -63,7 +63,7 @@ describe('Index Exports', () => {
     'getHighPageViewsLowFormCtrMetrics',
     'FORMS_AUDIT_INTERVAL',
     'SPACECAT_USER_AGENT',
-    'RUNTIMES',
+    'isAWSLambda',
   ];
 
   it('exports all expected functions', () => {

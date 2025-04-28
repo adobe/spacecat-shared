@@ -11,24 +11,17 @@
  */
 
 import AWSXray from 'aws-xray-sdk';
-import { RUNTIMES } from './constants.js';
+import { isAWSLambda } from './runtimes.js';
 
 export function xrayWrapper(fn) {
   return async (req, context) => {
-    const { runtime } = context;
-
     if (context.xray) {
       return context.xray;
     }
 
     context.xray = {
-      instrument: (client) => (runtime?.name === RUNTIMES.AWS_LAMBDA
-        ? AWSXray.captureAWSv3Client(client)
-        : client)
-      ,
+      instrument: (client) => (isAWSLambda() ? AWSXray.captureAWSv3Client(client) : client),
     };
-
-    process.env.SPACECAT_RUNTIME = runtime?.name;
 
     return fn(req, context);
   };

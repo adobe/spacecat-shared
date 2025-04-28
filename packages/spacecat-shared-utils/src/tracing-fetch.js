@@ -14,7 +14,7 @@ import AWSXRay from 'aws-xray-sdk';
 
 import { fetch as adobeFetch } from './adobe-fetch.js';
 import { isNumber, isObject } from './functions.js';
-import { RUNTIMES } from './constants.js';
+import { isAWSLambda } from './runtimes.js';
 
 export const SPACECAT_USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36 Spacecat/1.0';
 
@@ -152,7 +152,7 @@ const fetchWithTimeout = async (resource, options, signal) => {
  */
 export async function tracingFetch(url, options) {
   // fallback to adobe fetch outside an aws lambda function
-  if (process.env.SPACECAT_RUNTIME !== RUNTIMES.AWS_LAMBDA) {
+  if (!isAWSLambda()) {
     return adobeFetch;
   }
 

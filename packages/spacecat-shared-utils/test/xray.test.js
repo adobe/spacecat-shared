@@ -15,7 +15,7 @@
 import sinon from 'sinon';
 import { expect } from 'chai';
 import AWSXray from 'aws-xray-sdk';
-import { xrayWrapper, RUNTIMES } from '../src/index.js';
+import { xrayWrapper } from '../src/index.js';
 
 const mockFn = sinon.spy();
 let mockContext;
@@ -23,9 +23,8 @@ let mockContext;
 describe('xrayWrapper tests', () => {
   beforeEach(() => {
     sinon.resetHistory();
-    mockContext = {
-      runtime: { name: RUNTIMES.AWS_LAMBDA },
-    };
+    mockContext = {};
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
   });
 
   afterEach(() => {
@@ -77,7 +76,7 @@ describe('xrayWrapper tests', () => {
   });
 
   it('should return the original client if runtime is not AWS_LAMBDA', async () => {
-    mockContext.runtime.name = 'some-other-runtime';
+    delete process.env.AWS_EXECUTION_ENV;
     const captureStub = sinon.stub(AWSXray, 'captureAWSv3Client');
     const wrappedFn = xrayWrapper(mockFn);
     const req = { some: 'request' };

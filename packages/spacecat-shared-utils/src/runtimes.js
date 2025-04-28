@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-export const RUNTIMES = {
-  AWS_LAMBDA: 'lambda',
-};
+import { hasText } from './functions.js';
+
+export function isAWSLambda() {
+  return hasText(process.env.AWS_EXECUTION_ENV) && process.env.AWS_EXECUTION_ENV.startsWith('AWS_Lambda');
+}

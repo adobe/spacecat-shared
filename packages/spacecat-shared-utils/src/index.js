@@ -42,8 +42,8 @@ export {
 } from './helpers.js';
 
 export {
-  RUNTIMES,
-} from './constants.js';
+  isAWSLambda,
+} from './runtimes.js';
 
 export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';

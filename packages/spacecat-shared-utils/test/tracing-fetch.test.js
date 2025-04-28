@@ -16,7 +16,7 @@ import sinon from 'sinon';
 import esmock from 'esmock';
 import nock from 'nock';
 import AWSXRay from 'aws-xray-sdk';
-import { RUNTIMES, SPACECAT_USER_AGENT, tracingFetch } from '../src/index.js';
+import { SPACECAT_USER_AGENT, tracingFetch } from '../src/index.js';
 
 describe('tracing fetch function', () => {
   let sandbox;
@@ -25,7 +25,7 @@ describe('tracing fetch function', () => {
   let subSegment;
 
   beforeEach(() => {
-    process.env.SPACECAT_RUNTIME = RUNTIMES.AWS_LAMBDA;
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
     sandbox = sinon.createSandbox();
     AWSXRay.enableAutomaticMode();
 
@@ -56,7 +56,7 @@ describe('tracing fetch function', () => {
   });
 
   it('uses adobe fetch if runtime is not lambda', async () => {
-    delete process.env.SPACECAT_RUNTIME;
+    delete process.env.AWS_EXECUTION_ENV;
 
     const { tracingFetch: _tracingFetch } = await esmock('../src/tracing-fetch.js', {
       '../src/adobe-fetch.js': { fetch: 42 },

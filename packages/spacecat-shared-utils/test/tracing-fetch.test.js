@@ -13,6 +13,7 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
+import esmock from 'esmock';
 import nock from 'nock';
 import AWSXRay from 'aws-xray-sdk';
 import { SPACECAT_USER_AGENT, tracingFetch } from '../src/index.js';
@@ -24,6 +25,7 @@ describe('tracing fetch function', () => {
   let subSegment;
 
   beforeEach(() => {
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
     sandbox = sinon.createSandbox();
     AWSXRay.enableAutomaticMode();
 
@@ -51,6 +53,17 @@ describe('tracing fetch function', () => {
   afterEach(() => {
     sandbox.restore();
     nock.cleanAll();
+  });
+
+  it('uses adobe fetch if runtime is not lambda', async () => {
+    delete process.env.AWS_EXECUTION_ENV;
+
+    const { tracingFetch: _tracingFetch } = await esmock('../src/tracing-fetch.js', {
+      '../src/adobe-fetch.js': { fetch: 42 },
+    });
+
+    const fetchFn = await _tracingFetch('https://example.com/api/data');
+    expect(fetchFn).to.equal(42);
   });
 
   it('exports the correct SPACECAT_USER_AGENT', () => {

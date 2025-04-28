@@ -38,6 +38,7 @@
     "@adobe/spacecat-shared-data-access": "2.0.2",
     "chai": "5.2.0",
     "chai-as-promised": "8.0.1",
+    "esmock": "2.7.0",
     "husky": "9.1.7",
     "nock": "14.0.4",
     "sinon": "20.0.0",

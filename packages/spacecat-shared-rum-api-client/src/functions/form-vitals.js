@@ -166,7 +166,12 @@ function handler(bundles) {
     const match = source.match(/form[#.](\w+)/);
     const formsource = match ? match[1] : 'unknown';
     // groups by url and user agent
-    dataChunks.addFacet('urlUserAgents', (bundle) => generateKey(bundle.url, bundle.userAgent));
+    dataChunks.addFacet('urlUserAgents', (bundle) => {
+      // eslint-disable-next-line no-nested-ternary
+      const deviceType = bundle.userAgent.startsWith('desktop') ? 'desktop' : bundle.userAgent.startsWith('mobile') ? 'mobile' : 'other';
+      return generateKey(bundle.url, deviceType);
+    });
+
     METRICS.forEach((metric) => dataChunks.addSeries(metric, metricFns[metric](formsource)));
     // aggregates metrics per group (url and user agent)
     dataChunks.facets.urlUserAgents.reduce((acc, { value, metrics, weight }) => {

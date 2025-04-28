@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.16.1...@adobe/spacecat-shared-data-access-v2.17.0) (2025-04-28)
+
+
+### Features
+
+* async job ([#698](https://github.com/adobe/spacecat-shared/issues/698)) ([31cf58f](https://github.com/adobe/spacecat-shared/commit/31cf58fc9ef128d2cf094afe0286932c7edc369d))
+
+# [@adobe/spacecat-shared-data-access-v2.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.16.0...@adobe/spacecat-shared-data-access-v2.16.1) (2025-04-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#708](https://github.com/adobe/spacecat-shared/issues/708)) ([57535ac](https://github.com/adobe/spacecat-shared/commit/57535ac8c636de229cec7c5cee83dead07ac09fb))
+
 # [@adobe/spacecat-shared-data-access-v2.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.15.2...@adobe/spacecat-shared-data-access-v2.16.0) (2025-04-24)
 
 

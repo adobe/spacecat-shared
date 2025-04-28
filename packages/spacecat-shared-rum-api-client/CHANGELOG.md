@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.2...@adobe/spacecat-shared-rum-api-client-v2.23.3) (2025-04-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#708](https://github.com/adobe/spacecat-shared/issues/708)) ([57535ac](https://github.com/adobe/spacecat-shared/commit/57535ac8c636de229cec7c5cee83dead07ac09fb))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.1...@adobe/spacecat-shared-rum-api-client-v2.23.2) (2025-04-26)
+
+
+### Bug Fixes
+
+* changing user agent categorization for forms ([#705](https://github.com/adobe/spacecat-shared/issues/705)) ([239a186](https://github.com/adobe/spacecat-shared/commit/239a18657607ba9fcc041c9b90342d173cc5b81c))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.0...@adobe/spacecat-shared-rum-api-client-v2.23.1) (2025-04-25)
 
 

@@ -49,6 +49,7 @@ export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';
 
 export { logWrapper } from './log-wrapper.js';
+export { xrayWrapper } from './xray.js';
 
 export {
   composeBaseURL,

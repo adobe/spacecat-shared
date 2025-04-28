@@ -28,6 +28,8 @@ export function xrayWrapper(fn) {
       ,
     };
 
+    process.env.SPACECAT_RUNTIME = runtime?.name;
+
     return fn(req, context);
   };
 }

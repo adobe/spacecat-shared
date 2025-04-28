@@ -15,8 +15,7 @@
 import sinon from 'sinon';
 import { expect } from 'chai';
 import AWSXray from 'aws-xray-sdk';
-import { xrayWrapper } from '../src/xray.js'; // adjust path if needed
-import { RUNTIMES } from '../src/constants.js'; // adjust path if needed
+import { xrayWrapper, RUNTIMES } from '../src/index.js';
 
 const mockFn = sinon.spy();
 let mockContext;

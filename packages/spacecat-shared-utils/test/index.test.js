@@ -44,6 +44,7 @@ describe('Index Exports', () => {
     'isValidUUID',
     'isValidIMSOrgId',
     'logWrapper',
+    'xrayWrapper',
     'prependSchema',
     'resolveCustomerSecretsName',
     'resolveSecretsName',

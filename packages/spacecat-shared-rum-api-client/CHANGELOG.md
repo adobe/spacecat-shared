@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.23.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.3...@adobe/spacecat-shared-rum-api-client-v2.23.4) (2025-04-30)
+
+
+### Bug Fixes
+
+* form source proper handling in form vitals ([#711](https://github.com/adobe/spacecat-shared/issues/711)) ([e37bf0a](https://github.com/adobe/spacecat-shared/commit/e37bf0a6df28952a0e51f8689c4016a9bbff82e0))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.2...@adobe/spacecat-shared-rum-api-client-v2.23.3) (2025-04-26)
 
 

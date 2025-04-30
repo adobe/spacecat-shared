@@ -89,7 +89,7 @@ function populateFormsInternalNavigation(bundles, formVitals) {
       const fv = findByUrl(formVitals, formInternalNav.source);
       formVital.forminternalnavigation.push({
         url: formInternalNav.source,
-        pageview: fv?.pageview,
+        ...(fv && { pageview: fv.pageview }),
       });
     }
   });
@@ -176,16 +176,19 @@ function handler(bundles) {
     // aggregates metrics per group (url and user agent)
     dataChunks.facets.urlUserAgents.reduce((acc, { value, metrics, weight }) => {
       const [url, userAgent] = value.split(DELIMITER);
-      const key = formSourceMap[url].has(source) ? generateKey(url, source) : url;
-      acc[key] = acc[key] || initializeResult(url);
-      acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
-      // Enable traffic acquisition for persistence by uncommenting this line
-      // acc[key].trafficacquisition = trafficByUrlMap[url];
-      acc[key].formsource = source;
-      METRICS.filter((metric) => metrics[metric].sum) // filter out user-agents with no form vitals
-        .forEach((metric) => {
-          acc[key][metric][userAgent] = metrics[metric].sum;
-        });
+      if (formSourceMap[url].has(source)) {
+        const key = generateKey(url, source);
+        acc[key] = acc[key] || initializeResult(url);
+        acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
+        // Enable traffic acquisition for persistence by uncommenting this line
+        // acc[key].trafficacquisition = trafficByUrlMap[url];
+        acc[key].formsource = source;
+        // filter out user-agents with no form vitals
+        METRICS.filter((metric) => metrics[metric].sum)
+          .forEach((metric) => {
+            acc[key][metric][userAgent] = metrics[metric].sum;
+          });
+      }
       return acc;
     }, formVitals);
   });

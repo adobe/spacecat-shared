@@ -239,6 +239,34 @@ class Configuration extends BaseModel {
   async save() {
     return this.collection.create(sanitizeIdAndAuditFields(this.constructor.name, this.toJSON()));
   }
+
+  /**
+   * Get all configured workflow ARNs
+   * 
+   * @returns {object} The workflows configuration object
+   */
+  getWorkflows() {
+    return this.get('workflows') || {};
+  }
+
+  /**
+   * Get a specific workflow ARN by its type
+   * 
+   * @param {string} type - The workflow type
+   * @returns {string|undefined} The workflow ARN if found
+   */
+  getWorkflow(type) {
+    return this.getWorkflows()?.[type];
+  }
+
+  /**
+   * Set the workflows configuration
+   * 
+   * @param {object} workflows - The workflows configuration object 
+   */
+  setWorkflows(workflows) {
+    this.set('workflows', workflows);
+  }
 }
 
 export default Configuration;

@@ -30,12 +30,15 @@ export interface Configuration extends BaseModel {
   getSlackRoleMembersByRole(role: string): string[];
   getSlackRoles(): object;
   getVersion(): number;
+  getWorkflows(): object;
+  getWorkflow(type: string): string | undefined;
   isHandlerEnabledForOrg(type: string, organization: Organization): boolean;
   isHandlerEnabledForSite(type: string, site: Site): boolean;
   setHandlers(handlers: object): void;
   setJobs(jobs: object): void;
   setQueues(queues: object): void;
   setSlackRoles(slackRoles: object): void;
+  setWorkflows(workflows: object): void;
   updateHandlerOrgs(type: string, orgId: string, enabled: boolean): void;
   updateHandlerSites(type: string, siteId: string, enabled: boolean): void;
 }

@@ -52,6 +52,7 @@ const configurationSchema = Joi.object({
   queues: queueSchema,
   handlers: handlerSchema,
   jobs: jobsSchema,
+  workflows: Joi.object().pattern(Joi.string(), Joi.string()).optional(),
 }).unknown(true);
 
 export const checkConfiguration = (data, schema = configurationSchema) => {
@@ -90,6 +91,10 @@ const schema = new SchemaBuilder(Configuration, ConfigurationCollection)
     type: 'any',
     required: true,
     validate: (value) => isNonEmptyObject(value),
+  })
+  .addAttribute('workflows', {
+    type: 'any',
+    validate: (value) => !value || isNonEmptyObject(value),
   })
   .addAttribute('slackRoles', {
     type: 'any',

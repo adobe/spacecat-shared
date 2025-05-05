@@ -12,81 +12,43 @@
 
 /* eslint-env mocha */
 
-import sinon from 'sinon';
 import { expect } from 'chai';
+import sinon from 'sinon';
 import AWSXray from 'aws-xray-sdk';
-import { xrayWrapper } from '../src/index.js';
+import { instrumentAWSClient } from '../src/index.js';
 
-const mockFn = sinon.spy();
-let mockContext;
+describe('instrumentClient', () => {
+  let captureStub;
 
-describe('xrayWrapper tests', () => {
   beforeEach(() => {
-    sinon.resetHistory();
-    mockContext = {};
-    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
+    captureStub = sinon.stub(AWSXray, 'captureAWSv3Client');
   });
 
   afterEach(() => {
     sinon.restore();
-  });
-
-  it('should call the original function with the provided req and context', async () => {
-    const wrappedFn = xrayWrapper(mockFn);
-    const req = { some: 'request' };
-
-    await wrappedFn(req, mockContext);
-
-    expect(mockFn.calledWith(req, mockContext)).to.be.true;
-  });
-
-  it('should add xray.instrument function to context if not already present', async () => {
-    const wrappedFn = xrayWrapper(mockFn);
-    const req = { some: 'request' };
-
-    await wrappedFn(req, mockContext);
-
-    expect(mockContext).to.have.property('xray');
-    expect(mockContext.xray).to.be.an('object');
-    expect(mockContext.xray.instrument).to.be.a('function');
-  });
-
-  it('should not overwrite existing context.xray', async () => {
-    mockContext.xray = 42;
-    const wrappedFn = xrayWrapper(mockFn);
-    const req = { some: 'request' };
-
-    await wrappedFn(req, mockContext);
-
-    expect(mockContext.xray).to.equal(42);
-  });
-
-  it('should use AWSXray.captureAWSv3Client when runtime is AWS_LAMBDA', async () => {
-    const captureStub = sinon.stub(AWSXray, 'captureAWSv3Client').returns('capturedClient');
-    const wrappedFn = xrayWrapper(mockFn);
-    const req = { some: 'request' };
-
-    await wrappedFn(req, mockContext);
-
-    const client = { dummy: 'client' };
-    const instrumentedClient = mockContext.xray.instrument(client);
-
-    expect(captureStub.calledWith(client)).to.be.true;
-    expect(instrumentedClient).to.equal('capturedClient');
-  });
-
-  it('should return the original client if runtime is not AWS_LAMBDA', async () => {
     delete process.env.AWS_EXECUTION_ENV;
-    const captureStub = sinon.stub(AWSXray, 'captureAWSv3Client');
-    const wrappedFn = xrayWrapper(mockFn);
-    const req = { some: 'request' };
+  });
 
-    await wrappedFn(req, mockContext);
+  it('should use AWSXray.captureAWSv3Client when AWS_EXECUTION_ENV indicates Lambda', () => {
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs18.x';
 
     const client = { dummy: 'client' };
-    const instrumentedClient = mockContext.xray.instrument(client);
+    captureStub.returns('capturedClient');
+
+    const result = instrumentAWSClient(client);
+
+    expect(captureStub.calledOnceWithExactly(client)).to.be.true;
+    expect(result).to.equal('capturedClient');
+  });
+
+  it('should return original client when AWS_EXECUTION_ENV is undefined', () => {
+    delete process.env.AWS_EXECUTION_ENV;
+
+    const client = { dummy: 'client' };
+
+    const result = instrumentAWSClient(client);
 
     expect(captureStub.called).to.be.false;
-    expect(instrumentedClient).to.equal(client);
+    expect(result).to.equal(client);
   });
 });

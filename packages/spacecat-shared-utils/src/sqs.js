@@ -12,7 +12,7 @@
 
 import { Response } from '@adobe/fetch';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
-import AWSXray from 'aws-xray-sdk';
+import { instrumentAWSClient } from './xray.js';
 
 import { hasText, isNonEmptyArray } from './functions.js';
 
@@ -30,7 +30,7 @@ function badRequest(message) {
  */
 class SQS {
   constructor(region, log) {
-    this.sqsClient = AWSXray.captureAWSv3Client(new SQSClient({ region }));
+    this.sqsClient = instrumentAWSClient(new SQSClient({ region }));
     this.log = log;
   }
 

@@ -43,6 +43,7 @@
     "@adobe/helix-shared-wrap": "2.0.2",
     "chai": "5.2.0",
     "chai-as-promised": "8.0.1",
-    "sinon": "20.0.0"
+    "sinon": "20.0.0",
+    "proxyquire": "^2.1.3"
   }
 }

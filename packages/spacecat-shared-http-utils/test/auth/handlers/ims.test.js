@@ -51,6 +51,7 @@ const imsIdpConfigDev = {
 describe('AdobeImsHandler', () => {
   let logStub;
   let handler;
+  let mockImsClient;
 
   beforeEach(() => {
     logStub = {
@@ -58,7 +59,23 @@ describe('AdobeImsHandler', () => {
       info: sinon.stub(),
       error: sinon.stub(),
     };
-    handler = new AdobeImsHandler(logStub);
+
+    mockImsClient = {
+      getImsUserProfile: sinon.stub().resolves({
+        projectedProductContext: [{
+          prodCtx: {
+            serviceCode: 'dx_aem_perf',
+            owningEntity: 'org1@AdobeOrg',
+          },
+        }],
+      }),
+      getImsUserOrganizations: sinon.stub().resolves([{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+      }]),
+    };
+
+    handler = new AdobeImsHandler(logStub, mockImsClient);
   });
 
   afterEach(() => {
@@ -196,6 +213,70 @@ describe('AdobeImsHandler', () => {
       expect(result.profile).to.not.have.property('user_id');
       expect(result.profile).to.have.property('created_at', now);
       expect(result.profile).to.have.property('ttl', 3);
+    });
+
+    it('successfully validates a token with tenant information', async () => {
+      const token = await createToken({
+        user_id: 'test-user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.profile.tenants).to.have.lengthOf(1);
+      expect(result.profile.tenants[0]).to.deep.include({
+        id: 'org1',
+        name: 'Test Org',
+      });
+      expect(mockImsClient.getImsUserProfile.calledWith(token)).to.be.true;
+      expect(mockImsClient.getImsUserOrganizations.calledWith(token)).to.be.true;
+    });
+
+    it('handles empty projectedProductContext array', async () => {
+      const token = await createToken({
+        user_id: 'test-user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      // Mock empty projectedProductContext array
+      mockImsClient.getImsUserProfile.resolves({
+        projectedProductContext: [],
+      });
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.profile.tenants).to.deep.equal([]);
+    });
+
+    it('handles non-array projectedProductContext', async () => {
+      const token = await createToken({
+        user_id: 'test-user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      // Mock projectedProductContext as non-array
+      mockImsClient.getImsUserProfile.resolves({
+        projectedProductContext: null,
+      });
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.profile.tenants).to.deep.equal([]);
     });
   });
 });

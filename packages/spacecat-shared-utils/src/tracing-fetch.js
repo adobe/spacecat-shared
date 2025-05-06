@@ -151,13 +151,6 @@ const fetchWithTimeout = async (resource, options, signal) => {
  * @returns {Promise<Response>} The response from the fetch request.
  */
 export async function tracingFetch(url, options) {
-  // fallback to adobe fetch outside an aws lambda function
-  if (!isAWSLambda()) {
-    return adobeFetch;
-  }
-
-  const parentSegment = AWSXRay.getSegment();
-
   options = isObject(options) ? { ...options } : {};
   options.headers = isObject(options.headers) ? options.headers : { };
 
@@ -179,6 +172,13 @@ export async function tracingFetch(url, options) {
   if (!hasUserAgent) {
     options.headers['User-Agent'] = SPACECAT_USER_AGENT;
   }
+
+  // fallback to adobe fetch outside an aws lambda function
+  if (!isAWSLambda()) {
+    return fetchWithTimeout(url, options, signal);
+  }
+
+  const parentSegment = AWSXRay.getSegment();
 
   // If no parent segment, perform fetch without tracing
   if (!parentSegment) {

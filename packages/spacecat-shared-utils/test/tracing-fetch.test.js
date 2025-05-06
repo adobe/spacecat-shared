@@ -59,7 +59,7 @@ describe('tracing fetch function', () => {
     delete process.env.AWS_EXECUTION_ENV;
 
     const { tracingFetch: _tracingFetch } = await esmock('../src/tracing-fetch.js', {
-      '../src/adobe-fetch.js': { fetch: 42 },
+      '../src/adobe-fetch.js': { fetch: () => 42 },
     });
 
     const fetchFn = await _tracingFetch('https://example.com/api/data');

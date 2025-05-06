@@ -36,12 +36,14 @@
     "@adobe/fetch": "4.2.0",
     "@adobe/spacecat-shared-utils": "1.26.4",
     "@adobe/spacecat-shared-data-access": "2.0.2",
-    "jose": "6.0.10"
+    "jose": "6.0.10",
+    "@adobe/spacecat-shared-ims-client": "1.5.6"
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
     "chai": "5.2.0",
     "chai-as-promised": "8.0.1",
-    "sinon": "20.0.0"
+    "sinon": "20.0.0",
+    "proxyquire": "^2.1.3"
   }
 }

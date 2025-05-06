@@ -78,7 +78,7 @@ export default class AdobeImsHandler extends AbstractHandler {
     return this.jwksCache;
   }
 
-  #getTenants(profile, organizations) {
+  static #getTenants(profile, organizations) {
     const contexts = profile.projectedProductContext;
     if (!Array.isArray(contexts) || contexts.length === 0) {
       return [];
@@ -115,7 +115,7 @@ export default class AdobeImsHandler extends AbstractHandler {
     const imsProfile = await imsClient.getImsUserProfile(token);
     const organizations = await imsClient.getImsUserOrganizations(token);
 
-    const tenants = this.#getTenants(imsProfile, organizations);
+    const tenants = AdobeImsHandler.#getTenants(imsProfile, organizations);
 
     const jwks = await this.#getJwksUri(config);
     const { payload } = await jwtVerify(token, jwks);

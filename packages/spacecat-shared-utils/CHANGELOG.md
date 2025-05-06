@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.37.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.37.1...@adobe/spacecat-shared-utils-v1.37.2) (2025-05-06)
+
+
+### Bug Fixes
+
+* **xray:** local friendly xray instrumentation ([#714](https://github.com/adobe/spacecat-shared/issues/714)) ([7c7cebd](https://github.com/adobe/spacecat-shared/commit/7c7cebdde4e1c0b24c80201c5d16a68f470122cb))
+
 # [@adobe/spacecat-shared-utils-v1.37.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.37.0...@adobe/spacecat-shared-utils-v1.37.1) (2025-05-03)
 
 

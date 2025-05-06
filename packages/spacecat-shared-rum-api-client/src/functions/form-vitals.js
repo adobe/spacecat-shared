@@ -14,7 +14,7 @@ import { DataChunks } from '@adobe/rum-distiller';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
-const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate'];
+const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia'];
 const KEYWORDS_TO_FILTER = ['search'];
 
 function initializeResult(url) {
@@ -41,7 +41,7 @@ function filterEvents(bundles) {
       }
 
       const isFormRelatedEvent = ['fill', 'formsubmit'].includes(event.checkpoint)
-          || /\bform\b/.test(event.source);
+          || /\bform\b|aemform\w*/i.test(event.source);
       return isFormRelatedEvent && !KEYWORDS_TO_FILTER.some((keyword) => event.source
           && event.source.toLowerCase().includes(keyword));
     }),
@@ -82,6 +82,7 @@ function populateFormsInternalNavigation(bundles, formVitals) {
   dataChunks.filter = { checkpoint: ['navigate'] };
   dataChunks.filtered.forEach((bundle) => {
     const formInternalNav = bundle.events.find((e) => e.checkpoint === 'navigate');
+
     const formVital = findByUrl(formVitals, bundle.url);
     if (formInternalNav && formVital
         && !formVital.forminternalnavigation
@@ -133,8 +134,31 @@ function containsFormVitals(row) {
   return METRICS.some((metric) => Object.keys(row[metric]).length > 0);
 }
 
+function getParentPageVitals(dataChunks, formVitals, iframeParentMap) {
+  const iframeVitals = {};
+  if (dataChunks.facets.urlUserAgents) {
+    dataChunks.facets.urlUserAgents.reduce((acc, { value, weight }) => {
+      const [url, userAgent] = value.split(DELIMITER);
+
+      function getKeyByURLValue(obj, val) {
+        return Object.keys(obj).find((key) => obj[key].url === val);
+      }
+      const iframeSrc = getKeyByURLValue(iframeParentMap, url);
+      if (iframeSrc) {
+        acc[url] = acc[url] || { url, pageview: {} };
+        acc[url].pageview[userAgent] = acc[url].pageview[userAgent] || weight;
+        acc[url].formsource = iframeParentMap[iframeSrc].source;
+        acc[url].iframeSrc = iframeSrc;
+      }
+      return acc;
+    }, iframeVitals);
+  }
+  return iframeVitals;
+}
+
 function handler(bundles) {
   // Filter out search related events
+
   const bundlesWithFilteredEvents = filterEvents(bundles);
 
   const dataChunks = new DataChunks();
@@ -143,17 +167,30 @@ function handler(bundles) {
   const formViewdataChunks = new DataChunks();
   loadBundles(bundlesWithFilteredEvents, formViewdataChunks);
   const formSourceMap = {};
+  const iframeParentMap = {};
   const globalFormSourceSet = new Set();
-  formViewdataChunks.filter = { checkpoint: ['viewblock'] };
+  formViewdataChunks.filter = { checkpoint: ['viewblock', 'viewmedia'] };
   formViewdataChunks.filtered.forEach(({ url, events }) => {
     formSourceMap[url] = formSourceMap[url] || new Set();
-    events.forEach(({ checkpoint, source }) => {
+    events.forEach(({ checkpoint, source, target }) => {
       if (checkpoint === 'viewblock' && source) {
         formSourceMap[url].add(source);
         globalFormSourceSet.add(source);
       }
+      if (checkpoint === 'viewmedia' && target) {
+        if (target.includes('aemform.iframe')) {
+          if (!iframeParentMap[target]) {
+            // keeping the first matching url
+            iframeParentMap[target] = {
+              url,
+              source,
+            };
+          }
+        }
+      }
     });
   });
+
   // traffic acquisition data per url - uncomment this when required
   // const trafficByUrl = trafficAcquisition.handler(bundles);
   // const trafficByUrlMap = Object.fromEntries(
@@ -182,6 +219,9 @@ function handler(bundles) {
         acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
         // Enable traffic acquisition for persistence by uncommenting this line
         // acc[key].trafficacquisition = trafficByUrlMap[url];
+        if (iframeParentMap[url]) {
+          acc[key].parentFrameUrl = iframeParentMap[url].url;
+        }
         acc[key].formsource = source;
         // filter out user-agents with no form vitals
         METRICS.filter((metric) => metrics[metric].sum)
@@ -192,12 +232,29 @@ function handler(bundles) {
       return acc;
     }, formVitals);
   });
+
+  // For IFramed Urls
+  const parentPageVitals = getParentPageVitals(dataChunks, formVitals, iframeParentMap);
+
   // populate internal navigation data
   populateFormsInternalNavigation(bundles, formVitals);
   // filter out pages with no form vitals
   const filteredFormVitals = Object.values(formVitals).filter(containsFormVitals);
   findFormCTAForInternalNavigation(bundles, filteredFormVitals);
-  return filteredFormVitals;
+
+  const updatedFormVitals = filteredFormVitals.map((formVital) => {
+    if (formVital.parentFrameUrl) {
+      const { parentFrameUrl, ...rest } = formVital;
+      return {
+        ...rest,
+        iframeSrc: formVital.url,
+        url: parentFrameUrl,
+      };
+    }
+    return formVital;
+  });
+
+  return [...updatedFormVitals, ...Object.values(parentPageVitals)];
 }
 
 export default {

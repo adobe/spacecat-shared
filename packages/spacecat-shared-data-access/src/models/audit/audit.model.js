@@ -104,6 +104,7 @@ class Audit extends BaseModel {
       formatPayload: (stepResult, auditContext) => ({
         type: stepResult.type,
         siteId: stepResult.siteId,
+        allowCache: true,
         auditContext,
       }),
     },
@@ -117,6 +118,7 @@ class Audit extends BaseModel {
        * @param {string} stepResult.siteId - The site ID. Will be used as the job ID.
        * @param {string} stepResult.processingType - The scraping processing type to trigger.
        * @param {object} auditContext - The audit context.
+       * @param {object} context - The context object.
        * @param {object} auditContext.next - The next audit step to run.
        * @param {string} auditContext.auditId - The audit ID.
        * @param {string} auditContext.auditType - The audit type.
@@ -124,10 +126,13 @@ class Audit extends BaseModel {
        *
        * @returns {object} - The formatted payload.
        */
-      formatPayload: (stepResult, auditContext) => ({
+      formatPayload: (stepResult, auditContext, context) => ({
         urls: stepResult.urls,
         jobId: stepResult.siteId,
         processingType: stepResult.processingType || 'default',
+        skipMessage: false,
+        allowCache: true,
+        completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
         auditContext,
       }),
     },

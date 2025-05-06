@@ -11,11 +11,11 @@
  */
 
 import { DataChunks } from '@adobe/rum-distiller';
-import trafficAcquisition from './traffic-acquisition.js';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
-const FORM_SOURCE = ['.form', '.marketo', '.marketo-form'];
-const METRICS = ['formview', 'formengagement', 'formsubmit', 'formbuttonclick'];
+const METRICS = ['formview', 'formengagement', 'formsubmit'];
+const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate'];
+const KEYWORDS_TO_FILTER = ['search'];
 
 function initializeResult(url) {
   return {
@@ -23,45 +23,73 @@ function initializeResult(url) {
     formsubmit: {},
     formview: {},
     formengagement: {},
-    formbuttonclick: {},
     pageview: {},
     forminternalnavigation: [],
   };
 }
 
+function filterEvents(bundles) {
+  return bundles.map((bundle) => ({
+    ...bundle,
+    events: bundle.events.filter((event) => {
+      if (!CHECKPOINTS.includes(event.checkpoint)) {
+        return false;
+      }
+
+      if (event.checkpoint === 'navigate') {
+        return true;
+      }
+
+      const isFormRelatedEvent = ['fill', 'formsubmit'].includes(event.checkpoint)
+          || /\bform\b/.test(event.source);
+      return isFormRelatedEvent && !KEYWORDS_TO_FILTER.some((keyword) => event.source
+          && event.source.toLowerCase().includes(keyword));
+    }),
+  }));
+}
+
+function isFormSource(source, eventSource) {
+  const excludeSrc = ['form.', 'form#'];
+  if (source === 'unknown') {
+    return /\bform\b/.test(eventSource?.toLowerCase()) && !excludeSrc.some((exclude) => eventSource?.includes(exclude));
+  } else {
+    return eventSource?.includes(source);
+  }
+}
+
 const metricFns = {
-  formview: (bundle) => {
-    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock' && FORM_SOURCE.includes(e.source));
+  formview: (source) => (bundle) => {
+    const formView = bundle.events.find((e) => e.checkpoint === 'viewblock' && isFormSource(source, e.source));
     return formView ? bundle.weight : 0;
   },
-  formengagement: (bundle) => {
-    const formClick = bundle.events.find((e) => e.checkpoint === 'click' && e.source && /\bform\b/.test(e.source.toLowerCase()));
+  formengagement: (source) => (bundle) => {
+    const formClick = bundle.events.find((e) => (e.checkpoint === 'click' || e.checkpoint === 'fill') && isFormSource(source, e.source));
     return formClick ? bundle.weight : 0;
   },
-  formsubmit: (bundle) => {
-    const formSubmit = bundle.events.find((e) => e.checkpoint === 'formsubmit');
+  formsubmit: (source) => (bundle) => {
+    const formSubmit = bundle.events.find((e) => e.checkpoint === 'formsubmit' && isFormSource(source, e.source));
     return formSubmit ? bundle.weight : 0;
   },
-  formbuttonclick: (bundle) => {
-    const formButtonClick = bundle.events.find((e) => e.checkpoint === 'click' && e.source
-        && /\bform\b/.test(e.source.toLowerCase())
-        && /\bbutton\b/.test(e.source.toLowerCase()));
-    return formButtonClick ? bundle.weight : 0;
-  },
 };
+
+function findByUrl(formVitals, url) {
+  return Object.values(formVitals).find((item) => item.url === url);
+}
 
 function populateFormsInternalNavigation(bundles, formVitals) {
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
   dataChunks.filter = { checkpoint: ['navigate'] };
   dataChunks.filtered.forEach((bundle) => {
-    const forminternalnavigation = bundle.events.find((e) => e.checkpoint === 'navigate');
-    if (forminternalnavigation && formVitals[bundle.url]
-        && !formVitals[bundle.url].forminternalnavigation
-          .some((e) => e.url === forminternalnavigation.source)) {
-      formVitals[bundle.url].forminternalnavigation.push({
-        url: forminternalnavigation.source,
-        pageview: formVitals[forminternalnavigation.source]?.pageview || null,
+    const formInternalNav = bundle.events.find((e) => e.checkpoint === 'navigate');
+    const formVital = findByUrl(formVitals, bundle.url);
+    if (formInternalNav && formVital
+        && !formVital.forminternalnavigation
+          .some((e) => e.url === formInternalNav.source)) {
+      const fv = findByUrl(formVitals, formInternalNav.source);
+      formVital.forminternalnavigation.push({
+        url: formInternalNav.source,
+        ...(fv && { pageview: fv.pageview }),
       });
     }
   });
@@ -106,37 +134,64 @@ function containsFormVitals(row) {
 }
 
 function handler(bundles) {
+  // Filter out search related events
+  const bundlesWithFilteredEvents = filterEvents(bundles);
+
   const dataChunks = new DataChunks();
-  loadBundles(bundles, dataChunks);
+  loadBundles(bundlesWithFilteredEvents, dataChunks);
 
-  // groups by url and user agent
-  dataChunks.addFacet('urlUserAgents', (bundle) => generateKey(bundle.url, bundle.userAgent));
+  const formViewdataChunks = new DataChunks();
+  loadBundles(bundlesWithFilteredEvents, formViewdataChunks);
+  const formSourceMap = {};
+  const globalFormSourceSet = new Set();
+  formViewdataChunks.filter = { checkpoint: ['viewblock'] };
+  formViewdataChunks.filtered.forEach(({ url, events }) => {
+    formSourceMap[url] = formSourceMap[url] || new Set();
+    events.forEach(({ checkpoint, source }) => {
+      if (checkpoint === 'viewblock' && source) {
+        formSourceMap[url].add(source);
+        globalFormSourceSet.add(source);
+      }
+    });
+  });
+  // traffic acquisition data per url - uncomment this when required
+  // const trafficByUrl = trafficAcquisition.handler(bundles);
+  // const trafficByUrlMap = Object.fromEntries(
+  //   trafficByUrl.map(({ url, ...item }) => [url, item]),
+  // );
+  const formVitals = {};
 
-  // counts metrics per each group
-  METRICS.forEach((metric) => dataChunks.addSeries(metric, metricFns[metric]));
+  globalFormSourceSet.forEach((source) => {
+    // counts metrics per each group
+    const match = source.match(/form[#.](\w+)/);
+    const formsource = match ? match[1] : 'unknown';
+    // groups by url and user agent
+    dataChunks.addFacet('urlUserAgents', (bundle) => {
+      // eslint-disable-next-line no-nested-ternary
+      const deviceType = bundle.userAgent.startsWith('desktop') ? 'desktop' : bundle.userAgent.startsWith('mobile') ? 'mobile' : 'other';
+      return generateKey(bundle.url, deviceType);
+    });
 
-  // traffic acquisition data per url
-  const trafficByUrl = trafficAcquisition.handler(bundles);
-  const trafficByUrlMap = Object.fromEntries(
-    trafficByUrl.map(({ url, ...item }) => [url, item]),
-  );
-
-  // aggregates metrics per group (url and user agent)
-  const formVitals = dataChunks.facets.urlUserAgents.reduce((acc, { value, metrics, weight }) => {
-    const [url, userAgent] = value.split(DELIMITER);
-
-    acc[url] = acc[url] || initializeResult(url);
-    acc[url].pageview[userAgent] = weight;
-    acc[url].trafficacquisition = trafficByUrlMap[url];
-
-    METRICS.filter((metric) => metrics[metric].sum) // filter out user-agents with no form vitals
-      .forEach((metric) => {
-        acc[url][metric][userAgent] = metrics[metric].sum;
-      });
-
-    return acc;
-  }, {});
-
+    METRICS.forEach((metric) => dataChunks.addSeries(metric, metricFns[metric](formsource)));
+    // aggregates metrics per group (url and user agent)
+    dataChunks.facets.urlUserAgents.reduce((acc, { value, metrics, weight }) => {
+      const [url, userAgent] = value.split(DELIMITER);
+      if (formSourceMap[url].has(source)) {
+        const key = generateKey(url, source);
+        acc[key] = acc[key] || initializeResult(url);
+        acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
+        // Enable traffic acquisition for persistence by uncommenting this line
+        // acc[key].trafficacquisition = trafficByUrlMap[url];
+        acc[key].formsource = source;
+        // filter out user-agents with no form vitals
+        METRICS.filter((metric) => metrics[metric].sum)
+          .forEach((metric) => {
+            acc[key][metric][userAgent] = metrics[metric].sum;
+          });
+      }
+      return acc;
+    }, formVitals);
+  });
   // populate internal navigation data
   populateFormsInternalNavigation(bundles, formVitals);
   // filter out pages with no form vitals
@@ -147,5 +202,5 @@ function handler(bundles) {
 
 export default {
   handler,
-  checkpoints: ['viewblock', 'formsubmit', 'click', 'navigate'],
+  checkpoints: CHECKPOINTS,
 };

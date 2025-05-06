@@ -21,8 +21,14 @@ const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
 
 /**
+ * @import {type Site} from "@adobe/spacecat-shared-data-access/src/models/site/index.js"
+ * @typedef {Pick<Console, 'debug' | 'info' | 'warn' | 'error'>} Logging
+ */
+
+/**
  * A list of supported content source types and their required configuration parameters.
- * @type {Map<string, object>}
+ * @typedef {typeof CONTENT_SOURCE_TYPE_DRIVE_GOOGLE | typeof CONTENT_SOURCE_TYPE_ONEDRIVE} _CSKey
+ * @type {Map<_CSKey, {[key: string]: string}>}
  */
 const SUPPORTED_CONTENT_SOURCES = new Map([
   [CONTENT_SOURCE_TYPE_DRIVE_GOOGLE, {
@@ -186,9 +192,15 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
 };
 
 export default class ContentClient {
-  static async createFrom(context, site) {
+  /**
+   * @param {{log: Logging, env: Record<string, any>}} context
+   * @param {Site} site
+   * @param {SecretsManagerClient} [secretsManagerClient]
+   */
+  static async createFrom(context, site, secretsManagerClient = new SecretsManagerClient({})) {
     const { log = console, env } = context;
 
+    /** @type {{[key: string]: string}} */
     const config = {};
     const contentSourceType = site.getHlxConfig()?.content?.source?.type;
     const envMapping = SUPPORTED_CONTENT_SOURCES.get(contentSourceType);
@@ -201,11 +213,12 @@ export default class ContentClient {
 
     try {
       const customerSecret = resolveCustomerSecretsName(site.getBaseURL(), context);
-      const client = AWSXray.captureAWSv3Client(new SecretsManagerClient({}));
+      const client = AWSXray.captureAWSv3Client(secretsManagerClient);
       const command = new GetSecretValueCommand({ SecretId: customerSecret });
       const response = await client.send(command);
       const secrets = JSON.parse(response.SecretString);
       config.domainId = secrets.onedrive_domain_id;
+      config.helixAdminToken = secrets.helix_admin_token;
     } catch (e) {
       log.debug(`Customer ${site.getBaseURL()} secrets containing onedrive domain id not configured: ${e.message}`);
     }
@@ -241,6 +254,11 @@ export default class ContentClient {
     }
   }
 
+  /**
+   * @param {{[key: string]: any}} config
+   * @param {Site} site
+   * @param {Logging} log
+   */
   constructor(config, site, log) {
     validateSite(site);
     validateConfiguration(config, site.getHlxConfig()?.content.source?.type);
@@ -272,6 +290,28 @@ export default class ContentClient {
     }
 
     return docPath;
+  }
+
+  /**
+   * @param {string} path
+   * @returns {Promise<string>}
+   */
+  async getResourcePath(path) {
+    const { rso } = this.site.getHlxConfig();
+    // https://www.aem.live/docs/admin.html#tag/status
+    const adminEndpointUrl = `https://admin.hlx.page/status/${rso.owner}/${rso.site}/${rso.ref}/${path.replace(/^\/+/, '')}`;
+    const response = await fetch(adminEndpointUrl, {
+      headers: {
+        Authorization: `token ${this.config.helixAdminToken}`,
+      },
+    });
+    if (response.ok) {
+      const responseJson = await response.json();
+      return responseJson.resourcePath;
+    } else {
+      const errorMessage = await response.text();
+      throw new Error(`Failed to fetch document path for ${path}: ${errorMessage}`);
+    }
   }
 
   async getPageMetadata(path) {

@@ -1,3 +1,66 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.23.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.3...@adobe/spacecat-shared-rum-api-client-v2.23.4) (2025-04-30)
+
+
+### Bug Fixes
+
+* form source proper handling in form vitals ([#711](https://github.com/adobe/spacecat-shared/issues/711)) ([e37bf0a](https://github.com/adobe/spacecat-shared/commit/e37bf0a6df28952a0e51f8689c4016a9bbff82e0))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.2...@adobe/spacecat-shared-rum-api-client-v2.23.3) (2025-04-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#708](https://github.com/adobe/spacecat-shared/issues/708)) ([57535ac](https://github.com/adobe/spacecat-shared/commit/57535ac8c636de229cec7c5cee83dead07ac09fb))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.1...@adobe/spacecat-shared-rum-api-client-v2.23.2) (2025-04-26)
+
+
+### Bug Fixes
+
+* changing user agent categorization for forms ([#705](https://github.com/adobe/spacecat-shared/issues/705)) ([239a186](https://github.com/adobe/spacecat-shared/commit/239a18657607ba9fcc041c9b90342d173cc5b81c))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.0...@adobe/spacecat-shared-rum-api-client-v2.23.1) (2025-04-25)
+
+
+### Bug Fixes
+
+* eliminating unnecessary data from forms vitals ([#704](https://github.com/adobe/spacecat-shared/issues/704)) ([29be01e](https://github.com/adobe/spacecat-shared/commit/29be01e5d77d41b728a013a4b5532d06a08f7b2c))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.6...@adobe/spacecat-shared-rum-api-client-v2.23.0) (2025-04-16)
+
+
+### Features
+
+* formsource wise segregation of audit result ([#692](https://github.com/adobe/spacecat-shared/issues/692)) ([0f4f503](https://github.com/adobe/spacecat-shared/commit/0f4f503facbd81538a0d445a462735766e7bfffa))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.22.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.5...@adobe/spacecat-shared-rum-api-client-v2.22.6) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.0 ([#694](https://github.com/adobe/spacecat-shared/issues/694)) ([55883c5](https://github.com/adobe/spacecat-shared/commit/55883c597c61c891fc17ed39d0aab1c33af5b90c))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.22.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.4...@adobe/spacecat-shared-rum-api-client-v2.22.5) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#679](https://github.com/adobe/spacecat-shared/issues/679)) ([a41bf0c](https://github.com/adobe/spacecat-shared/commit/a41bf0cd488efa0f72af0933992edb256302af18))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.22.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.3...@adobe/spacecat-shared-rum-api-client-v2.22.4) (2025-04-11)
+
+
+### Bug Fixes
+
+* filter search form events ([#689](https://github.com/adobe/spacecat-shared/issues/689)) ([abde8cd](https://github.com/adobe/spacecat-shared/commit/abde8cd47f98f4aa5753a3105e8a54df4caffa07))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.22.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.2...@adobe/spacecat-shared-rum-api-client-v2.22.3) (2025-04-11)
+
+
+### Bug Fixes
+
+* earned threshold update ([#691](https://github.com/adobe/spacecat-shared/issues/691)) ([65defd0](https://github.com/adobe/spacecat-shared/commit/65defd0ee344f0e38d4559342d7fb5212dda178e))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.22.1...@adobe/spacecat-shared-rum-api-client-v2.22.2) (2025-04-01)
 
 

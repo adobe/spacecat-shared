@@ -1,27 +1,21 @@
 [
   {
     "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html",
-    "formsubmit": {},
-    "formview": {
-      "desktop:mac": 100
+    "formsubmit": {
+
     },
-    "formengagement": {},
-    "formbuttonclick": {},
+    "formview": {
+      "desktop": 100
+    },
+    "formengagement": {
+
+    },
     "pageview": {
-      "desktop:linux": 2200,
-      "desktop:mac": 100,
-      "desktop:windows": 100
+      "desktop": 2400
     },
     "forminternalnavigation": [
       {
         "url": "https://business.adobe.com/products/marketo.html",
-        "pageview": {
-          "desktop:linux": 2000,
-          "desktop:mac": 1300,
-          "desktop:windows": 1200,
-          "mobile:android": 300,
-          "mobile:ios": 200
-        },
         "CTAs": [
           {
             "source": "#tab-features-2",
@@ -31,312 +25,63 @@
         "totalClicksOnPage": 800
       }
     ],
-    "trafficacquisition": {
-      "total": 2400,
-      "earned": 0,
-      "maxTimeDelta": 33324,
-      "owned": 2400,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 2400
-        }
-      ]
-    }
+    "formsource": ".form"
   },
   {
-    "url": "https://business.adobe.com/",
-    "formsubmit": {},
-    "formview": {},
-    "formengagement": {
-      "desktop:windows": 100
-    },
-    "formbuttonclick": {},
-    "pageview": {
-      "desktop:windows": 1900,
-      "desktop:mac": 800,
-      "mobile:android": 300,
-      "mobile:ios": 100
-    },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 3100,
-      "earned": 0,
-      "maxTimeDelta": 0,
-      "owned": 3100,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 3100
-        }
-      ]
-    }
-  },
-  {
-    "url": "https://business.adobe.com/request-consultation/experience-cloud.html",
+    "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html",
     "formsubmit": {
-      "desktop:mac": 100
+      "desktop": 100
     },
-    "formview": {},
+    "formview": {
+      "desktop": 200
+    },
     "formengagement": {
-      "desktop:mac": 100
-    },
-    "formbuttonclick": {
-      "desktop:mac": 100
+      "desktop": 200
     },
     "pageview": {
-      "desktop:linux": 1600,
-      "desktop:mac": 200
+      "desktop": 2400
     },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 1800,
-      "earned": 0,
-      "maxTimeDelta": 841,
-      "owned": 1800,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 1800
-        }
-      ]
-    }
+    "forminternalnavigation": [
+
+    ],
+    "formsource": "form#abc"
   },
   {
-    "url": "https://business.adobe.com/resources/demo/adobe-learning-manager-lms.html",
+    "url": "https://business.adobe.com/de/products/magento/magento-commerce.html",
     "formsubmit": {
-      "desktop:windows": 100
+
     },
-    "formview": {},
+    "formview": {
+      "desktop": 100
+    },
     "formengagement": {
-      "desktop:windows": 100
-    },
-    "formbuttonclick": {
-      "desktop:windows": 100
+
     },
     "pageview": {
-      "desktop:windows": 400,
-      "mobile:android": 200,
-      "mobile:ios": 100
+      "desktop": 1500
     },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 700,
-      "earned": 0,
-      "maxTimeDelta": 18637,
-      "owned": 700,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 700
-        }
-      ]
-    }
+    "forminternalnavigation": [
+
+    ],
+    "formsource": "form#abc"
   },
   {
-    "url": "https://business.adobe.com/jp/resources/guides/leading-generative-ai-deployment-for-marketing.html",
+    "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html",
     "formsubmit": {
-      "desktop:windows": 200
+
     },
-    "formview": {},
+    "formview": {
+      "desktop": 200
+    },
     "formengagement": {
-      "desktop:windows": 200
-    },
-    "formbuttonclick": {
-      "desktop:windows": 200
+
     },
     "pageview": {
-      "desktop:windows": 200
+      "desktop": 2400
     },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 200,
-      "earned": 0,
-      "maxTimeDelta": 38409,
-      "owned": 200,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 200
-        }
-      ]
-    }
-  },
-  {
-    "url": "https://business.adobe.com/se/resources/main.html",
-    "formsubmit": {},
-    "formview": {},
-    "formengagement": {
-      "desktop:windows": 100
-    },
-    "formbuttonclick": {},
-    "pageview": {
-      "desktop:windows": 100
-    },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "maxTimeDelta": 18813,
-      "owned": 100,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    }
-  },
-  {
-    "url": "https://business.adobe.com/uk/products/magento/magento-commerce/sem.html",
-    "formsubmit": {},
-    "formview": {},
-    "formengagement": {
-      "desktop:windows": 100
-    },
-    "formbuttonclick": {},
-    "pageview": {
-      "desktop:windows": 100
-    },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "maxTimeDelta": 24548,
-      "owned": 100,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    }
-  },
-  {
-    "url": "https://business.adobe.com/jp/resources/digital-trends-apj-report.html",
-    "formsubmit": {
-      "desktop:windows": 100
-    },
-    "formview": {},
-    "formengagement": {
-      "desktop:windows": 100
-    },
-    "formbuttonclick": {
-      "desktop:windows": 100
-    },
-    "pageview": {
-      "desktop:windows": 100
-    },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "maxTimeDelta": 83321,
-      "owned": 100,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    }
-  },
-  {
-    "url": "https://business.adobe.com/products/workfront/get-demo.html",
-    "formsubmit": {
-      "desktop:mac": 100
-    },
-    "formview": {},
-    "formengagement": {
-      "desktop:mac": 100
-    },
-    "formbuttonclick": {
-      "desktop:mac": 100
-    },
-    "pageview": {
-      "desktop:mac": 100
-    },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "maxTimeDelta": 80312,
-      "owned": 100,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    }
-  },
-  {
-    "url": "https://business.adobe.com/jp/resources/reports/retail-digital-trends.html",
-    "formsubmit": {
-      "desktop:windows": 100
-    },
-    "formview": {},
-    "formengagement": {
-      "desktop:windows": 100
-    },
-    "formbuttonclick": {
-      "desktop:windows": 100
-    },
-    "pageview": {
-      "desktop:windows": 100
-    },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "maxTimeDelta": 34204,
-      "owned": 100,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    }
-  },
-  {
-    "url": "https://business.adobe.com/resources/reports/forrester-tei-adobe-content-supply-chain.html",
-    "formsubmit": {
-      "desktop:mac": 100
-    },
-    "formview": {},
-    "formengagement": {
-      "desktop:mac": 100
-    },
-    "formbuttonclick": {
-      "desktop:mac": 100
-    },
-    "pageview": {
-      "desktop:mac": 100
-    },
-    "forminternalnavigation": [],
-    "trafficacquisition": {
-      "total": 100,
-      "earned": 0,
-      "maxTimeDelta": 50435,
-      "owned": 100,
-      "paid": 0,
-      "sources": [
-        {
-          "type": "owned:direct",
-          "views": 100
-        }
-      ]
-    }
+    "forminternalnavigation": [
+
+    ],
+    "formsource": "form.xyz"
   }
 ]

@@ -28,6 +28,7 @@ function aggregateFormVitalsByDevice(formVitalsCollection) {
   formVitalsCollection.forEach((item) => {
     const {
       url, formview = {}, formengagement = {}, pageview = {}, formsubmit = {},
+      trafficacquisition = {},
     } = item;
 
     const totals = {
@@ -54,7 +55,7 @@ function aggregateFormVitalsByDevice(formVitalsCollection) {
     totals.formengagement = calculateSums(formengagement, totals.formengagement);
     totals.pageview = calculateSums(pageview, totals.pageview);
     totals.formsubmit = calculateSums(formsubmit, totals.formsubmit);
-
+    totals.trafficacquisition = trafficacquisition;
     resultMap.set(url, totals);
   });
 
@@ -90,18 +91,13 @@ export function getHighFormViewsLowConversionMetrics(formVitalsCollection) {
   const urls = [];
   resultMap.forEach((metrics, url) => {
     const pageViews = metrics.pageview.total;
-    // Default to pageViews if formViews are not available
-    const formViews = metrics.formview.total || pageViews;
-    const formEngagement = metrics.formengagement.total;
+    const formViews = metrics.formview.total;
     const formSubmit = metrics.formsubmit.total;
 
     if (hasHighPageViews(pageViews) && hasLowerConversionRate(formSubmit, formViews)) {
       urls.push({
         url,
-        pageViews,
-        formViews,
-        formEngagement,
-        formSubmit,
+        ...metrics,
       });
     }
   });
@@ -182,9 +178,7 @@ export function getHighPageViewsLowFormCtrMetrics(formVitalsCollection) {
       if (deviceData != null) {
         urls.push({
           url: entry.url,
-          pageViews: deviceData.pageview.total,
-          formViews: deviceData.formview.total,
-          formEngagement: deviceData.formengagement.total,
+          ...deviceData,
           CTA: {
             url: maxPageviewUrl.url,
             source: y.source,

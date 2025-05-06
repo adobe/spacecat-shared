@@ -24,12 +24,14 @@ import OpportunitySchema from '../../../../src/models/opportunity/opportunity.sc
 import SuggestionSchema from '../../../../src/models/suggestion/suggestion.schema.js';
 import Reference from '../../../../src/models/base/reference.js';
 import BaseCollection from '../../../../src/models/base/base.collection.js';
+import FixEntitySchema from '../../../../src/models/fix-entity/fix-entity.schema.js';
 
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 const opportunityEntity = new Entity(OpportunitySchema.toElectroDBSchema());
 const suggestionEntity = new Entity(SuggestionSchema.toElectroDBSchema());
+const fixEntity = new Entity(FixEntitySchema.toElectroDBSchema());
 const MockCollection = class MockCollection extends BaseCollection {};
 
 describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
@@ -92,6 +94,18 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
             primary: {},
           },
         },
+        fixEntity: {
+          entity: fixEntity,
+          query: {
+            primary: stub().returns({ go: stub().resolves({ data: [mockRecord] }) }),
+            'spacecat-data-gsi1pk-gsi1sk': stub().returns({ go: stub().resolves({ data: [mockRecord] }) }),
+          },
+          remove: stub().returns({ go: stub().resolves() }),
+          _remove: stub().returns({ go: stub().resolves() }),
+          indexes: {
+            primary: {},
+          },
+        },
       },
     };
 
@@ -102,7 +116,15 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       mockLogger,
     );
 
+    const FixEntityCollection = new MockCollection(
+      mockElectroService,
+      mockEntityRegistry,
+      FixEntitySchema,
+      mockLogger,
+    );
+
     mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(SuggestionCollection);
+    mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(FixEntityCollection);
 
     baseModelInstance = new BaseModel(
       mockElectroService,
@@ -185,6 +207,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       };
 
       mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(collectionMethods);
+      mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(collectionMethods);
       mockEntityRegistry.getCollection.withArgs('SomeModelCollection').returns(collectionMethods);
       mockElectroService.entities.opportunity.remove.returns({ go: () => Promise.resolve() });
     });

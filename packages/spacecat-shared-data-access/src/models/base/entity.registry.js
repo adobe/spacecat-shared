@@ -14,9 +14,11 @@ import { DataAccessError } from '../../errors/index.js';
 import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
 
 import ApiKeyCollection from '../api-key/api-key.collection.js';
+import AsyncJobCollection from '../async-job/async-job.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
+import FixEntityCollection from '../fix-entity/fix-entity.collection.js';
 import ImportJobCollection from '../import-job/import-job.collection.js';
 import ImportUrlCollection from '../import-url/import-url.collection.js';
 import KeyEventCollection from '../key-event/key-event.collection.js';
@@ -29,8 +31,10 @@ import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js'
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
+import AsyncJobSchema from '../async-job/async-job.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
 import ConfigurationSchema from '../configuration/configuration.schema.js';
+import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
 import ExperimentSchema from '../experiment/experiment.schema.js';
 import ImportJobSchema from '../import-job/import-job.schema.js';
 import ImportUrlSchema from '../import-url/import-url.schema.js';
@@ -125,8 +129,10 @@ class EntityRegistry {
 }
 
 EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
+EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(ConfigurationSchema, ConfigurationCollection);
+EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);
 EntityRegistry.registerEntity(ExperimentSchema, ExperimentCollection);
 EntityRegistry.registerEntity(ImportJobSchema, ImportJobCollection);
 EntityRegistry.registerEntity(ImportUrlSchema, ImportUrlCollection);

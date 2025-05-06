@@ -17,7 +17,7 @@ import {
   decodeJwt,
   jwtVerify,
 } from 'jose';
-import imsClient from '@adobe/spacecat-shared-ims-client';
+import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { getBearerToken } from './utils/bearer.js';
 
 import AbstractHandler from './abstract.js';
@@ -112,8 +112,8 @@ export default class AdobeImsHandler extends AbstractHandler {
       throw new Error(`Token not issued by expected idp: ${config.name} != ${claims.as}`);
     }
 
-    const imsProfile = await imsClient.getImsUserProfile(token);
-    const organizations = await imsClient.getImsUserOrganizations(token);
+    const imsProfile = await ImsClient.getImsUserProfile(token);
+    const organizations = await ImsClient.getImsUserOrganizations(token);
 
     const tenants = AdobeImsHandler.#getTenants(imsProfile, organizations);
 

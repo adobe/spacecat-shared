@@ -36,7 +36,8 @@
     "@adobe/fetch": "4.2.0",
     "@adobe/spacecat-shared-utils": "1.26.4",
     "@adobe/spacecat-shared-data-access": "2.0.2",
-    "jose": "6.0.10"
+    "jose": "6.0.10",
+    "@adobe/spacecat-shared-ims-client": "1.5.6"
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",

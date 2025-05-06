@@ -83,7 +83,7 @@ export default class AdobeImsHandler extends AbstractHandler {
     if (!Array.isArray(contexts) || contexts.length === 0) {
       return [];
     }
-  
+
     const filteredContexts = contexts
       .filter((context) => context.prodCtx.serviceCode === SERVICE_CODE)
       // remove duplicates
@@ -96,7 +96,7 @@ export default class AdobeImsHandler extends AbstractHandler {
         id: context.prodCtx.owningEntity.split('@')[0],
         subServices: context.prodCtx.enable_sub_service?.split(',').filter((subService) => subService.startsWith(SERVICE_CODE)),
       }));
-  
+
     return organizations.filter(
       (org) => filteredContexts.findIndex((ctx) => ctx.id === org.orgRef.ident) !== -1,
     ).map((org) => ({
@@ -156,8 +156,8 @@ export default class AdobeImsHandler extends AbstractHandler {
       const profile = transformProfile(payload);
 
       const scopes = [{ name: 'admin' }];
-      
-      if(!profile.email?.endsWith('@adobe.com')) {
+
+      if (!profile.email?.endsWith('@adobe.com')) {
         scopes.push(...payload.tenants.map(
           (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
         ));

@@ -17,6 +17,8 @@ export const IMPORT_TYPES = {
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
   ALL_TRAFFIC: 'all-traffic',
+  CWV_DAILY: 'cwv-daily',
+  CWV_WEEKLY: 'cwv-weekly',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -61,6 +63,14 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
   }),
+  [IMPORT_TYPES.CWV_DAILY]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.CWV_DAILY).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
+  [IMPORT_TYPES.CWV_WEEKLY]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.CWV_WEEKLY).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
@@ -89,6 +99,18 @@ export const DEFAULT_IMPORT_CONFIGS = {
     enabled: true,
     geo: 'global',
   },
+  'cwv-daily': {
+    type: 'cwv-daily',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
+  'cwv-weekly': {
+    type: 'cwv-weekly',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
 };
 
 export const configSchema = Joi.object({
@@ -108,7 +130,7 @@ export const configSchema = Joi.object({
     overrideBaseURL: Joi.string().uri().optional(),
   }).optional(),
   contentAiConfig: Joi.object({
-    index: Joi.string().required(),
+    index: Joi.string().optional(),
   }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),

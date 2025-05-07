@@ -11,7 +11,6 @@
  */
 
 import { DataChunks } from '@adobe/rum-distiller';
-import trafficAcquisition from './traffic-acquisition.js';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
@@ -90,7 +89,7 @@ function populateFormsInternalNavigation(bundles, formVitals) {
       const fv = findByUrl(formVitals, formInternalNav.source);
       formVital.forminternalnavigation.push({
         url: formInternalNav.source,
-        pageview: fv?.pageview,
+        ...(fv && { pageview: fv.pageview }),
       });
     }
   });
@@ -155,11 +154,11 @@ function handler(bundles) {
       }
     });
   });
-  // traffic acquisition data per url
-  const trafficByUrl = trafficAcquisition.handler(bundles);
-  const trafficByUrlMap = Object.fromEntries(
-    trafficByUrl.map(({ url, ...item }) => [url, item]),
-  );
+  // traffic acquisition data per url - uncomment this when required
+  // const trafficByUrl = trafficAcquisition.handler(bundles);
+  // const trafficByUrlMap = Object.fromEntries(
+  //   trafficByUrl.map(({ url, ...item }) => [url, item]),
+  // );
   const formVitals = {};
 
   globalFormSourceSet.forEach((source) => {
@@ -167,20 +166,29 @@ function handler(bundles) {
     const match = source.match(/form[#.](\w+)/);
     const formsource = match ? match[1] : 'unknown';
     // groups by url and user agent
-    dataChunks.addFacet('urlUserAgents', (bundle) => generateKey(bundle.url, bundle.userAgent));
+    dataChunks.addFacet('urlUserAgents', (bundle) => {
+      // eslint-disable-next-line no-nested-ternary
+      const deviceType = bundle.userAgent.startsWith('desktop') ? 'desktop' : bundle.userAgent.startsWith('mobile') ? 'mobile' : 'other';
+      return generateKey(bundle.url, deviceType);
+    });
+
     METRICS.forEach((metric) => dataChunks.addSeries(metric, metricFns[metric](formsource)));
     // aggregates metrics per group (url and user agent)
     dataChunks.facets.urlUserAgents.reduce((acc, { value, metrics, weight }) => {
       const [url, userAgent] = value.split(DELIMITER);
-      const key = formSourceMap[url].has(source) ? generateKey(url, source) : url;
-      acc[key] = acc[key] || initializeResult(url);
-      acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
-      acc[key].trafficacquisition = trafficByUrlMap[url];
-      acc[key].formsource = source;
-      METRICS.filter((metric) => metrics[metric].sum) // filter out user-agents with no form vitals
-        .forEach((metric) => {
-          acc[key][metric][userAgent] = metrics[metric].sum;
-        });
+      if (formSourceMap[url].has(source)) {
+        const key = generateKey(url, source);
+        acc[key] = acc[key] || initializeResult(url);
+        acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
+        // Enable traffic acquisition for persistence by uncommenting this line
+        // acc[key].trafficacquisition = trafficByUrlMap[url];
+        acc[key].formsource = source;
+        // filter out user-agents with no form vitals
+        METRICS.filter((metric) => metrics[metric].sum)
+          .forEach((metric) => {
+            acc[key][metric][userAgent] = metrics[metric].sum;
+          });
+      }
       return acc;
     }, formVitals);
   });

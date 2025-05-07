@@ -422,7 +422,7 @@ class BaseCollection {
         validatedItems.push({ ...removeElectroProperties(Item), ...item });
       } catch (error) {
         if (error instanceof ElectroValidationError) {
-          errorItems.push({ item, error: new ValidationError(error) });
+          errorItems.push({ item, error: new ValidationError('Validation error', this, error) });
         }
       }
     });

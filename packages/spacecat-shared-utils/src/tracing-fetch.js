@@ -14,6 +14,7 @@ import AWSXRay from 'aws-xray-sdk';
 
 import { fetch as adobeFetch } from './adobe-fetch.js';
 import { isNumber, isObject } from './functions.js';
+import { isAWSLambda } from './runtimes.js';
 
 export const SPACECAT_USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36 Spacecat/1.0';
 
@@ -150,8 +151,6 @@ const fetchWithTimeout = async (resource, options, signal) => {
  * @returns {Promise<Response>} The response from the fetch request.
  */
 export async function tracingFetch(url, options) {
-  const parentSegment = AWSXRay.getSegment();
-
   options = isObject(options) ? { ...options } : {};
   options.headers = isObject(options.headers) ? options.headers : { };
 
@@ -173,6 +172,13 @@ export async function tracingFetch(url, options) {
   if (!hasUserAgent) {
     options.headers['User-Agent'] = SPACECAT_USER_AGENT;
   }
+
+  // fallback to adobe fetch outside an aws lambda function
+  if (!isAWSLambda()) {
+    return fetchWithTimeout(url, options, signal);
+  }
+
+  const parentSegment = AWSXRay.getSegment();
 
   // If no parent segment, perform fetch without tracing
   if (!parentSegment) {

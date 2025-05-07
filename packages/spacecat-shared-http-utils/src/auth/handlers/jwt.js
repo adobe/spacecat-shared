@@ -26,11 +26,13 @@ export default class JwtHandler extends AbstractHandler {
   }
 
   async #setup(context) {
-    const authPublicKey = context.env?.AUTH_PUBLIC_KEY;
+    const authPublicKeyB64 = context.env?.AUTH_PUBLIC_KEY_B64;
 
-    if (!hasText(authPublicKey)) {
+    if (!hasText(authPublicKeyB64)) {
       throw new Error('No public key provided');
     }
+
+    const authPublicKey = Buffer.from(authPublicKeyB64, 'base64').toString('utf-8');
 
     this.authPublicKey = await importSPKI(authPublicKey, ALGORITHM_ES256);
   }
@@ -48,14 +50,12 @@ export default class JwtHandler extends AbstractHandler {
       },
     );
 
+    verifiedToken.payload.tenants = verifiedToken.payload.tenants || [];
+
     return verifiedToken.payload;
   }
 
   async checkAuth(request, context) {
-    const authInfo = new AuthInfo()
-      .withType(this.name)
-      .withAuthenticated(false);
-
     try {
       await this.#setup(context);
 
@@ -63,21 +63,26 @@ export default class JwtHandler extends AbstractHandler {
 
       if (!hasText(token)) {
         this.log('No bearer token provided', 'debug');
-        authInfo.withReason('No bearer token provided');
-        return authInfo;
+        return null;
       }
 
       const payload = await this.#validateToken(token);
 
+      const scopes = payload.is_admin ? [{ name: 'admin' }] : [];
+
+      scopes.push(...payload.tenants.map(
+        (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
+      ));
+
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
-        .withProfile(payload);
+        .withProfile(payload)
+        .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
-      authInfo.withReason(e.message);
     }
 
-    return authInfo;
+    return null;
   }
 }

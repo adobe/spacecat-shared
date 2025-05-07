@@ -134,7 +134,7 @@ function containsFormVitals(row) {
   return METRICS.some((metric) => Object.keys(row[metric]).length > 0);
 }
 
-function getParentPageVitals(dataChunks, formVitals, iframeParentMap) {
+function getParentPageVitals(dataChunks, iframeParentMap) {
   const iframeVitals = {};
   if (dataChunks.facets.urlUserAgents) {
     dataChunks.facets.urlUserAgents.reduce((acc, { value, weight }) => {
@@ -234,7 +234,7 @@ function handler(bundles) {
   });
 
   // For IFramed Urls
-  const parentPageVitals = getParentPageVitals(dataChunks, formVitals, iframeParentMap);
+  const parentPageVitals = getParentPageVitals(dataChunks, iframeParentMap);
 
   // populate internal navigation data
   populateFormsInternalNavigation(bundles, formVitals);

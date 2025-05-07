@@ -44,7 +44,6 @@ describe('Index Exports', () => {
     'isValidUUID',
     'isValidIMSOrgId',
     'logWrapper',
-    'xrayWrapper',
     'prependSchema',
     'resolveCustomerSecretsName',
     'resolveSecretsName',
@@ -64,6 +63,7 @@ describe('Index Exports', () => {
     'FORMS_AUDIT_INTERVAL',
     'SPACECAT_USER_AGENT',
     'isAWSLambda',
+    'instrumentAWSClient',
   ];
 
   it('exports all expected functions', () => {

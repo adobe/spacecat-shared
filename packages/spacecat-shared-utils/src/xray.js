@@ -13,16 +13,6 @@
 import AWSXray from 'aws-xray-sdk';
 import { isAWSLambda } from './runtimes.js';
 
-export function xrayWrapper(fn) {
-  return async (req, context) => {
-    if (context.xray) {
-      return context.xray;
-    }
-
-    context.xray = {
-      instrument: (client) => (isAWSLambda() ? AWSXray.captureAWSv3Client(client) : client),
-    };
-
-    return fn(req, context);
-  };
+export function instrumentAWSClient(client) {
+  return isAWSLambda() ? AWSXray.captureAWSv3Client(client) : client;
 }

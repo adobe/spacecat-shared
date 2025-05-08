@@ -508,7 +508,7 @@ class BaseCollection {
       const updates = items.map((item) => item.record);
       const response = await this.entity.put(updates).go();
 
-      if (response.unprocessed) {
+      if (isNonEmptyArray(response.unprocessed)) {
         this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
       }
 

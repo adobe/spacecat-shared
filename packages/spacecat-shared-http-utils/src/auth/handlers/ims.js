@@ -40,6 +40,7 @@ const IGNORED_PROFILE_PROPS = [
 const loadConfig = (context) => {
   try {
     const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
+    context.log.info(`Loaded config name: ${config.name}`);
     return config;
   } catch (e) {
     context.log.error(`Failed to load config from context: ${e.message}`);
@@ -122,7 +123,8 @@ export default class AdobeImsHandler extends AbstractHandler {
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
-        .withProfile(profile);
+        .withProfile(profile)
+        .withScopes([{ name: 'admin' }]);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
     }

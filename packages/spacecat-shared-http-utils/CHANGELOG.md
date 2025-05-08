@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.10.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.3...@adobe/spacecat-shared-http-utils-v1.10.4) (2025-05-07)
+
+
+### Bug Fixes
+
+* auth handling with ims token ([#678](https://github.com/adobe/spacecat-shared/issues/678)) ([9868748](https://github.com/adobe/spacecat-shared/commit/9868748b6d6d7269d2b598748f26f02dc707b1d6))
+
 # [@adobe/spacecat-shared-http-utils-v1.10.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.2...@adobe/spacecat-shared-http-utils-v1.10.3) (2025-04-15)
 
 

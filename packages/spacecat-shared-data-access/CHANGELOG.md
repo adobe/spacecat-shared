@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.17.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.1...@adobe/spacecat-shared-data-access-v2.17.2) (2025-05-08)
+
+
+### Bug Fixes
+
+* collection._saveMany deals with empty `.unprocessed` array in response ([#721](https://github.com/adobe/spacecat-shared/issues/721)) ([2750273](https://github.com/adobe/spacecat-shared/commit/27502735d2759d83a65129cb2c0ccb09f974368d))
+
 # [@adobe/spacecat-shared-data-access-v2.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.0...@adobe/spacecat-shared-data-access-v2.17.1) (2025-05-03)
 
 

@@ -63366,11 +63366,59 @@
       ]
     },
     {
+      "id": "6bt7",
+      "host": "publish-prod-abbvie-commercial.adobecqms.net",
+      "time": "2025-05-05T04:00:02.212Z",
+      "timeSlot": "2025-05-05T04:00:00.000Z",
+      "url": "https://www.iframe-example.com/test/getting-iframe-example/some-other-page.html",
+      "userAgent": "desktop:windows:blink",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "(direct)",
+          "timeDelta": 2273
+        },
+        {
+          "checkpoint": "viewmedia",
+          "target": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
+          "source": "#aemFormFrame",
+          "timeDelta": 2287
+        }
+      ],
+      "visit": true
+    },
+    {
+      "id": "6bt7",
+      "host": "publish-prod-abbvie-commercial.adobecqms.net",
+      "time": "2025-05-05T04:00:02.212Z",
+      "timeSlot": "2025-05-05T04:00:00.000Z",
+      "url": "https://www.iframe-example.com/test/getting-iframe-example/some-other-page.html",
+      "userAgent": "desktop:windows:blink",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "enter",
+          "target": "visible",
+          "source": "(direct)",
+          "timeDelta": 2273
+        },
+        {
+          "checkpoint": "viewmedia",
+          "target": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
+          "source": "#aemFormFrame",
+          "timeDelta": 2287
+        }
+      ],
+      "visit": true
+    },
+    {
       "id": "4f5r",
       "host": "publish-prod-abbvie-commercial.adobecqms.net",
       "time": "2025-05-05T15:00:08.461Z",
       "timeSlot": "2025-05-05T15:00:00.000Z",
-      "url": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin",
+      "url": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
       "userAgent": "mobile:ios:webkit",
       "weight": 100,
       "events": [
@@ -63400,7 +63448,7 @@
       "host": "publish-prod-abbvie-commercial.adobecqms.net",
       "time": "2025-05-05T15:00:01.472Z",
       "timeSlot": "2025-05-05T15:00:00.000Z",
-      "url": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin",
+      "url": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
       "userAgent": "mobile:ios:webkit",
       "weight": 100,
       "events": [
@@ -63436,20 +63484,47 @@
       "host": "publish-prod-abbvie-commercial.adobecqms.net",
       "time": "2025-05-05T14:00:07.466Z",
       "timeSlot": "2025-05-05T14:00:00.000Z",
-      "url": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin",
+      "url": "https://www.iframe-example.com/test/getting-iframe-example/guide-home",
+      "userAgent": "mobile:android:blink",
+      "weight": 100,
+      "events": [
+
+        {
+          "checkpoint": "click",
+          "source": ".font-28px",
+          "timeDelta": 11499
+        },
+
+        {
+          "checkpoint": "click",
+          "source": ".abbv-inline-use-isi",
+          "timeDelta": 288490
+        }
+      ],
+      "cwvTTFB": 3784,
+      "cwvLCP": 4400,
+      "cwvINP": 216,
+      "cwvCLS": 0.25626014177128703
+    },
+    {
+      "id": "s6t6",
+      "host": "publish-prod-abbvie-commercial.adobecqms.net",
+      "time": "2025-05-05T14:00:07.466Z",
+      "timeSlot": "2025-05-05T14:00:00.000Z",
+      "url": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
       "userAgent": "mobile:android:blink",
       "weight": 100,
       "events": [
         {
           "checkpoint": "viewmedia",
-          "target": "https://www.rinvoq.com/content/rinvoq/en-us/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
+          "target": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
           "source": "#aemFormFrame",
           "timeDelta": 7466
         },
         {
           "checkpoint": "navigate",
           "target": "visible",
-          "source": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide",
+          "source": "https://www.iframe-example.com/test/getting-iframe-example/guide-home",
           "timeDelta": 7355
         },
         {
@@ -63469,7 +63544,7 @@
         },
         {
           "checkpoint": "viewmedia",
-          "target": "https://www.rinvoq.com/content/dam/rinvoq/images/homepage/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/uc-questions_r6_mobile.png",
+          "target": "https://www.iframe-example.com/content/dam/iframe-example/images/homepage/test/getting-iframe-example/guide/uc-questions_r6_mobile.png",
           "source": "img",
           "timeDelta": 7463
         },
@@ -63489,13 +63564,13 @@
       "host": "publish-prod-abbvie-commercial.adobecqms.net",
       "time": "2025-05-05T04:00:02.212Z",
       "timeSlot": "2025-05-05T04:00:00.000Z",
-      "url": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin",
+      "url": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
       "userAgent": "desktop:windows:blink",
       "weight": 100,
       "events": [
         {
           "checkpoint": "viewmedia",
-          "target": "https://www.rinvoq.com/content/dam/rinvoq/images/homepage/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/uc-questions_r6_desktop.png",
+          "target": "https://www.iframe-example.com/content/dam/iframe-example/images/homepage/test/getting-iframe-example/guide/uc-questions_r6_desktop.png",
           "source": "img",
           "timeDelta": 2287
         },
@@ -63507,7 +63582,7 @@
         },
         {
           "checkpoint": "viewmedia",
-          "target": "https://www.rinvoq.com/content/rinvoq/en-us/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
+          "target": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
           "source": "#aemFormFrame",
           "timeDelta": 2287
         },
@@ -63519,7 +63594,7 @@
         },
         {
           "checkpoint": "viewmedia",
-          "target": "https://www.rinvoq.com/content/dam/rinvoq/images/common/rinvoq-logo-white-desktop-r9.png",
+          "target": "https://www.iframe-example.com/content/dam/iframe-example/images/common/iframe-example-logo-white-desktop-r9.png",
           "source": "header img",
           "timeDelta": 2286
         }
@@ -63531,25 +63606,25 @@
       "host": "publish-prod-abbvie-commercial.adobecqms.net",
       "time": "2025-05-05T15:00:00.220Z",
       "timeSlot": "2025-05-05T15:00:00.000Z",
-      "url": "https://www.rinvoq.com/content/rinvoq/en-us/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
+      "url": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
       "userAgent": "desktop:windows:blink",
       "weight": 100,
       "events": [
         {
           "checkpoint": "navigate",
           "target": "visible",
-          "source": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin",
+          "source": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
           "timeDelta": 220
         },
         {
           "checkpoint": "navigate",
           "target": "visible",
-          "source": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin",
+          "source": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
           "timeDelta": 220
         },
         {
           "checkpoint": "viewblock",
-          "target": "https://www.rinvoq.com/content/rinvoq/en-us/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
+          "target": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
           "source": "form#guideContainerForm",
           "timeDelta": 950
         }
@@ -63560,13 +63635,13 @@
       "host": "publish-prod-abbvie-commercial.adobecqms.net",
       "time": "2025-05-04T16:00:05.426Z",
       "timeSlot": "2025-05-04T16:00:00.000Z",
-      "url": "https://www.rinvoq.com/content/rinvoq/en-us/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
+      "url": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
       "userAgent": "desktop:windows:blink",
       "weight": 100,
       "events": [
         {
           "checkpoint": "viewblock",
-          "target": "https://www.rinvoq.com/content/rinvoq/en-us/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
+          "target": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
           "source": "form#guideContainerForm",
           "timeDelta": 17093
         },

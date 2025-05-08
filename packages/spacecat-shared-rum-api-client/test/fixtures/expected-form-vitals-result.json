@@ -85,32 +85,24 @@
     "formsource": "form.xyz"
   },
   {
-    "url": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin",
+    "url": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
     "formsubmit": {},
     "formview": {
       "desktop": 200
     },
     "formengagement": {},
     "pageview": {
-      "desktop": 200
-    },
-    "forminternalnavigation": [
-      {
-        "url": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin",
-        "CTAs": [],
-        "totalClicksOnPage": 100
-      }
-    ],
-    "formsource": "form#guideContainerForm",
-    "iframeSrc": "https://www.rinvoq.com/content/rinvoq/en-us/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html"
-  },
-  {
-    "url": "https://www.rinvoq.com/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin",
-    "pageview": {
       "mobile": 300,
       "desktop": 100
     },
     "formsource": "#aemFormFrame",
-    "iframeSrc": "https://www.rinvoq.com/content/rinvoq/en-us/ulcerative-colitis/getting-rinvoq/uc-doctor-discussion-guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html"
+    "forminternalnavigation": [
+      {
+        "url": "https://www.iframe-example.com/test/getting-iframe-example/guide-home",
+        "CTAs": [],
+        "totalClicksOnPage": 100
+      }
+    ],
+    "iframeSrc": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html"
   }
 ]

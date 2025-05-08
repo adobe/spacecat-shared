@@ -134,26 +134,57 @@ function containsFormVitals(row) {
   return METRICS.some((metric) => Object.keys(row[metric]).length > 0);
 }
 
-function getParentPageVitals(dataChunks, iframeParentMap) {
+function getParentPageVitalsGroupedByIFrame(bundles, dataChunks, iframeParentMap) {
   const iframeVitals = {};
   if (dataChunks.facets.urlUserAgents) {
     dataChunks.facets.urlUserAgents.reduce((acc, { value, weight }) => {
       const [url, userAgent] = value.split(DELIMITER);
 
-      function getKeyByURLValue(obj, val) {
-        return Object.keys(obj).find((key) => obj[key].url === val);
+      let iframeSrc = null;
+      let formsource;
+      for (const iframeUrl of Object.keys(iframeParentMap)) {
+        for (const parent of iframeParentMap[iframeUrl]) {
+          const [parentUrl, formSourceInParent] = parent.split(DELIMITER);
+          if (parentUrl === url) {
+            iframeSrc = iframeUrl;
+            formsource = formSourceInParent;
+            break;
+          }
+        }
       }
-      const iframeSrc = getKeyByURLValue(iframeParentMap, url);
       if (iframeSrc) {
-        acc[url] = acc[url] || { url, pageview: {} };
+        acc[url] = acc[url] || { url, pageview: {}, forminternalnavigation: [] };
         acc[url].pageview[userAgent] = acc[url].pageview[userAgent] || weight;
-        acc[url].formsource = iframeParentMap[iframeSrc].source;
+        acc[url].formsource = formsource;
         acc[url].iframeSrc = iframeSrc;
       }
       return acc;
     }, iframeVitals);
   }
-  return iframeVitals;
+  const groupedByIframeSrc = {};
+  const parentWebVitals = {};
+
+  // select the parent page with the most views
+  for (const [url, obj] of Object.entries(iframeVitals)) {
+    const { iframeSrc } = obj;
+    const totalViews = (obj.pageview.mobile || 0) + (obj.pageview.desktop || 0);
+    if (!groupedByIframeSrc[iframeSrc] || totalViews > groupedByIframeSrc[iframeSrc].totalViews) {
+      groupedByIframeSrc[iframeSrc] = { url, totalViews };
+    }
+  }
+
+  for (const { url } of Object.values(groupedByIframeSrc)) {
+    parentWebVitals[url] = iframeVitals[url];
+  }
+
+  populateFormsInternalNavigation(bundles, parentWebVitals);
+  findFormCTAForInternalNavigation(bundles, Object.values(parentWebVitals));
+
+  const iframeParentVitalsMap = {};
+  for (const vitals of Object.values(parentWebVitals)) {
+    iframeParentVitalsMap[vitals.iframeSrc] = vitals;
+  }
+  return iframeParentVitalsMap;
 }
 
 function handler(bundles) {
@@ -179,13 +210,8 @@ function handler(bundles) {
       }
       if (checkpoint === 'viewmedia' && target) {
         if (target.includes('aemform.iframe')) {
-          if (!iframeParentMap[target]) {
-            // keeping the first matching url
-            iframeParentMap[target] = {
-              url,
-              source,
-            };
-          }
+          iframeParentMap[target] = iframeParentMap[target] || new Set();
+          iframeParentMap[target].add(generateKey(url, source));
         }
       }
     });
@@ -219,9 +245,6 @@ function handler(bundles) {
         acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
         // Enable traffic acquisition for persistence by uncommenting this line
         // acc[key].trafficacquisition = trafficByUrlMap[url];
-        if (iframeParentMap[url]) {
-          acc[key].parentFrameUrl = iframeParentMap[url].url;
-        }
         acc[key].formsource = source;
         // filter out user-agents with no form vitals
         METRICS.filter((metric) => metrics[metric].sum)
@@ -233,8 +256,11 @@ function handler(bundles) {
     }, formVitals);
   });
 
-  // For IFramed Urls
-  const parentPageVitals = getParentPageVitals(dataChunks, iframeParentMap);
+  const iframeParentVitalsMap = getParentPageVitalsGroupedByIFrame(
+    bundles,
+    dataChunks,
+    iframeParentMap,
+  );
 
   // populate internal navigation data
   populateFormsInternalNavigation(bundles, formVitals);
@@ -243,18 +269,28 @@ function handler(bundles) {
   findFormCTAForInternalNavigation(bundles, filteredFormVitals);
 
   const updatedFormVitals = filteredFormVitals.map((formVital) => {
-    if (formVital.parentFrameUrl) {
-      const { parentFrameUrl, ...rest } = formVital;
-      return {
-        ...rest,
-        iframeSrc: formVital.url,
-        url: parentFrameUrl,
-      };
+    const formVitalCopy = { ...formVital };
+    const parentFormVital = iframeParentVitalsMap[formVital.url];
+    if (parentFormVital) {
+      const {
+        url,
+        pageview,
+        forminternalnavigation,
+        formsource,
+        iframeSrc,
+      } = parentFormVital;
+      Object.assign(formVitalCopy, {
+        url,
+        pageview: { ...pageview },
+        forminternalnavigation,
+        formsource,
+        iframeSrc,
+      });
     }
-    return formVital;
+    return formVitalCopy;
   });
 
-  return [...updatedFormVitals, ...Object.values(parentPageVitals)];
+  return [...updatedFormVitals];
 }
 
 export default {

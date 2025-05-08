@@ -209,7 +209,7 @@ function handler(bundles) {
         globalFormSourceSet.add(source);
       }
       if (checkpoint === 'viewmedia' && target) {
-        if (target.includes('aemform.iframe')) {
+        if (target.includes('iframe')) {
           iframeParentMap[target] = iframeParentMap[target] || new Set();
           iframeParentMap[target].add(generateKey(url, source));
         }

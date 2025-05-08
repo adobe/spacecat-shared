@@ -61,8 +61,8 @@ describe('HTTP Response Functions', () => {
   });
 
   it('accepted should return a 202 ACCEPTED response with custom body', async () => {
-    const body = { success: true };
-    const response = accepted(body);
+    const body = { status: 'ACCEPTED' };
+    const response = await accepted(body);
     await testMethod(response, 202, body);
   });
 

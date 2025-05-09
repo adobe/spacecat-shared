@@ -83,5 +83,26 @@
 
     ],
     "formsource": "form.xyz"
+  },
+  {
+    "url": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
+    "formsubmit": {},
+    "formview": {
+      "desktop": 200
+    },
+    "formengagement": {},
+    "pageview": {
+      "mobile": 300,
+      "desktop": 100
+    },
+    "formsource": "form#guideContainerForm",
+    "forminternalnavigation": [
+      {
+        "url": "https://www.iframe-example.com/test/getting-iframe-example/guide-home",
+        "CTAs": [],
+        "totalClicksOnPage": 100
+      }
+    ],
+    "iframeSrc": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html"
   }
 ]

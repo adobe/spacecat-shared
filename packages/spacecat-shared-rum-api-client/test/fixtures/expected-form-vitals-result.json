@@ -95,7 +95,7 @@
       "mobile": 300,
       "desktop": 100
     },
-    "formsource": "#aemFormFrame",
+    "formsource": "form#guideContainerForm",
     "forminternalnavigation": [
       {
         "url": "https://www.iframe-example.com/test/getting-iframe-example/guide-home",

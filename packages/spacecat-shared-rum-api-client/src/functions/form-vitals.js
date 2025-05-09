@@ -141,13 +141,10 @@ function getParentPageVitalsGroupedByIFrame(bundles, dataChunks, iframeParentMap
       const [url, userAgent] = value.split(DELIMITER);
 
       let iframeSrc = null;
-      let formsource;
       for (const iframeUrl of Object.keys(iframeParentMap)) {
-        for (const parent of iframeParentMap[iframeUrl]) {
-          const [parentUrl, formSourceInParent] = parent.split(DELIMITER);
+        for (const parentUrl of iframeParentMap[iframeUrl]) {
           if (parentUrl === url) {
             iframeSrc = iframeUrl;
-            formsource = formSourceInParent;
             break;
           }
         }
@@ -155,7 +152,6 @@ function getParentPageVitalsGroupedByIFrame(bundles, dataChunks, iframeParentMap
       if (iframeSrc) {
         acc[url] = acc[url] || { url, pageview: {}, forminternalnavigation: [] };
         acc[url].pageview[userAgent] = acc[url].pageview[userAgent] || weight;
-        acc[url].formsource = formsource;
         acc[url].iframeSrc = iframeSrc;
       }
       return acc;
@@ -209,9 +205,10 @@ function handler(bundles) {
         globalFormSourceSet.add(source);
       }
       if (checkpoint === 'viewmedia' && target) {
-        if (target.includes('iframe')) {
+        const regex = /aemform[\w.]*\.iframe[\w.]*/;
+        if (regex.test(target)) {
           iframeParentMap[target] = iframeParentMap[target] || new Set();
-          iframeParentMap[target].add(generateKey(url, source));
+          iframeParentMap[target].add(url);
         }
       }
     });
@@ -276,14 +273,13 @@ function handler(bundles) {
         url,
         pageview,
         forminternalnavigation,
-        formsource,
         iframeSrc,
       } = parentFormVital;
       Object.assign(formVitalCopy, {
         url,
         pageview: { ...pageview },
         forminternalnavigation,
-        formsource,
+
         iframeSrc,
       });
     }

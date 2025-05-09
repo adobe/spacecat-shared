@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.4...@adobe/spacecat-shared-rum-api-client-v2.24.0) (2025-05-09)
+
+
+### Features
+
+* identify iframe forms ([#715](https://github.com/adobe/spacecat-shared/issues/715)) ([d2e0a47](https://github.com/adobe/spacecat-shared/commit/d2e0a47f1020471a6f22f9d713e6bf9c03df2279))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.23.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.3...@adobe/spacecat-shared-rum-api-client-v2.23.4) (2025-04-30)
 
 

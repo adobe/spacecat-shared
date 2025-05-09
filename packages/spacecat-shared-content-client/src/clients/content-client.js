@@ -149,6 +149,23 @@ const validateLinks = (links, type) => {
   }
 };
 
+const validateImageAltText = (imageAltText) => {
+  if (!Array.isArray(imageAltText)) {
+    throw new Error(`${imageAltText} must be an array`);
+  }
+  for (const item of imageAltText) {
+    if (!isObject(item)) {
+      throw new Error(`${item} must be an object`);
+    }
+    if (!item.imageUrl) {
+      throw new Error(`No imageUrl found for ${item}`);
+    }
+    if (!item.altText) {
+      throw new Error(`No altText found for ${item}`);
+    }
+  }
+};
+
 const removeDuplicatedRedirects = (currentRedirects, newRedirects, log) => {
   const redirectsSet = new Set(
     currentRedirects.map(({ from, to }) => `${from}:${to}`),
@@ -428,5 +445,25 @@ export default class ContentClient {
     }
 
     this.#logDuration('updateBrokenInternalLink', startTime);
+  }
+
+  async updateImageAltText(path, imageAltText) {
+    const startTime = process.hrtime.bigint();
+
+    validatePath(path);
+    validateImageAltText(imageAltText);
+    await this.#initClient();
+
+    this.log.info(`Updating image alt text for ${this.site.getId()} and path ${path}`);
+
+    const docPath = this.#resolveDocPath(path);
+    const document = await this.rawClient.getDocument(docPath);
+
+    const response = await document.updateImageAltText(imageAltText);
+    if (response?.status !== 200) {
+      throw new Error(`Failed to update image alt text for path ${path}`);
+    }
+
+    this.#logDuration('updateImageAltText', startTime);
   }
 }

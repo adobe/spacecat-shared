@@ -131,7 +131,7 @@ class Audit extends BaseModel {
         jobId: stepResult.siteId,
         processingType: stepResult.processingType || 'default',
         skipMessage: false,
-        allowCache: true,
+        allowCache: Object.prototype.hasOwnProperty.call(stepResult, 'allowCache') ? stepResult.allowCache : true,
         completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
         auditContext,
       }),

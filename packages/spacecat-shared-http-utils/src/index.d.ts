@@ -15,6 +15,8 @@ export declare function ok(body?: string): Response;
 
 export declare function created(body: object): Response;
 
+export declare function accepted(body: object): Response;
+
 export declare function noContent(headers?: object): Response;
 
 export declare function badRequest(message?: string, headers?: object): Response;

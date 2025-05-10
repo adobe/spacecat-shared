@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.24.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.24.0...@adobe/spacecat-shared-rum-api-client-v2.24.1) (2025-05-10)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#727](https://github.com/adobe/spacecat-shared/issues/727)) ([590b973](https://github.com/adobe/spacecat-shared/commit/590b973f01f2dba697250ab4769106d06a908d98))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.23.4...@adobe/spacecat-shared-rum-api-client-v2.24.0) (2025-05-09)
 
 

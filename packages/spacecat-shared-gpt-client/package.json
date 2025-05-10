@@ -34,7 +34,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.2.0",
+    "@adobe/fetch": "4.2.1",
     "@adobe/helix-universal": "5.2.0",
     "@adobe/spacecat-shared-ims-client": "1.5.3",
     "@adobe/spacecat-shared-utils": "1.26.4"

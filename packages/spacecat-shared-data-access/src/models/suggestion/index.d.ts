@@ -20,7 +20,6 @@ export interface Suggestion extends BaseModel {
   getFixEntityId(): string;
   getFixEntity(): Promise<object>;
   getUpdatedBy(): string | null;
-  getUpdatedAt(): Date;
   getRank(): number;
   getStatus(): string;
   getType(): string;
@@ -30,7 +29,6 @@ export interface Suggestion extends BaseModel {
   setRank(rank: number): Suggestion;
   setStatus(status: string): Suggestion;
   setUpdatedBy(updatedBy: string | null): Suggestion;
-  setUpdatedAt(updatedAt: Date): Suggestion;
 }
 
 export interface SuggestionCollection extends BaseCollection<Suggestion> {

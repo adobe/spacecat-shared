@@ -11,25 +11,26 @@
  */
 
 import type {
-  BaseCollection,
-  BaseModel, MultiStatusCreateResult, Opportunity, Suggestion,
+  BaseCollection, BaseModel, Opportunity, Suggestion,
 } from '../index';
 
 export interface FixEntity extends BaseModel {
   getChangeDetails(): object;
-  getExecutedBy(): string;
+  setChangeDetails(value: object): this;
   getExecutedAt(): string;
-  getPublishedAt(): string;
-  addSuggestions(suggestions: object[]): Promise<MultiStatusCreateResult<Suggestion>>;
-  getSuggestions(): Promise<Suggestion>;
-  getOpportunityId(): string;
+  setExecutedAt(value: string): this;
+  getExecutedBy(): string;
+  setExecutedBy(value: string): this;
   getOpportunity(): Promise<Opportunity>;
+  getOpportunityId(): string;
+  setOpportunityId(value: string): this;
+  getPublishedAt(): string;
+  setPublishedAt(value: string): this;
   getStatus(): string;
+  setStatus(value: string): this;
+  getSuggestions(): Promise<Suggestion[]>;
+  getSuggestionsByUpdatedAt(updatedAt: string): Promise<Suggestion[]>;
   getType(): string;
-  setChangeDetails(changeDetails: object): FixEntity;
-  setType(rank: number): FixEntity;
-  setStatus(status: string): FixEntity;
-  setExecutedBy(executedBy: string): FixEntity;
 }
 
 export interface FixEntityCollection extends BaseCollection<FixEntity> {

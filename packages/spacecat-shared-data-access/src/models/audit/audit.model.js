@@ -116,6 +116,7 @@ class Audit extends BaseModel {
        * @param {object[]} stepResult.urls - The list of URLs to scrape.
        * @param {string} stepResult.urls[].url - The URL to scrape.
        * @param {string} stepResult.siteId - The site ID. Will be used as the job ID.
+       * @param {string} stepResult.options - The options for the scraper.
        * @param {string} stepResult.processingType - The scraping processing type to trigger.
        * @param {object} auditContext - The audit context.
        * @param {object} context - The context object.
@@ -132,6 +133,7 @@ class Audit extends BaseModel {
         processingType: stepResult.processingType || 'default',
         skipMessage: false,
         allowCache: true,
+        options: stepResult.options || {},
         completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
         auditContext,
       }),

@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isArray, isObject } from '@adobe/spacecat-shared-utils';
+import { isArray, isObject, isBoolean } from '@adobe/spacecat-shared-utils';
 
 import { ValidationError } from '../../errors/index.js';
 import BaseModel from '../base/base.model.js';
@@ -131,7 +131,7 @@ class Audit extends BaseModel {
         jobId: stepResult.siteId,
         processingType: stepResult.processingType || 'default',
         skipMessage: false,
-        allowCache: true,
+        allowCache: isBoolean(stepResult.allowCache) ? stepResult.allowCache : true,
         completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
         auditContext,
       }),

@@ -11,8 +11,7 @@
  */
 
 import type {
-  BaseCollection,
-  BaseModel, MultiStatusCreateResult, Opportunity, Suggestion,
+  BaseCollection, BaseModel, Opportunity, Suggestion,
 } from '../index';
 
 export interface FixEntity extends BaseModel {

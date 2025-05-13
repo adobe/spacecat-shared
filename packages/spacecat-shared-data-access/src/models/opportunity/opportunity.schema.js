@@ -66,6 +66,12 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addAttribute('tags', {
     type: 'set',
     items: 'string',
+  })
+  .addAttribute('updatedBy', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || typeof value === 'string',
+    default: null,
   });
 
 export default schema.build();

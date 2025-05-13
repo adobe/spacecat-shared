@@ -72,9 +72,22 @@ class Opportunity extends BaseModel {
       ...fixEntity,
       [this.idName]: this.getId(),
     }));
-    return this.entityRegistry
+
+    const fixEntitiesResponse = await this.entityRegistry
       .getCollection('FixEntityCollection')
       .createMany(childFixEntities, this);
+    let areAllSuggestionsFixed = true;
+    const suggestions = await this.getSuggestions();
+    suggestions.forEach((suggestion) => {
+      if (!suggestion.getFixEntityId()) {
+        areAllSuggestionsFixed = false;
+      }
+    });
+    if (areAllSuggestionsFixed) {
+      this.setStatus(Opportunity.STATUSES.RESOLVED);
+      await this.save();
+    }
+    return fixEntitiesResponse;
   }
 }
 

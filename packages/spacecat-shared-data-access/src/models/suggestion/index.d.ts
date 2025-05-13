@@ -24,6 +24,7 @@ export interface Suggestion extends BaseModel {
   getType(): string;
   setData(data: object): Suggestion;
   setKpiDeltas(kpiDeltas: object): Suggestion;
+  setFixEntityId(fixEntityId: string): Suggestion;
   setOpportunityId(opportunityId: string): Suggestion;
   setRank(rank: number): Suggestion;
   setStatus(status: string): Suggestion;

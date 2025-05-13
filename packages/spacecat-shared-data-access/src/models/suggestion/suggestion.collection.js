@@ -12,6 +12,7 @@
 
 import BaseCollection from '../base/base.collection.js';
 import Suggestion from './suggestion.model.js';
+import { Opportunity } from '../opportunity/index.js';
 
 /**
  * SuggestionCollection - A collection class responsible for managing Suggestion entities.
@@ -47,7 +48,17 @@ class SuggestionCollection extends BaseCollection {
     });
 
     await this._saveMany(suggestions);
-
+    const opportunity = await suggestions[0].getOpportunity();
+    const allSuggestions = await this.allByOpportunityId(opportunity.getId());
+    let allFixed = true;
+    allSuggestions.forEach((s) => {
+      if (s.getStatus() !== Suggestion.STATUSES.FIXED) {
+        allFixed = false;
+      }
+    });
+    if (allFixed) {
+      await opportunity.setStatus(Opportunity.STATUSES.RESOLVED);
+    }
     this.log.info(`Bulk updated ${suggestions.length} suggestions to status: ${status}`);
 
     return suggestions;

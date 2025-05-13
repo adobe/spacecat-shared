@@ -16,6 +16,7 @@ import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
 
+import sinon from 'sinon';
 import Suggestion from '../../../../src/models/suggestion/suggestion.model.js';
 
 import { createElectroMocks } from '../../util.js';
@@ -41,6 +42,23 @@ describe('SuggestionCollection', () => {
     },
   };
 
+  const mockOpportunityRecord = {
+    opportunityId: 'op67890',
+    siteId: 'site67890',
+    auditId: 'audit001',
+    title: 'Test Opportunity',
+    description: 'This is a test opportunity.',
+    runbook: 'http://runbook.url',
+    guidance: 'Follow these steps.',
+    type: 'SEO',
+    status: 'NEW',
+    origin: 'ESS_OPS',
+    tags: ['tag1', 'tag2'],
+    data: {
+      additionalInfo: 'info',
+    },
+  };
+
   beforeEach(() => {
     ({
       mockElectroService,
@@ -50,6 +68,14 @@ describe('SuggestionCollection', () => {
       model,
       schema,
     } = createElectroMocks(Suggestion, mockRecord));
+    mockElectroService.entities = {
+      ...mockElectroService.entities,
+      opportunity: {
+        get: sinon.stub().returns({
+          go: sinon.stub().resolves({ data: mockOpportunityRecord }),
+        }),
+      },
+    };
   });
 
   describe('constructor', () => {

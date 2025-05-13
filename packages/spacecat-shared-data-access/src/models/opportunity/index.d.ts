@@ -31,7 +31,7 @@ export interface Opportunity extends BaseModel {
   getSuggestions(): Promise<Suggestion[]>;
   getSuggestionsByStatus(status: string): Promise<Suggestion[]>;
   getSuggestionsByStatusAndRank(status: string, rank: string): Promise<Suggestion[]>;
-  getUpdatedBy(): string | null;
+  getUpdatedBy(): string;
   getTags(): string[];
   getTitle(): string;
   getType(): string;
@@ -45,7 +45,7 @@ export interface Opportunity extends BaseModel {
   setStatus(status: string): Opportunity;
   setTags(tags: string[]): Opportunity;
   setTitle(title: string): Opportunity;
-  setUpdatedBy(updatedBy: string | null): Opportunity;
+  setUpdatedBy(updatedBy: string): Opportunity;
 }
 
 export interface OpportunityCollection extends BaseCollection<Opportunity> {

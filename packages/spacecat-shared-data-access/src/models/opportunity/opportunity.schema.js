@@ -71,7 +71,6 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
     type: 'string',
     required: false,
     validate: (value) => !value || typeof value === 'string',
-    default: null,
   });
 
 export default schema.build();

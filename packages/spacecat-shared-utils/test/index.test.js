@@ -64,6 +64,7 @@ describe('Index Exports', () => {
     'SPACECAT_USER_AGENT',
     'isAWSLambda',
     'instrumentAWSClient',
+    'retrievePageAuthentication',
   ];
 
   it('exports all expected functions', () => {

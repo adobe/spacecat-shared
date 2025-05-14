@@ -25,7 +25,7 @@ import { resolveCustomerSecretsName } from './helpers.js';
  * @param {Site} site - The site to retrieve authentication for
  * @param {object} context - The context object
  * @returns {Promise<string>} - The authentication token
- * @throws {Error} - If site not found, secret not found, or token missing
+ * @throws {Error} - If secret is not found or token is missing
  */
 export async function retrievePageAuthentication(site, context) {
   const baseURL = site.getBaseURL();

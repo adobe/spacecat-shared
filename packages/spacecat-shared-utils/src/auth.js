@@ -10,27 +10,28 @@
  * governing permissions and limitations under the License.
  */
 
-import { GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import AWSXray from 'aws-xray-sdk';
+import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { isString } from './functions.js';
 import { resolveCustomerSecretsName } from './helpers.js';
 
 /**
+ * @import {type Site} from "@adobe/spacecat-shared-data-access/src/models/site/index.js"
+ */
+
+/**
  * Retrieves the page authentication token for a given site.
  *
- * @param {string} siteId - The site ID to retrieve authentication for
- * @param {object} context - The context object containing dataAccess and services
+ * @param {Site} site - The site to retrieve authentication for
+ * @param {object} context - The context object
  * @returns {Promise<string>} - The authentication token
  * @throws {Error} - If site not found, secret not found, or token missing
  */
-export async function retrievePageAuthentication(siteId, context) {
-  const { dataAccess: { Site }, attributes: { services } } = context;
-  const site = await Site.findById(siteId);
-  if (!site) {
-    throw new Error(`Site with ID ${siteId} not found, cannot resolve customer secrets for authentication`);
-  }
+export async function retrievePageAuthentication(site, context) {
   const baseURL = site.getBaseURL();
   const customerSecret = resolveCustomerSecretsName(baseURL, context);
-  const secretsClient = services.xray.captureAWSv3Client(services.secretsClient);
+  const secretsManagerClient = new SecretsManagerClient({});
+  const secretsClient = AWSXray.captureAWSv3Client(secretsManagerClient);
   const command = new GetSecretValueCommand({ SecretId: customerSecret });
 
   const response = await secretsClient.send(command);

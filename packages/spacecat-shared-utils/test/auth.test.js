@@ -15,6 +15,7 @@
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
+import AWSXray from 'aws-xray-sdk';
 import { retrievePageAuthentication } from '../src/auth.js';
 
 use(chaiAsPromised);
@@ -23,12 +24,10 @@ describe('auth', () => {
   describe('retrievePageAuthentication', () => {
     let mockSite;
     let mockSecretsClient;
-    let mockXray;
     let context;
 
     beforeEach(() => {
       mockSite = {
-        findById: sinon.stub(),
         getBaseURL: sinon.stub().returns('https://example.com'),
       };
 
@@ -36,65 +35,45 @@ describe('auth', () => {
         send: sinon.stub(),
       };
 
-      mockXray = {
-        captureAWSv3Client: sinon.stub().returns(mockSecretsClient),
-      };
+      sinon.stub(AWSXray, 'captureAWSv3Client').returns(mockSecretsClient);
 
       context = {
-        dataAccess: {
-          Site: mockSite,
-        },
-        attributes: {
-          services: {
-            xray: mockXray,
-            secretsClient: {},
-          },
-        },
         func: {
           version: 'test-version',
         },
       };
     });
 
+    afterEach(() => {
+      sinon.restore();
+    });
+
     it('should retrieve authentication token successfully', async () => {
-      const siteId = 'test-site-id';
       const authToken = 'test-token';
       const secretString = JSON.stringify({ PAGE_AUTH_TOKEN: authToken });
 
-      mockSite.findById.resolves(mockSite);
       mockSecretsClient.send.resolves({ SecretString: secretString });
 
-      const result = await retrievePageAuthentication(siteId, context);
+      const result = await retrievePageAuthentication(mockSite, context);
 
       expect(result).to.equal(authToken);
-      expect(mockSite.findById.calledWith(siteId)).to.be.true;
+      expect(mockSite.getBaseURL.calledOnce).to.be.true;
       expect(mockSecretsClient.send.calledOnce).to.be.true;
-    });
-
-    it('should throw error when site is not found', async () => {
-      const siteId = 'non-existent-site';
-      mockSite.findById.resolves(null);
-
-      await expect(retrievePageAuthentication(siteId, context))
-        .to.be.rejectedWith(`Site with ID ${siteId} not found, cannot resolve customer secrets for authentication`);
+      expect(AWSXray.captureAWSv3Client.calledOnce).to.be.true;
     });
 
     it('should throw error when secret string is not found', async () => {
-      const siteId = 'test-site-id';
-      mockSite.findById.resolves(mockSite);
       mockSecretsClient.send.resolves({});
 
-      await expect(retrievePageAuthentication(siteId, context))
+      await expect(retrievePageAuthentication(mockSite, context))
         .to.be.rejectedWith(/No secret string found for/);
     });
 
     it('should throw error when PAGE_AUTH_TOKEN is missing', async () => {
-      const siteId = 'test-site-id';
       const secretString = JSON.stringify({});
-      mockSite.findById.resolves(mockSite);
       mockSecretsClient.send.resolves({ SecretString: secretString });
 
-      await expect(retrievePageAuthentication(siteId, context))
+      await expect(retrievePageAuthentication(mockSite, context))
         .to.be.rejectedWith(/Missing 'PAGE_AUTH_TOKEN' in secrets for/);
     });
   });

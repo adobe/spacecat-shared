@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.4...@adobe/spacecat-shared-data-access-v2.18.0) (2025-05-12)
+
+
+### Features
+
+* content scraper audit step will honour the allowCache value fro… ([#725](https://github.com/adobe/spacecat-shared/issues/725)) ([89bfe23](https://github.com/adobe/spacecat-shared/commit/89bfe231b368aaf65eba1777c3799e5cd42fe8f6))
+
+# [@adobe/spacecat-shared-data-access-v2.17.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.3...@adobe/spacecat-shared-data-access-v2.17.4) (2025-05-12)
+
+
+### Bug Fixes
+
+* Update type definitions for FixEntity ([#731](https://github.com/adobe/spacecat-shared/issues/731)) ([cb0bee7](https://github.com/adobe/spacecat-shared/commit/cb0bee72e6d6e7d6cddaefc55f3e20230884b8ec))
+
 # [@adobe/spacecat-shared-data-access-v2.17.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.2...@adobe/spacecat-shared-data-access-v2.17.3) (2025-05-10)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.6...@adobe/spacecat-shared-http-utils-v1.11.0) (2025-05-12)
+
+
+### Features
+
+* **http-utils:** add HTTP 202 Accepted response helper ([#722](https://github.com/adobe/spacecat-shared/issues/722)) ([934ef6c](https://github.com/adobe/spacecat-shared/commit/934ef6ce71914918bae5b06600193cc3408a46e0))
+
 # [@adobe/spacecat-shared-http-utils-v1.10.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.5...@adobe/spacecat-shared-http-utils-v1.10.6) (2025-05-10)
 
 

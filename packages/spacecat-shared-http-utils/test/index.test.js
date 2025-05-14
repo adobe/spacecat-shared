@@ -14,6 +14,7 @@ import { expect } from 'chai';
 import {
   ok, badRequest, notFound, internalServerError,
   noContent, found, created, createResponse, unauthorized, forbidden,
+  accepted,
 } from '../src/index.js';
 
 async function testMethod(response, expectedCode, expectedBody) {
@@ -57,6 +58,12 @@ describe('HTTP Response Functions', () => {
     const body = { success: true };
     const response = await created(body);
     await testMethod(response, 201, body);
+  });
+
+  it('accepted should return a 202 ACCEPTED response with custom body', async () => {
+    const body = { status: 'ACCEPTED' };
+    const response = await accepted(body);
+    await testMethod(response, 202, body);
   });
 
   it('noContent should return a 204 No Content response with default headers', async () => {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.4...@adobe/spacecat-shared-data-access-v2.18.0) (2025-05-12)
+
+
+### Features
+
+* content scraper audit step will honour the allowCache value fro… ([#725](https://github.com/adobe/spacecat-shared/issues/725)) ([89bfe23](https://github.com/adobe/spacecat-shared/commit/89bfe231b368aaf65eba1777c3799e5cd42fe8f6))
+
 # [@adobe/spacecat-shared-data-access-v2.17.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.3...@adobe/spacecat-shared-data-access-v2.17.4) (2025-05-12)
 
 

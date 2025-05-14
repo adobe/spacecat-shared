@@ -58,6 +58,10 @@ export function created(body) {
   return createResponse(body, 201);
 }
 
+export function accepted(body) {
+  return createResponse(body, 202);
+}
+
 export function noContent(headers = {}) {
   return createResponse('', 204, headers);
 }

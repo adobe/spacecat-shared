@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.18.0...@adobe/spacecat-shared-data-access-v2.19.0) (2025-05-14)
+
+
+### Features
+
+* adding options to scraper sqs payload ([#733](https://github.com/adobe/spacecat-shared/issues/733)) ([eb9a08b](https://github.com/adobe/spacecat-shared/commit/eb9a08b06bc48388a5aa3c78f9ce57c05ef04313))
+
 # [@adobe/spacecat-shared-data-access-v2.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.4...@adobe/spacecat-shared-data-access-v2.18.0) (2025-05-12)
 
 

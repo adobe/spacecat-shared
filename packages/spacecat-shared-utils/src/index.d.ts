@@ -245,3 +245,5 @@ export function fetch(url: string | Request, options?: RequestOptions): Promise<
 export function tracingFetch(url: string | Request, options?: RequestOptions): Promise<Response>;
 
 export const SPACECAT_USER_AGENT: string;
+
+export function retrievePageAuthentication(siteId: string, context: object): Promise<string>;

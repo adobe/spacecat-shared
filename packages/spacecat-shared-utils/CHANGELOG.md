@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.37.4...@adobe/spacecat-shared-utils-v1.38.0) (2025-05-14)
+
+
+### Features
+
+* add page authentication token retrieval functionality ([#738](https://github.com/adobe/spacecat-shared/issues/738)) ([f38fe55](https://github.com/adobe/spacecat-shared/commit/f38fe55a02aa4cc3c1c3427d938cf711f3862e01))
+
 # [@adobe/spacecat-shared-utils-v1.37.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.37.3...@adobe/spacecat-shared-utils-v1.37.4) (2025-05-10)
 
 

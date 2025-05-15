@@ -80,6 +80,13 @@ describe('SchemaBuilder', () => {
           readOnly: true,
           required: true,
         },
+        updatedBy: {
+          default: null,
+          type: 'string',
+          required: false,
+          readOnly: false,
+          watch: '*',
+        },
         updatedAt: {
           default: instance.attributes.updatedAt.default,
           type: 'string',
@@ -405,6 +412,14 @@ describe('SchemaBuilder', () => {
         required: true,
         validate: () => true,
       });
+      instance.addAttribute('updatedBy', {
+        type: 'string',
+        required: false,
+        readOnly: false,
+        watch: '*',
+        validate: () => true,
+        default: null,
+      });
       instance.addAllIndex(['baseURL']);
       instance.addIndex({ composite: ['deliveryType'] }, { composite: ['updatedAt'] });
       instance.addIndex({ field: 'someField', composite: ['deliveryType'] }, { composite: ['updatedAt'] });
@@ -429,6 +444,14 @@ describe('SchemaBuilder', () => {
             readOnly: true,
             required: true,
             default: instance.attributes.createdAt.default,
+          },
+          updatedBy: {
+            default: null,
+            type: 'string',
+            required: false,
+            readOnly: false,
+            watch: '*',
+            validate: instance.attributes.updatedBy.validate,
           },
           updatedAt: {
             type: 'string',

@@ -9,10 +9,9 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import AWSXray from 'aws-xray-sdk';
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
 import {
-  composeBaseURL, hasText, isObject, resolveCustomerSecretsName, tracingFetch,
+  composeBaseURL, hasText, instrumentAWSClient, isObject, resolveCustomerSecretsName, tracingFetch,
 } from '@adobe/spacecat-shared-utils';
 import { Graph, hasCycle } from 'graph-data-structure';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
@@ -213,7 +212,7 @@ export default class ContentClient {
 
     try {
       const customerSecret = resolveCustomerSecretsName(site.getBaseURL(), context);
-      const client = AWSXray.captureAWSv3Client(secretsManagerClient);
+      const client = instrumentAWSClient(secretsManagerClient);
       const command = new GetSecretValueCommand({ SecretId: customerSecret });
       const response = await client.send(command);
       const secrets = JSON.parse(response.SecretString);

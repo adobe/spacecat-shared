@@ -32,6 +32,7 @@ describe('SQS', () => {
   describe('SQS class', () => {
     let context;
     AWSXRay.enableManualMode();
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
 
     beforeEach('setup', () => {
       context = {
@@ -190,6 +191,29 @@ describe('SQS', () => {
 
       const handler = sqsEventAdapter(exampleHandler);
       const response = await handler(emptyRequest, ctx);
+
+      expect(response.status).to.equal(200);
+      const result = await response.json();
+      expect(result.id).to.equal('1234567890');
+      expect(exampleHandler.calledWith({ id: '1234567890' })).to.be.true;
+    });
+
+    it('should invoke the function with message body out of aws context', async () => {
+      delete process.env.AWS_EXECUTION_ENV;
+      const ctx = {
+        log: console,
+      };
+
+      const request = new Request('https://space.cat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: '1234567890' }),
+      });
+
+      const handler = sqsEventAdapter(exampleHandler);
+      const response = await handler(request, ctx);
 
       expect(response.status).to.equal(200);
       const result = await response.json();

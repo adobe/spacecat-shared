@@ -165,6 +165,8 @@ export interface Site extends BaseModel {
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
   toggleLive(): Site;
+  getUpdatedBy(): string | null;
+  setUpdatedBy(updatedBy: string | null): Site;
 }
 
 export interface SiteCollection extends BaseCollection<Organization> {

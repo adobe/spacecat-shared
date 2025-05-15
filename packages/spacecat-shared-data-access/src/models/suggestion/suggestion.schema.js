@@ -50,11 +50,5 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
     required: true,
     default: Suggestion.STATUSES.NEW,
   });
-  /* .addAttribute('updatedBy', {
-    type: 'string',
-    required: false,
-    validate: (value) => !value || typeof value === 'string',
-    default: null,
-  }); */
 
 export default schema.build();

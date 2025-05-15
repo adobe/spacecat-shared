@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.4.25](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.24...@adobe/spacecat-shared-google-client-v1.4.25) (2025-05-15)
+
+
+### Bug Fixes
+
+* local development friendly aws clients and sqs wrapper ([#739](https://github.com/adobe/spacecat-shared/issues/739)) ([fada9c6](https://github.com/adobe/spacecat-shared/commit/fada9c6fc0508ba6acf46a4416593427b67306dd))
+
 # [@adobe/spacecat-shared-google-client-v1.4.24](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.23...@adobe/spacecat-shared-google-client-v1.4.24) (2025-05-11)
 
 

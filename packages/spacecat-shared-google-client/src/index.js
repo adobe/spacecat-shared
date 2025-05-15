@@ -14,7 +14,8 @@ import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import {
-  composeAuditURL, instrumentAWSClient,
+  composeAuditURL,
+  instrumentAWSClient,
   isArray,
   isInteger,
   isValidDate,

@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "@adobe/spacecat-shared-data-access": "https://gitpkg.vercel.app/adobe/spacecat-shared/packages/spacecat-shared-data-access?SITES-31570",
+    "@adobe/spacecat-shared-data-access": "2.0.2",
     "chai": "5.2.0",
     "chai-as-promised": "8.0.1",
     "esmock": "2.7.0",

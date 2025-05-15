@@ -73,3 +73,5 @@ export {
   getHighPageViewsLowFormCtrMetrics,
   FORMS_AUDIT_INTERVAL,
 } from './formcalc.js';
+
+export { retrievePageAuthentication } from './auth.js';

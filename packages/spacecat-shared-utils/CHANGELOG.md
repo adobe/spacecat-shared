@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.38.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.38.0...@adobe/spacecat-shared-utils-v1.38.1) (2025-05-15)
+
+
+### Bug Fixes
+
+* local development friendly aws clients and sqs wrapper ([#739](https://github.com/adobe/spacecat-shared/issues/739)) ([fada9c6](https://github.com/adobe/spacecat-shared/commit/fada9c6fc0508ba6acf46a4416593427b67306dd))
+
 # [@adobe/spacecat-shared-utils-v1.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.37.4...@adobe/spacecat-shared-utils-v1.38.0) (2025-05-14)
 
 

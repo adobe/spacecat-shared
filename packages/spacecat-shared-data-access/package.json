@@ -34,7 +34,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.33.1",
+    "@adobe/spacecat-shared-utils": "1.38.0",
     "@aws-sdk/client-dynamodb": "3.806.0",
     "@aws-sdk/lib-dynamodb": "3.806.0",
     "@types/joi": "17.2.3",

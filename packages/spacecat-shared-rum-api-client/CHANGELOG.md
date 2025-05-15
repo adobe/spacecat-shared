@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.24.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.24.2...@adobe/spacecat-shared-rum-api-client-v2.24.3) (2025-05-15)
+
+
+### Bug Fixes
+
+* detect iframe forms; bug fix for duplicated iframes with # ([#736](https://github.com/adobe/spacecat-shared/issues/736)) ([5243220](https://github.com/adobe/spacecat-shared/commit/524322096233e393f59899deb9de24bdab201275))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.24.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.24.1...@adobe/spacecat-shared-rum-api-client-v2.24.2) (2025-05-11)
 
 

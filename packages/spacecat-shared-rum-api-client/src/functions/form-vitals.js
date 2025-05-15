@@ -214,6 +214,17 @@ function handler(bundles) {
     });
   });
 
+  // remove duplicate urls with '#'
+  const iframeParentMapWithoutDuplicates = Object.fromEntries(
+    Object.entries(iframeParentMap).filter(([key]) => {
+      if (key.endsWith('#')) {
+        const baseUrl = key.slice(0, -1);
+        return !Object.prototype.hasOwnProperty.call(iframeParentMap, baseUrl);
+      }
+      return true;
+    }),
+  );
+
   // traffic acquisition data per url - uncomment this when required
   // const trafficByUrl = trafficAcquisition.handler(bundles);
   // const trafficByUrlMap = Object.fromEntries(
@@ -256,7 +267,7 @@ function handler(bundles) {
   const iframeParentVitalsMap = getParentPageVitalsGroupedByIFrame(
     bundles,
     dataChunks,
-    iframeParentMap,
+    iframeParentMapWithoutDuplicates,
   );
 
   // populate internal navigation data

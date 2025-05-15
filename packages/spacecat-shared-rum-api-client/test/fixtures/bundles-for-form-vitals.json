@@ -63652,6 +63652,48 @@
         }
       ],
       "cwvTTFB": 433
+    },
+    {
+      "id": "s6t6",
+      "host": "publish-prod-abbvie-commercial.adobecqms.net",
+      "time": "2025-05-05T14:00:07.466Z",
+      "timeSlot": "2025-05-05T14:00:00.000Z",
+      "url": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
+      "userAgent": "mobile:android:blink",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "viewmedia",
+          "target": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html#",
+          "source": "#aemFormFrame",
+          "timeDelta": 7466
+        }
+      ],
+      "cwvTTFB": 3784,
+      "cwvLCP": 4400,
+      "cwvINP": 216,
+      "cwvCLS": 0.25626014177128703
+    },
+    {
+      "id": "s6t6",
+      "host": "publish-prod-abbvie-commercial.adobecqms.net",
+      "time": "2025-05-05T14:00:07.466Z",
+      "timeSlot": "2025-05-05T14:00:00.000Z",
+      "url": "https://www.iframe-example.com/test/getting-iframe-example/some-other-page.html",
+      "userAgent": "mobile:android:blink",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "viewmedia",
+          "target": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html#",
+          "source": "#aemFormFrame",
+          "timeDelta": 7466
+        }
+      ],
+      "cwvTTFB": 3784,
+      "cwvLCP": 4400,
+      "cwvINP": 216,
+      "cwvCLS": 0.25626014177128703
     }
   ]
 }

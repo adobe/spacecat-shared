@@ -204,6 +204,14 @@ class BaseModel {
   }
 
   /**
+   * Gets the update timestamp of the current entity.
+   * @returns {string} - The ISO string representing when the entity was last updated.
+   */
+  getUpdatedBy() {
+    return this.record.updatedBy;
+  }
+
+  /**
    * Gets the expiration timestamp of the current entity.
    * @returns {string} - The ISO string representing when the entity will expire.
    */

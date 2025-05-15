@@ -88,6 +88,14 @@ describe('SchemaBuilder', () => {
           watch: '*',
           set: instance.attributes.updatedAt.set,
         },
+        updatedBy: {
+          default: instance.attributes.updatedBy.default,
+          type: 'string',
+          required: false,
+          readOnly: false,
+          watch: '*',
+          validate: instance.attributes.updatedBy.validate,
+        },
       });
 
       expect(instance.rawIndexes).to.deep.equal({
@@ -437,6 +445,14 @@ describe('SchemaBuilder', () => {
             watch: '*',
             default: instance.attributes.updatedAt.default,
             set: instance.attributes.updatedAt.set,
+          },
+          updatedBy: {
+            type: 'string',
+            required: false,
+            readOnly: false,
+            validate: instance.attributes.updatedBy.validate,
+            default: null,
+            watch: '*',
           },
           organizationId: {
             type: 'string',

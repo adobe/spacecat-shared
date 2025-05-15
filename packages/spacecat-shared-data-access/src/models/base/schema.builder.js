@@ -73,6 +73,20 @@ const UPDATED_AT_ATTRIBUTE_DATA = {
 };
 
 /**
+ * UpdatedBy attribute configuration object.
+ * Automatically sets to current user at creation.
+ * @type {object}
+ */
+const UPDATED_BY_ATTRIBUTE_DATA = {
+  type: 'string',
+  required: false,
+  readOnly: false,
+  watch: '*',
+  validate: (value) => !value || typeof value === 'string',
+  default: null,
+};
+
+/**
  * The SchemaBuilder class allows for constructing a schema definition
  * including attributes, indexes, and references to other entities.
  * Index ordering is enforced at build time for deterministic output:
@@ -136,6 +150,7 @@ class SchemaBuilder {
     this.addAttribute(this.idName, ID_ATTRIBUTE_DATA);
     this.addAttribute('createdAt', CREATED_AT_ATTRIBUTE_DATA);
     this.addAttribute('updatedAt', UPDATED_AT_ATTRIBUTE_DATA);
+    this.addAttribute('updatedBy', UPDATED_BY_ATTRIBUTE_DATA);
     // todo: add createdBy, updatedBy and auto-set from auth context
 
     // set up the primary index directly

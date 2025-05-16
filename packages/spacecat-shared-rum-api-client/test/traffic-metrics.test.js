@@ -79,7 +79,6 @@ const expectedMetrics = [
 describe('Traffic-categories metrics', () => {
   it('Provies traffic-categorization metrics', async () => {
     const traficMetricResults = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
-    console.log(JSON.stringify(traficMetricResults));
     expect(traficMetricResults).to.deep.equal(expectedTraficMetricResults);
   });
 

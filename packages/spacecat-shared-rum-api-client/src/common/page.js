@@ -10,21 +10,18 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText, isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 import { COOKIE_CONSENT_SELECTORS } from './constants.js';
 
 const uncategorized = 'uncategorized';
 
-function canClassifyPage(pageTypes) {
-  return pageTypes !== undefined && pageTypes != null;
-}
-
 export function getPageType(bundle, pageTypes) {
-  if (!canClassifyPage(pageTypes)) {
+  if (!isNonEmptyObject(pageTypes)) {
     return uncategorized;
   }
 
   const pageTypeEntries = Object.entries(pageTypes);
-  if (!pageTypeEntries || pageTypeEntries.length === 0) {
+  if (isNonEmptyArray(pageTypeEntries)) {
     return uncategorized;
   }
 
@@ -38,7 +35,7 @@ export function getPageType(bundle, pageTypes) {
 
   const entry = pageTypeEntries.find(classify);
 
-  if (entry === null || entry?.[0] === '' || entry?.[0] === 'other') {
+  if (!hasText(entry) || entry?.[0] === 'other') {
     return uncategorized;
   }
   return entry?.[0] ?? uncategorized;

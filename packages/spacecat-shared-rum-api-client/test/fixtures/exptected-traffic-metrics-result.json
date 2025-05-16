@@ -3238,7 +3238,7 @@
                 "bounceRate": 0.7972531336615232,
                 "totalNumClicks": 11003,
                 "avgClicksPerSession": 2.2450520301979187,
-                "type": "other | Other Pages"
+                "type": "uncategorized"
             }
         ]
     },
@@ -3254,7 +3254,7 @@
                 "bounceRate": 0.8271829176449741,
                 "totalNumClicks": 7403,
                 "avgClicksPerSession": 1.8977185337093052,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "source": "owned"
             },
             {
@@ -3266,7 +3266,7 @@
                 "bounceRate": 0.33333333333333337,
                 "totalNumClicks": 3600,
                 "avgClicksPerSession": 3.6,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "source": "earned"
             },
             {
@@ -3278,7 +3278,7 @@
                 "bounceRate": 1,
                 "totalNumClicks": 0,
                 "avgClicksPerSession": 0,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "source": "paid"
             }
         ]
@@ -3295,7 +3295,7 @@
                 "bounceRate": 0.7962829380065346,
                 "totalNumClicks": 10903,
                 "avgClicksPerSession": 2.2709852114142888,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "deviceType": "desktop"
             },
             {
@@ -3307,7 +3307,7 @@
                 "bounceRate": 0.8023715415019763,
                 "totalNumClicks": 100,
                 "avgClicksPerSession": 1,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "deviceType": "mobile"
             },
             {
@@ -3319,7 +3319,7 @@
                 "bounceRate": 1,
                 "totalNumClicks": 0,
                 "avgClicksPerSession": 0,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "deviceType": "bot"
             }
         ]
@@ -3336,7 +3336,7 @@
                 "bounceRate": 0.8269677243137433,
                 "totalNumClicks": 7303,
                 "avgClicksPerSession": 1.9213364903972638,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "source": "owned",
                 "deviceType": "desktop"
             },
@@ -3349,7 +3349,7 @@
                 "bounceRate": 0.33333333333333337,
                 "totalNumClicks": 3600,
                 "avgClicksPerSession": 3.6,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "source": "earned",
                 "deviceType": "desktop"
             },
@@ -3362,7 +3362,7 @@
                 "bounceRate": 0.8023715415019763,
                 "totalNumClicks": 100,
                 "avgClicksPerSession": 1,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "source": "owned",
                 "deviceType": "mobile"
             },
@@ -3375,7 +3375,7 @@
                 "bounceRate": 1,
                 "totalNumClicks": 0,
                 "avgClicksPerSession": 0,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "source": "owned",
                 "deviceType": "bot"
             },
@@ -3388,7 +3388,7 @@
                 "bounceRate": 1,
                 "totalNumClicks": 0,
                 "avgClicksPerSession": 0,
-                "type": "other | Other Pages",
+                "type": "uncategorized",
                 "source": "paid",
                 "deviceType": "desktop"
             }

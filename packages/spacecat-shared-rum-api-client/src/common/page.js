@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import { COOKIE_CONSENT_SELECTORS } from './constants.js';
 
 const uncategorized = 'uncategorized';
@@ -21,9 +21,6 @@ export function getPageType(bundle, pageTypes) {
   }
 
   const pageTypeEntries = Object.entries(pageTypes);
-  if (!isNonEmptyArray(pageTypeEntries)) {
-    return uncategorized;
-  }
 
   const classify = ([, regEx]) => {
     if (regEx instanceof RegExp) {

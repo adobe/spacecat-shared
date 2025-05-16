@@ -13,64 +13,24 @@
 import { DataChunks } from '@adobe/rum-distiller';
 import { DELIMITER, generateKey, loadBundles } from '../utils.js';
 import { classifyTraffic } from '../common/traffic.js';
-import { COOKIE_CONSENT_SELECTORS } from '../common/constants.js';
-
-const uncategorized = 'uncategorized';
+import { getPageType, isConsentClick } from '../common/page.js';
 
 function getTrafficSource(bundle) {
   return classifyTraffic(bundle).type;
 }
 
-function isConsentClick(source) {
-  if (typeof source !== 'string' || !source) {
-    return false;
-  }
-
-  const sourceLower = source.toLowerCase();
-  return COOKIE_CONSENT_SELECTORS.some((keyword) => sourceLower.includes(keyword.toLowerCase()));
-}
-
-function getPageType(bundle, pageTypes) {
-  const pageTypeEntries = Object.entries(pageTypes);
-  if (!pageTypeEntries || pageTypeEntries.length === 0) {
-    return uncategorized;
-  }
-
-  const classify = (_, suppliedRegex) => {
-    if (suppliedRegex instanceof RegExp) {
-      return suppliedRegex.test(bundle.url);
-    }
-
-    return new RegExp(suppliedRegex).test(bundle.url);
-  };
-
-  const entry = pageTypeEntries.find(classify);
-
-  if (entry === null || entry?.[0] === '' || entry?.[0] === 'other') {
-    return uncategorized;
-  }
-  return entry?.[0] ?? 'unknown';
-}
-
-function canClassifyPage(pageTypes) {
-  return pageTypes !== undefined && pageTypes != null;
-}
 function getDeviceType(bundle) {
   return bundle.userAgent.split(':')?.[0];
 }
 
 function addPageTypeFacet(dataChunks, pageTypes) {
-  if (!canClassifyPage(pageTypes)) {
-    dataChunks.addFacet('pageType', () => uncategorized);
-    return;
-  }
   dataChunks.addFacet('pageType', (bundle) => getPageType(bundle, pageTypes));
 }
 
 function addPageTypeDeviceTypeFacet(dataChunks, pageTypes) {
   dataChunks.addFacet('pageTypeDeviceTypes', (bundle) => {
     const deviceType = getDeviceType(bundle);
-    const pageType = canClassifyPage(pageTypes) ? getPageType(bundle, pageTypes) : uncategorized;
+    const pageType = getPageType(bundle, pageTypes);
     return generateKey(pageType, deviceType);
   });
 }
@@ -78,14 +38,14 @@ function addPageTypeDeviceTypeFacet(dataChunks, pageTypes) {
 function addPageTypeTrafficSourceDeviceTypes(dataChunks, pageTypes) {
   dataChunks.addFacet('pageTrafficDeviceTypes', (bundle) => {
     const deviceType = getDeviceType(bundle);
-    const pageType = canClassifyPage(pageTypes) ? getPageType(bundle, pageTypes) : uncategorized;
+    const pageType = getPageType(bundle, pageTypes);
     return generateKey(pageType, getTrafficSource(bundle), deviceType);
   });
 }
 
 function addPageTypeTrafficSourceFacet(dataChunks, pageTypes) {
   dataChunks.addFacet('pageTypeTrafficSources', (bundle) => {
-    const pageType = canClassifyPage(pageTypes) ? getPageType(bundle, pageTypes) : uncategorized;
+    const pageType = getPageType(bundle, pageTypes);
     return generateKey(pageType, getTrafficSource(bundle));
   });
 }

@@ -14,6 +14,7 @@
 import { expect } from 'chai';
 import trafficMetrics from '../src/functions/traffic-metrics.js';
 import bundlesWithTraffic from './fixtures/bundles.json' with { type: 'json' };
+import expectedTraficMetricResults from './fixtures/exptected-traffic-metrics-result.json' with { type: 'json' };
 
 const pageTypesString = {
   'home | landing': '^/$',
@@ -39,6 +40,7 @@ const pageTypesRegEx = {
   'blog | article | news | insights': /^\/(blog|news|articles?|insights)(\/.*)?$/,
   'docs | documentation | help | support': /^\/(docs|documentation|help|support)(\/.*)?$/,
   '404 | not-found | error': /^\/(404|not-found|error)$/,
+  'other | Other Pages': /.*/, // This will match any URL that didn't match previous patterns
 };
 
 const options = {
@@ -63,7 +65,24 @@ const expectedGroupings = [
   'trafficSource',
 ];
 
+const expectedMetrics = [
+  'ctr',
+  'clickedSessions',
+  'totalSessions',
+  'sessionsWithEnter',
+  'clicksOverViews',
+  'bounceRate',
+  'totalNumClicks',
+  'avgClicksPerSession',
+];
+
 describe('Traffic-categories metrics', () => {
+  it('Provies traffic-categorization metrics', async () => {
+    const traficMetricResults = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
+    console.log(JSON.stringify(traficMetricResults));
+    expect(traficMetricResults).to.deep.equal(expectedTraficMetricResults);
+  });
+
   it('Provides populated metrics for all groupings', async () => {
     const result = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
     expectedGroupings.forEach((eGroup) => {
@@ -73,45 +92,40 @@ describe('Traffic-categories metrics', () => {
     });
   });
 
-  it('Provides metrics grouping per unique url', async () => {
+  it('Provides expected metrics per group', async () => {
     const result = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
-    const urls = result.find((metric) => metric.key === 'url');
-    console.log(urls);
-    expect(urls.value).lengthOf(59);
-  });
-
-  it('Provides metrics grouping per url and device type', async () => {
-    const result = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
-    const urlAndDeviceType = result.find((metric) => metric.key === 'urlDeviceType');
-    console.log(urlAndDeviceType);
-    expect(urlAndDeviceType.value).lengthOf(65);
-  });
-
-  it('Provides metrics grouping per url and traffic source', async () => {
-    const result = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
-    const trafficSource = result.find((metric) => metric.key === 'urlTrafficSource');
-    console.log(trafficSource);
-    expect(trafficSource.value).lengthOf(68);
+    expectedGroupings.forEach((group) => {
+      const dim = result.find((item) => item.key === group);
+      expectedMetrics.forEach((metric) => {
+        const m = dim.value[0][metric];
+        expect(m, `Missing metric: ${metric}`).to.exist;
+        expect(typeof m === 'number' && !Number.isNaN(m)).to.be.true;
+      });
+    });
   });
 
   it('Provides metrics grouping per pageType', async () => {
     const result = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
     const pageType = result.find((metric) => metric.key === 'pageType');
-    console.log(pageType);
-    expect(pageType.value).lengthOf(2);
+    expect(pageType.value).lengthOf(1);
   });
 
   it('Provides metrics if options are string regex', async () => {
     const result = trafficMetrics.handler(bundlesWithTraffic.rumBundles, stringRegexOptions);
     const pageType = result.find((metric) => metric.key === 'pageType');
-    console.log(pageType);
-    expect(pageType.value).lengthOf(2);
+    expect(pageType.value).lengthOf(1);
   });
 
   it('Provides uncategorized if pageOptions not defined', async () => {
     const result = trafficMetrics.handler(bundlesWithTraffic.rumBundles);
     const pageType = result.find((metric) => metric.key === 'pageType');
-    console.log(pageType);
+    expect(pageType.value).lengthOf(1);
+    expect(pageType.value[0].type).to.eql('uncategorized');
+  });
+
+  it('Provides uncategorized if pageOptions empty', async () => {
+    const result = trafficMetrics.handler(bundlesWithTraffic.rumBundles, { pageTypes: [] });
+    const pageType = result.find((metric) => metric.key === 'pageType');
     expect(pageType.value).lengthOf(1);
     expect(pageType.value[0].type).to.eql('uncategorized');
   });

@@ -57,7 +57,8 @@ class SuggestionCollection extends BaseCollection {
       }
     });
     if (allFixed) {
-      await opportunity.setStatus(Opportunity.STATUSES.RESOLVED);
+      opportunity.setStatus(Opportunity.STATUSES.RESOLVED);
+      await opportunity.save();
     }
     this.log.info(`Bulk updated ${suggestions.length} suggestions to status: ${status}`);
 

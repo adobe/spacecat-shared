@@ -20,6 +20,7 @@ import trafficAcquisition from './functions/traffic-acquisition.js';
 import totalMetrics from './functions/total-metrics.js';
 import variant from './functions/variant.js';
 import pageviews from './functions/pageviews.js';
+import trafficMetrics from './functions/traffic-metrics.js';
 import rageclick from './functions/opportunities/rageclick.js';
 import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
 import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
@@ -40,6 +41,7 @@ const HANDLERS = {
   'high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
   'high-organic-low-ctr': highOrganicLowCtr,
   pageviews,
+  trafficMetrics,
 };
 
 function sanitize(opts) {

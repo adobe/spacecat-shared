@@ -41,6 +41,7 @@ export const createElectroMocks = (Model, record) => {
     }),
     patch: stub().returns({
       set: stub(),
+      composite: stub().returns({ go: stub() }),
     }),
     put: stub().returns({
       go: stub().resolves({ data: record }),

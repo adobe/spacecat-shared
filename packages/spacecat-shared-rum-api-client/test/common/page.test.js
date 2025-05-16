@@ -18,7 +18,7 @@ describe('Page categorization', () => {
   const pageTypes = {
     home: /^\/$/,
     product: /^\/product\/\d+/,
-    other: /.*/,
+    'other | Other Pages': /.*/,
   };
 
   it('should return "uncategorized" if pageTypes is undefined', () => {

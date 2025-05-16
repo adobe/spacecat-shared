@@ -75,6 +75,12 @@ export const createElectroMocks = (Model, record) => {
           },
         },
       },
+      allByIndexKeys: stub().returns([]),
+      findById: stub().returns({
+        getId: stub().returns('testEntityId'),
+        setStatus: stub(),
+        save: stub(),
+      }),
     }),
   };
 

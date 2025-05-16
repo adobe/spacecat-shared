@@ -21,7 +21,7 @@ export function getPageType(bundle, pageTypes) {
   }
 
   const pageTypeEntries = Object.entries(pageTypes);
-  if (isNonEmptyArray(pageTypeEntries)) {
+  if (!isNonEmptyArray(pageTypeEntries)) {
     return uncategorized;
   }
 
@@ -35,7 +35,7 @@ export function getPageType(bundle, pageTypes) {
 
   const entry = pageTypeEntries.find(classify);
 
-  if (!hasText(entry) || entry?.[0] === 'other') {
+  if (!hasText(entry?.[0]) || entry?.[0] === 'other | Other Pages') {
     return uncategorized;
   }
   return entry?.[0] ?? uncategorized;

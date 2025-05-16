@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.19.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.1...@adobe/spacecat-shared-data-access-v2.19.2) (2025-05-16)
+
+
+### Bug Fixes
+
+* default table name ([#742](https://github.com/adobe/spacecat-shared/issues/742)) ([deaa0af](https://github.com/adobe/spacecat-shared/commit/deaa0afee239d2f24444cb39df54a929135617ba))
+
 # [@adobe/spacecat-shared-data-access-v2.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.0...@adobe/spacecat-shared-data-access-v2.19.1) (2025-05-15)
 
 

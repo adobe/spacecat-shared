@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.24.3...@adobe/spacecat-shared-rum-api-client-v2.25.0) (2025-05-16)
+
+
+### Features
+
+* optel traffic group metrics ([#741](https://github.com/adobe/spacecat-shared/issues/741)) ([cdfef6a](https://github.com/adobe/spacecat-shared/commit/cdfef6a42731bf5fb5056619df605e9db67e724e))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.24.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.24.2...@adobe/spacecat-shared-rum-api-client-v2.24.3) (2025-05-15)
 
 

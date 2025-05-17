@@ -65,6 +65,34 @@ function getCTRByUrlAndVendor(bundles) {
     }, {});
 }
 
+function getCategoryCtrByUrl(bundles, classificationAndCtrByUrl) {
+  const groupedByClassification = bundles.reduce((acc, bundle) => {
+    const { url } = bundle;
+    const hasClick = bundle.events.some((event) => event.checkpoint === 'click');
+    const { classification } = classificationAndCtrByUrl[url];
+    if (!acc[classification]) {
+      acc[classification] = { sessionsWithClick: 0, totalPageviews: 0 };
+    }
+    acc[classification].totalPageviews += bundle.weight;
+    if (hasClick) {
+      acc[classification].sessionsWithClick += bundle.weight;
+    }
+    return acc;
+  }, {});
+  const categoryCtr = Object.entries(groupedByClassification)
+    .reduce((acc, [classification, { sessionsWithClick, totalPageviews }]) => {
+      acc[classification] = {
+        categoryCtr: sessionsWithClick / totalPageviews,
+      };
+      return acc;
+    }, {});
+  return Object.entries(classificationAndCtrByUrl).map(([url, { classification, ctr }]) => ({
+    url,
+    categoryCtr: categoryCtr[classification]?.categoryCtr,
+    pageCtr: ctr,
+  }));
+}
+
 /**
  * Calculates the Click-Through Rate (CTR) average for the entire site.
  * CTR is defined as the total number of sessions with at least one click event
@@ -91,4 +119,5 @@ function getSiteAvgCTR(bundles) {
 export {
   getSiteAvgCTR,
   getCTRByUrlAndVendor,
+  getCategoryCtrByUrl,
 };

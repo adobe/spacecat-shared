@@ -24,7 +24,7 @@ import trafficMetrics from './functions/traffic-metrics.js';
 import rageclick from './functions/opportunities/rageclick.js';
 import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
 import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
-
+import highOrganicLowCtrV2 from './functions/opportunities/high-organic-low-ctr-v2.js';
 // exported for tests
 export const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
 
@@ -40,6 +40,7 @@ const HANDLERS = {
   totalMetrics,
   'high-inorganic-high-bounce-rate': highInorganicHighBounceRate,
   'high-organic-low-ctr': highOrganicLowCtr,
+  'high-organic-low-ctr-v2': highOrganicLowCtrV2,
   pageviews,
   trafficMetrics,
 };

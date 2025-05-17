@@ -86,11 +86,14 @@ function getCategoryCtrByUrl(bundles, classificationAndCtrByUrl) {
       };
       return acc;
     }, {});
-  return Object.entries(classificationAndCtrByUrl).map(([, { classification, ctr }]) => ({
-    category: classification,
-    categoryCtr: categoryCtr[classification]?.categoryCtr,
-    pageCtr: ctr,
-  }));
+  return Object.entries(classificationAndCtrByUrl).reduce((acc, [url, { classification, ctr }]) => {
+    acc[url] = {
+      category: classification,
+      categoryCtr: categoryCtr[classification]?.categoryCtr,
+      pageCtr: ctr,
+    };
+    return acc;
+  }, {});
 }
 
 /**

@@ -86,8 +86,8 @@ function getCategoryCtrByUrl(bundles, classificationAndCtrByUrl) {
       };
       return acc;
     }, {});
-  return Object.entries(classificationAndCtrByUrl).map(([url, { classification, ctr }]) => ({
-    url,
+  return Object.entries(classificationAndCtrByUrl).map(([, { classification, ctr }]) => ({
+    category: classification,
     categoryCtr: categoryCtr[classification]?.categoryCtr,
     pageCtr: ctr,
   }));

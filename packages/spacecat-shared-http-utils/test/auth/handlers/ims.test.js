@@ -76,7 +76,7 @@ describe('AdobeImsHandler', () => {
       }]),
     };
 
-    handler = new AdobeImsHandler(logStub, mockImsClient);
+    handler = new AdobeImsHandler(logStub);
 
     imsIdpConfigDev.discovery.jwks = publicJwk;
     context = {
@@ -85,6 +85,7 @@ describe('AdobeImsHandler', () => {
       env: {
         AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev),
       },
+      imsClient: mockImsClient,
     };
   });
 
@@ -146,6 +147,7 @@ describe('AdobeImsHandler', () => {
       func: { version: 'ci1234' },
       pathInfo: { headers: { authorization: `Bearer ${token}` } },
       env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) },
+      imsClient: mockImsClient,
     };
     const result = await handler.checkAuth({}, testContext);
 
@@ -197,7 +199,10 @@ describe('AdobeImsHandler', () => {
     it('successfully validates a token and returns the profile', async () => {
       const now = Date.now();
       const token = await createToken({
-        user_id: 'test-user', as: 'ims-na1-stg1', created_at: now, expires_in: 3600,
+        user_id: 'test-user',
+        as: 'ims-na1-stg1',
+        created_at: now,
+        expires_in: 3600,
       });
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
 

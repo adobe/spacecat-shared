@@ -17,7 +17,6 @@ import {
   decodeJwt,
   jwtVerify,
 } from 'jose';
-import { imsClientWrapper as imsClient } from '@adobe/spacecat-shared-ims-client/src/clients/ims-client-wrapper.js';
 import { getBearerToken } from './utils/bearer.js';
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
@@ -89,10 +88,9 @@ function getTenants(profile, organizations) {
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
  */
 export default class AdobeImsHandler extends AbstractHandler {
-  constructor(log, imsClientOverride = imsClient) {
+  constructor(log) {
     super('ims', log);
     this.jwksCache = null;
-    this.imsClient = imsClientOverride;
   }
 
   async #getJwksUri(config) {
@@ -106,14 +104,14 @@ export default class AdobeImsHandler extends AbstractHandler {
     return this.jwksCache;
   }
 
-  async #validateToken(token, config) {
+  async #validateToken(token, config, imsClient) {
     const claims = await decodeJwt(token);
     if (config.name !== claims.as) {
       throw new Error(`Token not issued by expected idp: ${config.name} != ${claims.as}`);
     }
 
-    const imsProfile = await this.imsClient.getImsUserProfile(token);
-    const organizations = await this.imsClient.getImsUserOrganizations(token);
+    const imsProfile = await imsClient.getImsUserProfile(token);
+    const organizations = await imsClient.getImsUserOrganizations(token);
     const tenants = getTenants(imsProfile, organizations);
 
     const jwks = await this.#getJwksUri(config);
@@ -149,9 +147,14 @@ export default class AdobeImsHandler extends AbstractHandler {
       return null;
     }
 
+    if (!context.imsClient) {
+      this.log('No IMS client available in context', 'error');
+      return null;
+    }
+
     try {
       const config = loadConfig(context);
-      const payload = await this.#validateToken(token, config);
+      const payload = await this.#validateToken(token, config, context.imsClient);
       const profile = transformProfile(payload);
 
       const scopes = [];

@@ -10,8 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
-import { COOKIE_CONSENT_SELECTORS } from './constants.js';
+import { hasText, isNonEmptyObject, isString } from '@adobe/spacecat-shared-utils';
+import classifyConsent from '@adobe/rum-distiller/consent.js';
 
 const uncategorized = 'uncategorized';
 
@@ -39,10 +39,6 @@ export function getPageType(bundle, pageTypes) {
 }
 
 export function isConsentClick(source) {
-  if (typeof source !== 'string' || !source) {
-    return false;
-  }
-
-  const sourceLower = source.toLowerCase();
-  return COOKIE_CONSENT_SELECTORS.some((keyword) => sourceLower.includes(keyword.toLowerCase()));
+  const consent = isString(source) ? classifyConsent(source?.toLocaleLowerCase()) : undefined;
+  return !(consent === undefined);
 }

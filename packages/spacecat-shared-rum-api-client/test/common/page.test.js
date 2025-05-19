@@ -65,11 +65,10 @@ describe('Page categorization', () => {
 
 describe('IsConsentClick Check', () => {
   it('should return true for known consent keywords', () => {
-    expect(isConsentClick('onetrust')).to.be.true;
-    expect(isConsentClick('.CookiebotWidget')).to.be.true;
+    expect(isConsentClick('#onetrust-')).to.be.true;
   });
   it('should be case-insensitive', () => {
-    expect(isConsentClick('ONEtrust')).to.be.true;
+    expect(isConsentClick('#onEtrust-')).to.be.true;
   });
 
   it('should return false for unrelated string', () => {

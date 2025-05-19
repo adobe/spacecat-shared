@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.11.0...@adobe/spacecat-shared-http-utils-v1.12.0) (2025-05-19)
+
+
+### Features
+
+* http-utils 2xx methods support optional headers ([#746](https://github.com/adobe/spacecat-shared/issues/746)) ([4319d47](https://github.com/adobe/spacecat-shared/commit/4319d479341aa06c5251495389580f3663d1ec57))
+
 # [@adobe/spacecat-shared-http-utils-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.6...@adobe/spacecat-shared-http-utils-v1.11.0) (2025-05-12)
 
 

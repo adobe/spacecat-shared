@@ -291,6 +291,17 @@ describe('AdobeImsHandler', () => {
       });
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
 
+      // Mock IMS profile response with Adobe email
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'test-user@adobe.com',
+        projectedProductContext: [{
+          prodCtx: {
+            serviceCode: 'dx_aem_perf',
+            owningEntity: 'org1@AdobeOrg',
+          },
+        }],
+      });
+
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.instanceof(AuthInfo);

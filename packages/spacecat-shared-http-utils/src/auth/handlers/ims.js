@@ -104,15 +104,11 @@ export default class AdobeImsHandler extends AbstractHandler {
     return this.jwksCache;
   }
 
-  async #validateToken(token, config, imsClient) {
+  async #validateToken(token, config) {
     const claims = await decodeJwt(token);
     if (config.name !== claims.as) {
       throw new Error(`Token not issued by expected idp: ${config.name} != ${claims.as}`);
     }
-
-    const imsProfile = await imsClient.getImsUserProfile(token);
-    const organizations = await imsClient.getImsUserOrganizations(token);
-    const tenants = getTenants(imsProfile, organizations);
 
     const jwks = await this.#getJwksUri(config);
     const { payload } = await jwtVerify(token, jwks);
@@ -135,7 +131,6 @@ export default class AdobeImsHandler extends AbstractHandler {
     }
 
     payload.ttl = ttl;
-    payload.tenants = tenants || [];
 
     return payload;
   }
@@ -154,12 +149,14 @@ export default class AdobeImsHandler extends AbstractHandler {
 
     try {
       const config = loadConfig(context);
-      const payload = await this.#validateToken(token, config, context.imsClient);
+      const payload = await this.#validateToken(token, config);
+      const imsProfile = await context.imsClient.getImsUserProfile(token);
+      const organizations = await context.imsClient.getImsUserOrganizations(token);
+      payload.tenants = getTenants(imsProfile, organizations) || [];
+
       const profile = transformProfile(payload);
-
       const scopes = [];
-
-      if (profile.email?.endsWith('@adobe.com')) {
+      if (imsProfile.email?.endsWith('@adobe.com')) {
         scopes.push({ name: 'admin' });
       } else {
         scopes.push(...payload.tenants.map(

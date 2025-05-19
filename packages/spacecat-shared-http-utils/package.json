@@ -12,6 +12,7 @@
   "scripts": {
     "test": "c8 mocha --spec=test/**/*.test.js",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
@@ -36,6 +37,7 @@
     "@adobe/fetch": "4.2.1",
     "@adobe/spacecat-shared-utils": "1.26.4",
     "@adobe/spacecat-shared-data-access": "2.0.2",
+    "@adobe/spacecat-shared-ims-client": "1.5.6",
     "jose": "6.0.11"
   },
   "devDependencies": {

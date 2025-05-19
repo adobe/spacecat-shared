@@ -228,10 +228,10 @@ describe('AdobeImsHandler', () => {
 
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
-      expect(result.profile.tenants).to.have.lengthOf(1);
-      expect(result.profile.tenants[0]).to.deep.include({
-        id: 'org1',
-        name: 'Test Org',
+      expect(result.scopes).to.have.lengthOf(1);
+      expect(result.scopes[0]).to.deep.include({
+        name: 'user',
+        domains: ['org1'],
       });
       expect(mockImsClient.getImsUserProfile.calledWith(token)).to.be.true;
       expect(mockImsClient.getImsUserOrganizations.calledWith(token)).to.be.true;
@@ -275,6 +275,22 @@ describe('AdobeImsHandler', () => {
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
       expect(result.profile.tenants).to.deep.equal([]);
+    });
+
+    it('gives only admin scope to adobe.com users', async () => {
+      const token = await createToken({
+        user_id: 'test-user@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
     });
   });
 });

@@ -154,12 +154,14 @@ export default class AdobeImsHandler extends AbstractHandler {
       const payload = await this.#validateToken(token, config);
       const profile = transformProfile(payload);
 
-      const scopes = [{ name: 'admin' }];
+      let scopes = [];
 
-      if (!profile.email?.endsWith('@adobe.com')) {
-        scopes.push(...payload.tenants.map(
+      if (profile.email?.endsWith('@adobe.com')) {
+        scopes = [{ name: 'admin' }];
+      } else {
+        scopes = payload.tenants.map(
           (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
-        ));
+        );
       }
 
       return new AuthInfo()

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.38.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.38.2...@adobe/spacecat-shared-utils-v1.38.3) (2025-05-19)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.2 ([#747](https://github.com/adobe/spacecat-shared/issues/747)) ([64e350a](https://github.com/adobe/spacecat-shared/commit/64e350ad62b7b6d3ad9aa47c66f51ba16508fc6c))
+
 # [@adobe/spacecat-shared-utils-v1.38.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.38.1...@adobe/spacecat-shared-utils-v1.38.2) (2025-05-17)
 
 

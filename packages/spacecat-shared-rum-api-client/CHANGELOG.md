@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.25.0...@adobe/spacecat-shared-rum-api-client-v2.25.1) (2025-05-19)
+
+
+### Bug Fixes
+
+* use rum bundler for consent classification ([#744](https://github.com/adobe/spacecat-shared/issues/744)) ([251ca76](https://github.com/adobe/spacecat-shared/commit/251ca76ec65c3775fdc1656143cfd1767bfb9b1c))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.24.3...@adobe/spacecat-shared-rum-api-client-v2.25.0) (2025-05-16)
 
 

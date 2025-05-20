@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.0...@adobe/spacecat-shared-http-utils-v1.13.1) (2025-05-20)
+
+
+### Bug Fixes
+
+* expose cookie handler ([#750](https://github.com/adobe/spacecat-shared/issues/750)) ([4df4c91](https://github.com/adobe/spacecat-shared/commit/4df4c9117943147fbaf01fa13c6e23d2f330cd3d))
+
 # [@adobe/spacecat-shared-http-utils-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.12.1...@adobe/spacecat-shared-http-utils-v1.13.0) (2025-05-20)
 
 

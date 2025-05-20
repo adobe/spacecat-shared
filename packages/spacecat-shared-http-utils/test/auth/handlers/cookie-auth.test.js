@@ -18,7 +18,7 @@ import { generateKeyPair } from 'crypto';
 import { promisify } from 'util';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
-import CookieHandler from '../../../src/auth/handlers/cookie.js';
+import CookieAuthHandler from '../../../src/auth/handlers/cookie-auth.js';
 import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
 
@@ -44,7 +44,7 @@ const createTokenPayload = (overrides = {}) => ({
   ...overrides,
 });
 
-describe('CookieHandler', () => {
+describe('CookieAuthHandler', () => {
   let logStub;
   let handler;
 
@@ -63,7 +63,7 @@ describe('CookieHandler', () => {
       info: sinon.stub(),
       error: sinon.stub(),
     };
-    handler = new CookieHandler(logStub);
+    handler = new CookieAuthHandler(logStub);
   });
 
   afterEach(() => {
@@ -75,13 +75,13 @@ describe('CookieHandler', () => {
   });
 
   it('sets the name and log properties correctly', () => {
-    expect(handler.name).to.equal('cookie');
+    expect(handler.name).to.equal('cookieAuth');
     expect(handler.logger).to.equal(logStub);
   });
 
   it('logs messages correctly', () => {
     handler.log('test message', 'info');
-    expect(logStub.info.calledWith('[cookie] test message')).to.be.true;
+    expect(logStub.info.calledWith('[cookieAuth] test message')).to.be.true;
   });
 
   it('returns null when there is no session token', async () => {
@@ -91,7 +91,7 @@ describe('CookieHandler', () => {
     };
     const result = await handler.checkAuth({}, context);
     expect(result).to.be.null;
-    expect(logStub.debug.calledWith('[cookie] No bearer token provided')).to.be.true;
+    expect(logStub.debug.calledWith('[cookieAuth] No bearer token provided')).to.be.true;
   });
 
   it('returns null when public key is not provided', async () => {
@@ -101,7 +101,7 @@ describe('CookieHandler', () => {
     };
     const result = await handler.checkAuth({}, context);
     expect(result).to.be.null;
-    expect(logStub.error.calledWith('[cookie] Failed to validate token: No public key provided')).to.be.true;
+    expect(logStub.error.calledWith('[cookieAuth] Failed to validate token: No public key provided')).to.be.true;
   });
 
   describe('token validation', () => {
@@ -121,7 +121,7 @@ describe('CookieHandler', () => {
 
       const result = await handler.checkAuth({}, context);
       expect(result).to.be.null;
-      expect(logStub.error.calledWith('[cookie] Failed to validate token: unexpected "iss" claim value')).to.be.true;
+      expect(logStub.error.calledWith('[cookieAuth] Failed to validate token: unexpected "iss" claim value')).to.be.true;
     });
 
     it('returns null when token is expired', async () => {
@@ -134,7 +134,7 @@ describe('CookieHandler', () => {
       clock.restore();
 
       expect(result).to.be.null;
-      expect(logStub.error.calledWith('[cookie] Failed to validate token: "exp" claim timestamp check failed')).to.be.true;
+      expect(logStub.error.calledWith('[cookieAuth] Failed to validate token: "exp" claim timestamp check failed')).to.be.true;
     });
 
     it('successfully validates an admin token', async () => {
@@ -146,7 +146,7 @@ describe('CookieHandler', () => {
       const result = await handler.checkAuth({}, context);
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
-      expect(result.type).to.equal('cookie');
+      expect(result.type).to.equal('cookieAuth');
       expect(result.scopes).to.deep.include({ name: 'admin' });
     });
 
@@ -165,7 +165,7 @@ describe('CookieHandler', () => {
       const result = await handler.checkAuth({}, context);
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
-      expect(result.type).to.equal('cookie');
+      expect(result.type).to.equal('cookieAuth');
       expect(result.scopes).to.have.lengthOf(2);
       expect(result.scopes).to.deep.include({
         name: 'user',
@@ -184,7 +184,7 @@ describe('CookieHandler', () => {
       const result = await handler.checkAuth({}, context);
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
-      expect(result.type).to.equal('cookie');
+      expect(result.type).to.equal('cookieAuth');
       expect(result.scopes).to.be.an('array').that.is.empty;
     });
   });

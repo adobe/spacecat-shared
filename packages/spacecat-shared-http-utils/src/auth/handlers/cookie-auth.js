@@ -20,9 +20,9 @@ import { getCookieValue } from './utils/cookie.js';
 const ALGORITHM_ES256 = 'ES256';
 export const ISSUER = 'https://spacecat.experiencecloud.live';
 
-export default class CookieHandler extends AbstractHandler {
+export default class CookieAuthHandler extends AbstractHandler {
   constructor(log) {
-    super('cookie', log);
+    super('cookieAuth', log);
   }
 
   async #setup(context) {

@@ -12,6 +12,7 @@
   "scripts": {
     "test": "c8 mocha --spec=test/**/*.test.js",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {

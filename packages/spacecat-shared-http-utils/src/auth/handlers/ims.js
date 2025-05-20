@@ -17,9 +17,7 @@ import {
   decodeJwt,
   jwtVerify,
 } from 'jose';
-
 import { getBearerToken } from './utils/bearer.js';
-
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
 
@@ -37,6 +35,7 @@ const IGNORED_PROFILE_PROPS = [
   'aa_id',
 ];
 
+const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {
     const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
@@ -56,6 +55,34 @@ const transformProfile = (payload) => {
 
   return profile;
 };
+
+function getTenants(profile, organizations) {
+  const contexts = profile.projectedProductContext;
+  if (!Array.isArray(contexts) || contexts.length === 0) {
+    return [];
+  }
+
+  const filteredContexts = contexts
+    .filter((context) => context.prodCtx.serviceCode === SERVICE_CODE)
+    // remove duplicates
+    .filter((context, index, array) => array.findIndex(
+      (tenant) => (context.prodCtx.owningEntity
+        && tenant.prodCtx.owningEntity === context.prodCtx.owningEntity),
+    ) === index)
+    // remove the auth source from the id (<id>@<auth-src>)
+    .map((context) => ({
+      id: context.prodCtx.owningEntity.split('@')[0],
+      subServices: context.prodCtx.enable_sub_service?.split(',').filter((subService) => subService.startsWith(SERVICE_CODE)),
+    }));
+
+  return organizations.filter(
+    (org) => filteredContexts.findIndex((ctx) => ctx.id === org.orgRef.ident) !== -1,
+  ).map((org) => ({
+    id: org.orgRef.ident,
+    name: org.orgName,
+    subServices: filteredContexts.find((ctx) => ctx.id === org.orgRef.ident)?.subServices,
+  }));
+}
 
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
@@ -115,16 +142,33 @@ export default class AdobeImsHandler extends AbstractHandler {
       return null;
     }
 
+    if (!context.imsClient) {
+      this.log('No IMS client available in context', 'error');
+      return null;
+    }
+
     try {
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);
+      const imsProfile = await context.imsClient.getImsUserProfile(token);
+      const organizations = await context.imsClient.getImsUserOrganizations(token);
+      payload.tenants = getTenants(imsProfile, organizations) || [];
+
       const profile = transformProfile(payload);
+      const scopes = [];
+      if (imsProfile.email?.endsWith('@adobe.com')) {
+        scopes.push({ name: 'admin' });
+      } else {
+        scopes.push(...payload.tenants.map(
+          (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
+        ));
+      }
 
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
         .withProfile(profile)
-        .withScopes([{ name: 'admin' }]);
+        .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
     }

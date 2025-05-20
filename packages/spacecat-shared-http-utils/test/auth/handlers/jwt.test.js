@@ -193,5 +193,91 @@ describe('SpacecatJWTHandler', () => {
       expect(result.hasOrganization(`${orgId}@AdobeId`)).to.be.true;
       expect(result.hasScope('user', scope)).to.be.true;
     });
+
+    it('successfully validates a token with no tenants array', async () => {
+      const token = await createToken(createTokenPayload({
+        user_id: 'test-user',
+        is_admin: false,
+      }));
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.profile).to.be.an('object');
+      expect(result.profile).to.have.property('tenants').that.is.an('array').with.lengthOf(0);
+      expect(result.getScopes()).to.be.an('array').with.lengthOf(0);
+    });
+
+    it('successfully validates a token from bearer token', async () => {
+      const token = await createToken(createTokenPayload({
+        user_id: 'test-user',
+        is_admin: false,
+        tenants: [],
+      }));
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.profile).to.have.property('user_id', 'test-user');
+    });
+
+    it('successfully validates a token from cookie when bearer token is not present', async () => {
+      const token = await createToken(createTokenPayload({
+        user_id: 'test-user',
+        is_admin: false,
+        tenants: [],
+      }));
+      context.pathInfo = {
+        headers: {
+          cookie: `sessionToken=${token}`,
+        },
+      };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.profile).to.have.property('user_id', 'test-user');
+    });
+
+    it('prefers bearer token over cookie token when both are present', async () => {
+      const bearerToken = await createToken(createTokenPayload({
+        user_id: 'bearer-user',
+        is_admin: false,
+        tenants: [],
+      }));
+      const cookieToken = await createToken(createTokenPayload({
+        user_id: 'cookie-user',
+        is_admin: false,
+        tenants: [],
+      }));
+      context.pathInfo = {
+        headers: {
+          authorization: `Bearer ${bearerToken}`,
+          cookie: `sessionToken=${cookieToken}`,
+        },
+      };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.profile).to.have.property('user_id', 'bearer-user');
+    });
+
+    it('returns null when both bearer token and cookie are missing', async () => {
+      context.pathInfo = {
+        headers: {},
+      };
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.null;
+      expect(logStub.debug.calledWith('[jwt] No bearer token provided')).to.be.true;
+    });
   });
 });

@@ -16,6 +16,7 @@ import LegacyApiKeyHandler from './auth/handlers/legacy-api-key.js';
 import AdobeImsHandler from './auth/handlers/ims.js';
 import ScopedApiKeyHandler from './auth/handlers/scoped-api-key.js';
 import JwtHandler from './auth/handlers/jwt.js';
+import CookieAuthHandler from './auth/handlers/cookie-auth.js';
 
 const HEADER_CONTENT_TYPE = 'content-type';
 const HEADER_ERROR = 'x-error';
@@ -112,5 +113,5 @@ export { enrichPathInfo } from './enrich-path-info-wrapper.js';
 export { hashWithSHA256 } from './auth/generate-hash.js';
 
 export {
-  AdobeImsHandler, ScopedApiKeyHandler, LegacyApiKeyHandler, JwtHandler,
+  AdobeImsHandler, CookieAuthHandler, ScopedApiKeyHandler, LegacyApiKeyHandler, JwtHandler,
 };

@@ -91,7 +91,7 @@ describe('CookieAuthHandler', () => {
     };
     const result = await handler.checkAuth({}, context);
     expect(result).to.be.null;
-    expect(logStub.debug.calledWith('[cookieAuth] No bearer token provided')).to.be.true;
+    expect(logStub.debug.calledWith('[cookieAuth] No session token provided')).to.be.true;
   });
 
   it('returns null when public key is not provided', async () => {

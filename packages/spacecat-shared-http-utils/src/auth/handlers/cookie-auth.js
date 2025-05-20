@@ -62,7 +62,7 @@ export default class CookieAuthHandler extends AbstractHandler {
       const sessionToken = getCookieValue(context, 'sessionToken');
 
       if (!hasText(sessionToken)) {
-        this.log('No bearer token provided', 'debug');
+        this.log('No session token provided', 'debug');
         return null;
       }
 

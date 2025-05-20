@@ -42,8 +42,14 @@ function filterEvents(bundles) {
 
       const isFormRelatedEvent = ['fill', 'formsubmit'].includes(event.checkpoint)
           || /\bform\b|aemform\w*/i.test(event.source);
-      return isFormRelatedEvent && !KEYWORDS_TO_FILTER.some((keyword) => event.source
-          && event.source.toLowerCase().includes(keyword));
+          return (
+            isFormRelatedEvent &&
+            !KEYWORDS_TO_FILTER.some(
+              (keyword) =>
+                (event.source && event.source.toLowerCase().includes(keyword)) ||
+                (event.target && event.target.toLowerCase().includes(keyword)),
+            )
+          );
     }),
   }));
 }

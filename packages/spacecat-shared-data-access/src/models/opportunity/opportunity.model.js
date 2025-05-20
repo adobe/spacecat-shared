@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
 
 /**
@@ -76,8 +77,11 @@ class Opportunity extends BaseModel {
     const fixEntitiesResponse = await this.entityRegistry
       .getCollection('FixEntityCollection')
       .createMany(childFixEntities, this);
-    let areAllSuggestionsFixed = true;
     const suggestions = await this.getSuggestions();
+    if (!isNonEmptyArray(suggestions)) {
+      return fixEntitiesResponse;
+    }
+    let areAllSuggestionsFixed = true;
     suggestions.forEach((suggestion) => {
       if (!suggestion.getFixEntityId()) {
         areAllSuggestionsFixed = false;

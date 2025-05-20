@@ -79,11 +79,39 @@ describe('OpportunityModel', () => {
   });
 
   describe('addFixEntities', () => {
-    it('adds related fix entities to the opportunity', async () => {
+    it('adds related fix entities to the opportunity when all suggestions are fixed', async () => {
       const mockFixEntityCollection = {
         createMany: stub().returns(Promise.resolve({ id: 'fix-entity-1' })),
       };
       mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(mockFixEntityCollection);
+      mockEntityRegistry.getCollection().allByIndexKeys.returns([{ id: 'suggestion-1', getFixEntityId: stub().returns('fix-entity-1') }]);
+
+      const fixEntity = await instance.addFixEntities([{ text: 'Fix entity text' }]);
+      expect(fixEntity).to.deep.equal({ id: 'fix-entity-1' });
+      expect(mockEntityRegistry.getCollection.calledWith('FixEntityCollection')).to.be.true;
+      expect(mockFixEntityCollection.createMany.calledOnceWith([{ text: 'Fix entity text', opportunityId: 'op12345' }])).to.be.true;
+    });
+
+    it('adds related fix entities to the opportunity when there is no suggestion', async () => {
+      const mockFixEntityCollection = {
+        createMany: stub().returns(Promise.resolve({ id: 'fix-entity-1' })),
+      };
+      mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(mockFixEntityCollection);
+      mockEntityRegistry.getCollection().allByIndexKeys.returns([]);
+
+      const fixEntity = await instance.addFixEntities([{ text: 'Fix entity text' }]);
+      expect(fixEntity).to.deep.equal({ id: 'fix-entity-1' });
+      expect(mockEntityRegistry.getCollection.calledWith('FixEntityCollection')).to.be.true;
+      expect(mockFixEntityCollection.createMany.calledOnceWith([{ text: 'Fix entity text', opportunityId: 'op12345' }])).to.be.true;
+    });
+
+    it('adds related fix entities to the opportunity when not all suggestions are fixed', async () => {
+      const mockFixEntityCollection = {
+        createMany: stub().returns(Promise.resolve({ id: 'fix-entity-1' })),
+      };
+      mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(mockFixEntityCollection);
+      mockEntityRegistry.getCollection().allByIndexKeys.returns([{ id: 'suggestion-1', getFixEntityId: stub().returns('fix-entity-1') },
+        { id: 'suggestion-2', getFixEntityId: stub().returns(undefined) }]);
 
       const fixEntity = await instance.addFixEntities([{ text: 'Fix entity text' }]);
       expect(fixEntity).to.deep.equal({ id: 'fix-entity-1' });

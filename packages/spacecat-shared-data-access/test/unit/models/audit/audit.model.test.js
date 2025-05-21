@@ -268,6 +268,7 @@ describe('AuditModel', () => {
         completionQueueUrl: 'audit-jobs-queue-url',
         skipMessage: false,
         allowCache: true,
+        options: {},
         auditContext: { some: 'context' },
       });
     });

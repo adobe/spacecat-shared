@@ -12,9 +12,9 @@
 
 import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
-import AWSXray from 'aws-xray-sdk';
 import { Service } from 'electrodb';
 
+import { instrumentAWSClient } from '@adobe/spacecat-shared-utils';
 import { EntityRegistry } from '../models/index.js';
 
 export * from '../errors/index.js';
@@ -22,7 +22,7 @@ export * from '../models/index.js';
 export * from '../util/index.js';
 
 const createRawClient = (client = undefined) => {
-  const dbClient = client || AWSXray.captureAWSv3Client(new DynamoDB());
+  const dbClient = instrumentAWSClient(client || new DynamoDB());
   return DynamoDBDocument.from(dbClient, {
     marshallOptions: {
       convertEmptyValues: true,

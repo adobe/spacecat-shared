@@ -1,3 +1,43 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.25.2...@adobe/spacecat-shared-rum-api-client-v2.26.0) (2025-05-20)
+
+
+### Bug Fixes
+
+* filter Forms that submit to an endpoint containing the term search ([#748](https://github.com/adobe/spacecat-shared/issues/748)) ([aa2d74b](https://github.com/adobe/spacecat-shared/commit/aa2d74b1ae7895101b90ff2b91acff5ed351f60d))
+
+
+### Features
+
+* add cookie auth handler ([#749](https://github.com/adobe/spacecat-shared/issues/749)) ([362184b](https://github.com/adobe/spacecat-shared/commit/362184b1339ccdaa25328228c906917721d86bd1))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.25.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.25.1...@adobe/spacecat-shared-rum-api-client-v2.25.2) (2025-05-19)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.2 ([#747](https://github.com/adobe/spacecat-shared/issues/747)) ([64e350a](https://github.com/adobe/spacecat-shared/commit/64e350ad62b7b6d3ad9aa47c66f51ba16508fc6c))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.25.0...@adobe/spacecat-shared-rum-api-client-v2.25.1) (2025-05-19)
+
+
+### Bug Fixes
+
+* use rum bundler for consent classification ([#744](https://github.com/adobe/spacecat-shared/issues/744)) ([251ca76](https://github.com/adobe/spacecat-shared/commit/251ca76ec65c3775fdc1656143cfd1767bfb9b1c))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.24.3...@adobe/spacecat-shared-rum-api-client-v2.25.0) (2025-05-16)
+
+
+### Features
+
+* optel traffic group metrics ([#741](https://github.com/adobe/spacecat-shared/issues/741)) ([cdfef6a](https://github.com/adobe/spacecat-shared/commit/cdfef6a42731bf5fb5056619df605e9db67e724e))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.24.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.24.2...@adobe/spacecat-shared-rum-api-client-v2.24.3) (2025-05-15)
+
+
+### Bug Fixes
+
+* detect iframe forms; bug fix for duplicated iframes with # ([#736](https://github.com/adobe/spacecat-shared/issues/736)) ([5243220](https://github.com/adobe/spacecat-shared/commit/524322096233e393f59899deb9de24bdab201275))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.24.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.24.1...@adobe/spacecat-shared-rum-api-client-v2.24.2) (2025-05-11)
 
 

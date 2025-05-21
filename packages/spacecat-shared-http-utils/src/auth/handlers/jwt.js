@@ -16,6 +16,7 @@ import { importSPKI, jwtVerify } from 'jose';
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
 import { getBearerToken } from './utils/bearer.js';
+import { getCookieValue } from './utils/cookie.js';
 
 const ALGORITHM_ES256 = 'ES256';
 export const ISSUER = 'https://spacecat.experiencecloud.live';
@@ -59,7 +60,7 @@ export default class JwtHandler extends AbstractHandler {
     try {
       await this.#setup(context);
 
-      const token = getBearerToken(context);
+      const token = getBearerToken(context) ?? getCookieValue(context, 'sessionToken');
 
       if (!hasText(token)) {
         this.log('No bearer token provided', 'debug');

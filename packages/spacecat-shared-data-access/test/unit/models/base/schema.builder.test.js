@@ -81,7 +81,7 @@ describe('SchemaBuilder', () => {
           required: true,
         },
         updatedBy: {
-          default: null,
+          default: instance.attributes.updatedBy.default,
           type: 'string',
           required: false,
           readOnly: false,
@@ -446,7 +446,7 @@ describe('SchemaBuilder', () => {
             default: instance.attributes.createdAt.default,
           },
           updatedBy: {
-            default: null,
+            default: instance.attributes.updatedBy.default,
             type: 'string',
             required: false,
             readOnly: false,

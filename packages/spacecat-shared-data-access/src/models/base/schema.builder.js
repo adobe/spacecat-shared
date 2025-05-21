@@ -77,7 +77,7 @@ const UPDATED_BY_ATTRIBUTE_DATA = {
   required: false,
   readOnly: false,
   watch: '*',
-  default: null,
+  default: () => 'system',
 };
 
 /**

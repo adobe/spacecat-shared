@@ -83,7 +83,7 @@ const UPDATED_BY_ATTRIBUTE_DATA = {
   readOnly: false,
   watch: '*',
   validate: (value) => !value || typeof value === 'string',
-  default: null,
+  default: () => 'system',
 };
 
 /**

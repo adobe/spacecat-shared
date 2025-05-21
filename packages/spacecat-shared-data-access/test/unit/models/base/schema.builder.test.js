@@ -451,7 +451,7 @@ describe('SchemaBuilder', () => {
             required: false,
             readOnly: false,
             validate: instance.attributes.updatedBy.validate,
-            default: null,
+            default: instance.attributes.updatedBy.default,
             watch: '*',
           },
           organizationId: {

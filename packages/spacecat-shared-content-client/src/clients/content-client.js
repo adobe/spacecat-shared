@@ -218,6 +218,9 @@ export default class ContentClient {
       const secrets = JSON.parse(response.SecretString);
       config.domainId = secrets.onedrive_domain_id;
       config.helixAdminToken = secrets.helix_admin_token;
+      config.clientId = secrets.client_id;
+      config.clientSecret = secrets.client_secret;
+      config.authority = secrets.authority;
     } catch (e) {
       log.debug(`Customer ${site.getBaseURL()} secrets containing onedrive domain id not configured: ${e.message}`);
     }

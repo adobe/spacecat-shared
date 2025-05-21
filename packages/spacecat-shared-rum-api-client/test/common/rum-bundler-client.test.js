@@ -196,4 +196,70 @@ describe('Rum bundler client', () => {
     // eslint-disable-next-line no-unused-expressions
     expect(containsCorrectData).to.be.true;
   });
+
+  it('should throw a human readable error if fetch fails', async () => {
+    const domain = 'some-domain.com';
+    const domainkey = 'testkey';
+    const granularity = 'HOURLY';
+    const interval = 7;
+    const dates = generateHourlyDates(7);
+
+    for (const date of dates) {
+      nock(BASE_URL)
+        .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}/${date[3]}?domainkey=${domainkey}`)
+        .replyWithError('Network failure');
+    }
+
+    await expect(fetchBundles({
+      domain,
+      domainkey,
+      granularity,
+      interval,
+      checkpoints: ['good'],
+    }, console)).to.be.rejectedWith(/Error fetching data from/);
+  });
+
+  it('should throw a human readable error if JSON parsing fails', async () => {
+    const domain = 'some-domain.com';
+    const domainkey = 'testkey';
+    const granularity = 'HOURLY';
+    const interval = 7;
+    const dates = generateHourlyDates(7);
+
+    for (const date of dates) {
+      nock(BASE_URL)
+        .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}/${date[3]}?domainkey=${domainkey}`)
+        .reply(200, 'this is not valid JSON');
+    }
+
+    await expect(fetchBundles({
+      domain,
+      domainkey,
+      granularity,
+      interval,
+      checkpoints: ['good'],
+    }, console)).to.be.rejectedWith(/^Error parsing JSON from https:\/\/bundles\.aem\.page\/bundles\/some-domain\.com\/\d{4}\/\d{2}\/\d{2}\/\d{2}\?domainkey=redacted: Unexpected token 'h', "this is not"\.\.\. is not valid JSON$/);
+  });
+
+  it('should throw an error if response status is not ok', async () => {
+    const domain = 'some-domain.com';
+    const domainkey = 'testkey';
+    const granularity = 'DAILY';
+    const interval = 7;
+    const dates = generateDailyDates(7);
+
+    for (const date of dates) {
+      nock(BASE_URL)
+        .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}?domainkey=${domainkey}`)
+        .reply(500, { error: 'Internal Server Error' });
+    }
+
+    await expect(fetchBundles({
+      domain,
+      domainkey,
+      granularity,
+      interval,
+      checkpoints: ['good'],
+    }, console)).to.be.rejectedWith(/^Error fetching data from https:\/\/bundles\.aem\.page\/bundles\/some-domain\.com\/\d{4}\/\d{2}\/\d{2}\?domainkey=redacted: Request to https:\/\/bundles\.aem\.page\/bundles\/some-domain\.com\/\d{4}\/\d{2}\/\d{2}\?domainkey=redacted failed with status 500$/);
+  });
 });

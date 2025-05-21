@@ -1,3 +1,15 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.25.2...@adobe/spacecat-shared-rum-api-client-v2.26.0) (2025-05-20)
+
+
+### Bug Fixes
+
+* filter Forms that submit to an endpoint containing the term search ([#748](https://github.com/adobe/spacecat-shared/issues/748)) ([aa2d74b](https://github.com/adobe/spacecat-shared/commit/aa2d74b1ae7895101b90ff2b91acff5ed351f60d))
+
+
+### Features
+
+* add cookie auth handler ([#749](https://github.com/adobe/spacecat-shared/issues/749)) ([362184b](https://github.com/adobe/spacecat-shared/commit/362184b1339ccdaa25328228c906917721d86bd1))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.25.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.25.1...@adobe/spacecat-shared-rum-api-client-v2.25.2) (2025-05-19)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.1...@adobe/spacecat-shared-http-utils-v1.13.2) (2025-05-21)
+
+
+### Bug Fixes
+
+* merge cookie auth logic with jwt handler ([#751](https://github.com/adobe/spacecat-shared/issues/751)) ([407273b](https://github.com/adobe/spacecat-shared/commit/407273b4e2a2dafe4839ee3e22969f1f648878e8))
+
 # [@adobe/spacecat-shared-http-utils-v1.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.0...@adobe/spacecat-shared-http-utils-v1.13.1) (2025-05-20)
 
 

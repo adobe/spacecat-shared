@@ -57,7 +57,7 @@ export default class ImsPromiseClient extends ImsBaseClient {
 
     if (!hasText(imsHost) || !hasText(clientId) || !hasText(clientSecret)
       || (type === ImsPromiseClient.CLIENT_TYPE.EMITTER && !hasText(promiseDefinitionId))) {
-      throw new Error('Context param must include properties: imsHost, clientId, and clientSecret and for CONSUMER type also promiseDefinitionId.');
+      throw new Error('Context param must include properties: imsHost, clientId, and clientSecret and for EMITTER type also promiseDefinitionId.');
     }
 
     return new ImsPromiseClient({

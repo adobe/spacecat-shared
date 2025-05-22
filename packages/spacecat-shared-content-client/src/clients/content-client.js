@@ -216,11 +216,11 @@ export default class ContentClient {
       const command = new GetSecretValueCommand({ SecretId: customerSecret });
       const response = await client.send(command);
       const secrets = JSON.parse(response.SecretString);
-      config.domainId = secrets.onedrive_domain_id;
-      config.helixAdminToken = secrets.helix_admin_token;
-      config.clientId = secrets.onedrive_client_id;
-      config.clientSecret = secrets.onedrive_client_secret;
-      config.authority = secrets.onedrive_authority;
+      config.domainId = secrets.onedrive_domain_id || config.domainId;
+      config.helixAdminToken = secrets.helix_admin_token || config.helixAdminToken;
+      config.clientId = secrets.onedrive_client_id || config.clientId;
+      config.clientSecret = secrets.onedrive_client_secret || config.clientSecret;
+      config.authority = secrets.onedrive_authority || config.authority;
     } catch (e) {
       log.debug(`Customer ${site.getBaseURL()} secrets containing onedrive domain id not configured: ${e.message}`);
     }

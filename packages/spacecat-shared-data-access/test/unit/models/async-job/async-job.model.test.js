@@ -99,6 +99,10 @@ describe('AsyncJobModel', () => {
       instance.setResult({ value: 42 });
       expect(instance.getResult()).to.deep.equal({ value: 42 });
     });
+    it('sets result as array', () => {
+      instance.setResult([{ value: 42 }]);
+      expect(instance.getResult()).to.deep.equal([{ value: 42 }]);
+    });
   });
 
   describe('error', () => {

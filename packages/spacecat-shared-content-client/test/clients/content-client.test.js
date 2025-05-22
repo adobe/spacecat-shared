@@ -795,41 +795,4 @@ describe('ContentClient', () => {
       await expect(client.updateImageAltText(path, imageAltText)).to.be.rejectedWith('Failed to update image alt text for path /test-path');
     });
   });
-
-  describe('#resolveDocPath', () => {
-    let siteConfig;
-    let client;
-
-    beforeEach(async () => {
-      siteConfig = {
-        getId: () => 'site-id',
-        getHlxConfig: () => ({
-          content: {
-            source: {
-              type: 'onedrive',
-              url: 'https://adobe.sharepoint.com/:f:/r/sites/HelixProjects/Shared%20Documents/sites/spacecat-test',
-            },
-          },
-        }),
-        getBaseURL: () => 'https://adobe.sharepoint.com',
-      };
-      client = await ContentClient.createFrom(context, siteConfig);
-      client.rawClient = {
-        getDocument: sinon.stub().returns({
-          getMetadata: sinon.stub().resolves(new Map()),
-        }),
-      };
-      client.contentSource = siteConfig.getHlxConfig().content.source;
-    });
-
-    it('should resolve correct docPath for OneDrive with subpath via getPageMetadata', async () => {
-      await client.getPageMetadata('/sites/spacecat-test/test/careers/');
-      expect(client.rawClient.getDocument.calledWith('/test/careers/index.docx')).to.be.true;
-    });
-
-    it('should add leading slash if missing after subpath strip', async () => {
-      await client.getPageMetadata('/sites/spacecat-testtest/careers/');
-      expect(client.rawClient.getDocument.calledWith('/test/careers/index.docx')).to.be.true;
-    });
-  });
 });

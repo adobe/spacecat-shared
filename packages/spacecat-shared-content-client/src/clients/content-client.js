@@ -305,16 +305,6 @@ export default class ContentClient {
     let docPath = path.endsWith('/') ? `${path}index` : path;
 
     if (this.contentSource.type === CONTENT_SOURCE_TYPE_ONEDRIVE) {
-      // Extract subpath after 'Shared%20Documents' from the URL
-      const { url } = this.contentSource;
-      const match = url && url.match(/Shared%20Documents(\/[^?]*)/);
-      if (match && match[1]) {
-        const subpath = decodeURIComponent(match[1]);
-        if (docPath.startsWith(subpath)) {
-          docPath = docPath.slice(subpath.length);
-          if (!docPath.startsWith('/')) docPath = `/${docPath}`;
-        }
-      }
       docPath += '.docx';
     }
 

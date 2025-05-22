@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject, isValidUrl, isIsoDate } from '@adobe/spacecat-shared-utils';
+import {
+  isObject, isValidUrl, isIsoDate, isArray,
+} from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
 import AsyncJob from './async-job.model.js';
 import AsyncJobCollection from './async-job.collection.js';
@@ -31,7 +33,7 @@ const schema = new SchemaBuilder(AsyncJob, AsyncJobCollection)
   })
   .addAttribute('result', {
     type: 'any',
-    validate: (value) => !value || isObject(value),
+    validate: (value) => !value || isObject(value) || isArray(value),
   })
   .addAttribute('error', {
     type: 'map',

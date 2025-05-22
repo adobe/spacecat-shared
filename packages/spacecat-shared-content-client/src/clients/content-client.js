@@ -460,8 +460,9 @@ export default class ContentClient {
     this.log.info(`Updating image alt text for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
+    this.log.info(`Doc path: ${docPath}`);
     const document = await this.rawClient.getDocument(docPath);
-
+    this.log.info(`Document: ${document}`);
     const response = await document.updateImageAltText(imageAltText);
     if (response?.status !== 200) {
       throw new Error(`Failed to update image alt text for path ${path}`);

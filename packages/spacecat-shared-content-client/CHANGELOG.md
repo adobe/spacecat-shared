@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.6.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.6.18...@adobe/spacecat-shared-content-client-v1.6.19) (2025-05-22)
+
+
+### Bug Fixes
+
+* allow default value for sharepoint credentials ([#755](https://github.com/adobe/spacecat-shared/issues/755)) ([0b06c0b](https://github.com/adobe/spacecat-shared/commit/0b06c0bcded13264cdc7039cf25c02e8a3f1c870))
+
 # [@adobe/spacecat-shared-content-client-v1.6.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.6.17...@adobe/spacecat-shared-content-client-v1.6.18) (2025-05-21)
 
 

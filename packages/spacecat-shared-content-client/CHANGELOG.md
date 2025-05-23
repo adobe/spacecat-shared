@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.6.20...@adobe/spacecat-shared-content-client-v1.7.0) (2025-05-23)
+
+
+### Features
+
+* updateImageAltText for content client ([#724](https://github.com/adobe/spacecat-shared/issues/724)) ([b2a5628](https://github.com/adobe/spacecat-shared/commit/b2a56282f8066b9192314c23610a7e0d0abd04e6))
+
 # [@adobe/spacecat-shared-content-client-v1.6.20](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.6.19...@adobe/spacecat-shared-content-client-v1.6.20) (2025-05-22)
 
 

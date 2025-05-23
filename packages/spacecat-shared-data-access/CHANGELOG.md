@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.4...@adobe/spacecat-shared-data-access-v2.20.0) (2025-05-23)
+
+
+### Features
+
+* added accessibility as an audit type ([#759](https://github.com/adobe/spacecat-shared/issues/759)) ([9ec2874](https://github.com/adobe/spacecat-shared/commit/9ec2874a18b27ab2c923b2944cbbc89d82996291))
+
 # [@adobe/spacecat-shared-data-access-v2.19.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.3...@adobe/spacecat-shared-data-access-v2.19.4) (2025-05-22)
 
 

@@ -19,7 +19,6 @@ export interface Suggestion extends BaseModel {
   getOpportunityId(): string;
   getFixEntityId(): string;
   getFixEntity(): Promise<object>;
-  getUpdatedBy(): string;
   getRank(): number;
   getStatus(): string;
   getType(): string;
@@ -28,7 +27,6 @@ export interface Suggestion extends BaseModel {
   setOpportunityId(opportunityId: string): Suggestion;
   setRank(rank: number): Suggestion;
   setStatus(status: string): Suggestion;
-  setUpdatedBy(updatedBy: string): Suggestion;
 }
 
 export interface SuggestionCollection extends BaseCollection<Suggestion> {

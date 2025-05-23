@@ -11,6 +11,7 @@
  */
 
 import { DataChunks } from '@adobe/rum-distiller';
+import trafficAcquisition from './traffic-acquisition.js';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
@@ -230,10 +231,10 @@ function handler(bundles) {
   );
 
   // traffic acquisition data per url - uncomment this when required
-  // const trafficByUrl = trafficAcquisition.handler(bundles);
-  // const trafficByUrlMap = Object.fromEntries(
-  //   trafficByUrl.map(({ url, ...item }) => [url, item]),
-  // );
+  const trafficByUrl = trafficAcquisition.handler(bundles);
+  const trafficByUrlMap = Object.fromEntries(
+    trafficByUrl.map(({ url, ...item }) => [url, item]),
+  );
   const formVitals = {};
 
   globalFormSourceSet.forEach((source) => {
@@ -256,7 +257,7 @@ function handler(bundles) {
         acc[key] = acc[key] || initializeResult(url);
         acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
         // Enable traffic acquisition for persistence by uncommenting this line
-        // acc[key].trafficacquisition = trafficByUrlMap[url];
+        acc[key].trafficacquisition = trafficByUrlMap[url];
         acc[key].formsource = source;
         // filter out user-agents with no form vitals
         METRICS.filter((metric) => metrics[metric].sum)

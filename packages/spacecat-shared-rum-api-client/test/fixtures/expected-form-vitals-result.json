@@ -25,6 +25,19 @@
         "totalClicksOnPage": 800
       }
     ],
+    "trafficacquisition": {
+      "total": 2400,
+      "earned": 0,
+      "owned": 2400,
+      "paid": 0,
+      "maxTimeDelta": 33324,
+      "sources": [
+        {
+          "type": "owned:direct",
+          "views": 2400
+        }
+      ]
+    },
     "formsource": ".form"
   },
   {
@@ -44,6 +57,19 @@
     "forminternalnavigation": [
 
     ],
+    "trafficacquisition": {
+      "earned": 0,
+      "maxTimeDelta": 33324,
+      "owned": 2400,
+      "paid": 0,
+      "sources": [
+        {
+          "type": "owned:direct",
+          "views": 2400
+        }
+      ],
+      "total": 2400
+    },
     "formsource": "form#abc"
   },
   {
@@ -63,6 +89,19 @@
     "forminternalnavigation": [
 
     ],
+    "trafficacquisition": {
+      "earned": 0,
+      "maxTimeDelta": 497,
+      "owned": 1500,
+      "paid": 0,
+      "sources": [
+        {
+          "type": "owned:direct",
+          "views": 1500
+        }
+      ],
+      "total": 1500
+    },
     "formsource": "form#abc"
   },
   {
@@ -82,6 +121,19 @@
     "forminternalnavigation": [
 
     ],
+    "trafficacquisition": {
+      "earned": 0,
+      "maxTimeDelta": 33324,
+      "owned": 2400,
+      "paid": 0,
+      "sources": [
+        {
+          "type": "owned:direct",
+          "views": 2400
+        }
+      ],
+      "total": 2400
+    },
     "formsource": "form.xyz"
   },
   {
@@ -103,6 +155,19 @@
         "totalClicksOnPage": 100
       }
     ],
+    "trafficacquisition": {
+      "earned": 0,
+      "maxTimeDelta": 17093,
+      "owned": 200,
+      "paid": 0,
+      "sources": [
+        {
+          "type": "owned:direct",
+          "views": 200
+        }
+      ],
+      "total": 200
+    },
     "iframeSrc": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html"
   }
 ]

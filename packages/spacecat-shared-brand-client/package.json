@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-brand-client",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "Shared modules of the Spacecat Services - Brand Client",
   "type": "module",
   "engines": {

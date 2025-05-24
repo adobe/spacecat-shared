@@ -24,6 +24,7 @@ import {
   IMS_TOKEN_ENDPOINT,
   IMS_TOKEN_ENDPOINT_V3,
   IMS_VALIDATE_TOKEN_ENDPOINT,
+  IMS_ADMIN_PROFILE_ENDPOINT,
 } from '../utils.js';
 
 export default class ImsClient extends ImsBaseClient {
@@ -335,5 +336,39 @@ export default class ImsClient extends ImsBaseClient {
     }
 
     return validationResponse.json();
+  }
+
+  /**
+   * Fetches the profile for a given GUID using by using the IMS Admin API
+   * @param {string} imsId - The IMS ID of the user
+   * @returns {Promise<Object>} The user's profile data
+   * @throws {Error} If the request fails
+   */
+  async getImsAdminProfile(imsId) {
+    if (!hasText(imsId)) {
+      throw new Error('imsId param is required.');
+    }
+
+    const { guid, authSource } = extractIdAndAuthSource(imsId);
+
+    const serviceToken = await this.getServiceAccessToken();
+
+    const adminProfileResponse = await this.imsApiCall(
+      IMS_ADMIN_PROFILE_ENDPOINT,
+      {},
+      {
+        guid,
+        client_id: this.config.clientId,
+        bearer_token: serviceToken.access_token,
+        auth_src: authSource,
+      },
+      { noContentType: true },
+    );
+
+    if (!adminProfileResponse.ok) {
+      throw new Error(`IMS getAdminProfile request failed with status: ${adminProfileResponse.status}`);
+    }
+
+    return adminProfileResponse.json();
   }
 }

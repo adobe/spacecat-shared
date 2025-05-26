@@ -50,12 +50,16 @@ export function createResponse(body, status = 200, headers = {}) {
   });
 }
 
-export function ok(body = '') {
-  return createResponse(body, 200);
+export function ok(body = '', headers = {}) {
+  return createResponse(body, 200, headers);
 }
 
-export function created(body) {
-  return createResponse(body, 201);
+export function created(body, headers = {}) {
+  return createResponse(body, 201, headers);
+}
+
+export function accepted(body, headers = {}) {
+  return createResponse(body, 202, headers);
 }
 
 export function noContent(headers = {}) {

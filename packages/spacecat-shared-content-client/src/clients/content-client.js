@@ -9,10 +9,9 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import AWSXray from 'aws-xray-sdk';
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
 import {
-  composeBaseURL, hasText, isObject, resolveCustomerSecretsName, tracingFetch,
+  composeBaseURL, hasText, instrumentAWSClient, isObject, resolveCustomerSecretsName, tracingFetch,
 } from '@adobe/spacecat-shared-utils';
 import { Graph, hasCycle } from 'graph-data-structure';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
@@ -150,6 +149,23 @@ const validateLinks = (links, type) => {
   }
 };
 
+const validateImageAltText = (imageAltText) => {
+  if (!Array.isArray(imageAltText)) {
+    throw new Error(`${imageAltText} must be an array`);
+  }
+  for (const item of imageAltText) {
+    if (!isObject(item)) {
+      throw new Error(`${item} must be an object`);
+    }
+    if (!item.imageUrl) {
+      throw new Error(`No imageUrl found for ${item}`);
+    }
+    if (!item.altText) {
+      throw new Error(`No altText found for ${item}`);
+    }
+  }
+};
+
 const removeDuplicatedRedirects = (currentRedirects, newRedirects, log) => {
   const redirectsSet = new Set(
     currentRedirects.map(({ from, to }) => `${from}:${to}`),
@@ -213,12 +229,15 @@ export default class ContentClient {
 
     try {
       const customerSecret = resolveCustomerSecretsName(site.getBaseURL(), context);
-      const client = AWSXray.captureAWSv3Client(secretsManagerClient);
+      const client = instrumentAWSClient(secretsManagerClient);
       const command = new GetSecretValueCommand({ SecretId: customerSecret });
       const response = await client.send(command);
       const secrets = JSON.parse(response.SecretString);
-      config.domainId = secrets.onedrive_domain_id;
-      config.helixAdminToken = secrets.helix_admin_token;
+      config.domainId = secrets.onedrive_domain_id || config.domainId;
+      config.helixAdminToken = secrets.helix_admin_token || config.helixAdminToken;
+      config.clientId = secrets.onedrive_client_id || config.clientId;
+      config.clientSecret = secrets.onedrive_client_secret || config.clientSecret;
+      config.authority = secrets.onedrive_authority || config.authority;
     } catch (e) {
       log.debug(`Customer ${site.getBaseURL()} secrets containing onedrive domain id not configured: ${e.message}`);
     }
@@ -429,5 +448,26 @@ export default class ContentClient {
     }
 
     this.#logDuration('updateBrokenInternalLink', startTime);
+  }
+
+  async updateImageAltText(path, imageAltText) {
+    const startTime = process.hrtime.bigint();
+
+    validatePath(path);
+    validateImageAltText(imageAltText);
+    await this.#initClient();
+
+    this.log.info(`Updating image alt text for ${this.site.getId()} and path ${path}`);
+
+    const docPath = this.#resolveDocPath(path);
+    this.log.info(`Doc path: ${docPath}`);
+    const document = await this.rawClient.getDocument(docPath);
+    this.log.info(`Document: ${document}`);
+    const response = await document.updateImageAltText(imageAltText);
+    if (response?.status !== 200) {
+      throw new Error(`Failed to update image alt text for path ${path}`);
+    }
+
+    this.#logDuration('updateImageAltText', startTime);
   }
 }

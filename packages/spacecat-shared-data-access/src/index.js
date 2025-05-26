@@ -14,7 +14,7 @@ import { createDataAccess } from './service/index.js';
 
 export * from './service/index.js';
 
-const TABLE_NAME_DATA = 'spacecat-services-data-dev';
+const TABLE_NAME_DATA = 'spacecat-services-data';
 
 /**
  * Wrapper for data access layer

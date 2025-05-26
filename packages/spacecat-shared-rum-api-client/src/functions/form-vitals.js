@@ -11,6 +11,7 @@
  */
 
 import { DataChunks } from '@adobe/rum-distiller';
+import trafficAcquisition from './traffic-acquisition.js';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
@@ -41,9 +42,13 @@ function filterEvents(bundles) {
       }
 
       const isFormRelatedEvent = ['fill', 'formsubmit'].includes(event.checkpoint)
-          || /\bform\b|aemform\w*/i.test(event.source);
-      return isFormRelatedEvent && !KEYWORDS_TO_FILTER.some((keyword) => event.source
-          && event.source.toLowerCase().includes(keyword));
+        || /\bform\b|aemform\w*/i.test(event.source);
+
+      return isFormRelatedEvent
+        && !KEYWORDS_TO_FILTER.some(
+          (keyword) => (event.source && event.source.toLowerCase().includes(keyword))
+            || (event.target && event.target.toLowerCase().includes(keyword)),
+        );
     }),
   }));
 }
@@ -214,11 +219,22 @@ function handler(bundles) {
     });
   });
 
+  // remove duplicate urls with '#'
+  const iframeParentMapWithoutDuplicates = Object.fromEntries(
+    Object.entries(iframeParentMap).filter(([key]) => {
+      if (key.endsWith('#')) {
+        const baseUrl = key.slice(0, -1);
+        return !Object.prototype.hasOwnProperty.call(iframeParentMap, baseUrl);
+      }
+      return true;
+    }),
+  );
+
   // traffic acquisition data per url - uncomment this when required
-  // const trafficByUrl = trafficAcquisition.handler(bundles);
-  // const trafficByUrlMap = Object.fromEntries(
-  //   trafficByUrl.map(({ url, ...item }) => [url, item]),
-  // );
+  const trafficByUrl = trafficAcquisition.handler(bundles);
+  const trafficByUrlMap = Object.fromEntries(
+    trafficByUrl.map(({ url, ...item }) => [url, item]),
+  );
   const formVitals = {};
 
   globalFormSourceSet.forEach((source) => {
@@ -241,7 +257,7 @@ function handler(bundles) {
         acc[key] = acc[key] || initializeResult(url);
         acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
         // Enable traffic acquisition for persistence by uncommenting this line
-        // acc[key].trafficacquisition = trafficByUrlMap[url];
+        acc[key].trafficacquisition = trafficByUrlMap[url];
         acc[key].formsource = source;
         // filter out user-agents with no form vitals
         METRICS.filter((metric) => metrics[metric].sum)
@@ -256,7 +272,7 @@ function handler(bundles) {
   const iframeParentVitalsMap = getParentPageVitalsGroupedByIFrame(
     bundles,
     dataChunks,
-    iframeParentMap,
+    iframeParentMapWithoutDuplicates,
   );
 
   // populate internal navigation data

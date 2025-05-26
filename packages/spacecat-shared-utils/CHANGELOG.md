@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-utils-v1.38.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.38.3...@adobe/spacecat-shared-utils-v1.38.4) (2025-05-24)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#762](https://github.com/adobe/spacecat-shared/issues/762)) ([2eb5a22](https://github.com/adobe/spacecat-shared/commit/2eb5a22935a7293ef293157e0b0fe6506d5b4c94))
+
+# [@adobe/spacecat-shared-utils-v1.38.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.38.2...@adobe/spacecat-shared-utils-v1.38.3) (2025-05-19)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.2 ([#747](https://github.com/adobe/spacecat-shared/issues/747)) ([64e350a](https://github.com/adobe/spacecat-shared/commit/64e350ad62b7b6d3ad9aa47c66f51ba16508fc6c))
+
+# [@adobe/spacecat-shared-utils-v1.38.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.38.1...@adobe/spacecat-shared-utils-v1.38.2) (2025-05-17)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#743](https://github.com/adobe/spacecat-shared/issues/743)) ([afee6a7](https://github.com/adobe/spacecat-shared/commit/afee6a75d7cb6fb52d5fd18dbc5d74f2e73206f2))
+
+# [@adobe/spacecat-shared-utils-v1.38.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.38.0...@adobe/spacecat-shared-utils-v1.38.1) (2025-05-15)
+
+
+### Bug Fixes
+
+* local development friendly aws clients and sqs wrapper ([#739](https://github.com/adobe/spacecat-shared/issues/739)) ([fada9c6](https://github.com/adobe/spacecat-shared/commit/fada9c6fc0508ba6acf46a4416593427b67306dd))
+
+# [@adobe/spacecat-shared-utils-v1.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.37.4...@adobe/spacecat-shared-utils-v1.38.0) (2025-05-14)
+
+
+### Features
+
+* add page authentication token retrieval functionality ([#738](https://github.com/adobe/spacecat-shared/issues/738)) ([f38fe55](https://github.com/adobe/spacecat-shared/commit/f38fe55a02aa4cc3c1c3427d938cf711f3862e01))
+
 # [@adobe/spacecat-shared-utils-v1.37.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.37.3...@adobe/spacecat-shared-utils-v1.37.4) (2025-05-10)
 
 

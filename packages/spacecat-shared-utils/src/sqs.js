@@ -15,6 +15,7 @@ import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { instrumentAWSClient } from './xray.js';
 
 import { hasText, isNonEmptyArray } from './functions.js';
+import { isAWSLambda } from './runtimes.js';
 
 function badRequest(message) {
   return new Response('', {
@@ -102,6 +103,12 @@ export function sqsEventAdapter(fn) {
   return async (req, context) => {
     const { log } = context;
     let message;
+
+    // if not in aws lambda, invoke the function with json body as message
+    if (!isAWSLambda()) {
+      message = await req.json();
+      return fn(message, context);
+    }
 
     // currently not processing batch messages
     const records = context.invocation?.event?.Records;

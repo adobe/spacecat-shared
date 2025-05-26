@@ -1,3 +1,66 @@
+# [@adobe/spacecat-shared-data-access-v2.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.20.1...@adobe/spacecat-shared-data-access-v2.21.0) (2025-05-26)
+
+
+### Features
+
+* add updatedBy attribute to entities and ims api to resolve profile ([#758](https://github.com/adobe/spacecat-shared/issues/758)) ([47f73ff](https://github.com/adobe/spacecat-shared/commit/47f73ff18609f0b97576c391caad7409f0d24349))
+
+# [@adobe/spacecat-shared-data-access-v2.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.20.0...@adobe/spacecat-shared-data-access-v2.20.1) (2025-05-24)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#762](https://github.com/adobe/spacecat-shared/issues/762)) ([2eb5a22](https://github.com/adobe/spacecat-shared/commit/2eb5a22935a7293ef293157e0b0fe6506d5b4c94))
+
+# [@adobe/spacecat-shared-data-access-v2.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.4...@adobe/spacecat-shared-data-access-v2.20.0) (2025-05-23)
+
+
+### Features
+
+* added accessibility as an audit type ([#759](https://github.com/adobe/spacecat-shared/issues/759)) ([9ec2874](https://github.com/adobe/spacecat-shared/commit/9ec2874a18b27ab2c923b2944cbbc89d82996291))
+
+# [@adobe/spacecat-shared-data-access-v2.19.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.3...@adobe/spacecat-shared-data-access-v2.19.4) (2025-05-22)
+
+
+### Bug Fixes
+
+* async job schema ([#756](https://github.com/adobe/spacecat-shared/issues/756)) ([1546cdd](https://github.com/adobe/spacecat-shared/commit/1546cdd07907b1f41684d6486b38004bd5e893d1))
+
+# [@adobe/spacecat-shared-data-access-v2.19.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.2...@adobe/spacecat-shared-data-access-v2.19.3) (2025-05-17)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#743](https://github.com/adobe/spacecat-shared/issues/743)) ([afee6a7](https://github.com/adobe/spacecat-shared/commit/afee6a75d7cb6fb52d5fd18dbc5d74f2e73206f2))
+
+# [@adobe/spacecat-shared-data-access-v2.19.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.1...@adobe/spacecat-shared-data-access-v2.19.2) (2025-05-16)
+
+
+### Bug Fixes
+
+* default table name ([#742](https://github.com/adobe/spacecat-shared/issues/742)) ([deaa0af](https://github.com/adobe/spacecat-shared/commit/deaa0afee239d2f24444cb39df54a929135617ba))
+
+# [@adobe/spacecat-shared-data-access-v2.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.0...@adobe/spacecat-shared-data-access-v2.19.1) (2025-05-15)
+
+
+### Bug Fixes
+
+* local development friendly aws clients and sqs wrapper ([#739](https://github.com/adobe/spacecat-shared/issues/739)) ([fada9c6](https://github.com/adobe/spacecat-shared/commit/fada9c6fc0508ba6acf46a4416593427b67306dd))
+
+# [@adobe/spacecat-shared-data-access-v2.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.18.0...@adobe/spacecat-shared-data-access-v2.19.0) (2025-05-14)
+
+
+### Features
+
+* adding options to scraper sqs payload ([#733](https://github.com/adobe/spacecat-shared/issues/733)) ([eb9a08b](https://github.com/adobe/spacecat-shared/commit/eb9a08b06bc48388a5aa3c78f9ce57c05ef04313))
+
+# [@adobe/spacecat-shared-data-access-v2.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.4...@adobe/spacecat-shared-data-access-v2.18.0) (2025-05-12)
+
+
+### Features
+
+* content scraper audit step will honour the allowCache value fro… ([#725](https://github.com/adobe/spacecat-shared/issues/725)) ([89bfe23](https://github.com/adobe/spacecat-shared/commit/89bfe231b368aaf65eba1777c3799e5cd42fe8f6))
+
 # [@adobe/spacecat-shared-data-access-v2.17.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.3...@adobe/spacecat-shared-data-access-v2.17.4) (2025-05-12)
 
 

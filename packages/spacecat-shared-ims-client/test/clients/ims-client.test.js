@@ -452,4 +452,76 @@ describe('ImsClient', () => {
       await expect(client.validateAccessToken('some-token')).to.eventually.eql(expectedResult);
     });
   });
+
+  describe('getImsAdminProfile', () => {
+    let client;
+    const testImsId = 'test-guid@c62f24cc5b5b7e0e0a494004';
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+    });
+
+    it('throws error when imsId is not provided', async () => {
+      await expect(client.getImsAdminProfile())
+        .to.be.rejectedWith('imsId param is required.');
+    });
+
+    it('successfully fetches admin profile', async () => {
+      const mockAdminProfile = {
+        id: 'test-guid',
+        email: 'test@adobe.com',
+        firstName: 'Test',
+        lastName: 'User',
+      };
+
+      // Mock service token endpoint
+      mockImsTokenResponse();
+
+      // Mock admin profile endpoint
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/admin_profile/v3')
+        .reply(200, mockAdminProfile);
+
+      const result = await client.getImsAdminProfile(testImsId);
+      expect(result).to.deep.equal(mockAdminProfile);
+    });
+
+    it('throws error when admin profile request fails', async () => {
+      // Mock service token endpoint
+      mockImsTokenResponse();
+
+      // Mock failed admin profile response
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/admin_profile/v3')
+        .reply(404);
+
+      await expect(client.getImsAdminProfile(testImsId))
+        .to.be.rejectedWith('IMS getAdminProfile request failed with status: 404');
+    });
+
+    it('reuses existing service token if available', async () => {
+      const mockAdminProfile = {
+        id: 'test-guid',
+        email: 'test@adobe.com',
+      };
+
+      // Set existing service token
+      client.serviceAccessToken = {
+        access_token: 'ZHVtbXktYWNjZXNzLXRva2Vu',
+        expires_in: 86400,
+        token_type: 'bearer',
+      };
+
+      // Mock only admin profile endpoint (token endpoint should not be called)
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/admin_profile/v3')
+        .reply(200, mockAdminProfile);
+
+      const result = await client.getImsAdminProfile(testImsId);
+      expect(result).to.deep.equal(mockAdminProfile);
+
+      // Verify no pending mocks (token endpoint was not called)
+      expect(nock.isDone()).to.be.true;
+    });
+  });
 });

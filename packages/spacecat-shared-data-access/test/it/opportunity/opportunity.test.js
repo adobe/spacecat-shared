@@ -155,6 +155,7 @@ describe('Opportunity IT', async () => {
       status: 'NEW',
       guidance: { foo: 'bar' },
       data: { brokenLinks: ['https://example.com'] },
+      updatedBy: 'system',
     };
 
     const opportunity = await Opportunity.create(data);
@@ -183,6 +184,7 @@ describe('Opportunity IT', async () => {
       status: 'NEW',
       guidance: { foo: 'bar' },
       data: { brokenLinks: ['https://example.com'] },
+      updatedBy: 'system',
     };
 
     const opportunity = await Opportunity.create(data);
@@ -258,6 +260,7 @@ describe('Opportunity IT', async () => {
         origin: 'AI',
         status: 'NEW',
         data: { brokenLinks: ['https://example.com'] },
+        updatedBy: 'system',
       },
       {
         siteId,
@@ -269,6 +272,7 @@ describe('Opportunity IT', async () => {
         origin: 'AI',
         status: 'NEW',
         data: { brokenInternalLinks: ['https://example.com'] },
+        updatedBy: 'system',
       },
     ];
 
@@ -305,6 +309,7 @@ describe('Opportunity IT', async () => {
         origin: 'AI',
         status: 'NEW',
         data: { brokenLinks: ['https://example.com'] },
+        updatedBy: 'system',
       },
       {
         siteId,
@@ -316,6 +321,7 @@ describe('Opportunity IT', async () => {
         origin: 'AI',
         status: 'NEW',
         data: { brokenInternalLinks: ['https://example.com'] },
+        updatedBy: 'system',
       },
       {
         siteId,
@@ -327,6 +333,7 @@ describe('Opportunity IT', async () => {
         origin: 'AI',
         status: 'NEW',
         data: { brokenInternalLinks: ['https://example.com'] },
+        updatedBy: 'system',
       },
     ];
 

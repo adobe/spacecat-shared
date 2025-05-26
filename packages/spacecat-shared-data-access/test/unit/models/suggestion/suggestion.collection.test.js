@@ -83,6 +83,24 @@ describe('SuggestionCollection', () => {
       }]);
     });
 
+    it('updates the status of multiple suggestions with different statuses', async () => {
+      const mockSuggestions = [model];
+      const mockStatus = 'FIXED';
+
+      await instance.bulkUpdateStatus(mockSuggestions, mockStatus);
+
+      expect(mockElectroService.entities.suggestion.put.calledOnce).to.be.true;
+      expect(mockElectroService.entities.suggestion.put.firstCall.args[0]).to.deep.equal([{
+        suggestionId: 's12345',
+        opportunityId: 'op67890',
+        data: {
+          title: 'Test Suggestion',
+          description: 'This is a test suggestion.',
+        },
+        status: 'FIXED',
+      }]);
+    });
+
     it('throws an error if suggestions is not an array', async () => {
       await expect(instance.bulkUpdateStatus({}, 'NEW'))
         .to.be.rejectedWith('Suggestions must be an array');

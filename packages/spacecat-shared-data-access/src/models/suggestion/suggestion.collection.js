@@ -46,17 +46,17 @@ class SuggestionCollection extends BaseCollection {
     suggestions.forEach((suggestion) => {
       suggestion.setStatus(status);
     });
-
     await this._saveMany(suggestions);
+    if (status !== Suggestion.STATUSES.FIXED) {
+      return suggestions;
+    }
     const opportunity = await suggestions[0].getOpportunity();
     const allSuggestions = await this.allByOpportunityId(opportunity.getId());
-    let allFixed = true;
-    allSuggestions.forEach((s) => {
-      if (s.getStatus() !== Suggestion.STATUSES.FIXED) {
-        allFixed = false;
-      }
-    });
-    if (allFixed) {
+    const allFixedSuggestions = await this.allByOpportunityIdAndStatus(
+      opportunity.getId(),
+      Suggestion.STATUSES.FIXED,
+    );
+    if (allSuggestions.length === allFixedSuggestions.length) {
       opportunity.setStatus(Opportunity.STATUSES.RESOLVED);
       await opportunity.save();
     }

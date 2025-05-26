@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.20.1...@adobe/spacecat-shared-data-access-v2.21.0) (2025-05-26)
+
+
+### Features
+
+* add updatedBy attribute to entities and ims api to resolve profile ([#758](https://github.com/adobe/spacecat-shared/issues/758)) ([47f73ff](https://github.com/adobe/spacecat-shared/commit/47f73ff18609f0b97576c391caad7409f0d24349))
+
 # [@adobe/spacecat-shared-data-access-v2.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.20.0...@adobe/spacecat-shared-data-access-v2.20.1) (2025-05-24)
 
 

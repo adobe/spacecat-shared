@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.21...@adobe/spacecat-shared-ahrefs-client-v1.7.0) (2025-05-26)
+
+
+### Features
+
+* Support fetching only unbranded keywords from ahrefs ([#765](https://github.com/adobe/spacecat-shared/issues/765)) ([1fb300b](https://github.com/adobe/spacecat-shared/commit/1fb300bf22e200a31b03c2df50e18d76ed9d882e))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.6.21](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.20...@adobe/spacecat-shared-ahrefs-client-v1.6.21) (2025-05-26)
 
 

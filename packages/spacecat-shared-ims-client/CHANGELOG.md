@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.7.6...@adobe/spacecat-shared-ims-client-v1.8.0) (2025-05-26)
+
+
+### Features
+
+* add updatedBy attribute to entities and ims api to resolve profile ([#758](https://github.com/adobe/spacecat-shared/issues/758)) ([47f73ff](https://github.com/adobe/spacecat-shared/commit/47f73ff18609f0b97576c391caad7409f0d24349))
+
 # [@adobe/spacecat-shared-ims-client-v1.7.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.7.5...@adobe/spacecat-shared-ims-client-v1.7.6) (2025-05-19)
 
 

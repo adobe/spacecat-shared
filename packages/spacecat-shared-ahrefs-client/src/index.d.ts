@@ -80,7 +80,7 @@ export default class AhrefsAPIClient {
       country?: string,
       keywordFilter?: string[],
       limit?: number,
-      mode?: 'exaxt' | 'prefix',
+      mode?: 'exact' | 'prefix',
       excludeBranded?: boolean,
     }):
       Promise<{ result: object, fullAuditRef: string }>;

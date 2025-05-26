@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.26.0...@adobe/spacecat-shared-rum-api-client-v2.27.0) (2025-05-26)
+
+
+### Features
+
+* including traffic acquisition data in forms oppoty ([#754](https://github.com/adobe/spacecat-shared/issues/754)) ([616ebd3](https://github.com/adobe/spacecat-shared/commit/616ebd3b0302d67693db8bce7b55224ff7915778))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.25.2...@adobe/spacecat-shared-rum-api-client-v2.26.0) (2025-05-20)
 
 

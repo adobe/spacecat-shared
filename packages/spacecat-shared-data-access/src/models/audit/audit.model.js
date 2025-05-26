@@ -48,6 +48,7 @@ class Audit extends BaseModel {
     SITE_DETECTION: 'site-detection',
     ALT_TEXT: 'alt-text',
     ACCESSIBILITY: 'accessibility',
+    AUDIT_STATUS_PROCESSING: 'audit-status-processing',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

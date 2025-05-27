@@ -11,6 +11,8 @@
  */
 import { Response } from '@adobe/fetch';
 
+export declare function createResponse(body: object, status?: number, headers?: object): Response;
+
 export declare function ok(body?: string, headers?: object): Response;
 
 export declare function created(body: object, headers?: object): Response;

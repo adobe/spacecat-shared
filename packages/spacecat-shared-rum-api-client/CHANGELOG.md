@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.27.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.27.1...@adobe/spacecat-shared-rum-api-client-v2.27.2) (2025-05-27)
+
+
+### Bug Fixes
+
+* disregarding CTAs without a valid source for low nav opportunities ([#769](https://github.com/adobe/spacecat-shared/issues/769)) ([1dc5d30](https://github.com/adobe/spacecat-shared/commit/1dc5d30ddaa4291061ea29c52c797aa6cfdca670))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.27.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.27.0...@adobe/spacecat-shared-rum-api-client-v2.27.1) (2025-05-26)
 
 

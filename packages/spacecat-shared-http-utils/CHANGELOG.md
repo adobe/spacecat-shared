@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.2...@adobe/spacecat-shared-http-utils-v1.14.0) (2025-05-27)
+
+
+### Features
+
+* add 405 response util ([#768](https://github.com/adobe/spacecat-shared/issues/768)) ([300ceb2](https://github.com/adobe/spacecat-shared/commit/300ceb2c979b304849a30f0e227823308d144c40))
+
 # [@adobe/spacecat-shared-http-utils-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.1...@adobe/spacecat-shared-http-utils-v1.13.2) (2025-05-21)
 
 

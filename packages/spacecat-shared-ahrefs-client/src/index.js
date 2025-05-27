@@ -181,7 +181,13 @@ export default class AhrefsAPIClient {
     return this.sendRequest('/site-explorer/metrics-history', queryParams);
   }
 
-  async getOrganicKeywords(url, country = 'us', keywordFilter = [], limit = 10, mode = 'prefix') {
+  async getOrganicKeywords(url, {
+    country = 'us',
+    keywordFilter = [],
+    limit = 10,
+    mode = 'prefix',
+    excludeBranded = false,
+  } = {}) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -215,11 +221,23 @@ export default class AhrefsAPIClient {
       mode,
       output: 'json',
     };
+    let where;
     if (keywordFilter.length > 0) {
+      where = {
+        or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
+      };
+    }
+    if (excludeBranded) {
+      const nonBrandedWhere = { field: 'is_branded', is: ['eq', 0] };
+      if (where) {
+        where = { and: [nonBrandedWhere, where] };
+      } else {
+        where = nonBrandedWhere;
+      }
+    }
+    if (where != null) {
       try {
-        queryParams.where = JSON.stringify({
-          or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
-        });
+        queryParams.where = JSON.stringify(where);
       } catch (e) {
         this.log.error(`Error parsing keyword filter: ${e.message}`);
         throw new Error(`Error parsing keyword filter: ${e.message}`);

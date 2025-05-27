@@ -14,6 +14,7 @@ import Joi from 'joi';
 
 export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
+  ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
   ALL_TRAFFIC: 'all-traffic',
@@ -42,6 +43,14 @@ const IMPORT_BASE_KEYS = {
 export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+    pageUrl: Joi.string().uri().optional(),
+  }),
+  [IMPORT_TYPES.ORGANIC_KEYWORDS_NONBRANDED]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS_NONBRANDED).required(),
     ...IMPORT_BASE_KEYS,
     geo: Joi.string().optional(),
     limit: Joi.number().integer().min(1).max(100)

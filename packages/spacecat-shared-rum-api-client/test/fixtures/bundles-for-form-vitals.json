@@ -63694,6 +63694,28 @@
       "cwvLCP": 4400,
       "cwvINP": 216,
       "cwvCLS": 0.25626014177128703
+    },
+    {
+      "id": "s6t6",
+      "host": "publish-prod-abbvie-commercial.adobecqms.net",
+      "time": "2025-05-05T14:00:07.466Z",
+      "timeSlot": "2025-05-05T14:00:00.000Z",
+      "url": "https://www.experiment-example.com/test/experiment-page",
+      "userAgent": "mobile:android:blink",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "viewblock",
+          "source": "#form",
+          "timeDelta": 7466
+        },
+        {
+          "checkpoint": "experiment",
+          "target": "",
+          "source": "some-experiment",
+          "timeDelta": 7355
+        }
+      ]
     }
   ]
 }

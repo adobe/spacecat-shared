@@ -15,7 +15,7 @@ import trafficAcquisition from './traffic-acquisition.js';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
-const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia'];
+const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia', 'experiment'];
 const KEYWORDS_TO_FILTER = ['search'];
 
 function initializeResult(url) {
@@ -38,6 +38,10 @@ function filterEvents(bundles) {
       }
 
       if (event.checkpoint === 'navigate') {
+        return true;
+      }
+
+      if (event.checkpoint === 'experiment') {
         return true;
       }
 
@@ -79,6 +83,21 @@ const metricFns = {
 
 function findByUrl(formVitals, url) {
   return Object.values(formVitals).find((item) => item.url === url);
+}
+
+function getAllURLWithExperiment(bundles, formVitals) {
+  const dataChunks = new DataChunks();
+  loadBundles(bundles, dataChunks);
+  dataChunks.filter = { checkpoint: ['experiment', 'viewblock'] };
+  const experimentUrls = new Set();
+  dataChunks.filtered.forEach((bundle) => {
+    const experimentData = bundle.events.find((e) => e.checkpoint === 'experiment');
+    const formVital = findByUrl(formVitals, bundle.url);
+    if (experimentData && formVital) {
+      experimentUrls.add(bundle.url);
+    }
+  });
+  return experimentUrls;
 }
 
 function populateFormsInternalNavigation(bundles, formVitals) {
@@ -137,6 +156,10 @@ function findFormCTAForInternalNavigation(bundles, formVitals) {
 
 function containsFormVitals(row) {
   return METRICS.some((metric) => Object.keys(row[metric]).length > 0);
+}
+
+function isUnderExperiment(row, experimentUrls) {
+  return experimentUrls.has(row.url);
 }
 
 function getParentPageVitalsGroupedByIFrame(bundles, dataChunks, iframeParentMap) {
@@ -275,10 +298,14 @@ function handler(bundles) {
     iframeParentMapWithoutDuplicates,
   );
 
+  const experimentUrls = getAllURLWithExperiment(bundlesWithFilteredEvents, formVitals);
+
   // populate internal navigation data
   populateFormsInternalNavigation(bundles, formVitals);
   // filter out pages with no form vitals
-  const filteredFormVitals = Object.values(formVitals).filter(containsFormVitals);
+  const filteredFormVitals = Object.values(formVitals).filter(
+    (formVital) => containsFormVitals(formVital) && !isUnderExperiment(formVital, experimentUrls),
+  );
   findFormCTAForInternalNavigation(bundles, filteredFormVitals);
 
   const updatedFormVitals = filteredFormVitals.map((formVital) => {

@@ -739,11 +739,12 @@ describe('Config Tests', () => {
           },
         ],
       };
+
       expect(() => validateConfiguration(config))
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -762,6 +763,23 @@ describe('Config Tests', () => {
                   label: 'imports[0].destinations[0]',
                   value: 'invalid',
                   key: 0,
+                },
+              },
+              {
+                message: '"imports[0].type" must be [organic-keywords-nonbranded]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'organic-keywords-nonbranded',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
                 },
               },
               {

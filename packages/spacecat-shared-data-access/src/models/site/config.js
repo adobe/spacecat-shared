@@ -89,6 +89,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['ahrefs'],
     enabled: true,
   },
+  'organic-keywords-nonbranded': {
+    type: 'organic-keywords-nonbranded',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
   'organic-traffic': {
     type: 'organic-traffic',
     destinations: ['default'],

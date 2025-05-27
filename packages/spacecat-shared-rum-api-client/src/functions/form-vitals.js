@@ -114,7 +114,7 @@ function findFormCTAForInternalNavigation(bundles, formVitals) {
             totalClickOnPage += bundle.weight;
             const clickCheckpoint = bundle.events.find((e) => e.checkpoint === 'click' && e.target === url);
 
-            if (clickCheckpoint) {
+            if (clickCheckpoint && clickCheckpoint.source) {
               const { source } = clickCheckpoint;
               // Retrieves the existing CTA object if it exists; otherwise,
               // initializes a new one with default values.

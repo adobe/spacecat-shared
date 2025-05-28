@@ -175,12 +175,13 @@ describe('AuditModel', () => {
       SITE_DETECTION: 'site-detection',
       ALT_TEXT: 'alt-text',
       ACCESSIBILITY: 'accessibility',
-      AUDIT_STATUS_PROCESSING: 'audit-status-processing',
+      AUDIT_STATUS_PROCESSOR: 'audit-status-processor',
+      DISABLE_IMPORT_AUDIT_PROCESSOR: 'disable-import-audit-processor',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(25);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(26);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

@@ -49,7 +49,7 @@ class Audit extends BaseModel {
     ALT_TEXT: 'alt-text',
     ACCESSIBILITY: 'accessibility',
     AUDIT_STATUS_PROCESSOR: 'audit-status-processor',
-    DISABLE_AUDIT_STATUS_PROCESSOR: 'disable-audit-status-processor',
+    DISABLE_IMPORT_AUDIT_PROCESSOR: 'disable-import-audit-processor',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

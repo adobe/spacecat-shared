@@ -12,7 +12,7 @@
 
 import trafficAcquisition from '../traffic-acquisition.js';
 import { getCTRByUrlAndVendor, getSiteAvgCTR, getCategoryCtrByUrl } from '../../common/aggregateFns.js';
-import { classifyPage } from './classifier.js';
+import { classifyPageWithLLM } from './classifier.js';
 
 const DAILY_EARNED_THRESHOLD = 100;
 const CTR_THRESHOLD_RATIO = 0.95;
@@ -49,7 +49,7 @@ function convertToOpportunity(traffic) {
     type: 'high-organic-low-ctr-v2',
     page: url,
     screenshot: '',
-    pageClassification: classifyPage(url),
+    pageClassification: classifyPageWithLLM(url),
     categoryCtr: categoryCtrByUrl[url]?.categoryCtr,
     trackedPageKPIName: 'Click Through Rate',
     trackedPageKPIValue: ctr,
@@ -122,7 +122,7 @@ function hasLowerCTR(ctr, siteAvgCTR) {
 
 function getUrlClassificationAndCtr(urls, ctrByUrlAndVendor) {
   return urls.reduce((acc, url) => {
-    const classification = classifyPage(url);
+    const classification = classifyPageWithLLM(url);
     console.log(`classification of url [${url}] is [${classification}]`);
     const ctr = ctrByUrlAndVendor[url].value;
     acc[url] = { classification, ctr };

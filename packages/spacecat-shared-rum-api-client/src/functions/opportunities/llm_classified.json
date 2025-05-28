@@ -1,0 +1,4003 @@
+{
+  "https://www.westjet.com/book/all-inclusive-vacation-packages": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/book/all-inclusive-vacations": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/book/all-inclusive-vacations-from-calgary": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/book/all-inclusive-vacations-to-mexico": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/book/caribbean/all-inclusive-vacations-to-cuba": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/book/cheap-flights-from-toronto-to-calgary": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/book/disney-vacations": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/book/fixtures/fr/footer": {
+    "category": "Sitemap/Navigation Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/book/last-minute-vacations": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/cabinupdates": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/contact/connect-with-agent": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-bb": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-bs": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/account": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/account/": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/account/activity": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/account/expiring": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/account/milestone-history": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/account/missing-rewards": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/account/offers": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/account/overview": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/account/rewards": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/account/settings": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/account/travel-documents": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/account/trips": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/aircraft": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/aircraft/boeing-737-700-next-generation": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/aircraft/boeing-737-8-max": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/aircraft/boeing-737-800-next-generation": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/aircraft/boeing-787-9-dreamliner": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/aircraft/cabin-updates": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/aircraft/dehavilland-dash-8-400": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/airport/lounges": {
+    "category": "Informational Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/airport/lounges/elevation": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/airport/lounges/elevation-lounge-access": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/airport/parking-deals": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/airport/security-screening": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/airport/terminals": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/baggage": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/baggage/allowance": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/baggage/carry-on": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/baggage/lost-delayed-damaged": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/baggage/lost-delayed-damaged/submit-expenses": {
+    "category": "Support/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/baggage/lost-found": {
+    "category": "ERROR",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/baggage/special": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/baggage/sports": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel": {
+    "category": "Travel Booking / Promotion Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/asia": {
+    "category": "Travel Information Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/asia/japan": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/asia/seoul": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/canada": {
+    "category": "Travel Guide/Listing",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/canada/edmonton-non-stop": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/canada/from-calgary": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/canada/new-brunswick": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/caribbean": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/europe": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/europe%7Bignore%7D": {
+    "category": "not_applicable",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/europe/ireland/dublin": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/europe/scotland/edinburgh": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/mexico": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/best-of-travel/united-states": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/book-trip/vacation": {
+    "category": "E-commerce/Travel Booking Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/careers": {
+    "category": "Careers/Job Opportunity Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/careers/cabin-crew": {
+    "category": "Careers/Job Opportunity Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/careers/contact-centre": {
+    "category": "Careers/Job Opportunity Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/careers/corporate": {
+    "category": "Careers/Job Opportunity Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/careers/customer-and-guest-experience": {
+    "category": "Careers/Job Opportunity Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/careers/pilot": {
+    "category": "Careers/Job Opportunity Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/careers/technical-operations": {
+    "category": "Careers/Job Opportunity Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/children": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/children/accompanied-over-2": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/children/car-seats": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/children/family-seating": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/children/infants": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/children/unaccompanied": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/children/unaccompanied/request": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/contact": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/contact/connect-with-agent": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/contact/irregular-operations-contact": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/contact/on-hold-self-serve": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/contact/phone": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/contact/requests": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/contact/requests/exceptional-circumstances-refund-request": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/contact/requests/travel-agents-vacations": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/contact/requests/travel-insurance-flights": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/contact/schedule-change": {
+    "category": "Support Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/contact/share-feedback": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/contact/social-media": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/contact/travel-agents": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/deals": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/deals/3": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/deals/birthday-sale/flights": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/deals/cardholder-exclusive": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/deals/easter-sale/flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/deals/easter-sale/vacations": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/deals/mothers-day/flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/deals/mothers-day/vacations": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/deals/perkopolis": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/deals/vacations/2": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/destinations": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/canada": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/caribbean-central-america": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/caribbean-central-america/grenada": {
+    "category": "ERROR",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/destinations/caribbean-central-america/jamaica": {
+    "category": "Destination Information Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/calgary": {
+    "category": "Destination Information Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/cancun": {
+    "category": "Travel Destination Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/deer-lake": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/edmonton": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/liberia": {
+    "category": "Destination General Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/los-cabos": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/mexico-city": {
+    "category": "Destination Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/montego-bay": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/puerto-vallarta": {
+    "category": "Travel Destination Guide",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/punta-cana": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/tokyo": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/toronto": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/vancouver": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/varadero": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/discover/victoria": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/destinations/europe": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/europe/italy": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/europe/spain": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/destinations/mexico": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/extras": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/extras/gift-card": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/extras/travel-insurance": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flight-guide": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flight-guide/": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flight-guide/trip": {
+    "category": "Informational/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flights/bereavement": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flights/conventions": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flights/departure-taxes": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/flights/direct-flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/flights/fares": {
+    "category": "Pricing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/flights/fees": {
+    "category": "Pricing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/flights/fees/baggage-fee-changes": {
+    "category": "Pricing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/flights/low-fares": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flights/low-fares/sun": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flights/our-fares": {
+    "category": "Pricing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/flights/payment": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flights/payment/flexpay": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flights/payment/hold-fare": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/flights/route-map": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/flights/status": {
+    "category": "Service/Utility Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/flights/swoop": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/forgot-password-or-id": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/get-travel-ready": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/get-travel-ready/advisories": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/get-travel-ready/id-entry-requirements": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/get-travel-ready/mandatory-pre-boarding-requirements": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/health": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/help": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/help/baggage": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/help/booking": {
+    "category": "ERROR",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/help/discount-codes": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/help/gift-card": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/help/how-to-book-companion-voucher": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/help/rewards": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/help/rewards/vouchers": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/help/rewards/westjet-dollars": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/help/seat-selection": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/help/ticket-number": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/help/travel-credits": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/help/upgrade-offer": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/help/westjet-connect": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/help/westjet-wifi": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/hotels/CUNMC2/barcelo-maya-colonial": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/CUNMR2/margaritaville-island-reserve-riviera-maya": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/CUNVH2/ventus-ha-at-marina-el-cid-spa-beach-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/PVRDC4/decameron-isla-coral-guayabitos-ramada": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/antigua/ANUJB2/jolly-beach-antigua": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/antigua/ANUPB2/pineapple-beach-club-antigua": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/antigua/ANURO2/royalton-antigua-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/aruba/AUASB2/secrets-baby-beach-aruba": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNAS2/planet-hollywood-adult-scene-cancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNCC2/occidental-costa-cancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNCC4/catalonia-grand-costa-mujeres-all-suites-and-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNDS2/dreams-sands-cancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNGM2/moon-palace-the-grand-cancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNHR4/haven-riviera-cancun-resort-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNMJ2/majestic-elegance-costa-mujeres": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNOC2/occidental-tucancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNOP4/oleo-cancun-playa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNPH2/planet-hollywood-cancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNRC2/royalton-chic-cancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNSD2/seadust-cancun-family-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/hotels/cancun/CUNSN4/sandos-cancun-luxury-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/huatulco/HUXBA2/barcelo-huatulco": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/huatulco/HUXDH2/dreams-huatulco-resort-and-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/huatulco/HUXLB4/las-brisas-huatulco": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/huatulco/HUXSH2/secrets-huatulco-resort-and-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/liberia/LIROG2/occidental-papagayo": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/liberia/LIROT2/occidental-tamarindo": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/liberia/LIRPH2/planet-hollywood-costa-rica": {
+    "category": "ERROR",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/hotels/los-cabos/SJDBL2/hyatt-ziva-los-cabos": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/los-cabos/SJDKG2/krystal-grand-los-cabos": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/los-cabos/SJDPU2/pueblo-bonito-sunset-beach-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/los-cabos/SJDRO4/grand-decameron-los-cabos-trademark": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/los-cabos/SJDRS2/royal-solaris-los-cabos": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/montego-bay/MBJCA4/catalonia-montego-bay": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/montego-bay/MBJHN2/hideaway-at-royalton-negril": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/montego-bay/MBJRB2/royalton-blue-waters": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/montego-bay/MBJRB4/bahia-principe-luxury-runaway-bay": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/nassau/NASBR2/breezes-resort-spa-bahamas": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/nassau/NASGH2/grand-hyatt-baha-mar": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/ocho-rios-runaway-bay/MBJGB4/bahia-principe-grand-jamaica": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/ocho-rios-runaway-bay/MBJMO2/jamaica-moon-palace-jamaica-grande": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRBA2/barcelo-puerto-vallarta": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRCC4/grand-decameron-complex-trademark": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRCOS/costa-sur-resort-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRDE2/delta-hotels-riviera-nayarit": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRFA2/fiesta-americana-puerto-vallarta": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRHA2/hacienda-buenaventura-hotel-mexican-charm": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRHI2/krystal-grand-puerto-vallarta": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRIP2/iberostar-selection-playa-mita": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRKG2/krystal-grand-nuevo-vallarta": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRKR2/krystal-puerto-vallarta": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRME2/puerto-vallarta-melia-puerto-vallarta": {
+    "category": "Product/Service Page (Hotel Informational and Booking)",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRNO2/dreams-vallarta-bay-resort-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVROC2/puerto-vallarta-occidental-nuevo-vallarta": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRPA2/paradise-village-beach-resort-golf-and-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRPV2/puerto-vallarta-grand-palladium-vallarta-resort-and-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRSAM/puerto-vallarta-samba-vallarta-hotel": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/puerto-vallarta/PVRSU2/sunscape-puerto-vallarta-resort-and-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/LRMBP4/bahia-principe-luxury-bouganville": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/LRMGB4/bahia-principe-grand-la-romana": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJBA4/bahia-principe-grand-punta-cana": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJBP2/punta-cana-barcelo-bavaro-palace": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJBV4/grand-bavaro-princess-all-suites-resort-spa-and-casino": {
+    "category": "ERROR",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJCL2/punta-cana-majestic-colonial-punta-cana": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJGA4/bahia-principe-grand-aquamarine": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJGR4/bahia-principe-grand-turquesa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJLA4/bahia-principe-luxury-ambar": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJME2/punta-cana-majestic-elegance-punta-cana": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJOE4/ocean-el-faro": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJON2/dreams-onyx-resort-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJOP2/occidental-punta-cana": {
+    "category": "Product/Service Page - Hotel Booking",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJRB2/royalton-bavaro": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJSA4/serenade-all-suites-adults-only-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJSC4/grand-sirenis-punta-cana-beach-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJSE4/serenade-punta-cana-beach-spa-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/punta-cana/PUJVH4/vik-hotel-arena-blanca-beach": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNAK4/bahia-principe-luxury-akumal": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNBA2/barcelo-maya-riviera": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNBC2/barcelo-maya-caribe": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNBC4/bahia-principe-grand-coba": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNBL4/cancun-bluebay-grand-esmeralda": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNBM2/cancun-barcelo-maya-palace": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNCI2/cancun-marina-el-cid-spa-and-beach-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNCT4/cancun-catalonia-royal-tulum-beach-and-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNCY4/catalonia-yucatan-beach": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNDR2/cancun-dreams-riviera-cancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNDT2/cancun-dreams-tulum-resort-and-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNGB4/bahia-principe-grand-tulum": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNGP2/wyndham-alltra-playa-del-carmen": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNGR4/cancun-grand-riviera-princess-all-suites-and-spa-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNGS4/grand-sirenis-riviera-maya-resort": {
+    "category": "Hotel Booking and Information Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNIM2/iberostar-waves-paraiso-del-mar": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNMB2/barcelo-maya-beach": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNMC2/barcelo-maya-colonial": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNMO2/cancun-moon-palace-golf-and-spa-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNMT2/barcelo-maya-tropical": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNNS2/dreams-sapphire-resort-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNOR2/royal-hideaway-playacar": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNOR4/ocean-riviera-paradise": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNOX2/occidental-grand-xcaret-destination": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNPE2/paradisus-playa-del-carmen": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNPY4/platinum-yucatan-princess-all-suites-and-spa-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNRT2/royalton-splash-riviera-cancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNRY2/royalton-riviera-cancun": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNSC4/cancun-sandos-caracol-eco-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNSK4/bahia-principe-luxury-sian-kaan": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNVI4/cancun-valentin-imperial-maya": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/riviera-maya/CUNVM2/ventus-at-marina-el-cid-spa-beach-resort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/st-lucia/UVFAN2/st-lucia-anse-chastanet": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/st-lucia/UVFRO2/royalton-saint-lucia": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/st-martin-st-maarten/SXMSB2/sonesta-maho-beach-resort-casino-spa": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/varadero/VRAAS4/grand-aston-varadero": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/varadero/VRABV4/blau-varadero": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/varadero/VRAGR4/grand-memories-varadero": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/varadero/VRAIB4/iberostar-origin-laguna-azul": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/varadero/VRAOC4/occidental-arenas-blancas": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/varadero/VRAPA4/varadero-paradisus-varadero": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/varadero/VRAPP4/varadero-paradisus-princesa-del-mar": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/hotels/varadero/VRARH4/royalton-hicacos": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/inflight": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/inflight/business-cabin": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/inflight/economy-buy-on-board-menu": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/inflight/economy-cabin": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/inflight/entertainment": {
+    "category": "Multimedia/Video Gallery Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/inflight/food-and-beverages": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/inflight/menu": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/inflight/premium-cabin": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/interruptions": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/interruptions/canadian-passenger-rights": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/interruptions/compensation-claims": {
+    "category": "Support/Claim Submission Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/interruptions/delays-cancellations-changes": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/interruptions/downgrade-refund-request": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/interruptions/submit-expenses": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/interruptions/us-service-plan": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/legal": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/legal/privacy-policy": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/legal/privacy-policy/privacy-requests": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/legal/tariffs": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/legal/terms-use": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/legal/travel-terms-conditions/westjet-flights": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/legal/travel-terms-conditions/westjet-vacations": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/manage": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/manage/": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/change-cancel": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/check-in": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/dashboard": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/manage/dashboard/details": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/manage/dashboard/lookup": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/dashboard/trips": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/manage/extended-comfort": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/mobile-app": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/receipts": {
+    "category": "Support Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/retrieve-itinerary": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/manage/seats": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/upgrade": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/upgrade/offers": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/manage/upgrade/terms-conditions": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/manage/vacations": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/my-trips/retrieve-itinerary": {
+    "category": "Error Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/news": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/news/2023/the-westjet-group-marks-successful-integration-of-ultra-low-cost": {
+    "category": "ERROR",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/news/2024/westjet-introduces-ultrabasic-": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/news/2025/canadian-tire-corporation-and-westjet-launch-strategic-partnersh": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/news/2025/delta--korean-air-to-strengthen-partnerships-with-westjet": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/news/2025/hola-barcelona--westjet-connects-halifax-to-the-mediterranean-wi": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/news/2025/more-europe--less-hassle--westjet-strengthens-european-network-w": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/news/2025/rewards-members-rejoice--westjet--yyc-calgary-international-airp": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/news/2025/westjet-strengthens-domestic-schedule-with-three-new-routes-and-": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/news/2025/westjet-to-relax-carry-on-baggage-sizing": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/pets": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/pets/general-entrance-requirements": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/reset-password": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards-email/unsubscribe": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/account": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/benefits": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/benefits/milestones": {
+    "category": "Rewards Program Information Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/benefits/vouchers": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/contact-us": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/contact-us/name-change": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/rbc-mastercard": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/rbc-mastercard/cardholder-benefits": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/rbc-mastercard/companion-voucher": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/rbc-world-elite-mastercard": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite/0cmpv-bn": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite/0cmpv-hph": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite/benefits": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite/cardholder-benefits": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite/companion-voucher": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite/lounge-exchange": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite/ss": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite/statuslift": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/credit-cards/world-elite/statuslift-update": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/earn": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/join": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/manage": {
+    "category": "User Dashboard/Member Portal",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/manage/expiring-dollars": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/manage/missing-rewards": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/manage/ticket-receipts": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/manage/transaction-history": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/member-exclusive": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/new-westjet-rewards": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/new-westjet-rewards/contest": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/new-westjet-rewards/contest/one-million": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/new-westjet-rewards/contest/one-million/join": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/offers": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/offers/companion-bonus": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/offers/earn-teal": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/offers/first-flight-bonus": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/offers/redeem-contest": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/offers/share-the-love": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/partner-airlines": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/partners": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/partners/telus": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/redeem": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/set-password": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/terms-conditions": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/rewards/tiers": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/tiers/gift-of-gold": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/tiers/gold": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/tiers/platinum": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/tiers/silver": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/tiers/teal": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/tiers/upgrades": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/rewards/westjet-dollars": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/sign-in": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/special-needs": {
+    "category": "Informational Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/special-needs/assistance-services": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/special-needs/medication": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/special-needs/non-visible-disabilities": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/special-needs/pdf-document-accessibility": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/special-needs/seating": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/special-needs/service-dogs": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/special-needs/wheelchairs-mobility-aids": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/vacations/family-vacation-packages": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/vacations/featured": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/hotel-savings-elite-island-resorts": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/hotel-savings-playa": {
+    "category": "Error/404 Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/indulge-am-resorts": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/instant-savings-bahamas": {
+    "category": "Error/404 Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/instant-savings-majestic": {
+    "category": "Error/404 Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/kids-offers-bahia-principe": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/kids-offers-melia-paradisus": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/kids-offers-mexico-caribbean": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/multiple-offers-bahia-principe": {
+    "category": "Error/404 Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/resort-credits-iberostar": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/resort-credits-palladium": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/resort-credits-royalton-resorts": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/vacations/offers/room-offers-anse-chastanet": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-ca/who-we-are": {
+    "category": "About/Company Information Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/who-we-are/airline-partners": {
+    "category": "About/Company Information Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ca/who-we-are/brand/our-westjetters": {
+    "category": "About/Company Information Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-es": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-fr": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-gb": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-gb/best-of-travel/canada": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-gb/best-of-travel/canada/atlantic-canada": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-gb/best-of-travel/canada/halifax": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-gb/flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-gb/flights/direct-flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-gb/flights/fees": {
+    "category": "Pricing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-gb/flights/low-fares": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-gb/manage": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-gb/manage/check-in": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ie": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-it/flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-it/help/westjet-wifi": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-jm": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-jm/flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-jp": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-kr": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-kr/manage": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-ky": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-mx": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-mx/manage/check-in": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-nl": {
+    "category": "ERROR",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-us": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/baggage": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/best-of-travel": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/best-of-travel/canada/alberta": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-us/best-of-travel/united-states": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-us/contact": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/contact/on-hold-self-serve": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/contact/phone": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/deals": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-us/flights/direct-flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/flights/fees": {
+    "category": "Pricing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/flights/low-fares": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/flights/status": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/get-travel-ready": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/help": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-us/inflight/entertainment": {
+    "category": "Informational Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-us/inflight/food-and-beverages": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/inflight/premium-cabin": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-us/manage": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-us/manage/": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/manage/check-in": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/manage/dashboard/details": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/manage/dashboard/lookup": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/manage/retrieve-itinerary": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/en-us/manage/seats": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/rewards/join": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/en-us/sign-in": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/es-es": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/es-mx": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/es-mx/flights": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/es-us": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/account": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/bagages": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/en-vol/nourriture-et-boissons": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/fr-ca/flights/low-fares": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/gerer": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/gerer/enregistrement": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/gerer/sieges": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/manage": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/manage/dashboard/lookup": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/offres": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/offres/fete-des-meres/vols": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/recompenses/adherer": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/vacances": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/vols": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-ca/vols/bas-tarifs": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/fr-ca/vols/frais": {
+    "category": "Pricing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.westjet.com/fr-fr": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fr-fr/vols": {
+    "category": "Flights/Bookings Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.westjet.com/fram/console": {
+    "category": "Error/404 Page",
+    "isSuitableForTesting": "True"
+  },
+  "": {},
+  "https://www.aetna.com/about-us/login.html": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/precertification/precertification-lists-results.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/find-a-doctor.html": {
+    "category": "Healthcare Provider Locator Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/precertification/precertification-lists.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/login-register.html": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/employers-organizations.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/about-us/contact-aetna.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/members.html": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/search-results.html": {
+    "category": "Search Results Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/using-your-aetna-benefits/secure-member-account.html": {
+    "category": "Account/Login/Registration Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/find-provider.html": {
+    "category": "Store Locator Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/index-member-mapd.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/buy-dental-coverage.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/resource-center/availity.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/clinical-policy-bulletins/medical-clinical-policy-bulletins.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/clinical-policy-bulletins/medical-clinical-policy-bulletins/medical-clinical-policy-bulletins-search-results.html": {
+    "category": "Search Results Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/legal-notices/text-terms-of-use.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/insurance-producer.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/benefits-medicare-advantage-plan/otc-benefits.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/for-members/pay-medicare-premium.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/health-care-professional-forms.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/for-members/view-coverage-benefits.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/index.html": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/mental-health-questionnaire.html": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/depression-assessment.html": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/clinical-policy-bulletins.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/index-member-pdp.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work.html": {
+    "category": "ERROR_PARSING",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/legal-notices/privacy.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/member-services.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/live-well/health-survey.html": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/prescription-drugs/check-medicare-drug-list.html": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/contact-us.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/index-member.html": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/confirmation-pages/email-acknowledgement.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/using-your-aetna-benefits/aetna-mobile.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/about-us.html": {
+    "category": "About/Company Information Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/join-the-aetna-network.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/contact-member-services.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/searchresults.html": {
+    "category": "Search Results Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/contact-us/print-forms.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/legal-notices/disclaimer.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/sites/shopmedicare-portfolio.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-advantage-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/vision-insurance.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/disclosure-information.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/disputes-appeals/disputes-appeals-overview.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/faqs-health-insurance/member-rights-member-services-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2025-aetna-standard-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/discounts.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/medicare/part-b-drug-um.html": {
+    "category": "Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/hmo-pos-ppo-hdhp-whats-the-difference.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/part-d-prescription-drug-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/dowhen-need-find-new-doctor.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/prescription-drugs/find-pharmacy.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/legal-notices.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/employers-organizations/working-with-aetna.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/extra-member-benefits.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/forms/confirmation-pages/active-listening.html": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/faqs-health-insurance.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/precertification.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/contact-us-online.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/for-producers.html": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement/payment-estimator-fee-schedules.html": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/network.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/prescription-drugs/check-medicare-drug-list-member.html": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/information-in-other-languages.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement/electronic-claims.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/hdhp.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/anxiety-questionnaire.html": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/benefits-medicare-advantage-plan/gym-memberships-fitness-classes.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/disputes-appeals/medicare-appeals.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/faqs-health-insurance/pharmacy-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/provider-education-manuals/provider-manuals.html": {
+    "category": "ERROR_PARSING",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-insurance-plans/ppo.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/dental-insurance-through-work.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/telemedicine.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/prescription-drugs.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/newsletters-news/provider-newsletters-archive.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/insurance-producer/sales-contact-tool.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/prescription-drugs/mail-order-pharmacy.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/consumer-marketplace.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/using-your-aetna-benefits/find-form.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/faqs-health-insurance/health-care-professionals-join-network.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/complaints-grievances-appeals.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/claim-denials.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/benefits-medicare-advantage-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/footers/privacy-information-footer.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/confirmation-pages/confirmation-health-care-professionals.html": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/voluntary-benefits.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/explaining-premiums-deductibles-coinsurance-and-copays.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/results-mental-health-questionnaire-reach-out-today.html": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-reform/summary-benefits-and-coverage-individuals.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/aca-individual.html": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/pharmacy/rx-home-delivery.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/disputes-appeals/provider-appeals.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/pharmacy.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/employers-organizations/glp1-benefits-coverage.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-insurance-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/anxiety-check.html": {
+    "category": "Health assessment and resource page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/find-provider/request-printed-directory.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/live-well/secure-broker-health-survey.html": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/disputes-appeals.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-advantage-ppo-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/accessibility/accessibility-services.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/smart-compare.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/shopmedicare-benefits.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/lesser-known-health-perks-plan-may-offer.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/sites/shopmedicare-product.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2025-aetna-advanced-control-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/choose-medicare-supplement-state.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/member-faq/dme-durable-medical-equipment.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement/era-eft-electronic-eobs.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/medication-safety-vaccines/health-screenings-vaccinations.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/shopmedicare-enrollment.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/dental-care-eye-wear-hearing-aids.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/csnp-chronic-condition-special-needs-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/contact-us/appeals-grievances.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/using-your-aetna-benefits/network-out-of-network-care.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/compassionate-care-program.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/womens-health/breast-pump-coverage-and-breastfeeding.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-guide/hsa-vs-fsa.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/womens-health/pregnancy-care-reproductive-health.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/north-carolina-state-health-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/footers/disclaimers.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/member-faq.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2025-aetna-health-exchange-plan-individual.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/compassionate-care-program/compassionate-care-living-will.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/members/active-listening.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/facility-request-to-join-network-form.html": {
+    "category": "Facility Network Join Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-advantage-dsnp-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/forms/confirmation-pages/form-submit-success.html": {
+    "category": "Confirmation Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/yourdsnp.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/welcome.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/clinical-policy-bulletins/pharmacy-clinical-policy-bulletins/pharmacy-clinical-policy-bulletins-search-results.html": {
+    "category": "Search Results Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/womens-health/understanding-infertility.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/clinical-policy-bulletins/pharmacy-clinical-policy-bulletins.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/sites/caremark.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/suicide-myths-and-facts.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/health-care-101.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/provider-data-validation.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/student-insurance.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/faqs-health-insurance/dmo-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/insurance-producer/become-appointed-with-aetna.html": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/state-specific-information.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/using-your-aetna-benefits/manage-health-care-costs.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/understanding-healthcare.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/clinical-policy-bulletins/dental-clinical-policy-bulletins.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/employers-organizations/tools-manuals-forms.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/medicaid-coverage.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-insurance-plans/epo.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/benefits-medicare-advantage-plan/resources-for-living.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/provider-termination-request-form.html": {
+    "category": "Provider Termination Request Form",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/footers/terms-of-use.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/using-your-aetna-benefits/health-savings-account.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/solutions/segment/small-business.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement/claim-coordination-review.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/how-an-individual-plan-works.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-guide.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/employers-organizations/self-insurance-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/my-health-plan-through-work.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-insurance-plans/dental.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/medical-emergency-go-er-urgent-care.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/choose-medicare-supplement-state/view-medicare-supplement-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-advantage-hmo-pos-plans.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/transparency-in-coverage.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/services.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.329.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/preventive-care/pcp.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/results-mental-health-questionnaire-take-care-of-you.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/using-your-aetna-benefits.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/utilization-management/drug-infusion-site-of-care-policy.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/womens-health.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/services/customer-service.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/parts-of-medicare.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2025-advanced-control-choice-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/prescription-drugs/prescription-payment-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/faqs-health-insurance/ppo-dental-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/footers/about-us.html": {
+    "category": "About/Company Information Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/ongoing-care.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/shopmedicare.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/non-opioid-painkillers.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement/refunding-overpayments.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/claims-coverage.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/benefits-medicare-advantage-plan/managing-health.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/healthy-home-visit.html": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H2663.005.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/working-past-65.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/legal-notices/nondiscrimination-notice.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/index-member-dsnp.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/cobra-coverage.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/apcn.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/shopmedicare-eligibility.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2025-advanced-control-plan.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/sites/myoptions.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/preventive-care.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/utilization-management.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/insurance-producer/producer-world-tools-resources.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/faqs-health-insurance/health-care-professionals-dispute-process-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/prescription-drugs/check-medicare-drug-list.html/check-medicare-drug-list.html": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.120.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/snp-special-needs-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/changing-coverage.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/about-us/fraud-waste-abuse.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/newsletters-news/office-link-updates-march-2023/behavioral-health-updates-march-2023/behavioral-health-supervisory-billing.html": {
+    "category": "Informational Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/results-anxiety-health-questionnaire-reach-out-today.html": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/footers/provider-directory-info.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/footers/fraud-waste-abuse.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/faqs-health-insurance/orthodontic-care-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/employers-organizations/retiree-health-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/administration/inspira-financial.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-supplement-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/insurance-producer/aetna-whole-health.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/flexible-spending-account.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/services/care-management.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/patient-care-programs/aetna-institutes.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/phone-call-from-aetna.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/results-mental-health-questionnaire-explore-the-good.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/yourdsnp-enrollment.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/legal-notices/program-provisions.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/prescription-drugs/drug-information-resources.html": {
+    "category": "Information Resource Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/provider-education-manuals/educational-webinars.html": {
+    "category": "Education/Training Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/insurance-regulations-state.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/news/88-percent-members-in-4-star-plans-higher-2025.html": {
+    "category": "Press/News/Press Release Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/federal-no-surprises-act.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/about-us/aetna-facts-and-companies/aetna-companies.html": {
+    "category": "About/Company Information Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement/electronic-transaction-vendors.html": {
+    "category": "Category/Listing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/insurance-producer/working-with-aetna.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2024-aetna-standard-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-insurance-plans/specialty.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/womens-health/reproductive-health.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/site-map.html": {
+    "category": "Sitemap/Navigation Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-insurance-plans/indemnity.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/confirmation-pages/confirmation-provider-termination-request-form.html": {
+    "category": "Confirmation Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/compassionate-care-program/compassionate-care-description.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/faqs-health-insurance/infertility-treatment-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/benefits-medicare-advantage-plan/ask-nurse.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/services/telehealth.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.425.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/solutions/forms/small-business-product-information-request.html": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/pharmacy/specialty-pharmacy.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-guide/change-health-plan.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/tools-and-tech.html": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/contact-us/print-forms/disenroll-part-d.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/enrollment-tips.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/sites/shopmedicare-education.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/understanding-dental-benefits.html": {
+    "category": "ERROR_PARSING",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/aetna-whole-health.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/microsites/aonfi/index.html": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3312.069.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/contact-us/extra-benefits-phone-numbers.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/contact-us/email-us.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/food-affects-mental-health.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/claims-coverage/aetna-external-review-program.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/provider-education-manuals.html": {
+    "category": "ERROR_PARSING",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/medicare-advantage-right-for-you.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-advantage-hmo-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.170.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-insurance-plans/hmo.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/few-months-away.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/womens-health/mental-health.html": {
+    "category": "ERROR_PARSING",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/faqs-health-insurance/oral-surgery-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/footers/notice-of-non-discrimination.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.438.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/solutions/forms/mid-sized-business-product-information-request.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/do-antibiotics-help-the-flu.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/seminars/index.html": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/get-started-with-medicare.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2025-basic-control-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/dental-application.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/services/behavioral-health.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/medicare.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/welcometoaetna.html": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/becoming65.html": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/yourdsnp-benefits.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/for-members/telehealth.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/microsites/wtw/index.html": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/still-working.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/medicare-prescription-drug-plans-need-to-know.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/aetnaoptions.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/prescription-drugs/extra-help-pay-medicare-prescriptions.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/medicare-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2025-standard-control-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/faq/medicare-costs-premiums-copays-coinsurance.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/npi-submissions.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-reform/tax-forms-affordable-care-act.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.312.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/dental-health.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/sites/eeob.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement/provider-electronic-savings-calculator.html": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/womens-health/iui-intrauterine-insemination-coverage.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-guide/ways-achieve-total-body-health.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-guide/secondary-health-insurance.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/medicare-enrollment-periods-what-to-know.html": {
+    "category": "Blog/Article",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/medicare-advantage-mental-health.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/faqs-health-insurance/emergency-care-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.330.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/confirmation-pages/confirmation-facility-request-to-join-network-form.html": {
+    "category": "Checkout/Transaction Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/glossary.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/site-map.html": {
+    "category": "Sitemap/Navigation Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/employers-organizations/retiree-health-plans/aetna-medicare-advantage.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/errors/500.html": {
+    "category": "Error/404 Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/compassionate-care-program/compassionate-care-resources.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H0628.013.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/contact-us/request-a-call.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/live-well/health-survey-broker.html": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-guide/managing-health.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2025-aetna-advanced-control-plan-california.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/commitment-quality/institutes-of-quality/bariatric-surgery-facilities.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H3146.006.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/services/diabetes.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3959.002.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/insurance-producer/forms/individual-medicare/application-status.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement/electronic-transaction-tools.html": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/faq/part-d-prescription-drug-coverage.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.088.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/insurance-producer/health-wellness/wellness-programs.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-advantage-dsnp-plans/care-team.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.091.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/employers-organizations/resources/afa-summary-plan-grids.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H2293.021.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.476.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/forms/order-information-kit.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/north-carolina-state-health-plan/nc-shp-clear-pricing-project.html": {
+    "category": "Pricing Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/how-to-avoid-late-enrollment-penalties.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5522.004.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/how-much-does-medicare-cost.html": {
+    "category": "Pricing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/results-mental-health-questionnaire-keep-your-healthy-going.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/using-your-aetna-benefits/network-out-of-network-care/cost-of-out-of-network-doctors-hospitals.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/plan-comparison-tool.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/solutions/segment/mid-sized-business.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/health-care-questions-ask-infertility-treatment.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/epic-payer-platform.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H2663.023.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H7301.013.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/final-enrollment-checklist.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/employers-organizations/forms/small-business-contact-aetna-state-select.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.086.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3959.035.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/newsletters-news/office-link-updates-march-2025.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/dental-care-eye-wear-hearing-aids-member.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-insurance-plans/pharmacy.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/health-benefits-of-home-cooking.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-advantage-dsnp-plans/aetna-dsnp-member-benefits.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/care-management.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/solutions/industry/education-insurance/college-students.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/surprise-billing-resources.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.352.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.272.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5522.022.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.087.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/solutions/segment/small-business/in-network-benefits.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/2020-vision-still-need-eye-exam.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/cpb-state-deviations.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/faqs-health-insurance/health-care-professionals-cpb-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-reform.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/do-i-qualify-for-medicare-financial-assistance.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.270.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/vision-insurance-through-work.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-insurance-plans/supplemental.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/pre-enrollment-checklist.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/benefits-to-expect.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-advantage-dsnp-plans/constipation-causes.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2025-high-value-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/index.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/notice-of-disclaimers-post-enroll.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/forms/complaints-grievance-appeal-survey.html": {
+    "category": "Survey/Feedback Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/minuteclinic-benefits.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/personal-assistant.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H1609.021.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/pharmacy.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.077.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3959.011.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/ww25/warweek25.html": {
+    "category": "Event/Promotion/Announcement Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/about-us/aetna-history.html": {
+    "category": "About/Company Information Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H2293.016.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/administration/inspira-financial/health-expense-funds/retirement-reimbursement-arrangement.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/seminars/search-results-prospect.html": {
+    "category": "Search Results Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/dental-vision-hearing.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/faqs-health-insurance/employers-organizations-claims-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H3959.036.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H0523.022.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/microsites/aonfi/telemedicine.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.446.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H0628.001.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/aetna65.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-advantage-dsnp-plans/medications-causing-joint-muscle-pain.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H1609.018.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.456.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.375.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3931.095.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/medicare-questions-myths.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/state-specific-information/access-your-health-data.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/dependent-coverage.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/medicare/medicare-resources.html": {
+    "category": "Resource Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/preventive-care-glossary.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-insurance-plans/vision.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/utilization-management/clinical-questionnaire.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H2663.061.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.380.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5302.013.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/pharmacy-services/specialty-pharmacy-care-programs.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H1608.067.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/compassionate-care-program/compassionate-care-glossary.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/clinical-policy-bulletins/dental-clinical-policy-bulletins/DCPB041.html": {
+    "category": "ERROR_PARSING",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5793.020.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/live-well/health-tools.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/administration/inspira-financial/health-expense-funds/flexible-spending-account.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.450.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/find-a-medication/2024-new-jersey-educators-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/microsites/apple/home.html": {
+    "category": "Homepage",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/new-york-part-d-prescription-drug-plans.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/patient-care-programs/smart-compare.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/faq.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/lost-group-coverage-information.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.374.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/claims-payment-reimbursement/texas-telemedicine.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/patient-care-programs/locat-aba-guidelines.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/faqs-health-insurance/personal-health-record-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H7301.006.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3931.154.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/healthcheck": {
+    "category": "Marketing Landing Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H0628.012.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/medicare-supplement-plans-il-nc.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5522.013.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.434.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.353.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3959.041.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3239.002.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H2663.017.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H1609.042.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/social-security-medicare-enrollment.html": {
+    "category": "informational",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H3959.001.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/administration/inspira-financial/health-expense-funds/health-savings-account.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.033.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/faqs-health-insurance/selecting-participating-provider-faqs.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/patient-care-programs/alcohol-screening-intervention.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-guide/what-is-telemedicine.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.451.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/state-specific-information/payer-to-payer-health-data.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-guide/understanding-and-overcoming-postpartum-depression.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-guide/living-healthy.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/conditions.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-professionals/patient-well-being/depression-screening-tools-resources.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/commitment-quality/institutes-of-quality/orthopedic-care-facilities.html": {
+    "category": "Resource/Download/Guide Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/health-care-reform/public-exchanges-health-care-professionals.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/individuals-families/health-insurance-through-work/health-reimbursement-arrangement.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/medicare-hsa.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H3959.037.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H1608.076.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/insurance-producer/working-with-aetna/get-a-quote.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/florida-medicare-advantage-plans.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.119.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/about-aetna-insurance/contact-us/forms/about/contact_us.html": {
+    "category": "Contact Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/sites/coveragegap.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/which-plan-will-save-most-money.html": {
+    "category": "Comparison & List Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/medicare-for-travelers.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/pharmacy-services.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.392.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.081.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.159.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/results-anxiety-health-questionnaire-find-your-calm.html": {
+    "category": "Guide Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.319.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/womens-health/reproductive-health-var.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/employers-organizations/diabetes-referral-form/thank-you-diabetes-referral-form.html": {
+    "category": "Thank You/Confirmation Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/medicare-scams.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/employers-organizations/manage-users-enrollment-ebilling.html": {
+    "category": "User Dashboard/Member Portal Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/microsites/wtw/dental.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/sites/veterans65.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/member-rights-resources/rights/hmo-ppo-member-rights.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H2293.028.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/immediate-care.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/about-us/health-equity/medicaid.html": {
+    "category": "About/Company Information Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/sites/smartsaver.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H7301.007.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/icd-10-5010-npi-information.html": {
+    "category": "Healthcare Providers Information Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3146.001.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.431.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/vision-insurance/vision-assessment.html": {
+    "category": "Tools/Calculator Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-insurance-plans/stoploss.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.286.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/right-medicare-plan.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H3288.051.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/individuals-families/mental-emotional-health/results-anxiety-health-questionnaire-focus-on-feeling-better.html": {
+    "category": "Custom Mental Health Resource and Self-Assessment Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/plan.H1608.079.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/faqs-health-insurance/health-care-professionals-b-notice-and-1099-miscellaneous-reporting.html": {
+    "category": "FAQ/Support/Knowledge Base Page",
+    "isSuitableForTesting": "False"
+  },
+  "https://www.aetna.com/medicare/plan.H5521.055.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/compare-plans-enroll/ohio-part-d-prescription-drug-plans.html": {
+    "category": "Product/Service Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/medicare/understanding-medicare/medicare-onboarding-process.html": {
+    "category": "Blog/Article Page",
+    "isSuitableForTesting": "True"
+  },
+  "https://www.aetna.com/health-care-professionals/medicare/medicare-compliance-attestation.html": {
+    "category": "Legal & Policy Page",
+    "isSuitableForTesting": "False"
+  }
+}

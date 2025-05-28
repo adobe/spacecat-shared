@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import llmClassifiers from './llm_classified.json' assert { type: 'json' };
+
 const PAGE_CLASSIFICATION_MAP = {
   'wilson.com': {
     'homepage | Homepage': /^https:\/\/www\.wilson\.com(\/[a-z]{2}-[a-z]{2})?\/?$/,
@@ -53,6 +55,13 @@ export function classifyPage(pageUrl) {
     if (value.test(pageUrl)) {
       return key;
     }
+  }
+  return 'other | Other Pages';
+}
+
+export function classifyPageWithLLM(pageUrl) {
+  if (llmClassifiers[pageUrl]) {
+    return llmClassifiers[pageUrl].category;
   }
   return 'other | Other Pages';
 }

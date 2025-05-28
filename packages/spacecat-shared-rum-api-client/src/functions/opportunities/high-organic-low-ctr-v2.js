@@ -50,6 +50,7 @@ function convertToOpportunity(traffic) {
     page: url,
     screenshot: '',
     pageClassification: classifyPageWithLLM(url),
+    isSuitableForTesting: classifyPageWithLLM(url, 'isSuitableForTesting'),
     categoryCtr: categoryCtrByUrl[url]?.categoryCtr,
     trackedPageKPIName: 'Click Through Rate',
     trackedPageKPIValue: ctr,
@@ -139,9 +140,21 @@ function handler(bundles, opts = {}) {
     Object.keys(ctrByUrlAndVendor),
     ctrByUrlAndVendor,
   );
-  console.log('classificationAndCtrByUrl', JSON.stringify(classificationAndCtrByUrl, null, 2));
   const categoryCtrByUrl = getCategoryCtrByUrl(bundles, classificationAndCtrByUrl);
-  console.log('categoryCtrByUrl', JSON.stringify(categoryCtrByUrl, null, 2));
+  // create a map with category as key and categoryCtr and url count as value
+  const categoryCtrByUrlMap = Object.entries(categoryCtrByUrl).reduce(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (acc, [url, { category, categoryCtr, pageCtr }]) => {
+      if (!acc[category]) {
+        acc[category] = { categoryCtr, urlCount: 0 };
+      }
+      acc[category].urlCount += 1;
+      return acc;
+    },
+    {},
+  );
+  console.log('categoryMap: ', JSON.stringify(categoryCtrByUrlMap, null, 2));
+
   const siteAvgCTR = getSiteAvgCTR(bundles);
 
   return trafficByUrl.filter((traffic) => traffic.total > interval * DAILY_PAGEVIEW_THRESHOLD)

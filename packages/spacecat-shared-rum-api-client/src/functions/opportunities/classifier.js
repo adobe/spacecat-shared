@@ -59,9 +59,9 @@ export function classifyPage(pageUrl) {
   return 'other | Other Pages';
 }
 
-export function classifyPageWithLLM(pageUrl) {
-  if (llmClassifiers[pageUrl]) {
-    return llmClassifiers[pageUrl].category;
+export function classifyPageWithLLM(pageUrl, key = 'category') {
+  if (llmClassifiers[pageUrl] && llmClassifiers[pageUrl][key]) {
+    return llmClassifiers[pageUrl][key];
   }
   return 'other | Other Pages';
 }

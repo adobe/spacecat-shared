@@ -113,4 +113,34 @@ describe('SiteCollection', () => {
       expect(instance.allByDeliveryType).to.have.been.calledOnce;
     });
   });
+
+  describe('findByPreviewURL', () => {
+    const mockSite = {
+      getId: () => 's12345',
+      getHlxConfig: stub().returns({
+        rso: {
+          ref: 'ref',
+          site: 'site',
+          owner: 'owner',
+        },
+      }),
+    };
+    it('returns site by preview URL', async () => {
+      instance.allByDeliveryType = stub().resolves([mockSite]);
+
+      const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page', 'aem_edge');
+
+      expect(result).to.deep.equal(mockSite);
+      expect(instance.allByDeliveryType).to.have.been.calledOnceWithExactly('aem_edge');
+    });
+
+    it('returns site by preview URL without delivery type', async () => {
+      instance.all = stub().resolves([mockSite]);
+
+      const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
+
+      expect(result).to.deep.equal(mockSite);
+      expect(instance.all).to.have.been.calledOnce;
+    });
+  });
 });

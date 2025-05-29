@@ -35,7 +35,7 @@ class Site extends BaseModel {
   }
 
   /**
-   * Resolves the site's base URL to a  final URL by fetching the URL,
+   * Resolves the site's base URL to a final URL by fetching the URL,
    * following the redirects and returning the final URL.
    *
    * If the site has a configured overrideBaseURL, that one will be returned.

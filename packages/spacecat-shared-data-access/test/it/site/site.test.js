@@ -265,6 +265,157 @@ describe('Site IT', async () => {
     }
   });
 
+  it('gets all sites by hlxConfig RSO properties', async () => {
+    // First, create test sites with specific RSO configurations
+    const HlxConfig1 = {
+      rso: {
+        ref: 'main',
+        site: 'test-site-1',
+        owner: 'adobe',
+      },
+    };
+
+    const HlxConfig2 = {
+      rso: {
+        ref: 'main',
+        site: 'test-site-2',
+        owner: 'adobe',
+      },
+    };
+
+    const HlxConfig3 = {
+      rso: {
+        ref: 'develop',
+        site: 'test-site-3',
+        owner: 'adobe',
+      },
+    };
+
+    const site1 = await Site.create({
+      baseURL: 'https://rso-test-1.com',
+      name: 'rso-test-site-1',
+      organizationId: sampleData.organizations[0].getId(),
+      hlxConfig: HlxConfig1,
+      isLive: true,
+    });
+
+    const site2 = await Site.create({
+      baseURL: 'https://rso-test-2.com',
+      name: 'rso-test-site-2',
+      organizationId: sampleData.organizations[0].getId(),
+      hlxConfig: HlxConfig2,
+      isLive: true,
+    });
+
+    const site3 = await Site.create({
+      baseURL: 'https://rso-test-3.com',
+      name: 'rso-test-site-3',
+      organizationId: sampleData.organizations[0].getId(),
+      hlxConfig: HlxConfig3,
+      isLive: true,
+    });
+
+    const sitesByAll1 = await Site.allByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
+      'main',
+      'test-site-1',
+      'adobe',
+    );
+    expect(sitesByAll1).to.be.an('array');
+    expect(sitesByAll1.length).to.equal(1);
+    expect(sitesByAll1[0].getBaseURL()).to.equal('https://rso-test-1.com');
+
+    const sitesByAll2 = await Site.allByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
+      'main',
+      'test-site-2',
+      'adobe',
+    );
+    expect(sitesByAll2).to.be.an('array');
+    expect(sitesByAll2.length).to.equal(1);
+    expect(sitesByAll2[0].getBaseURL()).to.equal('https://rso-test-2.com');
+
+    const sitesByAll3 = await Site.allByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
+      'develop',
+      'test-site-3',
+      'adobe',
+    );
+    expect(sitesByAll3).to.be.an('array');
+    expect(sitesByAll3.length).to.equal(1);
+    expect(sitesByAll3[0].getBaseURL()).to.equal('https://rso-test-3.com');
+
+    // Test with non-existent RSO values
+    const noSites = await Site.allByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
+      'non-existent',
+      'test-site-1',
+      'adobe',
+    );
+    expect(noSites).to.be.an('array');
+    expect(noSites.length).to.equal(0);
+
+    // Test findBy methods (single result expected)
+    const singleSite = await Site.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
+      'develop',
+      'test-site-3',
+      'adobe',
+    );
+    expect(singleSite).to.be.an('object');
+    expect(singleSite.getBaseURL()).to.equal('https://rso-test-3.com');
+
+    // Test findBy with non-existent values (should return null)
+    const notFound = await Site.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
+      'non-existent',
+      'test-site-1',
+      'adobe',
+    );
+    expect(notFound).to.be.null;
+
+    // Clean up test sites
+    await site1.remove();
+    await site2.remove();
+    await site3.remove();
+  });
+
+  it('finds site by preview URL using RSO index', async () => {
+    // Create a test site with specific RSO configuration
+    const site = await Site.create({
+      baseURL: 'https://preview-test.com',
+      name: 'preview-test-site',
+      organizationId: sampleData.organizations[0].getId(),
+      hlxConfig: {
+        rso: {
+          ref: 'feature-branch',
+          site: 'my-site',
+          owner: 'mycompany',
+        },
+      },
+      deliveryType: 'aem_edge',
+      isLive: true,
+    });
+
+    // Test finding by preview URL
+    const previewURL = 'https://feature-branch--my-site--mycompany.hlx.page/some/path';
+    const foundSite = await Site.findByPreviewURL(previewURL);
+    expect(foundSite).to.be.an('object');
+    expect(foundSite.getId()).to.equal(site.getId());
+    expect(foundSite.getBaseURL()).to.equal('https://preview-test.com');
+
+    // Test finding with correct delivery type
+    const foundWithDeliveryType = await Site.findByPreviewURL(previewURL, 'aem_edge');
+    expect(foundWithDeliveryType).to.be.an('object');
+    expect(foundWithDeliveryType.getId()).to.equal(site.getId());
+
+    // Test finding with wrong delivery type (should return null)
+    const notFoundWrongType = await Site.findByPreviewURL(previewURL, 'aem_cs');
+    expect(notFoundWrongType).to.be.null;
+
+    // Test with non-existent preview URL
+    const nonExistentURL = 'https://non-existent--test--adobe.hlx.page/';
+    const notFound = await Site.findByPreviewURL(nonExistentURL);
+    expect(notFound).to.be.null;
+
+    // Clean up
+    await site.remove();
+  });
+
   it('adds a new site', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',

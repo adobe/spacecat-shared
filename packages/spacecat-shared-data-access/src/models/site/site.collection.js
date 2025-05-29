@@ -73,20 +73,21 @@ class SiteCollection extends BaseCollection {
   }
 
   async findByPreviewURL(previewURL, deliveryType = null) {
-    const sitesQuery = Object.values(Site.DELIVERY_TYPES)
-      .includes(deliveryType)
-      ? this.allByDeliveryType(deliveryType)
-      : this.all();
-
     const { hostname } = new URL(previewURL);
     const [host] = hostname.split('.');
     const [ref, site, owner] = host.split('--');
-    const sites = await sitesQuery;
 
-    return sites.find((s) => {
-      const { rso } = s.getHlxConfig();
-      return (rso.ref === ref && rso.site === site && rso.owner === owner);
-    });
+    const foundSite = await this.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
+      ref,
+      site,
+      owner,
+    );
+
+    if (foundSite && deliveryType && foundSite.getDeliveryType() !== deliveryType) {
+      return null;
+    }
+
+    return foundSite;
   }
 }
 

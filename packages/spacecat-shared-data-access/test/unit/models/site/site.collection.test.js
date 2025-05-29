@@ -117,6 +117,7 @@ describe('SiteCollection', () => {
   describe('findByPreviewURL', () => {
     const mockSite = {
       getId: () => 's12345',
+      getDeliveryType: () => 'aem_edge',
       getHlxConfig: stub().returns({
         rso: {
           ref: 'ref',
@@ -125,22 +126,59 @@ describe('SiteCollection', () => {
         },
       }),
     };
+
+    beforeEach(() => {
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner = stub();
+    });
+
     it('returns site by preview URL', async () => {
-      instance.allByDeliveryType = stub().resolves([mockSite]);
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
 
       const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page', 'aem_edge');
 
       expect(result).to.deep.equal(mockSite);
-      expect(instance.allByDeliveryType).to.have.been.calledOnceWithExactly('aem_edge');
+      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
+        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
     });
 
     it('returns site by preview URL without delivery type', async () => {
-      instance.all = stub().resolves([mockSite]);
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
 
       const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
 
       expect(result).to.deep.equal(mockSite);
-      expect(instance.all).to.have.been.calledOnce;
+      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
+        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
+    });
+
+    it('returns null when site is found but delivery type does not match', async () => {
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
+
+      const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page', 'aem_cs');
+
+      expect(result).to.be.null;
+      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
+        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
+    });
+
+    it('returns null when no site is found', async () => {
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(null);
+
+      const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
+
+      expect(result).to.be.null;
+      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
+        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
+    });
+
+    it('handles complex preview URLs with paths', async () => {
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
+
+      const result = await instance.findByPreviewURL('https://feature-branch--my-site--company.hlx.page/some/path?query=param');
+
+      expect(result).to.deep.equal(mockSite);
+      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
+        .to.have.been.calledOnceWithExactly('feature-branch', 'my-site', 'company');
     });
   });
 });

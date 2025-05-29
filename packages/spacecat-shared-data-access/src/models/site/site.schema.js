@@ -83,6 +83,21 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     default: {},
     validate: (value) => isObject(value),
   })
+  .addAttribute('hlxConfigRsoRef', {
+    type: 'string',
+    watch: ['hlxConfig'],
+    set: (_, { hlxConfig }) => hlxConfig?.rso?.ref || undefined,
+  })
+  .addAttribute('hlxConfigRsoSite', {
+    type: 'string',
+    watch: ['hlxConfig'],
+    set: (_, { hlxConfig }) => hlxConfig?.rso?.site || undefined,
+  })
+  .addAttribute('hlxConfigRsoOwner', {
+    type: 'string',
+    watch: ['hlxConfig'],
+    set: (_, { hlxConfig }) => hlxConfig?.rso?.owner || undefined,
+  })
   .addAttribute('isLive', {
     type: 'boolean',
     required: true,
@@ -97,6 +112,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAllIndex(['baseURL'])
   .addIndex(
     { composite: ['deliveryType'] },
+    { composite: ['updatedAt'] },
+  )
+  .addIndex(
+    { composite: ['hlxConfigRsoRef', 'hlxConfigRsoSite', 'hlxConfigRsoOwner'] },
     { composite: ['updatedAt'] },
   );
 

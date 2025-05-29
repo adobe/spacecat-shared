@@ -97,7 +97,7 @@ export default async function getAcls({
       exclude: [
         'apiKey', 'audit', 'configuration', 'experiment',
         'importJob', 'importUrl', 'keyEvent', 'latestAudit',
-        'opportunity', 'siteCandidate', 'siteTopPage', 'suggestion',
+        'opportunity', 'siteCandidate', 'siteTopPage', 'suggestion', 'asyncJob',
       ],
     },
   };

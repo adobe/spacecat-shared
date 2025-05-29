@@ -184,10 +184,9 @@ declare function getQuery(placeholders: object, filename: string, log: object):
 /**
  * Retrieves the high-form-view-low-form-conversion metrics from the provided array of form vitals.
  * @param {Object[]} formVitals - An array of form vitals.
- * @param {number} interval - The interval in days.
  * @returns {Object[]} - An array of high-form-view-low-form-conversion metrics.
  */
-declare function getHighFormViewsLowConversionMetrics(formVitals: object[], interval: number):
+declare function getHighFormViewsLowConversionMetrics(formVitals: object[]):
   object[];
 
 /**
@@ -195,7 +194,7 @@ declare function getHighFormViewsLowConversionMetrics(formVitals: object[], inte
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-page-view-low-form-view metrics.
  */
-declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[], interval: number):
+declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[]):
   object[];
 
 /**
@@ -203,7 +202,7 @@ declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[], inter
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-page-view-low-form-ctr metrics.
  */
-declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[], interval: number):
+declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[]):
   object[];
 
 /**
@@ -246,3 +245,5 @@ export function fetch(url: string | Request, options?: RequestOptions): Promise<
 export function tracingFetch(url: string | Request, options?: RequestOptions): Promise<Response>;
 
 export const SPACECAT_USER_AGENT: string;
+
+export function retrievePageAuthentication(site: object, context: object): Promise<string>;

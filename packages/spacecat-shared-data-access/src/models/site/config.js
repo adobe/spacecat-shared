@@ -14,9 +14,12 @@ import Joi from 'joi';
 
 export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
+  ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
   ALL_TRAFFIC: 'all-traffic',
+  CWV_DAILY: 'cwv-daily',
+  CWV_WEEKLY: 'cwv-weekly',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -46,6 +49,14 @@ export const IMPORT_TYPE_SCHEMAS = {
       .optional(),
     pageUrl: Joi.string().uri().optional(),
   }),
+  [IMPORT_TYPES.ORGANIC_KEYWORDS_NONBRANDED]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS_NONBRANDED).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+    pageUrl: Joi.string().uri().optional(),
+  }),
   [IMPORT_TYPES.ORGANIC_TRAFFIC]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_TRAFFIC).required(),
     ...IMPORT_BASE_KEYS,
@@ -61,11 +72,25 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
   }),
+  [IMPORT_TYPES.CWV_DAILY]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.CWV_DAILY).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
+  [IMPORT_TYPES.CWV_WEEKLY]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.CWV_WEEKLY).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
   'organic-keywords': {
     type: 'organic-keywords',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
+  'organic-keywords-nonbranded': {
+    type: 'organic-keywords-nonbranded',
     destinations: ['default'],
     sources: ['ahrefs'],
     enabled: true,
@@ -89,6 +114,18 @@ export const DEFAULT_IMPORT_CONFIGS = {
     enabled: true,
     geo: 'global',
   },
+  'cwv-daily': {
+    type: 'cwv-daily',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
+  'cwv-weekly': {
+    type: 'cwv-weekly',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
 };
 
 export const configSchema = Joi.object({
@@ -106,6 +143,9 @@ export const configSchema = Joi.object({
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
+  }).optional(),
+  contentAiConfig: Joi.object({
+    index: Joi.string().optional(),
   }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
@@ -158,6 +198,7 @@ export const Config = (data = {}) => {
   self.isInternalCustomer = () => state?.slack?.workspace === 'internal';
   self.getSlackMentions = (type) => state?.handlers?.[type]?.mentions?.slack;
   self.getHandlerConfig = (type) => state?.handlers?.[type];
+  self.getContentAiConfig = () => state?.contentAiConfig;
   self.getHandlers = () => state.handlers;
   self.getImports = () => state.imports;
   self.getExcludedURLs = (type) => state?.handlers?.[type]?.excludedURLs;
@@ -277,6 +318,7 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
   handlers: config.getHandlers(),
+  contentAiConfig: config.getContentAiConfig(),
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),

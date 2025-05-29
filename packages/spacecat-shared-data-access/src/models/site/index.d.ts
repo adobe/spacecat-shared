@@ -23,6 +23,15 @@ import type {
   SiteTopPage,
 } from '../index';
 
+export interface HlxConfig {
+  hlxVersion: number; // helix (AEM Edge Delivery) major version
+  rso: { // remote source origin configuration
+    ref: string; // vcs (ie github) branch name
+    site: string; // vcs (ie github) repo name
+    owner: string; // vcs (ie github) owner (organization)
+  };
+}
+
 export type IMPORT_TYPES = {
   readonly ORGANIC_KEYWORDS: 'organic-keywords';
   readonly ORGANIC_TRAFFIC: 'organic-traffic';
@@ -124,7 +133,7 @@ export interface Site extends BaseModel {
     expId: string, url: string, updatedAt: string
   ): Promise<Experiment[]>;
   getGitHubURL(): string;
-  getHlxConfig(): object;
+  getHlxConfig(): HlxConfig;
   getDeliveryConfig(): object;
   getIsLive(): boolean;
   getIsLiveToggledAt(): string;
@@ -150,7 +159,7 @@ export interface Site extends BaseModel {
   setConfig(config: object): Site;
   setDeliveryType(deliveryType: string): Site;
   setGitHubURL(gitHubURL: string): Site;
-  setHlxConfig(hlxConfig: object): Site;
+  setHlxConfig(hlxConfig: HlxConfig): Site;
   setDeliveryConfig(deliveryConfig: object): Site;
   setIsLive(isLive: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;

@@ -436,7 +436,7 @@ class BaseCollection {
         validatedItems.push({ ...removeElectroProperties(Item), ...item });
       } catch (error) {
         if (error instanceof ElectroValidationError) {
-          errorItems.push({ item, error: new ValidationError(error) });
+          errorItems.push({ item, error: new ValidationError('Validation error', this, error) });
         }
       }
     });
@@ -524,7 +524,7 @@ class BaseCollection {
       const updates = items.map((item) => item.record);
       const response = await this.entity.put(updates).go();
 
-      if (response.unprocessed) {
+      if (isNonEmptyArray(response.unprocessed)) {
         this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
       }
 

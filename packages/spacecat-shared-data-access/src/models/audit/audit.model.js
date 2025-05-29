@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isArray, isObject } from '@adobe/spacecat-shared-utils';
+import { isArray, isObject, isBoolean } from '@adobe/spacecat-shared-utils';
 
 import { ValidationError } from '../../errors/index.js';
 import BaseModel from '../base/base.model.js';
@@ -47,6 +47,7 @@ class Audit extends BaseModel {
     FORMS_OPPORTUNITIES: 'forms-opportunities',
     SITE_DETECTION: 'site-detection',
     ALT_TEXT: 'alt-text',
+    ACCESSIBILITY: 'accessibility',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
@@ -104,6 +105,7 @@ class Audit extends BaseModel {
       formatPayload: (stepResult, auditContext) => ({
         type: stepResult.type,
         siteId: stepResult.siteId,
+        allowCache: true,
         auditContext,
       }),
     },
@@ -115,8 +117,10 @@ class Audit extends BaseModel {
        * @param {object[]} stepResult.urls - The list of URLs to scrape.
        * @param {string} stepResult.urls[].url - The URL to scrape.
        * @param {string} stepResult.siteId - The site ID. Will be used as the job ID.
+       * @param {string} stepResult.options - The options for the scraper.
        * @param {string} stepResult.processingType - The scraping processing type to trigger.
        * @param {object} auditContext - The audit context.
+       * @param {object} context - The context object.
        * @param {object} auditContext.next - The next audit step to run.
        * @param {string} auditContext.auditId - The audit ID.
        * @param {string} auditContext.auditType - The audit type.
@@ -124,10 +128,14 @@ class Audit extends BaseModel {
        *
        * @returns {object} - The formatted payload.
        */
-      formatPayload: (stepResult, auditContext) => ({
+      formatPayload: (stepResult, auditContext, context) => ({
         urls: stepResult.urls,
         jobId: stepResult.siteId,
         processingType: stepResult.processingType || 'default',
+        skipMessage: false,
+        allowCache: isBoolean(stepResult.allowCache) ? stepResult.allowCache : true,
+        options: stepResult.options || {},
+        completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
         auditContext,
       }),
     },

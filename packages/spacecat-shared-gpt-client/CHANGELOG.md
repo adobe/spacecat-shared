@@ -1,3 +1,66 @@
+# [@adobe/spacecat-shared-gpt-client-v1.5.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.12...@adobe/spacecat-shared-gpt-client-v1.5.13) (2025-05-26)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#763](https://github.com/adobe/spacecat-shared/issues/763)) ([643b396](https://github.com/adobe/spacecat-shared/commit/643b396130e9144f87099935204927b5522aff68))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.11...@adobe/spacecat-shared-gpt-client-v1.5.12) (2025-05-19)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.2 ([#747](https://github.com/adobe/spacecat-shared/issues/747)) ([64e350a](https://github.com/adobe/spacecat-shared/commit/64e350ad62b7b6d3ad9aa47c66f51ba16508fc6c))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.10...@adobe/spacecat-shared-gpt-client-v1.5.11) (2025-05-11)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#728](https://github.com/adobe/spacecat-shared/issues/728)) ([ff65d76](https://github.com/adobe/spacecat-shared/commit/ff65d76ff0be4dd734c3e47a94d542a492cf13fb))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.9...@adobe/spacecat-shared-gpt-client-v1.5.10) (2025-05-10)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#727](https://github.com/adobe/spacecat-shared/issues/727)) ([590b973](https://github.com/adobe/spacecat-shared/commit/590b973f01f2dba697250ab4769106d06a908d98))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.8...@adobe/spacecat-shared-gpt-client-v1.5.9) (2025-04-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#708](https://github.com/adobe/spacecat-shared/issues/708)) ([57535ac](https://github.com/adobe/spacecat-shared/commit/57535ac8c636de229cec7c5cee83dead07ac09fb))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.7...@adobe/spacecat-shared-gpt-client-v1.5.8) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.0 ([#694](https://github.com/adobe/spacecat-shared/issues/694)) ([55883c5](https://github.com/adobe/spacecat-shared/commit/55883c597c61c891fc17ed39d0aab1c33af5b90c))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.6...@adobe/spacecat-shared-gpt-client-v1.5.7) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#679](https://github.com/adobe/spacecat-shared/issues/679)) ([a41bf0c](https://github.com/adobe/spacecat-shared/commit/a41bf0cd488efa0f72af0933992edb256302af18))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.5...@adobe/spacecat-shared-gpt-client-v1.5.6) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#674](https://github.com/adobe/spacecat-shared/issues/674)) ([285b37d](https://github.com/adobe/spacecat-shared/commit/285b37de9df42adb6a23694bcc699608e3b5b8fe))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.4...@adobe/spacecat-shared-gpt-client-v1.5.5) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#673](https://github.com/adobe/spacecat-shared/issues/673)) ([69d9f99](https://github.com/adobe/spacecat-shared/commit/69d9f99a563eb229171f3c3ffdbdc5a29a6e002b))
+
 # [@adobe/spacecat-shared-gpt-client-v1.5.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.3...@adobe/spacecat-shared-gpt-client-v1.5.4) (2025-03-04)
 
 

@@ -103,6 +103,7 @@ describe('Organization IT', async () => {
       fulfillableItems: {
         some: 'items',
       },
+      updatedBy: 'system',
     };
 
     const organization = await Organization.create(data);

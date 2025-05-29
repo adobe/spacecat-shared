@@ -610,6 +610,19 @@ describe('BaseCollection', () => {
       const result = await baseCollectionInstance._saveMany(mockRecords);
       expect(result).to.be.undefined;
       expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+      expect(mockLogger.error).not.called;
+    });
+
+    it('saves multiple entities successfully if `res.unprocessed` is an empty array', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockEntityModel.put.returns({
+        go: async () => ({ unprocessed: [] }),
+      });
+
+      const result = await baseCollectionInstance._saveMany(mockRecords);
+      expect(result).to.be.undefined;
+      expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+      expect(mockLogger.error).not.called;
     });
 
     it('saves some entities successfully with unprocessed items', async () => {

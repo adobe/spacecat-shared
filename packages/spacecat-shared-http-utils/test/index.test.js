@@ -12,8 +12,18 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import {
-  ok, badRequest, notFound, internalServerError,
-  noContent, found, created, createResponse, unauthorized, forbidden,
+  accepted,
+  badRequest,
+  createResponse,
+  created,
+  forbidden,
+  found,
+  internalServerError,
+  methodNotAllowed,
+  noContent,
+  notFound,
+  ok,
+  unauthorized,
 } from '../src/index.js';
 
 async function testMethod(response, expectedCode, expectedBody) {
@@ -53,10 +63,40 @@ describe('HTTP Response Functions', () => {
     await testMethod(response, 200, body);
   });
 
+  it('ok should return a 200 OK response with custom body and headers', async () => {
+    const body = { success: true };
+    const headers = { key: 'value' };
+    const response = await ok(body, headers);
+    await testMethod(response, 200, body);
+    expect(response.headers.get('key')).to.equal('value');
+  });
+
   it('created should return a 201 CREATED response with custom body', async () => {
     const body = { success: true };
     const response = await created(body);
     await testMethod(response, 201, body);
+  });
+
+  it('created should return a 200 OK response with custom body and headers', async () => {
+    const body = { success: true };
+    const headers = { key: 'value' };
+    const response = await created(body, headers);
+    await testMethod(response, 201, body);
+    expect(response.headers.get('key')).to.equal('value');
+  });
+
+  it('accepted should return a 202 ACCEPTED response with custom body', async () => {
+    const body = { status: 'ACCEPTED' };
+    const response = await accepted(body);
+    await testMethod(response, 202, body);
+  });
+
+  it('accepted should return a 200 OK response with custom body and headers', async () => {
+    const body = { status: 'ACCEPTED' };
+    const headers = { key: 'value' };
+    const response = await accepted(body, headers);
+    await testMethod(response, 202, body);
+    expect(response.headers.get('key')).to.equal('value');
   });
 
   it('noContent should return a 204 No Content response with default headers', async () => {
@@ -132,6 +172,23 @@ describe('HTTP Response Functions', () => {
     expect(response.headers.get('custom-header')).to.equal('value');
     const responseBody = await response.json();
     expect(responseBody).to.deep.equal({ message: 'Resource not found' });
+  });
+
+  it('methodNotAllowed should return a 405 Method Not Allowed response with default message and headers', async () => {
+    const response = await methodNotAllowed();
+    expect(response.status).to.equal(405);
+    expect(response.headers.get('x-error')).to.equal('method not allowed');
+    const responseBody = await response.json();
+    expect(responseBody).to.deep.equal({ message: 'method not allowed' });
+  });
+
+  it('methodNotAllowed should return a 405 Method Not Allowed response with custom message and headers', async () => {
+    const response = await methodNotAllowed('This method is not allowed', { 'custom-header': 'value' });
+    expect(response.status).to.equal(405);
+    expect(response.headers.get('x-error')).to.equal('This method is not allowed');
+    expect(response.headers.get('custom-header')).to.equal('value');
+    const responseBody = await response.json();
+    expect(responseBody).to.deep.equal({ message: 'This method is not allowed' });
   });
 
   it('internalServerError should return a 500 Internal Server Error response with default message and headers', async () => {

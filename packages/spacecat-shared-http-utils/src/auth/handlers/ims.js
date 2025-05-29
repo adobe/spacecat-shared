@@ -19,8 +19,6 @@ import {
   jwtVerify,
 } from 'jose';
 
-import configProd from './config/ims.js';
-import configDev from './config/ims-stg.js';
 import { getBearerToken } from './utils/bearer.js';
 
 import AbstractHandler from './abstract.js';
@@ -42,11 +40,14 @@ const IGNORED_PROFILE_PROPS = [
 ];
 
 const loadConfig = (context) => {
-  const funcVersion = context.func?.version;
-  const isDev = /^ci\d*$/i.test(funcVersion);
-  context.log.debug(`Function version: ${funcVersion} (isDev: ${isDev})`);
-  /* c8 ignore next */
-  return isDev ? configDev : configProd;
+  try {
+    const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
+    context.log.info(`Loaded config name: ${config.name}`);
+    return config;
+  } catch (e) {
+    context.log.error(`Failed to load config from context: ${e.message}`);
+    throw Error('Failed to load config from context');
+  }
 };
 
 const transformProfile = (payload) => {
@@ -282,7 +283,8 @@ export default class AdobeImsHandler extends AbstractHandler {
         .withType(this.name)
         .withAuthenticated(true)
         .withProfile(profile)
-        .withRBAC(acls);
+        .withRBAC(acls)
+        .withScopes([{ name: 'admin' }]);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
       this.log(e.stack, 'error');

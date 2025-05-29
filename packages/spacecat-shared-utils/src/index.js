@@ -41,10 +41,15 @@ export {
   getQuery,
 } from './helpers.js';
 
+export {
+  isAWSLambda,
+} from './runtimes.js';
+
 export { sqsWrapper } from './sqs.js';
 export { sqsEventAdapter } from './sqs.js';
 
 export { logWrapper } from './log-wrapper.js';
+export { instrumentAWSClient } from './xray.js';
 
 export {
   composeBaseURL,
@@ -62,4 +67,11 @@ export { s3Wrapper } from './s3.js';
 
 export { fetch } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';
-export { getHighFormViewsLowConversionMetrics, getHighPageViewsLowFormViewsMetrics, getHighPageViewsLowFormCtrMetrics } from './formcalc.js';
+export {
+  getHighFormViewsLowConversionMetrics,
+  getHighPageViewsLowFormViewsMetrics,
+  getHighPageViewsLowFormCtrMetrics,
+  FORMS_AUDIT_INTERVAL,
+} from './formcalc.js';
+
+export { retrievePageAuthentication } from './auth.js';

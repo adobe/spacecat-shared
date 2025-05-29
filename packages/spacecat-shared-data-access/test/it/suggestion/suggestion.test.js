@@ -184,13 +184,16 @@ describe('Suggestion IT', async () => {
         rank: 0,
         status: 'NEW',
         data: { foo: 'bar' },
+        updatedBy: 'system',
       },
       {
         type: 'REDIRECT_UPDATE',
         rank: 1,
         status: 'APPROVED',
         data: { foo: 'bar' },
+        updatedBy: 'system',
       },
+
     ];
 
     const suggestions = await opportunity.addSuggestions(data);

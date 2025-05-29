@@ -12,9 +12,10 @@
 
 import { Response } from '@adobe/fetch';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
-import AWSXray from 'aws-xray-sdk';
+import { instrumentAWSClient } from './xray.js';
 
 import { hasText, isNonEmptyArray } from './functions.js';
+import { isAWSLambda } from './runtimes.js';
 
 function badRequest(message) {
   return new Response('', {
@@ -30,7 +31,7 @@ function badRequest(message) {
  */
 class SQS {
   constructor(region, log) {
-    this.sqsClient = AWSXray.captureAWSv3Client(new SQSClient({ region }));
+    this.sqsClient = instrumentAWSClient(new SQSClient({ region }));
     this.log = log;
   }
 
@@ -102,6 +103,12 @@ export function sqsEventAdapter(fn) {
   return async (req, context) => {
     const { log } = context;
     let message;
+
+    // if not in aws lambda, invoke the function with json body as message
+    if (!isAWSLambda()) {
+      message = await req.json();
+      return fn(message, context);
+    }
 
     // currently not processing batch messages
     const records = context.invocation?.event?.Records;

@@ -1,3 +1,73 @@
+# [@adobe/spacecat-shared-brand-client-v1.1.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.9...@adobe/spacecat-shared-brand-client-v1.1.10) (2025-05-26)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#763](https://github.com/adobe/spacecat-shared/issues/763)) ([643b396](https://github.com/adobe/spacecat-shared/commit/643b396130e9144f87099935204927b5522aff68))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.8...@adobe/spacecat-shared-brand-client-v1.1.9) (2025-05-24)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#762](https://github.com/adobe/spacecat-shared/issues/762)) ([2eb5a22](https://github.com/adobe/spacecat-shared/commit/2eb5a22935a7293ef293157e0b0fe6506d5b4c94))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.7...@adobe/spacecat-shared-brand-client-v1.1.8) (2025-05-17)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#743](https://github.com/adobe/spacecat-shared/issues/743)) ([afee6a7](https://github.com/adobe/spacecat-shared/commit/afee6a75d7cb6fb52d5fd18dbc5d74f2e73206f2))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.6...@adobe/spacecat-shared-brand-client-v1.1.7) (2025-05-11)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#728](https://github.com/adobe/spacecat-shared/issues/728)) ([ff65d76](https://github.com/adobe/spacecat-shared/commit/ff65d76ff0be4dd734c3e47a94d542a492cf13fb))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.5...@adobe/spacecat-shared-brand-client-v1.1.6) (2025-05-03)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#712](https://github.com/adobe/spacecat-shared/issues/712)) ([76cebd2](https://github.com/adobe/spacecat-shared/commit/76cebd2a7a7b9799e4ca265833620eada01f5c8c))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.4...@adobe/spacecat-shared-brand-client-v1.1.5) (2025-04-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#708](https://github.com/adobe/spacecat-shared/issues/708)) ([57535ac](https://github.com/adobe/spacecat-shared/commit/57535ac8c636de229cec7c5cee83dead07ac09fb))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.3...@adobe/spacecat-shared-brand-client-v1.1.4) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.0 ([#694](https://github.com/adobe/spacecat-shared/issues/694)) ([55883c5](https://github.com/adobe/spacecat-shared/commit/55883c597c61c891fc17ed39d0aab1c33af5b90c))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.2...@adobe/spacecat-shared-brand-client-v1.1.3) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#679](https://github.com/adobe/spacecat-shared/issues/679)) ([a41bf0c](https://github.com/adobe/spacecat-shared/commit/a41bf0cd488efa0f72af0933992edb256302af18))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.1...@adobe/spacecat-shared-brand-client-v1.1.2) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#674](https://github.com/adobe/spacecat-shared/issues/674)) ([285b37d](https://github.com/adobe/spacecat-shared/commit/285b37de9df42adb6a23694bcc699608e3b5b8fe))
+
+# [@adobe/spacecat-shared-brand-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.0...@adobe/spacecat-shared-brand-client-v1.1.1) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#673](https://github.com/adobe/spacecat-shared/issues/673)) ([69d9f99](https://github.com/adobe/spacecat-shared/commit/69d9f99a563eb229171f3c3ffdbdc5a29a6e002b))
+
 # [@adobe/spacecat-shared-brand-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.0.2...@adobe/spacecat-shared-brand-client-v1.1.0) (2025-03-20)
 
 

@@ -1,3 +1,80 @@
+# [@adobe/spacecat-shared-ims-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.0...@adobe/spacecat-shared-ims-client-v1.8.1) (2025-05-26)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#763](https://github.com/adobe/spacecat-shared/issues/763)) ([643b396](https://github.com/adobe/spacecat-shared/commit/643b396130e9144f87099935204927b5522aff68))
+
+# [@adobe/spacecat-shared-ims-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.7.6...@adobe/spacecat-shared-ims-client-v1.8.0) (2025-05-26)
+
+
+### Features
+
+* add updatedBy attribute to entities and ims api to resolve profile ([#758](https://github.com/adobe/spacecat-shared/issues/758)) ([47f73ff](https://github.com/adobe/spacecat-shared/commit/47f73ff18609f0b97576c391caad7409f0d24349))
+
+# [@adobe/spacecat-shared-ims-client-v1.7.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.7.5...@adobe/spacecat-shared-ims-client-v1.7.6) (2025-05-19)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.2 ([#747](https://github.com/adobe/spacecat-shared/issues/747)) ([64e350a](https://github.com/adobe/spacecat-shared/commit/64e350ad62b7b6d3ad9aa47c66f51ba16508fc6c))
+
+# [@adobe/spacecat-shared-ims-client-v1.7.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.7.4...@adobe/spacecat-shared-ims-client-v1.7.5) (2025-05-11)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#728](https://github.com/adobe/spacecat-shared/issues/728)) ([ff65d76](https://github.com/adobe/spacecat-shared/commit/ff65d76ff0be4dd734c3e47a94d542a492cf13fb))
+
+# [@adobe/spacecat-shared-ims-client-v1.7.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.7.3...@adobe/spacecat-shared-ims-client-v1.7.4) (2025-05-10)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#727](https://github.com/adobe/spacecat-shared/issues/727)) ([590b973](https://github.com/adobe/spacecat-shared/commit/590b973f01f2dba697250ab4769106d06a908d98))
+
+# [@adobe/spacecat-shared-ims-client-v1.7.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.7.2...@adobe/spacecat-shared-ims-client-v1.7.3) (2025-04-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#708](https://github.com/adobe/spacecat-shared/issues/708)) ([57535ac](https://github.com/adobe/spacecat-shared/commit/57535ac8c636de229cec7c5cee83dead07ac09fb))
+
+# [@adobe/spacecat-shared-ims-client-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.7.1...@adobe/spacecat-shared-ims-client-v1.7.2) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.0 ([#694](https://github.com/adobe/spacecat-shared/issues/694)) ([55883c5](https://github.com/adobe/spacecat-shared/commit/55883c597c61c891fc17ed39d0aab1c33af5b90c))
+
+# [@adobe/spacecat-shared-ims-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.7.0...@adobe/spacecat-shared-ims-client-v1.7.1) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#679](https://github.com/adobe/spacecat-shared/issues/679)) ([a41bf0c](https://github.com/adobe/spacecat-shared/commit/a41bf0cd488efa0f72af0933992edb256302af18))
+
+# [@adobe/spacecat-shared-ims-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.6.3...@adobe/spacecat-shared-ims-client-v1.7.0) (2025-04-03)
+
+
+### Features
+
+* add IMS client for handling promise token ([#667](https://github.com/adobe/spacecat-shared/issues/667)) ([ba89df5](https://github.com/adobe/spacecat-shared/commit/ba89df534aab5bdc49bf5c42e2af8f201f9e1fb9))
+
+# [@adobe/spacecat-shared-ims-client-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.6.2...@adobe/spacecat-shared-ims-client-v1.6.3) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#674](https://github.com/adobe/spacecat-shared/issues/674)) ([285b37d](https://github.com/adobe/spacecat-shared/commit/285b37de9df42adb6a23694bcc699608e3b5b8fe))
+
+# [@adobe/spacecat-shared-ims-client-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.6.1...@adobe/spacecat-shared-ims-client-v1.6.2) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#673](https://github.com/adobe/spacecat-shared/issues/673)) ([69d9f99](https://github.com/adobe/spacecat-shared/commit/69d9f99a563eb229171f3c3ffdbdc5a29a6e002b))
+
 # [@adobe/spacecat-shared-ims-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.6.0...@adobe/spacecat-shared-ims-client-v1.6.1) (2025-03-27)
 
 

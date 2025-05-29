@@ -16,6 +16,7 @@ import { importSPKI, jwtVerify } from 'jose';
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
 import { getBearerToken } from './utils/bearer.js';
+import { getCookieValue } from './utils/cookie.js';
 
 const ALGORITHM_ES256 = 'ES256';
 export const ISSUER = 'https://spacecat.experiencecloud.live';
@@ -26,11 +27,13 @@ export default class JwtHandler extends AbstractHandler {
   }
 
   async #setup(context) {
-    const authPublicKey = context.env?.AUTH_PUBLIC_KEY;
+    const authPublicKeyB64 = context.env?.AUTH_PUBLIC_KEY_B64;
 
-    if (!hasText(authPublicKey)) {
+    if (!hasText(authPublicKeyB64)) {
       throw new Error('No public key provided');
     }
+
+    const authPublicKey = Buffer.from(authPublicKeyB64, 'base64').toString('utf-8');
 
     this.authPublicKey = await importSPKI(authPublicKey, ALGORITHM_ES256);
   }
@@ -48,36 +51,39 @@ export default class JwtHandler extends AbstractHandler {
       },
     );
 
+    verifiedToken.payload.tenants = verifiedToken.payload.tenants || [];
+
     return verifiedToken.payload;
   }
 
   async checkAuth(request, context) {
-    const authInfo = new AuthInfo()
-      .withType(this.name)
-      .withAuthenticated(false);
-
     try {
       await this.#setup(context);
 
-      const token = getBearerToken(context);
+      const token = getBearerToken(context) ?? getCookieValue(context, 'sessionToken');
 
       if (!hasText(token)) {
         this.log('No bearer token provided', 'debug');
-        authInfo.withReason('No bearer token provided');
-        return authInfo;
+        return null;
       }
 
       const payload = await this.#validateToken(token);
 
+      const scopes = payload.is_admin ? [{ name: 'admin' }] : [];
+
+      scopes.push(...payload.tenants.map(
+        (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
+      ));
+
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
-        .withProfile(payload);
+        .withProfile(payload)
+        .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
-      authInfo.withReason(e.message);
     }
 
-    return authInfo;
+    return null;
   }
 }

@@ -29,6 +29,7 @@ const schema = new SchemaBuilder(Opportunity, OpportunityCollection)
   .addReference('belongs_to', 'Audit', ['updatedAt'], { required: false })
   .addReference('belongs_to', 'LatestAudit', ['updatedAt'], { required: false })
   .addReference('has_many', 'Suggestions', ['updatedAt'], { removeDependents: true })
+  .addReference('has_many', 'FixEntities', ['updatedAt'], { removeDependents: true })
   .addAttribute('runbook', {
     type: 'string',
     validate: (value) => !value || isValidUrl(value),

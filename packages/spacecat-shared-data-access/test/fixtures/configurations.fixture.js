@@ -71,6 +71,17 @@ const configurations = [
           orgs: ['757ceb98-05c8-4e07-bb23-bc722115b2b0'],
         },
       },
+      sitemap: {
+        enabledByDefault: true,
+        enabled: {
+          sites: [],
+          orgs: [],
+        },
+        disabled: {
+          sites: [],
+          orgs: [],
+        },
+      },
       'lhs-mobile': {
         enabledByDefault: false,
         enabled: {

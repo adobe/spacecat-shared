@@ -64,8 +64,10 @@ const seedV2Fixtures = async () => {
     }, {
       actions: ['C', 'R'],
       path: '/latestAudit/*',
-    },
-    ],
+    }, {
+      actions: ['C', 'R'],
+      path: '/asyncJob/**',
+    }],
   }];
 
   const aclCtx = { acls };

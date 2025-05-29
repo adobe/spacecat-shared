@@ -22,7 +22,6 @@ import { importPKCS8, SignJWT } from 'jose';
 import publicJwk from '../../fixtures/auth/ims/public-jwks.js';
 import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
-import imsIdpConfigDev from '../../../src/auth/handlers/config/ims-stg.js';
 
 // Mock out the getAcls call done by the handler to always return an empty object
 const AdobeImsHandler = await esmock('../../../src/auth/handlers/ims.js', {
@@ -39,6 +38,18 @@ const createToken = async (payload, exp = 3600) => {
     .setIssuedAt()
     .setExpirationTime(`${exp} sec`)
     .sign(key);
+};
+const imsIdpConfigDev = {
+  name: 'ims-na1-stg1',
+  discoveryUrl: 'https://ims-na1-stg1.adobelogin.com/ims/.well-known/openid-configuration',
+  discovery: {
+    issuer: 'https://ims-na1-stg1.adobelogin.com',
+    authorization_endpoint: 'https://ims-na1-stg1.adobelogin.com/ims/authorize/v2',
+    token_endpoint: 'https://ims-na1-stg1.adobelogin.com/ims/token/v3',
+    userinfo_endpoint: 'https://ims-na1-stg1.adobelogin.com/ims/userinfo/v2',
+    revocation_endpoint: 'https://ims-na1-stg1.adobelogin.com/ims/revoke',
+    jwks_uri: 'https://ims-na1-stg1.adobelogin.com/ims/keys',
+  },
 };
 
 describe('AdobeImsHandler', () => {
@@ -95,7 +106,7 @@ describe('AdobeImsHandler', () => {
     expect(logStub.debug.calledWith('[ims] No bearer token provided')).to.be.true;
   });
 
-  it('returns null when the token was issued by a different idp', async () => {
+  it('returns null when there is no ims config', async () => {
     const token = await createToken({ as: 'ims-na1' });
     const context = {
       log: logStub,
@@ -106,19 +117,27 @@ describe('AdobeImsHandler', () => {
     const result = await handler.checkAuth({}, context);
 
     expect(result).to.be.null;
+  });
+
+  it('returns null when the token was issued by a different idp', async () => {
+    const token = await createToken({ as: 'ims-na1' });
+    const context = {
+      log: logStub,
+      func: { version: 'ci1234' },
+      pathInfo: { headers: { authorization: `Bearer ${token}` } },
+      env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) },
+    };
+    const result = await handler.checkAuth({}, context);
+
+    expect(result).to.be.null;
     expect(logStub.error.calledWith('[ims] Failed to validate token: Token not issued by expected idp: ims-na1-stg1 != ims-na1')).to.be.true;
   });
 
   describe('token validation', () => {
     let context;
-
     beforeEach(() => {
       imsIdpConfigDev.discovery.jwks = publicJwk;
-      context = {
-        func: { version: 'ci' },
-        imsClient: { getImsUserProfile: () => ({}) },
-        log: logStub,
-      };
+      context = { func: { version: 'ci' }, log: logStub, env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) } };
     });
 
     afterEach(() => {

@@ -71,6 +71,24 @@ class SiteCollection extends BaseCollection {
 
     return orderedSites;
   }
+
+  async findByPreviewURL(previewURL, deliveryType = null) {
+    const { hostname } = new URL(previewURL);
+    const [host] = hostname.split('.');
+    const [ref, site, owner] = host.split('--');
+
+    const foundSite = await this.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
+      ref,
+      site,
+      owner,
+    );
+
+    if (foundSite && deliveryType && foundSite.getDeliveryType() !== deliveryType) {
+      return null;
+    }
+
+    return foundSite;
+  }
 }
 
 export default SiteCollection;

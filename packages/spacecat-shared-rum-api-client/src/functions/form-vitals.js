@@ -10,9 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { DataChunks } from '@adobe/rum-distiller';
+import { DataChunks, facets } from '@adobe/rum-distiller';
 import trafficAcquisition from './traffic-acquisition.js';
-import { generateKey, DELIMITER, loadBundles } from '../utils.js';
+import { DELIMITER, generateKey, loadBundles } from '../utils.js';
 
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
 const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia', 'experiment'];
@@ -37,11 +37,7 @@ function filterEvents(bundles) {
         return false;
       }
 
-      if (event.checkpoint === 'navigate') {
-        return true;
-      }
-
-      if (event.checkpoint === 'experiment') {
+      if (event.checkpoint === 'navigate' || event.checkpoint === 'experiment') {
         return true;
       }
 
@@ -85,19 +81,16 @@ function findByUrl(formVitals, url) {
   return Object.values(formVitals).find((item) => item.url === url);
 }
 
-function getAllURLWithExperiment(bundles, formVitals) {
+function getAllURLWithExperiment(bundles) {
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
-  dataChunks.filter = { checkpoint: ['experiment', 'viewblock'] };
-  const experimentUrls = new Set();
-  dataChunks.filtered.forEach((bundle) => {
-    const experimentData = bundle.events.find((e) => e.checkpoint === 'experiment');
-    const formVital = findByUrl(formVitals, bundle.url);
-    if (experimentData && formVital) {
-      experimentUrls.add(bundle.url);
-    }
-  });
-  return experimentUrls;
+  const { checkpoint } = facets;
+  dataChunks.addFacet('checkpoint', checkpoint);
+  return new Set(
+    dataChunks.facets.checkpoint
+      .filter((cp) => cp.value === 'experiment')
+      .flatMap((_checkpoint) => _checkpoint.entries.map((_entry) => _entry.url)),
+  );
 }
 
 function populateFormsInternalNavigation(bundles, formVitals) {
@@ -298,7 +291,7 @@ function handler(bundles) {
     iframeParentMapWithoutDuplicates,
   );
 
-  const experimentUrls = getAllURLWithExperiment(bundlesWithFilteredEvents, formVitals);
+  const experimentUrls = getAllURLWithExperiment(bundlesWithFilteredEvents);
 
   // populate internal navigation data
   populateFormsInternalNavigation(bundles, formVitals);

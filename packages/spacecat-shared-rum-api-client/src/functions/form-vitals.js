@@ -10,9 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { DataChunks } from '@adobe/rum-distiller';
+import { DataChunks, facetFns, facets } from '@adobe/rum-distiller';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
+import { fetchBundles } from '../common/rum-bundler-client.js';
+
+const { checkpointSource } = facetFns;
+const { checkpoint: checkpointFacet, url: urlFacet } = facets;
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
 const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia'];
 const KEYWORDS_TO_FILTER = ['search'];
@@ -89,8 +93,8 @@ function populateFormsInternalNavigation(bundles, formVitals) {
 
     const formVital = findByUrl(formVitals, bundle.url);
     if (formInternalNav && formVital
-        && !formVital.forminternalnavigation
-          .some((e) => e.url === formInternalNav.source)) {
+      && !formVital.forminternalnavigation
+        .some((e) => e.url === formInternalNav.source)) {
       const fv = findByUrl(formVitals, formInternalNav.source);
       formVital.forminternalnavigation.push({
         url: formInternalNav.source,
@@ -131,6 +135,42 @@ function findFormCTAForInternalNavigation(bundles, formVitals) {
         }
       });
     }
+  });
+}
+
+function findFormCTAWithinPage(bundles, formVitals) {
+  return formVitals.map((item) => {
+    const { url, formsource } = item;
+    const dataChunks = new DataChunks();
+    dataChunks.load([{ rumBundles: bundles }]);
+    dataChunks.addFacet('viewblock.source', checkpointSource('viewblock'));
+    dataChunks.addFacet('checkpoint', checkpointFacet);
+    dataChunks.addFacet('url', urlFacet);
+    dataChunks.filter = { checkpoint: ['click', 'viewblock'], url: [url], 'viewblock.source': [formsource] };
+    const sortedBundles = dataChunks.filtered.sort((a, b) => a.timeDelta - b.timeDelta);
+    const sources = sortedBundles.map((a) => {
+      const { events } = a;
+      const viewblock = events.find(({ checkpoint, source }) => checkpoint === 'viewblock' && source === formsource);
+      const viewblockTime = viewblock.timeDelta;
+
+      const clicks = events.filter((e) => e.checkpoint === 'click')
+        // clicks within 1 second of viewblock
+        .filter((e) => Math.abs(e.timeDelta - viewblockTime) < 1000)
+        // ignore form clicks
+        .filter((e) => e.source && !e.source.match(/\bform\b/i));
+
+      return clicks.map((_) => _.source);
+    }).filter((_) => _.length > 0).flat();
+    if (sources.length > 0) {
+      return {
+        ...item,
+        cta: {
+          sources,
+          form: item.url,
+        },
+      };
+    }
+    return item;
   });
 }
 
@@ -179,7 +219,6 @@ function getParentPageVitalsGroupedByIFrame(bundles, dataChunks, iframeParentMap
 
   populateFormsInternalNavigation(bundles, parentWebVitals);
   findFormCTAForInternalNavigation(bundles, Object.values(parentWebVitals));
-
   const iframeParentVitalsMap = {};
   for (const vitals of Object.values(parentWebVitals)) {
     iframeParentVitalsMap[vitals.iframeSrc] = vitals;
@@ -279,8 +318,9 @@ function handler(bundles) {
   // filter out pages with no form vitals
   const filteredFormVitals = Object.values(formVitals).filter(containsFormVitals);
   findFormCTAForInternalNavigation(bundles, filteredFormVitals);
+  const formVitalsWithCTA = findFormCTAWithinPage(bundles, filteredFormVitals);
 
-  const updatedFormVitals = filteredFormVitals.map((formVital) => {
+  const updatedFormVitals = formVitalsWithCTA.map((formVital) => {
     const formVitalCopy = { ...formVital };
     const parentFormVital = iframeParentVitalsMap[formVital.url];
     if (parentFormVital) {
@@ -294,7 +334,6 @@ function handler(bundles) {
         url,
         pageview: { ...pageview },
         forminternalnavigation,
-
         iframeSrc,
       });
     }
@@ -303,6 +342,15 @@ function handler(bundles) {
 
   return [...updatedFormVitals];
 }
+const bundles = await fetchBundles({
+  domain: 'www.1firstbank.com',
+  domainkey: '7481BB13-C1FA-4C18-80B2-276E9201ADB2-EC8F91E4',
+  granularity: 'daily',
+  interval: 14,
+}, console);
+
+const result = handler(bundles);
+console.log(JSON.stringify(result, null, 2));
 
 export default {
   handler,

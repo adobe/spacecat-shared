@@ -14,6 +14,8 @@ import { DataChunks, facetFns, facets } from '@adobe/rum-distiller';
 import trafficAcquisition from './traffic-acquisition.js';
 import { generateKey, DELIMITER, loadBundles } from '../utils.js';
 
+import { fetchBundles } from '../common/rum-bundler-client.js';
+
 const { checkpointSource } = facetFns;
 const { checkpoint: checkpointFacet, url: urlFacet } = facets;
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
@@ -163,10 +165,7 @@ function findFormCTAWithinPage(bundles, formVitals) {
     if (sources.length > 0) {
       return {
         ...item,
-        cta: {
-          sources,
-          form: item.url,
-        },
+        formCTAWithinPage: [...new Set(sources)],
       };
     }
     return item;
@@ -341,6 +340,16 @@ function handler(bundles) {
 
   return [...updatedFormVitals];
 }
+
+const bundles = await fetchBundles({
+  domain: 'www.1firstbank.com',
+  domainkey: '7481BB13-C1FA-4C18-80B2-276E9201ADB2-EC8F91E4',
+  granularity: 'daily',
+  interval: 14,
+}, console);
+
+const result = handler(bundles);
+console.log(JSON.stringify(result, null, 2));
 
 export default {
   handler,

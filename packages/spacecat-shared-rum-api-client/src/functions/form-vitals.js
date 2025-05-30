@@ -163,10 +163,7 @@ function findFormCTAWithinPage(bundles, formVitals) {
     if (sources.length > 0) {
       return {
         ...item,
-        cta: {
-          sources,
-          form: item.url,
-        },
+        formCTAWithinPage: [...new Set(sources)],
       };
     }
     return item;

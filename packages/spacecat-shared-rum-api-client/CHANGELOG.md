@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.27.2...@adobe/spacecat-shared-rum-api-client-v2.28.0) (2025-05-30)
+
+
+### Features
+
+* filter pages under experiment ([#772](https://github.com/adobe/spacecat-shared/issues/772)) ([af63666](https://github.com/adobe/spacecat-shared/commit/af636667a38602a848624567ddcd37adba931597))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.27.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.27.1...@adobe/spacecat-shared-rum-api-client-v2.27.2) (2025-05-27)
 
 

@@ -59,6 +59,16 @@ export const extractIdAndAuthSource = (imsOrgId) => {
   return { orgId, authSource };
 };
 
+/**
+ * Extracts the guid and authSource from the IMS ID.
+ * @param {string} imsId - The IMS ID.
+ * @return {{authSource: string, guid: string}} - The guid and authSource.
+ */
+export const extractGuidAndAuthSource = (imsId) => {
+  const [guid, authSource] = imsId.split('@');
+  return { guid, authSource };
+};
+
 const emailDomainsToIgnore = ['techacct.adobe.com'];
 
 /**

@@ -15,6 +15,7 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 import ImsBaseClient from './ims-base-client.js';
 import {
   emailAddressIsAllowed,
+  extractGuidAndAuthSource,
   extractIdAndAuthSource,
   getGroupMembersEndpoint,
   getImsOrgsApiPath,
@@ -349,7 +350,7 @@ export default class ImsClient extends ImsBaseClient {
       throw new Error('imsId param is required.');
     }
 
-    const { guid, authSource } = extractIdAndAuthSource(imsId);
+    const { guid, authSource } = extractGuidAndAuthSource(imsId);
 
     const serviceToken = await this.getServiceAccessToken();
 

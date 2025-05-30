@@ -351,23 +351,26 @@ export default class ImsClient extends ImsBaseClient {
     }
 
     const { guid, authSource } = extractGuidAndAuthSource(imsId);
+    const serviceToken = await this.getServiceAccessToken();
 
-    const adminProfileResponse = await this.imsApiCall(
-      IMS_ADMIN_PROFILE_ENDPOINT,
-      {},
+    const formBody = `guid=${guid}&client_id=${this.config.clientId}&auth_src=${authSource}`;
+
+    const response = await fetch(
+      `https://${this.config.imsHost}${IMS_ADMIN_PROFILE_ENDPOINT}`,
       {
-        guid,
-        client_id: this.config.clientId,
-        auth_src: authSource,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Bearer ${serviceToken.access_token}`,
+        },
+        body: formBody,
       },
-      { noContentType: true, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
     );
 
-    if (!adminProfileResponse.ok) {
-      throw new Error(`IMS Admin Profile request for ${guid} with authSource ${authSource} 
-      and clientId ${this.config.clientId} IMS getAdminProfile request failed with status: ${adminProfileResponse.status}`);
+    if (!response.ok) {
+      throw new Error(`IMS getAdminProfile request failed with status: ${response.status}`);
     }
 
-    return adminProfileResponse.json();
+    return response.json();
   }
 }

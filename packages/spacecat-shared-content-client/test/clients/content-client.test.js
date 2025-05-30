@@ -714,4 +714,85 @@ describe('ContentClient', () => {
       }
     });
   });
+
+  describe('updateImageAltText', () => {
+    let client;
+    let mockDocument;
+
+    beforeEach(async () => {
+      client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
+      await client.getPageMetadata('/test-path');
+      mockDocument = {
+        getMetadata: sinon.stub().resolves(new Map()),
+        updateImageAltText: sinon.stub().resolves({ status: 200 }),
+      };
+      client.rawClient.getDocument = sinon.stub().returns(mockDocument);
+    });
+
+    it('should throw if imageAltText is not an array', async () => {
+      const path = '/test-path';
+      const imageAltText = 'not-an-array';
+      await expect(client.updateImageAltText(path, imageAltText)).to.be.rejectedWith('not-an-array must be an array');
+    });
+
+    it('should throw if an item in imageAltText is not an object', async () => {
+      const path = '/test-path';
+      const imageAltText = ['not-an-object'];
+      await expect(client.updateImageAltText(path, imageAltText)).to.be.rejectedWith('not-an-object must be an object');
+    });
+
+    it('should throw if an item in imageAltText is missing imageUrl', async () => {
+      const path = '/test-path';
+      const imageAltText = [{ altText: 'desc' }];
+      await expect(client.updateImageAltText(path, imageAltText)).to.be.rejectedWith('No imageUrl found for [object Object]');
+    });
+
+    it('should throw if an item in imageAltText is missing altText', async () => {
+      const path = '/test-path';
+      const imageAltText = [{ imageUrl: 'https://example.com/image.png' }];
+      await expect(client.updateImageAltText(path, imageAltText)).to.be.rejectedWith('No altText found for [object Object]');
+    });
+
+    it('should throw if imageAltText is invalid', async () => {
+      const path = '/test-path';
+      const imageAltText = [{ imageUrl: '', altText: '' }];
+      await expect(client.updateImageAltText(path, imageAltText)).to.be.rejected;
+    });
+
+    it('should update image alt text for Google Drive', async () => {
+      const path = '/test-path';
+      const imageAltText = [
+        { imageUrl: 'https://example.com/image.png', altText: 'desc' },
+      ];
+      await expect(client.updateImageAltText(path, imageAltText)).to.be.fulfilled;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
+      expect(mockDocument.updateImageAltText.calledOnceWith(imageAltText)).to.be.true;
+    });
+
+    it('should update image alt text for OneDrive', async () => {
+      client = await ContentClient.createFrom(context, siteConfigOneDrive);
+      await client.getPageMetadata('/test-path');
+      mockDocument = {
+        updateImageAltText: sinon.stub().resolves({ status: 200 }),
+      };
+      client.rawClient.getDocument = sinon.stub().returns(mockDocument);
+
+      const path = '/test-path';
+      const imageAltText = [
+        { imageUrl: 'https://example.com/image.png', altText: 'desc' },
+      ];
+      await expect(client.updateImageAltText(path, imageAltText)).to.be.fulfilled;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
+      expect(mockDocument.updateImageAltText.calledOnceWith(imageAltText)).to.be.true;
+    });
+
+    it('should throw if updateImageAltText response is not 200', async () => {
+      mockDocument.updateImageAltText.resolves({ status: 500 });
+      const path = '/test-path';
+      const imageAltText = [
+        { imageUrl: 'https://example.com/image.png', altText: 'desc' },
+      ];
+      await expect(client.updateImageAltText(path, imageAltText)).to.be.rejectedWith('Failed to update image alt text for path /test-path');
+    });
+  });
 });

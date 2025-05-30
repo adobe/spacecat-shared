@@ -1,3 +1,18 @@
+# [@adobe/spacecat-shared-data-access-v2.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.22.0...@adobe/spacecat-shared-data-access-v2.22.1) (2025-05-27)
+
+
+### Bug Fixes
+
+* amend DEFAULT_IMPORT_CONFIGS ([#771](https://github.com/adobe/spacecat-shared/issues/771)) ([5d2b8c3](https://github.com/adobe/spacecat-shared/commit/5d2b8c304df72cc546cd9fc40e16123b0792c0cc))
+
+# [@adobe/spacecat-shared-data-access-v2.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.21.0...@adobe/spacecat-shared-data-access-v2.22.0) (2025-05-27)
+
+
+### Features
+
+* add `organic-keywords-nonbranded` import type to site config ([#766](https://github.com/adobe/spacecat-shared/issues/766)) ([a3be1ec](https://github.com/adobe/spacecat-shared/commit/a3be1ec3a31dd0361fb475da329cb1655a875ebd))
+* add 405 response util ([#768](https://github.com/adobe/spacecat-shared/issues/768)) ([300ceb2](https://github.com/adobe/spacecat-shared/commit/300ceb2c979b304849a30f0e227823308d144c40))
+
 # [@adobe/spacecat-shared-data-access-v2.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.20.1...@adobe/spacecat-shared-data-access-v2.21.0) (2025-05-26)
 
 

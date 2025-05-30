@@ -361,7 +361,11 @@ describe('AhrefsAPIClient', () => {
         })
         .reply(200, organicKeywordsResponse);
 
-      const result = await client.getOrganicKeywords('test-site.com', 'us', ['keyword1', 'keyword2'], 100);
+      const result = await client.getOrganicKeywords('test-site.com', {
+        country: 'us',
+        keywordFilter: ['keyword1', 'keyword2'],
+        limit: 100,
+      });
 
       expect(result).to.deep.equal({
         result: organicKeywordsResponse,
@@ -421,7 +425,9 @@ describe('AhrefsAPIClient', () => {
         })
         .reply(200, organicKeywordsResponse);
 
-      const result = await client.getOrganicKeywords('test-site.com', 'us', [], 50, 'exact');
+      const result = await client.getOrganicKeywords('test-site.com', {
+        country: 'us', keywordFilter: [], limit: 50, mode: 'exact',
+      });
 
       expect(result).to.deep.equal({
         result: organicKeywordsResponse,
@@ -451,7 +457,7 @@ describe('AhrefsAPIClient', () => {
         })
         .reply(200, organicKeywordsResponse);
 
-      const result = await client.getOrganicKeywords('test-site.com', 'us', [], 5000);
+      const result = await client.getOrganicKeywords('test-site.com', { country: 'us', keywordFilter: [], limit: 5000 });
 
       expect(result).to.deep.equal({
         result: organicKeywordsResponse,
@@ -459,13 +465,86 @@ describe('AhrefsAPIClient', () => {
       });
     });
 
+    it('sends an API request for non-branded keywords only if specified', async () => {
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/organic-keywords')
+        .query({
+          country: 'us',
+          date: new Date().toISOString().split('T')[0],
+          select: [
+            'keyword',
+            'sum_traffic',
+            'volume',
+            'best_position',
+            'cpc',
+            'is_branded',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          target: 'test-site.com',
+          limit: 10,
+          mode: 'prefix',
+          output: 'json',
+          where: '{"field":"is_branded","is":["eq",0]}',
+        })
+        .reply(200, organicKeywordsResponse);
+
+      const result = await client.getOrganicKeywords('test-site.com', { country: 'us', excludeBranded: true });
+      expect(result).to.deep.equal({
+        result: organicKeywordsResponse,
+        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=10&mode=prefix&output=json&where=%7B%22field%22%3A%22is_branded%22%2C%22is%22%3A%5B%22eq%22%2C0%5D%7D',
+      });
+    });
+
+    it('supports combining keyword filters and non-branded keywords', async () => {
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/organic-keywords')
+        .query({
+          country: 'us',
+          date: new Date().toISOString().split('T')[0],
+          select: [
+            'keyword',
+            'sum_traffic',
+            'volume',
+            'best_position',
+            'cpc',
+            'is_branded',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          target: 'test-site.com',
+          limit: 10,
+          mode: 'prefix',
+          output: 'json',
+          where: JSON.stringify({
+            and: [
+              { field: 'is_branded', is: ['eq', 0] },
+              {
+                or: [
+                  { field: 'keyword', is: ['iphrase_match', 'keyword1'] },
+                  { field: 'keyword', is: ['iphrase_match', 'keyword2'] },
+                ],
+              },
+            ],
+          }),
+        })
+        .reply(200, organicKeywordsResponse);
+
+      const result = await client.getOrganicKeywords('test-site.com', {
+        country: 'us', keywordFilter: ['keyword1', 'keyword2'], excludeBranded: true,
+      });
+
+      expect(result).to.deep.equal({
+        result: organicKeywordsResponse,
+        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=10&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_branded%22%2C%22is%22%3A%5B%22eq%22%2C0%5D%7D%2C%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D%5D%7D',
+      });
+    });
+
     it('throws error when keyword filter does not contain appropriate keyword items', async () => {
-      const result = client.getOrganicKeywords('test-site.com', 'us', [BigInt(123)]);
+      const result = client.getOrganicKeywords('test-site.com', { country: 'us', keywordFilter: [BigInt(123)] });
       await expect(result).to.be.rejectedWith('Error parsing keyword filter: Do not know how to serialize a BigInt');
     });
 
     it('throws error when keyword filter is not an array', async () => {
-      const result = client.getOrganicKeywords('test-site.com', 'us', 'keyword1');
+      const result = client.getOrganicKeywords('test-site.com', { country: 'us', keywordFilter: 'keyword1' });
       await expect(result).to.be.rejectedWith('Invalid keyword filter: keyword1');
     });
 
@@ -475,17 +554,19 @@ describe('AhrefsAPIClient', () => {
     });
 
     it('throws error when country is not a string', async () => {
-      const result = client.getOrganicKeywords('test-site.com', 123);
+      const result = client.getOrganicKeywords('test-site.com', { country: 123 });
       await expect(result).to.be.rejectedWith('Invalid country: 123');
     });
 
     it('throws error when limit is not an integer', async () => {
-      const result = client.getOrganicKeywords('test-site.com', 'us', [], 1.5);
+      const result = client.getOrganicKeywords('test-site.com', { country: 'us', keywordFilter: [], limit: 1.5 });
       await expect(result).to.be.rejectedWith('Invalid limit: 1.5');
     });
 
     it('throws error when mode is invalid', async () => {
-      const result = client.getOrganicKeywords('test-site.com', 'us', [], 200, 'invalid-mode');
+      const result = client.getOrganicKeywords('test-site.com', {
+        country: 'us', keywordFilter: [], limit: 200, mode: 'invalid-mode',
+      });
       await expect(result).to.be.rejectedWith('Invalid mode: invalid-mode');
     });
   });

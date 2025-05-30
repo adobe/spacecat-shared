@@ -353,6 +353,8 @@ export default class ImsClient extends ImsBaseClient {
     const { guid, authSource } = extractGuidAndAuthSource(imsId);
 
     const serviceToken = await this.getServiceAccessToken();
+    this.log.debug(`IMS Admin Profile request for ${guid} with authSource ${authSource} 
+      and serviceToken ${serviceToken.access_token} and clientId ${this.config.clientId}`);
 
     const adminProfileResponse = await this.imsApiCall(
       IMS_ADMIN_PROFILE_ENDPOINT,

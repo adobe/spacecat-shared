@@ -360,7 +360,7 @@ export default class ImsClient extends ImsBaseClient {
         client_id: this.config.clientId,
         auth_src: authSource,
       },
-      { noContentType: true },
+      { noContentType: true, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
     );
 
     if (!adminProfileResponse.ok) {

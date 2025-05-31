@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-slack-client",
-  "version": "1.5.16",
+  "version": "1.5.17",
   "description": "Shared modules of the Spacecat Services - Slack Client",
   "type": "module",
   "engines": {

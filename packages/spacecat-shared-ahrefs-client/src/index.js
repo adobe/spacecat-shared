@@ -99,7 +99,7 @@ export default class AhrefsAPIClient {
         fullAuditRef,
       };
     } catch (e) {
-      this.log.error(`Error parsing Ahrefs API response: ${e.message}`);
+      this.log.error(`Error parsing Ahrefs API response: ${e.message}`, e);
       throw new Error(`Error parsing Ahrefs API response: ${e.message}`);
     }
   }

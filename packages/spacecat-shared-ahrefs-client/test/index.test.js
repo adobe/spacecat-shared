@@ -17,7 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import sinon from 'sinon';
 
-import AhrefsAPIClient, { fetch } from '../src/index.js';
+import AhrefsAPIClient, { fetch, ORGANIC_KEYWORDS_FIELDS } from '../src/index.js';
 
 use(chaiAsPromised);
 const sandbox = sinon.createSandbox();
@@ -339,14 +339,7 @@ describe('AhrefsAPIClient', () => {
         .query({
           country: 'us',
           date: new Date().toISOString().split('T')[0],
-          select: [
-            'keyword',
-            'sum_traffic',
-            'volume',
-            'best_position',
-            'cpc',
-            'is_branded',
-          ].join(','),
+          select: ORGANIC_KEYWORDS_FIELDS.join(','),
           order_by: 'sum_traffic:desc',
           target: 'test-site.com',
           limit: 100,
@@ -369,7 +362,7 @@ describe('AhrefsAPIClient', () => {
 
       expect(result).to.deep.equal({
         result: organicKeywordsResponse,
-        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=100&mode=prefix&output=json&where=%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D',
+        fullAuditRef: `https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=${ORGANIC_KEYWORDS_FIELDS.join('%2C')}&order_by=sum_traffic%3Adesc&target=test-site.com&limit=100&mode=prefix&output=json&where=%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D`,
       });
     });
 
@@ -379,14 +372,7 @@ describe('AhrefsAPIClient', () => {
         .query({
           country: 'us',
           date: new Date().toISOString().split('T')[0],
-          select: [
-            'keyword',
-            'sum_traffic',
-            'volume',
-            'best_position',
-            'cpc',
-            'is_branded',
-          ].join(','),
+          select: ORGANIC_KEYWORDS_FIELDS.join(','),
           order_by: 'sum_traffic:desc',
           target: 'test-site.com',
           limit: 10,
@@ -399,7 +385,7 @@ describe('AhrefsAPIClient', () => {
 
       expect(result).to.deep.equal({
         result: organicKeywordsResponse,
-        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=10&mode=prefix&output=json',
+        fullAuditRef: `https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=${ORGANIC_KEYWORDS_FIELDS.join('%2C')}&order_by=sum_traffic%3Adesc&target=test-site.com&limit=10&mode=prefix&output=json`,
       });
     });
 
@@ -409,14 +395,7 @@ describe('AhrefsAPIClient', () => {
         .query({
           country: 'us',
           date: new Date().toISOString().split('T')[0],
-          select: [
-            'keyword',
-            'sum_traffic',
-            'volume',
-            'best_position',
-            'cpc',
-            'is_branded',
-          ].join(','),
+          select: ORGANIC_KEYWORDS_FIELDS.join(','),
           order_by: 'sum_traffic:desc',
           target: 'test-site.com',
           limit: 50,
@@ -431,7 +410,7 @@ describe('AhrefsAPIClient', () => {
 
       expect(result).to.deep.equal({
         result: organicKeywordsResponse,
-        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=50&mode=exact&output=json',
+        fullAuditRef: `https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=${ORGANIC_KEYWORDS_FIELDS.join('%2C')}&order_by=sum_traffic%3Adesc&target=test-site.com&limit=50&mode=exact&output=json`,
       });
     });
 
@@ -441,14 +420,7 @@ describe('AhrefsAPIClient', () => {
         .query({
           country: 'us',
           date: new Date().toISOString().split('T')[0],
-          select: [
-            'keyword',
-            'sum_traffic',
-            'volume',
-            'best_position',
-            'cpc',
-            'is_branded',
-          ].join(','),
+          select: ORGANIC_KEYWORDS_FIELDS.join(','),
           order_by: 'sum_traffic:desc',
           target: 'test-site.com',
           limit: 100,
@@ -461,7 +433,7 @@ describe('AhrefsAPIClient', () => {
 
       expect(result).to.deep.equal({
         result: organicKeywordsResponse,
-        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=100&mode=prefix&output=json',
+        fullAuditRef: `https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=${ORGANIC_KEYWORDS_FIELDS.join('%2C')}&order_by=sum_traffic%3Adesc&target=test-site.com&limit=100&mode=prefix&output=json`,
       });
     });
 
@@ -471,14 +443,7 @@ describe('AhrefsAPIClient', () => {
         .query({
           country: 'us',
           date: new Date().toISOString().split('T')[0],
-          select: [
-            'keyword',
-            'sum_traffic',
-            'volume',
-            'best_position',
-            'cpc',
-            'is_branded',
-          ].join(','),
+          select: ORGANIC_KEYWORDS_FIELDS.join(','),
           order_by: 'sum_traffic:desc',
           target: 'test-site.com',
           limit: 10,
@@ -491,7 +456,7 @@ describe('AhrefsAPIClient', () => {
       const result = await client.getOrganicKeywords('test-site.com', { country: 'us', excludeBranded: true });
       expect(result).to.deep.equal({
         result: organicKeywordsResponse,
-        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=10&mode=prefix&output=json&where=%7B%22field%22%3A%22is_branded%22%2C%22is%22%3A%5B%22eq%22%2C0%5D%7D',
+        fullAuditRef: `https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=${ORGANIC_KEYWORDS_FIELDS.join('%2C')}&order_by=sum_traffic%3Adesc&target=test-site.com&limit=10&mode=prefix&output=json&where=%7B%22field%22%3A%22is_branded%22%2C%22is%22%3A%5B%22eq%22%2C0%5D%7D`,
       });
     });
 
@@ -501,14 +466,7 @@ describe('AhrefsAPIClient', () => {
         .query({
           country: 'us',
           date: new Date().toISOString().split('T')[0],
-          select: [
-            'keyword',
-            'sum_traffic',
-            'volume',
-            'best_position',
-            'cpc',
-            'is_branded',
-          ].join(','),
+          select: ORGANIC_KEYWORDS_FIELDS.join(','),
           order_by: 'sum_traffic:desc',
           target: 'test-site.com',
           limit: 10,
@@ -534,7 +492,7 @@ describe('AhrefsAPIClient', () => {
 
       expect(result).to.deep.equal({
         result: organicKeywordsResponse,
-        fullAuditRef: 'https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=keyword%2Csum_traffic%2Cvolume%2Cbest_position%2Ccpc%2Cis_branded&order_by=sum_traffic%3Adesc&target=test-site.com&limit=10&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_branded%22%2C%22is%22%3A%5B%22eq%22%2C0%5D%7D%2C%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D%5D%7D',
+        fullAuditRef: `https://example.com/site-explorer/organic-keywords?country=us&date=2023-03-12&select=${ORGANIC_KEYWORDS_FIELDS.join('%2C')}&order_by=sum_traffic%3Adesc&target=test-site.com&limit=10&mode=prefix&output=json&where=%7B%22and%22%3A%5B%7B%22field%22%3A%22is_branded%22%2C%22is%22%3A%5B%22eq%22%2C0%5D%7D%2C%7B%22or%22%3A%5B%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword1%22%5D%7D%2C%7B%22field%22%3A%22keyword%22%2C%22is%22%3A%5B%22iphrase_match%22%2C%22keyword2%22%5D%7D%5D%7D%5D%7D`,
       });
     });
 

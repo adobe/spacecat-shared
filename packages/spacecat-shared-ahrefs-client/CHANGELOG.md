@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.7.1...@adobe/spacecat-shared-ahrefs-client-v1.8.0) (2025-06-02)
+
+
+### Features
+
+* more fields from ahref for organic keywords ([#780](https://github.com/adobe/spacecat-shared/issues/780)) ([fd1bc34](https://github.com/adobe/spacecat-shared/commit/fd1bc3424def73bb944928d445bdf7f9df1fe933))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.7.0...@adobe/spacecat-shared-ahrefs-client-v1.7.1) (2025-05-31)
 
 

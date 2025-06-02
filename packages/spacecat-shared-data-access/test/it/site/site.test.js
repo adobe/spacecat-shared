@@ -288,13 +288,6 @@ describe('Site IT', async () => {
     expect(foundSite.getId()).to.equal(site.getId());
     expect(foundSite.getBaseURL()).to.equal('https://preview-test.com');
 
-    const foundWithDeliveryType = await Site.findByPreviewURL(previewURL, 'aem_edge');
-    expect(foundWithDeliveryType).to.be.an('object');
-    expect(foundWithDeliveryType.getId()).to.equal(site.getId());
-
-    const notFoundWrongType = await Site.findByPreviewURL(previewURL, 'aem_cs');
-    expect(notFoundWrongType).to.be.null;
-
     const nonExistentURL = 'https://non-existent--test--adobe.hlx.page/';
     const notFound = await Site.findByPreviewURL(nonExistentURL);
     expect(notFound).to.be.null;

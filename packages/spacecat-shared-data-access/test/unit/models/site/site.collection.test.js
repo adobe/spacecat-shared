@@ -134,29 +134,9 @@ describe('SiteCollection', () => {
     it('returns site by preview URL', async () => {
       instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
 
-      const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page', 'aem_edge');
-
-      expect(result).to.deep.equal(mockSite);
-      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
-        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
-    });
-
-    it('returns site by preview URL without delivery type', async () => {
-      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
-
       const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
 
       expect(result).to.deep.equal(mockSite);
-      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
-        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
-    });
-
-    it('returns null when site is found but delivery type does not match', async () => {
-      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
-
-      const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page', 'aem_cs');
-
-      expect(result).to.be.null;
       expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
         .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
     });

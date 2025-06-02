@@ -177,4 +177,7 @@ export interface SiteCollection extends BaseCollection<Organization> {
   findByDeliveryType(deliveryType: string): Promise<Site | null>;
   findByOrganizationId(organizationId: string): Promise<Site | null>;
   findByPreviewURL(previewURL: string, deliveryType?: string): Promise<Site | null>;
+  findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
+    hlxConfigRsoRef: string, hlxConfigRsoSite: string, hlxConfigRsoOwner: string
+  ): Promise<Site | null>;
 }

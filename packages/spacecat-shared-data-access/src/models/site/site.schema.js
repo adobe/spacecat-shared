@@ -85,16 +85,22 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   })
   .addAttribute('hlxConfigRsoRef', {
     type: 'string',
+    hidden: true,
+    readOnly: true,
     watch: ['hlxConfig'],
     set: (_, { hlxConfig }) => hlxConfig?.rso?.ref || undefined,
   })
   .addAttribute('hlxConfigRsoSite', {
     type: 'string',
+    hidden: true,
+    readOnly: true,
     watch: ['hlxConfig'],
     set: (_, { hlxConfig }) => hlxConfig?.rso?.site || undefined,
   })
   .addAttribute('hlxConfigRsoOwner', {
     type: 'string',
+    hidden: true,
+    readOnly: true,
     watch: ['hlxConfig'],
     set: (_, { hlxConfig }) => hlxConfig?.rso?.owner || undefined,
   })

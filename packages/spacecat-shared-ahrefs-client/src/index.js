@@ -32,7 +32,7 @@ export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([
   'is_informational',
   'is_commercial',
   'is_transactional',
-  'serp_features_merged',
+  'serp_features',
 ]);
 
 export default class AhrefsAPIClient {

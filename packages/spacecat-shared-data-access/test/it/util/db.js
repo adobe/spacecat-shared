@@ -40,6 +40,8 @@ export const TEST_DA_CONFIG = {
   tableNameExperiments: 'spacecat-services-experiments',
   tableNameImportJobs: 'spacecat-services-import-jobs',
   tableNameImportUrls: 'spacecat-services-import-urls',
+  tableNameScraperJobs: 'spacecat-services-scraper-jobs',
+  tableNameScraperUrls: 'spacecat-services-scraper-urls',
   tableNameKeyEvents: 'spacecat-services-key-events',
   tableNameLatestAudits: 'spacecat-services-latest-audits',
   tableNameOrganizations: 'spacecat-services-organizations',

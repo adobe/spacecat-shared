@@ -93,6 +93,7 @@ const configurations = [
     queues: {
       audits: 'sqs://.../spacecat-services-audit-jobs',
       imports: 'sqs://.../spacecat-services-import-jobs',
+      scraper: 'sqs://.../spacecat-services-scraper-jobs',
       reports: 'sqs://.../spacecat-services-report-jobs',
     },
     slackRoles: {

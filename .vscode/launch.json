@@ -24,7 +24,11 @@
                 "test/unit/**/*.test.js"
             ],
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
+            "internalConsoleOptions": "neverOpen",
+            "runtimeExecutable": "${workspaceFolder}/.vscode/debug-node.sh",
+            "env": {
+                "PATH": "${env:PATH}"
+            }
         },
         {
             "type": "node",
@@ -39,7 +43,11 @@
                 "test/unit/**/*.test.js"
             ],
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
+            "internalConsoleOptions": "neverOpen",
+            "runtimeExecutable": "${workspaceFolder}/.vscode/debug-node.sh",
+            "env": {
+                "PATH": "${env:PATH}"
+            }
         },
         {
             "type": "node",
@@ -54,7 +62,11 @@
                 "test/unit/**/*.test.js"
             ],
             "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
+            "internalConsoleOptions": "neverOpen",
+            "runtimeExecutable": "${workspaceFolder}/.vscode/debug-node.sh",
+            "env": {
+                "PATH": "${env:PATH}"
+            }
         },
         {
             "type": "node",
@@ -71,7 +83,11 @@
             "internalConsoleOptions": "neverOpen",
             "skipFiles": [
                 "<node_internals>/**"
-            ]
+            ],
+            "runtimeExecutable": "${workspaceFolder}/.vscode/debug-node.sh",
+            "env": {
+                "PATH": "${env:PATH}"
+            }
         },
         {
             "type": "node",
@@ -88,7 +104,32 @@
             "internalConsoleOptions": "neverOpen",
             "skipFiles": [
                 "<node_internals>/**"
-            ]
+            ],
+            "runtimeExecutable": "${workspaceFolder}/.vscode/debug-node.sh",
+            "env": {
+                "PATH": "${env:PATH}"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug ScrapeJob Tests",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "--require",
+                "./packages/spacecat-shared-data-access/test/it/fixtures.js",
+                "--spec",
+                "packages/spacecat-shared-data-access/test/it/scrape-job/scrape-job.test.js"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "runtimeExecutable": "${workspaceFolder}/.vscode/debug-node.sh",
+            "env": {
+                "PATH": "${env:PATH}"
+            }
         }
     ]
 }

@@ -124,7 +124,6 @@ function hasLowerCTR(ctr, siteAvgCTR) {
 function getUrlClassificationAndCtr(urls, ctrByUrlAndVendor) {
   return urls.reduce((acc, url) => {
     const classification = classifyPageWithLLM(url);
-    console.log(`classification of url [${url}] is [${classification}]`);
     const ctr = ctrByUrlAndVendor[url].value;
     acc[url] = { classification, ctr };
     return acc;

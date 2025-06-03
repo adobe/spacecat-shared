@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { createDataAccess } from '@adobe/spacecat-shared-data-access';
 import { hasText } from '@adobe/spacecat-shared-utils';
 import {
   createLocalJWKSet,
@@ -110,6 +109,7 @@ export default class AdobeImsHandler extends AbstractHandler {
     return payload;
   }
 
+  /*
   // eslint-disable-next-line class-methods-use-this
   async #addSampleRoleMember(aclAccess, role, item) {
     // eslint-disable-next-line no-param-reassign
@@ -196,7 +196,8 @@ export default class AdobeImsHandler extends AbstractHandler {
         },
         {
           actions: ['R'],
-          path: '/organization/77d14008-649f-4be2-8d40-cba150995410/site/b57fb90d-a847-4f18-b80e-283ff7145345',
+          path: '/organization/77d14008-649f-4be2-8d40-cba150995410/
+          site/b57fb90d-a847-4f18-b80e-283ff7145345',
         },
       ],
     });
@@ -226,7 +227,8 @@ export default class AdobeImsHandler extends AbstractHandler {
         },
         {
           actions: ['R'],
-          path: '/organization/77d14008-649f-4be2-8d40-cba150995410/site/b57fb90d-a847-4f18-b80e-283ff7145345',
+          path: '/organization/77d14008-649f-4be2-8d40-cba150995410
+          /site/b57fb90d-a847-4f18-b80e-283ff7145345',
         },
       ],
     });
@@ -250,7 +252,7 @@ export default class AdobeImsHandler extends AbstractHandler {
       },
     }, log);
   }
-
+*/
   async checkAuth(request, context) {
     // TODO This is only temporarily to put some things in the database
     /* */

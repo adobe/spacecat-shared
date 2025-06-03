@@ -18,8 +18,8 @@ import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 import fs from 'fs';
 import { importPKCS8, SignJWT } from 'jose';
+import esmock from 'esmock';
 
-import SpacecatJWTHandler from '../../../src/auth/handlers/jwt.js';
 import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
 
@@ -36,6 +36,18 @@ const decryptedPrivateKey = crypto.createPrivateKey({
 });
 const decryptedPrivateKeyPEM = decryptedPrivateKey.export({ format: 'pem', type: 'pkcs8' });
 const privateKey = await importPKCS8(decryptedPrivateKeyPEM, 'ES256');
+
+// Mock the JWT handler with mocked getAcls
+const SpacecatJWTHandler = await esmock('../../../src/auth/handlers/jwt.js', {
+  '../../../src/auth/rbac/acls.js': {
+    default: async () => ({
+      acls: [],
+      aclEntities: {
+        exclude: [],
+      },
+    }),
+  },
+});
 
 const createToken = async (payload, exp = 3600) => new SignJWT(payload)
   .setProtectedHeader({ alg: 'ES256' })

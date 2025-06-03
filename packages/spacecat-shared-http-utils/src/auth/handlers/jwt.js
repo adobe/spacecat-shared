@@ -17,6 +17,7 @@ import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
 import { getBearerToken } from './utils/bearer.js';
 import { getCookieValue } from './utils/cookie.js';
+import getAcls from '../rbac/acls.js';
 
 const ALGORITHM_ES256 = 'ES256';
 export const ISSUER = 'https://spacecat.experiencecloud.live';
@@ -75,11 +76,17 @@ export default class JwtHandler extends AbstractHandler {
         (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
       ));
 
+      const acls = await getAcls({
+        imsUserId: payload.sub,
+        imsOrgs: payload.tenants.map((tenant) => tenant.id),
+      }, context.log);
+
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
         .withProfile(payload)
-        .withScopes(scopes);
+        .withScopes(scopes)
+        .withRBAC(acls);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
     }

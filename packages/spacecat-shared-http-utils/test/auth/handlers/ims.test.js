@@ -123,6 +123,7 @@ describe('AdobeImsHandler', () => {
     const token = await createToken({ as: 'ims-na1' });
     const context = {
       log: logStub,
+      imsClient: { getImsUserProfile: () => ({}) },
       func: { version: 'ci1234' },
       pathInfo: { headers: { authorization: `Bearer ${token}` } },
       env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) },
@@ -137,7 +138,9 @@ describe('AdobeImsHandler', () => {
     let context;
     beforeEach(() => {
       imsIdpConfigDev.discovery.jwks = publicJwk;
-      context = { func: { version: 'ci' }, log: logStub, env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) } };
+      context = {
+        func: { version: 'ci' }, imsClient: { getImsUserProfile: () => ({}) }, log: logStub, env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) },
+      };
     });
 
     afterEach(() => {

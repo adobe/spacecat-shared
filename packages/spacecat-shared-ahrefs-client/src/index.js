@@ -25,6 +25,7 @@ export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([
   'sum_traffic',
   'volume',
   'best_position',
+  'best_position_url',
   'cpc',
   'last_update',
   'is_branded',

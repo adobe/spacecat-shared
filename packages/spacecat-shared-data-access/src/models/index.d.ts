@@ -18,6 +18,8 @@ export type * from './fix-entity';
 export type * from './experiment';
 export type * from './import-job';
 export type * from './import-url';
+export type * from './scrape-job';
+export type * from './scrape-url';
 export type * from './key-event';
 export type * from './latest-audit';
 export type * from './opportunity';

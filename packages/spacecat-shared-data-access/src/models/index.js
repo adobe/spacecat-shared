@@ -19,6 +19,8 @@ export * from './fix-entity/index.js';
 export * from './experiment/index.js';
 export * from './import-job/index.js';
 export * from './import-url/index.js';
+export * from './scrape-job/index.js';
+export * from './scrape-url/index.js';
 export * from './key-event/index.js';
 export * from './latest-audit/index.js';
 export * from './opportunity/index.js';

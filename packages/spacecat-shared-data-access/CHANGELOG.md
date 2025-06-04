@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.23.1...@adobe/spacecat-shared-data-access-v2.23.2) (2025-06-04)
+
+
+### Bug Fixes
+
+* typo issue for elmo ([#788](https://github.com/adobe/spacecat-shared/issues/788)) ([ba56401](https://github.com/adobe/spacecat-shared/commit/ba5640131566d0980a9104114cbe57fcfc53c181))
+
 # [@adobe/spacecat-shared-data-access-v2.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.23.0...@adobe/spacecat-shared-data-access-v2.23.1) (2025-06-04)
 
 

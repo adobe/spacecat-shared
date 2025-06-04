@@ -155,6 +155,19 @@ describe('AdobeImsHandler', () => {
     expect(logStub.error.calledWith('[ims] Failed to validate token: Token not issued by expected idp: ims-na1-stg1 != ims-na1')).to.be.true;
   });
 
+  it('throw error when context is not correct', async () => {
+    const token = await createToken({ as: 'ims-na1' });
+    const testContext = {
+      log: logStub,
+      func: { version: 'ci1234' },
+      pathInfo: { headers: { authorization: `Bearer ${token}` } },
+      env: { AUTH_HANDLER_IMS: 'invalid json' },
+      imsClient: mockImsClient,
+    };
+    const result = await handler.checkAuth({}, testContext);
+    expect(result).to.be.null;
+  });
+
   describe('token validation', () => {
     it('returns null when created_at is not a number', async () => {
       const token = await createToken({ as: 'ims-na1-stg1', created_at: 'not-a-number', expires_in: 3600 });

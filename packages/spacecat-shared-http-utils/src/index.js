@@ -50,16 +50,16 @@ export function createResponse(body, status = 200, headers = {}) {
   });
 }
 
-export function ok(body = '') {
-  return createResponse(body, 200);
+export function ok(body = '', headers = {}) {
+  return createResponse(body, 200, headers);
 }
 
-export function created(body) {
-  return createResponse(body, 201);
+export function created(body, headers = {}) {
+  return createResponse(body, 201, headers);
 }
 
-export function accepted(body) {
-  return createResponse(body, 202);
+export function accepted(body, headers = {}) {
+  return createResponse(body, 202, headers);
 }
 
 export function noContent(headers = {}) {
@@ -95,6 +95,13 @@ export function forbidden(message = 'forbidden', headers = {}) {
 
 export function notFound(message = 'not found', headers = {}) {
   return createResponse({ message }, 404, {
+    [HEADER_ERROR]: message,
+    ...headers,
+  });
+}
+
+export function methodNotAllowed(message = 'method not allowed', headers = {}) {
+  return createResponse({ message }, 405, {
     [HEADER_ERROR]: message,
     ...headers,
   });

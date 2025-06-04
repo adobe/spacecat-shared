@@ -11,17 +11,21 @@
  */
 import { Response } from '@adobe/fetch';
 
-export declare function ok(body?: string): Response;
+export declare function createResponse(body: object, status?: number, headers?: object): Response;
 
-export declare function created(body: object): Response;
+export declare function ok(body?: string, headers?: object): Response;
 
-export declare function accepted(body: object): Response;
+export declare function created(body: object, headers?: object): Response;
+
+export declare function accepted(body: object, headers?: object): Response;
 
 export declare function noContent(headers?: object): Response;
 
 export declare function badRequest(message?: string, headers?: object): Response;
 
 export declare function notFound(message?: string, headers?: object): Response;
+
+export declare function methodNotAllowed(message?: string, headers?: object): Response;
 
 export declare function internalServerError(message?: string, headers?: object): Response;
 

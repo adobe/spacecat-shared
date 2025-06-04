@@ -1,3 +1,59 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.8.2...@adobe/spacecat-shared-ahrefs-client-v1.9.0) (2025-06-04)
+
+
+### Features
+
+* fetch keyword_country and language fields, too ([#785](https://github.com/adobe/spacecat-shared/issues/785)) ([1266066](https://github.com/adobe/spacecat-shared/commit/1266066b0cdc19dede99db40b62bd39dff3c4ed3))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.8.1...@adobe/spacecat-shared-ahrefs-client-v1.8.2) (2025-06-04)
+
+
+### Bug Fixes
+
+* organic keyword import missing the url ([#784](https://github.com/adobe/spacecat-shared/issues/784)) ([ce82ed6](https://github.com/adobe/spacecat-shared/commit/ce82ed672bee61e60da713553b6c9de8f2ba32d5))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.8.0...@adobe/spacecat-shared-ahrefs-client-v1.8.1) (2025-06-02)
+
+
+### Bug Fixes
+
+* log error object ([#783](https://github.com/adobe/spacecat-shared/issues/783)) ([66285c1](https://github.com/adobe/spacecat-shared/commit/66285c14c4b7f022ad9bfd447025732fd993b644))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.7.1...@adobe/spacecat-shared-ahrefs-client-v1.8.0) (2025-06-02)
+
+
+### Features
+
+* more fields from ahref for organic keywords ([#780](https://github.com/adobe/spacecat-shared/issues/780)) ([fd1bc34](https://github.com/adobe/spacecat-shared/commit/fd1bc3424def73bb944928d445bdf7f9df1fe933))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.7.0...@adobe/spacecat-shared-ahrefs-client-v1.7.1) (2025-05-31)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#779](https://github.com/adobe/spacecat-shared/issues/779)) ([07f8cce](https://github.com/adobe/spacecat-shared/commit/07f8cce73e33bfb9c61fe14f2ef28012b872437d))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.21...@adobe/spacecat-shared-ahrefs-client-v1.7.0) (2025-05-26)
+
+
+### Features
+
+* Support fetching only unbranded keywords from ahrefs ([#765](https://github.com/adobe/spacecat-shared/issues/765)) ([1fb300b](https://github.com/adobe/spacecat-shared/commit/1fb300bf22e200a31b03c2df50e18d76ed9d882e))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.6.21](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.20...@adobe/spacecat-shared-ahrefs-client-v1.6.21) (2025-05-26)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#763](https://github.com/adobe/spacecat-shared/issues/763)) ([643b396](https://github.com/adobe/spacecat-shared/commit/643b396130e9144f87099935204927b5522aff68))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.6.20](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.19...@adobe/spacecat-shared-ahrefs-client-v1.6.20) (2025-05-19)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.2 ([#747](https://github.com/adobe/spacecat-shared/issues/747)) ([64e350a](https://github.com/adobe/spacecat-shared/commit/64e350ad62b7b6d3ad9aa47c66f51ba16508fc6c))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.6.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.6.18...@adobe/spacecat-shared-ahrefs-client-v1.6.19) (2025-05-11)
 
 

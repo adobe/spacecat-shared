@@ -43,6 +43,7 @@ describe('ApiKey IT', async () => {
         { name: 'imports.read' },
         { name: 'imports.write', domains: ['https://example.com'] },
       ],
+      updatedBy: 'system',
     };
 
     const apiKey = await ApiKey.create(data);
@@ -112,6 +113,7 @@ describe('ApiKey IT', async () => {
         { name: 'imports.write' },
         { name: 'imports.read', domains: ['https://updated-example.com'] },
       ],
+      updatedBy: 'system',
     };
 
     const result = await apiKey

@@ -10,11 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import { DataChunks } from '@adobe/rum-distiller';
-import { generateKey, DELIMITER, loadBundles } from '../utils.js';
+import { DataChunks, facets } from '@adobe/rum-distiller';
+import trafficAcquisition from './traffic-acquisition.js';
+import { DELIMITER, generateKey, loadBundles } from '../utils.js';
 
 const METRICS = ['formview', 'formengagement', 'formsubmit'];
-const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia'];
+const CHECKPOINTS = ['viewblock', 'click', 'fill', 'formsubmit', 'navigate', 'viewmedia', 'experiment'];
 const KEYWORDS_TO_FILTER = ['search'];
 
 function initializeResult(url) {
@@ -36,14 +37,18 @@ function filterEvents(bundles) {
         return false;
       }
 
-      if (event.checkpoint === 'navigate') {
+      if (event.checkpoint === 'navigate' || event.checkpoint === 'experiment') {
         return true;
       }
 
       const isFormRelatedEvent = ['fill', 'formsubmit'].includes(event.checkpoint)
-          || /\bform\b|aemform\w*/i.test(event.source);
-      return isFormRelatedEvent && !KEYWORDS_TO_FILTER.some((keyword) => event.source
-          && event.source.toLowerCase().includes(keyword));
+        || /\bform\b|aemform\w*/i.test(event.source);
+
+      return isFormRelatedEvent
+        && !KEYWORDS_TO_FILTER.some(
+          (keyword) => (event.source && event.source.toLowerCase().includes(keyword))
+            || (event.target && event.target.toLowerCase().includes(keyword)),
+        );
     }),
   }));
 }
@@ -74,6 +79,18 @@ const metricFns = {
 
 function findByUrl(formVitals, url) {
   return Object.values(formVitals).find((item) => item.url === url);
+}
+
+function getAllURLWithExperiment(bundles) {
+  const dataChunks = new DataChunks();
+  loadBundles(bundles, dataChunks);
+  const { checkpoint } = facets;
+  dataChunks.addFacet('checkpoint', checkpoint);
+  return new Set(
+    dataChunks.facets.checkpoint
+      .filter((cp) => cp.value === 'experiment')
+      .flatMap((_checkpoint) => _checkpoint.entries.map((_entry) => _entry.url)),
+  );
 }
 
 function populateFormsInternalNavigation(bundles, formVitals) {
@@ -109,7 +126,7 @@ function findFormCTAForInternalNavigation(bundles, formVitals) {
             totalClickOnPage += bundle.weight;
             const clickCheckpoint = bundle.events.find((e) => e.checkpoint === 'click' && e.target === url);
 
-            if (clickCheckpoint) {
+            if (clickCheckpoint && clickCheckpoint.source) {
               const { source } = clickCheckpoint;
               // Retrieves the existing CTA object if it exists; otherwise,
               // initializes a new one with default values.
@@ -132,6 +149,10 @@ function findFormCTAForInternalNavigation(bundles, formVitals) {
 
 function containsFormVitals(row) {
   return METRICS.some((metric) => Object.keys(row[metric]).length > 0);
+}
+
+function isUnderExperiment(row, experimentUrls) {
+  return experimentUrls.has(row.url);
 }
 
 function getParentPageVitalsGroupedByIFrame(bundles, dataChunks, iframeParentMap) {
@@ -226,10 +247,10 @@ function handler(bundles) {
   );
 
   // traffic acquisition data per url - uncomment this when required
-  // const trafficByUrl = trafficAcquisition.handler(bundles);
-  // const trafficByUrlMap = Object.fromEntries(
-  //   trafficByUrl.map(({ url, ...item }) => [url, item]),
-  // );
+  const trafficByUrl = trafficAcquisition.handler(bundles);
+  const trafficByUrlMap = Object.fromEntries(
+    trafficByUrl.map(({ url, ...item }) => [url, item]),
+  );
   const formVitals = {};
 
   globalFormSourceSet.forEach((source) => {
@@ -252,7 +273,7 @@ function handler(bundles) {
         acc[key] = acc[key] || initializeResult(url);
         acc[key].pageview[userAgent] = acc[key].pageview[userAgent] || weight;
         // Enable traffic acquisition for persistence by uncommenting this line
-        // acc[key].trafficacquisition = trafficByUrlMap[url];
+        acc[key].trafficacquisition = trafficByUrlMap[url];
         acc[key].formsource = source;
         // filter out user-agents with no form vitals
         METRICS.filter((metric) => metrics[metric].sum)
@@ -270,10 +291,14 @@ function handler(bundles) {
     iframeParentMapWithoutDuplicates,
   );
 
+  const experimentUrls = getAllURLWithExperiment(bundlesWithFilteredEvents);
+
   // populate internal navigation data
   populateFormsInternalNavigation(bundles, formVitals);
   // filter out pages with no form vitals
-  const filteredFormVitals = Object.values(formVitals).filter(containsFormVitals);
+  const filteredFormVitals = Object.values(formVitals).filter(
+    (formVital) => containsFormVitals(formVital) && !isUnderExperiment(formVital, experimentUrls),
+  );
   findFormCTAForInternalNavigation(bundles, filteredFormVitals);
 
   const updatedFormVitals = filteredFormVitals.map((formVital) => {

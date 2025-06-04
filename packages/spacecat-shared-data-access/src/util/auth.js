@@ -90,7 +90,9 @@ function getPermissions(path, acl) {
 export function hasPermisson(entityPath, perm, aclCtx, log) {
   const allActions = [];
   const traces = [];
-  log.info('aclCtx in data-access', aclCtx, entityPath, perm);
+  // can we print stack trace here?
+  const stackTrace = new Error().stack;
+  log.info('aclCtx in data-access', aclCtx, entityPath, perm, stackTrace);
   aclCtx.acls.forEach((a) => {
     const { actions, trace } = getPermissions(entityPath, a.acl);
     allActions.push(...actions);

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.8.1...@adobe/spacecat-shared-ahrefs-client-v1.8.2) (2025-06-04)
+
+
+### Bug Fixes
+
+* organic keyword import missing the url ([#784](https://github.com/adobe/spacecat-shared/issues/784)) ([ce82ed6](https://github.com/adobe/spacecat-shared/commit/ce82ed672bee61e60da713553b6c9de8f2ba32d5))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.8.0...@adobe/spacecat-shared-ahrefs-client-v1.8.1) (2025-06-02)
 
 

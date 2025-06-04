@@ -17,7 +17,7 @@ export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',
   ORGANIC_KEYWORDS_FEATURE_SNIPPETS: 'organic-keywords-feature-snippets',
-  ORGANIC_KEYWORDS_QUESTIONS: 'organic-keyword-questions',
+  ORGANIC_KEYWORDS_QUESTIONS: 'organic-keywords-questions',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
   ALL_TRAFFIC: 'all-traffic',
@@ -131,8 +131,8 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['ahrefs'],
     enabled: true,
   },
-  'organic-keyword-questions': {
-    type: 'organic-keyword-questions',
+  'organic-keywords-questions': {
+    type: 'organic-keywords-questions',
     destinations: ['default'],
     sources: ['ahrefs'],
     enabled: true,

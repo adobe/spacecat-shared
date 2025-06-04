@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.23.0...@adobe/spacecat-shared-data-access-v2.23.1) (2025-06-04)
+
+
+### Bug Fixes
+
+* new organic keyword imports configs ([#787](https://github.com/adobe/spacecat-shared/issues/787)) ([b2e70fc](https://github.com/adobe/spacecat-shared/commit/b2e70fc77f4695e7aaf4cb8e578410b459226e82))
+
 # [@adobe/spacecat-shared-data-access-v2.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.22.2...@adobe/spacecat-shared-data-access-v2.23.0) (2025-06-04)
 
 

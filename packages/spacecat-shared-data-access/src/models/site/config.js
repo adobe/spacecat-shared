@@ -15,6 +15,9 @@ import Joi from 'joi';
 export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
+  ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',
+  ORGANIC_KEYWORDS_FEATURE_SNIPPETS: 'organic-keywords-feature-snippets',
+  ORGANIC_KEYWORDS_QUESTIONS: 'organic-keyword-questions',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
   ALL_TRAFFIC: 'all-traffic',
@@ -56,6 +59,27 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(100)
       .optional(),
     pageUrl: Joi.string().uri().optional(),
+  }),
+  [IMPORT_TYPES.ORGANIC_KEYWORDS_AI_OVERVIEW]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS_AI_OVERVIEW).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+  }),
+  [IMPORT_TYPES.ORGANIC_KEYWORDS_FEATURE_SNIPPETS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS_FEATURE_SNIPPETS).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+  }),
+  [IMPORT_TYPES.ORGANIC_KEYWORDS_QUESTIONS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS_QUESTIONS).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
   }),
   [IMPORT_TYPES.ORGANIC_TRAFFIC]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_TRAFFIC).required(),

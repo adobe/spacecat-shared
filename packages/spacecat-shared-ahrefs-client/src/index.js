@@ -22,6 +22,8 @@ const getLimit = (limit, upperLimit) => Math.min(limit, upperLimit);
 
 export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([
   'keyword',
+  'keyword_country',
+  'language',
   'sum_traffic',
   'volume',
   'best_position',

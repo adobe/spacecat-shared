@@ -119,6 +119,24 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['ahrefs'],
     enabled: true,
   },
+  'organic-keywords-ai-overview': {
+    type: 'organic-keywords-ai-overview',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
+  'organic-keywords-feature-snippets': {
+    type: 'organic-keywords-feature-snippets',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
+  'organic-keyword-questions': {
+    type: 'organic-keyword-questions',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
   'organic-traffic': {
     type: 'organic-traffic',
     destinations: ['default'],

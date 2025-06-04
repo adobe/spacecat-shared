@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.8.2...@adobe/spacecat-shared-ahrefs-client-v1.9.0) (2025-06-04)
+
+
+### Features
+
+* fetch keyword_country and language fields, too ([#785](https://github.com/adobe/spacecat-shared/issues/785)) ([1266066](https://github.com/adobe/spacecat-shared/commit/1266066b0cdc19dede99db40b62bd39dff3c4ed3))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.8.1...@adobe/spacecat-shared-ahrefs-client-v1.8.2) (2025-06-04)
 
 

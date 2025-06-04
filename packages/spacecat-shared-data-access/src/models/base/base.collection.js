@@ -400,7 +400,7 @@ class BaseCollection {
       const tempData = { ...item };
       tempData[this.idName] = '';
       const temp = this.#createInstance(tempData);
-      console.log('temp.aclCtx', temp.aclCtx);
+      this.log.info('temp.aclCtx', temp.aclCtx);
       temp.ensurePermission('C');
 
       const record = upsert

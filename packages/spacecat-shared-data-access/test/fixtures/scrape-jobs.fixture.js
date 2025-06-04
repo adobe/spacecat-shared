@@ -20,6 +20,7 @@ const scrapeJobs = [
     baseURL: 'https://example-1.com/cars',
     startedAt: '2023-12-06T08:17:41.467Z',
     status: ScrapeJob.ScrapeJobStatus.RUNNING,
+    processingType: ScrapeJob.ScrapeProcessingType.DEFAULT,
     initiatedBy: {
       apiKeyName: 'K-123',
     },
@@ -44,6 +45,7 @@ const scrapeJobs = [
     baseURL: 'https://example-2.com/cars',
     startedAt: '2023-11-15T01:22:05.000Z',
     status: ScrapeJob.ScrapeJobStatus.FAILED,
+    processingType: ScrapeJob.ScrapeProcessingType.DEFAULT,
     initiatedBy: {
       apiKeyName: 'K-321',
     },
@@ -56,23 +58,9 @@ const scrapeJobs = [
         ScrapeJob.ScrapeScreenshotType.BLOCK,
       ],
     },
-  },
-  {
-    importJobId: '78e1f8de-661a-418b-bd80-24589a10b5ce',
-    importQueueId: 'Q-213',
-    hashedApiKey: 'some-key-2',
-    baseURL: 'https://example-3.com/',
-    startedAt: '2023-11-15T03:46:40.000Z',
-    endedAt: '2023-11-15T03:49:13.000Z',
-    status: ScrapeJob.ScrapeJobStatus.COMPLETE,
-    initiatedBy: {
-      apiKeyName: 'K-322',
+    customHeaders: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     },
-    options: {
-      [ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT]: false,
-    },
-    hasCustomImportJs: false,
-    hasCustomHeaders: true,
   },
 ];
 

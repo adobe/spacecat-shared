@@ -28,7 +28,7 @@ function checkScrapeJob(scrapeJob) {
   expect(scrapeJob.getBaseURL()).to.be.a('string');
   expect(scrapeJob.getDuration()).to.be.a('number');
   expect(scrapeJob.getFailedCount()).to.be.a('number');
-  expect(scrapeJob.getHasCustomHeaders()).to.be.a('boolean');
+  expect(scrapeJob.getCustomHeaders()).to.be.a('object');
   expect(scrapeJob.getHashedApiKey()).to.be.a('string');
   expect(scrapeJob.getScrapeQueueId()).to.be.a('string');
   expect(scrapeJob.getInitiatedBy()).to.be.an('object');
@@ -39,6 +39,7 @@ function checkScrapeJob(scrapeJob) {
   expect(scrapeJob.getUrlCount()).to.be.an('number');
   expect(scrapeJob.getProcessingType()).to.be.a('string');
   expect(scrapeJob.getOptions()).to.be.an('object');
+  expect(scrapeJob.getProcessingType()).to.be.a('string');
 }
 
 describe('ScrapeJob IT', async () => {
@@ -62,7 +63,9 @@ describe('ScrapeJob IT', async () => {
         apiKeyName: 'K-321',
       },
       processingType: ScrapeJobModel.ScrapeProcessingType.DEFAULT,
-      hasCustomHeaders: false,
+      customHeaders: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
       options: {
         enableJavascript: true,
         pageLoadTimeout: 10000,
@@ -81,14 +84,13 @@ describe('ScrapeJob IT', async () => {
 
     checkScrapeJob(scrapeJob);
 
-    expect(scrapeJob.getImportQueueId()).to.equal(newJobData.importQueueId);
+    expect(scrapeJob.getScrapeQueueId()).to.equal(newJobData.scrapeQueueId);
     expect(scrapeJob.getHashedApiKey()).to.equal(newJobData.hashedApiKey);
     expect(scrapeJob.getBaseURL()).to.equal(newJobData.baseURL);
     expect(scrapeJob.getStartedAt()).to.equal(newJobData.startedAt);
     expect(scrapeJob.getStatus()).to.equal(newJobData.status);
     expect(scrapeJob.getInitiatedBy()).to.eql(newJobData.initiatedBy);
-    expect(scrapeJob.getHasCustomImportJs()).to.equal(newJobData.hasCustomImportJs);
-    expect(scrapeJob.getHasCustomHeaders()).to.equal(newJobData.hasCustomHeaders);
+    expect(scrapeJob.getCustomHeaders()).to.equal(newJobData.customHeaders);
     expect(scrapeJob.getProcessingType()).to.equal(newJobData.processingType);
     expect(scrapeJob.getOptions()).to.eql(newJobData.options);
   });
@@ -131,6 +133,17 @@ describe('ScrapeJob IT', async () => {
       expect(err).to.be.instanceOf(DataAccessError);
       expect(err.cause).to.be.instanceOf(ElectroValidationError);
       expect(err.cause.message).to.contain('Invalid options. Options cannot be empty');
+    });
+  });
+
+  it('it fetches all scrape jobs by a url', async () => {
+    const scrapeJobs = await ScrapeJob.allByBaseURLAndProcessingType('https://example-1.com/cars', ScrapeJobModel.ScrapeProcessingType.DEFAULT);
+
+    expect(scrapeJobs).to.be.an('array');
+    expect(scrapeJobs.length).to.equal(1);
+    expect(scrapeJobs[0].getId()).to.equal(sampleData.scrapeJobs[0].getId());
+    scrapeJobs.forEach((scrapeJob) => {
+      checkScrapeJob(scrapeJob);
     });
   });
 
@@ -193,7 +206,7 @@ describe('ScrapeJob IT', async () => {
     const scrapeJobs = await ScrapeJob.allByStatus(ScrapeJobModel.ScrapeJobStatus.COMPLETE);
 
     expect(scrapeJobs).to.be.an('array');
-    expect(scrapeJobs.length).to.equal(2);
+    expect(scrapeJobs.length).to.equal(1);
     expect(scrapeJobs[0].getId()).to.equal(sampleData.scrapeJobs[0].getId());
     scrapeJobs.forEach((scrapeJob) => {
       checkScrapeJob(scrapeJob);
@@ -208,7 +221,7 @@ describe('ScrapeJob IT', async () => {
     );
 
     expect(scrapeJobs).to.be.an('array');
-    expect(scrapeJobs.length).to.equal(2);
+    expect(scrapeJobs.length).to.equal(1);
 
     scrapeJobs.forEach((scrapeJob) => {
       checkScrapeJob(scrapeJob);
@@ -219,7 +232,7 @@ describe('ScrapeJob IT', async () => {
     const sampleScrapeJob = sampleData.scrapeJobs[0];
     const scrapeJob = await ScrapeJob.findById(sampleScrapeJob.getId());
 
-    const scrapeUrls = await scrapeJob.getImportUrls();
+    const scrapeUrls = await scrapeJob.getScrapeUrls();
 
     expect(scrapeUrls).to.be.an('array');
     expect(scrapeUrls.length).to.equal(5);

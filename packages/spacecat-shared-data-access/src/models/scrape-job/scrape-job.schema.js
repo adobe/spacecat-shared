@@ -44,7 +44,7 @@ const ScrapeOptionTypeValidator = {
     }
   },
   [ScrapeJob.ScrapeOptions.WAIT_FOR_SELECTOR]: (value) => {
-    if (isString(value)) {
+    if (!isString(value)) {
       throw new Error(`Invalid value for ${ScrapeJob.ScrapeOptions.WAIT_FOR_SELECTOR}: ${value}`);
     }
   },

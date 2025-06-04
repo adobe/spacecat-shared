@@ -62,16 +62,20 @@
             "name": "Current Test File",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "args": [
-                "--timeout",
-                "999999",
-                "--colors",
-                "${file}"
+                "--require",
+                "./packages/spacecat-shared-data-access/test/it/fixtures.js",
+                "--spec",
+                "packages/spacecat-shared-data-access/test/it/scrape-job/scrape-job.test.js"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "skipFiles": [
                 "<node_internals>/**"
-            ]
+            ],
+            "runtimeExecutable": "${workspaceFolder}/.vscode/debug-node.sh",
+            "env": {
+                "PATH": "${env:PATH}"
+            }
         },
         {
             "type": "node",

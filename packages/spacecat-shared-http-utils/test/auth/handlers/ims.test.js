@@ -242,6 +242,11 @@ describe('AdobeImsHandler', () => {
       });
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
 
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+      }]);
+
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.instanceof(AuthInfo);
@@ -250,12 +255,13 @@ describe('AdobeImsHandler', () => {
       expect(result.scopes[0]).to.deep.include({
         name: 'user',
         domains: ['org1'],
+        subScopes: ['dx_aem_perf_auto_suggest', 'dx_aem_perf_auto_fix'],
       });
       expect(mockImsClient.getImsUserProfile.calledWith(token)).to.be.true;
       expect(mockImsClient.getImsUserOrganizations.calledWith(token)).to.be.true;
     });
 
-    it('handles empty projectedProductContext array', async () => {
+    it('handles empty organizations array', async () => {
       const token = await createToken({
         user_id: 'test-user@customer.com',
         as: 'ims-na1-stg1',
@@ -264,18 +270,20 @@ describe('AdobeImsHandler', () => {
       });
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
 
+      // Mock IMS profile response for non-Adobe user
       mockImsClient.getImsUserProfile.resolves({
-        projectedProductContext: [],
+        email: 'test-user@customer.com',
       });
+      mockImsClient.getImsUserOrganizations.resolves([]);
 
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
-      expect(result.profile.tenants).to.deep.equal([]);
+      expect(result.scopes).to.deep.equal([]);
     });
 
-    it('handles non-array projectedProductContext', async () => {
+    it('handles undefined organizations', async () => {
       const token = await createToken({
         user_id: 'test-user@customer.com',
         as: 'ims-na1-stg1',
@@ -284,18 +292,20 @@ describe('AdobeImsHandler', () => {
       });
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
 
+      // Mock IMS profile response for non-Adobe user
       mockImsClient.getImsUserProfile.resolves({
-        projectedProductContext: null,
+        email: 'test-user@customer.com',
       });
+      mockImsClient.getImsUserOrganizations.resolves(undefined);
 
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
-      expect(result.profile.tenants).to.deep.equal([]);
+      expect(result.scopes).to.deep.equal([]);
     });
 
-    it('handles projectedProductContext service code and sub service', async () => {
+    it('creates tenants with hardcoded subServices', async () => {
       const token = await createToken({
         user_id: 'test-user@customer.com',
         as: 'ims-na1-stg1',
@@ -304,31 +314,23 @@ describe('AdobeImsHandler', () => {
       });
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
 
-      // Mock IMS profile response with Adobe email
+      // Mock IMS profile response for non-Adobe user
       mockImsClient.getImsUserProfile.resolves({
-        email: 'test-user@adobe.com',
-        projectedProductContext: [{
-          prodCtx: {
-            serviceCode: 'foo',
-            owningEntity: null,
-          },
-        }, {
-          prodCtx: {
-            serviceCode: 'dx_aem_perf',
-            owningEntity: 'org1@AdobeOrg',
-            enable_sub_service: 'dx_aem_perf_foo,dx_aem_perf_bar',
-          },
-        }],
+        email: 'test-user@customer.com',
       });
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+      }]);
 
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
-      expect(result.profile.tenants).to.deep.equal([{
-        id: 'org1',
-        name: 'Test Org',
-        subServices: ['dx_aem_perf_foo', 'dx_aem_perf_bar'],
+      expect(result.scopes).to.deep.equal([{
+        name: 'user',
+        domains: ['org1'],
+        subScopes: ['dx_aem_perf_auto_suggest', 'dx_aem_perf_auto_fix'],
       }]);
     });
 
@@ -344,12 +346,6 @@ describe('AdobeImsHandler', () => {
       // Mock IMS profile response with Adobe email
       mockImsClient.getImsUserProfile.resolves({
         email: 'test-user@adobe.com',
-        projectedProductContext: [{
-          prodCtx: {
-            serviceCode: 'dx_aem_perf',
-            owningEntity: 'org1@AdobeOrg',
-          },
-        }],
       });
 
       const result = await handler.checkAuth({}, context);

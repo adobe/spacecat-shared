@@ -56,30 +56,15 @@ const transformProfile = (payload) => {
   return profile;
 };
 
-function getTenants(profile, organizations) {
-  const contexts = profile.projectedProductContext;
-  if (!isNonEmptyArray(contexts)) {
+function getTenants(organizations) {
+  if (!isNonEmptyArray(organizations)) {
     return [];
   }
 
-  const filteredContexts = contexts
-    .filter((context) => context.prodCtx.serviceCode === SERVICE_CODE)
-    // remove duplicates
-    .filter((context, index, array) => array.findIndex(
-      (tenant) => (context.prodCtx.owningEntity
-        && tenant.prodCtx.owningEntity === context.prodCtx.owningEntity),
-    ) === index)
-    // remove the auth source from the id (<id>@<auth-src>)
-    .map((context) => ({
-      id: context.prodCtx.owningEntity.split('@')[0],
-      subServices: context.prodCtx.enable_sub_service?.split(',').filter((subService) => subService.startsWith(SERVICE_CODE)),
-    }));
-  return organizations.filter(
-    (org) => filteredContexts.findIndex((ctx) => ctx.id === org.orgRef.ident) !== -1,
-  ).map((org) => ({
+  return organizations.map((org) => ({
     id: org.orgRef.ident,
     name: org.orgName,
-    subServices: filteredContexts.find((ctx) => ctx.id === org.orgRef.ident)?.subServices,
+    subServices: [`${SERVICE_CODE}_auto_suggest`, `${SERVICE_CODE}_auto_fix`],
   }));
 }
 
@@ -150,16 +135,13 @@ export default class AdobeImsHandler extends AbstractHandler {
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);
       const imsProfile = await context.imsClient.getImsUserProfile(token);
-      const organizations = await context.imsClient.getImsUserOrganizations(token);
-      this.log(`IMS profile: ${JSON.stringify(imsProfile)}`, 'info');
-      this.log(`Organizations: ${JSON.stringify(organizations)}`, 'info');
-      payload.tenants = getTenants(imsProfile, organizations) || [];
-      this.log(`Tenants: ${JSON.stringify(payload.tenants)}`, 'info');
       const profile = transformProfile(payload);
       const scopes = [];
       if (imsProfile.email?.endsWith('@adobe.com')) {
         scopes.push({ name: 'admin' });
       } else {
+        const organizations = await context.imsClient.getImsUserOrganizations(token);
+        payload.tenants = getTenants(organizations) || [];
         scopes.push(...payload.tenants.map(
           (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
         ));

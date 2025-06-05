@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.23.1...@adobe/spacecat-shared-data-access-v2.23.2) (2025-06-04)
+
+
+### Bug Fixes
+
+* typo issue for elmo ([#788](https://github.com/adobe/spacecat-shared/issues/788)) ([ba56401](https://github.com/adobe/spacecat-shared/commit/ba5640131566d0980a9104114cbe57fcfc53c181))
+
+# [@adobe/spacecat-shared-data-access-v2.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.23.0...@adobe/spacecat-shared-data-access-v2.23.1) (2025-06-04)
+
+
+### Bug Fixes
+
+* new organic keyword imports configs ([#787](https://github.com/adobe/spacecat-shared/issues/787)) ([b2e70fc](https://github.com/adobe/spacecat-shared/commit/b2e70fc77f4695e7aaf4cb8e578410b459226e82))
+
+# [@adobe/spacecat-shared-data-access-v2.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.22.2...@adobe/spacecat-shared-data-access-v2.23.0) (2025-06-04)
+
+
+### Features
+
+* add new keyword import types ([#786](https://github.com/adobe/spacecat-shared/issues/786)) ([e82c55e](https://github.com/adobe/spacecat-shared/commit/e82c55e5fe1b27603e35b2fdf5e5c23c3c1d338c))
+
+# [@adobe/spacecat-shared-data-access-v2.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.22.1...@adobe/spacecat-shared-data-access-v2.22.2) (2025-05-31)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#779](https://github.com/adobe/spacecat-shared/issues/779)) ([07f8cce](https://github.com/adobe/spacecat-shared/commit/07f8cce73e33bfb9c61fe14f2ef28012b872437d))
+
 # [@adobe/spacecat-shared-data-access-v2.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.22.0...@adobe/spacecat-shared-data-access-v2.22.1) (2025-05-27)
 
 

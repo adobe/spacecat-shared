@@ -62,25 +62,25 @@ function getTenants(profile, organizations) {
     return [];
   }
 
-  const ctxById = new Map();
-  for (const { prodCtx } of contexts) {
-    // eslint-disable-next-line no-continue
-    if (prodCtx.serviceCode !== SERVICE_CODE || !prodCtx.owningEntity) continue;
-    const id = prodCtx.owningEntity.split('@')[0];
-    if (!ctxById.has(id)) {
-      const subServices = prodCtx.enable_sub_service
-        ?.split(',')
-        .filter((s) => s.startsWith(SERVICE_CODE));
-      ctxById.set(id, subServices ?? []);
-    }
-  }
-  return organizations
-    .filter((org) => ctxById.has(org.orgRef.ident))
-    .map((org) => ({
-      id: org.orgRef.ident,
-      name: org.orgName,
-      subServices: ctxById.get(org.orgRef.ident),
+  const filteredContexts = contexts
+    .filter((context) => context.prodCtx.serviceCode === SERVICE_CODE)
+    // remove duplicates
+    .filter((context, index, array) => array.findIndex(
+      (tenant) => (context.prodCtx.owningEntity
+        && tenant.prodCtx.owningEntity === context.prodCtx.owningEntity),
+    ) === index)
+    // remove the auth source from the id (<id>@<auth-src>)
+    .map((context) => ({
+      id: context.prodCtx.owningEntity.split('@')[0],
+      subServices: context.prodCtx.enable_sub_service?.split(',').filter((subService) => subService.startsWith(SERVICE_CODE)),
     }));
+  return organizations.filter(
+    (org) => filteredContexts.findIndex((ctx) => ctx.id === org.orgRef.ident) !== -1,
+  ).map((org) => ({
+    id: org.orgRef.ident,
+    name: org.orgName,
+    subServices: filteredContexts.find((ctx) => ctx.id === org.orgRef.ident)?.subServices,
+  }));
 }
 
 /**
@@ -151,8 +151,10 @@ export default class AdobeImsHandler extends AbstractHandler {
       const payload = await this.#validateToken(token, config);
       const imsProfile = await context.imsClient.getImsUserProfile(token);
       const organizations = await context.imsClient.getImsUserOrganizations(token);
+      this.log(`IMS profile: ${JSON.stringify(imsProfile)}`, 'info');
+      this.log(`Organizations: ${JSON.stringify(organizations)}`, 'info');
       payload.tenants = getTenants(imsProfile, organizations) || [];
-
+      this.log(`Tenants: ${JSON.stringify(payload.tenants)}`, 'info');
       const profile = transformProfile(payload);
       const scopes = [];
       if (imsProfile.email?.endsWith('@adobe.com')) {

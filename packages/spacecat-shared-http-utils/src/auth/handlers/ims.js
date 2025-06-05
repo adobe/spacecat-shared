@@ -139,15 +139,11 @@ export default class AdobeImsHandler extends AbstractHandler {
       if (imsProfile.email?.endsWith('@adobe.com')) {
         scopes.push({ name: 'admin' });
       } else {
-        this.log(`IMS profile of non adobe user: ${JSON.stringify(imsProfile)}`, 'info');
         const organizations = await context.imsClient.getImsUserOrganizations(token);
-        this.log(`Organizations: ${JSON.stringify(organizations)}`, 'info');
         payload.tenants = getTenants(organizations) || [];
-        this.log(`Tenants created: ${JSON.stringify(payload.tenants)}`, 'info');
         scopes.push(...payload.tenants.map(
           (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
         ));
-        this.log(`Scopes created: ${JSON.stringify(scopes)}`, 'info');
       }
       const profile = transformProfile(payload);
 

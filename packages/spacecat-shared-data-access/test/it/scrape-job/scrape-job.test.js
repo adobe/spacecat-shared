@@ -40,6 +40,9 @@ function checkScrapeJob(scrapeJob) {
   expect(scrapeJob.getProcessingType()).to.be.a('string');
   expect(scrapeJob.getOptions()).to.be.an('object');
   expect(scrapeJob.getProcessingType()).to.be.a('string');
+  if (scrapeJob.getResults()) {
+    expect(scrapeJob.getResults()).to.be.an('object');
+  }
 }
 
 describe('ScrapeJob IT', async () => {
@@ -169,6 +172,9 @@ describe('ScrapeJob IT', async () => {
       redirectCount: 10,
       urlCount: 100,
       duration: 188000,
+      results: {
+        test: 'test',
+      },
     };
 
     await scrapeJob
@@ -179,6 +185,7 @@ describe('ScrapeJob IT', async () => {
       .setRedirectCount(updates.redirectCount)
       .setUrlCount(updates.urlCount)
       .setDuration(updates.duration)
+      .setResults(updates.results)
       .save();
 
     const updatedScrapeJob = await ScrapeJob.findById(scrapeJob.getId());
@@ -192,6 +199,7 @@ describe('ScrapeJob IT', async () => {
     expect(updatedScrapeJob.getRedirectCount()).to.equal(updates.redirectCount);
     expect(updatedScrapeJob.getUrlCount()).to.equal(updates.urlCount);
     expect(updatedScrapeJob.getDuration()).to.equal(updates.duration);
+    expect(updatedScrapeJob.getResults()).to.eql(updates.results);
   });
 
   it('finds a scrape job by its id', async () => {

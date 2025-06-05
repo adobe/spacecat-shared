@@ -22,9 +22,12 @@ const getLimit = (limit, upperLimit) => Math.min(limit, upperLimit);
 
 export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([
   'keyword',
+  'keyword_country',
+  'language',
   'sum_traffic',
   'volume',
   'best_position',
+  'best_position_url',
   'cpc',
   'last_update',
   'is_branded',
@@ -218,6 +221,7 @@ export default class AhrefsAPIClient {
     if (!['prefix', 'exact'].includes(mode)) {
       throw new Error(`Invalid mode: ${mode}`);
     }
+    this.log.info(`Getting organic keywords for ${url} with country ${country}, mode ${mode}, limit ${limit}, excludeBranded ${excludeBranded} and select:${ORGANIC_KEYWORDS_FIELDS.join(',')}`);
 
     const queryParams = {
       country,

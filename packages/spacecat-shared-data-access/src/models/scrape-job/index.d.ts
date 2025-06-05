@@ -21,6 +21,11 @@ export interface IOptions {
   screenshotTypes: string[] | undefined,
 }
 
+export interface IResults {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any,
+}
+
 export interface ScrapeJob extends BaseModel {
   getBaseURL(): string,
   getDuration(): number,
@@ -40,8 +45,7 @@ export interface ScrapeJob extends BaseModel {
   getUrlCount(): number,
   getProcessingType(): string,
   getCustomHeaders(): IOptions,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getResults(): any,
+  getResults(): IResults,
   setBaseURL(baseURL: string): void,
   setDuration(duration: number): void,
   setEndedAt(endTime: string): void,
@@ -57,8 +61,7 @@ export interface ScrapeJob extends BaseModel {
   setUrlCount(urlCount: number): void,
   setProcessingType(processingType: string): void,
   setCustomHeaders(customHeaders: IOptions): void,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setResults(results: any): void,
+  setResults(results: IResults): void,
 }
 
 export interface ScrapeJobCollection extends BaseCollection<ScrapeJob> {

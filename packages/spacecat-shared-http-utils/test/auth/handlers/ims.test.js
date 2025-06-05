@@ -295,6 +295,43 @@ describe('AdobeImsHandler', () => {
       expect(result.profile.tenants).to.deep.equal([]);
     });
 
+    it('handles projectedProductContext service code and sub service', async () => {
+      const token = await createToken({
+        user_id: 'test-user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      // Mock IMS profile response with Adobe email
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'test-user@adobe.com',
+        projectedProductContext: [{
+          prodCtx: {
+            serviceCode: 'foo',
+            owningEntity: null,
+          },
+        }, {
+          prodCtx: {
+            serviceCode: 'dx_aem_perf',
+            owningEntity: 'org1@AdobeOrg',
+            enable_sub_service: 'dx_aem_perf_foo,dx_aem_perf_bar',
+          },
+        }],
+      });
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.profile.tenants).to.deep.equal([{
+        id: 'org1',
+        name: 'Test Org',
+        subServices: ['dx_aem_perf_foo', 'dx_aem_perf_bar'],
+      }]);
+    });
+
     it('gives only admin scope to adobe.com users', async () => {
       const token = await createToken({
         user_id: 'test-user@adobe.com',

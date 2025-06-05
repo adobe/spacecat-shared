@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 import {
   createLocalJWKSet,
   createRemoteJWKSet,
@@ -58,30 +58,29 @@ const transformProfile = (payload) => {
 
 function getTenants(profile, organizations) {
   const contexts = profile.projectedProductContext;
-  if (!Array.isArray(contexts) || contexts.length === 0) {
+  if (!isNonEmptyArray(contexts)) {
     return [];
   }
 
-  const filteredContexts = contexts
-    .filter((context) => context.prodCtx.serviceCode === SERVICE_CODE)
-    // remove duplicates
-    .filter((context, index, array) => array.findIndex(
-      (tenant) => (context.prodCtx.owningEntity
-        && tenant.prodCtx.owningEntity === context.prodCtx.owningEntity),
-    ) === index)
-    // remove the auth source from the id (<id>@<auth-src>)
-    .map((context) => ({
-      id: context.prodCtx.owningEntity.split('@')[0],
-      subServices: context.prodCtx.enable_sub_service?.split(',').filter((subService) => subService.startsWith(SERVICE_CODE)),
+  const ctxById = new Map();
+  for (const { prodCtx } of contexts) {
+    // eslint-disable-next-line no-continue
+    if (prodCtx.serviceCode !== SERVICE_CODE || !prodCtx.owningEntity) continue;
+    const id = prodCtx.owningEntity.split('@')[0];
+    if (!ctxById.has(id)) {
+      const subServices = prodCtx.enable_sub_service
+        ?.split(',')
+        .filter((s) => s.startsWith(SERVICE_CODE));
+      ctxById.set(id, subServices ?? []);
+    }
+  }
+  return organizations
+    .filter((org) => ctxById.has(org.orgRef.ident))
+    .map((org) => ({
+      id: org.orgRef.ident,
+      name: org.orgName,
+      subServices: ctxById.get(org.orgRef.ident),
     }));
-
-  return organizations.filter(
-    (org) => filteredContexts.findIndex((ctx) => ctx.id === org.orgRef.ident) !== -1,
-  ).map((org) => ({
-    id: org.orgRef.ident,
-    name: org.orgName,
-    subServices: filteredContexts.find((ctx) => ctx.id === org.orgRef.ident)?.subServices,
-  }));
 }
 
 /**

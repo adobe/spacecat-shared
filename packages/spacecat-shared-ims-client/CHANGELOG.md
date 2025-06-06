@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.8.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.2...@adobe/spacecat-shared-ims-client-v1.8.3) (2025-06-06)
+
+
+### Bug Fixes
+
+* type error when no roles in profile ([#792](https://github.com/adobe/spacecat-shared/issues/792)) ([3b6b167](https://github.com/adobe/spacecat-shared/commit/3b6b1675990b21cd5aebd344a08323410e2d04ca))
+
 # [@adobe/spacecat-shared-ims-client-v1.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.1...@adobe/spacecat-shared-ims-client-v1.8.2) (2025-05-31)
 
 

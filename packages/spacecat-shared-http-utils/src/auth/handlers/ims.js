@@ -10,16 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 import {
   createLocalJWKSet,
   createRemoteJWKSet,
   decodeJwt,
   jwtVerify,
 } from 'jose';
-
 import { getBearerToken } from './utils/bearer.js';
-
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
 
@@ -37,6 +35,7 @@ const IGNORED_PROFILE_PROPS = [
   'aa_id',
 ];
 
+const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {
     const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
@@ -56,6 +55,18 @@ const transformProfile = (payload) => {
 
   return profile;
 };
+
+function getTenants(organizations) {
+  if (!isNonEmptyArray(organizations)) {
+    return [];
+  }
+
+  return organizations.map((org) => ({
+    id: org.orgRef.ident,
+    name: org.orgName,
+    subServices: [`${SERVICE_CODE}_auto_suggest`, `${SERVICE_CODE}_auto_fix`],
+  }));
+}
 
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
@@ -115,16 +126,32 @@ export default class AdobeImsHandler extends AbstractHandler {
       return null;
     }
 
+    if (!context.imsClient) {
+      this.log('No IMS client available in context', 'error');
+      return null;
+    }
+
     try {
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);
+      const imsProfile = await context.imsClient.getImsUserProfile(token);
+      const scopes = [];
+      if (imsProfile.email?.endsWith('@adobe.com')) {
+        scopes.push({ name: 'admin' });
+      } else {
+        const organizations = await context.imsClient.getImsUserOrganizations(token);
+        payload.tenants = getTenants(organizations) || [];
+        scopes.push(...payload.tenants.map(
+          (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
+        ));
+      }
       const profile = transformProfile(payload);
 
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
         .withProfile(profile)
-        .withScopes([{ name: 'admin' }]);
+        .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
     }

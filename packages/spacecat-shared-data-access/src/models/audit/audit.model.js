@@ -47,6 +47,7 @@ class Audit extends BaseModel {
     FORMS_OPPORTUNITIES: 'forms-opportunities',
     SITE_DETECTION: 'site-detection',
     ALT_TEXT: 'alt-text',
+    ACCESSIBILITY: 'accessibility',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

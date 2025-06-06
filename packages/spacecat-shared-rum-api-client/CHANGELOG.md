@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.28.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.28.0...@adobe/spacecat-shared-rum-api-client-v2.28.1) (2025-05-31)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#779](https://github.com/adobe/spacecat-shared/issues/779)) ([07f8cce](https://github.com/adobe/spacecat-shared/commit/07f8cce73e33bfb9c61fe14f2ef28012b872437d))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.27.2...@adobe/spacecat-shared-rum-api-client-v2.28.0) (2025-05-30)
+
+
+### Features
+
+* filter pages under experiment ([#772](https://github.com/adobe/spacecat-shared/issues/772)) ([af63666](https://github.com/adobe/spacecat-shared/commit/af636667a38602a848624567ddcd37adba931597))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.27.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.27.1...@adobe/spacecat-shared-rum-api-client-v2.27.2) (2025-05-27)
+
+
+### Bug Fixes
+
+* disregarding CTAs without a valid source for low nav opportunities ([#769](https://github.com/adobe/spacecat-shared/issues/769)) ([1dc5d30](https://github.com/adobe/spacecat-shared/commit/1dc5d30ddaa4291061ea29c52c797aa6cfdca670))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.27.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.27.0...@adobe/spacecat-shared-rum-api-client-v2.27.1) (2025-05-26)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#763](https://github.com/adobe/spacecat-shared/issues/763)) ([643b396](https://github.com/adobe/spacecat-shared/commit/643b396130e9144f87099935204927b5522aff68))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.26.0...@adobe/spacecat-shared-rum-api-client-v2.27.0) (2025-05-26)
+
+
+### Features
+
+* including traffic acquisition data in forms oppoty ([#754](https://github.com/adobe/spacecat-shared/issues/754)) ([616ebd3](https://github.com/adobe/spacecat-shared/commit/616ebd3b0302d67693db8bce7b55224ff7915778))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.25.2...@adobe/spacecat-shared-rum-api-client-v2.26.0) (2025-05-20)
 
 

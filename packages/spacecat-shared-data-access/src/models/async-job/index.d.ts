@@ -16,14 +16,14 @@ export interface AsyncJob extends BaseModel {
     getStatus(): string;
     getResultLocation(): string;
     getResultType(): string;
-    getResult(): object;
+    getResult(): object | [];
     getError(): { code: string; message: string; details?: object } | null;
     getMetadata(): object | null;
     getRecordExpiressAt(): number;
     setStatus(status: string): void;
     setResultLocation(location: string): void;
     setResultType(type: string): void;
-    setResult(result: object): void;
+    setResult(result: object | []): void;
     setError(error: { code: string; message: string; details?: object }): void;
     setMetadata(metadata: object): void;
     setExpiresAt(expiresAt: number): void;

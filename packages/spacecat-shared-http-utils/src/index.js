@@ -100,6 +100,13 @@ export function notFound(message = 'not found', headers = {}) {
   });
 }
 
+export function methodNotAllowed(message = 'method not allowed', headers = {}) {
+  return createResponse({ message }, 405, {
+    [HEADER_ERROR]: message,
+    ...headers,
+  });
+}
+
 export function internalServerError(message = 'internal server error', headers = {}) {
   return createResponse({ message }, 500, {
     [HEADER_ERROR]: message,

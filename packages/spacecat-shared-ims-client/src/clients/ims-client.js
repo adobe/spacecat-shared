@@ -25,6 +25,7 @@ import {
   IMS_TOKEN_ENDPOINT_V3,
   IMS_VALIDATE_TOKEN_ENDPOINT,
   IMS_ADMIN_PROFILE_ENDPOINT,
+  ADMIN_GROUP_IDENT,
 } from '../utils.js';
 
 export default class ImsClient extends ImsBaseClient {
@@ -370,5 +371,39 @@ export default class ImsClient extends ImsBaseClient {
     }
 
     return adminProfileResponse.json();
+  }
+
+  /**
+   * Fetch the IMS organizations of a user given the IMS access token
+   * and check if the user is an admin of any of them
+   * @param {string} imsAccessToken A valid IMS user access token
+   * @returns {Promise<boolean>} True if the user is an admin of any of the organizations,
+   * false otherwise
+   */
+  async isUserASOAdmin(imsAccessToken) {
+    if (!hasText(imsAccessToken)) {
+      throw new Error('imsAccessToken param is required.');
+    }
+
+    const organizationsResponse = await this.imsApiCall(
+      IMS_ALL_ORGANIZATIONS_ENDPOINT,
+      {},
+      null,
+      { accessToken: imsAccessToken },
+    );
+
+    if (!organizationsResponse.ok) {
+      throw new Error(`IMS getImsUserOrganizations request failed with status: ${organizationsResponse.status}`);
+    }
+
+    const organizations = await organizationsResponse.json();
+
+    return organizations.some((org) => {
+      const adminGroupsForOrg = ADMIN_GROUP_IDENT[org.orgRef.ident];
+      if (!adminGroupsForOrg) {
+        return false;
+      }
+      return org.groups.some((group) => adminGroupsForOrg.includes(group.ident));
+    });
   }
 }

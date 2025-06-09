@@ -23,6 +23,15 @@ export const IMS_VALIDATE_TOKEN_ENDPOINT = '/ims/validate_token/v1';
 export const IMS_PROFILE_ENDPOINT = '/ims/profile/v1';
 export const IMS_INVALIDATE_TOKEN_ENDPOINT = '/ims/invalidate_token/v2';
 export const IMS_ADMIN_PROFILE_ENDPOINT = '/ims/admin_profile/v3';
+export const ADMIN_GROUP_IDENT = {
+  '8C6043F15F43B6390A49401A': [
+    635541219,
+  ],
+  '908936ED5D35CC220A495CD4': [
+    879529884,
+    901092291,
+  ],
+};
 /**
  * Creates and populates a FormData object from key-value pairs.
  * @param {Object} fields - Object containing key-value pairs to append to FormData.

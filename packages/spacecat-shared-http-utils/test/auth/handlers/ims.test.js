@@ -51,6 +51,8 @@ const imsIdpConfigDev = {
 describe('AdobeImsHandler', () => {
   let logStub;
   let handler;
+  let mockImsClient;
+  let context;
 
   beforeEach(() => {
     logStub = {
@@ -58,11 +60,38 @@ describe('AdobeImsHandler', () => {
       info: sinon.stub(),
       error: sinon.stub(),
     };
+
+    mockImsClient = {
+      getImsUserProfile: sinon.stub().resolves({
+        projectedProductContext: [{
+          prodCtx: {
+            serviceCode: 'dx_aem_perf',
+            owningEntity: 'org1@AdobeOrg',
+          },
+        }],
+      }),
+      getImsUserOrganizations: sinon.stub().resolves([{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+      }]),
+    };
+
     handler = new AdobeImsHandler(logStub);
+
+    imsIdpConfigDev.discovery.jwks = publicJwk;
+    context = {
+      func: { version: 'ci' },
+      log: logStub,
+      env: {
+        AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev),
+      },
+      imsClient: mockImsClient,
+    };
   });
 
   afterEach(() => {
     sinon.restore();
+    delete imsIdpConfigDev.discovery.jwks;
   });
 
   it('is an instance of AbstractHandler', () => {
@@ -81,21 +110,18 @@ describe('AdobeImsHandler', () => {
   });
 
   it('returns null when there is no authorization header', async () => {
-    const context = {};
     const result = await handler.checkAuth({}, context);
 
     expect(result).to.be.null;
   });
 
   it('returns null when "Bearer " is missing from the authorization header', async () => {
-    const context = { pathInfo: { headers: { authorization: 'some-token' } } };
     const result = await handler.checkAuth({}, context);
 
     expect(result).to.be.null;
   });
 
   it('returns null when the token is empty', async () => {
-    const context = { pathInfo: { headers: { authorization: 'Bearer ' } } };
     const result = await handler.checkAuth({}, context);
 
     expect(result).to.be.null;
@@ -104,41 +130,45 @@ describe('AdobeImsHandler', () => {
 
   it('returns null when there is no ims config', async () => {
     const token = await createToken({ as: 'ims-na1' });
-    const context = {
+    const testContext = {
       log: logStub,
       func: { version: 'ci1234' },
       pathInfo: { headers: { authorization: `Bearer ${token}` } },
     };
-    const result = await handler.checkAuth({}, context);
+    const result = await handler.checkAuth({}, testContext);
 
     expect(result).to.be.null;
   });
 
   it('returns null when the token was issued by a different idp', async () => {
     const token = await createToken({ as: 'ims-na1' });
-    const context = {
+    const testContext = {
       log: logStub,
       func: { version: 'ci1234' },
       pathInfo: { headers: { authorization: `Bearer ${token}` } },
       env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) },
+      imsClient: mockImsClient,
     };
-    const result = await handler.checkAuth({}, context);
+    const result = await handler.checkAuth({}, testContext);
 
     expect(result).to.be.null;
     expect(logStub.error.calledWith('[ims] Failed to validate token: Token not issued by expected idp: ims-na1-stg1 != ims-na1')).to.be.true;
   });
 
+  it('throw error when context is not correct', async () => {
+    const token = await createToken({ as: 'ims-na1' });
+    const testContext = {
+      log: logStub,
+      func: { version: 'ci1234' },
+      pathInfo: { headers: { authorization: `Bearer ${token}` } },
+      env: { AUTH_HANDLER_IMS: 'invalid json' },
+      imsClient: mockImsClient,
+    };
+    const result = await handler.checkAuth({}, testContext);
+    expect(result).to.be.null;
+  });
+
   describe('token validation', () => {
-    let context;
-    beforeEach(() => {
-      imsIdpConfigDev.discovery.jwks = publicJwk;
-      context = { func: { version: 'ci' }, log: logStub, env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) } };
-    });
-
-    afterEach(() => {
-      delete imsIdpConfigDev.discovery.jwks;
-    });
-
     it('returns null when created_at is not a number', async () => {
       const token = await createToken({ as: 'ims-na1-stg1', created_at: 'not-a-number', expires_in: 3600 });
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
@@ -182,7 +212,10 @@ describe('AdobeImsHandler', () => {
     it('successfully validates a token and returns the profile', async () => {
       const now = Date.now();
       const token = await createToken({
-        user_id: 'test-user', as: 'ims-na1-stg1', created_at: now, expires_in: 3600,
+        user_id: 'test-user',
+        as: 'ims-na1-stg1',
+        created_at: now,
+        expires_in: 3600,
       });
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
 
@@ -196,6 +229,130 @@ describe('AdobeImsHandler', () => {
       expect(result.profile).to.not.have.property('user_id');
       expect(result.profile).to.have.property('created_at', now);
       expect(result.profile).to.have.property('ttl', 3);
+    });
+  });
+
+  describe('tenant information', () => {
+    it('successfully validates a token with tenant information', async () => {
+      const token = await createToken({
+        user_id: 'test-user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+      }]);
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.have.lengthOf(1);
+      expect(result.scopes[0]).to.deep.include({
+        name: 'user',
+        domains: ['org1'],
+        subScopes: ['dx_aem_perf_auto_suggest', 'dx_aem_perf_auto_fix'],
+      });
+      expect(mockImsClient.getImsUserProfile.calledWith(token)).to.be.true;
+      expect(mockImsClient.getImsUserOrganizations.calledWith(token)).to.be.true;
+    });
+
+    it('handles empty organizations array', async () => {
+      const token = await createToken({
+        user_id: 'test-user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      // Mock IMS profile response for non-Adobe user
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'test-user@customer.com',
+      });
+      mockImsClient.getImsUserOrganizations.resolves([]);
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([]);
+    });
+
+    it('handles undefined organizations', async () => {
+      const token = await createToken({
+        user_id: 'test-user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      // Mock IMS profile response for non-Adobe user
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'test-user@customer.com',
+      });
+      mockImsClient.getImsUserOrganizations.resolves(undefined);
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([]);
+    });
+
+    it('creates tenants with hardcoded subServices', async () => {
+      const token = await createToken({
+        user_id: 'test-user@customer.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      // Mock IMS profile response for non-Adobe user
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'test-user@customer.com',
+      });
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+      }]);
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([{
+        name: 'user',
+        domains: ['org1'],
+        subScopes: ['dx_aem_perf_auto_suggest', 'dx_aem_perf_auto_fix'],
+      }]);
+    });
+
+    it('gives only admin scope to adobe.com users', async () => {
+      const token = await createToken({
+        user_id: 'test-user@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      // Mock IMS profile response with Adobe email
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'test-user@adobe.com',
+      });
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
     });
   });
 });

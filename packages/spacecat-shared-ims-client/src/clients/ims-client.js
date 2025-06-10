@@ -381,22 +381,7 @@ export default class ImsClient extends ImsBaseClient {
    * false otherwise
    */
   async isUserASOAdmin(imsAccessToken) {
-    if (!hasText(imsAccessToken)) {
-      throw new Error('imsAccessToken param is required.');
-    }
-
-    const organizationsResponse = await this.imsApiCall(
-      IMS_ALL_ORGANIZATIONS_ENDPOINT,
-      {},
-      null,
-      { accessToken: imsAccessToken },
-    );
-
-    if (!organizationsResponse.ok) {
-      throw new Error(`IMS getImsUserOrganizations request failed with status: ${organizationsResponse.status}`);
-    }
-
-    const organizations = await organizationsResponse.json();
+    const organizations = await this.getImsUserOrganizations(imsAccessToken);
 
     return organizations.some((org) => {
       const adminGroupsForOrg = ADMIN_GROUP_IDENT[org.orgRef.ident];

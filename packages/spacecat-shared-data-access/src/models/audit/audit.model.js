@@ -10,10 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { isArray, isObject, isBoolean } from "@adobe/spacecat-shared-utils";
+import { isArray, isObject, isBoolean } from '@adobe/spacecat-shared-utils';
 
-import { ValidationError } from "../../errors/index.js";
-import BaseModel from "../base/base.model.js";
+import { ValidationError } from '../../errors/index.js';
+import BaseModel from '../base/base.model.js';
 
 /**
  * Audit - A class representing an Audit entity.
@@ -24,46 +24,36 @@ import BaseModel from "../base/base.model.js";
  */
 class Audit extends BaseModel {
   static AUDIT_TYPES = {
-    APEX: "apex",
-    CWV: "cwv",
-    LHS_MOBILE: "lhs-mobile",
-    LHS_DESKTOP: "lhs-desktop",
-    404: "404",
-    SITEMAP: "sitemap",
-    CANONICAL: "canonical",
-    BROKEN_BACKLINKS: "broken-backlinks",
-    BROKEN_INTERNAL_LINKS: "broken-internal-links",
-    EXPERIMENTATION: "experimentation",
-    CONVERSION: "conversion",
-    ORGANIC_KEYWORDS: "organic-keywords",
-    ORGANIC_TRAFFIC: "organic-traffic",
-    EXPERIMENTATION_ESS_DAILY: "experimentation-ess-daily",
-    EXPERIMENTATION_ESS_MONTHLY: "experimentation-ess-monthly",
-    EXPERIMENTATION_OPPORTUNITIES: "experimentation-opportunities",
-    META_TAGS: "meta-tags",
-    SOFT_404S: "soft-404s",
-    COSTS: "costs",
-    STRUCTURED_DATA: "structured-data",
-    STRUCTURED_DATA_AUTO_SUGGEST: "structured-data-auto-suggest",
-    FORMS_OPPORTUNITIES: "forms-opportunities",
-    SITE_DETECTION: "site-detection",
-    ALT_TEXT: "alt-text",
-    ACCESSIBILITY: "accessibility",
+    APEX: 'apex',
+    CWV: 'cwv',
+    LHS_MOBILE: 'lhs-mobile',
+    LHS_DESKTOP: 'lhs-desktop',
+    404: '404',
+    SITEMAP: 'sitemap',
+    CANONICAL: 'canonical',
+    BROKEN_BACKLINKS: 'broken-backlinks',
+    BROKEN_INTERNAL_LINKS: 'broken-internal-links',
+    EXPERIMENTATION: 'experimentation',
+    CONVERSION: 'conversion',
+    ORGANIC_KEYWORDS: 'organic-keywords',
+    ORGANIC_TRAFFIC: 'organic-traffic',
+    EXPERIMENTATION_ESS_DAILY: 'experimentation-ess-daily',
+    EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
+    EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
+    META_TAGS: 'meta-tags',
+    SOFT_404S: 'soft-404s',
+    COSTS: 'costs',
+    STRUCTURED_DATA: 'structured-data',
+    STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
+    FORMS_OPPORTUNITIES: 'forms-opportunities',
+    SITE_DETECTION: 'site-detection',
+    ALT_TEXT: 'alt-text',
+    ACCESSIBILITY: 'accessibility',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
-    [Audit.AUDIT_TYPES.LHS_DESKTOP]: [
-      "performance",
-      "seo",
-      "accessibility",
-      "best-practices",
-    ],
-    [Audit.AUDIT_TYPES.LHS_MOBILE]: [
-      "performance",
-      "seo",
-      "accessibility",
-      "best-practices",
-    ],
+    [Audit.AUDIT_TYPES.LHS_DESKTOP]: ['performance', 'seo', 'accessibility', 'best-practices'],
+    [Audit.AUDIT_TYPES.LHS_MOBILE]: ['performance', 'seo', 'accessibility', 'best-practices'],
   };
 
   static AUDIT_CONFIG = {
@@ -77,8 +67,8 @@ class Audit extends BaseModel {
    * @type {{CONTENT_SCRAPER: string, IMPORT_WORKER: string}}
    */
   static AUDIT_STEP_DESTINATIONS = {
-    CONTENT_SCRAPER: "content-scraper",
-    IMPORT_WORKER: "import-worker",
+    CONTENT_SCRAPER: 'content-scraper',
+    IMPORT_WORKER: 'import-worker',
   };
 
   /**
@@ -142,14 +132,11 @@ class Audit extends BaseModel {
       formatPayload: (stepResult, auditContext, context) => ({
         urls: stepResult.urls,
         jobId: stepResult.siteId,
-        processingType: stepResult.processingType || "default",
+        processingType: stepResult.processingType || 'default',
         skipMessage: false,
-        allowCache: isBoolean(stepResult.allowCache)
-          ? stepResult.allowCache
-          : true,
+        allowCache: isBoolean(stepResult.allowCache) ? stepResult.allowCache : true,
         options: stepResult.options || {},
-        completionQueueUrl:
-          stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
+        completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
         auditContext,
       }),
     },
@@ -163,21 +150,19 @@ class Audit extends BaseModel {
    */
   static validateAuditResult = (auditResult, auditType) => {
     if (!isObject(auditResult) && !isArray(auditResult)) {
-      throw new ValidationError("Audit result must be an object or array");
+      throw new ValidationError('Audit result must be an object or array');
     }
 
     if (isObject(auditResult.runtimeError)) {
       return true;
     }
 
-    if (
-      (auditType === Audit.AUDIT_CONFIG.TYPES.LHS_MOBILE ||
-        auditType === Audit.AUDIT_CONFIG.TYPES.LHS_DESKTOP) &&
-      !isObject(auditResult.scores)
-    ) {
-      throw new ValidationError(
-        `Missing scores property for audit type '${auditType}'`
-      );
+    if ((
+      auditType === Audit.AUDIT_CONFIG.TYPES.LHS_MOBILE
+        || auditType === Audit.AUDIT_CONFIG.TYPES.LHS_DESKTOP
+    )
+      && !isObject(auditResult.scores)) {
+      throw new ValidationError(`Missing scores property for audit type '${auditType}'`);
     }
 
     const expectedProperties = Audit.AUDIT_CONFIG.PROPERTIES[auditType];
@@ -185,9 +170,7 @@ class Audit extends BaseModel {
     if (expectedProperties) {
       for (const prop of expectedProperties) {
         if (!(prop in auditResult.scores)) {
-          throw new ValidationError(
-            `Missing expected property '${prop}' for audit type '${auditType}'`
-          );
+          throw new ValidationError(`Missing expected property '${prop}' for audit type '${auditType}'`);
         }
       }
     }

@@ -35,6 +35,9 @@ class ApiKey extends BaseModel {
     'imports.read_all',
     'imports.all_domains',
     'imports.assistant',
+    'scrapes.read_all',
+    'scrapes.write_all',
+    'scrapes.all_domains',
   ];
 
   isValid() {

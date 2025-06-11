@@ -47,7 +47,7 @@ class ScrapeJob extends BaseModel {
   static ScrapeOptions = {
     PROCESSING_TYPE: 'processingType',
     ENABLE_JAVASCRIPT: 'enableJavascript',
-    HIDE_CONSENT_BANNER: 'hideConsentBanner',
+    HIDE_CONSENT_BANNER: 'hideConsentBanners',
     PAGE_LOAD_TIMEOUT: 'pageLoadTimeout',
     WAIT_FOR_SELECTOR: 'waitForSelector',
     SECTION_LOAD_WAIT_TIME: 'sectionLoadWaitTime',

@@ -72,7 +72,7 @@ describe('ScrapeJob IT', async () => {
       options: {
         enableJavascript: true,
         pageLoadTimeout: 10000,
-        hideConsentBanner: false,
+        hideConsentBanners: false,
         waitForSelector: 'body',
         screenshotTypes: [
           ScrapeJobModel.ScrapeScreenshotType.FULL_PAGE,
@@ -102,7 +102,7 @@ describe('ScrapeJob IT', async () => {
     const options = {
       enableJavascript: true,
       pageLoadTimeout: 5000,
-      hideConsentBanner: true,
+      hideConsentBanners: true,
       waitForSelector: 'body',
       screenshotTypes: [
         ScrapeJobModel.ScrapeScreenshotType.SCROLL,

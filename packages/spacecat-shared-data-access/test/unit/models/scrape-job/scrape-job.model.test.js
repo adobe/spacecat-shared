@@ -51,7 +51,7 @@ describe('ScrapeJobModel', () => {
       options: {
         enableJavascript: true,
         pageLoadTimeout: 10000,
-        hideConsentBanner: true,
+        hideConsentBanners: true,
         waitForSelector: 'body',
         screenshotTypes: [
           ScrapeJob.ScrapeScreenshotType.SCROLL,
@@ -213,7 +213,7 @@ describe('ScrapeJobModel', () => {
       expect(instance.getOptions()).to.deep.equal({
         enableJavascript: true,
         pageLoadTimeout: 10000,
-        hideConsentBanner: true,
+        hideConsentBanners: true,
         waitForSelector: 'body',
         screenshotTypes: [
           ScrapeJob.ScrapeScreenshotType.SCROLL,

@@ -15,7 +15,7 @@ import type { ScrapeUrl } from '../scrape-url';
 
 export interface IOptions {
   enableJavascript: boolean,
-  hideConsentBanner: boolean,
+  hideConsentBanners: boolean,
   pageLoadTimeout: number | undefined,
   waitForSelector: string | undefined,
   screenshotTypes: string[] | undefined,

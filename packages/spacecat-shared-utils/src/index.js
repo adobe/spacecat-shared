@@ -29,6 +29,7 @@ export {
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
+  isValidHelixPreviewUrl,
   toBoolean,
 } from './functions.js';
 

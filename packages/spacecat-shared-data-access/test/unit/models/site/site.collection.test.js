@@ -113,4 +113,58 @@ describe('SiteCollection', () => {
       expect(instance.allByDeliveryType).to.have.been.calledOnce;
     });
   });
+
+  describe('findByPreviewURL', () => {
+    const mockSite = {
+      getId: () => 's12345',
+      getDeliveryType: () => 'aem_edge',
+      getHlxConfig: stub().returns({
+        rso: {
+          ref: 'ref',
+          site: 'site',
+          owner: 'owner',
+        },
+      }),
+    };
+
+    beforeEach(() => {
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner = stub();
+    });
+
+    it('returns site by preview URL', async () => {
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
+
+      const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
+
+      expect(result).to.deep.equal(mockSite);
+      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
+        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
+    });
+
+    it('returns null when no site is found', async () => {
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(null);
+
+      const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
+
+      expect(result).to.be.null;
+      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
+        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
+    });
+
+    it('handles complex preview URLs with paths', async () => {
+      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
+
+      const result = await instance.findByPreviewURL('https://feature-branch--my-site--company.hlx.page/some/path?query=param');
+
+      expect(result).to.deep.equal(mockSite);
+      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
+        .to.have.been.calledOnceWithExactly('feature-branch', 'my-site', 'company');
+    });
+
+    it('throws DataAccessError for invalid preview URLs', async () => {
+      const invalidUrl = 'https://invalid-url.com';
+      await expect(instance.findByPreviewURL(invalidUrl))
+        .to.be.rejectedWith(`Invalid preview URL: ${invalidUrl}`);
+    });
+  });
 });

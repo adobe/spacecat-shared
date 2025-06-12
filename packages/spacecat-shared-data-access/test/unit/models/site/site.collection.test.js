@@ -160,5 +160,11 @@ describe('SiteCollection', () => {
       expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
         .to.have.been.calledOnceWithExactly('feature-branch', 'my-site', 'company');
     });
+
+    it('throws DataAccessError for invalid preview URLs', async () => {
+      const invalidUrl = 'https://invalid-url.com';
+      await expect(instance.findByPreviewURL(invalidUrl))
+        .to.be.rejectedWith(`Invalid preview URL: ${invalidUrl}`);
+    });
   });
 });

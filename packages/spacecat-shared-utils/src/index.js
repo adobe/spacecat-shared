@@ -76,3 +76,60 @@ export {
 } from './formcalc.js';
 
 export { retrievePageAuthentication } from './auth.js';
+
+/**
+ * Computes CPC and related metrics from organic traffic and RUM data.
+ * @param {Object} params
+ * @param {Object} params.current - Current RUM metrics ({ totalPageViews, totalClicks, totalCTR })
+ * @param {Object} params.total - Total RUM metrics for a longer period ({ totalPageViews, totalClicks, totalCTR })
+ * @param {Array} params.organicTraffic - Array of organic traffic metrics ({ cost, value })
+ * @returns {Object} - { pageViewsChange, ctrChange, projectedTrafficValue, cpc }
+ */
+function computeCPCMetrics({ current, total, organicTraffic }) {
+  let pageViewsChange = 0;
+  let ctrChange = 0;
+  let projectedTrafficValue = 0;
+  let cpc = 0;
+
+  if (
+    current &&
+    total &&
+    typeof current.totalPageViews === 'number' &&
+    typeof total.totalPageViews === 'number' &&
+    typeof current.totalClicks === 'number' &&
+    typeof total.totalClicks === 'number' &&
+    typeof current.totalCTR === 'number' &&
+    typeof total.totalCTR === 'number'
+  ) {
+    const previousPageViews = total.totalPageViews - current.totalPageViews;
+    const previousCTR = previousPageViews > 0
+      ? (total.totalClicks - current.totalClicks) / previousPageViews
+      : 0;
+
+    pageViewsChange = previousPageViews > 0
+      ? ((current.totalPageViews - previousPageViews) / previousPageViews) * 100
+      : 0;
+
+    ctrChange = previousCTR !== 0
+      ? ((current.totalCTR - previousCTR) / previousCTR) * 100
+      : 0;
+
+    if (Array.isArray(organicTraffic) && organicTraffic.length > 0) {
+      const metric = organicTraffic[organicTraffic.length - 1];
+      if (metric && typeof metric.cost === 'number' && typeof metric.value === 'number' && metric.value !== 0) {
+        cpc = metric.cost / metric.value;
+      }
+    }
+
+    projectedTrafficValue = pageViewsChange * cpc;
+  }
+
+  return {
+    pageViewsChange,
+    ctrChange,
+    projectedTrafficValue,
+    cpc,
+  };
+}
+
+module.exports.computeCPCMetrics = computeCPCMetrics;

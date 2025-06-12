@@ -99,6 +99,10 @@ The module provides the following DAOs:
 - `getTopPagesForSite`
 - `addSiteTopPage`
 
+### Utility Functions
+
+- `computeCPCMetrics`: Computes CPC and related metrics from organic traffic and RUM data.
+
 ## Integrating Data Access in AWS Lambda Functions
 
 Our `spacecat-shared-data-access` module includes a wrapper that can be easily integrated into AWS Lambda functions using `@adobe/helix-shared-wrap`.

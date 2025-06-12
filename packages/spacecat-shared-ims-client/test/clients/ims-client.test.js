@@ -524,4 +524,103 @@ describe('ImsClient', () => {
       expect(nock.isDone()).to.be.true;
     });
   });
+
+  describe('isUserASOAdmin', () => {
+    let client;
+    const testAccessToken = 'test-access-token';
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+    });
+
+    it('throws error if no access token is provided', async () => {
+      await expect(client.isUserASOAdmin(null)).to.be.rejectedWith('imsAccessToken param is required.');
+    });
+
+    it('throws error if request fails', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .reply(500, {
+          error: 'server_error',
+          error_description: 'Boom',
+        });
+
+      await expect(client.isUserASOAdmin(testAccessToken)).to.be.rejectedWith('IMS getImsUserOrganizations request failed with status: 500');
+    });
+
+    it('returns true if user is ASO admin in any organization', async () => {
+      const mockOrgs = [
+        {
+          orgRef: {
+            ident: '8C6043F15F43B6390A49401A',
+            authSrc: 'AdobeOrg',
+          },
+          groups: [
+            {
+              groupName: '[Do Not Delete] ASO-admin',
+              ident: 635541219,
+              groupType: 'USER',
+            },
+          ],
+        },
+      ];
+
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .reply(200, mockOrgs);
+
+      const result = await client.isUserASOAdmin(testAccessToken);
+      expect(result).to.be.true;
+    });
+
+    it('returns false if user is not ASO admin in any organization', async () => {
+      const mockOrgs = [
+        {
+          orgRef: {
+            ident: '8C6043F15F43B6390A49401A',
+            authSrc: 'AdobeOrg',
+          },
+          groups: [
+            {
+              groupName: 'Some Other Group',
+              ident: 123456,
+              groupType: 'USER',
+            },
+          ],
+        },
+      ];
+
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .reply(200, mockOrgs);
+
+      const result = await client.isUserASOAdmin(testAccessToken);
+      expect(result).to.be.false;
+    });
+
+    it('returns false if organization has no admin groups defined', async () => {
+      const mockOrgs = [
+        {
+          orgRef: {
+            ident: 'UNKNOWN_ORG_ID',
+            authSrc: 'AdobeOrg',
+          },
+          groups: [
+            {
+              groupName: '[Do Not Delete] ASO-admin',
+              ident: 635541219,
+              groupType: 'USER',
+            },
+          ],
+        },
+      ];
+
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/organizations/v6')
+        .reply(200, mockOrgs);
+
+      const result = await client.isUserASOAdmin(testAccessToken);
+      expect(result).to.be.false;
+    });
+  });
 });

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.0...@adobe/spacecat-shared-http-utils-v1.14.1) (2025-06-06)
+
+
+### Bug Fixes
+
+* trigger a release for non-adobe users tenant isolation ([#789](https://github.com/adobe/spacecat-shared/issues/789)) ([92f5aa2](https://github.com/adobe/spacecat-shared/commit/92f5aa2cb65ffe1e1f19ef35f94f1f5016a49979))
+
 # [@adobe/spacecat-shared-http-utils-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.2...@adobe/spacecat-shared-http-utils-v1.14.0) (2025-05-27)
 
 

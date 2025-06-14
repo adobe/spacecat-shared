@@ -159,6 +159,9 @@ Inspired by <a href="https://github.com/adobe/helix-admin/blob/main/src/index.js
 <dt><a href="#composeBaseURL">composeBaseURL(domain)</a> ⇒ <code>string</code></dt>
 <dd><p>Composes a base URL by applying a series of transformations to the given domain.</p>
 </dd>
+<dt><a href="#computeCPCMetrics">computeCPCMetrics(params)</a> ⇒ <code>Object</code></dt>
+<dd><p>Computes CPC and related metrics from organic traffic and RUM data.</p>
+</dd>
 </dl>
 
 <a name="SQS"></a>
@@ -765,4 +768,19 @@ Composes a base URL by applying a series of transformations to the given domain.
 | Param | Type | Description |
 | --- | --- | --- |
 | domain | <code>string</code> | The domain to compose the base URL from. |
+
+<a name="computeCPCMetrics"></a>
+
+## computeCPCMetrics(params) ⇒ <code>Object</code>
+Computes CPC and related metrics from organic traffic and RUM data.
+
+**Kind**: global function  
+**Returns**: <code>Object</code> - An object with pageViewsChange, ctrChange, projectedTrafficValue, and cpc.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| params | <code>Object</code> | The input parameters. |
+| params.current | <code>Object</code> | Current RUM metrics ({ totalPageViews, totalClicks, totalCTR }) |
+| params.total | <code>Object</code> | Total RUM metrics for a longer period ({ totalPageViews, totalClicks, totalCTR }) |
+| params.organicTraffic | <code>Array</code> | Array of organic traffic metrics ({ cost, value }) |
 

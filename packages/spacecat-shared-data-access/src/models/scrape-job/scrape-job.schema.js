@@ -125,21 +125,8 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
     default: 0,
     validate: (value) => !value || isInteger(value),
   })
-  .addAttribute('hashedApiKey', {
-    type: 'string',
-    required: true,
-  })
   .addAttribute('scrapeQueueId', {
     type: 'string',
-  })
-  .addAttribute('initiatedBy', {
-    type: 'map',
-    properties: {
-      apiKeyName: { type: 'string' },
-      imsOrgId: { type: 'string' },
-      imsUserId: { type: 'string' },
-      userAgent: { type: 'string' },
-    },
   })
   .addAttribute('options', {
     type: 'any',

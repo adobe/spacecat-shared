@@ -162,18 +162,6 @@ describe('ScrapeJobModel', () => {
     });
   });
 
-  describe('hashedApiKey', () => {
-    it('gets hashedApiKey', () => {
-      expect(instance.getHashedApiKey()).to.equal('someHashedApiKey');
-    });
-
-    it('sets hashedApiKey', () => {
-      const newHashedApiKey = 'someNewHashedApiKey';
-      instance.setHashedApiKey(newHashedApiKey);
-      expect(instance.getHashedApiKey()).to.equal(newHashedApiKey);
-    });
-  });
-
   describe('scrapeQueueId', () => {
     it('gets scrapeQueueId', () => {
       expect(instance.getScrapeQueueId()).to.equal('iq12345');
@@ -183,23 +171,6 @@ describe('ScrapeJobModel', () => {
       const newScrapeQueueId = 'iq67890';
       instance.setScrapeQueueId(newScrapeQueueId);
       expect(instance.getScrapeQueueId()).to.equal(newScrapeQueueId);
-    });
-  });
-
-  describe('initiatedBy', () => {
-    it('gets initiatedBy', () => {
-      expect(instance.getInitiatedBy()).to.deep.equal(mockRecord.initiatedBy);
-    });
-
-    it('sets initiatedBy', () => {
-      const newInitiatedBy = {
-        apiKeyName: 'newApiKeyName',
-        imsOrgId: 'newImsOrgId',
-        imsUserId: 'newImsUserId',
-        userAgent: 'newUserAgent',
-      };
-      instance.setInitiatedBy(newInitiatedBy);
-      expect(instance.getInitiatedBy()).to.deep.equal(newInitiatedBy);
     });
   });
 

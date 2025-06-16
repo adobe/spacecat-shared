@@ -31,11 +31,7 @@ function checkScrapeJob(scrapeJob) {
   if (scrapeJob.getCustomHeaders()) {
     expect(scrapeJob.getCustomHeaders()).to.be.a('object');
   }
-  expect(scrapeJob.getHashedApiKey()).to.be.a('string');
   expect(scrapeJob.getScrapeQueueId()).to.be.a('string');
-  if (scrapeJob.getInitiatedBy()) {
-    expect(scrapeJob.getInitiatedBy()).to.be.an('object');
-  }
   expect(scrapeJob.getRedirectCount()).to.be.an('number');
   expect(scrapeJob.getStartedAt()).to.be.a('string');
   expect(scrapeJob.getStatus()).to.be.a('string');
@@ -58,13 +54,9 @@ describe('ScrapeJob IT', async () => {
 
     newJobData = {
       scrapeQueueId: 'some-queue-id',
-      hashedApiKey: 'some-hashed-api-key',
       baseURL: 'https://example-some.com/cars',
       startedAt: '2023-12-15T01:22:05.000Z',
       status: ScrapeJobModel.ScrapeJobStatus.RUNNING,
-      initiatedBy: {
-        apiKeyName: 'K-321',
-      },
       processingType: ScrapeJobModel.ScrapeProcessingType.DEFAULT,
       customHeader: {},
       options: {
@@ -86,11 +78,9 @@ describe('ScrapeJob IT', async () => {
     checkScrapeJob(scrapeJob);
 
     expect(scrapeJob.getScrapeQueueId()).to.equal(newJobData.scrapeQueueId);
-    expect(scrapeJob.getHashedApiKey()).to.equal(newJobData.hashedApiKey);
     expect(scrapeJob.getBaseURL()).to.equal(newJobData.baseURL);
     expect(scrapeJob.getStartedAt()).to.equal(newJobData.startedAt);
     expect(scrapeJob.getStatus()).to.equal(newJobData.status);
-    expect(scrapeJob.getInitiatedBy()).to.eql(newJobData.initiatedBy);
     expect(scrapeJob.getCustomHeaders()).to.equal(newJobData.customHeaders);
     expect(scrapeJob.getProcessingType()).to.equal(newJobData.processingType);
     expect(scrapeJob.getOptions()).to.eql(newJobData.options);

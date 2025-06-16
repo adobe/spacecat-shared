@@ -354,5 +354,26 @@ describe('AdobeImsHandler', () => {
       expect(result.authenticated).to.be.true;
       expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
     });
+
+    it('gives only admin scope to adobe.com users with uppercase email', async () => {
+      const token = await createToken({
+        user_id: 'TEST-USER@ADOBE.COM',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+      // Mock IMS profile response with Adobe email
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'TEST-USER@ADOBE.COM',
+      });
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
+    });
   });
 });

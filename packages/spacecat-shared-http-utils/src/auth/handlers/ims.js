@@ -136,7 +136,7 @@ export default class AdobeImsHandler extends AbstractHandler {
       const payload = await this.#validateToken(token, config);
       const imsProfile = await context.imsClient.getImsUserProfile(token);
       const scopes = [];
-      if (imsProfile.email?.endsWith('@adobe.com')) {
+      if (imsProfile.email?.toLowerCase().endsWith('@adobe.com')) {
         scopes.push({ name: 'admin' });
       } else {
         // for non-adobe users, we need to get the organizations and create the tenants

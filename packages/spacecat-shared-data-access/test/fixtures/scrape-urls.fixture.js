@@ -46,31 +46,31 @@ const scrapeUrls = [
   // 2
   {
     scrapeUrlId: '59896102-0f4b-4fff-a4cb-e45fd3b5b6b0',
-    scrapeJobId: '78e1f8de-661a-418b-bd80-24589a10b5ce',
+    scrapeJobId: '72113a4d-ca45-4c35-bd2e-29bb0ec03435',
     url: 'https://example-2.com/cars/1',
     status: ScrapeJob.ScrapeUrlStatus.COMPLETE,
   },
   {
     scrapeUrlId: '033f7342-c49e-45fd-8026-19b8220bf887',
-    scrapeJobId: '78e1f8de-661a-418b-bd80-24589a10b5ce',
+    scrapeJobId: '72113a4d-ca45-4c35-bd2e-29bb0ec03435',
     url: 'https://example-2.com/cars/2',
     status: ScrapeJob.ScrapeUrlStatus.COMPLETE,
   },
   {
     scrapeUrlId: 'f38a0810-21c9-4bf6-bdeb-6c0c32c38f62',
-    scrapeJobId: '78e1f8de-661a-418b-bd80-24589a10b5ce',
+    scrapeJobId: '72113a4d-ca45-4c35-bd2e-29bb0ec03435',
     url: 'https://example-2.com/cars/3',
     status: ScrapeJob.ScrapeUrlStatus.COMPLETE,
   },
   {
     scrapeUrlId: '480f058f-dde3-4149-ace0-25b14f13d597',
-    scrapeJobId: '78e1f8de-661a-418b-bd80-24589a10b5ce',
+    scrapeJobId: '72113a4d-ca45-4c35-bd2e-29bb0ec03435',
     url: 'https://example-2.com/cars/4',
     status: ScrapeJob.ScrapeUrlStatus.COMPLETE,
   },
   {
     scrapeUrlId: 'c5b2c409-6074-4379-a06d-06ca85e8b5d6',
-    scrapeJobId: '78e1f8de-661a-418b-bd80-24589a10b5ce',
+    scrapeJobId: '72113a4d-ca45-4c35-bd2e-29bb0ec03435',
     url: 'https://example-1.com/cars/5',
     status: ScrapeJob.ScrapeUrlStatus.STOPPED,
   },

@@ -31,7 +31,7 @@ export interface ScrapeJob extends BaseModel {
   getDuration(): number,
   getEndedAt(): string,
   getFailedCount(): number,
-  getHasCustomHeaders(): boolean,
+  getCustomHeaders(): string,
   getHashedApiKey(): string,
   getScrapeQueueId(): string,
   getScrapeUrls(): Promise<ScrapeUrl[]>,

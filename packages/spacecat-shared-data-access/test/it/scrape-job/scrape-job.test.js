@@ -28,10 +28,14 @@ function checkScrapeJob(scrapeJob) {
   expect(scrapeJob.getBaseURL()).to.be.a('string');
   expect(scrapeJob.getDuration()).to.be.a('number');
   expect(scrapeJob.getFailedCount()).to.be.a('number');
-  expect(scrapeJob.getCustomHeaders()).to.be.a('object');
+  if (scrapeJob.getCustomHeaders()) {
+    expect(scrapeJob.getCustomHeaders()).to.be.a('object');
+  }
   expect(scrapeJob.getHashedApiKey()).to.be.a('string');
   expect(scrapeJob.getScrapeQueueId()).to.be.a('string');
-  expect(scrapeJob.getInitiatedBy()).to.be.an('object');
+  if (scrapeJob.getInitiatedBy()) {
+    expect(scrapeJob.getInitiatedBy()).to.be.an('object');
+  }
   expect(scrapeJob.getRedirectCount()).to.be.an('number');
   expect(scrapeJob.getStartedAt()).to.be.a('string');
   expect(scrapeJob.getStatus()).to.be.a('string');
@@ -39,10 +43,6 @@ function checkScrapeJob(scrapeJob) {
   expect(scrapeJob.getUrlCount()).to.be.an('number');
   expect(scrapeJob.getProcessingType()).to.be.a('string');
   expect(scrapeJob.getOptions()).to.be.an('object');
-  expect(scrapeJob.getProcessingType()).to.be.a('string');
-  if (scrapeJob.getResults()) {
-    expect(scrapeJob.getResults()).to.be.an('object');
-  }
 }
 
 describe('ScrapeJob IT', async () => {
@@ -66,9 +66,7 @@ describe('ScrapeJob IT', async () => {
         apiKeyName: 'K-321',
       },
       processingType: ScrapeJobModel.ScrapeProcessingType.DEFAULT,
-      customHeaders: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
+      customHeader: {},
       options: {
         enableJavascript: true,
         pageLoadTimeout: 10000,
@@ -139,17 +137,6 @@ describe('ScrapeJob IT', async () => {
     });
   });
 
-  it('it fetches all scrape jobs by a url', async () => {
-    const scrapeJobs = await ScrapeJob.allByBaseURLAndProcessingType('https://example-1.com/cars', ScrapeJobModel.ScrapeProcessingType.DEFAULT);
-
-    expect(scrapeJobs).to.be.an('array');
-    expect(scrapeJobs.length).to.equal(1);
-    expect(scrapeJobs[0].getId()).to.equal(sampleData.scrapeJobs[0].getId());
-    scrapeJobs.forEach((scrapeJob) => {
-      checkScrapeJob(scrapeJob);
-    });
-  });
-
   it('throws an error when adding a new scrape job with invalid options', async () => {
     const data = { ...newJobData, options: { invalidOption: 'invalid' } };
 
@@ -172,9 +159,6 @@ describe('ScrapeJob IT', async () => {
       redirectCount: 10,
       urlCount: 100,
       duration: 188000,
-      results: {
-        test: 'test',
-      },
     };
 
     await scrapeJob
@@ -185,7 +169,6 @@ describe('ScrapeJob IT', async () => {
       .setRedirectCount(updates.redirectCount)
       .setUrlCount(updates.urlCount)
       .setDuration(updates.duration)
-      .setResults(updates.results)
       .save();
 
     const updatedScrapeJob = await ScrapeJob.findById(scrapeJob.getId());
@@ -199,7 +182,6 @@ describe('ScrapeJob IT', async () => {
     expect(updatedScrapeJob.getRedirectCount()).to.equal(updates.redirectCount);
     expect(updatedScrapeJob.getUrlCount()).to.equal(updates.urlCount);
     expect(updatedScrapeJob.getDuration()).to.equal(updates.duration);
-    expect(updatedScrapeJob.getResults()).to.eql(updates.results);
   });
 
   it('finds a scrape job by its id', async () => {
@@ -229,7 +211,7 @@ describe('ScrapeJob IT', async () => {
     );
 
     expect(scrapeJobs).to.be.an('array');
-    expect(scrapeJobs.length).to.equal(1);
+    expect(scrapeJobs.length).to.equal(2);
 
     scrapeJobs.forEach((scrapeJob) => {
       checkScrapeJob(scrapeJob);

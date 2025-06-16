@@ -375,6 +375,7 @@ describe('AdobeImsHandler', () => {
       mockImsClient.getImsUserProfile.resolves({
         email: 'TEST-USER@ADOBE.COM',
       });
+      mockImsClient.isUserASOAdmin.resolves(true);
 
       const result = await handler.checkAuth({}, context);
 

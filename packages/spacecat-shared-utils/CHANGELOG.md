@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.39.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.39.0...@adobe/spacecat-shared-utils-v1.39.1) (2025-06-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#802](https://github.com/adobe/spacecat-shared/issues/802)) ([fc2cb47](https://github.com/adobe/spacecat-shared/commit/fc2cb47183948833f5b0a411ae78d1649e747a17))
+
+# [@adobe/spacecat-shared-utils-v1.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.38.6...@adobe/spacecat-shared-utils-v1.39.0) (2025-06-12)
+
+
+### Features
+
+* introduce isValidHelixPreviewUrl in context of preflight audits ([#798](https://github.com/adobe/spacecat-shared/issues/798)) ([9e3fdd5](https://github.com/adobe/spacecat-shared/commit/9e3fdd5887e5b02e5a9248b4732f00f4bfa84f81))
+
 # [@adobe/spacecat-shared-utils-v1.38.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.38.5...@adobe/spacecat-shared-utils-v1.38.6) (2025-06-07)
 
 

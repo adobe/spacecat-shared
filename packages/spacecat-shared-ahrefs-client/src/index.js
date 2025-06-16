@@ -20,6 +20,24 @@ export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
 
 const getLimit = (limit, upperLimit) => Math.min(limit, upperLimit);
 
+export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([
+  'keyword',
+  'keyword_country',
+  'language',
+  'sum_traffic',
+  'volume',
+  'best_position',
+  'best_position_url',
+  'cpc',
+  'last_update',
+  'is_branded',
+  'is_navigational',
+  'is_informational',
+  'is_commercial',
+  'is_transactional',
+  'serp_features',
+]);
+
 export default class AhrefsAPIClient {
   static createFrom(context) {
     const { AHREFS_API_BASE_URL: apiBaseUrl, AHREFS_API_KEY: apiKey } = context.env;
@@ -59,13 +77,22 @@ export default class AhrefsAPIClient {
       },
     });
 
-    this.log.info(`Ahrefs API ${endpoint} response has number of rows: ${response.headers.get('x-api-rows')}, 
-      cost per row: ${response.headers.get('x-api-units-cost-row')},
-      total cost: ${response.headers.get('x-api-units-cost-total-actual')}`);
+    this.log.info(`Ahrefs API ${endpoint} response has number of rows: ${response.headers.get('x-api-rows')}, `
+      + `cost per row: ${response.headers.get('x-api-units-cost-row')}, `
+      + `total cost: ${response.headers.get('x-api-units-cost-total-actual')}`);
 
     if (!response.ok) {
-      this.log.error(`Ahrefs API request failed with status: ${response.status}`);
-      throw new Error(`Ahrefs API request failed with status: ${response.status}`);
+      let errorMessage = `Ahrefs API request failed with status: ${response.status}`;
+      try {
+        const errorBody = await response.json();
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error}`;
+        }
+      } catch (e) {
+        this.log.error(`Error parsing Ahrefs API error response: ${e.message}`);
+      }
+      this.log.error(errorMessage);
+      throw new Error(errorMessage);
     }
 
     try {
@@ -75,7 +102,7 @@ export default class AhrefsAPIClient {
         fullAuditRef,
       };
     } catch (e) {
-      this.log.error(`Error parsing Ahrefs API response: ${e.message}`);
+      this.log.error(`Error parsing Ahrefs API response: ${e.message}`, e);
       throw new Error(`Error parsing Ahrefs API response: ${e.message}`);
     }
   }
@@ -172,7 +199,13 @@ export default class AhrefsAPIClient {
     return this.sendRequest('/site-explorer/metrics-history', queryParams);
   }
 
-  async getOrganicKeywords(url, country = 'us', keywordFilter = [], limit = 10, mode = 'prefix') {
+  async getOrganicKeywords(url, {
+    country = 'us',
+    keywordFilter = [],
+    limit = 10,
+    mode = 'prefix',
+    excludeBranded = false,
+  } = {}) {
     if (!hasText(url)) {
       throw new Error(`Invalid URL: ${url}`);
     }
@@ -188,29 +221,35 @@ export default class AhrefsAPIClient {
     if (!['prefix', 'exact'].includes(mode)) {
       throw new Error(`Invalid mode: ${mode}`);
     }
+    this.log.info(`Getting organic keywords for ${url} with country ${country}, mode ${mode}, limit ${limit}, excludeBranded ${excludeBranded} and select:${ORGANIC_KEYWORDS_FIELDS.join(',')}`);
 
     const queryParams = {
       country,
       date: new Date().toISOString().split('T')[0],
-      select: [
-        'keyword',
-        'sum_traffic',
-        'volume',
-        'best_position',
-        'cpc',
-        'is_branded',
-      ].join(','),
+      select: ORGANIC_KEYWORDS_FIELDS.join(','),
       order_by: 'sum_traffic:desc',
       target: url,
       limit: getLimit(limit, 100),
       mode,
       output: 'json',
     };
+    let where;
     if (keywordFilter.length > 0) {
+      where = {
+        or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
+      };
+    }
+    if (excludeBranded) {
+      const nonBrandedWhere = { field: 'is_branded', is: ['eq', 0] };
+      if (where) {
+        where = { and: [nonBrandedWhere, where] };
+      } else {
+        where = nonBrandedWhere;
+      }
+    }
+    if (where != null) {
       try {
-        queryParams.where = JSON.stringify({
-          or: keywordFilter.map((keyword) => ({ field: 'keyword', is: ['iphrase_match', keyword] })),
-        });
+        queryParams.where = JSON.stringify(where);
       } catch (e) {
         this.log.error(`Error parsing keyword filter: ${e.message}`);
         throw new Error(`Error parsing keyword filter: ${e.message}`);

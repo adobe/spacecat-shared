@@ -139,9 +139,19 @@ describe('Config Tests', () => {
         headers: {
           'User-Agent': 'custom-agent',
         },
+        overrideBaseURL: 'https://example.com',
       };
       config.updateFetchConfig(fetchConfig);
       expect(config.getFetchConfig()).to.deep.equal(fetchConfig);
+    });
+
+    it('correctly updates the brandConfig option', () => {
+      const config = Config();
+      const brandConfig = {
+        brandId: 'test-brand',
+      };
+      config.updateBrandConfig(brandConfig);
+      expect(config.getBrandConfig()).to.deep.equal(brandConfig);
     });
 
     it('should fail gracefully if handler is not present in the configuration', () => {
@@ -153,6 +163,36 @@ describe('Config Tests', () => {
       expect(config.getFixedURLs('404')).to.be.undefined;
       expect(config.getIncludedURLs('404')).to.be.undefined;
       expect(config.getGroupedURLs('404')).to.be.undefined;
+    });
+
+    it('creates a Config with contentAiConfig property', () => {
+      const data = {
+        contentAiConfig: {
+          index: 'test-index',
+        },
+      };
+      const config = Config(data);
+      expect(config.getContentAiConfig()).to.deep.equal(data.contentAiConfig);
+    });
+
+    it('accepts an empty contentAiConfig object', () => {
+      const data = {
+        // empty object
+        contentAiConfig: {},
+      };
+      const config = Config(data);
+      expect(config.getContentAiConfig()).to.be.an('object');
+      expect(config.getContentAiConfig()).to.deep.equal({});
+    });
+
+    it('has empty contentAiConfig in default config', () => {
+      const config = Config();
+      expect(config.getContentAiConfig()).to.deep.equal(undefined);
+    });
+
+    it('should return undefined for contentAiConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getContentAiConfig()).to.be.undefined;
     });
   });
 
@@ -327,6 +367,16 @@ describe('Config Tests', () => {
       expect(data.isInternalCustomer()).to.equal(false);
       expect(slackMentions[0]).to.equal('id1');
     });
+
+    it('includes contentAiConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        contentAiConfig: {
+          index: 'test-index',
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.contentAiConfig).to.deep.equal(data.getContentAiConfig());
+    });
   });
 
   describe('Import Configuration', () => {
@@ -374,6 +424,32 @@ describe('Config Tests', () => {
           type: 'organic-keywords',
           destinations: ['default'],
           sources: ['ahrefs'],
+          enabled: true,
+        });
+      });
+
+      it('enables cwv-daily import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-daily');
+
+        const importConfig = config.getImportConfig('cwv-daily');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-daily',
+          destinations: ['default'],
+          sources: ['rum'],
+          enabled: true,
+        });
+      });
+
+      it('enables cwv-weekly import with default config', () => {
+        const config = Config();
+        config.enableImport('cwv-weekly');
+
+        const importConfig = config.getImportConfig('cwv-weekly');
+        expect(importConfig).to.deep.equal({
+          type: 'cwv-weekly',
+          destinations: ['default'],
+          sources: ['rum'],
           enabled: true,
         });
       });
@@ -580,6 +656,8 @@ describe('Config Tests', () => {
             sources: ['ahrefs'],
             pageUrl: 'https://example.com',
             enabled: false,
+            geo: 'us',
+            limit: 5,
           },
           {
             type: 'organic-traffic',
@@ -588,17 +666,40 @@ describe('Config Tests', () => {
             enabled: true,
           },
           {
+            type: 'all-traffic',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
             type: 'top-pages',
             destinations: ['default'],
             sources: ['ahrefs'],
             enabled: true,
             geo: 'us',
+            limit: 100,
+          },
+          {
+            type: 'cwv-daily',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
+          },
+          {
+            type: 'cwv-weekly',
+            destinations: ['default'],
+            sources: ['rum'],
+            enabled: true,
           },
         ],
         fetchConfig: {
           headers: {
             'User-Agent': 'test-agent',
           },
+          overrideBaseURL: 'https://example.com',
+        },
+        brandConfig: {
+          brandId: 'test-brand',
         },
       };
       const validated = validateConfiguration(config);
@@ -642,7 +743,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [top-pages]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -664,6 +765,74 @@ describe('Config Tests', () => {
                 },
               },
               {
+                context: {
+                  key: 'type',
+                  label: 'imports[0].type',
+                  valids: [
+                    'organic-keywords-nonbranded',
+                  ],
+                  value: 'organic-keywords',
+                },
+                message: '"imports[0].type" must be [organic-keywords-nonbranded]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+              },
+              {
+                context: {
+                  key: 'type',
+                  label: 'imports[0].type',
+                  valids: [
+                    'organic-keywords-ai-overview',
+                  ],
+                  value: 'organic-keywords',
+                },
+                message: '"imports[0].type" must be [organic-keywords-ai-overview]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+              },
+              {
+                context: {
+                  key: 'type',
+                  label: 'imports[0].type',
+                  valids: [
+                    'organic-keywords-feature-snippets',
+                  ],
+                  value: 'organic-keywords',
+                },
+                message: '"imports[0].type" must be [organic-keywords-feature-snippets]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+              },
+              {
+                context: {
+                  key: 'type',
+                  label: 'imports[0].type',
+                  valids: [
+                    'organic-keywords-questions',
+                  ],
+                  value: 'organic-keywords',
+                },
+                message: '"imports[0].type" must be [organic-keywords-questions]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+              },
+              {
                 message: '"imports[0].type" must be [organic-traffic]',
                 path: [
                   'imports',
@@ -674,6 +843,23 @@ describe('Config Tests', () => {
                 context: {
                   valids: [
                     'organic-traffic',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [all-traffic]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'all-traffic',
                   ],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
@@ -697,12 +883,46 @@ describe('Config Tests', () => {
                   key: 'type',
                 },
               },
+              {
+                message: '"imports[0].type" must be [cwv-daily]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'cwv-daily',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [cwv-weekly]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'cwv-weekly',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
             ]);
           return true;
         });
     });
 
-    it('throws error for invalid fetchConfig', () => {
+    it('throws error for invalid fetchConfig headers', () => {
       const config = {
         fetchConfig: {
           headers: 'not-an-object',
@@ -710,6 +930,24 @@ describe('Config Tests', () => {
       };
       expect(() => validateConfiguration(config))
         .to.throw('Configuration validation error: "fetchConfig.headers" must be of type object');
+    });
+
+    it('throws error for invalid brandConfig', () => {
+      const config = {
+        brandConfig: {},
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "brandConfig.brandId" is required');
+    });
+
+    it('throws error for invalid fetchConfig overrideBaseUrl', () => {
+      const config = {
+        fetchConfig: {
+          overrideBaseURL: 'not-a-url',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "fetchConfig.overrideBaseURL" must be a valid uri');
     });
 
     it('validates multiple import types with different configurations', () => {
@@ -764,6 +1002,96 @@ describe('Config Tests', () => {
       };
       expect(() => validateConfiguration(config))
         .to.throw('Configuration validation error: "imports[0]" does not match any of the allowed types');
+    });
+  });
+
+  describe('Threshold Configuration', () => {
+    it('should accept valid movingAvgThreshold and percentageChangeThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            movingAvgThreshold: 10,
+            percentageChangeThreshold: 20,
+          },
+        },
+      };
+      const config = Config(data);
+      const handlerConfig = config.getHandlerConfig('organic-traffic-internal');
+      expect(handlerConfig.movingAvgThreshold).to.equal(10);
+      expect(handlerConfig.percentageChangeThreshold).to.equal(20);
+    });
+
+    it('should reject negative movingAvgThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            movingAvgThreshold: -5,
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.movingAvgThreshold" must be greater than or equal to 1');
+    });
+
+    it('should reject zero movingAvgThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            movingAvgThreshold: 0,
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.movingAvgThreshold" must be greater than or equal to 1');
+    });
+
+    it('should reject negative percentageChangeThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            percentageChangeThreshold: -10,
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.percentageChangeThreshold" must be greater than or equal to 1');
+    });
+
+    it('should reject zero percentageChangeThreshold values', () => {
+      const data = {
+        handlers: {
+          'organic-traffic-internal': {
+            percentageChangeThreshold: 0,
+          },
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.percentageChangeThreshold" must be greater than or equal to 1');
+    });
+
+    it('should allow updating threshold values', () => {
+      // Create a config with an initial empty handlers object
+      const config = Config({
+        handlers: {
+          'organic-traffic-internal': {},
+        },
+      });
+      const handlerType = 'organic-traffic-internal';
+      // Initially handler config exists but without thresholds
+      const initialConfig = config.getHandlerConfig(handlerType);
+      expect(initialConfig).to.exist;
+      expect(initialConfig.movingAvgThreshold).to.be.undefined;
+      expect(initialConfig.percentageChangeThreshold).to.be.undefined;
+      // We need to create a new config with the thresholds
+      // since we can't modify the existing one directly
+      const updatedConfig = Config({
+        handlers: {
+          'organic-traffic-internal': {
+            movingAvgThreshold: 15,
+            percentageChangeThreshold: 25,
+          },
+        },
+      });
+      // Verify thresholds were set in the new config
+      const handlerConfig = updatedConfig.getHandlerConfig(handlerType);
+      expect(handlerConfig.movingAvgThreshold).to.equal(15);
+      expect(handlerConfig.percentageChangeThreshold).to.equal(25);
     });
   });
 });

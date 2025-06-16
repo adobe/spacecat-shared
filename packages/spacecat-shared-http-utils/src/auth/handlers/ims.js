@@ -10,17 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 import {
   createLocalJWKSet,
   createRemoteJWKSet,
   decodeJwt,
   jwtVerify,
 } from 'jose';
-
-import configProd from './config/ims.js';
-import configDev from './config/ims-stg.js';
-
+import { getBearerToken } from './utils/bearer.js';
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
 
@@ -38,22 +35,16 @@ const IGNORED_PROFILE_PROPS = [
   'aa_id',
 ];
 
+const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
-  const funcVersion = context.func?.version;
-  const isDev = /^ci\d*$/i.test(funcVersion);
-  context.log.debug(`Function version: ${funcVersion} (isDev: ${isDev})`);
-  /* c8 ignore next */
-  return isDev ? configDev : configProd;
-};
-
-const getBearerToken = (context) => {
-  const authorizationHeader = context.pathInfo?.headers?.authorization || '';
-
-  if (!authorizationHeader.startsWith('Bearer ')) {
-    return null;
+  try {
+    const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
+    context.log.info(`Loaded config name: ${config.name}`);
+    return config;
+  } catch (e) {
+    context.log.error(`Failed to load config from context: ${e.message}`);
+    throw Error('Failed to load config from context');
   }
-
-  return authorizationHeader.replace('Bearer ', '');
 };
 
 const transformProfile = (payload) => {
@@ -65,6 +56,21 @@ const transformProfile = (payload) => {
   return profile;
 };
 
+function getTenants(organizations) {
+  if (!isNonEmptyArray(organizations)) {
+    return [];
+  }
+
+  return organizations.map((org) => ({
+    id: org.orgRef.ident,
+    name: org.orgName,
+    subServices: [`${SERVICE_CODE}_auto_suggest`, `${SERVICE_CODE}_auto_fix`],
+  }));
+}
+
+/**
+ * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
+ */
 export default class AdobeImsHandler extends AbstractHandler {
   constructor(log) {
     super('ims', log);
@@ -83,9 +89,9 @@ export default class AdobeImsHandler extends AbstractHandler {
   }
 
   async #validateToken(token, config) {
-    const decoded = await decodeJwt(token);
-    if (config.name !== decoded.as) {
-      throw new Error(`Token not issued by expected idp: ${config.name} != ${decoded.as}`);
+    const claims = await decodeJwt(token);
+    if (config.name !== claims.as) {
+      throw new Error(`Token not issued by expected idp: ${config.name} != ${claims.as}`);
     }
 
     const jwks = await this.#getJwksUri(config);
@@ -120,15 +126,33 @@ export default class AdobeImsHandler extends AbstractHandler {
       return null;
     }
 
+    if (!context.imsClient) {
+      this.log('No IMS client available in context', 'error');
+      return null;
+    }
+
     try {
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);
+      const imsProfile = await context.imsClient.getImsUserProfile(token);
+      const scopes = [];
+      if (imsProfile.email?.toLowerCase().endsWith('@adobe.com')) {
+        scopes.push({ name: 'admin' });
+      } else {
+        // for non-adobe users, we need to get the organizations and create the tenants
+        const organizations = await context.imsClient.getImsUserOrganizations(token);
+        payload.tenants = getTenants(organizations) || [];
+        scopes.push(...payload.tenants.map(
+          (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
+        ));
+      }
       const profile = transformProfile(payload);
 
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
-        .withProfile(profile);
+        .withProfile(profile)
+        .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
     }

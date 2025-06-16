@@ -15,6 +15,7 @@ import { Response } from '@adobe/fetch';
 import LegacyApiKeyHandler from './auth/handlers/legacy-api-key.js';
 import AdobeImsHandler from './auth/handlers/ims.js';
 import ScopedApiKeyHandler from './auth/handlers/scoped-api-key.js';
+import JwtHandler from './auth/handlers/jwt.js';
 
 const HEADER_CONTENT_TYPE = 'content-type';
 const HEADER_ERROR = 'x-error';
@@ -49,12 +50,16 @@ export function createResponse(body, status = 200, headers = {}) {
   });
 }
 
-export function ok(body = '') {
-  return createResponse(body, 200);
+export function ok(body = '', headers = {}) {
+  return createResponse(body, 200, headers);
 }
 
-export function created(body) {
-  return createResponse(body, 201);
+export function created(body, headers = {}) {
+  return createResponse(body, 201, headers);
+}
+
+export function accepted(body, headers = {}) {
+  return createResponse(body, 202, headers);
 }
 
 export function noContent(headers = {}) {
@@ -95,6 +100,13 @@ export function notFound(message = 'not found', headers = {}) {
   });
 }
 
+export function methodNotAllowed(message = 'method not allowed', headers = {}) {
+  return createResponse({ message }, 405, {
+    [HEADER_ERROR]: message,
+    ...headers,
+  });
+}
+
 export function internalServerError(message = 'internal server error', headers = {}) {
   return createResponse({ message }, 500, {
     [HEADER_ERROR]: message,
@@ -106,4 +118,6 @@ export { authWrapper } from './auth/auth-wrapper.js';
 export { enrichPathInfo } from './enrich-path-info-wrapper.js';
 export { hashWithSHA256 } from './auth/generate-hash.js';
 
-export { AdobeImsHandler, ScopedApiKeyHandler, LegacyApiKeyHandler };
+export {
+  AdobeImsHandler, ScopedApiKeyHandler, LegacyApiKeyHandler, JwtHandler,
+};

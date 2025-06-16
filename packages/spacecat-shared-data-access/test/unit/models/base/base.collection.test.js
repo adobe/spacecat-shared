@@ -601,6 +601,19 @@ describe('BaseCollection', () => {
       const result = await baseCollectionInstance._saveMany(mockRecords);
       expect(result).to.be.undefined;
       expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+      expect(mockLogger.error).not.called;
+    });
+
+    it('saves multiple entities successfully if `res.unprocessed` is an empty array', async () => {
+      const mockRecords = [mockRecord, mockRecord];
+      mockElectroService.entities.mockEntityModel.put.returns({
+        go: async () => ({ unprocessed: [] }),
+      });
+
+      const result = await baseCollectionInstance._saveMany(mockRecords);
+      expect(result).to.be.undefined;
+      expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
+      expect(mockLogger.error).not.called;
     });
 
     it('saves some entities successfully with unprocessed items', async () => {
@@ -674,6 +687,30 @@ describe('BaseCollection', () => {
       expect(mockElectroService.entities.mockEntityModel.query.all)
         .to.have.been.calledOnceWithExactly({ pk: 'ALL_MOCKENTITYMODELS' });
       expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc', attributes: ['test'] });
+    });
+
+    it('handles pagination with fetchAllPages option', async () => {
+      const firstResult = { data: [mockRecord], cursor: 'key1' };
+      const secondRecord = { id: '2', foo: 'bar' };
+      const secondResult = { data: [secondRecord] };
+
+      const goStub = stub();
+      goStub.onFirstCall().resolves(firstResult);
+      goStub.onSecondCall().resolves(secondResult);
+
+      mockElectroService.entities.mockEntityModel.query.all.returns({
+        go: goStub,
+      });
+
+      const result = await baseCollectionInstance.all({}, { fetchAllPages: true });
+      expect(result).to.be.an('array').that.has.length(2);
+      expect(result[0].record).to.deep.include(mockRecord);
+      expect(result[1].record).to.deep.include(secondRecord);
+
+      expect(goStub.callCount).to.equal(2);
+
+      const secondCallArgs = goStub.secondCall.args[0];
+      expect(secondCallArgs).to.deep.include({ order: 'desc', cursor: 'key1' });
     });
   });
 

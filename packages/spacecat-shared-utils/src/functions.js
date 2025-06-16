@@ -15,6 +15,7 @@ import { validate as uuidValidate } from 'uuid';
 // Precompile regular expressions
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
+const IMS_ORG_ID_REGEX = /[a-z0-9]{24}@AdobeOrg/i;
 
 /**
  * Determines if the given parameter is an array.
@@ -251,6 +252,61 @@ function dateAfterDays(days, dateString) {
   return currentDate;
 }
 
+/**
+ * Validates whether the given string is a valid IMS Org ID.
+ * @param {string} imsOrgId - The string to validate.
+ * @returns {boolean} True if the given string is a valid IMS Org ID, false otherwise.
+ */
+function isValidIMSOrgId(imsOrgId) {
+  return IMS_ORG_ID_REGEX.test(imsOrgId);
+}
+
+/**
+ * Validates whether the given string is a valid Helix preview URL.
+ * Preview URLs have the format: https://ref--site--owner.domain
+ * where domain is typically .hlx.page, .aem.page, .hlx.live, etc.
+ *
+ * @param {string} urlString - The string to validate.
+ * @returns {boolean} True if the given string is a valid Helix preview URL.
+ */
+function isValidHelixPreviewUrl(urlString) {
+  try {
+    const url = new URL(urlString);
+    if (url.protocol !== 'https:') {
+      return false;
+    }
+
+    const parts = url.hostname.split('.');
+    if (parts.length < 2) {
+      return false;
+    }
+
+    // making 3 parts: ref--site--owner
+    const subdomain = parts[0];
+    const subdomainParts = subdomain.split('--');
+
+    if (subdomainParts.length !== 3) {
+      return false;
+    }
+
+    if (subdomainParts.some((part) => !part || part.trim() === '')) {
+      return false;
+    }
+
+    const domain = parts.slice(1).join('.');
+    const validDomains = [
+      'hlx.page',
+      'hlx.live',
+      'aem.page',
+      'aem.live',
+    ];
+
+    return validDomains.includes(domain);
+  } catch {
+    return false;
+  }
+}
+
 export {
   arrayEquals,
   dateAfterDays,
@@ -269,5 +325,7 @@ export {
   isValidDate,
   isValidUrl,
   isValidUUID,
+  isValidIMSOrgId,
+  isValidHelixPreviewUrl,
   toBoolean,
 };

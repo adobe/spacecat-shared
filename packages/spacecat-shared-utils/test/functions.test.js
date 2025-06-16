@@ -34,6 +34,8 @@ import {
   isValidDate,
   isValidUrl,
   isValidUUID,
+  isValidIMSOrgId,
+  isValidHelixPreviewUrl,
   toBoolean,
 } from '../src/index.js';
 
@@ -300,6 +302,16 @@ describe('Shared functions', () => {
     });
   });
 
+  describe('isValidIMSOrgId', () => {
+    it('returns false for invalid IMS Org Id', async () => {
+      expect(isValidIMSOrgId('invalid-ims-org-id')).to.be.false;
+    });
+
+    it('returns true for valid IMS Org Id', async () => {
+      expect(isValidIMSOrgId('36231B56669DEACD0A49402F@AdobeOrg')).to.be.true;
+    });
+  });
+
   describe('isValidDate', () => {
     it('returns false for invalid date', async () => {
       const invalidDates = [
@@ -337,6 +349,80 @@ describe('Shared functions', () => {
 
     it('returns true for valid UUID', async () => {
       expect(isValidUUID('123e4567-e89b-12d3-a456-426614174000')).to.be.true;
+    });
+  });
+
+  describe('isValidHelixPreviewUrl', () => {
+    it('returns false for invalid Helix preview URLs', async () => {
+      const invalidUrls = [
+        null,
+        undefined,
+        1234,
+        true,
+        '',
+        'invalid-url',
+        'http://ref--site--owner.hlx.page', // not https
+        'https://example.com', // not a preview domain
+        'https://ref-site-owner.hlx.page', // wrong separator
+        'https://ref--site.hlx.page', // missing owner
+        'https://--site--owner.hlx.page', // missing ref
+        'https://ref----owner.hlx.page', // missing site
+        'https://ref--site--owner.unknown.com', // wrong domain
+        'https://ref--site--owner--extra.hlx.page', // too many parts
+        'https://.hlx.page', // empty subdomain
+        'https://ref--.hlx.page', // empty parts
+        'https://--site--.hlx.page', // empty parts
+        'https://ref--site--.hlx.page', // empty owner
+        'https://nodots', // hostname without dots (triggers parts.length < 2)
+        'https://localhost', // another hostname without dots
+      ];
+
+      invalidUrls.forEach((url) => expect(isValidHelixPreviewUrl(url)).to.be.false);
+    });
+
+    it('returns false for URLs that cause URL constructor to throw', () => {
+      const malformedUrls = [
+        'not-a-url-at-all',
+        'data:text/html,<script>alert("xss")</script>',
+        'file:///etc/passwd',
+        '://invalid',
+        'https:////',
+        Symbol('invalid'),
+      ];
+
+      malformedUrls.forEach((url) => expect(isValidHelixPreviewUrl(url)).to.be.false);
+    });
+
+    it('returns true for valid Helix preview URLs', async () => {
+      const validUrls = [
+        'https://ref--site--owner.hlx.page',
+        'https://feature-branch--my-site--mycompany.hlx.page',
+        'https://main--website--adobe.hlx.page',
+        'https://ref--site--owner.hlx.live',
+        'https://ref--site--owner.aem.page',
+        'https://ref--site--owner.aem.live',
+        'https://feature-branch--my-site--mycompany.hlx.page/some/path',
+        'https://feature-branch--my-site--mycompany.hlx.page/some/path?query=param',
+        'https://123--abc--xyz.hlx.page',
+        'https://test-branch--my-site-123--company-name.hlx.page',
+      ];
+
+      validUrls.forEach((url) => expect(isValidHelixPreviewUrl(url)).to.be.true);
+    });
+
+    it('handles URLs with paths and query parameters', async () => {
+      expect(isValidHelixPreviewUrl('https://ref--site--owner.hlx.page/path/to/resource')).to.be.true;
+      expect(isValidHelixPreviewUrl('https://ref--site--owner.hlx.page/path?param=value')).to.be.true;
+      expect(isValidHelixPreviewUrl('https://ref--site--owner.hlx.page/path/to/resource?param=value&other=123')).to.be.true;
+      expect(isValidHelixPreviewUrl('https://ref--site--owner.hlx.page/#fragment')).to.be.true;
+    });
+
+    it('validates all supported Helix domains', async () => {
+      const domains = ['hlx.page', 'hlx.live', 'aem.page', 'aem.live'];
+
+      domains.forEach((domain) => {
+        expect(isValidHelixPreviewUrl(`https://ref--site--owner.${domain}`)).to.be.true;
+      });
     });
   });
 

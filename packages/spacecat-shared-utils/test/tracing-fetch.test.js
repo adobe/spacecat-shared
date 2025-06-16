@@ -12,20 +12,20 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { AbortController } from '@adobe/fetch';
 import sinon from 'sinon';
+import esmock from 'esmock';
 import nock from 'nock';
 import AWSXRay from 'aws-xray-sdk';
-import { tracingFetch, SPACECAT_USER_AGENT } from '../src/index.js';
+import { SPACECAT_USER_AGENT, tracingFetch } from '../src/index.js';
 
 describe('tracing fetch function', () => {
   let sandbox;
   let getSegmentStub;
   let parentSegment;
   let subSegment;
-  let log;
 
   beforeEach(() => {
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
     sandbox = sinon.createSandbox();
     AWSXRay.enableAutomaticMode();
 
@@ -48,15 +48,22 @@ describe('tracing fetch function', () => {
       noOp: false,
       notTraced: false,
     };
-
-    log = {
-      warn: sandbox.spy(),
-    };
   });
 
   afterEach(() => {
     sandbox.restore();
     nock.cleanAll();
+  });
+
+  it('uses adobe fetch if runtime is not lambda', async () => {
+    delete process.env.AWS_EXECUTION_ENV;
+
+    const { tracingFetch: _tracingFetch } = await esmock('../src/tracing-fetch.js', {
+      '../src/adobe-fetch.js': { fetch: () => 42 },
+    });
+
+    const fetchFn = await _tracingFetch('https://example.com/api/data');
+    expect(fetchFn).to.equal(42);
   });
 
   it('exports the correct SPACECAT_USER_AGENT', () => {
@@ -70,12 +77,13 @@ describe('tracing fetch function', () => {
     const options = { method: 'GET' };
 
     nock('https://example.com')
+      .matchHeader('User-Agent', SPACECAT_USER_AGENT)
       .get('/api/data')
       .reply(200, 'OK');
 
-    await tracingFetch(url, options);
+    const response = await tracingFetch(url, options);
 
-    expect(options.headers['User-Agent']).to.equal(SPACECAT_USER_AGENT);
+    expect(response.status).to.equal(200);
   });
 
   it('does not overwrite existing user agent', async () => {
@@ -260,46 +268,115 @@ describe('tracing fetch function', () => {
     expect(subSegment.close.calledOnce).to.be.true;
   });
 
-  it('handles timeout and returns 408 status with tracing', async () => {
-    const fetchWithTimeout = async (url, timeout, logger) => {
-      const controller = new AbortController();
-      const { signal } = controller;
-      const id = setTimeout(() => controller.abort(), timeout);
+  // New tests for timeout functionality
+  it('applies default timeout of 10 seconds when no timeout is specified', async () => {
+    getSegmentStub.returns(parentSegment);
 
-      try {
-        const response = await tracingFetch(url, { signal });
-        clearTimeout(id);
-        return response;
-      } catch (error) {
-        clearTimeout(id);
-        if (error.name === 'AbortError') {
-          logger.warn(`Request to ${url} timed out after ${timeout}ms`);
-          return { ok: false, status: 408 };
-        } else {
-          throw error;
-        }
-      }
-    };
+    const url = 'https://example.com/api/data';
+
+    nock('https://example.com')
+      .get('/api/data')
+      .reply(200, 'OK');
+
+    await tracingFetch(url);
+
+    // Check if addAnnotation was called with timeout_ms
+    const timeoutAnnotationCall = subSegment.addAnnotation.getCalls().find(
+      (call) => call.args[0] === 'timeout_ms' && call.args[1] === 10000,
+    );
+    expect(timeoutAnnotationCall).to.exist;
+  });
+
+  it('applies custom timeout when specified in options', async () => {
+    getSegmentStub.returns(parentSegment);
+
+    const url = 'https://example.com/api/data';
+    const customTimeout = 5000; // 5 seconds
+
+    nock('https://example.com')
+      .get('/api/data')
+      .reply(200, 'OK');
+
+    await tracingFetch(url, { timeout: customTimeout });
+
+    // Check if addAnnotation was called with timeout_ms
+    const timeoutAnnotationCall = subSegment.addAnnotation.getCalls().find(
+      (call) => call.args[0] === 'timeout_ms' && call.args[1] === customTimeout,
+    );
+    expect(timeoutAnnotationCall).to.exist;
+  });
+
+  // For timeout tests, we'll use a very short timeout and a delayed response
+  it('handles timeout correctly with parent segment', async function () {
+    this.timeout(5000); // Increase mocha timeout for this test
 
     getSegmentStub.returns(parentSegment);
 
     const url = 'https://example.com/api/data';
+    const shortTimeout = 50; // Very short timeout for testing
+
     nock('https://example.com')
       .get('/api/data')
-      .delay(1000) // Delay longer than timeout
+      .delay(200) // Delay longer than timeout
       .reply(200, 'OK');
 
-    const timeout = 500; // Timeout shorter than response delay
+    try {
+      await tracingFetch(url, { timeout: shortTimeout });
+      throw new Error('Expected fetch to throw a timeout error');
+    } catch (error) {
+      expect(error.message).to.include('timeout');
+      expect(error.code).to.equal('ETIMEOUT');
 
-    const response = await fetchWithTimeout(url, timeout, log);
+      // Check if the subsegment was properly handled
+      const timeoutAnnotationCall = subSegment.addAnnotation.getCalls().find(
+        (call) => call.args[0] === 'timeout_ms' && call.args[1] === shortTimeout,
+      );
+      expect(timeoutAnnotationCall).to.exist;
 
-    expect(response.ok).to.be.false;
-    expect(response.status).to.equal(408);
+      expect(subSegment.addErrorFlag.called).to.be.true;
+      expect(subSegment.close.called).to.be.true;
+    }
+  });
 
-    expect(parentSegment.addNewSubsegment.calledOnce).to.be.true;
-    expect(subSegment.addErrorFlag.calledOnce).to.be.true;
-    expect(subSegment.close.calledOnce).to.be.true;
+  it('handles timeout correctly without parent segment', async function () {
+    this.timeout(5000); // Increase mocha timeout for this test
 
-    expect(log.warn.calledOnceWithExactly(`Request to ${url} timed out after ${timeout}ms`)).to.be.true;
+    getSegmentStub.returns(null);
+
+    const url = 'https://example.com/api/data';
+    const shortTimeout = 50; // Very short timeout for testing
+
+    nock('https://example.com')
+      .get('/api/data')
+      .delay(200) // Delay longer than timeout
+      .reply(200, 'OK');
+
+    try {
+      await tracingFetch(url, { timeout: shortTimeout });
+      throw new Error('Expected fetch to throw a timeout error');
+    } catch (error) {
+      expect(error.message).to.include('timeout');
+      expect(error.code).to.equal('ETIMEOUT');
+    }
+  });
+
+  it('propagates non-timeout errors when there is no parent segment', async () => {
+    getSegmentStub.returns(null);
+
+    const url = 'https://example.com/api/data';
+    const networkError = new Error('Network Error');
+
+    nock('https://example.com')
+      .get('/api/data')
+      .replyWithError(networkError);
+
+    try {
+      await tracingFetch(url);
+      throw new Error('Expected fetch to throw an error');
+    } catch (error) {
+      // Verify that the original error is propagated
+      expect(error.message).to.equal('Network Error');
+      expect(error.code).to.not.equal('ETIMEOUT');
+    }
   });
 });

@@ -72,6 +72,8 @@ export default class AuthInfo {
     return this;
   }
 
+  getType() { return this.type; }
+
   getScopes() { return this.scopes; }
 
   getProfile() { return this.profile; }
@@ -79,4 +81,18 @@ export default class AuthInfo {
   getReason() { return this.reason; }
 
   isAuthenticated() { return this.authenticated; }
+
+  isAdmin() { return this.profile?.is_admin; }
+
+  hasOrganization(orgId) {
+    const [id] = orgId.split('@');
+    return this.profile?.tenants?.some(
+      (tenant) => tenant.id === id,
+    );
+  }
+
+  hasScope(name, subScope) {
+    return this.scopes.some((scope) => scope.name === name
+      && (!subScope || scope.subScopes?.includes(subScope)));
+  }
 }

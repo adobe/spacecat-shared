@@ -170,14 +170,17 @@ describe('AuditModel', () => {
       META_TAGS: 'meta-tags',
       COSTS: 'costs',
       STRUCTURED_DATA: 'structured-data',
+      STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
       FORMS_OPPORTUNITIES: 'forms-opportunities',
       SITE_DETECTION: 'site-detection',
       ALT_TEXT: 'alt-text',
+      ACCESSIBILITY: 'accessibility',
+      SECURITY_CSP: 'security-csp',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(22);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(25);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {
@@ -240,6 +243,7 @@ describe('AuditModel', () => {
       expect(formattedPayload).to.deep.equal({
         type: 'someType',
         siteId: 'someSiteId',
+        allowCache: true,
         auditContext: { some: 'context' },
       });
     });
@@ -250,14 +254,23 @@ describe('AuditModel', () => {
         siteId: 'someSiteId',
         processingType: 'someProcessingType',
       };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+      };
       const auditContext = { some: 'context' };
       const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
-        .formatPayload(stepResult, auditContext);
+        .formatPayload(stepResult, auditContext, context);
 
       expect(formattedPayload).to.deep.equal({
         urls: [{ url: 'someUrl' }],
         jobId: 'someSiteId',
         processingType: 'someProcessingType',
+        completionQueueUrl: 'audit-jobs-queue-url',
+        skipMessage: false,
+        allowCache: true,
+        options: {},
         auditContext: { some: 'context' },
       });
     });

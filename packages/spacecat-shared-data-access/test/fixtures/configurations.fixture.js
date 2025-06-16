@@ -44,6 +44,12 @@ const configurations = [
       404: {
         enabledByDefault: true,
       },
+      'rum-ingest': {
+        enabledByDefault: false,
+        enabled: {
+          sites: ['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe'],
+        },
+      },
       'organic-keywords': {
         enabledByDefault: false,
       },
@@ -63,6 +69,17 @@ const configurations = [
             'b197d10e-035e-433b-896f-8e4967c5de6a',
           ],
           orgs: ['757ceb98-05c8-4e07-bb23-bc722115b2b0'],
+        },
+      },
+      sitemap: {
+        enabledByDefault: true,
+        enabled: {
+          sites: [],
+          orgs: [],
+        },
+        disabled: {
+          sites: [],
+          orgs: [],
         },
       },
       'lhs-mobile': {

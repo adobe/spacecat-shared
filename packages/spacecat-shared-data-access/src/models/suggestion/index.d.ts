@@ -17,6 +17,8 @@ export interface Suggestion extends BaseModel {
   getKpiDeltas(): object;
   getOpportunity(): Promise<Opportunity>;
   getOpportunityId(): string;
+  getFixEntityId(): string;
+  getFixEntity(): Promise<object>;
   getRank(): number;
   getStatus(): string;
   getType(): string;
@@ -29,6 +31,7 @@ export interface Suggestion extends BaseModel {
 
 export interface SuggestionCollection extends BaseCollection<Suggestion> {
   allByOpportunityId(opportunityId: string): Promise<Suggestion[]>;
+  allByFixEntityId(fixEntityId: string): Promise<Suggestion[]>;
   allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion[]>;
   bulkUpdateStatus(suggestions: Suggestion[], status: string): Promise<Suggestion[]>;
   findByOpportunityId(opportunityId: string): Promise<Suggestion | null>;

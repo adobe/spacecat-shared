@@ -9,15 +9,21 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+import { DataChunks, series } from '@adobe/rum-distiller';
+import { loadBundles } from '../utils.js';
+
+function handler(bundles) {
+  const dataChunks = new DataChunks();
+  loadBundles(bundles, dataChunks);
+  dataChunks.addSeries('pageviews', series.pageViews);
+
+  const pageviews = dataChunks?.totals?.pageviews?.weight;
+
+  return {
+    pageviews,
+  };
+}
+
 export default {
-  name: 'ims-na1',
-  discoveryUrl: 'https://ims-na1.adobelogin.com/ims/.well-known/openid-configuration',
-  discovery: {
-    issuer: 'https://ims-na1.adobelogin.com',
-    authorization_endpoint: 'https://ims-na1.adobelogin.com/ims/authorize/v2',
-    token_endpoint: 'https://ims-na1.adobelogin.com/ims/token/v3',
-    userinfo_endpoint: 'https://ims-na1.adobelogin.com/ims/userinfo/v2',
-    revocation_endpoint: 'https://ims-na1.adobelogin.com/ims/revoke',
-    jwks_uri: 'https://ims-na1.adobelogin.com/ims/keys',
-  },
+  handler,
 };

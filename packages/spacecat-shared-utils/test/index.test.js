@@ -42,6 +42,8 @@ describe('Index Exports', () => {
     'isValidDate',
     'isValidUrl',
     'isValidUUID',
+    'isValidIMSOrgId',
+    'isValidHelixPreviewUrl',
     'logWrapper',
     'prependSchema',
     'resolveCustomerSecretsName',
@@ -59,7 +61,11 @@ describe('Index Exports', () => {
     'getHighFormViewsLowConversionMetrics',
     'getHighPageViewsLowFormViewsMetrics',
     'getHighPageViewsLowFormCtrMetrics',
+    'FORMS_AUDIT_INTERVAL',
     'SPACECAT_USER_AGENT',
+    'isAWSLambda',
+    'instrumentAWSClient',
+    'retrievePageAuthentication',
   ];
 
   it('exports all expected functions', () => {

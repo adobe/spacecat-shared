@@ -9,11 +9,12 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { Request } from '@adobe/fetch';
+import { Request, timeoutSignal, AbortError } from '@adobe/fetch';
 import AWSXRay from 'aws-xray-sdk';
 
 import { fetch as adobeFetch } from './adobe-fetch.js';
 import { isNumber, isObject } from './functions.js';
+import { isAWSLambda } from './runtimes.js';
 
 export const SPACECAT_USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36 Spacecat/1.0';
 
@@ -108,16 +109,57 @@ const handleSubSegmentError = (subSegment, request, error) => {
 };
 
 /**
+ * Creates a timeout error with a consistent format
+ * @param {number} timeout - The timeout value in milliseconds
+ * @returns {Error} A formatted timeout error
+ */
+const createTimeoutError = (timeout) => {
+  const timeoutError = new Error(`Request timeout after ${timeout}ms`);
+  timeoutError.code = 'ETIMEOUT';
+  return timeoutError;
+};
+
+/**
+ * Performs a fetch request with timeout handling
+ * @param {string|Request} resource - The resource to fetch
+ * @param {Object} options - Options for the fetch call
+ * @param {Object} signal - The timeout signal
+ * @returns {Promise<Response>} The fetch response
+ */
+const fetchWithTimeout = async (resource, options, signal) => {
+  try {
+    const fetchOptions = { ...options, signal };
+    return await adobeFetch(resource, fetchOptions);
+  } catch (error) {
+    if (error instanceof AbortError) {
+      // Extract timeout from signal (implementation detail, but necessary)
+      // eslint-disable-next-line no-underscore-dangle
+      const timeout = signal._ms || 10000;
+      throw createTimeoutError(timeout);
+    }
+    throw error;
+  } finally {
+    signal.clear(); // Clean up the signal
+  }
+};
+
+/**
  * Performs a fetch request and adds AWS X-Ray tracing, including request/response tracking.
  * @param {string} url - The URL for the request.
- * @param {Object} options - Options to be passed to the fetch call.
+ * @param {Object} [options] - Optional options to be passed to the fetch call.
+ * @param {number} [options.timeout=10000] - Timeout in milliseconds (defaults to 10 seconds).
  * @returns {Promise<Response>} The response from the fetch request.
  */
 export async function tracingFetch(url, options) {
-  const parentSegment = AWSXRay.getSegment();
+  options = isObject(options) ? { ...options } : {};
+  options.headers = isObject(options.headers) ? options.headers : { };
 
-  options = isObject(options) ? options : {};
-  options.headers = isObject(options.headers) ? options.headers : new Headers();
+  // Set default timeout of 10 seconds if not specified
+  const timeout = options.timeout || 10000;
+  delete options.timeout; // Remove from options as we'll handle it separately
+
+  // Create a timeout signal
+  const signal = timeoutSignal(timeout);
 
   // find user-agent header in headers case insensitively
   let hasUserAgent = false;
@@ -131,10 +173,19 @@ export async function tracingFetch(url, options) {
     options.headers['User-Agent'] = SPACECAT_USER_AGENT;
   }
 
-  if (!parentSegment) {
-    return adobeFetch(url, options);
+  // fallback to adobe fetch outside an aws lambda function
+  if (!isAWSLambda()) {
+    return fetchWithTimeout(url, options, signal);
   }
 
+  const parentSegment = AWSXRay.getSegment();
+
+  // If no parent segment, perform fetch without tracing
+  if (!parentSegment) {
+    return fetchWithTimeout(url, options, signal);
+  }
+
+  // With parent segment, create subsegment and add tracing
   const request = new Request(url, options);
   const { hostname } = new URL(request.url);
   const subSegment = createSubsegment(parentSegment, hostname);
@@ -145,21 +196,22 @@ export async function tracingFetch(url, options) {
     setTraceHeaders(request, parentSegment, subSegment);
   }
 
-  const capturedAdobeFetch = async () => {
-    let response = null;
-    try {
-      response = await adobeFetch(request);
-    } catch (e) {
-      handleSubSegmentError(subSegment, request, e);
-      throw e;
-    }
+  subSegment.addAnnotation('timeout_ms', timeout);
+
+  try {
+    // Create a new request with the signal
+    const requestWithSignal = new Request(request, { signal });
+
+    // Use the same fetchWithTimeout function but catch errors to handle subsegment
+    const response = await fetchWithTimeout(requestWithSignal, { }, signal);
 
     setSubSegmentFlagsByStatusCode(subSegment, response.status);
-
     addFetchRequestDataToSegment(subSegment, request, response);
     subSegment.close();
-    return response;
-  };
 
-  return capturedAdobeFetch();
+    return response;
+  } catch (error) {
+    handleSubSegmentError(subSegment, request, error);
+    throw error;
+  }
 }

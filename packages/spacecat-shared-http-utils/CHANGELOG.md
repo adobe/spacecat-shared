@@ -1,3 +1,129 @@
+# [@adobe/spacecat-shared-http-utils-v1.14.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.1...@adobe/spacecat-shared-http-utils-v1.14.2) (2025-06-16)
+
+
+### Bug Fixes
+
+* case insensitive check ([#804](https://github.com/adobe/spacecat-shared/issues/804)) ([264a524](https://github.com/adobe/spacecat-shared/commit/264a5245301660e842a40187afbfe1a7c1af31d2))
+
+# [@adobe/spacecat-shared-http-utils-v1.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.0...@adobe/spacecat-shared-http-utils-v1.14.1) (2025-06-06)
+
+
+### Bug Fixes
+
+* trigger a release for non-adobe users tenant isolation ([#789](https://github.com/adobe/spacecat-shared/issues/789)) ([92f5aa2](https://github.com/adobe/spacecat-shared/commit/92f5aa2cb65ffe1e1f19ef35f94f1f5016a49979))
+
+# [@adobe/spacecat-shared-http-utils-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.2...@adobe/spacecat-shared-http-utils-v1.14.0) (2025-05-27)
+
+
+### Features
+
+* add 405 response util ([#768](https://github.com/adobe/spacecat-shared/issues/768)) ([300ceb2](https://github.com/adobe/spacecat-shared/commit/300ceb2c979b304849a30f0e227823308d144c40))
+
+# [@adobe/spacecat-shared-http-utils-v1.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.1...@adobe/spacecat-shared-http-utils-v1.13.2) (2025-05-21)
+
+
+### Bug Fixes
+
+* merge cookie auth logic with jwt handler ([#751](https://github.com/adobe/spacecat-shared/issues/751)) ([407273b](https://github.com/adobe/spacecat-shared/commit/407273b4e2a2dafe4839ee3e22969f1f648878e8))
+
+# [@adobe/spacecat-shared-http-utils-v1.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.0...@adobe/spacecat-shared-http-utils-v1.13.1) (2025-05-20)
+
+
+### Bug Fixes
+
+* expose cookie handler ([#750](https://github.com/adobe/spacecat-shared/issues/750)) ([4df4c91](https://github.com/adobe/spacecat-shared/commit/4df4c9117943147fbaf01fa13c6e23d2f330cd3d))
+
+# [@adobe/spacecat-shared-http-utils-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.12.1...@adobe/spacecat-shared-http-utils-v1.13.0) (2025-05-20)
+
+
+### Features
+
+* add cookie auth handler ([#749](https://github.com/adobe/spacecat-shared/issues/749)) ([362184b](https://github.com/adobe/spacecat-shared/commit/362184b1339ccdaa25328228c906917721d86bd1))
+
+# [@adobe/spacecat-shared-http-utils-v1.12.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.12.0...@adobe/spacecat-shared-http-utils-v1.12.1) (2025-05-19)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.2 ([#747](https://github.com/adobe/spacecat-shared/issues/747)) ([64e350a](https://github.com/adobe/spacecat-shared/commit/64e350ad62b7b6d3ad9aa47c66f51ba16508fc6c))
+
+# [@adobe/spacecat-shared-http-utils-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.11.0...@adobe/spacecat-shared-http-utils-v1.12.0) (2025-05-19)
+
+
+### Features
+
+* http-utils 2xx methods support optional headers ([#746](https://github.com/adobe/spacecat-shared/issues/746)) ([4319d47](https://github.com/adobe/spacecat-shared/commit/4319d479341aa06c5251495389580f3663d1ec57))
+
+# [@adobe/spacecat-shared-http-utils-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.6...@adobe/spacecat-shared-http-utils-v1.11.0) (2025-05-12)
+
+
+### Features
+
+* **http-utils:** add HTTP 202 Accepted response helper ([#722](https://github.com/adobe/spacecat-shared/issues/722)) ([934ef6c](https://github.com/adobe/spacecat-shared/commit/934ef6ce71914918bae5b06600193cc3408a46e0))
+
+# [@adobe/spacecat-shared-http-utils-v1.10.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.5...@adobe/spacecat-shared-http-utils-v1.10.6) (2025-05-10)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#727](https://github.com/adobe/spacecat-shared/issues/727)) ([590b973](https://github.com/adobe/spacecat-shared/commit/590b973f01f2dba697250ab4769106d06a908d98))
+
+# [@adobe/spacecat-shared-http-utils-v1.10.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.4...@adobe/spacecat-shared-http-utils-v1.10.5) (2025-05-10)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#726](https://github.com/adobe/spacecat-shared/issues/726)) ([adbd174](https://github.com/adobe/spacecat-shared/commit/adbd174a05b46578ef636a6c4f69ea4d329581c9))
+
+# [@adobe/spacecat-shared-http-utils-v1.10.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.3...@adobe/spacecat-shared-http-utils-v1.10.4) (2025-05-07)
+
+
+### Bug Fixes
+
+* auth handling with ims token ([#678](https://github.com/adobe/spacecat-shared/issues/678)) ([9868748](https://github.com/adobe/spacecat-shared/commit/9868748b6d6d7269d2b598748f26f02dc707b1d6))
+
+# [@adobe/spacecat-shared-http-utils-v1.10.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.2...@adobe/spacecat-shared-http-utils-v1.10.3) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#679](https://github.com/adobe/spacecat-shared/issues/679)) ([a41bf0c](https://github.com/adobe/spacecat-shared/commit/a41bf0cd488efa0f72af0933992edb256302af18))
+
+# [@adobe/spacecat-shared-http-utils-v1.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.1...@adobe/spacecat-shared-http-utils-v1.10.2) (2025-04-02)
+
+
+### Bug Fixes
+
+* fix auth for dev ([#676](https://github.com/adobe/spacecat-shared/issues/676)) ([1508d58](https://github.com/adobe/spacecat-shared/commit/1508d5843a753685a7f35c0d18a020a991b94d25))
+
+# [@adobe/spacecat-shared-http-utils-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.10.0...@adobe/spacecat-shared-http-utils-v1.10.1) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#674](https://github.com/adobe/spacecat-shared/issues/674)) ([285b37d](https://github.com/adobe/spacecat-shared/commit/285b37de9df42adb6a23694bcc699608e3b5b8fe))
+
+# [@adobe/spacecat-shared-http-utils-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.12...@adobe/spacecat-shared-http-utils-v1.10.0) (2025-03-20)
+
+
+### Features
+
+* jwt auth handler (WIP) ([#669](https://github.com/adobe/spacecat-shared/issues/669)) ([f3c8d84](https://github.com/adobe/spacecat-shared/commit/f3c8d84a724e9664cac995fe67af7af65800b16f))
+
+# [@adobe/spacecat-shared-http-utils-v1.9.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.11...@adobe/spacecat-shared-http-utils-v1.9.12) (2025-03-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/fetch to v4.2.0 ([#645](https://github.com/adobe/spacecat-shared/issues/645)) ([7c97dc4](https://github.com/adobe/spacecat-shared/commit/7c97dc4c4853aa183553ed90f4b0d6dc9f49b656))
+
+# [@adobe/spacecat-shared-http-utils-v1.9.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.10...@adobe/spacecat-shared-http-utils-v1.9.11) (2025-03-03)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#638](https://github.com/adobe/spacecat-shared/issues/638)) ([64625c2](https://github.com/adobe/spacecat-shared/commit/64625c24f1b3b7bc4a26b576155bb6bc8529ef45))
+
 # [@adobe/spacecat-shared-http-utils-v1.9.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.9.9...@adobe/spacecat-shared-http-utils-v1.9.10) (2025-02-25)
 
 

@@ -1,3 +1,296 @@
+# [@adobe/spacecat-shared-data-access-v2.24.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.24.0...@adobe/spacecat-shared-data-access-v2.24.1) (2025-06-14)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#802](https://github.com/adobe/spacecat-shared/issues/802)) ([fc2cb47](https://github.com/adobe/spacecat-shared/commit/fc2cb47183948833f5b0a411ae78d1649e747a17))
+
+# [@adobe/spacecat-shared-data-access-v2.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.23.3...@adobe/spacecat-shared-data-access-v2.24.0) (2025-06-13)
+
+
+### Features
+
+* added security-csp as an audit type ([#801](https://github.com/adobe/spacecat-shared/issues/801)) ([4c3aa51](https://github.com/adobe/spacecat-shared/commit/4c3aa5194fc7e6b102cdab8ce1c6875ec5379821))
+
+# [@adobe/spacecat-shared-data-access-v2.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.23.2...@adobe/spacecat-shared-data-access-v2.23.3) (2025-06-07)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#794](https://github.com/adobe/spacecat-shared/issues/794)) ([756cc67](https://github.com/adobe/spacecat-shared/commit/756cc67513540b0fc69ead1b90345891fef64793))
+
+# [@adobe/spacecat-shared-data-access-v2.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.23.1...@adobe/spacecat-shared-data-access-v2.23.2) (2025-06-04)
+
+
+### Bug Fixes
+
+* typo issue for elmo ([#788](https://github.com/adobe/spacecat-shared/issues/788)) ([ba56401](https://github.com/adobe/spacecat-shared/commit/ba5640131566d0980a9104114cbe57fcfc53c181))
+
+# [@adobe/spacecat-shared-data-access-v2.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.23.0...@adobe/spacecat-shared-data-access-v2.23.1) (2025-06-04)
+
+
+### Bug Fixes
+
+* new organic keyword imports configs ([#787](https://github.com/adobe/spacecat-shared/issues/787)) ([b2e70fc](https://github.com/adobe/spacecat-shared/commit/b2e70fc77f4695e7aaf4cb8e578410b459226e82))
+
+# [@adobe/spacecat-shared-data-access-v2.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.22.2...@adobe/spacecat-shared-data-access-v2.23.0) (2025-06-04)
+
+
+### Features
+
+* add new keyword import types ([#786](https://github.com/adobe/spacecat-shared/issues/786)) ([e82c55e](https://github.com/adobe/spacecat-shared/commit/e82c55e5fe1b27603e35b2fdf5e5c23c3c1d338c))
+
+# [@adobe/spacecat-shared-data-access-v2.22.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.22.1...@adobe/spacecat-shared-data-access-v2.22.2) (2025-05-31)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#779](https://github.com/adobe/spacecat-shared/issues/779)) ([07f8cce](https://github.com/adobe/spacecat-shared/commit/07f8cce73e33bfb9c61fe14f2ef28012b872437d))
+
+# [@adobe/spacecat-shared-data-access-v2.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.22.0...@adobe/spacecat-shared-data-access-v2.22.1) (2025-05-27)
+
+
+### Bug Fixes
+
+* amend DEFAULT_IMPORT_CONFIGS ([#771](https://github.com/adobe/spacecat-shared/issues/771)) ([5d2b8c3](https://github.com/adobe/spacecat-shared/commit/5d2b8c304df72cc546cd9fc40e16123b0792c0cc))
+
+# [@adobe/spacecat-shared-data-access-v2.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.21.0...@adobe/spacecat-shared-data-access-v2.22.0) (2025-05-27)
+
+
+### Features
+
+* add `organic-keywords-nonbranded` import type to site config ([#766](https://github.com/adobe/spacecat-shared/issues/766)) ([a3be1ec](https://github.com/adobe/spacecat-shared/commit/a3be1ec3a31dd0361fb475da329cb1655a875ebd))
+* add 405 response util ([#768](https://github.com/adobe/spacecat-shared/issues/768)) ([300ceb2](https://github.com/adobe/spacecat-shared/commit/300ceb2c979b304849a30f0e227823308d144c40))
+
+# [@adobe/spacecat-shared-data-access-v2.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.20.1...@adobe/spacecat-shared-data-access-v2.21.0) (2025-05-26)
+
+
+### Features
+
+* add updatedBy attribute to entities and ims api to resolve profile ([#758](https://github.com/adobe/spacecat-shared/issues/758)) ([47f73ff](https://github.com/adobe/spacecat-shared/commit/47f73ff18609f0b97576c391caad7409f0d24349))
+
+# [@adobe/spacecat-shared-data-access-v2.20.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.20.0...@adobe/spacecat-shared-data-access-v2.20.1) (2025-05-24)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#762](https://github.com/adobe/spacecat-shared/issues/762)) ([2eb5a22](https://github.com/adobe/spacecat-shared/commit/2eb5a22935a7293ef293157e0b0fe6506d5b4c94))
+
+# [@adobe/spacecat-shared-data-access-v2.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.4...@adobe/spacecat-shared-data-access-v2.20.0) (2025-05-23)
+
+
+### Features
+
+* added accessibility as an audit type ([#759](https://github.com/adobe/spacecat-shared/issues/759)) ([9ec2874](https://github.com/adobe/spacecat-shared/commit/9ec2874a18b27ab2c923b2944cbbc89d82996291))
+
+# [@adobe/spacecat-shared-data-access-v2.19.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.3...@adobe/spacecat-shared-data-access-v2.19.4) (2025-05-22)
+
+
+### Bug Fixes
+
+* async job schema ([#756](https://github.com/adobe/spacecat-shared/issues/756)) ([1546cdd](https://github.com/adobe/spacecat-shared/commit/1546cdd07907b1f41684d6486b38004bd5e893d1))
+
+# [@adobe/spacecat-shared-data-access-v2.19.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.2...@adobe/spacecat-shared-data-access-v2.19.3) (2025-05-17)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#743](https://github.com/adobe/spacecat-shared/issues/743)) ([afee6a7](https://github.com/adobe/spacecat-shared/commit/afee6a75d7cb6fb52d5fd18dbc5d74f2e73206f2))
+
+# [@adobe/spacecat-shared-data-access-v2.19.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.1...@adobe/spacecat-shared-data-access-v2.19.2) (2025-05-16)
+
+
+### Bug Fixes
+
+* default table name ([#742](https://github.com/adobe/spacecat-shared/issues/742)) ([deaa0af](https://github.com/adobe/spacecat-shared/commit/deaa0afee239d2f24444cb39df54a929135617ba))
+
+# [@adobe/spacecat-shared-data-access-v2.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.19.0...@adobe/spacecat-shared-data-access-v2.19.1) (2025-05-15)
+
+
+### Bug Fixes
+
+* local development friendly aws clients and sqs wrapper ([#739](https://github.com/adobe/spacecat-shared/issues/739)) ([fada9c6](https://github.com/adobe/spacecat-shared/commit/fada9c6fc0508ba6acf46a4416593427b67306dd))
+
+# [@adobe/spacecat-shared-data-access-v2.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.18.0...@adobe/spacecat-shared-data-access-v2.19.0) (2025-05-14)
+
+
+### Features
+
+* adding options to scraper sqs payload ([#733](https://github.com/adobe/spacecat-shared/issues/733)) ([eb9a08b](https://github.com/adobe/spacecat-shared/commit/eb9a08b06bc48388a5aa3c78f9ce57c05ef04313))
+
+# [@adobe/spacecat-shared-data-access-v2.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.4...@adobe/spacecat-shared-data-access-v2.18.0) (2025-05-12)
+
+
+### Features
+
+* content scraper audit step will honour the allowCache value fro… ([#725](https://github.com/adobe/spacecat-shared/issues/725)) ([89bfe23](https://github.com/adobe/spacecat-shared/commit/89bfe231b368aaf65eba1777c3799e5cd42fe8f6))
+
+# [@adobe/spacecat-shared-data-access-v2.17.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.3...@adobe/spacecat-shared-data-access-v2.17.4) (2025-05-12)
+
+
+### Bug Fixes
+
+* Update type definitions for FixEntity ([#731](https://github.com/adobe/spacecat-shared/issues/731)) ([cb0bee7](https://github.com/adobe/spacecat-shared/commit/cb0bee72e6d6e7d6cddaefc55f3e20230884b8ec))
+
+# [@adobe/spacecat-shared-data-access-v2.17.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.2...@adobe/spacecat-shared-data-access-v2.17.3) (2025-05-10)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#726](https://github.com/adobe/spacecat-shared/issues/726)) ([adbd174](https://github.com/adobe/spacecat-shared/commit/adbd174a05b46578ef636a6c4f69ea4d329581c9))
+
+# [@adobe/spacecat-shared-data-access-v2.17.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.1...@adobe/spacecat-shared-data-access-v2.17.2) (2025-05-08)
+
+
+### Bug Fixes
+
+* collection._saveMany deals with empty `.unprocessed` array in response ([#721](https://github.com/adobe/spacecat-shared/issues/721)) ([2750273](https://github.com/adobe/spacecat-shared/commit/27502735d2759d83a65129cb2c0ccb09f974368d))
+
+# [@adobe/spacecat-shared-data-access-v2.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.17.0...@adobe/spacecat-shared-data-access-v2.17.1) (2025-05-03)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#712](https://github.com/adobe/spacecat-shared/issues/712)) ([76cebd2](https://github.com/adobe/spacecat-shared/commit/76cebd2a7a7b9799e4ca265833620eada01f5c8c))
+
+# [@adobe/spacecat-shared-data-access-v2.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.16.1...@adobe/spacecat-shared-data-access-v2.17.0) (2025-04-28)
+
+
+### Features
+
+* async job ([#698](https://github.com/adobe/spacecat-shared/issues/698)) ([31cf58f](https://github.com/adobe/spacecat-shared/commit/31cf58fc9ef128d2cf094afe0286932c7edc369d))
+
+# [@adobe/spacecat-shared-data-access-v2.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.16.0...@adobe/spacecat-shared-data-access-v2.16.1) (2025-04-26)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#708](https://github.com/adobe/spacecat-shared/issues/708)) ([57535ac](https://github.com/adobe/spacecat-shared/commit/57535ac8c636de229cec7c5cee83dead07ac09fb))
+
+# [@adobe/spacecat-shared-data-access-v2.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.15.2...@adobe/spacecat-shared-data-access-v2.16.0) (2025-04-24)
+
+
+### Features
+
+* Added cwv-daily and cwv-weekly import types ([#693](https://github.com/adobe/spacecat-shared/issues/693)) ([659826b](https://github.com/adobe/spacecat-shared/commit/659826b37cea03aa08f2db36a0ff7a43437c03a7))
+
+# [@adobe/spacecat-shared-data-access-v2.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.15.1...@adobe/spacecat-shared-data-access-v2.15.2) (2025-04-17)
+
+
+### Bug Fixes
+
+* add comments ([7b62a79](https://github.com/adobe/spacecat-shared/commit/7b62a7987d5f72f100840543870b74b9b783e721))
+
+# [@adobe/spacecat-shared-data-access-v2.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.15.0...@adobe/spacecat-shared-data-access-v2.15.1) (2025-04-17)
+
+
+### Bug Fixes
+
+* completion queue url for audit jobs ([#697](https://github.com/adobe/spacecat-shared/issues/697)) ([5987a4c](https://github.com/adobe/spacecat-shared/commit/5987a4cda6f682e12270e202d5bfd262b156d104))
+
+# [@adobe/spacecat-shared-data-access-v2.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.14.1...@adobe/spacecat-shared-data-access-v2.15.0) (2025-04-17)
+
+
+### Bug Fixes
+
+* completionUrl not sent to content scraper and introduce skip property ([#685](https://github.com/adobe/spacecat-shared/issues/685)) ([4d89a29](https://github.com/adobe/spacecat-shared/commit/4d89a297495fa69ebbcc0429ed879b2edafbd760))
+
+
+### Features
+
+* Add contentAiConfig validation to Config class ([#686](https://github.com/adobe/spacecat-shared/issues/686)) ([077fbbd](https://github.com/adobe/spacecat-shared/commit/077fbbd583f5567c265fe47e724ea5ce9f1a722d))
+
+# [@adobe/spacecat-shared-data-access-v2.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.14.0...@adobe/spacecat-shared-data-access-v2.14.1) (2025-04-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#679](https://github.com/adobe/spacecat-shared/issues/679)) ([a41bf0c](https://github.com/adobe/spacecat-shared/commit/a41bf0cd488efa0f72af0933992edb256302af18))
+
+# [@adobe/spacecat-shared-data-access-v2.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.3...@adobe/spacecat-shared-data-access-v2.14.0) (2025-04-11)
+
+
+### Features
+
+* add FixEntity for keeping track of the suggestion fixes ([#671](https://github.com/adobe/spacecat-shared/issues/671)) ([3be02da](https://github.com/adobe/spacecat-shared/commit/3be02da115cbb2d106e863ee715a5904aa2c75d2))
+
+# [@adobe/spacecat-shared-data-access-v2.13.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.2...@adobe/spacecat-shared-data-access-v2.13.3) (2025-04-08)
+
+
+### Bug Fixes
+
+* configuration shouldn't check for enabled if audit is enabledByDefault ([#675](https://github.com/adobe/spacecat-shared/issues/675)) ([0d8538a](https://github.com/adobe/spacecat-shared/commit/0d8538ac967e2a69a08ebc462530985780584f0e))
+
+# [@adobe/spacecat-shared-data-access-v2.13.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.1...@adobe/spacecat-shared-data-access-v2.13.2) (2025-04-01)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#674](https://github.com/adobe/spacecat-shared/issues/674)) ([285b37d](https://github.com/adobe/spacecat-shared/commit/285b37de9df42adb6a23694bcc699608e3b5b8fe))
+
+# [@adobe/spacecat-shared-data-access-v2.13.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.13.0...@adobe/spacecat-shared-data-access-v2.13.1) (2025-03-07)
+
+
+### Bug Fixes
+
+* **data-access:** fetch all records on demand ([#660](https://github.com/adobe/spacecat-shared/issues/660)) ([16bbeb4](https://github.com/adobe/spacecat-shared/commit/16bbeb4767526c846800480f49e2f7d06912330f))
+
+# [@adobe/spacecat-shared-data-access-v2.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.12.0...@adobe/spacecat-shared-data-access-v2.13.0) (2025-03-07)
+
+
+### Features
+
+* **data-access:** fetch all records on demand ([#659](https://github.com/adobe/spacecat-shared/issues/659)) ([a424f47](https://github.com/adobe/spacecat-shared/commit/a424f4763399ceaa1fb2d09bee454e8d5d0923f9))
+
+# [@adobe/spacecat-shared-data-access-v2.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.11.0...@adobe/spacecat-shared-data-access-v2.12.0) (2025-03-06)
+
+
+### Features
+
+* added structured data auto suggest audit type ([#628](https://github.com/adobe/spacecat-shared/issues/628)) ([6162442](https://github.com/adobe/spacecat-shared/commit/61624423669e0d93e6f2ed3c90c1a134a2458949))
+
+# [@adobe/spacecat-shared-data-access-v2.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.10.2...@adobe/spacecat-shared-data-access-v2.11.0) (2025-03-05)
+
+
+### Features
+
+* Brand client ([#640](https://github.com/adobe/spacecat-shared/issues/640)) ([8d82f45](https://github.com/adobe/spacecat-shared/commit/8d82f45349ea9be2b1359fe5ebebf5a350f52666))
+
+# [@adobe/spacecat-shared-data-access-v2.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.10.1...@adobe/spacecat-shared-data-access-v2.10.2) (2025-03-04)
+
+
+### Bug Fixes
+
+* add all-traffic to import schema ([#647](https://github.com/adobe/spacecat-shared/issues/647)) ([9fb3ee5](https://github.com/adobe/spacecat-shared/commit/9fb3ee56b332d095ff73b8dda235192d6ef31aa7))
+
+# [@adobe/spacecat-shared-data-access-v2.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.10.0...@adobe/spacecat-shared-data-access-v2.10.1) (2025-03-04)
+
+
+### Bug Fixes
+
+* getEnabledAuditsForSite not part of Configuration interface ([#646](https://github.com/adobe/spacecat-shared/issues/646)) ([33d7d03](https://github.com/adobe/spacecat-shared/commit/33d7d03ab52069aacb4f6c97fdfdc971a1eb8f1e))
+
+# [@adobe/spacecat-shared-data-access-v2.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.6...@adobe/spacecat-shared-data-access-v2.10.0) (2025-03-04)
+
+
+### Features
+
+* introduce getEnabledAuditsForSite in the configuration model ([#643](https://github.com/adobe/spacecat-shared/issues/643)) ([c4b60f5](https://github.com/adobe/spacecat-shared/commit/c4b60f519b75a7482856c7e1b35a1e087d2f1731))
+
+# [@adobe/spacecat-shared-data-access-v2.9.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.5...@adobe/spacecat-shared-data-access-v2.9.6) (2025-03-03)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#638](https://github.com/adobe/spacecat-shared/issues/638)) ([64625c2](https://github.com/adobe/spacecat-shared/commit/64625c24f1b3b7bc4a26b576155bb6bc8529ef45))
+
+# [@adobe/spacecat-shared-data-access-v2.9.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.4...@adobe/spacecat-shared-data-access-v2.9.5) (2025-02-28)
+
+
+### Bug Fixes
+
+* **override-base-url:** add overrideBaseURL in site.config.fetchConfig ([#633](https://github.com/adobe/spacecat-shared/issues/633)) ([526874f](https://github.com/adobe/spacecat-shared/commit/526874f8665e7bae94ca8968f1cb834cd424ae9f))
+
 # [@adobe/spacecat-shared-data-access-v2.9.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.9.3...@adobe/spacecat-shared-data-access-v2.9.4) (2025-02-27)
 
 

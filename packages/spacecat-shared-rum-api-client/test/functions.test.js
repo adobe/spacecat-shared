@@ -20,6 +20,7 @@ import highInorganicHighBounce from '../src/functions/opportunities/high-inorgan
 import highOrganicLowCTR from '../src/functions/opportunities/high-organic-low-ctr.js';
 import variant from '../src/functions/variant.js';
 import formVitals from '../src/functions/form-vitals.js';
+import pageviews from '../src/functions/pageviews.js';
 import bundles from './fixtures/bundles.json' with { type: 'json' };
 import bundlesWithTraffic from './fixtures/bundles-with-traffic-source.json' with { type: 'json' };
 import bundlesWithForm from './fixtures/bundles-for-form-vitals.json' with { type: 'json' };
@@ -79,5 +80,13 @@ describe('Query functions', () => {
       { interval: 7 },
     );
     expect(highInorganicHighBounceResult).to.eql(expectedHighOrganicLowCTRResult);
+  });
+
+  it('crunches pageviews', async () => {
+    const result = pageviews.handler(
+      bundles.rumBundles,
+      { interval: 7 },
+    );
+    expect(result).to.eql({ pageviews: 24173 });
   });
 });

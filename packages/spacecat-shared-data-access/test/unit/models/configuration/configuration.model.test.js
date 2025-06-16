@@ -119,6 +119,12 @@ describe('ConfigurationModel', () => {
       expect(instance.isHandlerEnabledForOrg('404', org)).to.be.true;
     });
 
+    it('returns true when enabled is there and the handler is enabled by default', () => {
+      console.log('starting test');
+      expect(instance.isHandlerEnabledForSite('sitemap', site)).to.be.true;
+      expect(instance.isHandlerEnabledForOrg('sitemap', org)).to.be.true;
+    });
+
     it('returns false if a handler is not enabled by default', () => {
       expect(instance.isHandlerEnabledForSite('organic-keywords', site)).to.be.false;
       expect(instance.isHandlerEnabledForOrg('organic-keywords', org)).to.be.false;
@@ -144,6 +150,12 @@ describe('ConfigurationModel', () => {
       expect(instance.getEnabledSiteIdsForHandler('lhs-mobile')).to.deep.equal(['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe']);
       delete instance.record.handlers;
       expect(instance.getEnabledSiteIdsForHandler('lhs-mobile')).to.deep.equal([]);
+    });
+
+    it('gets all enabled audits for a site', () => {
+      expect(Object.keys(instance.getHandlers() || {})
+        .filter((handler) => instance.isHandlerEnabledForSite(handler, site))).to.deep.equal(['404', 'rum-ingest', 'sitemap', 'lhs-mobile']);
+      expect(instance.getEnabledAuditsForSite(site)).to.deep.equal(['lhs-mobile', '404']);
     });
   });
 

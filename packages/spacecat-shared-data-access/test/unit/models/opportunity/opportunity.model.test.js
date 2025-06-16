@@ -78,6 +78,20 @@ describe('OpportunityModel', () => {
     });
   });
 
+  describe('addFixEntities', () => {
+    it('adds related fix entities to the opportunity', async () => {
+      const mockFixEntityCollection = {
+        createMany: stub().returns(Promise.resolve({ id: 'fix-entity-1' })),
+      };
+      mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(mockFixEntityCollection);
+
+      const fixEntity = await instance.addFixEntities([{ text: 'Fix entity text' }]);
+      expect(fixEntity).to.deep.equal({ id: 'fix-entity-1' });
+      expect(mockEntityRegistry.getCollection.calledWith('FixEntityCollection')).to.be.true;
+      expect(mockFixEntityCollection.createMany.calledOnceWith([{ text: 'Fix entity text', opportunityId: 'op12345' }])).to.be.true;
+    });
+  });
+
   describe('getSiteId and setSiteId', () => {
     it('returns the site ID of the opportunity', () => {
       expect(instance.getSiteId()).to.equal('site67890');

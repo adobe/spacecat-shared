@@ -9,16 +9,11 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-export default {
-  name: 'ims-na1-stg1',
-  discoveryUrl: 'https://ims-na1-stg1.adobelogin.com/ims/.well-known/openid-configuration',
-  // todo: fetch from discovery document
-  discovery: {
-    issuer: 'https://ims-na1-stg1.adobelogin.com',
-    authorization_endpoint: 'https://ims-na1-stg1.adobelogin.com/ims/authorize/v2',
-    token_endpoint: 'https://ims-na1-stg1.adobelogin.com/ims/token/v3',
-    userinfo_endpoint: 'https://ims-na1-stg1.adobelogin.com/ims/userinfo/v2',
-    revocation_endpoint: 'https://ims-na1-stg1.adobelogin.com/ims/revoke',
-    jwks_uri: 'https://ims-na1-stg1.adobelogin.com/ims/keys',
-  },
+
+import FixEntity from './fix-entity.model.js';
+import FixEntityCollection from './fix-entity.collection.js';
+
+export {
+  FixEntity,
+  FixEntityCollection,
 };

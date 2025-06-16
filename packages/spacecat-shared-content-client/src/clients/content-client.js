@@ -9,19 +9,25 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-
 import { createFrom as createContentSDKClient } from '@adobe/spacecat-helix-content-sdk';
 import {
-  composeBaseURL, hasText, isObject, tracingFetch,
+  composeBaseURL, hasText, instrumentAWSClient, isObject, resolveCustomerSecretsName, tracingFetch,
 } from '@adobe/spacecat-shared-utils';
 import { Graph, hasCycle } from 'graph-data-structure';
+import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 
 const CONTENT_SOURCE_TYPE_DRIVE_GOOGLE = 'drive.google';
 const CONTENT_SOURCE_TYPE_ONEDRIVE = 'onedrive';
 
 /**
+ * @import {type Site} from "@adobe/spacecat-shared-data-access/src/models/site/index.js"
+ * @typedef {Pick<Console, 'debug' | 'info' | 'warn' | 'error'>} Logging
+ */
+
+/**
  * A list of supported content source types and their required configuration parameters.
- * @type {Map<string, object>}
+ * @typedef {typeof CONTENT_SOURCE_TYPE_DRIVE_GOOGLE | typeof CONTENT_SOURCE_TYPE_ONEDRIVE} _CSKey
+ * @type {Map<_CSKey, {[key: string]: string}>}
  */
 const SUPPORTED_CONTENT_SOURCES = new Map([
   [CONTENT_SOURCE_TYPE_DRIVE_GOOGLE, {
@@ -100,39 +106,62 @@ const validateMetadata = (metadata) => {
   }
 };
 
-const validateRedirects = (redirects) => {
-  const pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
-  if (!Array.isArray(redirects)) {
-    throw new Error('Redirects must be an array');
+const validateLinks = (links, type) => {
+  let pathRegex;
+  if (type === 'URL') {
+    pathRegex = /^(http:\/\/|https:\/\/)[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
+  } else if (type === 'Redirect') {
+    pathRegex = /^\/[a-zA-Z0-9\-._~%!$&'()*+,;=:@/]*$/;
   }
 
-  if (!redirects.length) {
-    throw new Error('Redirects must not be empty');
+  if (!Array.isArray(links)) {
+    throw new Error(`${type}s must be an array`);
   }
 
-  for (const redirect of redirects) {
-    if (!isObject(redirect)) {
-      throw new Error('Redirect must be an object');
+  if (!links.length) {
+    throw new Error(`${type}s must not be empty`);
+  }
+
+  for (const link of links) {
+    if (!isObject(link)) {
+      throw new Error(`${type} must be an object`);
     }
 
-    if (!hasText(redirect.from)) {
-      throw new Error('Redirect must have a valid from path');
+    if (!hasText(link.from)) {
+      throw new Error(`${type} must have a valid from path`);
     }
 
-    if (!hasText(redirect.to)) {
-      throw new Error('Redirect must have a valid to path');
+    if (!hasText(link.to)) {
+      throw new Error(`${type} must have a valid to path`);
     }
 
-    if (!pathRegex.test(redirect.from)) {
-      throw new Error(`Invalid redirect from path: ${redirect.from}`);
+    if (!pathRegex.test(link.from)) {
+      throw new Error(`Invalid ${type} from path: ${link.from}`);
     }
 
-    if (!pathRegex.test(redirect.to)) {
-      throw new Error(`Invalid redirect to path: ${redirect.to}`);
+    if (!pathRegex.test(link.to)) {
+      throw new Error(`Invalid ${type} to path: ${link.to}`);
     }
 
-    if (redirect.from === redirect.to) {
-      throw new Error('Redirect from and to paths must be different');
+    if (link.from === link.to) {
+      throw new Error(`${type} from and to paths must be different`);
+    }
+  }
+};
+
+const validateImageAltText = (imageAltText) => {
+  if (!Array.isArray(imageAltText)) {
+    throw new Error(`${imageAltText} must be an array`);
+  }
+  for (const item of imageAltText) {
+    if (!isObject(item)) {
+      throw new Error(`${item} must be an object`);
+    }
+    if (!item.imageUrl) {
+      throw new Error(`No imageUrl found for ${item}`);
+    }
+    if (!item.altText) {
+      throw new Error(`No altText found for ${item}`);
     }
   }
 };
@@ -179,9 +208,15 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
 };
 
 export default class ContentClient {
-  static createFrom(context, site) {
+  /**
+   * @param {{log: Logging, env: Record<string, any>}} context
+   * @param {Site} site
+   * @param {SecretsManagerClient} [secretsManagerClient]
+   */
+  static async createFrom(context, site, secretsManagerClient = new SecretsManagerClient({})) {
     const { log = console, env } = context;
 
+    /** @type {{[key: string]: string}} */
     const config = {};
     const contentSourceType = site.getHlxConfig()?.content?.source?.type;
     const envMapping = SUPPORTED_CONTENT_SOURCES.get(contentSourceType);
@@ -192,6 +227,20 @@ export default class ContentClient {
       }
     }
 
+    try {
+      const customerSecret = resolveCustomerSecretsName(site.getBaseURL(), context);
+      const client = instrumentAWSClient(secretsManagerClient);
+      const command = new GetSecretValueCommand({ SecretId: customerSecret });
+      const response = await client.send(command);
+      const secrets = JSON.parse(response.SecretString);
+      config.domainId = secrets.onedrive_domain_id || config.domainId;
+      config.helixAdminToken = secrets.helix_admin_token || config.helixAdminToken;
+      config.clientId = secrets.onedrive_client_id || config.clientId;
+      config.clientSecret = secrets.onedrive_client_secret || config.clientSecret;
+      config.authority = secrets.onedrive_authority || config.authority;
+    } catch (e) {
+      log.debug(`Customer ${site.getBaseURL()} secrets containing onedrive domain id not configured: ${e.message}`);
+    }
     return new ContentClient(config, site, log);
   }
 
@@ -215,6 +264,7 @@ export default class ContentClient {
       const siteDto = {
         getId: () => site.siteId,
         getHlxConfig: () => site.hlxConfig,
+        getBaseURL: () => site.baseURL,
       };
       return ContentClient.createFrom({ log, env }, siteDto);
     } catch (e) {
@@ -223,6 +273,11 @@ export default class ContentClient {
     }
   }
 
+  /**
+   * @param {{[key: string]: any}} config
+   * @param {Site} site
+   * @param {Logging} log
+   */
   constructor(config, site, log) {
     validateSite(site);
     validateConfiguration(config, site.getHlxConfig()?.content.source?.type);
@@ -254,6 +309,28 @@ export default class ContentClient {
     }
 
     return docPath;
+  }
+
+  /**
+   * @param {string} path
+   * @returns {Promise<string>}
+   */
+  async getResourcePath(path) {
+    const { rso } = this.site.getHlxConfig();
+    // https://www.aem.live/docs/admin.html#tag/status
+    const adminEndpointUrl = `https://admin.hlx.page/status/${rso.owner}/${rso.site}/${rso.ref}/${path.replace(/^\/+/, '')}`;
+    const response = await fetch(adminEndpointUrl, {
+      headers: {
+        Authorization: `token ${this.config.helixAdminToken}`,
+      },
+    });
+    if (response.ok) {
+      const responseJson = await response.json();
+      return responseJson.resourcePath;
+    } else {
+      const errorMessage = await response.text();
+      throw new Error(`Failed to fetch document path for ${path}: ${errorMessage}`);
+    }
   }
 
   async getPageMetadata(path) {
@@ -322,7 +399,7 @@ export default class ContentClient {
   async updateRedirects(redirects) {
     const startTime = process.hrtime.bigint();
 
-    validateRedirects(redirects);
+    validateLinks(redirects, 'Redirect');
 
     await this.#initClient();
 
@@ -348,5 +425,49 @@ export default class ContentClient {
     }
 
     this.#logDuration('updateRedirects', startTime);
+  }
+
+  async updateBrokenInternalLink(path, brokenLink) {
+    const startTime = process.hrtime.bigint();
+
+    validateLinks([brokenLink], 'URL');
+    validatePath(path);
+
+    await this.#initClient();
+
+    this.log.info(`Updating page link for ${this.site.getId()} and path ${path}`);
+
+    const docPath = this.#resolveDocPath(path);
+    const document = await this.rawClient.getDocument(docPath);
+
+    this.log.info('Updating link from', brokenLink.from, 'to', brokenLink.to);
+    const response = await document.updateLink(brokenLink.from, brokenLink.to);
+
+    if (response.status !== 200) {
+      throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);
+    }
+
+    this.#logDuration('updateBrokenInternalLink', startTime);
+  }
+
+  async updateImageAltText(path, imageAltText) {
+    const startTime = process.hrtime.bigint();
+
+    validatePath(path);
+    validateImageAltText(imageAltText);
+    await this.#initClient();
+
+    this.log.info(`Updating image alt text for ${this.site.getId()} and path ${path}`);
+
+    const docPath = this.#resolveDocPath(path);
+    this.log.info(`Doc path: ${docPath}`);
+    const document = await this.rawClient.getDocument(docPath);
+    this.log.info(`Document: ${document}`);
+    const response = await document.updateImageAltText(imageAltText);
+    if (response?.status !== 200) {
+      throw new Error(`Failed to update image alt text for path ${path}`);
+    }
+
+    this.#logDuration('updateImageAltText', startTime);
   }
 }

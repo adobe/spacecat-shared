@@ -14,7 +14,7 @@ import { DataChunks, facets } from '@adobe/rum-distiller';
 import { loadBundles, trafficSeriesFn } from '../../utils.js';
 
 const HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.8;
-const NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.5;
+const NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.15;
 const BOUNCE_RATE_THRESHOLD = 0.5;
 const DAILY_PAGEVIEW_THRESHOLD = 1000;
 
@@ -78,7 +78,7 @@ function handler(bundles, opts = {}) {
         url.metrics.views.sum,
       );
       const bounceRate = 1 - url.metrics.clicks.sum / url.metrics.views.sum;
-      const hasHighBounce = bounceRate < BOUNCE_RATE_THRESHOLD;
+      const hasHighBounce = bounceRate > BOUNCE_RATE_THRESHOLD;
       const paidRatio = url.metrics.paid.sum / url.metrics.views.sum;
       const isHomepage = new URL(url.value).pathname === '/';
       const threshold = isHomepage ? HOMEPAGE_PAID_TRAFFIC_THRESHOLD : NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD;

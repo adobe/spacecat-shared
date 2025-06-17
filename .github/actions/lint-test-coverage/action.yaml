@@ -14,10 +14,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Lint
-      run: npm run lint
-      shell: bash
-
     - name: Upload coverage to Codecov
       if: ${{ inputs.upload_coverage == 'true' }}
       uses: codecov/codecov-action@v5

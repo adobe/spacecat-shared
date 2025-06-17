@@ -13,19 +13,6 @@
 import type { BaseCollection, BaseModel } from '../base';
 import type { ScrapeUrl } from '../scrape-url';
 
-export interface IOptions {
-  enableJavascript: boolean,
-  hideConsentBanners: boolean,
-  pageLoadTimeout: number | undefined,
-  waitForSelector: string | undefined,
-  screenshotTypes: string[] | undefined,
-}
-
-export interface IResults {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any,
-}
-
 export interface ScrapeJob extends BaseModel {
   getBaseURL(): string,
   getCustomHeaders(): IOptions,
@@ -35,7 +22,7 @@ export interface ScrapeJob extends BaseModel {
   getOptions(): string,
   getProcessingType(): string,
   getRedirectCount(): number,
-  getResults(): IResults,
+  getResults(): string,
   getScrapeQueueId(): string,
   getScrapeUrls(): Promise<ScrapeUrl[]>,
   getScrapeUrlsByStatus(status: string): Promise<ScrapeUrl[]>,
@@ -51,7 +38,7 @@ export interface ScrapeJob extends BaseModel {
   setOptions(options: string): void,
   setProcessingType(processingType: string): void,
   setRedirectCount(redirectCount: number): void,
-  setResults(results: IResults): void,
+  setResults(results: string): void,
   setScrapeQueueId(ScrapeQueueId: string): void,
   setStatus(status: string): void,
   setSuccessCount(successCount: number): void,

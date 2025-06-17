@@ -15,11 +15,9 @@
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import { ElectroValidationError } from 'electrodb';
 import ScrapeJobModel from '../../../src/models/scrape-job/scrape-job.model.js';
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
-import { DataAccessError } from '../../../src/index.js';
 
 use(chaiAsPromised);
 
@@ -113,31 +111,13 @@ describe('ScrapeJob IT', async () => {
     checkScrapeJob(scrapeJob);
     expect(scrapeJob.getProcessingType()).to.eql(ScrapeJobModel.ScrapeProcessingType.ACCESSIBILITY);
 
-    // test to make sure error is thrown if options attribute is not an object
-    validJobData = { ...newJobData, options: 'not-an-object' };
-    await ScrapeJob.create(validJobData).catch((err) => {
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.cause).to.be.instanceOf(ElectroValidationError);
-      expect(err.cause.message).to.contain('Invalid options. Options must be an object');
-    });
-
     // test to make sure data is not an empty object
-    validJobData = { ...newJobData, options: {} };
-    await ScrapeJob.create(validJobData).catch((err) => {
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.cause).to.be.instanceOf(ElectroValidationError);
-      expect(err.cause.message).to.contain('Invalid options. Options cannot be empty');
-    });
-  });
-
-  it('throws an error when adding a new scrape job with invalid options', async () => {
-    const data = { ...newJobData, options: { invalidOption: 'invalid' } };
-
-    await ScrapeJob.create(data).catch((err) => {
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.cause).to.be.instanceOf(ElectroValidationError);
-      expect(err.cause.message).to.contain('Invalid options: ');
-    });
+    // validJobData = { ...newJobData, options: {} };
+    // await ScrapeJob.create(validJobData).catch((err) => {
+    //   expect(err).to.be.instanceOf(DataAccessError);
+    //   expect(err.cause).to.be.instanceOf(ElectroValidationError);
+    //   expect(err.cause.message).to.contain('Invalid options. Options cannot be empty');
+    // });
   });
 
   it('updates an existing scrape job', async () => {

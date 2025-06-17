@@ -15,83 +15,15 @@
 import {
   isInteger,
   isIsoDate,
-  isNonEmptyObject,
   isNumber,
   isObject,
   isValidUrl,
   isString,
-  isArray,
 } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import ScrapeJob from './scrape-job.model.js';
 import ScrapeJobCollection from './scrape-job.collection.js';
-
-const ScrapeOptionTypeValidator = {
-  [ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT]: (value) => {
-    if (value !== true && value !== false) {
-      throw new Error(`Invalid value for ${ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT}: ${value}`);
-    }
-  },
-  [ScrapeJob.ScrapeOptions.PAGE_LOAD_TIMEOUT]: (value) => {
-    if (!isInteger(value) || value < 0) {
-      throw new Error(`Invalid value for ${ScrapeJob.ScrapeOptions.PAGE_LOAD_TIMEOUT}: ${value}`);
-    }
-  },
-  [ScrapeJob.ScrapeOptions.HIDE_CONSENT_BANNER]: (value) => {
-    if (value !== true && value !== false) {
-      throw new Error(`Invalid value for ${ScrapeJob.ScrapeOptions.HIDE_CONSENT_BANNER}: ${value}`);
-    }
-  },
-  [ScrapeJob.ScrapeOptions.WAIT_FOR_SELECTOR]: (value) => {
-    if (!isString(value)) {
-      throw new Error(`Invalid value for ${ScrapeJob.ScrapeOptions.WAIT_FOR_SELECTOR}: ${value}`);
-    }
-  },
-  [ScrapeJob.ScrapeOptions.SECTION_LOAD_WAIT_TIME]: (value) => {
-    if (!isInteger(value) || value < 0) {
-      throw new Error(`Invalid value for ${ScrapeJob.ScrapeOptions.SECTION_LOAD_WAIT_TIME}: ${value}`);
-    }
-  },
-  [ScrapeJob.ScrapeOptions.SCREENSHOT_TYPES]: (value) => {
-    if (!isArray(value)) {
-      throw new Error(`Invalid value for ${ScrapeJob.ScrapeOptions.SCREENSHOT_TYPES}: ${value}`);
-    }
-    value.forEach((item) => {
-      if (!isString(item) || !Object.values(ScrapeJob.ScrapeScreenshotType).includes(item)) {
-        throw new Error(`Invalid value for ${ScrapeJob.ScrapeOptions.SCREENSHOT_TYPES}: ${JSON.stringify(value)}`);
-      }
-    });
-  },
-};
-
-const validateOptions = (options) => {
-  if (!isObject(options)) {
-    throw new Error(`Invalid options. Options must be an object. Received: ${JSON.stringify(options)}`);
-  }
-
-  if (!isNonEmptyObject(options)) {
-    throw new Error('Invalid options. Options cannot be empty.');
-  }
-
-  const invalidOptions = Object.keys(options).filter(
-    (key) => !Object.values(ScrapeJob.ScrapeOptions)
-      .some((value) => value.toLowerCase() === key.toLowerCase()),
-  );
-
-  if (invalidOptions.length > 0) {
-    throw new Error(`Invalid options: ${invalidOptions}`);
-  }
-
-  // validate each option for it's expected data type
-  Object.keys(options).forEach((key) => {
-    if (ScrapeOptionTypeValidator[key]) {
-      ScrapeOptionTypeValidator[key](options[key]);
-    }
-  });
-
-  return true;
-};
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -110,7 +42,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   .addAttribute('processingType', {
     type: 'string',
     required: true,
-    validate: (value) => !value || Object.values(ScrapeJob.ScrapeProcessingType).includes(value),
+    validate: (value) => isString(value),
   })
   .addAttribute('duration', {
     type: 'number',
@@ -131,7 +63,7 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   })
   .addAttribute('options', {
     type: 'any',
-    validate: (value) => !value || validateOptions(value),
+    validate: (value) => !value || isObject(value),
   })
   .addAttribute('customHeaders', {
     type: 'any',

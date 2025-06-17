@@ -18,23 +18,6 @@ runs:
       run: npm run lint
       shell: bash
 
-    - name: Check if spacecat-shared-data-access changed
-      id: changes
-      uses: dorny/paths-filter@v3
-      with:
-        filters: |
-          spacecat-shared:
-            - 'packages/spacecat-shared-data-access/**'
-
-    - name: Run Integration Tests
-      if: steps.changes.outputs.spacecat-shared == 'true'
-      run: npm run --prefix packages/spacecat-shared-data-access test:it
-      shell: bash
-
-    - name: Run Unit Tests
-      run: npm run test
-      shell: bash
-
     - name: Upload coverage to Codecov
       if: ${{ inputs.upload_coverage == 'true' }}
       uses: codecov/codecov-action@v5

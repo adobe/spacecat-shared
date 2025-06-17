@@ -72,58 +72,53 @@ function handler(bundles, opts = {}) {
   return dataChunks.facets.urls
     .filter((url) => {
       const hasEnoughViews = url.metrics.views.sum > interval * DAILY_PAGEVIEW_THRESHOLD;
-      console.log(`\nURL: ${url.value}`);
-      console.log(`Pageview Check: ${hasEnoughViews ? 'PASS' : 'FAIL'}`);
-      console.log(`- Current views: ${url.metrics.views.sum}`);
-      console.log(`- Required views: ${interval * DAILY_PAGEVIEW_THRESHOLD}`);
-      return hasEnoughViews;
-    })
-    .filter((url) => {
       const isHighInorganic = hasHighInorganicTraffic(
         url.value,
         url.metrics.paid.sum,
         url.metrics.views.sum,
       );
+      const bounceRate = 1 - url.metrics.clicks.sum / url.metrics.views.sum;
+      const hasHighBounce = bounceRate < BOUNCE_RATE_THRESHOLD;
       const paidRatio = url.metrics.paid.sum / url.metrics.views.sum;
       const isHomepage = new URL(url.value).pathname === '/';
       const threshold = isHomepage ? HOMEPAGE_PAID_TRAFFIC_THRESHOLD : NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD;
-      
-      console.log(`\nURL: ${url.value}`);
-      console.log(`Inorganic Traffic Check: ${isHighInorganic ? 'PASS' : 'FAIL'}`);
-      console.log(`- Paid traffic ratio: ${(paidRatio * 100).toFixed(2)}%`);
-      console.log(`- Required ratio: ${(threshold * 100).toFixed(2)}%`);
-      console.log(`- Is homepage: ${isHomepage}`);
-      return isHighInorganic;
+
+      console.log(`
+=== URL Analysis: ${url.value} ===
+1. Pageview Check: ${hasEnoughViews ? 'PASS' : 'FAIL'}
+   - Current views: ${url.metrics.views.sum}
+   - Required views: ${interval * DAILY_PAGEVIEW_THRESHOLD}
+
+2. Inorganic Traffic Check: ${isHighInorganic ? 'PASS' : 'FAIL'}
+   - Paid traffic ratio: ${(paidRatio * 100).toFixed(2)}%
+   - Required ratio: ${(threshold * 100).toFixed(2)}%
+   - Is homepage: ${isHomepage}
+
+3. Bounce Rate Check: ${hasHighBounce ? 'PASS' : 'FAIL'}
+   - Current bounce rate: ${(bounceRate * 100).toFixed(2)}%
+   - Required bounce rate: ${(BOUNCE_RATE_THRESHOLD * 100).toFixed(2)}%
+   - Total views: ${url.metrics.views.sum}
+   - Total clicks: ${url.metrics.clicks.sum}
+
+Traffic Breakdown:
+   - Paid traffic: ${url.metrics.paid.sum}
+   - Earned traffic: ${url.metrics.earned.sum}
+   - Owned traffic: ${url.metrics.owned.sum}
+
+Final Status: ${(hasEnoughViews && isHighInorganic && hasHighBounce) ? 'SELECTED' : 'REJECTED'}
+========================================
+`);
+
+      return hasEnoughViews && isHighInorganic && hasHighBounce;
     })
-    .filter((url) => {
-      const bounceRate = 1 - url.metrics.clicks.sum / url.metrics.views.sum;
-      const hasHighBounce = bounceRate < BOUNCE_RATE_THRESHOLD;
-      
-      console.log(`\nURL: ${url.value}`);
-      console.log(`Bounce Rate Check: ${hasHighBounce ? 'PASS' : 'FAIL'}`);
-      console.log(`- Current bounce rate: ${(bounceRate * 100).toFixed(2)}%`);
-      console.log(`- Required bounce rate: ${(BOUNCE_RATE_THRESHOLD * 100).toFixed(2)}%`);
-      console.log(`- Total views: ${url.metrics.views.sum}`);
-      console.log(`- Total clicks: ${url.metrics.clicks.sum}`);
-      return hasHighBounce;
-    })
-    .map((url) => {
-      console.log(`\n=== FINAL SELECTION ===`);
-      console.log(`URL: ${url.value}`);
-      console.log(`- Total views: ${url.metrics.views.sum}`);
-      console.log(`- Paid traffic: ${url.metrics.paid.sum}`);
-      console.log(`- Earned traffic: ${url.metrics.earned.sum}`);
-      console.log(`- Owned traffic: ${url.metrics.owned.sum}`);
-      console.log(`- Bounce rate: ${((1 - url.metrics.clicks.sum / url.metrics.views.sum) * 100).toFixed(2)}%`);
-      return {
-        url: url.value,
-        total: url.metrics.views.sum,
-        earned: url.metrics.earned.sum,
-        owned: url.metrics.owned.sum,
-        paid: url.metrics.paid.sum,
-        bounceRate: 1 - url.metrics.clicks.sum / url.metrics.views.sum,
-      };
-    })
+    .map((url) => ({
+      url: url.value,
+      total: url.metrics.views.sum,
+      earned: url.metrics.earned.sum,
+      owned: url.metrics.owned.sum,
+      paid: url.metrics.paid.sum,
+      bounceRate: 1 - url.metrics.clicks.sum / url.metrics.views.sum,
+    }))
     .map(convertToOpportunity);
 }
 

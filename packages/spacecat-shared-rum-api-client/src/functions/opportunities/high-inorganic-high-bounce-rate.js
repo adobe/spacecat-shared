@@ -77,14 +77,17 @@ function handler(bundles, opts = {}) {
       url.metrics.views.sum,
     ))
     .filter((url) => url.metrics.clicks.sum / url.metrics.views.sum < BOUNCE_RATE_THRESHOLD)
-    .map((url) => ({
-      url: url.value,
-      total: url.metrics.views.sum,
-      earned: url.metrics.earned.sum,
-      owned: url.metrics.owned.sum,
-      paid: url.metrics.paid.sum,
-      bounceRate: 1 - url.metrics.clicks.sum / url.metrics.views.sum,
-    }))
+    .map((url) => {
+      console.log('Final filtered URL:', url.value);
+      return {
+        url: url.value,
+        total: url.metrics.views.sum,
+        earned: url.metrics.earned.sum,
+        owned: url.metrics.owned.sum,
+        paid: url.metrics.paid.sum,
+        bounceRate: 1 - url.metrics.clicks.sum / url.metrics.views.sum,
+      };
+    })
     .map(convertToOpportunity);
 }
 

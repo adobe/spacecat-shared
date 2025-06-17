@@ -112,7 +112,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     },
   })
 
-  .addAttribute('previewIndexSk', { // sort key
+  .addAttribute('previewIndexSk', {
     type: 'string',
     hidden: true,
     readOnly: true,

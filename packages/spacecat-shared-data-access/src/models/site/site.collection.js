@@ -79,7 +79,6 @@ class SiteCollection extends BaseCollection {
 
     const { hostname } = new URL(previewURL);
 
-    //  Helix / AEM Edge (`*.aem.page` or `*.aem.live`, `*.hlx.page` or `*.hlx.live`)
     if (/\.(?:aem|hlx)\.(?:page|live)$/i.test(hostname)) {
       if (!isValidHelixPreviewUrl(previewURL)) {
         throw new DataAccessError(`Invalid Helix preview URL: ${previewURL}`, this);
@@ -92,7 +91,6 @@ class SiteCollection extends BaseCollection {
       return this.findByPreviewIndexPkAndPreviewIndexSk(pk, sk);
     }
 
-    // AEMaaCS (`author-p<programId>-e<envId>.adobeaemcloud.com`)
     const csMatch = hostname.match(/^author-p(\d+)-e(\d+)\./);
     if (csMatch) {
       const [, programId, envId] = csMatch;

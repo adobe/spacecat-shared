@@ -104,11 +104,14 @@ describe('ScrapeJob IT', async () => {
     checkScrapeJob(scrapeJob);
     expect(scrapeJob.getOptions()).to.eql(validJobData.options);
 
-    validJobData = { ...newJobData, options: { processingType: 'screenshot' } };
+    validJobData = {
+      ...newJobData,
+      processingType: ScrapeJobModel.ScrapeProcessingType.ACCESSIBILITY,
+    };
     scrapeJob = await ScrapeJob.create(validJobData);
 
     checkScrapeJob(scrapeJob);
-    expect(scrapeJob.getOptions()).to.eql({ processingType: 'screenshot' });
+    expect(scrapeJob.getProcessingType()).to.eql(ScrapeJobModel.ScrapeProcessingType.ACCESSIBILITY);
 
     // test to make sure error is thrown if options attribute is not an object
     validJobData = { ...newJobData, options: 'not-an-object' };

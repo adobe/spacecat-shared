@@ -17,7 +17,6 @@ const scrapeJobs = [
     scrapeJobId: '021cbb7d-0772-45c6-967c-86a0a598b7dd',
     baseURL: 'https://example-2.com/cars',
     processingType: ScrapeJob.ScrapeProcessingType.DEFAULT,
-    hashedApiKey: 'some-key-2',
     scrapeQueueId: 'Q-321',
     options: {
       [ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT]: true,
@@ -33,7 +32,6 @@ const scrapeJobs = [
     scrapeJobId: '72113a4d-ca45-4c35-bd2e-29bb0ec03435',
     baseURL: 'https://example-2.com/cars',
     processingType: ScrapeJob.ScrapeProcessingType.DEFAULT,
-    hashedApiKey: 'some-key-2',
     scrapeQueueId: 'Q-321',
     options: {
       [ScrapeJob.ScrapeOptions.ENABLE_JAVASCRIPT]: true,

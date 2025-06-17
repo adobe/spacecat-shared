@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -42,6 +42,7 @@ const scrapeUrls = [
     scrapeJobId: '021cbb7d-0772-45c6-967c-86a0a598b7dd',
     url: 'https://example-1.com/cars/5',
     status: ScrapeJob.ScrapeUrlStatus.FAILED,
+    reason: 'Failed to scrape the URL: Something went wrong. Oops!',
   },
   // 2
   {

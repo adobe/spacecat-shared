@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -28,44 +28,49 @@ export interface IResults {
 
 export interface ScrapeJob extends BaseModel {
   getBaseURL(): string,
+  getCustomHeaders(): IOptions,
   getDuration(): number,
   getEndedAt(): string,
   getFailedCount(): number,
-  getCustomHeaders(): string,
+  getOptions(): string,
+  getProcessingType(): string,
+  getRedirectCount(): number,
+  getResults(): IResults,
   getScrapeQueueId(): string,
   getScrapeUrls(): Promise<ScrapeUrl[]>,
   getScrapeUrlsByStatus(status: string): Promise<ScrapeUrl[]>,
-  getOptions(): string,
-  getRedirectCount(): number,
   getStartedAt(): string,
   getStatus(): string,
   getSuccessCount(): number,
   getUrlCount(): number,
-  getProcessingType(): string,
-  getCustomHeaders(): IOptions,
-  getResults(): IResults,
   setBaseURL(baseURL: string): void,
+  setCustomHeaders(customHeaders: IOptions): void,
   setDuration(duration: number): void,
   setEndedAt(endTime: string): void,
   setFailedCount(failedCount: number): void,
-  setScrapeQueueId(ScrapeQueueId: string): void,
   setOptions(options: string): void,
+  setProcessingType(processingType: string): void,
   setRedirectCount(redirectCount: number): void,
+  setResults(results: IResults): void,
+  setScrapeQueueId(ScrapeQueueId: string): void,
   setStatus(status: string): void,
   setSuccessCount(successCount: number): void,
   setUrlCount(urlCount: number): void,
-  setProcessingType(processingType: string): void,
-  setCustomHeaders(customHeaders: IOptions): void,
-  setResults(results: IResults): void,
 }
 
 export interface ScrapeJobCollection extends BaseCollection<ScrapeJob> {
+  allByBaseURLAndProcessingType(baseURL: string, processingType: string): Promise<ScrapeJob[]>;
+  allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+    baseURL: string,
+    processingType: string,
+    optEnableJavascript: string,
+    optHideConsentBanner: string): Promise<ScrapeJob[]>;
   allByDateRange(startDate: string, endDate: string): Promise<ScrapeJob[]>;
   allByStartedAt(startDate: string): Promise<ScrapeJob[]>;
   allByStatus(status: string): Promise<ScrapeJob[]>;
   allByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<ScrapeJob[]>;
-  allByBaseURLAndProcessingType(baseURL: string, processingType: string): Promise<ScrapeJob[]>;
-  allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
+  findByBaseURLAndProcessingType(baseURL: string, processingType: string): Promise<ScrapeJob[]>;
+  findByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
     baseURL: string,
     processingType: string,
     optEnableJavascript: string,
@@ -73,10 +78,4 @@ export interface ScrapeJobCollection extends BaseCollection<ScrapeJob> {
   findByStartedAt(startDate: string): Promise<ScrapeJob | null>;
   findByStatus(status: string): Promise<ScrapeJob | null>;
   findByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<ScrapeJob | null>;
-  findByBaseURLAndProcessingType(baseURL: string, processingType: string): Promise<ScrapeJob[]>;
-  findByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
-    baseURL: string,
-    processingType: string,
-    optEnableJavascript: string,
-    optHideConsentBanner: string): Promise<ScrapeJob[]>;
 }

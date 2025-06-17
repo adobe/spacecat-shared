@@ -53,7 +53,7 @@ function hasHighInorganicTraffic(url, paid, total) {
 }
 
 function handler(bundles, opts = {}) {
-  const { interval = 7 } = opts;
+  const interval = 7;
 
   const dataChunks = new DataChunks();
 

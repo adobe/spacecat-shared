@@ -100,6 +100,7 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
 const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
+  .withRecordExpiry(ScrapeJob.SCRAPE_JOB_EXPIRES_IN_DAYS)
   .addReference('has_many', 'ScrapeUrls')
   .addAttribute('baseURL', {
     type: 'string',

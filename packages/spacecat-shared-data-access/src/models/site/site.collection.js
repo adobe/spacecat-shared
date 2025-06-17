@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidHelixPreviewUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidHelixPreviewUrl, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import DataAccessError from '../../errors/data-access.error.js';
 import BaseCollection from '../base/base.collection.js';
@@ -73,21 +73,35 @@ class SiteCollection extends BaseCollection {
   }
 
   async findByPreviewURL(previewURL) {
-    if (!isValidHelixPreviewUrl(previewURL)) {
-      throw new DataAccessError(
-        `Invalid preview URL: ${previewURL}`,
-        this,
-      );
+    if (!isValidUrl(previewURL)) {
+      throw new DataAccessError(`Invalid preview URL: ${previewURL}`, this);
     }
-    const { hostname } = new URL(previewURL);
-    const [host] = hostname.split('.');
-    const [ref, site, owner] = host.split('--');
 
-    return this.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner(
-      ref,
-      site,
-      owner,
-    );
+    const { hostname } = new URL(previewURL);
+
+    //  Helix / AEM Edge (`*.aem.page` or `*.aem.live`, `*.hlx.page` or `*.hlx.live`)
+    if (/\.(?:aem|hlx)\.(?:page|live)$/i.test(hostname)) {
+      if (!isValidHelixPreviewUrl(previewURL)) {
+        throw new DataAccessError(`Invalid Helix preview URL: ${previewURL}`, this);
+      }
+      const [host] = hostname.split('.');
+      const [ref, site, owner] = host.split('--');
+
+      const pk = `${ref}#${owner}`;
+      const sk = site;
+      return this.findByPreviewIndexPkAndPreviewIndexSk(pk, sk);
+    }
+
+    // AEMaaCS (`author-p<programId>-e<envId>.adobeaemcloud.com`)
+    const csMatch = hostname.match(/^author-p(\d+)-e(\d+)\./);
+    if (csMatch) {
+      const [, programId, envId] = csMatch;
+      const pk = `p${programId}`;
+      const sk = `e${envId}`;
+      return this.findByPreviewIndexPkAndPreviewIndexSk(pk, sk);
+    }
+
+    throw new DataAccessError(`Unsupported preview URL: ${previewURL}`, this);
   }
 }
 

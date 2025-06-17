@@ -128,43 +128,65 @@ describe('SiteCollection', () => {
     };
 
     beforeEach(() => {
-      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner = stub();
+      instance.findByPreviewIndexPkAndPreviewIndexSk = stub();
     });
 
-    it('returns site by preview URL', async () => {
-      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
+    it('returns site by helix preview URL', async () => {
+      instance.findByPreviewIndexPkAndPreviewIndexSk.resolves(mockSite);
 
       const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
 
       expect(result).to.deep.equal(mockSite);
-      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
-        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
+      expect(instance.findByPreviewIndexPkAndPreviewIndexSk)
+        .to.have.been.calledOnceWithExactly('ref#owner', 'site');
+    });
+
+    it('returns site by AEMaaCS preview URL', async () => {
+      instance.findByPreviewIndexPkAndPreviewIndexSk.resolves(mockSite);
+
+      const result = await instance.findByPreviewURL('https://author-p123456-e123456.adobeaemcloud.com/page');
+
+      expect(result).to.deep.equal(mockSite);
+      expect(instance.findByPreviewIndexPkAndPreviewIndexSk)
+        .to.have.been.calledOnceWithExactly('p123456', 'e123456');
     });
 
     it('returns null when no site is found', async () => {
-      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(null);
+      instance.findByPreviewIndexPkAndPreviewIndexSk.resolves(null);
 
       const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
 
       expect(result).to.be.null;
-      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
-        .to.have.been.calledOnceWithExactly('ref', 'site', 'owner');
+      expect(instance.findByPreviewIndexPkAndPreviewIndexSk)
+        .to.have.been.calledOnceWithExactly('ref#owner', 'site');
     });
 
-    it('handles complex preview URLs with paths', async () => {
-      instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner.resolves(mockSite);
+    it('handles complex helix preview URLs with paths', async () => {
+      instance.findByPreviewIndexPkAndPreviewIndexSk.resolves(mockSite);
 
       const result = await instance.findByPreviewURL('https://feature-branch--my-site--company.hlx.page/some/path?query=param');
 
       expect(result).to.deep.equal(mockSite);
-      expect(instance.findByHlxConfigRsoRefAndHlxConfigRsoSiteAndHlxConfigRsoOwner)
-        .to.have.been.calledOnceWithExactly('feature-branch', 'my-site', 'company');
+      expect(instance.findByPreviewIndexPkAndPreviewIndexSk)
+        .to.have.been.calledOnceWithExactly('feature-branch#company', 'my-site');
+    });
+
+    it('throws DataAccessError for invalid helix preview URLs', async () => {
+      const invalidUrl = 'https://invalid-hlx-url.aem.page';
+      await expect(instance.findByPreviewURL(invalidUrl))
+        .to.be.rejectedWith(`Invalid Helix preview URL: ${invalidUrl}`);
     });
 
     it('throws DataAccessError for invalid preview URLs', async () => {
-      const invalidUrl = 'https://invalid-url.com';
+      const invalidUrl = 'invalid-url.com';
       await expect(instance.findByPreviewURL(invalidUrl))
         .to.be.rejectedWith(`Invalid preview URL: ${invalidUrl}`);
+    });
+
+    it('throws DataAccessError for unsupported preview URLs', async () => {
+      const invalidUrl = 'https://unsupported-url.com';
+      await expect(instance.findByPreviewURL(invalidUrl))
+        .to.be.rejectedWith(`Unsupported preview URL: ${invalidUrl}`);
     });
   });
 });

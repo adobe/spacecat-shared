@@ -83,27 +83,6 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     default: {},
     validate: (value) => isObject(value),
   })
-  .addAttribute('hlxConfigRsoRef', {
-    type: 'string',
-    hidden: true,
-    readOnly: true,
-    watch: ['hlxConfig'],
-    set: (_, { hlxConfig }) => hlxConfig?.rso?.ref || undefined,
-  })
-  .addAttribute('hlxConfigRsoSite', {
-    type: 'string',
-    hidden: true,
-    readOnly: true,
-    watch: ['hlxConfig'],
-    set: (_, { hlxConfig }) => hlxConfig?.rso?.site || undefined,
-  })
-  .addAttribute('hlxConfigRsoOwner', {
-    type: 'string',
-    hidden: true,
-    readOnly: true,
-    watch: ['hlxConfig'],
-    set: (_, { hlxConfig }) => hlxConfig?.rso?.owner || undefined,
-  })
   .addAttribute('isLive', {
     type: 'boolean',
     required: true,
@@ -115,14 +94,47 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     set: () => new Date().toISOString(),
     validate: (value) => !value || isIsoDate(value),
   })
+  .addAttribute('previewIndexPk', {
+    type: 'string',
+    hidden: true,
+    readOnly: true,
+    watch: ['deliveryType', 'hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => {
+      if (attrs.deliveryType === Site.DELIVERY_TYPES.AEM_EDGE) {
+        const ref = attrs.hlxConfig?.rso?.ref;
+        const owner = attrs.hlxConfig?.rso?.owner;
+        return ref && owner ? `${ref}#${owner}` : undefined;
+      }
+      if (attrs.deliveryType === Site.DELIVERY_TYPES.AEM_CS) {
+        return attrs.deliveryConfig?.programId ? `p${attrs.deliveryConfig.programId}` : undefined;
+      }
+      return undefined;
+    },
+  })
+
+  .addAttribute('previewIndexSk', { // sort key
+    type: 'string',
+    hidden: true,
+    readOnly: true,
+    watch: ['deliveryType', 'hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => {
+      if (attrs.deliveryType === Site.DELIVERY_TYPES.AEM_EDGE) {
+        return attrs.hlxConfig?.rso?.site || undefined;
+      }
+      if (attrs.deliveryType === Site.DELIVERY_TYPES.AEM_CS) {
+        return attrs.deliveryConfig?.environmentId ? `e${attrs.deliveryConfig.environmentId}` : undefined;
+      }
+      return undefined;
+    },
+  })
   .addAllIndex(['baseURL'])
   .addIndex(
     { composite: ['deliveryType'] },
     { composite: ['updatedAt'] },
   )
   .addIndex(
-    { composite: ['hlxConfigRsoRef', 'hlxConfigRsoSite', 'hlxConfigRsoOwner'] },
-    { composite: ['updatedAt'] },
+    { composite: ['previewIndexPk'] },
+    { composite: ['previewIndexSk'] },
   );
 
 export default schema.build();

@@ -264,7 +264,7 @@ function isValidIMSOrgId(imsOrgId) {
 /**
  * Validates whether the given string is a valid Helix preview URL.
  * Preview URLs have the format: https://ref--site--owner.domain
- * where domain is typically .hlx.page, .aem.page, .hlx.live, etc.
+ * where domain is typically .hlx.page, .aem.page
  *
  * @param {string} urlString - The string to validate.
  * @returns {boolean} True if the given string is a valid Helix preview URL.
@@ -296,9 +296,7 @@ function isValidHelixPreviewUrl(urlString) {
     const domain = parts.slice(1).join('.');
     const validDomains = [
       'hlx.page',
-      'hlx.live',
       'aem.page',
-      'aem.live',
     ];
 
     return validDomains.includes(domain);

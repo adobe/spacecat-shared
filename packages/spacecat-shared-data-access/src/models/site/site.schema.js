@@ -94,38 +94,19 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     set: () => new Date().toISOString(),
     validate: (value) => !value || isIsoDate(value),
   })
-  .addAttribute('previewIndexPk', {
+  .addAttribute('externalOwnerId', {
     type: 'string',
     hidden: true,
     readOnly: true,
     watch: ['deliveryType', 'hlxConfig', 'deliveryConfig'],
-    set: (_, attrs) => {
-      if (attrs.deliveryType === Site.DELIVERY_TYPES.AEM_EDGE) {
-        const ref = attrs.hlxConfig?.rso?.ref;
-        const owner = attrs.hlxConfig?.rso?.owner;
-        return ref && owner ? `${ref}#${owner}` : undefined;
-      }
-      if (attrs.deliveryType === Site.DELIVERY_TYPES.AEM_CS) {
-        return attrs.deliveryConfig?.programId ? `p${attrs.deliveryConfig.programId}` : undefined;
-      }
-      return undefined;
-    },
+    set: (_, attrs) => Site.computeExternalIds(attrs).externalOwnerId,
   })
-
-  .addAttribute('previewIndexSk', {
+  .addAttribute('externalSiteId', {
     type: 'string',
     hidden: true,
     readOnly: true,
     watch: ['deliveryType', 'hlxConfig', 'deliveryConfig'],
-    set: (_, attrs) => {
-      if (attrs.deliveryType === Site.DELIVERY_TYPES.AEM_EDGE) {
-        return attrs.hlxConfig?.rso?.site || undefined;
-      }
-      if (attrs.deliveryType === Site.DELIVERY_TYPES.AEM_CS) {
-        return attrs.deliveryConfig?.environmentId ? `e${attrs.deliveryConfig.environmentId}` : undefined;
-      }
-      return undefined;
-    },
+    set: (_, attrs) => Site.computeExternalIds(attrs).externalSiteId,
   })
   .addAllIndex(['baseURL'])
   .addIndex(
@@ -133,8 +114,8 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     { composite: ['updatedAt'] },
   )
   .addIndex(
-    { composite: ['previewIndexPk'] },
-    { composite: ['previewIndexSk'] },
+    { composite: ['externalOwnerId'] },
+    { composite: ['externalSiteId'] },
   );
 
 export default schema.build();

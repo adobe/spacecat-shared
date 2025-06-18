@@ -79,27 +79,32 @@ class SiteCollection extends BaseCollection {
 
     const { hostname } = new URL(previewURL);
 
-    if (/\.(?:aem|hlx)\.(?:page|live)$/i.test(hostname)) {
-      if (!isValidHelixPreviewUrl(previewURL)) {
-        throw new DataAccessError(`Invalid Helix preview URL: ${previewURL}`, this);
+    const previewType = Site.getPreviewType(hostname);
+
+    switch (previewType) {
+      case Site.DELIVERY_TYPES.AEM_EDGE: {
+        if (!isValidHelixPreviewUrl(previewURL)) {
+          throw new DataAccessError(`Invalid Helix preview URL: ${previewURL}`, this);
+        }
+        const [host] = hostname.split('.');
+        const [ref, site, owner] = host.split('--');
+        const externalOwnerId = `${ref}#${owner}`;
+        return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, site);
       }
-      const [host] = hostname.split('.');
-      const [ref, site, owner] = host.split('--');
-
-      const pk = `${ref}#${owner}`;
-      const sk = site;
-      return this.findByPreviewIndexPkAndPreviewIndexSk(pk, sk);
+      case Site.DELIVERY_TYPES.AEM_CS: {
+        const csMatch = hostname.match(Site.DELIVERY_PATTERNS[Site.DELIVERY_TYPES.AEM_CS]);
+        if (csMatch) {
+          const [, programId, envId] = csMatch;
+          const externalOwnerId = `p${programId}`;
+          const externalSiteId = `e${envId}`;
+          return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, externalSiteId);
+        }
+        break;
+      }
+      default:
+        throw new DataAccessError(`Unsupported preview URL: ${previewURL}`, this);
     }
-
-    const csMatch = hostname.match(/^author-p(\d+)-e(\d+)\./);
-    if (csMatch) {
-      const [, programId, envId] = csMatch;
-      const pk = `p${programId}`;
-      const sk = `e${envId}`;
-      return this.findByPreviewIndexPkAndPreviewIndexSk(pk, sk);
-    }
-
-    throw new DataAccessError(`Unsupported preview URL: ${previewURL}`, this);
+    return null;
   }
 }
 

@@ -128,46 +128,46 @@ describe('SiteCollection', () => {
     };
 
     beforeEach(() => {
-      instance.findByPreviewIndexPkAndPreviewIndexSk = stub();
+      instance.findByExternalOwnerIdAndExternalSiteId = stub();
     });
 
     it('returns site by helix preview URL', async () => {
-      instance.findByPreviewIndexPkAndPreviewIndexSk.resolves(mockSite);
+      instance.findByExternalOwnerIdAndExternalSiteId.resolves(mockSite);
 
       const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
 
       expect(result).to.deep.equal(mockSite);
-      expect(instance.findByPreviewIndexPkAndPreviewIndexSk)
+      expect(instance.findByExternalOwnerIdAndExternalSiteId)
         .to.have.been.calledOnceWithExactly('ref#owner', 'site');
     });
 
     it('returns site by AEMaaCS preview URL', async () => {
-      instance.findByPreviewIndexPkAndPreviewIndexSk.resolves(mockSite);
+      instance.findByExternalOwnerIdAndExternalSiteId.resolves(mockSite);
 
       const result = await instance.findByPreviewURL('https://author-p123456-e123456.adobeaemcloud.com/page');
 
       expect(result).to.deep.equal(mockSite);
-      expect(instance.findByPreviewIndexPkAndPreviewIndexSk)
+      expect(instance.findByExternalOwnerIdAndExternalSiteId)
         .to.have.been.calledOnceWithExactly('p123456', 'e123456');
     });
 
     it('returns null when no site is found', async () => {
-      instance.findByPreviewIndexPkAndPreviewIndexSk.resolves(null);
+      instance.findByExternalOwnerIdAndExternalSiteId.resolves(null);
 
       const result = await instance.findByPreviewURL('https://ref--site--owner.aem.page');
 
       expect(result).to.be.null;
-      expect(instance.findByPreviewIndexPkAndPreviewIndexSk)
+      expect(instance.findByExternalOwnerIdAndExternalSiteId)
         .to.have.been.calledOnceWithExactly('ref#owner', 'site');
     });
 
     it('handles complex helix preview URLs with paths', async () => {
-      instance.findByPreviewIndexPkAndPreviewIndexSk.resolves(mockSite);
+      instance.findByExternalOwnerIdAndExternalSiteId.resolves(mockSite);
 
       const result = await instance.findByPreviewURL('https://feature-branch--my-site--company.hlx.page/some/path?query=param');
 
       expect(result).to.deep.equal(mockSite);
-      expect(instance.findByPreviewIndexPkAndPreviewIndexSk)
+      expect(instance.findByExternalOwnerIdAndExternalSiteId)
         .to.have.been.calledOnceWithExactly('feature-branch#company', 'my-site');
     });
 

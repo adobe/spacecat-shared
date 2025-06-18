@@ -196,8 +196,19 @@ async function fetchBundles(opts, log) {
       totalTransferSize += parseInt(response.headers.get('content-length'), 10);
       return response;
     }));
-    const bundles = await Promise.all(responses.map((response) => response.json()));
+    const bundlesRaw = await Promise.all(
+      // eslint-disable-next-line consistent-return
+      responses.map(async (response, index) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          log.warn(`Skipping response at index ${index}: status ${response.status}`);
+          return null;
+        }
+      }),
+    );
 
+    const bundles = bundlesRaw.filter(Boolean);
     bundles.forEach((b) => {
       b.rumBundles
         .filter((bundle) => !filterBotTraffic || !isBotTraffic(bundle))

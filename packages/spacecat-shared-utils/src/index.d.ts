@@ -247,3 +247,19 @@ export function tracingFetch(url: string | Request, options?: RequestOptions): P
 export const SPACECAT_USER_AGENT: string;
 
 export function retrievePageAuthentication(site: object, context: object): Promise<string>;
+
+/**
+ * Computes CPC and related metrics from organic traffic and RUM data.
+ * @param params - Object containing current, total, and organicTraffic arrays.
+ * @returns An object with pageViewsChange, ctrChange, projectedTrafficValue, and cpc.
+ */
+export function computeCPCMetrics(params: {
+  current: { totalPageViews: number; totalClicks: number; totalCTR: number };
+  total: { totalPageViews: number; totalClicks: number; totalCTR: number };
+  organicTraffic: Array<{ cost: number; value: number }>;
+}): {
+  pageViewsChange: number;
+  ctrChange: number;
+  projectedTrafficValue: number;
+  cpc: number;
+};

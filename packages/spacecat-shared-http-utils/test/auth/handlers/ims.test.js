@@ -70,11 +70,12 @@ describe('AdobeImsHandler', () => {
           },
         }],
       }),
-      getImsUserOrganizations: sinon.stub().resolves([{
-        orgRef: { ident: 'org1' },
-        orgName: 'Test Org',
-      }]),
-      isUserASOAdmin: sinon.stub().resolves(false),
+      getImsUserOrganizations: sinon.stub().resolves([
+        {
+          orgRef: { ident: '8C6043F15F43B6390A49401A' },
+          groups: [{ ident: 635541219 }],
+        },
+      ]),
     };
 
     handler = new AdobeImsHandler(logStub);
@@ -247,8 +248,6 @@ describe('AdobeImsHandler', () => {
         orgRef: { ident: 'org1' },
         orgName: 'Test Org',
       }]);
-      mockImsClient.isUserASOAdmin.resolves(false);
-
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.instanceof(AuthInfo);
@@ -261,7 +260,6 @@ describe('AdobeImsHandler', () => {
       });
       expect(mockImsClient.getImsUserProfile.calledWith(token)).to.be.true;
       expect(mockImsClient.getImsUserOrganizations.calledWith(token)).to.be.true;
-      expect(mockImsClient.isUserASOAdmin.calledWith(token)).to.be.true;
     });
 
     it('handles empty organizations array', async () => {
@@ -278,7 +276,6 @@ describe('AdobeImsHandler', () => {
         email: 'test-user@customer.com',
       });
       mockImsClient.getImsUserOrganizations.resolves([]);
-      mockImsClient.isUserASOAdmin.resolves(false);
 
       const result = await handler.checkAuth({}, context);
 
@@ -301,13 +298,10 @@ describe('AdobeImsHandler', () => {
         email: 'test-user@customer.com',
       });
       mockImsClient.getImsUserOrganizations.resolves(undefined);
-      mockImsClient.isUserASOAdmin.resolves(false);
 
       const result = await handler.checkAuth({}, context);
 
-      expect(result).to.be.instanceof(AuthInfo);
-      expect(result.authenticated).to.be.true;
-      expect(result.scopes).to.deep.equal([]);
+      expect(result).to.be.null;
     });
 
     it('creates tenants with hardcoded subServices', async () => {
@@ -327,7 +321,6 @@ describe('AdobeImsHandler', () => {
         orgRef: { ident: 'org1' },
         orgName: 'Test Org',
       }]);
-      mockImsClient.isUserASOAdmin.resolves(false);
 
       const result = await handler.checkAuth({}, context);
 
@@ -353,7 +346,6 @@ describe('AdobeImsHandler', () => {
       mockImsClient.getImsUserProfile.resolves({
         email: 'test-user@adobe.com',
       });
-      mockImsClient.isUserASOAdmin.resolves(true);
 
       const result = await handler.checkAuth({}, context);
 
@@ -375,7 +367,6 @@ describe('AdobeImsHandler', () => {
       mockImsClient.getImsUserProfile.resolves({
         email: 'TEST-USER@ADOBE.COM',
       });
-      mockImsClient.isUserASOAdmin.resolves(true);
 
       const result = await handler.checkAuth({}, context);
 

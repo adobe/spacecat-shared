@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.14.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.1...@adobe/spacecat-shared-http-utils-v1.14.2) (2025-06-16)
+
+
+### Bug Fixes
+
+* case insensitive check ([#804](https://github.com/adobe/spacecat-shared/issues/804)) ([264a524](https://github.com/adobe/spacecat-shared/commit/264a5245301660e842a40187afbfe1a7c1af31d2))
+
 # [@adobe/spacecat-shared-http-utils-v1.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.0...@adobe/spacecat-shared-http-utils-v1.14.1) (2025-06-06)
 
 

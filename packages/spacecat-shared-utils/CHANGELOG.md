@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.39.1...@adobe/spacecat-shared-utils-v1.40.0) (2025-06-18)
+
+
+### Features
+
+* expose getStaticContent function ([#809](https://github.com/adobe/spacecat-shared/issues/809)) ([33ad2ed](https://github.com/adobe/spacecat-shared/commit/33ad2ed2a01c9df4700932befd839c77c59cc504))
+
 # [@adobe/spacecat-shared-utils-v1.39.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.39.0...@adobe/spacecat-shared-utils-v1.39.1) (2025-06-14)
 
 

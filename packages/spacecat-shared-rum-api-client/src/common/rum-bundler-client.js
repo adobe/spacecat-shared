@@ -197,7 +197,6 @@ async function fetchBundles(opts, log) {
       return response;
     }));
     const bundlesRaw = await Promise.all(
-      // eslint-disable-next-line consistent-return
       responses.map(async (response, index) => {
         if (response.ok) {
           return response.json();

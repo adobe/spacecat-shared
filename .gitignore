@@ -141,3 +141,4 @@ junit
 
 # NVM (Node Version Manager)
 .nvmrc
+.vscode

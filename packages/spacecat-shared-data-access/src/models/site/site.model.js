@@ -13,6 +13,53 @@
 import { composeAuditURL, hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
 
+const HLX_HOST = /\.(?:aem|hlx)\.(?:page|live)$/i;
+export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)\./;
+
+/**
+ * Computes external IDs based on delivery type and configuration
+ */
+export const computeExternalIds = (attrs, deliveryTypes) => {
+  const { deliveryType, hlxConfig, deliveryConfig } = attrs;
+
+  switch (deliveryType) {
+    case deliveryTypes.AEM_EDGE: {
+      const rso = hlxConfig?.rso ?? {};
+      const { ref, owner, site } = rso;
+
+      return {
+        externalOwnerId: ref && owner ? `${ref}#${owner}` : undefined,
+        externalSiteId: site || undefined,
+      };
+    }
+
+    case deliveryTypes.AEM_CS: {
+      const { programId, environmentId } = deliveryConfig ?? {};
+
+      return {
+        externalOwnerId: programId ? `p${programId}` : undefined,
+        externalSiteId: environmentId ? `e${environmentId}` : undefined,
+      };
+    }
+
+    default:
+      return { externalOwnerId: undefined, externalSiteId: undefined };
+  }
+};
+
+/**
+ * Determines the preview type based on hostname
+ */
+export const getPreviewType = (hostname, deliveryTypes) => {
+  if (HLX_HOST.test(hostname)) {
+    return deliveryTypes.AEM_EDGE;
+  }
+  if (AEM_CS_HOST.test(hostname)) {
+    return deliveryTypes.AEM_CS;
+  }
+  return null;
+};
+
 /**
  * A class representing a Site entity. Provides methods to access and manipulate Site-specific data.
  * @class Site
@@ -27,58 +74,6 @@ class Site extends BaseModel {
   };
 
   static DEFAULT_DELIVERY_TYPE = Site.DELIVERY_TYPES.AEM_EDGE;
-
-  /**
-   * Delivery patterns for different site types
-   */
-  static DELIVERY_PATTERNS = {
-    [Site.DELIVERY_TYPES.AEM_EDGE]: /\.(?:aem|hlx)\.(?:page)$/i,
-    [Site.DELIVERY_TYPES.AEM_CS]: /^author-p(\d+)-e(\d+)\./,
-  };
-
-  /**
-   * Computes external IDs based on delivery type and configuration
-   */
-  static computeExternalIds(attrs) {
-    const { deliveryType, hlxConfig, deliveryConfig } = attrs;
-
-    switch (deliveryType) {
-      case Site.DELIVERY_TYPES.AEM_EDGE: {
-        const rso = hlxConfig?.rso ?? {};
-        const { ref, owner, site } = rso;
-
-        return {
-          externalOwnerId: ref && owner ? `${ref}#${owner}` : undefined,
-          externalSiteId: site || undefined,
-        };
-      }
-
-      case Site.DELIVERY_TYPES.AEM_CS: {
-        const { programId, environmentId } = deliveryConfig ?? {};
-
-        return {
-          externalOwnerId: programId ? `p${programId}` : undefined,
-          externalSiteId: environmentId ? `e${environmentId}` : undefined,
-        };
-      }
-
-      default:
-        return { externalOwnerId: undefined, externalSiteId: undefined };
-    }
-  }
-
-  /**
-   * Determines the preview type based on hostname
-   */
-  static getPreviewType(hostname) {
-    if (Site.DELIVERY_PATTERNS[Site.DELIVERY_TYPES.AEM_EDGE].test(hostname)) {
-      return Site.DELIVERY_TYPES.AEM_EDGE;
-    }
-    if (Site.DELIVERY_PATTERNS[Site.DELIVERY_TYPES.AEM_CS].test(hostname)) {
-      return Site.DELIVERY_TYPES.AEM_CS;
-    }
-    return null;
-  }
 
   async toggleLive() {
     const newIsLive = !this.getIsLive();

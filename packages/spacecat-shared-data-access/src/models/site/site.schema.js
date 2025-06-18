@@ -22,7 +22,7 @@ import {
 import { Config, DEFAULT_CONFIG, validateConfiguration } from './config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 
-import Site from './site.model.js';
+import Site, { computeExternalIds } from './site.model.js';
 import SiteCollection from './site.collection.js';
 
 /*
@@ -99,14 +99,14 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     hidden: true,
     readOnly: true,
     watch: ['deliveryType', 'hlxConfig', 'deliveryConfig'],
-    set: (_, attrs) => Site.computeExternalIds(attrs).externalOwnerId,
+    set: (_, attrs) => computeExternalIds(attrs, Site.DELIVERY_TYPES).externalOwnerId,
   })
   .addAttribute('externalSiteId', {
     type: 'string',
     hidden: true,
     readOnly: true,
     watch: ['deliveryType', 'hlxConfig', 'deliveryConfig'],
-    set: (_, attrs) => Site.computeExternalIds(attrs).externalSiteId,
+    set: (_, attrs) => computeExternalIds(attrs, Site.DELIVERY_TYPES).externalSiteId,
   })
   .addAllIndex(['baseURL'])
   .addIndex(

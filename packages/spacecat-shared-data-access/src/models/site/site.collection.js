@@ -15,7 +15,7 @@ import { hasText, isValidHelixPreviewUrl, isValidUrl } from '@adobe/spacecat-sha
 import DataAccessError from '../../errors/data-access.error.js';
 import BaseCollection from '../base/base.collection.js';
 
-import Site from './site.model.js';
+import Site, { AEM_CS_HOST, getPreviewType } from './site.model.js';
 
 /**
  * SiteCollection - A collection class responsible for managing Site entities.
@@ -78,8 +78,7 @@ class SiteCollection extends BaseCollection {
     }
 
     const { hostname } = new URL(previewURL);
-
-    const previewType = Site.getPreviewType(hostname);
+    const previewType = getPreviewType(hostname, Site.DELIVERY_TYPES);
 
     switch (previewType) {
       case Site.DELIVERY_TYPES.AEM_EDGE: {
@@ -92,19 +91,14 @@ class SiteCollection extends BaseCollection {
         return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, site);
       }
       case Site.DELIVERY_TYPES.AEM_CS: {
-        const csMatch = hostname.match(Site.DELIVERY_PATTERNS[Site.DELIVERY_TYPES.AEM_CS]);
-        if (csMatch) {
-          const [, programId, envId] = csMatch;
-          const externalOwnerId = `p${programId}`;
-          const externalSiteId = `e${envId}`;
-          return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, externalSiteId);
-        }
-        break;
+        const [, programId, envId] = AEM_CS_HOST.exec(hostname);
+        const externalOwnerId = `p${programId}`;
+        const externalSiteId = `e${envId}`;
+        return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, externalSiteId);
       }
       default:
         throw new DataAccessError(`Unsupported preview URL: ${previewURL}`, this);
     }
-    return null;
   }
 }
 

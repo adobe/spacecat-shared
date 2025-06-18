@@ -76,3 +76,10 @@ export {
 } from './formcalc.js';
 
 export { retrievePageAuthentication } from './auth.js';
+
+export {
+  getScrapedContentPath,
+  storeScrapedContent,
+  scrapeUrl,
+  scrapeAndStoreUrls,
+} from './scraper-utils.js';

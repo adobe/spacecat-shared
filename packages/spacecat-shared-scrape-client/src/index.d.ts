@@ -26,4 +26,40 @@ export default class ScrapeClient {
    * @param log - Optional logger instance for logging messages.
    */
   constructor(config: object, log?: Console);
+
+  /**
+   * Create and start a new scrape job.
+   * @param {object} data - json data for scrape job
+   * @returns {Promise<Response>} new job object
+   */
+  async createScrapeJob(data: object): Promise<object>;
+
+  /**
+   * Get all scrape jobs between startDate and endDate
+   * @param {string} startDate - The start date of the range.
+   * @param {string} endDate - The end date of the range.
+   * @returns {Promise<Response>} JSON representation of the scrape jobs.
+   */
+  async getScrapeJobsByDateRange(startDate: string, endDate: string): Promise<object[]>;
+
+  /**
+   * Get the status of an scrape job.
+   * @param {string} jobId - The ID of the job to fetch.
+   * @returns {Promise<Response>} JSON representation of the scrape job.
+   */
+  async getScrapeJobStatus(jobId: string): Promise<object>;
+
+  /**
+   * Get the result of a scrape job
+   * @param {string} jobId - The ID of the job to fetch.
+   * @returns {Promise<Response>} all results for all urls scrape jobs.
+   */
+  async getScrapeJobUrlResults(jobId: string): Promise<object[]>;
+
+  /**
+   * Get all scrape jobs by baseURL
+   * @param {string} baseURL - The baseURL of the jobs to fetch.
+   * @returns {Promise<Response>} JSON representation of the scrape jobs
+   */
+  async getScrapeJobsByBaseURL(baseURL: string): Promise<object[]>;
 }

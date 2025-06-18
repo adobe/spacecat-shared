@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.24.1...@adobe/spacecat-shared-data-access-v2.25.0) (2025-06-18)
+
+
+### Features
+
+* introduce ScrapeJob and ScrapeUrl entities ([#803](https://github.com/adobe/spacecat-shared/issues/803)) ([d295f65](https://github.com/adobe/spacecat-shared/commit/d295f65a89a986f08d5d3b28fe60b45d4c65ee36))
+
 # [@adobe/spacecat-shared-data-access-v2.24.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.24.0...@adobe/spacecat-shared-data-access-v2.24.1) (2025-06-14)
 
 

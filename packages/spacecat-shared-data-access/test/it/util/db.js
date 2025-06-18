@@ -16,6 +16,7 @@ import { DynamoDB } from '@aws-sdk/client-dynamodb';
 import { createDataAccess } from '../../../src/service/index.js';
 
 export const TEST_DA_CONFIG = {
+  indexNameAllScrapeJobsByDateRange: 'spacecat-services-all-scrape-jobs-by-date-range',
   indexNameAllImportJobsByDateRange: 'spacecat-services-all-import-jobs-by-date-range',
   indexNameAllImportJobsByStatus: 'spacecat-services-all-import-jobs-by-status',
   indexNameAllKeyEventsBySiteId: 'spacecat-services-key-events-by-site-id',
@@ -30,6 +31,7 @@ export const TEST_DA_CONFIG = {
   indexNameImportUrlsByJobIdAndStatus: 'spacecat-services-all-import-urls-by-job-id-and-status',
   pkAllConfigurations: 'ALL_CONFIGURATIONS',
   pkAllImportJobs: 'ALL_IMPORT_JOBS',
+  pkAllScrapeJobs: 'ALL_SCRAPE_JOBS',
   pkAllLatestAudits: 'ALL_LATEST_AUDITS',
   pkAllOrganizations: 'ALL_ORGANIZATIONS',
   pkAllSites: 'ALL_SITES',
@@ -40,6 +42,8 @@ export const TEST_DA_CONFIG = {
   tableNameExperiments: 'spacecat-services-experiments',
   tableNameImportJobs: 'spacecat-services-import-jobs',
   tableNameImportUrls: 'spacecat-services-import-urls',
+  tableNameScrapeJobs: 'spacecat-services-scrape-jobs',
+  tableNameScrapeUrls: 'spacecat-services-scrape-urls',
   tableNameKeyEvents: 'spacecat-services-key-events',
   tableNameLatestAudits: 'spacecat-services-latest-audits',
   tableNameOrganizations: 'spacecat-services-organizations',

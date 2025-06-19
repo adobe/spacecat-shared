@@ -144,7 +144,7 @@ describe('SiteCollection', () => {
     it('returns site by AEMaaCS preview URL', async () => {
       instance.findByExternalOwnerIdAndExternalSiteId.resolves(mockSite);
 
-      const result = await instance.findByPreviewURL('https://author-p123456-e123456.adobeaemcloud.com/page');
+      const result = await instance.findByPreviewURL('https://author-p123456-e123456-cmstg.adobeaemcloud.com/page');
 
       expect(result).to.deep.equal(mockSite);
       expect(instance.findByExternalOwnerIdAndExternalSiteId)

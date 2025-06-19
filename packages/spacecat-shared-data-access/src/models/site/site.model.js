@@ -14,37 +14,34 @@ import { composeAuditURL, hasText, isValidUrl } from '@adobe/spacecat-shared-uti
 import BaseModel from '../base/base.model.js';
 
 const HLX_HOST = /\.(?:aem|hlx)\.(?:page|live)$/i;
-export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)\./;
+export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)(?:-[^.]+)*\./i;
 
 /**
  * Computes external IDs based on delivery type and configuration
  */
-export const computeExternalIds = (attrs, deliveryTypes) => {
-  const { deliveryType, hlxConfig, deliveryConfig } = attrs;
+export const computeExternalIds = (attrs) => {
+  const { hlxConfig, deliveryConfig } = attrs;
 
-  switch (deliveryType) {
-    case deliveryTypes.AEM_EDGE: {
-      const rso = hlxConfig?.rso ?? {};
-      const { ref, owner, site } = rso;
+  if (hlxConfig) {
+    const rso = hlxConfig.rso ?? {};
+    const { ref, owner, site } = rso;
 
-      return {
-        externalOwnerId: ref && owner ? `${ref}#${owner}` : undefined,
-        externalSiteId: site || undefined,
-      };
-    }
-
-    case deliveryTypes.AEM_CS: {
-      const { programId, environmentId } = deliveryConfig ?? {};
-
-      return {
-        externalOwnerId: programId ? `p${programId}` : undefined,
-        externalSiteId: environmentId ? `e${environmentId}` : undefined,
-      };
-    }
-
-    default:
-      return { externalOwnerId: undefined, externalSiteId: undefined };
+    return {
+      externalOwnerId: ref && owner ? `${ref}#${owner}` : undefined,
+      externalSiteId: site || undefined,
+    };
   }
+
+  if (deliveryConfig) {
+    const { programId, environmentId } = deliveryConfig;
+
+    return {
+      externalOwnerId: programId ? `p${programId}` : undefined,
+      externalSiteId: environmentId ? `e${environmentId}` : undefined,
+    };
+  }
+
+  return { externalOwnerId: undefined, externalSiteId: undefined };
 };
 
 /**

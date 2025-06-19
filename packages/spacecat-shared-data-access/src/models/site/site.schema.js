@@ -98,15 +98,15 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     type: 'string',
     hidden: true,
     readOnly: true,
-    watch: ['deliveryType', 'hlxConfig', 'deliveryConfig'],
-    set: (_, attrs) => computeExternalIds(attrs, Site.DELIVERY_TYPES).externalOwnerId,
+    watch: ['hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs).externalOwnerId,
   })
   .addAttribute('externalSiteId', {
     type: 'string',
     hidden: true,
     readOnly: true,
-    watch: ['deliveryType', 'hlxConfig', 'deliveryConfig'],
-    set: (_, attrs) => computeExternalIds(attrs, Site.DELIVERY_TYPES).externalSiteId,
+    watch: ['hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs).externalSiteId,
   })
   .addAllIndex(['baseURL'])
   .addIndex(

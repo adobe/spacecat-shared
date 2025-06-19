@@ -145,30 +145,6 @@ describe('SiteModel', () => {
         externalSiteId: undefined,
       });
     });
-
-    it('computes external IDs for unknown delivery type', () => {
-      const attrs = {
-        deliveryType: 'unknown_type',
-        hlxConfig: {
-          rso: {
-            ref: 'main',
-            owner: 'adobe',
-            site: 'example-site',
-          },
-        },
-        deliveryConfig: {
-          programId: '12345',
-          environmentId: '67890',
-        },
-      };
-
-      const result = computeExternalIds(attrs, Site.DELIVERY_TYPES);
-
-      expect(result).to.deep.equal({
-        externalOwnerId: undefined,
-        externalSiteId: undefined,
-      });
-    });
   });
 
   describe('constructor', () => {

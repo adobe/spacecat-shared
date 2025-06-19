@@ -169,9 +169,8 @@ function ScrapeJobSupervisor(services, config) {
     options,
     customHeaders,
   ) {
-    const baseURL = determineBaseURL(urls);
     // Determine if there is a free scrape queue
-    const scrapeQueueId = await getAvailableScrapeQueue(baseURL);
+    const scrapeQueueId = await getAvailableScrapeQueue();
 
     if (scrapeQueueId === null) {
       throw new Error('Service Unavailable: No scrape queue available');

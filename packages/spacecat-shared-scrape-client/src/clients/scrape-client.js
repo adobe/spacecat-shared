@@ -81,7 +81,7 @@ export default class ScrapeClient {
         }
       });
     }
-    validateServices(context);
+    validateServices();
     const {
       log,
       dataAccess,

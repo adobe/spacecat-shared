@@ -11,7 +11,8 @@
  */
 
 import {
-  isIsoDate, isObject, isValidUrl,
+  isIsoDate, isObject, isValidUrl, isNonEmptyArray, hasText,
+  isValidUUID,
 } from '@adobe/spacecat-shared-utils';
 import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
 import { ScrapeJobDto } from './scrapeJobDto.js';
@@ -39,7 +40,7 @@ export default class ScrapeClient {
       throw new Error('Invalid request: missing application/json request data');
     }
 
-    if (!Array.isArray(data.urls) || !data.urls.length > 0) {
+    if (!isNonEmptyArray(data.urls)) {
       throw new Error('Invalid request: urls must be provided as a non-empty array');
     }
 
@@ -176,7 +177,7 @@ export default class ScrapeClient {
    * @returns {Promise<Response>} JSON representation of the scrape job.
    */
   async getScrapeJobStatus(jobId) {
-    if (!jobId) {
+    if (!isValidUUID(jobId)) {
       throw new Error('Job ID is required');
     }
     try {
@@ -236,7 +237,7 @@ export default class ScrapeClient {
       }
 
       let jobs = [];
-      if (processingType) {
+      if (hasText(processingType)) {
         jobs = await this.scrapeSupervisor.getScrapeJobsByBaseURLAndProcessingType(
           decodedBaseURL,
           processingType,
@@ -245,7 +246,7 @@ export default class ScrapeClient {
         jobs = await this.scrapeSupervisor.getScrapeJobsByBaseURL(decodedBaseURL);
       }
 
-      if (!jobs || jobs.length === 0) {
+      if (!isNonEmptyArray(jobs)) {
         return [];
       }
       return jobs.map((job) => ScrapeJobDto.toJSON(job));

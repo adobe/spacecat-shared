@@ -56,13 +56,6 @@ export default class ScrapeClient {
    */
   async getScrapeJobUrlResults(jobId: string): Promise<object[]>;
 
-  // /**
-  //  * Get all scrape jobs by baseURL
-  //  * @param {string} baseURL - The baseURL of the jobs to fetch.
-  //  * @returns {Promise<Response>} JSON representation of the scrape jobs
-  //  */
-  // async getScrapeJobsByBaseURL(baseURL: string): Promise<object[]>;
-
   /**
    * Get all scrape jobs by baseURL and processing type
    * @param {string} baseURL - The baseURL of the jobs to fetch.

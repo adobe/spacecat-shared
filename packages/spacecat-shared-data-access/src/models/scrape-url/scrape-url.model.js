@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,17 +10,19 @@
  * governing permissions and limitations under the License.
  */
 
-import { context as h2, h1 } from '@adobe/fetch';
+import BaseModel from '../base/base.model.js';
 
-/* c8 ignore next 3 */
-export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
-  ? h1()
-  : h2();
+/**
+ * ScraperUrl - A class representing an ScraperUrl entity.
+ * Provides methods to access and manipulate ScraperUrl-specific data.
+ *
+ * @class ScraperUrl
+ * @extends BaseModel
+ */
+class ScrapeUrl extends BaseModel {
+  static SCRAPE_URL_EXPIRES_IN_DAYS = 14;
 
-export function sanitizeHeaders(headers) {
-  return {
-    ...headers,
-    ...(headers.Authorization && { Authorization: '***' }),
-    ...(headers['x-api-key'] && { 'x-api-key': '****' }),
-  };
+  // add your custom methods or overrides here
 }
+
+export default ScrapeUrl;

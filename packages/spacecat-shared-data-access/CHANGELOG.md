@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.26.0...@adobe/spacecat-shared-data-access-v2.27.0) (2025-06-19)
+
+
+### Features
+
+* added `getDisabledAuditsForSite` for slack command ([#812](https://github.com/adobe/spacecat-shared/issues/812)) ([56ab4b4](https://github.com/adobe/spacecat-shared/commit/56ab4b4bd76ec8edac9b9219b725b1442d11ef14))
+
 # [@adobe/spacecat-shared-data-access-v2.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.25.0...@adobe/spacecat-shared-data-access-v2.26.0) (2025-06-19)
 
 

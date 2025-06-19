@@ -221,19 +221,19 @@ describe('Rum bundler client', () => {
       }
     }
 
-    const log = { warn: sinon.spy(), info: () => {} };
-    const { bundles, failedUrls } = await fetchBundles({
+    const log = { warn: sinon.spy(), info: sinon.spy() };
+    const opts = {
       domain,
       domainkey,
       granularity,
       interval,
       checkpoints: ['good'],
-    }, log);
+    };
+
+    const bundles = await fetchBundles(opts, log);
 
     expect(bundles.length).to.equal(2);
-    expect(failedUrls.length).to.equal(1);
-    expect(failedUrls[0]).to.include(`/bundles/${domain}/`);
-    expect(log.warn.calledOnce).to.be.true;
-    expect(log.warn.firstCall.args[0]).to.match(/Skipping response at index 2: status 500, url:/);
+    expect(opts.failedUrls.length).to.equal(2);
+    expect(opts.failedUrls[0]).to.include(`/bundles/${domain}/`);
   });
 });

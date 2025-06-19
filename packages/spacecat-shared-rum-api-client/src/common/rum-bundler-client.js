@@ -219,7 +219,15 @@ async function fetchBundles(opts, log) {
     });
   }
   log.info(`Retrieved RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
-  return mergeBundlesWithSameId(result).then((bundles) => ({ bundles, failedUrls }));
+
+  // Add failedUrls to opts object for access by callers
+  if (failedUrls.length > 0) {
+    // eslint-disable-next-line no-param-reassign
+    opts.failedUrls = failedUrls;
+    log.info(`Failed URLs: ${failedUrls.join(', ')}`);
+  }
+
+  return mergeBundlesWithSameId(result);
 }
 
 export {

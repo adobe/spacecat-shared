@@ -18,6 +18,8 @@ import {
   tracingFetch,
 } from '@adobe/spacecat-shared-utils';
 
+import { sanitizeHeaders } from '../utils.js';
+
 export default class GenvarClient {
   static createFrom(context) {
     const { log = console } = context;
@@ -84,7 +86,7 @@ export default class GenvarClient {
       'x-gw-ims-org-id': this.config.imsOrg,
     };
 
-    this.log.info(`[Genvar API Call] URL: ${url}, Headers: ${JSON.stringify({ ...headers, Authorization: '***' })}`);
+    this.log.info(`[Genvar API Call] URL: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
     let response;
     let responseJsonObj;
@@ -121,7 +123,7 @@ export default class GenvarClient {
         'x-gw-ims-org-id': this.config.imsOrg,
       };
 
-      this.log.info(`[Genvar API Call] URL: ${url}, Headers: ${JSON.stringify({ ...headers, Authorization: '***' })}`);
+      this.log.info(`[Genvar API Call] URL: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
       let response;
       try {

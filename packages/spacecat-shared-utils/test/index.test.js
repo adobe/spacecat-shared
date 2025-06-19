@@ -26,6 +26,7 @@ describe('Index Exports', () => {
     'generateCSVFile',
     'getStoredMetrics',
     'replacePlaceholders',
+    'getStaticContent',
     'getPrompt',
     'getQuery',
     'hasText',

@@ -39,6 +39,16 @@ const configurations = [
         type: 'apex',
         interval: 'weekly',
       },
+      {
+        group: 'audits',
+        type: 'cwv',
+        interval: 'daily',
+      },
+      {
+        group: 'audits',
+        type: 'organic-keywords',
+        interval: 'daily',
+      },
     ],
     handlers: {
       404: {

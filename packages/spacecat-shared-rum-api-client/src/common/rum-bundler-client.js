@@ -238,7 +238,6 @@ async function fetchBundles(opts, log) {
   if (failedUrls.length > 0) {
     // eslint-disable-next-line no-param-reassign
     opts.failedUrls = failedUrls;
-    log.info(`Failed URLs: ${failedUrls.join(', ')}`);
   }
 
   return mergeBundlesWithSameId(result);

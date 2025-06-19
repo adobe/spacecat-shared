@@ -296,26 +296,6 @@ describe('Site IT', async () => {
     await site.remove();
   });
 
-  xit('finds site by preview URL using AEMaaCS index', async () => {
-    const site = await Site.create({
-      baseURL: 'https://preview-test.com',
-      name: 'preview-test-site',
-      organizationId: sampleData.organizations[0].getId(),
-      deliveryType: 'aem_cs',
-      isLive: true,
-    });
-    site.setDeliveryConfig({
-      siteId: 'fe4bd002-e160-4fcc-9ae4-1afd8cc93835',
-      environmentId: '123456',
-      programId: '234567',
-      authorURL: 'https://author-p123456-e234567.adobeaemcloud.com',
-    });
-    await site.save();
-    const previewURL = 'https://author-p123456-e234567.adobeaemcloud.com/some/path';
-    const foundSite = await Site.findByPreviewURL(previewURL);
-    expect(foundSite).to.be.an('object');
-  });
-
   it('adds a new site', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',

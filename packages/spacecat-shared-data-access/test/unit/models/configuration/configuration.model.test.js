@@ -160,7 +160,7 @@ describe('ConfigurationModel', () => {
 
     it('gets all disabled audits for a site', () => {
       expect(Object.keys(instance.getHandlers() || {})
-        .filter((handler) => !instance.isHandlerEnabledForSite(handler, site))).to.deep.equal(['apex', 'cwv', 'organic-keywords']);
+        .filter((handler) => !instance.isHandlerEnabledForSite(handler, site))).to.deep.equal(['organic-keywords', 'cwv']);
       expect(instance.getDisabledAuditsForSite(site)).to.deep.equal(['cwv', 'organic-keywords']);
     });
 

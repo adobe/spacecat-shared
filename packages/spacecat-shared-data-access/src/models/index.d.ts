@@ -24,6 +24,8 @@ export type * from './opportunity';
 export type * from './organization';
 export type * from './role';
 export type * from './role-member';
+export type * from './scrape-job';
+export type * from './scrape-url';
 export type * from './site';
 export type * from './site-candidate';
 export type * from './site-top-page';

@@ -26,6 +26,8 @@ const resetDatabase = async () => {
     TEST_DA_CONFIG.tableNameExperiments,
     TEST_DA_CONFIG.tableNameImportJobs,
     TEST_DA_CONFIG.tableNameImportUrls,
+    TEST_DA_CONFIG.tableNameScrapeJobs,
+    TEST_DA_CONFIG.tableNameScrapeUrls,
     TEST_DA_CONFIG.tableNameKeyEvents,
     TEST_DA_CONFIG.tableNameLatestAudits,
     TEST_DA_CONFIG.tableNameOrganizations,
@@ -67,6 +69,14 @@ const seedV2Fixtures = async () => {
     }, {
       actions: ['C', 'R'],
       path: '/asyncJob/**',
+    },
+    {
+      actions: ['C', 'R'],
+      path: '/scrapeJob/**',
+    },
+    {
+      actions: ['C', 'R'],
+      path: '/scrapeUrl/**',
     }],
   }];
 

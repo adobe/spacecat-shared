@@ -29,6 +29,7 @@ export {
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
+  isValidHelixPreviewUrl,
   toBoolean,
 } from './functions.js';
 
@@ -37,6 +38,7 @@ export {
   resolveCustomerSecretsName,
   generateCSVFile,
   replacePlaceholders,
+  getStaticContent,
   getPrompt,
   getQuery,
 } from './helpers.js';

@@ -39,6 +39,20 @@ function filterEvents(checkpoints = []) {
   };
 }
 
+function sanitizeURL(url) {
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.searchParams.has('domainkey')) {
+      parsedUrl.searchParams.set('domainkey', 'redacted');
+    }
+    return parsedUrl.toString();
+    /* c8 ignore next 4 */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    return url;
+  }
+}
+
 function constructUrl(domain, date, granularity, domainkey) {
   const year = date.getUTCFullYear();
   const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
@@ -203,7 +217,7 @@ async function fetchBundles(opts, log) {
           return response.json();
         } else {
           const failedUrl = response.url || chunk[index];
-          log.warn(`Skipping response at index ${index}: status ${response.status}, url: ${failedUrl}`);
+          log.warn(`Skipping response at index ${index}: status ${response.status}, url: ${sanitizeURL(failedUrl)}`);
           failedUrls.push(failedUrl);
           return null;
         }

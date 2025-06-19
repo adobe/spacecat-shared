@@ -443,6 +443,22 @@ export default class ContentClient {
     this.#logDuration('updateRedirects', startTime);
   }
 
+  async getDocumentLinks(path) {
+    const startTime = process.hrtime.bigint();
+
+    await this.#initClient();
+
+    this.log.info(`Getting document links for ${this.site.getId()} and path ${path}`);
+
+    const docPath = this.#resolveDocPath(path);
+    const document = await this.rawClient.getDocument(docPath);
+    const links = await document.getLinks();
+
+    this.#logDuration('getDocumentLinks', startTime);
+
+    return links;
+  }
+
   async updateBrokenInternalLink(path, brokenLink) {
     const startTime = process.hrtime.bigint();
 

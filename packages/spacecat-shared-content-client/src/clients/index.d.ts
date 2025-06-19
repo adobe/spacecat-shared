@@ -166,5 +166,34 @@ export class ContentClient {
    * ```
    */
   getLivePreviewURLs(path: string):
-      Promise<{ liveURL: string | undefined, previewURL: string | undefined }>;
+       Promise<{ liveURL: string | undefined, previewURL: string | undefined }>;
+
+  /**
+   * Retrieves all links from a document at the specified path.
+   * This method extracts links from the document content, including both internal
+   * and external links, anchors, email links, and other href attributes.
+   *
+   * The path should stem from a page's URL and is relative to the site's root.
+   * Example: "/path/to/page" (from the full URL: "https://www.example.com/path/to/page").
+   *
+   * @param {string} path The path to the document to extract links from.
+   * Must be a valid path that exists in the content source.
+   * @returns {Promise<Array<{url: string | null, text: string | null}>>}
+   * A promise that resolves to an array of link objects, where each object contains:
+   * - url: The URL or path the link points to (can be null if not available)
+   * - text: The display text of the link (can be null if not available)
+   * @throws {Error} If there is an issue retrieving the document or extracting links.
+   *
+   * @example
+   * ```typescript
+   * const client = await ContentClient.createFrom(context, site);
+   * const links = await client.getDocumentLinks('/content/page');
+   * console.log(links);
+   * // [
+   * //   { url: 'https://example.com/external', text: 'External Link' },
+   * //   { url: '/internal/page', text: 'Internal Page' },
+   * // ]
+   * ```
+   */
+  getDocumentLinks(path: string): Promise<Array<{ url: string | null, text: string | null }>>;
 }

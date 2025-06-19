@@ -157,6 +157,22 @@ describe('ConfigurationModel', () => {
         .filter((handler) => instance.isHandlerEnabledForSite(handler, site))).to.deep.equal(['404', 'rum-ingest', 'sitemap', 'lhs-mobile']);
       expect(instance.getEnabledAuditsForSite(site)).to.deep.equal(['lhs-mobile', '404']);
     });
+
+    it('gets all disabled audits for a site', () => {
+      expect(Object.keys(instance.getHandlers() || {})
+        .filter((handler) => !instance.isHandlerEnabledForSite(handler, site))).to.deep.equal(['apex', 'cwv', 'organic-keywords']);
+      expect(instance.getDisabledAuditsForSite(site)).to.deep.equal(['cwv', 'organic-keywords']);
+    });
+
+    it('returns empty array for disabled audits when no handlers exist', () => {
+      delete instance.record.handlers;
+      expect(instance.getDisabledAuditsForSite(site)).to.deep.equal([]);
+    });
+
+    it('returns empty array for disabled audits when no jobs exist', () => {
+      delete instance.record.jobs;
+      expect(instance.getDisabledAuditsForSite(site)).to.deep.equal([]);
+    });
   });
 
   describe('manage handlers', () => {

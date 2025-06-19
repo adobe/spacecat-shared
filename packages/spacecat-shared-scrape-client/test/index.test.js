@@ -20,7 +20,7 @@ import sinon, { stub } from 'sinon';
 import { ScrapeJob, ScrapeUrl } from '@adobe/spacecat-shared-data-access';
 import ScrapeJobSchema from '@adobe/spacecat-shared-data-access/src/models/scrape-job/scrape-job.schema.js';
 import ScrapeUrlSchema from '@adobe/spacecat-shared-data-access/src/models/scrape-url/scrape-url.schema.js';
-import ScrapeClient from '../src/index.js';
+import { ScrapeClient } from '../src/index.js';
 
 use(sinonChai);
 use(chaiAsPromised);
@@ -88,6 +88,16 @@ describe('ScrapeJobController tests', () => {
     options: {},
     baseURL: 'https://www.example.com',
     scrapeQueueId: 'spacecat-scrape-queue-1',
+    processingType: 'default',
+  };
+
+  const exampleJob2 = {
+    scrapeJobId: 'f91afda0-afc8-467e-bfa3-fdbeba3037e9',
+    status: 'COMPLETE',
+    options: {},
+    baseURL: 'https://www.example.com',
+    scrapeQueueId: 'spacecat-scrape-queue-2',
+    processingType: 'form',
   };
 
   const urls = [
@@ -694,7 +704,7 @@ describe('ScrapeJobController tests', () => {
       expect(jobs).to.deep.equal([]);
     });
 
-    it('should handle errors while trying to fetch scrape jobs by baseURL gracefully', async () => {
+    it('should handle errors while trying to fetch scrape jobs by baseURL without processingType gracefully', async () => {
       try {
         baseContext.dataAccess.ScrapeJob.allByBaseURL = sandbox.stub().rejects(new Error('Failed to fetch scrape jobs by baseURL'));
 
@@ -705,13 +715,55 @@ describe('ScrapeJobController tests', () => {
       }
     });
 
+    it('should handle errors while trying to fetch scrape jobs by baseURL with processingType gracefully', async () => {
+      try {
+        baseContext.dataAccess.ScrapeJob.allByBaseURLAndProcessingType = sandbox.stub().rejects(new Error('Failed to fetch scrape jobs by baseURL'));
+
+        await scrapeJobController.getScrapeJobsByBaseURL('https://www.example.com', 'default');
+        assert.fail('Expected error to be thrown');
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch scrape jobs by baseURL: https://www.example.com and processing type: default, Failed to fetch scrape jobs by baseURL');
+      }
+    });
+
     it('should handle invalid baseURL gracefully', async () => {
       try {
         await scrapeJobController.getScrapeJobsByBaseURL('invalid-baseURL');
         assert.fail('Expected error to be thrown');
       } catch (err) {
-        expect(err.message).to.equal('Failed to fetch scrape jobs by baseURL: invalid-baseURL, Invalid request: baseURL must be a valid URL');
+        expect(err.message).to.equal(
+          'Failed to fetch scrape jobs by baseURL: invalid-baseURL, Invalid request: baseURL must be a valid URL',
+        );
       }
+    });
+
+    it('should return an array of scrape jobs by baseURL and processing type', async () => {
+      const job = createScrapeJob(exampleJob);
+      const job2 = createScrapeJob(exampleJob2);
+      baseContext.dataAccess.ScrapeJob.allByBaseURL = sandbox.stub().resolves([job, job2]);
+      baseContext.dataAccess.ScrapeJob.allByBaseURLAndProcessingType = sandbox
+        .stub()
+        .resolves([job]);
+
+      const jobs = await scrapeJobController.getScrapeJobsByBaseURL('https://www.example.com', 'default');
+      expect(jobs).to.be.an.instanceOf(Array);
+      expect(jobs.length).to.equal(1);
+      expect(jobs[0].baseURL).to.equal('https://www.example.com');
+    });
+
+    it('should return an array of scrape jobs by baseURL without processingType', async () => {
+      const job = createScrapeJob(exampleJob);
+      const job2 = createScrapeJob(exampleJob2);
+      baseContext.dataAccess.ScrapeJob.allByBaseURL = sandbox.stub().resolves([job, job2]);
+      baseContext.dataAccess.ScrapeJob.allByBaseURLAndProcessingType = sandbox
+        .stub()
+        .resolves([job]);
+
+      const jobs = await scrapeJobController.getScrapeJobsByBaseURL('https://www.example.com');
+      expect(jobs).to.be.an.instanceOf(Array);
+      expect(jobs.length).to.equal(2);
+      expect(jobs[0].baseURL).to.equal('https://www.example.com');
+      expect(jobs[1].baseURL).to.equal('https://www.example.com');
     });
   });
 });

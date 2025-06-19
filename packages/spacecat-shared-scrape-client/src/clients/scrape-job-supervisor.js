@@ -119,6 +119,16 @@ function ScrapeJobSupervisor(services, config) {
   }
 
   /**
+   * Get all scrape jobs by baseURL and processing type
+   * @param {string} baseURL - The baseURL of the jobs to fetch.
+   * @param {string} processingType - The processing type of the jobs to fetch.
+   * @returns {Promise<ScrapeJob[]>}
+   */
+  async function getScrapeJobsByBaseURLAndProcessingType(baseURL, processingType) {
+    return ScrapeJob.allByBaseURLAndProcessingType(baseURL, processingType);
+  }
+
+  /**
    * Queue all URLs as a single message for processing by another function. This will enable
    * the controller to respond with a new job ID ASAP, while the individual URLs are queued up
    * asynchronously.
@@ -219,6 +229,7 @@ function ScrapeJobSupervisor(services, config) {
     getScrapeJob,
     getScrapeJobsByDateRange,
     getScrapeJobsByBaseURL,
+    getScrapeJobsByBaseURLAndProcessingType,
   };
 }
 

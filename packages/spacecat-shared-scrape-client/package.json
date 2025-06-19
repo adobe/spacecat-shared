@@ -1,7 +1,7 @@
 {
-  "name": "@adobe/spacecat-shared-data-access",
-  "version": "2.26.0",
-  "description": "Shared modules of the Spacecat Services - Data Access",
+  "name": "@adobe/spacecat-shared-scrape-client",
+  "version": "1.0.0",
+  "description": "Shared modules of the Spacecat Services - Scrape Client",
   "type": "module",
   "engines": {
     "node": ">=22.0.0 <23.0.0",
@@ -10,8 +10,7 @@
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
-    "test:it": "mocha --require ./test/it/fixtures.js --spec \"test/it/**/*.test.js\"",
-    "test": "c8 mocha --spec \"test/unit/**/*.test.js\"",
+    "test": "c8 mocha --spec=test/**/*.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules"
@@ -19,7 +18,8 @@
   "mocha": {
     "require": "test/setup-env.js",
     "reporter": "mocha-multi-reporters",
-    "reporter-options": "configFile=.mocha-multi.json"
+    "reporter-options": "configFile=.mocha-multi.json",
+    "spec": "test/**/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -35,22 +35,16 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.38.4",
-    "@aws-sdk/client-dynamodb": "3.828.0",
-    "@aws-sdk/lib-dynamodb": "3.828.0",
-    "@types/joi": "17.2.3",
-    "aws-xray-sdk": "3.10.3",
-    "electrodb": "3.4.3",
-    "joi": "17.13.3",
-    "pluralize": "8.0.0",
-    "uuid": "11.1.0"
+    "@adobe/helix-universal": "5.2.2",
+    "@adobe/spacecat-shared-data-access": "2.25.0",
+    "@adobe/spacecat-shared-utils": "1.31.0"
   },
   "devDependencies": {
     "chai": "5.2.0",
     "chai-as-promised": "8.0.1",
-    "dynamo-db-local": "9.6.0",
     "nock": "14.0.5",
     "sinon": "20.0.0",
-    "sinon-chai": "4.0.0"
+    "sinon-chai": "4.0.0",
+    "typescript": "5.8.3"
   }
 }

@@ -122,16 +122,20 @@ export default class RUMAPIClient {
 
     try {
       const domainkey = await this._getDomainkey(opts);
-
-      const bundles = await fetchBundles({
+      const { bundles, failedUrls } = await fetchBundles({
         ...opts,
         domainkey,
         checkpoints,
       }, this.log);
 
       this.log.info(`Query "${query}" fetched ${bundles.length} bundles`);
-
-      return handler(bundles, opts);
+      const result = handler(bundles, { ...opts, failedUrls });
+      // Return failedUrls back to caller in opts
+      if (failedUrls && failedUrls.length > 0) {
+        // eslint-disable-next-line no-param-reassign
+        opts.failedUrls = failedUrls;
+      }
+      return result;
     } catch (e) {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
     }
@@ -157,22 +161,25 @@ export default class RUMAPIClient {
       const domainkey = await this._getDomainkey(opts);
 
       // Fetch bundles with deduplicated checkpoints
-      const bundles = await fetchBundles({
+      const { bundles, failedUrls } = await fetchBundles({
         ...opts,
         domainkey,
         checkpoints: [...allCheckpoints],
       }, this.log);
 
       const results = {};
-
       this.log.info(`Multi query ${JSON.stringify(queries.join(', '))} fetched ${bundles.length} bundles`);
-
       // Execute each query handler sequentially
       for (const { query, handler } of queryHandlers) {
         // eslint-disable-next-line no-await-in-loop
-        results[query] = await handler(bundles, opts);
+        results[query] = await handler(bundles, { ...opts, failedUrls });
       }
 
+      // Return failedUrls back to caller in opts
+      if (failedUrls && failedUrls.length > 0) {
+        // eslint-disable-next-line no-param-reassign
+        opts.failedUrls = failedUrls;
+      }
       return results;
     } catch (e) {
       throw new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);

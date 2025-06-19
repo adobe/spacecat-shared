@@ -196,4 +196,44 @@ describe('Rum bundler client', () => {
     // eslint-disable-next-line no-unused-expressions
     expect(containsCorrectData).to.be.true;
   });
+
+  it('should return failedUrls for failed responses and log them', async () => {
+    const domain = 'some-domain.com';
+    const domainkey = 'testkey';
+    const granularity = 'DAILY';
+    const interval = 3;
+    const allCheckpoints = ['good', 'bad'];
+
+    const dates = generateDailyDates(interval);
+    const rumBundles = generateRumBundles(dates, allCheckpoints);
+
+    // First two succeed, last one fails
+    for (let i = 0; i < dates.length; i += 1) {
+      const date = dates[i];
+      if (i < 2) {
+        nock(BASE_URL)
+          .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}?domainkey=${domainkey}`)
+          .reply(200, rumBundles[date.join()]);
+      } else {
+        nock(BASE_URL)
+          .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}?domainkey=${domainkey}`)
+          .reply(500, 'Internal Server Error');
+      }
+    }
+
+    const log = { warn: sinon.spy(), info: () => {} };
+    const { bundles, failedUrls } = await fetchBundles({
+      domain,
+      domainkey,
+      granularity,
+      interval,
+      checkpoints: ['good'],
+    }, log);
+
+    expect(bundles.length).to.equal(2);
+    expect(failedUrls.length).to.equal(1);
+    expect(failedUrls[0]).to.include(`/bundles/${domain}/`);
+    expect(log.warn.calledOnce).to.be.true;
+    expect(log.warn.firstCall.args[0]).to.match(/Skipping response at index 2: status 500, url:/);
+  });
 });

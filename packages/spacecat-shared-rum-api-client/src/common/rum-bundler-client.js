@@ -187,6 +187,7 @@ async function fetchBundles(opts, log) {
   const chunks = getUrlChunks(urls, CHUNK_SIZE);
 
   let totalTransferSize = 0;
+  const failedUrls = [];
 
   const result = [];
   for (const chunk of chunks) {
@@ -201,7 +202,9 @@ async function fetchBundles(opts, log) {
         if (response.ok) {
           return response.json();
         } else {
-          log.warn(`Skipping response at index ${index}: status ${response.status}`);
+          const failedUrl = response.url || chunk[index];
+          log.warn(`Skipping response at index ${index}: status ${response.status}, url: ${failedUrl}`);
+          failedUrls.push(failedUrl);
           return null;
         }
       }),
@@ -216,7 +219,7 @@ async function fetchBundles(opts, log) {
     });
   }
   log.info(`Retrieved RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
-  return mergeBundlesWithSameId(result);
+  return mergeBundlesWithSameId(result).then((bundles) => ({ bundles, failedUrls }));
 }
 
 export {

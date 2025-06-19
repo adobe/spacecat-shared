@@ -38,6 +38,7 @@ export {
   resolveCustomerSecretsName,
   generateCSVFile,
   replacePlaceholders,
+  getStaticContent,
   getPrompt,
   getQuery,
 } from './helpers.js';

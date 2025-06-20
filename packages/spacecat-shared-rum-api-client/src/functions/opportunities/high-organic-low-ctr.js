@@ -14,7 +14,7 @@ import trafficAcquisition from '../traffic-acquisition.js';
 import { getCTRByUrlAndVendor, getSiteAvgCTR } from '../../common/aggregateFns.js';
 
 const VENDORS_TO_CONSIDER = 5;
-const MAX_OPPORTUNITIES = 100;
+const MAX_OPPORTUNITIES = 10;
 
 const MAIN_TYPES = ['paid', 'earned', 'owned'];
 

@@ -57,7 +57,7 @@ describe('SiteModel', () => {
         },
       };
 
-      const result = computeExternalIds(attrs, Site.DELIVERY_TYPES);
+      const result = computeExternalIds(attrs);
 
       expect(result).to.deep.equal({
         externalOwnerId: 'main#adobe',
@@ -71,7 +71,7 @@ describe('SiteModel', () => {
         hlxConfig: {},
       };
 
-      const result = computeExternalIds(attrs, Site.DELIVERY_TYPES);
+      const result = computeExternalIds(attrs);
 
       expect(result).to.deep.equal({
         externalOwnerId: undefined,
@@ -91,7 +91,7 @@ describe('SiteModel', () => {
         },
       };
 
-      const result = computeExternalIds(attrs, Site.DELIVERY_TYPES);
+      const result = computeExternalIds(attrs);
 
       expect(result).to.deep.equal({
         externalOwnerId: 'main#adobe',
@@ -108,7 +108,7 @@ describe('SiteModel', () => {
         },
       };
 
-      const result = computeExternalIds(attrs, Site.DELIVERY_TYPES);
+      const result = computeExternalIds(attrs);
 
       expect(result).to.deep.equal({
         externalOwnerId: 'p12345',
@@ -121,7 +121,7 @@ describe('SiteModel', () => {
         deliveryType: Site.DELIVERY_TYPES.AEM_CS,
       };
 
-      const result = computeExternalIds(attrs, Site.DELIVERY_TYPES);
+      const result = computeExternalIds(attrs);
 
       expect(result).to.deep.equal({
         externalOwnerId: undefined,
@@ -138,7 +138,7 @@ describe('SiteModel', () => {
         },
       };
 
-      const result = computeExternalIds(attrs, Site.DELIVERY_TYPES);
+      const result = computeExternalIds(attrs);
 
       expect(result).to.deep.equal({
         externalOwnerId: 'p12345',

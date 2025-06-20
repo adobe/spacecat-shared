@@ -311,7 +311,11 @@ export default class ContentClient {
     return docPath;
   }
 
-  async #getHelixResourceStatus(path) {
+  /**
+   * @param {string} path
+   * @returns {Promise<string>}
+   */
+  async getResourcePath(path) {
     const { rso } = this.site.getHlxConfig();
     // https://www.aem.live/docs/admin.html#tag/status
     const adminEndpointUrl = `https://admin.hlx.page/status/${rso.owner}/${rso.site}/${rso.ref}/${path.replace(/^\/+/, '')}`;
@@ -321,32 +325,12 @@ export default class ContentClient {
       },
     });
     if (response.ok) {
-      return response.json();
+      const responseJson = await response.json();
+      return responseJson?.resourcePath;
     } else {
       const errorMessage = await response.text();
       throw new Error(`Failed to fetch document path for ${path}: ${errorMessage}`);
     }
-  }
-
-  /**
-   * @param {string} path
-   * @returns {Promise<string>}
-   */
-  async getResourcePath(path) {
-    const helixResourceStatus = await this.#getHelixResourceStatus(path);
-    return helixResourceStatus?.resourcePath;
-  }
-
-  /**
-   * @param {string} path
-   * @returns {Promise<{liveURL: string, previewURL: string}>}
-   */
-  async getLivePreviewURLs(path) {
-    const helixResourceStatus = await this.#getHelixResourceStatus(path);
-    return {
-      liveURL: helixResourceStatus?.live?.url,
-      previewURL: helixResourceStatus?.preview?.url,
-    };
   }
 
   async getPageMetadata(path) {

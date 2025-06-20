@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.28.0...@adobe/spacecat-shared-data-access-v2.29.0) (2025-06-20)
+
+
+### Features
+
+* introduce findByPreviewURL in site collection ([#773](https://github.com/adobe/spacecat-shared/issues/773)) ([3b7c092](https://github.com/adobe/spacecat-shared/commit/3b7c0925ce66bcb8d38db3e05cc04fefd0cac229))
+
 # [@adobe/spacecat-shared-data-access-v2.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.27.0...@adobe/spacecat-shared-data-access-v2.28.0) (2025-06-20)
 
 

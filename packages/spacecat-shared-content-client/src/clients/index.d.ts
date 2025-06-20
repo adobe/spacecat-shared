@@ -142,6 +142,33 @@ export class ContentClient {
   getResourcePath(path: string): Promise<string | undefined>;
 
   /**
+   * Retrieves the live and preview URLs for a given content path from the AEM admin API.
+   * The live URL represents the published version of the content, while the preview URL
+   * represents the draft/preview version that can be used for testing before publishing.
+   *
+   * The path should stem from a page's URL and is relative to the site's root.
+   * Example: "/path/to/page" (from the full URL: "https://www.example.com/path/to/page").
+   *
+   * @param {string} path The content path to get URLs for. Must be a valid path
+   * that exists in the content source.
+   * @returns {Promise<{liveURL: string | undefined, previewURL: string | undefined}>}
+   * A promise that resolves to an object containing:
+   * - liveURL: The live/published URL if available, undefined otherwise
+   * - previewURL: The preview URL if available, undefined otherwise
+   * @throws {Error} If the Helix admin API request fails or returns an error response.
+   *
+   * @example
+   * ```typescript
+   * const client = await ContentClient.createFrom(context, site);
+   * const urls = await client.getLivePreviewURLs('/content/page');
+   * console.log(urls.liveURL);    // e.g., 'https://owner--repo.hlx.live/content/page'
+   * console.log(urls.previewURL); // e.g., 'https://main--repo--owner.hlx.page/content/page'
+   * ```
+   */
+  getLivePreviewURLs(path: string):
+       Promise<{ liveURL: string | undefined, previewURL: string | undefined }>;
+
+  /**
    * Retrieves all links from a document at the specified path.
    * This method extracts links from the document content, including both internal
    * and external links, anchors, email links, and other href attributes.

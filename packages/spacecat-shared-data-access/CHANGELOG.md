@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.27.0...@adobe/spacecat-shared-data-access-v2.28.0) (2025-06-20)
+
+
+### Features
+
+* add paid audit type ([#811](https://github.com/adobe/spacecat-shared/issues/811)) ([e8aae98](https://github.com/adobe/spacecat-shared/commit/e8aae9853f2d53c22a352cf41417829a15e55319))
+
 # [@adobe/spacecat-shared-data-access-v2.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.26.0...@adobe/spacecat-shared-data-access-v2.27.0) (2025-06-19)
 
 

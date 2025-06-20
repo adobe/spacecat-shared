@@ -13,16 +13,15 @@
 import trafficAcquisition from '../traffic-acquisition.js';
 import { getCTRByUrlAndVendor, getSiteAvgCTR } from '../../common/aggregateFns.js';
 
-const DAILY_EARNED_THRESHOLD = 1000;
-const CTR_THRESHOLD_RATIO = 0.95;
-const DAILY_PAGEVIEW_THRESHOLD = 1000;
 const VENDORS_TO_CONSIDER = 5;
+const MAX_OPPORTUNITIES = 100;
 
 const MAIN_TYPES = ['paid', 'earned', 'owned'];
 
 function convertToOpportunity(traffic) {
   const {
-    url, total, ctr, paid, owned, earned, sources, siteAvgCTR, ctrByUrlAndVendor, pageOnTime,
+    url, total, ctr, paid, percentileScore, owned, earned,
+    sources, siteAvgCTR, ctrByUrlAndVendor, pageOnTime,
   } = traffic;
 
   const vendors = sources.reduce((acc, { type, views }) => {
@@ -51,6 +50,7 @@ function convertToOpportunity(traffic) {
     trackedKPISiteAverage: siteAvgCTR,
     pageViews: total,
     samples: total, // todo: get the actual number of samples
+    percentileScore,
     metrics: [{
       type: 'traffic',
       vendor: '*',
@@ -106,33 +106,48 @@ function convertToOpportunity(traffic) {
   return opportunity;
 }
 
-function hasHighOrganicTraffic(interval, traffic) {
-  const { earned } = traffic;
-  return earned >= DAILY_EARNED_THRESHOLD * interval;
+/**
+ * Sort pages by earned AND overall traffic using percentile scoring.
+ * @param {Array} pages - List of { url, total, earned }
+ * @returns {Array} List of pages sorted by joint strength
+ */
+function sortPagesByEarnedAndOverallTraffic(pages) {
+  if (!Array.isArray(pages) || pages.length === 0) return [];
+
+  const sortedOverall = [...pages].sort((a, b) => a.total - b.total);
+  const sortedEarned = [...pages].sort((a, b) => {
+    if (a.earned === b.earned) {
+      return a.total - b.total;
+    }
+    return a.earned - b.earned;
+  });
+  const n = pages.length;
+
+  const percentiles = pages.map((p) => {
+    const totalPercentile = sortedOverall.findIndex((x) => x.url === p.url) / (n - 1);
+    const earnedPercentile = sortedEarned.findIndex((x) => x.url === p.url) / (n - 1);
+    const percentileScore = totalPercentile * earnedPercentile;
+    return { ...p, percentileScore };
+  });
+
+  return percentiles.sort((a, b) => b.percentileScore - a.percentileScore);
 }
 
-function hasLowerCTR(ctr, siteAvgCTR) {
-  return ctr < CTR_THRESHOLD_RATIO * siteAvgCTR;
-}
-
-function handler(bundles, opts = {}) {
-  const { interval = 7 } = opts;
-
+function handler(bundles) {
   const trafficByUrl = trafficAcquisition.handler(bundles);
   const ctrByUrlAndVendor = getCTRByUrlAndVendor(bundles);
   const siteAvgCTR = getSiteAvgCTR(bundles);
+  const pagesSortedByEarnedAndOverallTraffic = sortPagesByEarnedAndOverallTraffic(
+    trafficByUrl,
+  ).slice(0, MAX_OPPORTUNITIES);
 
-  return trafficByUrl.filter((traffic) => traffic.total > interval * DAILY_PAGEVIEW_THRESHOLD)
-    .filter(hasHighOrganicTraffic.bind(null, interval))
-    .filter((traffic) => hasLowerCTR(ctrByUrlAndVendor[traffic.url].value, siteAvgCTR))
-    .map((traffic) => ({
-      ...traffic,
-      ctr: ctrByUrlAndVendor[traffic.url].value,
-      siteAvgCTR,
-      ctrByUrlAndVendor: ctrByUrlAndVendor[traffic.url].vendors,
-      pageOnTime: traffic.maxTimeDelta,
-    }))
-    .map(convertToOpportunity);
+  return pagesSortedByEarnedAndOverallTraffic.map((traffic) => ({
+    ...traffic,
+    ctr: ctrByUrlAndVendor[traffic.url].value,
+    siteAvgCTR,
+    ctrByUrlAndVendor: ctrByUrlAndVendor[traffic.url].vendors,
+    pageOnTime: traffic.maxTimeDelta,
+  })).map(convertToOpportunity);
 }
 
 export default {

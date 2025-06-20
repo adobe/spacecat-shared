@@ -22,6 +22,20 @@ const ONE_DAY = ONE_HOUR * HOURS_IN_DAY;
 
 const CHUNK_SIZE = 31;
 
+function sanitizeURL(url) {
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.searchParams.has('domainkey')) {
+      parsedUrl.searchParams.set('domainkey', 'redacted');
+    }
+    return parsedUrl.toString();
+    /* c8 ignore next 4 */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    return url;
+  }
+}
+
 function isBotTraffic(bundle) {
   return bundle?.userAgent?.includes('bot');
 }
@@ -192,11 +206,26 @@ async function fetchBundles(opts, log) {
   for (const chunk of chunks) {
     // eslint-disable-next-line no-loop-func
     const responses = await Promise.all(chunk.map(async (url) => {
-      const response = await fetch(url);
-      totalTransferSize += parseInt(response.headers.get('content-length'), 10);
-      return response;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Request to ${sanitizeURL(url)} failed with status ${response.status}`);
+        }
+        const contentLength = response.headers.get('content-length');
+        totalTransferSize += parseInt(contentLength, 10);
+        return response;
+      } catch (error) {
+        throw new Error(`Error fetching data from ${sanitizeURL(url)}: ${error.message}`);
+      }
     }));
-    const bundles = await Promise.all(responses.map((response) => response.json()));
+
+    const bundles = await Promise.all(responses.map(async (response) => {
+      try {
+        return await response.json();
+      } catch (error) {
+        throw new Error(`Error parsing JSON from ${sanitizeURL(response.url)}: ${error.message}`);
+      }
+    }));
 
     bundles.forEach((b) => {
       b.rumBundles

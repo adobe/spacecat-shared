@@ -133,7 +133,7 @@ export default class RUMAPIClient {
 
       return handler(bundles, opts);
     } catch (e) {
-      throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
+      throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}.\n--> Reason: ${e.message}`);
     }
   }
 
@@ -175,7 +175,7 @@ export default class RUMAPIClient {
 
       return results;
     } catch (e) {
-      throw new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
+      throw new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(sanitize(opts))}.\n--> Reason: ${e.message}`);
     }
   }
 }

@@ -158,6 +158,17 @@ declare function generateCSVFile(data: object[]): Buffer;
 declare function replacePlaceholders(content: string, placeholders: object): string;
 
 /**
+ * Function to support reading static file
+ * and replace placeholder strings with values.
+ *
+ * @param {Object} placeholders - A JSON object containing values to replace in the prompt content.
+ * @param {String} filename - The path of the prompt file.
+ * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content.
+ */
+declare function getStaticContent(placeholders: object, filename: string):
+    Promise<string | null>;
+
+/**
  * Reads the content of a prompt file asynchronously and replaces any placeholders
  * with the corresponding values. Logs the error and returns null in case of an error.
  *

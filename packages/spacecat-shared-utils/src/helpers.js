@@ -95,7 +95,7 @@ export function replacePlaceholders(content, placeholders) {
  * @param {String} filename - The path of the prompt file.
  * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content.
  */
-async function getStaticContent(placeholders, filename) {
+export async function getStaticContent(placeholders, filename) {
   const fileContent = await fs.readFile(filename, { encoding: 'utf8' });
   return replacePlaceholders(fileContent, placeholders);
 }

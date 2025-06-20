@@ -14,7 +14,7 @@ import { composeAuditURL, hasText, isValidUrl } from '@adobe/spacecat-shared-uti
 import BaseModel from '../base/base.model.js';
 
 const HLX_HOST = /\.(?:aem|hlx)\.(?:page|live)$/i;
-export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)(?:-[^.]+)*\./i;
+export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)(?:-[a-zA-Z0-9_-]+)*\./i;
 
 /**
  * Computes external IDs based on delivery type and configuration

@@ -75,11 +75,13 @@ describe('Query functions', () => {
   });
 
   it('crunches oppty/high-organic-low-ctr', async () => {
-    const highInorganicHighBounceResult = highOrganicLowCTR.handler(
+    let highOrganicHighBounceResult = highOrganicLowCTR.handler(
       bundlesWithTraffic.rumBundles,
       { interval: 7 },
     );
-    expect(highInorganicHighBounceResult).to.eql(expectedHighOrganicLowCTRResult);
+    expect(highOrganicHighBounceResult).to.eql(expectedHighOrganicLowCTRResult);
+    highOrganicHighBounceResult = highOrganicLowCTR.handler([], { interval: 7 });
+    expect(highOrganicHighBounceResult).to.eql([]);
   });
 
   it('crunches pageviews', async () => {

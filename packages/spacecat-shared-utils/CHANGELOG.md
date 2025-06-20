@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.40.0...@adobe/spacecat-shared-utils-v1.41.0) (2025-06-20)
+
+
+### Features
+
+* introduce findByPreviewURL in site collection ([#773](https://github.com/adobe/spacecat-shared/issues/773)) ([3b7c092](https://github.com/adobe/spacecat-shared/commit/3b7c0925ce66bcb8d38db3e05cc04fefd0cac229))
+
 # [@adobe/spacecat-shared-utils-v1.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.39.1...@adobe/spacecat-shared-utils-v1.40.0) (2025-06-18)
 
 

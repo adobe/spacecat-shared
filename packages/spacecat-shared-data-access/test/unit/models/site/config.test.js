@@ -149,6 +149,7 @@ describe('Config Tests', () => {
       const config = Config();
       const brandConfig = {
         brandId: 'test-brand',
+        userId: 'test-user',
       };
       config.updateBrandConfig(brandConfig);
       expect(config.getBrandConfig()).to.deep.equal(brandConfig);
@@ -700,6 +701,7 @@ describe('Config Tests', () => {
         },
         brandConfig: {
           brandId: 'test-brand',
+          userId: 'test-user',
         },
       };
       const validated = validateConfiguration(config);
@@ -938,6 +940,16 @@ describe('Config Tests', () => {
       };
       expect(() => validateConfiguration(config))
         .to.throw('Configuration validation error: "brandConfig.brandId" is required');
+    });
+
+    it('throws error for invalid brandConfig userId', () => {
+      const config = {
+        brandConfig: {
+          brandId: 'test-brand',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw('Configuration validation error: "brandConfig.userId" is required');
     });
 
     it('throws error for invalid fetchConfig overrideBaseUrl', () => {

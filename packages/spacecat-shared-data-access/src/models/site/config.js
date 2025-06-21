@@ -181,6 +181,7 @@ export const configSchema = Joi.object({
   ),
   brandConfig: Joi.object({
     brandId: Joi.string().required(),
+    userId: Joi.string().required(),
   }).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),

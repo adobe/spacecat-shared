@@ -76,4 +76,4 @@ export {
   FORMS_AUDIT_INTERVAL,
 } from './formcalc.js';
 
-export { retrievePageAuthentication } from './auth.js';
+export { retrievePageAuthentication, getAccessToken } from './auth.js';

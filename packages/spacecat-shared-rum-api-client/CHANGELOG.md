@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.28.1...@adobe/spacecat-shared-rum-api-client-v2.29.0) (2025-06-20)
+
+
+### Features
+
+* high organic low ctr detection using traffic instead of thresholds ([#815](https://github.com/adobe/spacecat-shared/issues/815)) ([54569fb](https://github.com/adobe/spacecat-shared/commit/54569fb5d9b5fbe8400da0aadbae148380866fda))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.28.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.28.0...@adobe/spacecat-shared-rum-api-client-v2.28.1) (2025-05-31)
 
 

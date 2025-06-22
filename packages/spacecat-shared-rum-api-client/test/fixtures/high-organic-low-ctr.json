@@ -8,6 +8,7 @@
     "trackedKPISiteAverage": 0.3701385784532856,
     "pageViews": 67000,
     "samples": 67000,
+    "percentileScore": 1,
     "metrics": [
       {
         "type": "traffic",
@@ -28,10 +29,10 @@
       },
       {
         "type": "pageOnTime",
+        "vendor": "*",
         "value": {
           "time": 0
-        },
-        "vendor": "*"
+        }
       },
       {
         "type": "traffic",
@@ -52,10 +53,10 @@
       },
       {
         "type": "pageOnTime",
+        "vendor": "google",
         "value": {
           "time": 0
-        },
-        "vendor": "google"
+        }
       },
       {
         "type": "traffic",
@@ -76,10 +77,219 @@
       },
       {
         "type": "pageOnTime",
+        "vendor": "tiktok",
         "value": {
           "time": 0
-        },
-        "vendor": "tiktok"
+        }
+      }
+    ]
+  },
+  {
+    "type": "high-organic-low-ctr",
+    "page": "https://www.spacecat.com/",
+    "screenshot": "",
+    "trackedPageKPIName": "Click Through Rate",
+    "trackedPageKPIValue": 0.3492407809110629,
+    "trackedKPISiteAverage": 0.3701385784532856,
+    "pageViews": 46100,
+    "samples": 46100,
+    "percentileScore": 0.6400000000000001,
+    "metrics": [
+      {
+        "type": "traffic",
+        "vendor": "*",
+        "value": {
+          "total": 46100,
+          "paid": 40700,
+          "owned": 5400,
+          "earned": 0
+        }
+      },
+      {
+        "type": "ctr",
+        "vendor": "*",
+        "value": {
+          "page": 0.3492407809110629
+        }
+      },
+      {
+        "type": "pageOnTime",
+        "vendor": "*",
+        "value": {
+          "time": 0
+        }
+      },
+      {
+        "type": "traffic",
+        "vendor": "google",
+        "value": {
+          "total": 100,
+          "owned": 0,
+          "earned": 0,
+          "paid": 100
+        }
+      },
+      {
+        "type": "ctr",
+        "vendor": "google",
+        "value": {
+          "page": 0
+        }
+      },
+      {
+        "type": "pageOnTime",
+        "vendor": "google",
+        "value": {
+          "time": 0
+        }
+      }
+    ]
+  },
+  {
+    "type": "high-organic-low-ctr",
+    "page": "https://www.spacecat.com/pricing",
+    "screenshot": "",
+    "trackedPageKPIName": "Click Through Rate",
+    "trackedPageKPIValue": 0.12761020881670534,
+    "trackedKPISiteAverage": 0.3701385784532856,
+    "pageViews": 43100,
+    "samples": 43100,
+    "percentileScore": 0.36,
+    "metrics": [
+      {
+        "type": "traffic",
+        "vendor": "*",
+        "value": {
+          "total": 43100,
+          "paid": 24100,
+          "owned": 19000,
+          "earned": 0
+        }
+      },
+      {
+        "type": "ctr",
+        "vendor": "*",
+        "value": {
+          "page": 0.12761020881670534
+        }
+      },
+      {
+        "type": "pageOnTime",
+        "vendor": "*",
+        "value": {
+          "time": 0
+        }
+      }
+    ]
+  },
+  {
+    "type": "high-organic-low-ctr",
+    "page": "https://www.spacecat.com/landing-page",
+    "screenshot": "",
+    "trackedPageKPIName": "Click Through Rate",
+    "trackedPageKPIValue": 0.927461139896373,
+    "trackedKPISiteAverage": 0.3701385784532856,
+    "pageViews": 38600,
+    "samples": 38600,
+    "percentileScore": 0.16000000000000003,
+    "metrics": [
+      {
+        "type": "traffic",
+        "vendor": "*",
+        "value": {
+          "total": 38600,
+          "paid": 4500,
+          "owned": 34100,
+          "earned": 0
+        }
+      },
+      {
+        "type": "ctr",
+        "vendor": "*",
+        "value": {
+          "page": 0.927461139896373
+        }
+      },
+      {
+        "type": "pageOnTime",
+        "vendor": "*",
+        "value": {
+          "time": 0
+        }
+      }
+    ]
+  },
+  {
+    "type": "high-organic-low-ctr",
+    "page": "https://www.spacecat.com/products",
+    "screenshot": "",
+    "trackedPageKPIName": "Click Through Rate",
+    "trackedPageKPIValue": 0.93717277486911,
+    "trackedKPISiteAverage": 0.3701385784532856,
+    "pageViews": 19100,
+    "samples": 19100,
+    "percentileScore": 0.04000000000000001,
+    "metrics": [
+      {
+        "type": "traffic",
+        "vendor": "*",
+        "value": {
+          "total": 19100,
+          "paid": 18400,
+          "owned": 700,
+          "earned": 0
+        }
+      },
+      {
+        "type": "ctr",
+        "vendor": "*",
+        "value": {
+          "page": 0.93717277486911
+        }
+      },
+      {
+        "type": "pageOnTime",
+        "vendor": "*",
+        "value": {
+          "time": 0
+        }
+      }
+    ]
+  },
+  {
+    "type": "high-organic-low-ctr",
+    "page": "https://www.spacecat.com/contact",
+    "screenshot": "",
+    "trackedPageKPIName": "Click Through Rate",
+    "trackedPageKPIValue": 0.09183673469387756,
+    "trackedKPISiteAverage": 0.3701385784532856,
+    "pageViews": 9800,
+    "samples": 9800,
+    "percentileScore": 0,
+    "metrics": [
+      {
+        "type": "traffic",
+        "vendor": "*",
+        "value": {
+          "total": 9800,
+          "paid": 100,
+          "owned": 9700,
+          "earned": 0
+        }
+      },
+      {
+        "type": "ctr",
+        "vendor": "*",
+        "value": {
+          "page": 0.09183673469387756
+        }
+      },
+      {
+        "type": "pageOnTime",
+        "vendor": "*",
+        "value": {
+          "time": 0
+        }
       }
     ]
   }

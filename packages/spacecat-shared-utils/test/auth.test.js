@@ -16,7 +16,9 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import AWSXray from 'aws-xray-sdk';
-import { retrievePageAuthentication } from '../src/auth.js';
+import { Site } from '@adobe/spacecat-shared-data-access';
+import { ImsPromiseClient } from '@adobe/spacecat-shared-ims-client';
+import { getAccessToken, retrievePageAuthentication } from '../src/auth.js';
 
 use(chaiAsPromised);
 
@@ -29,6 +31,7 @@ describe('auth', () => {
     beforeEach(() => {
       mockSite = {
         getBaseURL: sinon.stub().returns('https://example.com'),
+        getDeliveryType: sinon.stub().returns('aem_edge'),
       };
 
       mockSecretsClient = {
@@ -38,6 +41,7 @@ describe('auth', () => {
       sinon.stub(AWSXray, 'captureAWSv3Client').returns(mockSecretsClient);
 
       context = {
+        env: {},
         func: {
           version: 'test-version',
         },
@@ -75,6 +79,83 @@ describe('auth', () => {
 
       await expect(retrievePageAuthentication(mockSite, context))
         .to.be.rejectedWith(/Missing 'PAGE_AUTH_TOKEN' in secrets for/);
+    });
+  });
+
+  describe('getAccessToken', () => {
+    let mockSite;
+    let context;
+    let mockImsPromiseClient;
+
+    beforeEach(() => {
+      mockSite = {
+        getBaseURL: sinon.stub().returns('https://example.com'),
+        getDeliveryType: sinon.stub().returns(Site.DELIVERY_TYPES.AEM_CS),
+      };
+
+      context = {
+        env: {},
+        log: {
+          info: sinon.spy(),
+          error: sinon.spy(),
+        },
+      };
+
+      mockImsPromiseClient = {
+        exchangeToken: sinon.stub(),
+      };
+      sinon.stub(ImsPromiseClient, 'createFrom').returns(mockImsPromiseClient);
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('calls getAccessToken for AEM CS sites with a promise token', async () => {
+      const promiseToken = 'test-promise-token';
+      const authOptions = { promiseToken };
+      const expectedTokenResponse = { access_token: 'exchanged-token' };
+      mockImsPromiseClient.exchangeToken.resolves(expectedTokenResponse);
+
+      const result = await retrievePageAuthentication(mockSite, context, authOptions);
+
+      expect(ImsPromiseClient.createFrom)
+        .to.have.been.calledWith(context, ImsPromiseClient.CLIENT_TYPE.CONSUMER);
+      expect(mockImsPromiseClient.exchangeToken).to.have.been.calledWith(promiseToken, false);
+      expect(result).to.equal(expectedTokenResponse.access_token);
+    });
+
+    it('successfully exchanges a promise token without encryption', async () => {
+      const promiseToken = 'test-promise-token';
+      const expectedTokenResponse = { access_token: 'exchanged-token' };
+      mockImsPromiseClient.exchangeToken.resolves(expectedTokenResponse);
+
+      const result = await getAccessToken(context, promiseToken);
+
+      expect(ImsPromiseClient.createFrom)
+        .to.have.been.calledWith(context, ImsPromiseClient.CLIENT_TYPE.CONSUMER);
+      expect(mockImsPromiseClient.exchangeToken).to.have.been.calledWith(promiseToken, false);
+      expect(result).to.equal(expectedTokenResponse.access_token);
+    });
+
+    it('successfully exchanges a promise token with encryption when secrets are present', async () => {
+      context.env.AUTOFIX_CRYPT_SECRET = 'secret';
+      context.env.AUTOFIX_CRYPT_SALT = 'salt';
+      const promiseToken = 'test-promise-token';
+      const expectedTokenResponse = { access_token: 'encrypted-exchanged-token' };
+      mockImsPromiseClient.exchangeToken.resolves(expectedTokenResponse);
+
+      await getAccessToken(context, promiseToken);
+
+      expect(mockImsPromiseClient.exchangeToken).to.have.been.calledWith(promiseToken, true);
+    });
+
+    it('propagates errors from exchangeToken', async () => {
+      const promiseToken = 'test-promise-token';
+      const testError = new Error('IMS Exchange Failed');
+      mockImsPromiseClient.exchangeToken.rejects(testError);
+
+      await expect(getAccessToken(context, promiseToken)).to.be.rejectedWith(testError);
     });
   });
 });

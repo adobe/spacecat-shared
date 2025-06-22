@@ -47,6 +47,7 @@ describe('Index Exports', () => {
     'isValidHelixPreviewUrl',
     'logWrapper',
     'prependSchema',
+    'getAccessToken',
     'resolveCustomerSecretsName',
     'resolveSecretsName',
     's3Wrapper',

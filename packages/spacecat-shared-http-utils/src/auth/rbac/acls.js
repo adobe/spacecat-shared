@@ -23,7 +23,7 @@ export function pathSorter({ path: path1 }, { path: path2 }) {
   return sp2.length - sp1.length;
 }
 
-async function getDBAccess(log, tableName = 'spacecat-services-rbac-dev') { // TODO pick up from config
+async function getDBAccess(log, tableName = 'spacecat-services-rbac') { // TODO pick up from config
   return createDataAccess({
     tableNameData: tableName,
     aclCtx: {
@@ -93,11 +93,12 @@ export default async function getAcls({
   return {
     acls,
     aclEntities: {
-      // Right now only check organization and site
+      // Right now only check organization
       exclude: [
-        'apiKey', 'audit', 'configuration', 'experiment',
+        'site', 'apiKey', 'audit', 'configuration', 'experiment',
         'importJob', 'importUrl', 'keyEvent', 'latestAudit',
-        'opportunity', 'siteCandidate', 'siteTopPage', 'suggestion', 'asyncJob',
+        'opportunity', 'siteCandidate', 'siteTopPage', 'suggestion',
+        'asyncJob', 'scrapeJob', 'scrapeUrl',
       ],
     },
   };

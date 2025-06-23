@@ -43,6 +43,16 @@ export default function dataAccessWrapper(fn) {
         tableNameData: DYNAMO_TABLE_NAME_DATA,
         aclCtx: context.attributes.authInfo.rbac,
       }, log);
+
+      // create a data access layer for the rbac table
+      context.rbacDataAccess = createDataAccess({
+        tableNameData: 'spacecat-services-rbac',
+        aclCtx: {
+          aclEntities: {
+            exclude: ['role', 'roleMember'],
+          },
+        },
+      }, log);
     }
 
     return fn(request, context);

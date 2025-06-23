@@ -60,6 +60,12 @@ describe('ContentClient', () => {
     { from: '/test-B', to: '/test-D' },
   ];
 
+  const sampleLinks = [
+    { href: 'https://example.com/page1', text: 'Page 1' },
+    { href: 'https://example.com/page2', text: 'Page 2' },
+    { href: '/internal/page', text: 'Internal Page' },
+  ];
+
   const createContentClient = async (getPageMetadata) => {
     documentSdk = {
       getMetadata: sinon.stub().resolves(getPageMetadata),
@@ -82,6 +88,9 @@ describe('ContentClient', () => {
         getMetadata: getError
           ? sinon.stub().rejects(new Error(errorMessage))
           : sinon.stub().resolves(new Map()),
+        getLinks: getError
+          ? sinon.stub().rejects(new Error(errorMessage))
+          : sinon.stub().resolves(sampleLinks),
       }),
       getRedirects: sinon.stub().returns({
         get: getError
@@ -103,6 +112,19 @@ describe('ContentClient', () => {
     };
     const contentSDK = sinon.stub().returns({
       getRedirects: sinon.stub().returns(redirectsSdk),
+    });
+
+    return esmock('../../src/clients/content-client.js', {
+      '@adobe/spacecat-helix-content-sdk': { createFrom: contentSDK },
+    });
+  };
+
+  const createContentClientForLinks = async (getLinks) => {
+    const linksSdk = {
+      getLinks: sinon.stub().resolves(getLinks),
+    };
+    const contentSDK = sinon.stub().returns({
+      getDocument: sinon.stub().returns(linksSdk),
     });
 
     return esmock('../../src/clients/content-client.js', {
@@ -712,6 +734,236 @@ describe('ContentClient', () => {
       } catch (err) {
         expect(err.message).to.equal('Failed to fetch document path for /example-path: {"message":"Internal Server Error"}');
       }
+    });
+  });
+
+  describe('getLivePreviewURLs', () => {
+    let client;
+
+    function getHlxConfig() {
+      return {
+        ...hlxConfigGoogle,
+        rso: {
+          owner: 'owner',
+          site: 'repo',
+          ref: 'main',
+        },
+      };
+    }
+
+    const helixAdminToken = 'test-token';
+    /** @type {SecretsManagerClient} */
+    let secretsManagerClient;
+    /** @type
+     * {sinon.SinonStub<
+     *    Parameters<SecretsManagerClient['send']>,
+     *    ReturnType<SecretsManagerClient['send']>>
+     * } */
+    let sendStub;
+    beforeEach(async () => {
+      secretsManagerClient = new SecretsManagerClient();
+      sendStub = sinon.stub(secretsManagerClient, 'send');
+      sendStub.resolves({ SecretString: JSON.stringify({ helix_admin_token: helixAdminToken }) });
+
+      client = await ContentClient.createFrom(
+        context,
+        { ...siteConfigGoogleDrive, getHlxConfig },
+        secretsManagerClient,
+      );
+    });
+
+    it('should return live and preview URLs on success', async () => {
+      const path = 'example/path';
+      const mockResponse = {
+        live: { url: 'https://owner--repo.hlx.live/example/path' },
+        preview: { url: 'https://main--repo--owner.hlx.page/example/path' },
+      };
+
+      nock('https://admin.hlx.page', {
+        reqheaders: {
+          authorization: `token ${helixAdminToken}`,
+        },
+      })
+        .get('/status/owner/repo/main/example/path')
+        .reply(200, mockResponse);
+
+      expect(sendStub).to.have.been.calledWithMatch(
+        {
+          input: {
+            SecretId: resolveCustomerSecretsName(baseUrl, context),
+          },
+        },
+      );
+      const result = await client.getLivePreviewURLs(path);
+
+      expect(result).to.deep.equal({
+        liveURL: 'https://owner--repo.hlx.live/example/path',
+        previewURL: 'https://main--repo--owner.hlx.page/example/path',
+      });
+    });
+
+    it('should handle undefined URLs in response', async () => {
+      const path = '/example-path';
+      const mockResponse = {
+        live: null,
+        preview: { url: 'https://main--repo--owner.hlx.page/example-path' },
+      };
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path')
+        .reply(200, mockResponse);
+
+      const result = await client.getLivePreviewURLs(path);
+
+      expect(result).to.deep.equal({
+        liveURL: undefined,
+        previewURL: 'https://main--repo--owner.hlx.page/example-path',
+      });
+    });
+
+    it('should handle empty response object', async () => {
+      const path = '/example-path';
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path')
+        .reply(200, {});
+
+      const result = await client.getLivePreviewURLs(path);
+
+      expect(result).to.deep.equal({
+        liveURL: undefined,
+        previewURL: undefined,
+      });
+    });
+
+    it('should remove leading slashes from path in API call', async () => {
+      const path = '///multiple/leading/slashes';
+      const mockResponse = {
+        live: { url: 'https://owner--repo.hlx.live/multiple/leading/slashes' },
+        preview: { url: 'https://main--repo--owner.hlx.page/multiple/leading/slashes' },
+      };
+
+      const scope = nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/multiple/leading/slashes')
+        .reply(200, mockResponse);
+
+      await client.getLivePreviewURLs(path);
+
+      expect(scope.isDone()).to.be.true;
+    });
+
+    it('should throw an error on HTTP failure', async () => {
+      const path = '/example-path';
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path')
+        .reply(404, { message: 'Not Found' });
+
+      try {
+        await client.getLivePreviewURLs(path);
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch document path for /example-path: {"message":"Not Found"}');
+      }
+    });
+
+    it('should throw an error on network failure', async () => {
+      const path = '/example-path';
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path')
+        .replyWithError('Network error');
+
+      try {
+        await client.getLivePreviewURLs(path);
+      } catch (err) {
+        expect(err.message).to.include('Network error');
+      }
+    });
+  });
+
+  describe('getDocumentLinks', () => {
+    it('should throw an error if raw client throws an error', async () => {
+      const errorContentClient = await createErrorContentClient(true, false, 'Error getting document links');
+      const client = await errorContentClient.createFrom(context, siteConfigGoogleDrive);
+      const path = '/test-path';
+      await expect(client.getDocumentLinks(path)).to.be.rejectedWith('Error getting document links');
+    });
+
+    it('should get document links and log duration for Google Drive', async () => {
+      const linksContentClient = await createContentClientForLinks(sampleLinks);
+      const client = await linksContentClient.createFrom(context, siteConfigGoogleDrive);
+      const path = '/test-path';
+      const links = await client.getDocumentLinks(path);
+
+      expect(links).to.deep.equal(sampleLinks);
+      expect(log.info.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
+      expect(log.debug.calledTwice).to.be.true;
+    });
+
+    it('should get document links and log duration for OneDrive', async () => {
+      const linksContentClient = await createContentClientForLinks(sampleLinks);
+      const client = await linksContentClient.createFrom(context, siteConfigOneDrive);
+      const path = '/test-path';
+      const links = await client.getDocumentLinks(path);
+
+      expect(links).to.deep.equal(sampleLinks);
+      expect(log.info.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
+      expect(log.debug.calledTwice).to.be.true;
+    });
+
+    it('should return empty array when document has no links', async () => {
+      const linksContentClient = await createContentClientForLinks([]);
+      const client = await linksContentClient.createFrom(context, siteConfigGoogleDrive);
+      const path = '/test-path';
+      const links = await client.getDocumentLinks(path);
+
+      expect(links).to.be.an('array').that.is.empty;
+      expect(log.info.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
+    });
+
+    it('should correctly resolve paths ending with / for Google Drive', async () => {
+      const linksContentClient = await createContentClientForLinks(sampleLinks);
+      const client = await linksContentClient.createFrom(context, siteConfigGoogleDrive);
+      const path = '/test-path/';
+      await client.getDocumentLinks(path);
+
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path/index')).to.be.true;
+    });
+
+    it('should correctly resolve paths ending with / for OneDrive', async () => {
+      const linksContentClient = await createContentClientForLinks(sampleLinks);
+      const client = await linksContentClient.createFrom(context, siteConfigOneDrive);
+      const path = '/test-path/';
+      await client.getDocumentLinks(path);
+
+      expect(client.rawClient.getDocument.calledOnceWith('/test-path/index.docx')).to.be.true;
+    });
+
+    it('should handle null/undefined link properties gracefully', async () => {
+      const linksWithNulls = [
+        { url: 'https://example.com/page1', text: null },
+        { url: null, text: 'Text Only' },
+        { url: 'https://example.com/page2', text: '' },
+      ];
+      const linksContentClient = await createContentClientForLinks(linksWithNulls);
+      const client = await linksContentClient.createFrom(context, siteConfigGoogleDrive);
+      const path = '/test-path';
+      const links = await client.getDocumentLinks(path);
+
+      expect(links).to.deep.equal(linksWithNulls);
+    });
+
+    it('should handle very long paths correctly', async () => {
+      const longPath = '/very/long/path/with/many/segments/that/goes/deep/into/the/folder/structure';
+      const linksContentClient = await createContentClientForLinks(sampleLinks);
+      const client = await linksContentClient.createFrom(context, siteConfigGoogleDrive);
+      const links = await client.getDocumentLinks(longPath);
+
+      expect(links).to.deep.equal(sampleLinks);
+      expect(client.rawClient.getDocument.calledOnceWith(longPath)).to.be.true;
     });
   });
 

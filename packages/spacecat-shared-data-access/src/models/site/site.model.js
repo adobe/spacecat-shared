@@ -13,6 +13,50 @@
 import { composeAuditURL, hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
 
+const HLX_HOST = /\.(?:aem|hlx)\.(?:page|live)$/i;
+export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)/i;
+
+/**
+ * Computes external IDs based on delivery type and configuration
+ */
+export const computeExternalIds = (attrs) => {
+  const { hlxConfig, deliveryConfig } = attrs;
+
+  if (hlxConfig) {
+    const rso = hlxConfig.rso ?? {};
+    const { ref, owner, site } = rso;
+
+    return {
+      externalOwnerId: ref && owner ? `${ref}#${owner}` : undefined,
+      externalSiteId: site || undefined,
+    };
+  }
+
+  if (deliveryConfig) {
+    const { programId, environmentId } = deliveryConfig;
+
+    return {
+      externalOwnerId: programId ? `p${programId}` : undefined,
+      externalSiteId: environmentId ? `e${environmentId}` : undefined,
+    };
+  }
+
+  return { externalOwnerId: undefined, externalSiteId: undefined };
+};
+
+/**
+ * Determines the preview type based on hostname
+ */
+export const getPreviewType = (hostname, deliveryTypes) => {
+  if (HLX_HOST.test(hostname)) {
+    return deliveryTypes.AEM_EDGE;
+  }
+  if (AEM_CS_HOST.test(hostname)) {
+    return deliveryTypes.AEM_CS;
+  }
+  return null;
+};
+
 /**
  * A class representing a Site entity. Provides methods to access and manipulate Site-specific data.
  * @class Site
@@ -35,7 +79,7 @@ class Site extends BaseModel {
   }
 
   /**
-   * Resolves the site's base URL to a  final URL by fetching the URL,
+   * Resolves the site's base URL to a final URL by fetching the URL,
    * following the redirects and returning the final URL.
    *
    * If the site has a configured overrideBaseURL, that one will be returned.

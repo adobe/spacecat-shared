@@ -74,10 +74,12 @@ describe('AdobeImsHandler', () => {
           },
         }],
       }),
-      getImsUserOrganizations: sinon.stub().resolves([{
-        orgRef: { ident: 'org1' },
-        orgName: 'Test Org',
-      }]),
+      getImsUserOrganizations: sinon.stub().resolves([
+        {
+          orgRef: { ident: '8C6043F15F43B6390A49401A' },
+          groups: [{ ident: 635541219 }],
+        },
+      ]),
     };
 
     handler = new AdobeImsHandler(logStub);
@@ -285,7 +287,6 @@ describe('AdobeImsHandler', () => {
         orgRef: { ident: 'org1' },
         orgName: 'Test Org',
       }]);
-
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.instanceof(AuthInfo);
@@ -339,9 +340,7 @@ describe('AdobeImsHandler', () => {
 
       const result = await handler.checkAuth({}, context);
 
-      expect(result).to.be.instanceof(AuthInfo);
-      expect(result.authenticated).to.be.true;
-      expect(result.scopes).to.deep.equal([]);
+      expect(result).to.be.null;
     });
 
     it('creates tenants with hardcoded subServices', async () => {

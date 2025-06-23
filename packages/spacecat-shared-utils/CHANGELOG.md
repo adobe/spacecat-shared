@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-utils-v1.41.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.41.1...@adobe/spacecat-shared-utils-v1.41.2) (2025-06-23)
+
+
+### Bug Fixes
+
+* creating accesstoken from promise token ([#816](https://github.com/adobe/spacecat-shared/issues/816)) ([e5cd3c2](https://github.com/adobe/spacecat-shared/commit/e5cd3c27552ccb48bee4fd4d91c311495f5a29bd))
+
+# [@adobe/spacecat-shared-utils-v1.41.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.41.0...@adobe/spacecat-shared-utils-v1.41.1) (2025-06-21)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#817](https://github.com/adobe/spacecat-shared/issues/817)) ([522b440](https://github.com/adobe/spacecat-shared/commit/522b440ac1ac1d704b4106ad1f90f192541a8f0c))
+
+# [@adobe/spacecat-shared-utils-v1.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.40.0...@adobe/spacecat-shared-utils-v1.41.0) (2025-06-20)
+
+
+### Features
+
+* introduce findByPreviewURL in site collection ([#773](https://github.com/adobe/spacecat-shared/issues/773)) ([3b7c092](https://github.com/adobe/spacecat-shared/commit/3b7c0925ce66bcb8d38db3e05cc04fefd0cac229))
+
 # [@adobe/spacecat-shared-utils-v1.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.39.1...@adobe/spacecat-shared-utils-v1.40.0) (2025-06-18)
 
 

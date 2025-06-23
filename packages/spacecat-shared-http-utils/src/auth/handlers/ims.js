@@ -36,6 +36,15 @@ const IGNORED_PROFILE_PROPS = [
   'aa_id',
 ];
 
+const ADMIN_GROUP_IDENT = {
+  '8C6043F15F43B6390A49401A': [ // IMS admin group for stag
+    635541219,
+  ],
+  '908936ED5D35CC220A495CD4': [
+    879529884, // IMS admin group for prod
+    901092291, // IMS admin group for on call engineers
+  ],
+};
 const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {
@@ -69,6 +78,19 @@ function getTenants(organizations) {
   }));
 }
 
+function isUserASOAdmin(organizations) {
+  if (!organizations) {
+    throw new Error('organizations param is required.');
+  }
+
+  return organizations.some((org) => {
+    const adminGroupsForOrg = ADMIN_GROUP_IDENT[org.orgRef.ident];
+    if (!adminGroupsForOrg) {
+      return false;
+    }
+    return org.groups.some((group) => adminGroupsForOrg.includes(group.ident));
+  });
+}
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
  */
@@ -295,12 +317,12 @@ export default class AdobeImsHandler extends AbstractHandler {
 
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);
+      const organizations = await context.imsClient.getImsUserOrganizations(token);
+      const isAdmin = isUserASOAdmin(organizations);
       const scopes = [];
-      if (imsProfile.email?.toLowerCase().endsWith('@adobe.com')) {
+      if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {
         scopes.push({ name: 'admin' });
       } else {
-        // for non-adobe users, we need to get the organizations and create the tenants
-        const organizations = await context.imsClient.getImsUserOrganizations(token);
         payload.tenants = getTenants(organizations) || [];
         scopes.push(...payload.tenants.map(
           (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),

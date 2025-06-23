@@ -19,8 +19,8 @@ import sinonChai from 'sinon-chai';
 import nock from 'nock';
 
 import EntityRegistry from '../../../../src/models/base/entity.registry.js';
-import Site from '../../../../src/models/site/site.model.js';
 import schema from '../../../../src/models/site/site.schema.js';
+import Site, { computeExternalIds } from '../../../../src/models/site/site.model.js';
 import siteFixtures from '../../../fixtures/sites.fixture.js';
 import { createElectroMocks } from '../../util.js';
 
@@ -44,6 +44,109 @@ describe('SiteModel', () => {
     } = createElectroMocks(Site, mockRecord));
 
     mockElectroService.entities.patch = stub().returns({ set: stub() });
+  });
+
+  describe('computeExternalIds', () => {
+    it('computes external IDs for AEM_EDGE delivery type with valid RSO config', () => {
+      const attrs = {
+        deliveryType: Site.DELIVERY_TYPES.AEM_EDGE,
+        hlxConfig: {
+          rso: {
+            ref: 'main',
+            owner: 'adobe',
+            site: 'example-site',
+          },
+        },
+      };
+
+      const result = computeExternalIds(attrs);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: 'main#adobe',
+        externalSiteId: 'example-site',
+      });
+    });
+
+    it('computes external IDs for AEM_EDGE delivery type with missing RSO config', () => {
+      const attrs = {
+        deliveryType: Site.DELIVERY_TYPES.AEM_EDGE,
+        hlxConfig: {},
+      };
+
+      const result = computeExternalIds(attrs);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: undefined,
+        externalSiteId: undefined,
+      });
+    });
+
+    it('computes external IDs for AEM_EDGE delivery type with partial RSO config', () => {
+      const attrs = {
+        deliveryType: Site.DELIVERY_TYPES.AEM_EDGE,
+        hlxConfig: {
+          rso: {
+            ref: 'main',
+            owner: 'adobe',
+            // site is missing
+          },
+        },
+      };
+
+      const result = computeExternalIds(attrs);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: 'main#adobe',
+        externalSiteId: undefined,
+      });
+    });
+
+    it('computes external IDs for AEM_CS delivery type with valid delivery config', () => {
+      const attrs = {
+        deliveryType: Site.DELIVERY_TYPES.AEM_CS,
+        deliveryConfig: {
+          programId: '12345',
+          environmentId: '67890',
+        },
+      };
+
+      const result = computeExternalIds(attrs);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: 'p12345',
+        externalSiteId: 'e67890',
+      });
+    });
+
+    it('computes external IDs for AEM_CS delivery type with missing delivery config', () => {
+      const attrs = {
+        deliveryType: Site.DELIVERY_TYPES.AEM_CS,
+      };
+
+      const result = computeExternalIds(attrs);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: undefined,
+        externalSiteId: undefined,
+      });
+    });
+
+    it('computes external IDs for AEM_CS delivery type with partial delivery config', () => {
+      const attrs = {
+        deliveryType: Site.DELIVERY_TYPES.AEM_CS,
+        deliveryConfig: {
+          programId: '12345',
+          // environmentId is missing
+        },
+      };
+
+      const result = computeExternalIds(attrs);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: 'p12345',
+        externalSiteId: undefined,
+      });
+    });
   });
 
   describe('constructor', () => {

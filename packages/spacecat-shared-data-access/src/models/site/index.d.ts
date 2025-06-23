@@ -176,4 +176,8 @@ export interface SiteCollection extends BaseCollection<Organization> {
   findByBaseURL(baseURL: string): Promise<Site | null>;
   findByDeliveryType(deliveryType: string): Promise<Site | null>;
   findByOrganizationId(organizationId: string): Promise<Site | null>;
+  findByPreviewURL(previewURL: string): Promise<Site | null>;
+  findByExternalOwnerIdAndExternalSiteId(
+    externalOwnerId: string, externalSiteId: string
+  ): Promise<Site | null>;
 }

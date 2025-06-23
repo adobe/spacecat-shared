@@ -22,7 +22,7 @@ import {
 import { Config, DEFAULT_CONFIG, validateConfiguration } from './config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 
-import Site from './site.model.js';
+import Site, { computeExternalIds } from './site.model.js';
 import SiteCollection from './site.collection.js';
 
 /*
@@ -94,10 +94,28 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     set: () => new Date().toISOString(),
     validate: (value) => !value || isIsoDate(value),
   })
+  .addAttribute('externalOwnerId', {
+    type: 'string',
+    hidden: true,
+    readOnly: true,
+    watch: ['hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs).externalOwnerId,
+  })
+  .addAttribute('externalSiteId', {
+    type: 'string',
+    hidden: true,
+    readOnly: true,
+    watch: ['hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs).externalSiteId,
+  })
   .addAllIndex(['baseURL'])
   .addIndex(
     { composite: ['deliveryType'] },
     { composite: ['updatedAt'] },
+  )
+  .addIndex(
+    { composite: ['externalOwnerId'] },
+    { composite: ['externalSiteId'] },
   );
 
 export default schema.build();

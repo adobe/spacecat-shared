@@ -110,14 +110,6 @@ describe('ScrapeJob IT', async () => {
 
     checkScrapeJob(scrapeJob);
     expect(scrapeJob.getProcessingType()).to.eql(ScrapeJobModel.ScrapeProcessingType.ACCESSIBILITY);
-
-    // test to make sure data is not an empty object
-    // validJobData = { ...newJobData, options: {} };
-    // await ScrapeJob.create(validJobData).catch((err) => {
-    //   expect(err).to.be.instanceOf(DataAccessError);
-    //   expect(err.cause).to.be.instanceOf(ElectroValidationError);
-    //   expect(err.cause.message).to.contain('Invalid options. Options cannot be empty');
-    // });
   });
 
   it('updates an existing scrape job', async () => {
@@ -184,11 +176,28 @@ describe('ScrapeJob IT', async () => {
     );
 
     expect(scrapeJobs).to.be.an('array');
-    expect(scrapeJobs.length).to.equal(2);
+    expect(scrapeJobs.length).to.equal(3);
 
     scrapeJobs.forEach((scrapeJob) => {
       checkScrapeJob(scrapeJob);
     });
+  });
+
+  it('gets all scrape jobs by baseURL', async () => {
+    const scrapeJobs = await ScrapeJob.allByBaseURL('https://example-2.com/cars');
+
+    expect(scrapeJobs).to.be.an('array');
+    expect(scrapeJobs.length).to.equal(2);
+    expect(scrapeJobs[0].getId()).to.equal(sampleData.scrapeJobs[1].getId());
+    expect(scrapeJobs[1].getId()).to.equal(sampleData.scrapeJobs[0].getId());
+  });
+
+  it('gets all scrape jobs by baseURL and processing type', async () => {
+    const scrapeJobs = await ScrapeJob.allByBaseURLAndProcessingType('https://example-2.com/cars', ScrapeJobModel.ScrapeProcessingType.DEFAULT);
+
+    expect(scrapeJobs).to.be.an('array');
+    expect(scrapeJobs.length).to.equal(1);
+    expect(scrapeJobs[0].getId()).to.equal(sampleData.scrapeJobs[0].getId());
   });
 
   it('removes a scrape job', async () => {

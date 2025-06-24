@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.41.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.41.2...@adobe/spacecat-shared-utils-v1.41.3) (2025-06-24)
+
+
+### Bug Fixes
+
+* promise token exchange ([#821](https://github.com/adobe/spacecat-shared/issues/821)) ([8ede1cf](https://github.com/adobe/spacecat-shared/commit/8ede1cfa440642dd46bc483848f1bf935303a69c))
+
 # [@adobe/spacecat-shared-utils-v1.41.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.41.1...@adobe/spacecat-shared-utils-v1.41.2) (2025-06-23)
 
 

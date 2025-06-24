@@ -51,6 +51,9 @@ export async function getAccessToken(context, promiseToken) {
  * @throws {Error} - If secret is not found or token is missing
  */
 export async function retrievePageAuthentication(log, site, context, authOptions = {}) {
+  log.info(`auth: Site object: ${JSON.stringify(site)}`);
+  log.info(`auth: Retrieving page authentication for site ${site.id}`);
+  log.info(`auth: Delivery type: ${site.getDeliveryType()}`);
   log.info(`auth: Retrieving page authentication for site ${site.id}, delivery type: ${site.getDeliveryType()}`);
   log.info(`auth: Options: ${JSON.stringify(authOptions)}`);
 

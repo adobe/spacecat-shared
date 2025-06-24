@@ -50,9 +50,15 @@ export async function getAccessToken(context, promiseToken) {
  * @returns {Promise<string>} - The authentication token or access token
  * @throws {Error} - If secret is not found or token is missing
  */
-export async function retrievePageAuthentication(site, context, authOptions = {}) {
+export async function retrievePageAuthentication(site, context, log, authOptions = {}) {
+  log.info(`auth: Retrieving page authentication for site ${site.id}, delivery type: ${site.getDeliveryType()}`);
+  log.info(`auth: Options: ${JSON.stringify(authOptions)}`);
+
   if (site && site.getDeliveryType() === Site.DELIVERY_TYPES.AEM_CS && authOptions.promiseToken) {
-    return getAccessToken(context, authOptions.promiseToken.promise_token);
+    log.info(`auth: Retrieving access token for site ${site.id}`);
+    const token = await getAccessToken(context, authOptions.promiseToken.promise_token);
+    log.info(`auth: Access token retrieved: ${token}`);
+    return token;
   }
 
   const baseURL = site.getBaseURL();

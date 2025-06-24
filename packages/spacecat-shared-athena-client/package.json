@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-athena": "3.835.0",
-    "@adobe/spacecat-shared-utils": "1.41.2"
+    "@adobe/spacecat-shared-utils": "1.41.3"
   },
   "devDependencies": {
     "chai": "5.2.0",

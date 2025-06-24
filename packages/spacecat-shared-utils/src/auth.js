@@ -52,7 +52,7 @@ export async function getAccessToken(context, promiseToken) {
  */
 export async function retrievePageAuthentication(site, context, authOptions = {}) {
   if (site && site.getDeliveryType() === Site.DELIVERY_TYPES.AEM_CS && authOptions.promiseToken) {
-    return getAccessToken(context, authOptions.promiseToken);
+    return getAccessToken(context, authOptions.promiseToken.promise_token);
   }
 
   const baseURL = site.getBaseURL();

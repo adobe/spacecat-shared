@@ -238,7 +238,6 @@ async function fetchBundles(opts, log) {
       return response;
     }));
     const bundles = await Promise.all(responses.map((response) => response.json()));
-
     bundles.forEach((b) => {
       b.rumBundles
         .filter((bundle) => !filterBotTraffic || !isBotTraffic(bundle))

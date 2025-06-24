@@ -285,12 +285,12 @@ describe('Rum bundler client', () => {
 
       // Expected date: 2024-01-15
       const expectedDates = [['2024', '01', '15']];
-
       const rumBundles = generateRumBundles(expectedDates, allCheckpoints);
 
+      // Use .join() to match the key
       nock(BASE_URL)
         .get(`/bundles/${domain}/2024/01/15?domainkey=${domainkey}`)
-        .reply(200, rumBundles['20240115']);
+        .reply(200, rumBundles[expectedDates[0].join()]);
 
       const result = await fetchBundles({
         domain,
@@ -320,7 +320,7 @@ describe('Rum bundler client', () => {
 
       nock(BASE_URL)
         .get(`/bundles/${domain}/2024/01/15/10?domainkey=${domainkey}`)
-        .reply(200, rumBundles['2024011510']);
+        .reply(200, rumBundles[expectedDates[0].join()]);
 
       const result = await fetchBundles({
         domain,

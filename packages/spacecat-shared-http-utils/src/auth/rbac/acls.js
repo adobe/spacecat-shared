@@ -93,12 +93,12 @@ export default async function getAcls({
   return {
     acls,
     aclEntities: {
-      // Right now only check organization
+      // Right now Zero impact on the ACLs
       exclude: [
-        'site', 'apiKey', 'audit', 'configuration', 'experiment',
+        'organization', 'site', 'apiKey', 'audit', 'configuration', 'experiment',
         'importJob', 'importUrl', 'keyEvent', 'latestAudit',
         'opportunity', 'siteCandidate', 'siteTopPage', 'suggestion',
-        'asyncJob', 'scrapeJob', 'scrapeUrl',
+        'asyncJob', 'scrapeJob', 'scrapeUrl', 'fixEntity',
       ],
     },
   };

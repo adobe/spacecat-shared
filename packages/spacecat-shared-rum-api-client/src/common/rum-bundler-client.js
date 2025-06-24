@@ -54,6 +54,24 @@ function getUrlChunks(urls, chunkSize) {
     .map((_, index) => urls.slice(index * chunkSize, (index + 1) * chunkSize));
 }
 
+function generateUrlsForDateRange(startDate, endDate, domain, granularity, domainkey) {
+  const urls = [];
+  const currentDate = new Date(startDate);
+  const endDateTime = new Date(endDate);
+
+  while (currentDate <= endDateTime) {
+    urls.push(constructUrl(domain, currentDate, granularity, domainkey));
+
+    if (granularity.toUpperCase() === GRANULARITY.HOURLY) {
+      currentDate.setUTCHours(currentDate.getUTCHours() + 1);
+    } else {
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+  }
+
+  return urls;
+}
+
 /* c8 ignore start */
 /*
  * throw-away code for a single customer who customized the experimentation engine
@@ -165,23 +183,46 @@ async function fetchBundles(opts, log) {
     granularity = GRANULARITY.DAILY,
     checkpoints = [],
     filterBotTraffic = true,
+    startTime,
+    endTime,
   } = opts;
 
   if (!hasText(domain) || !hasText(domainkey)) {
     throw new Error('Missing required parameters');
   }
 
-  const multiplier = granularity.toUpperCase() === GRANULARITY.HOURLY ? ONE_HOUR : ONE_DAY;
-  const range = granularity.toUpperCase() === GRANULARITY.HOURLY
-    ? interval * HOURS_IN_DAY
-    : interval + 1;
+  // Validate startTime and endTime if provided
+  if (startTime && endTime) {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
 
-  const urls = [];
-  const currentDate = new Date();
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new Error('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z")');
+    }
 
-  for (let i = 0; i < range; i += 1) {
-    const date = new Date(currentDate.getTime() - i * multiplier);
-    urls.push(constructUrl(domain, date, granularity, domainkey));
+    if (start >= end) {
+      throw new Error('startTime must be before endTime');
+    }
+  }
+
+  let urls = [];
+
+  if (startTime && endTime) {
+    // Use custom date range
+    urls = generateUrlsForDateRange(startTime, endTime, domain, granularity, domainkey);
+  } else {
+    // Use existing interval-based logic
+    const multiplier = granularity.toUpperCase() === GRANULARITY.HOURLY ? ONE_HOUR : ONE_DAY;
+    const range = granularity.toUpperCase() === GRANULARITY.HOURLY
+      ? interval * HOURS_IN_DAY
+      : interval + 1;
+
+    const currentDate = new Date();
+
+    for (let i = 0; i < range; i += 1) {
+      const date = new Date(currentDate.getTime() - i * multiplier);
+      urls.push(constructUrl(domain, date, granularity, domainkey));
+    }
   }
 
   const chunks = getUrlChunks(urls, CHUNK_SIZE);

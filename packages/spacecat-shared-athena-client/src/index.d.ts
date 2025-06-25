@@ -46,6 +46,16 @@ export declare class AWSAthenaClient {
     opts?: AthenaClientOptions,
   ): AWSAthenaClient;
 
+  /**
+   * Execute an SQL query against AWS Athena and return the results as an array of records.
+   * This method handles query execution, polling for completion, and parsing results.
+   * 
+   * @param sql - The SQL query string to execute
+   * @param database - The name of the database to query against
+   * @param description - Optional description for the query (used for logging and AWS console)
+   * @param opts - Optional configuration to override default client options
+   * @returns Promise that resolves to an array of records, where each record is a key-value object
+   */
   query(
     sql: string,
     database: string,
@@ -53,6 +63,16 @@ export declare class AWSAthenaClient {
     opts?: AthenaClientOptions,
   ): Promise<Record<string, string>[]>;
 
+  /**
+   * Execute an SQL statement against AWS Athena and return the execution ID.
+   * to know if the query executed successfully without retrieving results.
+   * 
+   * @param sql - The SQL statement to execute
+   * @param database - The name of the database to execute the statement against
+   * @param description - Optional description for the execution (used for logging and AWS console)
+   * @param opts - Optional configuration to override default client options
+   * @returns Promise that resolves to the query execution ID
+   */
   execute(
     sql: string,
     database: string,

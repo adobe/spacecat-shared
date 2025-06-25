@@ -91,7 +91,7 @@ describe('RBAC', () => {
       },
     });
 
-    const log = { debug: () => { } };
+    const log = { debug: () => { }, info: () => { } };
     const imsUserId = '1234@5678.e';
     const imsOrgs = ['BAABAABAA@AdobeOrg'];
     const imsGroups = [{
@@ -168,7 +168,7 @@ describe('RBAC', () => {
       },
     });
 
-    const log = { debug: () => { } };
+    const log = { debug: () => { }, info: () => { } };
     const imsOrgs = ['DAB0@AdobeOrg'];
     const apiKey = 'BHEUAARK!';
     const acls = await getAcls({ imsOrgs, apiKey }, log);

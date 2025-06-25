@@ -12,10 +12,11 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import trafficMetrics from '../src/functions/paid-traffic-metrics.js';
+import trafficMetrics from '../src/functions/traffic-metrics.js';
 import bundlesWithTraffic from './fixtures/bundles.json' with { type: 'json' };
 import expectedTraficMetricResults from './fixtures/exptected-traffic-metrics-result.json' with { type: 'json' };
 import bundlesWithTrafficSource from './fixtures/bundles-with-traffic-source.json' with { type: 'json' };
+import { classifyTraffic } from '../src/common/traffic.js';
 
 const pageTypesString = {
   'home | landing': '^/$',
@@ -77,7 +78,7 @@ const expectedMetrics = [
   'avgClicksPerSession',
 ];
 
-describe('Paid traffic metrics', () => {
+describe('Traffic metrics', () => {
   it('Provies traffic-categorization metrics', async () => {
     const traficMetricResults = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
     expect(traficMetricResults).to.deep.equal(expectedTraficMetricResults);
@@ -130,21 +131,46 @@ describe('Paid traffic metrics', () => {
     expect(pageType.value[0].type).to.eql('uncategorized');
   });
 
-  it('only returns metrics for paid traffic', async () => {
-    const result = trafficMetrics.handler(bundlesWithTrafficSource.rumBundles, options);
-    // For every group, every value, every url, check that the original bundle had a paid event
-    const paidUrls = new Set(
-      bundlesWithTrafficSource.rumBundles
-        .filter((b) => b.events.some((e) => e.checkpoint === 'paid'))
-        .map((b) => b.url),
+  it('Only returns metrics for paid traffic', async () => {
+    const result = trafficMetrics.handler(bundlesWithTrafficSource.rumBundles, { ...options, trafficType: 'paid' });
+    const getSourceType = (bundle) => classifyTraffic(bundle).type;
+
+    // 1. Group all bundles by (url, type)
+    const allTuples = new Set(
+      bundlesWithTrafficSource.rumBundles.map((b) => `${b.url}|${getSourceType(b)}`),
     );
+    const paidTuples = new Set(
+      Array.from(allTuples).filter((tuple) => tuple.endsWith('|paid')),
+    );
+    const nonPaidTuples = new Set(
+      Array.from(allTuples).filter((tuple) => !tuple.endsWith('|paid')),
+    );
+
+    // 2. Collect all (url, source) tuples returned in the result
+    const resultTuples = new Set();
     result.forEach((group) => {
       group.value.forEach((segment) => {
-        // segment.urls is always an array of urls for that segment
-        segment.urls.forEach((url) => {
-          expect(paidUrls.has(url), `Non-paid url found in segment: ${url}`).to.be.true;
-        });
+        if ('url' in segment && 'source' in segment) {
+          const type = segment.source.split(':')[0];
+          resultTuples.add(`${segment.url}|${type}`);
+        }
+        if (Array.isArray(segment.urls) && segment.source) {
+          const type = segment.source.split(':')[0];
+          segment.urls.forEach((url) => {
+            resultTuples.add(`${url}|${type}`);
+          });
+        }
       });
+    });
+
+    // 3. Check that every paid (url, type) tuple is present in the result
+    paidTuples.forEach((tuple) => {
+      expect(resultTuples.has(tuple), `Paid url/type tuple missing from result: ${tuple}`).to.be.true;
+    });
+
+    // 4. Check that no non-paid (url, type) tuple is present in the result
+    nonPaidTuples.forEach((tuple) => {
+      expect(resultTuples.has(tuple), `Non-paid url/type tuple found in result: ${tuple}`).to.be.false;
     });
   });
 });

@@ -12,9 +12,10 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import trafficMetrics from '../src/functions/traffic-metrics.js';
+import trafficMetrics from '../src/functions/paid-traffic-metrics.js';
 import bundlesWithTraffic from './fixtures/bundles.json' with { type: 'json' };
 import expectedTraficMetricResults from './fixtures/exptected-traffic-metrics-result.json' with { type: 'json' };
+import bundlesWithTrafficSource from './fixtures/bundles-with-traffic-source.json' with { type: 'json' };
 
 const pageTypesString = {
   'home | landing': '^/$',
@@ -68,7 +69,7 @@ const expectedGroupings = [
 const expectedMetrics = [
   'ctr',
   'clickedSessions',
-  'totalSessions',
+  'pageViews',
   'sessionsWithEnter',
   'clicksOverViews',
   'bounceRate',
@@ -76,7 +77,7 @@ const expectedMetrics = [
   'avgClicksPerSession',
 ];
 
-describe('Traffic-categories metrics', () => {
+describe('Paid traffic metrics', () => {
   it('Provies traffic-categorization metrics', async () => {
     const traficMetricResults = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
     expect(traficMetricResults).to.deep.equal(expectedTraficMetricResults);
@@ -127,5 +128,23 @@ describe('Traffic-categories metrics', () => {
     const pageType = result.find((metric) => metric.key === 'pageType');
     expect(pageType.value).lengthOf(1);
     expect(pageType.value[0].type).to.eql('uncategorized');
+  });
+
+  it('only returns metrics for paid traffic', async () => {
+    const result = trafficMetrics.handler(bundlesWithTrafficSource.rumBundles, options);
+    // For every group, every value, every url, check that the original bundle had a paid event
+    const paidUrls = new Set(
+      bundlesWithTrafficSource.rumBundles
+        .filter((b) => b.events.some((e) => e.checkpoint === 'paid'))
+        .map((b) => b.url),
+    );
+    result.forEach((group) => {
+      group.value.forEach((segment) => {
+        // segment.urls is always an array of urls for that segment
+        segment.urls.forEach((url) => {
+          expect(paidUrls.has(url), `Non-paid url found in segment: ${url}`).to.be.true;
+        });
+      });
+    });
   });
 });

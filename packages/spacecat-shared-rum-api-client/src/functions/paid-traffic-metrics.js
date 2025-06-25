@@ -16,7 +16,8 @@ import { classifyTraffic } from '../common/traffic.js';
 import { getPageType, isConsentClick } from '../common/page.js';
 
 function getTrafficSource(bundle) {
-  return classifyTraffic(bundle).type;
+  const { type, category, vendor } = classifyTraffic(bundle);
+  return `${type}:${category}:${vendor}`;
 }
 
 function getDeviceType(bundle) {
@@ -52,16 +53,17 @@ function addPageTypeTrafficSourceFacet(dataChunks, pageTypes) {
 
 function handler(bundles, options = { pageTypes: null }) {
   const dataChunks = new DataChunks();
+  const paidBundles = bundles.filter((bundle) => classifyTraffic(bundle).type === 'paid');
   const { pageTypes: pageTypeOpt } = options;
 
-  loadBundles(bundles, dataChunks);
+  loadBundles(paidBundles, dataChunks);
 
   const metricFilter = (metrics) => {
     const { ctr, enters, sumOfAllClicks } = metrics;
     return {
       ctr: ctr.sum / ctr.weight,
       clickedSessions: ctr.sum,
-      totalSessions: ctr.weight,
+      pageViews: ctr.weight,
       sessionsWithEnter: enters.sum,
       clicksOverViews: ctr.weight ? ctr.sum / ctr.weight : 0,
       bounceRate: ctr.weight ? (1 - (ctr.sum / ctr.weight)) : 0,
@@ -116,6 +118,7 @@ function handler(bundles, options = { pageTypes: null }) {
     return {
       ...metricFilter(facet.metrics),
       url,
+      urls: [url],
     };
   });
 
@@ -124,6 +127,7 @@ function handler(bundles, options = { pageTypes: null }) {
     return {
       ...metricFilter(facet.metrics),
       type,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
@@ -132,6 +136,7 @@ function handler(bundles, options = { pageTypes: null }) {
     return {
       ...metricFilter(facet.metrics),
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
@@ -141,6 +146,7 @@ function handler(bundles, options = { pageTypes: null }) {
       ...metricFilter(facet.metrics),
       url,
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
@@ -149,6 +155,7 @@ function handler(bundles, options = { pageTypes: null }) {
     return {
       ...metricFilter(facet.metrics),
       source,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
@@ -158,6 +165,7 @@ function handler(bundles, options = { pageTypes: null }) {
       ...metricFilter(facet.metrics),
       url,
       source,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
@@ -168,6 +176,7 @@ function handler(bundles, options = { pageTypes: null }) {
       url,
       source,
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
@@ -177,6 +186,7 @@ function handler(bundles, options = { pageTypes: null }) {
       ...metricFilter(facet.metrics),
       type,
       source,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
@@ -186,6 +196,7 @@ function handler(bundles, options = { pageTypes: null }) {
       ...metricFilter(facet.metrics),
       type,
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
@@ -195,6 +206,7 @@ function handler(bundles, options = { pageTypes: null }) {
       ...metricFilter(facet.metrics),
       deviceType,
       source,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
@@ -205,6 +217,7 @@ function handler(bundles, options = { pageTypes: null }) {
       type,
       source,
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 

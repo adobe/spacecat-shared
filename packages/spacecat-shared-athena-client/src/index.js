@@ -27,15 +27,15 @@ function sleep(ms) {
 
 export class AWSAthenaClient {
   /**
-     * @param {import('@aws-sdk/client-athena').AthenaClient} client
-     * @param {string} tempLocation   – S3 URI for Athena temp results
-     * @param {{ info: Function, warn: Function, error: Function, debug: Function }} log
-     * @param {object} opts
-     * @param {number} [opts.backoffMs=100]
-     * @param {number} [opts.maxRetries=3]
-     * @param {number} [opts.pollIntervalMs=1000]
-     * @param {number} [opts.maxPollAttempts=60]
-     */
+   * @param {import('@aws-sdk/client-athena').AthenaClient} client
+   * @param {string} tempLocation   – S3 URI for Athena temp results
+   * @param {{ info: Function, warn: Function, error: Function, debug: Function }} log
+   * @param {object} opts
+   * @param {number} [opts.backoffMs=100]
+   * @param {number} [opts.maxRetries=3]
+   * @param {number} [opts.pollIntervalMs=1000]
+   * @param {number} [opts.maxPollAttempts=120]
+   */
   constructor(client, tempLocation, log, opts = {}) {
     const {
       backoffMs = 100,
@@ -58,11 +58,11 @@ export class AWSAthenaClient {
   }
 
   /**
-     * @param {object} context   – must contain `env.AWS_REGION` and `log`
-     * @param {string} tempLocation   – S3 URI for Athena temp results
-     * @param {object} opts      – same opts as constructor
-     * @returns {AWSAthenaClient}
-     */
+   * @param {object} context   – must contain `env.AWS_REGION` and `log`
+   * @param {string} tempLocation   – S3 URI for Athena temp results
+   * @param {object} opts      – same opts as constructor
+   * @returns {AWSAthenaClient}
+   */
   static fromContext(context, tempLocation, opts = {}) {
     if (context.athenaClient) return context.athenaClient;
 
@@ -73,10 +73,10 @@ export class AWSAthenaClient {
   }
 
   /**
-     * @private
-     * Start the query, with retries on StartQueryExecution errors
-     * @returns {Promise<string>} – QueryExecutionId
-     */
+   * @private
+   * Start the query, with retries on StartQueryExecution errors
+   * @returns {Promise<string>} – QueryExecutionId
+   */
   async #startQueryWithRetry(sql, database, description, backoffMs, maxRetries) {
     let lastError = new Error('No attempts were made');
     for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
@@ -111,9 +111,9 @@ export class AWSAthenaClient {
   }
 
   /**
-     * @private
-     * Poll the given query until it finishes or fails
-     */
+   * @private
+   * Poll the given query until it finishes or fails
+   */
   async #pollToCompletion(queryExecutionId, description, pollIntervalMs, maxPollAttempts) {
     for (let i = 0; i < maxPollAttempts; i += 1) {
       // eslint-disable-next-line no-await-in-loop
@@ -141,9 +141,9 @@ export class AWSAthenaClient {
   }
 
   /**
-     * @private
-     * Parse Athena results into usable format
-     */
+   * @private
+   * Parse Athena results into usable format
+   */
   static #parseAthenaResults(results) {
     if (!results.ResultSet || !results.ResultSet.Rows || results.ResultSet.Rows.length === 0) {
       return [];
@@ -182,8 +182,8 @@ export class AWSAthenaClient {
   }
 
   /**
-     * Execute a query without returning results (for DDL operations)
-     */
+   * Execute a query without returning results (for DDL operations)
+   */
   async execute(sql, database, description = 'Athena query', opts = {}) {
     const {
       backoffMs = this.backoffMs,
@@ -208,18 +208,17 @@ export class AWSAthenaClient {
   }
 
   /**
-     * Execute an Athena SQL query and return parsed results.
-     *
-     * @param {string} sql - sql query to run
-     * @param {string} database - database to run against
-     * @param {string} [description='Athena query'] – human-readable for logs
-     * @param {object} [opts]
-     * @param {number} [opts.backoffMs]
-     * @param {number} [opts.maxRetries]
-     * @param {number} [opts.pollIntervalMs]
-     * @param {number} [opts.maxPollAttempts]
-     * @returns {Promise<Array>} – Parsed query results
-     */
+   * Execute an Athena SQL query and return parsed results.
+   * @param {string} sql - sql query to run
+   * @param {string} database - database to run against
+   * @param {string} [description='Athena query'] – human-readable for logs
+   * @param {object} [opts]
+   * @param {number} [opts.backoffMs]
+   * @param {number} [opts.maxRetries]
+   * @param {number} [opts.pollIntervalMs]
+   * @param {number} [opts.maxPollAttempts]
+   * @returns {Promise<Array>} – Parsed query results
+   */
   async query(sql, database, description = 'Athena query', opts = {}) {
     const {
       backoffMs = this.backoffMs,

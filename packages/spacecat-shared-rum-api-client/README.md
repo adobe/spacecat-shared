@@ -71,8 +71,8 @@ console.log(`Query result: ${result}`);
 | domainkey   | no       |         | Provide directly or omit to auto-fetch using `RUM_ADMIN_KEY`. |
 | interval    | no       | 7       | Interval in days (integer). Ignored when startTime/endTime are provided. |
 | granularity | no       | daily   | 'daily' or 'hourly'.                                     |
-| startTime   | no       |         | Start time in ISO 8601 format (e.g., "2024-01-01T00:00:00Z"). Must be before endTime. |
-| endTime     | no       |         | End time in ISO 8601 format (e.g., "2024-01-31T23:59:59Z"). Must be after startTime. |
+| startTime   | no       |         | Start time in ISO 8601 format (e.g., "2024-01-01T00:00:00Z"). Must be before endTime. Format `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SSZ` |
+| endTime     | no       |         | End time in ISO 8601 format (e.g., "2024-01-31T23:59:59Z"). Must be after startTime.  Format `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SSZ` |
 
 
 ### Retrieving and Caching the Domainkey

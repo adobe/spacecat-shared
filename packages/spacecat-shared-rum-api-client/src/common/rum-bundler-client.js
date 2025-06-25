@@ -22,6 +22,24 @@ const ONE_DAY = ONE_HOUR * HOURS_IN_DAY;
 
 const CHUNK_SIZE = 31;
 
+/**
+ * Parses a date string and returns a Date object.
+ * Supports both ISO 8601 format (e.g., "2024-01-01T00:00:00Z")
+ * and simple date format (e.g., "2024-01-01").
+ * For simple date strings, assumes UTC timezone.
+ * @param {string} dateString - The date string to parse
+ * @returns {Date} The parsed Date object
+ */
+function parseDate(dateString) {
+  // If it's a simple date string (YYYY-MM-DD), convert to ISO format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return new Date(`${dateString}T00:00:00.000Z`);
+  }
+
+  // Otherwise, let the Date constructor handle it (ISO 8601, etc.)
+  return new Date(dateString);
+}
+
 function isBotTraffic(bundle) {
   return bundle?.userAgent?.includes('bot');
 }
@@ -56,10 +74,10 @@ function getUrlChunks(urls, chunkSize) {
 
 function generateUrlsForDateRange(startDate, endDate, domain, granularity, domainkey) {
   const urls = [];
-  const currentDate = new Date(startDate);
-  const endDateTime = new Date(endDate);
+  const currentDate = parseDate(startDate);
+  const endDateTime = parseDate(endDate);
 
-  while (currentDate <= endDateTime) {
+  while (currentDate < endDateTime) {
     urls.push(constructUrl(domain, currentDate, granularity, domainkey));
 
     if (granularity.toUpperCase() === GRANULARITY.HOURLY) {
@@ -193,11 +211,11 @@ async function fetchBundles(opts, log) {
 
   // Validate startTime and endTime if provided
   if (startTime && endTime) {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
+    const start = parseDate(startTime);
+    const end = parseDate(endTime);
 
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      throw new Error('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z")');
+      throw new Error('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z") or simple date format (e.g., "2024-01-01")');
     }
 
     if (start >= end) {

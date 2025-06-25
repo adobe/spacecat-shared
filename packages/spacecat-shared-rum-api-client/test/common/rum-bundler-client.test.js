@@ -440,7 +440,7 @@ describe('Rum bundler client', () => {
         domainkey,
         startTime,
         endTime,
-      }, console)).to.be.rejectedWith('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z")');
+      }, console)).to.be.rejectedWith('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z") or simple date format (e.g., "2024-01-01")');
     });
 
     it('should throw error when endTime has invalid format', async () => {
@@ -454,7 +454,7 @@ describe('Rum bundler client', () => {
         domainkey,
         startTime,
         endTime,
-      }, console)).to.be.rejectedWith('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z")');
+      }, console)).to.be.rejectedWith('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z") or simple date format (e.g., "2024-01-01")');
     });
 
     it('should accept valid ISO 8601 date formats', async () => {
@@ -520,6 +520,140 @@ describe('Rum bundler client', () => {
       }, console);
 
       expect(result.length).to.equal(dates.length);
+    });
+
+    it('should accept simple date format (YYYY-MM-DD)', async () => {
+      const domain = 'test-domain.com';
+      const domainkey = 'testkey';
+      const startTime = '2024-01-01';
+      const endTime = '2024-01-03';
+      const granularity = 'DAILY';
+      const allCheckpoints = ['good', 'bad'];
+
+      // Expected dates: 2024-01-01, 2024-01-02 (endDate is exclusive)
+      const expectedDates = [
+        ['2024', '01', '01'],
+        ['2024', '01', '02'],
+      ];
+
+      const rumBundles = generateRumBundles(expectedDates, allCheckpoints);
+
+      for (const date of expectedDates) {
+        nock(BASE_URL)
+          .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}?domainkey=${domainkey}`)
+          .reply(200, rumBundles[date.join()]);
+      }
+
+      const result = await fetchBundles({
+        domain,
+        domainkey,
+        startTime,
+        endTime,
+        granularity,
+        checkpoints: ['good'],
+      }, console);
+
+      expect(result.length).to.equal(expectedDates.length);
+    });
+
+    it('should handle simple date format with hourly granularity', async () => {
+      const domain = 'test-domain.com';
+      const domainkey = 'testkey';
+      const startTime = '2024-01-01';
+      const endTime = '2024-01-03';
+      const granularity = 'HOURLY';
+      const allCheckpoints = ['good', 'bad'];
+
+      // Expected dates: 48 hours from 2024-01-01 00:00 to 2024-01-02 23:00 (endDate is exclusive)
+      const expectedDates = [];
+      for (let day = 1; day <= 2; day += 1) {
+        for (let hour = 0; hour < 24; hour += 1) {
+          expectedDates.push(['2024', '01', day.toString().padStart(2, '0'), hour.toString().padStart(2, '0')]);
+        }
+      }
+
+      const rumBundles = generateRumBundles(expectedDates, allCheckpoints);
+
+      for (const date of expectedDates) {
+        nock(BASE_URL)
+          .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}/${date[3]}?domainkey=${domainkey}`)
+          .reply(200, rumBundles[date.join()]);
+      }
+
+      const result = await fetchBundles({
+        domain,
+        domainkey,
+        startTime,
+        endTime,
+        granularity,
+        checkpoints: ['good'],
+      }, console);
+
+      expect(result.length).to.equal(48); // 2 days * 24 hours = 48 hours
+    });
+
+    it('should verify endDate is exclusive with simple date format', async () => {
+      const domain = 'test-domain.com';
+      const domainkey = 'testkey';
+      const startTime = '2024-01-01';
+      const endTime = '2024-01-02';
+      const granularity = 'DAILY';
+      const allCheckpoints = ['good', 'bad'];
+
+      // Expected dates: only 2024-01-01 (endDate is exclusive)
+      const expectedDates = [['2024', '01', '01']];
+
+      const rumBundles = generateRumBundles(expectedDates, allCheckpoints);
+
+      nock(BASE_URL)
+        .get(`/bundles/${domain}/2024/01/01?domainkey=${domainkey}`)
+        .reply(200, rumBundles[expectedDates[0].join()]);
+
+      const result = await fetchBundles({
+        domain,
+        domainkey,
+        startTime,
+        endTime,
+        granularity,
+        checkpoints: ['good'],
+      }, console);
+
+      expect(result.length).to.equal(1);
+      expect(result[0].events[0].checkpoint).to.equal('good');
+    });
+
+    it('should accept mixed date formats (simple and ISO)', async () => {
+      const domain = 'test-domain.com';
+      const domainkey = 'testkey';
+      const startTime = '2024-01-01'; // Simple format
+      const endTime = '2024-01-03T00:00:00Z'; // ISO format
+      const granularity = 'DAILY';
+      const allCheckpoints = ['good', 'bad'];
+
+      // Expected dates: 2024-01-01, 2024-01-02 (endDate is exclusive)
+      const expectedDates = [
+        ['2024', '01', '01'],
+        ['2024', '01', '02'],
+      ];
+
+      const rumBundles = generateRumBundles(expectedDates, allCheckpoints);
+
+      for (const date of expectedDates) {
+        nock(BASE_URL)
+          .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}?domainkey=${domainkey}`)
+          .reply(200, rumBundles[date.join()]);
+      }
+
+      const result = await fetchBundles({
+        domain,
+        domainkey,
+        startTime,
+        endTime,
+        granularity,
+        checkpoints: ['good'],
+      }, console);
+
+      expect(result.length).to.equal(expectedDates.length);
     });
   });
 

@@ -50,7 +50,7 @@
     "chai-as-promised": "8.0.1",
     "dynamo-db-local": "9.6.0",
     "nock": "14.0.5",
-    "sinon": "20.0.0",
+    "sinon": "21.0.0",
     "sinon-chai": "4.0.0"
   }
 }

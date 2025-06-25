@@ -10,4 +10,55 @@
  * governing permissions and limitations under the License.
  */
 
-export { AWSAthenaClient } from './clients/athena-client.js';
+import { AthenaClient } from '@aws-sdk/client-athena';
+
+export interface AthenaClientOptions {
+  backoffMs?: number;
+  maxRetries?: number;
+  pollIntervalMs?: number;
+  maxPollAttempts?: number;
+}
+
+export interface Logger {
+  info: (message: string) => void;
+  warn: (message: string) => void;
+  error: (message: string) => void;
+  debug: (message: string) => void;
+}
+
+export declare class AWSAthenaClient {
+  constructor(
+    client: AthenaClient,
+    tempLocation: string,
+    log: Logger,
+    opts?: AthenaClientOptions,
+  );
+
+  static fromContext(
+    context: {
+      env?: {
+        AWS_REGION?: string;
+      };
+      log: Logger;
+      athenaClient?: AWSAthenaClient;
+    },
+    tempLocation: string,
+    opts?: AthenaClientOptions,
+  ): AWSAthenaClient;
+
+  query(
+    sql: string,
+    database: string,
+    description?: string,
+    opts?: AthenaClientOptions,
+  ): Promise<Record<string, string>[]>;
+
+  execute(
+    sql: string,
+    database: string,
+    description?: string,
+    opts?: AthenaClientOptions,
+  ): Promise<string>;
+}
+
+export type Context = Parameters<typeof AWSAthenaClient.fromContext>[0];

@@ -59,7 +59,7 @@ function addPageTypeTrafficSourceDeviceTypes(dataChunks, pageTypes, memo) {
 function addPageTypeTrafficSourceFacet(dataChunks, pageTypes, memo) {
   dataChunks.addFacet('pageTypeTrafficSources', (bundle) => {
     const pageType = getPageType(bundle, pageTypes);
-    return generateKey(pageType, getTrafficSource(bundle, memo));
+    return generateKey(pageType, getTrafficSourceKey(bundle, memo));
   });
 }
 
@@ -90,12 +90,12 @@ function handler(bundles, options = { pageTypes: null, trafficType: 'all' }) {
       ctr, enters, sumOfAllClicks, facet,
     } = metrics;
     return {
-      ctr: ctr.sum / ctr.weight,
+      ctr: ctr.weight !== 0 ? ctr.sum / ctr.weight : 0,
       clickedSessions: ctr.sum,
       pageViews: facet.weight,
       sessionsWithEnter: enters.sum,
-      clicksOverViews: ctr.weight ? ctr.sum / ctr.weight : 0,
-      bounceRate: ctr.weight ? (1 - (ctr.sum / ctr.weight)) : 0,
+      clicksOverViews: ctr.weight !== 0 ? ctr.sum / ctr.weight : 0,
+      bounceRate: ctr.weight !== 0 ? (1 - (ctr.sum / ctr.weight)) : 1,
       totalNumClicks: sumOfAllClicks.sum,
       avgClicksPerSession: ctr.sum ? sumOfAllClicks.sum / ctr.sum : 0,
     };

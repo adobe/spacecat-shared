@@ -173,4 +173,36 @@ describe('Traffic metrics', () => {
       expect(resultTuples.has(tuple), `Non-paid url/type tuple found in result: ${tuple}`).to.be.false;
     });
   });
+
+  it('Returns empty metrics if trafficType does not match any bundle', async () => {
+    const result = trafficMetrics.handler(bundlesWithTrafficSource.rumBundles, { ...options, trafficType: 'nonexistent' });
+    result.forEach((group) => {
+      expect(group.value, `Group ${group.key} should be empty`).to.be.an('array').that.is.empty;
+    });
+  });
+
+  it('Handles case where ctr.weight is zero', async () => {
+    // Bundle with no click events, so ctr.weight will be zero
+    const noClickBundle = [{
+      id: 'test1',
+      url: '/no-click',
+      userAgent: 'desktop:mac',
+      weight: 0,
+      events: [
+        { checkpoint: 'enter', target: 'visible', source: 'https://www.example.com/' },
+      ],
+    }];
+    const result = trafficMetrics.handler(noClickBundle, options);
+    // Find the url grouping for our test bundle
+    const urlGroup = result.find((g) => g.key === 'url');
+    expect(urlGroup.value).to.have.lengthOf(1);
+    const metrics = urlGroup.value[0];
+    expect(metrics.ctr).to.equal(0);
+    expect(metrics.clickedSessions).to.equal(0);
+    expect(metrics.pageViews).to.equal(0);
+    expect(metrics.clicksOverViews).to.equal(0);
+    expect(metrics.bounceRate).to.equal(1);
+    expect(metrics.totalNumClicks).to.equal(0);
+    expect(metrics.avgClicksPerSession).to.equal(0);
+  });
 });

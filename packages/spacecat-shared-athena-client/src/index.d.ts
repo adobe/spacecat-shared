@@ -49,7 +49,7 @@ export declare class AWSAthenaClient {
   /**
    * Execute an SQL query against AWS Athena and return the results as an array of records.
    * This method handles query execution, polling for completion, and parsing results.
-   * 
+   *
    * @param sql - The SQL query string to execute
    * @param database - The name of the database to query against
    * @param description - Optional description for the query (used for logging and AWS console)
@@ -66,7 +66,7 @@ export declare class AWSAthenaClient {
   /**
    * Execute an SQL statement against AWS Athena and return the execution ID.
    * to know if the query executed successfully without retrieving results.
-   * 
+   *
    * @param sql - The SQL statement to execute
    * @param database - The name of the database to execute the statement against
    * @param description - Optional description for the execution (used for logging and AWS console)

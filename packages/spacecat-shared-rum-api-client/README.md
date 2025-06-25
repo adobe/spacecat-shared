@@ -46,6 +46,21 @@ const result = await rumApiClient.query('cwv', opts);
 console.log(`Query result: ${result}`);
 ```
 
+**Using startTime and endTime for precise date ranges:**
+
+```js
+const opts = {
+  domain: 'www.aem.live',
+  domainkey: '<domain-key>',
+  granularity: 'daily',
+  startTime: '2024-01-01T00:00:00Z',
+  endTime: '2024-01-31T23:59:59Z'
+};
+
+const result = await rumApiClient.query('cwv', opts);
+console.log(`Query result: ${result}`);
+```
+
 **Note**: All query names must be lowercase.
 
 ### Query Options: the 'opts' object
@@ -54,8 +69,10 @@ console.log(`Query result: ${result}`);
 |-------------|----------|---------|----------------------------------------------------------|
 | domain      | yes      |         | The domain for which to fetch data.                      |
 | domainkey   | no       |         | Provide directly or omit to auto-fetch using `RUM_ADMIN_KEY`. |
-| interval    | no       | 7       | Interval in days (integer).                              |
+| interval    | no       | 7       | Interval in days (integer). Ignored when startTime/endTime are provided. |
 | granularity | no       | daily   | 'daily' or 'hourly'.                                     |
+| startTime   | no       |         | Start time in ISO 8601 format (e.g., "2024-01-01T00:00:00Z"). Must be before endTime. |
+| endTime     | no       |         | End time in ISO 8601 format (e.g., "2024-01-31T23:59:59Z"). Must be after startTime. |
 
 
 ### Retrieving and Caching the Domainkey

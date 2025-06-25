@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.30.0...@adobe/spacecat-shared-rum-api-client-v2.31.0) (2025-06-25)
+
+
+### Features
+
+* expose urls with most paid traffic  ([#825](https://github.com/adobe/spacecat-shared/issues/825)) ([88dde01](https://github.com/adobe/spacecat-shared/commit/88dde01843ae32643a54d93868b7ef7eec10a62a))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.29.0...@adobe/spacecat-shared-rum-api-client-v2.30.0) (2025-06-25)
 
 

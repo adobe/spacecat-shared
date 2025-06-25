@@ -56,6 +56,13 @@ function addPageTypeTrafficSourceDeviceTypes(dataChunks, pageTypes, memo) {
   });
 }
 
+function addPageTypeTrafficSourceFacet(dataChunks, pageTypes, memo) {
+  dataChunks.addFacet('pageTypeTrafficSources', (bundle) => {
+    const pageType = getPageType(bundle, pageTypes);
+    return generateKey(pageType, getTrafficSource(bundle, memo));
+  });
+}
+
 /**
  * Handler for traffic metrics.
  * @param {Array} bundles - The RUM bundles.
@@ -110,10 +117,7 @@ function handler(bundles, options = { pageTypes: null, trafficType: 'all' }) {
 
   addPageTypeFacet(dataChunks, pageTypeOpt);
 
-  dataChunks.addFacet('pageTypeTrafficSources', (bundle) => {
-    const pageType = getPageType(bundle, pageTypeOpt);
-    return generateKey(pageType, getTS(bundle));
-  });
+  addPageTypeTrafficSourceFacet(dataChunks, pageTypeOpt, trafficSourceMemo);
 
   addPageTypeDeviceTypeFacet(dataChunks, pageTypeOpt);
 

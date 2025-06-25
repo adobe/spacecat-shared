@@ -57,7 +57,9 @@ async function getDBRoles(dbAccess, {
     idents.push(`apiKeyID:${apiKey}`);
   }
 
+  log.debug(`Getting role memberships for ${imsOrgId} identities ${idents}`);
   const roleMemberships = await dbAccess.RoleMember.allRoleMembershipByIdentities(imsOrgId, idents);
+  log.debug(`Found ${roleMemberships.length} role memberships`);
   const roles = await Promise.all(roleMemberships.map(async (rm) => rm.getRole()));
   log.debug(`Found role membership names for ${imsOrgId} identities ${idents}: ${roles.map((r) => r.getName())}`);
   return roles;

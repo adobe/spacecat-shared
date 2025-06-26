@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.29.1...@adobe/spacecat-shared-data-access-v2.30.0) (2025-06-26)
+
+
+### Features
+
+* add CDN logs config ([#827](https://github.com/adobe/spacecat-shared/issues/827)) ([c4dd99b](https://github.com/adobe/spacecat-shared/commit/c4dd99bf142312b8285491769ea552c90f3e60aa))
+
 # [@adobe/spacecat-shared-data-access-v2.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.29.0...@adobe/spacecat-shared-data-access-v2.29.1) (2025-06-21)
 
 

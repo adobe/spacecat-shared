@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.30.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.30.0...@adobe/spacecat-shared-data-access-v2.30.1) (2025-06-26)
+
+
+### Bug Fixes
+
+* add setter for cdn logs condfig ([#828](https://github.com/adobe/spacecat-shared/issues/828)) ([094edf3](https://github.com/adobe/spacecat-shared/commit/094edf3edf362531930294b5195c55239f8b3efc))
+
 # [@adobe/spacecat-shared-data-access-v2.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.29.1...@adobe/spacecat-shared-data-access-v2.30.0) (2025-06-26)
 
 

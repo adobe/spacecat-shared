@@ -226,6 +226,18 @@ describe('Config Tests', () => {
       };
       expect(() => Config(data)).to.throw('Configuration validation error: "cdnLogsConfig.bucketName" is required');
     });
+
+    it('should be able to update cdnLogsConfig', () => {
+      const data = {
+        cdnLogsConfig: {
+          filters: [{ key: 'test-key', value: 'test-value' }],
+          outputLocation: 'test-output-location',
+        },
+      };
+      const config = Config({});
+      config.updateCdnLogsConfig(data.cdnLogsConfig);
+      expect(config.getCdnLogsConfig()).to.deep.equal(data.cdnLogsConfig);
+    });
   });
 
   describe('Grouped URLs option', () => {

@@ -265,7 +265,7 @@ describe('Site IT', async () => {
     }
   });
 
-  it('finds site by preview URL using RSO index', async () => {
+  it('finds site by preview URL using deliveryConfig', async () => {
     // Create a test site with specific RSO configuration
     const site = await Site.create({
       baseURL: 'https://preview-test.com',
@@ -279,10 +279,16 @@ describe('Site IT', async () => {
         },
       },
       deliveryType: 'aem_edge',
+      authoringType: 'cs',
+      deliveryConfig: {
+        programId: '123',
+        environmentId: '456',
+        authorURL: 'https://author.preview-test.com',
+      },
       isLive: true,
     });
 
-    const previewURL = 'https://feature-branch--my-site--mycompany.hlx.page/some/path';
+    const previewURL = 'https://author-p123-e456.adobeaemcloud.com/some/path';
     const foundSite = await Site.findByPreviewURL(previewURL);
     expect(foundSite).to.be.an('object');
     expect(foundSite.getId()).to.equal(site.getId());

@@ -19,10 +19,10 @@ export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)/i;
 /**
  * Computes external IDs based on delivery type and configuration
  */
-export const computeExternalIds = (attrs) => {
+export const computeExternalIds = (attrs, authoringTypes) => {
   const { hlxConfig, deliveryConfig } = attrs;
 
-  if (hlxConfig) {
+  if (hlxConfig && authoringTypes.DA) {
     const rso = hlxConfig.rso ?? {};
     const { ref, owner, site } = rso;
 
@@ -32,7 +32,7 @@ export const computeExternalIds = (attrs) => {
     };
   }
 
-  if (deliveryConfig) {
+  if (deliveryConfig && (authoringTypes.CS || authoringTypes.CW)) {
     const { programId, environmentId } = deliveryConfig;
 
     return {
@@ -45,14 +45,14 @@ export const computeExternalIds = (attrs) => {
 };
 
 /**
- * Determines the preview type based on hostname
+ * Determines the authoring type based on hostname
  */
-export const getPreviewType = (hostname, deliveryTypes) => {
+export const getAuthoringType = (hostname, authoringTypes) => {
   if (HLX_HOST.test(hostname)) {
-    return deliveryTypes.AEM_EDGE;
+    return authoringTypes.DA;
   }
   if (AEM_CS_HOST.test(hostname)) {
-    return deliveryTypes.AEM_CS;
+    return authoringTypes.CS;
   }
   return null;
 };
@@ -71,6 +71,12 @@ class Site extends BaseModel {
   };
 
   static DEFAULT_DELIVERY_TYPE = Site.DELIVERY_TYPES.AEM_EDGE;
+
+  static AUTHORING_TYPES = {
+    CW: 'cs/crosswalk',
+    CS: 'cs',
+    DA: 'documentauthoring',
+  };
 
   async toggleLive() {
     const newIsLive = !this.getIsLive();

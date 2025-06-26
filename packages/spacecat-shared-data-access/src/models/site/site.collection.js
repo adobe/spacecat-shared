@@ -15,7 +15,7 @@ import { hasText, isValidHelixPreviewUrl, isValidUrl } from '@adobe/spacecat-sha
 import DataAccessError from '../../errors/data-access.error.js';
 import BaseCollection from '../base/base.collection.js';
 
-import Site, { AEM_CS_HOST, getPreviewType } from './site.model.js';
+import Site, { AEM_CS_HOST, getAuthoringType } from './site.model.js';
 
 /**
  * SiteCollection - A collection class responsible for managing Site entities.
@@ -78,10 +78,10 @@ class SiteCollection extends BaseCollection {
     }
 
     const { hostname } = new URL(previewURL);
-    const previewType = getPreviewType(hostname, Site.DELIVERY_TYPES);
+    const previewType = getAuthoringType(hostname, Site.AUTHORING_TYPES);
 
     switch (previewType) {
-      case Site.DELIVERY_TYPES.AEM_EDGE: {
+      case Site.AUTHORING_TYPES.DA: {
         if (!isValidHelixPreviewUrl(previewURL)) {
           throw new DataAccessError(`Invalid Helix preview URL: ${previewURL}`, this);
         }
@@ -90,7 +90,8 @@ class SiteCollection extends BaseCollection {
         const externalOwnerId = `${ref}#${owner}`;
         return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, site);
       }
-      case Site.DELIVERY_TYPES.AEM_CS: {
+      case Site.AUTHORING_TYPES.CW:
+      case Site.AUTHORING_TYPES.CS: {
         const [, programId, envId] = AEM_CS_HOST.exec(hostname);
         const externalOwnerId = `p${programId}`;
         const externalSiteId = `e${envId}`;

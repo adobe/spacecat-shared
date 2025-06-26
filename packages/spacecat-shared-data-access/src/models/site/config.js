@@ -363,6 +363,10 @@ export const Config = (data = {}) => {
     return config?.enabled ?? false;
   };
 
+  self.updateCdnLogsConfig = (cdnLogsConfig) => {
+    state.cdnLogsConfig = cdnLogsConfig;
+  };
+
   return Object.freeze(self);
 };
 

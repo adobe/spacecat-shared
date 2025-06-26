@@ -102,14 +102,14 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     type: 'string',
     hidden: true,
     readOnly: true,
-    watch: ['hlxConfig', 'deliveryConfig'],
+    watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
     set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalOwnerId,
   })
   .addAttribute('externalSiteId', {
     type: 'string',
     hidden: true,
     readOnly: true,
-    watch: ['hlxConfig', 'deliveryConfig'],
+    watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
     set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalSiteId,
   })
   .addAllIndex(['baseURL'])

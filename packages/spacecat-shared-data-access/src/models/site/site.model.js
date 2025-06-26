@@ -20,9 +20,9 @@ export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)/i;
  * Computes external IDs based on delivery type and configuration
  */
 export const computeExternalIds = (attrs, authoringTypes) => {
-  const { hlxConfig, deliveryConfig } = attrs;
+  const { authoringType, hlxConfig, deliveryConfig } = attrs;
 
-  if (hlxConfig && authoringTypes.DA) {
+  if (hlxConfig && (authoringType === authoringTypes.DA)) {
     const rso = hlxConfig.rso ?? {};
     const { ref, owner, site } = rso;
 
@@ -32,7 +32,8 @@ export const computeExternalIds = (attrs, authoringTypes) => {
     };
   }
 
-  if (deliveryConfig && (authoringTypes.CS || authoringTypes.CW)) {
+  if (deliveryConfig
+    && (authoringType === authoringTypes.CS || authoringType === authoringTypes.CW)) {
     const { programId, environmentId } = deliveryConfig;
 
     return {

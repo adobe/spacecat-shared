@@ -74,8 +74,10 @@ class Site extends BaseModel {
   static DEFAULT_DELIVERY_TYPE = Site.DELIVERY_TYPES.AEM_EDGE;
 
   static AUTHORING_TYPES = {
-    CW: 'cs/crosswalk',
+    CS_CW: 'cs/crosswalk',
     CS: 'cs',
+    SP: 'sharepoint',
+    GD: 'googledocs',
     DA: 'documentauthoring',
   };
 

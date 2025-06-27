@@ -39,10 +39,12 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
       } = context.env;
 
+      log.info(`Creating data access layer for ${DYNAMO_TABLE_NAME_DATA}`);
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
         aclCtx: context.attributes.authInfo.rbac,
       }, log);
+      log.info(`Created data access layer for ${DYNAMO_TABLE_NAME_DATA}`);
 
       // create a data access layer for the rbac table
       context.rbacDataAccess = createDataAccess({

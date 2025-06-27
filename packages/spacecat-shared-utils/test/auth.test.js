@@ -32,6 +32,7 @@ describe('auth', () => {
       mockSite = {
         getBaseURL: sinon.stub().returns('https://example.com'),
         getDeliveryType: sinon.stub().returns('aem_edge'),
+        getAuthoringType: sinon.stub().returns('da'),
       };
 
       mockSecretsClient = {
@@ -90,7 +91,8 @@ describe('auth', () => {
     beforeEach(() => {
       mockSite = {
         getBaseURL: sinon.stub().returns('https://example.com'),
-        getDeliveryType: sinon.stub().returns(Site.DELIVERY_TYPES.AEM_CS),
+        getDeliveryType: sinon.stub().returns(Site.DELIVERY_TYPES.AEM_EDGE),
+        getAuthoringType: sinon.stub().returns('cs/crosswalk'),
       };
 
       context = {

@@ -39,7 +39,10 @@ export default function dataAccessWrapper(fn) {
         DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
       } = context.env;
 
-      log.info(`Creating data access layer for ${DYNAMO_TABLE_NAME_DATA}`);
+      log.info(`Creating data access layer for ${DYNAMO_TABLE_NAME_DATA} with context ${JSON.stringify(context)}`);
+      // can we print stack trace with actual line number and file path?
+      const stackTrace = new Error().stack;
+      log.info(`Stack trace for error: ${stackTrace}`);
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
         aclCtx: context.attributes.authInfo.rbac,

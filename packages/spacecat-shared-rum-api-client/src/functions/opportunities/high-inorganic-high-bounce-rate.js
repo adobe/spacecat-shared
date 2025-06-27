@@ -14,7 +14,7 @@ import { DataChunks, facets } from '@adobe/rum-distiller';
 import { loadBundles, trafficSeriesFn } from '../../utils.js';
 
 const HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.8;
-const NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.5;
+const NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD = 0.15;
 const BOUNCE_RATE_THRESHOLD = 0.5;
 const DAILY_PAGEVIEW_THRESHOLD = 1000;
 
@@ -53,7 +53,7 @@ function hasHighInorganicTraffic(url, paid, total) {
 }
 
 function handler(bundles, opts = {}) {
-  const { interval = 7 } = opts;
+  const interval = 7;
 
   const dataChunks = new DataChunks();
 
@@ -70,13 +70,47 @@ function handler(bundles, opts = {}) {
   dataChunks.addSeries('paid', trafficSeriesFn(memo, 'paid'));
 
   return dataChunks.facets.urls
-    .filter((url) => url.metrics.views.sum > interval * DAILY_PAGEVIEW_THRESHOLD)
-    .filter((url) => hasHighInorganicTraffic(
-      url.value,
-      url.metrics.paid.sum,
-      url.metrics.views.sum,
-    ))
-    .filter((url) => url.metrics.clicks.sum / url.metrics.views.sum < BOUNCE_RATE_THRESHOLD)
+    .filter((url) => {
+      const hasEnoughViews = url.metrics.views.sum > interval * DAILY_PAGEVIEW_THRESHOLD;
+      const isHighInorganic = hasHighInorganicTraffic(
+        url.value,
+        url.metrics.paid.sum,
+        url.metrics.views.sum,
+      );
+      const bounceRate = 1 - url.metrics.clicks.sum / url.metrics.views.sum;
+      const hasHighBounce = bounceRate > BOUNCE_RATE_THRESHOLD;
+      const paidRatio = url.metrics.paid.sum / url.metrics.views.sum;
+      const isHomepage = new URL(url.value).pathname === '/';
+      const threshold = isHomepage ? HOMEPAGE_PAID_TRAFFIC_THRESHOLD : NON_HOMEPAGE_PAID_TRAFFIC_THRESHOLD;
+
+      console.log(`
+=== URL Analysis: ${url.value} ===
+1. Pageview Check: ${hasEnoughViews ? 'PASS' : 'FAIL'}
+   - Current views: ${url.metrics.views.sum}
+   - Required views: ${interval * DAILY_PAGEVIEW_THRESHOLD}
+
+2. Inorganic Traffic Check: ${isHighInorganic ? 'PASS' : 'FAIL'}
+   - Paid traffic ratio: ${(paidRatio * 100).toFixed(2)}%
+   - Required ratio: ${(threshold * 100).toFixed(2)}%
+   - Is homepage: ${isHomepage}
+
+3. Bounce Rate Check: ${hasHighBounce ? 'PASS' : 'FAIL'}
+   - Current bounce rate: ${(bounceRate * 100).toFixed(2)}%
+   - Required bounce rate: ${(BOUNCE_RATE_THRESHOLD * 100).toFixed(2)}%
+   - Total views: ${url.metrics.views.sum}
+   - Total clicks: ${url.metrics.clicks.sum}
+
+Traffic Breakdown:
+   - Paid traffic: ${url.metrics.paid.sum}
+   - Earned traffic: ${url.metrics.earned.sum}
+   - Owned traffic: ${url.metrics.owned.sum}
+
+Final Status: ${(hasEnoughViews && isHighInorganic && hasHighBounce) ? 'SELECTED' : 'REJECTED'}
+========================================
+`);
+
+      return hasEnoughViews && isHighInorganic && hasHighBounce;
+    })
     .map((url) => ({
       url: url.value,
       total: url.metrics.views.sum,

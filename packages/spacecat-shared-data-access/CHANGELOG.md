@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.30.1...@adobe/spacecat-shared-data-access-v2.31.0) (2025-06-27)
+
+
+### Features
+
+* introduce authoring type ([#826](https://github.com/adobe/spacecat-shared/issues/826)) ([36202ec](https://github.com/adobe/spacecat-shared/commit/36202ec19be415043ae333b2a3428d69595d920b))
+
 # [@adobe/spacecat-shared-data-access-v2.30.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.30.0...@adobe/spacecat-shared-data-access-v2.30.1) (2025-06-26)
 
 

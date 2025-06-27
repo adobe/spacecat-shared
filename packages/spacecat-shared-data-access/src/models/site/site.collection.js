@@ -81,6 +81,8 @@ class SiteCollection extends BaseCollection {
     const previewType = getAuthoringType(hostname, Site.AUTHORING_TYPES);
 
     switch (previewType) {
+      case Site.AUTHORING_TYPES.SP:
+      case Site.AUTHORING_TYPES.GD:
       case Site.AUTHORING_TYPES.DA: {
         if (!isValidHelixPreviewUrl(previewURL)) {
           throw new DataAccessError(`Invalid Helix preview URL: ${previewURL}`, this);
@@ -90,7 +92,7 @@ class SiteCollection extends BaseCollection {
         const externalOwnerId = `${ref}#${owner}`;
         return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, site);
       }
-      case Site.AUTHORING_TYPES.CW:
+      case Site.AUTHORING_TYPES.CS_CW:
       case Site.AUTHORING_TYPES.CS: {
         const [, programId, envId] = AEM_CS_HOST.exec(hostname);
         const externalOwnerId = `p${programId}`;

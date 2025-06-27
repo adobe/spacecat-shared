@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.41.3...@adobe/spacecat-shared-utils-v1.42.0) (2025-06-27)
+
+
+### Features
+
+* introduce page authentication for authoring type ([#829](https://github.com/adobe/spacecat-shared/issues/829)) ([86ec166](https://github.com/adobe/spacecat-shared/commit/86ec16621c9088a77d1cd9ac15430a3e087cd00c))
+
 # [@adobe/spacecat-shared-utils-v1.41.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.41.2...@adobe/spacecat-shared-utils-v1.41.3) (2025-06-24)
 
 

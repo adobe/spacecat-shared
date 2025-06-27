@@ -223,6 +223,17 @@ describe('SiteModel', () => {
     });
   });
 
+  describe('authoringType', () => {
+    it('gets authoringType', () => {
+      expect(instance.getAuthoringType()).to.equal('cs/crosswalk');
+    });
+
+    it('sets authoringType', () => {
+      instance.setAuthoringType('cs');
+      expect(instance.getAuthoringType()).to.equal('cs');
+    });
+  });
+
   describe('hlxConfig', () => {
     it('gets hlxConfig', () => {
       expect(instance.getHlxConfig()).to.deep.equal(undefined);

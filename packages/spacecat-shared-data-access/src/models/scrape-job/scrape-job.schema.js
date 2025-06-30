@@ -113,6 +113,10 @@ const schema = new SchemaBuilder(ScrapeJob, ScrapeJobCollection)
   })
   // access pattern: get all jobs sorted by startedAt
   .addAllIndex(['startedAt'])
+  .addIndex(
+    { composite: ['baseURL'] },
+    { composite: ['processingType', 'startedAt'] },
+  )
   // access pattern: get all jobs for a given baseURL and processingType,
   // can be filtered by optEnableJavascript and optHideConsentBanner
   // are solrted by startedAt

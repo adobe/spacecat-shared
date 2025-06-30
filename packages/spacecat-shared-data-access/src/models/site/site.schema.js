@@ -22,7 +22,7 @@ import {
 import { Config, DEFAULT_CONFIG, validateConfiguration } from './config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 
-import Site from './site.model.js';
+import Site, { computeExternalIds } from './site.model.js';
 import SiteCollection from './site.collection.js';
 
 /*
@@ -63,6 +63,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     default: Site.DEFAULT_DELIVERY_TYPE,
     required: true,
   })
+  .addAttribute('authoringType', {
+    type: Object.values(Site.AUTHORING_TYPES),
+    required: false,
+  })
   .addAttribute('gitHubURL', {
     type: 'string',
     validate: (value) => !value || isValidUrl(value),
@@ -94,10 +98,28 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     set: () => new Date().toISOString(),
     validate: (value) => !value || isIsoDate(value),
   })
+  .addAttribute('externalOwnerId', {
+    type: 'string',
+    hidden: true,
+    readOnly: true,
+    watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalOwnerId,
+  })
+  .addAttribute('externalSiteId', {
+    type: 'string',
+    hidden: true,
+    readOnly: true,
+    watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalSiteId,
+  })
   .addAllIndex(['baseURL'])
   .addIndex(
     { composite: ['deliveryType'] },
     { composite: ['updatedAt'] },
+  )
+  .addIndex(
+    { composite: ['externalOwnerId'] },
+    { composite: ['externalSiteId'] },
   );
 
 export default schema.build();

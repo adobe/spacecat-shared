@@ -81,6 +81,8 @@ The module provides the following DAOs:
 - `addSite`
 - `updateSite`
 - `removeSite`
+- `findByPreviewURL`
+- `findByExternalOwnerIdAndExternalSiteId`
 
 ### Site Candidate Functions
 - `getSiteCandidateByBaseURL`

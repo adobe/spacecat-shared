@@ -46,6 +46,7 @@ export interface ScrapeJob extends BaseModel {
 }
 
 export interface ScrapeJobCollection extends BaseCollection<ScrapeJob> {
+  allByBaseURL(baseURL: string): Promise<ScrapeJob[]>;
   allByBaseURLAndProcessingType(baseURL: string, processingType: string): Promise<ScrapeJob[]>;
   allByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
     baseURL: string,
@@ -56,6 +57,7 @@ export interface ScrapeJobCollection extends BaseCollection<ScrapeJob> {
   allByStartedAt(startDate: string): Promise<ScrapeJob[]>;
   allByStatus(status: string): Promise<ScrapeJob[]>;
   allByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<ScrapeJob[]>;
+  findByBaseURL(baseURL: string): Promise<ScrapeJob[]>;
   findByBaseURLAndProcessingType(baseURL: string, processingType: string): Promise<ScrapeJob[]>;
   findByBaseURLAndProcessingTypeAndOptEnableJavascriptAndOptHideConsentBanner(
     baseURL: string,

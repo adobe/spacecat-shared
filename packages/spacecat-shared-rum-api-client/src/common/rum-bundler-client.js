@@ -22,6 +22,24 @@ const ONE_DAY = ONE_HOUR * HOURS_IN_DAY;
 
 const CHUNK_SIZE = 31;
 
+/**
+ * Parses a date string and returns a Date object.
+ * Supports both ISO 8601 format (e.g., "2024-01-01T00:00:00Z")
+ * and simple date format (e.g., "2024-01-01").
+ * For simple date strings, assumes UTC timezone.
+ * @param {string} dateString - The date string to parse
+ * @returns {Date} The parsed Date object
+ */
+function parseDate(dateString) {
+  // If it's a simple date string (YYYY-MM-DD), convert to ISO format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return new Date(`${dateString}T00:00:00.000Z`);
+  }
+
+  // Otherwise, let the Date constructor handle it (ISO 8601, etc.)
+  return new Date(dateString);
+}
+
 function isBotTraffic(bundle) {
   return bundle?.userAgent?.includes('bot');
 }
@@ -52,6 +70,24 @@ function getUrlChunks(urls, chunkSize) {
   return Array(Math.ceil(urls.length / chunkSize))
     .fill()
     .map((_, index) => urls.slice(index * chunkSize, (index + 1) * chunkSize));
+}
+
+function generateUrlsForDateRange(startDate, endDate, domain, granularity, domainkey) {
+  const urls = [];
+  const currentDate = parseDate(startDate);
+  const endDateTime = parseDate(endDate);
+
+  while (currentDate < endDateTime) {
+    urls.push(constructUrl(domain, currentDate, granularity, domainkey));
+
+    if (granularity.toUpperCase() === GRANULARITY.HOURLY) {
+      currentDate.setUTCHours(currentDate.getUTCHours() + 1);
+    } else {
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+  }
+
+  return urls;
 }
 
 /* c8 ignore start */
@@ -165,23 +201,46 @@ async function fetchBundles(opts, log) {
     granularity = GRANULARITY.DAILY,
     checkpoints = [],
     filterBotTraffic = true,
+    startTime,
+    endTime,
   } = opts;
 
   if (!hasText(domain) || !hasText(domainkey)) {
     throw new Error('Missing required parameters');
   }
 
-  const multiplier = granularity.toUpperCase() === GRANULARITY.HOURLY ? ONE_HOUR : ONE_DAY;
-  const range = granularity.toUpperCase() === GRANULARITY.HOURLY
-    ? interval * HOURS_IN_DAY
-    : interval + 1;
+  // Validate startTime and endTime if provided
+  if (startTime && endTime) {
+    const start = parseDate(startTime);
+    const end = parseDate(endTime);
 
-  const urls = [];
-  const currentDate = new Date();
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new Error('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z") or simple date format (e.g., "2024-01-01")');
+    }
 
-  for (let i = 0; i < range; i += 1) {
-    const date = new Date(currentDate.getTime() - i * multiplier);
-    urls.push(constructUrl(domain, date, granularity, domainkey));
+    if (start >= end) {
+      throw new Error('startTime must be before endTime');
+    }
+  }
+
+  let urls = [];
+
+  if (startTime && endTime) {
+    // Use custom date range
+    urls = generateUrlsForDateRange(startTime, endTime, domain, granularity, domainkey);
+  } else {
+    // Use existing interval-based logic
+    const multiplier = granularity.toUpperCase() === GRANULARITY.HOURLY ? ONE_HOUR : ONE_DAY;
+    const range = granularity.toUpperCase() === GRANULARITY.HOURLY
+      ? interval * HOURS_IN_DAY
+      : interval + 1;
+
+    const currentDate = new Date();
+
+    for (let i = 0; i < range; i += 1) {
+      const date = new Date(currentDate.getTime() - i * multiplier);
+      urls.push(constructUrl(domain, date, granularity, domainkey));
+    }
   }
 
   const chunks = getUrlChunks(urls, CHUNK_SIZE);
@@ -197,7 +256,6 @@ async function fetchBundles(opts, log) {
       return response;
     }));
     const bundles = await Promise.all(responses.map((response) => response.json()));
-
     bundles.forEach((b) => {
       b.rumBundles
         .filter((bundle) => !filterBotTraffic || !isBotTraffic(bundle))

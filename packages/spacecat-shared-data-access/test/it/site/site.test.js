@@ -265,6 +265,43 @@ describe('Site IT', async () => {
     }
   });
 
+  it('finds site by preview URL using deliveryConfig', async () => {
+    // Create a test site with specific RSO configuration
+    const site = await Site.create({
+      baseURL: 'https://preview-test.com',
+      name: 'preview-test-site',
+      organizationId: sampleData.organizations[0].getId(),
+      hlxConfig: {
+        rso: {
+          ref: 'feature-branch',
+          site: 'my-site',
+          owner: 'mycompany',
+        },
+      },
+      deliveryType: 'aem_edge',
+      authoringType: 'cs',
+      deliveryConfig: {
+        programId: '123',
+        environmentId: '456',
+        authorURL: 'https://author.preview-test.com',
+      },
+      isLive: true,
+    });
+
+    const previewURL = 'https://author-p123-e456.adobeaemcloud.com/some/path';
+    const foundSite = await Site.findByPreviewURL(previewURL);
+    expect(foundSite).to.be.an('object');
+    expect(foundSite.getId()).to.equal(site.getId());
+    expect(foundSite.getBaseURL()).to.equal('https://preview-test.com');
+
+    const nonExistentURL = 'https://non-existent--test--adobe.hlx.page/';
+    const notFound = await Site.findByPreviewURL(nonExistentURL);
+    expect(notFound).to.be.null;
+
+    // Clean up
+    await site.remove();
+  });
+
   it('adds a new site', async () => {
     const newSiteData = {
       baseURL: 'https://newexample.com',

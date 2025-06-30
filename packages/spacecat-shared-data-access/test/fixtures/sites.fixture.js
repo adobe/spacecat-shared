@@ -16,6 +16,7 @@ const sites = [
     baseURL: 'https://example0.com',
     name: 'test-site',
     deliveryType: 'aem_edge',
+    authoringType: 'cs/crosswalk',
     gitHubURL: 'https://github.com/org-0/test-repo',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     isLive: true,

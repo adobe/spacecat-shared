@@ -235,6 +235,7 @@ describe('Rum bundler client', () => {
     expect(bundles.length).to.equal(2);
     expect(opts.failedUrls.length).to.equal(2);
     expect(opts.failedUrls[0]).to.include(`/bundles/${domain}/`);
+  });
 
   // Start and End Date Tests
   describe('startTime and endTime functionality', () => {

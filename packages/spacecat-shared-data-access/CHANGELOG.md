@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.32.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.32.0...@adobe/spacecat-shared-data-access-v2.32.1) (2025-06-30)
+
+
+### Bug Fixes
+
+* make filter value array ([#834](https://github.com/adobe/spacecat-shared/issues/834)) ([db48daa](https://github.com/adobe/spacecat-shared/commit/db48daab3907917f32f71fed27b7468790c0c2d5))
+
 # [@adobe/spacecat-shared-data-access-v2.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.31.1...@adobe/spacecat-shared-data-access-v2.32.0) (2025-06-30)
 
 

@@ -199,7 +199,7 @@ describe('Config Tests', () => {
       const data = {
         cdnLogsConfig: {
           bucketName: 'test-bucket',
-          filters: [{ key: 'test-key', value: 'test-value' }],
+          filters: [{ key: 'test-key', value: ['test-value'] }],
           outputLocation: 'test-output-location',
         },
       };
@@ -220,7 +220,7 @@ describe('Config Tests', () => {
     it('should throw an error if cdnLogsConfig is invalid', () => {
       const data = {
         cdnLogsConfig: {
-          filters: [{ key: 'test-key', value: 'test-value' }],
+          filters: [{ key: 'test-key', value: ['test-value'] }],
           outputLocation: 'test-output-location',
         },
       };

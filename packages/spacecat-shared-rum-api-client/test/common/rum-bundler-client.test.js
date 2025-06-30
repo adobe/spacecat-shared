@@ -197,6 +197,46 @@ describe('Rum bundler client', () => {
     expect(containsCorrectData).to.be.true;
   });
 
+  it('should return failedUrls for failed responses and log them', async () => {
+    const domain = 'some-domain.com';
+    const domainkey = 'testkey';
+    const granularity = 'DAILY';
+    const interval = 3;
+    const allCheckpoints = ['good', 'bad'];
+
+    const dates = generateDailyDates(interval);
+    const rumBundles = generateRumBundles(dates, allCheckpoints);
+
+    // First two succeed, last one fails
+    for (let i = 0; i < dates.length; i += 1) {
+      const date = dates[i];
+      if (i < 2) {
+        nock(BASE_URL)
+          .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}?domainkey=${domainkey}`)
+          .reply(200, rumBundles[date.join()]);
+      } else {
+        nock(BASE_URL)
+          .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}?domainkey=${domainkey}`)
+          .reply(500, 'Internal Server Error');
+      }
+    }
+
+    const log = { warn: sinon.spy(), info: sinon.spy() };
+    const opts = {
+      domain,
+      domainkey,
+      granularity,
+      interval,
+      checkpoints: ['good'],
+    };
+
+    const bundles = await fetchBundles(opts, log);
+
+    expect(bundles.length).to.equal(2);
+    expect(opts.failedUrls.length).to.equal(2);
+    expect(opts.failedUrls[0]).to.include(`/bundles/${domain}/`);
+  });
+
   // Start and End Date Tests
   describe('startTime and endTime functionality', () => {
     it('should fetch bundles for specific date range with daily granularity', async () => {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.31.1...@adobe/spacecat-shared-data-access-v2.32.0) (2025-06-30)
+
+
+### Features
+
+* added paid traffic suggestion type ([#832](https://github.com/adobe/spacecat-shared/issues/832)) ([5ed8d52](https://github.com/adobe/spacecat-shared/commit/5ed8d52e93228b69ba6fe0a5da7309afbf8c479e))
+
 # [@adobe/spacecat-shared-data-access-v2.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.31.0...@adobe/spacecat-shared-data-access-v2.31.1) (2025-06-28)
 
 

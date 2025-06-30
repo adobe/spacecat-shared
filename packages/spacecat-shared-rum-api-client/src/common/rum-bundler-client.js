@@ -277,7 +277,7 @@ async function fetchBundles(opts, log) {
           return response.json();
         } else {
           const failedUrl = response.url || chunk[index];
-          log.warn(`Skipping response at index ${index}: status ${response.status}, url: ${sanitizeURL(failedUrl)}`);
+          log.warn(`Skipping response at index ${index}: status ${response.status} - url: ${sanitizeURL(failedUrl)}`);
           failedUrls.push(failedUrl);
           return null;
         }

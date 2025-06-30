@@ -40,14 +40,14 @@
     "@adobe/spacecat-shared-utils": "1.38.0",
     "@aws-sdk/client-secrets-manager": "3.839.0",
     "aws-xray-sdk": "3.10.3",
-    "google-auth-library": "9.15.1",
-    "googleapis": "149.0.0"
+    "google-auth-library": "10.1.0",
+    "googleapis": "150.0.1"
   },
   "devDependencies": {
     "chai": "5.2.0",
     "chai-as-promised": "8.0.1",
     "nock": "14.0.5",
-    "sinon": "20.0.0",
+    "sinon": "21.0.0",
     "sinon-chai": "4.0.0",
     "typescript": "5.8.3"
   }

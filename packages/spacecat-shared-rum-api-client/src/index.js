@@ -122,7 +122,6 @@ export default class RUMAPIClient {
 
     try {
       const domainkey = await this._getDomainkey(opts);
-
       const bundles = await fetchBundles({
         ...opts,
         domainkey,
@@ -130,7 +129,6 @@ export default class RUMAPIClient {
       }, this.log);
 
       this.log.info(`Query "${query}" fetched ${bundles.length} bundles`);
-
       return handler(bundles, opts);
     } catch (e) {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
@@ -164,7 +162,6 @@ export default class RUMAPIClient {
       }, this.log);
 
       const results = {};
-
       this.log.info(`Multi query ${JSON.stringify(queries.join(', '))} fetched ${bundles.length} bundles`);
 
       // Execute each query handler sequentially

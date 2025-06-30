@@ -57,6 +57,20 @@ function filterEvents(checkpoints = []) {
   };
 }
 
+function sanitizeURL(url) {
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.searchParams.has('domainkey')) {
+      parsedUrl.searchParams.set('domainkey', 'redacted');
+    }
+    return parsedUrl.toString();
+    /* c8 ignore next 4 */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    return url;
+  }
+}
+
 function constructUrl(domain, date, granularity, domainkey) {
   const year = date.getUTCFullYear();
   const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
@@ -246,6 +260,7 @@ async function fetchBundles(opts, log) {
   const chunks = getUrlChunks(urls, CHUNK_SIZE);
 
   let totalTransferSize = 0;
+  const failedUrls = [];
 
   const result = [];
   for (const chunk of chunks) {
@@ -255,7 +270,21 @@ async function fetchBundles(opts, log) {
       totalTransferSize += parseInt(response.headers.get('content-length'), 10);
       return response;
     }));
-    const bundles = await Promise.all(responses.map((response) => response.json()));
+
+    const bundlesRaw = await Promise.all(
+      responses.map(async (response, index) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          const failedUrl = response.url || chunk[index];
+          log.warn(`Skipping response at index ${index}: status ${response.status} - url: ${sanitizeURL(failedUrl)}`);
+          failedUrls.push(failedUrl);
+          return null;
+        }
+      }),
+    );
+    const bundles = bundlesRaw.filter(Boolean);
+
     bundles.forEach((b) => {
       b.rumBundles
         .filter((bundle) => !filterBotTraffic || !isBotTraffic(bundle))
@@ -264,6 +293,11 @@ async function fetchBundles(opts, log) {
     });
   }
   log.info(`Retrieved RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
+  // Add failedUrls to opts object for access by callers
+  if (failedUrls.length > 0) {
+    // eslint-disable-next-line no-param-reassign
+    opts.failedUrls = failedUrls;
+  }
   return mergeBundlesWithSameId(result);
 }
 

@@ -94,6 +94,9 @@ class Audit extends BaseModel {
        * @param {object} stepResult - The result of the audit step.
        * @param {string} stepResult.type - The import type to trigger.
        * @param {string} stepResult.siteId - The site ID for which the import is triggered.
+       * @param {string} stepResult.pageUrl - The page URL for which the import is triggered.
+       * @param {object[]} stepResult.urlConfigs - The list of URL configs for which the import is
+       * triggered.
        * @param {object} auditContext - The audit context.
        * @param {object} auditContext.next - The next audit step to run.
        * @param {string} auditContext.auditId - The audit ID.
@@ -107,6 +110,8 @@ class Audit extends BaseModel {
       formatPayload: (stepResult, auditContext) => ({
         type: stepResult.type,
         siteId: stepResult.siteId,
+        pageUrl: stepResult.pageUrl,
+        urlConfigs: stepResult.urlConfigs,
         allowCache: true,
         auditContext,
       }),

@@ -236,7 +236,11 @@ describe('AuditModel', () => {
     });
 
     it('formats import worker payload correctly', () => {
-      const stepResult = { type: 'someType', siteId: 'someSiteId' };
+      const stepResult = {
+        type: 'someType',
+        siteId: 'someSiteId',
+        urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
+      };
       const auditContext = { some: 'context' };
       const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.IMPORT_WORKER]
         .formatPayload(stepResult, auditContext);
@@ -244,6 +248,8 @@ describe('AuditModel', () => {
       expect(formattedPayload).to.deep.equal({
         type: 'someType',
         siteId: 'someSiteId',
+        pageUrl: undefined,
+        urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
         allowCache: true,
         auditContext: { some: 'context' },
       });

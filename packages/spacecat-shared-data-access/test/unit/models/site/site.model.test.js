@@ -18,7 +18,7 @@ import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
 
-import Site from '../../../../src/models/site/site.model.js';
+import Site, { computeExternalIds } from '../../../../src/models/site/site.model.js';
 import siteFixtures from '../../../fixtures/sites.fixture.js';
 import { createElectroMocks } from '../../util.js';
 
@@ -42,6 +42,109 @@ describe('SiteModel', () => {
     } = createElectroMocks(Site, mockRecord));
 
     mockElectroService.entities.patch = stub().returns({ set: stub() });
+  });
+
+  describe('computeExternalIds', () => {
+    it('computes external IDs for document authoring type with valid RSO config', () => {
+      const attrs = {
+        authoringType: Site.AUTHORING_TYPES.DA,
+        hlxConfig: {
+          rso: {
+            ref: 'main',
+            owner: 'adobe',
+            site: 'example-site',
+          },
+        },
+      };
+
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: 'main#adobe',
+        externalSiteId: 'example-site',
+      });
+    });
+
+    it('computes external IDs for document authoring type with missing RSO config', () => {
+      const attrs = {
+        authoringType: Site.AUTHORING_TYPES.DA,
+        hlxConfig: {},
+      };
+
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: undefined,
+        externalSiteId: undefined,
+      });
+    });
+
+    it('computes external IDs for document authoring type with partial RSO config', () => {
+      const attrs = {
+        authoringType: Site.AUTHORING_TYPES.DA,
+        hlxConfig: {
+          rso: {
+            ref: 'main',
+            owner: 'adobe',
+            // site is missing
+          },
+        },
+      };
+
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: 'main#adobe',
+        externalSiteId: undefined,
+      });
+    });
+
+    it('computes external IDs for cloud service authoring type with valid delivery config', () => {
+      const attrs = {
+        authoringType: Site.AUTHORING_TYPES.CS,
+        deliveryConfig: {
+          programId: '12345',
+          environmentId: '67890',
+        },
+      };
+
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: 'p12345',
+        externalSiteId: 'e67890',
+      });
+    });
+
+    it('computes external IDs for cloud service authoring type with missing delivery config', () => {
+      const attrs = {
+        authoringType: Site.AUTHORING_TYPES.CS,
+      };
+
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: undefined,
+        externalSiteId: undefined,
+      });
+    });
+
+    it('computes external IDs for cloud service authoring type with partial delivery config', () => {
+      const attrs = {
+        authoringType: Site.AUTHORING_TYPES.CS,
+        deliveryConfig: {
+          programId: '12345',
+          // environmentId is missing
+        },
+      };
+
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: 'p12345',
+        externalSiteId: undefined,
+      });
+    });
   });
 
   describe('constructor', () => {
@@ -117,6 +220,17 @@ describe('SiteModel', () => {
     it('sets deliveryType', () => {
       instance.setDeliveryType('aem_cs');
       expect(instance.getDeliveryType()).to.equal('aem_cs');
+    });
+  });
+
+  describe('authoringType', () => {
+    it('gets authoringType', () => {
+      expect(instance.getAuthoringType()).to.equal('cs/crosswalk');
+    });
+
+    it('sets authoringType', () => {
+      instance.setAuthoringType('cs');
+      expect(instance.getAuthoringType()).to.equal('cs');
     });
   });
 

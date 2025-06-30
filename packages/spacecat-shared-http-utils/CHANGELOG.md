@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.14.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.2...@adobe/spacecat-shared-http-utils-v1.14.3) (2025-06-23)
+
+
+### Bug Fixes
+
+* for adobe users admin access to only admin group members ([#796](https://github.com/adobe/spacecat-shared/issues/796)) ([11766d5](https://github.com/adobe/spacecat-shared/commit/11766d5265aee799e9d5b895c565a2c56b556b38))
+
 # [@adobe/spacecat-shared-http-utils-v1.14.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.1...@adobe/spacecat-shared-http-utils-v1.14.2) (2025-06-16)
 
 

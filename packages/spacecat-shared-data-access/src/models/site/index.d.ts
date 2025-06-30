@@ -126,6 +126,7 @@ export interface Site extends BaseModel {
   getName(): string;
   getConfig(): SiteConfig;
   getDeliveryType(): string;
+  getAuthoringType(): string;
   getExperiments(): Promise<Experiment[]>;
   getExperimentsByExpId(expId: string): Promise<Experiment[]>;
   getExperimentsByExpIdAndUrl(expId: string, url: string): Promise<Experiment[]>;
@@ -158,6 +159,7 @@ export interface Site extends BaseModel {
   setName(name: string): Site;
   setConfig(config: object): Site;
   setDeliveryType(deliveryType: string): Site;
+  setAuthoringType(authoringType: string): Site;
   setGitHubURL(gitHubURL: string): Site;
   setHlxConfig(hlxConfig: HlxConfig): Site;
   setDeliveryConfig(deliveryConfig: object): Site;
@@ -176,4 +178,8 @@ export interface SiteCollection extends BaseCollection<Organization> {
   findByBaseURL(baseURL: string): Promise<Site | null>;
   findByDeliveryType(deliveryType: string): Promise<Site | null>;
   findByOrganizationId(organizationId: string): Promise<Site | null>;
+  findByPreviewURL(previewURL: string): Promise<Site | null>;
+  findByExternalOwnerIdAndExternalSiteId(
+    externalOwnerId: string, externalSiteId: string
+  ): Promise<Site | null>;
 }

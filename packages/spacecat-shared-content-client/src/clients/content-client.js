@@ -311,11 +311,7 @@ export default class ContentClient {
     return docPath;
   }
 
-  /**
-   * @param {string} path
-   * @returns {Promise<string>}
-   */
-  async getResourcePath(path) {
+  async #getHelixResourceStatus(path) {
     const { rso } = this.site.getHlxConfig();
     // https://www.aem.live/docs/admin.html#tag/status
     const adminEndpointUrl = `https://admin.hlx.page/status/${rso.owner}/${rso.site}/${rso.ref}/${path.replace(/^\/+/, '')}`;
@@ -325,12 +321,32 @@ export default class ContentClient {
       },
     });
     if (response.ok) {
-      const responseJson = await response.json();
-      return responseJson.resourcePath;
+      return response.json();
     } else {
       const errorMessage = await response.text();
       throw new Error(`Failed to fetch document path for ${path}: ${errorMessage}`);
     }
+  }
+
+  /**
+   * @param {string} path
+   * @returns {Promise<string>}
+   */
+  async getResourcePath(path) {
+    const helixResourceStatus = await this.#getHelixResourceStatus(path);
+    return helixResourceStatus?.resourcePath;
+  }
+
+  /**
+   * @param {string} path
+   * @returns {Promise<{liveURL: string, previewURL: string}>}
+   */
+  async getLivePreviewURLs(path) {
+    const helixResourceStatus = await this.#getHelixResourceStatus(path);
+    return {
+      liveURL: helixResourceStatus?.live?.url,
+      previewURL: helixResourceStatus?.preview?.url,
+    };
   }
 
   async getPageMetadata(path) {
@@ -425,6 +441,22 @@ export default class ContentClient {
     }
 
     this.#logDuration('updateRedirects', startTime);
+  }
+
+  async getDocumentLinks(path) {
+    const startTime = process.hrtime.bigint();
+
+    await this.#initClient();
+
+    this.log.info(`Getting document links for ${this.site.getId()} and path ${path}`);
+
+    const docPath = this.#resolveDocPath(path);
+    const document = await this.rawClient.getDocument(docPath);
+    const links = await document.getLinks();
+
+    this.#logDuration('getDocumentLinks', startTime);
+
+    return links;
   }
 
   async updateBrokenInternalLink(path, brokenLink) {

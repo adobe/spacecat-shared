@@ -73,6 +73,17 @@ class Configuration extends BaseModel {
       .map((job) => job.type);
   }
 
+  getDisabledAuditsForSite(site) {
+    const disabledHandlers = new Set(
+      Object.keys(this.getHandlers() || {})
+        .filter((handler) => !this.isHandlerEnabledForSite(handler, site)),
+    );
+
+    return (this.getJobs() || [])
+      .filter((job) => job.group === 'audits' && disabledHandlers.has(job.type))
+      .map((job) => job.type);
+  }
+
   isHandlerEnabledForSite(type, site) {
     const handler = this.getHandlers()?.[type];
     if (!handler) return false;

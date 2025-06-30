@@ -194,6 +194,50 @@ describe('Config Tests', () => {
       const config = Config({});
       expect(config.getContentAiConfig()).to.be.undefined;
     });
+
+    it('creates a Config with cdnLogsConfig property', () => {
+      const data = {
+        cdnLogsConfig: {
+          bucketName: 'test-bucket',
+          filters: [{ key: 'test-key', value: 'test-value' }],
+          outputLocation: 'test-output-location',
+        },
+      };
+      const config = Config(data);
+      expect(config.getCdnLogsConfig()).to.deep.equal(data.cdnLogsConfig);
+    });
+
+    it('has empty cdnLogsConfig in default config', () => {
+      const config = Config();
+      expect(config.getCdnLogsConfig()).to.deep.equal(undefined);
+    });
+
+    it('should return undefined for cdnLogsConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getCdnLogsConfig()).to.be.undefined;
+    });
+
+    it('should throw an error if cdnLogsConfig is invalid', () => {
+      const data = {
+        cdnLogsConfig: {
+          filters: [{ key: 'test-key', value: 'test-value' }],
+          outputLocation: 'test-output-location',
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "cdnLogsConfig.bucketName" is required');
+    });
+
+    it('should be able to update cdnLogsConfig', () => {
+      const data = {
+        cdnLogsConfig: {
+          filters: [{ key: 'test-key', value: 'test-value' }],
+          outputLocation: 'test-output-location',
+        },
+      };
+      const config = Config({});
+      config.updateCdnLogsConfig(data.cdnLogsConfig);
+      expect(config.getCdnLogsConfig()).to.deep.equal(data.cdnLogsConfig);
+    });
   });
 
   describe('Grouped URLs option', () => {

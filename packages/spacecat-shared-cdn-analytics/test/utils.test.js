@@ -275,7 +275,7 @@ describe('CDN Analytics Utils', () => {
         },
       });
       const oldEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'PROD';
+      process.env.NODE_ENV = 'prod';
       const oldCwd = process.cwd;
       process.cwd = () => '/mock/cwd';
       const result = await reportUtils.loadSql('test-query', { table: 'test_table' });

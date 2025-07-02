@@ -34,23 +34,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "wsk": {
-    "target": "aws",
-    "name": "spacecat-services/audit-worker@${version}",
-    "memory": 6144,
-    "awsRole!important": "arn:aws:iam::${env.AWS_ACCOUNT_ID}:role/spacecat-role-lambda-generic",
-    "testUrl": "/_status_check/healthcheck.json",
-    "awsAttachAuthorizer": "",
-    "dev": {
-      "params-file": "secrets/dev-secrets.json"
-    },
-    "fastlyServiceId!important": "",
-    "timeout": 900000,
-    "nodeVersion": 22,
-    "static": [
-      "src/cdn-logs-report/sql"
-    ]
-  },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
     "chai": "5.2.0",

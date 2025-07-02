@@ -238,6 +238,18 @@ describe('Config Tests', () => {
       config.updateCdnLogsConfig(data.cdnLogsConfig);
       expect(config.getCdnLogsConfig()).to.deep.equal(data.cdnLogsConfig);
     });
+
+    it('should be able to update cdnLogsConfig with type', () => {
+      const data = {
+        cdnLogsConfig: {
+          filters: [{ key: 'test-key', value: 'test-value', type: 'exclude' }],
+          outputLocation: 'test-output-location',
+        },
+      };
+      const config = Config({});
+      config.updateCdnLogsConfig(data.cdnLogsConfig);
+      expect(config.getCdnLogsConfig()).to.deep.equal(data.cdnLogsConfig);
+    });
   });
 
   describe('Grouped URLs option', () => {

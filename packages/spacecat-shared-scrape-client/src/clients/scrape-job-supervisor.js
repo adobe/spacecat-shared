@@ -148,7 +148,7 @@ function ScrapeJobSupervisor(services, config) {
     const message = {
       processingType,
       jobId: scrapeJob.getId(),
-      urls,
+      urls: urls.map((url) => ({ url })),
       customHeaders,
       options,
     };

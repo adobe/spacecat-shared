@@ -255,15 +255,33 @@ describe('CDN Analytics Utils', () => {
   });
 
   describe('Database Operations', () => {
-    it('should load SQL successfully', async () => {
+    it('should load SQL successfully (dev)', async () => {
       const reportUtils = await esmock('../src/utils.js', {
         '@adobe/spacecat-shared-utils': {
           getStaticContent: sandbox.stub().resolves('CREATE TABLE test_table...'),
         },
       });
-
+      const oldEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
       const result = await reportUtils.loadSql('test-query', { table: 'test_table' });
       expect(result).to.equal('CREATE TABLE test_table...');
+      process.env.NODE_ENV = oldEnv;
+    });
+
+    it('should load SQL successfully (prod)', async () => {
+      const reportUtils = await esmock('../src/utils.js', {
+        '@adobe/spacecat-shared-utils': {
+          getStaticContent: sandbox.stub().resolves('CREATE TABLE test_table...'),
+        },
+      });
+      const oldEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'PROD';
+      const oldCwd = process.cwd;
+      process.cwd = () => '/mock/cwd';
+      const result = await reportUtils.loadSql('test-query', { table: 'test_table' });
+      expect(result).to.equal('CREATE TABLE test_table...');
+      process.env.NODE_ENV = oldEnv;
+      process.cwd = oldCwd;
     });
 
     it('should handle SQL loading errors', async () => {
@@ -272,7 +290,6 @@ describe('CDN Analytics Utils', () => {
           getStaticContent: sandbox.stub().rejects(new Error('SQL load failed')),
         },
       });
-
       try {
         await errorReportUtils.loadSql('test-query', { table: 'test_table' });
         expect.fail('Should have thrown an error');
@@ -287,9 +304,11 @@ describe('CDN Analytics Utils', () => {
           getStaticContent: sandbox.stub().resolves('SELECT * FROM custom_table'),
         },
       });
-
+      const oldEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
       const result = await reportUtils.loadSql('custom-query', { table: 'custom_table' }, 'custom-dir');
       expect(result).to.equal('SELECT * FROM custom_table');
+      process.env.NODE_ENV = oldEnv;
     });
   });
 });

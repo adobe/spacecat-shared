@@ -207,6 +207,18 @@ describe('Config Tests', () => {
       expect(config.getCdnLogsConfig()).to.deep.equal(data.cdnLogsConfig);
     });
 
+    it('creates a Config with cdnLogsConfig property with filter type', () => {
+      const data = {
+        cdnLogsConfig: {
+          bucketName: 'test-bucket',
+          filters: [{ key: 'test-key', value: ['test-value'], type: 'exclude' }],
+          outputLocation: 'test-output-location',
+        },
+      };
+      const config = Config(data);
+      expect(config.getCdnLogsConfig()).to.deep.equal(data.cdnLogsConfig);
+    });
+
     it('has empty cdnLogsConfig in default config', () => {
       const config = Config();
       expect(config.getCdnLogsConfig()).to.deep.equal(undefined);

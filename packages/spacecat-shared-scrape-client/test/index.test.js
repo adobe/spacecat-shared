@@ -355,6 +355,7 @@ describe('ScrapeJobController tests', () => {
         // (we only send a single message now, instead of 1 per URL)
         expect(mockSqsClient.sendMessage).to.have.been.calledOnce;
         const firstCall = mockSqsClient.sendMessage.getCall(0);
+        expect(firstCall.args[1].urls).to.deep.equal(urls.map((url) => ({ url })));
         expect(firstCall.args[1].customHeaders).to.deep.equal({ Authorization: 'Bearer aXsPb3183G' });
       } catch (err) {
         assert.fail(err);

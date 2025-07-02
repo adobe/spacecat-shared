@@ -12,7 +12,7 @@
 
 import { getStaticContent } from '@adobe/spacecat-shared-utils';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, resolve, join } from 'path';
 
 // eslint-disable-next-line no-underscore-dangle
 const __filename = fileURLToPath(import.meta.url);
@@ -187,7 +187,7 @@ export function buildSiteFilters(filters) {
 export async function loadSql(filename, variables, subdirectory = 'weekly-analysis') {
   const isProd = process.env.NODE_ENV === 'production';
   const sqlFilePath = isProd
-    ? join(process.cwd(), 'node_modules', '@adobe', 'spacecat-shared-cdn-analytics', 'src', 'sql', subdirectory, `${filename}.sql`)
+    ? resolve(process.cwd(), 'node_modules', '@adobe', 'spacecat-shared-cdn-analytics', 'src', 'sql', subdirectory, `${filename}.sql`)
     : join(__dirname, 'sql', subdirectory, `${filename}.sql`);
   return getStaticContent(variables, sqlFilePath);
 }

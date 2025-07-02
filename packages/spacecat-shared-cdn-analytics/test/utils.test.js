@@ -273,6 +273,9 @@ describe('CDN Analytics Utils', () => {
         '@adobe/spacecat-shared-utils': {
           getStaticContent: sandbox.stub().resolves('CREATE TABLE test_table...'),
         },
+        path: {
+          resolve: sandbox.stub().callsFake((...args) => `/resolved/${args.slice(1).join('/')}`),
+        },
       });
       const oldEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';

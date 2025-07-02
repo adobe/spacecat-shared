@@ -186,6 +186,8 @@ export function buildSiteFilters(filters) {
 
 export async function loadSql(filename, variables, subdirectory = 'weekly-analysis') {
   const isProd = process.env.NODE_ENV === 'prod';
+  // eslint-disable-next-line no-console
+  console.log('isProd testing for cdn analytics', isProd);
   const sqlFilePath = isProd
     ? join(process.cwd(), 'node_modules', '@adobe', 'spacecat-shared-cdn-analytics', 'src', 'sql', subdirectory, `${filename}.sql`)
     : join(__dirname, 'sql', subdirectory, `${filename}.sql`);

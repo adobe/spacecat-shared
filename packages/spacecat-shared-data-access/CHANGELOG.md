@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.32.1...@adobe/spacecat-shared-data-access-v2.33.0) (2025-07-02)
+
+
+### Features
+
+* add type for filter ([#836](https://github.com/adobe/spacecat-shared/issues/836)) ([e70cbf6](https://github.com/adobe/spacecat-shared/commit/e70cbf60550aa485c3b38ff3ed28393d8fd4b066))
+
 # [@adobe/spacecat-shared-data-access-v2.32.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.32.0...@adobe/spacecat-shared-data-access-v2.32.1) (2025-06-30)
 
 

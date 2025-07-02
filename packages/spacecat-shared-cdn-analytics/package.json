@@ -1,0 +1,68 @@
+{
+  "name": "@adobe/spacecat-shared-cdn-analytics",
+  "version": "1.0.0",
+  "description": "Shared CDN analytics utilities for Spacecat Services",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0 <23.0.0",
+    "npm": ">=10.9.0 <12.0.0"
+  },
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "scripts": {
+    "test": "c8 mocha",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "clean": "rm -rf package-lock.json node_modules"
+  },
+  "mocha": {
+    "require": "test/setup-env.js",
+    "reporter": "mocha-multi-reporters",
+    "reporter-options": "configFile=.mocha-multi.json",
+    "spec": "test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adobe/spacecat-shared.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/adobe/spacecat-shared/issues"
+  },
+  "homepage": "https://github.com/adobe/spacecat-shared#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "wsk": {
+    "target": "aws",
+    "name": "spacecat-services/audit-worker@${version}",
+    "memory": 6144,
+    "awsRole!important": "arn:aws:iam::${env.AWS_ACCOUNT_ID}:role/spacecat-role-lambda-generic",
+    "testUrl": "/_status_check/healthcheck.json",
+    "awsAttachAuthorizer": "",
+    "dev": {
+      "params-file": "secrets/dev-secrets.json"
+    },
+    "fastlyServiceId!important": "",
+    "timeout": 900000,
+    "nodeVersion": 22,
+    "static": [
+      "src/cdn-logs-report/sql"
+    ]
+  },
+  "devDependencies": {
+    "@adobe/helix-shared-wrap": "2.0.2",
+    "chai": "5.2.0",
+    "chai-as-promised": "8.0.1",
+    "esmock": "2.7.0",
+    "husky": "9.1.7",
+    "nock": "14.0.5",
+    "sinon": "20.0.0",
+    "sinon-chai": "4.0.0"
+  },
+  "dependencies": {
+    "@adobe/spacecat-shared-athena-client": "^1.0.0",
+    "@adobe/spacecat-shared-utils": "^1.41.2"
+  }
+}

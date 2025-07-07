@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-content-client-v1.7.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.14...@adobe/spacecat-shared-content-client-v1.7.15) (2025-07-05)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#837](https://github.com/adobe/spacecat-shared/issues/837)) ([acfbbe7](https://github.com/adobe/spacecat-shared/commit/acfbbe712d90fe2f4b0cab97e8a941eb1bd5c8ea))
+
+# [@adobe/spacecat-shared-content-client-v1.7.14](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.13...@adobe/spacecat-shared-content-client-v1.7.14) (2025-06-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#830](https://github.com/adobe/spacecat-shared/issues/830)) ([b98589d](https://github.com/adobe/spacecat-shared/commit/b98589da5c11aa4e63358e98f0c0852b0ef2a02d))
+
+# [@adobe/spacecat-shared-content-client-v1.7.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.12...@adobe/spacecat-shared-content-client-v1.7.13) (2025-06-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.4.17 ([#824](https://github.com/adobe/spacecat-shared/issues/824)) ([e0bcb9e](https://github.com/adobe/spacecat-shared/commit/e0bcb9e8e8c47e4c251da1046b51035ab4808dac))
+
+# [@adobe/spacecat-shared-content-client-v1.7.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.11...@adobe/spacecat-shared-content-client-v1.7.12) (2025-06-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.4.16 ([#823](https://github.com/adobe/spacecat-shared/issues/823)) ([148d9ff](https://github.com/adobe/spacecat-shared/commit/148d9ff511dfbac4b496066596f9ff71cc47a297))
+
 # [@adobe/spacecat-shared-content-client-v1.7.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.10...@adobe/spacecat-shared-content-client-v1.7.11) (2025-06-21)
 
 

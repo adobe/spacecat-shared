@@ -32,6 +32,7 @@ describe('auth', () => {
       mockSite = {
         getBaseURL: sinon.stub().returns('https://example.com'),
         getDeliveryType: sinon.stub().returns('aem_edge'),
+        getAuthoringType: sinon.stub().returns('da'),
       };
 
       mockSecretsClient = {
@@ -90,7 +91,8 @@ describe('auth', () => {
     beforeEach(() => {
       mockSite = {
         getBaseURL: sinon.stub().returns('https://example.com'),
-        getDeliveryType: sinon.stub().returns(Site.DELIVERY_TYPES.AEM_CS),
+        getDeliveryType: sinon.stub().returns(Site.DELIVERY_TYPES.AEM_EDGE),
+        getAuthoringType: sinon.stub().returns('cs/crosswalk'),
       };
 
       context = {
@@ -113,7 +115,13 @@ describe('auth', () => {
 
     it('calls getAccessToken for AEM CS sites with a promise token', async () => {
       const promiseToken = 'test-promise-token';
-      const authOptions = { promiseToken };
+      const authOptions = {
+        promiseToken: {
+          promise_token: promiseToken,
+          expires_in: 14399,
+          token_type: 'promise_token',
+        },
+      };
       const expectedTokenResponse = { access_token: 'exchanged-token' };
       mockImsPromiseClient.exchangeToken.resolves(expectedTokenResponse);
 

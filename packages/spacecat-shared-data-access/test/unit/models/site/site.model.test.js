@@ -47,9 +47,9 @@ describe('SiteModel', () => {
   });
 
   describe('computeExternalIds', () => {
-    it('computes external IDs for AEM_EDGE delivery type with valid RSO config', () => {
+    it('computes external IDs for document authoring type with valid RSO config', () => {
       const attrs = {
-        deliveryType: Site.DELIVERY_TYPES.AEM_EDGE,
+        authoringType: Site.AUTHORING_TYPES.DA,
         hlxConfig: {
           rso: {
             ref: 'main',
@@ -59,7 +59,7 @@ describe('SiteModel', () => {
         },
       };
 
-      const result = computeExternalIds(attrs);
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
         externalOwnerId: 'main#adobe',
@@ -67,13 +67,13 @@ describe('SiteModel', () => {
       });
     });
 
-    it('computes external IDs for AEM_EDGE delivery type with missing RSO config', () => {
+    it('computes external IDs for document authoring type with missing RSO config', () => {
       const attrs = {
-        deliveryType: Site.DELIVERY_TYPES.AEM_EDGE,
+        authoringType: Site.AUTHORING_TYPES.DA,
         hlxConfig: {},
       };
 
-      const result = computeExternalIds(attrs);
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
         externalOwnerId: undefined,
@@ -81,9 +81,9 @@ describe('SiteModel', () => {
       });
     });
 
-    it('computes external IDs for AEM_EDGE delivery type with partial RSO config', () => {
+    it('computes external IDs for document authoring type with partial RSO config', () => {
       const attrs = {
-        deliveryType: Site.DELIVERY_TYPES.AEM_EDGE,
+        authoringType: Site.AUTHORING_TYPES.DA,
         hlxConfig: {
           rso: {
             ref: 'main',
@@ -93,7 +93,7 @@ describe('SiteModel', () => {
         },
       };
 
-      const result = computeExternalIds(attrs);
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
         externalOwnerId: 'main#adobe',
@@ -101,16 +101,16 @@ describe('SiteModel', () => {
       });
     });
 
-    it('computes external IDs for AEM_CS delivery type with valid delivery config', () => {
+    it('computes external IDs for cloud service authoring type with valid delivery config', () => {
       const attrs = {
-        deliveryType: Site.DELIVERY_TYPES.AEM_CS,
+        authoringType: Site.AUTHORING_TYPES.CS,
         deliveryConfig: {
           programId: '12345',
           environmentId: '67890',
         },
       };
 
-      const result = computeExternalIds(attrs);
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
         externalOwnerId: 'p12345',
@@ -118,12 +118,12 @@ describe('SiteModel', () => {
       });
     });
 
-    it('computes external IDs for AEM_CS delivery type with missing delivery config', () => {
+    it('computes external IDs for cloud service authoring type with missing delivery config', () => {
       const attrs = {
-        deliveryType: Site.DELIVERY_TYPES.AEM_CS,
+        authoringType: Site.AUTHORING_TYPES.CS,
       };
 
-      const result = computeExternalIds(attrs);
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
         externalOwnerId: undefined,
@@ -131,16 +131,16 @@ describe('SiteModel', () => {
       });
     });
 
-    it('computes external IDs for AEM_CS delivery type with partial delivery config', () => {
+    it('computes external IDs for cloud service authoring type with partial delivery config', () => {
       const attrs = {
-        deliveryType: Site.DELIVERY_TYPES.AEM_CS,
+        authoringType: Site.AUTHORING_TYPES.CS,
         deliveryConfig: {
           programId: '12345',
           // environmentId is missing
         },
       };
 
-      const result = computeExternalIds(attrs);
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
         externalOwnerId: 'p12345',
@@ -222,6 +222,17 @@ describe('SiteModel', () => {
     it('sets deliveryType', () => {
       instance.setDeliveryType('aem_cs');
       expect(instance.getDeliveryType()).to.equal('aem_cs');
+    });
+  });
+
+  describe('authoringType', () => {
+    it('gets authoringType', () => {
+      expect(instance.getAuthoringType()).to.equal('cs/crosswalk');
+    });
+
+    it('sets authoringType', () => {
+      instance.setAuthoringType('cs');
+      expect(instance.getAuthoringType()).to.equal('cs');
     });
   });
 

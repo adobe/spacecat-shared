@@ -186,6 +186,17 @@ export const configSchema = Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
   }).optional(),
+  cdnLogsConfig: Joi.object({
+    bucketName: Joi.string().required(),
+    filters: Joi.array().items(
+      Joi.object({
+        key: Joi.string().required(),
+        value: Joi.array().items(Joi.string()).required(),
+        type: Joi.string().valid('include', 'exclude').optional(),
+      }),
+    ).optional(),
+    outputLocation: Joi.string().required(),
+  }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
@@ -251,6 +262,7 @@ export const Config = (data = {}) => {
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
+  self.getCdnLogsConfig = () => state?.cdnLogsConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -352,6 +364,10 @@ export const Config = (data = {}) => {
     return config?.enabled ?? false;
   };
 
+  self.updateCdnLogsConfig = (cdnLogsConfig) => {
+    state.cdnLogsConfig = cdnLogsConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -364,4 +380,5 @@ Config.toDynamoItem = (config) => ({
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
+  cdnLogsConfig: config.getCdnLogsConfig(),
 });

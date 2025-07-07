@@ -51,8 +51,12 @@ export async function getAccessToken(context, promiseToken) {
  * @throws {Error} - If secret is not found or token is missing
  */
 export async function retrievePageAuthentication(site, context, authOptions = {}) {
-  if (site && site.getDeliveryType() === Site.DELIVERY_TYPES.AEM_CS && authOptions.promiseToken) {
-    return getAccessToken(context, authOptions.promiseToken);
+  const CS_TYPES = [Site.AUTHORING_TYPES.CS, Site.AUTHORING_TYPES.CS_CW];
+  if (site
+    && (CS_TYPES.includes(site.getAuthoringType())
+      || site.getDeliveryType() === Site.DELIVERY_TYPES.AEM_CS)
+    && authOptions.promiseToken) {
+    return getAccessToken(context, authOptions.promiseToken.promise_token);
   }
 
   const baseURL = site.getBaseURL();

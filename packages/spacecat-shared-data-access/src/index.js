@@ -45,7 +45,7 @@ export default function dataAccessWrapper(fn) {
       log.info(`Stack trace for error: ${stackTrace}`);
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
-        aclCtx: context.attributes.authInfo.rbac,
+        aclCtx: context?.attributes?.authInfo?.rbac || {},
       }, log);
       log.info(`Created data access layer for ${DYNAMO_TABLE_NAME_DATA}`);
 

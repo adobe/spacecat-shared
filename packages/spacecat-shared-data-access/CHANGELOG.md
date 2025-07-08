@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.33.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.1...@adobe/spacecat-shared-data-access-v2.33.2) (2025-07-08)
+
+
+### Bug Fixes
+
+* external site ID indexes for crosswalk authorType ([#840](https://github.com/adobe/spacecat-shared/issues/840)) ([6ac2a6e](https://github.com/adobe/spacecat-shared/commit/6ac2a6e8bd5aa082aa58498a7acd80f176932d7d))
+
 # [@adobe/spacecat-shared-data-access-v2.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.0...@adobe/spacecat-shared-data-access-v2.33.1) (2025-07-05)
 
 

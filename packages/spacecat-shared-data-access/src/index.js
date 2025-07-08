@@ -15,6 +15,7 @@ import { createDataAccess } from './service/index.js';
 export * from './service/index.js';
 
 const TABLE_NAME_DATA = 'spacecat-services-data';
+const TABLE_NAME_RBAC = 'spacecat-services-rbac';
 
 /**
  * Wrapper for data access layer
@@ -37,6 +38,7 @@ export default function dataAccessWrapper(fn) {
 
       const {
         DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
+        DYNAMO_TABLE_NAME_RBAC = TABLE_NAME_RBAC,
       } = context.env;
 
       log.info(`Creating data access layer for ${DYNAMO_TABLE_NAME_DATA} with context ${JSON.stringify(context)}`);
@@ -51,7 +53,7 @@ export default function dataAccessWrapper(fn) {
 
       // create a data access layer for the rbac table
       context.rbacDataAccess = createDataAccess({
-        tableNameData: 'spacecat-services-rbac',
+        tableNameData: DYNAMO_TABLE_NAME_RBAC,
         aclCtx: {
           aclEntities: {
             exclude: ['role', 'roleMember'],

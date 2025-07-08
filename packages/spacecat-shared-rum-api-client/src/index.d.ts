@@ -29,6 +29,16 @@ export interface RUMAPIOptions {
   interval?: number;
 
   /**
+   * Start Date
+   */
+  startDate?: string;
+
+  /**
+   * End Date
+   */
+  endDate?: string;
+
+  /**
    * Granularity can be 'hourly' or 'daily'.
    * @default 'daily'
    */

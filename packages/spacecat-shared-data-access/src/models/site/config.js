@@ -191,7 +191,8 @@ export const configSchema = Joi.object({
     filters: Joi.array().items(
       Joi.object({
         key: Joi.string().required(),
-        value: Joi.string().required(),
+        value: Joi.array().items(Joi.string()).required(),
+        type: Joi.string().valid('include', 'exclude').optional(),
       }),
     ).optional(),
     outputLocation: Joi.string().required(),

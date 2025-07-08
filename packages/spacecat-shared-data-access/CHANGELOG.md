@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v2.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.0...@adobe/spacecat-shared-data-access-v2.33.1) (2025-07-05)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#837](https://github.com/adobe/spacecat-shared/issues/837)) ([acfbbe7](https://github.com/adobe/spacecat-shared/commit/acfbbe712d90fe2f4b0cab97e8a941eb1bd5c8ea))
+
+# [@adobe/spacecat-shared-data-access-v2.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.32.1...@adobe/spacecat-shared-data-access-v2.33.0) (2025-07-02)
+
+
+### Features
+
+* add type for filter ([#836](https://github.com/adobe/spacecat-shared/issues/836)) ([e70cbf6](https://github.com/adobe/spacecat-shared/commit/e70cbf60550aa485c3b38ff3ed28393d8fd4b066))
+
+# [@adobe/spacecat-shared-data-access-v2.32.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.32.0...@adobe/spacecat-shared-data-access-v2.32.1) (2025-06-30)
+
+
+### Bug Fixes
+
+* make filter value array ([#834](https://github.com/adobe/spacecat-shared/issues/834)) ([db48daa](https://github.com/adobe/spacecat-shared/commit/db48daab3907917f32f71fed27b7468790c0c2d5))
+
 # [@adobe/spacecat-shared-data-access-v2.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.31.1...@adobe/spacecat-shared-data-access-v2.32.0) (2025-06-30)
 
 

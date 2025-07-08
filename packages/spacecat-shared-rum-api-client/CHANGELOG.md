@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.31.0...@adobe/spacecat-shared-rum-api-client-v2.31.1) (2025-06-30)
+
+
+### Bug Fixes
+
+* check status before parsing rum bundles ([#807](https://github.com/adobe/spacecat-shared/issues/807)) ([36566e4](https://github.com/adobe/spacecat-shared/commit/36566e4ab1cb8e72e3e5e0673df3171c7793ab82))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.30.0...@adobe/spacecat-shared-rum-api-client-v2.31.0) (2025-06-25)
 
 

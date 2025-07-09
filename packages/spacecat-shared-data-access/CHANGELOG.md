@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.33.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.2...@adobe/spacecat-shared-data-access-v2.33.3) (2025-07-09)
+
+
+### Bug Fixes
+
+* Update shared-data schema to include 'da' type in options ([#839](https://github.com/adobe/spacecat-shared/issues/839)) ([7131377](https://github.com/adobe/spacecat-shared/commit/7131377f088dc8457aef361682c78e64891cea7f))
+
 # [@adobe/spacecat-shared-data-access-v2.33.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.1...@adobe/spacecat-shared-data-access-v2.33.2) (2025-07-08)
 
 

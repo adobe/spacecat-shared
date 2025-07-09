@@ -101,6 +101,13 @@ describe('ImportJob IT', async () => {
     checkImportJob(importJob);
     expect(importJob.getOptions()).to.eql({ type: 'doc' });
 
+    // Add test for da type
+    data = { ...newJobData, options: { type: 'da' } };
+    importJob = await ImportJob.create(data);
+
+    checkImportJob(importJob);
+    expect(importJob.getOptions()).to.eql({ type: 'da' });
+
     // test to make sure data error is thrown if data is not an object
     data = { ...newJobData, options: { data: 'not-an-object' } };
     await ImportJob.create(data).catch((err) => {

@@ -21,6 +21,7 @@ import highOrganicLowCTR from '../src/functions/opportunities/high-organic-low-c
 import variant from '../src/functions/variant.js';
 import formVitals from '../src/functions/form-vitals.js';
 import pageviews from '../src/functions/pageviews.js';
+import trafficAnalysis from '../src/functions/traffic-analysis.js';
 import bundles from './fixtures/bundles.json' with { type: 'json' };
 import bundlesWithTraffic from './fixtures/bundles-with-traffic-source.json' with { type: 'json' };
 import bundlesWithForm from './fixtures/bundles-for-form-vitals.json' with { type: 'json' };
@@ -34,6 +35,7 @@ import expectedVariantResult from './fixtures/variant.json' with { type: 'json' 
 import expectedHighInorganicHighBounceResult from './fixtures/high-inorganic-high-bounce.json' with { type: 'json' };
 import expectedHighOrganicLowCTRResult from './fixtures/high-organic-low-ctr.json' with { type: 'json' };
 import expectedFormVitalsResult from './fixtures/expected-form-vitals-result.json' with { type: 'json' };
+import expectedTrafficAnalysisResult from './fixtures/expected-traffic-analysis-result.json' with { type: 'json' };
 
 describe('Query functions', () => {
   it('crunches form vitals', async () => {
@@ -90,5 +92,10 @@ describe('Query functions', () => {
       { interval: 7 },
     );
     expect(result).to.eql({ pageviews: 24173 });
+  });
+
+  it('crunches traffic analysis', async () => {
+    const trafficAnalysisResult = await trafficAnalysis.handler(bundles.rumBundles);
+    expect(expectedTrafficAnalysisResult).to.eql(trafficAnalysisResult);
   });
 });

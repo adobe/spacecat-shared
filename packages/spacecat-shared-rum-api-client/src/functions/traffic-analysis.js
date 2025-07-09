@@ -34,18 +34,20 @@ async function handler(bundles) {
 
   const result = bundles.map((bundle) => {
     const {
-      referrer, utmSource, utmMedium, tracking,
+      url, weight, referrer, utmSource, utmMedium, tracking,
     } = extractTrafficHints(bundle);
 
     const trafficType = getTrafficType(bundle, memo, referrer, utmSource, utmMedium, tracking);
 
     return {
-      ...bundle,
       ...trafficType,
+      url,
+      weight,
       referrer,
       utmSource,
       utmMedium,
-      tracking,
+      device: bundle.userAgent,
+      events: bundle.events,
     };
   });
 

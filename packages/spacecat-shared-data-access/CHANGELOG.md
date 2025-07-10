@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.33.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.4...@adobe/spacecat-shared-data-access-v2.33.5) (2025-07-10)
+
+
+### Bug Fixes
+
+* adding pageUrl and urlConfigs to import worker payload formatter ([#833](https://github.com/adobe/spacecat-shared/issues/833)) ([b9e7254](https://github.com/adobe/spacecat-shared/commit/b9e7254107b8690df0a414a80b4c9afce8f3a994))
+
 # [@adobe/spacecat-shared-data-access-v2.33.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.3...@adobe/spacecat-shared-data-access-v2.33.4) (2025-07-10)
 
 

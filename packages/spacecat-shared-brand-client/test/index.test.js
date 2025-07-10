@@ -25,6 +25,11 @@ describe('BrandClient', () => {
   const validImsOrgId = '36031A57899DEACD0A49402F@AdobeOrg';
   const validImsAccessToken = 'Bearer valid-ims-token';
   const validBrandId = 'brand123';
+  const validUserId = 'user123';
+  const brandConfig = {
+    brandId: validBrandId,
+    userId: validUserId,
+  };
   const mockLog = {
     debug: () => { },
     info: () => { },
@@ -163,7 +168,7 @@ describe('BrandClient', () => {
         .get(`/api/v1/libraries/${validBrandId}?selector=details`)
         .reply(200, mockGuidelines);
 
-      const result = await client.getBrandGuidelines(validBrandId, validImsOrgId, validImsConfig);
+      const result = await client.getBrandGuidelines(brandConfig, validImsOrgId, validImsConfig);
       expect(result).to.deep.include({
         id: validBrandId,
         name: 'Test Brand',
@@ -178,21 +183,27 @@ describe('BrandClient', () => {
       });
     });
 
-    it('throws error for invalid brand ID', async () => {
+    it('throws error for invalid brand id', async () => {
       const client = new BrandClient({ apiBaseUrl: validApiBaseUrl, apiKey: validApiKey }, mockLog);
-      await expect(client.getBrandGuidelines('', validImsOrgId, validImsConfig))
-        .to.be.rejectedWith('Invalid brand ID: ');
+      await expect(client.getBrandGuidelines({}, validImsOrgId, validImsConfig))
+        .to.be.rejectedWith('Invalid brand ID or user ID');
+    });
+
+    it('throws error for invalid brand userId', async () => {
+      const client = new BrandClient({ apiBaseUrl: validApiBaseUrl, apiKey: validApiKey }, mockLog);
+      await expect(client.getBrandGuidelines({ ...brandConfig, userId: '' }, validImsOrgId, validImsConfig))
+        .to.be.rejectedWith('Invalid brand ID or user ID');
     });
 
     it('throws error for invalid IMS org ID', async () => {
       const client = new BrandClient({ apiBaseUrl: validApiBaseUrl, apiKey: validApiKey }, mockLog);
-      await expect(client.getBrandGuidelines(validBrandId, 'invalid-ims-org', validImsConfig))
+      await expect(client.getBrandGuidelines(brandConfig, 'invalid-ims-org', validImsConfig))
         .to.be.rejectedWith('Invalid IMS Org ID: invalid-ims-org');
     });
 
     it('throws error for invalid IMS config', async () => {
       const client = new BrandClient({ apiBaseUrl: validApiBaseUrl, apiKey: validApiKey }, mockLog);
-      await expect(client.getBrandGuidelines(validBrandId, validImsOrgId, {}))
+      await expect(client.getBrandGuidelines(brandConfig, validImsOrgId, {}))
         .to.be.rejectedWith('Invalid IMS Config: {}');
     });
 
@@ -214,7 +225,7 @@ describe('BrandClient', () => {
         .get(`/api/v1/libraries/${validBrandId}?selector=details`)
         .reply(200, mockGuidelines);
 
-      await expect(client.getBrandGuidelines(validBrandId, validImsOrgId, validImsConfig))
+      await expect(client.getBrandGuidelines(brandConfig, validImsOrgId, validImsConfig))
         .to.be.rejectedWith(`Brand ${validBrandId} not found for org ${validImsOrgId}`);
     });
 
@@ -231,7 +242,7 @@ describe('BrandClient', () => {
         .get(`/api/v1/libraries/${validBrandId}?selector=details`)
         .reply(500);
 
-      await expect(client.getBrandGuidelines(validBrandId, validImsOrgId, validImsConfig))
+      await expect(client.getBrandGuidelines(brandConfig, validImsOrgId, validImsConfig))
         .to.be.rejectedWith(`Error getting brand guidelines for brand ${validBrandId}: 500`);
     });
 
@@ -255,8 +266,8 @@ describe('BrandClient', () => {
         .reply(200, mockGuidelines);
 
       // Make two calls
-      await client.getBrandGuidelines(validBrandId, validImsOrgId, validImsConfig);
-      await client.getBrandGuidelines(validBrandId, validImsOrgId, validImsConfig);
+      await client.getBrandGuidelines(brandConfig, validImsOrgId, validImsConfig);
+      await client.getBrandGuidelines(brandConfig, validImsOrgId, validImsConfig);
 
       // Verify IMS token was only requested once
       expect(imsMock.isDone()).to.equal(true);

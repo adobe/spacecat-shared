@@ -130,9 +130,10 @@ export default class BrandClient {
     return this.serviceAccessToken;
   }
 
-  async getBrandGuidelines(brandId, imsOrgId, imsConfig = {}) {
-    if (!hasText(brandId)) {
-      throw this.#createError(`Invalid brand ID: ${brandId}`, HTTP_BAD_REQUEST);
+  async getBrandGuidelines(brandConfig, imsOrgId, imsConfig = {}) {
+    const { brandId, userId } = brandConfig;
+    if (!hasText(brandId) || !hasText(userId)) {
+      throw this.#createError('Invalid brand ID or user ID', HTTP_BAD_REQUEST);
     }
     if (!isValidIMSOrgId(imsOrgId)) {
       throw this.#createError(`Invalid IMS Org ID: ${imsOrgId}`, HTTP_BAD_REQUEST);
@@ -148,6 +149,7 @@ export default class BrandClient {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${imsAccessToken}`,
       'x-api-key': this.apiKey,
+      'user-id': userId,
     };
     const response = await fetch(`${this.apiBaseUrl}${API_GET_BRAND_GUIDELINES(brandId)}`, {
       headers,

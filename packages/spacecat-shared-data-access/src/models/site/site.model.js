@@ -33,7 +33,7 @@ export const computeExternalIds = (attrs, authoringTypes) => {
   }
 
   if (deliveryConfig
-    && (authoringType === authoringTypes.CS || authoringType === authoringTypes.CW)) {
+    && (authoringType === authoringTypes.CS || authoringType === authoringTypes.CS_CW)) {
     const { programId, environmentId } = deliveryConfig;
 
     return {

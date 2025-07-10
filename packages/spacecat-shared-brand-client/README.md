@@ -59,7 +59,7 @@ const brands = await client.getBrandsForOrganization('org123', 'ims-access-token
 
 ```
 
-#### getBrandGuidelines(brandId, imsOrgId, imsConfig)
+#### getBrandGuidelines(brandConfig, imsOrgId, imsConfig)
 
 Retrieves brand guidelines for the given brand and IMS Org.
 
@@ -71,7 +71,12 @@ const imsConfig = {
   clientSecret: 'client-secret'
 };
 
-const guidelines = await client.getBrandGuidelines('brand123', 'org123', imsConfig);
+const brandConfig = {
+  brandId: 'brand123',
+  userId: 'user123'
+};
+
+const guidelines = await client.getBrandGuidelines(brandConfig, 'org123', imsConfig);
 // Returns BrandGuidelines object:
 // {
 //   id: 'brand123',

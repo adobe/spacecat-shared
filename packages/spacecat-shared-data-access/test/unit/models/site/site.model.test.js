@@ -116,6 +116,23 @@ describe('SiteModel', () => {
       });
     });
 
+    it('computes external IDs for crosswalk authoring type with correct delivery config', () => {
+      const attrs = {
+        authoringType: Site.AUTHORING_TYPES.CS_CW,
+        deliveryConfig: {
+          programId: '12345',
+          environmentId: '67890',
+        },
+      };
+
+      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+
+      expect(result).to.deep.equal({
+        externalOwnerId: 'p12345',
+        externalSiteId: 'e67890',
+      });
+    });
+
     it('computes external IDs for cloud service authoring type with missing delivery config', () => {
       const attrs = {
         authoringType: Site.AUTHORING_TYPES.CS,

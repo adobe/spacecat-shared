@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.33.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.3...@adobe/spacecat-shared-data-access-v2.33.4) (2025-07-10)
+
+
+### Bug Fixes
+
+* Supporting userId in brandConfig ([#838](https://github.com/adobe/spacecat-shared/issues/838)) ([b585ea6](https://github.com/adobe/spacecat-shared/commit/b585ea6e1821925644bac59bbe9e0fcadfaa55be))
+
 # [@adobe/spacecat-shared-data-access-v2.33.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.2...@adobe/spacecat-shared-data-access-v2.33.3) (2025-07-09)
 
 

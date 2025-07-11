@@ -60,7 +60,7 @@ describe('SiteModel', () => {
       const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
-        externalOwnerId: 'main#adobe',
+        externalOwnerId: 'adobe',
         externalSiteId: 'example-site',
       });
     });
@@ -94,7 +94,7 @@ describe('SiteModel', () => {
       const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
-        externalOwnerId: 'main#adobe',
+        externalOwnerId: 'adobe',
         externalSiteId: undefined,
       });
     });

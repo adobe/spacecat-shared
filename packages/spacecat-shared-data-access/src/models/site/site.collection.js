@@ -88,9 +88,8 @@ class SiteCollection extends BaseCollection {
           throw new DataAccessError(`Invalid Helix preview URL: ${previewURL}`, this);
         }
         const [host] = hostname.split('.');
-        const [ref, site, owner] = host.split('--');
-        const externalOwnerId = `${ref}#${owner}`;
-        return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, site);
+        const [, site, owner] = host.split('--');
+        return this.findByExternalOwnerIdAndExternalSiteId(owner, site);
       }
       case Site.AUTHORING_TYPES.CS_CW:
       case Site.AUTHORING_TYPES.CS: {

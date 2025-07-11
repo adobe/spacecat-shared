@@ -274,6 +274,22 @@ describe('SiteModel', () => {
     });
   });
 
+  describe('isSandbox', () => {
+    it('gets isSandbox with default value', () => {
+      expect(instance.getIsSandbox()).to.equal(false);
+    });
+
+    it('sets isSandbox to true', () => {
+      instance.setIsSandbox(true);
+      expect(instance.getIsSandbox()).to.equal(true);
+    });
+
+    it('sets isSandbox to false', () => {
+      instance.setIsSandbox(false);
+      expect(instance.getIsSandbox()).to.equal(false);
+    });
+  });
+
   describe('isLiveToggledAt', () => {
     it('gets isLiveToggledAt', () => {
       expect(instance.getIsLiveToggledAt()).to.equal('2024-11-29T07:45:55.952Z');

@@ -137,6 +137,7 @@ export interface Site extends BaseModel {
   getHlxConfig(): HlxConfig;
   getDeliveryConfig(): object;
   getIsLive(): boolean;
+  getIsSandbox(): boolean;
   getIsLiveToggledAt(): string;
   getKeyEvents(): Promise<KeyEvent[]>
   getKeyEventsByTimestamp(timestamp: string): Promise<KeyEvent[]>
@@ -164,6 +165,7 @@ export interface Site extends BaseModel {
   setHlxConfig(hlxConfig: HlxConfig): Site;
   setDeliveryConfig(deliveryConfig: object): Site;
   setIsLive(isLive: boolean): Site;
+  setIsSandbox(isSandbox: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
   toggleLive(): Site;

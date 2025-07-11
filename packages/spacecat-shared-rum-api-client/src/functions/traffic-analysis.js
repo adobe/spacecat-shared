@@ -40,9 +40,15 @@ function getNotFound(bundle) {
 }
 
 function getReferrer(bundle) {
-  return bundle.events
+  const enterCheckpoint = bundle.events
     .find((e) => e.checkpoint === 'enter')
-    ?.source || null;
+    ?.source;
+
+  const navigateCheckpoint = bundle.events
+    .find((e) => e.checkpoint === 'navigate')
+    ?.source;
+
+  return navigateCheckpoint || enterCheckpoint || null;
 }
 
 function getClicked(bundle) {

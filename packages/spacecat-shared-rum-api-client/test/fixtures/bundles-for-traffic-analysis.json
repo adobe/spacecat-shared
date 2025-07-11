@@ -57,7 +57,7 @@
         },
         {
           "checkpoint": "consent",
-          "source": "ontetrust",
+          "source": "onetrust",
           "target": "hidden"
         },
         {
@@ -212,6 +212,10 @@
           "checkpoint": "cwv-ttfb",
           "value": 1099.0999999940395,
           "timeDelta": 3921
+        },
+        {
+          "checkpoint": "click",
+          "source": "#truste-close"
         }
       ]
     },
@@ -228,6 +232,11 @@
           "checkpoint": "top",
           "target": "hidden",
           "timeDelta": 193.300048828125
+        },
+        {
+          "checkpoint": "consent",
+          "source": "onetrust",
+          "target": "show"
         }
       ]
     },
@@ -257,6 +266,11 @@
         {
           "checkpoint": "cwv",
           "timeDelta": 3596.60009765625
+        },
+        {
+          "checkpoint": "consent",
+          "source": "onetrust",
+          "target": "suppressed"
         },
         {
           "checkpoint": "loadresource",
@@ -317,6 +331,10 @@
           "target": 1,
           "source": "https://www.aem.live/new-nav.plain.html",
           "timeDelta": 891.60009765625
+        },
+        {
+          "checkpoint": "click",
+          "source": "#CybotCookiebot-Decline"
         },
         {
           "checkpoint": "navigate",
@@ -391,6 +409,10 @@
           "target": "visible",
           "source": "",
           "timeDelta": 2174.699951171875
+        },
+        {
+          "checkpoint": "click",
+          "source": "#cybot-reject"
         },
         {
           "checkpoint": "viewblock",
@@ -472,6 +494,11 @@
         {
           "checkpoint": "load",
           "timeDelta": 1536
+        },
+        {
+          "checkpoint": "consent",
+          "source": "onetrust",
+          "target": "hidden"
         },
         {
           "checkpoint": "loadresource",

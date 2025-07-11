@@ -87,6 +87,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     default: {},
     validate: (value) => isObject(value),
   })
+  .addAttribute('isSandbox', {
+    type: 'boolean',
+    default: false,
+  })
   .addAttribute('isLive', {
     type: 'boolean',
     required: true,

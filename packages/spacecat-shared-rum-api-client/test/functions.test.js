@@ -25,6 +25,7 @@ import trafficAnalysis from '../src/functions/traffic-analysis.js';
 import bundles from './fixtures/bundles.json' with { type: 'json' };
 import bundlesWithTraffic from './fixtures/bundles-with-traffic-source.json' with { type: 'json' };
 import bundlesWithForm from './fixtures/bundles-for-form-vitals.json' with { type: 'json' };
+import bundlesTrafficAnalysis from './fixtures/bundles-for-traffic-analysis.json' with { type: 'json' };
 import bundlesForVariant from './fixtures/bundles_for_variant.json' with { type: 'json' };
 import bundlesFor404InternalLinks from './fixtures/bundles-for-404-internal-links.json' with { type: 'json' };
 import expected404Result from './fixtures/notfound.json' with { type: 'json' };
@@ -95,7 +96,7 @@ describe('Query functions', () => {
   });
 
   it('crunches traffic analysis', async () => {
-    const trafficAnalysisResult = await trafficAnalysis.handler(bundles.rumBundles);
+    const trafficAnalysisResult = await trafficAnalysis.handler(bundlesTrafficAnalysis.rumBundles);
     expect(expectedTrafficAnalysisResult).to.eql(trafficAnalysisResult);
   });
 });

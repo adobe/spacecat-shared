@@ -10,20 +10,76 @@
  * governing permissions and limitations under the License.
  */
 
-import { classifyTrafficSource, extractTrafficHints } from '../common/traffic.js';
+import { utils } from '@adobe/rum-distiller';
+import { classifyTraffic } from '../common/traffic.js';
 
-function getTrafficType(bundle, memo, referrer, utmSource, utmMedium, tracking) {
+function getUTM(bundle, type) {
+  return bundle.events
+    .find((e) => e.checkpoint === 'utm' && e.source === `utm_${type}`)
+    ?.target || null;
+}
+
+function getCWV(bundle, metric) {
+  const measurements = bundle.events
+    .filter((e) => e.checkpoint === `cwv-${metric}`)
+    .map((e) => e.value);
+
+  return measurements.length > 0 ? Math.max(...measurements) : null;
+}
+
+function containsEngagedScroll(bundle) {
+  return bundle.events
+    .some((e) => (e.checkpoint === 'viewmedia' || e.checkpoint === 'viewblock') && e.timeDelta >= 10000)
+    ? 1 : 0;
+}
+
+function getNotFound(bundle) {
+  return bundle.events
+    .find((e) => e.checkpoint === '404')
+    ?.source || null;
+}
+
+function getReferrer(bundle) {
+  return bundle.events
+    .find((e) => e.checkpoint === 'enter')
+    ?.source || null;
+}
+
+function getClicked(bundle) {
+  const latestClickEvent = bundle.events
+    .filter((e) => e.checkpoint === 'click')
+    .reduce((latest, current) => {
+      if (!latest || !latest.timeDelta) return current;
+      if (current?.timeDelta > latest.timeDelta) return current;
+      return latest;
+    }, null);
+
+  if (!latestClickEvent) return 0;
+
+  const isConsentClick = !!utils.reclassifyConsent(latestClickEvent).vendor;
+
+  if (isConsentClick) return 0;
+
+  return 1;
+}
+
+function getConsent(bundle) {
+  const consentBannerStatus = bundle.events
+    .find((e) => e.checkpoint === 'consent')
+    ?.target;
+
+  const consentClick = bundle.events.find((e) => e.checkpoint === 'click' && utils.reclassifyConsent(e).vendor);
+
+  if (!consentClick) return consentBannerStatus || null;
+
+  return utils.reclassifyConsent(consentClick).target;
+}
+
+function trafficType(bundle, memo) {
   const key = `${bundle.id}${bundle.url}${bundle.time}`;
   if (memo[key]) return memo[key];
 
-  const type = classifyTrafficSource(
-    bundle.url,
-    referrer,
-    utmSource,
-    utmMedium,
-    tracking,
-  );
-
+  const type = classifyTraffic(bundle);
   // eslint-disable-next-line no-param-reassign
   memo[key] = type;
   return type;
@@ -33,22 +89,30 @@ async function handler(bundles) {
   const memo = {};
 
   const result = bundles.map((bundle) => {
-    const {
-      url, weight, referrer, utmSource, utmMedium, tracking,
-    } = extractTrafficHints(bundle);
-
-    const trafficType = getTrafficType(bundle, memo, referrer, utmSource, utmMedium, tracking);
+    /* eslint-disable camelcase */
+    const trafficData = trafficType(bundle, memo);
+    const clicked = getClicked(bundle);
 
     return {
-      ...trafficType,
-      url,
-      weight,
-      referrer,
-      utmSource,
-      utmMedium,
-      device: bundle.userAgent,
-      events: bundle.events,
+      path: new URL(bundle.url).pathname,
+      trf_type: trafficData.type,
+      trf_channel: trafficData.category,
+      trf_platform: trafficData.vendor || null,
+      device: bundle.userAgent.split(':')[0],
+      utm_source: getUTM(bundle, 'source'),
+      utm_medium: getUTM(bundle, 'medium'),
+      utm_campaign: getUTM(bundle, 'campaign'),
+      referrer: getReferrer(bundle),
+      consent: getConsent(bundle),
+      notfound: getNotFound(bundle),
+      pageviews: bundle.weight,
+      clicked,
+      engaged: containsEngagedScroll(bundle) || clicked,
+      lcp: getCWV(bundle, 'lcp'),
+      inp: getCWV(bundle, 'inp'),
+      cls: getCWV(bundle, 'cls'),
     };
+    /* eslint-enable camelcase */
   });
 
   return result;

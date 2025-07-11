@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-brand-client-v1.1.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.14...@adobe/spacecat-shared-brand-client-v1.1.15) (2025-07-10)
+
+
+### Bug Fixes
+
+* Supporting userId in brandConfig ([#838](https://github.com/adobe/spacecat-shared/issues/838)) ([b585ea6](https://github.com/adobe/spacecat-shared/commit/b585ea6e1821925644bac59bbe9e0fcadfaa55be))
+
 # [@adobe/spacecat-shared-brand-client-v1.1.14](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.13...@adobe/spacecat-shared-brand-client-v1.1.14) (2025-06-28)
 
 

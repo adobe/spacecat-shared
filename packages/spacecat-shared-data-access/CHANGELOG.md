@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.33.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.4...@adobe/spacecat-shared-data-access-v2.33.5) (2025-07-10)
+
+
+### Bug Fixes
+
+* adding pageUrl and urlConfigs to import worker payload formatter ([#833](https://github.com/adobe/spacecat-shared/issues/833)) ([b9e7254](https://github.com/adobe/spacecat-shared/commit/b9e7254107b8690df0a414a80b4c9afce8f3a994))
+
+# [@adobe/spacecat-shared-data-access-v2.33.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.3...@adobe/spacecat-shared-data-access-v2.33.4) (2025-07-10)
+
+
+### Bug Fixes
+
+* Supporting userId in brandConfig ([#838](https://github.com/adobe/spacecat-shared/issues/838)) ([b585ea6](https://github.com/adobe/spacecat-shared/commit/b585ea6e1821925644bac59bbe9e0fcadfaa55be))
+
+# [@adobe/spacecat-shared-data-access-v2.33.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.2...@adobe/spacecat-shared-data-access-v2.33.3) (2025-07-09)
+
+
+### Bug Fixes
+
+* Update shared-data schema to include 'da' type in options ([#839](https://github.com/adobe/spacecat-shared/issues/839)) ([7131377](https://github.com/adobe/spacecat-shared/commit/7131377f088dc8457aef361682c78e64891cea7f))
+
+# [@adobe/spacecat-shared-data-access-v2.33.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.1...@adobe/spacecat-shared-data-access-v2.33.2) (2025-07-08)
+
+
+### Bug Fixes
+
+* external site ID indexes for crosswalk authorType ([#840](https://github.com/adobe/spacecat-shared/issues/840)) ([6ac2a6e](https://github.com/adobe/spacecat-shared/commit/6ac2a6e8bd5aa082aa58498a7acd80f176932d7d))
+
 # [@adobe/spacecat-shared-data-access-v2.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.0...@adobe/spacecat-shared-data-access-v2.33.1) (2025-07-05)
 
 

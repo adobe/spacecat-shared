@@ -19,6 +19,41 @@ import { getBearerToken } from './utils/bearer.js';
 import { getCookieValue } from './utils/cookie.js';
 import getAcls from '../rbac/acls.js';
 
+/**
+ * Transforms tenants list into a flattened array of org-group mappings.
+ * Each object contains orgId (from tenant.id) and groupId (from tenant.groups array).
+ *
+ * @param {Array} tenants - Array of tenant objects from JWT payload
+ * @returns {Array} Array of objects with orgId and groupId properties
+ */
+function getOrgGroupMappings(tenants) {
+  if (!Array.isArray(tenants) || tenants.length === 0) {
+    return [];
+  }
+
+  const mappings = [];
+
+  tenants.forEach((tenant) => {
+    const orgId = tenant.id;
+    if (!orgId) {
+      return; // Skip this iteration
+    }
+
+    if (Array.isArray(tenant.groups) && tenant.groups.length > 0) {
+      tenant.groups.forEach((groupId) => {
+        if (groupId) {
+          mappings.push({
+            orgId,
+            groupId,
+          });
+        }
+      });
+    }
+  });
+
+  return mappings;
+}
+
 const ALGORITHM_ES256 = 'ES256';
 export const ISSUER = 'https://spacecat.experiencecloud.live';
 
@@ -79,6 +114,7 @@ export default class JwtHandler extends AbstractHandler {
       const acls = await getAcls({
         imsUserId: payload.sub,
         imsOrgs: payload.tenants.map((tenant) => tenant.id),
+        imsGroups: getOrgGroupMappings(payload.tenants),
       }, context.log);
 
       return new AuthInfo()
@@ -94,3 +130,5 @@ export default class JwtHandler extends AbstractHandler {
     return null;
   }
 }
+
+export { getOrgGroupMappings };

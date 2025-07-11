@@ -54,12 +54,14 @@ export default class LegacyApiKeyHandler extends AbstractHandler {
       : apiKeyFromHeader === expectedUserApiKey || apiKeyFromHeader === expectedAdminApiKey;
 
     // provide acls to legacy keys, admin role for admin api key and read role for user api key
-    const acls = [{
-      acl: [{
-        actions: isRouteAdminOnly ? ['C', 'R', 'U', 'D'] : ['R'],
-        path: '/**',
+    const acls = {
+      acls: [{
+        acl: [{
+          actions: isRouteAdminOnly ? ['C', 'R', 'U', 'D'] : ['R'],
+          path: '/**',
+        }],
       }],
-    }];
+    };
 
     if (isApiKeyValid) {
       const profile = isRouteAdminOnly ? { user_id: 'admin' } : { user_id: 'legacy-user' };

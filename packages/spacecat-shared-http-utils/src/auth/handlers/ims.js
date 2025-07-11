@@ -91,6 +91,41 @@ function isUserASOAdmin(organizations) {
     return org.groups.some((group) => adminGroupsForOrg.includes(group.ident));
   });
 }
+
+/**
+ * Transforms organizations list into an array of org-group mappings.
+ * Each object contains orgId (from orgRef.ident) and groupId (from group.ident).
+ *
+ * @param {Array} organizations - Array of organization objects from IMS
+ * @returns {Array} Array of objects with orgId and groupId properties
+ */
+function getOrgGroupMappings(organizations) {
+  if (!isNonEmptyArray(organizations)) {
+    return [];
+  }
+
+  const mappings = [];
+
+  organizations.forEach((org) => {
+    const orgId = org.orgRef?.ident;
+    if (!orgId) {
+      return; // Skip this iteration
+    }
+
+    if (isNonEmptyArray(org.groups)) {
+      org.groups.forEach((group) => {
+        if (group.ident) {
+          mappings.push({
+            orgId,
+            groupId: group.ident,
+          });
+        }
+      });
+    }
+  });
+
+  return mappings;
+}
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
  */
@@ -309,15 +344,17 @@ export default class AdobeImsHandler extends AbstractHandler {
     try {
       const imsProfile = await context.imsClient.getImsUserProfile(token);
       this.log(`IMS profile: ${JSON.stringify(imsProfile)}`, 'debug');
+      const organizations = await context.imsClient.getImsUserOrganizations(token);
 
       const acls = await getAcls({
         imsUserId: imsProfile.userId,
-        imsOrgs: [imsProfile.ownerOrg],
+        imsOrgs: imsProfile.organizations,
+        imsGroups: getOrgGroupMappings(organizations),
       }, context.log);
 
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);
-      const organizations = await context.imsClient.getImsUserOrganizations(token);
+
       const isAdmin = isUserASOAdmin(organizations);
       const scopes = [];
       if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {
@@ -344,3 +381,5 @@ export default class AdobeImsHandler extends AbstractHandler {
     return null;
   }
 }
+
+export { getOrgGroupMappings };

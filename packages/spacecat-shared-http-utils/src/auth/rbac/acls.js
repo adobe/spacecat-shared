@@ -23,6 +23,11 @@ export function pathSorter({ path: path1 }, { path: path2 }) {
   return sp2.length - sp1.length;
 }
 
+function getIdent(imsOrgId) {
+  // remmove @AdobeOrg
+  return imsOrgId.replace('@AdobeOrg', '');
+}
+
 async function getDBAccess(log, tableName = 'spacecat-services-rbac') {
   log.info(`Getting DB access for ${tableName}`);
   return createDataAccess({
@@ -80,7 +85,7 @@ export default async function getAcls({
   for (const imsOrgId of imsOrgs) {
     // eslint-disable-next-line no-await-in-loop
     const roles = await getDBRoles(dbAccess, {
-      imsUserId, imsOrgId, imsGroups, apiKey,
+      imsUserId, imsOrgId: getIdent(imsOrgId), imsGroups, apiKey,
     }, log);
 
     roles.forEach((r) => {
@@ -94,7 +99,7 @@ export default async function getAcls({
       acls.push(entry);
     });
   }
-  log.info(`Found ACLs ${acls.length}`);
+  log.info(`Found ACLs ${acls} and length ${acls.length}`);
 
   return {
     acls,

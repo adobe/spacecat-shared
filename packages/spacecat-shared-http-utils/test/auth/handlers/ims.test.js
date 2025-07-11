@@ -27,6 +27,11 @@ import AuthInfo from '../../../src/auth/auth-info.js';
 const AdobeImsHandler = await esmock('../../../src/auth/handlers/ims.js', {
   '../../../src/auth/rbac/acls.js': () => ({}),
 });
+
+// Import the getOrgGroupMappings function for testing
+const { getOrgGroupMappings } = await esmock('../../../src/auth/handlers/ims.js', {
+  '../../../src/auth/rbac/acls.js': () => ({}),
+});
 use(chaiAsPromised);
 
 const privateKey = fs.readFileSync('test/fixtures/auth/ims/private_key.pem', 'utf8');
@@ -412,6 +417,130 @@ describe('AdobeImsHandler', () => {
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
       expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
+    });
+  });
+
+  describe('getOrgGroupMappings', () => {
+    it('returns empty array when organizations is not provided', () => {
+      const result = getOrgGroupMappings();
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organizations is null', () => {
+      const result = getOrgGroupMappings(null);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organizations is empty array', () => {
+      const result = getOrgGroupMappings([]);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organization has no orgRef.ident', () => {
+      const organizations = [{
+        orgName: 'Test Org',
+        groups: [{ ident: 123 }],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organization has empty orgRef.ident', () => {
+      const organizations = [{
+        orgRef: { ident: '' },
+        orgName: 'Test Org',
+        groups: [{ ident: 123 }],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organization has no groups', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organization has empty groups array', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+        groups: [],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('skips groups without valid ident', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+        groups: [
+          { ident: 123 },
+          { ident: null },
+          { ident: 456 },
+          { ident: undefined },
+        ],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([
+        { orgId: 'org1', groupId: 123 },
+        { orgId: 'org1', groupId: 456 },
+      ]);
+    });
+
+    it('correctly maps organizations with groups', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org 1',
+        groups: [
+          { ident: 123 },
+          { ident: 456 },
+        ],
+      }, {
+        orgRef: { ident: 'org2' },
+        orgName: 'Test Org 2',
+        groups: [
+          { ident: 789 },
+        ],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([
+        { orgId: 'org1', groupId: 123 },
+        { orgId: 'org1', groupId: 456 },
+        { orgId: 'org2', groupId: 789 },
+      ]);
+    });
+
+    it('handles multiple organizations with mixed valid/invalid data', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        groups: [
+          { ident: 123 },
+          { ident: null },
+        ],
+      }, {
+        orgRef: { ident: '' }, // Invalid orgId
+        groups: [
+          { ident: 456 },
+        ],
+      }, {
+        orgRef: { ident: 'org3' },
+        groups: [
+          { ident: 789 },
+          { ident: undefined },
+          { ident: 101 },
+        ],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([
+        { orgId: 'org1', groupId: 123 },
+        { orgId: 'org3', groupId: 789 },
+        { orgId: 'org3', groupId: 101 },
+      ]);
     });
   });
 });

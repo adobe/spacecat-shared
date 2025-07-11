@@ -61,11 +61,11 @@ describe('RBAC', () => {
       { getRole: () => r2 },
     ];
     const mockRoleMembersFn = (oid, ids) => {
-      if (oid === 'BAABAABAA@AdobeOrg') {
+      if (oid === 'BAABAABAA') {
         if (ids.length === 4
-          && ids.includes('imsOrgID:BAABAABAA@AdobeOrg')
-          && ids.includes('imsOrgID/groupID:BAABAABAA@AdobeOrg/12345678')
-          && ids.includes('imsOrgID/groupID:BAABAABAA@AdobeOrg/87654321')
+          && ids.includes('imsOrgID:BAABAABAA')
+          && ids.includes('imsOrgID/groupID:BAABAABAA/12345678')
+          && ids.includes('imsOrgID/groupID:BAABAABAA/87654321')
           && ids.includes('imsID:1234@5678.e')) {
           return mockRoleMembers;
         }
@@ -95,13 +95,13 @@ describe('RBAC', () => {
     const imsUserId = '1234@5678.e';
     const imsOrgs = ['BAABAABAA@AdobeOrg'];
     const imsGroups = [{
-      orgId: 'BAABAABAA@AdobeOrg',
+      orgId: 'BAABAABAA',
       groupId: 12345678,
     }, {
-      orgId: 'F00F00@AdobeOrg',
+      orgId: 'F00F00',
       groupId: 99999999,
     }, {
-      orgId: 'BAABAABAA@AdobeOrg',
+      orgId: 'BAABAABAA',
       groupId: 87654321,
     }];
 
@@ -140,9 +140,9 @@ describe('RBAC', () => {
     };
     const mockRoleMembers = [{ getRole: () => mockRole }];
     const mockRoleMembersFn = (oid, ids) => {
-      if (oid === 'DAB0@AdobeOrg') {
+      if (oid === 'DAB0') {
         if (ids.length === 2
-          && ids.includes('imsOrgID:DAB0@AdobeOrg')
+          && ids.includes('imsOrgID:DAB0')
           && ids.includes('apiKeyID:BHEUAARK!')) {
           return mockRoleMembers;
         }

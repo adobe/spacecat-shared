@@ -51,7 +51,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -127,7 +127,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -1096,7 +1096,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -1229,7 +1229,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -1742,7 +1742,7 @@
     "notfound": null,
     "pageviews": 1,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": 48,
     "cls": 0
@@ -1799,7 +1799,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 670.0999999046326,
     "inp": null,
     "cls": 0.014371910428911266
@@ -1856,7 +1856,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -2103,7 +2103,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -2122,7 +2122,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -2160,7 +2160,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 2756.899999856949,
     "inp": null,
     "cls": 0.0004926924960464029
@@ -2179,7 +2179,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -2369,7 +2369,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 1111.8000000715256,
     "inp": null,
     "cls": 0.00005561630774288468
@@ -2426,7 +2426,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 361.09999999403954,
     "inp": null,
     "cls": 0.00017381700304902785
@@ -2673,7 +2673,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 642.4000000357628,
     "inp": null,
     "cls": 0.00015531111257074455
@@ -2825,7 +2825,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 504.09999990463257,
     "inp": null,
     "cls": 0.001196862904999452
@@ -2901,7 +2901,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 568.3000000119209,
     "inp": 184,
     "cls": 0
@@ -3129,7 +3129,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 2179,
     "inp": null,
     "cls": 0.0000349089773839612
@@ -3281,7 +3281,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 138.10000000149012,
     "inp": 32,
     "cls": 0
@@ -3300,7 +3300,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -3395,7 +3395,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 1087.800000000745,
     "inp": null,
     "cls": 0
@@ -3490,7 +3490,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -3623,7 +3623,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 519.9000000059605,
     "inp": null,
     "cls": 0.0012854992059480124
@@ -3965,7 +3965,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 1706.2000000476837,
     "inp": null,
     "cls": 0.0036581120205716085
@@ -4117,7 +4117,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -4345,7 +4345,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 1392.199999999255,
     "inp": 24,
     "cls": 0
@@ -4364,7 +4364,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": 0,
     "cls": null
@@ -4535,7 +4535,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 9262.09999999404,
     "inp": 1672,
     "cls": 0.000014584478299111764
@@ -4725,7 +4725,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": 341.5,
     "inp": null,
     "cls": 0.0003369777094401792
@@ -4744,7 +4744,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null
@@ -4782,7 +4782,7 @@
     "notfound": null,
     "pageviews": 100,
     "clicked": 0,
-    "engaged": 1,
+    "engaged": 0,
     "lcp": null,
     "inp": null,
     "cls": null

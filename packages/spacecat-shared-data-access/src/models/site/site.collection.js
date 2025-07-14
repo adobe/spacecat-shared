@@ -93,20 +93,20 @@ class SiteCollection extends BaseCollection {
         }
         const [host] = hostname.split('.');
         const [, site, owner] = host.split('--');
-        
-        this.log.info('Parsed Helix preview URL', { 
-          host, 
-          site, 
-          owner, 
-          note: 'Using owner directly as externalOwnerId (ref removed)' 
+
+        this.log.info('Parsed Helix preview URL', {
+          host,
+          site,
+          owner,
+          note: 'Using owner directly as externalOwnerId (ref removed)',
         });
-        
+
         const result = await this.findByExternalOwnerIdAndExternalSiteId(owner, site);
-        this.log.info('Helix site lookup result', { 
-          found: !!result, 
-          siteId: result?.getId() 
+        this.log.info('Helix site lookup result', {
+          found: !!result,
+          siteId: result?.getId(),
         });
-        
+
         return result;
       }
       case Site.AUTHORING_TYPES.CS_CW:

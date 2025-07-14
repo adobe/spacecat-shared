@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.6...@adobe/spacecat-shared-data-access-v2.34.0) (2025-07-14)
+
+
+### Features
+
+* add traffic analysis import handler ([#846](https://github.com/adobe/spacecat-shared/issues/846)) ([c8b65f0](https://github.com/adobe/spacecat-shared/commit/c8b65f0b0a29afdafc84686cf8b2ff1f6f9ed9cb))
+
 # [@adobe/spacecat-shared-data-access-v2.33.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.5...@adobe/spacecat-shared-data-access-v2.33.6) (2025-07-12)
 
 

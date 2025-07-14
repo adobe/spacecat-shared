@@ -12,6 +12,7 @@
 
 import { composeAuditURL, hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
+import { logger } from '@adobe/spacecat-shared-utils';
 
 const HLX_HOST = /\.(?:aem|hlx)\.(?:page|live)$/i;
 export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)/i;
@@ -22,14 +23,24 @@ export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)/i;
 export const computeExternalIds = (attrs, authoringTypes) => {
   const { authoringType, hlxConfig, deliveryConfig } = attrs;
 
+  logger.info('Computing external IDs', { authoringType, hasHlxConfig: !!hlxConfig, hasDeliveryConfig: !!deliveryConfig });
+
   if (hlxConfig && (authoringType === authoringTypes.DA)) {
     const rso = hlxConfig.rso ?? {};
     const { owner, site } = rso;
 
-    return {
+    const result = {
       externalOwnerId: owner || undefined,
       externalSiteId: site || undefined,
     };
+
+    logger.info('Computed external IDs', { 
+      input: { owner, site }, 
+      result,
+      note: 'Using owner directly (ref removed from externalOwnerId)'
+    });
+
+    return result;
   }
 
   if (deliveryConfig
@@ -41,6 +52,12 @@ export const computeExternalIds = (attrs, authoringTypes) => {
       externalSiteId: environmentId ? `e${environmentId}` : undefined,
     };
   }
+
+  logger.info('No external IDs computed - unsupported authoring type or missing config', { 
+    authoringType, 
+    hasHlxConfig: !!hlxConfig, 
+    hasDeliveryConfig: !!deliveryConfig 
+  });
 
   return { externalOwnerId: undefined, externalSiteId: undefined };
 };

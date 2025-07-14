@@ -77,8 +77,12 @@ class SiteCollection extends BaseCollection {
       throw new DataAccessError(`Invalid preview URL: ${previewURL}`, this);
     }
 
+    this.log.info('Finding site by preview URL', { previewURL });
+
     const { hostname } = new URL(previewURL);
     const previewType = getAuthoringType(hostname, Site.AUTHORING_TYPES);
+
+    this.log.info('Detected preview type', { hostname, previewType });
 
     switch (previewType) {
       case Site.AUTHORING_TYPES.SP:
@@ -89,7 +93,21 @@ class SiteCollection extends BaseCollection {
         }
         const [host] = hostname.split('.');
         const [, site, owner] = host.split('--');
-        return this.findByExternalOwnerIdAndExternalSiteId(owner, site);
+        
+        this.log.info('Parsed Helix preview URL', { 
+          host, 
+          site, 
+          owner, 
+          note: 'Using owner directly as externalOwnerId (ref removed)' 
+        });
+        
+        const result = await this.findByExternalOwnerIdAndExternalSiteId(owner, site);
+        this.log.info('Helix site lookup result', { 
+          found: !!result, 
+          siteId: result?.getId() 
+        });
+        
+        return result;
       }
       case Site.AUTHORING_TYPES.CS_CW:
       case Site.AUTHORING_TYPES.CS: {
@@ -99,6 +117,7 @@ class SiteCollection extends BaseCollection {
         return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, externalSiteId);
       }
       default:
+        this.log.warn('Unsupported preview URL type', { previewURL, hostname, previewType });
         throw new DataAccessError(`Unsupported preview URL: ${previewURL}`, this);
     }
   }

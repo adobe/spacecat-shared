@@ -31,6 +31,11 @@ const roleMembers = [
     identity: 'imsID:1234@5678.e',
     roleId: '4d6b2f29-4d2d-405e-aad6-1f62e6933c39',
   },
+  {
+    imsOrgId: 'DAADAADAA@AdobeOrg',
+    identity: 'imsOrgID/groupID:DAADAADAA@AdobeOrg/12345678',
+    roleId: '216b2f29-4d2d-405e-aad6-1f62e6933c39',
+  },
 ];
 
 export default roleMembers;

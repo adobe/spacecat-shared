@@ -801,7 +801,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -969,6 +969,23 @@ describe('Config Tests', () => {
                 context: {
                   valids: [
                     'cwv-weekly',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [traffic-analysis]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'traffic-analysis',
                   ],
                   label: 'imports[0].type',
                   value: 'organic-keywords',

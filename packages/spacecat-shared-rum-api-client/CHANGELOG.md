@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.32.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.32.1...@adobe/spacecat-shared-rum-api-client-v2.32.2) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#845](https://github.com/adobe/spacecat-shared/issues/845)) ([23bd3a2](https://github.com/adobe/spacecat-shared/commit/23bd3a2235686480cb89d6379276d9ed000baea3))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.32.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.32.0...@adobe/spacecat-shared-rum-api-client-v2.32.1) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.17.0 ([#844](https://github.com/adobe/spacecat-shared/issues/844)) ([17e8237](https://github.com/adobe/spacecat-shared/commit/17e8237ef56c9b7a6d4b13cd8ddf5f868e8d92bc)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
+# [@adobe/spacecat-shared-rum-api-client-v2.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.31.1...@adobe/spacecat-shared-rum-api-client-v2.32.0) (2025-07-11)
+
+
+### Features
+
+* add RUM API Client handler for paid traffic analysis import ([#841](https://github.com/adobe/spacecat-shared/issues/841)) ([6e6656e](https://github.com/adobe/spacecat-shared/commit/6e6656efb7e9741b52d26c21ea910988b219e2cc))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.31.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.31.0...@adobe/spacecat-shared-rum-api-client-v2.31.1) (2025-06-30)
 
 

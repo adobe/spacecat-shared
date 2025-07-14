@@ -23,6 +23,7 @@ export const IMPORT_TYPES = {
   ALL_TRAFFIC: 'all-traffic',
   CWV_DAILY: 'cwv-daily',
   CWV_WEEKLY: 'cwv-weekly',
+  TRAFFIC_ANALYSIS: 'traffic-analysis',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -104,6 +105,10 @@ export const IMPORT_TYPE_SCHEMAS = {
     type: Joi.string().valid(IMPORT_TYPES.CWV_WEEKLY).required(),
     ...IMPORT_BASE_KEYS,
   }),
+  [IMPORT_TYPES.TRAFFIC_ANALYSIS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.TRAFFIC_ANALYSIS).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
@@ -164,6 +169,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
   },
   'cwv-weekly': {
     type: 'cwv-weekly',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
+  'traffic-analysis': {
+    type: 'traffic-analysis',
     destinations: ['default'],
     sources: ['rum'],
     enabled: true,

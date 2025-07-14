@@ -107,6 +107,8 @@ export const IMPORT_TYPE_SCHEMAS = {
   }),
   [IMPORT_TYPES.TRAFFIC_ANALYSIS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.TRAFFIC_ANALYSIS).required(),
+    year: Joi.number().integer().optional(),
+    week: Joi.number().integer().optional(),
     ...IMPORT_BASE_KEYS,
   }),
 };

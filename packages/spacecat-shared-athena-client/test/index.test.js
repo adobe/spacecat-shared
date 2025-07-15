@@ -17,7 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { AthenaClient, QueryExecutionState } from '@aws-sdk/client-athena';
-import { AWSAthenaClient } from '../src/index.js';
+import { getTrafficAnalysisQuery, getTrafficAnalysisQueryPlaceholders, AWSAthenaClient } from '../src/index.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -290,5 +290,48 @@ describe('AWSAthenaClient', () => {
       const results = await athenaClient.query('SELECT * FROM table', 'database');
       expect(results).to.deep.equal([{ COLUMN1: 'value1', Column2: 'value2' }]);
     });
+  });
+});
+
+describe('Traffic analysis query loader', () => {
+  it('should load and template the traffic analysis query', async () => {
+    const placeholders = {
+      tableName: 'my_table',
+      siteId: 'mysite',
+      year: 2024,
+      month: 6,
+      week: 23,
+      dimensionColumns: 'channel, device',
+      groupBy: 'channel, device',
+      dimensionColumnsPrefixed: 'a.channel, a.device,',
+    };
+    const sql = await getTrafficAnalysisQuery(placeholders);
+    console.log(sql);
+    expect(sql).to.be.a('string');
+    expect(sql).to.include('FROM my_table');
+    expect(sql).to.include("siteid = 'mysite'");
+    expect(sql).to.include('year = 2024');
+    expect(sql).to.include('month = 6');
+    expect(sql).to.include('week = 23');
+    expect(sql).to.include('channel, device');
+    expect(sql).to.include('a.channel, a.device,');
+    // Should not contain any unreplaced {{...}}
+    const unreplaced = sql.match(/{{\s*\w+\s*}}/g);
+    expect(unreplaced, `Unreplaced placeholders found: ${unreplaced ? unreplaced.join(', ') : ''}`)
+      .to.be.null;
+  });
+
+  it('should extract all unique placeholders from the query template', async () => {
+    const keys = await getTrafficAnalysisQueryPlaceholders();
+    expect(keys).to.be.an('array').that.includes('tableName');
+    expect(keys).to.include('siteId');
+    expect(keys).to.include('year');
+    expect(keys).to.include('week');
+    expect(keys).to.include('month');
+    expect(keys).to.include('dimensionColumns');
+    expect(keys).to.include('groupBy');
+    expect(keys).to.include('dimensionColumnsPrefixed');
+    // Should not include duplicates
+    expect(new Set(keys).size).to.equal(keys.length);
   });
 });

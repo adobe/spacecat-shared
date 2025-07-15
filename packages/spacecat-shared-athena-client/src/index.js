@@ -246,3 +246,5 @@ export class AWSAthenaClient {
     return AWSAthenaClient.#parseAthenaResults(results);
   }
 }
+
+export { getTrafficAnalysisQuery, getTrafficAnalysisQueryPlaceholders } from './queries.js';

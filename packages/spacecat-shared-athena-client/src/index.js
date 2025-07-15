@@ -14,8 +14,8 @@ import {
   AthenaClient,
   StartQueryExecutionCommand,
   GetQueryExecutionCommand,
-  GetQueryResultsCommand,
   QueryExecutionState,
+  paginateGetQueryResults,
 } from '@aws-sdk/client-athena';
 import { instrumentAWSClient, hasText } from '@adobe/spacecat-shared-utils';
 
@@ -220,29 +220,38 @@ export class AWSAthenaClient {
    * @returns {Promise<Array>} – Parsed query results
    */
   async query(sql, database, description = 'Athena query', opts = {}) {
-    const {
-      backoffMs = this.backoffMs,
-      maxRetries = this.maxRetries,
-      pollIntervalMs = this.pollIntervalMs,
-      maxPollAttempts = this.maxPollAttempts,
-    } = opts;
+    const queryExecutionId = await this.execute(sql, database, description, opts);
 
-    this.log.info(`[Athena Client] Executing: ${description}`);
+    this.log.debug(`[Athena Client] Fetching paginated results for QueryExecutionId=${queryExecutionId}`);
 
-    const queryExecutionId = await this.#startQueryWithRetry(
-      sql,
-      database,
-      description,
-      backoffMs,
-      maxRetries,
-    );
+    const paginationConfig = {
+      client: this.client,
+    };
 
-    await this.#pollToCompletion(queryExecutionId, description, pollIntervalMs, maxPollAttempts);
+    const input = {
+      QueryExecutionId: queryExecutionId,
+    };
 
-    const results = await this.client.send(
-      new GetQueryResultsCommand({ QueryExecutionId: queryExecutionId }),
-    );
+    const paginator = paginateGetQueryResults(paginationConfig, input);
 
-    return AWSAthenaClient.#parseAthenaResults(results);
+    const allResults = [];
+    let pageCount = 0;
+    let totalRows = 0;
+
+    /* c8 ignore start */
+    for await (const page of paginator) {
+      pageCount += 1;
+      const pageRows = page.ResultSet?.Rows?.length || 0;
+      totalRows += pageRows;
+
+      this.log.debug(`[Athena Client] Processing page ${pageCount} with ${pageRows} rows`);
+
+      const pageResults = AWSAthenaClient.#parseAthenaResults(page);
+      allResults.push(...pageResults);
+    }
+    /* c8 ignore stop */
+
+    this.log.info(`[Athena Client] Fetched ${totalRows} total rows across ${pageCount} pages`);
+    return allResults;
   }
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.0.3...@adobe/spacecat-shared-athena-client-v1.0.4) (2025-07-15)
+
+
+### Bug Fixes
+
+* add pagination for athena ([#848](https://github.com/adobe/spacecat-shared/issues/848)) ([2007cfa](https://github.com/adobe/spacecat-shared/commit/2007cfad79f1921ad015c9c0301cf790f9b9405d))
+
 # [@adobe/spacecat-shared-athena-client-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.0.2...@adobe/spacecat-shared-athena-client-v1.0.3) (2025-07-12)
 
 

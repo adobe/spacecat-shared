@@ -145,7 +145,7 @@ export default class ScrapeClient {
       );
       return ScrapeJobDto.toJSON(job);
     } catch (error) {
-      const msgError = `Failed to create a new scrape job: ${error.message}`;
+      const msgError = `[ScrapeClient]: Failed to create a new scrape job: ${error.message}`;
       this.config.log.error(msgError);
       throw new Error(msgError);
     }

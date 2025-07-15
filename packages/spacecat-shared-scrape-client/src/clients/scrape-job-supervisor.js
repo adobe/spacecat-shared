@@ -136,18 +136,23 @@ function ScrapeJobSupervisor(services, config) {
    * @param {object} scrapeJob - The scrape job record.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
    */
-  async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders) {
-    log.info(`Starting a new scrape job of baseUrl: ${scrapeJob.getBaseURL()} with ${urls.length}`
-      + ` URLs. This new job has claimed: ${scrapeJob.getScrapeQueueId()} `
-      + `(jobId: ${scrapeJob.getId()})`);
-
-    const options = scrapeJob.getOptions();
-    const processingType = scrapeJob.getProcessingType();
+  async function queueUrlsForScrapeWorker(
+    urls,
+    jobId,
+    processingType,
+    options,
+    customHeaders,
+    baseUrl,
+    scrapeQueueId,
+  ) {
+    log.info(`Starting a new scrape job of baseUrl: ${baseUrl} with ${urls.length}`
+      + ` URLs. This new job has claimed: ${scrapeQueueId} `
+      + `(jobId: ${jobId})`);
 
     // Send a single message containing all URLs and the new job ID
     const message = {
       processingType,
-      jobId: scrapeJob.getId(),
+      jobId,
       urls,
       customHeaders,
       options,
@@ -177,13 +182,19 @@ function ScrapeJobSupervisor(services, config) {
     }
 
     // If a queue is available, create the scrape-job record in dataAccess:
-    const newScrapeJob = await createNewScrapeJob(
-      urls,
-      scrapeQueueId,
-      processingType,
-      options,
-      customHeaders,
-    );
+    let newScrapeJob = null;
+    try {
+      newScrapeJob = await createNewScrapeJob(
+        urls,
+        scrapeQueueId,
+        processingType,
+        options,
+        customHeaders,
+      );
+    } catch (error) {
+      log.error(`[ScrapeJobSupervisor]: Error creating new scrape job in DynamoDB: ${error}`);
+      throw error;
+    }
 
     log.info(
       'New scrape job created:\n'
@@ -197,7 +208,15 @@ function ScrapeJobSupervisor(services, config) {
 
     // Queue all URLs for scrape as a single message. This enables the controller to respond with
     // a job ID ASAP, while the individual URLs are queued up asynchronously by another function.
-    await queueUrlsForScrapeWorker(urls, newScrapeJob, customHeaders);
+    await queueUrlsForScrapeWorker(
+      urls,
+      newScrapeJob.getId(),
+      processingType,
+      options,
+      customHeaders,
+      newScrapeJob.getBaseURL(),
+      scrapeQueueId,
+    );
 
     return newScrapeJob;
   }

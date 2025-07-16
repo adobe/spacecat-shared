@@ -23,6 +23,7 @@ export const computeExternalIds = (attrs, authoringTypes) => {
   const { authoringType, hlxConfig, deliveryConfig } = attrs;
 
   if (hlxConfig && (authoringType === authoringTypes.DA)) {
+    console.log('[Site Model] computeExternalIds triggered for Document Authoring');
     const rso = hlxConfig.rso ?? {};
     const { owner, site } = rso;
 
@@ -34,6 +35,7 @@ export const computeExternalIds = (attrs, authoringTypes) => {
 
   if (deliveryConfig
     && (authoringType === authoringTypes.CS || authoringType === authoringTypes.CS_CW)) {
+    console.log('[Site Model] computeExternalIds triggered for Cloud Service');
     const { programId, environmentId } = deliveryConfig;
 
     return {
@@ -42,6 +44,7 @@ export const computeExternalIds = (attrs, authoringTypes) => {
     };
   }
 
+  console.log('[Site Model] computeExternalIds triggered for other authoring types');
   return { externalOwnerId: undefined, externalSiteId: undefined };
 };
 

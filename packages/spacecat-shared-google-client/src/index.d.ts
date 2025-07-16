@@ -96,7 +96,7 @@ export default class GoogleClient {
    * Should be one of 'PHONE', 'DESKTOP',  or 'TABLET'
    * @returns {Promise<Object>} the Chrome UX report data for the requested url and form factor
    */
-  getChromeUXReport(url: string, formFactor: string?): Promise<JSON>;
+  getChromeUXReport(url: string, formFactor?: string): Promise<JSON>;
 
   /**
    * Retrieves the current Page Speed Insights for a given url and strategy and category
@@ -110,5 +110,5 @@ export default class GoogleClient {
    * @returns {Promise<JSON>}
    * the Page Speed Insights data for the requested url and strategy and category
    */
-  getPageSpeedInsights(url: string, strategy: string?, category: string?): Promise<JSON>;
+  getPageSpeedInsights(url: string, strategy?: string, category?: string): Promise<JSON>;
 }

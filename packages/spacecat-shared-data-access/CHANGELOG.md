@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.34.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.34.0...@adobe/spacecat-shared-data-access-v2.34.1) (2025-07-16)
+
+
+### Bug Fixes
+
+* add try catch for config for sites validation ([#850](https://github.com/adobe/spacecat-shared/issues/850)) ([17c8402](https://github.com/adobe/spacecat-shared/commit/17c84023568de20395ba52a6876683f1354ba6b7))
+
 # [@adobe/spacecat-shared-data-access-v2.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.6...@adobe/spacecat-shared-data-access-v2.34.0) (2025-07-14)
 
 

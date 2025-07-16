@@ -11,6 +11,7 @@
  */
 
 import Joi from 'joi';
+import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
@@ -23,6 +24,7 @@ export const IMPORT_TYPES = {
   ALL_TRAFFIC: 'all-traffic',
   CWV_DAILY: 'cwv-daily',
   CWV_WEEKLY: 'cwv-weekly',
+  TRAFFIC_ANALYSIS: 'traffic-analysis',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -104,6 +106,12 @@ export const IMPORT_TYPE_SCHEMAS = {
     type: Joi.string().valid(IMPORT_TYPES.CWV_WEEKLY).required(),
     ...IMPORT_BASE_KEYS,
   }),
+  [IMPORT_TYPES.TRAFFIC_ANALYSIS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.TRAFFIC_ANALYSIS).required(),
+    year: Joi.number().integer().optional(),
+    week: Joi.number().integer().optional(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
@@ -168,6 +176,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['rum'],
     enabled: true,
   },
+  'traffic-analysis': {
+    type: 'traffic-analysis',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
 };
 
 export const configSchema = Joi.object({
@@ -181,6 +195,7 @@ export const configSchema = Joi.object({
   ),
   brandConfig: Joi.object({
     brandId: Joi.string().required(),
+    userId: Joi.string().required(),
   }).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
@@ -191,7 +206,8 @@ export const configSchema = Joi.object({
     filters: Joi.array().items(
       Joi.object({
         key: Joi.string().required(),
-        value: Joi.string().required(),
+        value: Joi.array().items(Joi.string()).required(),
+        type: Joi.string().valid('include', 'exclude').optional(),
       }),
     ).optional(),
     outputLocation: Joi.string().required(),
@@ -242,7 +258,20 @@ export function validateConfiguration(config) {
 }
 
 export const Config = (data = {}) => {
-  const validConfig = validateConfiguration(data);
+  let validConfig;
+
+  try {
+    validConfig = validateConfiguration(data);
+  } catch (error) {
+    const logger = getLogger();
+    if (logger && logger !== console) {
+      logger.error('Site configuration validation failed, using default config', {
+        error: error.message,
+        invalidConfig: data,
+      });
+    }
+    validConfig = { ...DEFAULT_CONFIG };
+  }
 
   const state = { ...validConfig };
   const self = { state };

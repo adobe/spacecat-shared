@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-google-client",
-  "version": "1.4.34",
+  "version": "1.4.37",
   "description": "Shared modules of the Spacecat Services - Google Client",
   "type": "module",
   "engines": {
@@ -38,13 +38,13 @@
     "@adobe/helix-universal": "5.2.2",
     "@adobe/spacecat-shared-http-utils": "1.9.4",
     "@adobe/spacecat-shared-utils": "1.38.0",
-    "@aws-sdk/client-secrets-manager": "3.830.0",
+    "@aws-sdk/client-secrets-manager": "3.844.0",
     "aws-xray-sdk": "3.10.3",
     "google-auth-library": "9.15.1",
     "googleapis": "149.0.0"
   },
   "devDependencies": {
-    "chai": "5.2.0",
+    "chai": "5.2.1",
     "chai-as-promised": "8.0.1",
     "nock": "14.0.5",
     "sinon": "20.0.0",

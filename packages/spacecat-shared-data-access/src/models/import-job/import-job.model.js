@@ -54,6 +54,7 @@ class ImportJob extends BaseModel {
   static ImportOptionTypes = {
     DOC: 'doc',
     XWALK: 'xwalk',
+    DA: 'da',
   };
 
   // add your custom methods or overrides here

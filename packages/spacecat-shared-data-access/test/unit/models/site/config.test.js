@@ -15,8 +15,13 @@
 import { expect } from 'chai';
 
 import { Config, validateConfiguration } from '../../../../src/models/site/config.js';
+import { registerLogger } from '../../../../src/util/logger-registry.js';
 
 describe('Config Tests', () => {
+  beforeEach(() => {
+    registerLogger(null);
+  });
+
   describe('Config Creation', () => {
     it('creates an Config with defaults when no data is provided', () => {
       const config = Config();
@@ -44,7 +49,7 @@ describe('Config Tests', () => {
       expect(config.getSlackMentions(404)).to.deep.equal(['id1']);
     });
 
-    it('throws an error when data is invalid', () => {
+    it('returns default config when data is invalid', () => {
       const data = {
         slack: {
           channel: 'channel1',
@@ -56,10 +61,12 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.404.mentions" must be of type object');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
 
-    it('throws an error when invitedUserCount is invalid', () => {
+    it('returns default config when invitedUserCount is invalid', () => {
       const data = {
         slack: {
           channel: 'channel1',
@@ -67,7 +74,49 @@ describe('Config Tests', () => {
           invitedUserCount: -12,
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "slack.invitedUserCount" must be greater than or equal to 0');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
+    });
+
+    it('logs error when validation fails and logger is available', () => {
+      // Create a mock logger
+      const mockLogger = {};
+
+      // Spy on the logger error method
+      let loggedError = null;
+      let loggedData = null;
+      mockLogger.error = (message, data) => {
+        loggedError = message;
+        loggedData = data;
+      };
+
+      // Register the mock logger
+      registerLogger(mockLogger);
+
+      const invalidData = {
+        slack: {
+          channel: 'channel1',
+          workspace: 'workspace1',
+        },
+        handlers: {
+          404: {
+            mentions: [{ email: ['id1'] }], // invalid - should be string array
+          },
+        },
+      };
+
+      const config = Config(invalidData);
+
+      // Should still return default config
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
+
+      // Should have logged the error
+      expect(loggedError).to.equal('Site configuration validation failed, using default config');
+      expect(loggedData).to.have.property('error');
+      expect(loggedData).to.have.property('invalidConfig');
+      expect(loggedData.invalidConfig).to.deep.equal(invalidData);
     });
   });
 
@@ -230,14 +279,17 @@ describe('Config Tests', () => {
       expect(config.getCdnLogsConfig()).to.be.undefined;
     });
 
-    it('should throw an error if cdnLogsConfig is invalid', () => {
+    it('should return default config if cdnLogsConfig is invalid', () => {
       const data = {
         cdnLogsConfig: {
           filters: [{ key: 'test-key', value: ['test-value'] }],
           outputLocation: 'test-output-location',
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "cdnLogsConfig.bucketName" is required');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
+      expect(config.getCdnLogsConfig()).to.be.undefined;
     });
 
     it('should be able to update cdnLogsConfig', () => {
@@ -270,7 +322,7 @@ describe('Config Tests', () => {
       expect(config.getGroupedURLs('broken-backlinks')).to.deep.equal(groupedURLs);
     });
 
-    it('Config creation with an incorrect groupedURLs option type', () => {
+    it('Config creation with an incorrect groupedURLs option type returns default config', () => {
       const data = {
         handlers: {
           'broken-backlinks': {
@@ -278,11 +330,12 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data))
-        .to.throw('Configuration validation error: "handlers.broken-backlinks.groupedURLs" must be an array');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
 
-    it('Config creation with an incorrect groupedURLs option structure', () => {
+    it('Config creation with an incorrect groupedURLs option structure returns default config', () => {
       const data = {
         handlers: {
           'broken-backlinks': {
@@ -292,7 +345,9 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.broken-backlinks.groupedURLs[0].wrong" is not allowed');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
 
     it('Config updates grouped URLs with the groupedURLs option', () => {
@@ -363,7 +418,7 @@ describe('Config Tests', () => {
       expect(updatedMetrics.projectedTrafficValue).to.equal(1500);
     });
 
-    it('should throw an error if latestMetrics is invalid', () => {
+    it('should return default config if latestMetrics is invalid', () => {
       const data = {
         handlers: {
           'latest-metrics': {
@@ -375,7 +430,9 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.latest-metrics.latestMetrics.pageViewsChange" must be a number');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
   });
 
@@ -451,24 +508,30 @@ describe('Config Tests', () => {
       expect(config.getImports()).to.deep.equal(data.imports);
     });
 
-    it('throws error for unknown import type', () => {
-      expect(() => Config({
+    it('returns default config for unknown import type', () => {
+      const config = Config({
         imports: [{
           type: 'unknown-type',
           destinations: ['default'],
           sources: ['ahrefs'],
         }],
-      })).to.throw('Configuration validation error');
+      });
+      expect(config.getImports()).to.be.undefined;
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
 
-    it('throws error for invalid import configuration', () => {
-      expect(() => Config({
+    it('returns default config for invalid import configuration', () => {
+      const config = Config({
         imports: [{
           type: 'organic-keywords',
           destinations: ['invalid'],
           sources: ['invalid'],
         }],
-      })).to.throw('Configuration validation error');
+      });
+
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
 
     describe('enableImport method', () => {
@@ -1106,7 +1169,7 @@ describe('Config Tests', () => {
       expect(handlerConfig.percentageChangeThreshold).to.equal(20);
     });
 
-    it('should reject negative movingAvgThreshold values', () => {
+    it('should return default config for negative movingAvgThreshold values', () => {
       const data = {
         handlers: {
           'organic-traffic-internal': {
@@ -1114,10 +1177,12 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.movingAvgThreshold" must be greater than or equal to 1');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
 
-    it('should reject zero movingAvgThreshold values', () => {
+    it('should return default config for zero movingAvgThreshold values', () => {
       const data = {
         handlers: {
           'organic-traffic-internal': {
@@ -1125,10 +1190,12 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.movingAvgThreshold" must be greater than or equal to 1');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
 
-    it('should reject negative percentageChangeThreshold values', () => {
+    it('should return default config for negative percentageChangeThreshold values', () => {
       const data = {
         handlers: {
           'organic-traffic-internal': {
@@ -1136,10 +1203,12 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.percentageChangeThreshold" must be greater than or equal to 1');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
 
-    it('should reject zero percentageChangeThreshold values', () => {
+    it('should return default config for zero percentageChangeThreshold values', () => {
       const data = {
         handlers: {
           'organic-traffic-internal': {
@@ -1147,7 +1216,9 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.percentageChangeThreshold" must be greater than or equal to 1');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
 
     it('should allow updating threshold values', () => {

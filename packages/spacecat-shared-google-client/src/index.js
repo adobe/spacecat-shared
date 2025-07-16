@@ -81,6 +81,7 @@ export default class GoogleClient {
         expiryDate: secrets.expiry_date,
         siteUrl: secrets.site_url,
         baseUrl: baseURL,
+        apiKey: context.env.GOOGLE_API_KEY,
         clientId: context.env.GOOGLE_CLIENT_ID,
         clientSecret: context.env.GOOGLE_CLIENT_SECRET,
         redirectUri: context.env.GOOGLE_REDIRECT_URI,

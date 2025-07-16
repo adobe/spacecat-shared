@@ -108,21 +108,21 @@ const schema = new SchemaBuilder(Site, SiteCollection)
         authoringType: entity.authoringType,
         hlxConfig: entity.hlxConfig,
         deliveryConfig: entity.deliveryConfig,
-        ...changedAttrs // Override with any changed values
+        ...changedAttrs, // Override with any changed values
       };
-      
+
       console.log('[Site Schema] externalOwnerId watch triggered:', {
         changedAttrs,
         entityAuthoringType: entity.authoringType,
         entityHlxConfig: entity.hlxConfig,
         entityDeliveryConfig: entity.deliveryConfig,
         fullAttrs,
-        siteId: entity.siteId || entity.id
+        siteId: entity.siteId || entity.id,
       });
-      
+
       const result = computeExternalIds(fullAttrs, Site.AUTHORING_TYPES).externalOwnerId;
       console.log('[Site Schema] externalOwnerId computed result:', result);
-      
+
       return result;
     },
   })
@@ -137,21 +137,21 @@ const schema = new SchemaBuilder(Site, SiteCollection)
         authoringType: entity.authoringType,
         hlxConfig: entity.hlxConfig,
         deliveryConfig: entity.deliveryConfig,
-        ...changedAttrs // Override with any changed values
+        ...changedAttrs, // Override with any changed values
       };
-      
+
       console.log('[Site Schema] externalSiteId watch triggered:', {
         changedAttrs,
         entityAuthoringType: entity.authoringType,
         entityHlxConfig: entity.hlxConfig,
         entityDeliveryConfig: entity.deliveryConfig,
         fullAttrs,
-        siteId: entity.siteId || entity.id
+        siteId: entity.siteId || entity.id,
       });
-      
+
       const result = computeExternalIds(fullAttrs, Site.AUTHORING_TYPES).externalSiteId;
       console.log('[Site Schema] externalSiteId computed result:', result);
-      
+
       return result;
     },
   })

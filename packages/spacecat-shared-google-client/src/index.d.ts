@@ -20,7 +20,7 @@ export default class GoogleClient {
    * @param {string} url - The URL of the site to be audited.
    * @returns An instance of GoogleClient.
    */
-  static createFrom(context: object, url: string): GoogleClient;
+  static createFrom(context: object, url: string): Promise<GoogleClient>;
 
   /**
    * Constructor for creating an instance of GoogleClient.
@@ -87,4 +87,28 @@ export default class GoogleClient {
    *}
    * */
   listSites(): Promise<JSON>;
+
+  /**
+   * Retrieves the current Chrome UX report for a given url and form factors
+   * @see https://developer.chrome.com/docs/crux/api
+   * @param url the url to get the Chrome UX report for
+   * @param formFactor the form factor to get the Chrome UX report for.
+   * Should be one of 'PHONE', 'DESKTOP',  or 'TABLET'
+   * @returns {Promise<Object>} the Chrome UX report data for the requested url and form factor
+   */
+  getChromeUXReport(url: string, formFactor: string?): Promise<JSON>;
+
+  /**
+   * Retrieves the current Page Speed Insights for a given url and strategy and category
+   * @see https://developers.google.com/speed/docs/insights/v5/reference/pagespeedapi/runpagespeed
+   * @param url the url to get the Page Speed Insights for
+   * @param strategy the strategy to get the Page Speed Insights for.
+   * Should be 'mobile' or 'desktop', defaults to 'mobile'
+   * @param category the category to get the Page Speed Insights for.
+   * Should be one of 'performance', 'accessibility', 'best-practices', 'seo', or 'pwa',
+   * defaults to 'performance'
+   * @returns {Promise<JSON>}
+   * the Page Speed Insights data for the requested url and strategy and category
+   */
+  getPageSpeedInsights(url: string, strategy: string?, category: string?): Promise<JSON>;
 }

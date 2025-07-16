@@ -32,6 +32,7 @@ export default class GoogleClient {
       config.clientSecret,
       config.redirectUri,
     );
+    this.apiKey = config.apiKey;
 
     this.authClient.setCredentials({
       access_token: config.accessToken,
@@ -198,6 +199,46 @@ export default class GoogleClient {
     } catch (error) {
       this.log.error('Error retrieving sites:', error.message);
       throw new Error(`Error retrieving sites from Google API: ${error.message}`);
+    }
+  }
+
+  async getChromeUXReport(url, formFactor = 'PHONE') {
+    const chromeuxreport = google.chromeuxreport({
+      version: 'v1',
+      auth: this.apiKey,
+    });
+
+    try {
+      const response = await chromeuxreport.records.queryRecord({
+        requestBody: {
+          url,
+          formFactor,
+        },
+      });
+      return response;
+    } catch (error) {
+      this.log.error('Error retrieving Chrome UX report:', error.message);
+      throw new Error(`Error retrieving Chrome UX report from Google API: ${error.message}`);
+    }
+  }
+
+  async getPageSpeedInsights(url, strategy = 'mobile', category = 'performance') {
+    const pagespeedonline = google.pagespeedonline({
+      version: 'v5',
+      auth: this.apiKey,
+    });
+
+    try {
+      const response = await pagespeedonline.pagespeedapi.runpagespeed({
+        url,
+        category,
+        strategy,
+      }, { retry: false });
+
+      return response;
+    } catch (error) {
+      this.log.error('Error retrieving Page Speed Insights:', error.message);
+      throw new Error(`Error retrieving Page Speed Insights from Google API: ${error.message}`);
     }
   }
 }

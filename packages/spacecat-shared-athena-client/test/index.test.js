@@ -298,8 +298,8 @@ describe('Traffic analysis query loader', () => {
     const placeholders = {
       tableName: 'my_table',
       siteId: 'mysite',
-      year: 2024,
-      month: 6,
+      years: 2024,
+      months: 6,
       week: 23,
       dimensionColumns: 'channel, device',
       groupBy: 'channel, device',
@@ -310,8 +310,8 @@ describe('Traffic analysis query loader', () => {
     expect(sql).to.be.a('string');
     expect(sql).to.include('FROM my_table');
     expect(sql).to.include("siteid = 'mysite'");
-    expect(sql).to.include('year = 2024');
-    expect(sql).to.include('month = 6');
+    expect(sql).to.include('year IN (2024)');
+    expect(sql).to.include('month IN (6)');
     expect(sql).to.include('week = 23');
     expect(sql).to.include('channel, device');
     expect(sql).to.include('a.channel, a.device,');
@@ -325,9 +325,9 @@ describe('Traffic analysis query loader', () => {
     const keys = await getTrafficAnalysisQueryPlaceholders();
     expect(keys).to.be.an('array').that.includes('tableName');
     expect(keys).to.include('siteId');
-    expect(keys).to.include('year');
+    expect(keys).to.include('years');
     expect(keys).to.include('week');
-    expect(keys).to.include('month');
+    expect(keys).to.include('months');
     expect(keys).to.include('dimensionColumns');
     expect(keys).to.include('groupBy');
     expect(keys).to.include('dimensionColumnsPrefixed');

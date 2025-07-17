@@ -39,6 +39,7 @@ async function checkSite(site) {
   const audits = await site.getAudits();
   expect(audits).to.be.an('array');
   expect(site.getIsLive()).to.be.a('boolean');
+  expect(site.getIsSandbox()).to.be.a('boolean');
   expect(isIsoDate(site.getIsLiveToggledAt())).to.be.true;
 }
 
@@ -329,6 +330,7 @@ describe('Site IT', async () => {
       organizationId: sampleData.organizations[0].getId(),
       isLive: true,
       isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      isSandbox: false,
       audits: [],
       config: {
         handlers: {
@@ -353,6 +355,7 @@ describe('Site IT', async () => {
       deliveryType: 'aem_cs',
       gitHubURL: 'https://updated-github.com',
       isLive: false,
+      isSandbox: true,
       organizationId: sampleData.organizations[1].getId(),
       name: 'updated-site',
       hlxConfig: {
@@ -382,6 +385,7 @@ describe('Site IT', async () => {
     site.setGitHubURL(updates.gitHubURL);
     site.setHlxConfig(updates.hlxConfig);
     site.setIsLive(updates.isLive);
+    site.setIsSandbox(updates.isSandbox);
     site.setOrganizationId(updates.organizationId);
 
     await site.save();
@@ -394,6 +398,7 @@ describe('Site IT', async () => {
     expect(updatedSite.getDeliveryType()).to.equal(updates.deliveryType);
     expect(updatedSite.getGitHubURL()).to.equal(updates.gitHubURL);
     expect(updatedSite.getIsLive()).to.equal(updates.isLive);
+    expect(updatedSite.getIsSandbox()).to.equal(updates.isSandbox);
     expect(updatedSite.getOrganizationId()).to.equal(updates.organizationId);
     expect(updatedSite.getName()).to.equal(updates.name);
   });
@@ -558,6 +563,192 @@ describe('Site IT', async () => {
         .to.deep.equal(['google']);
       expect(updatedConfig.getImportConfig('top-pages').geo)
         .to.equal('us');
+    });
+  });
+
+  describe('Site Sandbox Configuration', () => {
+    it('creates a site with default isSandbox value (false)', async () => {
+      const newSiteData = {
+        baseURL: 'https://default-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/default-sandbox-test-repo',
+        name: 'default-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+
+      expect(site.getIsSandbox()).to.be.false;
+
+      // Clean up
+      await site.remove();
+    });
+
+    it('creates a site with isSandbox set to true', async () => {
+      const newSiteData = {
+        baseURL: 'https://sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/sandbox-test-repo',
+        name: 'sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isSandbox: true,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+
+      expect(site.getIsSandbox()).to.be.true;
+
+      // Clean up
+      await site.remove();
+    });
+
+    it('creates a site with isSandbox set to false explicitly', async () => {
+      const newSiteData = {
+        baseURL: 'https://non-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/non-sandbox-test-repo',
+        name: 'non-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isSandbox: false,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+
+      expect(site.getIsSandbox()).to.be.false;
+
+      // Clean up
+      await site.remove();
+    });
+
+    it('updates isSandbox value from false to true', async () => {
+      // Create a site with isSandbox false
+      const newSiteData = {
+        baseURL: 'https://update-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/update-sandbox-test-repo',
+        name: 'update-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isSandbox: false,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+      expect(site.getIsSandbox()).to.be.false;
+
+      // Update isSandbox to true
+      site.setIsSandbox(true);
+      await site.save();
+
+      // Fetch the updated site and verify the change
+      const updatedSite = await Site.findById(site.getId());
+      expect(updatedSite.getIsSandbox()).to.be.true;
+
+      // Clean up
+      await updatedSite.remove();
+    });
+
+    it('updates isSandbox value from true to false', async () => {
+      // Create a site with isSandbox true
+      const newSiteData = {
+        baseURL: 'https://toggle-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/toggle-sandbox-test-repo',
+        name: 'toggle-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isSandbox: true,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+      expect(site.getIsSandbox()).to.be.true;
+
+      // Update isSandbox to false
+      site.setIsSandbox(false);
+      await site.save();
+
+      // Fetch the updated site and verify the change
+      const updatedSite = await Site.findById(site.getId());
+      expect(updatedSite.getIsSandbox()).to.be.false;
+
+      // Clean up
+      await updatedSite.remove();
+    });
+
+    it('verifies isSandbox getter and setter methods work correctly', async () => {
+      const newSiteData = {
+        baseURL: 'https://getter-setter-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/getter-setter-sandbox-test-repo',
+        name: 'getter-setter-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+
+      // Test default value
+      expect(site.getIsSandbox()).to.be.false;
+
+      // Test setter returns the site object for chaining
+      const returnedSite = site.setIsSandbox(true);
+      expect(returnedSite).to.equal(site);
+      expect(site.getIsSandbox()).to.be.true;
+
+      // Test setting back to false
+      site.setIsSandbox(false);
+      expect(site.getIsSandbox()).to.be.false;
+
+      // Clean up
+      await site.remove();
+    });
+
+    it('handles isSandbox in combination with other site properties', async () => {
+      const newSiteData = {
+        baseURL: 'https://combined-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/combined-sandbox-test-repo',
+        name: 'combined-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isSandbox: true,
+        deliveryType: 'aem_edge',
+        authoringType: 'cs',
+        hlxConfig: {
+          rso: {
+            ref: 'main',
+            site: 'test-site',
+            owner: 'test-owner',
+          },
+        },
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+
+      // Verify all properties including isSandbox
+      expect(site.getIsSandbox()).to.be.true;
+      expect(site.getIsLive()).to.be.true;
+      expect(site.getDeliveryType()).to.equal('aem_edge');
+      expect(site.getAuthoringType()).to.equal('cs');
+      expect(site.getBaseURL()).to.equal('https://combined-sandbox-example.com');
+
+      // Update multiple properties including isSandbox
+      site.setIsSandbox(false);
+      site.setIsLive(false);
+      site.setDeliveryType('aem_cs');
+
+      await site.save();
+
+      // Verify updates were saved correctly
+      const updatedSite = await Site.findById(site.getId());
+      expect(updatedSite.getIsSandbox()).to.be.false;
+      expect(updatedSite.getIsLive()).to.be.false;
+      expect(updatedSite.getDeliveryType()).to.equal('aem_cs');
+
+      // Clean up
+      await updatedSite.remove();
     });
   });
 });

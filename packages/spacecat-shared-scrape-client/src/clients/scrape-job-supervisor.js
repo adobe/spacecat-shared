@@ -35,6 +35,7 @@ function ScrapeJobSupervisor(services, config) {
   const {
     queues = [], // Array of scrape queues
     scrapeWorkerQueue, // URL of the scrape worker queue
+    maxUrlsPerMessage,
   } = config;
 
   /**
@@ -128,6 +129,12 @@ function ScrapeJobSupervisor(services, config) {
     return ScrapeJob.allByBaseURLAndProcessingType(baseURL, processingType);
   }
 
+  /**
+   * Split an array of URLs into batches of a specified size.
+   * @param urls
+   * @param batchSize
+   * @returns {*[]}
+   */
   function splitUrlsIntoBatches(urls, batchSize = 1000) {
     const batches = [];
     for (let i = 0; i < urls.length; i += batchSize) {
@@ -157,8 +164,9 @@ function ScrapeJobSupervisor(services, config) {
     let urlBatches = [];
 
     // If there are more than 1000 URLs, split them into multiple messages
-    if (totalUrlCount > 1000) {
-      urlBatches = splitUrlsIntoBatches(urls);
+    if (totalUrlCount > maxUrlsPerMessage) {
+      urlBatches = splitUrlsIntoBatches(urls, maxUrlsPerMessage);
+      log.info(`Queuing ${totalUrlCount} URLs for scrape in ${urlBatches.length} messages.`);
     } else {
       // If there are 1000 or fewer URLs, we can send them all in a single message
       log.info(`Queuing ${totalUrlCount} URLs for scrape in a single message.`);

@@ -200,6 +200,10 @@ export const configSchema = Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
   }).optional(),
+  llmo: Joi.object({
+    dataFolder: Joi.string().required(),
+    brand: Joi.string().required(),
+  }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
     filters: Joi.array().items(
@@ -277,12 +281,20 @@ export const Config = (data = {}) => {
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
+  self.getLlmoConfig = () => state.llmo;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
       workspace,
       invitedUserCount,
+    };
+  };
+
+  self.updateLlmoConfig = (dataFolder, brand) => {
+    state.llmo = {
+      dataFolder,
+      brand,
     };
   };
 
@@ -395,4 +407,5 @@ Config.toDynamoItem = (config) => ({
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
   cdnLogsConfig: config.getCdnLogsConfig(),
+  llmo: config.getLlmoConfig(),
 });

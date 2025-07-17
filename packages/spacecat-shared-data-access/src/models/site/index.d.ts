@@ -97,6 +97,10 @@ export interface SiteConfig {
       headers?: Record<string, string>;
       overrideBaseURL?: string;
     };
+    llmo?: {
+      dataFolder: string;
+      brand: string;
+    };
   };
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
   getImports(): ImportConfig[];

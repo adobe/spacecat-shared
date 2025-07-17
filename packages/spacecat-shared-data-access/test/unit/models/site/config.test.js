@@ -69,8 +69,28 @@ describe('Config Tests', () => {
       };
       expect(() => Config(data)).to.throw('Configuration validation error: "slack.invitedUserCount" must be greater than or equal to 0');
     });
-  });
 
+    it('creates a Config with llmo property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoConfig()).to.deep.equal(data.llmo);
+    });
+
+    it('throws an error when llmo property is invalid', () => {
+      const data = {
+        llmo: {
+          dataFolder: 123,
+          brand: 'mybrand',
+        },
+      };
+      expect(() => Config(data)).to.throw('Configuration validation error: "llmo.dataFolder" must be a string');
+    });
+  });
   describe('Config Methods', () => {
     it('correctly updates the Slack configuration', () => {
       const config = Config();
@@ -80,6 +100,15 @@ describe('Config Tests', () => {
       expect(slackConfig.channel).to.equal('newChannel');
       expect(slackConfig.workspace).to.equal('newWorkspace');
       expect(slackConfig.invitedUserCount).to.equal(20);
+    });
+
+    it('correctly updates the LLMO configuration', () => {
+      const config = Config();
+      config.updateLlmoConfig('newBrandFolder', 'newBrand');
+
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.dataFolder).to.equal('newBrandFolder');
+      expect(llmoConfig.brand).to.equal('newBrand');
     });
 
     it('correctly updates the Slack mentions', () => {
@@ -433,6 +462,17 @@ describe('Config Tests', () => {
       });
       const dynamoItem = Config.toDynamoItem(data);
       expect(dynamoItem.contentAiConfig).to.deep.equal(data.getContentAiConfig());
+    });
+
+    it('includes llmo in toDynamoItem conversion', () => {
+      const data = Config({
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.llmo).to.deep.equal(data.getLlmoConfig());
     });
   });
 

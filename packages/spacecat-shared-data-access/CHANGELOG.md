@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.34.1...@adobe/spacecat-shared-data-access-v2.35.0) (2025-07-17)
+
+
+### Features
+
+* introduce isSandbox flag for sandbox sites ([#842](https://github.com/adobe/spacecat-shared/issues/842)) ([066adb4](https://github.com/adobe/spacecat-shared/commit/066adb4629901a82b7c5c21297795d82eb771d29))
+
 # [@adobe/spacecat-shared-data-access-v2.34.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.34.0...@adobe/spacecat-shared-data-access-v2.34.1) (2025-07-16)
 
 

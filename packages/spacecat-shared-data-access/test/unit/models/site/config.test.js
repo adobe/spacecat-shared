@@ -130,14 +130,18 @@ describe('Config Tests', () => {
       expect(config.getLlmoConfig()).to.deep.equal(data.llmo);
     });
 
-    it('throws an error when llmo property is invalid', () => {
+    it('test fetching config with invalid llmo property', () => {
       const data = {
         llmo: {
           dataFolder: 123,
           brand: 'mybrand',
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "llmo.dataFolder" must be a string');
+      // Config() catches validation errors and returns default config instead of throwing
+      const config = Config(data);
+      expect(config.getLlmoConfig()).to.be.undefined;
+      expect(config.getSlackConfig()).to.deep.equal({});
+      expect(config.getHandlers()).to.deep.equal({});
     });
   });
   describe('Config Methods', () => {

@@ -11,7 +11,6 @@
  */
 
 import { isValidUrl } from '@adobe/spacecat-shared-utils';
-import { validate as uuidValidate } from 'uuid';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import PageIntent from './page-intent.model.js';
@@ -26,12 +25,6 @@ import PageIntentCollection from './page-intent.collection.js';
 const schema = new SchemaBuilder(PageIntent, PageIntentCollection)
   // link back to Site entity
   .addReference('belongs_to', 'Site')
-
-  // the site this page belongs to
-  .addAttribute('siteId', {
-    type: 'string',
-    validate: (value) => !value || uuidValidate(value),
-  })
 
   // page’s full URL (must be unique)
   .addAttribute('url', {
@@ -57,9 +50,6 @@ const schema = new SchemaBuilder(PageIntent, PageIntentCollection)
     type: 'string',
     default: PageIntent.DEFAULT_UPDATED_BY,
   })
-
-  // allow querying all pages for a site
-  .addAllIndex(['siteId'])
 
   // allow fetching the single record by its URL
   .addIndex(

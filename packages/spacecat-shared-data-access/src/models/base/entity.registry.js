@@ -31,6 +31,7 @@ import SiteCandidateCollection from '../site-candidate/site-candidate.collection
 import SiteCollection from '../site/site.collection.js';
 import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
+import ReportCollection from '../report/report.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -50,6 +51,7 @@ import SiteSchema from '../site/site.schema.js';
 import SiteCandidateSchema from '../site-candidate/site-candidate.schema.js';
 import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
 import SuggestionSchema from '../suggestion/suggestion.schema.js';
+import ReportSchema from '../report/report.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -150,5 +152,6 @@ EntityRegistry.registerEntity(SiteSchema, SiteCollection);
 EntityRegistry.registerEntity(SiteCandidateSchema, SiteCandidateCollection);
 EntityRegistry.registerEntity(SiteTopPageSchema, SiteTopPageCollection);
 EntityRegistry.registerEntity(SuggestionSchema, SuggestionCollection);
+EntityRegistry.registerEntity(ReportSchema, ReportCollection);
 
 export default EntityRegistry;

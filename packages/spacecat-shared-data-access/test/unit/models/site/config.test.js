@@ -192,7 +192,7 @@ describe('Config Tests', () => {
             country: 'US',
             product: 'Product A',
             volume: '100',
-            importTime: '2021-01-01',
+            importTime: '2021-01-01T00:00:00.000Z',
           },
         ],
         AI: [
@@ -205,7 +205,7 @@ describe('Config Tests', () => {
             country: 'US',
             product: 'Product A',
             volume: '100',
-            importTime: '2021-01-01',
+            importTime: '2021-01-01T00:00:00.000Z',
           },
         ],
       };

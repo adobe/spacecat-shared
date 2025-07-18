@@ -44,8 +44,9 @@ const schema = new SchemaBuilder(Report, ReportCollection)
   })
   .addAttribute('storagePath', {
     type: 'string',
-    required: true,
-    validate: (value) => isString(value) && value.length > 0,
+    required: false,
+    default: () => '',
+    validate: (value) => !value || (isString(value) && value.length >= 0),
   });
 
 export default schema.build();

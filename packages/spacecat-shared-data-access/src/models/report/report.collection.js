@@ -21,7 +21,16 @@ import BaseCollection from '../base/base.collection.js';
  */
 class ReportCollection extends BaseCollection {
   async create(item) {
-    return super.create(item, { upsert: true });
+    const report = await super.create(item, { upsert: true });
+
+    // If storagePath is empty string (default value), compute it automatically
+    if (report.getStoragePath() === '') {
+      const storagePath = `/reports/${item.siteId}/${item.reportType}/${report.getId()}/`;
+      report.setStoragePath(storagePath);
+      await report.save();
+    }
+
+    return report;
   }
 }
 

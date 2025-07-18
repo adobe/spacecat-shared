@@ -14,68 +14,210 @@
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { seedDatabase } from '../util/seed.js';
+import { validate as uuidValidate } from 'uuid';
+
+import fixtures from '../../fixtures/index.fixtures.js';
 import { getDataAccess } from '../util/db.js';
-import reportsFixture from '../../fixtures/reports.fixture.js';
+import { seedDatabase } from '../util/seed.js';
+import { sanitizeTimestamps } from '../../../src/util/util.js';
 
 use(chaiAsPromised);
 
-describe('Report IT', () => {
-  let dataAccess;
+function checkReport(report) {
+  expect(report).to.be.an('object');
+  expect(report.getId()).to.be.a('string');
+  expect(report.getReportType()).to.be.a('string');
+  expect(report.getSiteId()).to.be.a('string');
+  expect(report.getReportPeriod()).to.be.an('object');
+  expect(report.getComparisonPeriod()).to.be.an('object');
+  expect(report.getStoragePath()).to.be.a('string');
+  expect(report.getCreatedAt()).to.be.a('string');
+  expect(report.getUpdatedAt()).to.be.a('string');
+  expect(report.getUpdatedBy()).to.be.a('string');
+}
+
+describe('Report IT', async () => {
+  const { siteId } = fixtures.sites[0];
+  let sampleData;
   let Report;
 
   before(async () => {
-    await seedDatabase();
-    dataAccess = getDataAccess();
+    sampleData = await seedDatabase();
+
+    const dataAccess = getDataAccess();
     Report = dataAccess.Report;
   });
 
-  it('should seed reports correctly', async () => {
-    // Aggregate all reports by unique siteId
-    const uniqueSiteIds = [...new Set(reportsFixture.map((r) => r.siteId))];
-    // Fetch all reports for each siteId in parallel
-    const reportsArrays = await Promise
-      .all(uniqueSiteIds.map((siteId) => Report.allBySiteId(siteId)));
-    const allReports = reportsArrays.flat();
-    expect(allReports).to.be.an('array');
-    expect(allReports.length).to.equal(reportsFixture.length);
-    const ids = allReports.map((r) => r.getId());
-    for (const fixture of reportsFixture) {
-      expect(ids).to.include(fixture.reportId);
+  it('finds one report by ID', async () => {
+    const sample = sampleData.reports[0];
+
+    const report = await Report.findById(sample.getId());
+
+    checkReport(report);
+
+    expect(
+      sanitizeTimestamps(report.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sample.toJSON()),
+    );
+  });
+
+  it('returns null when report is not found by ID', async () => {
+    const report = await Report.findById('00000000-0000-0000-0000-000000000000');
+
+    expect(report).to.be.null;
+  });
+
+  it('finds all reports by site ID', async () => {
+    const sample = sampleData.reports[0];
+    const testSiteId = sample.getSiteId();
+
+    const reports = await Report.allBySiteId(testSiteId);
+
+    expect(reports).to.be.an('array');
+    expect(reports.length).to.be.greaterThan(0);
+
+    for (const report of reports) {
+      checkReport(report);
+      expect(report.getSiteId()).to.equal(testSiteId);
     }
   });
 
-  it('should find a report by id', async () => {
-    const report = await Report.findById(reportsFixture[0].reportId);
-    expect(report).to.exist;
-    expect(report.getId()).to.equal(reportsFixture[0].reportId);
-    expect(report.getReportType()).to.equal(reportsFixture[0].reportType);
-    expect(report.getReportPeriod()).to.deep.equal(reportsFixture[0].reportPeriod);
-    expect(report.getComparisonPeriod()).to.deep.equal(reportsFixture[0].comparisonPeriod);
-    expect(report.getStoragePath()).to.equal(reportsFixture[0].storagePath);
-  });
-
-  it('should find all reports by siteId', async () => {
-    const { siteId } = reportsFixture[0];
-    const reports = await Report.allBySiteId(siteId);
-    expect(reports).to.be.an('array');
-    expect(reports.some((r) => r.getId() === reportsFixture[0].reportId)).to.be.true;
-  });
-
-  it('should create a new report', async () => {
-    // Use a valid UUID for siteId from the fixture
-    const newReport = {
-      reportId: 'c3d4e5f6-a7b8-9012-cdab-3456789012cd',
-      siteId: reportsFixture[0].siteId, // valid UUID
+  it('adds a new report', async () => {
+    const data = {
+      siteId,
       reportType: 'summary',
-      reportPeriod: { startDate: '2025-08-01T09:00:00Z', endDate: '2025-08-31T09:00:00Z' },
-      comparisonPeriod: { startDate: '2025-07-01T09:00:00Z', endDate: '2025-07-31T09:00:00Z' },
-      storagePath: '/reports/5d6d4439-6659-46c2-b646-92d110fa5a52/summary/c3d4e5f6-a7b8-9012-cdab-3456789012cd/',
+      reportPeriod: {
+        startDate: '2025-08-01T09:00:00Z',
+        endDate: '2025-08-31T09:00:00Z',
+      },
+      comparisonPeriod: {
+        startDate: '2025-07-01T09:00:00Z',
+        endDate: '2025-07-31T09:00:00Z',
+      },
     };
-    const created = await Report.create(newReport);
-    expect(created.getId()).to.equal(newReport.reportId);
-    const found = await Report.findById(newReport.reportId);
-    expect(found).to.exist;
-    expect(found.getReportType()).to.equal('summary');
+
+    const report = await Report.create(data);
+
+    checkReport(report);
+
+    expect(uuidValidate(report.getId())).to.be.true;
+    expect(report.getSiteId()).to.equal(data.siteId);
+    expect(report.getReportType()).to.equal(data.reportType);
+    expect(report.getReportPeriod()).to.deep.equal(data.reportPeriod);
+    expect(report.getComparisonPeriod()).to.deep.equal(data.comparisonPeriod);
+
+    // Storage path should be auto-computed with the generated reportId
+    const expectedStoragePath = `/reports/${siteId}/summary/${report.getId()}/`;
+    expect(report.getStoragePath()).to.equal(expectedStoragePath);
+
+    const record = report.toJSON();
+    delete record.reportId;
+    delete record.createdAt;
+    delete record.updatedAt;
+    delete record.updatedBy;
+    // The storagePath in the record will include the auto-generated reportId
+    const expectedRecord = { ...data };
+    expectedRecord.storagePath = `/reports/${siteId}/summary/${report.getId()}/`;
+    expect(record).to.eql(expectedRecord);
+  });
+
+  it('adds a new report with custom storage path', async () => {
+    const data = {
+      siteId,
+      reportType: 'custom',
+      reportPeriod: {
+        startDate: '2025-08-01T09:00:00Z',
+        endDate: '2025-08-31T09:00:00Z',
+      },
+      comparisonPeriod: {
+        startDate: '2025-07-01T09:00:00Z',
+        endDate: '2025-07-31T09:00:00Z',
+      },
+      storagePath: '/custom/reports/path/',
+    };
+
+    const report = await Report.create(data);
+
+    checkReport(report);
+
+    expect(uuidValidate(report.getId())).to.be.true;
+    expect(report.getSiteId()).to.equal(data.siteId);
+    expect(report.getReportType()).to.equal(data.reportType);
+    expect(report.getReportPeriod()).to.deep.equal(data.reportPeriod);
+    expect(report.getComparisonPeriod()).to.deep.equal(data.comparisonPeriod);
+    expect(report.getStoragePath()).to.equal(data.storagePath);
+
+    const record = report.toJSON();
+    delete record.reportId;
+    delete record.createdAt;
+    delete record.updatedAt;
+    delete record.updatedBy;
+    expect(record).to.eql(data);
+  });
+
+  it('adds a new report with empty storage path (auto-computed)', async () => {
+    const data = {
+      siteId,
+      reportType: 'auto-computed',
+      reportPeriod: {
+        startDate: '2025-08-01T09:00:00Z',
+        endDate: '2025-08-31T09:00:00Z',
+      },
+      comparisonPeriod: {
+        startDate: '2025-07-01T09:00:00Z',
+        endDate: '2025-07-31T09:00:00Z',
+      },
+      storagePath: '', // Explicitly set to empty string
+    };
+
+    const report = await Report.create(data);
+
+    checkReport(report);
+
+    expect(uuidValidate(report.getId())).to.be.true;
+    expect(report.getSiteId()).to.equal(data.siteId);
+    expect(report.getReportType()).to.equal(data.reportType);
+    expect(report.getReportPeriod()).to.deep.equal(data.reportPeriod);
+    expect(report.getComparisonPeriod()).to.deep.equal(data.comparisonPeriod);
+
+    // Storage path should be auto-computed since it was empty
+    const expectedStoragePath = `/reports/${siteId}/auto-computed/${report.getId()}/`;
+    expect(report.getStoragePath()).to.equal(expectedStoragePath);
+  });
+
+  it('updates a report', async () => {
+    const sample = sampleData.reports[0];
+    const updates = {
+      reportType: 'updated-type',
+      reportPeriod: {
+        startDate: '2025-09-01T09:00:00Z',
+        endDate: '2025-09-30T09:00:00Z',
+      },
+      comparisonPeriod: {
+        startDate: '2025-08-01T09:00:00Z',
+        endDate: '2025-08-31T09:00:00Z',
+      },
+      storagePath: '/reports/updated/path/',
+      updatedBy: 'test-user',
+    };
+
+    const report = await Report.findById(sample.getId());
+
+    report.setReportType(updates.reportType);
+    report.setReportPeriod(updates.reportPeriod);
+    report.setComparisonPeriod(updates.comparisonPeriod);
+    report.setStoragePath(updates.storagePath);
+    report.setUpdatedBy(updates.updatedBy);
+
+    await report.save();
+
+    checkReport(report);
+
+    expect(report.getReportType()).to.equal(updates.reportType);
+    expect(report.getReportPeriod()).to.deep.equal(updates.reportPeriod);
+    expect(report.getComparisonPeriod()).to.deep.equal(updates.comparisonPeriod);
+    expect(report.getStoragePath()).to.equal(updates.storagePath);
+    expect(report.getUpdatedBy()).to.equal(updates.updatedBy);
   });
 });

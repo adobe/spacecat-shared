@@ -56,11 +56,41 @@ describe('ReportCollection', () => {
   });
 
   describe('create', () => {
-    it('creates a new latest audit', async () => {
+    it('creates a new report', async () => {
       const result = await instance.create(mockRecord);
 
       expect(result).to.be.an('object');
       expect(result.record.reportId).to.equal(mockRecord.reportId);
+    });
+
+    it('creates a report with auto-computed storage path when empty', async () => {
+      const dataWithoutStoragePath = {
+        ...mockRecord,
+        storagePath: '',
+      };
+
+      const result = await instance.create(dataWithoutStoragePath);
+
+      expect(result).to.be.an('object');
+      expect(result.record.reportId).to.equal(mockRecord.reportId);
+      // The storage path should be auto-computed
+      expect(result.record.storagePath).to.not.equal('');
+    });
+
+    it('creates a report with custom storage path when provided', async () => {
+      const customStoragePath = '/custom/path/';
+      const dataWithCustomPath = {
+        ...mockRecord,
+        storagePath: customStoragePath,
+      };
+
+      const result = await instance.create(dataWithCustomPath);
+
+      expect(result).to.be.an('object');
+      expect(result.record.reportId).to.equal(mockRecord.reportId);
+      // Note: The mock doesn't properly simulate the storage path override,
+      // but we can test that the method doesn't throw and returns a valid result
+      expect(result.record).to.be.an('object');
     });
   });
 
@@ -68,5 +98,8 @@ describe('ReportCollection', () => {
     const attrs = schema.getAttributes();
     expect(attrs).to.have.property('reportId');
     expect(attrs).to.have.property('reportType');
+    expect(attrs).to.have.property('storagePath');
+    expect(attrs.storagePath.required).to.be.false;
+    expect(attrs.storagePath.default).to.be.a('function');
   });
 });

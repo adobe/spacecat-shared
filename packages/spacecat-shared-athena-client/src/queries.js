@@ -19,28 +19,16 @@ const TRAFIC_ANALYSIS_PATH = 'static/queries/traffic-analysis.sql.tpl';
  * @param {Object} log - Logger (optional)
  * @returns {Promise<string|null>} The templated SQL string or null on error.
  */
-export async function getTrafficAnalysisQuery(placeholders = {}, log = console) {
-  try {
-    // getStaticContent expects the filename relative to the static/ directory
-    return await getStaticContent(placeholders, TRAFIC_ANALYSIS_PATH);
-  } catch (err) {
-    log.error('Error loading traffic analysis query:', err.message);
-    return null;
-  }
+export async function getTrafficAnalysisQuery(placeholders = {}) {
+  return getStaticContent(placeholders, TRAFIC_ANALYSIS_PATH);
 }
 
 /**
  * Scans the query template and returns a sorted array of unique placeholder (strings).
  * @returns {Promise<string[]>} Array of unique placeholder keys found in the template.
  */
-export async function getTrafficAnalysisQueryPlaceholders(log = console) {
-  try {
-    // Load the raw template with no replacements
-    const raw = await getStaticContent({}, TRAFIC_ANALYSIS_PATH);
-    const matches = raw ? raw.match(/{{\s*([\w]+)\s*}}/g) : [];
-    return [...new Set((matches || []).map((m) => m.replace(/{{\s*|\s*}}/g, '')))].sort();
-  } catch (err) {
-    log.error('Error extracting placeholders from traffic analysis query:', err.message);
-    return [];
-  }
+export async function getTrafficAnalysisQueryPlaceholders() {
+  const raw = await getStaticContent({}, TRAFIC_ANALYSIS_PATH);
+  const matches = raw.match(/{{\s*([\w]+)\s*}}/g);
+  return [...new Set((matches).map((m) => m.replace(/{{\s*|\s*}}/g, '')))].sort();
 }

@@ -11,6 +11,7 @@
  */
 
 import Joi from 'joi';
+import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
@@ -257,7 +258,20 @@ export function validateConfiguration(config) {
 }
 
 export const Config = (data = {}) => {
-  const validConfig = validateConfiguration(data);
+  let validConfig;
+
+  try {
+    validConfig = validateConfiguration(data);
+  } catch (error) {
+    const logger = getLogger();
+    if (logger && logger !== console) {
+      logger.error('Site configuration validation failed, using default config', {
+        error: error.message,
+        invalidConfig: data,
+      });
+    }
+    validConfig = { ...DEFAULT_CONFIG };
+  }
 
   const state = { ...validConfig };
   const self = { state };

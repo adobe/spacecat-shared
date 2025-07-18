@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,19 +10,16 @@
  * governing permissions and limitations under the License.
  */
 
-export {
-  guardAny,
-  guardArray,
-  guardBoolean,
-  guardEnum,
-  guardId,
-  guardMap,
-  guardNumber,
-  guardSet,
-  guardString,
-} from './guards.js';
+import BaseCollection from '../base/base.collection.js';
 
-export {
-  registerLogger,
-  getLogger,
-} from './logger-registry.js';
+/**
+ * PageIntentCollection - Manages PageIntent entities.
+ *
+ * @class PageIntentCollection
+ * @extends BaseCollection
+ */
+class PageIntentCollection extends BaseCollection {
+  // add custom collection-level methods here, if needed
+}
+
+export default PageIntentCollection;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,19 +10,25 @@
  * governing permissions and limitations under the License.
  */
 
-export {
-  guardAny,
-  guardArray,
-  guardBoolean,
-  guardEnum,
-  guardId,
-  guardMap,
-  guardNumber,
-  guardSet,
-  guardString,
-} from './guards.js';
+import BaseModel from '../base/base.model.js';
 
-export {
-  registerLogger,
-  getLogger,
-} from './logger-registry.js';
+/**
+ * PageIntent - Represents a page’s intent & topic within a site.
+ *
+ * @class PageIntent
+ * @extends BaseModel
+ */
+class PageIntent extends BaseModel {
+  static DEFAULT_UPDATED_BY = 'spacecat';
+
+  static PAGE_INTENTS = {
+    INFORMATIONAL: 'INFORMATIONAL',
+    NAVIGATIONAL: 'NAVIGATIONAL',
+    TRANSACTIONAL: 'TRANSACTIONAL',
+    COMMERCIAL: 'COMMERCIAL',
+  };
+
+  // add any custom methods or overrides here
+}
+
+export default PageIntent;

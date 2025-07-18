@@ -50,6 +50,7 @@ export const TEST_DA_CONFIG = {
   tableNameSiteCandidates: 'spacecat-services-site-candidates',
   tableNameSiteTopPages: 'spacecat-services-site-top-pages',
   tableNameSites: 'spacecat-services-sites',
+  tableNamePageIntents: 'spacecat-services-page-intents',
   tableNameSpacecatData: 'spacecat-data',
 };
 

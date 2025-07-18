@@ -23,7 +23,6 @@ export const computeExternalIds = (attrs, authoringTypes) => {
   const { authoringType, hlxConfig, deliveryConfig } = attrs;
 
   if (hlxConfig && (authoringType === authoringTypes.DA)) {
-    console.log('[Site Model] computeExternalIds triggered for Document Authoring');
     const rso = hlxConfig.rso ?? {};
     const { owner, site } = rso;
 
@@ -35,7 +34,6 @@ export const computeExternalIds = (attrs, authoringTypes) => {
 
   if (deliveryConfig
     && (authoringType === authoringTypes.CS || authoringType === authoringTypes.CS_CW)) {
-    console.log('[Site Model] computeExternalIds triggered for Cloud Service');
     const { programId, environmentId } = deliveryConfig;
 
     return {
@@ -44,7 +42,6 @@ export const computeExternalIds = (attrs, authoringTypes) => {
     };
   }
 
-  console.log('[Site Model] computeExternalIds triggered for other authoring types');
   return { externalOwnerId: undefined, externalSiteId: undefined };
 };
 
@@ -87,6 +84,23 @@ class Site extends BaseModel {
   async toggleLive() {
     const newIsLive = !this.getIsLive();
     this.setIsLive(newIsLive);
+    return this;
+  }
+
+  /**
+   * Computes and sets external IDs based on current entity state
+   * This method should be called after updating authoringType, hlxConfig, or deliveryConfig
+   */
+  computeAndSetExternalIds() {
+    const attrs = {
+      authoringType: this.getAuthoringType(),
+      hlxConfig: this.getHlxConfig(),
+      deliveryConfig: this.getDeliveryConfig(),
+    };
+
+    const { externalOwnerId, externalSiteId } = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+    this.setExternalOwnerId(externalOwnerId);
+    this.setExternalSiteId(externalSiteId);
     return this;
   }
 

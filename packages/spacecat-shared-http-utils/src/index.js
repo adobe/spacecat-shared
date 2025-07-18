@@ -11,20 +11,42 @@
  */
 
 import { Response } from '@adobe/fetch';
-import { gzip } from 'zlib';
-import { promisify } from 'util';
+import { gzipSync } from 'zlib';
 
 import LegacyApiKeyHandler from './auth/handlers/legacy-api-key.js';
 import AdobeImsHandler from './auth/handlers/ims.js';
 import ScopedApiKeyHandler from './auth/handlers/scoped-api-key.js';
 import JwtHandler from './auth/handlers/jwt.js';
 
-const gzipAsync = promisify(gzip);
-
 const HEADER_ERROR = 'x-error';
-const HEADER_CONTENT_TYPE = 'content-type';
-const HEADER_CONTENT_ENCODING = 'content-encoding';
+const HEADER_CONTENT_TYPE = 'Content-Type';
+const HEADER_CONTENT_ENCODING = 'Content-Encoding';
 const CONTENT_TYPE_JSON = 'application/json';
+
+/**
+ * Case-insensitive getter for headers.
+ */
+function getHeader(headers, key) {
+  const lowerKey = key.toLowerCase();
+  const actualKey = Object.keys(headers).find((k) => k.toLowerCase() === lowerKey);
+  return actualKey ? headers[actualKey] : undefined;
+}
+
+/**
+ * Case-insensitive setter for headers.
+ */
+function setHeader(headers, key, value) {
+  const lowerKey = key.toLowerCase();
+  const actualKey = Object.keys(headers).find((k) => k.toLowerCase() === lowerKey);
+  if (actualKey) {
+    /* c8 ignore next 3 */
+    // eslint-disable-next-line no-param-reassign
+    headers[actualKey] = value;
+  } else {
+    // eslint-disable-next-line no-param-reassign
+    headers[key] = value;
+  }
+}
 
 /**
  * Creates a response with a JSON body if the content-type is JSON. Defaults to 200 status.
@@ -34,26 +56,26 @@ const CONTENT_TYPE_JSON = 'application/json';
  * @param {object|string|Buffer} body - Response body.
  * @param {number} [status=200] - Optional status code.
  * @param {object} [headers={}] - Optional headers.
- * @return {Promise<Response>} Response object, possibly gzipped.
+ * @return {Response} Response object.
  */
-export async function createResponse(body, status = 200, headers = {}) {
+export function createResponse(body, status = 200, headers = {}) {
   let responseBody = body;
 
-  // Set default content-type to JSON if not provided
-  if (!headers[HEADER_CONTENT_TYPE]) {
-    Object.assign(headers, {
-      [HEADER_CONTENT_TYPE]: `${CONTENT_TYPE_JSON}; charset=utf-8`,
-    });
+  const contentType = getHeader(headers, HEADER_CONTENT_TYPE);
+  const contentEncoding = getHeader(headers, HEADER_CONTENT_ENCODING);
+  const wantsGzip = contentEncoding?.toLowerCase() === 'gzip';
+
+  // default to application/json if content-type not set
+  if (!contentType) {
+    setHeader(headers, HEADER_CONTENT_TYPE, `${CONTENT_TYPE_JSON}; charset=utf-8`);
   }
 
-  const isJson = headers[HEADER_CONTENT_TYPE].includes(CONTENT_TYPE_JSON);
-  const wantsGzip = headers[HEADER_CONTENT_ENCODING] === 'gzip';
+  const finalContentType = getHeader(headers, HEADER_CONTENT_TYPE);
 
-  if (isJson && wantsGzip) {
+  // if content-type is JSON, serialize and optionally gzip
+  if (finalContentType?.toLowerCase().includes(CONTENT_TYPE_JSON)) {
     const jsonBody = body === '' ? '' : JSON.stringify(body);
-    responseBody = await gzipAsync(jsonBody);
-  } else if (isJson && typeof body !== 'string' && !(body instanceof Buffer)) {
-    responseBody = body === '' ? '' : JSON.stringify(body);
+    responseBody = wantsGzip ? gzipSync(Buffer.from(jsonBody)) : jsonBody;
   }
 
   return new Response(responseBody, {

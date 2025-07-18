@@ -2,9 +2,10 @@ WITH raw AS (
     SELECT
         trf_type,
         path,
+        {{pageTypeCase}},
         trf_channel,
         utm_campaign,
-        trf_platform
+        trf_platform,
         device,
         pageviews,
         clicked,
@@ -14,9 +15,7 @@ WITH raw AS (
         inp
     FROM {{tableName}}
     WHERE siteid = '{{siteId}}'
-        AND year IN ({{years}})
-        AND month IN ({{months}})
-        AND week = {{week}}
+        AND ({{temporalCondition}})
 ),
   
 agg AS (
@@ -39,7 +38,7 @@ grand_total AS (
 )
   
 SELECT
-    {{dimensionColumnsPrefixed}}
+    {{dimensionColumnsPrefixed}},
     a.pageviews,
   
     CAST(a.pageviews AS double) / NULLIF(t.total_pv, 0)            AS pct_pageviews,

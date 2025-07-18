@@ -298,36 +298,36 @@ describe('Traffic analysis query loader', () => {
     const placeholders = {
       tableName: 'my_table',
       siteId: 'mysite',
-      years: 2024,
-      months: 6,
-      week: 23,
+      pageTypeCase: 'NULL as page_type',
+      temporalCondition: `(year=${2024} AND month=${6} AND week=${23})`,
       dimensionColumns: 'channel, device',
       groupBy: 'channel, device',
-      dimensionColumnsPrefixed: 'a.channel, a.device,',
+      dimensionColumnsPrefixed: 'a.channel, a.device',
     };
     const sql = await getTrafficAnalysisQuery(placeholders);
-    console.log(sql);
-    expect(sql).to.be.a('string');
-    expect(sql).to.include('FROM my_table');
-    expect(sql).to.include("siteid = 'mysite'");
-    expect(sql).to.include('year IN (2024)');
-    expect(sql).to.include('month IN (6)');
-    expect(sql).to.include('week = 23');
-    expect(sql).to.include('channel, device');
-    expect(sql).to.include('a.channel, a.device,');
     // Should not contain any unreplaced {{...}}
     const unreplaced = sql.match(/{{\s*\w+\s*}}/g);
     expect(unreplaced, `Unreplaced placeholders found: ${unreplaced ? unreplaced.join(', ') : ''}`)
       .to.be.null;
+    console.log(sql);
+    expect(sql, 'unexpected double ,,').to.not.match(/,,/g); // catch double commas
+    expect(sql, 'unexpected trailing comma').to.not.match(/,\s*\)/g); // catch trailing comma before closing paren
+    expect(sql).to.include('FROM my_table');
+    expect(sql).to.include("siteid = 'mysite'");
+    expect(sql).to.include('year=2024');
+    expect(sql).to.include('month=6');
+    expect(sql).to.include('week=23');
+    expect(sql).to.include('channel, device');
+    expect(sql).to.include('a.channel, a.device,');
   });
 
   it('should extract all unique placeholders from the query template', async () => {
     const keys = await getTrafficAnalysisQueryPlaceholders();
+    console.log(keys);
     expect(keys).to.be.an('array').that.includes('tableName');
     expect(keys).to.include('siteId');
-    expect(keys).to.include('years');
-    expect(keys).to.include('week');
-    expect(keys).to.include('months');
+    expect(keys).to.include('temporalCondition');
+    expect(keys).to.include('pageTypeCase');
     expect(keys).to.include('dimensionColumns');
     expect(keys).to.include('groupBy');
     expect(keys).to.include('dimensionColumnsPrefixed');

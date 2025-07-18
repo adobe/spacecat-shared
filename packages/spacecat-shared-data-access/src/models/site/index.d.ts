@@ -100,6 +100,28 @@ export interface SiteConfig {
     llmo?: {
       dataFolder: string;
       brand: string;
+      questions?: {
+        Human?: Array<{
+          key: string;
+          question: string;
+          source?: string;
+          country?: string;
+          product?: string;
+          volume?: string;
+          importTime?: string;
+        }>;
+        AI?: Array<{
+          key: string;
+          question: string;
+          source?: string;
+          country?: string;
+          product?: string;
+          volume?: string;
+          keyword?: string;
+          url?: string;
+          importTime?: string;
+        }>;
+      };
     };
   };
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };

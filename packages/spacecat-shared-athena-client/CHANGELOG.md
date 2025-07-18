@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.0.4...@adobe/spacecat-shared-athena-client-v1.1.0) (2025-07-18)
+
+
+### Features
+
+* add traffic queries for traffic analysis to shared location ([#847](https://github.com/adobe/spacecat-shared/issues/847)) ([4eecc72](https://github.com/adobe/spacecat-shared/commit/4eecc7289ba630e37fea923262b13e70528ce250))
+
 # [@adobe/spacecat-shared-athena-client-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.0.3...@adobe/spacecat-shared-athena-client-v1.0.4) (2025-07-15)
 
 

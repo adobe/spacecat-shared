@@ -43,6 +43,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addReference('has_many', 'Opportunities')
   .addReference('has_many', 'SiteCandidates')
   .addReference('has_many', 'SiteTopPages')
+  .addReference('has_many', 'PageIntents')
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
@@ -86,6 +87,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     type: 'any',
     default: {},
     validate: (value) => isObject(value),
+  })
+  .addAttribute('isSandbox', {
+    type: 'boolean',
+    default: false,
   })
   .addAttribute('isLive', {
     type: 'boolean',

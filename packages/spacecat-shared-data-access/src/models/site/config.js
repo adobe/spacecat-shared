@@ -204,6 +204,32 @@ export const configSchema = Joi.object({
   llmo: Joi.object({
     dataFolder: Joi.string().required(),
     brand: Joi.string().required(),
+    questions: Joi.object({
+      Human: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          question: Joi.string().required(),
+          source: Joi.string().optional(),
+          country: Joi.string().optional(),
+          product: Joi.string().optional(),
+          volume: Joi.string().optional(),
+          importTime: Joi.string().isoDate().optional(),
+        }),
+      ).optional(),
+      AI: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          question: Joi.string().required(),
+          source: Joi.string().optional(),
+          country: Joi.string().optional(),
+          product: Joi.string().optional(),
+          volume: Joi.string().optional(),
+          keyword: Joi.string().optional(),
+          url: Joi.string().uri().optional(),
+          importTime: Joi.string().isoDate().optional(),
+        }),
+      ).optional(),
+    }).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
@@ -305,10 +331,11 @@ export const Config = (data = {}) => {
     };
   };
 
-  self.updateLlmoConfig = (dataFolder, brand) => {
+  self.updateLlmoConfig = (dataFolder, brand, questions) => {
     state.llmo = {
       dataFolder,
       brand,
+      ...(questions !== undefined ? { questions } : {}),
     };
   };
 

@@ -143,6 +143,80 @@ describe('Config Tests', () => {
       expect(config.getSlackConfig()).to.deep.equal({});
       expect(config.getHandlers()).to.deep.equal({});
     });
+
+    it('creates a Config with llmo property including questions', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+          questions: {
+            Human: [
+              {
+                key: 'foo',
+                question: 'What is foo?',
+                source: 'manual-csv',
+                country: 'US',
+                product: 'Product A',
+                volume: '100',
+                importTime: '2021-01-01',
+              },
+            ],
+            AI: [
+              {
+                key: 'bar',
+                question: 'What is bar?',
+                source: 'ahrefs',
+                keyword: 'bar',
+                url: 'https://example.com',
+                country: 'US',
+                product: 'Product A',
+                volume: '100',
+                importTime: '2021-01-01',
+              },
+            ],
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoConfig()).to.deep.equal(data.llmo);
+    });
+
+    it('correctly updates the LLMO configuration including questions', () => {
+      const config = Config();
+      const questions = {
+        Human: [
+          {
+            key: 'foo',
+            question: 'What is foo?',
+            source: 'manual-csv',
+            country: 'US',
+            product: 'Product A',
+            volume: '100',
+            importTime: '2021-01-01',
+          },
+        ],
+        AI: [
+          {
+            key: 'bar',
+            question: 'What is bar?',
+            source: 'ahrefs',
+            keyword: 'bar',
+            url: 'https://example.com',
+            country: 'US',
+            product: 'Product A',
+            volume: '100',
+            importTime: '2021-01-01',
+          },
+        ],
+      };
+      config.updateLlmoConfig('newBrandFolder', 'newBrand', questions);
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.dataFolder).to.equal('newBrandFolder');
+      expect(llmoConfig.brand).to.equal('newBrand');
+      expect(llmoConfig.questions.Human[0].key).to.equal('foo');
+      expect(llmoConfig.questions.AI[0].key).to.equal('bar');
+      expect(llmoConfig.questions).to.deep.equal(questions);
+    });
   });
   describe('Config Methods', () => {
     it('correctly updates the Slack configuration', () => {
@@ -525,11 +599,27 @@ describe('Config Tests', () => {
       expect(dynamoItem.contentAiConfig).to.deep.equal(data.getContentAiConfig());
     });
 
-    it('includes llmo in toDynamoItem conversion', () => {
+    it('includes llmo in toDynamoItem conversion including questions', () => {
       const data = Config({
         llmo: {
           dataFolder: '/data/folder',
           brand: 'mybrand',
+          questions: {
+            Human: [
+              {
+                question: 'What is foo?',
+                source: 'manual-csv',
+              },
+            ],
+            AI: [
+              {
+                question: 'What is bar?',
+                source: 'ahrefs',
+                keyword: 'bar',
+                url: 'https://example.com',
+              },
+            ],
+          },
         },
       });
       const dynamoItem = Config.toDynamoItem(data);

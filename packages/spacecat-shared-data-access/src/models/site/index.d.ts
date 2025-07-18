@@ -61,6 +61,18 @@ export interface ImportConfig {
   limit?: number;
 }
 
+export interface LlmoQuestion {
+  key: string;
+  question: string;
+  source?: string;
+  country?: string;
+  product?: string;
+  volume?: string;
+  importTime?: string;
+  keyword?: string;
+  url?: string;
+}
+
 export interface SiteConfig {
   state: {
     slack?: {
@@ -101,26 +113,8 @@ export interface SiteConfig {
       dataFolder: string;
       brand: string;
       questions?: {
-        Human?: Array<{
-          key: string;
-          question: string;
-          source?: string;
-          country?: string;
-          product?: string;
-          volume?: string;
-          importTime?: string;
-        }>;
-        AI?: Array<{
-          key: string;
-          question: string;
-          source?: string;
-          country?: string;
-          product?: string;
-          volume?: string;
-          keyword?: string;
-          url?: string;
-          importTime?: string;
-        }>;
+        Human?: Array<LlmoQuestion>;
+        AI?: Array<LlmoQuestion>;
       };
     };
   };
@@ -142,6 +136,15 @@ export interface SiteConfig {
   getLatestMetrics(type: string):
     { pageViewsChange: number; ctrChange: number; projectedTrafficValue: number } | undefined;
   getFetchConfig(): { headers?: Record<string, string>, overrideBaseURL?: string } | undefined;
+  getLlmoConfig(): {
+    dataFolder: string;
+    brand: string;
+    questions?: { Human?: Array<LlmoQuestion>; AI?: Array<LlmoQuestion> };
+  } | undefined;
+  updateLlmoConfig(dataFolder: string, brand: string, questions?: {
+    Human?: Array<LlmoQuestion>;
+    AI?: Array<LlmoQuestion>;
+  }): void;
 }
 
 export interface Site extends BaseModel {

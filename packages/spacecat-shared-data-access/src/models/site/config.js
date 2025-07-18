@@ -321,7 +321,7 @@ export const Config = (data = {}) => {
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
-  self.getLlmoConfig = () => state.llmo;
+  self.getLlmoConfig = () => state?.llmo;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {

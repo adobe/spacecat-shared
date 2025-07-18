@@ -15,6 +15,11 @@ export interface BrandClientConfig {
   apiKey: string;
 }
 
+export interface BrandConfig {
+  brandId: string;
+  userId: string;
+}
+
 export interface Brand {
   id: string;
   name: string;
@@ -67,7 +72,7 @@ export default class BrandClient {
   /**
    * Retrieves brand guidelines for the given brand and IMS Org.
    *
-   * @param {string} brandId - The ID of the brand to get guidelines for
+   * @param {BrandConfig} brandConfig - The brand configuration including brandId and userId
    * @param {string} imsOrgId - The IMS organization ID that owns the brand
    * @param {ImsConfig} imsConfig - Configuration for IMS authentication
    * @returns {Promise<BrandGuidelines>} The brand guidelines including tone of voice,
@@ -76,7 +81,7 @@ export default class BrandClient {
    * or if the API request fails
    */
   getBrandGuidelines(
-    brandId: string,
+    brandConfig: BrandConfig,
     imsOrgId: string,
     imsConfig: ImsConfig,
   ): Promise<BrandGuidelines>;

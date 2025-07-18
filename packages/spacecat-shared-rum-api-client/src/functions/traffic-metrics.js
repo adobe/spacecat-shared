@@ -15,8 +15,21 @@ import { DELIMITER, generateKey, loadBundles } from '../utils.js';
 import { classifyTraffic } from '../common/traffic.js';
 import { getPageType, isConsentClick } from '../common/page.js';
 
-function getTrafficSource(bundle) {
-  return classifyTraffic(bundle).type;
+function getTrafficSource(bundle, memo) {
+  const id = `${bundle.id}-${bundle.url}-${bundle.time}`;
+  if (id in memo) {
+    return memo[id];
+  }
+  const result = classifyTraffic(bundle);
+  // eslint-disable-next-line no-param-reassign
+  memo[id] = result;
+  return result;
+}
+
+function getTrafficSourceKey(bundle, memo) {
+  const classifyResult = getTrafficSource(bundle, memo);
+  const { type, category, vendor } = classifyResult;
+  return `${type}:${category}:${vendor}`;
 }
 
 function getDeviceType(bundle) {
@@ -35,36 +48,54 @@ function addPageTypeDeviceTypeFacet(dataChunks, pageTypes) {
   });
 }
 
-function addPageTypeTrafficSourceDeviceTypes(dataChunks, pageTypes) {
+function addPageTypeTrafficSourceDeviceTypes(dataChunks, pageTypes, memo) {
   dataChunks.addFacet('pageTrafficDeviceTypes', (bundle) => {
     const deviceType = getDeviceType(bundle);
     const pageType = getPageType(bundle, pageTypes);
-    return generateKey(pageType, getTrafficSource(bundle), deviceType);
+    return generateKey(pageType, getTrafficSourceKey(bundle, memo), deviceType);
   });
 }
 
-function addPageTypeTrafficSourceFacet(dataChunks, pageTypes) {
+function addPageTypeTrafficSourceFacet(dataChunks, pageTypes, memo) {
   dataChunks.addFacet('pageTypeTrafficSources', (bundle) => {
     const pageType = getPageType(bundle, pageTypes);
-    return generateKey(pageType, getTrafficSource(bundle));
+    return generateKey(pageType, getTrafficSourceKey(bundle, memo));
   });
 }
 
-function handler(bundles, options = { pageTypes: null }) {
+/**
+ * Handler for traffic metrics.
+ * @param {Array} bundles - The RUM bundles.
+ * @param {Object} options - Options object.
+ * @param {Object} [options.pageTypes] - Page type regex or mapping.
+ * @param {string} [options.trafficType] - Eg, 'paid', 'earned', 'owned', 'all'. Defaults to 'all'.
+ */
+function handler(bundles, options = { pageTypes: null, trafficType: 'all' }) {
   const dataChunks = new DataChunks();
-  const { pageTypes: pageTypeOpt } = options;
+  const trafficSourceMemo = {};
+  const { pageTypes: pageTypeOpt, trafficType = 'all' } = options;
 
-  loadBundles(bundles, dataChunks);
+  let filteredBundles = bundles;
+  if (trafficType && trafficType !== 'all') {
+    filteredBundles = bundles
+      .filter((bundle) => getTrafficSource(bundle, trafficSourceMemo).type === trafficType);
+  }
+
+  const getTS = (bundle) => getTrafficSourceKey(bundle, trafficSourceMemo);
+
+  loadBundles(filteredBundles, dataChunks);
 
   const metricFilter = (metrics) => {
-    const { ctr, enters, sumOfAllClicks } = metrics;
+    const {
+      ctr, enters, sumOfAllClicks, facet,
+    } = metrics;
     return {
-      ctr: ctr.sum / ctr.weight,
+      ctr: ctr.weight !== 0 ? ctr.sum / ctr.weight : 0,
       clickedSessions: ctr.sum,
-      totalSessions: ctr.weight,
+      pageViews: facet.weight,
       sessionsWithEnter: enters.sum,
-      clicksOverViews: ctr.weight ? ctr.sum / ctr.weight : 0,
-      bounceRate: ctr.weight ? (1 - (ctr.sum / ctr.weight)) : 0,
+      clicksOverViews: ctr.weight !== 0 ? ctr.sum / ctr.weight : 0,
+      bounceRate: ctr.weight !== 0 ? (1 - (ctr.sum / ctr.weight)) : 1,
       totalNumClicks: sumOfAllClicks.sum,
       avgClicksPerSession: ctr.sum ? sumOfAllClicks.sum / ctr.sum : 0,
     };
@@ -72,25 +103,25 @@ function handler(bundles, options = { pageTypes: null }) {
 
   dataChunks.addFacet('urls', (bundle) => bundle.url);
 
-  dataChunks.addFacet('trafficSources', (bundle) => getTrafficSource(bundle));
+  dataChunks.addFacet('trafficSources', (bundle) => getTS(bundle));
 
-  dataChunks.addFacet('urlTrafficSources', (bundle) => generateKey(bundle.url, getTrafficSource(bundle)));
+  dataChunks.addFacet('urlTrafficSources', (bundle) => generateKey(bundle.url, getTS(bundle)));
 
   dataChunks.addFacet('urlDeviceTypes', (bundle) => generateKey(bundle.url, getDeviceType(bundle)));
 
   dataChunks.addFacet('deviceTypes', (bundle) => getDeviceType(bundle));
 
-  dataChunks.addFacet('urlTrafficSourceDeviceTypes', (bundle) => generateKey(bundle.url, getTrafficSource(bundle), getDeviceType(bundle)));
+  dataChunks.addFacet('urlTrafficSourceDeviceTypes', (bundle) => generateKey(bundle.url, getTS(bundle), getDeviceType(bundle)));
 
-  dataChunks.addFacet('deviceTypeTrafficSources', (bundle) => generateKey(getDeviceType(bundle), getTrafficSource(bundle)));
+  dataChunks.addFacet('deviceTypeTrafficSources', (bundle) => generateKey(getDeviceType(bundle), getTS(bundle)));
 
   addPageTypeFacet(dataChunks, pageTypeOpt);
 
-  addPageTypeTrafficSourceFacet(dataChunks, pageTypeOpt);
+  addPageTypeTrafficSourceFacet(dataChunks, pageTypeOpt, trafficSourceMemo);
 
   addPageTypeDeviceTypeFacet(dataChunks, pageTypeOpt);
 
-  addPageTypeTrafficSourceDeviceTypes(dataChunks, pageTypeOpt);
+  addPageTypeTrafficSourceDeviceTypes(dataChunks, pageTypeOpt, trafficSourceMemo);
 
   dataChunks.addSeries('ctr', (bundle) => {
     const isClicked = bundle.events.some((e) => e.checkpoint === 'click');
@@ -111,100 +142,108 @@ function handler(bundles, options = { pageTypes: null }) {
     return containsEnter ? bundle.weight : 0;
   });
 
-  const urls = dataChunks.facets.urls.map((facet) => {
-    const url = facet.value;
-    return {
-      ...metricFilter(facet.metrics),
-      url,
-    };
-  });
+  const urls = dataChunks.facets.urls.map((facet) => ({
+    ...metricFilter({ ...facet.metrics, facet }),
+    url: facet.value,
+    urls: [facet.value],
+  }));
 
   const pageType = dataChunks.facets.pageType.map((facet) => {
     const type = facet.value;
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       type,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
   const deviceTypes = dataChunks.facets.deviceTypes.map((facet) => {
     const deviceType = facet.value;
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
   const urlDeviceTypes = dataChunks.facets.urlDeviceTypes.map((facet) => {
     const [url, deviceType] = facet.value.split(DELIMITER);
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       url,
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
   const trafficSources = dataChunks.facets.trafficSources.map((facet) => {
     const source = facet.value;
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       source,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
   const urlTrafficSources = dataChunks.facets.urlTrafficSources.map((facet) => {
     const [url, source] = facet.value.split(DELIMITER);
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       url,
       source,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
   const urlTrafficSourceDeviceTypes = dataChunks.facets.urlTrafficSourceDeviceTypes.map((facet) => {
     const [url, source, deviceType] = facet.value.split(DELIMITER);
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       url,
       source,
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
   const pageTypeTrafficSources = dataChunks.facets.pageTypeTrafficSources.map((facet) => {
     const [type, source] = facet.value.split(DELIMITER);
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       type,
       source,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
   const pageTypeDeviceTypes = dataChunks.facets.pageTypeDeviceTypes.map((facet) => {
     const [type, deviceType] = facet.value.split(DELIMITER);
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       type,
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
   const deviceTypeTrafficSources = dataChunks.facets.deviceTypeTrafficSources.map((facet) => {
     const [deviceType, source] = facet.value.split(DELIMITER);
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       deviceType,
       source,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 
   const pageTrafficDeviceTypes = dataChunks.facets.pageTrafficDeviceTypes.map((facet) => {
     const [type, source, deviceType] = facet.value.split(DELIMITER);
     return {
-      ...metricFilter(facet.metrics),
+      ...metricFilter({ ...facet.metrics, facet }),
       type,
       source,
       deviceType,
+      urls: [...new Set(facet.entries.map((b) => b.url))],
     };
   });
 

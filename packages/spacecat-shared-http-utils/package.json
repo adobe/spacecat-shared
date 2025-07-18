@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-http-utils",
-  "version": "1.14.0",
+  "version": "1.14.4",
   "description": "Shared modules of the Spacecat Services - HTTP Utils",
   "type": "module",
   "engines": {
@@ -12,6 +12,7 @@
   "scripts": {
     "test": "c8 mocha --spec=test/**/*.test.js",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
@@ -40,7 +41,7 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "chai": "5.2.0",
+    "chai": "5.2.1",
     "chai-as-promised": "8.0.1",
     "sinon": "20.0.0"
   }

@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-http-utils-v1.14.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.3...@adobe/spacecat-shared-http-utils-v1.14.4) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#845](https://github.com/adobe/spacecat-shared/issues/845)) ([23bd3a2](https://github.com/adobe/spacecat-shared/commit/23bd3a2235686480cb89d6379276d9ed000baea3))
+
+# [@adobe/spacecat-shared-http-utils-v1.14.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.2...@adobe/spacecat-shared-http-utils-v1.14.3) (2025-06-23)
+
+
+### Bug Fixes
+
+* for adobe users admin access to only admin group members ([#796](https://github.com/adobe/spacecat-shared/issues/796)) ([11766d5](https://github.com/adobe/spacecat-shared/commit/11766d5265aee799e9d5b895c565a2c56b556b38))
+
+# [@adobe/spacecat-shared-http-utils-v1.14.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.1...@adobe/spacecat-shared-http-utils-v1.14.2) (2025-06-16)
+
+
+### Bug Fixes
+
+* case insensitive check ([#804](https://github.com/adobe/spacecat-shared/issues/804)) ([264a524](https://github.com/adobe/spacecat-shared/commit/264a5245301660e842a40187afbfe1a7c1af31d2))
+
+# [@adobe/spacecat-shared-http-utils-v1.14.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.0...@adobe/spacecat-shared-http-utils-v1.14.1) (2025-06-06)
+
+
+### Bug Fixes
+
+* trigger a release for non-adobe users tenant isolation ([#789](https://github.com/adobe/spacecat-shared/issues/789)) ([92f5aa2](https://github.com/adobe/spacecat-shared/commit/92f5aa2cb65ffe1e1f19ef35f94f1f5016a49979))
+
 # [@adobe/spacecat-shared-http-utils-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.13.2...@adobe/spacecat-shared-http-utils-v1.14.0) (2025-05-27)
 
 

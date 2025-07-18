@@ -29,6 +29,7 @@ export {
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
+  isValidHelixPreviewUrl,
   toBoolean,
 } from './functions.js';
 
@@ -37,6 +38,7 @@ export {
   resolveCustomerSecretsName,
   generateCSVFile,
   replacePlaceholders,
+  getStaticContent,
   getPrompt,
   getQuery,
 } from './helpers.js';
@@ -74,4 +76,4 @@ export {
   FORMS_AUDIT_INTERVAL,
 } from './formcalc.js';
 
-export { retrievePageAuthentication } from './auth.js';
+export { retrievePageAuthentication, getAccessToken } from './auth.js';

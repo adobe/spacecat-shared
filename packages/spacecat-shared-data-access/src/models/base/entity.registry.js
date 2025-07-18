@@ -25,10 +25,13 @@ import KeyEventCollection from '../key-event/key-event.collection.js';
 import LatestAuditCollection from '../latest-audit/latest-audit.collection.js';
 import OpportunityCollection from '../opportunity/opportunity.collection.js';
 import OrganizationCollection from '../organization/organization.collection.js';
+import ScrapeJobCollection from '../scrape-job/scrape-job.collection.js';
+import ScrapeUrlCollection from '../scrape-url/scrape-url.collection.js';
 import SiteCandidateCollection from '../site-candidate/site-candidate.collection.js';
 import SiteCollection from '../site/site.collection.js';
 import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
+import PageIntentCollection from '../page-intent/page-intent.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -42,10 +45,13 @@ import KeyEventSchema from '../key-event/key-event.schema.js';
 import LatestAuditSchema from '../latest-audit/latest-audit.schema.js';
 import OpportunitySchema from '../opportunity/opportunity.schema.js';
 import OrganizationSchema from '../organization/organization.schema.js';
+import ScrapeJobSchema from '../scrape-job/scrape-job.schema.js';
+import ScrapeUrlSchema from '../scrape-url/scrape-url.schema.js';
 import SiteSchema from '../site/site.schema.js';
 import SiteCandidateSchema from '../site-candidate/site-candidate.schema.js';
 import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
 import SuggestionSchema from '../suggestion/suggestion.schema.js';
+import PageIntentSchema from '../page-intent/page-intent.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -140,9 +146,12 @@ EntityRegistry.registerEntity(KeyEventSchema, KeyEventCollection);
 EntityRegistry.registerEntity(LatestAuditSchema, LatestAuditCollection);
 EntityRegistry.registerEntity(OpportunitySchema, OpportunityCollection);
 EntityRegistry.registerEntity(OrganizationSchema, OrganizationCollection);
+EntityRegistry.registerEntity(ScrapeJobSchema, ScrapeJobCollection);
+EntityRegistry.registerEntity(ScrapeUrlSchema, ScrapeUrlCollection);
 EntityRegistry.registerEntity(SiteSchema, SiteCollection);
 EntityRegistry.registerEntity(SiteCandidateSchema, SiteCandidateCollection);
 EntityRegistry.registerEntity(SiteTopPageSchema, SiteTopPageCollection);
 EntityRegistry.registerEntity(SuggestionSchema, SuggestionCollection);
+EntityRegistry.registerEntity(PageIntentSchema, PageIntentCollection);
 
 export default EntityRegistry;

@@ -16,3 +16,11 @@ import { context as h2, h1 } from '@adobe/fetch';
 export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
   ? h1()
   : h2();
+
+export function sanitizeHeaders(headers) {
+  return {
+    ...headers,
+    ...(headers.Authorization && { Authorization: '***' }),
+    ...(headers['x-api-key'] && { 'x-api-key': '****' }),
+  };
+}

@@ -14,7 +14,7 @@ import { createUrl } from '@adobe/fetch';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 
-import { fetch as httpFetch } from '../utils.js';
+import { fetch as httpFetch, sanitizeHeaders } from '../utils.js';
 
 const USER_ROLE_IMAGE_URL_TYPE = 'image_url';
 const USER_ROLE_TEXT_TYPE = 'text';
@@ -125,7 +125,7 @@ export default class FirefallClient {
       'x-gw-ims-org-id': this.config.imsOrg,
     };
 
-    this.log.info(`URL: ${url}, Headers: ${JSON.stringify(headers)}`);
+    this.log.info(`[Firefall API Call]]: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
     const response = await httpFetch(url, {
       method: 'POST',
@@ -158,7 +158,7 @@ export default class FirefallClient {
         'x-gw-ims-org-id': this.config.imsOrg,
       };
 
-      this.log.info(`URL: ${url}, Headers: ${JSON.stringify(headers)}`);
+      this.log.info(`URL: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
       const response = await httpFetch(
         createUrl(url),
@@ -314,7 +314,6 @@ export default class FirefallClient {
       const result = output.capability_response.generations[0][0];
 
       this.log.info(`Generation Info: ${JSON.stringify(result.generation_info)}`);
-      this.log.info(`LLM Info: ${JSON.stringify(output.capability_response.llm_output)}`);
 
       return result.text;
     } catch (error) {

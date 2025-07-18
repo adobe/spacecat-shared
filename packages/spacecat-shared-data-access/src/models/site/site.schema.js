@@ -22,7 +22,7 @@ import {
 import { Config, DEFAULT_CONFIG, validateConfiguration } from './config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 
-import Site from './site.model.js';
+import Site, { computeExternalIds } from './site.model.js';
 import SiteCollection from './site.collection.js';
 
 /*
@@ -43,6 +43,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addReference('has_many', 'Opportunities')
   .addReference('has_many', 'SiteCandidates')
   .addReference('has_many', 'SiteTopPages')
+  .addReference('has_many', 'PageIntents')
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
@@ -62,6 +63,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     type: Object.values(Site.DELIVERY_TYPES),
     default: Site.DEFAULT_DELIVERY_TYPE,
     required: true,
+  })
+  .addAttribute('authoringType', {
+    type: Object.values(Site.AUTHORING_TYPES),
+    required: false,
   })
   .addAttribute('gitHubURL', {
     type: 'string',
@@ -83,6 +88,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     default: {},
     validate: (value) => isObject(value),
   })
+  .addAttribute('isSandbox', {
+    type: 'boolean',
+    default: false,
+  })
   .addAttribute('isLive', {
     type: 'boolean',
     required: true,
@@ -94,10 +103,28 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     set: () => new Date().toISOString(),
     validate: (value) => !value || isIsoDate(value),
   })
+  .addAttribute('externalOwnerId', {
+    type: 'string',
+    hidden: true,
+    readOnly: true,
+    watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalOwnerId,
+  })
+  .addAttribute('externalSiteId', {
+    type: 'string',
+    hidden: true,
+    readOnly: true,
+    watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalSiteId,
+  })
   .addAllIndex(['baseURL'])
   .addIndex(
     { composite: ['deliveryType'] },
     { composite: ['updatedAt'] },
+  )
+  .addIndex(
+    { composite: ['externalOwnerId'] },
+    { composite: ['externalSiteId'] },
   );
 
 export default schema.build();

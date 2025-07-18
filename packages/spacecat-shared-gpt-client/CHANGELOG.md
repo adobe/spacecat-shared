@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-gpt-client-v1.5.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.15...@adobe/spacecat-shared-gpt-client-v1.5.16) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#845](https://github.com/adobe/spacecat-shared/issues/845)) ([23bd3a2](https://github.com/adobe/spacecat-shared/commit/23bd3a2235686480cb89d6379276d9ed000baea3))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.14...@adobe/spacecat-shared-gpt-client-v1.5.15) (2025-06-19)
+
+
+### Bug Fixes
+
+* sanitize headers before logging ([#810](https://github.com/adobe/spacecat-shared/issues/810)) ([775168f](https://github.com/adobe/spacecat-shared/commit/775168fa013c615c53ae936805e81c42a6c349c2))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.14](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.13...@adobe/spacecat-shared-gpt-client-v1.5.14) (2025-05-31)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#779](https://github.com/adobe/spacecat-shared/issues/779)) ([07f8cce](https://github.com/adobe/spacecat-shared/commit/07f8cce73e33bfb9c61fe14f2ef28012b872437d))
+
 # [@adobe/spacecat-shared-gpt-client-v1.5.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.12...@adobe/spacecat-shared-gpt-client-v1.5.13) (2025-05-26)
 
 

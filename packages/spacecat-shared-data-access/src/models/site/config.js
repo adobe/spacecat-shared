@@ -11,15 +11,20 @@
  */
 
 import Joi from 'joi';
+import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
+  ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',
+  ORGANIC_KEYWORDS_FEATURE_SNIPPETS: 'organic-keywords-feature-snippets',
+  ORGANIC_KEYWORDS_QUESTIONS: 'organic-keywords-questions',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
   ALL_TRAFFIC: 'all-traffic',
   CWV_DAILY: 'cwv-daily',
   CWV_WEEKLY: 'cwv-weekly',
+  TRAFFIC_ANALYSIS: 'traffic-analysis',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -57,6 +62,27 @@ export const IMPORT_TYPE_SCHEMAS = {
       .optional(),
     pageUrl: Joi.string().uri().optional(),
   }),
+  [IMPORT_TYPES.ORGANIC_KEYWORDS_AI_OVERVIEW]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS_AI_OVERVIEW).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+  }),
+  [IMPORT_TYPES.ORGANIC_KEYWORDS_FEATURE_SNIPPETS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS_FEATURE_SNIPPETS).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+  }),
+  [IMPORT_TYPES.ORGANIC_KEYWORDS_QUESTIONS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS_QUESTIONS).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+  }),
   [IMPORT_TYPES.ORGANIC_TRAFFIC]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_TRAFFIC).required(),
     ...IMPORT_BASE_KEYS,
@@ -80,6 +106,12 @@ export const IMPORT_TYPE_SCHEMAS = {
     type: Joi.string().valid(IMPORT_TYPES.CWV_WEEKLY).required(),
     ...IMPORT_BASE_KEYS,
   }),
+  [IMPORT_TYPES.TRAFFIC_ANALYSIS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.TRAFFIC_ANALYSIS).required(),
+    year: Joi.number().integer().optional(),
+    week: Joi.number().integer().optional(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
@@ -91,6 +123,24 @@ export const DEFAULT_IMPORT_CONFIGS = {
   },
   'organic-keywords-nonbranded': {
     type: 'organic-keywords-nonbranded',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
+  'organic-keywords-ai-overview': {
+    type: 'organic-keywords-ai-overview',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
+  'organic-keywords-feature-snippets': {
+    type: 'organic-keywords-feature-snippets',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
+  'organic-keywords-questions': {
+    type: 'organic-keywords-questions',
     destinations: ['default'],
     sources: ['ahrefs'],
     enabled: true,
@@ -126,6 +176,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['rum'],
     enabled: true,
   },
+  'traffic-analysis': {
+    type: 'traffic-analysis',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
 };
 
 export const configSchema = Joi.object({
@@ -139,10 +195,22 @@ export const configSchema = Joi.object({
   ),
   brandConfig: Joi.object({
     brandId: Joi.string().required(),
+    userId: Joi.string().required(),
   }).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
+  }).optional(),
+  cdnLogsConfig: Joi.object({
+    bucketName: Joi.string().required(),
+    filters: Joi.array().items(
+      Joi.object({
+        key: Joi.string().required(),
+        value: Joi.array().items(Joi.string()).required(),
+        type: Joi.string().valid('include', 'exclude').optional(),
+      }),
+    ).optional(),
+    outputLocation: Joi.string().required(),
   }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -190,7 +258,20 @@ export function validateConfiguration(config) {
 }
 
 export const Config = (data = {}) => {
-  const validConfig = validateConfiguration(data);
+  let validConfig;
+
+  try {
+    validConfig = validateConfiguration(data);
+  } catch (error) {
+    const logger = getLogger();
+    if (logger && logger !== console) {
+      logger.error('Site configuration validation failed, using default config', {
+        error: error.message,
+        invalidConfig: data,
+      });
+    }
+    validConfig = { ...DEFAULT_CONFIG };
+  }
 
   const state = { ...validConfig };
   const self = { state };
@@ -209,6 +290,7 @@ export const Config = (data = {}) => {
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
+  self.getCdnLogsConfig = () => state?.cdnLogsConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -310,6 +392,10 @@ export const Config = (data = {}) => {
     return config?.enabled ?? false;
   };
 
+  self.updateCdnLogsConfig = (cdnLogsConfig) => {
+    state.cdnLogsConfig = cdnLogsConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -322,4 +408,5 @@ Config.toDynamoItem = (config) => ({
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
+  cdnLogsConfig: config.getCdnLogsConfig(),
 });

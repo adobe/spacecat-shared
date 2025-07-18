@@ -10,16 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyArray } from '@adobe/spacecat-shared-utils';
 import {
   createLocalJWKSet,
   createRemoteJWKSet,
   decodeJwt,
   jwtVerify,
 } from 'jose';
-
 import { getBearerToken } from './utils/bearer.js';
-
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
 
@@ -37,6 +35,16 @@ const IGNORED_PROFILE_PROPS = [
   'aa_id',
 ];
 
+const ADMIN_GROUP_IDENT = {
+  '8C6043F15F43B6390A49401A': [ // IMS admin group for stag
+    635541219,
+  ],
+  '908936ED5D35CC220A495CD4': [
+    879529884, // IMS admin group for prod
+    901092291, // IMS admin group for on call engineers
+  ],
+};
+const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {
     const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
@@ -57,6 +65,31 @@ const transformProfile = (payload) => {
   return profile;
 };
 
+function getTenants(organizations) {
+  if (!isNonEmptyArray(organizations)) {
+    return [];
+  }
+
+  return organizations.map((org) => ({
+    id: org.orgRef.ident,
+    name: org.orgName,
+    subServices: [`${SERVICE_CODE}_auto_suggest`, `${SERVICE_CODE}_auto_fix`],
+  }));
+}
+
+function isUserASOAdmin(organizations) {
+  if (!organizations) {
+    throw new Error('organizations param is required.');
+  }
+
+  return organizations.some((org) => {
+    const adminGroupsForOrg = ADMIN_GROUP_IDENT[org.orgRef.ident];
+    if (!adminGroupsForOrg) {
+      return false;
+    }
+    return org.groups.some((group) => adminGroupsForOrg.includes(group.ident));
+  });
+}
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
  */
@@ -115,16 +148,33 @@ export default class AdobeImsHandler extends AbstractHandler {
       return null;
     }
 
+    if (!context.imsClient) {
+      this.log('No IMS client available in context', 'error');
+      return null;
+    }
+
     try {
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);
+      const imsProfile = await context.imsClient.getImsUserProfile(token);
+      const organizations = await context.imsClient.getImsUserOrganizations(token);
+      const isAdmin = isUserASOAdmin(organizations);
+      const scopes = [];
+      if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {
+        scopes.push({ name: 'admin' });
+      } else {
+        payload.tenants = getTenants(organizations) || [];
+        scopes.push(...payload.tenants.map(
+          (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
+        ));
+      }
       const profile = transformProfile(payload);
 
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)
         .withProfile(profile)
-        .withScopes([{ name: 'admin' }]);
+        .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'error');
     }

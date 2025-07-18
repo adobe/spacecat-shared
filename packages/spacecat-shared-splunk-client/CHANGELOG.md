@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-splunk-client-v1.0.15](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.14...@adobe/spacecat-shared-splunk-client-v1.0.15) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#845](https://github.com/adobe/spacecat-shared/issues/845)) ([23bd3a2](https://github.com/adobe/spacecat-shared/commit/23bd3a2235686480cb89d6379276d9ed000baea3))
+
+# [@adobe/spacecat-shared-splunk-client-v1.0.14](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.13...@adobe/spacecat-shared-splunk-client-v1.0.14) (2025-05-31)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#779](https://github.com/adobe/spacecat-shared/issues/779)) ([07f8cce](https://github.com/adobe/spacecat-shared/commit/07f8cce73e33bfb9c61fe14f2ef28012b872437d))
+
 # [@adobe/spacecat-shared-splunk-client-v1.0.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.12...@adobe/spacecat-shared-splunk-client-v1.0.13) (2025-05-26)
 
 

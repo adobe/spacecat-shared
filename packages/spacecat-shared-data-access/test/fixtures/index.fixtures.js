@@ -17,6 +17,8 @@ import configurations from './configurations.fixture.js';
 import experiments from './experiments.fixture.js';
 import importJobs from './import-jobs.fixture.js';
 import importUrls from './import-urls.fixture.js';
+import scrapeJobs from './scrape-jobs.fixture.js';
+import scrapeUrls from './scrape-urls.fixture.js';
 import keyEvents from './key-events.fixture.js';
 import opportunities from './opportunities.fixture.js';
 import organizations from './organizations.fixture.js';
@@ -25,6 +27,7 @@ import siteTopPages from './site-top-pages.fixture.js';
 import sites from './sites.fixture.js';
 import suggestions from './suggestions.fixture.js';
 import fixEntities from './fix-entity.fixture.js';
+import pageIntents from './page-intents.fixture.js';
 
 export default {
   apiKeys,
@@ -42,4 +45,7 @@ export default {
   siteTopPages,
   sites,
   suggestions,
+  scrapeJobs,
+  scrapeUrls,
+  pageIntents,
 };

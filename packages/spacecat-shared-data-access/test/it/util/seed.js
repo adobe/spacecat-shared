@@ -26,12 +26,15 @@ const resetDatabase = async () => {
     TEST_DA_CONFIG.tableNameExperiments,
     TEST_DA_CONFIG.tableNameImportJobs,
     TEST_DA_CONFIG.tableNameImportUrls,
+    TEST_DA_CONFIG.tableNameScrapeJobs,
+    TEST_DA_CONFIG.tableNameScrapeUrls,
     TEST_DA_CONFIG.tableNameKeyEvents,
     TEST_DA_CONFIG.tableNameLatestAudits,
     TEST_DA_CONFIG.tableNameOrganizations,
     TEST_DA_CONFIG.tableNameSiteCandidates,
     TEST_DA_CONFIG.tableNameSiteTopPages,
     TEST_DA_CONFIG.tableNameSites,
+    TEST_DA_CONFIG.tableNamePageIntents,
   ]);
   await createTablesFromSchema(dbClient);
 };

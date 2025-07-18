@@ -175,11 +175,13 @@ describe('AuditModel', () => {
       SITE_DETECTION: 'site-detection',
       ALT_TEXT: 'alt-text',
       ACCESSIBILITY: 'accessibility',
+      SECURITY_CSP: 'security-csp',
+      PAID: 'paid',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(24);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(26);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {
@@ -234,7 +236,11 @@ describe('AuditModel', () => {
     });
 
     it('formats import worker payload correctly', () => {
-      const stepResult = { type: 'someType', siteId: 'someSiteId' };
+      const stepResult = {
+        type: 'someType',
+        siteId: 'someSiteId',
+        urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
+      };
       const auditContext = { some: 'context' };
       const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.IMPORT_WORKER]
         .formatPayload(stepResult, auditContext);
@@ -242,6 +248,8 @@ describe('AuditModel', () => {
       expect(formattedPayload).to.deep.equal({
         type: 'someType',
         siteId: 'someSiteId',
+        pageUrl: undefined,
+        urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
         allowCache: true,
         auditContext: { some: 'context' },
       });

@@ -15,6 +15,8 @@ import { expect } from 'chai';
 import trafficMetrics from '../src/functions/traffic-metrics.js';
 import bundlesWithTraffic from './fixtures/bundles.json' with { type: 'json' };
 import expectedTraficMetricResults from './fixtures/exptected-traffic-metrics-result.json' with { type: 'json' };
+import bundlesWithTrafficSource from './fixtures/bundles-with-traffic-source.json' with { type: 'json' };
+import { classifyTraffic } from '../src/common/traffic.js';
 
 const pageTypesString = {
   'home | landing': '^/$',
@@ -68,7 +70,7 @@ const expectedGroupings = [
 const expectedMetrics = [
   'ctr',
   'clickedSessions',
-  'totalSessions',
+  'pageViews',
   'sessionsWithEnter',
   'clicksOverViews',
   'bounceRate',
@@ -76,7 +78,7 @@ const expectedMetrics = [
   'avgClicksPerSession',
 ];
 
-describe('Traffic-categories metrics', () => {
+describe('Traffic metrics', () => {
   it('Provies traffic-categorization metrics', async () => {
     const traficMetricResults = trafficMetrics.handler(bundlesWithTraffic.rumBundles, options);
     expect(traficMetricResults).to.deep.equal(expectedTraficMetricResults);
@@ -127,5 +129,80 @@ describe('Traffic-categories metrics', () => {
     const pageType = result.find((metric) => metric.key === 'pageType');
     expect(pageType.value).lengthOf(1);
     expect(pageType.value[0].type).to.eql('uncategorized');
+  });
+
+  it('Only returns metrics for paid traffic', async () => {
+    const result = trafficMetrics.handler(bundlesWithTrafficSource.rumBundles, { ...options, trafficType: 'paid' });
+    const getSourceType = (bundle) => classifyTraffic(bundle).type;
+
+    // 1. Group all bundles by (url, type)
+    const allTuples = new Set(
+      bundlesWithTrafficSource.rumBundles.map((b) => `${b.url}|${getSourceType(b)}`),
+    );
+    const paidTuples = new Set(
+      Array.from(allTuples).filter((tuple) => tuple.endsWith('|paid')),
+    );
+    const nonPaidTuples = new Set(
+      Array.from(allTuples).filter((tuple) => !tuple.endsWith('|paid')),
+    );
+
+    // 2. Collect all (url, source) tuples returned in the result
+    const resultTuples = new Set();
+    result.forEach((group) => {
+      group.value.forEach((segment) => {
+        if ('url' in segment && 'source' in segment) {
+          const type = segment.source.split(':')[0];
+          resultTuples.add(`${segment.url}|${type}`);
+        }
+        if (Array.isArray(segment.urls) && segment.source) {
+          const type = segment.source.split(':')[0];
+          segment.urls.forEach((url) => {
+            resultTuples.add(`${url}|${type}`);
+          });
+        }
+      });
+    });
+
+    // 3. Check that every paid (url, type) tuple is present in the result
+    paidTuples.forEach((tuple) => {
+      expect(resultTuples.has(tuple), `Paid url/type tuple missing from result: ${tuple}`).to.be.true;
+    });
+
+    // 4. Check that no non-paid (url, type) tuple is present in the result
+    nonPaidTuples.forEach((tuple) => {
+      expect(resultTuples.has(tuple), `Non-paid url/type tuple found in result: ${tuple}`).to.be.false;
+    });
+  });
+
+  it('Returns empty metrics if trafficType does not match any bundle', async () => {
+    const result = trafficMetrics.handler(bundlesWithTrafficSource.rumBundles, { ...options, trafficType: 'nonexistent' });
+    result.forEach((group) => {
+      expect(group.value, `Group ${group.key} should be empty`).to.be.an('array').that.is.empty;
+    });
+  });
+
+  it('Handles case where ctr.weight is zero', async () => {
+    // Bundle with no click events, so ctr.weight will be zero
+    const noClickBundle = [{
+      id: 'test1',
+      url: '/no-click',
+      userAgent: 'desktop:mac',
+      weight: 0,
+      events: [
+        { checkpoint: 'enter', target: 'visible', source: 'https://www.example.com/' },
+      ],
+    }];
+    const result = trafficMetrics.handler(noClickBundle, options);
+    // Find the url grouping for our test bundle
+    const urlGroup = result.find((g) => g.key === 'url');
+    expect(urlGroup.value).to.have.lengthOf(1);
+    const metrics = urlGroup.value[0];
+    expect(metrics.ctr).to.equal(0);
+    expect(metrics.clickedSessions).to.equal(0);
+    expect(metrics.pageViews).to.equal(0);
+    expect(metrics.clicksOverViews).to.equal(0);
+    expect(metrics.bounceRate).to.equal(1);
+    expect(metrics.totalNumClicks).to.equal(0);
+    expect(metrics.avgClicksPerSession).to.equal(0);
   });
 });

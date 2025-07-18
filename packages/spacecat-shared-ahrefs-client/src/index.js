@@ -20,6 +20,24 @@ export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
 
 const getLimit = (limit, upperLimit) => Math.min(limit, upperLimit);
 
+export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([
+  'keyword',
+  'keyword_country',
+  'language',
+  'sum_traffic',
+  'volume',
+  'best_position',
+  'best_position_url',
+  'cpc',
+  'last_update',
+  'is_branded',
+  'is_navigational',
+  'is_informational',
+  'is_commercial',
+  'is_transactional',
+  'serp_features',
+]);
+
 export default class AhrefsAPIClient {
   static createFrom(context) {
     const { AHREFS_API_BASE_URL: apiBaseUrl, AHREFS_API_KEY: apiKey } = context.env;
@@ -84,7 +102,7 @@ export default class AhrefsAPIClient {
         fullAuditRef,
       };
     } catch (e) {
-      this.log.error(`Error parsing Ahrefs API response: ${e.message}`);
+      this.log.error(`Error parsing Ahrefs API response: ${e.message}`, e);
       throw new Error(`Error parsing Ahrefs API response: ${e.message}`);
     }
   }
@@ -203,18 +221,12 @@ export default class AhrefsAPIClient {
     if (!['prefix', 'exact'].includes(mode)) {
       throw new Error(`Invalid mode: ${mode}`);
     }
+    this.log.info(`Getting organic keywords for ${url} with country ${country}, mode ${mode}, limit ${limit}, excludeBranded ${excludeBranded} and select:${ORGANIC_KEYWORDS_FIELDS.join(',')}`);
 
     const queryParams = {
       country,
       date: new Date().toISOString().split('T')[0],
-      select: [
-        'keyword',
-        'sum_traffic',
-        'volume',
-        'best_position',
-        'cpc',
-        'is_branded',
-      ].join(','),
+      select: ORGANIC_KEYWORDS_FIELDS.join(','),
       order_by: 'sum_traffic:desc',
       target: url,
       limit: getLimit(limit, 100),

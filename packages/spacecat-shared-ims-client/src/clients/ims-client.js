@@ -264,7 +264,7 @@ export default class ImsClient extends ImsBaseClient {
     }
 
     // Helper to pull the unique organization ID values from an array of role entries
-    function getOrganizationList(roles) {
+    function getOrganizationList(roles = []) {
       return [...new Set(roles.map((roleEntry) => roleEntry.organization))];
     }
 

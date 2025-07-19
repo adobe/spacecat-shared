@@ -183,6 +183,7 @@ describe('ScrapeJobController tests', () => {
         hideConsentBanners: false,
       },
       maxUrlsPerJob: 3,
+      maxUrlsPerMessage: 2,
     };
 
     const { info, debug, error } = console;
@@ -352,8 +353,8 @@ describe('ScrapeJobController tests', () => {
         expect(job).to.be.an.instanceOf(Object);
 
         // Verify how many messages were sent to SQS
-        // (we only send a single message now, instead of 1 per URL)
-        expect(mockSqsClient.sendMessage).to.have.been.calledOnce;
+        // we send 2 messages because we have 3 URLs and the maxUrlsPerMessage is set to 2
+        expect(mockSqsClient.sendMessage).to.have.been.calledTwice;
         const firstCall = mockSqsClient.sendMessage.getCall(0);
         expect(firstCall.args[1].customHeaders).to.deep.equal({ Authorization: 'Bearer aXsPb3183G' });
       } catch (err) {
@@ -371,12 +372,28 @@ describe('ScrapeJobController tests', () => {
       expect(job).to.be.an.instanceOf(Object);
 
       // Verify how many messages were sent to SQS
-      // (we only send a single message now, instead of 1 per URL)
+      // we send 2 messages because we have 3 URLs and the maxUrlsPerMessage is set to 2
+      expect(mockSqsClient.sendMessage).to.have.been.calledTwice;
+
+      // Check the resulting message to the scrape-worker-queue
+      const firstCall = mockSqsClient.sendMessage.getCall(0);
+      const secondCall = mockSqsClient.sendMessage.getCall(1);
+      expect(firstCall.args[1].batch.length).to.equal(2);
+      expect(firstCall.args[0]).to.equal('https://sqs.us-east-1.amazonaws.com/1234567890/scrape-worker-queue');
+      expect(secondCall.args[1].batch.length).to.equal(1);
+    });
+
+    it('should send only one message when URLs are less than maxUrlsPerMessage', async () => {
+      baseContext.data.urls = ['https://example.com/page1'];
+      baseContext.data.customHeaders = exampleCustomHeaders;
+      const job = await scrapeJobController.createScrapeJob(baseContext.data);
+
+      expect(job).to.be.an.instanceOf(Object);
       expect(mockSqsClient.sendMessage).to.have.been.calledOnce;
 
       // Check the resulting message to the scrape-worker-queue
       const firstCall = mockSqsClient.sendMessage.getCall(0);
-      expect(firstCall.args[1].urls.length).to.equal(3);
+      expect(firstCall.args[1].batch.length).to.equal(1);
       expect(firstCall.args[0]).to.equal('https://sqs.us-east-1.amazonaws.com/1234567890/scrape-worker-queue');
     });
 

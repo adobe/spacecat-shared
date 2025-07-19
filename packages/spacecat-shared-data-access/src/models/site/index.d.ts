@@ -71,6 +71,7 @@ export interface LlmoQuestion {
   importTime?: string;
   keyword?: string;
   url?: string;
+  tags?: string[];
 }
 
 export interface SiteConfig {

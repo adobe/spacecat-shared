@@ -158,6 +158,7 @@ describe('Config Tests', () => {
                 country: 'US',
                 product: 'Product A',
                 volume: '100',
+                tags: ['tag1', 'tag2'],
                 importTime: '2021-01-01T00:00:00.000Z',
               },
             ],
@@ -171,6 +172,7 @@ describe('Config Tests', () => {
                 country: 'US',
                 product: 'Product A',
                 volume: '100',
+                tags: ['tag3', 'tag4'],
                 importTime: '2021-01-01T00:00:00.000Z',
               },
             ],
@@ -192,6 +194,7 @@ describe('Config Tests', () => {
             country: 'US',
             product: 'Product A',
             volume: '100',
+            tags: ['tag1', 'tag2'],
             importTime: '2021-01-01T00:00:00.000Z',
           },
         ],
@@ -205,6 +208,7 @@ describe('Config Tests', () => {
             country: 'US',
             product: 'Product A',
             volume: '100',
+            tags: ['tag3', 'tag4'],
             importTime: '2021-01-01T00:00:00.000Z',
           },
         ],
@@ -215,6 +219,8 @@ describe('Config Tests', () => {
       expect(llmoConfig.brand).to.equal('newBrand');
       expect(llmoConfig.questions.Human[0].key).to.equal('foo');
       expect(llmoConfig.questions.AI[0].key).to.equal('bar');
+      expect(llmoConfig.questions.Human[0].tags).to.deep.equal(['tag1', 'tag2']);
+      expect(llmoConfig.questions.AI[0].tags).to.deep.equal(['tag3', 'tag4']);
       expect(llmoConfig.questions).to.deep.equal(questions);
     });
   });

@@ -201,6 +201,40 @@ export const configSchema = Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
   }).optional(),
+  llmo: Joi.object({
+    dataFolder: Joi.string().required(),
+    brand: Joi.string().required(),
+    questions: Joi.object({
+      Human: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          question: Joi.string().required(),
+          source: Joi.string().optional(),
+          country: Joi.string().optional(),
+          product: Joi.string().optional(),
+          volume: Joi.string().optional(),
+          keyword: Joi.string().optional(),
+          url: Joi.string().uri().optional(),
+          tags: Joi.array().items(Joi.string()).optional(),
+          importTime: Joi.string().isoDate().optional(),
+        }),
+      ).optional(),
+      AI: Joi.array().items(
+        Joi.object({
+          key: Joi.string().required(),
+          question: Joi.string().required(),
+          source: Joi.string().optional(),
+          country: Joi.string().optional(),
+          product: Joi.string().optional(),
+          volume: Joi.string().optional(),
+          keyword: Joi.string().optional(),
+          url: Joi.string().uri().optional(),
+          tags: Joi.array().items(Joi.string()).optional(),
+          importTime: Joi.string().isoDate().optional(),
+        }),
+      ).optional(),
+    }).optional(),
+  }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
     filters: Joi.array().items(
@@ -291,12 +325,21 @@ export const Config = (data = {}) => {
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
+  self.getLlmoConfig = () => state?.llmo;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
       channel,
       workspace,
       invitedUserCount,
+    };
+  };
+
+  self.updateLlmoConfig = (dataFolder, brand, questions) => {
+    state.llmo = {
+      dataFolder,
+      brand,
+      ...(questions !== undefined ? { questions } : {}),
     };
   };
 
@@ -409,4 +452,5 @@ Config.toDynamoItem = (config) => ({
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
   cdnLogsConfig: config.getCdnLogsConfig(),
+  llmo: config.getLlmoConfig(),
 });

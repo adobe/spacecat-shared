@@ -28,3 +28,4 @@ export type * from './site';
 export type * from './site-candidate';
 export type * from './site-top-page';
 export type * from './suggestion';
+export type * from './report';

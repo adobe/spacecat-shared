@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-http-utils-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.0...@adobe/spacecat-shared-http-utils-v1.15.1) (2025-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#859](https://github.com/adobe/spacecat-shared/issues/859)) ([7ca9099](https://github.com/adobe/spacecat-shared/commit/7ca90994d61d07f71e580301365447b94ad07a52))
+
+# [@adobe/spacecat-shared-http-utils-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.4...@adobe/spacecat-shared-http-utils-v1.15.0) (2025-07-18)
+
+
+### Features
+
+* gzip support ([#858](https://github.com/adobe/spacecat-shared/issues/858)) ([b2ccb4c](https://github.com/adobe/spacecat-shared/commit/b2ccb4c83b220837b01ba1fe086e0f635a8eb07b))
+
 # [@adobe/spacecat-shared-http-utils-v1.14.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.3...@adobe/spacecat-shared-http-utils-v1.14.4) (2025-07-12)
 
 

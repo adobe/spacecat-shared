@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-data-access-v2.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.37.0...@adobe/spacecat-shared-data-access-v2.38.0) (2025-07-21)
+
+
+### Features
+
+* add pageTypes to store pattern matching for pageTypes ([#857](https://github.com/adobe/spacecat-shared/issues/857)) ([4081e8c](https://github.com/adobe/spacecat-shared/commit/4081e8cfd8571d43b9720c07caeb22ced77281d0))
+
+# [@adobe/spacecat-shared-data-access-v2.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.36.1...@adobe/spacecat-shared-data-access-v2.37.0) (2025-07-21)
+
+
+### Features
+
+* added `Report` model, schema and collection implementation ([#855](https://github.com/adobe/spacecat-shared/issues/855)) ([4100a0e](https://github.com/adobe/spacecat-shared/commit/4100a0e557709d29dd590ff87c987d70b005f734))
+
+# [@adobe/spacecat-shared-data-access-v2.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.36.0...@adobe/spacecat-shared-data-access-v2.36.1) (2025-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#859](https://github.com/adobe/spacecat-shared/issues/859)) ([7ca9099](https://github.com/adobe/spacecat-shared/commit/7ca90994d61d07f71e580301365447b94ad07a52))
+
+# [@adobe/spacecat-shared-data-access-v2.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.35.0...@adobe/spacecat-shared-data-access-v2.36.0) (2025-07-17)
+
+
+### Features
+
+* page intent entity ([#856](https://github.com/adobe/spacecat-shared/issues/856)) ([9e6f709](https://github.com/adobe/spacecat-shared/commit/9e6f70925dc8b9467081e2a1a1b23968a2089638))
+
+# [@adobe/spacecat-shared-data-access-v2.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.34.1...@adobe/spacecat-shared-data-access-v2.35.0) (2025-07-17)
+
+
+### Features
+
+* introduce isSandbox flag for sandbox sites ([#842](https://github.com/adobe/spacecat-shared/issues/842)) ([066adb4](https://github.com/adobe/spacecat-shared/commit/066adb4629901a82b7c5c21297795d82eb771d29))
+
+# [@adobe/spacecat-shared-data-access-v2.34.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.34.0...@adobe/spacecat-shared-data-access-v2.34.1) (2025-07-16)
+
+
+### Bug Fixes
+
+* add try catch for config for sites validation ([#850](https://github.com/adobe/spacecat-shared/issues/850)) ([17c8402](https://github.com/adobe/spacecat-shared/commit/17c84023568de20395ba52a6876683f1354ba6b7))
+
 # [@adobe/spacecat-shared-data-access-v2.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.33.6...@adobe/spacecat-shared-data-access-v2.34.0) (2025-07-14)
 
 

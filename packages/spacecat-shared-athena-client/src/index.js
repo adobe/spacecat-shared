@@ -255,3 +255,5 @@ export class AWSAthenaClient {
     return allResults;
   }
 }
+
+export { getTrafficAnalysisQuery, getTrafficAnalysisQueryPlaceholders } from './queries.js';

@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.33.0...@adobe/spacecat-shared-rum-api-client-v2.33.1) (2025-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#859](https://github.com/adobe/spacecat-shared/issues/859)) ([7ca9099](https://github.com/adobe/spacecat-shared/commit/7ca90994d61d07f71e580301365447b94ad07a52))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.32.2...@adobe/spacecat-shared-rum-api-client-v2.33.0) (2025-07-16)
+
+
+### Features
+
+* **rum-api-client:** add latest_scroll metric to traffic-analysis import output ([#849](https://github.com/adobe/spacecat-shared/issues/849)) ([6c219ee](https://github.com/adobe/spacecat-shared/commit/6c219eecb9bf0966e83b5a212c919a20add87fb4))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.32.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.32.1...@adobe/spacecat-shared-rum-api-client-v2.32.2) (2025-07-12)
 
 

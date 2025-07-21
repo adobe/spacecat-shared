@@ -35,6 +35,7 @@ function ScrapeJobSupervisor(services, config) {
   const {
     queues = [], // Array of scrape queues
     scrapeWorkerQueue, // URL of the scrape worker queue
+    maxUrlsPerMessage,
   } = config;
 
   /**
@@ -129,9 +130,24 @@ function ScrapeJobSupervisor(services, config) {
   }
 
   /**
-   * Queue all URLs as a single message for processing by another function. This will enable
-   * the controller to respond with a new job ID ASAP, while the individual URLs are queued up
-   * asynchronously.
+   * Split an array of URLs into batches of a specified size.
+   * @param urls
+   * @param batchSize
+   * @returns {*[]}
+   */
+  function splitUrlsIntoBatches(urls, batchSize = 1000) {
+    const batches = [];
+    for (let i = 0; i < urls.length; i += batchSize) {
+      batches.push(urls.slice(i, i + batchSize));
+    }
+    log.info(`Split ${urls.length} URLs into ${batches.length} batches of size ${batchSize}.`);
+    return batches;
+  }
+
+  /**
+   * Queue all URLs for processing by another function. Splits URL-Arrays > 1000 into multiple
+   * messages. This will enable the controller to respond with a new job ID ASAP, while the
+   * individual URLs are queued up asynchronously.
    * @param {Array<string>} urls - Array of URL records to queue.
    * @param {object} scrapeJob - The scrape job record.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
@@ -143,17 +159,32 @@ function ScrapeJobSupervisor(services, config) {
 
     const options = scrapeJob.getOptions();
     const processingType = scrapeJob.getProcessingType();
+    const totalUrlCount = urls.length;
+    const baseUrl = scrapeJob.getBaseURL();
+    let urlBatches = [];
 
-    // Send a single message containing all URLs and the new job ID
-    const message = {
-      processingType,
-      jobId: scrapeJob.getId(),
-      urls,
-      customHeaders,
-      options,
-    };
+    // If there are more than 1000 URLs, split them into multiple messages
+    if (totalUrlCount > maxUrlsPerMessage) {
+      urlBatches = splitUrlsIntoBatches(urls, maxUrlsPerMessage);
+      log.info(`Queuing ${totalUrlCount} URLs for scrape in ${urlBatches.length} messages.`);
+    } else {
+      // If there are 1000 or fewer URLs, we can send them all in a single message
+      log.info(`Queuing ${totalUrlCount} URLs for scrape in a single message.`);
+      urlBatches = [urls]; // Wrap in an array to maintain consistent structure
+    }
 
-    await sqs.sendMessage(scrapeWorkerQueue, message);
+    for (const batch of urlBatches) {
+      const message = {
+        processingType,
+        jobId: scrapeJob.getId(),
+        batch,
+        customHeaders,
+        options,
+      };
+
+      // eslint-disable-next-line no-await-in-loop
+      await sqs.sendMessage(scrapeWorkerQueue, message, baseUrl);
+    }
   }
 
   /**

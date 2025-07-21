@@ -505,7 +505,10 @@ class BaseCollection {
     }
 
     try {
-      const updates = items.map((item) => item.record);
+      const updates = items.map((item) => {
+        item.record.updatedAt = new Date().toISOString();
+        return item.record;
+      });
       const response = await this.entity.put(updates).go();
 
       if (isNonEmptyArray(response.unprocessed)) {

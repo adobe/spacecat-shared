@@ -604,6 +604,19 @@ describe('BaseCollection', () => {
       expect(mockLogger.error).not.called;
     });
 
+    it('updates updatedAt field for all entities before saving', async () => {
+      const mockRecords = [mockRecord];
+      const originalUpdatedAt = mockRecord.updatedAt;
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance._saveMany(mockRecords);
+
+      // Verify updatedAt was updated
+      expect(mockRecords[0].record.updatedAt).to.not.equal(originalUpdatedAt);
+      expect(mockRecords[0].record.updatedAt).to.be.a('string');
+      expect(new Date(mockRecords[0].record.updatedAt).getTime()).to.be.closeTo(Date.now(), 1000);
+    });
+
     it('saves multiple entities successfully if `res.unprocessed` is an empty array', async () => {
       const mockRecords = [mockRecord, mockRecord];
       mockElectroService.entities.mockEntityModel.put.returns({

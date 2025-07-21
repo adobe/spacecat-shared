@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.37.0...@adobe/spacecat-shared-data-access-v2.38.0) (2025-07-21)
+
+
+### Features
+
+* add pageTypes to store pattern matching for pageTypes ([#857](https://github.com/adobe/spacecat-shared/issues/857)) ([4081e8c](https://github.com/adobe/spacecat-shared/commit/4081e8cfd8571d43b9720c07caeb22ced77281d0))
+
 # [@adobe/spacecat-shared-data-access-v2.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.36.1...@adobe/spacecat-shared-data-access-v2.37.0) (2025-07-21)
 
 

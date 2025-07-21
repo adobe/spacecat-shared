@@ -110,7 +110,6 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAttribute('externalSiteId', {
     type: 'string',
     hidden: true,
-    readOnly: true,
     set: (_, attrs) => {
       // Compute external site ID during creation
       const { externalSiteId } = computeExternalIds(attrs, Site.AUTHORING_TYPES);

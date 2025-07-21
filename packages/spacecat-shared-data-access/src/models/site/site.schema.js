@@ -22,7 +22,7 @@ import {
 import { Config, DEFAULT_CONFIG, validateConfiguration } from './config.js';
 import SchemaBuilder from '../base/schema.builder.js';
 
-import Site from './site.model.js';
+import Site, { computeExternalIds } from './site.model.js';
 import SiteCollection from './site.collection.js';
 
 /*
@@ -101,11 +101,21 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAttribute('externalOwnerId', {
     type: 'string',
     hidden: true,
+    set: (_, attrs) => {
+      // Compute external owner ID during creation
+      const { externalOwnerId } = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+      return externalOwnerId;
+    },
   })
   .addAttribute('externalSiteId', {
     type: 'string',
     hidden: true,
     readOnly: true,
+    set: (_, attrs) => {
+      // Compute external site ID during creation
+      const { externalSiteId } = computeExternalIds(attrs, Site.AUTHORING_TYPES);
+      return externalSiteId;
+    },
   })
   .addAllIndex(['baseURL'])
   .addIndex(

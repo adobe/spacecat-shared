@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -81,6 +81,43 @@ describe('Report IT', async () => {
       checkReport(report);
       expect(report.getSiteId()).to.equal(testSiteId);
     }
+  });
+
+  it('finds single report by site ID', async () => {
+    const sample = sampleData.reports[0];
+    const testSiteId = sample.getSiteId();
+
+    const report = await Report.findBySiteId(testSiteId);
+
+    expect(report).to.not.be.null;
+    checkReport(report);
+    expect(report.getSiteId()).to.equal(testSiteId);
+  });
+
+  it('finds all reports by report type', async () => {
+    const sample = sampleData.reports[0];
+    const testReportType = sample.getReportType();
+
+    const reports = await Report.allByReportType(testReportType);
+
+    expect(reports).to.be.an('array');
+    expect(reports.length).to.be.greaterThan(0);
+
+    for (const report of reports) {
+      checkReport(report);
+      expect(report.getReportType()).to.equal(testReportType);
+    }
+  });
+
+  it('finds single report by report type', async () => {
+    const sample = sampleData.reports[0];
+    const testReportType = sample.getReportType();
+
+    const report = await Report.findByReportType(testReportType);
+
+    expect(report).to.not.be.null;
+    checkReport(report);
+    expect(report.getReportType()).to.equal(testReportType);
   });
 
   it('adds a new report', async () => {

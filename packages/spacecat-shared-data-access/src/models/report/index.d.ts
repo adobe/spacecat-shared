@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -13,13 +13,10 @@
 import type { BaseModel, BaseCollection, Site } from '../index';
 
 export interface Report extends BaseModel {
-  getId(): string;
   getReportType(): string;
   getReportPeriod(): { startDate: string; endDate: string };
   getComparisonPeriod(): { startDate: string; endDate: string };
   getStoragePath(): string;
-  getCreatedAt(): string;
-  getUpdatedAt(): string;
   getSite(): Promise<Site>;
   setReportType(reportType: string): Report;
   setReportPeriod(period: { startDate: string; endDate: string }): Report;
@@ -30,6 +27,7 @@ export interface Report extends BaseModel {
 export interface ReportCollection extends BaseCollection<Report> {
   // Add collection-specific methods here if needed
   allBySiteId(siteId: string): Promise<Report[]>;
+  findBySiteId(siteId: string): Promise<Report | null>;
   allByReportType(reportType: string): Promise<Report[]>;
-  findByReportId(reportId: string): Promise<Report | null>;
+  findByReportType(reportType: string): Promise<Report | null>;
 }

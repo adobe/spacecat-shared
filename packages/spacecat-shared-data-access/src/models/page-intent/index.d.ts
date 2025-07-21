@@ -28,7 +28,6 @@ export interface PageIntent extends BaseModel {
 export interface PageIntentCollection extends BaseCollection<PageIntent> {
     allBySiteId(siteId: string): Promise<PageIntent[]>;
     findBySiteId(siteId: string): Promise<PageIntent | null>;
-
     allByUrl(url: string): Promise<PageIntent[]>;
     findByUrl(url: string): Promise<PageIntent | null>;
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-scrape-client-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.2...@adobe/spacecat-shared-scrape-client-v1.0.3) (2025-07-21)
+
+
+### Bug Fixes
+
+* ScrapeClient handle large url lists ([#854](https://github.com/adobe/spacecat-shared/issues/854)) ([d0768db](https://github.com/adobe/spacecat-shared/commit/d0768db101d65bc604c64473648cba0344612025))
+
 # [@adobe/spacecat-shared-scrape-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.1...@adobe/spacecat-shared-scrape-client-v1.0.2) (2025-07-19)
 
 

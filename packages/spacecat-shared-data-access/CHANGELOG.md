@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.36.1...@adobe/spacecat-shared-data-access-v2.37.0) (2025-07-21)
+
+
+### Features
+
+* added `Report` model, schema and collection implementation ([#855](https://github.com/adobe/spacecat-shared/issues/855)) ([4100a0e](https://github.com/adobe/spacecat-shared/commit/4100a0e557709d29dd590ff87c987d70b005f734))
+
 # [@adobe/spacecat-shared-data-access-v2.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.36.0...@adobe/spacecat-shared-data-access-v2.36.1) (2025-07-19)
 
 

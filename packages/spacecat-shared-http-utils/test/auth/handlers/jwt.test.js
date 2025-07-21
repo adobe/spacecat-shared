@@ -133,7 +133,7 @@ describe('SpacecatJWTHandler', () => {
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.null;
-      expect(logStub.error.calledWith('[jwt] Failed to validate token: No public key provided')).to.be.true;
+      expect(logStub.debug.calledWith('[jwt] Failed to validate token: No public key provided')).to.be.true;
     });
 
     it('returns null when the token was created by an unexpected issuer', async () => {
@@ -143,7 +143,7 @@ describe('SpacecatJWTHandler', () => {
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.null;
-      expect(logStub.error.calledWith('[jwt] Failed to validate token: unexpected "iss" claim value')).to.be.true;
+      expect(logStub.debug.calledWith('[jwt] Failed to validate token: unexpected "iss" claim value')).to.be.true;
     });
 
     it('returns null when the token is expired', async () => {
@@ -163,7 +163,7 @@ describe('SpacecatJWTHandler', () => {
       clock.restore();
 
       expect(result).to.be.null;
-      expect(logStub.error.calledWith('[jwt] Failed to validate token: "exp" claim timestamp check failed')).to.be.true;
+      expect(logStub.debug.calledWith('[jwt] Failed to validate token: "exp" claim timestamp check failed')).to.be.true;
     });
 
     it('successfully validates a token and returns the profile', async () => {

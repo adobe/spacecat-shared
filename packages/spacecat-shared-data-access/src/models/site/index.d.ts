@@ -146,6 +146,16 @@ export interface SiteConfig {
     Human?: Array<LlmoQuestion>;
     AI?: Array<LlmoQuestion>;
   }): void;
+  updateLlmoDataFolder(dataFolder: string): void;
+  updateLlmoBrand(brand: string): void;
+  getLlmoDataFolder(): string | undefined;
+  getLlmoBrand(): string | undefined;
+  getLlmoHumanQuestions(): LlmoQuestion[] | undefined;
+  getLlmoAIQuestions(): LlmoQuestion[] | undefined;
+  addLlmoHumanQuestions(questions: LlmoQuestion[]): void;
+  addLlmoAIQuestions(questions: LlmoQuestion[]): void;
+  removeLlmoQuestion(key: string): void;
+  updateLlmoQuestion(key: string, questionUpdate: Partial<LlmoQuestion>): void;
 }
 
 export interface Site extends BaseModel {

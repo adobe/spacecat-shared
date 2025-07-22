@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.1...@adobe/spacecat-shared-http-utils-v1.15.2) (2025-07-21)
+
+
+### Bug Fixes
+
+* auth handlers log level adjustments ([#861](https://github.com/adobe/spacecat-shared/issues/861)) ([f2511b3](https://github.com/adobe/spacecat-shared/commit/f2511b32e817a9a899cb87bcf89ef35ca69a27ca))
+
 # [@adobe/spacecat-shared-http-utils-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.0...@adobe/spacecat-shared-http-utils-v1.15.1) (2025-07-19)
 
 

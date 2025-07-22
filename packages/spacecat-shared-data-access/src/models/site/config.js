@@ -37,6 +37,20 @@ export const IMPORT_SOURCES = {
   RUM: 'rum',
 };
 
+// LLMO question schema for both Human and AI questions
+const QUESTION_SCHEMA = Joi.object({
+  key: Joi.string().required(),
+  question: Joi.string().required(),
+  source: Joi.string().optional(),
+  country: Joi.string().optional(),
+  product: Joi.string().optional(),
+  volume: Joi.string().optional(),
+  keyword: Joi.string().optional(),
+  url: Joi.string().uri().optional(),
+  tags: Joi.array().items(Joi.string()).optional(),
+  importTime: Joi.string().isoDate().optional(),
+});
+
 const IMPORT_BASE_KEYS = {
   destinations: Joi.array().items(Joi.string().valid(IMPORT_DESTINATIONS.DEFAULT)).required(),
   sources: Joi.array().items(Joi.string().valid(...Object.values(IMPORT_SOURCES))).required(),
@@ -201,6 +215,14 @@ export const configSchema = Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
   }).optional(),
+  llmo: Joi.object({
+    dataFolder: Joi.string().required(),
+    brand: Joi.string().required(),
+    questions: Joi.object({
+      Human: Joi.array().items(QUESTION_SCHEMA).optional(),
+      AI: Joi.array().items(QUESTION_SCHEMA).optional(),
+    }).optional(),
+  }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
     filters: Joi.array().items(
@@ -291,6 +313,11 @@ export const Config = (data = {}) => {
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
+  self.getLlmoConfig = () => state?.llmo;
+  self.getLlmoDataFolder = () => state?.llmo?.dataFolder;
+  self.getLlmoBrand = () => state?.llmo?.brand;
+  self.getLlmoHumanQuestions = () => state?.llmo?.questions?.Human;
+  self.getLlmoAIQuestions = () => state?.llmo?.questions?.AI;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -298,6 +325,64 @@ export const Config = (data = {}) => {
       workspace,
       invitedUserCount,
     };
+  };
+
+  self.updateLlmoConfig = (dataFolder, brand, questions) => {
+    state.llmo = {
+      dataFolder,
+      brand,
+      ...(questions !== undefined ? { questions } : {}),
+    };
+  };
+
+  self.updateLlmoDataFolder = (dataFolder) => {
+    state.llmo = state.llmo || {};
+    state.llmo.dataFolder = dataFolder;
+  };
+
+  self.updateLlmoBrand = (brand) => {
+    state.llmo = state.llmo || {};
+    state.llmo.brand = brand;
+  };
+
+  self.addLlmoHumanQuestions = (questions) => {
+    state.llmo = state.llmo || {};
+    state.llmo.questions = state.llmo.questions || {};
+    state.llmo.questions.Human = state.llmo.questions.Human || [];
+    state.llmo.questions.Human.push(...questions);
+  };
+
+  self.addLlmoAIQuestions = (questions) => {
+    state.llmo = state.llmo || {};
+    state.llmo.questions = state.llmo.questions || {};
+    state.llmo.questions.AI = state.llmo.questions.AI || [];
+    state.llmo.questions.AI.push(...questions);
+  };
+
+  self.removeLlmoQuestion = (key) => {
+    state.llmo = state.llmo || {};
+    state.llmo.questions = state.llmo.questions || {};
+    state.llmo.questions.Human = state.llmo.questions.Human || [];
+    state.llmo.questions.Human = state.llmo.questions.Human.filter(
+      (question) => question.key !== key,
+    );
+    state.llmo.questions.AI = state.llmo.questions.AI || [];
+    state.llmo.questions.AI = state.llmo.questions.AI.filter(
+      (question) => question.key !== key,
+    );
+  };
+
+  self.updateLlmoQuestion = (key, questionUpdate) => {
+    state.llmo = state.llmo || {};
+    state.llmo.questions = state.llmo.questions || {};
+    state.llmo.questions.Human = state.llmo.questions.Human || [];
+    state.llmo.questions.Human = state.llmo.questions.Human.map(
+      (question) => (question.key === key ? { ...question, ...questionUpdate, key } : question),
+    );
+    state.llmo.questions.AI = state.llmo.questions.AI || [];
+    state.llmo.questions.AI = state.llmo.questions.AI.map(
+      (question) => (question.key === key ? { ...question, ...questionUpdate, key } : question),
+    );
   };
 
   self.updateImports = (imports) => {
@@ -409,4 +494,5 @@ Config.toDynamoItem = (config) => ({
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
   cdnLogsConfig: config.getCdnLogsConfig(),
+  llmo: config.getLlmoConfig(),
 });

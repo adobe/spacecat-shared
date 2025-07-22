@@ -33,6 +33,7 @@ import SiteTopFormCollection from '../site-top-form/site-top-form.collection.js'
 import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
 import PageIntentCollection from '../page-intent/page-intent.collection.js';
+import ReportCollection from '../report/report.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -54,6 +55,7 @@ import SiteTopFormSchema from '../site-top-form/site-top-form.schema.js';
 import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
 import SuggestionSchema from '../suggestion/suggestion.schema.js';
 import PageIntentSchema from '../page-intent/page-intent.schema.js';
+import ReportSchema from '../report/report.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -156,5 +158,6 @@ EntityRegistry.registerEntity(SiteTopFormSchema, SiteTopFormCollection);
 EntityRegistry.registerEntity(SiteTopPageSchema, SiteTopPageCollection);
 EntityRegistry.registerEntity(SuggestionSchema, SuggestionCollection);
 EntityRegistry.registerEntity(PageIntentSchema, PageIntentCollection);
+EntityRegistry.registerEntity(ReportSchema, ReportCollection);
 
 export default EntityRegistry;

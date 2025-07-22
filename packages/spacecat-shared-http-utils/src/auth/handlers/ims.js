@@ -48,7 +48,7 @@ const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {
     const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
-    context.log.info(`Loaded config name: ${config.name}`);
+    context.log.debug(`Loaded config name: ${config.name}`);
     return config;
   } catch (e) {
     context.log.error(`Failed to load config from context: ${e.message}`);
@@ -176,7 +176,7 @@ export default class AdobeImsHandler extends AbstractHandler {
         .withProfile(profile)
         .withScopes(scopes);
     } catch (e) {
-      this.log(`Failed to validate token: ${e.message}`, 'error');
+      this.log(`Failed to validate token: ${e.message}`, 'debug');
     }
 
     return null;

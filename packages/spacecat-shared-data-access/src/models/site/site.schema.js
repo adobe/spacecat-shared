@@ -118,6 +118,21 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
     set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalSiteId,
   })
+  .addAttribute('pageTypes', {
+    type: 'list',
+    required: false,
+    items: {
+      type: 'map',
+      required: true,
+      properties: {
+        name: { type: 'string', required: true },
+        pattern: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
+  })
   .addAllIndex(['baseURL'])
   .addIndex(
     { composite: ['deliveryType'] },

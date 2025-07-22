@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-data-access-v2.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.38.1...@adobe/spacecat-shared-data-access-v2.39.0) (2025-07-22)
+
+
+### Features
+
+* add llmo specific configuration in site config ([#853](https://github.com/adobe/spacecat-shared/issues/853)) ([476b8e8](https://github.com/adobe/spacecat-shared/commit/476b8e84009602a4c9d7ef8d42b9efcae3beae9e))
+
+# [@adobe/spacecat-shared-data-access-v2.38.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.38.0...@adobe/spacecat-shared-data-access-v2.38.1) (2025-07-22)
+
+
+### Bug Fixes
+
+* return provided data when config error ([#862](https://github.com/adobe/spacecat-shared/issues/862)) ([eb418cd](https://github.com/adobe/spacecat-shared/commit/eb418cdf4e942f2da0b40d95cc991b9a4a34a393))
+
+# [@adobe/spacecat-shared-data-access-v2.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.37.0...@adobe/spacecat-shared-data-access-v2.38.0) (2025-07-21)
+
+
+### Features
+
+* add pageTypes to store pattern matching for pageTypes ([#857](https://github.com/adobe/spacecat-shared/issues/857)) ([4081e8c](https://github.com/adobe/spacecat-shared/commit/4081e8cfd8571d43b9720c07caeb22ced77281d0))
+
+# [@adobe/spacecat-shared-data-access-v2.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.36.1...@adobe/spacecat-shared-data-access-v2.37.0) (2025-07-21)
+
+
+### Features
+
+* added `Report` model, schema and collection implementation ([#855](https://github.com/adobe/spacecat-shared/issues/855)) ([4100a0e](https://github.com/adobe/spacecat-shared/commit/4100a0e557709d29dd590ff87c987d70b005f734))
+
+# [@adobe/spacecat-shared-data-access-v2.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.36.0...@adobe/spacecat-shared-data-access-v2.36.1) (2025-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#859](https://github.com/adobe/spacecat-shared/issues/859)) ([7ca9099](https://github.com/adobe/spacecat-shared/commit/7ca90994d61d07f71e580301365447b94ad07a52))
+
 # [@adobe/spacecat-shared-data-access-v2.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.35.0...@adobe/spacecat-shared-data-access-v2.36.0) (2025-07-17)
 
 

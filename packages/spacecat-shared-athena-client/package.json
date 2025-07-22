@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-athena-client",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Shared modules of the Spacecat Services - AWS Athena Client",
   "type": "module",
   "engines": {
@@ -35,7 +35,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@aws-sdk/client-athena": "3.844.0",
+    "@aws-sdk/client-athena": "3.848.0",
     "@adobe/spacecat-shared-utils": "1.41.3"
   },
   "devDependencies": {

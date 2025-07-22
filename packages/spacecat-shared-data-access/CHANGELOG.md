@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.38.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.38.0...@adobe/spacecat-shared-data-access-v2.38.1) (2025-07-22)
+
+
+### Bug Fixes
+
+* return provided data when config error ([#862](https://github.com/adobe/spacecat-shared/issues/862)) ([eb418cd](https://github.com/adobe/spacecat-shared/commit/eb418cdf4e942f2da0b40d95cc991b9a4a34a393))
+
 # [@adobe/spacecat-shared-data-access-v2.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.37.0...@adobe/spacecat-shared-data-access-v2.38.0) (2025-07-21)
 
 

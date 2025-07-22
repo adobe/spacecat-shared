@@ -280,22 +280,22 @@ export function validateConfiguration(config) {
 }
 
 export const Config = (data = {}) => {
-  let validConfig;
+  let configData;
 
   try {
-    validConfig = validateConfiguration(data);
+    configData = validateConfiguration(data);
   } catch (error) {
     const logger = getLogger();
     if (logger && logger !== console) {
-      logger.error('Site configuration validation failed, using default config', {
+      logger.error('Site configuration validation failed, using provided data', {
         error: error.message,
         invalidConfig: data,
       });
     }
-    validConfig = { ...DEFAULT_CONFIG };
+    configData = { ...data };
   }
 
-  const state = { ...validConfig };
+  const state = { ...configData };
   const self = { state };
   self.getSlackConfig = () => state.slack;
   self.isInternalCustomer = () => state?.slack?.workspace === 'internal';

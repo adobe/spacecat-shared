@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.38.1...@adobe/spacecat-shared-data-access-v2.39.0) (2025-07-22)
+
+
+### Features
+
+* add llmo specific configuration in site config ([#853](https://github.com/adobe/spacecat-shared/issues/853)) ([476b8e8](https://github.com/adobe/spacecat-shared/commit/476b8e84009602a4c9d7ef8d42b9efcae3beae9e))
+
 # [@adobe/spacecat-shared-data-access-v2.38.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.38.0...@adobe/spacecat-shared-data-access-v2.38.1) (2025-07-22)
 
 

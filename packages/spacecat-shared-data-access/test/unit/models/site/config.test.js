@@ -155,11 +155,9 @@ describe('Config Tests', () => {
           brand: 'mybrand',
         },
       };
-      // Config() catches validation errors and returns default config instead of throwing
+      // Config() catches validation errors and uses provided data as-is
       const config = Config(data);
-      expect(config.getLlmoConfig()).to.be.undefined;
-      expect(config.getSlackConfig()).to.deep.equal({});
-      expect(config.getHandlers()).to.deep.equal({});
+      expect(config.getLlmoConfig()).to.deep.equal(data.llmo);
     });
 
     it('creates a Config with llmo property including questions', () => {

@@ -256,4 +256,11 @@ export class AWSAthenaClient {
   }
 }
 
-export { getTrafficAnalysisQuery, getTrafficAnalysisQueryPlaceholders } from './queries.js';
+export {
+  getTrafficAnalysisQuery,
+  getTrafficAnalysisQueryPlaceholders,
+  buildPageTypeCase,
+  getTrafficAnalysisQueryPlaceholdersFilled,
+} from './traffic-analysis/queries.js';
+export { TrafficDataResponseDto } from './traffic-analysis/traffic-data-base-response.js';
+export { TrafficDataWithCWVDto } from './traffic-analysis/traffic-data-with-cwv.js';

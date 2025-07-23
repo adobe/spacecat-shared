@@ -73,15 +73,16 @@ describe('SuggestionCollection', () => {
       await instance.bulkUpdateStatus(mockSuggestions, mockStatus);
 
       expect(mockElectroService.entities.suggestion.put.calledOnce).to.be.true;
-      expect(mockElectroService.entities.suggestion.put.firstCall.args[0]).to.deep.equal([{
-        suggestionId: 's12345',
-        opportunityId: 'op67890',
-        data: {
-          title: 'Test Suggestion',
-          description: 'This is a test suggestion.',
-        },
-        status: 'NEW',
-      }]);
+      const putCallArgs = mockElectroService.entities.suggestion.put.firstCall.args[0];
+      expect(putCallArgs).to.be.an('array').with.length(1);
+      expect(putCallArgs[0]).to.have.property('suggestionId', 's12345');
+      expect(putCallArgs[0]).to.have.property('opportunityId', 'op67890');
+      expect(putCallArgs[0]).to.have.property('status', 'NEW');
+      expect(putCallArgs[0]).to.have.property('updatedAt').that.is.a('string');
+      expect(putCallArgs[0].data).to.deep.equal({
+        title: 'Test Suggestion',
+        description: 'This is a test suggestion.',
+      });
 
       // Verify that updatedAt was updated in the local objects
       expect(model.record.updatedAt).to.not.equal(originalUpdatedAt);

@@ -68,6 +68,7 @@ describe('SuggestionCollection', () => {
     it('updates the status of multiple suggestions', async () => {
       const mockSuggestions = [model];
       const mockStatus = 'NEW';
+      const originalUpdatedAt = model.record.updatedAt;
 
       await instance.bulkUpdateStatus(mockSuggestions, mockStatus);
 
@@ -81,6 +82,11 @@ describe('SuggestionCollection', () => {
         },
         status: 'NEW',
       }]);
+
+      // Verify that updatedAt was updated in the local objects
+      expect(model.record.updatedAt).to.not.equal(originalUpdatedAt);
+      expect(model.record.updatedAt).to.be.a('string');
+      expect(new Date(model.record.updatedAt).getTime()).to.be.closeTo(Date.now(), 1000);
     });
 
     it('throws an error if suggestions is not an array', async () => {

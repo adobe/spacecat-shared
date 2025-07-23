@@ -48,13 +48,6 @@ class SuggestionCollection extends BaseCollection {
 
     await this._saveMany(suggestions);
 
-    // Update the updatedAt field in the model instances to match what was saved
-    const now = new Date().toISOString();
-    suggestions.forEach((suggestion) => {
-      // eslint-disable-next-line no-param-reassign
-      suggestion.record.updatedAt = now;
-    });
-
     this.log.info(`Bulk updated ${suggestions.length} suggestions to status: ${status}`);
 
     return suggestions;

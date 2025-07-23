@@ -81,7 +81,7 @@ export default class JwtHandler extends AbstractHandler {
         .withProfile(payload)
         .withScopes(scopes);
     } catch (e) {
-      this.log(`Failed to validate token: ${e.message}`, 'error');
+      this.log(`Failed to validate token: ${e.message}`, 'debug');
     }
 
     return null;

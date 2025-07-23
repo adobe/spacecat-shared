@@ -61,6 +61,19 @@ export interface ImportConfig {
   limit?: number;
 }
 
+export interface LlmoQuestion {
+  key: string;
+  question: string;
+  source?: string;
+  country?: string;
+  product?: string;
+  volume?: string;
+  importTime?: string;
+  keyword?: string;
+  url?: string;
+  tags?: string[];
+}
+
 export interface SiteConfig {
   state: {
     slack?: {
@@ -97,6 +110,14 @@ export interface SiteConfig {
       headers?: Record<string, string>;
       overrideBaseURL?: string;
     };
+    llmo?: {
+      dataFolder: string;
+      brand: string;
+      questions?: {
+        Human?: Array<LlmoQuestion>;
+        AI?: Array<LlmoQuestion>;
+      };
+    };
   };
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
   getImports(): ImportConfig[];
@@ -116,6 +137,25 @@ export interface SiteConfig {
   getLatestMetrics(type: string):
     { pageViewsChange: number; ctrChange: number; projectedTrafficValue: number } | undefined;
   getFetchConfig(): { headers?: Record<string, string>, overrideBaseURL?: string } | undefined;
+  getLlmoConfig(): {
+    dataFolder: string;
+    brand: string;
+    questions?: { Human?: Array<LlmoQuestion>; AI?: Array<LlmoQuestion> };
+  } | undefined;
+  updateLlmoConfig(dataFolder: string, brand: string, questions?: {
+    Human?: Array<LlmoQuestion>;
+    AI?: Array<LlmoQuestion>;
+  }): void;
+  updateLlmoDataFolder(dataFolder: string): void;
+  updateLlmoBrand(brand: string): void;
+  getLlmoDataFolder(): string | undefined;
+  getLlmoBrand(): string | undefined;
+  getLlmoHumanQuestions(): LlmoQuestion[] | undefined;
+  getLlmoAIQuestions(): LlmoQuestion[] | undefined;
+  addLlmoHumanQuestions(questions: LlmoQuestion[]): void;
+  addLlmoAIQuestions(questions: LlmoQuestion[]): void;
+  removeLlmoQuestion(key: string): void;
+  updateLlmoQuestion(key: string, questionUpdate: Partial<LlmoQuestion>): void;
 }
 
 export interface Site extends BaseModel {

@@ -77,3 +77,5 @@ export {
 } from './formcalc.js';
 
 export { retrievePageAuthentication, getAccessToken } from './auth.js';
+
+export { getDateRanges } from './calendar-week-helper.js';

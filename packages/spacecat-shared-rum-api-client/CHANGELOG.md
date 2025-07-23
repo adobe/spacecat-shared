@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.33.1...@adobe/spacecat-shared-rum-api-client-v2.34.0) (2025-07-23)
+
+
+### Features
+
+* **rum-client:** add log checkpoints for around every 50k bundles fetched ([#864](https://github.com/adobe/spacecat-shared/issues/864)) ([23acfc4](https://github.com/adobe/spacecat-shared/commit/23acfc430753371b6440aead135848031874cc68))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.33.0...@adobe/spacecat-shared-rum-api-client-v2.33.1) (2025-07-19)
 
 

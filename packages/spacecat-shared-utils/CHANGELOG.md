@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.42.4...@adobe/spacecat-shared-utils-v1.43.0) (2025-07-23)
+
+
+### Features
+
+* add shared get-calendar-week to shared ([#865](https://github.com/adobe/spacecat-shared/issues/865)) ([f44c57f](https://github.com/adobe/spacecat-shared/commit/f44c57f8d0517af7a2c95f41e097f866e2722651))
+
 # [@adobe/spacecat-shared-utils-v1.42.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.42.3...@adobe/spacecat-shared-utils-v1.42.4) (2025-07-19)
 
 

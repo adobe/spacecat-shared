@@ -261,6 +261,7 @@ async function fetchBundles(opts, log) {
 
   let totalTransferSize = 0;
   const failedUrls = [];
+  let lastCheckpoint = 0;
 
   const result = [];
   for (const chunk of chunks) {
@@ -291,8 +292,15 @@ async function fetchBundles(opts, log) {
         .map(filterEvents(checkpoints))
         .forEach((bundle) => result.push(bundle));
     });
+
+    const currentCheckpoint = Math.floor(result.length / 50000);
+
+    if (currentCheckpoint > lastCheckpoint) {
+      log.info(`Checkpoint: Fetched ${result.length} bundles; resuming...`);
+      lastCheckpoint = currentCheckpoint;
+    }
   }
-  log.info(`Retrieved RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
+  log.info(`Retrieved all RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
 
   // Add failedUrls to opts object for access by callers
   if (failedUrls.length > 0) {

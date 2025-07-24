@@ -73,6 +73,36 @@ const organizations = [
           },
       },
   },
+  {
+    organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
+    imsOrgId: '1234567892ABCDEF12345678@AdobeOrg',
+    name: '2-1234Name',
+    config:
+      {
+        slack:
+          {
+            workspace: '2-workspace',
+            channel: '2-channel',
+          },
+        handlers:
+          {
+            404:
+              {
+                mentions:
+                  {
+                    slack:
+                      [
+                        '2-slackId',
+                      ],
+                  },
+              },
+            'organic-keywords':
+              {
+                country: 'RO',
+              },
+          },
+      },
+  },
 ];
 
 export default organizations;

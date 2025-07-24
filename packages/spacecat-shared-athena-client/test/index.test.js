@@ -784,7 +784,7 @@ describe('DTO Tests', () => {
       const inputData = {
         trf_type: 'organic',
         trf_channel: 'search',
-        utm_platform: 'google',
+        trf_platform: 'google',
         utm_source: 'google',
         utm_medium: 'organic',
         utm_campaign: 'none',

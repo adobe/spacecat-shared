@@ -803,7 +803,7 @@ describe('DTO Tests', () => {
       expect(result).to.deep.equal({
         type: 'organic',
         channel: 'search',
-        utm_platform: 'google',
+        platform: 'google',
         utm_source: 'google',
         utm_medium: 'organic',
         campaign: 'none',

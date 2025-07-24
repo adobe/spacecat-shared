@@ -784,7 +784,7 @@ describe('DTO Tests', () => {
       const inputData = {
         trf_type: 'organic',
         trf_channel: 'search',
-        platform: 'google',
+        utm_platform: 'google',
         utm_source: 'google',
         utm_medium: 'organic',
         utm_campaign: 'none',
@@ -803,7 +803,7 @@ describe('DTO Tests', () => {
       expect(result).to.deep.equal({
         type: 'organic',
         channel: 'search',
-        platform: 'google',
+        utm_platform: 'google',
         utm_source: 'google',
         utm_medium: 'organic',
         campaign: 'none',
@@ -824,7 +824,7 @@ describe('DTO Tests', () => {
       const inputData = {
         trf_type: 'organic',
         trf_channel: 'search',
-        platform: 'google',
+        utm_platform: 'google',
         utm_source: 'google',
         utm_medium: 'organic',
         utm_campaign: 'none',

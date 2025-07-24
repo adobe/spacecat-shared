@@ -17,11 +17,13 @@ export interface Organization extends BaseModel {
   getFulfillableItems(): object;
   getImsOrgId(): string;
   getName(): string;
+  getTenantId(): string;
   getSites(): Promise<Site[]>;
   setConfig(config: object): Organization;
   setFulfillableItems(fulfillableItems: object): Organization;
   setImsOrgId(imsOrgId: string): Organization;
   setName(name: string): Organization;
+  setTenantId(tenantId: string): Organization;
 }
 
 export interface OrganizationCollection extends BaseCollection<Organization> {

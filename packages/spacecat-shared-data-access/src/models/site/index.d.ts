@@ -21,7 +21,7 @@ import type {
   Organization,
   SiteCandidate,
   SiteTopPage,
-} from '../index';
+} from '../index.js';
 
 export interface HlxConfig {
   hlxVersion: number; // helix (AEM Edge Delivery) major version
@@ -62,17 +62,23 @@ export interface ImportConfig {
   limit?: number;
 }
 
+export type WellKnownLmmoTag = 'market' | 'product' | 'topic';
+export type LmmoTag = `${WellKnownLmmoTag}:${string}` | string;
+
 export interface LlmoQuestion {
   key: string;
   question: string;
   source?: string;
-  country?: string;
-  product?: string;
   volume?: string;
   importTime?: string;
   keyword?: string;
   url?: string;
-  tags?: string[];
+  tags?: LmmoTag[];
+}
+
+export interface LlmoUrlPattern {
+  urlPattern: string;
+  tags?: LmmoTag[];
 }
 
 export interface SiteConfig {
@@ -118,8 +124,10 @@ export interface SiteConfig {
         Human?: Array<LlmoQuestion>;
         AI?: Array<LlmoQuestion>;
       };
+      urlPatterns?: Array<LlmoUrlPattern>
     };
   };
+  extractWellKnownTags(tags: Array<string>): Partial<Record<WellKnownLmmoTag, string>>;
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
   getImports(): ImportConfig[];
   getImportConfig(type: ImportType): ImportConfig | undefined;
@@ -146,17 +154,20 @@ export interface SiteConfig {
   updateLlmoConfig(dataFolder: string, brand: string, questions?: {
     Human?: Array<LlmoQuestion>;
     AI?: Array<LlmoQuestion>;
-  }): void;
+  }, urlPatterns?: Array<LlmoUrlPattern>): void;
   updateLlmoDataFolder(dataFolder: string): void;
   updateLlmoBrand(brand: string): void;
   getLlmoDataFolder(): string | undefined;
   getLlmoBrand(): string | undefined;
   getLlmoHumanQuestions(): LlmoQuestion[] | undefined;
   getLlmoAIQuestions(): LlmoQuestion[] | undefined;
+  getLlmoUrlPatterns(): Array<LlmoUrlPattern> | undefined;
   addLlmoHumanQuestions(questions: LlmoQuestion[]): void;
   addLlmoAIQuestions(questions: LlmoQuestion[]): void;
   removeLlmoQuestion(key: string): void;
   updateLlmoQuestion(key: string, questionUpdate: Partial<LlmoQuestion>): void;
+  addLlmoUrlPatterns(urlPatterns: Array<LlmoUrlPattern>): void;
+  removeLlmoUrlPattern(urlPattern: string): void;
 }
 
 export interface Site extends BaseModel {

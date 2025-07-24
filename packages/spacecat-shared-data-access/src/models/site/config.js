@@ -38,19 +38,31 @@ export const IMPORT_SOURCES = {
   RUM: 'rum',
 };
 
+const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
+const LLMO_TAG = Joi.alternatives()
+  .try(
+    // Tag market, product, topic like this: "market: ch", "product: firefly", "topic: copyright"
+    Joi.string().pattern(LLMO_TAG_PATTERN),
+    Joi.string(),
+  );
+
 // LLMO question schema for both Human and AI questions
 const QUESTION_SCHEMA = Joi.object({
   key: Joi.string().required(),
   question: Joi.string().required(),
   source: Joi.string().optional(),
-  country: Joi.string().optional(),
-  product: Joi.string().optional(),
   volume: Joi.string().optional(),
   keyword: Joi.string().optional(),
   url: Joi.string().uri().optional(),
-  tags: Joi.array().items(Joi.string()).optional(),
+  tags: Joi.array().items(LLMO_TAG).optional(),
   importTime: Joi.string().isoDate().optional(),
 });
+
+const LLMO_URL_PATTERN_SCHEMA = {
+  urlPattern: Joi.string().uri().required(),
+  tags: Joi.array().items(LLMO_TAG).optional(),
+};
+const LLMO_URL_PATTERNS_SCHEMA = Joi.array().items(LLMO_URL_PATTERN_SCHEMA);
 
 const IMPORT_BASE_KEYS = {
   destinations: Joi.array().items(Joi.string().valid(IMPORT_DESTINATIONS.DEFAULT)).required(),
@@ -235,6 +247,7 @@ export const configSchema = Joi.object({
       Human: Joi.array().items(QUESTION_SCHEMA).optional(),
       AI: Joi.array().items(QUESTION_SCHEMA).optional(),
     }).optional(),
+    urlPatterns: LLMO_URL_PATTERNS_SCHEMA.optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
@@ -292,6 +305,20 @@ export function validateConfiguration(config) {
   return value; // Validated and sanitized configuration
 }
 
+export function extractWellKnownTags(tags) {
+  const wellKnownTags = {};
+  for (const tag of tags) {
+    if (LLMO_TAG_PATTERN.test(tag)) {
+      const colonIdx = tag.indexOf(':');
+      const value = tag.slice(colonIdx + 1).trim();
+      if (colonIdx !== -1 && value) {
+        wellKnownTags[tag.slice(0, colonIdx).trim()] = value;
+      }
+    }
+  }
+  return wellKnownTags;
+}
+
 export const Config = (data = {}) => {
   let configData;
 
@@ -309,7 +336,7 @@ export const Config = (data = {}) => {
   }
 
   const state = { ...configData };
-  const self = { state };
+  const self = { state, extractWellKnownTags };
   self.getSlackConfig = () => state.slack;
   self.isInternalCustomer = () => state?.slack?.workspace === 'internal';
   self.getSlackMentions = (type) => state?.handlers?.[type]?.mentions?.slack;
@@ -331,6 +358,7 @@ export const Config = (data = {}) => {
   self.getLlmoBrand = () => state?.llmo?.brand;
   self.getLlmoHumanQuestions = () => state?.llmo?.questions?.Human;
   self.getLlmoAIQuestions = () => state?.llmo?.questions?.AI;
+  self.getLlmoUrlPatterns = () => state?.llmo?.urlPatterns;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -340,11 +368,12 @@ export const Config = (data = {}) => {
     };
   };
 
-  self.updateLlmoConfig = (dataFolder, brand, questions) => {
+  self.updateLlmoConfig = (dataFolder, brand, questions = {}, urlPatterns = undefined) => {
     state.llmo = {
       dataFolder,
       brand,
-      ...(questions !== undefined ? { questions } : {}),
+      questions,
+      urlPatterns,
     };
   };
 
@@ -395,6 +424,36 @@ export const Config = (data = {}) => {
     state.llmo.questions.AI = state.llmo.questions.AI || [];
     state.llmo.questions.AI = state.llmo.questions.AI.map(
       (question) => (question.key === key ? { ...question, ...questionUpdate, key } : question),
+    );
+  };
+
+  self.addLlmoUrlPatterns = (urlPatterns) => {
+    Joi.assert(urlPatterns, LLMO_URL_PATTERNS_SCHEMA, 'Invalid URL patterns');
+
+    state.llmo ??= {};
+    state.llmo.urlPatterns ??= [];
+    const byPattern = new Map(
+      state.llmo.urlPatterns.map((p) => [p.urlPattern, p]),
+    );
+    for (const p of urlPatterns) {
+      byPattern.set(p.urlPattern, p);
+    }
+
+    state.llmo.urlPatterns = [...byPattern.values()];
+  };
+
+  self.replaceLlmoUrlPatterns = (urlPatterns) => {
+    Joi.assert(urlPatterns, LLMO_URL_PATTERNS_SCHEMA, 'Invalid URL patterns');
+    state.llmo ??= {};
+    state.llmo.urlPatterns = urlPatterns;
+  };
+
+  self.removeLlmoUrlPattern = (urlPattern) => {
+    const urlPatterns = state.llmo?.urlPatterns;
+    if (!urlPatterns) return;
+
+    state.llmo.urlPatterns = urlPatterns.filter(
+      (pattern) => pattern.urlPattern !== urlPattern,
     );
   };
 

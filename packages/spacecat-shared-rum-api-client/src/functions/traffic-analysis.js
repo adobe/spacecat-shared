@@ -97,7 +97,6 @@ async function handler(bundles) {
   const memo = {};
 
   const result = bundles.map((bundle) => {
-    /* eslint-disable camelcase */
     const trafficData = trafficType(bundle, memo);
     const clicked = getClicked(bundle);
     const latestScroll = getLatestScroll(bundle);
@@ -121,8 +120,8 @@ async function handler(bundles) {
       lcp: getCWV(bundle, 'lcp'),
       inp: getCWV(bundle, 'inp'),
       cls: getCWV(bundle, 'cls'),
+      date: bundle.time.split('T')[0],
     };
-    /* eslint-enable camelcase */
   });
 
   return result;

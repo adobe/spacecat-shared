@@ -171,10 +171,8 @@ describe('Config Tests', () => {
                 key: 'foo',
                 question: 'What is foo?',
                 source: 'manual-csv',
-                country: 'US',
-                product: 'Product A',
                 volume: '100',
-                tags: ['tag1', 'tag2'],
+                tags: ['tag1', 'tag2', 'market: US', 'product: Product A'],
                 importTime: '2021-01-01T00:00:00.000Z',
               },
             ],
@@ -185,14 +183,31 @@ describe('Config Tests', () => {
                 source: 'ahrefs',
                 keyword: 'bar',
                 url: 'https://example.com',
-                country: 'US',
-                product: 'Product A',
                 volume: '100',
-                tags: ['tag3', 'tag4'],
+                tags: ['tag3', 'tag4', 'market: US', 'product: Product A'],
                 importTime: '2021-01-01T00:00:00.000Z',
               },
             ],
           },
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoConfig()).to.deep.equal(data.llmo);
+    });
+
+    it('creates a Config with llmo property including URL patterns', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+          urlPatterns: [
+            { urlPattern: 'https://www.adobe.com/*' },
+            { urlPattern: 'https://www.adobe.com/firefly*', tags: ['product: firefly'] },
+            { urlPattern: 'https://www.adobe.com/products/firefly*', tags: ['product: firefly'] },
+            { urlPattern: 'https://www.adobe.com/fr/*', tags: ['market: fr'] },
+            { urlPattern: 'https://www.adobe.com/fr/firefly*', tags: ['product: firefly', 'market: fr'] },
+            { urlPattern: 'https://www.adobe.com/fr/products/firefly*', tags: ['product: firefly', 'market: fr'] },
+          ],
         },
       };
       const config = Config(data);
@@ -207,10 +222,8 @@ describe('Config Tests', () => {
             key: 'foo',
             question: 'What is foo?',
             source: 'manual-csv',
-            country: 'US',
-            product: 'Product A',
             volume: '100',
-            tags: ['tag1', 'tag2'],
+            tags: ['tag1', 'tag2', 'market: US', 'product: Product A'],
             importTime: '2021-01-01T00:00:00.000Z',
           },
         ],
@@ -221,10 +234,8 @@ describe('Config Tests', () => {
             source: 'ahrefs',
             keyword: 'bar',
             url: 'https://example.com',
-            country: 'US',
-            product: 'Product A',
             volume: '100',
-            tags: ['tag3', 'tag4'],
+            tags: ['tag3', 'tag4', 'market: US', 'product: Product A'],
             importTime: '2021-01-01T00:00:00.000Z',
           },
         ],
@@ -235,11 +246,29 @@ describe('Config Tests', () => {
       expect(llmoConfig.brand).to.equal('newBrand');
       expect(llmoConfig.questions.Human[0].key).to.equal('foo');
       expect(llmoConfig.questions.AI[0].key).to.equal('bar');
-      expect(llmoConfig.questions.Human[0].tags).to.deep.equal(['tag1', 'tag2']);
-      expect(llmoConfig.questions.AI[0].tags).to.deep.equal(['tag3', 'tag4']);
+      expect(llmoConfig.questions.Human[0].tags).to.deep.equal(['tag1', 'tag2', 'market: US', 'product: Product A']);
+      expect(llmoConfig.questions.AI[0].tags).to.deep.equal(['tag3', 'tag4', 'market: US', 'product: Product A']);
       expect(llmoConfig.questions).to.deep.equal(questions);
     });
+
+    it('correctly updates the LLMO configuration including URL patterns', () => {
+      const config = Config();
+      const urlPatterns = [
+        { urlPattern: 'https://www.adobe.com/*' },
+        { urlPattern: 'https://www.adobe.com/firefly*', tags: ['product: firefly'] },
+        { urlPattern: 'https://www.adobe.com/products/firefly*', tags: ['product: firefly'] },
+        { urlPattern: 'https://www.adobe.com/fr/*', tags: ['market: fr'] },
+        { urlPattern: 'https://www.adobe.com/fr/firefly*', tags: ['product: firefly', 'market: fr'] },
+        { urlPattern: 'https://www.adobe.com/fr/products/firefly*', tags: ['product: firefly', 'market: fr'] },
+      ];
+      config.updateLlmoConfig('newBrandFolder', 'newBrand', undefined, urlPatterns);
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.dataFolder).to.equal('newBrandFolder');
+      expect(llmoConfig.brand).to.equal('newBrand');
+      expect(llmoConfig.urlPatterns).to.deep.equal(urlPatterns);
+    });
   });
+
   describe('Config Methods', () => {
     it('correctly updates the Slack configuration', () => {
       const config = Config();
@@ -1829,6 +1858,132 @@ describe('Config Tests', () => {
 
         expect(updatedHumanQuestion.question).to.equal('Updated question');
         expect(updatedHumanQuestion.source).to.equal('ahrefs'); // Should remain unchanged
+      });
+    });
+  });
+
+  describe('LLMO URL Patterns', () => {
+    const existingUrlPatterns = [
+      { urlPattern: 'https://www.adobe.com/*' },
+      { urlPattern: 'https://www.adobe.com/firefly*', tags: ['product: firefly'] },
+      { urlPattern: 'https://www.adobe.com/products/firefly*', tags: ['product: firefly'] },
+      { urlPattern: 'https://www.adobe.com/fr/*', tags: ['market: fr'] },
+      { urlPattern: 'https://www.adobe.com/fr/firefly*', tags: ['product: firefly', 'market: fr'] },
+      { urlPattern: 'https://www.adobe.com/fr/products/firefly*', tags: ['product: firefly', 'market: fr'] },
+    ];
+
+    let config;
+
+    beforeEach(() => {
+      config = Config({
+        llmo: {
+          dataFolder: '/test/folder',
+          brand: 'testBrand',
+          urlPatterns: existingUrlPatterns,
+        },
+      });
+    });
+
+    describe('addLlmoUrlPatterns', () => {
+      it('Adds additional URL patterns at the end', () => {
+        const newPatterns = [
+          { urlPattern: 'https://www.adobe.com/acrobat*' },
+          { urlPattern: 'https://www.adobe.com/products/acrobat*', tags: ['product: acrobat'] },
+        ];
+        config.addLlmoUrlPatterns(newPatterns);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal([...existingUrlPatterns, ...newPatterns]);
+      });
+
+      it('replaces existing URL patterns', () => {
+        const existingPattern = {
+          urlPattern: 'https://www.adobe.com/firefly*',
+          tags: ['completely', 'new', 'tags'],
+        };
+        const newPattern = {
+          urlPattern: 'https://www.adobe.com/ch_fr/firefly*',
+          tags: ['product: firefly', 'market: ch'],
+        };
+
+        const existingIdx = existingUrlPatterns.findIndex(
+          (pattern) => pattern.urlPattern === existingPattern.urlPattern,
+        );
+
+        config.addLlmoUrlPatterns([newPattern, existingPattern]);
+        const updatedPatterns = config.getLlmoUrlPatterns();
+
+        expect(updatedPatterns).to.deep.equal([
+          ...existingUrlPatterns.slice(0, existingIdx),
+          existingPattern,
+          ...existingUrlPatterns.slice(existingIdx + 1),
+          newPattern,
+        ]);
+      });
+    });
+
+    describe('replaceLlmoUrlPatterns', () => {
+      it('should replace all existing URL patterns with new ones', () => {
+        const newPatterns = [
+          { urlPattern: 'https://www.adobe.com/acrobat*' },
+          { urlPattern: 'https://www.adobe.com/products/acrobat*', tags: ['product: acrobat'] },
+        ];
+        config.replaceLlmoUrlPatterns(newPatterns);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal(newPatterns);
+      });
+
+      it('should clear existing patterns if an empty array is provided', () => {
+        config.replaceLlmoUrlPatterns([]);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal([]);
+      });
+    });
+
+    describe('removeLlmoUrlPattern', () => {
+      it('can remove an URL pattern from a config', () => {
+        const patternToRemove = 'https://www.adobe.com/firefly*';
+        const patternIdx = existingUrlPatterns.findIndex(
+          (pattern) => pattern.urlPattern === patternToRemove,
+        );
+        config.removeLlmoUrlPattern(patternToRemove);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal([
+          ...existingUrlPatterns.slice(0, patternIdx),
+          ...existingUrlPatterns.slice(patternIdx + 1),
+        ]);
+      });
+
+      it('does nothing if the pattern does not exist', () => {
+        const nonExistentPattern = 'https://www.adobe.com/nonexistent*';
+        config.removeLlmoUrlPattern(nonExistentPattern);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal(existingUrlPatterns);
+      });
+    });
+  });
+
+  describe('LLMO Well Known Tags', () => {
+    const { extractWellKnownTags } = Config();
+
+    it('Extracts well known tags from an array of strings', () => {
+      const tags = ['arbitrary', 'product: The Product', 'market: The Market', 'another: tag', 'unknown:tag', 'topic: A Topic'];
+      expect(extractWellKnownTags(tags)).to.deep.equal({
+        product: 'The Product',
+        market: 'The Market',
+        topic: 'A Topic',
+      });
+    });
+
+    it('does not require whitespace after the colon', () => {
+      const tags = ['product:The Product', 'topic:A Topic'];
+      expect(extractWellKnownTags(tags)).to.deep.equal({
+        product: 'The Product',
+        topic: 'A Topic',
       });
     });
   });

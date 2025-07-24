@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.1.1...@adobe/spacecat-shared-athena-client-v1.2.0) (2025-07-24)
+
+
+### Features
+
+* ensure queries are shared so cache and api return same ([#866](https://github.com/adobe/spacecat-shared/issues/866)) ([b23d772](https://github.com/adobe/spacecat-shared/commit/b23d772a3a04355333ed090cc00386c33db6f872))
+
 # [@adobe/spacecat-shared-athena-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.1.0...@adobe/spacecat-shared-athena-client-v1.1.1) (2025-07-19)
 
 

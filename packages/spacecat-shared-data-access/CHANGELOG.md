@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.39.0...@adobe/spacecat-shared-data-access-v2.40.0) (2025-07-24)
+
+
+### Features
+
+* amend llmo config with URL patterns ([#869](https://github.com/adobe/spacecat-shared/issues/869)) ([c6cb047](https://github.com/adobe/spacecat-shared/commit/c6cb0476c6d2b3dad048855ae49481ae8fcfb5ce))
+
 # [@adobe/spacecat-shared-data-access-v2.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.38.1...@adobe/spacecat-shared-data-access-v2.39.0) (2025-07-22)
 
 

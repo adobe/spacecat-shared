@@ -173,11 +173,14 @@ function ScrapeJobSupervisor(services, config) {
       urlBatches = [urls]; // Wrap in an array to maintain consistent structure
     }
 
-    for (const batch of urlBatches) {
+    for (const [index, batch] of urlBatches.entries()) {
+      // Calculate the offset for numbering the URLs in the batch
+      const offset = index * maxUrlsPerMessage;
       const message = {
         processingType,
         jobId: scrapeJob.getId(),
         batch,
+        batchOffset: offset,
         customHeaders,
         options,
       };

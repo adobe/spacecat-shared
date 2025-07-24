@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.34.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.34.0...@adobe/spacecat-shared-rum-api-client-v2.34.1) (2025-07-24)
+
+
+### Bug Fixes
+
+* add date field to the traffic analysis query ([#870](https://github.com/adobe/spacecat-shared/issues/870)) ([ecbab0c](https://github.com/adobe/spacecat-shared/commit/ecbab0cdbfe2dd740bd29bc76873508715ab52cf))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.33.1...@adobe/spacecat-shared-rum-api-client-v2.34.0) (2025-07-23)
 
 

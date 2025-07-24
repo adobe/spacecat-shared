@@ -18,10 +18,12 @@ export interface Organization extends BaseModel {
   getImsOrgId(): string;
   getName(): string;
   getSites(): Promise<Site[]>;
+  getTenantId(): string;
   setConfig(config: object): Organization;
   setFulfillableItems(fulfillableItems: object): Organization;
   setImsOrgId(imsOrgId: string): Organization;
   setName(name: string): Organization;
+  setTenantId(tenantId: string): Organization;
 }
 
 export interface OrganizationCollection extends BaseCollection<Organization> {

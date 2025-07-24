@@ -96,4 +96,50 @@ describe('OrganizationModel', () => {
       expect(instance.getFulfillableItems()).to.deep.equal(['item3', 'item4']);
     });
   });
+
+  describe('tenantId', () => {
+    it('gets tenantId when present', () => {
+      expect(instance.getTenantId()).to.equal('tenant-0');
+    });
+
+    it('gets undefined tenantId when not present', () => {
+      // Create a new instance with no tenantId
+      const orgWithoutTenantId = { ...sampleOrganization };
+      delete orgWithoutTenantId.tenantId;
+
+      const {
+        model: instanceWithoutTenantId,
+      } = createElectroMocks(Organization, orgWithoutTenantId);
+
+      expect(instanceWithoutTenantId.getTenantId()).to.be.undefined;
+    });
+
+    it('sets tenantId to a string value', () => {
+      instance.setTenantId('new-tenant-id');
+      expect(instance.getTenantId()).to.equal('new-tenant-id');
+      expect(instance.record.tenantId).to.equal('new-tenant-id');
+    });
+
+    it('sets tenantId to undefined', () => {
+      instance.setTenantId(undefined);
+      expect(instance.getTenantId()).to.be.undefined;
+      expect(instance.record.tenantId).to.be.undefined;
+    });
+
+    it('overwrites existing tenantId', () => {
+      // First set a tenantId
+      instance.setTenantId('original-tenant');
+      expect(instance.getTenantId()).to.equal('original-tenant');
+
+      // Then overwrite it
+      instance.setTenantId('updated-tenant');
+      expect(instance.getTenantId()).to.equal('updated-tenant');
+      expect(instance.record.tenantId).to.equal('updated-tenant');
+    });
+
+    it('returns the organization instance when setting tenantId', () => {
+      const result = instance.setTenantId('test-tenant');
+      expect(result).to.equal(instance);
+    });
+  });
 });

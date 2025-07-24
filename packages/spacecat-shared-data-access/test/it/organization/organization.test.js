@@ -110,6 +110,33 @@ describe('Organization IT', async () => {
     ).to.eql(data);
   });
 
+  it('adds a new organization with tenantId', async () => {
+    const data = {
+      name: 'New Organization with Tenant',
+      imsOrgId: '1234567895ABCDEF12345678@AdobeOrg',
+      tenantId: 'test-tenant-123',
+      config: {
+        some: 'config',
+      },
+      fulfillableItems: {
+        some: 'items',
+      },
+      updatedBy: 'system',
+    };
+
+    const organization = await Organization.create(data);
+
+    delete data.config;
+    delete organization.record.config;
+
+    expect(organization).to.be.an('object');
+    expect(organization.getTenantId()).to.equal('test-tenant-123');
+
+    expect(
+      sanitizeIdAndAuditFields('Organization', organization.toJSON()),
+    ).to.eql(data);
+  });
+
   it('updates an organization', async () => {
     const organization = await Organization.findById(sampleData.organizations[0].getId());
 
@@ -149,6 +176,37 @@ describe('Organization IT', async () => {
     ).to.eql(
       sanitizeIdAndAuditFields('Organization', expectedOrganization),
     );
+  });
+
+  it('updates an organization tenantId', async () => {
+    const organization = await Organization.findById(sampleData.organizations[0].getId());
+    const originalTenantId = organization.getTenantId();
+
+    // Update tenantId
+    organization.setTenantId('updated-tenant-id');
+    await organization.save();
+
+    // Verify the update
+    const updatedOrganization = await Organization.findById(organization.getId());
+    expect(updatedOrganization.getTenantId()).to.equal('updated-tenant-id');
+    expect(updatedOrganization.getTenantId()).to.not.equal(originalTenantId);
+
+    // Verify other fields remain unchanged
+    expect(updatedOrganization.getName()).to.equal(organization.getName());
+    expect(updatedOrganization.getImsOrgId()).to.equal(organization.getImsOrgId());
+  });
+
+  it('updates an organization tenantId from null to value', async () => {
+    const organization = await Organization.findById(sampleData.organizations[2].getId());
+    expect(organization.getTenantId()).to.be.null;
+
+    // Set tenantId to a value
+    organization.setTenantId('new-tenant-id');
+    await organization.save();
+
+    // Verify the update
+    const updatedOrganization = await Organization.findById(organization.getId());
+    expect(updatedOrganization.getTenantId()).to.equal('new-tenant-id');
   });
 
   it('updates an organization with a new config', async () => {

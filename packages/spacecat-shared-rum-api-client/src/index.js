@@ -178,26 +178,20 @@ export default class RUMAPIClient {
     }
   }
 
-  async createQueryStream(query, opts) {
-    const domainkey = await this._getDomainkey(opts);
+  async queryStream(query, opts) {
     const { handler, checkpoints } = HANDLERS[query] || {};
     if (!handler) throw new Error(`Unknown query ${query}`);
 
-    return new ReadableStream({
-      async start(controller) {
-        const bundleStream = createBundleStream({
-          ...opts,
-          domainkey,
-          checkpoints,
-          handler,
-        }, this.log);
-
-        for await (const bundle of bundleStream) {
-          controller.enqueue(bundle);
-        }
-
-        controller.close();
-      },
-    });
+    try {
+      const domainkey = await this._getDomainkey(opts);
+      return createBundleStream({
+        ...opts,
+        domainkey,
+        checkpoints,
+        handler,
+      }, this.log);
+    } catch (e) {
+      throw new Error(`Query stream '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
+    }
   }
 }

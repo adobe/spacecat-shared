@@ -338,21 +338,26 @@ function createBundleStream(opts, log) {
 
   return new ReadableStream({
     async start(controller) {
+      const failedUrls = [];
+      let totalTransferSize = 0;
+
       async function streamBundle(url) {
         const response = await fetch(url);
+        totalTransferSize += parseInt(response.headers.get('content-length'), 10);
 
         if (!response.ok) {
           log.warn(`Failed to fetch URL: ${sanitizeURL(url)} - status: ${response.status}`);
+          failedUrls.push(url);
           return;
         }
 
         const bundles = await response.json();
 
-        const filtered = bundles.rumBundles?.filter(
+        const filtered = bundles?.rumBundles?.filter(
           (bundle) => !filterBotTraffic || !isBotTraffic(bundle),
         ).map(filterEvents(checkpoints));
 
-        const crunchedBundle = handler(filtered);
+        const crunchedBundle = handler(filtered || []);
         controller.enqueue(crunchedBundle);
       }
 
@@ -369,6 +374,15 @@ function createBundleStream(opts, log) {
         .map(() => worker());
 
       await Promise.all(workers);
+
+      log.info(`Retrieved all RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
+
+      // Add failedUrls to opts object for access by callers
+      if (failedUrls.length > 0) {
+        // eslint-disable-next-line no-param-reassign
+        opts.failedUrls = failedUrls;
+      }
+
       controller.close();
     },
   });

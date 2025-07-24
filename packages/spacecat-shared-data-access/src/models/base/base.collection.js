@@ -505,15 +505,14 @@ class BaseCollection {
     }
 
     try {
-      const now = new Date().toISOString();
+      const updates = items.map((item) => item.record);
+      const response = await this.entity.put(updates).go();
 
-      const updates = items.map((item) => {
+      const now = new Date().toISOString();
+      items.forEach((item) => {
         const { record } = item;
         record.updatedAt = now;
-        return record;
       });
-
-      const response = await this.entity.put(updates).go();
 
       if (isNonEmptyArray(response.unprocessed)) {
         this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);

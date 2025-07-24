@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.34.1...@adobe/spacecat-shared-rum-api-client-v2.35.0) (2025-07-24)
+
+
+### Features
+
+* **rum-api-client:** add query stream ([#872](https://github.com/adobe/spacecat-shared/issues/872)) ([7702138](https://github.com/adobe/spacecat-shared/commit/77021388a298843f3ec2571c9a6f148184fa2814))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.34.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.34.0...@adobe/spacecat-shared-rum-api-client-v2.34.1) (2025-07-24)
 
 

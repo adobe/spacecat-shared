@@ -13,7 +13,6 @@ import { getStaticContent, getDateRanges } from '@adobe/spacecat-shared-utils';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// ESM way to get the current file's directory (no __dirname, no __filename)
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
 

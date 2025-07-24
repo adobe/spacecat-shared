@@ -24,7 +24,6 @@ WITH raw AS (
     WHERE siteid = '{{siteId}}'
     AND ({{temporalCondition}})
 ),
-
 agg AS (
     SELECT
         {{dimensionColumns}},

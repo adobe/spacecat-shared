@@ -340,6 +340,8 @@ function createBundleStream(opts, log) {
     async start(controller) {
       const failedUrls = [];
       let totalTransferSize = 0;
+      let bundlesCount = 0;
+      let lastCheckpoint = 0;
 
       async function streamBundle(url) {
         const response = await fetch(url);
@@ -356,6 +358,14 @@ function createBundleStream(opts, log) {
         const filtered = bundles?.rumBundles?.filter(
           (bundle) => !filterBotTraffic || !isBotTraffic(bundle),
         ).map(filterEvents(checkpoints));
+
+        bundlesCount += filtered.length;
+        const currentCheckpoint = Math.floor(bundlesCount / 50000);
+
+        if (currentCheckpoint > lastCheckpoint) {
+          log.info(`Checkpoint: Fetched ${bundlesCount} bundles; resuming...`);
+          lastCheckpoint = currentCheckpoint;
+        }
 
         const crunchedBundle = handler(filtered || []);
         controller.enqueue(crunchedBundle);

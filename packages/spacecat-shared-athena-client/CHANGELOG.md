@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.2.0...@adobe/spacecat-shared-athena-client-v1.2.1) (2025-07-24)
+
+
+### Bug Fixes
+
+* mapping of traffic data response ([#871](https://github.com/adobe/spacecat-shared/issues/871)) ([ca65936](https://github.com/adobe/spacecat-shared/commit/ca659361b2f61c83bf995c285860d479e9f82066))
+
 # [@adobe/spacecat-shared-athena-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.1.1...@adobe/spacecat-shared-athena-client-v1.2.0) (2025-07-24)
 
 

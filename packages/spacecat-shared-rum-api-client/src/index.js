@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 import { hasText, fetch } from '@adobe/spacecat-shared-utils';
-import { fetchBundles } from './common/rum-bundler-client.js';
+import { fetchBundles, createBundleStream } from './common/rum-bundler-client.js';
 import notfound from './functions/404.js';
 import notfoundInternalLinks from './functions/404-internal-links.js';
 import cwv from './functions/cwv.js';
@@ -175,6 +175,23 @@ export default class RUMAPIClient {
       return results;
     } catch (e) {
       throw new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
+    }
+  }
+
+  async queryStream(query, opts) {
+    const { handler, checkpoints } = HANDLERS[query] || {};
+    if (!handler) throw new Error(`Unknown query ${query}`);
+
+    try {
+      const domainkey = await this._getDomainkey(opts);
+      return createBundleStream({
+        ...opts,
+        domainkey,
+        checkpoints,
+        handler,
+      }, this.log);
+    } catch (e) {
+      throw new Error(`Query stream '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
     }
   }
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.2.1...@adobe/spacecat-shared-athena-client-v1.2.2) (2025-07-25)
+
+
+### Bug Fixes
+
+* switch to js template ([#876](https://github.com/adobe/spacecat-shared/issues/876)) ([4e843c6](https://github.com/adobe/spacecat-shared/commit/4e843c66a0d5b0d7d8652c03bb184e9f4253e4ea))
+
 # [@adobe/spacecat-shared-athena-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.2.0...@adobe/spacecat-shared-athena-client-v1.2.1) (2025-07-24)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.35.0...@adobe/spacecat-shared-rum-api-client-v2.36.0) (2025-07-25)
+
+
+### Features
+
+* classify organic llm referral traffic ([#877](https://github.com/adobe/spacecat-shared/issues/877)) ([63e029e](https://github.com/adobe/spacecat-shared/commit/63e029ee3db343d487ba1cbe2a006b11dce683bf))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.34.1...@adobe/spacecat-shared-rum-api-client-v2.35.0) (2025-07-24)
 
 

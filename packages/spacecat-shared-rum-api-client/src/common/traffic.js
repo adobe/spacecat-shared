@@ -27,7 +27,8 @@ import URI from 'urijs';
 export function getSecondLevelDomain(url) {
   if (!hasText(url)) return url;
   const uri = new URI(url);
-  return uri.hostname().split(uri.tld())[0];
+  const tld = uri.tld();
+  return uri.hostname().split(`.${tld}`)[0];
 }
 
 /*

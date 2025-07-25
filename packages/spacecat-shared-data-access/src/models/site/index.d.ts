@@ -36,6 +36,7 @@ export type IMPORT_TYPES = {
   readonly ORGANIC_KEYWORDS: 'organic-keywords';
   readonly ORGANIC_TRAFFIC: 'organic-traffic';
   readonly TOP_PAGES: 'top-pages';
+  readonly TOP_FORMS: 'top-forms';
 };
 
 export type IMPORT_DESTINATIONS = {
@@ -47,7 +48,7 @@ export type IMPORT_SOURCES = {
   readonly GSC: 'google';
 };
 
-export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages';
+export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages' | 'top-forms';
 export type ImportDestination = 'default';
 export type ImportSource = 'ahrefs' | 'google';
 

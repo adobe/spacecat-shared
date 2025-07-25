@@ -42,6 +42,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addReference('has_one', 'LatestAudit', ['auditType'], { required: false })
   .addReference('has_many', 'Opportunities')
   .addReference('has_many', 'SiteCandidates')
+  .addReference('has_many', 'SiteTopForms')
   .addReference('has_many', 'SiteTopPages')
   .addReference('has_many', 'PageIntents')
   .addAttribute('baseURL', {

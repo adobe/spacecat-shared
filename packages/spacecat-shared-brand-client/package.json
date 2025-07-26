@@ -43,7 +43,7 @@
     "chai-as-promised": "8.0.1",
     "mocha": "11.7.1",
     "mocha-multi-reporters": "1.5.1",
-    "nock": "14.0.6",
+    "nock": "14.0.7",
     "sinon": "20.0.0",
     "sinon-chai": "4.0.0",
     "typescript": "5.8.3",

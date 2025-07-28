@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.2...@adobe/spacecat-shared-data-access-v2.41.0) (2025-07-28)
+
+
+### Features
+
+* add top form model ([#863](https://github.com/adobe/spacecat-shared/issues/863)) ([66138ce](https://github.com/adobe/spacecat-shared/commit/66138ced4a0b0e3c68bf0aaec02b7adaafb0503d))
+
 # [@adobe/spacecat-shared-data-access-v2.40.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.1...@adobe/spacecat-shared-data-access-v2.40.2) (2025-07-28)
 
 

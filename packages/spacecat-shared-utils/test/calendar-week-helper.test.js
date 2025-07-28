@@ -49,7 +49,6 @@ describe('Utils - getLastNumberOfWeeks', () => {
   });
 
   it('should handle 53-week years correctly', () => {
-    // January 10, 2021, belongs to the last week of the 53-week year 2020
     clock = sinon.useFakeTimers(new Date('2021-01-10T12:00:00Z'));
     const result = getLastNumberOfWeeks(3);
     expect(result).to.deep.equal([
@@ -60,14 +59,21 @@ describe('Utils - getLastNumberOfWeeks', () => {
   });
 
   it('should handle year boundaries correctly for a 52-week year', () => {
-    // 2025 is a 52-week year.
-    // Setting date to early 2026, so we go back to 2025.
-    clock = sinon.useFakeTimers(new Date('2026-01-12T12:00:00Z')); // Monday of Week 3, 2026
+    clock = sinon.useFakeTimers(new Date('2026-01-12T12:00:00Z'));
     const result = getLastNumberOfWeeks(3);
     expect(result).to.deep.equal([
       { week: 52, year: 2025 },
       { week: 1, year: 2026 },
       { week: 2, year: 2026 },
+    ]);
+  });
+
+  it('should set week to 53 when rolling back to a year with 53 weeks', () => {
+    clock = sinon.useFakeTimers(new Date('2021-01-11T12:00:00Z'));
+    const result = getLastNumberOfWeeks(2);
+    expect(result).to.deep.equal([
+      { week: 53, year: 2020 },
+      { week: 1, year: 2021 },
     ]);
   });
 });

@@ -78,4 +78,4 @@ export {
 
 export { retrievePageAuthentication, getAccessToken } from './auth.js';
 
-export { getDateRanges } from './calendar-week-helper.js';
+export { getDateRanges, getLastNumberOfWeeks } from './calendar-week-helper.js';

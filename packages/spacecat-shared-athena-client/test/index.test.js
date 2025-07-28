@@ -312,6 +312,7 @@ describe('Traffic analysis query functions', () => {
         dimensionColumns: 'channel, device',
         groupBy: 'channel, device',
         dimensionColumnsPrefixed: 'a.channel, a.device',
+        trfTypeConfition: 'trf_type IN (`paid`)',
       };
       const sql = getTrafficAnalysisQuery(placeholders);
       // Should not contain any unreplaced {{...}}
@@ -424,6 +425,7 @@ describe('Traffic analysis query functions', () => {
         siteId: 'test-site-id',
         dimensions: ['utm_campaign', 'device'],
         tableName: 'traffic_data',
+        trfTypes: ['paid'],
       };
 
       const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
@@ -435,12 +437,14 @@ describe('Traffic analysis query functions', () => {
       expect(result).to.have.property('groupBy', 'utm_campaign, device');
       expect(result).to.have.property('temporalCondition');
       expect(result).to.have.property('pageTypeCase', 'NULL as page_type');
+      expect(result).to.have.property('trfTypeCondition', 'trf_type IN (\'paid\')');
 
       // Check temporal condition format
       expect(result.temporalCondition).to.match(/\(year=\d+ AND month=\d+ AND week=23\)/);
 
       // Test full SQL generation for comma validation
       const sql = getTrafficAnalysisQuery(result);
+      console.log(sql);
 
       // Verify no dangling commas (even number of dimensions)
       expect(sql, 'unexpected double commas').to.not.match(/,,/g);
@@ -450,6 +454,7 @@ describe('Traffic analysis query functions', () => {
       // Verify proper comma separation in dimensions
       expect(sql).to.include('utm_campaign, device');
       expect(sql).to.include('a.utm_campaign, a.device');
+      expect(sql).to.include('AND trf_type IN (\'paid\')');
     });
 
     it('should handle page types when page_type dimension is included (2 dimensions - even)', () => {
@@ -630,6 +635,7 @@ describe('Traffic analysis query functions', () => {
         siteId: 'triple-dim-site',
         dimensions: ['trf_channel', 'utm_campaign', 'device'],
         tableName: 'triple_dim_table',
+        trfTypes: ['earned', 'owned', 'paid'],
       };
 
       const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
@@ -646,10 +652,12 @@ describe('Traffic analysis query functions', () => {
       expect(sql, 'unexpected double commas').to.not.match(/,,/g);
       expect(sql, 'unexpected trailing comma before closing paren').to.not.match(/,\s*\)/g);
       expect(sql, 'unexpected trailing comma before FROM').to.not.match(/,\s*FROM/gi);
+      expect(sql).to.not.match(/undefined/);
 
       // Verify proper comma separation in dimensions
       expect(sql).to.include('trf_channel, utm_campaign, device');
       expect(sql).to.include('a.trf_channel, a.utm_campaign, a.device');
+      expect(sql).to.include('AND trf_type IN (\'earned\', \'owned\', \'paid\')');
     });
 
     it('should handle cross-month year correctly', () => {
@@ -705,6 +713,7 @@ describe('Traffic analysis query functions', () => {
       expect(sql, 'unexpected double commas').to.not.match(/,,/g);
       expect(sql, 'unexpected trailing comma before closing paren').to.not.match(/,\s*\)/g);
       expect(sql, 'unexpected trailing comma before FROM').to.not.match(/,\s*FROM/gi);
+      expect(sql).to.not.match(/undefined/);
 
       // Verify SQL structure is reasonable
       expect(sql).to.include('WITH raw AS');
@@ -728,6 +737,9 @@ describe('Traffic analysis query functions', () => {
       expect(sql).to.include('week=23');
       expect(sql).to.include('year=');
       expect(sql).to.include('month=');
+
+      // verify if trf_type not passed we dont filter
+      expect(sql).to.include('AND TRUE');
     });
 
     it('should generate SQL without page types when not in dimensions (2 dimensions - even)', () => {

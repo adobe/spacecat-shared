@@ -26,6 +26,7 @@ export function getTrafficAnalysisTemplate({
   siteId,
   tableName,
   temporalCondition,
+  trfTypeCondition,
   dimensionColumns,
   groupBy,
   dimensionColumnsPrefixed,
@@ -57,6 +58,7 @@ WITH raw AS (
     FROM ${tableName}
     WHERE siteid = '${siteId}'
     AND (${temporalCondition})
+    AND ${trfTypeCondition}
 ),
 agg AS (
     SELECT

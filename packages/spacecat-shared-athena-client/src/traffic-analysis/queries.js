@@ -36,6 +36,7 @@ export function getTrafficAnalysisQueryPlaceholders() {
     'siteId',
     'tableName',
     'temporalCondition',
+    'trfTypeCondition',
   ];
 }
 
@@ -71,7 +72,8 @@ export function buildPageTypeCase(pageTypes, column) {
  * @param {string} params.tableName - The name of the source table.
  * @param {string} params.pageTypeMatchColumn - The pageTypeMatchColumn of the source table.
  * @param {Object|null} [params.pageTypes=null] - Optional pageType rules for CASE generation.
- *
+ * @param {string[]|null} [params.trfTypes] - Traffic type to filter by before
+ *  grouping (e.g ['paid']).
  * @returns {Object} Template values for SQL generation.
  */
 export function getTrafficAnalysisQueryPlaceholdersFilled({
@@ -82,6 +84,7 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
   tableName,
   pageTypes = null,
   pageTypeMatchColumn = 'path',
+  trfTypes = null,
 }) {
   if (!week || !year || !siteId || !tableName) {
     throw new Error('Missing required parameters: week, year, siteId, or tableName');
@@ -104,6 +107,12 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
     pageTypeCase = buildPageTypeCase(pageTypes, pageTypeMatchColumn);
   }
 
+  let trfTypeCondition = 'TRUE';
+  if (trfTypes && trfTypes.length > 0) {
+    const quotedTypes = trfTypes.map((type) => `'${type}'`).join(', ');
+    trfTypeCondition = `trf_type IN (${quotedTypes})`;
+  }
+
   return {
     siteId,
     groupBy: dimensionColumns,
@@ -112,5 +121,6 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
     tableName,
     temporalCondition,
     pageTypeCase,
+    trfTypeCondition,
   };
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.43.1...@adobe/spacecat-shared-utils-v1.44.0) (2025-07-28)
+
+
+### Features
+
+* add function for extracting list of calendar weeks ([#880](https://github.com/adobe/spacecat-shared/issues/880)) ([f69a808](https://github.com/adobe/spacecat-shared/commit/f69a808b96ee5e977e5cf5936e3effa378b51581))
+
 # [@adobe/spacecat-shared-utils-v1.43.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.43.0...@adobe/spacecat-shared-utils-v1.43.1) (2025-07-27)
 
 

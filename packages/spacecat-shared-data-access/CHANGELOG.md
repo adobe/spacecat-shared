@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.40.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.1...@adobe/spacecat-shared-data-access-v2.40.2) (2025-07-28)
+
+
+### Bug Fixes
+
+* SITES-33793 update updatedAt field in _saveMany method ([#860](https://github.com/adobe/spacecat-shared/issues/860)) ([5d6454b](https://github.com/adobe/spacecat-shared/commit/5d6454b7ef9eedee39c41eda56d72324bc472c09))
+
 # [@adobe/spacecat-shared-data-access-v2.40.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.0...@adobe/spacecat-shared-data-access-v2.40.1) (2025-07-27)
 
 

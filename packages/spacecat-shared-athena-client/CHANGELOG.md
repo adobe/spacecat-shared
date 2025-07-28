@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.2.2...@adobe/spacecat-shared-athena-client-v1.2.3) (2025-07-28)
+
+
+### Bug Fixes
+
+* introduce filter on traffic type ([#882](https://github.com/adobe/spacecat-shared/issues/882)) ([df08c60](https://github.com/adobe/spacecat-shared/commit/df08c6066206ba43582104b6be6a6622259cbafc))
+
 # [@adobe/spacecat-shared-athena-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.2.1...@adobe/spacecat-shared-athena-client-v1.2.2) (2025-07-25)
 
 

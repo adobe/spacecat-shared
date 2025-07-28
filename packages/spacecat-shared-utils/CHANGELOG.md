@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.44.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.44.0...@adobe/spacecat-shared-utils-v1.44.1) (2025-07-28)
+
+
+### Bug Fixes
+
+* expose calendar week helper function ([#881](https://github.com/adobe/spacecat-shared/issues/881)) ([5e178a8](https://github.com/adobe/spacecat-shared/commit/5e178a8eeaf426612f593f016f765b76cd565c03))
+
 # [@adobe/spacecat-shared-utils-v1.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.43.1...@adobe/spacecat-shared-utils-v1.44.0) (2025-07-28)
 
 

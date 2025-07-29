@@ -48,6 +48,11 @@ const schema = new SchemaBuilder(Report, ReportCollection)
     required: false,
     default: () => '',
     validate: (value) => !value || (isString(value) && value.length >= 0),
+  })
+  .addAttribute('status', {
+    type: ['processing', 'success', 'failed'],
+    required: true,
+    default: 'processing',
   });
 
 export default schema.build();

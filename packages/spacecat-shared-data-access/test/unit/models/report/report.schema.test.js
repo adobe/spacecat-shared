@@ -73,4 +73,47 @@ describe('Report Schema', () => {
       expect(storagePathAttr.default()).to.equal('');
     });
   });
+
+  describe('status attribute', () => {
+    it('should have status as required with default processing', () => {
+      const attributes = reportSchema.getAttributes();
+      const statusAttr = attributes.status;
+
+      expect(statusAttr).to.exist;
+      expect(statusAttr.required).to.be.true;
+      expect(statusAttr.default).to.equal('processing');
+      expect(statusAttr.type).to.deep.equal(['processing', 'success', 'failed']);
+    });
+
+    it('should validate processing as valid', () => {
+      const attributes = reportSchema.getAttributes();
+      const statusAttr = attributes.status;
+
+      // For enum types, validation is handled by ElectroDB internally
+      expect(statusAttr.type).to.include('processing');
+    });
+
+    it('should validate success as valid', () => {
+      const attributes = reportSchema.getAttributes();
+      const statusAttr = attributes.status;
+
+      expect(statusAttr.type).to.include('success');
+    });
+
+    it('should validate failed as valid', () => {
+      const attributes = reportSchema.getAttributes();
+      const statusAttr = attributes.status;
+
+      expect(statusAttr.type).to.include('failed');
+    });
+
+    it('should not include invalid status values', () => {
+      const attributes = reportSchema.getAttributes();
+      const statusAttr = attributes.status;
+
+      expect(statusAttr.type).to.not.include('invalid');
+      expect(statusAttr.type).to.not.include('pending');
+      expect(statusAttr.type).to.not.include('completed');
+    });
+  });
 });

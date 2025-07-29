@@ -31,6 +31,8 @@ function checkReport(report) {
   expect(report.getReportPeriod()).to.be.an('object');
   expect(report.getComparisonPeriod()).to.be.an('object');
   expect(report.getStoragePath()).to.be.a('string');
+  expect(report.getStatus()).to.be.a('string');
+  expect(['processing', 'success', 'failed']).to.include(report.getStatus());
   expect(report.getCreatedAt()).to.be.a('string');
   expect(report.getUpdatedAt()).to.be.a('string');
   expect(report.getUpdatedBy()).to.be.a('string');

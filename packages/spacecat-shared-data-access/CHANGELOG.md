@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.41.0...@adobe/spacecat-shared-data-access-v2.42.0) (2025-07-29)
+
+
+### Features
+
+* added `status` field in reports ([#883](https://github.com/adobe/spacecat-shared/issues/883)) ([f6e9fcd](https://github.com/adobe/spacecat-shared/commit/f6e9fcd1e8e5eabb731c4cdbd89654fc725c9837))
+
 # [@adobe/spacecat-shared-data-access-v2.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.2...@adobe/spacecat-shared-data-access-v2.41.0) (2025-07-28)
 
 

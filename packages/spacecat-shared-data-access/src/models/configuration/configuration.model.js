@@ -31,7 +31,7 @@ class Configuration extends BaseModel {
   };
 
   static JOB_INTERVALS = {
-    NEVER: 'never', // allows to enable imports without scheduling them
+    NEVER: 'never', // allows to enable imports without scheduling them.
     EVERY_HOUR: 'every-hour',
     DAILY: 'daily',
     WEEKLY: 'weekly',

@@ -604,36 +604,101 @@ describe('BaseCollection', () => {
     });
 
     it('saves multiple entities successfully', async () => {
-      const mockRecords = [mockRecord, mockRecord];
+      const mockModelInstances = [
+        new MockModel(
+          mockElectroService,
+          mockEntityRegistry,
+          baseCollectionInstance.schema,
+          mockRecord,
+          mockLogger,
+        ),
+        new MockModel(
+          mockElectroService,
+          mockEntityRegistry,
+          baseCollectionInstance.schema,
+          mockRecord,
+          mockLogger,
+        ),
+      ];
       mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
 
-      const result = await baseCollectionInstance._saveMany(mockRecords);
+      const result = await baseCollectionInstance._saveMany(mockModelInstances);
       expect(result).to.be.undefined;
       expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
       expect(mockLogger.error).not.called;
     });
 
+    it('updates updatedAt field for all entities before saving', async () => {
+      const mockModelInstance = new MockModel(
+        mockElectroService,
+        mockEntityRegistry,
+        baseCollectionInstance.schema,
+        mockRecord,
+        mockLogger,
+      );
+      const originalUpdatedAt = mockModelInstance.record.updatedAt;
+      mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
+
+      await baseCollectionInstance._saveMany([mockModelInstance]);
+
+      // Verify updatedAt was updated
+      expect(mockModelInstance.record.updatedAt).to.not.equal(originalUpdatedAt);
+      expect(mockModelInstance.record.updatedAt).to.be.a('string');
+      expect(new Date(mockModelInstance.record.updatedAt).getTime())
+        .to.be.closeTo(Date.now(), 1000);
+    });
+
     it('saves multiple entities successfully if `res.unprocessed` is an empty array', async () => {
-      const mockRecords = [mockRecord, mockRecord];
+      const mockModelInstances = [
+        new MockModel(
+          mockElectroService,
+          mockEntityRegistry,
+          baseCollectionInstance.schema,
+          mockRecord,
+          mockLogger,
+        ),
+        new MockModel(
+          mockElectroService,
+          mockEntityRegistry,
+          baseCollectionInstance.schema,
+          mockRecord,
+          mockLogger,
+        ),
+      ];
       mockElectroService.entities.mockEntityModel.put.returns({
         go: async () => ({ unprocessed: [] }),
       });
 
-      const result = await baseCollectionInstance._saveMany(mockRecords);
+      const result = await baseCollectionInstance._saveMany(mockModelInstances);
       expect(result).to.be.undefined;
       expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
       expect(mockLogger.error).not.called;
     });
 
     it('saves some entities successfully with unprocessed items', async () => {
-      const mockRecords = [mockRecord, mockRecord];
+      const mockModelInstances = [
+        new MockModel(
+          mockElectroService,
+          mockEntityRegistry,
+          baseCollectionInstance.schema,
+          mockRecord,
+          mockLogger,
+        ),
+        new MockModel(
+          mockElectroService,
+          mockEntityRegistry,
+          baseCollectionInstance.schema,
+          mockRecord,
+          mockLogger,
+        ),
+      ];
       mockElectroService.entities.mockEntityModel.put.returns(
         {
           go: () => Promise.resolve({ unprocessed: [mockRecord] }),
         },
       );
 
-      const result = await baseCollectionInstance._saveMany(mockRecords);
+      const result = await baseCollectionInstance._saveMany(mockModelInstances);
       expect(result).to.be.undefined;
       expect(mockElectroService.entities.mockEntityModel.put.calledOnce).to.be.true;
       expect(mockLogger.error.calledOnceWith(`Failed to process all items in batch write for [mockEntityModel]: ${JSON.stringify([mockRecord])}`)).to.be.true;
@@ -641,12 +706,27 @@ describe('BaseCollection', () => {
 
     it('throws error and logs when save fails', async () => {
       const error = new Error('Save failed');
-      const mockRecords = [mockRecord, mockRecord];
+      const mockModelInstances = [
+        new MockModel(
+          mockElectroService,
+          mockEntityRegistry,
+          baseCollectionInstance.schema,
+          mockRecord,
+          mockLogger,
+        ),
+        new MockModel(
+          mockElectroService,
+          mockEntityRegistry,
+          baseCollectionInstance.schema,
+          mockRecord,
+          mockLogger,
+        ),
+      ];
       mockElectroService.entities.mockEntityModel.put.returns(
         { go: () => Promise.reject(error) },
       );
 
-      await expect(baseCollectionInstance._saveMany(mockRecords)).to.be.rejectedWith(DataAccessError, 'Failed to save many');
+      await expect(baseCollectionInstance._saveMany(mockModelInstances)).to.be.rejectedWith(DataAccessError, 'Failed to save many');
       expect(mockLogger.error.calledOnce).to.be.true;
     });
   });

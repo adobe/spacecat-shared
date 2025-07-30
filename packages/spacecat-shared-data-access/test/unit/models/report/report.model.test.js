@@ -91,6 +91,27 @@ describe('ReportModel', () => {
     });
   });
 
+  describe('status', () => {
+    it('gets status', () => {
+      expect(instance.getStatus()).to.equal(sampleReport.status);
+    });
+
+    it('sets status to processing', () => {
+      instance.setStatus('processing');
+      expect(instance.record.status).to.equal('processing');
+    });
+
+    it('sets status to success', () => {
+      instance.setStatus('success');
+      expect(instance.record.status).to.equal('success');
+    });
+
+    it('sets status to failed', () => {
+      instance.setStatus('failed');
+      expect(instance.record.status).to.equal('failed');
+    });
+  });
+
   describe('createdAt', () => {
     it('gets createdAt', () => {
       expect(instance.getCreatedAt()).to.equal(sampleReport.createdAt);

@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-scrape-client-v1.0.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.4...@adobe/spacecat-shared-scrape-client-v1.0.5) (2025-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#878](https://github.com/adobe/spacecat-shared/issues/878)) ([b049828](https://github.com/adobe/spacecat-shared/commit/b04982839c0ff5e4de4ab0e37508c5eb5272a679))
+
+# [@adobe/spacecat-shared-scrape-client-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.3...@adobe/spacecat-shared-scrape-client-v1.0.4) (2025-07-24)
+
+
+### Bug Fixes
+
+* (scrape-job-supervisor): add offset for URL numbering in batches ([#868](https://github.com/adobe/spacecat-shared/issues/868)) ([12789c0](https://github.com/adobe/spacecat-shared/commit/12789c0cabe33ad5e526793d645bfef421a851af))
+
 # [@adobe/spacecat-shared-scrape-client-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.2...@adobe/spacecat-shared-scrape-client-v1.0.3) (2025-07-21)
 
 

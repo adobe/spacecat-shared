@@ -184,7 +184,7 @@ describe('AdobeImsHandler', () => {
     const result = await handler.checkAuth({}, testContext);
 
     expect(result).to.be.null;
-    expect(logStub.error.calledWith('[ims] Failed to validate token: Token not issued by expected idp: ims-na1-stg1 != ims-na1')).to.be.true;
+    expect(logStub.debug.calledWith('[ims] Failed to validate token: Token not issued by expected idp: ims-na1-stg1 != ims-na1')).to.be.true;
   });
 
   it('throw error when context is not correct', async () => {
@@ -222,7 +222,7 @@ describe('AdobeImsHandler', () => {
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.null;
-      expect(logStub.error.calledWith('[ims] Failed to validate token: expires_in and created_at claims must be numbers')).to.be.true;
+      expect(logStub.debug.calledWith('[ims] Failed to validate token: expires_in and created_at claims must be numbers')).to.be.true;
     });
 
     it('returns null when expires_in is not a number', async () => {
@@ -232,7 +232,7 @@ describe('AdobeImsHandler', () => {
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.null;
-      expect(logStub.error.calledWith('[ims] Failed to validate token: expires_in and created_at claims must be numbers')).to.be.true;
+      expect(logStub.debug.calledWith('[ims] Failed to validate token: expires_in and created_at claims must be numbers')).to.be.true;
     });
 
     it('returns null when created_at is in the future', async () => {
@@ -242,7 +242,7 @@ describe('AdobeImsHandler', () => {
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.null;
-      expect(logStub.error.calledWith('[ims] Failed to validate token: created_at should be in the past')).to.be.true;
+      expect(logStub.debug.calledWith('[ims] Failed to validate token: created_at should be in the past')).to.be.true;
     });
 
     it('returns null when the token is expired', async () => {
@@ -252,7 +252,7 @@ describe('AdobeImsHandler', () => {
       const result = await handler.checkAuth({}, context);
 
       expect(result).to.be.null;
-      expect(logStub.error.calledWith('[ims] Failed to validate token: token expired')).to.be.true;
+      expect(logStub.debug.calledWith('[ims] Failed to validate token: token expired')).to.be.true;
     });
 
     it('successfully validates a token and returns the profile', async () => {

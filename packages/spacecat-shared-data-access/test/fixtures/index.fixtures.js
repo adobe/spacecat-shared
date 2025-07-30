@@ -25,6 +25,7 @@ import organizations from './organizations.fixture.js';
 import roles from './roles.fixture.js';
 import roleMembers from './role-members.fixture.js';
 import siteCandidates from './site-candidates.fixture.js';
+import siteTopForms from './site-top-forms.fixture.js';
 import siteTopPages from './site-top-pages.fixture.js';
 import sites from './sites.fixture.js';
 import suggestions from './suggestions.fixture.js';
@@ -47,6 +48,7 @@ export default {
   roles,
   roleMembers,
   siteCandidates,
+  siteTopForms,
   siteTopPages,
   sites,
   suggestions,

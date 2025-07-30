@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-rum-api-client",
-  "version": "2.33.1",
+  "version": "2.36.1",
   "description": "Shared modules of the Spacecat Services - Rum API client",
   "type": "module",
   "engines": {
@@ -46,7 +46,7 @@
   "devDependencies": {
     "chai": "5.2.1",
     "chai-as-promised": "8.0.1",
-    "nock": "14.0.6",
+    "nock": "14.0.7",
     "sinon": "20.0.0",
     "sinon-chai": "4.0.0",
     "typescript": "5.8.3"

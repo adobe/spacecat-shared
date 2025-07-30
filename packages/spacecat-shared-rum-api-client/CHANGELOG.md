@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.0...@adobe/spacecat-shared-rum-api-client-v2.36.1) (2025-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#878](https://github.com/adobe/spacecat-shared/issues/878)) ([b049828](https://github.com/adobe/spacecat-shared/commit/b04982839c0ff5e4de4ab0e37508c5eb5272a679))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.35.0...@adobe/spacecat-shared-rum-api-client-v2.36.0) (2025-07-25)
+
+
+### Features
+
+* classify organic llm referral traffic ([#877](https://github.com/adobe/spacecat-shared/issues/877)) ([63e029e](https://github.com/adobe/spacecat-shared/commit/63e029ee3db343d487ba1cbe2a006b11dce683bf))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.34.1...@adobe/spacecat-shared-rum-api-client-v2.35.0) (2025-07-24)
+
+
+### Features
+
+* **rum-api-client:** add query stream ([#872](https://github.com/adobe/spacecat-shared/issues/872)) ([7702138](https://github.com/adobe/spacecat-shared/commit/77021388a298843f3ec2571c9a6f148184fa2814))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.34.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.34.0...@adobe/spacecat-shared-rum-api-client-v2.34.1) (2025-07-24)
+
+
+### Bug Fixes
+
+* add date field to the traffic analysis query ([#870](https://github.com/adobe/spacecat-shared/issues/870)) ([ecbab0c](https://github.com/adobe/spacecat-shared/commit/ecbab0cdbfe2dd740bd29bc76873508715ab52cf))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.33.1...@adobe/spacecat-shared-rum-api-client-v2.34.0) (2025-07-23)
+
+
+### Features
+
+* **rum-client:** add log checkpoints for around every 50k bundles fetched ([#864](https://github.com/adobe/spacecat-shared/issues/864)) ([23acfc4](https://github.com/adobe/spacecat-shared/commit/23acfc430753371b6440aead135848031874cc68))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.33.0...@adobe/spacecat-shared-rum-api-client-v2.33.1) (2025-07-19)
 
 

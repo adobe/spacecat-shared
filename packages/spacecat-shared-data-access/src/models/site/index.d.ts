@@ -21,7 +21,7 @@ import type {
   Organization,
   SiteCandidate,
   SiteTopPage,
-} from '../index';
+} from '../index.js';
 
 export interface HlxConfig {
   hlxVersion: number; // helix (AEM Edge Delivery) major version
@@ -36,6 +36,7 @@ export type IMPORT_TYPES = {
   readonly ORGANIC_KEYWORDS: 'organic-keywords';
   readonly ORGANIC_TRAFFIC: 'organic-traffic';
   readonly TOP_PAGES: 'top-pages';
+  readonly TOP_FORMS: 'top-forms';
 };
 
 export type IMPORT_DESTINATIONS = {
@@ -47,7 +48,7 @@ export type IMPORT_SOURCES = {
   readonly GSC: 'google';
 };
 
-export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages';
+export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages' | 'top-forms';
 export type ImportDestination = 'default';
 export type ImportSource = 'ahrefs' | 'google';
 
@@ -59,6 +60,25 @@ export interface ImportConfig {
   pageUrl?: string;
   geo?: string;
   limit?: number;
+}
+
+export type WellKnownLmmoTag = 'market' | 'product' | 'topic';
+export type LmmoTag = `${WellKnownLmmoTag}:${string}` | string;
+
+export interface LlmoQuestion {
+  key: string;
+  question: string;
+  source?: string;
+  volume?: string;
+  importTime?: string;
+  keyword?: string;
+  url?: string;
+  tags?: LmmoTag[];
+}
+
+export interface LlmoUrlPattern {
+  urlPattern: string;
+  tags?: LmmoTag[];
 }
 
 export interface SiteConfig {
@@ -97,7 +117,17 @@ export interface SiteConfig {
       headers?: Record<string, string>;
       overrideBaseURL?: string;
     };
+    llmo?: {
+      dataFolder: string;
+      brand: string;
+      questions?: {
+        Human?: Array<LlmoQuestion>;
+        AI?: Array<LlmoQuestion>;
+      };
+      urlPatterns?: Array<LlmoUrlPattern>
+    };
   };
+  extractWellKnownTags(tags: Array<string>): Partial<Record<WellKnownLmmoTag, string>>;
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
   getImports(): ImportConfig[];
   getImportConfig(type: ImportType): ImportConfig | undefined;
@@ -116,6 +146,28 @@ export interface SiteConfig {
   getLatestMetrics(type: string):
     { pageViewsChange: number; ctrChange: number; projectedTrafficValue: number } | undefined;
   getFetchConfig(): { headers?: Record<string, string>, overrideBaseURL?: string } | undefined;
+  getLlmoConfig(): {
+    dataFolder: string;
+    brand: string;
+    questions?: { Human?: Array<LlmoQuestion>; AI?: Array<LlmoQuestion> };
+  } | undefined;
+  updateLlmoConfig(dataFolder: string, brand: string, questions?: {
+    Human?: Array<LlmoQuestion>;
+    AI?: Array<LlmoQuestion>;
+  }, urlPatterns?: Array<LlmoUrlPattern>): void;
+  updateLlmoDataFolder(dataFolder: string): void;
+  updateLlmoBrand(brand: string): void;
+  getLlmoDataFolder(): string | undefined;
+  getLlmoBrand(): string | undefined;
+  getLlmoHumanQuestions(): LlmoQuestion[] | undefined;
+  getLlmoAIQuestions(): LlmoQuestion[] | undefined;
+  getLlmoUrlPatterns(): Array<LlmoUrlPattern> | undefined;
+  addLlmoHumanQuestions(questions: LlmoQuestion[]): void;
+  addLlmoAIQuestions(questions: LlmoQuestion[]): void;
+  removeLlmoQuestion(key: string): void;
+  updateLlmoQuestion(key: string, questionUpdate: Partial<LlmoQuestion>): void;
+  addLlmoUrlPatterns(urlPatterns: Array<LlmoUrlPattern>): void;
+  removeLlmoUrlPattern(urlPattern: string): void;
 }
 
 export interface Site extends BaseModel {

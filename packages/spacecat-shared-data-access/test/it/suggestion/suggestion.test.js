@@ -219,6 +219,7 @@ describe('Suggestion IT', async () => {
 
   it('updates the status of multiple suggestions', async () => {
     const suggestions = sampleData.suggestions.slice(0, 3);
+    const originalUpdatedAt = suggestions[0].getUpdatedAt();
 
     await Suggestion.bulkUpdateStatus(suggestions, 'APPROVED');
 
@@ -228,6 +229,13 @@ describe('Suggestion IT', async () => {
 
     updatedSuggestions.forEach((suggestion) => {
       expect(suggestion.getStatus()).to.equal('APPROVED');
+    });
+
+    // Verify that updatedAt was updated for all suggestions
+    updatedSuggestions.forEach((suggestion) => {
+      expect(new Date(suggestion.getUpdatedAt())).to.be.greaterThan(
+        new Date(originalUpdatedAt),
+      );
     });
   });
 

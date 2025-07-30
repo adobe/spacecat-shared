@@ -1,3 +1,52 @@
+# [@adobe/spacecat-shared-data-access-v2.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.41.0...@adobe/spacecat-shared-data-access-v2.42.0) (2025-07-29)
+
+
+### Features
+
+* added `status` field in reports ([#883](https://github.com/adobe/spacecat-shared/issues/883)) ([f6e9fcd](https://github.com/adobe/spacecat-shared/commit/f6e9fcd1e8e5eabb731c4cdbd89654fc725c9837))
+
+# [@adobe/spacecat-shared-data-access-v2.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.2...@adobe/spacecat-shared-data-access-v2.41.0) (2025-07-28)
+
+
+### Features
+
+* add top form model ([#863](https://github.com/adobe/spacecat-shared/issues/863)) ([66138ce](https://github.com/adobe/spacecat-shared/commit/66138ced4a0b0e3c68bf0aaec02b7adaafb0503d))
+
+# [@adobe/spacecat-shared-data-access-v2.40.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.1...@adobe/spacecat-shared-data-access-v2.40.2) (2025-07-28)
+
+
+### Bug Fixes
+
+* SITES-33793 update updatedAt field in _saveMany method ([#860](https://github.com/adobe/spacecat-shared/issues/860)) ([5d6454b](https://github.com/adobe/spacecat-shared/commit/5d6454b7ef9eedee39c41eda56d72324bc472c09))
+
+# [@adobe/spacecat-shared-data-access-v2.40.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.0...@adobe/spacecat-shared-data-access-v2.40.1) (2025-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#878](https://github.com/adobe/spacecat-shared/issues/878)) ([b049828](https://github.com/adobe/spacecat-shared/commit/b04982839c0ff5e4de4ab0e37508c5eb5272a679))
+
+# [@adobe/spacecat-shared-data-access-v2.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.39.0...@adobe/spacecat-shared-data-access-v2.40.0) (2025-07-24)
+
+
+### Features
+
+* amend llmo config with URL patterns ([#869](https://github.com/adobe/spacecat-shared/issues/869)) ([c6cb047](https://github.com/adobe/spacecat-shared/commit/c6cb0476c6d2b3dad048855ae49481ae8fcfb5ce))
+
+# [@adobe/spacecat-shared-data-access-v2.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.38.1...@adobe/spacecat-shared-data-access-v2.39.0) (2025-07-22)
+
+
+### Features
+
+* add llmo specific configuration in site config ([#853](https://github.com/adobe/spacecat-shared/issues/853)) ([476b8e8](https://github.com/adobe/spacecat-shared/commit/476b8e84009602a4c9d7ef8d42b9efcae3beae9e))
+
+# [@adobe/spacecat-shared-data-access-v2.38.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.38.0...@adobe/spacecat-shared-data-access-v2.38.1) (2025-07-22)
+
+
+### Bug Fixes
+
+* return provided data when config error ([#862](https://github.com/adobe/spacecat-shared/issues/862)) ([eb418cd](https://github.com/adobe/spacecat-shared/commit/eb418cdf4e942f2da0b40d95cc991b9a4a34a393))
+
 # [@adobe/spacecat-shared-data-access-v2.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.37.0...@adobe/spacecat-shared-data-access-v2.38.0) (2025-07-21)
 
 

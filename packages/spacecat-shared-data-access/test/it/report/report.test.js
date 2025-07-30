@@ -31,6 +31,8 @@ function checkReport(report) {
   expect(report.getReportPeriod()).to.be.an('object');
   expect(report.getComparisonPeriod()).to.be.an('object');
   expect(report.getStoragePath()).to.be.a('string');
+  expect(report.getStatus()).to.be.a('string');
+  expect(['processing', 'success', 'failed']).to.include(report.getStatus());
   expect(report.getCreatedAt()).to.be.a('string');
   expect(report.getUpdatedAt()).to.be.a('string');
   expect(report.getUpdatedBy()).to.be.a('string');
@@ -156,6 +158,7 @@ describe('Report IT', async () => {
     // The storagePath in the record will include the auto-generated reportId
     const expectedRecord = { ...data };
     expectedRecord.storagePath = `/reports/${siteId}/summary/${report.getId()}/`;
+    expectedRecord.status = 'processing'; // Default status for new reports
     expect(record).to.eql(expectedRecord);
   });
 
@@ -190,7 +193,10 @@ describe('Report IT', async () => {
     delete record.createdAt;
     delete record.updatedAt;
     delete record.updatedBy;
-    expect(record).to.eql(data);
+
+    const expectedRecord = { ...data };
+    expectedRecord.status = 'processing'; // Default status for new reports
+    expect(record).to.eql(expectedRecord);
   });
 
   it('adds a new report with empty storage path (auto-computed)', async () => {

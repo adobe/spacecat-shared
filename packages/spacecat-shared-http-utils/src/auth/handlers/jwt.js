@@ -124,7 +124,7 @@ export default class JwtHandler extends AbstractHandler {
         .withScopes(scopes)
         .withRBAC(acls);
     } catch (e) {
-      this.log(`Failed to validate token: ${e.message}`, 'error');
+      this.log(`Failed to validate token: ${e.message}`, 'debug');
     }
 
     return null;

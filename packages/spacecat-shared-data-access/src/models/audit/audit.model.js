@@ -97,6 +97,7 @@ class Audit extends BaseModel {
        * @param {string} stepResult.pageUrl - The page URL for which the import is triggered.
        * @param {object[]} stepResult.urlConfigs - The list of URL configs for which the import is
        * triggered.
+       * @param {bool} stepResult.skipEnabledCheck - Skip the enabled check when running the import.
        * @param {object} auditContext - The audit context.
        * @param {object} auditContext.next - The next audit step to run.
        * @param {string} auditContext.auditId - The audit ID.
@@ -112,6 +113,7 @@ class Audit extends BaseModel {
         siteId: stepResult.siteId,
         pageUrl: stepResult.pageUrl,
         urlConfigs: stepResult.urlConfigs,
+        skipEnabledCheck: !!stepResult.skipEnabledCheck,
         allowCache: true,
         auditContext,
       }),

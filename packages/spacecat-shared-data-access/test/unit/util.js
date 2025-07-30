@@ -73,6 +73,7 @@ export const createElectroMocks = (Model, record) => {
           'apiKey', 'audit', 'configuration', 'experiment',
           'importJob', 'importUrl', 'keyEvent', 'latestAudit', 'organization',
           'opportunity', 'site', 'siteCandidate', 'siteTopPage', 'suggestion', 'asyncJob', 'scrapeJob', 'scrapeUrl',
+          'siteTopForm',
         ],
       },
     },

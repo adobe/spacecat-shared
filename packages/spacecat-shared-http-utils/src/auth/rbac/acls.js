@@ -109,7 +109,7 @@ export default async function getAcls({
         'site', 'apiKey', 'audit', 'configuration', 'experiment',
         'importJob', 'importUrl', 'keyEvent', 'latestAudit',
         'opportunity', 'siteCandidate', 'siteTopPage', 'suggestion',
-        'asyncJob', 'scrapeJob', 'scrapeUrl', 'fixEntity',
+        'asyncJob', 'scrapeJob', 'scrapeUrl', 'fixEntity', 'siteTopForm',
       ],
     },
   };

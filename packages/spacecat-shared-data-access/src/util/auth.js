@@ -100,7 +100,7 @@ export function hasPermisson(entityPath, perm, aclCtx, log) {
 
   const permission = allActions.includes(perm);
   if (permission) {
-    log.debug(`Permission granted for ${entityPath} with ${perm} traces: ${JSON.stringify(traces)}`);
+    log.info(`Permission granted for ${entityPath} with ${perm} traces: ${JSON.stringify(traces)}`);
   }
   return permission;
 }
@@ -117,7 +117,7 @@ export function hasPermisson(entityPath, perm, aclCtx, log) {
  */
 export function ensurePermission(path, perm, aclCtx, log) {
   const permission = hasPermisson(path, perm, aclCtx, log);
-  log.debug(`Check ${perm} access permission for ${path} result: ${permission}`);
+  log.info(`Check ${perm} access permission for ${path} result: ${permission}`);
   if (!permission) {
     throw new Error('Permission denied');
   }

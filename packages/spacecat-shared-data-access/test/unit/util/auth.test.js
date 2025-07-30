@@ -33,7 +33,7 @@ describe('haspermission', () => {
         role: 'not-much-at-all',
       }],
     };
-    const log = { debug: () => { } };
+    const log = { debug: () => { }, info: () => { } };
     expect(hasPermisson('/someapi/123', 'R', aclCtx, log)).to.be.false;
   });
 
@@ -57,7 +57,7 @@ describe('haspermission', () => {
         },
       ],
     };
-    const log = { debug: () => { } };
+    const log = { debug: () => { }, info: () => { } };
 
     // Matches both role1 and some-admin so get all CRUD
     expect(hasPermisson('/some/where/out/there', 'C', aclCtx, log)).to.be.true;
@@ -102,7 +102,7 @@ describe('haspermission', () => {
 
     // Ensure the paths are sorted with the longest first
     aclCtx.acls.forEach((a) => a.acl.sort(pathSorter));
-    const log = { debug: () => { } };
+    const log = { debug: () => { }, info: () => { } };
 
     // matching rule: /someapi/**
     expect(hasPermisson('/someapi/xyz123', 'C', aclCtx, log)).to.be.true;

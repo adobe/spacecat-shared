@@ -117,6 +117,9 @@ export default class JwtHandler extends AbstractHandler {
         imsGroups: getOrgGroupMappings(payload.tenants),
       }, context.log);
 
+      const { pathInfo: { suffix } } = context;
+      acls.requestedResource = suffix;
+
       return new AuthInfo()
         .withType(this.name)
         .withAuthenticated(true)

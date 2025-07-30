@@ -84,12 +84,40 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
     mockElectroService = {
       entities: {
         opportunity: {
-          entity: opportunityEntity,
+          entity: {
+            ...opportunityEntity,
+            model: {
+              schema: {
+                attributes: {},
+              },
+              indexes: {},
+            },
+          },
+          model: {
+            schema: {
+              attributes: {},
+            },
+            indexes: {},
+          },
           remove: stub().returns({ go: stub().resolves() }),
           _remove: stub().returns({ go: stub().resolves() }),
         },
         suggestion: {
-          entity: suggestionEntity,
+          entity: {
+            ...suggestionEntity,
+            model: {
+              schema: {
+                attributes: {},
+              },
+              indexes: {},
+            },
+          },
+          model: {
+            schema: {
+              attributes: {},
+            },
+            indexes: {},
+          },
           query: {
             primary: stub().returns({ go: stub().resolves({ data: [mockRecord] }) }),
             'spacecat-data-gsi1pk-gsi1sk': stub().returns({ go: stub().resolves({ data: [mockRecord] }) }),
@@ -101,7 +129,21 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
           },
         },
         fixEntity: {
-          entity: fixEntity,
+          entity: {
+            ...fixEntity,
+            model: {
+              schema: {
+                attributes: {},
+              },
+              indexes: {},
+            },
+          },
+          model: {
+            schema: {
+              attributes: {},
+            },
+            indexes: {},
+          },
           query: {
             primary: stub().returns({ go: stub().resolves({ data: [mockRecord] }) }),
             'spacecat-data-gsi1pk-gsi1sk': stub().returns({ go: stub().resolves({ data: [mockRecord] }) }),
@@ -372,6 +414,136 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
         expect(result).to.be.an.instanceOf(BaseModel);
         expect(mockLogger.debug).to.have.been.calledWithExactly('No sort keys defined for Opportunity to Suggestions');
       });
+    });
+  });
+
+  describe('ACL path generation', () => {
+    it('uses requestedResource when ACL path generation fails', async () => {
+      // Create a simple test that verifies the requestedResource fallback logic
+      // by checking if the log message is generated when the conditions are met
+
+      // Mock the ACL context with requestedResource
+      const aclCtxWithResource = {
+        acls: [{
+          acl: [{
+            actions: ['R'],
+            path: '/custom/resource/path',
+          }],
+        }],
+        aclEntities: {
+          exclude: [],
+        },
+        requestedResource: '/custom/resource/path',
+      };
+
+      // Create a simple schema that has belongs_to relationships
+      const simpleSchema = {
+        getEntityName: () => 'TestEntity',
+        getModelName: () => 'TestEntity',
+        getCollectionName: () => 'TestEntityCollection',
+        getAttributes: () => ({ id: { type: 'string' } }),
+        getReferences: () => [],
+        getReferencesByType: (type) => {
+          if (type === 'belongs_to') {
+            return [{
+              getTarget: () => 'ParentEntity',
+              getType: () => 'belongs_to',
+              target: 'ParentEntity',
+            }];
+          }
+          return [];
+        },
+        allowsUpdates: () => true,
+        allowsRemove: () => true,
+        toElectroDBSchema: () => ({}),
+        toAccessorConfigs: () => [],
+        findIndexNameByKeys: () => 'primary',
+        getIdName: () => 'id',
+      };
+
+      // Mock entity registry that returns a parent collection with belongs_to relationships
+      const mockEntityRegistryWithParent = {
+        aclCtx: aclCtxWithResource,
+        log: mockLogger,
+        getCollection: (collectionName) => {
+          if (collectionName === 'ParentEntityCollection') {
+            return {
+              schema: {
+                getReferencesByType: (type) => {
+                  if (type === 'belongs_to') {
+                    return [{
+                      getTarget: () => 'GrandParentEntity',
+                      getType: () => 'belongs_to',
+                    }];
+                  }
+                  return [];
+                },
+              },
+            };
+          }
+          return {
+            schema: {
+              getReferenceByTypeAndTarget: () => null,
+              getModelName: () => 'TestEntity',
+            },
+          };
+        },
+      };
+
+      // Create a simple mock entity
+      const mockEntity = {
+        model: {
+          schema: {
+            attributes: {},
+          },
+          indexes: {},
+        },
+        remove: stub().returns({ go: stub().resolves() }),
+        patch: stub().returns({ set: stub().returns({}) }),
+      };
+
+      const mockElectroServiceSimple = {
+        entities: {
+          TestEntity: mockEntity,
+        },
+      };
+
+      const instanceWithResource = new BaseModel(
+        mockElectroServiceSimple,
+        mockEntityRegistryWithParent,
+        simpleSchema,
+        { id: 'test-123', parentEntityId: 'parent-123' },
+        mockLogger,
+      );
+
+      // Call ensurePermission to trigger ACL path generation
+      instanceWithResource.ensurePermission('R');
+
+      // Verify that the requestedResource fallback was logged
+      expect(mockLogger.info).to.have.been.calledWith('ACL now baseed on requestedResource: /custom/resource/path');
+    });
+
+    it('does not use requestedResource when ACL path generation succeeds', async () => {
+      // Mock the ACL context without requestedResource
+      const aclCtxWithoutResource = {
+        aclEntities: {
+          exclude: ['opportunity'], // Exclude opportunity so ACL path generation is skipped
+        },
+      };
+
+      const instanceWithoutResource = new BaseModel(
+        mockElectroService,
+        { ...mockEntityRegistry, aclCtx: aclCtxWithoutResource },
+        OpportunitySchema,
+        mockRecord,
+        mockLogger,
+      );
+
+      // Call ensurePermission to trigger ACL path generation
+      await instanceWithoutResource.ensurePermission('R');
+
+      // Verify that the requestedResource fallback was NOT logged
+      expect(mockLogger.info).to.not.have.been.calledWith('ACL now baseed on requestedResource: /custom/resource/path');
     });
   });
 });

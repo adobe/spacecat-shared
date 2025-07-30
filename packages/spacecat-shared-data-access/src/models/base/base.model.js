@@ -93,7 +93,7 @@ class BaseModel {
    * @returns The path representation. Always absolute, so starts with a '/'. Returns
    * null if the entity is owned more than 1 level deep, which is currently not checked.
    */
-  #getACLPath() {
+  #getACLPath(aclCtx) {
     const belongsTo = this.schema.getReferencesByType(Reference.TYPES.BELONGS_TO);
     if (belongsTo.length === 0) {
       return `/${this.entityName}/${this.getId()}`;
@@ -104,7 +104,11 @@ class BaseModel {
     if (ownerCollection?.schema?.getReferencesByType) {
       const ownerBelongsTo = ownerCollection.schema.getReferencesByType(Reference.TYPES.BELONGS_TO);
       if (ownerBelongsTo.length > 0) {
-        // The owner also belongs to something. Currently this is not supported for ACL checks
+        // The owner also belongs to something. this will depend on now requestedResource
+        if (aclCtx?.requestedResource) {
+          this.log.info(`ACL now baseed on requestedResource: ${aclCtx.requestedResource}`);
+          return aclCtx.requestedResource;
+        }
         return null;
       }
     }
@@ -126,11 +130,11 @@ class BaseModel {
       return;
     }
 
-    const aclPath = this.#getACLPath();
+    const aclPath = this.#getACLPath(this.aclCtx);
     if (aclPath) {
       ensurePermission(aclPath, action, this.aclCtx, this.log);
     } else {
-      this.log.info(`Entity [${this.entityName}] is owned more than 1 level deep. Currently excluded from ACL checking`);
+      this.log.info(`Entity [${this.entityName}] is not accessed through API service. This flow is curretnly excluded from ACL checking`);
     }
   }
 

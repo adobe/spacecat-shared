@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.42.0...@adobe/spacecat-shared-data-access-v2.43.0) (2025-07-30)
+
+
+### Features
+
+* Add `'never'` to job intervals ([#885](https://github.com/adobe/spacecat-shared/issues/885)) ([#886](https://github.com/adobe/spacecat-shared/issues/886)) ([07a92ce](https://github.com/adobe/spacecat-shared/commit/07a92ce2659e27a85058d1d40942ec7e8b8897e3))
+
 # [@adobe/spacecat-shared-data-access-v2.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.41.0...@adobe/spacecat-shared-data-access-v2.42.0) (2025-07-29)
 
 

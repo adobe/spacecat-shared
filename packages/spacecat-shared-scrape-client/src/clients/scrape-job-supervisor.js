@@ -39,9 +39,16 @@ function ScrapeJobSupervisor(services, config) {
   } = config;
 
   /**
-   * Get the queue with the least number of messages.
+   * Returns the queue of already running scrapeJobs with the same baseURL
+   * or the one with the fewest messages.
+   * @param {string} baseURL - The base URL for the scrape job.
+   * @returns {Promise<string|null>} - The name of the queue or null if no queues are available.
    */
-  async function getAvailableScrapeQueue() {
+  async function getAvailableScrapeQueue(baseURL) {
+    const runningJob = await ScrapeJob.findByBaseURL(baseURL);
+    if (runningJob) {
+      return runningJob.getQueueUrl(); // Return the queue of the running job
+    }
     const countMessages = async (queue) => {
       const count = await sqs.getQueueMessageCount(queue);
       return { queue, count };
@@ -74,6 +81,7 @@ function ScrapeJobSupervisor(services, config) {
    * Create a new scrape job by claiming one of the free scrape queues, persisting the scrape job
    * metadata, and setting the job status to 'RUNNING'.
    * @param {Array<string>} urls - The list of URLs to scrape.
+   * @param {string} baseURL - The base URL for the scrape job.
    * @param {string} scrapeQueueId - Name of the queue to use for this scrape job.
    * @param {string} processingType - The scrape handler to be used for the scrape job.
    * @param {object} options - Client provided options for the scrape job.
@@ -82,13 +90,14 @@ function ScrapeJobSupervisor(services, config) {
    */
   async function createNewScrapeJob(
     urls,
+    baseURL,
     scrapeQueueId,
     processingType,
     options,
     customHeaders = null,
   ) {
     const jobData = {
-      baseURL: determineBaseURL(urls),
+      baseURL,
       scrapeQueueId,
       processingType,
       options,
@@ -193,6 +202,7 @@ function ScrapeJobSupervisor(services, config) {
   /**
    * Starts a new scrape job.
    * @param {Array<string>} urls - The URLs to scrape.
+   * @param {string} processingType - The type of processing to perform.
    * @param {object} options - Optional configuration params for the scrape job.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
    * @returns {Promise<ScrapeJob>} newly created job object
@@ -203,8 +213,10 @@ function ScrapeJobSupervisor(services, config) {
     options,
     customHeaders,
   ) {
+    // get the base URL from the first URL in the list
+    const baseURL = determineBaseURL(urls);
     // Determine if there is a free scrape queue
-    const scrapeQueueId = await getAvailableScrapeQueue();
+    const scrapeQueueId = await getAvailableScrapeQueue(baseURL);
 
     if (scrapeQueueId === null) {
       throw new Error('Service Unavailable: No scrape queue available');
@@ -213,6 +225,7 @@ function ScrapeJobSupervisor(services, config) {
     // If a queue is available, create the scrape-job record in dataAccess:
     const newScrapeJob = await createNewScrapeJob(
       urls,
+      baseURL,
       scrapeQueueId,
       processingType,
       options,

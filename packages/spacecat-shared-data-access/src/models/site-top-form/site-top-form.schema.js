@@ -40,7 +40,8 @@ const schema = new SchemaBuilder(SiteTopForm, SiteTopFormCollection)
   })
   .addAttribute('formSource', {
     type: 'string',
-    required: true,
+    required: false,
+    default: '',
   })
   .addAttribute('traffic', {
     type: 'number',

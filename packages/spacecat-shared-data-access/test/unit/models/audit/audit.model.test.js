@@ -157,6 +157,7 @@ describe('AuditModel', () => {
       LHS_DESKTOP: 'lhs-desktop',
       404: '404',
       SITEMAP: 'sitemap',
+      REDIRECT_CHAINS: 'redirect-chains',
       CANONICAL: 'canonical',
       BROKEN_BACKLINKS: 'broken-backlinks',
       BROKEN_INTERNAL_LINKS: 'broken-internal-links',
@@ -181,7 +182,7 @@ describe('AuditModel', () => {
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(26);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(27);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {
@@ -280,6 +281,103 @@ describe('AuditModel', () => {
         options: {},
         auditContext: { some: 'context' },
       });
+    });
+
+    it('formats content scraper payload with default processing type when not provided', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        // processingType is not provided
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: [{ url: 'someUrl' }],
+        jobId: 'someSiteId',
+        processingType: 'default', // Should use default when not provided
+        completionQueueUrl: 'audit-jobs-queue-url',
+        skipMessage: false,
+        allowCache: true,
+        options: {},
+        auditContext: { some: 'context' },
+      });
+    });
+
+    it('formats content scraper payload with explicit allowCache boolean value', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        processingType: 'someProcessingType',
+        allowCache: false, // Explicit boolean value
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: [{ url: 'someUrl' }],
+        jobId: 'someSiteId',
+        processingType: 'someProcessingType',
+        completionQueueUrl: 'audit-jobs-queue-url',
+        skipMessage: false,
+        allowCache: false, // Should use the explicit boolean value
+        options: {},
+        auditContext: { some: 'context' },
+      });
+    });
+
+    it('gets import worker queue URL from context', () => {
+      const context = {
+        env: {
+          IMPORT_WORKER_QUEUE_URL: 'import-worker-queue-url',
+        },
+      };
+      const queueUrl = auditStepDestinationConfigs[auditStepDestinations.IMPORT_WORKER]
+        .getQueueUrl(context);
+
+      expect(queueUrl).to.equal('import-worker-queue-url');
+    });
+
+    it('gets content scraper queue URL from context', () => {
+      const context = {
+        env: {
+          CONTENT_SCRAPER_QUEUE_URL: 'content-scraper-queue-url',
+        },
+      };
+      const queueUrl = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .getQueueUrl(context);
+
+      expect(queueUrl).to.equal('content-scraper-queue-url');
+    });
+
+    it('returns undefined when queue URL is not in context', () => {
+      const context = {
+        env: {},
+      };
+      const queueUrl = auditStepDestinationConfigs[auditStepDestinations.IMPORT_WORKER]
+        .getQueueUrl(context);
+
+      expect(queueUrl).to.be.undefined;
+    });
+
+    it('returns undefined when context env is undefined', () => {
+      const context = {};
+      const queueUrl = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .getQueueUrl(context);
+
+      expect(queueUrl).to.be.undefined;
     });
   });
 });

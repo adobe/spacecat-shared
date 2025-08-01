@@ -26,6 +26,7 @@ export * from './organization/index.js';
 export * from './scrape-job/index.js';
 export * from './scrape-url/index.js';
 export * from './site-candidate/index.js';
+export * from './site-top-form/index.js';
 export * from './site-top-page/index.js';
 export * from './site/index.js';
 export * from './suggestion/index.js';

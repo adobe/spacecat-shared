@@ -19,20 +19,15 @@ const getFirstMondayOfYear = (year) => {
 
 const getThursdayOfWeek = (date) => {
   const thursday = new Date(date.getTime());
-  thursday.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  const dayOfWeek = date.getUTCDay() || 7;
+  thursday.setUTCDate(date.getUTCDate() + 4 - dayOfWeek);
   return thursday;
 };
 
 const has53CalendarWeeks = (year) => {
-  const lastDayOfYear = new Date(Date.UTC(year, 11, 31));
-  const lastThursday = getThursdayOfWeek(lastDayOfYear);
-  const firstMonday = getFirstMondayOfYear(year);
-  const thursdayOfFirstWeek = new Date(firstMonday.getTime() + 3 * MILLISECONDS_IN_A_DAY);
-
-  const maxWeek = Math.ceil((lastThursday.getTime() - thursdayOfFirstWeek.getTime())
-    / MILLISECONDS_IN_A_WEEK) + 1;
-
-  return maxWeek === 53;
+  const jan1 = new Date(Date.UTC(year, 0, 1));
+  const dec31 = new Date(Date.UTC(year, 11, 31));
+  return jan1.getUTCDay() === 4 || dec31.getUTCDay() === 4;
 };
 
 const isValidWeek = (week, year) => {
@@ -118,4 +113,22 @@ export function getDateRanges(week, year) {
       endTime: endDate.toISOString(),
     },
   ];
+}
+
+// Note: This function binds week exclusively to one year
+export function getLastNumberOfWeeks(number) {
+  const result = [];
+  let { week, year } = getLastFullCalendarWeek();
+
+  for (let i = 0; i < number; i += 1) {
+    result.unshift({ week, year });
+
+    week -= 1;
+    if (week < 1) {
+      year -= 1;
+      week = has53CalendarWeeks(year) ? 53 : 52;
+    }
+  }
+
+  return result;
 }

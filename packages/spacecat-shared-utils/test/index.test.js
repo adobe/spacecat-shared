@@ -69,6 +69,7 @@ describe('Index Exports', () => {
     'instrumentAWSClient',
     'retrievePageAuthentication',
     'getDateRanges',
+    'getLastNumberOfWeeks',
   ];
 
   it('exports all expected functions', () => {

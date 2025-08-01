@@ -12,10 +12,13 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject, isString } from '@adobe/spacecat-shared-utils';
+import { isInteger, isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
+
+import { validate as uuidValidate } from 'uuid';
+
 import SchemaBuilder from '../base/schema.builder.js';
-import Report from './report.model.js';
-import ReportCollection from './report.collection.js';
+import SiteTopForm from './site-top-form.model.js';
+import SiteTopFormCollection from './site-top-form.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -23,36 +26,41 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder(Report, ReportCollection)
-  .addReference('belongs_to', 'Site')
-  .addAllIndex(['reportType'])
-  .addAttribute('reportType', {
+const schema = new SchemaBuilder(SiteTopForm, SiteTopFormCollection)
+  .addReference('belongs_to', 'Site', ['source', 'traffic'])
+  .addAttribute('siteId', {
     type: 'string',
     required: true,
-    validate: (value) => isString(value) && value.length > 0,
+    validate: (value) => uuidValidate(value),
   })
-  .addAttribute('reportPeriod', {
-    type: 'any',
-    required: true,
-    validate: (value) => isNonEmptyObject(value)
-    && isString(value.startDate) && isString(value.endDate),
-  })
-  .addAttribute('comparisonPeriod', {
-    type: 'any',
-    required: true,
-    validate: (value) => isNonEmptyObject(value)
-    && isString(value.startDate) && isString(value.endDate),
-  })
-  .addAttribute('storagePath', {
+  .addAttribute('url', {
     type: 'string',
+    required: true,
+    validate: (value) => isValidUrl(value),
+  })
+  .addAttribute('formSource', {
+    type: 'string',
+    required: true,
+  })
+  .addAttribute('traffic', {
+    type: 'number',
     required: false,
-    default: () => '',
-    validate: (value) => !value || (isString(value) && value.length >= 0),
+    default: 0,
+    validate: (value) => isInteger(value),
   })
-  .addAttribute('status', {
-    type: ['processing', 'success', 'failed'],
+  .addAttribute('source', {
+    type: 'string',
     required: true,
-    default: 'processing',
-  });
+  })
+  .addAttribute('importedAt', {
+    type: 'string',
+    required: true,
+    default: () => new Date().toISOString(),
+    validate: (value) => isIsoDate(value),
+  })
+  .addIndex(
+    { composite: ['url', 'formSource'] },
+    { composite: ['traffic'] },
+  );
 
 export default schema.build();

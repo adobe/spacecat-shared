@@ -13,7 +13,70 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { getDateRanges } from '../src/calendar-week-helper.js';
+import { getDateRanges, getLastNumberOfWeeks } from '../src/calendar-week-helper.js';
+
+describe('Utils - getLastNumberOfWeeks', () => {
+  let clock;
+
+  afterEach(() => {
+    if (clock) {
+      clock.restore();
+    }
+  });
+
+  it('should return the last 5 weeks correctly', () => {
+    clock = sinon.useFakeTimers(new Date('2025-07-25T12:00:00Z'));
+    const result = getLastNumberOfWeeks(5);
+    expect(result).to.deep.equal([
+      { week: 25, year: 2025 },
+      { week: 26, year: 2025 },
+      { week: 27, year: 2025 },
+      { week: 28, year: 2025 },
+      { week: 29, year: 2025 },
+    ]);
+  });
+
+  it('should handle year boundaries correctly', () => {
+    clock = sinon.useFakeTimers(new Date('2025-01-15T12:00:00Z'));
+    const result = getLastNumberOfWeeks(5);
+    expect(result).to.deep.equal([
+      { week: 50, year: 2024 },
+      { week: 51, year: 2024 },
+      { week: 52, year: 2024 },
+      { week: 1, year: 2025 },
+      { week: 2, year: 2025 },
+    ]);
+  });
+
+  it('should handle 53-week years correctly', () => {
+    clock = sinon.useFakeTimers(new Date('2021-01-10T12:00:00Z'));
+    const result = getLastNumberOfWeeks(3);
+    expect(result).to.deep.equal([
+      { week: 51, year: 2020 },
+      { week: 52, year: 2020 },
+      { week: 53, year: 2020 },
+    ]);
+  });
+
+  it('should handle year boundaries correctly for a 52-week year', () => {
+    clock = sinon.useFakeTimers(new Date('2026-01-12T12:00:00Z'));
+    const result = getLastNumberOfWeeks(3);
+    expect(result).to.deep.equal([
+      { week: 52, year: 2025 },
+      { week: 1, year: 2026 },
+      { week: 2, year: 2026 },
+    ]);
+  });
+
+  it('should set week to 53 when rolling back to a year with 53 weeks', () => {
+    clock = sinon.useFakeTimers(new Date('2021-01-11T12:00:00Z'));
+    const result = getLastNumberOfWeeks(2);
+    expect(result).to.deep.equal([
+      { week: 53, year: 2020 },
+      { week: 1, year: 2021 },
+    ]);
+  });
+});
 
 describe('Utils - getDateRanges', () => {
   let clock;

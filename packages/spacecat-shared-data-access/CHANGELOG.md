@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-data-access-v2.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.42.0...@adobe/spacecat-shared-data-access-v2.43.0) (2025-07-30)
+
+
+### Features
+
+* Add `'never'` to job intervals ([#885](https://github.com/adobe/spacecat-shared/issues/885)) ([#886](https://github.com/adobe/spacecat-shared/issues/886)) ([07a92ce](https://github.com/adobe/spacecat-shared/commit/07a92ce2659e27a85058d1d40942ec7e8b8897e3))
+
+# [@adobe/spacecat-shared-data-access-v2.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.41.0...@adobe/spacecat-shared-data-access-v2.42.0) (2025-07-29)
+
+
+### Features
+
+* added `status` field in reports ([#883](https://github.com/adobe/spacecat-shared/issues/883)) ([f6e9fcd](https://github.com/adobe/spacecat-shared/commit/f6e9fcd1e8e5eabb731c4cdbd89654fc725c9837))
+
+# [@adobe/spacecat-shared-data-access-v2.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.2...@adobe/spacecat-shared-data-access-v2.41.0) (2025-07-28)
+
+
+### Features
+
+* add top form model ([#863](https://github.com/adobe/spacecat-shared/issues/863)) ([66138ce](https://github.com/adobe/spacecat-shared/commit/66138ced4a0b0e3c68bf0aaec02b7adaafb0503d))
+
+# [@adobe/spacecat-shared-data-access-v2.40.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.1...@adobe/spacecat-shared-data-access-v2.40.2) (2025-07-28)
+
+
+### Bug Fixes
+
+* SITES-33793 update updatedAt field in _saveMany method ([#860](https://github.com/adobe/spacecat-shared/issues/860)) ([5d6454b](https://github.com/adobe/spacecat-shared/commit/5d6454b7ef9eedee39c41eda56d72324bc472c09))
+
+# [@adobe/spacecat-shared-data-access-v2.40.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.0...@adobe/spacecat-shared-data-access-v2.40.1) (2025-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#878](https://github.com/adobe/spacecat-shared/issues/878)) ([b049828](https://github.com/adobe/spacecat-shared/commit/b04982839c0ff5e4de4ab0e37508c5eb5272a679))
+
 # [@adobe/spacecat-shared-data-access-v2.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.39.0...@adobe/spacecat-shared-data-access-v2.40.0) (2025-07-24)
 
 

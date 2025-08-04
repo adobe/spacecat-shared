@@ -33,43 +33,9 @@ function ScrapeJobSupervisor(services, config) {
   const { ScrapeJob } = dataAccess;
 
   const {
-    queues = [], // Array of scrape queues
     scrapeWorkerQueue, // URL of the scrape worker queue
     maxUrlsPerMessage,
   } = config;
-
-  /**
-   * Returns the queue of already running scrapeJobs with the same baseURL
-   * or the one with the fewest messages.
-   * @param {string} baseURL - The base URL for the scrape job.
-   * @returns {Promise<string|null>} - The name of the queue or null if no queues are available.
-   */
-  async function getAvailableScrapeQueue(baseURL) {
-    const runningJob = await ScrapeJob.findByBaseURL(baseURL);
-    if (runningJob) {
-      return runningJob.getQueueUrl(); // Return the queue of the running job
-    }
-    const countMessages = async (queue) => {
-      const count = await sqs.getQueueMessageCount(queue);
-      return { queue, count };
-    };
-
-    const arrProm = queues.map(
-      (queue) => countMessages(queue),
-    );
-    const queueMessageCounts = await Promise.all(arrProm);
-
-    if (queueMessageCounts.length === 0) {
-      return null;
-    }
-
-    // get the queue with the lowest number of messages
-    const queueWithLeastMessages = queueMessageCounts.reduce(
-      (min, current) => (min.count < current.count ? min : current),
-    );
-    log.info(`Queue with least messages: ${queueWithLeastMessages.queue}`);
-    return queueWithLeastMessages.queue;
-  }
 
   function determineBaseURL(urls) {
     // Initially, we will just use the domain of the first URL
@@ -81,8 +47,6 @@ function ScrapeJobSupervisor(services, config) {
    * Create a new scrape job by claiming one of the free scrape queues, persisting the scrape job
    * metadata, and setting the job status to 'RUNNING'.
    * @param {Array<string>} urls - The list of URLs to scrape.
-   * @param {string} baseURL - The base URL for the scrape job.
-   * @param {string} scrapeQueueId - Name of the queue to use for this scrape job.
    * @param {string} processingType - The scrape handler to be used for the scrape job.
    * @param {object} options - Client provided options for the scrape job.
    * @param {object} customHeaders - Custom headers to be sent with each request.
@@ -90,15 +54,12 @@ function ScrapeJobSupervisor(services, config) {
    */
   async function createNewScrapeJob(
     urls,
-    baseURL,
-    scrapeQueueId,
     processingType,
     options,
     customHeaders = null,
   ) {
     const jobData = {
-      baseURL,
-      scrapeQueueId,
+      baseURL: determineBaseURL(urls),
       processingType,
       options,
       urlCount: urls.length,
@@ -160,8 +121,9 @@ function ScrapeJobSupervisor(services, config) {
    * @param {Array<string>} urls - Array of URL records to queue.
    * @param {object} scrapeJob - The scrape job record.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
+   * @param {string} maxScrapeAge - The maximum age of the scrape job
    */
-  async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders) {
+  async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders, maxScrapeAge) {
     log.info(`Starting a new scrape job of baseUrl: ${scrapeJob.getBaseURL()} with ${urls.length}`
       + ` URLs. This new job has claimed: ${scrapeJob.getScrapeQueueId()} `
       + `(jobId: ${scrapeJob.getId()})`);
@@ -192,6 +154,7 @@ function ScrapeJobSupervisor(services, config) {
         batchOffset: offset,
         customHeaders,
         options,
+        maxScrapeAge,
       };
 
       // eslint-disable-next-line no-await-in-loop
@@ -205,6 +168,7 @@ function ScrapeJobSupervisor(services, config) {
    * @param {string} processingType - The type of processing to perform.
    * @param {object} options - Optional configuration params for the scrape job.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
+   * @param {string} maxScrapeAge - The maximum age of the scrape job
    * @returns {Promise<ScrapeJob>} newly created job object
    */
   async function startNewJob(
@@ -212,21 +176,10 @@ function ScrapeJobSupervisor(services, config) {
     processingType,
     options,
     customHeaders,
+    maxScrapeAge,
   ) {
-    // get the base URL from the first URL in the list
-    const baseURL = determineBaseURL(urls);
-    // Determine if there is a free scrape queue
-    const scrapeQueueId = await getAvailableScrapeQueue(baseURL);
-
-    if (scrapeQueueId === null) {
-      throw new Error('Service Unavailable: No scrape queue available');
-    }
-
-    // If a queue is available, create the scrape-job record in dataAccess:
     const newScrapeJob = await createNewScrapeJob(
       urls,
-      baseURL,
-      scrapeQueueId,
       processingType,
       options,
       customHeaders,
@@ -237,14 +190,13 @@ function ScrapeJobSupervisor(services, config) {
       + `- baseUrl: ${newScrapeJob.getBaseURL()}\n`
       + `- urlCount: ${urls.length}\n`
       + `- jobId: ${newScrapeJob.getId()}\n`
-      + `- scrapeQueueId: ${scrapeQueueId}\n`
       + `- customHeaders: ${JSON.stringify(customHeaders)}\n`
       + `- options: ${JSON.stringify(options)}`,
     );
 
     // Queue all URLs for scrape as a single message. This enables the controller to respond with
     // a job ID ASAP, while the individual URLs are queued up asynchronously by another function.
-    await queueUrlsForScrapeWorker(urls, newScrapeJob, customHeaders);
+    await queueUrlsForScrapeWorker(urls, newScrapeJob, customHeaders, maxScrapeAge);
 
     return newScrapeJob;
   }

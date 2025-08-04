@@ -107,8 +107,16 @@ describe('SiteTopFormCollection', () => {
       await expect(instance.removeByUrlAndFormSource()).to.be.rejectedWith('URL is required');
     });
 
-    it('throws an error if formSource is not provided', async () => {
-      await expect(instance.removeByUrlAndFormSource('https://example.com')).to.be.rejectedWith('FormSource is required');
+    it('handles removal when formSource is not provided (defaults to empty string)', async () => {
+      const url = 'https://example.com/contact';
+
+      instance.findByUrlAndFormSource = stub().resolves(model);
+
+      await instance.removeByUrlAndFormSource(url);
+
+      expect(instance.findByUrlAndFormSource).to.have.been.calledOnceWith(url, '');
+      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: 'f12345' }]))
+        .to.be.true;
     });
 
     it('removes a specific form by URL and formSource', async () => {
@@ -134,6 +142,257 @@ describe('SiteTopFormCollection', () => {
 
       expect(instance.findByUrlAndFormSource).to.have.been.calledOnceWith(url, formSource);
       expect(mockElectroService.entities.siteTopForm.delete).to.not.have.been.called;
+    });
+  });
+
+  describe('create', () => {
+    it('throws an error if URL is not provided', async () => {
+      const item = {
+        siteId: 'site123',
+        formSource: '#contact-form',
+        source: 'google',
+      };
+
+      await expect(instance.create(item)).to.be.rejectedWith('URL is required and cannot be empty');
+    });
+
+    it('throws an error if URL is empty', async () => {
+      const item = {
+        siteId: 'site123',
+        url: '',
+        formSource: '#contact-form',
+        source: 'google',
+      };
+
+      await expect(instance.create(item)).to.be.rejectedWith('URL is required and cannot be empty');
+    });
+
+    it('sets formSource to empty string when not provided', async () => {
+      const item = {
+        siteId: 'site123',
+        url: 'https://example.com/contact',
+        source: 'google',
+      };
+
+      mockElectroService.entities.siteTopForm.create.returns({
+        go: () => Promise.resolve({ data: mockRecord }),
+      });
+
+      const result = await instance.create(item);
+
+      expect(result).to.not.be.null;
+      expect(mockElectroService.entities.siteTopForm.create).to.have.been.calledOnce;
+    });
+
+    it('sets formSource to empty string when null', async () => {
+      const item = {
+        siteId: 'site123',
+        url: 'https://example.com/contact',
+        formSource: null,
+        source: 'google',
+      };
+
+      mockElectroService.entities.siteTopForm.create.returns({
+        go: () => Promise.resolve({ data: mockRecord }),
+      });
+
+      const result = await instance.create(item);
+
+      expect(result).to.not.be.null;
+      expect(mockElectroService.entities.siteTopForm.create).to.have.been.calledOnce;
+    });
+
+    it('preserves formSource when provided', async () => {
+      const item = {
+        siteId: 'site123',
+        url: 'https://example.com/contact',
+        formSource: '#contact-form',
+        source: 'google',
+      };
+
+      mockElectroService.entities.siteTopForm.create.returns({
+        go: () => Promise.resolve({ data: mockRecord }),
+      });
+
+      const result = await instance.create(item);
+
+      expect(result).to.not.be.null;
+      expect(mockElectroService.entities.siteTopForm.create).to.have.been.calledOnce;
+    });
+  });
+
+  describe('createMany', () => {
+    it('throws an error if any item is missing URL', async () => {
+      const items = [
+        {
+          siteId: 'site123',
+          url: 'https://example.com/form1',
+          source: 'google',
+        },
+        {
+          siteId: 'site123',
+          formSource: '#form2',
+          source: 'google',
+        },
+      ];
+
+      await expect(instance.createMany(items)).to.be.rejectedWith('URL is required and cannot be empty for all items');
+    });
+
+    it('throws an error if any item has empty URL', async () => {
+      const items = [
+        {
+          siteId: 'site123',
+          url: 'https://example.com/form1',
+          source: 'google',
+        },
+        {
+          siteId: 'site123',
+          url: '',
+          formSource: '#form2',
+          source: 'google',
+        },
+      ];
+
+      await expect(instance.createMany(items)).to.be.rejectedWith('URL is required and cannot be empty for all items');
+    });
+
+    it('processes all items and sets default formSource', async () => {
+      const items = [
+        {
+          siteId: 'site123',
+          url: 'https://example.com/form1',
+          formSource: '#form1',
+          source: 'google',
+        },
+        {
+          siteId: 'site123',
+          url: 'https://example.com/form2',
+          formSource: null,
+          source: 'google',
+        },
+        {
+          siteId: 'site123',
+          url: 'https://example.com/form3',
+          source: 'google',
+        },
+      ];
+
+      // Mock the put method to simulate successful batch creation
+      mockElectroService.entities.siteTopForm.put.returns({
+        go: () => Promise.resolve({
+          data: [mockRecord, mockRecord, mockRecord],
+        }),
+      });
+
+      const result = await instance.createMany(items);
+
+      expect(result).to.not.be.null;
+      expect(result.createdItems).to.be.an('array');
+      expect(mockElectroService.entities.siteTopForm.put).to.have.been.called;
+    });
+  });
+
+  describe('findByUrlAndFormSource', () => {
+    it('throws an error if URL is not provided', async () => {
+      await expect(instance.findByUrlAndFormSource()).to.be.rejectedWith('URL is required');
+    });
+
+    it('throws an error if URL is empty', async () => {
+      await expect(instance.findByUrlAndFormSource('')).to.be.rejectedWith('URL is required');
+    });
+
+    it('uses empty string as default formSource', async () => {
+      const url = 'https://example.com/contact';
+
+      const mockFindByIndexKeys = stub(instance, 'findByIndexKeys').resolves(model);
+
+      await instance.findByUrlAndFormSource(url);
+
+      expect(mockFindByIndexKeys).to.have.been.calledOnceWith({
+        url,
+        formSource: '',
+      }, {
+        index: 'spacecat-data-gsi2pk-gsi2sk',
+      });
+
+      mockFindByIndexKeys.restore();
+    });
+
+    it('uses provided formSource', async () => {
+      const url = 'https://example.com/contact';
+      const formSource = '#contact-form';
+
+      const mockFindByIndexKeys = stub(instance, 'findByIndexKeys').resolves(model);
+
+      await instance.findByUrlAndFormSource(url, formSource);
+
+      expect(mockFindByIndexKeys).to.have.been.calledOnceWith({
+        url,
+        formSource,
+      }, {
+        index: 'spacecat-data-gsi2pk-gsi2sk',
+      });
+
+      mockFindByIndexKeys.restore();
+    });
+
+    it('tries legacy null formSource when not found with empty string', async () => {
+      const url = 'https://example.com/contact';
+
+      const mockFindByIndexKeys = stub(instance, 'findByIndexKeys')
+        .onFirstCall().resolves(null)
+        .onSecondCall()
+        .resolves(model);
+
+      const result = await instance.findByUrlAndFormSource(url, '');
+
+      expect(mockFindByIndexKeys).to.have.been.calledTwice;
+      expect(mockFindByIndexKeys.firstCall).to.have.been.calledWith({
+        url,
+        formSource: '',
+      }, {
+        index: 'spacecat-data-gsi2pk-gsi2sk',
+      });
+      expect(mockFindByIndexKeys.secondCall).to.have.been.calledWith({
+        url,
+        formSource: null,
+      }, {
+        index: 'spacecat-data-gsi2pk-gsi2sk',
+      });
+
+      expect(result).to.equal(model);
+
+      mockFindByIndexKeys.restore();
+    });
+
+    it('handles error in legacy null search gracefully', async () => {
+      const url = 'https://example.com/contact';
+
+      const mockFindByIndexKeys = stub(instance, 'findByIndexKeys')
+        .onFirstCall().resolves(null)
+        .onSecondCall()
+        .throws(new Error('Legacy search error'));
+
+      const result = await instance.findByUrlAndFormSource(url, '');
+
+      expect(result).to.be.null;
+      expect(mockLogger.debug).to.have.been.calledWith('Legacy null formSource search failed: Legacy search error');
+
+      mockFindByIndexKeys.restore();
+    });
+
+    it('handles general error and returns null', async () => {
+      const url = 'https://example.com/contact';
+
+      const mockFindByIndexKeys = stub(instance, 'findByIndexKeys').throws(new Error('Database error'));
+
+      const result = await instance.findByUrlAndFormSource(url, '#form');
+
+      expect(result).to.be.null;
+      expect(mockLogger.error).to.have.been.calledWith('Failed to find form by URL and formSource: Database error');
+
+      mockFindByIndexKeys.restore();
     });
   });
 });

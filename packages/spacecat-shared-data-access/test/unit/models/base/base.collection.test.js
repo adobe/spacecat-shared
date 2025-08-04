@@ -639,6 +639,11 @@ describe('BaseCollection', () => {
       const originalUpdatedAt = mockModelInstance.record.updatedAt;
       mockElectroService.entities.mockEntityModel.put.returns({ go: () => [] });
 
+      // Add small delay to ensure timestamp difference
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
+
       await baseCollectionInstance._saveMany([mockModelInstance]);
 
       // Verify updatedAt was updated

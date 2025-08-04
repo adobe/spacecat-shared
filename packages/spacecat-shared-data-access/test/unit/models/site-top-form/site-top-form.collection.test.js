@@ -115,7 +115,7 @@ describe('SiteTopFormCollection', () => {
       await instance.removeByUrlAndFormSource(url);
 
       expect(instance.findByUrlAndFormSource).to.have.been.calledOnceWith(url, '');
-      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: 'f12345' }]))
+      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: '1336eeb5-2d71-4016-825a-550feb483dfb' }]))
         .to.be.true;
     });
 

@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.43.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.43.1...@adobe/spacecat-shared-data-access-v2.43.2) (2025-08-04)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#888](https://github.com/adobe/spacecat-shared/issues/888)) ([45ccd67](https://github.com/adobe/spacecat-shared/commit/45ccd679577031d01771aa642ac0c2e33b22af6f))
+
+# [@adobe/spacecat-shared-data-access-v2.43.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.43.0...@adobe/spacecat-shared-data-access-v2.43.1) (2025-08-04)
+
+
+### Bug Fixes
+
+* mark formSource optional in SiteTopForm model ([#884](https://github.com/adobe/spacecat-shared/issues/884)) ([7ea285b](https://github.com/adobe/spacecat-shared/commit/7ea285b59809e4983ec6337b9544be57ed62148e))
+
+# [@adobe/spacecat-shared-data-access-v2.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.42.0...@adobe/spacecat-shared-data-access-v2.43.0) (2025-07-30)
+
+
+### Features
+
+* Add `'never'` to job intervals ([#885](https://github.com/adobe/spacecat-shared/issues/885)) ([#886](https://github.com/adobe/spacecat-shared/issues/886)) ([07a92ce](https://github.com/adobe/spacecat-shared/commit/07a92ce2659e27a85058d1d40942ec7e8b8897e3))
+
+# [@adobe/spacecat-shared-data-access-v2.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.41.0...@adobe/spacecat-shared-data-access-v2.42.0) (2025-07-29)
+
+
+### Features
+
+* added `status` field in reports ([#883](https://github.com/adobe/spacecat-shared/issues/883)) ([f6e9fcd](https://github.com/adobe/spacecat-shared/commit/f6e9fcd1e8e5eabb731c4cdbd89654fc725c9837))
+
 # [@adobe/spacecat-shared-data-access-v2.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.40.2...@adobe/spacecat-shared-data-access-v2.41.0) (2025-07-28)
 
 

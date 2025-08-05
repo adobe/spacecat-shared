@@ -15,7 +15,6 @@ import { createDataAccess } from './service/index.js';
 export * from './service/index.js';
 
 const TABLE_NAME_DATA = 'spacecat-services-data';
-const TABLE_NAME_RBAC = 'spacecat-services-rbac';
 
 /**
  * Wrapper for data access layer
@@ -38,27 +37,11 @@ export default function dataAccessWrapper(fn) {
 
       const {
         DYNAMO_TABLE_NAME_DATA = TABLE_NAME_DATA,
-        DYNAMO_TABLE_NAME_RBAC = TABLE_NAME_RBAC,
       } = context.env;
 
-      log.info(`Creating data access layer for ${DYNAMO_TABLE_NAME_DATA} with context ${JSON.stringify(context)}`);
-      // can we print stack trace with actual line number and file path?
-      const stackTrace = new Error().stack;
-      log.info(`Stack trace for error: ${stackTrace}`);
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
         aclCtx: context?.attributes?.authInfo?.rbac || {},
-      }, log);
-      log.info(`Created data access layer for ${DYNAMO_TABLE_NAME_DATA}`);
-
-      // create a data access layer for the rbac table
-      context.rbacDataAccess = createDataAccess({
-        tableNameData: DYNAMO_TABLE_NAME_RBAC,
-        aclCtx: {
-          aclEntities: {
-            exclude: ['role', 'roleMember'],
-          },
-        },
       }, log);
     }
 

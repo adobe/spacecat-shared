@@ -29,7 +29,6 @@ function getIdent(imsOrgId) {
 }
 
 async function getDBAccess(log, tableName = 'spacecat-services-rbac') {
-  log.info(`Getting DB access for ${tableName}`);
   return createDataAccess({
     tableNameData: tableName,
     aclCtx: {
@@ -43,7 +42,6 @@ async function getDBAccess(log, tableName = 'spacecat-services-rbac') {
 async function getDBRoles(dbAccess, {
   imsUserId, imsOrgId, imsGroups, apiKey,
 }, log) {
-  log.info(`Getting DB roles for ${imsOrgId}`);
   const idents = [`imsOrgID:${imsOrgId}`];
   if (imsUserId) {
     idents.push(`imsID:${imsUserId}`);
@@ -64,9 +62,7 @@ async function getDBRoles(dbAccess, {
     idents.push(`apiKeyID:${apiKey}`);
   }
 
-  log.info(`Getting role memberships for ${imsOrgId} identities ${idents}`);
   const roleMemberships = await dbAccess.RoleMember.allRoleMembershipByIdentities(imsOrgId, idents);
-  log.info(`Found ${roleMemberships.length} role memberships`);
   const roles = await Promise.all(roleMemberships.map(async (rm) => rm.getRole()));
   log.info(`Found role membership names for ${imsOrgId} identities ${idents}: ${roles.map((r) => r.getName())}`);
   return roles;
@@ -76,7 +72,6 @@ export default async function getAcls({
   imsUserId, imsOrgs, imsGroups, apiKey,
 }, log) {
   const dbAccess = await getDBAccess(log);
-  log.info('Got DB access');
 
   const acls = [];
 

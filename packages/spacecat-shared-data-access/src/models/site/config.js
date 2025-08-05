@@ -248,6 +248,10 @@ export const configSchema = Joi.object({
       AI: Joi.array().items(QUESTION_SCHEMA).optional(),
     }).optional(),
     urlPatterns: LLMO_URL_PATTERNS_SCHEMA.optional(),
+    customerIntent: Joi.object({
+      adobeProduct: Joi.string().required(), // Should this be mandatory?
+      cdnProvider: Joi.array().items(Joi.string()).required(), // Can we have one without the other?
+    }).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),

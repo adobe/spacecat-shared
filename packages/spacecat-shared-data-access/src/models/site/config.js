@@ -252,6 +252,13 @@ export const configSchema = Joi.object({
       adobeProduct: Joi.string().required(), // Should this be mandatory?
       cdnProvider: Joi.array().items(Joi.string()).required(), // Can we have one without the other?
     }).optional(),
+    filterConfig: Joi.array().items(
+      Joi.object({
+        key: Joi.string().required(),
+        value: Joi.string().required(),
+        records: Joi.array().items(Joi.string()).optional(),
+      }),
+    ).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),

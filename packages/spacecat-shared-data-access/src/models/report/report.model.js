@@ -13,7 +13,11 @@
 import BaseModel from '../base/base.model.js';
 
 class Report extends BaseModel {
-
+  static STATUSES = {
+    PROCESSING: 'processing',
+    SUCCESS: 'success',
+    FAILED: 'failed',
+  };
 }
 
 export default Report;

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.43.2...@adobe/spacecat-shared-data-access-v2.44.0) (2025-08-06)
+
+
+### Features
+
+* add customer intent, filter schema and tags for llmo subconfig (LLMO-198, LLMO-202) ([#890](https://github.com/adobe/spacecat-shared/issues/890)) ([e11af65](https://github.com/adobe/spacecat-shared/commit/e11af6525b5ada6966d4c0424cc394e95c49c7a8))
+
 # [@adobe/spacecat-shared-data-access-v2.43.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.43.1...@adobe/spacecat-shared-data-access-v2.43.2) (2025-08-04)
 
 

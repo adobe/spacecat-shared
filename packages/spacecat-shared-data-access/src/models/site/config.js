@@ -276,9 +276,6 @@ export const configSchema = Joi.object({
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
-  paidTrafficAnalysisConfig: Joi.object({
-    frequency: Joi.string().optional(),
-  }).optional(),
   handlers: Joi.object().pattern(Joi.string(), Joi.object({
     mentions: Joi.object().pattern(Joi.string(), Joi.array().items(Joi.string())),
     excludedURLs: Joi.array().items(Joi.string()),
@@ -375,8 +372,6 @@ export const Config = (data = {}) => {
   self.getLlmoHumanQuestions = () => state?.llmo?.questions?.Human;
   self.getLlmoAIQuestions = () => state?.llmo?.questions?.AI;
   self.getLlmoUrlPatterns = () => state?.llmo?.urlPatterns;
-  self.getPaidTrafficAnalysisConfig = () => state?.paidTrafficAnalysisConfig;
-  self.getPaidTrafficAnalysisFrequency = () => state?.paidTrafficAnalysisConfig?.frequency ?? 'weekly';
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -571,15 +566,6 @@ export const Config = (data = {}) => {
     state.cdnLogsConfig = cdnLogsConfig;
   };
 
-  self.updatePaidTrafficAnalysisFrequency = (frequency) => {
-    const existing = state.paidTrafficAnalysisConfig || {};
-    state.paidTrafficAnalysisConfig = {
-      ...existing,
-      frequency,
-    };
-    validateConfiguration(state);
-  };
-
   return Object.freeze(self);
 };
 
@@ -594,5 +580,4 @@ Config.toDynamoItem = (config) => ({
   brandConfig: config.getBrandConfig(),
   cdnLogsConfig: config.getCdnLogsConfig(),
   llmo: config.getLlmoConfig(),
-  paidTrafficAnalysisConfig: config.getPaidTrafficAnalysisConfig(),
 });

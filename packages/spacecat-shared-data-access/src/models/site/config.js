@@ -249,8 +249,9 @@ export const configSchema = Joi.object({
     }).optional(),
     urlPatterns: LLMO_URL_PATTERNS_SCHEMA.optional(),
     customerIntent: Joi.object({
-      adobeProduct: Joi.string().required(), // Should this be mandatory?
-      cdnProvider: Joi.array().items(Joi.string()).required(), // Can we have one without the other?
+      adobeProduct: Joi.string().optional(),
+      cdnProvider: Joi.array().items(Joi.string()).optional(),
+      referralProvider: Joi.string().optional(),
     }).optional(),
     filterConfig: Joi.array().items(
       Joi.object({

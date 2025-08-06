@@ -2004,4 +2004,37 @@ describe('Config Tests', () => {
       });
     });
   });
+
+  describe('Paid Traffic Analysis Config', () => {
+    it('should return undefined when paidTrafficAnalysisConfig is not configured', () => {
+      const config = Config();
+      expect(config.getPaidTrafficAnalysisConfig()).to.be.undefined;
+      expect(config.getPaidTrafficAnalysisFrequency()).to.equal('weekly'); // default
+    });
+
+    it('should return config when paidTrafficAnalysisConfig is configured', () => {
+      const data = {
+        paidTrafficAnalysisConfig: {
+          frequency: 'monthly',
+        },
+      };
+      const config = Config(data);
+      expect(config.getPaidTrafficAnalysisConfig()).to.deep.equal({
+        frequency: 'monthly',
+      });
+      expect(config.getPaidTrafficAnalysisFrequency()).to.equal('monthly');
+    });
+
+    it('should update paidTrafficAnalysisConfig', () => {
+      const config = Config();
+      const newConfig = {
+        frequency: 'monthly',
+      };
+
+      config.updatePaidTrafficAnalysisConfig(newConfig);
+
+      expect(config.getPaidTrafficAnalysisConfig()).to.deep.equal(newConfig);
+      expect(config.getPaidTrafficAnalysisFrequency()).to.equal('monthly');
+    });
+  });
 });

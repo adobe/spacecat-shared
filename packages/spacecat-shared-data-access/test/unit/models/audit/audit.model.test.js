@@ -178,6 +178,7 @@ describe('AuditModel', () => {
       SECURITY_CSP: 'security-csp',
       PAID: 'paid',
       HREFLANG: 'hreflang',
+      PAID_TRAFFIC_ANALYSIS: 'paid-traffic-analysis',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

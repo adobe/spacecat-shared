@@ -248,6 +248,19 @@ export const configSchema = Joi.object({
       AI: Joi.array().items(QUESTION_SCHEMA).optional(),
     }).optional(),
     urlPatterns: LLMO_URL_PATTERNS_SCHEMA.optional(),
+    customerIntent: Joi.object({
+      adobeProduct: Joi.string().optional(),
+      cdnProvider: Joi.array().items(Joi.string()).optional(),
+      referralProvider: Joi.string().optional(),
+    }).optional(),
+    filterConfig: Joi.array().items(
+      Joi.object({
+        key: Joi.string().required(),
+        value: Joi.string().required(),
+        records: Joi.array().items(Joi.string()).optional(),
+      }),
+    ).optional(),
+    tags: Joi.array().items(Joi.string()).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),

@@ -50,6 +50,7 @@ class Audit extends BaseModel {
     ACCESSIBILITY: 'accessibility',
     SECURITY_CSP: 'security-csp',
     PAID: 'paid',
+    HREFLANG: 'hreflang',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

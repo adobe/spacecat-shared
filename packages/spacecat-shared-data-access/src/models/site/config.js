@@ -571,10 +571,11 @@ export const Config = (data = {}) => {
     state.cdnLogsConfig = cdnLogsConfig;
   };
 
-  self.updatePaidTrafficAnalysisConfig = (config) => {
+  self.updatePaidTrafficAnalysisFrequency = (frequency) => {
+    const existing = state.paidTrafficAnalysisConfig || {};
     state.paidTrafficAnalysisConfig = {
-      ...state.paidTrafficAnalysisConfig,
-      ...config,
+      ...existing,
+      frequency,
     };
     validateConfiguration(state);
   };

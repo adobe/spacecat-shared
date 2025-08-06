@@ -2025,16 +2025,13 @@ describe('Config Tests', () => {
       expect(config.getPaidTrafficAnalysisFrequency()).to.equal('monthly');
     });
 
-    it('should update paidTrafficAnalysisConfig', () => {
+    it('should update paid traffic analysis frequency', () => {
       const config = Config();
-      const newConfig = {
-        frequency: 'monthly',
-      };
 
-      config.updatePaidTrafficAnalysisConfig(newConfig);
+      config.updatePaidTrafficAnalysisFrequency('monthly');
 
-      expect(config.getPaidTrafficAnalysisConfig()).to.deep.equal(newConfig);
       expect(config.getPaidTrafficAnalysisFrequency()).to.equal('monthly');
+      expect(config.getPaidTrafficAnalysisConfig()).to.deep.equal({ frequency: 'monthly' });
     });
   });
 });

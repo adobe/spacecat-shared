@@ -95,12 +95,14 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2024,
         month: 12,
+        week: 1,
         startTime: '2024-12-30T00:00:00.000Z',
         endTime: '2024-12-31T23:59:59.999Z',
       },
       {
         year: 2025,
         month: 1,
+        week: 1,
         startTime: '2025-01-01T00:00:00.000Z',
         endTime: '2025-01-05T23:59:59.999Z',
       },
@@ -113,12 +115,14 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2025,
         month: 1,
+        week: 5,
         startTime: '2025-01-27T00:00:00.000Z',
         endTime: '2025-01-31T23:59:59.999Z',
       },
       {
         year: 2025,
         month: 2,
+        week: 5,
         startTime: '2025-02-01T00:00:00.000Z',
         endTime: '2025-02-02T23:59:59.999Z',
       },
@@ -131,12 +135,14 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2020,
         month: 12,
+        week: 53,
         startTime: '2020-12-28T00:00:00.000Z',
         endTime: '2020-12-31T23:59:59.999Z',
       },
       {
         year: 2021,
         month: 1,
+        week: 53,
         startTime: '2021-01-01T00:00:00.000Z',
         endTime: '2021-01-03T23:59:59.999Z',
       },
@@ -149,6 +155,7 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2025,
         month: 7,
+        week: 28,
         startTime: '2025-07-07T00:00:00.000Z',
         endTime: '2025-07-13T23:59:59.999Z',
       },
@@ -161,6 +168,7 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2025,
         month: 7,
+        week: 28,
         startTime: '2025-07-07T00:00:00.000Z',
         endTime: '2025-07-13T23:59:59.999Z',
       },
@@ -173,6 +181,7 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2025,
         month: 7,
+        week: 28,
         startTime: '2025-07-07T00:00:00.000Z',
         endTime: '2025-07-13T23:59:59.999Z',
       },
@@ -185,6 +194,7 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2025,
         month: 7,
+        week: 28,
         startTime: '2025-07-07T00:00:00.000Z',
         endTime: '2025-07-13T23:59:59.999Z',
       },
@@ -199,6 +209,7 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2024,
         month: 12,
+        week: 52,
         startTime: '2024-12-23T00:00:00.000Z',
         endTime: '2024-12-29T23:59:59.999Z',
       },
@@ -213,6 +224,7 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2023,
         month: 12,
+        week: 52,
         startTime: '2023-12-25T00:00:00.000Z',
         endTime: '2023-12-31T23:59:59.999Z',
       },
@@ -225,6 +237,7 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2025,
         month: 7,
+        week: 28,
         startTime: '2025-07-07T00:00:00.000Z',
         endTime: '2025-07-13T23:59:59.999Z',
       },
@@ -237,12 +250,14 @@ describe('Utils - getDateRanges', () => {
       {
         year: 2025,
         month: 12,
+        week: 1,
         startTime: '2025-12-29T00:00:00.000Z',
         endTime: '2025-12-31T23:59:59.999Z',
       },
       {
         year: 2026,
         month: 1,
+        week: 1,
         startTime: '2026-01-01T00:00:00.000Z',
         endTime: '2026-01-04T23:59:59.999Z',
       },

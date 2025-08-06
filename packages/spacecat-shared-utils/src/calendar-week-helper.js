@@ -76,6 +76,7 @@ export function getDateRanges(week, year) {
     return [{
       year: startYear,
       month: startMonth,
+      week: effectiveWeek,
       startTime: startDate.toISOString(),
       endTime: endDate.toISOString(),
     }];
@@ -103,12 +104,14 @@ export function getDateRanges(week, year) {
     {
       year: startYear,
       month: startMonth,
+      week: effectiveWeek,
       startTime: startDate.toISOString(),
       endTime: endOfFirstMonth,
     },
     {
       year: endYear,
       month: endMonth,
+      week: effectiveWeek,
       startTime: startOfSecondMonth,
       endTime: endDate.toISOString(),
     },

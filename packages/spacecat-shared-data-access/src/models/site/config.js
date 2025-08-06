@@ -260,6 +260,7 @@ export const configSchema = Joi.object({
         records: Joi.array().items(Joi.string()).optional(),
       }),
     ).optional(),
+    tags: Joi.array().items(Joi.string()).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),

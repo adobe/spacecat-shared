@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.44.0...@adobe/spacecat-shared-data-access-v2.45.0) (2025-08-07)
+
+
+### Features
+
+* hreflang as an audit type ([#893](https://github.com/adobe/spacecat-shared/issues/893)) ([3fe4b8d](https://github.com/adobe/spacecat-shared/commit/3fe4b8d0be59bd5ca9e5492dfb6ced11a5652afd))
+
 # [@adobe/spacecat-shared-data-access-v2.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.43.2...@adobe/spacecat-shared-data-access-v2.44.0) (2025-08-06)
 
 

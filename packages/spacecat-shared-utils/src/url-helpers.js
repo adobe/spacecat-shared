@@ -146,7 +146,11 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
     resp = await fetch(urlString, { headers, method });
 
     if (resp.ok) {
-      return ensureHttps(resp.url);
+      if (method === 'HEAD') {
+        return ensureHttps(resp.url);
+      } else if (method === 'GET') {
+        return ensureHttps(resp.headers.get('Location') || resp.url);
+      }
     }
 
     // Handle redirect chains

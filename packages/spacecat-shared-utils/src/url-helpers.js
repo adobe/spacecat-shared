@@ -11,6 +11,7 @@
  */
 
 import { context as h2, h1 } from '@adobe/fetch';
+import { SPACECAT_USER_AGENT } from './tracing-fetch.js';
 
 /* c8 ignore next 3 */
 export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
@@ -105,7 +106,74 @@ async function composeAuditURL(url, userAgent) {
   return stripTrailingSlash(finalUrl);
 }
 
+/**
+ * Ensures the URL is HTTPS.
+ * @param {string} url - The URL to ensure is HTTPS.
+ * @returns {string} The HTTPS URL.
+ */
+function ensureHttps(url) {
+  const urlObj = new URL(url);
+  urlObj.protocol = 'https';
+  return urlObj.toString();
+}
+
+/**
+ * Gets HTTP headers with appropriate user agent for the request type
+ * @returns {Object} - HTTP headers object
+ */
+function getRequestHeaders() {
+  return {
+    Accept: 'text/html,application/xhtml+xml,application/xml,text/css,application/javascript,text/javascript;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+    Referer: 'https://www.adobe.com/',
+    'User-Agent': SPACECAT_USER_AGENT,
+  };
+}
+
+/**
+ * Resolve canonical URL for a given URL string.
+ * @param {string} urlString - The URL string to normalize.
+ * @param {string} method - HTTP method to use ('HEAD' or 'GET').
+ * @returns {Promise<string>} A Promise that resolves to the canonical URL.
+ */
+async function resolveCanonicalUrl(urlString, method = 'HEAD') {
+  const headers = getRequestHeaders();
+  let resp;
+
+  try {
+    resp = await fetch(urlString, { headers, method });
+
+    if (resp.ok) {
+      return ensureHttps(resp.url);
+    }
+
+    // Handle redirect chains
+    if (urlString !== resp.url) {
+      return resolveCanonicalUrl(resp.url, method);
+    }
+
+    if (method === 'HEAD') {
+      return resolveCanonicalUrl(urlString, 'GET');
+    }
+
+    // If the URL is not found, throw an error
+    const errorMessage = `HTTP error! status: ${resp.status}`;
+    throw new Error(errorMessage);
+  } catch (err) {
+    // If HEAD failed with network error and we haven't tried GET yet, retry with GET
+    if (method === 'HEAD') {
+      return resolveCanonicalUrl(urlString, 'GET');
+    }
+    throw new Error(`Failed to retrieve URL (${urlString}): ${err.message}`);
+  }
+}
+
 export {
+  ensureHttps,
+  getRequestHeaders,
+  resolveCanonicalUrl,
   composeBaseURL,
   composeAuditURL,
   prependSchema,

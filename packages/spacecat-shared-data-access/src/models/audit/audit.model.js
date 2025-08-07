@@ -30,6 +30,7 @@ class Audit extends BaseModel {
     LHS_DESKTOP: 'lhs-desktop',
     404: '404',
     SITEMAP: 'sitemap',
+    REDIRECT_CHAINS: 'redirect-chains',
     CANONICAL: 'canonical',
     BROKEN_BACKLINKS: 'broken-backlinks',
     BROKEN_INTERNAL_LINKS: 'broken-internal-links',

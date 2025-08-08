@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.45.0...@adobe/spacecat-shared-data-access-v2.46.0) (2025-08-08)
+
+
+### Features
+
+* add paid traffic analysis audit ([#892](https://github.com/adobe/spacecat-shared/issues/892)) ([6d68f74](https://github.com/adobe/spacecat-shared/commit/6d68f7413be811220f0ad651ed4837d2133f832f))
+
 # [@adobe/spacecat-shared-data-access-v2.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.44.0...@adobe/spacecat-shared-data-access-v2.45.0) (2025-08-07)
 
 

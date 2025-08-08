@@ -101,20 +101,16 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAttribute('externalOwnerId', {
     type: 'string',
     hidden: true,
-    set: (_, attrs) => {
-      // Compute external owner ID during creation
-      const { externalOwnerId } = computeExternalIds(attrs, Site.AUTHORING_TYPES);
-      return externalOwnerId;
-    },
+    readOnly: true,
+    watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalOwnerId,
   })
   .addAttribute('externalSiteId', {
     type: 'string',
     hidden: true,
-    set: (_, attrs) => {
-      // Compute external site ID during creation
-      const { externalSiteId } = computeExternalIds(attrs, Site.AUTHORING_TYPES);
-      return externalSiteId;
-    },
+    readOnly: true,
+    watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
+    set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalSiteId,
   })
   .addAllIndex(['baseURL'])
   .addIndex(

@@ -88,23 +88,6 @@ class Site extends BaseModel {
   }
 
   /**
-   * Computes and sets external IDs based on current entity state
-   * This method should be called after updating authoringType, hlxConfig, or deliveryConfig
-   */
-  computeAndSetExternalIds() {
-    const attrs = {
-      authoringType: this.getAuthoringType(),
-      hlxConfig: this.getHlxConfig(),
-      deliveryConfig: this.getDeliveryConfig(),
-    };
-
-    const { externalOwnerId, externalSiteId } = computeExternalIds(attrs, Site.AUTHORING_TYPES);
-    this.setExternalOwnerId(externalOwnerId);
-    this.setExternalSiteId(externalSiteId);
-    return this;
-  }
-
-  /**
    * Resolves the site's base URL to a final URL by fetching the URL,
    * following the redirects and returning the final URL.
    *

@@ -25,6 +25,7 @@ import rageclick from './functions/opportunities/rageclick.js';
 import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
 import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
 import trafficAnalysis from './functions/traffic-analysis.js';
+import jsErrors from './functions/js-errors.js';
 
 // exported for tests
 export const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
@@ -44,6 +45,7 @@ const HANDLERS = {
   pageviews,
   trafficMetrics,
   'traffic-analysis': trafficAnalysis,
+  jsErrors,
 };
 
 function sanitize(opts) {

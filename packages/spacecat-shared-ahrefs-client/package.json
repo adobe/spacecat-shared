@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-ahrefs-client",
-  "version": "1.9.4",
+  "version": "1.9.5",
   "description": "Shared modules of the Spacecat Services - Ahrefs Client",
   "type": "module",
   "engines": {

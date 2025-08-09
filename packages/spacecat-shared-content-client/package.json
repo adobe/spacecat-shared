@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-content-client",
-  "version": "1.7.21",
+  "version": "1.7.22",
   "description": "Shared modules of the Spacecat Services - Content Client",
   "type": "module",
   "engines": {

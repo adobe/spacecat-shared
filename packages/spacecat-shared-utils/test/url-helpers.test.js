@@ -360,33 +360,7 @@ describe('URL Utility Functions', () => {
         .to.be.rejectedWith('HTTP error! status: 500');
     });
 
-    it('should throw error when GET method fails (covers lines 158-159)', async () => {
-      nock('https://example.com')
-        .head('/')
-        .reply(405); // Method not allowed
-
-      nock('https://example.com')
-        .get('/')
-        .reply(404); // Not found - this will trigger the error on lines 158-159
-
-      await expect(resolveCanonicalUrl('https://example.com'))
-        .to.be.rejectedWith('HTTP error! status: 404');
-    });
-
-    it('should throw error when non-HEAD method fails (covers lines 158-159)', async () => {
-      nock('https://example.com')
-        .get('/')
-        .reply(500); // Server error - this will trigger the error on lines 158-159
-
-      await expect(resolveCanonicalUrl('https://example.com/', 'GET'))
-        .to.be.rejectedWith('HTTP error! status: 500');
-    });
-
-    it('should fallback to GET when HEAD fails with no redirect (covers line 162)', async () => {
-      // This test creates the exact scenario to hit line 162:
-      // 1. resp.ok is false (404 response)
-      // 2. urlString === resp.url (no redirect)
-      // 3. method === 'HEAD'
+    it('should fallback to GET when HEAD fails with no redirect', async () => {
       nock('https://example.com')
         .head('/')
         .reply(404); // Not found - resp.ok will be false

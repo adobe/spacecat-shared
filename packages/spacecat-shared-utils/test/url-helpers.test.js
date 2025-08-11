@@ -381,5 +381,22 @@ describe('URL Utility Functions', () => {
       await expect(resolveCanonicalUrl('https://example.com/', 'GET'))
         .to.be.rejectedWith('HTTP error! status: 500');
     });
+
+    it('should fallback to GET when HEAD fails with no redirect (covers line 162)', async () => {
+      // This test creates the exact scenario to hit line 162:
+      // 1. resp.ok is false (404 response)
+      // 2. urlString === resp.url (no redirect)
+      // 3. method === 'HEAD'
+      nock('https://example.com')
+        .head('/')
+        .reply(404); // Not found - resp.ok will be false
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200); // Success for the GET fallback
+
+      const result = await resolveCanonicalUrl('https://example.com/', 'HEAD');
+      expect(result).to.equal('https://example.com/');
+    });
   });
 });

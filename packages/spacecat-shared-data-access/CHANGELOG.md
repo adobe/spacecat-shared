@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-data-access-v2.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.48.0...@adobe/spacecat-shared-data-access-v2.49.0) (2025-08-11)
+
+
+### Features
+
+* simpler config for llmo-prompts-ahref import ([#904](https://github.com/adobe/spacecat-shared/issues/904)) ([39a65d7](https://github.com/adobe/spacecat-shared/commit/39a65d7260d10ba2e30f5a61ef68551e5bbf24af))
+
+# [@adobe/spacecat-shared-data-access-v2.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.47.0...@adobe/spacecat-shared-data-access-v2.48.0) (2025-08-11)
+
+
+### Features
+
+* add import type llmo-prompts-ahref ([#902](https://github.com/adobe/spacecat-shared/issues/902)) ([64b7ba0](https://github.com/adobe/spacecat-shared/commit/64b7ba0bf622fe2eff021f2e3660d5f809a0c8b2))
+
+# [@adobe/spacecat-shared-data-access-v2.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.46.2...@adobe/spacecat-shared-data-access-v2.47.0) (2025-08-11)
+
+
+### Features
+
+* make customerIntent config generic ([#896](https://github.com/adobe/spacecat-shared/issues/896)) ([d02a592](https://github.com/adobe/spacecat-shared/commit/d02a592fb556d282f652f8dc9c2603ae47a0e93c))
+
+# [@adobe/spacecat-shared-data-access-v2.46.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.46.1...@adobe/spacecat-shared-data-access-v2.46.2) (2025-08-11)
+
+
+### Bug Fixes
+
+* [preflight] removing ref from externalOwnerId to find site for a branch-based preview URL ([#843](https://github.com/adobe/spacecat-shared/issues/843)) ([4f57fcf](https://github.com/adobe/spacecat-shared/commit/4f57fcf2f645279e423455dea60df37e116950b4))
+
+# [@adobe/spacecat-shared-data-access-v2.46.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.46.0...@adobe/spacecat-shared-data-access-v2.46.1) (2025-08-09)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#899](https://github.com/adobe/spacecat-shared/issues/899)) ([c2cc342](https://github.com/adobe/spacecat-shared/commit/c2cc3422a0a4a3f8d1a2724847da456bf801ff59))
+
+# [@adobe/spacecat-shared-data-access-v2.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.45.0...@adobe/spacecat-shared-data-access-v2.46.0) (2025-08-08)
+
+
+### Features
+
+* add paid traffic analysis audit ([#892](https://github.com/adobe/spacecat-shared/issues/892)) ([6d68f74](https://github.com/adobe/spacecat-shared/commit/6d68f7413be811220f0ad651ed4837d2133f832f))
+
 # [@adobe/spacecat-shared-data-access-v2.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.44.0...@adobe/spacecat-shared-data-access-v2.45.0) (2025-08-07)
 
 

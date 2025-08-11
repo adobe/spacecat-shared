@@ -14,6 +14,7 @@ import Joi from 'joi';
 import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
+  LLMO_QUESTIONS_IMPORT_TYPE: 'llmo-prompts-ahref',
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',
@@ -73,6 +74,12 @@ const IMPORT_BASE_KEYS = {
 };
 
 export const IMPORT_TYPE_SCHEMAS = {
+  [IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE).required(),
+    enabled: Joi.boolean().default(true),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+  }),
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
     ...IMPORT_BASE_KEYS,
@@ -248,11 +255,12 @@ export const configSchema = Joi.object({
       AI: Joi.array().items(QUESTION_SCHEMA).optional(),
     }).optional(),
     urlPatterns: LLMO_URL_PATTERNS_SCHEMA.optional(),
-    customerIntent: Joi.object({
-      adobeProduct: Joi.string().optional(),
-      cdnProvider: Joi.array().items(Joi.string()).optional(),
-      referralProvider: Joi.string().optional(),
-    }).optional(),
+    customerIntent: Joi.array().items(
+      Joi.object({
+        key: Joi.string().required(),
+        value: Joi.string().required(),
+      }),
+    ).optional(),
     filterConfig: Joi.array().items(
       Joi.object({
         key: Joi.string().required(),

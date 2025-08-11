@@ -76,7 +76,7 @@ const IMPORT_BASE_KEYS = {
 export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE).required(),
-    ...IMPORT_BASE_KEYS,
+    enabled: Joi.boolean().default(true),
     limit: Joi.number().integer().min(1).max(100)
       .optional(),
   }),

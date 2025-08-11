@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.46.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.46.1...@adobe/spacecat-shared-data-access-v2.46.2) (2025-08-11)
+
+
+### Bug Fixes
+
+* [preflight] removing ref from externalOwnerId to find site for a branch-based preview URL ([#843](https://github.com/adobe/spacecat-shared/issues/843)) ([4f57fcf](https://github.com/adobe/spacecat-shared/commit/4f57fcf2f645279e423455dea60df37e116950b4))
+
 # [@adobe/spacecat-shared-data-access-v2.46.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.46.0...@adobe/spacecat-shared-data-access-v2.46.1) (2025-08-09)
 
 

@@ -118,7 +118,7 @@ function ensureHttps(url) {
 }
 
 /**
- * Gets HTTP headers with appropriate user agent for the request type
+ * Gets spacecat HTTP headers with appropriate user agent for the request type
  * @returns {Object} - HTTP headers object
  */
 function getSpacecatRequestHeaders() {
@@ -133,7 +133,7 @@ function getSpacecatRequestHeaders() {
 }
 
 /**
- * Resolve canonical URL for a given URL string.
+ * Resolve canonical URL for a given URL string by following redirect chain.
  * @param {string} urlString - The URL string to normalize.
  * @param {string} method - HTTP method to use ('HEAD' or 'GET').
  * @returns {Promise<string>} A Promise that resolves to the canonical URL.

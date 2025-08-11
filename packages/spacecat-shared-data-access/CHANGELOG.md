@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.46.2...@adobe/spacecat-shared-data-access-v2.47.0) (2025-08-11)
+
+
+### Features
+
+* make customerIntent config generic ([#896](https://github.com/adobe/spacecat-shared/issues/896)) ([d02a592](https://github.com/adobe/spacecat-shared/commit/d02a592fb556d282f652f8dc9c2603ae47a0e93c))
+
 # [@adobe/spacecat-shared-data-access-v2.46.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.46.1...@adobe/spacecat-shared-data-access-v2.46.2) (2025-08-11)
 
 

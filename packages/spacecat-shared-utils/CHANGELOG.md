@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.44.3...@adobe/spacecat-shared-utils-v1.45.0) (2025-08-11)
+
+
+### Features
+
+* Create shared utils method for resolving canonical url ([#895](https://github.com/adobe/spacecat-shared/issues/895)) ([054ebf7](https://github.com/adobe/spacecat-shared/commit/054ebf7c0ef90269eac75558d3050ebee712c725))
+
 # [@adobe/spacecat-shared-utils-v1.44.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.44.2...@adobe/spacecat-shared-utils-v1.44.3) (2025-08-09)
 
 

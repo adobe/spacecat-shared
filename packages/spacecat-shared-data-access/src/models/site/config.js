@@ -14,6 +14,7 @@ import Joi from 'joi';
 import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
+  LLMO_QUESTIONS_IMPORT_TYPE: 'llmo-prompts-ahref',
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',
@@ -73,6 +74,12 @@ const IMPORT_BASE_KEYS = {
 };
 
 export const IMPORT_TYPE_SCHEMAS = {
+  [IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE).required(),
+    ...IMPORT_BASE_KEYS,
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+  }),
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
     ...IMPORT_BASE_KEYS,

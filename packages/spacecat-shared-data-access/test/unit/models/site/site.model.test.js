@@ -274,6 +274,22 @@ describe('SiteModel', () => {
     });
   });
 
+  describe('isSandbox', () => {
+    it('gets isSandbox with default value', () => {
+      expect(instance.getIsSandbox()).to.equal(false);
+    });
+
+    it('sets isSandbox to true', () => {
+      instance.setIsSandbox(true);
+      expect(instance.getIsSandbox()).to.equal(true);
+    });
+
+    it('sets isSandbox to false', () => {
+      instance.setIsSandbox(false);
+      expect(instance.getIsSandbox()).to.equal(false);
+    });
+  });
+
   describe('isLiveToggledAt', () => {
     it('gets isLiveToggledAt', () => {
       expect(instance.getIsLiveToggledAt()).to.equal('2024-11-29T07:45:55.952Z');
@@ -343,6 +359,39 @@ describe('SiteModel', () => {
       const finalURL = await instance.resolveFinalURL();
 
       expect(finalURL).to.equal(instance.getBaseURL().replace(/^https?:\/\//, ''));
+    });
+  });
+
+  describe('pageTypes attribute', () => {
+    it('accepts a valid array of pageTypes', () => {
+      const validPageTypes = [
+        { name: 'Home', pattern: '^/$' },
+        { name: 'Blog', pattern: '^/blog/.*' },
+      ];
+      instance.setPageTypes(validPageTypes);
+      expect(instance.record.pageTypes).to.deep.equal(validPageTypes);
+    });
+
+    it('throws if set to undefined', () => {
+      expect(() => instance.setpageTypes(undefined)).to.throw();
+    });
+
+    it('throws if set to a non-array', () => {
+      expect(() => instance.setpageTypes('not-an-array')).to.throw();
+      expect(() => instance.setpageTypes(123)).to.throw();
+      expect(() => instance.setpageTypes({})).to.throw();
+    });
+
+    it('accepts an empty array', () => {
+      instance.setPageTypes([]);
+      expect(instance.record.pageTypes).to.deep.equal([]);
+    });
+
+    it('throws if items are missing name or pattern', () => {
+      const missingName = [{ pattern: '^/foo$' }];
+      const missingPattern = [{ name: 'Foo' }];
+      expect(() => instance.setpageTypes(missingName)).to.throw();
+      expect(() => instance.setpageTypes(missingPattern)).to.throw();
     });
   });
 });

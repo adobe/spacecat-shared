@@ -98,6 +98,156 @@ describe('RUMAPIClient', () => {
   });
 });
 
+describe('RUMAPIClient#queryStream', () => {
+  let context;
+  let rumApiClient;
+
+  beforeEach(() => {
+    context = { env: {} };
+    rumApiClient = RUMAPIClient.createFrom(context);
+  });
+
+  it('throws error when unknown query is requested', async () => {
+    const opts = { domainkey: 'some-key' };
+    await expect(rumApiClient.queryStream('unknown-query', opts)).to.be.rejectedWith('Unknown query unknown-query');
+  });
+
+  it('throws error when domainkey is missing', async () => {
+    const opts = { domain: 'example.com', interval: 0 };
+    await expect(rumApiClient.queryStream('404', opts)).to.be.rejectedWith('You need to provide a \'domainkey\' or set RUM_ADMIN_KEY env variable');
+  });
+
+  it('creates a readable stream of processed bundles', async () => {
+    const rumBundles = [
+      {
+        id: '1',
+        url: 'https://space.cat/foo',
+        time: 1678886400000,
+        weight: 1,
+        events: [{ checkpoint: '404', source: '/not-found' }],
+      },
+      {
+        id: '2',
+        url: 'https://space.cat/bar',
+        time: 1678886400000,
+        weight: 1,
+        events: [],
+      },
+    ];
+
+    nock(RUM_BUNDLER_API_HOST)
+      .get((uri) => uri.startsWith('/bundles/space.cat'))
+      .reply(200, { rumBundles });
+
+    const opts = {
+      domain: 'space.cat',
+      domainkey: 'some-domain-key',
+      interval: 0,
+    };
+
+    const readableStream = await rumApiClient.queryStream('404', opts);
+    const reader = readableStream.getReader();
+
+    const received = [];
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // eslint-disable-next-line no-await-in-loop
+      const { done, value } = await reader.read();
+      if (done) break;
+      received.push(value);
+    }
+
+    expect(received.length).to.equal(1);
+    const result = received[0];
+
+    expect(result).to.be.an('array').with.lengthOf(1);
+    expect(result[0]).to.deep.equal({
+      url: 'https://space.cat/foo',
+      views: 1,
+      all_sources: ['/not-found'],
+      source_count: 1,
+      top_source: '/not-found',
+    });
+  });
+
+  it('handles empty bundles array gracefully', async () => {
+    const rumBundles = [];
+
+    nock(RUM_BUNDLER_API_HOST)
+      .get((uri) => uri.startsWith('/bundles/space.cat'))
+      .reply(200, { rumBundles });
+
+    const opts = {
+      domain: 'space.cat',
+      domainkey: 'some-domain-key',
+      interval: 0,
+    };
+
+    const readableStream = await rumApiClient.queryStream('404', opts);
+    const reader = readableStream.getReader();
+
+    const received = [];
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // eslint-disable-next-line no-await-in-loop
+      const { done, value } = await reader.read();
+      if (done) break;
+      received.push(value);
+    }
+
+    expect(received.length).to.equal(1);
+    const result = received[0];
+    expect(result).to.be.an('array').that.is.empty;
+  });
+
+  it('uses admin key to fetch domainkey if not provided in opts', async () => {
+    nock(RUM_BUNDLER_API_HOST)
+      .get('/domainkey/example.com')
+      .matchHeader('Authorization', 'Bearer admin-key')
+      .reply(200, { domainkey: 'external-domain-key' });
+
+    const rumBundles = [
+      {
+        id: '1',
+        url: 'https://example.com/1',
+        time: 1678886400000,
+        weight: 1,
+        events: [{ checkpoint: '404', source: '/not-found' }],
+      },
+    ];
+
+    nock(RUM_BUNDLER_API_HOST)
+      .get((uri) => uri.startsWith('/bundles/example.com'))
+      .reply(200, { rumBundles });
+
+    const opts = {
+      domain: 'example.com',
+      interval: 0,
+    };
+
+    context.env.RUM_ADMIN_KEY = 'admin-key';
+    delete context.rumApiClient;
+    rumApiClient = RUMAPIClient.createFrom(context);
+
+    const readableStream = await rumApiClient.queryStream('404', opts);
+    const reader = readableStream.getReader();
+
+    const received = [];
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      // eslint-disable-next-line no-await-in-loop
+      const { done, value } = await reader.read();
+      if (done) break;
+      received.push(value);
+    }
+
+    expect(received.length).to.equal(1);
+    const result = received[0];
+    expect(result).to.be.an('array').with.lengthOf(1);
+    expect(result[0].views).to.equal(1);
+  });
+});
+
 describe('RUMAPIClient with admin key for external domainkey fetch', () => {
   let context;
   let client;
@@ -105,6 +255,10 @@ describe('RUMAPIClient with admin key for external domainkey fetch', () => {
     context = { env: { RUM_ADMIN_KEY: 'admin-key' } };
     delete context.rumApiClient;
     client = RUMAPIClient.createFrom(context);
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
   });
 
   it('fetches domainkey externally when not provided in opts', async () => {
@@ -179,6 +333,10 @@ describe('RUMAPIClient retrieveDomainkey method', () => {
     context = { env: { RUM_ADMIN_KEY: 'admin-key' } };
     delete context.rumApiClient;
     client = RUMAPIClient.createFrom(context);
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
   });
 
   it('retrieves and caches the domainkey', async () => {

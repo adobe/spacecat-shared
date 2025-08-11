@@ -15,8 +15,13 @@
 import { expect } from 'chai';
 
 import { Config, validateConfiguration } from '../../../../src/models/site/config.js';
+import { registerLogger } from '../../../../src/util/logger-registry.js';
 
 describe('Config Tests', () => {
+  beforeEach(() => {
+    registerLogger(null);
+  });
+
   describe('Config Creation', () => {
     it('creates an Config with defaults when no data is provided', () => {
       const config = Config();
@@ -44,7 +49,7 @@ describe('Config Tests', () => {
       expect(config.getSlackMentions(404)).to.deep.equal(['id1']);
     });
 
-    it('throws an error when data is invalid', () => {
+    it('preserves provided data when validation fails', () => {
       const data = {
         slack: {
           channel: 'channel1',
@@ -56,10 +61,19 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.404.mentions" must be of type object');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({
+        channel: 'channel1',
+        workspace: 'workspace1',
+      });
+      expect(config.getHandlers()).to.deep.equal({
+        404: {
+          mentions: [{ email: ['id1'] }],
+        },
+      });
     });
 
-    it('throws an error when invitedUserCount is invalid', () => {
+    it('preserves provided data when invitedUserCount is invalid', () => {
       const data = {
         slack: {
           channel: 'channel1',
@@ -67,7 +81,191 @@ describe('Config Tests', () => {
           invitedUserCount: -12,
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "slack.invitedUserCount" must be greater than or equal to 0');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.deep.equal({
+        channel: 'channel1',
+        workspace: 'workspace1',
+        invitedUserCount: -12,
+      });
+      expect(config.getHandlers()).to.be.undefined;
+    });
+
+    it('logs error when validation fails and logger is available', () => {
+      // Create a mock logger
+      const mockLogger = {};
+
+      // Spy on the logger error method
+      let loggedError = null;
+      let loggedData = null;
+      mockLogger.error = (message, data) => {
+        loggedError = message;
+        loggedData = data;
+      };
+
+      // Register the mock logger
+      registerLogger(mockLogger);
+
+      const invalidData = {
+        slack: {
+          channel: 'channel1',
+          workspace: 'workspace1',
+        },
+        handlers: {
+          404: {
+            mentions: [{ email: ['id1'] }], // invalid - should be string array
+          },
+        },
+      };
+
+      const config = Config(invalidData);
+
+      // Should preserve the provided invalid data
+      expect(config.getSlackConfig()).to.deep.equal({
+        channel: 'channel1',
+        workspace: 'workspace1',
+      });
+      expect(config.getHandlers()).to.deep.equal({
+        404: {
+          mentions: [{ email: ['id1'] }],
+        },
+      });
+
+      // Should have logged the error
+      expect(loggedError).to.equal('Site configuration validation failed, using provided data');
+      expect(loggedData).to.have.property('error');
+      expect(loggedData).to.have.property('invalidConfig');
+      expect(loggedData.invalidConfig).to.deep.equal(invalidData);
+    });
+
+    it('creates a Config with llmo property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoConfig()).to.deep.equal(data.llmo);
+    });
+
+    it('test fetching config with invalid llmo property', () => {
+      const data = {
+        llmo: {
+          dataFolder: 123,
+          brand: 'mybrand',
+        },
+      };
+      // Config() catches validation errors and uses provided data as-is
+      const config = Config(data);
+      expect(config.getLlmoConfig()).to.deep.equal(data.llmo);
+    });
+
+    it('creates a Config with llmo property including questions', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+          questions: {
+            Human: [
+              {
+                key: 'foo',
+                question: 'What is foo?',
+                source: 'manual-csv',
+                volume: '100',
+                tags: ['tag1', 'tag2', 'market: US', 'product: Product A'],
+                importTime: '2021-01-01T00:00:00.000Z',
+              },
+            ],
+            AI: [
+              {
+                key: 'bar',
+                question: 'What is bar?',
+                source: 'ahrefs',
+                keyword: 'bar',
+                url: 'https://example.com',
+                volume: '100',
+                tags: ['tag3', 'tag4', 'market: US', 'product: Product A'],
+                importTime: '2021-01-01T00:00:00.000Z',
+              },
+            ],
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoConfig()).to.deep.equal(data.llmo);
+    });
+
+    it('creates a Config with llmo property including URL patterns', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+          urlPatterns: [
+            { urlPattern: 'https://www.adobe.com/*' },
+            { urlPattern: 'https://www.adobe.com/firefly*', tags: ['product: firefly'] },
+            { urlPattern: 'https://www.adobe.com/products/firefly*', tags: ['product: firefly'] },
+            { urlPattern: 'https://www.adobe.com/fr/*', tags: ['market: fr'] },
+            { urlPattern: 'https://www.adobe.com/fr/firefly*', tags: ['product: firefly', 'market: fr'] },
+            { urlPattern: 'https://www.adobe.com/fr/products/firefly*', tags: ['product: firefly', 'market: fr'] },
+          ],
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoConfig()).to.deep.equal(data.llmo);
+    });
+
+    it('correctly updates the LLMO configuration including questions', () => {
+      const config = Config();
+      const questions = {
+        Human: [
+          {
+            key: 'foo',
+            question: 'What is foo?',
+            source: 'manual-csv',
+            volume: '100',
+            tags: ['tag1', 'tag2', 'market: US', 'product: Product A'],
+            importTime: '2021-01-01T00:00:00.000Z',
+          },
+        ],
+        AI: [
+          {
+            key: 'bar',
+            question: 'What is bar?',
+            source: 'ahrefs',
+            keyword: 'bar',
+            url: 'https://example.com',
+            volume: '100',
+            tags: ['tag3', 'tag4', 'market: US', 'product: Product A'],
+            importTime: '2021-01-01T00:00:00.000Z',
+          },
+        ],
+      };
+      config.updateLlmoConfig('newBrandFolder', 'newBrand', questions);
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.dataFolder).to.equal('newBrandFolder');
+      expect(llmoConfig.brand).to.equal('newBrand');
+      expect(llmoConfig.questions.Human[0].key).to.equal('foo');
+      expect(llmoConfig.questions.AI[0].key).to.equal('bar');
+      expect(llmoConfig.questions.Human[0].tags).to.deep.equal(['tag1', 'tag2', 'market: US', 'product: Product A']);
+      expect(llmoConfig.questions.AI[0].tags).to.deep.equal(['tag3', 'tag4', 'market: US', 'product: Product A']);
+      expect(llmoConfig.questions).to.deep.equal(questions);
+    });
+
+    it('correctly updates the LLMO configuration including URL patterns', () => {
+      const config = Config();
+      const urlPatterns = [
+        { urlPattern: 'https://www.adobe.com/*' },
+        { urlPattern: 'https://www.adobe.com/firefly*', tags: ['product: firefly'] },
+        { urlPattern: 'https://www.adobe.com/products/firefly*', tags: ['product: firefly'] },
+        { urlPattern: 'https://www.adobe.com/fr/*', tags: ['market: fr'] },
+        { urlPattern: 'https://www.adobe.com/fr/firefly*', tags: ['product: firefly', 'market: fr'] },
+        { urlPattern: 'https://www.adobe.com/fr/products/firefly*', tags: ['product: firefly', 'market: fr'] },
+      ];
+      config.updateLlmoConfig('newBrandFolder', 'newBrand', undefined, urlPatterns);
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.dataFolder).to.equal('newBrandFolder');
+      expect(llmoConfig.brand).to.equal('newBrand');
+      expect(llmoConfig.urlPatterns).to.deep.equal(urlPatterns);
     });
   });
 
@@ -80,6 +278,15 @@ describe('Config Tests', () => {
       expect(slackConfig.channel).to.equal('newChannel');
       expect(slackConfig.workspace).to.equal('newWorkspace');
       expect(slackConfig.invitedUserCount).to.equal(20);
+    });
+
+    it('correctly updates the LLMO configuration', () => {
+      const config = Config();
+      config.updateLlmoConfig('newBrandFolder', 'newBrand');
+
+      const llmoConfig = config.getLlmoConfig();
+      expect(llmoConfig.dataFolder).to.equal('newBrandFolder');
+      expect(llmoConfig.brand).to.equal('newBrand');
     });
 
     it('correctly updates the Slack mentions', () => {
@@ -230,14 +437,20 @@ describe('Config Tests', () => {
       expect(config.getCdnLogsConfig()).to.be.undefined;
     });
 
-    it('should throw an error if cdnLogsConfig is invalid', () => {
+    it('should preserve provided data if cdnLogsConfig is invalid', () => {
       const data = {
         cdnLogsConfig: {
           filters: [{ key: 'test-key', value: ['test-value'] }],
           outputLocation: 'test-output-location',
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "cdnLogsConfig.bucketName" is required');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.be.undefined;
+      expect(config.getCdnLogsConfig()).to.deep.equal({
+        filters: [{ key: 'test-key', value: ['test-value'] }],
+        outputLocation: 'test-output-location',
+      });
     });
 
     it('should be able to update cdnLogsConfig', () => {
@@ -270,7 +483,7 @@ describe('Config Tests', () => {
       expect(config.getGroupedURLs('broken-backlinks')).to.deep.equal(groupedURLs);
     });
 
-    it('Config creation with an incorrect groupedURLs option type', () => {
+    it('Config creation with an incorrect groupedURLs option type preserves provided data', () => {
       const data = {
         handlers: {
           'broken-backlinks': {
@@ -278,11 +491,16 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data))
-        .to.throw('Configuration validation error: "handlers.broken-backlinks.groupedURLs" must be an array');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.deep.equal({
+        'broken-backlinks': {
+          groupedURLs: 'invalid-type',
+        },
+      });
     });
 
-    it('Config creation with an incorrect groupedURLs option structure', () => {
+    it('Config creation with an incorrect groupedURLs option structure preserves provided data', () => {
       const data = {
         handlers: {
           'broken-backlinks': {
@@ -292,7 +510,15 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.broken-backlinks.groupedURLs[0].wrong" is not allowed');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.deep.equal({
+        'broken-backlinks': {
+          groupedURLs: [
+            { wrong: 'wrong', structure: 'structure' },
+          ],
+        },
+      });
     });
 
     it('Config updates grouped URLs with the groupedURLs option', () => {
@@ -363,7 +589,7 @@ describe('Config Tests', () => {
       expect(updatedMetrics.projectedTrafficValue).to.equal(1500);
     });
 
-    it('should throw an error if latestMetrics is invalid', () => {
+    it('should preserve provided data if latestMetrics is invalid', () => {
       const data = {
         handlers: {
           'latest-metrics': {
@@ -375,7 +601,17 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.latest-metrics.latestMetrics.pageViewsChange" must be a number');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.deep.equal({
+        'latest-metrics': {
+          latestMetrics: {
+            pageViewsChange: 'invalid',
+            ctrChange: 5,
+            projectedTrafficValue: 1000,
+          },
+        },
+      });
     });
   });
 
@@ -434,6 +670,33 @@ describe('Config Tests', () => {
       const dynamoItem = Config.toDynamoItem(data);
       expect(dynamoItem.contentAiConfig).to.deep.equal(data.getContentAiConfig());
     });
+
+    it('includes llmo in toDynamoItem conversion including questions', () => {
+      const data = Config({
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+          questions: {
+            Human: [
+              {
+                question: 'What is foo?',
+                source: 'manual-csv',
+              },
+            ],
+            AI: [
+              {
+                question: 'What is bar?',
+                source: 'ahrefs',
+                keyword: 'bar',
+                url: 'https://example.com',
+              },
+            ],
+          },
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.llmo).to.deep.equal(data.getLlmoConfig());
+    });
   });
 
   describe('Import Configuration', () => {
@@ -451,24 +714,39 @@ describe('Config Tests', () => {
       expect(config.getImports()).to.deep.equal(data.imports);
     });
 
-    it('throws error for unknown import type', () => {
-      expect(() => Config({
+    it('preserves provided data for unknown import type', () => {
+      const config = Config({
         imports: [{
           type: 'unknown-type',
           destinations: ['default'],
           sources: ['ahrefs'],
         }],
-      })).to.throw('Configuration validation error');
+      });
+      expect(config.getImports()).to.deep.equal([{
+        type: 'unknown-type',
+        destinations: ['default'],
+        sources: ['ahrefs'],
+      }]);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.be.undefined;
     });
 
-    it('throws error for invalid import configuration', () => {
-      expect(() => Config({
+    it('preserves provided data for invalid import configuration', () => {
+      const config = Config({
         imports: [{
           type: 'organic-keywords',
           destinations: ['invalid'],
           sources: ['invalid'],
         }],
-      })).to.throw('Configuration validation error');
+      });
+
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.be.undefined;
+      expect(config.getImports()).to.deep.equal([{
+        type: 'organic-keywords',
+        destinations: ['invalid'],
+        sources: ['invalid'],
+      }]);
     });
 
     describe('enableImport method', () => {
@@ -801,7 +1079,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]');
+            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -975,6 +1253,40 @@ describe('Config Tests', () => {
                   key: 'type',
                 },
               },
+              {
+                message: '"imports[0].type" must be [traffic-analysis]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'traffic-analysis',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
+              {
+                message: '"imports[0].type" must be [top-forms]',
+                path: [
+                  'imports',
+                  0,
+                  'type',
+                ],
+                type: 'any.only',
+                context: {
+                  valids: [
+                    'top-forms',
+                  ],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              },
             ]);
           return true;
         });
@@ -1089,7 +1401,7 @@ describe('Config Tests', () => {
       expect(handlerConfig.percentageChangeThreshold).to.equal(20);
     });
 
-    it('should reject negative movingAvgThreshold values', () => {
+    it('should preserve provided data for negative movingAvgThreshold values', () => {
       const data = {
         handlers: {
           'organic-traffic-internal': {
@@ -1097,10 +1409,16 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.movingAvgThreshold" must be greater than or equal to 1');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.deep.equal({
+        'organic-traffic-internal': {
+          movingAvgThreshold: -5,
+        },
+      });
     });
 
-    it('should reject zero movingAvgThreshold values', () => {
+    it('should preserve provided data for zero movingAvgThreshold values', () => {
       const data = {
         handlers: {
           'organic-traffic-internal': {
@@ -1108,10 +1426,16 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.movingAvgThreshold" must be greater than or equal to 1');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.deep.equal({
+        'organic-traffic-internal': {
+          movingAvgThreshold: 0,
+        },
+      });
     });
 
-    it('should reject negative percentageChangeThreshold values', () => {
+    it('should preserve provided data for negative percentageChangeThreshold values', () => {
       const data = {
         handlers: {
           'organic-traffic-internal': {
@@ -1119,10 +1443,16 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.percentageChangeThreshold" must be greater than or equal to 1');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.deep.equal({
+        'organic-traffic-internal': {
+          percentageChangeThreshold: -10,
+        },
+      });
     });
 
-    it('should reject zero percentageChangeThreshold values', () => {
+    it('should preserve provided data for zero percentageChangeThreshold values', () => {
       const data = {
         handlers: {
           'organic-traffic-internal': {
@@ -1130,7 +1460,13 @@ describe('Config Tests', () => {
           },
         },
       };
-      expect(() => Config(data)).to.throw('Configuration validation error: "handlers.organic-traffic-internal.percentageChangeThreshold" must be greater than or equal to 1');
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.deep.equal({
+        'organic-traffic-internal': {
+          percentageChangeThreshold: 0,
+        },
+      });
     });
 
     it('should allow updating threshold values', () => {
@@ -1160,6 +1496,512 @@ describe('Config Tests', () => {
       const handlerConfig = updatedConfig.getHandlerConfig(handlerType);
       expect(handlerConfig.movingAvgThreshold).to.equal(15);
       expect(handlerConfig.percentageChangeThreshold).to.equal(25);
+    });
+  });
+
+  describe('LLMO Question Management', () => {
+    let config;
+
+    beforeEach(() => {
+      config = Config();
+    });
+
+    describe('getLlmoDataFolder', () => {
+      it('should return undefined when llmo config does not exist', () => {
+        expect(config.getLlmoDataFolder()).to.be.undefined;
+      });
+
+      it('should return dataFolder when llmo config exists', () => {
+        config.updateLlmoConfig('/test/folder', 'testBrand');
+        expect(config.getLlmoDataFolder()).to.equal('/test/folder');
+      });
+    });
+
+    describe('getLlmoBrand', () => {
+      it('should return undefined when llmo config does not exist', () => {
+        expect(config.getLlmoBrand()).to.be.undefined;
+      });
+
+      it('should return brand when llmo config exists', () => {
+        config.updateLlmoConfig('/test/folder', 'testBrand');
+        expect(config.getLlmoBrand()).to.equal('testBrand');
+      });
+    });
+
+    describe('updateLlmoDataFolder', () => {
+      it('should create llmo config if it does not exist and set dataFolder', () => {
+        config.updateLlmoDataFolder('/new/folder');
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.dataFolder).to.equal('/new/folder');
+        expect(llmoConfig.brand).to.be.undefined;
+      });
+
+      it('should update dataFolder when llmo config already exists', () => {
+        // First create llmo config
+        config.updateLlmoConfig('/old/folder', 'oldBrand');
+
+        // Then update dataFolder
+        config.updateLlmoDataFolder('/new/folder');
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.dataFolder).to.equal('/new/folder');
+        expect(llmoConfig.brand).to.equal('oldBrand'); // Should preserve existing brand
+      });
+
+      it('should update dataFolder multiple times', () => {
+        config.updateLlmoDataFolder('/first/folder');
+        config.updateLlmoDataFolder('/second/folder');
+        config.updateLlmoDataFolder('/third/folder');
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.dataFolder).to.equal('/third/folder');
+      });
+    });
+
+    describe('updateLlmoBrand', () => {
+      it('should create llmo config if it does not exist and set brand', () => {
+        config.updateLlmoBrand('newBrand');
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.brand).to.equal('newBrand');
+        expect(llmoConfig.dataFolder).to.be.undefined;
+      });
+
+      it('should update brand when llmo config already exists', () => {
+        // First create llmo config
+        config.updateLlmoConfig('/old/folder', 'oldBrand');
+
+        // Then update brand
+        config.updateLlmoBrand('newBrand');
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.brand).to.equal('newBrand');
+        expect(llmoConfig.dataFolder).to.equal('/old/folder'); // Should preserve existing dataFolder
+      });
+
+      it('should update brand multiple times', () => {
+        config.updateLlmoBrand('firstBrand');
+        config.updateLlmoBrand('secondBrand');
+        config.updateLlmoBrand('thirdBrand');
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.brand).to.equal('thirdBrand');
+      });
+    });
+
+    describe('getLlmoHumanQuestions', () => {
+      it('should return undefined when llmo questions do not exist', () => {
+        expect(config.getLlmoHumanQuestions()).to.be.undefined;
+      });
+
+      it('should return Human questions when they exist', () => {
+        const questions = {
+          Human: [
+            { key: 'q1', question: 'What is SEO?' },
+            { key: 'q2', question: 'How to improve rankings?' },
+          ],
+          AI: [
+            { key: 'q3', question: 'What is AI?' },
+          ],
+        };
+        config.updateLlmoConfig('/test/folder', 'testBrand', questions);
+        expect(config.getLlmoHumanQuestions()).to.deep.equal(questions.Human);
+      });
+    });
+
+    describe('getLlmoAIQuestions', () => {
+      it('should return undefined when llmo questions do not exist', () => {
+        expect(config.getLlmoAIQuestions()).to.be.undefined;
+      });
+
+      it('should return AI questions when they exist', () => {
+        const questions = {
+          Human: [
+            { key: 'q1', question: 'What is SEO?' },
+          ],
+          AI: [
+            { key: 'q2', question: 'What is AI?' },
+            { key: 'q3', question: 'How does ML work?' },
+          ],
+        };
+        config.updateLlmoConfig('/test/folder', 'testBrand', questions);
+        expect(config.getLlmoAIQuestions()).to.deep.equal(questions.AI);
+      });
+    });
+
+    describe('addLlmoHumanQuestions', () => {
+      it('should add single question to Human questions', () => {
+        const question = { key: 'q1', question: 'What is SEO?' };
+        config.addLlmoHumanQuestions([question]);
+
+        const humanQuestions = config.getLlmoHumanQuestions();
+        expect(humanQuestions).to.have.length(1);
+        expect(humanQuestions[0]).to.deep.equal(question);
+      });
+
+      it('should add multiple questions to Human questions', () => {
+        const questions = [
+          { key: 'q1', question: 'What is SEO?' },
+          { key: 'q2', question: 'How to improve rankings?' },
+          { key: 'q3', question: 'Best practices for content?' },
+        ];
+        config.addLlmoHumanQuestions(questions);
+
+        const humanQuestions = config.getLlmoHumanQuestions();
+        expect(humanQuestions).to.have.length(3);
+        expect(humanQuestions).to.deep.equal(questions);
+      });
+
+      it('should append to existing Human questions', () => {
+        // First, add some initial questions
+        const initialQuestions = [
+          { key: 'q1', question: 'What is SEO?' },
+        ];
+        config.addLlmoHumanQuestions(initialQuestions);
+
+        // Then add more questions
+        const additionalQuestions = [
+          { key: 'q2', question: 'How to improve rankings?' },
+          { key: 'q3', question: 'Best practices for content?' },
+        ];
+        config.addLlmoHumanQuestions(additionalQuestions);
+
+        const humanQuestions = config.getLlmoHumanQuestions();
+        expect(humanQuestions).to.have.length(3);
+        expect(humanQuestions[0]).to.deep.equal(initialQuestions[0]);
+        expect(humanQuestions[1]).to.deep.equal(additionalQuestions[0]);
+        expect(humanQuestions[2]).to.deep.equal(additionalQuestions[1]);
+      });
+
+      it('should not affect AI questions when adding Human questions', () => {
+        // First add some AI questions
+        const aiQuestions = [
+          { key: 'ai1', question: 'What is AI?' },
+        ];
+        config.addLlmoAIQuestions(aiQuestions);
+
+        // Then add Human questions
+        const humanQuestions = [
+          { key: 'q1', question: 'What is SEO?' },
+        ];
+        config.addLlmoHumanQuestions(humanQuestions);
+
+        // Verify AI questions are unchanged
+        const aiQuestionsResult = config.getLlmoAIQuestions();
+        expect(aiQuestionsResult).to.deep.equal(aiQuestions);
+      });
+    });
+
+    describe('addLlmoAIQuestions', () => {
+      it('should add single question to AI questions', () => {
+        const question = { key: 'ai1', question: 'What is AI?' };
+        config.addLlmoAIQuestions([question]);
+
+        const aiQuestions = config.getLlmoAIQuestions();
+        expect(aiQuestions).to.have.length(1);
+        expect(aiQuestions[0]).to.deep.equal(question);
+      });
+
+      it('should add multiple questions to AI questions', () => {
+        const questions = [
+          { key: 'ai1', question: 'What is AI?' },
+          { key: 'ai2', question: 'How does ML work?' },
+          { key: 'ai3', question: 'What is deep learning?' },
+        ];
+        config.addLlmoAIQuestions(questions);
+
+        const aiQuestions = config.getLlmoAIQuestions();
+        expect(aiQuestions).to.have.length(3);
+        expect(aiQuestions).to.deep.equal(questions);
+      });
+
+      it('should append to existing AI questions', () => {
+        // First, add some initial questions
+        const initialQuestions = [
+          { key: 'ai1', question: 'What is AI?' },
+        ];
+        config.addLlmoAIQuestions(initialQuestions);
+
+        // Then add more questions
+        const additionalQuestions = [
+          { key: 'ai2', question: 'How does ML work?' },
+          { key: 'ai3', question: 'What is deep learning?' },
+        ];
+        config.addLlmoAIQuestions(additionalQuestions);
+
+        const aiQuestions = config.getLlmoAIQuestions();
+        expect(aiQuestions).to.have.length(3);
+        expect(aiQuestions[0]).to.deep.equal(initialQuestions[0]);
+        expect(aiQuestions[1]).to.deep.equal(additionalQuestions[0]);
+        expect(aiQuestions[2]).to.deep.equal(additionalQuestions[1]);
+      });
+
+      it('should not affect Human questions when adding AI questions', () => {
+        // First add some Human questions
+        const humanQuestions = [
+          { key: 'q1', question: 'What is SEO?' },
+        ];
+        config.addLlmoHumanQuestions(humanQuestions);
+
+        // Then add AI questions
+        const aiQuestions = [
+          { key: 'ai1', question: 'What is AI?' },
+        ];
+        config.addLlmoAIQuestions(aiQuestions);
+
+        // Verify Human questions are unchanged
+        const humanQuestionsResult = config.getLlmoHumanQuestions();
+        expect(humanQuestionsResult).to.deep.equal(humanQuestions);
+      });
+    });
+
+    describe('removeLlmoQuestion', () => {
+      beforeEach(() => {
+        // Setup initial questions
+        const humanQuestions = [
+          { key: 'q1', question: 'What is SEO?' },
+          { key: 'q2', question: 'How to improve rankings?' },
+        ];
+        const aiQuestions = [
+          { key: 'ai1', question: 'What is AI?' },
+          { key: 'q2', question: 'How to improve rankings?' }, // Same key as Human question
+        ];
+        config.addLlmoHumanQuestions(humanQuestions);
+        config.addLlmoAIQuestions(aiQuestions);
+      });
+
+      it('should remove question from both Human and AI arrays by key', () => {
+        config.removeLlmoQuestion('q2');
+
+        const humanQuestions = config.getLlmoHumanQuestions();
+        const aiQuestions = config.getLlmoAIQuestions();
+
+        expect(humanQuestions).to.have.length(1);
+        expect(humanQuestions[0].key).to.equal('q1');
+        expect(aiQuestions).to.have.length(1);
+        expect(aiQuestions[0].key).to.equal('ai1');
+      });
+
+      it('should not remove questions with different keys', () => {
+        config.removeLlmoQuestion('nonexistent');
+
+        const humanQuestions = config.getLlmoHumanQuestions();
+        const aiQuestions = config.getLlmoAIQuestions();
+
+        expect(humanQuestions).to.have.length(2);
+        expect(aiQuestions).to.have.length(2);
+      });
+
+      it('should handle removing from empty arrays', () => {
+        const emptyConfig = Config();
+        expect(() => emptyConfig.removeLlmoQuestion('q1')).to.not.throw();
+      });
+    });
+
+    describe('updateLlmoQuestion', () => {
+      beforeEach(() => {
+        // Setup initial questions
+        const humanQuestions = [
+          { key: 'q1', question: 'What is SEO?', source: 'manual' },
+          { key: 'q2', question: 'How to improve rankings?', source: 'ahrefs' },
+        ];
+        const aiQuestions = [
+          { key: 'ai1', question: 'What is AI?', source: 'manual' },
+          { key: 'q2', question: 'How to improve rankings?', source: 'ahrefs' }, // Same key as Human question
+        ];
+        config.addLlmoHumanQuestions(humanQuestions);
+        config.addLlmoAIQuestions(aiQuestions);
+      });
+
+      it('should update question in both Human and AI arrays by key', () => {
+        const update = { question: 'Updated question', source: 'updated-source' };
+        config.updateLlmoQuestion('q2', update);
+
+        const humanQuestions = config.getLlmoHumanQuestions();
+        const aiQuestions = config.getLlmoAIQuestions();
+
+        // Check Human questions
+        const updatedHumanQuestion = humanQuestions.find((q) => q.key === 'q2');
+        expect(updatedHumanQuestion.question).to.equal('Updated question');
+        expect(updatedHumanQuestion.source).to.equal('updated-source');
+
+        // Check AI questions
+        const updatedAIQuestion = aiQuestions.find((q) => q.key === 'q2');
+        expect(updatedAIQuestion.question).to.equal('Updated question');
+        expect(updatedAIQuestion.source).to.equal('updated-source');
+      });
+
+      it('should preserve the key when updating', () => {
+        const update = { question: 'Updated question' };
+        config.updateLlmoQuestion('q2', update);
+
+        const humanQuestions = config.getLlmoHumanQuestions();
+        const aiQuestions = config.getLlmoAIQuestions();
+
+        const updatedHumanQuestion = humanQuestions.find((q) => q.key === 'q2');
+        const updatedAIQuestion = aiQuestions.find((q) => q.key === 'q2');
+
+        expect(updatedHumanQuestion.key).to.equal('q2');
+        expect(updatedAIQuestion.key).to.equal('q2');
+      });
+
+      it('should not update questions with different keys', () => {
+        const update = { question: 'Updated question' };
+        config.updateLlmoQuestion('nonexistent', update);
+
+        const humanQuestions = config.getLlmoHumanQuestions();
+        const aiQuestions = config.getLlmoAIQuestions();
+
+        // Verify no questions were updated
+        const humanQuestion = humanQuestions.find((q) => q.key === 'q1');
+        const aiQuestion = aiQuestions.find((q) => q.key === 'ai1');
+
+        expect(humanQuestion.question).to.equal('What is SEO?');
+        expect(aiQuestion.question).to.equal('What is AI?');
+      });
+
+      it('should handle updating in empty arrays', () => {
+        const emptyConfig = Config();
+        expect(() => emptyConfig.updateLlmoQuestion('q1', { question: 'Updated' })).to.not.throw();
+      });
+
+      it('should update only specified fields', () => {
+        const update = { question: 'Updated question' };
+        config.updateLlmoQuestion('q2', update);
+
+        const humanQuestions = config.getLlmoHumanQuestions();
+        const updatedHumanQuestion = humanQuestions.find((q) => q.key === 'q2');
+
+        expect(updatedHumanQuestion.question).to.equal('Updated question');
+        expect(updatedHumanQuestion.source).to.equal('ahrefs'); // Should remain unchanged
+      });
+    });
+  });
+
+  describe('LLMO URL Patterns', () => {
+    const existingUrlPatterns = [
+      { urlPattern: 'https://www.adobe.com/*' },
+      { urlPattern: 'https://www.adobe.com/firefly*', tags: ['product: firefly'] },
+      { urlPattern: 'https://www.adobe.com/products/firefly*', tags: ['product: firefly'] },
+      { urlPattern: 'https://www.adobe.com/fr/*', tags: ['market: fr'] },
+      { urlPattern: 'https://www.adobe.com/fr/firefly*', tags: ['product: firefly', 'market: fr'] },
+      { urlPattern: 'https://www.adobe.com/fr/products/firefly*', tags: ['product: firefly', 'market: fr'] },
+    ];
+
+    let config;
+
+    beforeEach(() => {
+      config = Config({
+        llmo: {
+          dataFolder: '/test/folder',
+          brand: 'testBrand',
+          urlPatterns: existingUrlPatterns,
+        },
+      });
+    });
+
+    describe('addLlmoUrlPatterns', () => {
+      it('Adds additional URL patterns at the end', () => {
+        const newPatterns = [
+          { urlPattern: 'https://www.adobe.com/acrobat*' },
+          { urlPattern: 'https://www.adobe.com/products/acrobat*', tags: ['product: acrobat'] },
+        ];
+        config.addLlmoUrlPatterns(newPatterns);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal([...existingUrlPatterns, ...newPatterns]);
+      });
+
+      it('replaces existing URL patterns', () => {
+        const existingPattern = {
+          urlPattern: 'https://www.adobe.com/firefly*',
+          tags: ['completely', 'new', 'tags'],
+        };
+        const newPattern = {
+          urlPattern: 'https://www.adobe.com/ch_fr/firefly*',
+          tags: ['product: firefly', 'market: ch'],
+        };
+
+        const existingIdx = existingUrlPatterns.findIndex(
+          (pattern) => pattern.urlPattern === existingPattern.urlPattern,
+        );
+
+        config.addLlmoUrlPatterns([newPattern, existingPattern]);
+        const updatedPatterns = config.getLlmoUrlPatterns();
+
+        expect(updatedPatterns).to.deep.equal([
+          ...existingUrlPatterns.slice(0, existingIdx),
+          existingPattern,
+          ...existingUrlPatterns.slice(existingIdx + 1),
+          newPattern,
+        ]);
+      });
+    });
+
+    describe('replaceLlmoUrlPatterns', () => {
+      it('should replace all existing URL patterns with new ones', () => {
+        const newPatterns = [
+          { urlPattern: 'https://www.adobe.com/acrobat*' },
+          { urlPattern: 'https://www.adobe.com/products/acrobat*', tags: ['product: acrobat'] },
+        ];
+        config.replaceLlmoUrlPatterns(newPatterns);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal(newPatterns);
+      });
+
+      it('should clear existing patterns if an empty array is provided', () => {
+        config.replaceLlmoUrlPatterns([]);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal([]);
+      });
+    });
+
+    describe('removeLlmoUrlPattern', () => {
+      it('can remove an URL pattern from a config', () => {
+        const patternToRemove = 'https://www.adobe.com/firefly*';
+        const patternIdx = existingUrlPatterns.findIndex(
+          (pattern) => pattern.urlPattern === patternToRemove,
+        );
+        config.removeLlmoUrlPattern(patternToRemove);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal([
+          ...existingUrlPatterns.slice(0, patternIdx),
+          ...existingUrlPatterns.slice(patternIdx + 1),
+        ]);
+      });
+
+      it('does nothing if the pattern does not exist', () => {
+        const nonExistentPattern = 'https://www.adobe.com/nonexistent*';
+        config.removeLlmoUrlPattern(nonExistentPattern);
+
+        const updatedPatterns = config.getLlmoUrlPatterns();
+        expect(updatedPatterns).to.deep.equal(existingUrlPatterns);
+      });
+    });
+  });
+
+  describe('LLMO Well Known Tags', () => {
+    const { extractWellKnownTags } = Config();
+
+    it('Extracts well known tags from an array of strings', () => {
+      const tags = ['arbitrary', 'product: The Product', 'market: The Market', 'another: tag', 'unknown:tag', 'topic: A Topic'];
+      expect(extractWellKnownTags(tags)).to.deep.equal({
+        product: 'The Product',
+        market: 'The Market',
+        topic: 'A Topic',
+      });
+    });
+
+    it('does not require whitespace after the colon', () => {
+      const tags = ['product:The Product', 'topic:A Topic'];
+      expect(extractWellKnownTags(tags)).to.deep.equal({
+        product: 'The Product',
+        topic: 'A Topic',
+      });
     });
   });
 });

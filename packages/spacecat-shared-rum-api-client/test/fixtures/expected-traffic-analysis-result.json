@@ -14,9 +14,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 10873,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -33,9 +35,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 10873,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/home",
@@ -52,9 +56,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 2613.10009765625,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/favicon",
@@ -71,9 +77,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -90,9 +98,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/indexing",
@@ -109,9 +119,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/home",
@@ -128,9 +140,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 2184.89990234375,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/target-integration",
@@ -147,9 +161,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 25477,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/custom-headers",
@@ -166,9 +182,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/architecture",
@@ -185,9 +203,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 28160,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/indexing",
@@ -204,9 +224,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/tutorial",
@@ -223,9 +245,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -242,9 +266,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/",
@@ -261,9 +287,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 9336.5,
     "lcp": 359.19999998807907,
     "inp": 24,
-    "cls": 0.0017516344318214377
+    "cls": 0.0017516344318214377,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/indexing",
@@ -280,9 +308,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -299,9 +329,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/home",
@@ -318,9 +350,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 17406,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/block-collection",
@@ -337,9 +371,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/go-live-checklist",
@@ -356,9 +392,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/community-feeds.json",
@@ -375,9 +413,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/",
@@ -394,9 +434,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 666246.1000976562,
     "lcp": 12457.29999999993,
     "inp": 8,
-    "cls": 0.0003578743971979453
+    "cls": 0.0003578743971979453,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/global",
@@ -413,9 +455,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/favicon",
@@ -432,9 +476,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/spreadsheets",
@@ -451,9 +497,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/home",
@@ -470,9 +518,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/tools/sidekick/",
@@ -489,9 +539,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/",
@@ -508,9 +560,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 23709.699951171875,
     "lcp": 331,
     "inp": null,
-    "cls": 0.007353345974817716
+    "cls": 0.007353345974817716,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/",
@@ -527,9 +581,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/block-collection",
@@ -546,9 +602,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/favicon",
@@ -565,9 +623,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/placeholders",
@@ -584,9 +644,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/byo-cdn-cloudflare-worker-setup",
@@ -603,9 +665,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/indexing",
@@ -622,9 +686,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/byo-dns",
@@ -641,9 +707,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/",
@@ -660,9 +728,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/go-live-checklist",
@@ -679,9 +749,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/authoring",
@@ -698,9 +770,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/authoring",
@@ -717,9 +791,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -736,9 +812,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/byo-cdn-fastly-setup",
@@ -755,9 +833,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/franklin-video-series-advanced",
@@ -774,9 +854,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/indexing",
@@ -793,9 +875,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -812,9 +896,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/home",
@@ -831,9 +917,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -850,9 +938,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/",
@@ -869,9 +959,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/indexing",
@@ -888,9 +980,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/block-collection",
@@ -907,9 +1001,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -926,9 +1022,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -945,9 +1043,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/block-collection",
@@ -964,9 +1064,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/",
@@ -983,9 +1085,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/block-collection",
@@ -1002,9 +1106,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/admin.html",
@@ -1021,9 +1127,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -1040,9 +1148,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/sidekick",
@@ -1059,9 +1169,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-31"
   },
   {
     "path": "/docs/",
@@ -1078,9 +1190,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 373,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/home",
@@ -1097,9 +1211,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 2438.2451171875,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/home",
@@ -1116,9 +1232,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/davidsmodel",
@@ -1135,9 +1253,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 11854.10009765625,
     "lcp": 1462.800000011921,
     "inp": null,
-    "cls": 0.0008412734152590839
+    "cls": 0.0008412734152590839,
+    "date": "2024-05-30"
   },
   {
     "path": "/home",
@@ -1154,9 +1274,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -1173,9 +1295,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/block-collection/breadcrumbs",
@@ -1192,9 +1316,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 2072.699951171875,
     "lcp": 45.39999997615814,
     "inp": 24,
-    "cls": 0.000014899872841139986
+    "cls": 0.000014899872841139986,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/block-collection",
@@ -1211,9 +1337,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 4007.199951171875,
     "lcp": 469.09999990463257,
     "inp": 0,
-    "cls": 0.00046955551696522917
+    "cls": 0.00046955551696522917,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/block-collection/headings",
@@ -1230,9 +1358,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 1038.10009765625,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/home",
@@ -1249,9 +1379,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 5994,
     "lcp": 4339,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/home",
@@ -1268,9 +1400,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 101827.30004882812,
     "lcp": 954.7000000476837,
     "inp": null,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/placeholders",
@@ -1287,9 +1421,11 @@
     "pageviews": 1,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 1605.300048828125,
     "lcp": 857.5,
     "inp": 0,
-    "cls": 0.0033961481968127383
+    "cls": 0.0033961481968127383,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/markup-reference",
@@ -1306,9 +1442,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/",
@@ -1325,9 +1463,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 5735.60009765625,
     "lcp": 125.39999997615814,
     "inp": 8,
-    "cls": 0.00014166538272603388
+    "cls": 0.00014166538272603388,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/placeholders",
@@ -1344,9 +1484,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 528.300048828125,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/block-collection",
@@ -1363,9 +1505,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/byo-cdn-fastly-setup",
@@ -1382,9 +1526,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/sidekick-extension",
@@ -1401,9 +1547,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 2068716.1000976562,
     "lcp": 433.70000000298023,
     "inp": 0,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/go-live-checklist",
@@ -1420,9 +1568,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/web-components",
@@ -1439,9 +1589,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 72978,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -1458,9 +1610,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -1477,9 +1631,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/block-collection",
@@ -1496,9 +1652,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/byo-cdn-cloudflare-worker-setup",
@@ -1515,9 +1673,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/cdn-guide",
@@ -1534,9 +1694,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/custom-headers",
@@ -1553,9 +1715,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/favicon",
@@ -1572,9 +1736,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -1591,9 +1757,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/tools/bot/setup",
@@ -1610,9 +1778,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 2677.89990234375,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/home",
@@ -1629,9 +1799,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 1148.89990234375,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/byo-cdn-cloudflare-worker-setup",
@@ -1648,9 +1820,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 845.60009765625,
     "lcp": 483.69999998807907,
     "inp": null,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/",
@@ -1667,9 +1841,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 802.39990234375,
     "lcp": 665.9000000059605,
     "inp": 8,
-    "cls": 0.014938114266613822
+    "cls": 0.014938114266613822,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/",
@@ -1686,9 +1862,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/",
@@ -1705,9 +1883,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 497.39990234375,
     "lcp": 402.29999999701977,
     "inp": null,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/",
@@ -1724,9 +1904,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 853.10009765625,
     "lcp": 748,
     "inp": null,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/",
@@ -1743,9 +1925,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 5852.60009765625,
     "lcp": null,
     "inp": 48,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/",
@@ -1762,9 +1946,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 13656.699951171875,
     "lcp": 13562.09999999404,
     "inp": null,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/",
@@ -1781,9 +1967,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 26379.39990234375,
     "lcp": 26276.5,
     "inp": null,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/tutorial",
@@ -1800,9 +1988,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 1597.60009765625,
     "lcp": 670.0999999046326,
     "inp": null,
-    "cls": 0.014371910428911266
+    "cls": 0.014371910428911266,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/setup-customer-sharepoint",
@@ -1819,9 +2009,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/github-actions",
@@ -1838,9 +2030,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/home",
@@ -1857,9 +2051,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 2246.699951171875,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/sitemap",
@@ -1876,9 +2072,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/byo-cdn-akamai-setup",
@@ -1895,9 +2093,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -1914,9 +2114,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 1529.699951171875,
     "lcp": 1060.8999998569489,
     "inp": 48,
-    "cls": 0.00079558170557108
+    "cls": 0.00079558170557108,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/spreadsheets",
@@ -1933,9 +2135,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/block-collection",
@@ -1952,9 +2156,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/keeping-it-100",
@@ -1971,9 +2177,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 5704.300048828125,
     "lcp": 300.90000009536743,
     "inp": 16,
-    "cls": 0.008511456923948437
+    "cls": 0.008511456923948437,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -1990,9 +2198,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 878.89990234375,
     "lcp": 158.60000000149012,
     "inp": 0,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/custom-headers",
@@ -2009,9 +2219,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/byo-cdn-akamai-setup",
@@ -2028,9 +2240,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/developer/keeping-it-100",
@@ -2047,9 +2261,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-30"
   },
   {
     "path": "/docs/go-live-checklist",
@@ -2066,9 +2282,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/home",
@@ -2085,9 +2303,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2104,9 +2324,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 2683,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/home",
@@ -2123,9 +2345,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 2028.60009765625,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -2142,9 +2366,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/tools/sidekick/",
@@ -2161,9 +2387,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 8631,
     "lcp": 2756.899999856949,
     "inp": null,
-    "cls": 0.0004926924960464029
+    "cls": 0.0004926924960464029,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/authentication-setup-site",
@@ -2180,9 +2408,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 6434,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2199,9 +2429,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 2499.60009765625,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/block-collection",
@@ -2218,9 +2450,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/tutorial",
@@ -2237,9 +2471,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 14986,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/spreadsheets",
@@ -2256,9 +2492,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/tools/sidekick/",
@@ -2275,9 +2513,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/tutorial",
@@ -2294,9 +2534,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 36916.5,
     "lcp": 511.09999990463257,
     "inp": 0,
-    "cls": 0.41610793533928664
+    "cls": 0.41610793533928664,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/redirects",
@@ -2313,9 +2555,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -2332,9 +2576,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/keeping-it-100",
@@ -2351,9 +2597,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2370,9 +2618,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 1580.89990234375,
     "lcp": 1111.8000000715256,
     "inp": null,
-    "cls": 0.00005561630774288468
+    "cls": 0.00005561630774288468,
+    "date": "2024-05-29"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2389,9 +2639,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 1129.10009765625,
     "lcp": 14.299999997019768,
     "inp": 8,
-    "cls": 0.0003088058037783154
+    "cls": 0.0003088058037783154,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/bulk-metadata",
@@ -2408,9 +2660,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/setup-customer-sharepoint",
@@ -2427,9 +2681,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 1381,
     "lcp": 361.09999999403954,
     "inp": null,
-    "cls": 0.00017381700304902785
+    "cls": 0.00017381700304902785,
+    "date": "2024-05-29"
   },
   {
     "path": "/home",
@@ -2446,9 +2702,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 7631.60009765625,
     "lcp": 1542.1000000238419,
     "inp": 8,
-    "cls": 0.0014904411062944996
+    "cls": 0.0014904411062944996,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/spreadsheets",
@@ -2465,9 +2723,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/custom-headers",
@@ -2484,9 +2744,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 13354.699951171875,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/indexing",
@@ -2503,9 +2765,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/rum",
@@ -2522,9 +2786,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 497.89990234375,
     "lcp": 78.79999995231628,
     "inp": null,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/web-components",
@@ -2541,9 +2807,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 778.89990234375,
     "lcp": 612.2000000476837,
     "inp": null,
-    "cls": 0.00007814911374216038
+    "cls": 0.00007814911374216038,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/placeholders",
@@ -2560,9 +2828,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 20120.800048828125,
     "lcp": 391,
     "inp": 24,
-    "cls": 0.001584125504439147
+    "cls": 0.001584125504439147,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/tutorial",
@@ -2579,9 +2849,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 1968.300048828125,
     "lcp": 1260,
     "inp": 8,
-    "cls": 1.4238716953862687e-7
+    "cls": 1.4238716953862687e-7,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -2598,9 +2870,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/",
@@ -2617,9 +2891,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/rum",
@@ -2636,9 +2912,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 1925.10009765625,
     "lcp": 135.79999999701977,
     "inp": 0,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/tutorial",
@@ -2655,9 +2933,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/",
@@ -2674,9 +2954,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 2201.39990234375,
     "lcp": 642.4000000357628,
     "inp": null,
-    "cls": 0.00015531111257074455
+    "cls": 0.00015531111257074455,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/",
@@ -2693,9 +2975,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -2712,9 +2996,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 10557.39990234375,
     "lcp": 438.6999999284744,
     "inp": null,
-    "cls": 0.00016292810624583885
+    "cls": 0.00016292810624583885,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/go-live-checklist",
@@ -2731,9 +3017,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/bulk-metadata",
@@ -2750,9 +3038,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/rum",
@@ -2769,9 +3059,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -2788,9 +3080,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/spreadsheets",
@@ -2807,9 +3101,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2826,9 +3122,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 4513.800048828125,
     "lcp": 504.09999990463257,
     "inp": null,
-    "cls": 0.001196862904999452
+    "cls": 0.001196862904999452,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/faq",
@@ -2845,9 +3143,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/sidekick-extension",
@@ -2864,9 +3164,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -2883,9 +3185,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2902,9 +3206,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 1055.10009765625,
     "lcp": 568.3000000119209,
     "inp": 184,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/admin.html",
@@ -2921,9 +3227,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/block-collection",
@@ -2940,9 +3248,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 16894.39990234375,
     "lcp": 641.2000000476837,
     "inp": 8,
-    "cls": 0.000525946849597043
+    "cls": 0.000525946849597043,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/",
@@ -2959,9 +3269,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 4754.5,
     "lcp": 143.5,
     "inp": 56,
-    "cls": 0.012401669733174766
+    "cls": 0.012401669733174766,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/redirects",
@@ -2978,9 +3290,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/home",
@@ -2997,9 +3311,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 611.199951171875,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/rum",
@@ -3016,9 +3332,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 3558,
     "lcp": 1003,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/custom-headers",
@@ -3035,9 +3353,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/home",
@@ -3054,9 +3374,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/keeping-it-100",
@@ -3073,9 +3395,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 6343,
     "lcp": 228.2000000178814,
     "inp": 24,
-    "cls": 0.00002011617376730104
+    "cls": 0.00002011617376730104,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/byo-cdn-cloudflare-worker-setup",
@@ -3092,9 +3416,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 812478,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -3111,9 +3437,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -3130,9 +3458,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 2499.5,
     "lcp": 2179,
     "inp": null,
-    "cls": 0.0000349089773839612
+    "cls": 0.0000349089773839612,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/sidekick",
@@ -3149,9 +3479,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/docs/byo-cdn-cloudflare-setup",
@@ -3168,9 +3500,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/developer/block-collection",
@@ -3187,9 +3521,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-29"
   },
   {
     "path": "/home",
@@ -3206,9 +3542,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 11051.10009765625,
     "lcp": 2099.699999988079,
     "inp": null,
-    "cls": 0.011145537287059668
+    "cls": 0.011145537287059668,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/importer",
@@ -3225,9 +3563,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 10184602.300048828,
     "lcp": 1345.7999999523163,
     "inp": 56,
-    "cls": 0.07786671987900227
+    "cls": 0.07786671987900227,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/custom-headers",
@@ -3244,9 +3584,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 5435.300048828125,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/placeholders",
@@ -3263,9 +3605,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/",
@@ -3282,9 +3626,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 1517.39990234375,
     "lcp": 138.10000000149012,
     "inp": 32,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-28"
   },
   {
     "path": "/tools/sidekick/",
@@ -3301,9 +3647,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 3566.5,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/configuring-aem-assets-sidekick-plugin",
@@ -3320,9 +3668,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 701,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/byo-dns",
@@ -3339,9 +3689,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/tutorial",
@@ -3358,9 +3710,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/placeholders",
@@ -3377,9 +3731,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -3396,9 +3752,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 2064.89990234375,
     "lcp": 1087.800000000745,
     "inp": null,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-28"
   },
   {
     "path": "/tools/rum/list.html",
@@ -3415,9 +3773,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 1281.699951171875,
     "lcp": 1182.5,
     "inp": 8,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/spreadsheets",
@@ -3434,9 +3794,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/placeholders",
@@ -3453,9 +3815,11 @@
     "pageviews": 1,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 907.800048828125,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/block-collection",
@@ -3472,9 +3836,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 14286.39990234375,
     "lcp": 379.2999999523163,
     "inp": null,
-    "cls": 0.0005859699349788617
+    "cls": 0.0005859699349788617,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -3491,9 +3857,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 3819,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/block-collection",
@@ -3510,9 +3878,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/favicon",
@@ -3529,9 +3899,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/custom-headers",
@@ -3548,9 +3920,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/home",
@@ -3567,9 +3941,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 3574.699951171875,
     "lcp": 2454.2,
     "inp": null,
-    "cls": 0.26956930913977606
+    "cls": 0.26956930913977606,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/tutorial",
@@ -3586,9 +3962,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/placeholders",
@@ -3605,9 +3983,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/home",
@@ -3624,9 +4004,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 4765.699951171875,
     "lcp": 519.9000000059605,
     "inp": null,
-    "cls": 0.0012854992059480124
+    "cls": 0.0012854992059480124,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/spreadsheets",
@@ -3643,9 +4025,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/block-collection",
@@ -3662,9 +4046,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/faq",
@@ -3681,9 +4067,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/sitemap",
@@ -3700,9 +4088,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/",
@@ -3719,9 +4109,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/indexing",
@@ -3738,9 +4130,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/",
@@ -3757,9 +4151,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 17696.699951171875,
     "lcp": 243.6999999997206,
     "inp": 0,
-    "cls": 0.00046545922870236585
+    "cls": 0.00046545922870236585,
+    "date": "2024-05-28"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -3776,9 +4172,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 506.699951171875,
     "lcp": 210.90000000596046,
     "inp": 0,
-    "cls": 0.8038918492979402
+    "cls": 0.8038918492979402,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/franklin-video-series",
@@ -3795,9 +4193,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/authoring",
@@ -3814,9 +4214,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/sitemap",
@@ -3833,9 +4235,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/bulk-metadata",
@@ -3852,9 +4256,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/custom-headers",
@@ -3871,9 +4277,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/",
@@ -3890,9 +4298,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 187.10009765625,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -3909,9 +4319,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 16011.800048828125,
     "lcp": 2300.5,
     "inp": null,
-    "cls": 0.00006451334172505896
+    "cls": 0.00006451334172505896,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/",
@@ -3928,9 +4340,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 828.5,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/",
@@ -3947,9 +4361,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/tutorial",
@@ -3966,9 +4382,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 5010.699951171875,
     "lcp": 1706.2000000476837,
     "inp": null,
-    "cls": 0.0036581120205716085
+    "cls": 0.0036581120205716085,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/block-collection",
@@ -3985,9 +4403,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 290.10009765625,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/custom-headers",
@@ -4004,9 +4424,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/byo-dns",
@@ -4023,9 +4445,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 995.300048828125,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -4042,9 +4466,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/docs/setup-byo-cdn-push-invalidation",
@@ -4061,9 +4487,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-28"
   },
   {
     "path": "/home",
@@ -4080,9 +4508,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 1107.39990234375,
     "lcp": 699.3999999985099,
     "inp": 0,
-    "cls": 0.030174735922545284
+    "cls": 0.030174735922545284,
+    "date": "2024-05-28"
   },
   {
     "path": "/developer/tutorial",
@@ -4099,9 +4529,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 12890.39990234375,
     "lcp": 1244.0999999940395,
     "inp": 24,
-    "cls": 0.0000349089773839612
+    "cls": 0.0000349089773839612,
+    "date": "2024-05-28"
   },
   {
     "path": "/home",
@@ -4118,9 +4550,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 7581.5,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/davidsmodel",
@@ -4137,9 +4571,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 2449.699951171875,
     "lcp": 1631,
     "inp": 0,
-    "cls": 1
+    "cls": 1,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/block-collection",
@@ -4156,9 +4592,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/home",
@@ -4175,9 +4613,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/block-collection",
@@ -4194,9 +4634,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/tutorial",
@@ -4213,9 +4655,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/go-live-checklist",
@@ -4232,9 +4676,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 37776.800048828125,
     "lcp": 75.5,
     "inp": 8,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/aem-assets-sidekick-plugin",
@@ -4251,9 +4697,11 @@
     "pageviews": 10,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/keeping-it-100",
@@ -4270,9 +4718,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/",
@@ -4289,9 +4739,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -4308,9 +4760,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -4327,9 +4781,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/davidsmodel",
@@ -4346,9 +4802,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 2187.699951171875,
     "lcp": 1392.199999999255,
     "inp": 24,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-27"
   },
   {
     "path": "/home",
@@ -4365,9 +4823,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 3567.199951171875,
     "lcp": null,
     "inp": 0,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/block-collection/section-metadata",
@@ -4384,9 +4844,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/",
@@ -4403,9 +4865,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 7823.800048828125,
     "lcp": 674.6999999992549,
     "inp": 8,
-    "cls": 0.03118640415888744
+    "cls": 0.03118640415888744,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/block-collection",
@@ -4422,9 +4886,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/home",
@@ -4441,9 +4907,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 2191.300048828125,
     "lcp": 823.1999999880791,
     "inp": 16,
-    "cls": 0.01082667551011483
+    "cls": 0.01082667551011483,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/spreadsheets",
@@ -4460,9 +4928,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/indexing",
@@ -4479,9 +4949,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/authentication-setup-site",
@@ -4498,9 +4970,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 108637.30004882812,
     "lcp": 639.1999999284744,
     "inp": 8,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/setup-customer-sharepoint",
@@ -4517,9 +4991,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -4536,9 +5012,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 3535.60009765625,
     "lcp": 9262.09999999404,
     "inp": 1672,
-    "cls": 0.000014584478299111764
+    "cls": 0.000014584478299111764,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/redirects",
@@ -4555,9 +5033,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/tools/sidekick/",
@@ -4574,9 +5054,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -4593,9 +5075,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/forms",
@@ -4612,9 +5096,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 982.5,
     "lcp": 954,
     "inp": null,
-    "cls": 0.0005954693086687166
+    "cls": 0.0005954693086687166,
+    "date": "2024-05-27"
   },
   {
     "path": "/home",
@@ -4631,9 +5117,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 2401.39990234375,
     "lcp": 1285.199999988079,
     "inp": 8,
-    "cls": 0.010834143295695585
+    "cls": 0.010834143295695585,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/indexing",
@@ -4650,9 +5138,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/developer/spreadsheets",
@@ -4669,9 +5159,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/byo-cdn-akamai-setup",
@@ -4688,9 +5180,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/vip/intake",
@@ -4707,9 +5201,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 835.89990234375,
     "lcp": 28,
     "inp": 0,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-27"
   },
   {
     "path": "/docs/",
@@ -4726,9 +5222,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 5126,
     "lcp": 341.5,
     "inp": null,
-    "cls": 0.0003369777094401792
+    "cls": 0.0003369777094401792,
+    "date": "2024-05-27"
   },
   {
     "path": "/vip/intake",
@@ -4745,9 +5243,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 4613,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-27"
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -4764,9 +5264,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 730.60009765625,
     "lcp": 73.10000002384186,
     "inp": 8,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-27"
   },
   {
     "path": "/home",
@@ -4783,9 +5285,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": 6358,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-26"
   },
   {
     "path": "/developer/tutorial",
@@ -4802,9 +5306,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 437035.89990234375,
     "lcp": 721.8000000119209,
     "inp": 48,
-    "cls": 0.860314348987717
+    "cls": 0.860314348987717,
+    "date": "2024-05-26"
   },
   {
     "path": "/developer/block-collection/section-metadata",
@@ -4821,9 +5327,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-26"
   },
   {
     "path": "/developer/block-collection",
@@ -4840,9 +5348,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 69131,
     "lcp": 50.799999952316284,
     "inp": 24,
-    "cls": 0.00007054030746086006
+    "cls": 0.00007054030746086006,
+    "date": "2024-05-26"
   },
   {
     "path": "/developer/placeholders",
@@ -4859,9 +5369,11 @@
     "pageviews": 100,
     "clicked": 1,
     "engaged": 1,
+    "latest_scroll": 6454.300048828125,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-26"
   },
   {
     "path": "/docs/byo-dns",
@@ -4878,9 +5390,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-26"
   },
   {
     "path": "/home",
@@ -4897,9 +5411,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 180843.69995117188,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-26"
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -4916,9 +5432,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 1,
+    "latest_scroll": 10367.5,
     "lcp": 438.8999999985099,
     "inp": null,
-    "cls": 0
+    "cls": 0,
+    "date": "2024-05-26"
   },
   {
     "path": "/docs/byo-cdn-fastly-setup",
@@ -4935,9 +5453,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-26"
   },
   {
     "path": "/developer/tutorial",
@@ -4954,9 +5474,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-07"
   },
   {
     "path": "/developer/tutorial",
@@ -4973,9 +5495,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-07"
   },
   {
     "path": "/developer/tutorial",
@@ -4992,9 +5516,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-07"
   },
   {
     "path": "/developer/tutorial",
@@ -5011,9 +5537,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-07"
   },
   {
     "path": "/developer/",
@@ -5030,9 +5558,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-07"
   },
   {
     "path": "/some-other-page",
@@ -5049,9 +5579,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-07"
   },
   {
     "path": "/some-other-page",
@@ -5068,9 +5600,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-07"
   },
   {
     "path": "/some-other-page",
@@ -5087,9 +5621,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-05-07"
   },
   {
     "path": "/new-exp-page",
@@ -5106,9 +5642,11 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-01-01"
   },
   {
     "path": "/new-exp-page",
@@ -5125,8 +5663,10 @@
     "pageviews": 100,
     "clicked": 0,
     "engaged": 0,
+    "latest_scroll": null,
     "lcp": null,
     "inp": null,
-    "cls": null
+    "cls": null,
+    "date": "2024-01-31"
   }
 ]

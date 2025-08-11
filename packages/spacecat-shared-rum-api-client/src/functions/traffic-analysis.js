@@ -27,10 +27,12 @@ function getCWV(bundle, metric) {
   return measurements.length > 0 ? Math.max(...measurements) : null;
 }
 
-function containsEngagedScroll(bundle) {
-  return bundle.events
-    .some((e) => (e.checkpoint === 'viewmedia' || e.checkpoint === 'viewblock') && e.timeDelta >= 10000)
-    ? 1 : 0;
+function getLatestScroll(bundle) {
+  const scrolls = bundle.events
+    .filter((e) => e.checkpoint === 'viewmedia' || e.checkpoint === 'viewblock')
+    .map((e) => e.timeDelta);
+
+  return scrolls.length > 0 ? Math.max(...scrolls) : null;
 }
 
 function getNotFound(bundle) {
@@ -95,9 +97,9 @@ async function handler(bundles) {
   const memo = {};
 
   const result = bundles.map((bundle) => {
-    /* eslint-disable camelcase */
     const trafficData = trafficType(bundle, memo);
     const clicked = getClicked(bundle);
+    const latestScroll = getLatestScroll(bundle);
 
     return {
       path: new URL(bundle.url).pathname,
@@ -113,12 +115,13 @@ async function handler(bundles) {
       notfound: getNotFound(bundle),
       pageviews: bundle.weight,
       clicked,
-      engaged: containsEngagedScroll(bundle) || clicked,
+      engaged: (latestScroll >= 10000 || clicked) ? 1 : 0,
+      latest_scroll: latestScroll,
       lcp: getCWV(bundle, 'lcp'),
       inp: getCWV(bundle, 'inp'),
       cls: getCWV(bundle, 'cls'),
+      date: bundle.time.split('T')[0],
     };
-    /* eslint-enable camelcase */
   });
 
   return result;

@@ -85,6 +85,18 @@ describe('Traffic classification', () => {
     assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'affiliate', tracking: null });
   });
 
+  it('earned llm', () => {
+    const expected = { type: 'earned', category: 'llm', vendor: '' };
+
+    assert({ ...expected, vendor: 'openai' }, { referrer: 'https://chatgpt.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: '', utmSource: 'chatgpt.com', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: 'https://openai.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'perplexity' }, { referrer: 'https://www.perplexity.ai/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'claude' }, { referrer: 'https://claude.ai/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'microsoft' }, { referrer: 'https://copilot.microsoft.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'google' }, { referrer: 'https://gemini.google.com/', utmSource: '', utmMedium: '', tracking: null });
+  });
+
   it('earned search', () => {
     const expected = { type: 'earned', category: 'search', vendor: '' };
 

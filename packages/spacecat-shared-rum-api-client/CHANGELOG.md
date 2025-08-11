@@ -1,3 +1,80 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.36.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.2...@adobe/spacecat-shared-rum-api-client-v2.36.3) (2025-08-09)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#899](https://github.com/adobe/spacecat-shared/issues/899)) ([c2cc342](https://github.com/adobe/spacecat-shared/commit/c2cc3422a0a4a3f8d1a2724847da456bf801ff59))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.36.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.1...@adobe/spacecat-shared-rum-api-client-v2.36.2) (2025-08-04)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#888](https://github.com/adobe/spacecat-shared/issues/888)) ([45ccd67](https://github.com/adobe/spacecat-shared/commit/45ccd679577031d01771aa642ac0c2e33b22af6f))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.36.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.0...@adobe/spacecat-shared-rum-api-client-v2.36.1) (2025-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#878](https://github.com/adobe/spacecat-shared/issues/878)) ([b049828](https://github.com/adobe/spacecat-shared/commit/b04982839c0ff5e4de4ab0e37508c5eb5272a679))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.35.0...@adobe/spacecat-shared-rum-api-client-v2.36.0) (2025-07-25)
+
+
+### Features
+
+* classify organic llm referral traffic ([#877](https://github.com/adobe/spacecat-shared/issues/877)) ([63e029e](https://github.com/adobe/spacecat-shared/commit/63e029ee3db343d487ba1cbe2a006b11dce683bf))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.34.1...@adobe/spacecat-shared-rum-api-client-v2.35.0) (2025-07-24)
+
+
+### Features
+
+* **rum-api-client:** add query stream ([#872](https://github.com/adobe/spacecat-shared/issues/872)) ([7702138](https://github.com/adobe/spacecat-shared/commit/77021388a298843f3ec2571c9a6f148184fa2814))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.34.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.34.0...@adobe/spacecat-shared-rum-api-client-v2.34.1) (2025-07-24)
+
+
+### Bug Fixes
+
+* add date field to the traffic analysis query ([#870](https://github.com/adobe/spacecat-shared/issues/870)) ([ecbab0c](https://github.com/adobe/spacecat-shared/commit/ecbab0cdbfe2dd740bd29bc76873508715ab52cf))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.33.1...@adobe/spacecat-shared-rum-api-client-v2.34.0) (2025-07-23)
+
+
+### Features
+
+* **rum-client:** add log checkpoints for around every 50k bundles fetched ([#864](https://github.com/adobe/spacecat-shared/issues/864)) ([23acfc4](https://github.com/adobe/spacecat-shared/commit/23acfc430753371b6440aead135848031874cc68))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.33.0...@adobe/spacecat-shared-rum-api-client-v2.33.1) (2025-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#859](https://github.com/adobe/spacecat-shared/issues/859)) ([7ca9099](https://github.com/adobe/spacecat-shared/commit/7ca90994d61d07f71e580301365447b94ad07a52))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.32.2...@adobe/spacecat-shared-rum-api-client-v2.33.0) (2025-07-16)
+
+
+### Features
+
+* **rum-api-client:** add latest_scroll metric to traffic-analysis import output ([#849](https://github.com/adobe/spacecat-shared/issues/849)) ([6c219ee](https://github.com/adobe/spacecat-shared/commit/6c219eecb9bf0966e83b5a212c919a20add87fb4))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.32.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.32.1...@adobe/spacecat-shared-rum-api-client-v2.32.2) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#845](https://github.com/adobe/spacecat-shared/issues/845)) ([23bd3a2](https://github.com/adobe/spacecat-shared/commit/23bd3a2235686480cb89d6379276d9ed000baea3))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.32.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.32.0...@adobe/spacecat-shared-rum-api-client-v2.32.1) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.17.0 ([#844](https://github.com/adobe/spacecat-shared/issues/844)) ([17e8237](https://github.com/adobe/spacecat-shared/commit/17e8237ef56c9b7a6d4b13cd8ddf5f868e8d92bc)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
 # [@adobe/spacecat-shared-rum-api-client-v2.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.31.1...@adobe/spacecat-shared-rum-api-client-v2.32.0) (2025-07-11)
 
 

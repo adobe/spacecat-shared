@@ -42,7 +42,9 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addReference('has_one', 'LatestAudit', ['auditType'], { required: false })
   .addReference('has_many', 'Opportunities')
   .addReference('has_many', 'SiteCandidates')
+  .addReference('has_many', 'SiteTopForms')
   .addReference('has_many', 'SiteTopPages')
+  .addReference('has_many', 'PageIntents')
   .addAttribute('baseURL', {
     type: 'string',
     required: true,
@@ -87,6 +89,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     default: {},
     validate: (value) => isObject(value),
   })
+  .addAttribute('isSandbox', {
+    type: 'boolean',
+    default: false,
+  })
   .addAttribute('isLive', {
     type: 'boolean',
     required: true,
@@ -111,6 +117,21 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     readOnly: true,
     watch: ['authoringType', 'hlxConfig', 'deliveryConfig'],
     set: (_, attrs) => computeExternalIds(attrs, Site.AUTHORING_TYPES).externalSiteId,
+  })
+  .addAttribute('pageTypes', {
+    type: 'list',
+    required: false,
+    items: {
+      type: 'map',
+      required: true,
+      properties: {
+        name: { type: 'string', required: true },
+        pattern: {
+          type: 'string',
+          required: true,
+        },
+      },
+    },
   })
   .addAllIndex(['baseURL'])
   .addIndex(

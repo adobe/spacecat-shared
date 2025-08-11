@@ -68,6 +68,8 @@ describe('Index Exports', () => {
     'isAWSLambda',
     'instrumentAWSClient',
     'retrievePageAuthentication',
+    'getDateRanges',
+    'getLastNumberOfWeeks',
   ];
 
   it('exports all expected functions', () => {

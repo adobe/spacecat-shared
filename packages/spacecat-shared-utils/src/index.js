@@ -61,6 +61,9 @@ export {
   stripTrailingDot,
   stripTrailingSlash,
   stripWWW,
+  resolveCanonicalUrl,
+  getRequestHeaders,
+  ensureHttps,
 } from './url-helpers.js';
 
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';

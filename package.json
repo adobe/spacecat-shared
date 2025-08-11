@@ -53,8 +53,5 @@
   },
   "lint-staged": {
     "*.js": "eslint"
-  },
-  "dependencies": {
-    "@adobe/spacecat-shared-data-access": "2.46.0"
   }
 }

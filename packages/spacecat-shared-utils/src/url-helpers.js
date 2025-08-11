@@ -121,7 +121,7 @@ function ensureHttps(url) {
  * Gets HTTP headers with appropriate user agent for the request type
  * @returns {Object} - HTTP headers object
  */
-function getRequestHeaders() {
+function getSpacecatRequestHeaders() {
   return {
     Accept: 'text/html,application/xhtml+xml,application/xml,text/css,application/javascript,text/javascript;q=0.9,image/avif,image/webp,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.5',
@@ -139,18 +139,14 @@ function getRequestHeaders() {
  * @returns {Promise<string>} A Promise that resolves to the canonical URL.
  */
 async function resolveCanonicalUrl(urlString, method = 'HEAD') {
-  const headers = getRequestHeaders();
+  const headers = getSpacecatRequestHeaders();
   let resp;
 
   try {
     resp = await fetch(urlString, { headers, method });
 
     if (resp.ok) {
-      if (method === 'HEAD') {
-        return ensureHttps(resp.url);
-      } else if (method === 'GET') {
-        return ensureHttps(resp.headers.get('Location') || resp.url);
-      }
+      return ensureHttps(resp.url);
     }
 
     // Handle redirect chains
@@ -176,7 +172,7 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
 
 export {
   ensureHttps,
-  getRequestHeaders,
+  getSpacecatRequestHeaders,
   resolveCanonicalUrl,
   composeBaseURL,
   composeAuditURL,

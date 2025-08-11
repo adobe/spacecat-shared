@@ -62,7 +62,7 @@ export {
   stripTrailingSlash,
   stripWWW,
   resolveCanonicalUrl,
-  getRequestHeaders,
+  getSpacecatRequestHeaders,
   ensureHttps,
 } from './url-helpers.js';
 

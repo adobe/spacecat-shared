@@ -23,7 +23,7 @@ import {
   stripTrailingSlash,
   stripWWW,
   resolveCanonicalUrl,
-  getRequestHeaders,
+  getSpacecatRequestHeaders,
   ensureHttps,
 } from '../src/url-helpers.js';
 
@@ -198,9 +198,9 @@ describe('URL Utility Functions', () => {
     });
   });
 
-  describe('getRequestHeaders', () => {
+  describe('getSpacecatRequestHeaders', () => {
     it('should return headers with SPACECAT_USER_AGENT', () => {
-      const headers = getRequestHeaders();
+      const headers = getSpacecatRequestHeaders();
       expect(headers).to.have.property('User-Agent');
       expect(headers).to.have.property('Accept');
       expect(headers).to.have.property('Accept-Language');

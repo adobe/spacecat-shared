@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.47.0...@adobe/spacecat-shared-data-access-v2.48.0) (2025-08-11)
+
+
+### Features
+
+* add import type llmo-prompts-ahref ([#902](https://github.com/adobe/spacecat-shared/issues/902)) ([64b7ba0](https://github.com/adobe/spacecat-shared/commit/64b7ba0bf622fe2eff021f2e3660d5f809a0c8b2))
+
 # [@adobe/spacecat-shared-data-access-v2.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.46.2...@adobe/spacecat-shared-data-access-v2.47.0) (2025-08-11)
 
 

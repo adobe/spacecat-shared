@@ -138,7 +138,7 @@ describe('SiteCollection', () => {
 
       expect(result).to.deep.equal(mockSite);
       expect(instance.findByExternalOwnerIdAndExternalSiteId)
-        .to.have.been.calledOnceWithExactly('ref#owner', 'site');
+        .to.have.been.calledOnceWithExactly('owner', 'site');
     });
 
     it('returns site by AEMaaCS preview URL', async () => {
@@ -158,7 +158,7 @@ describe('SiteCollection', () => {
 
       expect(result).to.be.null;
       expect(instance.findByExternalOwnerIdAndExternalSiteId)
-        .to.have.been.calledOnceWithExactly('ref#owner', 'site');
+        .to.have.been.calledOnceWithExactly('owner', 'site');
     });
 
     it('handles complex helix preview URLs with paths', async () => {
@@ -168,7 +168,7 @@ describe('SiteCollection', () => {
 
       expect(result).to.deep.equal(mockSite);
       expect(instance.findByExternalOwnerIdAndExternalSiteId)
-        .to.have.been.calledOnceWithExactly('feature-branch#company', 'my-site');
+        .to.have.been.calledOnceWithExactly('company', 'my-site');
     });
 
     it('throws DataAccessError for invalid helix preview URLs', async () => {

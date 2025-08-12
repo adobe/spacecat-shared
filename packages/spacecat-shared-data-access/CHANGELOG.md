@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.49.0...@adobe/spacecat-shared-data-access-v2.50.0) (2025-08-12)
+
+
+### Features
+
+* SITES-34221 implemented getters for raw and ai reports ([#905](https://github.com/adobe/spacecat-shared/issues/905)) ([e2916f5](https://github.com/adobe/spacecat-shared/commit/e2916f52e5b13350a37d34502f65b7454f65cd0b))
+
 # [@adobe/spacecat-shared-data-access-v2.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.48.0...@adobe/spacecat-shared-data-access-v2.49.0) (2025-08-11)
 
 

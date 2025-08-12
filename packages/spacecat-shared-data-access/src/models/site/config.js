@@ -14,7 +14,7 @@ import Joi from 'joi';
 import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
-  LLMO_QUESTIONS_IMPORT_TYPE: 'llmo-prompts-ahref',
+  LLMO_QUESTIONS_IMPORT_TYPE: 'llmo-prompts-ahrefs',
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',

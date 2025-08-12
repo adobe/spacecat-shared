@@ -18,6 +18,14 @@ class Report extends BaseModel {
     SUCCESS: 'success',
     FAILED: 'failed',
   };
+
+  getRawStoragePath() {
+    return `${this.getStoragePath()}raw/`;
+  }
+
+  getEnhancedStoragePath() {
+    return `${this.getStoragePath()}enhanced/`;
+  }
 }
 
 export default Report;

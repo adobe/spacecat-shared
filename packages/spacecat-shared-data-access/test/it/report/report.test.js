@@ -147,7 +147,7 @@ describe('Report IT', async () => {
     expect(report.getComparisonPeriod()).to.deep.equal(data.comparisonPeriod);
 
     // Storage path should be auto-computed with the generated reportId
-    const expectedStoragePath = `/reports/${siteId}/summary/${report.getId()}/`;
+    const expectedStoragePath = `reports/${siteId}/summary/${report.getId()}/`;
     expect(report.getStoragePath()).to.equal(expectedStoragePath);
 
     const record = report.toJSON();
@@ -157,7 +157,7 @@ describe('Report IT', async () => {
     delete record.updatedBy;
     // The storagePath in the record will include the auto-generated reportId
     const expectedRecord = { ...data };
-    expectedRecord.storagePath = `/reports/${siteId}/summary/${report.getId()}/`;
+    expectedRecord.storagePath = `reports/${siteId}/summary/${report.getId()}/`;
     expectedRecord.status = 'processing'; // Default status for new reports
     expect(record).to.eql(expectedRecord);
   });
@@ -225,7 +225,7 @@ describe('Report IT', async () => {
     expect(report.getComparisonPeriod()).to.deep.equal(data.comparisonPeriod);
 
     // Storage path should be auto-computed since it was empty
-    const expectedStoragePath = `/reports/${siteId}/auto-computed/${report.getId()}/`;
+    const expectedStoragePath = `reports/${siteId}/auto-computed/${report.getId()}/`;
     expect(report.getStoragePath()).to.equal(expectedStoragePath);
   });
 
@@ -241,7 +241,7 @@ describe('Report IT', async () => {
         startDate: '2025-08-01T09:00:00Z',
         endDate: '2025-08-31T09:00:00Z',
       },
-      storagePath: '/reports/updated/path/',
+      storagePath: 'reports/updated/path/',
       updatedBy: 'test-user',
     };
 

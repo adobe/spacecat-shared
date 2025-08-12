@@ -25,7 +25,7 @@ class ReportCollection extends BaseCollection {
 
     // If storagePath is empty string (default value), compute it automatically
     if (report.getStoragePath() === '') {
-      const storagePath = `/reports/${item.siteId}/${item.reportType}/${report.getId()}/`;
+      const storagePath = `reports/${item.siteId}/${item.reportType}/${report.getId()}/`;
       report.setStoragePath(storagePath);
       await report.save();
     }

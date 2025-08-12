@@ -13,7 +13,19 @@
 import BaseModel from '../base/base.model.js';
 
 class Report extends BaseModel {
+  static STATUSES = {
+    PROCESSING: 'processing',
+    SUCCESS: 'success',
+    FAILED: 'failed',
+  };
 
+  getRawStoragePath() {
+    return `${this.getStoragePath()}raw/`;
+  }
+
+  getEnhancedStoragePath() {
+    return `${this.getStoragePath()}enhanced/`;
+  }
 }
 
 export default Report;

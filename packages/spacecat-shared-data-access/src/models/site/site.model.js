@@ -24,10 +24,10 @@ export const computeExternalIds = (attrs, authoringTypes) => {
 
   if (hlxConfig && (authoringType === authoringTypes.DA)) {
     const rso = hlxConfig.rso ?? {};
-    const { ref, owner, site } = rso;
+    const { owner, site } = rso;
 
     return {
-      externalOwnerId: ref && owner ? `${ref}#${owner}` : undefined,
+      externalOwnerId: owner || undefined,
       externalSiteId: site || undefined,
     };
   }

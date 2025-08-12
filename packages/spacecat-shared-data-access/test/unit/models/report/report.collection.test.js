@@ -120,7 +120,7 @@ describe('ReportCollection', () => {
 
       // Verify that setStoragePath was called with the correct auto-computed path
       expect(setStoragePathSpy.calledOnceWith(
-        `/reports/${mockRecord.siteId}/${mockRecord.reportType}/${mockRecord.reportId}/`,
+        `reports/${mockRecord.siteId}/${mockRecord.reportType}/${mockRecord.reportId}/`,
       )).to.be.true;
 
       // Verify that save was called to persist the changes
@@ -219,8 +219,8 @@ describe('ReportCollection', () => {
 
       const result = await instance.create(testData);
 
-      // Verify the storage path format is correct: /reports/{siteId}/{reportType}/{reportId}/
-      const expectedPath = `/reports/${testData.siteId}/${testData.reportType}/${testData.reportId}/`;
+      // Verify the storage path format is correct: reports/{siteId}/{reportType}/{reportId}/
+      const expectedPath = `reports/${testData.siteId}/${testData.reportType}/${testData.reportId}/`;
       expect(setStoragePathSpy.calledOnceWith(expectedPath)).to.be.true;
 
       expect(result).to.equal(mockReportInstance);

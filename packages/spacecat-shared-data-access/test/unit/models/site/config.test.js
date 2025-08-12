@@ -1079,209 +1079,136 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]');
+            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]');
+          console.log('DTLS', ...error.cause.details[0].context.details);
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
-                message: '"imports[0].destinations[0]" must be [default]',
-                path: [
-                  'imports',
-                  0,
-                  'destinations',
-                  0,
-                ],
+                message: '"imports[0].type" must be [llmo-prompts-ahrefs]',
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
                 context: {
-                  valids: [
-                    'default',
-                  ],
+                  valids: ['llmo-prompts-ahrefs'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              }, {
+                message: '"imports[0].destinations[0]" must be [default]',
+                path: ['imports', 0, 'destinations', 0],
+                type: 'any.only',
+                context: {
+                  valids: ['default'],
                   label: 'imports[0].destinations[0]',
                   value: 'invalid',
                   key: 0,
                 },
-              },
-              {
-                context: {
-                  key: 'type',
-                  label: 'imports[0].type',
-                  valids: [
-                    'organic-keywords-nonbranded',
-                  ],
-                  value: 'organic-keywords',
-                },
+              }, {
                 message: '"imports[0].type" must be [organic-keywords-nonbranded]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
-              },
-              {
                 context: {
-                  key: 'type',
+                  valids: ['organic-keywords-nonbranded'],
                   label: 'imports[0].type',
-                  valids: [
-                    'organic-keywords-ai-overview',
-                  ],
                   value: 'organic-keywords',
+                  key: 'type',
                 },
+              }, {
                 message: '"imports[0].type" must be [organic-keywords-ai-overview]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
-              },
-              {
                 context: {
-                  key: 'type',
+                  valids: ['organic-keywords-ai-overview'],
                   label: 'imports[0].type',
-                  valids: [
-                    'organic-keywords-feature-snippets',
-                  ],
                   value: 'organic-keywords',
+                  key: 'type',
                 },
+              }, {
                 message: '"imports[0].type" must be [organic-keywords-feature-snippets]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
-              },
-              {
                 context: {
-                  key: 'type',
+                  valids: ['organic-keywords-feature-snippets'],
                   label: 'imports[0].type',
-                  valids: [
-                    'organic-keywords-questions',
-                  ],
                   value: 'organic-keywords',
+                  key: 'type',
                 },
+              }, {
                 message: '"imports[0].type" must be [organic-keywords-questions]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
-              },
-              {
+                context: {
+                  valids: ['organic-keywords-questions'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              }, {
                 message: '"imports[0].type" must be [organic-traffic]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
                 context: {
-                  valids: [
-                    'organic-traffic',
-                  ],
+                  valids: ['organic-traffic'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',
                 },
-              },
-              {
+              }, {
                 message: '"imports[0].type" must be [all-traffic]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
                 context: {
-                  valids: [
-                    'all-traffic',
-                  ],
+                  valids: ['all-traffic'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',
                 },
-              },
-              {
+              }, {
                 message: '"imports[0].type" must be [top-pages]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
                 context: {
-                  valids: [
-                    'top-pages',
-                  ],
+                  valids: ['top-pages'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',
                 },
-              },
-              {
+              }, {
                 message: '"imports[0].type" must be [cwv-daily]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
                 context: {
-                  valids: [
-                    'cwv-daily',
-                  ],
+                  valids: ['cwv-daily'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',
                 },
-              },
-              {
+              }, {
                 message: '"imports[0].type" must be [cwv-weekly]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
                 context: {
-                  valids: [
-                    'cwv-weekly',
-                  ],
+                  valids: ['cwv-weekly'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',
                 },
-              },
-              {
+              }, {
                 message: '"imports[0].type" must be [traffic-analysis]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
                 context: {
-                  valids: [
-                    'traffic-analysis',
-                  ],
+                  valids: ['traffic-analysis'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',
                 },
-              },
-              {
+              }, {
                 message: '"imports[0].type" must be [top-forms]',
-                path: [
-                  'imports',
-                  0,
-                  'type',
-                ],
+                path: ['imports', 0, 'type'],
                 type: 'any.only',
                 context: {
-                  valids: [
-                    'top-forms',
-                  ],
+                  valids: ['top-forms'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',

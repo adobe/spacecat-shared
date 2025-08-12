@@ -18,7 +18,7 @@ export interface Report extends BaseModel {
   getComparisonPeriod(): { startDate: string; endDate: string };
   getStoragePath(): string;
   getRawStoragePath(): string;
-  getEnhancedReportPath(): string;
+  getEnhancedStoragePath(): string;
   getSite(): Promise<Site>;
   setReportType(reportType: string): Report;
   setReportPeriod(period: { startDate: string; endDate: string }): Report;

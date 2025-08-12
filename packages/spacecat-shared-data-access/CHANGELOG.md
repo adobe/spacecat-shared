@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.51.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.51.0...@adobe/spacecat-shared-data-access-v2.51.1) (2025-08-12)
+
+
+### Bug Fixes
+
+* naming of the new llmo prompts import ([#907](https://github.com/adobe/spacecat-shared/issues/907)) ([e3a6703](https://github.com/adobe/spacecat-shared/commit/e3a6703ac7a052946b93707179c237274ec255c6))
+
 # [@adobe/spacecat-shared-data-access-v2.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.50.0...@adobe/spacecat-shared-data-access-v2.51.0) (2025-08-12)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.50.0...@adobe/spacecat-shared-data-access-v2.51.0) (2025-08-12)
+
+
+### Features
+
+* removed slash from reports path ([#906](https://github.com/adobe/spacecat-shared/issues/906)) ([44ace99](https://github.com/adobe/spacecat-shared/commit/44ace9999fc2d5d2fc332b03cae7ceafbd9a939a))
+
 # [@adobe/spacecat-shared-data-access-v2.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.49.0...@adobe/spacecat-shared-data-access-v2.50.0) (2025-08-12)
 
 

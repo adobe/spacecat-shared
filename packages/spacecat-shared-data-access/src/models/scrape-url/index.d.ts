@@ -20,12 +20,14 @@ export interface ScrapeUrl extends BaseModel {
   getReason(): string,
   getStatus(): string,
   getUrl(): string,
+  getIsOriginal(): boolean,
   setFile(file: string): void,
   setScrapeJobId(ScrapeJobId: string): void,
   setPath(path: string): void,
   setReason(reason: string): void,
   setStatus(status: string): void,
   setUrl(url: string): void,
+  setIsOriginal(isOriginal: boolean): void,
 }
 
 export interface ScrapeUrlCollection extends BaseCollection<ScrapeUrl> {

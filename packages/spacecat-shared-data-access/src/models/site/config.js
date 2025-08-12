@@ -380,6 +380,10 @@ export const Config = (data = {}) => {
   self.getLlmoHumanQuestions = () => state?.llmo?.questions?.Human;
   self.getLlmoAIQuestions = () => state?.llmo?.questions?.AI;
   self.getLlmoUrlPatterns = () => state?.llmo?.urlPatterns;
+  self.getLlmoCustomerIntent = () => {
+    const llmoConfig = self.getLlmoConfig();
+    return llmoConfig?.customerIntent || [];
+  };
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -390,7 +394,9 @@ export const Config = (data = {}) => {
   };
 
   self.updateLlmoConfig = (dataFolder, brand, questions = {}, urlPatterns = undefined) => {
+    const currentLlmoConfig = state.llmo || {};
     state.llmo = {
+      ...currentLlmoConfig,
       dataFolder,
       brand,
       questions,
@@ -420,6 +426,47 @@ export const Config = (data = {}) => {
     state.llmo.questions = state.llmo.questions || {};
     state.llmo.questions.AI = state.llmo.questions.AI || [];
     state.llmo.questions.AI.push(...questions);
+  };
+
+  self.addLlmoCustomerIntent = (customerIntentItems) => {
+    state.llmo = state.llmo || {};
+    state.llmo.customerIntent = state.llmo.customerIntent || [];
+    state.llmo.customerIntent.push(...customerIntentItems);
+  };
+
+  self.removeLlmoCustomerIntent = (intentKey) => {
+    state.llmo = state.llmo || {};
+    state.llmo.customerIntent = state.llmo.customerIntent || [];
+
+    const currentCustomerIntent = state.llmo.customerIntent;
+    const firstOccurrenceIndex = currentCustomerIntent.findIndex(
+      (item) => item.key === intentKey,
+    );
+
+    if (firstOccurrenceIndex !== -1) {
+      state.llmo.customerIntent = currentCustomerIntent.filter(
+        (item, index) => index !== firstOccurrenceIndex,
+      );
+    }
+  };
+
+  self.updateLlmoCustomerIntent = (intentKey, updateData) => {
+    state.llmo = state.llmo || {};
+    state.llmo.customerIntent = state.llmo.customerIntent || [];
+
+    const currentCustomerIntent = state.llmo.customerIntent;
+    const firstOccurrenceIndex = currentCustomerIntent.findIndex(
+      (item) => item.key === intentKey,
+    );
+
+    if (firstOccurrenceIndex !== -1) {
+      state.llmo.customerIntent = currentCustomerIntent.map((item, index) => {
+        if (index === firstOccurrenceIndex) {
+          return { ...item, ...updateData };
+        }
+        return item;
+      });
+    }
   };
 
   self.removeLlmoQuestion = (key) => {

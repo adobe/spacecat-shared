@@ -1080,7 +1080,6 @@ describe('Config Tests', () => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
             .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]');
-          console.log('DTLS', ...error.cause.details[0].context.details);
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -1908,6 +1907,299 @@ describe('Config Tests', () => {
         const updatedPatterns = config.getLlmoUrlPatterns();
         expect(updatedPatterns).to.deep.equal(existingUrlPatterns);
       });
+    });
+  });
+
+  describe('LLMO Customer Intent Management', () => {
+    let config;
+
+    beforeEach(() => {
+      config = Config();
+    });
+
+    describe('getLlmoCustomerIntent', () => {
+      it('should return empty array when llmo config does not exist', () => {
+        expect(config.getLlmoCustomerIntent()).to.deep.equal([]);
+      });
+
+      it('should return empty array when customerIntent does not exist', () => {
+        config.updateLlmoConfig('/test/folder', 'testBrand');
+        expect(config.getLlmoCustomerIntent()).to.deep.equal([]);
+      });
+
+      it('should return customer intent when it exists', () => {
+        const customerIntent = [
+          { key: 'target_audience', value: 'small business owners' },
+          { key: 'primary_goal', value: 'increase conversions' },
+        ];
+        config.addLlmoCustomerIntent(customerIntent);
+        expect(config.getLlmoCustomerIntent()).to.deep.equal(customerIntent);
+      });
+    });
+
+    describe('addLlmoCustomerIntent', () => {
+      it('should add single customer intent item', () => {
+        const intentItem = { key: 'target_audience', value: 'small business owners' };
+        config.addLlmoCustomerIntent([intentItem]);
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent).to.have.length(1);
+        expect(customerIntent[0]).to.deep.equal(intentItem);
+      });
+
+      it('should add multiple customer intent items', () => {
+        const intentItems = [
+          { key: 'target_audience', value: 'small business owners' },
+          { key: 'primary_goal', value: 'increase conversions' },
+          { key: 'user_persona', value: 'marketing director' },
+        ];
+        config.addLlmoCustomerIntent(intentItems);
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent).to.have.length(3);
+        expect(customerIntent).to.deep.equal(intentItems);
+      });
+
+      it('should append to existing customer intent items', () => {
+        // First, add some initial items
+        const initialItems = [
+          { key: 'target_audience', value: 'small business owners' },
+        ];
+        config.addLlmoCustomerIntent(initialItems);
+
+        // Then add more items
+        const additionalItems = [
+          { key: 'primary_goal', value: 'increase conversions' },
+          { key: 'user_persona', value: 'marketing director' },
+        ];
+        config.addLlmoCustomerIntent(additionalItems);
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent).to.have.length(3);
+        expect(customerIntent[0]).to.deep.equal(initialItems[0]);
+        expect(customerIntent[1]).to.deep.equal(additionalItems[0]);
+        expect(customerIntent[2]).to.deep.equal(additionalItems[1]);
+      });
+
+      it('should allow duplicate keys', () => {
+        const intentItems = [
+          { key: 'target_audience', value: 'small business owners' },
+          { key: 'target_audience', value: 'enterprise customers' },
+        ];
+        config.addLlmoCustomerIntent(intentItems);
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent).to.have.length(2);
+        expect(customerIntent[0].key).to.equal('target_audience');
+        expect(customerIntent[1].key).to.equal('target_audience');
+        expect(customerIntent[0].value).to.equal('small business owners');
+        expect(customerIntent[1].value).to.equal('enterprise customers');
+      });
+
+      it('should handle empty arrays', () => {
+        config.addLlmoCustomerIntent([]);
+        expect(config.getLlmoCustomerIntent()).to.deep.equal([]);
+      });
+    });
+
+    describe('removeLlmoCustomerIntent', () => {
+      beforeEach(() => {
+        // Setup initial customer intent items
+        const intentItems = [
+          { key: 'target_audience', value: 'small business owners' },
+          { key: 'primary_goal', value: 'increase conversions' },
+          { key: 'target_audience', value: 'enterprise customers' }, // Duplicate key
+          { key: 'user_persona', value: 'marketing director' },
+        ];
+        config.addLlmoCustomerIntent(intentItems);
+      });
+
+      it('should remove first occurrence of customer intent item by key', () => {
+        config.removeLlmoCustomerIntent('target_audience');
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent).to.have.length(3);
+        expect(customerIntent[0].key).to.equal('primary_goal');
+        expect(customerIntent[1].key).to.equal('target_audience');
+        expect(customerIntent[1].value).to.equal('enterprise customers');
+        expect(customerIntent[2].key).to.equal('user_persona');
+      });
+
+      it('should not remove items with different keys', () => {
+        config.removeLlmoCustomerIntent('nonexistent');
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent).to.have.length(4);
+      });
+
+      it('should handle removing from empty arrays', () => {
+        const emptyConfig = Config();
+        expect(() => emptyConfig.removeLlmoCustomerIntent('target_audience')).to.not.throw();
+        expect(emptyConfig.getLlmoCustomerIntent()).to.deep.equal([]);
+      });
+
+      it('should handle removing from undefined customerIntent', () => {
+        const emptyConfig = Config();
+        emptyConfig.updateLlmoConfig('/test/folder', 'testBrand');
+        expect(() => emptyConfig.removeLlmoCustomerIntent('target_audience')).to.not.throw();
+        expect(emptyConfig.getLlmoCustomerIntent()).to.deep.equal([]);
+      });
+    });
+
+    describe('updateLlmoCustomerIntent', () => {
+      beforeEach(() => {
+        // Setup initial customer intent items
+        const intentItems = [
+          { key: 'target_audience', value: 'small business owners' },
+          { key: 'primary_goal', value: 'increase conversions' },
+          { key: 'target_audience', value: 'enterprise customers' }, // Duplicate key
+          { key: 'user_persona', value: 'marketing director' },
+        ];
+        config.addLlmoCustomerIntent(intentItems);
+      });
+
+      it('should update first occurrence of customer intent item by key', () => {
+        const update = { value: 'updated small business owners' };
+        config.updateLlmoCustomerIntent('target_audience', update);
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent).to.have.length(4);
+        expect(customerIntent[0].key).to.equal('target_audience');
+        expect(customerIntent[0].value).to.equal('updated small business owners');
+        expect(customerIntent[2].key).to.equal('target_audience');
+        expect(customerIntent[2].value).to.equal('enterprise customers'); // Should remain unchanged
+      });
+
+      it('should support partial updates (value only)', () => {
+        const update = { value: 'updated goal' };
+        config.updateLlmoCustomerIntent('primary_goal', update);
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        const updatedItem = customerIntent.find((item) => item.key === 'primary_goal');
+        expect(updatedItem.key).to.equal('primary_goal');
+        expect(updatedItem.value).to.equal('updated goal');
+      });
+
+      it('should support partial updates (key only)', () => {
+        const update = { key: 'updated_audience' };
+        config.updateLlmoCustomerIntent('target_audience', update);
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent[0].key).to.equal('updated_audience');
+        expect(customerIntent[0].value).to.equal('small business owners'); // Should remain unchanged
+      });
+
+      it('should support updating both key and value', () => {
+        const update = { key: 'updated_audience', value: 'updated value' };
+        config.updateLlmoCustomerIntent('target_audience', update);
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent[0].key).to.equal('updated_audience');
+        expect(customerIntent[0].value).to.equal('updated value');
+      });
+
+      it('should not update items with different keys', () => {
+        const update = { value: 'should not change' };
+        config.updateLlmoCustomerIntent('nonexistent', update);
+
+        const customerIntent = config.getLlmoCustomerIntent();
+        expect(customerIntent).to.have.length(4);
+        // Verify original values are unchanged
+        expect(customerIntent[0].value).to.equal('small business owners');
+        expect(customerIntent[1].value).to.equal('increase conversions');
+      });
+
+      it('should handle updating in empty arrays', () => {
+        const emptyConfig = Config();
+        expect(() => emptyConfig.updateLlmoCustomerIntent('target_audience', { value: 'updated' })).to.not.throw();
+        expect(emptyConfig.getLlmoCustomerIntent()).to.deep.equal([]);
+      });
+
+      it('should handle updating in undefined customerIntent', () => {
+        const emptyConfig = Config();
+        emptyConfig.updateLlmoConfig('/test/folder', 'testBrand');
+        expect(() => emptyConfig.updateLlmoCustomerIntent('target_audience', { value: 'updated' })).to.not.throw();
+        expect(emptyConfig.getLlmoCustomerIntent()).to.deep.equal([]);
+      });
+    });
+
+    it('should validate customerIntent data structure in config creation', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+          customerIntent: [
+            { key: 'target_audience', value: 'small business owners' },
+            { key: 'primary_goal', value: 'increase conversions' },
+          ],
+        },
+      };
+      const testConfig = Config(data);
+      expect(testConfig.getLlmoCustomerIntent()).to.deep.equal(data.llmo.customerIntent);
+    });
+
+    it('should handle empty customerIntent arrays in config creation', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+          customerIntent: [],
+        },
+      };
+      const testConfig = Config(data);
+      expect(testConfig.getLlmoCustomerIntent()).to.deep.equal([]);
+    });
+
+    it('should handle missing customerIntent in llmo config', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/data/folder',
+          brand: 'mybrand',
+        },
+      };
+      const testConfig = Config(data);
+      expect(testConfig.getLlmoCustomerIntent()).to.deep.equal([]);
+    });
+
+    it('should preserve customerIntent when updateLlmoConfig is called', () => {
+      // First, add some customer intent
+      const customerIntent = [
+        { key: 'target_audience', value: 'small business owners' },
+        { key: 'primary_goal', value: 'increase conversions' },
+      ];
+      config.addLlmoCustomerIntent(customerIntent);
+
+      // Then update the llmo config with new dataFolder and brand
+      config.updateLlmoConfig('/new/folder', 'newBrand');
+
+      // Customer intent should still be there
+      expect(config.getLlmoCustomerIntent()).to.deep.equal(customerIntent);
+
+      // And the new values should be set
+      expect(config.getLlmoDataFolder()).to.equal('/new/folder');
+      expect(config.getLlmoBrand()).to.equal('newBrand');
+    });
+
+    it('should preserve customerIntent when updateLlmoConfig is called with questions', () => {
+      // First, add some customer intent
+      const customerIntent = [
+        { key: 'target_audience', value: 'small business owners' },
+      ];
+      config.addLlmoCustomerIntent(customerIntent);
+
+      // Then update the llmo config with questions
+      const questions = {
+        Human: [{ key: 'q1', question: 'What is SEO?' }],
+      };
+      config.updateLlmoConfig('/new/folder', 'newBrand', questions);
+
+      // Customer intent should still be there
+      expect(config.getLlmoCustomerIntent()).to.deep.equal(customerIntent);
+
+      // And the new values should be set
+      expect(config.getLlmoDataFolder()).to.equal('/new/folder');
+      expect(config.getLlmoBrand()).to.equal('newBrand');
+      expect(config.getLlmoHumanQuestions()).to.deep.equal(questions.Human);
     });
   });
 

@@ -116,6 +116,8 @@ class Audit extends BaseModel {
         type: stepResult.type,
         siteId: stepResult.siteId,
         pageUrl: stepResult.pageUrl,
+        startDate: stepResult.startDate,
+        endDate: stepResult.endDate,
         urlConfigs: stepResult.urlConfigs,
         allowCache: true,
         auditContext,

@@ -22,6 +22,9 @@ import {
   stripTrailingDot,
   stripTrailingSlash,
   stripWWW,
+  resolveCanonicalUrl,
+  getSpacecatRequestHeaders,
+  ensureHttps,
 } from '../src/url-helpers.js';
 
 describe('URL Utility Functions', () => {
@@ -34,6 +37,14 @@ describe('URL Utility Functions', () => {
       expect(prependSchema('https://example.com')).to.equal('https://example.com');
       expect(prependSchema('http://example.com')).to.equal('http://example.com');
     });
+
+    it('should handle URLs with paths', () => {
+      expect(prependSchema('example.com/path')).to.equal('https://example.com/path');
+    });
+
+    it('should handle URLs with query parameters', () => {
+      expect(prependSchema('example.com/path?param=value')).to.equal('https://example.com/path?param=value');
+    });
   });
 
   describe('stripPort', () => {
@@ -44,6 +55,14 @@ describe('URL Utility Functions', () => {
 
     it('should not modify the URL if no port number present', () => {
       expect(stripPort('example.com')).to.equal('example.com');
+    });
+
+    it('should handle URLs with paths and ports', () => {
+      expect(stripPort('example.com:8080/path')).to.equal('example.compath');
+    });
+
+    it('should handle URLs with query parameters and ports', () => {
+      expect(stripPort('example.com:8080/path?param=value')).to.equal('example.compath?param=value');
     });
   });
 
@@ -56,6 +75,10 @@ describe('URL Utility Functions', () => {
 
     it('should not modify the URL if no trailing dot present', () => {
       expect(stripTrailingDot('example.com')).to.equal('example.com');
+    });
+
+    it('should handle URLs with paths and trailing dots', () => {
+      expect(stripTrailingDot('example.com./path')).to.equal('example.com./path');
     });
   });
 
@@ -72,6 +95,10 @@ describe('URL Utility Functions', () => {
     it('should not modify the URL if no trailing slash present', () => {
       expect(stripTrailingSlash('example.com')).to.equal('example.com');
     });
+
+    it('should handle URLs with query parameters', () => {
+      expect(stripTrailingSlash('example.com/?param=value')).to.equal('example.com/?param=value');
+    });
   });
 
   describe('stripWWW', () => {
@@ -87,6 +114,14 @@ describe('URL Utility Functions', () => {
       expect(stripWWW('https://www.example.com')).to.equal('https://example.com');
       expect(stripWWW('http://www.example.com')).to.equal('http://example.com');
     });
+
+    it('should handle URLs with paths', () => {
+      expect(stripWWW('www.example.com/path')).to.equal('example.com/path');
+    });
+
+    it('should handle URLs with query parameters', () => {
+      expect(stripWWW('www.example.com/path?param=value')).to.equal('example.com/path?param=value');
+    });
   });
 
   describe('composeBaseURL', () => {
@@ -101,6 +136,11 @@ describe('URL Utility Functions', () => {
       expect(composeBaseURL('example.com.:123')).to.equal('https://example.com');
       expect(composeBaseURL('WWW.example.com')).to.equal('https://example.com');
       expect(composeBaseURL('WWW.example.com.:342')).to.equal('https://example.com');
+    });
+
+    it('should handle edge cases', () => {
+      expect(composeBaseURL('')).to.equal('https://');
+      expect(composeBaseURL('example')).to.equal('https://example');
     });
   });
 
@@ -141,6 +181,196 @@ describe('URL Utility Functions', () => {
 
       const inputUrl = 'abc.com';
       await expect(composeAuditURL(inputUrl)).to.eventually.equal('www.abc.com');
+    });
+
+    it('should handle URLs without user agent', async () => {
+      nock('https://abc.com')
+        .get('/')
+        .reply(200);
+      await expect(composeAuditURL('abc.com')).to.eventually.equal('abc.com');
+    });
+
+    it('should handle URLs with paths and trailing slashes', async () => {
+      nock('https://abc.com')
+        .get('/path/')
+        .reply(200);
+      await expect(composeAuditURL('https://abc.com/path/')).to.eventually.equal('abc.com/path/');
+    });
+  });
+
+  describe('getSpacecatRequestHeaders', () => {
+    it('should return headers with SPACECAT_USER_AGENT', () => {
+      const headers = getSpacecatRequestHeaders();
+      expect(headers).to.have.property('User-Agent');
+      expect(headers).to.have.property('Accept');
+      expect(headers).to.have.property('Accept-Language');
+      expect(headers).to.have.property('Cache-Control');
+      expect(headers).to.have.property('Pragma');
+      expect(headers).to.have.property('Referer');
+    });
+  });
+
+  describe('ensureHttps', () => {
+    it('should convert HTTP to HTTPS', () => {
+      expect(ensureHttps('http://example.com')).to.equal('https://example.com/');
+    });
+
+    it('should keep HTTPS as is', () => {
+      expect(ensureHttps('https://example.com')).to.equal('https://example.com/');
+    });
+
+    it('should handle URLs with paths', () => {
+      expect(ensureHttps('http://example.com/path')).to.equal('https://example.com/path');
+    });
+  });
+
+  describe('resolveCanonicalUrl', () => {
+    afterEach(() => {
+      nock.cleanAll();
+    });
+
+    it('should resolve canonical URL successfully with HEAD request', async () => {
+      nock('https://example.com')
+        .head('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.equal('https://example.com/');
+    });
+
+    it('should handle redirects and return final URL', async () => {
+      nock('https://example.com')
+        .head('/')
+        .reply(301, undefined, { Location: 'https://www.example.com/' });
+
+      nock('https://www.example.com')
+        .head('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.equal('https://www.example.com/');
+    });
+
+    it('should fallback to GET when HEAD fails', async () => {
+      nock('https://example.com')
+        .head('/')
+        .reply(405); // Method not allowed
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.equal('https://example.com/');
+    });
+
+    it('should handle network errors and retry with GET', async () => {
+      nock('https://example.com')
+        .head('/')
+        .replyWithError('Network error');
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.equal('https://example.com/');
+    });
+
+    it('should throw error when both HEAD and GET fail', async () => {
+      nock('https://example.com')
+        .head('/')
+        .reply(404);
+
+      nock('https://example.com')
+        .get('/')
+        .reply(404);
+
+      await expect(resolveCanonicalUrl('https://example.com'))
+        .to.be.rejectedWith('HTTP error! status: 404');
+    });
+
+    it('should throw error when network error occurs on GET retry', async () => {
+      nock('https://example.com')
+        .head('/')
+        .replyWithError('Network error');
+
+      nock('https://example.com')
+        .get('/')
+        .replyWithError('Network error');
+
+      await expect(resolveCanonicalUrl('https://example.com'))
+        .to.be.rejectedWith('Failed to retrieve URL (https://example.com): Network error');
+    });
+
+    it('should use custom method when provided', async () => {
+      nock('https://example.com')
+        .get('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com', 'GET');
+      expect(result).to.equal('https://example.com/');
+    });
+
+    it('should convert HTTP to HTTPS in the final URL', async () => {
+      nock('http://example.com')
+        .head('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('http://example.com');
+      expect(result).to.equal('https://example.com/');
+    });
+
+    it('should handle URLs with paths and preserve them', async () => {
+      nock('https://example.com')
+        .head('/path/to/resource')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com/path/to/resource');
+      expect(result).to.equal('https://example.com/path/to/resource');
+    });
+
+    it('should handle multiple redirects', async () => {
+      nock('https://example.com')
+        .head('/')
+        .reply(301, undefined, { Location: 'https://www.example.com/' });
+
+      nock('https://www.example.com')
+        .head('/')
+        .reply(302, undefined, { Location: 'https://final.example.com/' });
+
+      nock('https://final.example.com')
+        .head('/')
+        .reply(200);
+
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.equal('https://final.example.com/');
+    });
+
+    it('should handle non-200 responses without redirects', async () => {
+      nock('https://example.com')
+        .head('/')
+        .reply(500);
+
+      nock('https://example.com')
+        .get('/')
+        .reply(500);
+
+      await expect(resolveCanonicalUrl('https://example.com'))
+        .to.be.rejectedWith('HTTP error! status: 500');
+    });
+
+    it('should fallback to GET when HEAD fails with no redirect', async () => {
+      nock('https://example.com')
+        .head('/')
+        .reply(404); // Not found - resp.ok will be false
+
+      nock('https://example.com')
+        .get('/')
+        .reply(200); // Success for the GET fallback
+
+      const result = await resolveCanonicalUrl('https://example.com/', 'HEAD');
+      expect(result).to.equal('https://example.com/');
     });
   });
 });

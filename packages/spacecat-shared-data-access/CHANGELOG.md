@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.52.0...@adobe/spacecat-shared-data-access-v2.53.0) (2025-08-12)
+
+
+### Features
+
+* add llmo methods for api endpoints ([#910](https://github.com/adobe/spacecat-shared/issues/910)) ([be938d5](https://github.com/adobe/spacecat-shared/commit/be938d5bd2bf3d430ab6f7b4b3ee4734aab98185))
+
 # [@adobe/spacecat-shared-data-access-v2.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.51.1...@adobe/spacecat-shared-data-access-v2.52.0) (2025-08-12)
 
 

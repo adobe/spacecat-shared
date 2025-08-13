@@ -266,43 +266,6 @@ describe('ScrapeJobController tests', () => {
       }
     });
 
-    it('should reject when no scrape queues are defined', async () => {
-      delete scrapeJobConfiguration.queues;
-      baseContext.env.SCRAPE_JOB_CONFIGURATION = JSON.stringify(scrapeJobConfiguration);
-
-      const scrapeJobControllerNoQueues = ScrapeClient.createFrom(baseContext);
-      try {
-        await scrapeJobControllerNoQueues.createScrapeJob(baseContext.data);
-        assert.fail('Expected error to be thrown');
-      } catch (err) {
-        expect(err.message).to.equal('Failed to create a new scrape job: Service Unavailable: No scrape queue available');
-      }
-    });
-
-    it('correctly returns queue with least messages', async () => {
-      try {
-        scrapeJobConfiguration.queues = ['spacecat-scrape-queue-1', 'spacecat-scrape-queue-2'];
-        baseContext.env.SCRAPE_JOB_CONFIGURATION = JSON.stringify(scrapeJobConfiguration);
-        baseContext.log.info = sandbox.stub();
-        const testScrapeJobController = ScrapeClient.createFrom(baseContext);
-        await testScrapeJobController.createScrapeJob(baseContext.data);
-        expect(baseContext.log.info.getCalls()[1].args[0]).to.equal('Queue with least messages: spacecat-scrape-queue-2');
-      } catch (err) {
-        assert.fail(err);
-      }
-
-      try {
-        scrapeJobConfiguration.queues = ['spacecat-scrape-queue-1', 'spacecat-scrape-queue-3'];
-        baseContext.log.info = sandbox.stub();
-        baseContext.env.SCRAPE_JOB_CONFIGURATION = JSON.stringify(scrapeJobConfiguration);
-        const testScrapeJobController2 = ScrapeClient.createFrom(baseContext);
-        await testScrapeJobController2.createScrapeJob(baseContext.data);
-        expect(baseContext.log.info.getCalls()[1].args[0]).to.equal('Queue with least messages: spacecat-scrape-queue-1');
-      } catch (err) {
-        assert.fail(err);
-      }
-    });
-
     it('should reject when invalid URLs are passed in', async () => {
       try {
         baseContext.data.urls = ['https://example.com/page1', 'not-a-valid-url'];

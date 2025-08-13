@@ -118,6 +118,8 @@ export default class ScrapeClient {
   /**
    * Create and start a new scrape job.
    * @param {object} data - json data for scrape job
+   * @param {number} data.maxScrapeAge - (optional) max age of scrapes in hours
+   * default is 24, 0 to force rescrape
    * @returns {Promise<Response>} newly created job object
    */
   async createScrapeJob(data) {
@@ -125,7 +127,11 @@ export default class ScrapeClient {
       this.validateRequestData(data);
 
       const {
-        urls, options, customHeaders, processingType = ScrapeJobModel.ScrapeProcessingType.DEFAULT,
+        urls,
+        options,
+        customHeaders,
+        processingType = ScrapeJobModel.ScrapeProcessingType.DEFAULT,
+        maxScrapeAge = 24,
       } = data;
 
       this.config.log.info(`Creating a new scrape job with ${urls.length} URLs.`);
@@ -142,6 +148,7 @@ export default class ScrapeClient {
         processingType,
         mergedOptions,
         customHeaders,
+        maxScrapeAge,
       );
       return ScrapeJobDto.toJSON(job);
     } catch (error) {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.53.0...@adobe/spacecat-shared-data-access-v2.54.0) (2025-08-13)
+
+
+### Features
+
+* add isOriginal field to scrapeUrl ([#908](https://github.com/adobe/spacecat-shared/issues/908)) ([03dfd59](https://github.com/adobe/spacecat-shared/commit/03dfd59c94f91204ac995aeeac53d4e128317dd5))
+
 # [@adobe/spacecat-shared-data-access-v2.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.52.0...@adobe/spacecat-shared-data-access-v2.53.0) (2025-08-12)
 
 

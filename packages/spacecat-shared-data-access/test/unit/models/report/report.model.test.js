@@ -73,6 +73,18 @@ describe('ReportModel', () => {
     });
   });
 
+  describe('derived storage paths', () => {
+    it('gets raw storage path', () => {
+      const expectedRaw = `${sampleReport.storagePath}raw/`;
+      expect(instance.getRawStoragePath()).to.equal(expectedRaw);
+    });
+
+    it('gets enhanced storage path', () => {
+      const expectedEnhanced = `${sampleReport.storagePath}enhanced/`;
+      expect(instance.getEnhancedStoragePath()).to.equal(expectedEnhanced);
+    });
+  });
+
   describe('status', () => {
     it('gets status', () => {
       expect(instance.getStatus()).to.equal(sampleReport.status);

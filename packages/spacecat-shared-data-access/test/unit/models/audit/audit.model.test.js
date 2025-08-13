@@ -178,11 +178,14 @@ describe('AuditModel', () => {
       ACCESSIBILITY: 'accessibility',
       SECURITY_CSP: 'security-csp',
       PAID: 'paid',
+      HREFLANG: 'hreflang',
+      PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
+      PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(27);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(30);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {
@@ -240,6 +243,7 @@ describe('AuditModel', () => {
       const stepResult = {
         type: 'someType',
         siteId: 'someSiteId',
+        endDate: '2025-08-12T15:46:00.000Z',
         urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
       };
       const auditContext = { some: 'context' };
@@ -250,6 +254,8 @@ describe('AuditModel', () => {
         type: 'someType',
         siteId: 'someSiteId',
         pageUrl: undefined,
+        startDate: undefined,
+        endDate: '2025-08-12T15:46:00.000Z',
         urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
         allowCache: true,
         auditContext: { some: 'context' },

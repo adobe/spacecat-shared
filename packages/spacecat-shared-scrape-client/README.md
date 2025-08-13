@@ -1,5 +1,6 @@
 # Spacecat Shared - Scrape Client
 
+
 A JavaScript client for managing web scraping jobs, part of the SpaceCat Shared library. The ScrapeClient provides a comprehensive interface for creating, monitoring, and retrieving results from web scraping operations without needing to access the SpaceCat API service directly.
 
 ## Installation

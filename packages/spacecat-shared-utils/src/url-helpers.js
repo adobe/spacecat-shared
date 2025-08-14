@@ -136,7 +136,7 @@ function getSpacecatRequestHeaders() {
  * Resolve canonical URL for a given URL string by following redirect chain.
  * @param {string} urlString - The URL string to normalize.
  * @param {string} method - HTTP method to use ('HEAD' or 'GET').
- * @returns {Promise<string>} A Promise that resolves to the canonical URL.
+ * @returns {Promise<string|null>} A Promise that resolves to the canonical URL or null if failed.
  */
 async function resolveCanonicalUrl(urlString, method = 'HEAD') {
   const headers = getSpacecatRequestHeaders();
@@ -158,15 +158,16 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
       return resolveCanonicalUrl(urlString, 'GET');
     }
 
-    // If the URL is not found, throw an error
-    const errorMessage = `HTTP error! status: ${resp.status}`;
-    throw new Error(errorMessage);
-  } catch (err) {
+    // If the URL is not found and we've tried both HEAD and GET, return null
+    return null;
+  } catch {
     // If HEAD failed with network error and we haven't tried GET yet, retry with GET
     if (method === 'HEAD') {
       return resolveCanonicalUrl(urlString, 'GET');
     }
-    throw new Error(`Failed to retrieve URL (${urlString}): ${err.message}`);
+
+    // For all errors (both HTTP status and network), return null
+    return null;
   }
 }
 

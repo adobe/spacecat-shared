@@ -11,8 +11,7 @@
  */
 
 import {
-  isIsoDate, isObject, isValidUrl, isNonEmptyArray, hasText,
-  isValidUUID,
+  hasText, isIsoDate, isNonEmptyArray, isObject, isValidUrl, isValidUUID,
 } from '@adobe/spacecat-shared-utils';
 import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
 import { ScrapeJobDto } from './scrapeJobDto.js';
@@ -132,6 +131,7 @@ export default class ScrapeClient {
         customHeaders,
         processingType = ScrapeJobModel.ScrapeProcessingType.DEFAULT,
         maxScrapeAge = 24,
+        auditData = {},
       } = data;
 
       this.config.log.info(`Creating a new scrape job with ${urls.length} URLs.`);
@@ -149,6 +149,7 @@ export default class ScrapeClient {
         mergedOptions,
         customHeaders,
         maxScrapeAge,
+        auditData,
       );
       return ScrapeJobDto.toJSON(job);
     } catch (error) {
@@ -221,6 +222,23 @@ export default class ScrapeClient {
       }));
 
       return results;
+    } catch (error) {
+      const msgError = `Failed to fetch the scrape job result: ${error.message}`;
+      this.config.log.error(msgError);
+      throw new Error(msgError);
+    }
+  }
+
+  async getScrapeResultPaths(jobId) {
+    try {
+      const job = await this.scrapeSupervisor.getScrapeJob(jobId);
+      if (!job) {
+        return null;
+      }
+      const { ScrapeUrl } = this.config.dataAccess;
+      const scrapeUrls = await ScrapeUrl.allByScrapeJobId(job.getId());
+      // eslint-disable-next-line max-len
+      return scrapeUrls.filter((url) => url.getStatus() === ScrapeJobModel.ScrapeUrlStatus.COMPLETE).map((url) => url.getPath());
     } catch (error) {
       const msgError = `Failed to fetch the scrape job result: ${error.message}`;
       this.config.log.error(msgError);

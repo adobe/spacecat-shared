@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.45.0...@adobe/spacecat-shared-utils-v1.46.0) (2025-08-14)
+
+
+### Features
+
+* return null instead of throwing error ([#914](https://github.com/adobe/spacecat-shared/issues/914)) ([90760c0](https://github.com/adobe/spacecat-shared/commit/90760c040c46eab127c1bfc780a454875475fb64))
+
 # [@adobe/spacecat-shared-utils-v1.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.44.3...@adobe/spacecat-shared-utils-v1.45.0) (2025-08-11)
 
 

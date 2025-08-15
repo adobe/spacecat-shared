@@ -15,7 +15,7 @@
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
-    "require": "test/setup-env.cjs",
+    "require": "test/setup-env.js",
     "reporter": "mocha-multi-reporters",
     "reporter-options": "configFile=.mocha-multi.json",
     "spec": "test/*.test.js"

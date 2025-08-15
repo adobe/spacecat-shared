@@ -73,6 +73,9 @@ describe('Index Exports', () => {
     'resolveCanonicalUrl',
     'getSpacecatRequestHeaders',
     'ensureHttps',
+    'getWeekInfo',
+    'getMonthInfo',
+    'getTemporalCondition',
   ];
 
   it('exports all expected functions', () => {

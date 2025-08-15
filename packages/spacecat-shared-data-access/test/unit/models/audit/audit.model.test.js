@@ -168,6 +168,7 @@ describe('AuditModel', () => {
       EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
       EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
       META_TAGS: 'meta-tags',
+      SOFT_404S: 'soft-404s',
       COSTS: 'costs',
       STRUCTURED_DATA: 'structured-data',
       STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',

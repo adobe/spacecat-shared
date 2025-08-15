@@ -319,7 +319,6 @@ describe('Utils - temporal helpers', () => {
     });
   });
 
-  // Additional coverage for single-month and cross-month week conditions
   it('getWeekInfo: single month week returns single condition string', () => {
     const info = getWeekInfo(28, 2025); // 2025-07-08..2025-07-14 (ISO week 28)
     expect(info.temporalCondition).to.equal('year=2025 AND month=7 AND week=28');
@@ -331,7 +330,6 @@ describe('Utils - temporal helpers', () => {
     expect(info.temporalCondition).to.equal('(year=2020 AND month=12 AND week=53) OR (year=2021 AND month=1 AND week=53)');
   });
 
-  // Coverage for getMonthInfo partial inputs and invalid year
   it('getMonthInfo: missing year falls back to last full month', () => {
     clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
     const info = getMonthInfo(8);

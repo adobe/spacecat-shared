@@ -237,11 +237,9 @@ export default class ScrapeClient {
       }
       const { ScrapeUrl } = this.config.dataAccess;
       const scrapeUrls = await ScrapeUrl.allByScrapeJobId(job.getId());
-      return scrapeUrls.filter((url) => url.getStatus() === ScrapeJobModel.ScrapeUrlStatus.COMPLETE)
-        .map((url) => ({
-          url: url.getUrl(),
-          path: url.getPath(),
-        }));
+      return scrapeUrls
+        .filter((url) => url.getStatus() === ScrapeJobModel.ScrapeUrlStatus.COMPLETE)
+        .reduce((map, url) => map.set(url.getUrl(), url.getPath()), new Map());
     } catch (error) {
       const msgError = `Failed to fetch the scrape job result: ${error.message}`;
       this.config.log.error(msgError);

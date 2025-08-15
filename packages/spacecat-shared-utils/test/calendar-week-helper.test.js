@@ -13,7 +13,13 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { getDateRanges, getLastNumberOfWeeks } from '../src/calendar-week-helper.js';
+import {
+  getDateRanges,
+  getLastNumberOfWeeks,
+  getWeekInfo,
+  getMonthInfo,
+  getTemporalCondition,
+} from '../src/calendar-week-helper.js';
 
 describe('Utils - getLastNumberOfWeeks', () => {
   let clock;
@@ -75,6 +81,15 @@ describe('Utils - getLastNumberOfWeeks', () => {
       { week: 53, year: 2020 },
       { week: 1, year: 2021 },
     ]);
+  });
+
+  it('covers internal year<100 date construction path (lines 25-27)', function () {
+    this.timeout(20000);
+    // Force enough iterations so that internal logic evaluates a year < 100
+    const currentYear = new Date().getUTCFullYear();
+    const n = ((currentYear - 99) * 53) + 2;
+    const result = getLastNumberOfWeeks(n);
+    expect(result.length).to.equal(n);
   });
 });
 
@@ -247,5 +262,163 @@ describe('Utils - getDateRanges', () => {
         endTime: '2026-01-04T23:59:59.999Z',
       },
     ]);
+  });
+});
+
+describe('Utils - temporal helpers', () => {
+  let clock;
+
+  afterEach(() => {
+    if (clock) {
+      clock.restore();
+      clock = null;
+    }
+  });
+
+  it('getMonthInfo(): no args uses last full month', () => {
+    clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+    const info = getMonthInfo();
+    expect(info).to.deep.equal({ month: 6, year: 2025, temporalCondition: '(year=2025 AND month=6)' });
+  });
+
+  it('getWeekInfo: valid inputs spanning two months', () => {
+    const info = getWeekInfo(5, 2025); // 2025-01-27..2025-02-02
+    expect(info.week).to.equal(5);
+    expect(info.year).to.equal(2025);
+    expect(info.month).to.equal(1); // Thursday is Jan 30
+    expect(info.temporalCondition).to.equal('(year=2025 AND month=1 AND week=5) OR (year=2025 AND month=2 AND week=5)');
+  });
+
+  it('getWeekInfo: invalid inputs fallback to last full week (covers helper)', () => {
+    clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+    const info = getWeekInfo(0, 99);
+    expect(info).to.deep.equal({
+      week: 28,
+      month: 7,
+      year: 2025,
+      temporalCondition: '(year=2025 AND month=7 AND week=28)',
+    });
+  });
+
+  it('getMonthInfo: invalid inputs fallback to current month', () => {
+    clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+    const info = getMonthInfo(0, 99);
+    expect(info).to.deep.equal({
+      month: 7,
+      year: 2025,
+      temporalCondition: '(year=2025 AND month=7)',
+    });
+  });
+
+  it('getMonthInfo: valid inputs are preserved', () => {
+    const info = getMonthInfo(8, 2025);
+    expect(info).to.deep.equal({
+      month: 8,
+      year: 2025,
+      temporalCondition: '(year=2025 AND month=8)',
+    });
+  });
+
+  it('getWeekInfo: single month week returns single condition string', () => {
+    const info = getWeekInfo(28, 2025); // 2025-07-08..2025-07-14 (ISO week 28)
+    expect(info.temporalCondition).to.equal('(year=2025 AND month=7 AND week=28)');
+  });
+
+  it('getWeekInfo: week 53 in 2020 spans two months and sets month=12', () => {
+    const info = getWeekInfo(53, 2020); // 2020-12-28..2021-01-03
+    expect(info.month).to.equal(12);
+    expect(info.temporalCondition).to.equal('(year=2020 AND month=12 AND week=53) OR (year=2021 AND month=1 AND week=53)');
+  });
+
+  it('getMonthInfo: missing year falls back to last full month', () => {
+    clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+    const info = getMonthInfo(8);
+    expect(info).to.deep.equal({ month: 6, year: 2025, temporalCondition: '(year=2025 AND month=6)' });
+  });
+
+  it('getMonthInfo: missing month falls back to last full month', () => {
+    clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+    const info = getMonthInfo(undefined, 2025);
+    expect(info).to.deep.equal({ month: 6, year: 2025, temporalCondition: '(year=2025 AND month=6)' });
+  });
+
+  it('getMonthInfo: invalid year (<100) falls back to current month', () => {
+    clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+    const info = getMonthInfo(8, 25);
+    expect(info).to.deep.equal({ month: 7, year: 2025, temporalCondition: '(year=2025 AND month=7)' });
+  });
+
+  describe('getTemporalCondition', () => {
+    afterEach(() => {
+      if (clock) {
+        clock.restore();
+        clock = null;
+      }
+    });
+
+    it('returns condition for valid week/year with single month', () => {
+      const c = getTemporalCondition({ week: 28, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
+
+    it('returns condition for valid week/year spanning two months', () => {
+      const c = getTemporalCondition({ week: 5, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=1 AND week=5) OR (year=2025 AND month=2 AND week=5)');
+    });
+
+    it('returns condition for valid month/year', () => {
+      const c = getTemporalCondition({ month: 8, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=8)');
+    });
+
+    it('falls back to last full week when week invalid (covers helper)', () => {
+      clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+      const c = getTemporalCondition({ week: 0, year: 99 });
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
+
+    it('falls back to last full month when month invalid (covers helper)', () => {
+      clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+      const c = getTemporalCondition({ month: 0, year: 99 });
+      expect(c).to.equal('(year=2025 AND month=6)');
+    });
+
+    it('falls back to last full week when no inputs provided (covers helper)', () => {
+      clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+      const c = getTemporalCondition();
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
+
+    it('prefers week when both week and month are provided (single-month week)', () => {
+      const c = getTemporalCondition({ week: 28, month: 8, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
+
+    it('prefers week when both week and month are provided (two-month week)', () => {
+      const c = getTemporalCondition({ week: 5, month: 8, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=1 AND week=5) OR (year=2025 AND month=2 AND week=5)');
+    });
+
+    it('uses month when week invalid but month valid', () => {
+      const c = getTemporalCondition({ week: 0, month: 8, year: 2025 });
+      expect(c).to.equal('(year=2025 AND month=8)');
+    });
+
+    it('week 53 in 2020 returns OR across years and months', () => {
+      const c = getTemporalCondition({ week: 53, year: 2020 });
+      expect(c).to.equal('(year=2020 AND month=12 AND week=53) OR (year=2021 AND month=1 AND week=53)');
+    });
+
+    it('only week without year falls back to last full week', () => {
+      clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+      const c = getTemporalCondition({ week: 10 });
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
+
+    it('only month without year falls back to last full week', () => {
+      clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
+      const c = getTemporalCondition({ month: 8 });
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
+    });
   });
 });

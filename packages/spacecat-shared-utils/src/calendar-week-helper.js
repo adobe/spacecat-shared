@@ -9,69 +9,104 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-const MILLISECONDS_IN_A_DAY = 24 * 60 * 60 * 1000;
-const MILLISECONDS_IN_A_WEEK = 7 * MILLISECONDS_IN_A_DAY;
+import {
+  startOfWeek as dfStartOfWeek,
+  subWeeks,
+  getISOWeek,
+  getISOWeekYear,
+} from 'date-fns';
 
-const getFirstMondayOfYear = (year) => {
-  const jan4 = new Date(Date.UTC(year, 0, 4));
-  return new Date(Date.UTC(year, 0, 4 - (jan4.getUTCDay() || 7) + 1));
-};
+const MILLIS_IN_DAY = 24 * 60 * 60 * 1000;
+const MILLIS_IN_WEEK = 7 * MILLIS_IN_DAY;
 
-const getThursdayOfWeek = (date) => {
-  const thursday = new Date(date.getTime());
-  const dayOfWeek = date.getUTCDay() || 7;
-  thursday.setUTCDate(date.getUTCDate() + 4 - dayOfWeek);
-  return thursday;
-};
+function createUTCDate(year, month, day) {
+  // If year is < 100, normalize to the current UTC year as requested
+  if (!Number.isInteger(year) || year < 100) {
+    const currentYear = new Date().getUTCFullYear();
+    return new Date(Date.UTC(currentYear, month, day));
+  }
+  return new Date(Date.UTC(year, month, day));
+}
 
-const has53CalendarWeeks = (year) => {
-  const jan1 = new Date(Date.UTC(year, 0, 1));
-  const dec31 = new Date(Date.UTC(year, 11, 31));
+function getFirstMondayOfYear(year) {
+  const jan4 = createUTCDate(year, 0, 4);
+  return createUTCDate(year, 0, 4 - (jan4.getUTCDay() || 7) + 1);
+}
+
+function has53CalendarWeeks(year) {
+  const jan1 = createUTCDate(year, 0, 1);
+  const dec31 = createUTCDate(year, 11, 31);
   return jan1.getUTCDay() === 4 || dec31.getUTCDay() === 4;
-};
+}
 
-const isValidWeek = (week, year) => {
-  if (year < 100 || week < 1) return false;
+function isValidWeek(week, year) {
+  if (!Number.isInteger(year) || year < 100 || !Number.isInteger(week) || week < 1) return false;
   if (week === 53) return has53CalendarWeeks(year);
   return week <= 52;
-};
+}
 
-const getLastFullCalendarWeek = () => {
-  const currentDate = new Date();
-  currentDate.setUTCHours(0, 0, 0, 0);
+function isValidMonth(month, year) {
+  return Number.isInteger(year)
+  && year >= 100 && Number.isInteger(month) && month >= 1 && month <= 12;
+}
 
-  const previousWeekDate = new Date(currentDate.getTime() - MILLISECONDS_IN_A_WEEK);
+// Get last full ISO week { week, year }
+function getLastFullCalendarWeek() {
+  const anchor = subWeeks(
+    dfStartOfWeek(new Date(), { weekStartsOn: 1 }), // Monday start
+    1,
+  );
+  return {
+    week: getISOWeek(anchor),
+    year: getISOWeekYear(anchor),
+  };
+}
 
-  const thursdayOfPreviousWeek = getThursdayOfWeek(previousWeekDate);
-  const year = thursdayOfPreviousWeek.getUTCFullYear();
-
+// --- Week triples builder (UTC-safe) ---
+function getWeekTriples(week, year) {
+  const triplesSet = new Set();
   const firstMonday = getFirstMondayOfYear(year);
-  const thursdayOfFirstWeek = new Date(firstMonday.getTime() + 3 * MILLISECONDS_IN_A_DAY);
+  const start = new Date(firstMonday.getTime() + (week - 1) * MILLIS_IN_WEEK);
 
-  const week = Math.ceil((thursdayOfPreviousWeek.getTime() - thursdayOfFirstWeek.getTime())
-    / MILLISECONDS_IN_A_WEEK) + 1;
+  for (let i = 0; i < 7; i += 1) {
+    const d = new Date(start.getTime() + i * MILLIS_IN_DAY);
+    const month = d.getUTCMonth() + 1;
+    const calYear = d.getUTCFullYear();
+    triplesSet.add(`${calYear}-${month}-${week}`);
+  }
 
-  return { week, year };
-};
+  return Array.from(triplesSet).map((t) => {
+    const [y, m, w] = t.split('-').map(Number);
+    return { year: y, month: m, week: w };
+  });
+}
+
+function buildWeeklyCondition(triples) {
+  const parts = triples.map(({ year, month, week }) => `(year=${year} AND month=${month} AND week=${week})`);
+  return parts.length === 1 ? parts[0] : parts.join(' OR ');
+}
 
 export function getDateRanges(week, year) {
   let effectiveWeek = week;
   let effectiveYear = year;
 
   if (!isValidWeek(effectiveWeek, effectiveYear)) {
-    const lastFullWeek = getLastFullCalendarWeek();
-    effectiveWeek = lastFullWeek.week;
-    effectiveYear = lastFullWeek.year;
+    const lastFull = getLastFullCalendarWeek();
+    effectiveWeek = lastFull.week;
+    effectiveYear = lastFull.year;
   }
 
   const firstMonday = getFirstMondayOfYear(effectiveYear);
-  const startDate = new Date(firstMonday.getTime() + (effectiveWeek - 1) * MILLISECONDS_IN_A_WEEK);
-  const endDate = new Date(startDate.getTime() + 6 * MILLISECONDS_IN_A_DAY);
+  const startDate = new Date(firstMonday.getTime() + (effectiveWeek - 1) * MILLIS_IN_WEEK);
+  const endDate = new Date(startDate.getTime() + 6 * MILLIS_IN_DAY);
   endDate.setUTCHours(23, 59, 59, 999);
+
   const startMonth = startDate.getUTCMonth() + 1;
   const endMonth = endDate.getUTCMonth() + 1;
   const startYear = startDate.getUTCFullYear();
+  const endYear = endDate.getUTCFullYear();
 
+  // Week in one month
   if (startMonth === endMonth) {
     return [{
       year: startYear,
@@ -81,12 +116,11 @@ export function getDateRanges(week, year) {
     }];
   }
 
-  const endYear = endDate.getUTCFullYear();
-
+  // Week spans two months
   const endOfFirstMonth = new Date(Date.UTC(
     startYear,
-    startDate.getUTCMonth() + 1,
-    0,
+    startDate.getUTCMonth() + 1, // next month
+    0, // last day prev month
     23,
     59,
     59,
@@ -113,6 +147,81 @@ export function getDateRanges(week, year) {
       endTime: endDate.toISOString(),
     },
   ];
+}
+
+// --- Public: Get week info ---
+export function getWeekInfo(inputWeek = null, inputYear = null) {
+  let effectiveWeek = inputWeek;
+  let effectiveYear = inputYear;
+
+  if (!isValidWeek(effectiveWeek, effectiveYear)) {
+    const lastFull = getLastFullCalendarWeek();
+    effectiveWeek = lastFull.week;
+    effectiveYear = lastFull.year;
+  }
+
+  const triples = getWeekTriples(effectiveWeek, effectiveYear);
+  const thursday = new Date(
+    getFirstMondayOfYear(effectiveYear).getTime()
+    + (effectiveWeek - 1) * MILLIS_IN_WEEK + 3 * MILLIS_IN_DAY,
+  );
+  const month = thursday.getUTCMonth() + 1;
+
+  return {
+    week: effectiveWeek,
+    year: effectiveYear,
+    month,
+    temporalCondition: buildWeeklyCondition(triples),
+  };
+}
+
+// --- Public: Get month info ---
+export function getMonthInfo(inputMonth = null, inputYear = null) {
+  const now = new Date();
+  const bothProvided = Number.isInteger(inputMonth) && Number.isInteger(inputYear);
+  const validProvided = bothProvided && isValidMonth(inputMonth, inputYear);
+
+  if (validProvided) {
+    return { month: inputMonth, year: inputYear, temporalCondition: `(year=${inputYear} AND month=${inputMonth})` };
+  }
+
+  if (!bothProvided) {
+    // No or partial inputs → last full month
+    const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    return {
+      month: lastMonth.getUTCMonth() + 1,
+      year: lastMonth.getUTCFullYear(),
+      temporalCondition: `(year=${lastMonth.getUTCFullYear()} AND month=${lastMonth.getUTCMonth() + 1})`,
+    };
+  }
+
+  // Both provided but invalid → current month
+  const currMonth = now.getUTCMonth() + 1;
+  const currYear = now.getUTCFullYear();
+  return { month: currMonth, year: currYear, temporalCondition: `(year=${currYear} AND month=${currMonth})` };
+}
+
+// --- Public: Main decision function ---
+export function getTemporalCondition({ week, month, year } = {}) {
+  const hasWeek = Number.isInteger(week) && Number.isInteger(year);
+  const hasMonth = Number.isInteger(month) && Number.isInteger(year);
+
+  if (hasWeek && isValidWeek(week, year)) {
+    return getWeekInfo(week, year).temporalCondition;
+  }
+
+  if (hasMonth && isValidMonth(month, year)) {
+    return getMonthInfo(month, year).temporalCondition;
+  }
+
+  // Fallbacks
+  if (Number.isInteger(week) || (!hasWeek && !hasMonth)) {
+    // default last full week
+    return getWeekInfo().temporalCondition;
+  }
+
+  // Otherwise fall back to last full month
+  return getMonthInfo().temporalCondition;
 }
 
 // Note: This function binds week exclusively to one year

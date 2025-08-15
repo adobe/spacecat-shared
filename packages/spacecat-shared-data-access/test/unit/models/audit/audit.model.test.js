@@ -168,6 +168,7 @@ describe('AuditModel', () => {
       EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
       EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
       META_TAGS: 'meta-tags',
+      LLM_ERROR_PAGES: 'llm-error-pages',
       COSTS: 'costs',
       STRUCTURED_DATA: 'structured-data',
       STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
@@ -184,7 +185,7 @@ describe('AuditModel', () => {
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(29);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(30);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

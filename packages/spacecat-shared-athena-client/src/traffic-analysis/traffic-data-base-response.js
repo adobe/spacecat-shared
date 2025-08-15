@@ -28,7 +28,7 @@ export const TrafficDataResponseDto = {
    *   click_rate: number,
    *   engagement_rate: number,
    *   bounce_rate: number,
-   *   engaged_scroll: number,
+   *   engaged_scroll_rate: number,
    *   p70_scroll: number,
    * }} JSON object.
    */
@@ -45,7 +45,7 @@ export const TrafficDataResponseDto = {
     click_rate: data.click_rate,
     engagement_rate: data.engagement_rate,
     bounce_rate: data.bounce_rate,
-    engaged_scroll: data.engaged_scroll,
+    engaged_scroll_rate: data.engaged_scroll_rate,
     p70_scroll: data.p70_scroll,
   }),
 };

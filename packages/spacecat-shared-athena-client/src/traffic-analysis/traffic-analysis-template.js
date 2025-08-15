@@ -74,6 +74,7 @@ agg AS (
         approx_percentile(inp, 0.70)     AS p70_inp
     FROM raw
     GROUP BY ${groupBy}
+    HAVING SUM(pageviews) >= 1000
 ),
 grand_total AS (
     SELECT CAST(SUM(pageviews) AS BIGINT) AS total_pv FROM agg
@@ -85,7 +86,7 @@ SELECT
     CAST(a.clicks AS DOUBLE)      / NULLIF(a.row_count, 0)      AS click_rate,
     CAST(a.engagements AS DOUBLE) / NULLIF(a.row_count, 0)      AS engagement_rate,
     1 - CAST(a.engagements AS DOUBLE) / NULLIF(a.row_count, 0)  AS bounce_rate,
-    a.engaged_scroll,
+    CAST(a.engaged_scroll AS DOUBLE) / NULLIF(a.row_count, 0) AS engaged_scroll_rate,
     a.p70_scroll,
     a.p70_lcp,
     a.p70_cls,

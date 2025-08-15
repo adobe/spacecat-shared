@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.46.0...@adobe/spacecat-shared-utils-v1.47.0) (2025-08-15)
+
+
+### Features
+
+* add support for month and last full week and last full month in shared ([#915](https://github.com/adobe/spacecat-shared/issues/915)) ([bdf3f3e](https://github.com/adobe/spacecat-shared/commit/bdf3f3e5bd6b9e749368cd72cc375bdb6fa83e2c))
+
 # [@adobe/spacecat-shared-utils-v1.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.45.0...@adobe/spacecat-shared-utils-v1.46.0) (2025-08-14)
 
 

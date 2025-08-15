@@ -41,6 +41,7 @@ class Audit extends BaseModel {
     EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
     EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
     META_TAGS: 'meta-tags',
+    LLM_ERROR_PAGES: 'llm-error-pages',
     COSTS: 'costs',
     STRUCTURED_DATA: 'structured-data',
     STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',

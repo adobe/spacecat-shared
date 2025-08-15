@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v2.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.53.0...@adobe/spacecat-shared-data-access-v2.54.0) (2025-08-13)
+
+
+### Features
+
+* add isOriginal field to scrapeUrl ([#908](https://github.com/adobe/spacecat-shared/issues/908)) ([03dfd59](https://github.com/adobe/spacecat-shared/commit/03dfd59c94f91204ac995aeeac53d4e128317dd5))
+
+# [@adobe/spacecat-shared-data-access-v2.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.52.0...@adobe/spacecat-shared-data-access-v2.53.0) (2025-08-12)
+
+
+### Features
+
+* add llmo methods for api endpoints ([#910](https://github.com/adobe/spacecat-shared/issues/910)) ([be938d5](https://github.com/adobe/spacecat-shared/commit/be938d5bd2bf3d430ab6f7b4b3ee4734aab98185))
+
+# [@adobe/spacecat-shared-data-access-v2.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.51.1...@adobe/spacecat-shared-data-access-v2.52.0) (2025-08-12)
+
+
+### Features
+
+* support extra properties for messages audit -> import ([#911](https://github.com/adobe/spacecat-shared/issues/911)) ([ebbccc1](https://github.com/adobe/spacecat-shared/commit/ebbccc17cdfa02a4f046c705a4410e697894cdb8))
+
 # [@adobe/spacecat-shared-data-access-v2.51.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.51.0...@adobe/spacecat-shared-data-access-v2.51.1) (2025-08-12)
 
 

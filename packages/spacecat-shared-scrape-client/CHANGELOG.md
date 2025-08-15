@@ -1,3 +1,15 @@
+# [@adobe/spacecat-shared-scrape-client-v2.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.7...@adobe/spacecat-shared-scrape-client-v2.0.0) (2025-08-13)
+
+
+### Features
+
+* re-scraping of URLs ([b889a19](https://github.com/adobe/spacecat-shared/commit/b889a19b1cec20b1f1dc32a89b34ab5125fa90e6))
+
+
+### BREAKING CHANGES
+
+* ScrapeClient does not choose a scrape queue anymore. This is done in Scrape Job Manager.
+
 # [@adobe/spacecat-shared-scrape-client-v1.0.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.6...@adobe/spacecat-shared-scrape-client-v1.0.7) (2025-08-09)
 
 

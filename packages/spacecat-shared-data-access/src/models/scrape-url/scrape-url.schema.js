@@ -45,6 +45,10 @@ const schema = new SchemaBuilder(ScrapeUrl, ScrapeUrlCollection)
     type: 'string',
     required: true,
     validate: (value) => isValidUrl(value),
+  })
+  .addAttribute('isOriginal', {
+    type: 'boolean',
+    default: true,
   });
 
 export default schema.build();

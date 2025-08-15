@@ -277,7 +277,7 @@ describe('URL Utility Functions', () => {
       expect(result).to.equal('https://example.com/');
     });
 
-    it('should throw error when both HEAD and GET fail', async () => {
+    it('should return null when both HEAD and GET fail', async () => {
       nock('https://example.com')
         .head('/')
         .reply(404);
@@ -286,11 +286,11 @@ describe('URL Utility Functions', () => {
         .get('/')
         .reply(404);
 
-      await expect(resolveCanonicalUrl('https://example.com'))
-        .to.be.rejectedWith('HTTP error! status: 404');
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.be.null;
     });
 
-    it('should throw error when network error occurs on GET retry', async () => {
+    it('should return null when network error occurs on GET retry', async () => {
       nock('https://example.com')
         .head('/')
         .replyWithError('Network error');
@@ -299,8 +299,8 @@ describe('URL Utility Functions', () => {
         .get('/')
         .replyWithError('Network error');
 
-      await expect(resolveCanonicalUrl('https://example.com'))
-        .to.be.rejectedWith('Failed to retrieve URL (https://example.com): Network error');
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.be.null;
     });
 
     it('should use custom method when provided', async () => {
@@ -347,7 +347,7 @@ describe('URL Utility Functions', () => {
       expect(result).to.equal('https://final.example.com/');
     });
 
-    it('should handle non-200 responses without redirects', async () => {
+    it('should return null for non-200 responses without redirects', async () => {
       nock('https://example.com')
         .head('/')
         .reply(500);
@@ -356,8 +356,8 @@ describe('URL Utility Functions', () => {
         .get('/')
         .reply(500);
 
-      await expect(resolveCanonicalUrl('https://example.com'))
-        .to.be.rejectedWith('HTTP error! status: 500');
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.be.null;
     });
 
     it('should fallback to GET when HEAD fails with no redirect', async () => {

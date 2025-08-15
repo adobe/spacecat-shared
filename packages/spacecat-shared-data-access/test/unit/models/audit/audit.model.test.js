@@ -242,6 +242,7 @@ describe('AuditModel', () => {
       const stepResult = {
         type: 'someType',
         siteId: 'someSiteId',
+        endDate: '2025-08-12T15:46:00.000Z',
         urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
       };
       const auditContext = { some: 'context' };
@@ -252,6 +253,8 @@ describe('AuditModel', () => {
         type: 'someType',
         siteId: 'someSiteId',
         pageUrl: undefined,
+        startDate: undefined,
+        endDate: '2025-08-12T15:46:00.000Z',
         urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
         allowCache: true,
         auditContext: { some: 'context' },

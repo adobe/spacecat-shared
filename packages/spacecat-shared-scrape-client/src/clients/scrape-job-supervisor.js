@@ -127,7 +127,7 @@ function ScrapeJobSupervisor(services, config) {
   // eslint-disable-next-line max-len
   async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders, maxScrapeAge, auditData) {
     log.info(`Starting a new scrape job of baseUrl: ${scrapeJob.getBaseURL()} with ${urls.length}`
-      + ` URLs. This new job has claimed: ${scrapeJob.getScrapeQueueId()} `
+      + ' URLs.'
       + `(jobId: ${scrapeJob.getId()})`);
 
     const options = scrapeJob.getOptions();

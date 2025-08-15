@@ -165,7 +165,7 @@ class Audit extends BaseModel {
        * @returns {object} - The formatted payload for the scrape client.
        */
       formatPayload: (stepResult, auditContext, context) => ({
-        urls: stepResult.urls,
+        urls: stepResult.urls.map((urlObj) => urlObj.url),
         processingType: stepResult.processingType || 'default',
         options: stepResult.options || {},
         maxScrapeAge: stepResult.maxScrapeAge || 24,
@@ -175,7 +175,6 @@ class Audit extends BaseModel {
           auditContext,
         },
       }),
-      getType: () => 'scrape-client',
     },
   };
 

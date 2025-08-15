@@ -296,7 +296,7 @@ describe('Utils - temporal helpers', () => {
       week: 28,
       month: 7,
       year: 2025,
-      temporalCondition: 'year=2025 AND month=7 AND week=28',
+      temporalCondition: '(year=2025 AND month=7 AND week=28)',
     });
   });
 
@@ -321,7 +321,7 @@ describe('Utils - temporal helpers', () => {
 
   it('getWeekInfo: single month week returns single condition string', () => {
     const info = getWeekInfo(28, 2025); // 2025-07-08..2025-07-14 (ISO week 28)
-    expect(info.temporalCondition).to.equal('year=2025 AND month=7 AND week=28');
+    expect(info.temporalCondition).to.equal('(year=2025 AND month=7 AND week=28)');
   });
 
   it('getWeekInfo: week 53 in 2020 spans two months and sets month=12', () => {
@@ -358,7 +358,7 @@ describe('Utils - temporal helpers', () => {
 
     it('returns condition for valid week/year with single month', () => {
       const c = getTemporalCondition({ week: 28, year: 2025 });
-      expect(c).to.equal('year=2025 AND month=7 AND week=28');
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
     });
 
     it('returns condition for valid week/year spanning two months', () => {
@@ -374,7 +374,7 @@ describe('Utils - temporal helpers', () => {
     it('falls back to last full week when week invalid (covers helper)', () => {
       clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
       const c = getTemporalCondition({ week: 0, year: 99 });
-      expect(c).to.equal('year=2025 AND month=7 AND week=28');
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
     });
 
     it('falls back to last full month when month invalid (covers helper)', () => {
@@ -386,12 +386,12 @@ describe('Utils - temporal helpers', () => {
     it('falls back to last full week when no inputs provided (covers helper)', () => {
       clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
       const c = getTemporalCondition();
-      expect(c).to.equal('year=2025 AND month=7 AND week=28');
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
     });
 
     it('prefers week when both week and month are provided (single-month week)', () => {
       const c = getTemporalCondition({ week: 28, month: 8, year: 2025 });
-      expect(c).to.equal('year=2025 AND month=7 AND week=28');
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
     });
 
     it('prefers week when both week and month are provided (two-month week)', () => {
@@ -412,13 +412,13 @@ describe('Utils - temporal helpers', () => {
     it('only week without year falls back to last full week', () => {
       clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
       const c = getTemporalCondition({ week: 10 });
-      expect(c).to.equal('year=2025 AND month=7 AND week=28');
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
     });
 
     it('only month without year falls back to last full week', () => {
       clock = sinon.useFakeTimers(new Date('2025-07-16T12:00:00Z'));
       const c = getTemporalCondition({ month: 8 });
-      expect(c).to.equal('year=2025 AND month=7 AND week=28');
+      expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
     });
   });
 });

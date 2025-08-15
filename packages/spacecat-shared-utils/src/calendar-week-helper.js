@@ -83,7 +83,7 @@ function getWeekTriples(week, year) {
 
 function buildWeeklyCondition(triples) {
   const parts = triples.map(({ year, month, week }) => `(year=${year} AND month=${month} AND week=${week})`);
-  return parts.length === 1 ? parts[0].slice(1, -1) : parts.join(' OR ');
+  return parts.length === 1 ? parts[0] : parts.join(' OR ');
 }
 
 export function getDateRanges(week, year) {

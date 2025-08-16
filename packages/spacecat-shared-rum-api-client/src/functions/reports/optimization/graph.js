@@ -102,7 +102,7 @@ function initializeDataChunksWithDateAggregation(bundles, granularity = 'DAILY')
  * @returns {Object} Aggregated traffic data
  */
 function processBundles(bundles, granularity = 'DAILY', filterUrls = []) {
-  const dataChunks = initializeDataChunksWithDateAggregation(bundles, granularity, filterUrls);
+  const dataChunks = initializeDataChunksWithDateAggregation(bundles, granularity);
 
   let trafficData = [];
   const byUrl = {};

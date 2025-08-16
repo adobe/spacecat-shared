@@ -142,3 +142,5 @@ junit
 # NVM (Node Version Manager)
 .nvmrc
 .vscode
+
+test-rum.js

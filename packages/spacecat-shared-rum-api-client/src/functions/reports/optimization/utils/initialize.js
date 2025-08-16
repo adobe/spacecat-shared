@@ -11,6 +11,7 @@
  */
 import { DataChunks, series, facets } from '@adobe/rum-distiller';
 import { computeConversionRate } from '@adobe/rum-distiller/utils.js';
+import { loadBundles } from '../../../../utils.js';
 
 /**
  * Initialize DataChunks with common configuration
@@ -18,31 +19,31 @@ import { computeConversionRate } from '@adobe/rum-distiller/utils.js';
  * @returns {DataChunks} Configured DataChunks instance
  */
 export function initializeDataChunks(bundles) {
-  const chunk = new DataChunks();
-  chunk.load([{ rumBundles: bundles }]);
+  const dataChunks = new DataChunks();
+  loadBundles(bundles, dataChunks);
 
   const conversionSpec = { checkpoint: ['click'] };
-  chunk.addFacet('url', facets.url, 'some', 'none');
-  chunk.addFacet('checkpoint', facets.checkpoint, 'every', 'none');
+  dataChunks.addFacet('url', facets.url, 'some', 'none');
+  dataChunks.addFacet('checkpoint', facets.checkpoint, 'every', 'none');
 
   // Add metrics series
-  chunk.addSeries('pageViews', series.pageViews);
-  chunk.addSeries('engagement', series.engagement);
-  chunk.addSeries('bounces', series.bounces);
-  chunk.addSeries('organic', series.organic);
-  chunk.addSeries('visits', series.visits);
-  chunk.addSeries('conversions', (bundle) => (bundle && chunk.hasConversion(bundle, conversionSpec) ? bundle.weight : 0));
-  chunk.addSeries('trafficData', (bundle) => ({
+  dataChunks.addSeries('pageViews', series.pageViews);
+  dataChunks.addSeries('engagement', series.engagement);
+  dataChunks.addSeries('bounces', series.bounces);
+  dataChunks.addSeries('organic', series.organic);
+  dataChunks.addSeries('visits', series.visits);
+  dataChunks.addSeries('conversions', (bundle) => (bundle && dataChunks.hasConversion(bundle, conversionSpec) ? bundle.weight : 0));
+  dataChunks.addSeries('trafficData', (bundle) => ({
     date: bundle?.time || new Date().toISOString(),
     organic: series.organic(bundle) || 0,
     visits: series.visits(bundle) || 0,
     pageViews: series.pageViews(bundle) || 0,
     bounces: series.bounces(bundle) || 0,
-    conversions: bundle && chunk.hasConversion(bundle, conversionSpec) ? bundle.weight : 0,
+    conversions: bundle && dataChunks.hasConversion(bundle, conversionSpec) ? bundle.weight : 0,
     engagement: series.engagement(bundle) || 0,
   }));
 
-  return chunk;
+  return dataChunks;
 }
 
 /**

@@ -39,7 +39,7 @@
     "chai-as-promised": "8.0.1",
     "esmock": "2.7.1",
     "husky": "9.1.7",
-    "nock": "14.0.9",
+    "nock": "14.0.10",
     "sinon": "20.0.0",
     "sinon-chai": "4.0.0"
   },

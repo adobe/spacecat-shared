@@ -10,29 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { urlMatchesFilter } from '@adobe/spacecat-shared-utils';
 import { initializeDataChunks, calculateMetrics } from './utils/initialize.js';
 
-function handler(bundles, opts) {
-  // Handle null/undefined bundles
-  let processedBundles = bundles;
-  if (!bundles || !Array.isArray(bundles)) {
-    processedBundles = [];
-  }
-
-  // Filter bundles by outlier URLs if provided
-  let filteredBundles = processedBundles;
-  if (opts && opts.outlierUrls && opts.outlierUrls.length > 0) {
-    filteredBundles = processedBundles
-      .filter((item) => !urlMatchesFilter(item.url, opts.outlierUrls));
-  }
-
-  // If urls filter is provided, keep only those URLs
-  if (opts && opts.urls && opts.urls.length > 0) {
-    filteredBundles = processedBundles.filter((item) => urlMatchesFilter(item.url, opts.urls));
-  }
-
-  const dataChunks = initializeDataChunks(filteredBundles);
+function handler(bundles) {
+  const dataChunks = initializeDataChunks(bundles);
   const result = calculateMetrics(dataChunks);
   return result;
 }

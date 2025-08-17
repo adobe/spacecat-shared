@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 import { DataChunks, series, facets } from '@adobe/rum-distiller';
+import { urlMatchesFilter } from '@adobe/spacecat-shared-utils';
 import { loadBundles } from '../../../utils.js';
 
 /**
@@ -21,28 +22,6 @@ function validateDateRange(startTime, endTime) {
   if (startTime && endTime && new Date(startTime) > new Date(endTime)) {
     throw new Error('Start time must be before end time');
   }
-}
-
-/**
- * Check if a URL matches any of the filter URLs
- * @param {string} url - URL to check (format: @https://domain.com/path)
- * @param {string[]} filterUrls - Array of filter URLs (format: domain.com/path)
- * @returns {boolean} True if URL matches any filter URL
- */
-function urlMatchesFilter(url, filterUrls) {
-  if (!filterUrls || filterUrls.length === 0) return true;
-
-  // Remove @ prefix and https:// from bundle URL
-  let cleanUrl = url.startsWith('@') ? url.substring(1) : url;
-  cleanUrl = cleanUrl.replace(/^https?:\/\//, '');
-
-  return filterUrls.some((filterUrl) => {
-    // Remove https:// from filter URL if present
-    const cleanFilterUrl = filterUrl.replace(/^https?:\/\//, '');
-
-    // Check if the bundle URL starts with the filter URL (domain + path)
-    return cleanUrl.startsWith(cleanFilterUrl);
-  });
 }
 
 /**

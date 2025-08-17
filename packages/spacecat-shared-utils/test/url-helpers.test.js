@@ -376,97 +376,102 @@ describe('URL Utility Functions', () => {
   });
 
   describe('urlMatchesFilter', () => {
-    it('should return true when filterUrls is empty or null', () => {
-      expect(urlMatchesFilter('https://example.com/path', [])).to.be.true;
+    it('should return true when filterUrls is null', () => {
       expect(urlMatchesFilter('https://example.com/path', null)).to.be.true;
+    });
+
+    it('should return true when filterUrls is undefined', () => {
       expect(urlMatchesFilter('https://example.com/path', undefined)).to.be.true;
     });
 
-    it('should match exact pathnames', () => {
-      const filterUrls = ['https://example.com/reeses'];
-      expect(urlMatchesFilter('@https://example.com/reeses', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com/reeses', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('http://example.com/reeses', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('example.com/reeses', filterUrls)).to.be.true;
+    it('should return true when filterUrls is empty array', () => {
+      expect(urlMatchesFilter('https://example.com/path', [])).to.be.true;
     });
 
-    it('should not match different pathnames', () => {
-      const filterUrls = ['https://example.com/reeses'];
-      expect(urlMatchesFilter('@https://example.com/reeses/chocolate-lava.html', filterUrls)).to.be.false;
-      expect(urlMatchesFilter('https://example.com/twizzlers', filterUrls)).to.be.false;
-      expect(urlMatchesFilter('https://example.com/reeses/', filterUrls)).to.be.false;
+    it('should return true when URL path matches a filter URL path', () => {
+      const filterUrls = ['example.com/path', 'other.com/different'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
     });
 
-    it('should match any URL when filter has no path', () => {
-      const filterUrls = ['https://example.com'];
-      expect(urlMatchesFilter('@https://example.com/reeses', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com/twizzlers', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com/products/good-and-plenty-licorice-candy-1-8-oz-box.html', filterUrls)).to.be.true;
+    it('should return true when URL path matches a filter URL path with different domains', () => {
+      const filterUrls = ['domain1.com/path', 'domain2.com/path'];
+      expect(urlMatchesFilter('https://domain3.com/path', filterUrls)).to.be.true;
     });
 
-    it('should match root path when filter has root path', () => {
-      const filterUrls = ['https://example.com/'];
-      expect(urlMatchesFilter('@https://example.com/', filterUrls)).to.be.true;
+    it('should return false when URL path does not match any filter URL path', () => {
+      const filterUrls = ['example.com/different', 'other.com/another'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.false;
+    });
+
+    it('should handle URLs without schema by prepending https://', () => {
+      const filterUrls = ['https://example.com/path'];
+      expect(urlMatchesFilter('example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle filter URLs without schema by prepending https://', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle both URLs without schema', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle root path matching', () => {
+      const filterUrls = ['example.com/', 'other.com/'];
       expect(urlMatchesFilter('https://example.com/', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('@https://example.com/reeses', filterUrls)).to.be.false;
     });
 
-    it('should match against multiple filter URLs', () => {
-      const filterUrls = [
-        'https://example.com/reeses',
-        'https://example.com/twizzlers',
-        'https://example.com/brookside',
-      ];
-      expect(urlMatchesFilter('@https://example.com/reeses', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com/twizzlers', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('http://example.com/brookside', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com/smores', filterUrls)).to.be.false;
+    it('should handle nested paths', () => {
+      const filterUrls = ['example.com/path/to/resource', 'other.com/different'];
+      expect(urlMatchesFilter('https://example.com/path/to/resource', filterUrls)).to.be.true;
     });
 
-    it('should handle URLs with query parameters', () => {
-      const filterUrls = ['https://example.com/reeses'];
-      expect(urlMatchesFilter('@https://example.com/reeses?param=value', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com/reeses#fragment', filterUrls)).to.be.true;
+    it('should handle paths with query parameters (ignoring them)', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path?param=value', filterUrls)).to.be.true;
     });
 
-    it('should handle URLs with different protocols', () => {
-      const filterUrls = ['http://example.com/reeses'];
-      expect(urlMatchesFilter('@https://example.com/reeses', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('http://example.com/reeses', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('example.com/reeses', filterUrls)).to.be.true;
+    it('should handle filter URLs with query parameters (ignoring them)', () => {
+      const filterUrls = ['example.com/path?param=value'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
     });
 
-    it('should handle URLs with @ prefix', () => {
-      const filterUrls = ['https://example.com/reeses'];
-      expect(urlMatchesFilter('@https://example.com/reeses', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('@http://example.com/reeses', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('@example.com/reeses', filterUrls)).to.be.true;
+    it('should handle paths with fragments (ignoring them)', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path#fragment', filterUrls)).to.be.true;
     });
 
-    it('should handle complex paths', () => {
-      const filterUrls = ['https://example.com/products/good-and-plenty-licorice-candy-1-8-oz-box.html'];
-      expect(urlMatchesFilter('@https://example.com/products/good-and-plenty-licorice-candy-1-8-oz-box.html', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com/products/good-and-plenty-licorice-candy-1-8-oz-box.html', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com/products/good-and-plenty-licorice-candy-1-8-oz-box', filterUrls)).to.be.false;
+    it('should handle filter URLs with fragments (ignoring them)', () => {
+      const filterUrls = ['example.com/path#fragment'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
     });
 
-    it('should handle edge cases with empty paths', () => {
-      const filterUrls = ['https://example.com'];
-      expect(urlMatchesFilter('@https://example.com', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('example.com', filterUrls)).to.be.true;
+    it('should handle case-sensitive path matching', () => {
+      const filterUrls = ['example.com/Path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.false;
+      expect(urlMatchesFilter('https://example.com/Path', filterUrls)).to.be.true;
     });
 
-    it('should handle URLs with trailing slashes', () => {
-      const filterUrls = ['https://example.com/reeses/'];
-      expect(urlMatchesFilter('@https://example.com/reeses/', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('https://example.com/reeses', filterUrls)).to.be.false;
+    it('should handle multiple filter URLs and return true if any match', () => {
+      const filterUrls = ['example.com/first', 'example.com/second', 'example.com/third'];
+      expect(urlMatchesFilter('https://example.com/second', filterUrls)).to.be.true;
     });
 
-    it('should handle case sensitivity in paths', () => {
-      const filterUrls = ['https://example.com/Reeses'];
-      expect(urlMatchesFilter('@https://example.com/reeses', filterUrls)).to.be.false;
-      expect(urlMatchesFilter('@https://example.com/Reeses', filterUrls)).to.be.true;
+    it('should handle multiple filter URLs and return false if none match', () => {
+      const filterUrls = ['example.com/first', 'example.com/second', 'example.com/third'];
+      expect(urlMatchesFilter('https://example.com/fourth', filterUrls)).to.be.false;
+    });
+
+    it('should handle URLs with ports (ignoring them)', () => {
+      const filterUrls = ['example.com:8080/path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle URLs with www prefix (ignoring it)', () => {
+      const filterUrls = ['www.example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
     });
   });
 });

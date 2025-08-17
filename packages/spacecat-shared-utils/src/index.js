@@ -64,6 +64,7 @@ export {
   resolveCanonicalUrl,
   getSpacecatRequestHeaders,
   ensureHttps,
+  urlMatchesFilter,
 } from './url-helpers.js';
 
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';

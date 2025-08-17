@@ -171,6 +171,23 @@ async function resolveCanonicalUrl(urlString, method = 'HEAD') {
   }
 }
 
+/**
+ * Check if a URL matches any of the filter URLs by comparing pathnames
+ * @param {string} url - URL to check (format: https://domain.com/path)
+ * @param {string[]} filterUrls - Array of filter URLs (format: domain.com/path)
+ * @returns {boolean} True if URL matches any filter URL
+ */
+function urlMatchesFilter(url, filterUrls) {
+  if (!filterUrls || filterUrls.length === 0) return true;
+  const normalizedUrl = prependSchema(url);
+  const urlPath = new URL(normalizedUrl).pathname;
+  return filterUrls.some((filterUrl) => {
+    const normalizedFilterUrl = prependSchema(filterUrl);
+    const filterPath = new URL(normalizedFilterUrl).pathname;
+    return urlPath === filterPath;
+  });
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,
@@ -182,4 +199,5 @@ export {
   stripTrailingDot,
   stripTrailingSlash,
   stripWWW,
+  urlMatchesFilter,
 };

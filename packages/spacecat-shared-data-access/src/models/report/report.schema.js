@@ -50,9 +50,9 @@ const schema = new SchemaBuilder(Report, ReportCollection)
     validate: (value) => !value || (isString(value) && value.length >= 0),
   })
   .addAttribute('status', {
-    type: ['processing', 'success', 'failed'],
+    type: Object.values(Report.STATUSES),
     required: true,
-    default: 'processing',
+    default: Report.STATUSES.PROCESSING,
   });
 
 export default schema.build();

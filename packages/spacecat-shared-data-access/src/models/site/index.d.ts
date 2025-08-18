@@ -81,6 +81,11 @@ export interface LlmoUrlPattern {
   tags?: LmmoTag[];
 }
 
+export interface LlmoCustomerIntent {
+  key: string;
+  value: string;
+}
+
 export interface SiteConfig {
   state: {
     slack?: {
@@ -124,7 +129,8 @@ export interface SiteConfig {
         Human?: Array<LlmoQuestion>;
         AI?: Array<LlmoQuestion>;
       };
-      urlPatterns?: Array<LlmoUrlPattern>
+      urlPatterns?: Array<LlmoUrlPattern>;
+      customerIntent?: Array<LlmoCustomerIntent>;
     };
   };
   extractWellKnownTags(tags: Array<string>): Partial<Record<WellKnownLmmoTag, string>>;
@@ -150,6 +156,8 @@ export interface SiteConfig {
     dataFolder: string;
     brand: string;
     questions?: { Human?: Array<LlmoQuestion>; AI?: Array<LlmoQuestion> };
+    urlPatterns?: Array<LlmoUrlPattern>;
+    customerIntent?: Array<LlmoCustomerIntent>;
   } | undefined;
   updateLlmoConfig(dataFolder: string, brand: string, questions?: {
     Human?: Array<LlmoQuestion>;
@@ -168,6 +176,10 @@ export interface SiteConfig {
   updateLlmoQuestion(key: string, questionUpdate: Partial<LlmoQuestion>): void;
   addLlmoUrlPatterns(urlPatterns: Array<LlmoUrlPattern>): void;
   removeLlmoUrlPattern(urlPattern: string): void;
+  getLlmoCustomerIntent(): Array<LlmoCustomerIntent>;
+  addLlmoCustomerIntent(customerIntentItems: Array<LlmoCustomerIntent>): void;
+  removeLlmoCustomerIntent(intentKey: string): void;
+  updateLlmoCustomerIntent(intentKey: string, updateData: Partial<LlmoCustomerIntent>): void;
 }
 
 export interface Site extends BaseModel {

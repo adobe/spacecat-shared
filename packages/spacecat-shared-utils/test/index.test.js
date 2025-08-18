@@ -70,6 +70,12 @@ describe('Index Exports', () => {
     'retrievePageAuthentication',
     'getDateRanges',
     'getLastNumberOfWeeks',
+    'resolveCanonicalUrl',
+    'getSpacecatRequestHeaders',
+    'ensureHttps',
+    'getWeekInfo',
+    'getMonthInfo',
+    'getTemporalCondition',
   ];
 
   it('exports all expected functions', () => {

@@ -18,7 +18,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -39,7 +40,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -60,7 +62,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/favicon",
@@ -81,7 +84,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -102,7 +106,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/indexing",
@@ -123,7 +128,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -144,7 +150,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/target-integration",
@@ -165,7 +172,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/custom-headers",
@@ -186,7 +194,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/architecture",
@@ -207,7 +216,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/indexing",
@@ -228,7 +238,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -249,7 +260,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -270,7 +282,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -291,7 +304,8 @@
     "lcp": 359.19999998807907,
     "inp": 24,
     "cls": 0.0017516344318214377,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/indexing",
@@ -312,7 +326,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -333,7 +348,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -354,7 +370,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/block-collection",
@@ -375,7 +392,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/go-live-checklist",
@@ -396,7 +414,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/community-feeds.json",
@@ -417,7 +436,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -438,7 +458,8 @@
     "lcp": 12457.29999999993,
     "inp": 8,
     "cls": 0.0003578743971979453,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/global",
@@ -459,7 +480,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/favicon",
@@ -480,7 +502,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/spreadsheets",
@@ -501,7 +524,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -522,7 +546,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/sidekick/",
@@ -543,7 +568,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -564,7 +590,8 @@
     "lcp": 331,
     "inp": null,
     "cls": 0.007353345974817716,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -585,7 +612,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -606,7 +634,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/favicon",
@@ -627,7 +656,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/placeholders",
@@ -648,7 +678,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-cdn-cloudflare-worker-setup",
@@ -669,7 +700,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/indexing",
@@ -690,7 +722,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-dns",
@@ -711,7 +744,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -732,7 +766,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/go-live-checklist",
@@ -753,7 +788,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/authoring",
@@ -774,7 +810,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/authoring",
@@ -795,7 +832,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -816,7 +854,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-cdn-fastly-setup",
@@ -837,7 +876,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/franklin-video-series-advanced",
@@ -858,7 +898,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/indexing",
@@ -879,7 +920,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -900,7 +942,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -921,7 +964,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -942,7 +986,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -963,7 +1008,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/indexing",
@@ -984,7 +1030,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -1005,7 +1052,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -1026,7 +1074,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -1047,7 +1096,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -1068,7 +1118,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1089,7 +1140,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -1110,7 +1162,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/admin.html",
@@ -1131,7 +1184,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -1152,7 +1206,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/sidekick",
@@ -1173,7 +1228,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-31"
+    "date": "2024-05-31",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1194,7 +1250,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -1215,7 +1272,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -1236,7 +1294,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/davidsmodel",
@@ -1257,7 +1316,8 @@
     "lcp": 1462.800000011921,
     "inp": null,
     "cls": 0.0008412734152590839,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -1278,7 +1338,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -1299,7 +1360,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection/breadcrumbs",
@@ -1320,7 +1382,8 @@
     "lcp": 45.39999997615814,
     "inp": 24,
     "cls": 0.000014899872841139986,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 4
   },
   {
     "path": "/developer/block-collection",
@@ -1341,7 +1404,8 @@
     "lcp": 469.09999990463257,
     "inp": 0,
     "cls": 0.00046955551696522917,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/block-collection/headings",
@@ -1362,7 +1426,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -1383,7 +1448,8 @@
     "lcp": 4339,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/home",
@@ -1404,7 +1470,8 @@
     "lcp": 954.7000000476837,
     "inp": null,
     "cls": 0,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/placeholders",
@@ -1425,7 +1492,8 @@
     "lcp": 857.5,
     "inp": 0,
     "cls": 0.0033961481968127383,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 3
   },
   {
     "path": "/developer/markup-reference",
@@ -1446,7 +1514,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1467,7 +1536,8 @@
     "lcp": 125.39999997615814,
     "inp": 8,
     "cls": 0.00014166538272603388,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/placeholders",
@@ -1488,7 +1558,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -1509,7 +1580,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-cdn-fastly-setup",
@@ -1530,7 +1602,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/sidekick-extension",
@@ -1551,7 +1624,8 @@
     "lcp": 433.70000000298023,
     "inp": 0,
     "cls": 0,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 14
   },
   {
     "path": "/docs/go-live-checklist",
@@ -1572,7 +1646,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/web-components",
@@ -1593,7 +1668,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -1614,7 +1690,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -1635,7 +1712,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -1656,7 +1734,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-cdn-cloudflare-worker-setup",
@@ -1677,7 +1756,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/cdn-guide",
@@ -1698,7 +1778,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/custom-headers",
@@ -1719,7 +1800,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/favicon",
@@ -1740,7 +1822,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -1761,7 +1844,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/tools/bot/setup",
@@ -1782,7 +1866,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/home",
@@ -1803,7 +1888,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/byo-cdn-cloudflare-worker-setup",
@@ -1824,7 +1910,8 @@
     "lcp": 483.69999998807907,
     "inp": null,
     "cls": 0,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1845,7 +1932,8 @@
     "lcp": 665.9000000059605,
     "inp": 8,
     "cls": 0.014938114266613822,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1866,7 +1954,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1887,7 +1976,8 @@
     "lcp": 402.29999999701977,
     "inp": null,
     "cls": 0,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1908,7 +1998,8 @@
     "lcp": 748,
     "inp": null,
     "cls": 0,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1929,7 +2020,8 @@
     "lcp": null,
     "inp": 48,
     "cls": 0,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1950,7 +2042,8 @@
     "lcp": 13562.09999999404,
     "inp": null,
     "cls": 0,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -1971,7 +2064,8 @@
     "lcp": 26276.5,
     "inp": null,
     "cls": 0,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -1992,7 +2086,8 @@
     "lcp": 670.0999999046326,
     "inp": null,
     "cls": 0.014371910428911266,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/setup-customer-sharepoint",
@@ -2013,7 +2108,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/github-actions",
@@ -2034,7 +2130,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -2055,7 +2152,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/sitemap",
@@ -2076,7 +2174,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-cdn-akamai-setup",
@@ -2097,7 +2196,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2118,7 +2218,8 @@
     "lcp": 1060.8999998569489,
     "inp": 48,
     "cls": 0.00079558170557108,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 2
   },
   {
     "path": "/developer/spreadsheets",
@@ -2139,7 +2240,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -2160,7 +2262,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/keeping-it-100",
@@ -2181,7 +2284,8 @@
     "lcp": 300.90000009536743,
     "inp": 16,
     "cls": 0.008511456923948437,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -2202,7 +2306,8 @@
     "lcp": 158.60000000149012,
     "inp": 0,
     "cls": 0,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 2
   },
   {
     "path": "/docs/custom-headers",
@@ -2223,7 +2328,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-cdn-akamai-setup",
@@ -2244,7 +2350,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/keeping-it-100",
@@ -2265,7 +2372,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-30"
+    "date": "2024-05-30",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/go-live-checklist",
@@ -2286,7 +2394,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -2307,7 +2416,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2328,7 +2438,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -2349,7 +2460,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -2370,7 +2482,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/sidekick/",
@@ -2391,7 +2504,8 @@
     "lcp": 2756.899999856949,
     "inp": null,
     "cls": 0.0004926924960464029,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/authentication-setup-site",
@@ -2412,7 +2526,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2433,7 +2548,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/block-collection",
@@ -2454,7 +2570,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -2475,7 +2592,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/spreadsheets",
@@ -2496,7 +2614,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/sidekick/",
@@ -2517,7 +2636,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -2538,7 +2658,8 @@
     "lcp": 511.09999990463257,
     "inp": 0,
     "cls": 0.41610793533928664,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/redirects",
@@ -2559,7 +2680,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -2580,7 +2702,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/keeping-it-100",
@@ -2601,7 +2724,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2622,7 +2746,8 @@
     "lcp": 1111.8000000715256,
     "inp": null,
     "cls": 0.00005561630774288468,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -2643,7 +2768,8 @@
     "lcp": 14.299999997019768,
     "inp": 8,
     "cls": 0.0003088058037783154,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 2
   },
   {
     "path": "/docs/bulk-metadata",
@@ -2664,7 +2790,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/setup-customer-sharepoint",
@@ -2685,7 +2812,8 @@
     "lcp": 361.09999999403954,
     "inp": null,
     "cls": 0.00017381700304902785,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -2706,7 +2834,8 @@
     "lcp": 1542.1000000238419,
     "inp": 8,
     "cls": 0.0014904411062944996,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/spreadsheets",
@@ -2727,7 +2856,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/custom-headers",
@@ -2748,7 +2878,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/indexing",
@@ -2769,7 +2900,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/rum",
@@ -2790,7 +2922,8 @@
     "lcp": 78.79999995231628,
     "inp": null,
     "cls": 0,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/web-components",
@@ -2811,7 +2944,8 @@
     "lcp": 612.2000000476837,
     "inp": null,
     "cls": 0.00007814911374216038,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/placeholders",
@@ -2832,7 +2966,8 @@
     "lcp": 391,
     "inp": 24,
     "cls": 0.001584125504439147,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/tutorial",
@@ -2853,7 +2988,8 @@
     "lcp": 1260,
     "inp": 8,
     "cls": 1.4238716953862687e-7,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 2
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -2874,7 +3010,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -2895,7 +3032,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/rum",
@@ -2916,7 +3054,8 @@
     "lcp": 135.79999999701977,
     "inp": 0,
     "cls": 0,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 2
   },
   {
     "path": "/developer/tutorial",
@@ -2937,7 +3076,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -2958,7 +3098,8 @@
     "lcp": 642.4000000357628,
     "inp": null,
     "cls": 0.00015531111257074455,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -2979,7 +3120,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -3000,7 +3142,8 @@
     "lcp": 438.6999999284744,
     "inp": null,
     "cls": 0.00016292810624583885,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/go-live-checklist",
@@ -3021,7 +3164,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/bulk-metadata",
@@ -3042,7 +3186,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/rum",
@@ -3063,7 +3208,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -3084,7 +3230,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/spreadsheets",
@@ -3105,7 +3252,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -3126,7 +3274,8 @@
     "lcp": 504.09999990463257,
     "inp": null,
     "cls": 0.001196862904999452,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/faq",
@@ -3147,7 +3296,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/sidekick-extension",
@@ -3168,7 +3318,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -3189,7 +3340,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -3210,7 +3362,8 @@
     "lcp": 568.3000000119209,
     "inp": 184,
     "cls": 0,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/admin.html",
@@ -3231,7 +3384,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -3252,7 +3406,8 @@
     "lcp": 641.2000000476837,
     "inp": 8,
     "cls": 0.000525946849597043,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 2
   },
   {
     "path": "/docs/",
@@ -3273,7 +3428,8 @@
     "lcp": 143.5,
     "inp": 56,
     "cls": 0.012401669733174766,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 2
   },
   {
     "path": "/docs/redirects",
@@ -3294,7 +3450,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -3315,7 +3472,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/rum",
@@ -3336,7 +3494,8 @@
     "lcp": 1003,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 2
   },
   {
     "path": "/docs/custom-headers",
@@ -3357,7 +3516,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -3378,7 +3538,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/keeping-it-100",
@@ -3399,7 +3560,8 @@
     "lcp": 228.2000000178814,
     "inp": 24,
     "cls": 0.00002011617376730104,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/byo-cdn-cloudflare-worker-setup",
@@ -3420,7 +3582,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 5
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -3441,7 +3604,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -3462,7 +3626,8 @@
     "lcp": 2179,
     "inp": null,
     "cls": 0.0000349089773839612,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/sidekick",
@@ -3483,7 +3648,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-cdn-cloudflare-setup",
@@ -3504,7 +3670,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -3525,7 +3692,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-29"
+    "date": "2024-05-29",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -3546,7 +3714,8 @@
     "lcp": 2099.699999988079,
     "inp": null,
     "cls": 0.011145537287059668,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/importer",
@@ -3567,7 +3736,8 @@
     "lcp": 1345.7999999523163,
     "inp": 56,
     "cls": 0.07786671987900227,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 8
   },
   {
     "path": "/docs/custom-headers",
@@ -3588,7 +3758,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/placeholders",
@@ -3609,7 +3780,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -3630,7 +3802,8 @@
     "lcp": 138.10000000149012,
     "inp": 32,
     "cls": 0,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/sidekick/",
@@ -3651,7 +3824,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/configuring-aem-assets-sidekick-plugin",
@@ -3672,7 +3846,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-dns",
@@ -3693,7 +3868,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -3714,7 +3890,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/placeholders",
@@ -3735,7 +3912,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 3
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -3756,7 +3934,8 @@
     "lcp": 1087.800000000745,
     "inp": null,
     "cls": 0,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/list.html",
@@ -3777,7 +3956,8 @@
     "lcp": 1182.5,
     "inp": 8,
     "cls": 0,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/spreadsheets",
@@ -3798,7 +3978,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/placeholders",
@@ -3819,7 +4000,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -3840,7 +4022,8 @@
     "lcp": 379.2999999523163,
     "inp": null,
     "cls": 0.0005859699349788617,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/markup-sections-blocks",
@@ -3861,7 +4044,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -3882,7 +4066,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/favicon",
@@ -3903,7 +4088,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/custom-headers",
@@ -3924,7 +4110,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -3945,7 +4132,8 @@
     "lcp": 2454.2,
     "inp": null,
     "cls": 0.26956930913977606,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/tutorial",
@@ -3966,7 +4154,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/placeholders",
@@ -3987,7 +4176,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -4008,7 +4198,8 @@
     "lcp": 519.9000000059605,
     "inp": null,
     "cls": 0.0012854992059480124,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/spreadsheets",
@@ -4029,7 +4220,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -4050,7 +4242,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/faq",
@@ -4071,7 +4264,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/sitemap",
@@ -4092,7 +4286,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -4113,7 +4308,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/indexing",
@@ -4134,7 +4330,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -4155,7 +4352,8 @@
     "lcp": 243.6999999997206,
     "inp": 0,
     "cls": 0.00046545922870236585,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -4176,7 +4374,8 @@
     "lcp": 210.90000000596046,
     "inp": 0,
     "cls": 0.8038918492979402,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/franklin-video-series",
@@ -4197,7 +4396,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/authoring",
@@ -4218,7 +4418,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/sitemap",
@@ -4239,7 +4440,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/bulk-metadata",
@@ -4260,7 +4462,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/custom-headers",
@@ -4281,7 +4484,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -4302,7 +4506,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -4323,7 +4528,8 @@
     "lcp": 2300.5,
     "inp": null,
     "cls": 0.00006451334172505896,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -4344,7 +4550,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -4365,7 +4572,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -4386,7 +4594,8 @@
     "lcp": 1706.2000000476837,
     "inp": null,
     "cls": 0.0036581120205716085,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -4407,7 +4616,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/custom-headers",
@@ -4428,7 +4638,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-dns",
@@ -4449,7 +4660,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -4470,7 +4682,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/setup-byo-cdn-push-invalidation",
@@ -4491,7 +4704,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -4512,7 +4726,8 @@
     "lcp": 699.3999999985099,
     "inp": 0,
     "cls": 0.030174735922545284,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/tutorial",
@@ -4533,7 +4748,8 @@
     "lcp": 1244.0999999940395,
     "inp": 24,
     "cls": 0.0000349089773839612,
-    "date": "2024-05-28"
+    "date": "2024-05-28",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/home",
@@ -4554,7 +4770,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/davidsmodel",
@@ -4575,7 +4792,8 @@
     "lcp": 1631,
     "inp": 0,
     "cls": 1,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 6
   },
   {
     "path": "/developer/block-collection",
@@ -4596,7 +4814,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -4617,7 +4836,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -4638,7 +4858,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -4659,7 +4880,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/go-live-checklist",
@@ -4680,7 +4902,8 @@
     "lcp": 75.5,
     "inp": 8,
     "cls": 0,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 4
   },
   {
     "path": "/docs/aem-assets-sidekick-plugin",
@@ -4701,7 +4924,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/keeping-it-100",
@@ -4722,7 +4946,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -4743,7 +4968,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -4764,7 +4990,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -4785,7 +5012,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/davidsmodel",
@@ -4806,7 +5034,8 @@
     "lcp": 1392.199999999255,
     "inp": 24,
     "cls": 0,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -4827,7 +5056,8 @@
     "lcp": null,
     "inp": 0,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection/section-metadata",
@@ -4848,7 +5078,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/",
@@ -4869,7 +5100,8 @@
     "lcp": 674.6999999992549,
     "inp": 8,
     "cls": 0.03118640415888744,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/block-collection",
@@ -4890,7 +5122,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -4911,7 +5144,8 @@
     "lcp": 823.1999999880791,
     "inp": 16,
     "cls": 0.01082667551011483,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/developer/spreadsheets",
@@ -4932,7 +5166,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/indexing",
@@ -4953,7 +5188,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/authentication-setup-site",
@@ -4974,7 +5210,8 @@
     "lcp": 639.1999999284744,
     "inp": 8,
     "cls": 0,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/setup-customer-sharepoint",
@@ -4995,7 +5232,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -5016,7 +5254,8 @@
     "lcp": 9262.09999999404,
     "inp": 1672,
     "cls": 0.000014584478299111764,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/redirects",
@@ -5037,7 +5276,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/sidekick/",
@@ -5058,7 +5298,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/dev-collab-and-good-practices",
@@ -5079,7 +5320,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/forms",
@@ -5100,7 +5342,8 @@
     "lcp": 954,
     "inp": null,
     "cls": 0.0005954693086687166,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -5121,7 +5364,8 @@
     "lcp": 1285.199999988079,
     "inp": 8,
     "cls": 0.010834143295695585,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 2
   },
   {
     "path": "/developer/indexing",
@@ -5142,7 +5386,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/spreadsheets",
@@ -5163,7 +5408,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-cdn-akamai-setup",
@@ -5184,7 +5430,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/vip/intake",
@@ -5205,7 +5452,8 @@
     "lcp": 28,
     "inp": 0,
     "cls": 0,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/docs/",
@@ -5226,7 +5474,8 @@
     "lcp": 341.5,
     "inp": null,
     "cls": 0.0003369777094401792,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/vip/intake",
@@ -5247,7 +5496,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/tools/rum/explorer.html",
@@ -5268,7 +5518,8 @@
     "lcp": 73.10000002384186,
     "inp": 8,
     "cls": 0,
-    "date": "2024-05-27"
+    "date": "2024-05-27",
+    "total_nonconsent_clicks": 1
   },
   {
     "path": "/home",
@@ -5289,7 +5540,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-26"
+    "date": "2024-05-26",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -5310,7 +5562,8 @@
     "lcp": 721.8000000119209,
     "inp": 48,
     "cls": 0.860314348987717,
-    "date": "2024-05-26"
+    "date": "2024-05-26",
+    "total_nonconsent_clicks": 3
   },
   {
     "path": "/developer/block-collection/section-metadata",
@@ -5331,7 +5584,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-26"
+    "date": "2024-05-26",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/block-collection",
@@ -5352,7 +5606,8 @@
     "lcp": 50.799999952316284,
     "inp": 24,
     "cls": 0.00007054030746086006,
-    "date": "2024-05-26"
+    "date": "2024-05-26",
+    "total_nonconsent_clicks": 5
   },
   {
     "path": "/developer/placeholders",
@@ -5373,7 +5628,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-26"
+    "date": "2024-05-26",
+    "total_nonconsent_clicks": 10
   },
   {
     "path": "/docs/byo-dns",
@@ -5394,7 +5650,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-26"
+    "date": "2024-05-26",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/home",
@@ -5415,7 +5672,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-26"
+    "date": "2024-05-26",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/anatomy-of-a-franklin-project",
@@ -5436,7 +5694,8 @@
     "lcp": 438.8999999985099,
     "inp": null,
     "cls": 0,
-    "date": "2024-05-26"
+    "date": "2024-05-26",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/docs/byo-cdn-fastly-setup",
@@ -5457,7 +5716,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-26"
+    "date": "2024-05-26",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -5478,7 +5738,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-07"
+    "date": "2024-05-07",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -5499,7 +5760,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-07"
+    "date": "2024-05-07",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -5520,7 +5782,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-07"
+    "date": "2024-05-07",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/tutorial",
@@ -5541,7 +5804,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-07"
+    "date": "2024-05-07",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/developer/",
@@ -5562,7 +5826,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-07"
+    "date": "2024-05-07",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/some-other-page",
@@ -5583,7 +5848,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-07"
+    "date": "2024-05-07",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/some-other-page",
@@ -5604,7 +5870,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-07"
+    "date": "2024-05-07",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/some-other-page",
@@ -5625,7 +5892,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-05-07"
+    "date": "2024-05-07",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/new-exp-page",
@@ -5646,7 +5914,8 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-01-01"
+    "date": "2024-01-01",
+    "total_nonconsent_clicks": 0
   },
   {
     "path": "/new-exp-page",
@@ -5667,6 +5936,7 @@
     "lcp": null,
     "inp": null,
     "cls": null,
-    "date": "2024-01-31"
+    "date": "2024-01-31",
+    "total_nonconsent_clicks": 0
   }
 ]

@@ -71,6 +71,13 @@ function getClicked(bundle) {
   return 1;
 }
 
+function getNonConsentClicks(bundle) {
+  return bundle.events
+    .filter((e) => e.checkpoint === 'click')
+    .filter((e) => !utils.reclassifyConsent(e).vendor)
+    ?.length || 0;
+}
+
 function getConsent(bundle) {
   const consentBannerStatus = bundle.events
     .find((e) => e.checkpoint === 'consent')
@@ -121,6 +128,7 @@ async function handler(bundles) {
       inp: getCWV(bundle, 'inp'),
       cls: getCWV(bundle, 'cls'),
       date: bundle.time.split('T')[0],
+      total_nonconsent_clicks: getNonConsentClicks(bundle),
     };
   });
 

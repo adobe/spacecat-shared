@@ -9,7 +9,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { getDateRanges } from '@adobe/spacecat-shared-utils';
+import { getTemporalCondition } from '@adobe/spacecat-shared-utils';
 import { getTrafficAnalysisTemplate } from './traffic-analysis-template.js';
 
 /**
@@ -66,6 +66,7 @@ export function buildPageTypeCase(pageTypes, column) {
  *
  * @param {Object} params - Input parameters.
  * @param {number} params.week - The ISO week number (1–53).
+ * @param {number} params.month - Month number (1-12).
  * @param {number} params.year - The year (e.g. 2025).
  * @param {string} params.siteId - UUID of the site.
  * @param {string[]} [params.dimensions] - Dimensions to group by (e.g. ['utm_campaign', 'device']).
@@ -78,6 +79,7 @@ export function buildPageTypeCase(pageTypes, column) {
  */
 export function getTrafficAnalysisQueryPlaceholdersFilled({
   week,
+  month,
   year,
   siteId,
   dimensions,
@@ -85,9 +87,14 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
   pageTypes = null,
   pageTypeMatchColumn = 'path',
   trfTypes = null,
+  temporalCondition = null,
 }) {
-  if (!week || !year || !siteId || !tableName) {
-    throw new Error('Missing required parameters: week, year, siteId, or tableName');
+  if (!siteId || !tableName) {
+    throw new Error('Missing required parameters: siteId, or tableName');
+  }
+
+  if (!temporalCondition && ((!week && !month) || !year)) {
+    throw new Error('Missing required parameters: week, month or year');
   }
 
   if (!Array.isArray(dimensions) || dimensions.length === 0) {
@@ -97,10 +104,10 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
   const dimensionColumns = dimensions.join(', ');
   const dimensionColumnsPrefixed = dimensions.map((col) => `a.${col}`).join(', ');
 
-  const dateRanges = getDateRanges(week, year);
-  const temporalCondition = dateRanges
-    .map((r) => `(year=${r.year} AND month=${r.month} AND week=${week})`)
-    .join(' OR ');
+  let tempCondition = null;
+  if (!temporalCondition) {
+    tempCondition = getTemporalCondition({ week, month, year });
+  }
 
   let pageTypeCase = 'NULL as page_type';
   if (dimensions.includes('page_type') && pageTypes) {
@@ -119,7 +126,7 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
     dimensionColumns,
     dimensionColumnsPrefixed,
     tableName,
-    temporalCondition,
+    temporalCondition: tempCondition,
     pageTypeCase,
     trfTypeCondition,
   };

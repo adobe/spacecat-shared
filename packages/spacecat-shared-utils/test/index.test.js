@@ -76,6 +76,7 @@ describe('Index Exports', () => {
     'getWeekInfo',
     'getMonthInfo',
     'getTemporalCondition',
+    'urlMatchesFilter',
   ];
 
   it('exports all expected functions', () => {

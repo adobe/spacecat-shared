@@ -101,20 +101,24 @@ class BaseModel {
 
     // Check if the owning collection again is owned by something
     const ownerCollection = this.entityRegistry.getCollection(`${belongsTo[0].getTarget()}Collection`);
-    if (ownerCollection?.schema?.getReferencesByType) {
-      const ownerBelongsTo = ownerCollection.schema.getReferencesByType(Reference.TYPES.BELONGS_TO);
-      if (ownerBelongsTo.length > 0) {
-        // The owner also belongs to something. this will depend on now requestedResource
-        if (aclCtx?.requestedResource) {
-          this.log.info(`ACL now baseed on requestedResource: ${aclCtx.requestedResource}`);
-          return aclCtx.requestedResource;
-        }
-        return null;
-      }
+    if (!ownerCollection?.schema?.getReferencesByType) {
+      const ownerID = this.record[entityNameToIdName(belongsTo[0].target)];
+      return `/${decapitalize(belongsTo[0].target)}/${ownerID}/${this.entityName}/${this.getId()}`;
     }
 
-    const ownerID = this.record[entityNameToIdName(belongsTo[0].target)];
-    return `/${decapitalize(belongsTo[0].target)}/${ownerID}/${this.entityName}/${this.getId()}`;
+    const ownerBelongsTo = ownerCollection.schema.getReferencesByType(Reference.TYPES.BELONGS_TO);
+    if (ownerBelongsTo.length === 0) {
+      const ownerID = this.record[entityNameToIdName(belongsTo[0].target)];
+      return `/${decapitalize(belongsTo[0].target)}/${ownerID}/${this.entityName}/${this.getId()}`;
+    }
+
+    // The owner also belongs to something. this will depend on now requestedResource
+    if (aclCtx?.requestedResource) {
+      this.log.info(`ACL now baseed on requestedResource: ${aclCtx.requestedResource}`);
+      return aclCtx.requestedResource;
+    }
+
+    return null;
   }
 
   /**

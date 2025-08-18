@@ -467,11 +467,11 @@ class BaseCollection {
     try {
       const { validatedItems, errorItems } = this.#validateItems(newItems);
 
-      const createdItems = this.#createInstances(validatedItems);
-      // Check that the current user has permission to create each entity
-      createdItems.forEach((item) => item.ensurePermission('C'));
-
+      let createdItems = [];
       if (validatedItems.length > 0) {
+        createdItems = this.#createInstances(validatedItems);
+        // Check that the current user has permission to create each entity
+        createdItems.forEach((item) => item.ensurePermission('C'));
         const response = await this.entity.put(validatedItems).go();
 
         if (isNonEmptyArray(response?.unprocessed)) {

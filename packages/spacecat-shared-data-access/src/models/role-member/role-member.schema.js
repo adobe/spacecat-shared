@@ -12,6 +12,7 @@
 
 /* c8 ignore start */
 
+import { isValidIMSOrgId } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
 
 import RoleMember from './role-member.model.js';
@@ -22,19 +23,6 @@ Schema Doc: https://electrodb.dev/en/modeling/schema/
 Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
-
-export const validateIMSOrg = (value) => {
-  if (value.length < 1) {
-    throw new Error('IMS Org ID must not be empty');
-  }
-
-  const components = value.split('@');
-  if (components.length !== 2) {
-    throw new Error('Incorrectly formed IMS Org ID');
-  }
-
-  return true;
-};
 
 export const validateIdentity = (value) => {
   if (value.length < 1) {
@@ -62,7 +50,7 @@ const schema = new SchemaBuilder(RoleMember, RoleMemberCollection)
   .addAttribute('imsOrgId', {
     type: 'string',
     required: true,
-    validate: (value) => validateIMSOrg(value),
+    validate: (value) => isValidIMSOrgId(value),
   })
   .addAttribute('identity', {
     type: 'string',

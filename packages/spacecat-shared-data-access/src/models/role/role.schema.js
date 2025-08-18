@@ -12,9 +12,8 @@
 
 /* c8 ignore start */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidIMSOrgId } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
-import { validateIMSOrg } from '../role-member/role-member.schema.js';
 
 import Role from './role.model.js';
 import RoleCollection from './role.collection.js';
@@ -33,7 +32,7 @@ const schema = new SchemaBuilder(Role, RoleCollection)
   .addAttribute('imsOrgId', {
     type: 'string',
     required: true,
-    validate: (value) => validateIMSOrg(value),
+    validate: (value) => isValidIMSOrgId(value),
   })
   .addAttribute('acl', {
     type: 'list',

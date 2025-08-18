@@ -14,16 +14,10 @@
 import { expect } from 'chai';
 
 import {
-  validateIMSOrg,
   validateIdentity,
 } from '../../../../src/models/role-member/role-member.schema.js';
 
 describe('RoleSchema', () => {
-  it('validateIMSOrg', () => {
-    expect(validateIMSOrg('FEEF00FAA@AdobeOrg')).to.be.true;
-    expect(() => validateIMSOrg('FEEF00FAA')).to.throw();
-  });
-
   it('validateIdentity', () => {
     expect(validateIdentity('imsID:1234@4567.e')).to.be.true;
     expect(validateIdentity('imsOrgID:1234')).to.be.true;

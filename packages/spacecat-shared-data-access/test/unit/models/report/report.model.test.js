@@ -30,10 +30,28 @@ describe('ReportModel', () => {
   let mockRecord;
 
   beforeEach(() => {
+    const acls = [{
+      acl: [{
+        actions: ['C', 'R', 'U', 'D'],
+        path: '/site/*/report',
+      },
+      {
+        actions: ['C', 'R', 'U', 'D'],
+        path: '/site/*/report/**',
+      }],
+    }];
     mockRecord = { ...sampleReport };
     ({
       model: instance,
     } = createElectroMocks(Report, mockRecord));
+
+    // Set up proper ACL context
+    instance.aclCtx = {
+      acls,
+      aclEntities: {
+        exclude: [], // Exclude report from ACL checking for tests
+      },
+    };
   });
 
   describe('constructor', () => {

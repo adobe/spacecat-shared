@@ -20,6 +20,7 @@ import {
 import { getBearerToken } from './utils/bearer.js';
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
+import getAcls from '../rbac/acls.js';
 
 const IGNORED_PROFILE_PROPS = [
   'id',
@@ -90,6 +91,41 @@ function isUserASOAdmin(organizations) {
     return org.groups.some((group) => adminGroupsForOrg.includes(group.ident));
   });
 }
+
+/**
+ * Transforms organizations list into an array of org-group mappings.
+ * Each object contains orgId (from orgRef.ident) and groupId (from group.ident).
+ *
+ * @param {Array} organizations - Array of organization objects from IMS
+ * @returns {Array} Array of objects with orgId and groupId properties
+ */
+function getOrgGroupMappings(organizations) {
+  if (!isNonEmptyArray(organizations)) {
+    return [];
+  }
+
+  const mappings = [];
+
+  organizations.forEach((org) => {
+    const orgId = org.orgRef?.ident;
+    if (!orgId) {
+      return; // Skip this iteration
+    }
+
+    if (isNonEmptyArray(org.groups)) {
+      org.groups.forEach((group) => {
+        if (group.ident) {
+          mappings.push({
+            orgId,
+            groupId: group.ident,
+          });
+        }
+      });
+    }
+  });
+
+  return mappings;
+}
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
  */
@@ -141,7 +177,159 @@ export default class AdobeImsHandler extends AbstractHandler {
     return payload;
   }
 
+  /*
+  // eslint-disable-next-line class-methods-use-this
+  async #addSampleRoleMember(aclAccess, role, item) {
+    // eslint-disable-next-line no-param-reassign
+    item.roleId = role.getId();
+    const created = await aclAccess.RoleMember.create(item);
+    // role.getRoleMembers().add(created);
+    console.log('§§§ role member created:', created.getId());
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async #addSampleRole(aclAccess, item) {
+    const existing = await aclAccess.Role.findByIndexKeys({
+      name: item.name,
+      imsOrgId: item.imsOrgId,
+    });
+    if (existing) {
+      return null;
+    }
+
+    console.log('§§§ creating role:', item);
+    await aclAccess.Role.create(item);
+
+    const lookedup = await aclAccess.Role.findByIndexKeys({
+      name: item.name,
+      imsOrgId: item.imsOrgId,
+    });
+    console.log('§§§ role looked up:', lookedup.getId());
+
+    return lookedup;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async #fillModel(aclAccess) {
+    const r1 = await this.#addSampleRole(aclAccess, {
+      name: 'mysite-importer',
+      imsOrgId: 'F4646ED9626926AA0A49420E@AdobeOrg',
+      acl: [
+        {
+          actions: ['C', 'R', 'U', 'D'],
+          path: '/organization/45678',
+        },
+      ],
+    });
+    if (!r1) {
+      return;
+    }
+    console.log('§§§ New role created:', r1);
+    await this.#addSampleRoleMember(aclAccess, r1, {
+      imsOrgId: 'F4646ED9626926AA0A49420E@AdobeOrg',
+      identity: 'imsID:374B0263626BA96D0A49421B@f71261f462692705494128.e',
+    });
+
+    const r2 = await this.#addSampleRole(aclAccess, {
+      name: 'test-account-writer',
+      imsOrgId: 'F4646ED9626926AA0A49420E@AdobeOrg',
+      acl: [
+        {
+          actions: ['C', 'R', 'U', 'D'],
+          path: '/organization/0f8ff270-968e-4007-aea1-2fa1c5e3332c',
+        },
+        {
+          actions: ['C', 'R', 'U', 'D'],
+          path: '/organization/77d14008-649f-4be2-8d40-cba150995410/site/**',
+        },
+      ],
+    });
+
+    await this.#addSampleRoleMember(aclAccess, r2, {
+      imsOrgId: 'F4646ED9626926AA0A49420E@AdobeOrg',
+      identity: 'imsID:374B0263626BA96D0A49421B@f71261f462692705494128.e',
+    });
+
+    const r3 = await this.#addSampleRole(aclAccess, {
+      name: 'test-account-reader',
+      imsOrgId: 'F4646ED9626926AA0A49420E@AdobeOrg',
+      acl: [
+        {
+          actions: ['R'],
+          path: '/organization/0f8ff270-968e-4007-aea1-2fa1c5e3332c',
+        },
+        {
+          actions: ['R'],
+          path: '/organization/77d14008-649f-4be2-8d40-cba150995410',
+        },
+        {
+          actions: ['R'],
+          path: '/organization/77d14008-649f-4be2-8d40-cba150995410/
+          site/b57fb90d-a847-4f18-b80e-283ff7145345',
+        },
+      ],
+    });
+    await this.#addSampleRoleMember(aclAccess, r3, {
+      imsOrgId: 'F4646ED9626926AA0A49420E@AdobeOrg',
+      identity: 'imsOrgID:F4646ED9626926AA0A49420E@AdobeOrg',
+    });
+
+    // await this.#addSampleRoleMembers(aclAccess, {
+    //   imsOrgId: 'F4646ED9626926AA0A49420E@AdobeOrg',
+    //   identity: 'imsOrgID/groupID:F4646ED9626926AA0A49420E/560518161',
+    //   name: 'another-account-reader',
+    // }, true);
+    // await this.#addSampleRoleMembers(aclAccess, {
+    //   imsOrgId: 'F4646ED9626926AA0A49420E@AdobeOrg',
+    //   identity: 'imsOrgID/groupID:F4646ED9626926AA0A49420E/560518161',
+    //   name: 'another-account-writer',
+    // }, true);
+
+    const r4 = await this.#addSampleRole(aclAccess, {
+      name: 'test-account-reader',
+      imsOrgId: '43101FC962E3B1BF0A494217@AdobeOrg',
+      acl: [
+        {
+          actions: ['R'],
+          path: '/organization/77d14008-649f-4be2-8d40-cba150995410',
+        },
+        {
+          actions: ['R'],
+          path: '/organization/77d14008-649f-4be2-8d40-cba150995410
+          /site/b57fb90d-a847-4f18-b80e-283ff7145345',
+        },
+      ],
+    });
+    await this.#addSampleRoleMember(aclAccess, r4, {
+      imsOrgId: '43101FC962E3B1BF0A494217@AdobeOrg',
+      identity: 'apiKeyID:7b0784db-e05b-4329-acba-84575313fb81',
+    });
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async #getAclAccess(context) {
+    console.log('§§§ Getting ACL Access');
+
+    const { log } = context;
+    return createDataAccess({
+      tableNameData: 'spacecat-services-rbac-dev',
+      aclCtx: {
+        aclEntities: {
+          exclude: ['role', 'roleMember'],
+        },
+      },
+    }, log);
+  }
+*/
   async checkAuth(request, context) {
+    // TODO This is only temporarily to put some things in the database
+    /* */
+    // console.log('§§§ Get ACL Access via model');
+    // const aclAccess = await this.#getAclAccess(context);
+    // console.log('§§§ Done getting ACL Access via model');
+    // await this.#fillModel(aclAccess);
+    /* */
+
     const token = getBearerToken(context);
     if (!hasText(token)) {
       this.log('No bearer token provided', 'debug');
@@ -154,10 +342,19 @@ export default class AdobeImsHandler extends AbstractHandler {
     }
 
     try {
+      const imsProfile = await context.imsClient.getImsUserProfile(token);
+      this.log(`IMS profile: ${JSON.stringify(imsProfile)}`, 'debug');
+      const organizations = await context.imsClient.getImsUserOrganizations(token);
+
+      const acls = await getAcls({
+        imsUserId: imsProfile.userId,
+        imsOrgs: imsProfile.organizations,
+        imsGroups: getOrgGroupMappings(organizations),
+      }, context.log);
+
       const config = loadConfig(context);
       const payload = await this.#validateToken(token, config);
-      const imsProfile = await context.imsClient.getImsUserProfile(token);
-      const organizations = await context.imsClient.getImsUserOrganizations(token);
+
       const isAdmin = isUserASOAdmin(organizations);
       const scopes = [];
       if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {
@@ -174,6 +371,7 @@ export default class AdobeImsHandler extends AbstractHandler {
         .withType(this.name)
         .withAuthenticated(true)
         .withProfile(profile)
+        .withRBAC(acls)
         .withScopes(scopes);
     } catch (e) {
       this.log(`Failed to validate token: ${e.message}`, 'debug');
@@ -182,3 +380,5 @@ export default class AdobeImsHandler extends AbstractHandler {
     return null;
   }
 }
+
+export { getOrgGroupMappings };

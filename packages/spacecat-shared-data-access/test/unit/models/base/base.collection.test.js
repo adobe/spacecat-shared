@@ -27,8 +27,8 @@ import { DataAccessError } from '../../../../src/index.js';
 chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
-const MockModel = class MockEntityModel extends BaseModel {};
-const MockCollection = class MockEntityCollection extends BaseCollection {};
+const MockModel = class MockEntityModel extends BaseModel { };
+const MockCollection = class MockEntityCollection extends BaseCollection { };
 
 const createSchema = (service, indexes) => new Schema(
   MockModel,
@@ -74,6 +74,12 @@ describe('BaseCollection', () => {
   beforeEach(() => {
     mockIndexes = { primary: {}, all: { index: 'all', indexType: 'all' } };
     mockEntityRegistry = {
+      aclCtx: {
+        aclEntities: {
+          // Exclude the mockEntityModel from ACL checks
+          exclude: ['mockEntityModel'],
+        },
+      },
       getCollection: stub(),
     };
 
@@ -97,6 +103,9 @@ describe('BaseCollection', () => {
                 go: () => ({ data: [] }),
               }),
               go: () => ({ data: [] }),
+              where: stub().returns({
+                go: () => ({ data: [] }),
+              }),
             }),
             bySomeKey: stub(),
             primary: stub(),
@@ -774,6 +783,20 @@ describe('BaseCollection', () => {
       expect(mockGo).to.have.been.calledOnceWithExactly({ order: 'desc', attributes: ['test'] });
     });
 
+    it('applies where filter function if provided', async () => {
+      const mockFindResult = { data: [mockRecord] };
+      const mockGo = stub().resolves(mockFindResult);
+      const mockWhere = stub().returns({ go: mockGo });
+      mockElectroService.entities.mockEntityModel.query.all().where = mockWhere;
+
+      const filterFunc = () => {
+        // A sample filter function
+      };
+
+      await baseCollectionInstance.all({}, { filter: filterFunc });
+      expect(mockWhere).to.have.been.calledOnceWithExactly(filterFunc);
+    });
+
     it('handles pagination with fetchAllPages option', async () => {
       const firstResult = { data: [mockRecord], cursor: 'key1' };
       const secondRecord = { id: '2', foo: 'bar' };
@@ -925,6 +948,9 @@ describe('BaseCollection', () => {
       mockElectroService.entities.mockEntityModel.delete.returns(
         { go: () => Promise.reject(error) },
       );
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: () => Promise.resolve({ data: mockRecord }),
+      });
 
       await expect(baseCollectionInstance.removeByIds(['ef39921f-9a02-41db-b491-02c98987d956']))
         .to.be.rejectedWith(DataAccessError, 'Failed to remove');
@@ -934,6 +960,24 @@ describe('BaseCollection', () => {
     it('removes entities successfully', async () => {
       const mockIds = ['ef39921f-9a02-41db-b491-02c98987d956', 'ef39921f-9a02-41db-b491-02c98987d957'];
       mockElectroService.entities.mockEntityModel.delete.returns({ go: () => Promise.resolve() });
+      mockElectroService.entities.mockEntityModel.get
+        .withArgs({ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' })
+        .returns({
+          go: () => Promise.resolve({ data: mockRecord }),
+        });
+
+      const mockRecord2 = {
+        mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957',
+        mockParentEntityModelId: 'some-parent-id',
+        data: {},
+      };
+
+      mockElectroService.entities.mockEntityModel.get
+        .withArgs({ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' })
+        .returns({
+          go: () => Promise.resolve({ data: mockRecord2 }),
+        });
+
       await baseCollectionInstance.removeByIds(mockIds);
       expect(mockElectroService.entities.mockEntityModel.delete)
         .to.have.been.calledOnceWithExactly([

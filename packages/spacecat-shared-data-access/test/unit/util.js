@@ -39,6 +39,9 @@ export const createElectroMocks = (Model, record) => {
     delete: stub().returns({
       go: stub().resolves({}),
     }),
+    get: stub().returns({
+      go: () => ({ data: record }),
+    }),
     patch: stub().returns({
       set: stub(),
     }),
@@ -63,6 +66,17 @@ export const createElectroMocks = (Model, record) => {
   };
 
   const mockEntityRegistry = {
+    aclCtx: {
+      aclEntities: {
+        // For the unit tests, by default skip the ACL checks
+        exclude: [
+          'apiKey', 'audit', 'configuration', 'experiment',
+          'importJob', 'importUrl', 'keyEvent', 'latestAudit', 'organization',
+          'opportunity', 'site', 'siteCandidate', 'siteTopPage', 'suggestion', 'asyncJob', 'scrapeJob', 'scrapeUrl',
+          'siteTopForm',
+        ],
+      },
+    },
     log: mockLogger,
     getCollection: stub().returns({
       schema: {

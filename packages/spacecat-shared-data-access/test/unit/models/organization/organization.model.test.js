@@ -96,4 +96,65 @@ describe('OrganizationModel', () => {
       expect(instance.getFulfillableItems()).to.deep.equal(['item3', 'item4']);
     });
   });
+
+  describe('access control', () => {
+    function getAclCtx1() {
+      return {
+        acls: [
+          {
+            role: 'joe@bloggs.org',
+            acl: [
+              { path: '/organization/**', actions: ['C', 'R', 'U', 'D'] },
+              { path: '/configuration/*', actions: ['R', 'U'] },
+            ],
+          },
+          {
+            role: 'AFAA9891/editor',
+            acl: [
+              { path: '/import-job/**', actions: ['C'] },
+            ],
+          },
+        ],
+        aclEntities: {
+          model: ['organization', 'site'],
+        },
+      };
+    }
+
+    it('allowed to set name', () => {
+      instance.aclCtx = getAclCtx1();
+
+      instance.setName('My Name');
+      expect(instance.getName()).to.equal('My Name');
+    });
+
+    function getAclCtx2() {
+      return {
+        acls: [
+          {
+            role: 'AFAA9891/editor',
+            acl: [
+              { path: '/organization/**', actions: ['R'] },
+            ],
+          },
+        ],
+        aclEntities: {
+          model: ['organization', 'site'],
+        },
+      };
+    }
+
+    it('not allowed to set name', () => {
+      instance.aclCtx = getAclCtx2();
+
+      instance.getName();
+      try {
+        instance.setName('My Name');
+      } catch {
+        // good
+        return;
+      }
+      expect.fail('Should have thrown an error');
+    });
+  });
 });

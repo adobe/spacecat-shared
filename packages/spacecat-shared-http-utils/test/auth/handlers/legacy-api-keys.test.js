@@ -132,4 +132,25 @@ describe('LegacyApiKeyHandler', () => {
     const result = await handler.checkAuth(request, context);
     expect(result).to.be.null;
   });
+
+  it('returns null for user API key on admin endpoint of access control', async () => {
+    const request = {};
+    const context = mockContext('POST /role', 'valid-user-key', 'valid-admin-key');
+    context.pathInfo.headers['x-api-key'] = 'valid-user-key';
+
+    const result = await handler.checkAuth(request, context);
+    expect(result).to.be.null;
+  });
+
+  it('returns auth info for admin API key on admin endpoint of access control', async () => {
+    const request = {};
+    const context = mockContext('POST /role', 'valid-user-key', 'valid-admin-key');
+    context.pathInfo.headers['x-api-key'] = 'valid-admin-key';
+
+    const result = await handler.checkAuth(request, context);
+    expect(result).to.be.instanceof(AuthInfo);
+    expect(result.authenticated).to.be.true;
+    expect(result.type).to.equal('legacyApiKey');
+    expect(result.profile).to.deep.equal({ user_id: 'admin' });
+  });
 });

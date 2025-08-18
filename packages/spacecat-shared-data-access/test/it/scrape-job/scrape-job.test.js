@@ -46,8 +46,16 @@ describe('ScrapeJob IT', async () => {
 
   before(async () => {
     sampleData = await seedDatabase();
-
-    const dataAccess = getDataAccess();
+    const aclCtx = {
+      acls: [],
+      aclEntities: {
+        // For the unit tests, by default skip the ACL checks
+        exclude: [
+          'scrapeJob', 'scrapeUrl',
+        ],
+      },
+    };
+    const dataAccess = getDataAccess({ aclCtx });
     ScrapeJob = dataAccess.ScrapeJob;
 
     newJobData = {

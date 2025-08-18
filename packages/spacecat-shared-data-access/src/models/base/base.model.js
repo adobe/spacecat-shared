@@ -14,9 +14,11 @@ import { isNonEmptyArray, isNonEmptyObject } from '@adobe/spacecat-shared-utils'
 
 import { DataAccessError } from '../../errors/index.js';
 import { createAccessors } from '../../util/accessor.utils.js';
+import { ensurePermission } from '../../util/auth.js';
 import Patcher from '../../util/patcher.js';
 import {
   capitalize,
+  decapitalize,
   entityNameToIdName,
   idNameToEntityName,
 } from '../../util/util.js';
@@ -55,6 +57,7 @@ class BaseModel {
     this.schema = schema;
     this.record = record;
     this.log = log;
+    this.aclCtx = entityRegistry.aclCtx;
 
     this.entityName = schema.getEntityName();
     this.idName = entityNameToIdName(this.entityName);
@@ -86,6 +89,60 @@ class BaseModel {
   }
 
   /**
+   * Provide a path representation of the current instance for ACL purposes.
+   * @returns The path representation. Always absolute, so starts with a '/'. Returns
+   * null if the entity is owned more than 1 level deep, which is currently not checked.
+   */
+  #getACLPath(aclCtx) {
+    const belongsTo = this.schema.getReferencesByType(Reference.TYPES.BELONGS_TO);
+    if (belongsTo.length === 0) {
+      return `/${this.entityName}/${this.getId()}`;
+    }
+
+    // Check if the owning collection again is owned by something
+    const ownerCollection = this.entityRegistry.getCollection(`${belongsTo[0].getTarget()}Collection`);
+    if (!ownerCollection?.schema?.getReferencesByType) {
+      const ownerID = this.record[entityNameToIdName(belongsTo[0].target)];
+      return `/${decapitalize(belongsTo[0].target)}/${ownerID}/${this.entityName}/${this.getId()}`;
+    }
+
+    const ownerBelongsTo = ownerCollection.schema.getReferencesByType(Reference.TYPES.BELONGS_TO);
+    if (ownerBelongsTo.length === 0) {
+      const ownerID = this.record[entityNameToIdName(belongsTo[0].target)];
+      return `/${decapitalize(belongsTo[0].target)}/${ownerID}/${this.entityName}/${this.getId()}`;
+    }
+
+    // The owner also belongs to something. this will depend on now requestedResource
+    if (aclCtx?.requestedResource) {
+      this.log.info(`ACL now baseed on requestedResource: ${aclCtx.requestedResource}`);
+      return aclCtx.requestedResource;
+    }
+
+    return null;
+  }
+
+  /**
+   * Checks if the specified action is allowed for the current entity, given the
+   * current ACL context. If the action is permitted, then the method returns.
+   * If the action is not permitted, an error is thrown.
+   * @param {string} action - The action to check permission for.
+   * @throws {Error} - Throws an error if the action is not permitted.
+   */
+  ensurePermission(action) {
+    if (this.aclCtx?.aclEntities?.exclude?.includes(this.entityName)) {
+      this.log.info(`Entity [${this.entityName}] is excluded from ACL checking`);
+      return;
+    }
+
+    const aclPath = this.#getACLPath(this.aclCtx);
+    if (aclPath) {
+      ensurePermission(aclPath, action, this.aclCtx, this.log);
+    } else {
+      this.log.info(`Entity [${this.entityName}] is not accessed through API service. This flow is curretnly excluded from ACL checking`);
+    }
+  }
+
+  /**
    * Initializes the attributes for the current entity. This method is called during the
    * construction of the entity instance to set up the getter and setter methods for
    * accessing and modifying the entity attributes. The getter and setter methods are
@@ -112,7 +169,10 @@ class BaseModel {
         .some((ref) => ref.getTarget() === idNameToEntityName(name));
 
       if (!this[getterMethodName] || name === this.idName) {
-        this[getterMethodName] = () => this.record[name];
+        this[getterMethodName] = () => {
+          this.ensurePermission('R');
+          return this.record[name];
+        };
       }
 
       if (this.schema.allowsUpdates()) {
@@ -120,6 +180,7 @@ class BaseModel {
 
         if (!this[setterMethodName] && !attr.readOnly) {
           this[setterMethodName] = (value) => {
+            this.ensurePermission('U');
             this.patcher.patchValue(name, value, isReference);
             return this;
           };
@@ -234,6 +295,8 @@ class BaseModel {
    * or if the removal operation fails.
    */
   async remove() {
+    this.ensurePermission('D');
+
     if (!this.schema.allowsRemove()) {
       throw new DataAccessError(`The entity ${this.schema.getModelName()} does not allow removal`);
     }
@@ -318,6 +381,8 @@ class BaseModel {
    * @returns {Object} - A JSON representation of the entity attributes.
    */
   toJSON() {
+    this.ensurePermission('R');
+
     const attributes = this.schema.getAttributes();
 
     return Object.keys(attributes).reduce((json, key) => {

@@ -58,6 +58,7 @@ export default class AuthenticationManager {
 
         context.attributes = context.attributes || {};
         context.attributes.authInfo = authInfo;
+        this.log.debug(`Set authInfo to: ${JSON.stringify(authInfo)}`);
 
         return authInfo;
       } else {

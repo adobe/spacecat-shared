@@ -116,7 +116,7 @@ describe('AuthenticationManager', () => {
     expect(context.attributes.authInfo).to.deep.equal({ user: 'testUser' });
     expect(logStub.debug.calledWith('Failed to authenticate with FailAuthHandler')).to.be.true;
     expect(logStub.debug.calledWith('Authenticated with PassAuthHandler')).to.be.true;
-    expect(logStub.debug.callCount).to.equal(4);
+    expect(logStub.debug.callCount).to.equal(5);
   });
 
   it('uses multiple handlers and authenticate with the first valid one', async () => {
@@ -130,6 +130,6 @@ describe('AuthenticationManager', () => {
     expect(authInfo).to.deep.equal({ user: 'testUser' });
     expect(context.attributes.authInfo).to.deep.equal({ user: 'testUser' });
     expect(logStub.debug.calledWith('Authenticated with TestHandler1')).to.be.true;
-    expect(logStub.debug.callCount).to.equal(2);
+    expect(logStub.debug.callCount).to.equal(3);
   });
 });

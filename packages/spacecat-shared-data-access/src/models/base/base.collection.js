@@ -118,6 +118,7 @@ class BaseCollection {
       this.schema,
       record,
       this.log,
+      this.aclCtx,
     );
   }
 
@@ -246,6 +247,10 @@ class BaseCollection {
           { [options.between.attribute]: options.between.start },
           { [options.between.attribute]: options.between.end },
         );
+      }
+
+      if (options.filter) {
+        query = query.where(options.filter);
       }
 
       // execute the initial query
@@ -388,6 +393,15 @@ class BaseCollection {
     }
 
     try {
+      // Check that the current user has permission to create the entity
+      // Do this by creating a temporary instance and checking that.
+      // The temp entity has an empty ID, because that will be assigned by the database
+      // upon real creation.
+      const tempData = { ...item };
+      tempData[this.idName] = '';
+      const temp = this.#createInstance(tempData);
+      temp.ensurePermission('C');
+
       const record = upsert
         ? await this.entity.put(item).go()
         : await this.entity.create(item).go();
@@ -453,15 +467,17 @@ class BaseCollection {
     try {
       const { validatedItems, errorItems } = this.#validateItems(newItems);
 
+      let createdItems = [];
       if (validatedItems.length > 0) {
+        createdItems = this.#createInstances(validatedItems);
+        // Check that the current user has permission to create each entity
+        createdItems.forEach((item) => item.ensurePermission('C'));
         const response = await this.entity.put(validatedItems).go();
 
         if (isNonEmptyArray(response?.unprocessed)) {
           this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
         }
       }
-
-      const createdItems = this.#createInstances(validatedItems);
 
       if (isNonEmptyObject(parent)) {
         createdItems.forEach((record) => {
@@ -539,6 +555,13 @@ class BaseCollection {
       const message = `Failed to remove [${this.entityName}]: ids must be a non-empty array`;
       this.log.error(message);
       throw new DataAccessError(message);
+    }
+
+    // TODO this is quite inefficient, consider a batch lookup
+    for (const id of ids) {
+      // eslint-disable-next-line no-await-in-loop
+      const inst = await this.findById(id);
+      inst?.ensurePermission('D');
     }
 
     try {

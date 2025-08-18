@@ -41,6 +41,7 @@ export default function dataAccessWrapper(fn) {
 
       context.dataAccess = createDataAccess({
         tableNameData: DYNAMO_TABLE_NAME_DATA,
+        aclCtx: context?.attributes?.authInfo?.rbac || {},
       }, log);
     }
 

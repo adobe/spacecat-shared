@@ -18,8 +18,8 @@ import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 import fs from 'fs';
 import { importPKCS8, SignJWT } from 'jose';
+import esmock from 'esmock';
 
-import SpacecatJWTHandler from '../../../src/auth/handlers/jwt.js';
 import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
 
@@ -36,6 +36,30 @@ const decryptedPrivateKey = crypto.createPrivateKey({
 });
 const decryptedPrivateKeyPEM = decryptedPrivateKey.export({ format: 'pem', type: 'pkcs8' });
 const privateKey = await importPKCS8(decryptedPrivateKeyPEM, 'ES256');
+
+// Mock the JWT handler with mocked getAcls
+const SpacecatJWTHandler = await esmock('../../../src/auth/handlers/jwt.js', {
+  '../../../src/auth/rbac/acls.js': {
+    default: async () => ({
+      acls: [],
+      aclEntities: {
+        exclude: [],
+      },
+    }),
+  },
+});
+
+// Import the getOrgGroupMappings function for testing
+const { getOrgGroupMappings } = await esmock('../../../src/auth/handlers/jwt.js', {
+  '../../../src/auth/rbac/acls.js': {
+    default: async () => ({
+      acls: [],
+      aclEntities: {
+        exclude: [],
+      },
+    }),
+  },
+});
 
 const createToken = async (payload, exp = 3600) => new SignJWT(payload)
   .setProtectedHeader({ alg: 'ES256' })
@@ -278,6 +302,38 @@ describe('SpacecatJWTHandler', () => {
 
       expect(result).to.be.null;
       expect(logStub.debug.calledWith('[jwt] No bearer token provided')).to.be.true;
+    });
+  });
+
+  describe('getOrgGroupMappings', () => {
+    it('returns empty array when tenant has no id', () => {
+      const tenants = [{
+        name: 'Test Tenant',
+        subServices: ['service1'],
+        groups: [123, 456],
+      }];
+      const result = getOrgGroupMappings(tenants);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('skips tenant when orgId is falsy', () => {
+      const tenants = [{
+        id: 'valid-tenant',
+        groups: [123, 456],
+      }, {
+        id: '', // Empty string - falsy
+        groups: [789],
+      }, {
+        id: 'another-valid-tenant',
+        groups: [101, 102],
+      }];
+      const result = getOrgGroupMappings(tenants);
+      expect(result).to.deep.equal([
+        { orgId: 'valid-tenant', groupId: 123 },
+        { orgId: 'valid-tenant', groupId: 456 },
+        { orgId: 'another-valid-tenant', groupId: 101 },
+        { orgId: 'another-valid-tenant', groupId: 102 },
+      ]);
     });
   });
 });

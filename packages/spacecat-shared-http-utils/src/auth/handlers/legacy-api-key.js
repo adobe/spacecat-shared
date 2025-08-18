@@ -20,6 +20,8 @@ const ADMIN_ENDPOINTS = [
   'POST /sites',
   'POST /event/fulfillment',
   'POST /slack/channels/invite-by-user-id',
+  'POST /role',
+  'POST /role-member',
 ];
 
 /**
@@ -51,12 +53,23 @@ export default class LegacyApiKeyHandler extends AbstractHandler {
       ? apiKeyFromHeader === expectedAdminApiKey
       : apiKeyFromHeader === expectedUserApiKey || apiKeyFromHeader === expectedAdminApiKey;
 
+    // provide acls to legacy keys, admin role for admin api key and read role for user api key
+    const acls = {
+      acls: [{
+        acl: [{
+          actions: isRouteAdminOnly ? ['C', 'R', 'U', 'D'] : ['R'],
+          path: '/**',
+        }],
+      }],
+    };
+
     if (isApiKeyValid) {
       const profile = isRouteAdminOnly ? { user_id: 'admin' } : { user_id: 'legacy-user' };
       return new AuthInfo()
         .withAuthenticated(true)
         .withProfile(profile)
-        .withType(this.name);
+        .withType(this.name)
+        .withRBAC(acls);
     }
 
     return null;

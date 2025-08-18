@@ -23,6 +23,16 @@ export default class AuthInfo {
   }
 
   /**
+   * Set the information for Role Based Access Control.
+   * @param {Object} rbac - The RBAC information
+   * @returns {AuthInfo} The auth info object
+   */
+  withRBAC(rbac) {
+    this.rbac = rbac;
+    return this;
+  }
+
+  /**
    * Set the authenticated flag.
    * @param {boolean} value - The value of the authenticated flag
    * @returns {AuthInfo} The auth info object
@@ -71,6 +81,8 @@ export default class AuthInfo {
     this.scopes = scopes;
     return this;
   }
+
+  getRBAC() { return this.rbac; }
 
   getType() { return this.type; }
 

@@ -34,7 +34,7 @@ describe('SiteTopFormCollection', () => {
   let schema;
 
   const mockRecord = {
-    siteTopFormId: 'f12345',
+    siteTopFormId: '1336eeb5-2d71-4016-825a-550feb483dfb',
   };
 
   beforeEach(() => {
@@ -73,7 +73,7 @@ describe('SiteTopFormCollection', () => {
       await instance.removeForSiteId(siteId);
 
       expect(instance.allBySiteId.calledOnceWith(siteId)).to.be.true;
-      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: 'f12345' }]))
+      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: '1336eeb5-2d71-4016-825a-550feb483dfb' }]))
         .to.be.true;
     });
 
@@ -97,7 +97,7 @@ describe('SiteTopFormCollection', () => {
       await instance.removeForSiteId(siteId, source);
 
       expect(instance.allBySiteIdAndSource).to.have.been.calledOnceWith(siteId, source);
-      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: 'f12345' }]))
+      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: '1336eeb5-2d71-4016-825a-550feb483dfb' }]))
         .to.be.true;
     });
   });
@@ -115,7 +115,7 @@ describe('SiteTopFormCollection', () => {
       await instance.removeByUrlAndFormSource(url);
 
       expect(instance.findByUrlAndFormSource).to.have.been.calledOnceWith(url, '');
-      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: 'f12345' }]))
+      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: '1336eeb5-2d71-4016-825a-550feb483dfb' }]))
         .to.be.true;
     });
 
@@ -128,7 +128,7 @@ describe('SiteTopFormCollection', () => {
       await instance.removeByUrlAndFormSource(url, formSource);
 
       expect(instance.findByUrlAndFormSource).to.have.been.calledOnceWith(url, formSource);
-      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: 'f12345' }]))
+      expect(mockElectroService.entities.siteTopForm.delete.calledOnceWith([{ siteTopFormId: '1336eeb5-2d71-4016-825a-550feb483dfb' }]))
         .to.be.true;
     });
 

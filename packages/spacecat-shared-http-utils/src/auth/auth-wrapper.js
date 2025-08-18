@@ -14,6 +14,7 @@ import { Response } from '@adobe/fetch';
 
 import { isObject } from '@adobe/spacecat-shared-utils';
 import AuthenticationManager from './authentication-manager.js';
+import AuthInfo from './auth-info.js';
 import { checkScopes } from './check-scopes.js';
 
 const ANONYMOUS_ENDPOINTS = [
@@ -29,9 +30,31 @@ export function authWrapper(fn, opts = {}) {
 
     const route = `${method.toUpperCase()} ${suffix}`;
 
+    if (method.toUpperCase() === 'OPTIONS') {
+      return fn(request, context);
+    }
+
     if (ANONYMOUS_ENDPOINTS.includes(route)
         || route.startsWith('POST /hooks/site-detection/')
-        || method.toUpperCase() === 'OPTIONS') {
+    ) {
+      const profile = { user_id: 'anonymous' };
+      const authInfo = new AuthInfo()
+        .withAuthenticated(true)
+        .withProfile(profile)
+        .withType('anonymous')
+        .withRBAC({
+          acls: [{
+            acl: [{
+              actions: ['C', 'R', 'U', 'D'],
+              path: '/**',
+            }],
+          }],
+        });
+
+      // Set authInfo in the correct location for the test
+      context.attributes = context.attributes || {};
+      context.attributes.authInfo = authInfo;
+
       return fn(request, context);
     }
 
@@ -54,7 +77,8 @@ export function authWrapper(fn, opts = {}) {
           checkScopes: (scopes) => checkScopes(scopes, authInfo, log),
         };
       }
-    } catch {
+    } catch (e) {
+      log.error(`Auth Error: ${e}`);
       return new Response('Unauthorized', { status: 401 });
     }
 

@@ -13,16 +13,25 @@
 /* eslint-env mocha */
 
 import { expect, use } from 'chai';
+import esmock from 'esmock';
 import sinon from 'sinon';
 import chaiAsPromised from 'chai-as-promised';
 import fs from 'fs';
 import { importPKCS8, SignJWT } from 'jose';
 
 import publicJwk from '../../fixtures/auth/ims/public-jwks.js';
-import AdobeImsHandler from '../../../src/auth/handlers/ims.js';
 import AbstractHandler from '../../../src/auth/handlers/abstract.js';
 import AuthInfo from '../../../src/auth/auth-info.js';
 
+// Mock out the getAcls call done by the handler to always return an empty object
+const AdobeImsHandler = await esmock('../../../src/auth/handlers/ims.js', {
+  '../../../src/auth/rbac/acls.js': () => ({}),
+});
+
+// Import the getOrgGroupMappings function for testing
+const { getOrgGroupMappings } = await esmock('../../../src/auth/handlers/ims.js', {
+  '../../../src/auth/rbac/acls.js': () => ({}),
+});
 use(chaiAsPromised);
 
 const privateKey = fs.readFileSync('test/fixtures/auth/ims/private_key.pem', 'utf8');
@@ -130,10 +139,31 @@ describe('AdobeImsHandler', () => {
     expect(logStub.debug.calledWith('[ims] No bearer token provided')).to.be.true;
   });
 
+  it('returns null when IMS client is not available in context', async () => {
+    const token = await createToken({
+      user_id: 'test-user@adobe.com',
+      as: 'ims-na1-stg1',
+      created_at: Date.now(),
+      expires_in: 3600,
+    });
+    const testContext = {
+      log: logStub,
+      func: { version: 'ci1234' },
+      pathInfo: { headers: { authorization: `Bearer ${token}` } },
+      env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) },
+      // No imsClient property
+    };
+    const result = await handler.checkAuth({}, testContext);
+
+    expect(result).to.be.null;
+    expect(logStub.error.calledWith('[ims] No IMS client available in context')).to.be.true;
+  });
+
   it('returns null when there is no ims config', async () => {
     const token = await createToken({ as: 'ims-na1' });
     const testContext = {
       log: logStub,
+      imsClient: { getImsUserProfile: () => ({}) },
       func: { version: 'ci1234' },
       pathInfo: { headers: { authorization: `Bearer ${token}` } },
     };
@@ -171,6 +201,20 @@ describe('AdobeImsHandler', () => {
   });
 
   describe('token validation', () => {
+    beforeEach(() => {
+      imsIdpConfigDev.discovery.jwks = publicJwk;
+      context = {
+        func: { version: 'ci' },
+        imsClient: mockImsClient,
+        log: logStub,
+        env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) },
+      };
+    });
+
+    afterEach(() => {
+      delete imsIdpConfigDev.discovery.jwks;
+    });
+
     it('returns null when created_at is not a number', async () => {
       const token = await createToken({ as: 'ims-na1-stg1', created_at: 'not-a-number', expires_in: 3600 });
       context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
@@ -214,7 +258,7 @@ describe('AdobeImsHandler', () => {
     it('successfully validates a token and returns the profile', async () => {
       const now = Date.now();
       const token = await createToken({
-        user_id: 'test-user',
+        user_id: 'test-user@adobe.com',
         as: 'ims-na1-stg1',
         created_at: now,
         expires_in: 3600,
@@ -227,7 +271,7 @@ describe('AdobeImsHandler', () => {
       expect(result.authenticated).to.be.true;
       expect(result.profile).to.be.an('object');
       expect(result.profile).to.have.property('as', 'ims-na1-stg1');
-      expect(result.profile).to.have.property('email', 'test-user');
+      expect(result.profile).to.have.property('email', 'test-user@adobe.com');
       expect(result.profile).to.not.have.property('user_id');
       expect(result.profile).to.have.property('created_at', now);
       expect(result.profile).to.have.property('ttl', 3);
@@ -373,6 +417,130 @@ describe('AdobeImsHandler', () => {
       expect(result).to.be.instanceof(AuthInfo);
       expect(result.authenticated).to.be.true;
       expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
+    });
+  });
+
+  describe('getOrgGroupMappings', () => {
+    it('returns empty array when organizations is not provided', () => {
+      const result = getOrgGroupMappings();
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organizations is null', () => {
+      const result = getOrgGroupMappings(null);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organizations is empty array', () => {
+      const result = getOrgGroupMappings([]);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organization has no orgRef.ident', () => {
+      const organizations = [{
+        orgName: 'Test Org',
+        groups: [{ ident: 123 }],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organization has empty orgRef.ident', () => {
+      const organizations = [{
+        orgRef: { ident: '' },
+        orgName: 'Test Org',
+        groups: [{ ident: 123 }],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organization has no groups', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns empty array when organization has empty groups array', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+        groups: [],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('skips groups without valid ident', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org',
+        groups: [
+          { ident: 123 },
+          { ident: null },
+          { ident: 456 },
+          { ident: undefined },
+        ],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([
+        { orgId: 'org1', groupId: 123 },
+        { orgId: 'org1', groupId: 456 },
+      ]);
+    });
+
+    it('correctly maps organizations with groups', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        orgName: 'Test Org 1',
+        groups: [
+          { ident: 123 },
+          { ident: 456 },
+        ],
+      }, {
+        orgRef: { ident: 'org2' },
+        orgName: 'Test Org 2',
+        groups: [
+          { ident: 789 },
+        ],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([
+        { orgId: 'org1', groupId: 123 },
+        { orgId: 'org1', groupId: 456 },
+        { orgId: 'org2', groupId: 789 },
+      ]);
+    });
+
+    it('handles multiple organizations with mixed valid/invalid data', () => {
+      const organizations = [{
+        orgRef: { ident: 'org1' },
+        groups: [
+          { ident: 123 },
+          { ident: null },
+        ],
+      }, {
+        orgRef: { ident: '' }, // Invalid orgId
+        groups: [
+          { ident: 456 },
+        ],
+      }, {
+        orgRef: { ident: 'org3' },
+        groups: [
+          { ident: 789 },
+          { ident: undefined },
+          { ident: 101 },
+        ],
+      }];
+      const result = getOrgGroupMappings(organizations);
+      expect(result).to.deep.equal([
+        { orgId: 'org1', groupId: 123 },
+        { orgId: 'org3', groupId: 789 },
+        { orgId: 'org3', groupId: 101 },
+      ]);
     });
   });
 });

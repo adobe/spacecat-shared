@@ -11,15 +11,16 @@
  */
 
 /* eslint-env mocha */
-
+/* eslint-disable  max-classes-per-file */
 import { Request } from '@adobe/fetch';
 import wrap from '@adobe/helix-shared-wrap';
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import esmock from 'esmock';
 
 import { authWrapper, enrichPathInfo } from '../../src/index.js';
 import AbstractHandler from '../../src/auth/handlers/abstract.js';
-import ScopedApiKeyHandler from '../../src/auth/handlers/scoped-api-key.js';
+import AuthInfo from '../../src/auth/auth-info.js';
 
 use(chaiAsPromised);
 
@@ -49,11 +50,13 @@ describe('auth wrapper', () => {
       pathInfo: {
         suffix: '',
       },
-      dataAccess: { ApiKey: { findByHashedApiKey: async () => mockApiKey } },
     };
     mockApiKey = {
       getId: () => 'test-id',
+      getApiKeyId: () => 'xxx-yyy-zzz',
       getExpiresAt: () => null,
+      getImsUserId: () => 'aaa@bbb.c',
+      getImsOrgId: () => 'B00BAA@AdobeOrg',
       getRevokedAt: () => null,
       getHashedApiKey: () => '372c6ba5a67b01a8d6c45e5ade6b41db9586ca06c77f0ef7795dfe895111fd0b',
       getName: () => 'Test API key name',
@@ -83,7 +86,9 @@ describe('auth wrapper', () => {
     const resp = await action(new Request('https://space.cat/slack/events'), context);
 
     expect(resp).to.equal(42);
-    expect(context.attributes.authInfo).to.be.undefined;
+    expect(context.attributes.authInfo).to.be.an('object');
+    expect(context.attributes.authInfo.getType()).to.equal('anonymous');
+    expect(context.attributes.authInfo.getProfile()).to.deep.equal({ user_id: 'anonymous' });
   });
 
   it('passes options method', async () => {
@@ -117,6 +122,12 @@ describe('auth wrapper', () => {
   });
 
   it('should add auth.checkScopes to the context', async () => {
+    const ScopedApiKeyHandler = await esmock('../../src/auth/handlers/scoped-api-key.js', {
+      '@adobe/spacecat-shared-data-access/src/index.js': {
+        createDataAccess: () => ({ ApiKey: { findByHashedApiKey: async () => mockApiKey } }),
+      },
+    });
+
     const scopedAction = wrap(() => 42)
       .with(authWrapper, { authHandlers: [ScopedApiKeyHandler] })
       .with(enrichPathInfo);
@@ -133,5 +144,53 @@ describe('auth wrapper', () => {
 
     const expectedError = 'API key is missing the [scope-user-does-not-have] scope(s) required for this resource';
     expect(() => context.auth.checkScopes(['scope-user-does-not-have'])).to.throw(expectedError);
+
+    // Test the actual hardcoded ACL structure from ScopedApiKeyHandler
+    const rbac = context.attributes.authInfo.getRBAC();
+    expect(rbac.acls).to.have.lengthOf(1);
+    expect(rbac.acls[0].acl).to.have.lengthOf(4);
+    expect(rbac.acls[0].acl[0].path).to.equal('/importJob');
+    expect(rbac.acls[0].acl[0].actions).to.deep.equal(['C', 'R', 'U', 'D']);
+  });
+
+  it('should handle authentication with RBAC and ACLs', async () => {
+    const MockHandler = class extends AbstractHandler {
+      constructor(log) {
+        super('mock', log);
+      }
+
+      // eslint-disable-next-line class-methods-use-this,no-unused-vars,no-shadow
+      async checkAuth() {
+        return new AuthInfo()
+          .withAuthenticated(true)
+          .withProfile({ user_id: 'test-user' })
+          .withType('mock')
+          .withRBAC({
+            acls: [{
+              acl: [{
+                actions: ['R'],
+                path: '/test/**',
+              }],
+            }],
+            aclEntities: {
+              exclude: ['test-entity'],
+            },
+          });
+      }
+    };
+
+    const mockAction = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [MockHandler] })
+      .with(enrichPathInfo);
+
+    const resp = await mockAction(new Request('https://space.cat/test'), context);
+
+    expect(resp).to.equal(42);
+    expect(context.attributes.authInfo).to.be.an('object');
+    expect(context.attributes.authInfo.getType()).to.equal('mock');
+    expect(context.attributes.authInfo.getProfile()).to.deep.equal({ user_id: 'test-user' });
+    expect(context.attributes.authInfo.getRBAC().acls).to.have.lengthOf(1);
+    expect(context.attributes.authInfo.getRBAC().aclEntities.exclude).to.deep.equal(['test-entity']);
+    expect(context.auth.checkScopes).to.be.a('function');
   });
 });

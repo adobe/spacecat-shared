@@ -25,6 +25,8 @@ import KeyEventCollection from '../key-event/key-event.collection.js';
 import LatestAuditCollection from '../latest-audit/latest-audit.collection.js';
 import OpportunityCollection from '../opportunity/opportunity.collection.js';
 import OrganizationCollection from '../organization/organization.collection.js';
+import RoleCollection from '../role/role.collection.js';
+import RoleMemberCollection from '../role-member/role-member.collection.js';
 import ScrapeJobCollection from '../scrape-job/scrape-job.collection.js';
 import ScrapeUrlCollection from '../scrape-url/scrape-url.collection.js';
 import SiteCandidateCollection from '../site-candidate/site-candidate.collection.js';
@@ -47,6 +49,8 @@ import KeyEventSchema from '../key-event/key-event.schema.js';
 import LatestAuditSchema from '../latest-audit/latest-audit.schema.js';
 import OpportunitySchema from '../opportunity/opportunity.schema.js';
 import OrganizationSchema from '../organization/organization.schema.js';
+import RoleSchema from '../role/role.schema.js';
+import RoleMemberSchema from '../role-member/role-member.schema.js';
 import ScrapeJobSchema from '../scrape-job/scrape-job.schema.js';
 import ScrapeUrlSchema from '../scrape-url/scrape-url.schema.js';
 import SiteSchema from '../site/site.schema.js';
@@ -71,11 +75,11 @@ class EntityRegistry {
    * @param {Object} service - The ElectroDB service instance used to manage entities.
    * @param {Object} log - A logger for capturing and logging information.
    */
-  constructor(service, log) {
+  constructor(service, config, log) {
     this.service = service;
+    this.aclCtx = config.aclCtx;
     this.log = log;
     this.collections = new Map();
-
     this.#initialize();
   }
 
@@ -150,6 +154,8 @@ EntityRegistry.registerEntity(KeyEventSchema, KeyEventCollection);
 EntityRegistry.registerEntity(LatestAuditSchema, LatestAuditCollection);
 EntityRegistry.registerEntity(OpportunitySchema, OpportunityCollection);
 EntityRegistry.registerEntity(OrganizationSchema, OrganizationCollection);
+EntityRegistry.registerEntity(RoleSchema, RoleCollection);
+EntityRegistry.registerEntity(RoleMemberSchema, RoleMemberCollection);
 EntityRegistry.registerEntity(ScrapeJobSchema, ScrapeJobCollection);
 EntityRegistry.registerEntity(ScrapeUrlSchema, ScrapeUrlCollection);
 EntityRegistry.registerEntity(SiteSchema, SiteCollection);

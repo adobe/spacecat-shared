@@ -25,8 +25,8 @@ chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('EntityRegistry', () => {
-  const MockModel = class MockModel extends BaseModel {};
-  const MockCollection = class MockCollection extends BaseCollection {};
+  const MockModel = class MockModel extends BaseModel { };
+  const MockCollection = class MockCollection extends BaseCollection { };
   const MockSchema = new Schema(
     MockModel,
     MockCollection,
@@ -65,7 +65,22 @@ describe('EntityRegistry', () => {
 
     EntityRegistry.registerEntity(MockSchema, MockCollection);
 
-    entityRegistry = new EntityRegistry(electroService, console);
+    const aclCtx = {
+      acls: [
+        {
+          role: 'myrole',
+          acl: [
+            { path: '/some/where/out/there', actions: ['D'] },
+            { path: '/somwhere/else', actions: ['C', 'R', 'U', 'D'] },
+          ],
+        },
+      ],
+      aclEntities: {
+        exclude: ['foo', 'bar'],
+      },
+    };
+    const config = { aclCtx };
+    entityRegistry = new EntityRegistry(electroService, config, console);
   });
 
   afterEach(() => {
@@ -111,5 +126,20 @@ describe('EntityRegistry', () => {
         },
       },
     });
+  });
+
+  it('has the correct ACL context', () => {
+    const { aclCtx } = entityRegistry;
+
+    expect(aclCtx.acls).to.have.lengthOf(1);
+    expect(aclCtx.acls[0].role).to.equal('myrole');
+
+    expect(aclCtx.acls[0].acl).to.have.lengthOf(2);
+    expect(aclCtx.acls[0].acl[0].path).to.equal('/some/where/out/there');
+    expect(aclCtx.acls[0].acl[0].actions).to.deep.equal(['D']);
+    expect(aclCtx.acls[0].acl[1].path).to.equal('/somwhere/else');
+    expect(aclCtx.acls[0].acl[1].actions).to.deep.equal(['C', 'R', 'U', 'D']);
+
+    expect(aclCtx.aclEntities).to.deep.equal({ exclude: ['foo', 'bar'] });
   });
 });

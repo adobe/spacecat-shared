@@ -35,14 +35,15 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.2.2",
-    "@adobe/spacecat-shared-data-access": "2.45.0",
     "@adobe/spacecat-shared-utils": "1.26.4",
+    "@adobe/spacecat-shared-data-access": "file:../spacecat-shared-data-access",
     "jose": "6.0.12"
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
     "chai": "5.2.1",
     "chai-as-promised": "8.0.1",
+    "esmock": "2.7.0",
     "sinon": "20.0.0"
   }
 }

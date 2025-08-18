@@ -22,6 +22,8 @@ export type * from './key-event';
 export type * from './latest-audit';
 export type * from './opportunity';
 export type * from './organization';
+export type * from './role';
+export type * from './role-member';
 export type * from './scrape-job';
 export type * from './scrape-url';
 export type * from './site';

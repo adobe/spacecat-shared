@@ -23,6 +23,8 @@ export * from './key-event/index.js';
 export * from './latest-audit/index.js';
 export * from './opportunity/index.js';
 export * from './organization/index.js';
+export * from './role/index.js';
+export * from './role-member/index.js';
 export * from './scrape-job/index.js';
 export * from './scrape-url/index.js';
 export * from './site-candidate/index.js';

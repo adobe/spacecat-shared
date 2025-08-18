@@ -35,6 +35,24 @@ describe('ReportCollection', () => {
   const mockRecord = reports[0];
 
   beforeEach(() => {
+    const acls = [{
+      acl: [{
+        actions: ['C', 'R', 'U', 'D'],
+        path: '/site/*/report',
+      },
+      {
+        actions: ['C', 'R', 'U', 'D'],
+        path: '/site/*/report/**',
+      }],
+    }];
+
+    const aclCtx = {
+      acls,
+      aclEntities: {
+        exclude: [], // Exclude report from ACL checking for tests
+      },
+    };
+
     ({
       mockElectroService,
       mockEntityRegistry,
@@ -43,6 +61,9 @@ describe('ReportCollection', () => {
       model,
       schema,
     } = createElectroMocks(Report, mockRecord));
+
+    // Update the EntityRegistry with proper ACL context
+    mockEntityRegistry.aclCtx = aclCtx;
   });
 
   describe('constructor', () => {

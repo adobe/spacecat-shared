@@ -473,5 +473,73 @@ describe('URL Utility Functions', () => {
       const filterUrls = ['www.example.com/path'];
       expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
     });
+
+    it('should handle URLs with leading and trailing whitespace', () => {
+      const filterUrls = ['  example.com/path  ', '  other.com/different  '];
+      expect(urlMatchesFilter('  https://example.com/path  ', filterUrls)).to.be.true;
+    });
+
+    it('should handle URLs with multiple trailing slashes', () => {
+      const filterUrls = ['example.com/path///', 'other.com/different///'];
+      expect(urlMatchesFilter('https://example.com/path///', filterUrls)).to.be.true;
+    });
+
+    it('should handle root paths with multiple trailing slashes', () => {
+      const filterUrls = ['example.com///', 'other.com///'];
+      expect(urlMatchesFilter('https://example.com///', filterUrls)).to.be.true;
+    });
+
+    it('should handle mixed whitespace and trailing slashes', () => {
+      const filterUrls = ['  example.com/path///  ', '  other.com/different///  '];
+      expect(urlMatchesFilter('  https://example.com/path///  ', filterUrls)).to.be.true;
+    });
+
+    it('should handle filter URLs with whitespace and trailing slashes', () => {
+      const filterUrls = ['  example.com/path///  '];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle input URL with whitespace and trailing slashes', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('  https://example.com/path///  ', filterUrls)).to.be.true;
+    });
+
+    it('should handle invalid main URL and return false', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('invalid-url', filterUrls)).to.be.false;
+    });
+
+    it('should handle invalid filter URLs and continue checking others', () => {
+      const filterUrls = ['invalid-filter-url', 'example.com/path', 'another-invalid-url'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle all invalid filter URLs and return false', () => {
+      const filterUrls = ['invalid-filter-url-1', 'invalid-filter-url-2'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.false;
+    });
+
+    it('should handle null or undefined input URL', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter(null, filterUrls)).to.be.false;
+      expect(urlMatchesFilter(undefined, filterUrls)).to.be.false;
+    });
+
+    it('should handle non-string input URL', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter(123, filterUrls)).to.be.false;
+      expect(urlMatchesFilter({}, filterUrls)).to.be.false;
+    });
+
+    it('should handle URL that causes prependSchema to fail', () => {
+      const filterUrls = ['example.com/path'];
+      // Create a URL that will cause prependSchema to fail when trying to create URL object
+      expect(urlMatchesFilter('https://[invalid-url]', filterUrls)).to.be.false;
+    });
+
+    it('should handle filter URL that causes prependSchema to fail', () => {
+      const filterUrls = ['[invalid-filter-url]', 'example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
   });
 });

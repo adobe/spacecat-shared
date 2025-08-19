@@ -25,8 +25,10 @@ import { createAccessors } from '../../util/accessor.utils.js';
 import { guardId } from '../../util/guards.js';
 import {
   entityNameToAllPKValue,
+  entityNameToIdName,
   removeElectroProperties,
 } from '../../util/util.js';
+import Reference from './reference.js';
 
 function isValidParent(parent, child) {
   if (!hasText(parent.entityName)) {
@@ -557,15 +559,32 @@ class BaseCollection {
       throw new DataAccessError(message);
     }
 
-    // TODO this is quite inefficient, consider a batch lookup
-    for (const id of ids) {
-      // eslint-disable-next-line no-await-in-loop
-      const inst = await this.findById(id);
-      inst?.ensurePermission('D');
-    }
+    // Check permissions for all entities in parallel with minimal data projection
+    await Promise.all(
+      ids.map(async (id) => {
+        // Only fetch minimal data needed for permission checking (ID + foreign keys)
+        const minimalAttributes = [this.idName];
+        const belongsToRefs = this.schema.getReferencesByType(Reference.TYPES.BELONGS_TO);
+        belongsToRefs.forEach((ref) => {
+          const foreignKeyName = entityNameToIdName(ref.getTarget());
+          if (!minimalAttributes.includes(foreignKeyName)) {
+            minimalAttributes.push(foreignKeyName);
+          }
+        });
+
+        const record = await this.entity.get({ [this.idName]: id }).go({
+          attributes: minimalAttributes,
+        });
+
+        if (record?.data) {
+          const inst = this.#createInstance(record.data);
+          inst.ensurePermission('D');
+        }
+      }),
+    );
 
     try {
-      // todo: consider removing dependent records
+      // Note: This method only removes the specified entities, not their dependents
 
       await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
 

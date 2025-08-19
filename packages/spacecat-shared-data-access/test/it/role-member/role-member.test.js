@@ -50,13 +50,13 @@ describe('RoleMember IT', () => {
 
   it('should create a new role member', async () => {
     const newRoleMember = {
-      imsOrgId: 'NEWORG@AdobeOrg',
+      imsOrgId: 'NEWORG123456789012345678@AdobeOrg',
       identity: 'imsID:newuser@example.com',
       roleId: '1d6b2f29-4d2d-405e-aad6-1f62e6933c39', // Use existing role
     };
     const created = await RoleMember.create(newRoleMember);
     expect(created).to.exist;
-    expect(created.getImsOrgId()).to.equal('NEWORG@AdobeOrg');
+    expect(created.getImsOrgId()).to.equal('NEWORG123456789012345678@AdobeOrg');
     expect(created.getIdentity()).to.equal('imsID:newuser@example.com');
     expect(created.getRoleId()).to.equal('1d6b2f29-4d2d-405e-aad6-1f62e6933c39');
   });
@@ -64,7 +64,7 @@ describe('RoleMember IT', () => {
   it('should update a role member', async () => {
     // Create a fresh role member first, then update it
     const newRoleMember = {
-      imsOrgId: 'UPDATEORG123@AdobeOrg',
+      imsOrgId: 'UPDATEORG123456789012345678@AdobeOrg',
       identity: 'imsID:updateuser@example.com',
       roleId: '1d6b2f29-4d2d-405e-aad6-1f62e6933c39', // Use existing role
     };
@@ -84,7 +84,7 @@ describe('RoleMember IT', () => {
   it('should delete a role member', async () => {
     // Create a fresh role member first, then delete it
     const newRoleMember = {
-      imsOrgId: 'DELETEORG123@AdobeOrg',
+      imsOrgId: 'DELETEORG123456789012345678@AdobeOrg',
       identity: 'imsID:deleteuser@example.com',
       roleId: '1d6b2f29-4d2d-405e-aad6-1f62e6933c39', // Use existing role
     };
@@ -102,7 +102,7 @@ describe('RoleMember IT', () => {
   });
 
   it('should find role members by imsOrgId index', async () => {
-    const orgId = roleMembers[0].imsOrgId; // DAADAADAA@AdobeOrg
+    const orgId = roleMembers[0].imsOrgId; // DAADAADAA123456789012345@AdobeOrg
     const results = await RoleMember.allByImsOrgId(orgId);
     expect(results).to.be.an('array');
     expect(results.length).to.be.greaterThan(0);
@@ -112,8 +112,8 @@ describe('RoleMember IT', () => {
   });
 
   it('should find role members by imsOrgId and identity', async () => {
-    const orgId = roleMembers[0].imsOrgId; // DAADAADAA@AdobeOrg
-    const { identity } = roleMembers[0]; // imsOrgID:DAADAADAA@AdobeOrg
+    const orgId = roleMembers[0].imsOrgId; // DAADAADAA123456789012345@AdobeOrg
+    const { identity } = roleMembers[0]; // imsOrgID:DAADAADAA123456789012345@AdobeOrg
     const results = await RoleMember.allByImsOrgIdAndIdentity(orgId, identity);
     expect(results).to.be.an('array');
     expect(results.length).to.be.greaterThan(0);
@@ -125,8 +125,8 @@ describe('RoleMember IT', () => {
 
   it('should find all matching roles for identities', async () => {
     const members = await RoleMember.allRoleMembershipByIdentities(
-      'DAADAADAA@AdobeOrg',
-      ['imsOrgID:DAADAADAA@AdobeOrg', 'imsID:1234@5678.e'],
+      'DAADAADAA123456789012345@AdobeOrg',
+      ['imsOrgID:DAADAADAA123456789012345@AdobeOrg', 'imsID:1234@5678.e'],
     );
     expect(members).to.be.an('array');
     expect(members.length).to.be.greaterThan(0);

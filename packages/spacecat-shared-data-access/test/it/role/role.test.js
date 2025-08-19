@@ -46,13 +46,13 @@ describe('Role IT', () => {
     const newRole = {
       roleId: '99999999-9999-4999-9999-999999999999',
       name: 'new-role',
-      imsOrgId: 'NEWORG@AdobeOrg',
+      imsOrgId: 'NEWORG123456789012345678@AdobeOrg',
       acl: [],
     };
     const created = await Role.create(newRole);
     expect(created).to.exist;
     expect(created.getName()).to.equal('new-role');
-    expect(created.getImsOrgId()).to.equal('NEWORG@AdobeOrg');
+    expect(created.getImsOrgId()).to.equal('NEWORG123456789012345678@AdobeOrg');
   });
 
   it('should update a role', async () => {

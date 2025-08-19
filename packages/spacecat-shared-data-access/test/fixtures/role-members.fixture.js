@@ -12,28 +12,28 @@
 
 const roleMembers = [
   {
-    imsOrgId: 'DAADAADAA@AdobeOrg',
-    identity: 'imsOrgID:DAADAADAA@AdobeOrg',
+    imsOrgId: 'DAADAADAA123456789012345@AdobeOrg',
+    identity: 'imsOrgID:DAADAADAA123456789012345@AdobeOrg',
     roleId: '1d6b2f29-4d2d-405e-aad6-1f62e6933c39',
   },
   {
-    imsOrgId: 'DAADAADAA@AdobeOrg',
-    identity: 'imsOrgID:DAADAADAA@AdobeOrg',
+    imsOrgId: 'DAADAADAA123456789012345@AdobeOrg',
+    identity: 'imsOrgID:DAADAADAA123456789012345@AdobeOrg',
     roleId: '2d6b2f29-4d2d-405e-aad6-1f62e6933c39',
   },
   {
-    imsOrgId: 'DAADAADAA@AdobeOrg',
+    imsOrgId: 'DAADAADAA123456789012345@AdobeOrg',
     identity: 'imsID:1234@5678.e',
     roleId: '3d6b2f29-4d2d-405e-aad6-1f62e6933c39',
   },
   {
-    imsOrgId: '12345678@AdobeOrg',
+    imsOrgId: '123456789012345678901234@AdobeOrg',
     identity: 'imsID:1234@5678.e',
     roleId: '4d6b2f29-4d2d-405e-aad6-1f62e6933c39',
   },
   {
-    imsOrgId: 'DAADAADAA@AdobeOrg',
-    identity: 'imsOrgID/groupID:DAADAADAA@AdobeOrg/12345678',
+    imsOrgId: 'DAADAADAA123456789012345@AdobeOrg',
+    identity: 'imsOrgID/groupID:DAADAADAA123456789012345@AdobeOrg/12345678',
     roleId: '216b2f29-4d2d-405e-aad6-1f62e6933c39',
   },
 ];

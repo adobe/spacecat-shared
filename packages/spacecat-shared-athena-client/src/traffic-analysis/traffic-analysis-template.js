@@ -20,6 +20,8 @@
  * @param {string} params.groupBy - Group by clause
  * @param {string} params.dimensionColumnsPrefixed - Prefixed dimension columns
  * @param {string} params.pageTypeCase - Page type case statement
+ * @param {string} params.minColumn - Column used for prefiltering totals (e.g. path)
+ * @param {number} params.pageViewThreshold - Minimum total pageviews for minColumn to include
  * @returns {string} The SQL query string
  */
 export function getTrafficAnalysisTemplate({
@@ -31,9 +33,22 @@ export function getTrafficAnalysisTemplate({
   groupBy,
   dimensionColumnsPrefixed,
   pageTypeCase,
+  minColumn,
+  pageViewThreshold,
 }) {
   return `
-WITH raw AS (
+WITH min_totals AS (
+    SELECT
+        ${minColumn} AS min_key,
+        CAST(SUM(pageviews) AS BIGINT) AS total_pageviews
+    FROM ${tableName}
+    WHERE siteid = '${siteId}'
+    AND (${temporalCondition})
+    AND ${trfTypeCondition}
+    GROUP BY ${minColumn}
+    HAVING SUM(pageviews) >= ${pageViewThreshold}
+),
+raw AS (
     SELECT
         path,
         ${pageTypeCase},   
@@ -55,8 +70,9 @@ WITH raw AS (
         lcp,
         cls,
         inp
-    FROM ${tableName}
-    WHERE siteid = '${siteId}'
+    FROM ${tableName} m
+    JOIN min_totals t ON m.${minColumn} = t.min_key
+    WHERE m.siteid = '${siteId}'
     AND (${temporalCondition})
     AND ${trfTypeCondition}
 ),
@@ -74,7 +90,6 @@ agg AS (
         approx_percentile(inp, 0.70)     AS p70_inp
     FROM raw
     GROUP BY ${groupBy}
-    HAVING SUM(pageviews) >= 1000
 ),
 grand_total AS (
     SELECT CAST(SUM(pageviews) AS BIGINT) AS total_pv FROM agg

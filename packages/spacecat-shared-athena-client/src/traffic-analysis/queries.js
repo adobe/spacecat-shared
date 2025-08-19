@@ -28,16 +28,19 @@ export function getTrafficAnalysisQuery(placeholders = {}) {
  */
 export function getTrafficAnalysisQueryPlaceholders() {
   // Return the known placeholders used in the template
-  return [
+  const keys = [
     'dimensionColumns',
     'dimensionColumnsPrefixed',
     'groupBy',
+    'minColumn',
     'pageTypeCase',
+    'pageViewThreshold',
     'siteId',
     'tableName',
     'temporalCondition',
     'trfTypeCondition',
   ];
+  return keys.sort();
 }
 
 /**
@@ -75,6 +78,9 @@ export function buildPageTypeCase(pageTypes, column) {
  * @param {Object|null} [params.pageTypes=null] - Optional pageType rules for CASE generation.
  * @param {string[]|null} [params.trfTypes] - Traffic type to filter by before
  *  grouping (e.g ['paid']).
+ * @param {string} [params.minColumn='path'] - Column to aggregate totals for thresholding.
+ * @param {number} [params.pageViewThreshold=1000] - Minimum total pageviews for the minColumn key
+ * to include.
  * @returns {Object} Template values for SQL generation.
  */
 export function getTrafficAnalysisQueryPlaceholdersFilled({
@@ -88,6 +94,8 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
   pageTypeMatchColumn = 'path',
   trfTypes = null,
   temporalCondition = null,
+  minColumn = null,
+  pageViewThreshold = 1000,
 }) {
   if (!siteId || !tableName) {
     throw new Error('Missing required parameters: siteId, or tableName');
@@ -129,5 +137,7 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
     temporalCondition: tempCondition,
     pageTypeCase,
     trfTypeCondition,
+    minColumn: minColumn || dimensions[0],
+    pageViewThreshold,
   };
 }

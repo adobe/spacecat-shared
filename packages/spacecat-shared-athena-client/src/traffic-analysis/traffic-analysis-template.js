@@ -20,8 +20,7 @@
  * @param {string} params.groupBy - Group by clause
  * @param {string} params.dimensionColumnsPrefixed - Prefixed dimension columns
  * @param {string} params.pageTypeCase - Page type case statement
- * @param {string} params.minColumn - Column used for prefiltering totals (e.g. path)
- * @param {number} params.pageViewThreshold - Minimum total pageviews for minColumn to include
+ * @param {number} params.pageViewThreshold - Minimum total pageviews for path to include
  * @returns {string} The SQL query string
  */
 export function getTrafficAnalysisTemplate({
@@ -33,19 +32,18 @@ export function getTrafficAnalysisTemplate({
   groupBy,
   dimensionColumnsPrefixed,
   pageTypeCase,
-  minColumn,
   pageViewThreshold,
 }) {
   return `
 WITH min_totals AS (
     SELECT
-        ${minColumn} AS min_key,
+        path AS min_key,
         CAST(SUM(pageviews) AS BIGINT) AS total_pageviews
     FROM ${tableName}
     WHERE siteid = '${siteId}'
     AND (${temporalCondition})
     AND ${trfTypeCondition}
-    GROUP BY ${minColumn}
+    GROUP BY path
     HAVING SUM(pageviews) >= ${pageViewThreshold}
 ),
 raw AS (
@@ -71,7 +69,7 @@ raw AS (
         cls,
         inp
     FROM ${tableName} m
-    JOIN min_totals t ON m.${minColumn} = t.min_key
+    JOIN min_totals t ON m.path = t.min_key
     WHERE m.siteid = '${siteId}'
     AND (${temporalCondition})
     AND ${trfTypeCondition}

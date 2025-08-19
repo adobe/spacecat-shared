@@ -336,7 +336,7 @@ describe('Traffic analysis query functions', () => {
       expect(sql.length).to.be.greaterThan(0);
     });
 
-    it('should default minColumn to first dimension and apply default threshold', () => {
+    it('should filter by path with default threshold', () => {
       const params = {
         week: 23,
         month: 6,
@@ -352,12 +352,12 @@ describe('Traffic analysis query functions', () => {
       const sql = getTrafficAnalysisQuery(placeholders);
 
       expect(sql).to.include('WITH min_totals AS');
-      expect(sql).to.include('GROUP BY utm_campaign');
-      expect(sql).to.include('JOIN min_totals t ON m.utm_campaign = t.min_key');
+      expect(sql).to.include('GROUP BY path');
+      expect(sql).to.include('JOIN min_totals t ON m.path = t.min_key');
       expect(sql).to.include('HAVING SUM(pageviews) >= 1000');
     });
 
-    it('should respect provided minColumn and pageViewThreshold', () => {
+    it('should respect provided pageViewThreshold (path-based)', () => {
       const params = {
         week: 23,
         month: 6,
@@ -367,7 +367,6 @@ describe('Traffic analysis query functions', () => {
         tableName: 'my_table',
         pageTypes: null,
         trfTypes: ['paid'],
-        minColumn: 'utm_campaign',
         pageViewThreshold: 5000,
       };
 
@@ -376,8 +375,8 @@ describe('Traffic analysis query functions', () => {
       console.log(sql);
 
       expect(sql).to.include('WITH min_totals AS');
-      expect(sql).to.include('GROUP BY utm_campaign');
-      expect(sql).to.include('JOIN min_totals t ON m.utm_campaign = t.min_key');
+      expect(sql).to.include('GROUP BY path');
+      expect(sql).to.include('JOIN min_totals t ON m.path = t.min_key');
       expect(sql).to.include('HAVING SUM(pageviews) >= 5000');
     });
   });

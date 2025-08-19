@@ -335,6 +335,51 @@ describe('Traffic analysis query functions', () => {
       expect(sql).to.be.a('string');
       expect(sql.length).to.be.greaterThan(0);
     });
+
+    it('should default minColumn to first dimension and apply default threshold', () => {
+      const params = {
+        week: 23,
+        month: 6,
+        year: 2024,
+        siteId: 'mysite',
+        dimensions: ['utm_campaign', 'device'],
+        tableName: 'my_table',
+        pageTypes: null,
+        trfTypes: ['paid'],
+      };
+
+      const placeholders = getTrafficAnalysisQueryPlaceholdersFilled(params);
+      const sql = getTrafficAnalysisQuery(placeholders);
+
+      expect(sql).to.include('WITH min_totals AS');
+      expect(sql).to.include('GROUP BY utm_campaign');
+      expect(sql).to.include('JOIN min_totals t ON m.utm_campaign = t.min_key');
+      expect(sql).to.include('HAVING SUM(pageviews) >= 1000');
+    });
+
+    it('should respect provided minColumn and pageViewThreshold', () => {
+      const params = {
+        week: 23,
+        month: 6,
+        year: 2024,
+        siteId: 'mysite',
+        dimensions: ['utm_campaign', 'device'],
+        tableName: 'my_table',
+        pageTypes: null,
+        trfTypes: ['paid'],
+        minColumn: 'utm_campaign',
+        pageViewThreshold: 5000,
+      };
+
+      const placeholders = getTrafficAnalysisQueryPlaceholdersFilled(params);
+      const sql = getTrafficAnalysisQuery(placeholders);
+      console.log(sql);
+
+      expect(sql).to.include('WITH min_totals AS');
+      expect(sql).to.include('GROUP BY utm_campaign');
+      expect(sql).to.include('JOIN min_totals t ON m.utm_campaign = t.min_key');
+      expect(sql).to.include('HAVING SUM(pageviews) >= 5000');
+    });
   });
 
   describe('getTrafficAnalysisQueryPlaceholders', () => {
@@ -734,7 +779,7 @@ describe('Traffic analysis query functions', () => {
       expect(sql).to.not.match(/undefined/);
 
       // Verify SQL structure is reasonable
-      expect(sql).to.include('WITH raw AS');
+      expect(sql).to.include('WITH min_totals AS');
       expect(sql).to.include('agg AS');
       expect(sql).to.include('grand_total AS');
       expect(sql).to.include('FROM rum_bundles_2024');

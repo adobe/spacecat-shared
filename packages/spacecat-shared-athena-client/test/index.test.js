@@ -418,6 +418,24 @@ describe('Traffic analysis query functions', () => {
   });
 
   describe('getTrafficAnalysisQueryPlaceholdersFilled', () => {
+    it('should support month-based temporal condition (no week)', () => {
+      const params = {
+        month: 6,
+        year: 2024,
+        siteId: 'month-site',
+        dimensions: ['device'],
+        tableName: 'traffic_data',
+      };
+
+      const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+      expect(result.temporalCondition).to.include('month=');
+      expect(result.temporalCondition).to.include('year=');
+
+      const sql = getTrafficAnalysisQuery(result);
+      expect(sql).to.include('month=6');
+      expect(sql).to.include('year=2024');
+    });
     it('should generate complete placeholder values for valid input (2 dimensions - even)', () => {
       const params = {
         week: 23,
@@ -520,7 +538,7 @@ describe('Traffic analysis query functions', () => {
       };
 
       expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing required parameters: week, year, siteId, or tableName');
+        .to.throw('Missing required parameters: week, month or year');
     });
 
     it('should throw error for missing year', () => {
@@ -532,7 +550,7 @@ describe('Traffic analysis query functions', () => {
       };
 
       expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing required parameters: week, year, siteId, or tableName');
+        .to.throw('Missing required parameters: week, month or year');
     });
 
     it('should throw error for missing siteId', () => {
@@ -544,7 +562,7 @@ describe('Traffic analysis query functions', () => {
       };
 
       expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing required parameters: week, year, siteId, or tableName');
+        .to.throw('Missing required parameters: siteId, or tableName');
     });
 
     it('should throw error for missing tableName', () => {
@@ -556,7 +574,7 @@ describe('Traffic analysis query functions', () => {
       };
 
       expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing required parameters: week, year, siteId, or tableName');
+        .to.throw('Missing required parameters: siteId, or tableName');
     });
 
     it('should throw error for empty dimensions array', () => {
@@ -663,7 +681,7 @@ describe('Traffic analysis query functions', () => {
     it('should handle cross-month year correctly', () => {
       const params = {
         week: 53, // Week 53 often spans into the next year
-        year: 2024,
+        year: 2020, // use a year that actually has ISO week 53
         siteId: 'cross-month-site',
         dimensions: ['device'],
         tableName: 'cross_month_table',
@@ -806,7 +824,7 @@ describe('DTO Tests', () => {
         click_rate: 0.15,
         engagement_rate: 0.8,
         bounce_rate: 0.2,
-        engaged_scroll: 0.6,
+        engaged_scroll_rate: 0.6,
         p70_scroll: 0.75,
       };
 
@@ -825,7 +843,7 @@ describe('DTO Tests', () => {
         click_rate: 0.15,
         engagement_rate: 0.8,
         bounce_rate: 0.2,
-        engaged_scroll: 0.6,
+        engaged_scroll_rate: 0.6,
         p70_scroll: 0.75,
       });
     });
@@ -846,7 +864,7 @@ describe('DTO Tests', () => {
         click_rate: 0.15,
         engagement_rate: 0.8,
         bounce_rate: 0.2,
-        engaged_scroll: 0.6,
+        engaged_scroll_rate: 0.6,
         p70_scroll: 0.75,
         path: '/home',
         page_type: 'Home Page',

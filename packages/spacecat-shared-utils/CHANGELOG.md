@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.47.0...@adobe/spacecat-shared-utils-v1.48.0) (2025-08-18)
+
+
+### Features
+
+* added `urlMatchesFilter` in `spacecat-shared-utils` ([#921](https://github.com/adobe/spacecat-shared/issues/921)) ([74e11e4](https://github.com/adobe/spacecat-shared/commit/74e11e4124137b13942b0c58ead620905c438538))
+
 # [@adobe/spacecat-shared-utils-v1.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.46.0...@adobe/spacecat-shared-utils-v1.47.0) (2025-08-15)
 
 

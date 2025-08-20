@@ -180,11 +180,12 @@ describe('AuditModel', () => {
       HREFLANG: 'hreflang',
       PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
       PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
+      READABILITY: 'readability',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(29);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(30);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

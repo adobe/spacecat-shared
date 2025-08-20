@@ -89,3 +89,5 @@ export {
   getMonthInfo,
   getTemporalCondition,
 } from './calendar-week-helper.js';
+
+export { detectAEMVersion } from './aem.js';

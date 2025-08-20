@@ -25,6 +25,7 @@ import {
   resolveCanonicalUrl,
   getSpacecatRequestHeaders,
   ensureHttps,
+  urlMatchesFilter,
 } from '../src/url-helpers.js';
 
 describe('URL Utility Functions', () => {
@@ -277,7 +278,7 @@ describe('URL Utility Functions', () => {
       expect(result).to.equal('https://example.com/');
     });
 
-    it('should throw error when both HEAD and GET fail', async () => {
+    it('should return null when both HEAD and GET fail', async () => {
       nock('https://example.com')
         .head('/')
         .reply(404);
@@ -286,11 +287,11 @@ describe('URL Utility Functions', () => {
         .get('/')
         .reply(404);
 
-      await expect(resolveCanonicalUrl('https://example.com'))
-        .to.be.rejectedWith('HTTP error! status: 404');
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.be.null;
     });
 
-    it('should throw error when network error occurs on GET retry', async () => {
+    it('should return null when network error occurs on GET retry', async () => {
       nock('https://example.com')
         .head('/')
         .replyWithError('Network error');
@@ -299,8 +300,8 @@ describe('URL Utility Functions', () => {
         .get('/')
         .replyWithError('Network error');
 
-      await expect(resolveCanonicalUrl('https://example.com'))
-        .to.be.rejectedWith('Failed to retrieve URL (https://example.com): Network error');
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.be.null;
     });
 
     it('should use custom method when provided', async () => {
@@ -347,7 +348,7 @@ describe('URL Utility Functions', () => {
       expect(result).to.equal('https://final.example.com/');
     });
 
-    it('should handle non-200 responses without redirects', async () => {
+    it('should return null for non-200 responses without redirects', async () => {
       nock('https://example.com')
         .head('/')
         .reply(500);
@@ -356,8 +357,8 @@ describe('URL Utility Functions', () => {
         .get('/')
         .reply(500);
 
-      await expect(resolveCanonicalUrl('https://example.com'))
-        .to.be.rejectedWith('HTTP error! status: 500');
+      const result = await resolveCanonicalUrl('https://example.com');
+      expect(result).to.be.null;
     });
 
     it('should fallback to GET when HEAD fails with no redirect', async () => {
@@ -371,6 +372,174 @@ describe('URL Utility Functions', () => {
 
       const result = await resolveCanonicalUrl('https://example.com/', 'HEAD');
       expect(result).to.equal('https://example.com/');
+    });
+  });
+
+  describe('urlMatchesFilter', () => {
+    it('should return true when filterUrls is null', () => {
+      expect(urlMatchesFilter('https://example.com/path', null)).to.be.true;
+    });
+
+    it('should return true when filterUrls is undefined', () => {
+      expect(urlMatchesFilter('https://example.com/path', undefined)).to.be.true;
+    });
+
+    it('should return true when filterUrls is empty array', () => {
+      expect(urlMatchesFilter('https://example.com/path', [])).to.be.true;
+    });
+
+    it('should return true when URL path matches a filter URL path', () => {
+      const filterUrls = ['example.com/path', 'other.com/different'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should return true when URL path matches a filter URL path with different domains', () => {
+      const filterUrls = ['domain1.com/path', 'domain2.com/path'];
+      expect(urlMatchesFilter('https://domain3.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should return false when URL path does not match any filter URL path', () => {
+      const filterUrls = ['example.com/different', 'other.com/another'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.false;
+    });
+
+    it('should handle URLs without schema by prepending https://', () => {
+      const filterUrls = ['https://example.com/path'];
+      expect(urlMatchesFilter('example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle filter URLs without schema by prepending https://', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle both URLs without schema', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle root path matching', () => {
+      const filterUrls = ['example.com/', 'other.com/'];
+      expect(urlMatchesFilter('https://example.com/', filterUrls)).to.be.true;
+    });
+
+    it('should handle nested paths', () => {
+      const filterUrls = ['example.com/path/to/resource', 'other.com/different'];
+      expect(urlMatchesFilter('https://example.com/path/to/resource', filterUrls)).to.be.true;
+    });
+
+    it('should handle paths with query parameters (ignoring them)', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path?param=value', filterUrls)).to.be.true;
+    });
+
+    it('should handle filter URLs with query parameters (ignoring them)', () => {
+      const filterUrls = ['example.com/path?param=value'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle paths with fragments (ignoring them)', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path#fragment', filterUrls)).to.be.true;
+    });
+
+    it('should handle filter URLs with fragments (ignoring them)', () => {
+      const filterUrls = ['example.com/path#fragment'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle case-sensitive path matching', () => {
+      const filterUrls = ['example.com/Path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.false;
+      expect(urlMatchesFilter('https://example.com/Path', filterUrls)).to.be.true;
+    });
+
+    it('should handle multiple filter URLs and return true if any match', () => {
+      const filterUrls = ['example.com/first', 'example.com/second', 'example.com/third'];
+      expect(urlMatchesFilter('https://example.com/second', filterUrls)).to.be.true;
+    });
+
+    it('should handle multiple filter URLs and return false if none match', () => {
+      const filterUrls = ['example.com/first', 'example.com/second', 'example.com/third'];
+      expect(urlMatchesFilter('https://example.com/fourth', filterUrls)).to.be.false;
+    });
+
+    it('should handle URLs with ports (ignoring them)', () => {
+      const filterUrls = ['example.com:8080/path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle URLs with www prefix (ignoring it)', () => {
+      const filterUrls = ['www.example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle URLs with leading and trailing whitespace', () => {
+      const filterUrls = ['  example.com/path  ', '  other.com/different  '];
+      expect(urlMatchesFilter('  https://example.com/path  ', filterUrls)).to.be.true;
+    });
+
+    it('should handle URLs with multiple trailing slashes', () => {
+      const filterUrls = ['example.com/path///', 'other.com/different///'];
+      expect(urlMatchesFilter('https://example.com/path///', filterUrls)).to.be.true;
+    });
+
+    it('should handle root paths with multiple trailing slashes', () => {
+      const filterUrls = ['example.com///', 'other.com///'];
+      expect(urlMatchesFilter('https://example.com///', filterUrls)).to.be.true;
+    });
+
+    it('should handle mixed whitespace and trailing slashes', () => {
+      const filterUrls = ['  example.com/path///  ', '  other.com/different///  '];
+      expect(urlMatchesFilter('  https://example.com/path///  ', filterUrls)).to.be.true;
+    });
+
+    it('should handle filter URLs with whitespace and trailing slashes', () => {
+      const filterUrls = ['  example.com/path///  '];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle input URL with whitespace and trailing slashes', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('  https://example.com/path///  ', filterUrls)).to.be.true;
+    });
+
+    it('should handle invalid main URL and return false', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter('invalid-url', filterUrls)).to.be.false;
+    });
+
+    it('should handle invalid filter URLs and continue checking others', () => {
+      const filterUrls = ['invalid-filter-url', 'example.com/path', 'another-invalid-url'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
+    });
+
+    it('should handle all invalid filter URLs and return false', () => {
+      const filterUrls = ['invalid-filter-url-1', 'invalid-filter-url-2'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.false;
+    });
+
+    it('should handle null or undefined input URL', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter(null, filterUrls)).to.be.false;
+      expect(urlMatchesFilter(undefined, filterUrls)).to.be.false;
+    });
+
+    it('should handle non-string input URL', () => {
+      const filterUrls = ['example.com/path'];
+      expect(urlMatchesFilter(123, filterUrls)).to.be.false;
+      expect(urlMatchesFilter({}, filterUrls)).to.be.false;
+    });
+
+    it('should handle URL that causes prependSchema to fail', () => {
+      const filterUrls = ['example.com/path'];
+      // Create a URL that will cause prependSchema to fail when trying to create URL object
+      expect(urlMatchesFilter('https://[invalid-url]', filterUrls)).to.be.false;
+    });
+
+    it('should handle filter URL that causes prependSchema to fail', () => {
+      const filterUrls = ['[invalid-filter-url]', 'example.com/path'];
+      expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
     });
   });
 });

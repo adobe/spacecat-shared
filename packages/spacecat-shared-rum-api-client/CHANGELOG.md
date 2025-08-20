@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.36.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.3...@adobe/spacecat-shared-rum-api-client-v2.36.4) (2025-08-15)
+
+
+### Bug Fixes
+
+* **rum-api-client:** harden LLM-related classifications ([#916](https://github.com/adobe/spacecat-shared/issues/916)) ([63573d7](https://github.com/adobe/spacecat-shared/commit/63573d71af9e2452f3cf4377efcddd6e7e4267c0))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.36.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.2...@adobe/spacecat-shared-rum-api-client-v2.36.3) (2025-08-09)
 
 

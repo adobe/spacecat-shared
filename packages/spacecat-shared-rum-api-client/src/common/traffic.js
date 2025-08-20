@@ -41,7 +41,7 @@ const referrers = {
   social: /^\b((www\.)?x)\b|(.*(facebook|tiktok|snapchat|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
   ad: /googlesyndication|2mdn|doubleclick|syndicatedsearch/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
-  llm: /chatgpt|openai|perplexity|claude|gemini\.google|copilot\.microsoft/,
+  llm: /\b(chatgpt|openai)\b|perplexity|claude|gemini\.google|copilot\.microsoft/,
 };
 
 const mediums = {
@@ -103,7 +103,7 @@ const vendorClassifications = [
   { regex: /amazon|ctv/i, result: 'amazon' },
   { regex: /dailymotion/i, result: 'dailymotion' },
   { regex: /twitch/i, result: 'twitch' },
-  { regex: /chatgpt|openai/i, result: 'openai' },
+  { regex: /\b(chatgpt|openai)\b/i, result: 'openai' },
   { regex: /perplexity/i, result: 'perplexity' },
   { regex: /claude/i, result: 'claude' },
   { regex: /direct/i, result: 'direct' },

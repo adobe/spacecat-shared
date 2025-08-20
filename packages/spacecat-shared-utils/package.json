@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.45.0",
+  "version": "1.48.0",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
   "engines": {
@@ -52,6 +52,7 @@
     "@aws-sdk/client-sqs": "3.864.0",
     "@json2csv/plainjs": "7.0.6",
     "aws-xray-sdk": "3.10.3",
-    "uuid": "11.1.0"
+    "uuid": "11.1.0",
+    "date-fns": "2.30.0"
   }
 }

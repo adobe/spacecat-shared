@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.55.0...@adobe/spacecat-shared-data-access-v2.56.0) (2025-08-20)
+
+
+### Features
+
+* add cdn filters in llmo config ([#925](https://github.com/adobe/spacecat-shared/issues/925)) ([021110b](https://github.com/adobe/spacecat-shared/commit/021110bbf7da221d41a808af54ed43f5e5f513ea))
+
 # [@adobe/spacecat-shared-data-access-v2.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.54.0...@adobe/spacecat-shared-data-access-v2.55.0) (2025-08-20)
 
 

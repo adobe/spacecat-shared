@@ -122,10 +122,12 @@ function ScrapeJobSupervisor(services, config) {
    * @param {object} scrapeJob - The scrape job record.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
    * @param {string} maxScrapeAge - The maximum age of the scrape job
+   * @param auditContext
    */
-  async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders, maxScrapeAge) {
+  // eslint-disable-next-line max-len
+  async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders, maxScrapeAge, auditData) {
     log.info(`Starting a new scrape job of baseUrl: ${scrapeJob.getBaseURL()} with ${urls.length}`
-      + ` URLs. This new job has claimed: ${scrapeJob.getScrapeQueueId()} `
+      + ' URLs.'
       + `(jobId: ${scrapeJob.getId()})`);
 
     const options = scrapeJob.getOptions();
@@ -155,6 +157,7 @@ function ScrapeJobSupervisor(services, config) {
         customHeaders,
         options,
         maxScrapeAge,
+        auditData,
       };
 
       // eslint-disable-next-line no-await-in-loop
@@ -168,7 +171,8 @@ function ScrapeJobSupervisor(services, config) {
    * @param {string} processingType - The type of processing to perform.
    * @param {object} options - Optional configuration params for the scrape job.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
-   * @param {string} maxScrapeAge - The maximum age of the scrape job
+   * @param {number} maxScrapeAge - The maximum age of the scrape job
+   * @param auditContext
    * @returns {Promise<ScrapeJob>} newly created job object
    */
   async function startNewJob(
@@ -177,6 +181,7 @@ function ScrapeJobSupervisor(services, config) {
     options,
     customHeaders,
     maxScrapeAge,
+    auditContext,
   ) {
     const newScrapeJob = await createNewScrapeJob(
       urls,
@@ -196,7 +201,7 @@ function ScrapeJobSupervisor(services, config) {
 
     // Queue all URLs for scrape as a single message. This enables the controller to respond with
     // a job ID ASAP, while the individual URLs are queued up asynchronously by another function.
-    await queueUrlsForScrapeWorker(urls, newScrapeJob, customHeaders, maxScrapeAge);
+    await queueUrlsForScrapeWorker(urls, newScrapeJob, customHeaders, maxScrapeAge, auditContext);
 
     return newScrapeJob;
   }

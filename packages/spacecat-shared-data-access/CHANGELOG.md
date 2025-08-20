@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.54.0...@adobe/spacecat-shared-data-access-v2.55.0) (2025-08-20)
+
+
+### Features
+
+* add scrape-client destination  ([#913](https://github.com/adobe/spacecat-shared/issues/913)) ([e208a87](https://github.com/adobe/spacecat-shared/commit/e208a87214874a2708ac2d7614fcfd4c0770fe17))
+
 # [@adobe/spacecat-shared-data-access-v2.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.53.0...@adobe/spacecat-shared-data-access-v2.54.0) (2025-08-13)
 
 

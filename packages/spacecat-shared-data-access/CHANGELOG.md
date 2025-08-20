@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.56.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.56.0...@adobe/spacecat-shared-data-access-v2.56.1) (2025-08-20)
+
+
+### Bug Fixes
+
+* add readability as audit type ([#926](https://github.com/adobe/spacecat-shared/issues/926)) ([c9cec04](https://github.com/adobe/spacecat-shared/commit/c9cec041b4302eb792c5d715658e6f9e306e35b8))
+
 # [@adobe/spacecat-shared-data-access-v2.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.55.0...@adobe/spacecat-shared-data-access-v2.56.0) (2025-08-20)
 
 

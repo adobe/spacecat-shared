@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Organization, getTrialUserActivity } from '../index';
+import type {
+  BaseCollection, BaseModel, Organization, getTrialUserActivity,
+} from '../index';
 
 export type ProviderType = 'IMS' | 'MICROSOFT' | 'GOOGLE';
 export type Status = 'REGISTERED' | 'VERIFIED' | 'BLOCKED' | 'DELETED';

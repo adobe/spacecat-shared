@@ -11,7 +11,7 @@
  */
 
 import type {
-  BaseCollection, BaseModel, Organization, getTrialUserActivity,
+  BaseCollection, BaseModel, Organization,
 } from '../index';
 
 export type ProviderType = 'IMS' | 'MICROSOFT' | 'GOOGLE';
@@ -24,7 +24,6 @@ export interface TrialUser extends BaseModel {
   getLastSeenAt(): Date | null;
   getMetadata(): object | null;
   getOrganization(): Promise<Organization>;
-  getTrialUserActivities(): Promise<getTrialUserActivity[]>;
   setExternalUserId(externalUserId: string): TrialUser;
   setStatus(status: Status): TrialUser;
   setProvider(provider: ProviderType): TrialUser;
@@ -33,6 +32,10 @@ export interface TrialUser extends BaseModel {
 }
 
 export interface TrialUserCollection extends BaseCollection<TrialUser> {
+  allByProvider(provider: ProviderType): Promise<TrialUser[]>;
+  allByProviderAndExternalUserId(provider: ProviderType, externalId: string): Promise<TrialUser[]>;
+  allByOrganizationId(organizationId: string): Promise<TrialUser[]>;
+  findByProvider(provider: ProviderType): Promise<TrialUser[]>;
   findByProviderAndExternalUserId(provider: ProviderType, externalId: string):
     Promise<TrialUser | null>;
   findByOrganizationId(organizationId: string): Promise<TrialUser[]>;

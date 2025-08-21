@@ -193,4 +193,44 @@ describe('auth wrapper', () => {
     expect(context.attributes.authInfo.getRBAC().aclEntities.exclude).to.deep.equal(['test-entity']);
     expect(context.auth.checkScopes).to.be.a('function');
   });
+
+  it('should allow auth endpoints to be accessed without authentication', async () => {
+    // Test POST /auth/login
+    context.pathInfo.suffix = '/auth/login';
+    context.pathInfo.method = 'POST';
+    const loginPostResp = await action(new Request('https://space.cat/auth/login', {
+      method: 'POST',
+    }), context);
+
+    expect(loginPostResp).to.equal(42);
+    expect(context.attributes.authInfo).to.be.undefined;
+
+    // Test GET /auth/login
+    context.pathInfo.method = 'GET';
+    const loginGetResp = await action(new Request('https://space.cat/auth/login', {
+      method: 'GET',
+    }), context);
+
+    expect(loginGetResp).to.equal(42);
+    expect(context.attributes.authInfo).to.be.undefined;
+
+    // Test POST /auth/google
+    context.pathInfo.suffix = '/auth/google';
+    context.pathInfo.method = 'POST';
+    const googlePostResp = await action(new Request('https://space.cat/auth/google', {
+      method: 'POST',
+    }), context);
+
+    expect(googlePostResp).to.equal(42);
+    expect(context.attributes.authInfo).to.be.undefined;
+
+    // Test GET /auth/google
+    context.pathInfo.method = 'GET';
+    const googleGetResp = await action(new Request('https://space.cat/auth/google', {
+      method: 'GET',
+    }), context);
+
+    expect(googleGetResp).to.equal(42);
+    expect(context.attributes.authInfo).to.be.undefined;
+  });
 });

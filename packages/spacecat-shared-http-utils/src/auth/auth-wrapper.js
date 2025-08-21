@@ -22,6 +22,13 @@ const ANONYMOUS_ENDPOINTS = [
   'POST /slack/events',
 ];
 
+const AUTH_ENDPOINTS = [
+  'POST /auth/login',
+  'GET /auth/login',
+  'POST /auth/google',
+  'GET /auth/google',
+];
+
 export function authWrapper(fn, opts = {}) {
   let authenticationManager;
 
@@ -31,6 +38,11 @@ export function authWrapper(fn, opts = {}) {
     const route = `${method.toUpperCase()} ${suffix}`;
 
     if (method.toUpperCase() === 'OPTIONS') {
+      return fn(request, context);
+    }
+
+    if (AUTH_ENDPOINTS.includes(route)) {
+      // allowing auth endpoints to be accessed without authentication
       return fn(request, context);
     }
 

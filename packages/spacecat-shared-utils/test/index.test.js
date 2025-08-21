@@ -78,6 +78,7 @@ describe('Index Exports', () => {
     'getTemporalCondition',
     'urlMatchesFilter',
     'detectAEMVersion',
+    'determineAEMCSPageId',
     'DELIVERY_TYPES',
   ];
 

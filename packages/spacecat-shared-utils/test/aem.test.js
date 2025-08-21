@@ -13,7 +13,9 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { DELIVERY_TYPES, detectAEMVersion } from '../src/aem.js';
+import sinon from 'sinon';
+import nock from 'nock';
+import { DELIVERY_TYPES, detectAEMVersion, determineAEMCSPageId } from '../src/aem.js';
 
 describe('AEM Detection', () => {
   describe('detectAEMVersion', () => {
@@ -430,5 +432,189 @@ describe('AEM Detection', () => {
         expect(result).to.equal(DELIVERY_TYPES.AEM_CS);
       });
     });
+  });
+});
+
+describe('determineAEMCSPageId', () => {
+  beforeEach(() => {
+    nock.cleanAll();
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+    sinon.restore();
+  });
+
+  it('should extract page ID from valid meta tag', async () => {
+    const pageURL = 'https://example.com/page';
+    const expectedPageId = 'page-12345';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-id" content="${expectedPageId}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    const result = await determineAEMCSPageId(pageURL);
+    expect(result).to.equal(expectedPageId);
+  });
+
+  it('should extract page ID from self-closing meta tag', async () => {
+    const pageURL = 'https://example.com/page';
+    const expectedPageId = 'page-self-closing';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-id" content="${expectedPageId}" />
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    const result = await determineAEMCSPageId(pageURL);
+    expect(result).to.equal(expectedPageId);
+  });
+
+  it('should trim whitespace from extracted page ID', async () => {
+    const pageURL = 'https://example.com/page';
+    const pageIdWithWhitespace = '  page-with-spaces  ';
+    const expectedPageId = 'page-with-spaces';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-id" content="${pageIdWithWhitespace}">
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    const result = await determineAEMCSPageId(pageURL);
+    expect(result).to.equal(expectedPageId);
+  });
+
+  it('should return null when fetch response is not ok', async () => {
+    const pageURL = 'https://example.com/not-found';
+
+    nock('https://example.com')
+      .get('/not-found')
+      .reply(404, 'Page not found');
+
+    const result = await determineAEMCSPageId(pageURL);
+    expect(result).to.be.null;
+  });
+
+  it('should return null when no meta tag is found', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <title>Test Page</title>
+          <meta name="description" content="A test page">
+        </head>
+        <body>Content without page ID meta tag</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    const result = await determineAEMCSPageId(pageURL);
+    expect(result).to.be.null;
+  });
+
+  it('should return null when meta tag content is empty', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-id" content="">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    const result = await determineAEMCSPageId(pageURL);
+    expect(result).to.be.null;
+  });
+
+  it('should handle network errors gracefully', async () => {
+    const pageURL = 'https://example.com/error';
+
+    nock('https://example.com')
+      .get('/error')
+      .replyWithError('Network error');
+
+    try {
+      await determineAEMCSPageId(pageURL);
+      expect.fail('Should have thrown an error');
+    } catch (error) {
+      expect(error.message).to.include('Network error');
+    }
+  });
+
+  it('should handle multiple meta tags and return first match', async () => {
+    const pageURL = 'https://example.com/page';
+    const expectedPageId = 'first-page-id';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-id" content="${expectedPageId}">
+          <meta name="content-page-id" content="second-page-id">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    const result = await determineAEMCSPageId(pageURL);
+    expect(result).to.equal(expectedPageId);
+  });
+
+  it('should handle server error responses', async () => {
+    const pageURL = 'https://example.com/server-error';
+
+    nock('https://example.com')
+      .get('/server-error')
+      .reply(500, 'Internal Server Error');
+
+    const result = await determineAEMCSPageId(pageURL);
+    expect(result).to.be.null;
+  });
+
+  it('should handle empty HTML response', async () => {
+    const pageURL = 'https://example.com/empty';
+
+    nock('https://example.com')
+      .get('/empty')
+      .reply(200, '');
+
+    const result = await determineAEMCSPageId(pageURL);
+    expect(result).to.be.null;
   });
 });

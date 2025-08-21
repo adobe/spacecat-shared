@@ -42,6 +42,68 @@ npm install @adobe/spacecat-shared-data-access
 - **geo** (String): Geo of the top page.
 - **importedAt** (String): Timestamp of the import.
 
+### Organization
+- **id** (String): Unique identifier for an organization.
+- **createdAt** (String): Timestamp of creation.
+- **updatedAt** (String): Timestamp of the last update.
+
+### OrganizationIdentityProvider
+- **id** (String): Unique identifier for the identity provider.
+- **metadata** (Map): Metadata for the identity provider.
+- **provider** (String): Type of identity provider. (IMS, MICROSOFT, GOOGLE)
+- **externalId** (String): External identifier from the provider.
+- **createdAt** (String): Timestamp of creation.
+- **Indexes**:
+  - `byProviderAndExternalId`
+  - `byOrganizationId`
+
+### TrialUser
+- **id** (String): Unique identifier for the trial user.
+- **externalUserId** (String): External user identifier.
+- **status** (String): Status of the trial user. (REGISTERED, VERIFIED, BLOCKED, DELETED)
+- **provider** (String): Type of identity provider. (IMS, MICROSOFT, GOOGLE)
+- **lastSeenAt** (String): Timestamp of last activity.
+- **createdAt** (String): Timestamp of creation.
+- **metadata** (Map): Metadata for the trial user.
+- **updatedAt** (String): Timestamp of the last update.
+- **Indexes**:
+  - `byProviderAndExternalUserId`
+  - `byOrganizationId`
+
+### TrialUserActivity
+- **id** (String): Unique identifier for the trial user activity.
+- **type** (String): Type of activity performed. (SIGN_UP, SIGN_IN, CREATE_SITE, RUN_AUDIT, PROMPT_RUN, DOWNLOAD)
+- **details** (Map): Details of the activity.
+- **createdAt** (String): Timestamp of creation.
+- **productCode** (String): Product code associated with the activity. (LLMO, ASO, etc.)
+- **Indexes**:
+  - `byTrialUserId`
+  - `byEntitlementId`
+  - `byProductCodeAndCreatedAt`
+  - `bySiteIdAndCreatedAt`
+
+### Entitlement
+- **id** (String): Unique identifier for the entitlement.
+- **productCode** (String): Product code for the entitlement. (LLMO, ASO, etc.)
+- **tier** (String): Tier level of the entitlement. (FREE_TRIAL, PAID)
+- **status** (String): Status of the entitlement. (ACTIVE, SUSPENDED, ENDED)
+- **createdAt** (String): Timestamp of creation.
+- **updatedAt** (String): Timestamp of the last update.
+- **quotas** (Map): Quota information for the entitlement.
+- **Indexes**:
+  - `byOrganizationId`
+  - `byOrganizationIdAndProductCode`
+  - `byStatusAndUpdatedAt`
+
+### SiteEnrollment
+- **id** (String): Unique identifier for the site enrollment.
+- **status** (String): Status of the enrollment. (ACTIVE, SUSPENDED, ENDED)
+- **createdAt** (String): Timestamp of creation.
+- **Indexes**:
+  - `bySiteId`
+  - `byEntitlementId`
+  - `byEntitlementIdAndStatus`
+
 ## DynamoDB Data Model
 
 The module is designed to work with the following DynamoDB tables:
@@ -51,6 +113,12 @@ The module is designed to work with the following DynamoDB tables:
 3. **Latest Audits Table**: Holds only the latest audit for each site for quick access.
 4. **Site Candidates Table**: Manages site candidates.
 5. **Site Top Pages Table**: Stores top pages for each site.
+6. **Organizations Table**: Manages organization records.
+7. **Organization Identity Providers Table**: Manages identity providers for organizations.
+8. **Trial Users Table**: Manages trial user accounts.
+9. **Trial User Activities Table**: Tracks activities performed by trial users.
+10. **Entitlements Table**: Manages entitlements granted to organizations.
+11. **Site Enrollments Table**: Manages site enrollments linked to entitlements.
 
 Each table is designed with scalability and efficient querying in mind, utilizing both key and non-key attributes effectively.
 

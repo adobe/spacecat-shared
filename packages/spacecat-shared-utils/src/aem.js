@@ -24,7 +24,7 @@ export const DELIVERY_TYPES = {
  * @return {string|null} - 'aem_edge', 'aem_cs', 'aem_ams', 'aem_headless'
  * or 'other' if undetermined, null if no HTML source is provided
  */
-export function detectAEMVersion(headers, htmlSource) {
+export function detectAEMVersion(htmlSource, headers = {}) {
   if (!htmlSource || typeof htmlSource !== 'string') {
     return null;
   }
@@ -182,7 +182,7 @@ export function detectAEMVersion(headers, htmlSource) {
   const MIN_THRESHOLD = 2;
 
   if (maxMatches < MIN_THRESHOLD) {
-    return 'other';
+    return DELIVERY_TYPES.OTHER;
   }
   // Create an array of [type, matches] and find the first with maxMatches, or 'other'
   const types = [
@@ -192,5 +192,5 @@ export function detectAEMVersion(headers, htmlSource) {
     [DELIVERY_TYPES.AEM_HEADLESS, aemHeadlessMatches],
   ];
   const found = types.find(([, count]) => count === maxMatches);
-  return found ? found[0] : DELIVERY_TYPES.OTHER;
+  return found[0];
 }

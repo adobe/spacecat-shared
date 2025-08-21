@@ -77,6 +77,8 @@ describe('Index Exports', () => {
     'getMonthInfo',
     'getTemporalCondition',
     'urlMatchesFilter',
+    'detectAEMVersion',
+    'DELIVERY_TYPES',
   ];
 
   it('exports all expected functions', () => {

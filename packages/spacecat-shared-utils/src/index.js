@@ -90,4 +90,4 @@ export {
   getTemporalCondition,
 } from './calendar-week-helper.js';
 
-export { detectAEMVersion } from './aem.js';
+export { detectAEMVersion, DELIVERY_TYPES } from './aem.js';

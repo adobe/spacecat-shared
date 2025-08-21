@@ -20,6 +20,7 @@ import type {
   Opportunity,
   Organization,
   SiteCandidate,
+  SiteEnrollment,
   SiteTopPage,
 } from '../index.js';
 
@@ -214,6 +215,7 @@ export interface Site extends BaseModel {
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
   getSiteCandidates(): Promise<SiteCandidate[]>;
+  getSiteEnrollments(): Promise<SiteEnrollment[]>;
   getSiteTopPages(): Promise<SiteTopPage[]>;
   getSiteTopPagesBySource(source: string): Promise<SiteTopPage[]>;
   getSiteTopPagesBySourceAndGeo(source: string, geo: string): Promise<SiteTopPage[]>;

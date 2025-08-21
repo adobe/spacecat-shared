@@ -87,19 +87,11 @@ npm install @adobe/spacecat-shared-data-access
 - **createdAt** (String): Timestamp of creation.
 - **updatedAt** (String): Timestamp of the last update.
 - **quotas** (Map): Quota information for the entitlement.
-- **Indexes**:
-  - `byOrganizationId`
-  - `byOrganizationIdAndProductCode`
-  - `byStatusAndUpdatedAt`
 
 ### SiteEnrollment
 - **id** (String): Unique identifier for the site enrollment.
 - **status** (String): Status of the enrollment. (ACTIVE, SUSPENDED, ENDED)
 - **createdAt** (String): Timestamp of creation.
-- **Indexes**:
-  - `bySiteId`
-  - `byEntitlementId`
-  - `byEntitlementIdAndStatus`
 
 ## DynamoDB Data Model
 

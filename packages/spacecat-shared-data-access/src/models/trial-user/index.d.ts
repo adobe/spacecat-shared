@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Organization } from '../index';
+import type { BaseCollection, BaseModel, Organization, getTrialUserActivity } from '../index';
 
 export type ProviderType = 'IMS' | 'MICROSOFT' | 'GOOGLE';
 export type Status = 'REGISTERED' | 'VERIFIED' | 'BLOCKED' | 'DELETED';
@@ -22,6 +22,7 @@ export interface TrialUser extends BaseModel {
   getLastSeenAt(): Date | null;
   getMetadata(): object | null;
   getOrganization(): Promise<Organization>;
+  getTrialUserActivities(): Promise<getTrialUserActivity[]>;
   setExternalUserId(externalUserId: string): TrialUser;
   setStatus(status: Status): TrialUser;
   setProvider(provider: ProviderType): TrialUser;

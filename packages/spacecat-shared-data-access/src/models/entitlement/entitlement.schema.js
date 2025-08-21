@@ -10,10 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { isObject } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
-import OrganizationIdentityProvider from './organization-identity-provider.model.js';
-import OrganizationIdentityProviderCollection from './organization-identity-provider.collection.js';
+import Entitlement from './entitlement.model.js';
+import EntitlementCollection from './entitlement.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -21,31 +20,37 @@ Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
-const schema = new SchemaBuilder(
-  OrganizationIdentityProvider,
-  OrganizationIdentityProviderCollection,
-)
+const schema = new SchemaBuilder(Entitlement, EntitlementCollection)
   // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Organization')
-  // Reference to TrialUsers (one-to-many relationship)
-  .addReference('has_many', 'TrialUsers')
-  .addAttribute('metadata', {
-    type: 'any',
+  // Reference to SiteEnrollments (one-to-many relationship)
+  .addReference('has_many', 'SiteEnrollments')
+  .addAttribute('productCode', {
+    type: Object.values(Entitlement.PRODUCT_CODES),
+    required: true,
+  })
+  .addAttribute('tier', {
+    type: Object.values(Entitlement.TIERS),
+    required: true,
+  })
+  .addAttribute('status', {
+    type: Object.values(Entitlement.STATUSES),
+    required: true,
+  })
+  .addAttribute('quotas', {
+    type: 'map',
     required: false,
-    validate: (value) => !value || isObject(value),
-  })
-  .addAttribute('provider', {
-    type: Object.values(OrganizationIdentityProvider.PROVIDER_TYPES),
-    required: true,
-  })
-  .addAttribute('externalId', {
-    type: 'string',
-    required: true,
+    properties: {
+      llmo_trial_prompts: { type: 'number' },
+    },
   })
   .addIndex(
-    { composite: ['provider'] },
-    { composite: ['externalId'] },
+    { composite: ['organizationId'] },
+    { composite: ['productCode'] },
   )
-  .addAllIndex(['organizationId']);
+  .addIndex(
+    { composite: ['status'] },
+    { composite: ['updatedAt'] },
+  );
 
 export default schema.build();

@@ -53,9 +53,6 @@ npm install @adobe/spacecat-shared-data-access
 - **provider** (String): Type of identity provider. (IMS, MICROSOFT, GOOGLE)
 - **externalId** (String): External identifier from the provider.
 - **createdAt** (String): Timestamp of creation.
-- **Indexes**:
-  - `byProviderAndExternalId`
-  - `byOrganizationId`
 
 ### TrialUser
 - **id** (String): Unique identifier for the trial user.

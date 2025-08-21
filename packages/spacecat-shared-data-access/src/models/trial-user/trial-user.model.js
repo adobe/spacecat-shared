@@ -30,6 +30,16 @@ class TrialUser extends BaseModel {
     BLOCKED: 'BLOCKED',
     DELETED: 'DELETED',
   };
+
+  /**
+   * Trial user provider types.
+   * Any change to this object needs to be reflected in the index.d.ts file as well.
+   */
+  static PROVIDER_TYPES = {
+    IMS: 'IMS',
+    MICROSOFT: 'MICROSOFT',
+    GOOGLE: 'GOOGLE',
+  };
 }
 
 export default TrialUser;

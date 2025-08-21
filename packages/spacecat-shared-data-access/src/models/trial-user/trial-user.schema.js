@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { isIsoDate, isString } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isObject, isString } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
 import TrialUser from './trial-user.model.js';
 import TrialUserCollection from './trial-user.collection.js';
@@ -22,8 +22,11 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 */
 
 const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
+  // Reference to OrganizationIdentityProvider (many-to-one relationship)
   .addReference('belongs_to', 'OrganizationIdentityProvider')
+  // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Organization')
+  // Reference to TrialUserActivity (one-to-many relationship)
   .addReference('has_many', 'TrialUserActivity')
   .addAttribute('ExternalUserId', { //  IDP subject/identifier; no emails/names
     type: 'string',
@@ -34,12 +37,17 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
     type: Object.values(TrialUser.STATUSES),
     required: true,
   })
+  .addAttribute('provider', {
+    type: Object.values(TrialUser.PROVIDER_TYPES),
+    required: true,
+  })
   .addAttribute('lastSeenAt', {
     type: 'string',
     validate: (value) => isIsoDate(value),
   })
   .addAttribute('metadata', {
     type: 'any',
+    validate: (value) => !value || isObject(value),
   })
   .addAllIndex(['OrganizationId'])
   .addIndex(

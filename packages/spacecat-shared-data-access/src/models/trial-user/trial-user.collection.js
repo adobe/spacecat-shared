@@ -9,3 +9,18 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
+import BaseCollection from '../base/base.collection.js';
+
+/**
+ * TrialUserCollection - A collection class responsible for managing TrialUser entities.
+ * Extends the BaseCollection to provide specific methods for interacting with TrialUser records.
+ *
+ * @class TrialUserCollection
+ * @extends BaseCollection
+ */
+class TrialUserCollection extends BaseCollection {
+  // add custom methods here
+}
+
+export default TrialUserCollection;

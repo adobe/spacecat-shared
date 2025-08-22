@@ -31,6 +31,7 @@ class Audit extends BaseModel {
     404: '404',
     SITEMAP: 'sitemap',
     CANONICAL: 'canonical',
+    REDIRECT_CHAINS: 'redirect-chains',
     BROKEN_BACKLINKS: 'broken-backlinks',
     BROKEN_INTERNAL_LINKS: 'broken-internal-links',
     EXPERIMENTATION: 'experimentation',

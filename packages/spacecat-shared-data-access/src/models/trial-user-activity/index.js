@@ -10,22 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseCollection from '../base/base.collection.js';
-import SiteEnrollment from './site-enrollment.model.js';
+import TrialUserActivity from './trial-user-activity.model.js';
+import TrialUserActivityCollection from './trial-user-activity.collection.js';
 
-/**
- * SiteEnrollmentCollection - A class representing a collection of SiteEnrollment entities.
- * Provides methods to query and manipulate collections of SiteEnrollment data.
- *
- * @class SiteEnrollmentCollection
- * @extends BaseCollection
- */
-class SiteEnrollmentCollection extends BaseCollection {
-  constructor(service, tableName) {
-    super(service, tableName, SiteEnrollment);
-  }
-
-  // add your custom collection methods here
-}
-
-export default SiteEnrollmentCollection;
+export {
+  TrialUserActivity,
+  TrialUserActivityCollection,
+};

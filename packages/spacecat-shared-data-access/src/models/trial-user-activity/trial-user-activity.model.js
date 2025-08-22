@@ -13,20 +13,25 @@
 import BaseModel from '../base/base.model.js';
 
 /**
- * OrganizationIdentityProvider - A class representing an OrganizationIdentityProvider entity.
- * Provides methods to access and manipulate OrganizationIdentityProvider-specific data.
+ * TrialUserActivity - A class representing a trial user activity entity.
+ * Provides methods to access and manipulate trial user activity-specific data.
  *
- * @class OrganizationIdentityProvider
+ * @class TrialUserActivity
  * @extends BaseModel
  */
-class OrganizationIdentityProvider extends BaseModel {
-  static PROVIDER_TYPES = {
-    IMS: 'IMS',
-    MICROSOFT: 'MICROSOFT',
-    GOOGLE: 'GOOGLE',
+class TrialUserActivity extends BaseModel {
+  /**
+   * Trial user activity types.
+   * Any change to this object needs to be reflected in the index.d.ts file as well.
+   */
+  static TYPES = {
+    SIGN_UP: 'SIGN_UP',
+    SIGN_IN: 'SIGN_IN',
+    CREATE_SITE: 'CREATE_SITE',
+    RUN_AUDIT: 'RUN_AUDIT',
+    PROMPT_RUN: 'PROMPT_RUN',
+    DOWNLOAD: 'DOWNLOAD',
   };
-
-  // add your custom methods or overrides here
 }
 
-export default OrganizationIdentityProvider;
+export default TrialUserActivity;

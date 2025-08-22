@@ -10,10 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import trialUser from './trial-user.model.js';
+import TrialUser from './trial-user.model.js';
 import TrialUserCollection from './trial-user.collection.js';
 
 export {
-  trialUser,
+  TrialUser,
   TrialUserCollection,
 };

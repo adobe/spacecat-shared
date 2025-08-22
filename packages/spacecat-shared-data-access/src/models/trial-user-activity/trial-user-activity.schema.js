@@ -10,29 +10,46 @@
  * governing permissions and limitations under the License.
  */
 
+import { isString } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
-import SiteEnrollment from './site-enrollment.model.js';
-import SiteEnrollmentCollection from './site-enrollment.collection.js';
+import TrialUserActivity from './trial-user-activity.model.js';
+import TrialUserActivityCollection from './trial-user-activity.collection.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
 Attribute Doc: https://electrodb.dev/en/modeling/attributes/
 Indexes Doc: https://electrodb.dev/en/modeling/indexes/
- */
+*/
 
-const schema = new SchemaBuilder(SiteEnrollment, SiteEnrollmentCollection)
-  // Reference to Site (many-to-one relationship)
-  .addReference('belongs_to', 'Site')
-  // Reference to Entitlement (many-to-one relationship)
+const schema = new SchemaBuilder(TrialUserActivity, TrialUserActivityCollection)
+  // Reference to OrganizationIdentityProvider (many-to-one relationship)
+  .addReference('belongs_to', 'TrialUser')
+  // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Entitlement')
-  .addAttribute('status', {
-    type: Object.values(SiteEnrollment.STATUSES),
+  .addAttribute('type', {
+    type: Object.values(TrialUserActivity.TYPES),
     required: true,
   })
-  .addAllIndex(['siteId'])
+  .addAttribute('details', {
+    type: 'any',
+  })
+  .addAttribute('productCode', {
+    type: 'string',
+    required: true,
+    validate: (value) => isString(value),
+  })
+  .addAllIndex(['trialUserId'])
   .addIndex(
     { composite: ['entitlementId'] },
-    { composite: ['status'] },
+    { composite: ['createdAt'] },
+  )
+  .addIndex(
+    { composite: ['productCode'] },
+    { composite: ['createdAt'] },
+  )
+  .addIndex(
+    { composite: ['siteId'] },
+    { composite: ['createdAt'] },
   );
 
 export default schema.build();

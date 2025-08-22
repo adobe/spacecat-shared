@@ -32,3 +32,4 @@ export type * from './site-top-page';
 export type * from './suggestion';
 export type * from './report';
 export type * from './trial-user';
+export type * from './trial-user-activity';

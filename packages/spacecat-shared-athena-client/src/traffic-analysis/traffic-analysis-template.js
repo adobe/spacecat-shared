@@ -20,6 +20,7 @@
  * @param {string} params.groupBy - Group by clause
  * @param {string} params.dimensionColumnsPrefixed - Prefixed dimension columns
  * @param {string} params.pageTypeCase - Page type case statement
+ * @param {number} params.pageViewThreshold - Minimum total pageviews for path to include
  * @returns {string} The SQL query string
  */
 export function getTrafficAnalysisTemplate({
@@ -31,9 +32,21 @@ export function getTrafficAnalysisTemplate({
   groupBy,
   dimensionColumnsPrefixed,
   pageTypeCase,
+  pageViewThreshold,
 }) {
   return `
-WITH raw AS (
+WITH min_totals AS (
+    SELECT
+        path AS min_key,
+        CAST(SUM(pageviews) AS BIGINT) AS total_pageviews
+    FROM ${tableName}
+    WHERE siteid = '${siteId}'
+    AND (${temporalCondition})
+    AND ${trfTypeCondition}
+    GROUP BY path
+    HAVING SUM(pageviews) >= ${pageViewThreshold}
+),
+raw AS (
     SELECT
         path,
         ${pageTypeCase},   
@@ -55,8 +68,9 @@ WITH raw AS (
         lcp,
         cls,
         inp
-    FROM ${tableName}
-    WHERE siteid = '${siteId}'
+    FROM ${tableName} m
+    JOIN min_totals t ON m.path = t.min_key
+    WHERE m.siteid = '${siteId}'
     AND (${temporalCondition})
     AND ${trfTypeCondition}
 ),
@@ -85,7 +99,7 @@ SELECT
     CAST(a.clicks AS DOUBLE)      / NULLIF(a.row_count, 0)      AS click_rate,
     CAST(a.engagements AS DOUBLE) / NULLIF(a.row_count, 0)      AS engagement_rate,
     1 - CAST(a.engagements AS DOUBLE) / NULLIF(a.row_count, 0)  AS bounce_rate,
-    a.engaged_scroll,
+    CAST(a.engaged_scroll AS DOUBLE) / NULLIF(a.row_count, 0) AS engaged_scroll_rate,
     a.p70_scroll,
     a.p70_lcp,
     a.p70_cls,

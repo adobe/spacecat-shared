@@ -666,6 +666,148 @@ describe('ScrapeJobController tests', () => {
     });
   });
 
+  describe('getScrapeResultPaths', () => {
+    it('should return a Map of URL to path for complete scrape URLs', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getPath: () => 'path/to/result1',
+            getUrl: () => 'https://example.com/page1',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getPath: () => 'path/to/result2',
+            getUrl: () => 'https://example.com/page2',
+          },
+        ]);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        expect(resultPaths).to.be.an.instanceOf(Map);
+        expect(resultPaths.size).to.equal(2);
+        expect(resultPaths.get('https://example.com/page1')).to.equal('path/to/result1');
+        expect(resultPaths.get('https://example.com/page2')).to.equal('path/to/result2');
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should return null when job is not found', async () => {
+      try {
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(null);
+        scrapeJobController = ScrapeClient.createFrom(baseContext);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths('3ec88567-c9f8-4fb1-8361-b53985a2898b');
+        expect(resultPaths).to.be.null;
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should only include URLs with COMPLETE status', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getPath: () => 'path/to/result1',
+            getUrl: () => 'https://example.com/page1',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.RUNNING,
+            getPath: () => 'path/to/result2',
+            getUrl: () => 'https://example.com/page2',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.FAILED,
+            getPath: () => 'path/to/result3',
+            getUrl: () => 'https://example.com/page3',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.PENDING,
+            getPath: () => 'path/to/result4',
+            getUrl: () => 'https://example.com/page4',
+          },
+        ]);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        expect(resultPaths).to.be.an.instanceOf(Map);
+        expect(resultPaths.size).to.equal(1);
+        expect(resultPaths.get('https://example.com/page1')).to.equal('path/to/result1');
+        expect(resultPaths.has('https://example.com/page2')).to.be.false;
+        expect(resultPaths.has('https://example.com/page3')).to.be.false;
+        expect(resultPaths.has('https://example.com/page4')).to.be.false;
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should return empty Map when no URLs have COMPLETE status', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.RUNNING,
+            getPath: () => 'path/to/result1',
+            getUrl: () => 'https://example.com/page1',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.FAILED,
+            getPath: () => 'path/to/result2',
+            getUrl: () => 'https://example.com/page2',
+          },
+        ]);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        expect(resultPaths).to.be.an.instanceOf(Map);
+        expect(resultPaths.size).to.equal(0);
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should return empty Map when no scrape URLs exist for the job', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([]);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        expect(resultPaths).to.be.an.instanceOf(Map);
+        expect(resultPaths.size).to.equal(0);
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should handle errors when fetching scrape job gracefully', async () => {
+      try {
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().rejects(new Error('Database connection failed'));
+        await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        assert.fail('Expected error to be thrown');
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch the scrape job result: Database connection failed');
+      }
+    });
+
+    it('should handle errors when fetching scrape URLs gracefully', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().rejects(new Error('Failed to fetch scrape URLs'));
+
+        await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        assert.fail('Expected error to be thrown');
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch the scrape job result: Failed to fetch scrape URLs');
+      }
+    });
+  });
+
   describe('getScrapeJobsByBaseURL', () => {
     it('should return an array of scrape jobs', async () => {
       const job = createScrapeJob(exampleJob);

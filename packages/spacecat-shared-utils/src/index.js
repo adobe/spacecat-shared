@@ -64,6 +64,7 @@ export {
   resolveCanonicalUrl,
   getSpacecatRequestHeaders,
   ensureHttps,
+  urlMatchesFilter,
 } from './url-helpers.js';
 
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';
@@ -81,4 +82,10 @@ export {
 
 export { retrievePageAuthentication, getAccessToken } from './auth.js';
 
-export { getDateRanges, getLastNumberOfWeeks } from './calendar-week-helper.js';
+export {
+  getDateRanges,
+  getLastNumberOfWeeks,
+  getWeekInfo,
+  getMonthInfo,
+  getTemporalCondition,
+} from './calendar-week-helper.js';

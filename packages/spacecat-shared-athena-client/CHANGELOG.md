@@ -1,3 +1,11 @@
+# [@adobe/spacecat-shared-athena-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.2.5...@adobe/spacecat-shared-athena-client-v1.3.0) (2025-08-20)
+
+
+### Features
+
+* add query by month and other fixes ([#917](https://github.com/adobe/spacecat-shared/issues/917)) ([57e4144](https://github.com/adobe/spacecat-shared/commit/57e41443bfdcf9068251f6656e5c0cfcebf32d21))
+* add threshold for pageviews ([#923](https://github.com/adobe/spacecat-shared/issues/923)) ([5b989cd](https://github.com/adobe/spacecat-shared/commit/5b989cd7c38ac946609143ed5402d2ff1600c581))
+
 # [@adobe/spacecat-shared-athena-client-v1.2.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.2.4...@adobe/spacecat-shared-athena-client-v1.2.5) (2025-08-09)
 
 

@@ -142,6 +142,104 @@ describe('AuditModel', () => {
       expect(Audit.validateAuditResult(mockRecord.auditResult, 'lhs-mobile')).to.be.true;
     });
 
+    it('returns true if auditResult is an object and contains all expected properties for lhs-desktop', () => {
+      mockRecord.auditResult = {
+        scores: {
+          performance: 0.95, seo: 0.88, accessibility: 0.92, 'best-practices': 0.85,
+        },
+      };
+      expect(Audit.validateAuditResult(mockRecord.auditResult, 'lhs-desktop')).to.be.true;
+    });
+
+    it('returns true if auditResult is an object and contains all expected properties for lhs-mobile with different values', () => {
+      mockRecord.auditResult = {
+        scores: {
+          performance: 0.75, seo: 0.92, accessibility: 0.88, 'best-practices': 0.95,
+        },
+      };
+      expect(Audit.validateAuditResult(mockRecord.auditResult, 'lhs-mobile')).to.be.true;
+    });
+
+    it('returns true if auditResult is an object and contains all expected properties for lhs-desktop with all properties present', () => {
+      // This test specifically targets the loop execution in lines 170-178
+      const auditResult = {
+        scores: {
+          performance: 0.85,
+          seo: 0.90,
+          accessibility: 0.95,
+          'best-practices': 0.88,
+        },
+      };
+
+      // Verify that expectedProperties exists for lhs-desktop
+      const expectedProperties = Audit.AUDIT_CONFIG.PROPERTIES['lhs-desktop'];
+      expect(expectedProperties).to.be.an('array');
+      expect(expectedProperties).to.have.lengthOf(4);
+
+      // This should execute the loop and return true
+      expect(Audit.validateAuditResult(auditResult, 'lhs-desktop')).to.be.true;
+    });
+
+    it('returns true if auditResult is an object and contains all expected properties for lhs-mobile with explicit loop execution', () => {
+      // This test specifically targets the loop execution in lines 170-178
+      // by ensuring the loop executes for all properties
+      const auditResult = {
+        scores: {
+          performance: 0.75,
+          seo: 0.92,
+          accessibility: 0.88,
+          'best-practices': 0.95,
+        },
+      };
+
+      // Verify that expectedProperties exists for lhs-mobile
+      const expectedProperties = Audit.AUDIT_CONFIG.PROPERTIES['lhs-mobile'];
+      expect(expectedProperties).to.be.an('array');
+      expect(expectedProperties).to.have.lengthOf(4);
+
+      // Verify each property exists in the scores object
+      expectedProperties.forEach((prop) => {
+        expect(auditResult.scores).to.have.property(prop);
+      });
+
+      // This should execute the loop and return true
+      expect(Audit.validateAuditResult(auditResult, 'lhs-mobile')).to.be.true;
+    });
+
+    it('returns true when validating lhs-desktop audit with all required properties present (covering loop execution)', () => {
+      // This test specifically targets the validation loop that checks each expected property
+      const auditResult = {
+        scores: {
+          performance: 0.85,
+          seo: 0.90,
+          accessibility: 0.95,
+          'best-practices': 0.88,
+          // Adding extra properties to ensure we're testing the specific ones
+          extraProperty: 0.99,
+        },
+      };
+
+      // This call should execute the property validation loop in validateAuditResult
+      const result = Audit.validateAuditResult(auditResult, 'lhs-desktop');
+      expect(result).to.be.true;
+    });
+
+    it('validates each expected property exists for lhs-mobile audit type', () => {
+      // Create an audit result with all required properties for lhs-mobile
+      const auditResult = {
+        scores: {
+          performance: 0.75,
+          seo: 0.92,
+          accessibility: 0.88,
+          'best-practices': 0.95,
+        },
+      };
+
+      // This should trigger the validation loop for each property
+      const result = Audit.validateAuditResult(auditResult, 'lhs-mobile');
+      expect(result).to.be.true;
+    });
+
     it('returns true if auditResult is an array', () => {
       mockRecord.auditResult = [{ scores: { foo: 'bar' } }];
       expect(Audit.validateAuditResult(mockRecord.auditResult, 'experimentation')).to.be.true;
@@ -181,11 +279,12 @@ describe('AuditModel', () => {
       HREFLANG: 'hreflang',
       PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
       PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
+      READABILITY: 'readability',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(30);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(31);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {
@@ -204,10 +303,11 @@ describe('AuditModel', () => {
       const expectedAuditStepDestinations = {
         CONTENT_SCRAPER: 'content-scraper',
         IMPORT_WORKER: 'import-worker',
+        SCRAPE_CLIENT: 'scrape-client',
       };
 
       expect(auditStepDestinations).to.eql(expectedAuditStepDestinations);
-      expect(Object.keys(auditStepDestinations)).to.have.lengthOf(2);
+      expect(Object.keys(auditStepDestinations)).to.have.lengthOf(3);
     });
 
     it('does not have unexpected audit step destinations in AUDIT_STEP_DESTINATIONS', () => {
@@ -225,6 +325,9 @@ describe('AuditModel', () => {
         },
         [auditStepDestinations.IMPORT_WORKER]: {
           queueUrl: process.env.IMPORT_WORKER_QUEUE_URL,
+          formatPayload: sinon.match.func,
+        },
+        [auditStepDestinations.SCRAPE_CLIENT]: {
           formatPayload: sinon.match.func,
         },
       };
@@ -266,6 +369,7 @@ describe('AuditModel', () => {
       const stepResult = {
         urls: [{ url: 'someUrl' }],
         siteId: 'someSiteId',
+        options: { someOption: 'someValue' },
         processingType: 'someProcessingType',
       };
       const context = {
@@ -284,7 +388,7 @@ describe('AuditModel', () => {
         completionQueueUrl: 'audit-jobs-queue-url',
         skipMessage: false,
         allowCache: true,
-        options: {},
+        options: { someOption: 'someValue' },
         auditContext: { some: 'context' },
       });
     });
@@ -384,6 +488,67 @@ describe('AuditModel', () => {
         .getQueueUrl(context);
 
       expect(queueUrl).to.be.undefined;
+    });
+
+    it('formats scrape client payload correctly', () => {
+      const stepResult = {
+        urls: [{ url: 'https://example.com/page1' }, { url: 'https://example.com/page2' }],
+        siteId: 'test-site-id',
+        processingType: 'custom-processing',
+        options: { depth: 2, wait: 1000 },
+        maxScrapeAge: 48,
+        completionQueueUrl: 'custom-completion-queue-url',
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+      };
+      const auditContext = { auditId: 'test-audit-id', auditType: 'test-type' };
+
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.SCRAPE_CLIENT]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: ['https://example.com/page1', 'https://example.com/page2'],
+        processingType: 'custom-processing',
+        options: { depth: 2, wait: 1000 },
+        maxScrapeAge: 48,
+        auditData: {
+          siteId: 'test-site-id',
+          completionQueueUrl: 'custom-completion-queue-url',
+          auditContext: { auditId: 'test-audit-id', auditType: 'test-type' },
+        },
+      });
+    });
+
+    it('formats scrape client payload with default values when not provided', () => {
+      const stepResult = {
+        urls: [{ url: 'https://example.com/page1' }],
+        siteId: 'test-site-id',
+        // processingType, options, maxScrapeAge, and completionQueueUrl are not provided
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+      };
+      const auditContext = { auditId: 'test-audit-id' };
+
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.SCRAPE_CLIENT]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: ['https://example.com/page1'],
+        processingType: 'default', // Should use default when not provided
+        options: {}, // Should use empty object when not provided
+        maxScrapeAge: 24, // Should use default value of 24
+        auditData: {
+          siteId: 'test-site-id',
+          completionQueueUrl: 'audit-jobs-queue-url', // Should use context.env.AUDIT_JOBS_QUEUE_URL when not provided
+          auditContext: { auditId: 'test-audit-id' },
+        },
+      });
     });
   });
 });

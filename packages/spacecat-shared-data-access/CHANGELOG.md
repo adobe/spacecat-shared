@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.56.1...@adobe/spacecat-shared-data-access-v2.57.0) (2025-08-22)
+
+
+### Features
+
+* add new redirect-chains audit ([#929](https://github.com/adobe/spacecat-shared/issues/929)) ([256c924](https://github.com/adobe/spacecat-shared/commit/256c924ce953a440dbd27d94a73cd6051f5e83b5))
+
 # [@adobe/spacecat-shared-data-access-v2.56.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.56.0...@adobe/spacecat-shared-data-access-v2.56.1) (2025-08-20)
 
 

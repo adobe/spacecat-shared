@@ -35,12 +35,12 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "chai": "5.2.1",
+    "chai": "6.0.1",
     "chai-as-promised": "8.0.1",
     "esmock": "2.7.1",
     "husky": "9.1.7",
     "nock": "14.0.9",
-    "sinon": "20.0.0",
+    "sinon": "21.0.0",
     "sinon-chai": "4.0.0"
   },
   "dependencies": {
@@ -53,6 +53,6 @@
     "@json2csv/plainjs": "7.0.6",
     "aws-xray-sdk": "3.10.3",
     "uuid": "11.1.0",
-    "date-fns": "2.30.0"
+    "date-fns": "4.1.0"
   }
 }

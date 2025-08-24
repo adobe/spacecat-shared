@@ -335,7 +335,13 @@ Calculates the amount of inorganic traffic and the bounce rate for each page. Id
 
 ### high-organic-low-ctr (Experimentation Opportunity)
 
-Calculates the amount of non-inorganic (earned and owned) traffic and the click-through rate for each page and vendor. Identifies pages with high non-inorganic traffic and low click-through rates, which can be targeted for future experimentation opportunities. An example payload is provided below:
+Calculates the amount of non-inorganic (earned and owned) traffic and the click-through rate for each page and vendor. Identifies pages with high non-inorganic traffic and low click-through rates, which can be targeted for future experimentation opportunities. 
+
+#### options supported
+- **maxOpportunities** - No. of maximum opportunities to return, defaults to 10
+
+
+An example payload is provided below:
 
 ```json
 [

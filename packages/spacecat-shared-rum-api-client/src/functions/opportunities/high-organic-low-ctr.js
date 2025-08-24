@@ -139,7 +139,7 @@ function handler(bundles, opts) {
   const siteAvgCTR = getSiteAvgCTR(bundles);
   const pagesSortedByEarnedAndOverallTraffic = sortPagesByEarnedAndOverallTraffic(
     trafficByUrl,
-  ).slice(0, opts.maxOpportunities || DEFAULT_MAX_OPPORTUNITIES);
+  ).slice(0, opts?.maxOpportunities || DEFAULT_MAX_OPPORTUNITIES);
 
   return pagesSortedByEarnedAndOverallTraffic.map((traffic) => ({
     ...traffic,

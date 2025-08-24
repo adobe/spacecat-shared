@@ -1,5 +1,139 @@
 # Spacecat Shared - GPT Client
 
+## Azure OpenAI
+
+The `AzureOpenAIClient` library provides a streamlined way to interact with Azure OpenAI's Chat Completions API, enabling applications to fetch AI-generated responses based on provided prompts. Designed with simplicity and efficiency in mind, this client handles all aspects of communication with Azure OpenAI, including request authentication, error handling, and response parsing.
+
+### Configuration
+
+To use the `AzureOpenAIClient`, you need to configure it with the following parameters:
+
+- `AZURE_OPENAI_ENDPOINT`: The endpoint URL for your Azure OpenAI resource (e.g., `https://your-resource.openai.azure.com`).
+- `AZURE_OPENAI_KEY`: Your API key for accessing the Azure OpenAI API.
+- `AZURE_API_VERSION`: The API version to use (default: `2024-02-01`).
+- `AZURE_COMPLETION_DEPLOYMENT`: The deployment name for your Azure OpenAI model (default: `gpt-4o`).
+
+These parameters can be set through environment variables or passed directly to the `AzureOpenAIClient.createFrom` method.
+
+### Usage Examples
+
+#### Instantiating the Azure OpenAI Client
+
+```javascript
+import AzureOpenAIClient from 'path/to/azure-openai-client';
+
+// Assuming environment variables are set
+const context = {
+  env: process.env,
+  log: console, // Using console for logging in this example
+};
+
+try {
+  const client = AzureOpenAIClient.createFrom(context);
+  console.log('AzureOpenAIClient created successfully.');
+} catch (error) {
+  console.error('Error creating AzureOpenAIClient:', error.message);
+}
+```
+
+#### Fetching Chat Completions
+
+```javascript
+/**
+ * Fetch chat completions using Azure OpenAI's Chat Completions API.
+ */
+async function fetchChatCompletion(prompt) {
+  try {
+    const client = AzureOpenAIClient.createFrom({
+      env: {
+        AZURE_OPENAI_ENDPOINT: 'https://your-resource.openai.azure.com',
+        AZURE_OPENAI_KEY: 'your-api-key',
+        AZURE_API_VERSION: '2024-02-01',
+        AZURE_COMPLETION_DEPLOYMENT: 'gpt-4o',
+      },
+      log: console,
+    });
+
+    const response = await client.fetchChatCompletion(prompt);
+    console.log('Response:', JSON.stringify(response));
+  } catch (error) {
+    console.error('Failed to fetch chat completion:', error.message);
+  }
+}
+
+fetchChatCompletion('What is the capital of France?');
+```
+
+#### Using Images with Chat Completions
+
+```javascript
+/**
+ * Fetch chat completions with image analysis using Azure OpenAI.
+ */
+async function fetchChatCompletionWithImages(prompt, imageUrls) {
+  try {
+    const client = AzureOpenAIClient.createFrom({
+      env: {
+        AZURE_OPENAI_ENDPOINT: 'https://your-resource.openai.azure.com',
+        AZURE_OPENAI_KEY: 'your-api-key',
+        AZURE_API_VERSION: '2024-02-01',
+        AZURE_COMPLETION_DEPLOYMENT: 'gpt-4o',
+      },
+      log: console,
+    });
+
+    const options = {
+      imageUrls: imageUrls, // Array of image URLs or base64 data
+    };
+
+    const response = await client.fetchChatCompletion(prompt, options);
+    console.log('Response:', JSON.stringify(response));
+  } catch (error) {
+    console.error('Failed to fetch chat completion with images:', error.message);
+  }
+}
+
+// Example with image URLs
+fetchChatCompletionWithImages(
+  'Identify all food items in this image',
+  ['https://example.com/food-image.jpg', 'data:image/png;base64,iVBORw0KGgoAAAA...=']
+);
+```
+
+#### Requesting JSON Responses
+
+```javascript
+/**
+ * Fetch chat completions with JSON response format.
+ */
+async function fetchJSONResponse(prompt) {
+  try {
+    const client = AzureOpenAIClient.createFrom({
+      env: {
+        AZURE_OPENAI_ENDPOINT: 'https://your-resource.openai.azure.com',
+        AZURE_OPENAI_KEY: 'your-api-key',
+        AZURE_API_VERSION: '2024-02-01',
+        AZURE_COMPLETION_DEPLOYMENT: 'gpt-4o',
+      },
+      log: console,
+    });
+
+    const options = {
+      responseFormat: 'json_object',
+    };
+
+    const response = await client.fetchChatCompletion(prompt, options);
+    console.log('JSON Response:', JSON.stringify(response));
+  } catch (error) {
+    console.error('Failed to fetch JSON response:', error.message);
+  }
+}
+
+fetchJSONResponse('Provide a list of 3 colors in JSON format');
+```
+
+Ensure that you replace `'path/to/azure-openai-client'` with the actual path to the `AzureOpenAIClient` class in your project and adjust the configuration parameters according to your Azure OpenAI resource credentials.
+
 ## Firefall
 The `FirefallClient` library offers a streamlined way to interact with the Firefall API, enabling applications to fetch insights, recommendations, and codes based on provided prompts. Designed with simplicity and efficiency in mind, this client handles all aspects of communication with the Firefall API, including request authentication, error handling, and response parsing.
 

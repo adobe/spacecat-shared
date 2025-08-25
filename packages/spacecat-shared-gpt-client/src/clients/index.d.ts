@@ -15,7 +15,8 @@ import type { UniversalContext } from '@adobe/helix-universal';
 export class AzureOpenAIClient {
   /**
    * Creates a new AzureOpenAIClient instance from the given UniversalContext.
-   * @param {UniversalContext} context The UniversalContext to use for creating the AzureOpenAIClient.
+   * @param {UniversalContext} context - The UniversalContext to use for creating the
+   *   AzureOpenAIClient.
    * @returns {AzureOpenAIClient} The AzureOpenAIClient instance.
    */
   static createFrom(context: UniversalContext): AzureOpenAIClient;

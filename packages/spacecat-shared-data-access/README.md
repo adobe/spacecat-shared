@@ -63,9 +63,6 @@ npm install @adobe/spacecat-shared-data-access
 - **createdAt** (String): Timestamp of creation.
 - **metadata** (Map): Metadata for the trial user.
 - **updatedAt** (String): Timestamp of the last update.
-- **Indexes**:
-  - `byProviderAndExternalUserId`
-  - `byOrganizationId`
 
 ### TrialUserActivity
 - **id** (String): Unique identifier for the trial user activity.
@@ -73,11 +70,6 @@ npm install @adobe/spacecat-shared-data-access
 - **details** (Map): Details of the activity.
 - **createdAt** (String): Timestamp of creation.
 - **productCode** (String): Product code associated with the activity. (LLMO, ASO, etc.)
-- **Indexes**:
-  - `byTrialUserId`
-  - `byEntitlementId`
-  - `byProductCodeAndCreatedAt`
-  - `bySiteIdAndCreatedAt`
 
 ### Entitlement
 - **id** (String): Unique identifier for the entitlement.
@@ -102,12 +94,6 @@ The module is designed to work with the following DynamoDB tables:
 3. **Latest Audits Table**: Holds only the latest audit for each site for quick access.
 4. **Site Candidates Table**: Manages site candidates.
 5. **Site Top Pages Table**: Stores top pages for each site.
-6. **Organizations Table**: Manages organization records.
-7. **Organization Identity Providers Table**: Manages identity providers for organizations.
-8. **Trial Users Table**: Manages trial user accounts.
-9. **Trial User Activities Table**: Tracks activities performed by trial users.
-10. **Entitlements Table**: Manages entitlements granted to organizations.
-11. **Site Enrollments Table**: Manages site enrollments linked to entitlements.
 
 Each table is designed with scalability and efficient querying in mind, utilizing both key and non-key attributes effectively.
 

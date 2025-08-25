@@ -13,13 +13,14 @@
 import type {
   BaseCollection, BaseModel,
 } from '../base';
+import type { EntitlementProductCode } from '../entitlement';
 
 export type Type = 'SIGN_UP' | 'SIGN_IN' | 'CREATE_SITE' | 'RUN_AUDIT' | 'PROMPT_RUN' | 'DOWNLOAD';
 
 export interface TrialUserActivity extends BaseModel {
   getType(): Type;
   getDetails(): object | null;
-  getProductCode(): string;
+  getProductCode(): EntitlementProductCode;
   setType(type: Type): TrialUserActivity;
   setDetails(details: object): TrialUserActivity;
   setProductCode(productCode: string): TrialUserActivity;
@@ -30,8 +31,8 @@ export interface TrialUserActivityCollection extends BaseCollection<TrialUserAct
   allByEntitlementId(entitlementId: string): Promise<TrialUserActivity[]>;
   allByEntitlementIdAndCreatedAt(entitlementId: string, createdAt: string):
     Promise<TrialUserActivity[]>;
-  allByProductCode(productCode: string): Promise<TrialUserActivity[]>;
-  allByProductCodeAndCreatedAt(productCode: string, createdAt: string):
+  allByProductCode(productCode: EntitlementProductCode): Promise<TrialUserActivity[]>;
+  allByProductCodeAndCreatedAt(productCode: EntitlementProductCode, createdAt: string):
     Promise<TrialUserActivity[]>;
   allBySiteId(siteId: string): Promise<TrialUserActivity[]>;
   allBySiteIdAndCreatedAt(siteId: string, createdAt: string): Promise<TrialUserActivity[]>;
@@ -40,8 +41,8 @@ export interface TrialUserActivityCollection extends BaseCollection<TrialUserAct
   findByEntitlementId(entitlementId: string): Promise<TrialUserActivity[]>;
   findByEntitlementIdAndCreatedAt(entitlementId: string, createdAt: string):
     Promise<TrialUserActivity[]>;
-  findByProductCode(productCode: string): Promise<TrialUserActivity[]>;
-  findByProductCodeAndCreatedAt(productCode: string, createdAt: string):
+  findByProductCode(productCode: EntitlementProductCode): Promise<TrialUserActivity[]>;
+  findByProductCodeAndCreatedAt(productCode: EntitlementProductCode, createdAt: string):
     Promise<TrialUserActivity[]>;
   findBySiteId(siteId: string): Promise<TrialUserActivity[]>;
   findBySiteIdAndCreatedAt(siteId: string, createdAt: string): Promise<TrialUserActivity[]>;

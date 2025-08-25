@@ -10,10 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { isString } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
 import TrialUserActivity from './trial-user-activity.model.js';
 import TrialUserActivityCollection from './trial-user-activity.collection.js';
+import Entitlement from '../entitlement/entitlement.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -26,6 +26,8 @@ const schema = new SchemaBuilder(TrialUserActivity, TrialUserActivityCollection)
   .addReference('belongs_to', 'TrialUser')
   // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Entitlement')
+  // Reference to Site (many-to-one relationship)
+  .addReference('belongs_to', 'Site')
   .addAttribute('type', {
     type: Object.values(TrialUserActivity.TYPES),
     required: true,
@@ -34,21 +36,12 @@ const schema = new SchemaBuilder(TrialUserActivity, TrialUserActivityCollection)
     type: 'any',
   })
   .addAttribute('productCode', {
-    type: 'string',
+    type: Object.values(Entitlement.PRODUCT_CODES),
     required: true,
-    validate: (value) => isString(value),
   })
   .addAllIndex(['trialUserId'])
   .addIndex(
-    { composite: ['entitlementId'] },
-    { composite: ['createdAt'] },
-  )
-  .addIndex(
-    { composite: ['productCode'] },
-    { composite: ['createdAt'] },
-  )
-  .addIndex(
-    { composite: ['siteId'] },
+    { composite: ['productCode', 'siteId', 'entitlementId'] },
     { composite: ['createdAt'] },
   );
 

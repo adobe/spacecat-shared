@@ -30,6 +30,7 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
   .addReference('has_many', 'Sites')
   .addReference('has_many', 'Entitlements')
   .addReference('has_many', 'OrganizationIdentityProviders')
+  .addReference('has_many', 'TrialUsers')
   .addAttribute('config', {
     type: 'any',
     required: true,

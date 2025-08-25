@@ -45,6 +45,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addReference('has_many', 'SiteEnrollments')
   .addReference('has_many', 'SiteTopForms')
   .addReference('has_many', 'SiteTopPages')
+  .addReference('has_many', 'TrialUserActivities')
   .addReference('has_many', 'PageIntents')
   .addAttribute('baseURL', {
     type: 'string',

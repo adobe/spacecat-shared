@@ -13,8 +13,8 @@
 import type {
   BaseCollection, BaseModel, Organization,
 } from '../index';
+import type { ProviderType } from '../organization-identity-provider';
 
-export type ProviderType = 'IMS' | 'MICROSOFT' | 'GOOGLE';
 export type Status = 'REGISTERED' | 'VERIFIED' | 'BLOCKED' | 'DELETED';
 
 export interface TrialUser extends BaseModel {

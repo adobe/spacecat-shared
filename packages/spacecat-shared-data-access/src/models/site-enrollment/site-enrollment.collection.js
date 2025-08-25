@@ -11,7 +11,6 @@
  */
 
 import BaseCollection from '../base/base.collection.js';
-import SiteEnrollment from './site-enrollment.model.js';
 
 /**
  * SiteEnrollmentCollection - A class representing a collection of SiteEnrollment entities.
@@ -21,10 +20,6 @@ import SiteEnrollment from './site-enrollment.model.js';
  * @extends BaseCollection
  */
 class SiteEnrollmentCollection extends BaseCollection {
-  constructor(service, tableName) {
-    super(service, tableName, SiteEnrollment);
-  }
-
   // add your custom collection methods here
 }
 

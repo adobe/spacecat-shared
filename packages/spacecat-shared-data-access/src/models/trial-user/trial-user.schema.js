@@ -10,10 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { isIsoDate, isObject, isString } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isObject } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
 import TrialUser from './trial-user.model.js';
 import TrialUserCollection from './trial-user.collection.js';
+import OrganizationIdentityProvider from '../organization-identity-provider/organization-identity-provider.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -27,18 +28,17 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
   // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Organization')
   // Reference to TrialUserActivity (one-to-many relationship)
-  .addReference('has_many', 'TrialUserActivity')
-  .addAttribute('ExternalUserId', { //  IDP subject/identifier; no emails/names
+  .addReference('has_many', 'TrialUserActivities')
+  .addAttribute('externalUserId', { //  IDP subject/identifier; no emails/names
     type: 'string',
     required: true,
-    validate: (value) => isString(value),
   })
   .addAttribute('status', {
     type: Object.values(TrialUser.STATUSES),
     required: true,
   })
   .addAttribute('provider', {
-    type: Object.values(TrialUser.PROVIDER_TYPES),
+    type: Object.values(OrganizationIdentityProvider.PROVIDER_TYPES),
     required: true,
   })
   .addAttribute('lastSeenAt', {
@@ -49,7 +49,7 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
     type: 'any',
     validate: (value) => !value || isObject(value),
   })
-  .addAllIndex(['OrganizationId'])
+  .addAllIndex(['organizationId'])
   .addIndex(
     { composite: ['provider'] },
     { composite: ['externalUserId'] },

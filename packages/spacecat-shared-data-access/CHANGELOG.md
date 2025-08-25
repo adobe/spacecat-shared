@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.56.1...@adobe/spacecat-shared-data-access-v2.57.0) (2025-08-22)
+
+
+### Features
+
+* add new redirect-chains audit ([#929](https://github.com/adobe/spacecat-shared/issues/929)) ([256c924](https://github.com/adobe/spacecat-shared/commit/256c924ce953a440dbd27d94a73cd6051f5e83b5))
+
+# [@adobe/spacecat-shared-data-access-v2.56.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.56.0...@adobe/spacecat-shared-data-access-v2.56.1) (2025-08-20)
+
+
+### Bug Fixes
+
+* add readability as audit type ([#926](https://github.com/adobe/spacecat-shared/issues/926)) ([c9cec04](https://github.com/adobe/spacecat-shared/commit/c9cec041b4302eb792c5d715658e6f9e306e35b8))
+
+# [@adobe/spacecat-shared-data-access-v2.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.55.0...@adobe/spacecat-shared-data-access-v2.56.0) (2025-08-20)
+
+
+### Features
+
+* add cdn filters in llmo config ([#925](https://github.com/adobe/spacecat-shared/issues/925)) ([021110b](https://github.com/adobe/spacecat-shared/commit/021110bbf7da221d41a808af54ed43f5e5f513ea))
+
+# [@adobe/spacecat-shared-data-access-v2.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.54.0...@adobe/spacecat-shared-data-access-v2.55.0) (2025-08-20)
+
+
+### Features
+
+* add scrape-client destination  ([#913](https://github.com/adobe/spacecat-shared/issues/913)) ([e208a87](https://github.com/adobe/spacecat-shared/commit/e208a87214874a2708ac2d7614fcfd4c0770fe17))
+
 # [@adobe/spacecat-shared-data-access-v2.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.53.0...@adobe/spacecat-shared-data-access-v2.54.0) (2025-08-13)
 
 

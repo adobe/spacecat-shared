@@ -2203,6 +2203,62 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO CDN Logs Filter', () => {
+    it('creates a Config with llmo cdnlogsFilter property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          cdnlogsFilter: [
+            { key: 'path', value: ['/api/', '/content/'] },
+          ],
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal(data.llmo.cdnlogsFilter);
+    });
+
+    it('creates a Config with llmo cdnlogsFilter property with filter type', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          cdnlogsFilter: [
+            { key: 'path', value: ['/api/'], type: 'include' },
+            { key: 'status_code', value: ['404'], type: 'exclude' },
+          ],
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal(data.llmo.cdnlogsFilter);
+    });
+
+    it('has undefined cdnlogsFilter in default config', () => {
+      const config = Config();
+      expect(config.getLlmoCdnlogsFilter()).to.be.undefined;
+    });
+
+    it('should return undefined for cdnlogsFilter if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoCdnlogsFilter()).to.be.undefined;
+    });
+
+    it('should be able to update cdnlogsFilter', () => {
+      const config = Config();
+      const cdnlogsFilter = [
+        { key: 'path', value: ['/api/'], type: 'include' },
+        { key: 'status_code', value: ['200'], type: 'exclude' },
+      ];
+      config.updateLlmoCdnlogsFilter(cdnlogsFilter);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
+    });
+  });
+
   describe('LLMO Well Known Tags', () => {
     const { extractWellKnownTags } = Config();
 

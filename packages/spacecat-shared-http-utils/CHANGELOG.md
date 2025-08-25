@@ -1,3 +1,15 @@
+# [@adobe/spacecat-shared-http-utils-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.2...@adobe/spacecat-shared-http-utils-v1.16.0) (2025-08-20)
+
+
+### Bug Fixes
+
+* Change the log level from info to debug ([#922](https://github.com/adobe/spacecat-shared/issues/922)) ([e291a2a](https://github.com/adobe/spacecat-shared/commit/e291a2ad83b31eb258fb65be4201ea6948af85c3))
+
+
+### Features
+
+* add threshold for pageviews ([#923](https://github.com/adobe/spacecat-shared/issues/923)) ([5b989cd](https://github.com/adobe/spacecat-shared/commit/5b989cd7c38ac946609143ed5402d2ff1600c581))
+
 # [@adobe/spacecat-shared-http-utils-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.1...@adobe/spacecat-shared-http-utils-v1.15.2) (2025-07-21)
 
 

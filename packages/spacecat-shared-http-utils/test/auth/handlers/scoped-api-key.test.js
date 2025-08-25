@@ -111,7 +111,7 @@ describe('ScopedApiKeyHandler', () => {
 
     const result = await handler.checkAuth({}, context);
     expect(result).to.be.null;
-    expect(logStub.error.getCall(0).args[0]).to.equal('[scopedApiKey] No API key entity found in the data layer for the provided API key: test-scoped-api-key');
+    expect(logStub.debug.getCall(0).args[0]).to.equal('[scopedApiKey] No API key entity found in the data layer for the provided API key: test-scoped-api-key');
   });
 
   it('should return null if the API key has expired', async () => {

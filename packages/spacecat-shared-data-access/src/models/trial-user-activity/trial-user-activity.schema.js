@@ -39,7 +39,6 @@ const schema = new SchemaBuilder(TrialUserActivity, TrialUserActivityCollection)
     type: Object.values(Entitlement.PRODUCT_CODES),
     required: true,
   })
-  .addAllIndex(['trialUserId'])
   .addIndex(
     { composite: ['productCode', 'siteId', 'entitlementId'] },
     { composite: ['createdAt'] },

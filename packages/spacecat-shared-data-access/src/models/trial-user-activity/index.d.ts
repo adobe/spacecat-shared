@@ -27,7 +27,6 @@ export interface TrialUserActivity extends BaseModel {
 }
 
 export interface TrialUserActivityCollection extends BaseCollection<TrialUserActivity> {
-  allByTrialUserId(trialUserId: string): Promise<TrialUserActivity[]>;
   allByEntitlementId(entitlementId: string): Promise<TrialUserActivity[]>;
   allByEntitlementIdAndCreatedAt(entitlementId: string, createdAt: string):
     Promise<TrialUserActivity[]>;
@@ -37,7 +36,6 @@ export interface TrialUserActivityCollection extends BaseCollection<TrialUserAct
   allBySiteId(siteId: string): Promise<TrialUserActivity[]>;
   allBySiteIdAndCreatedAt(siteId: string, createdAt: string): Promise<TrialUserActivity[]>;
 
-  findByTrialUserId(trialUserId: string): Promise<TrialUserActivity[]>;
   findByEntitlementId(entitlementId: string): Promise<TrialUserActivity[]>;
   findByEntitlementIdAndCreatedAt(entitlementId: string, createdAt: string):
     Promise<TrialUserActivity[]>;

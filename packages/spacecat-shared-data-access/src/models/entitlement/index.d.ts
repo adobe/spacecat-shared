@@ -38,13 +38,10 @@ export interface EntitlementCollection extends
     organizationId: string,
     productCode: EntitlementProductCode,
   ): Promise<Entitlement[]>;
-  allByStatus(status: EntitlementStatus): Promise<Entitlement[]>;
-  allByStatusAndUpdatedAt(status: EntitlementStatus, updatedAt: string): Promise<Entitlement[]>;
+
   findByOrganizationId(organizationId: string): Promise<Entitlement[]>;
   findByOrganizationIdAndProductCode(
     organizationId: string,
     productCode: EntitlementProductCode,
   ): Promise<Entitlement[]>;
-  findByStatus(status: EntitlementStatus): Promise<Entitlement[]>;
-  findByStatusAndUpdatedAt(status: EntitlementStatus, updatedAt: string): Promise<Entitlement[]>;
 }

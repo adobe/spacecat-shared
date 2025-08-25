@@ -25,14 +25,7 @@ const schema = new SchemaBuilder(SiteEnrollment, SiteEnrollmentCollection)
   .addReference('belongs_to', 'Site')
   // Reference to Entitlement (many-to-one relationship)
   .addReference('belongs_to', 'Entitlement')
-  .addAttribute('status', {
-    type: Object.values(SiteEnrollment.STATUSES),
-    required: true,
-  })
   .addAllIndex(['siteId'])
-  .addIndex(
-    { composite: ['entitlementId'] },
-    { composite: ['status'] },
-  );
+  .addAllIndex(['entitlementId']);
 
 export default schema.build();

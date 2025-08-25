@@ -29,7 +29,7 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
   .addReference('belongs_to', 'Organization')
   // Reference to TrialUserActivity (one-to-many relationship)
   .addReference('has_many', 'TrialUserActivities')
-  .addAttribute('externalUserId', { //  IDP subject/identifier; no emails/names
+  .addAttribute('externalUserId', {
     type: 'string',
     required: true,
   })
@@ -45,6 +45,18 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
     type: 'string',
     validate: (value) => isIsoDate(value),
   })
+  .addAttribute('emailId', {
+    type: 'string',
+    required: true,
+  })
+  .addAttribute('firstName', {
+    type: 'string',
+    required: false,
+  })
+  .addAttribute('lastName', {
+    type: 'string',
+    required: false,
+  })
   .addAttribute('metadata', {
     type: 'any',
     validate: (value) => !value || isObject(value),
@@ -52,7 +64,7 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
   .addAllIndex(['organizationId'])
   .addIndex(
     { composite: ['provider'] },
-    { composite: ['externalUserId'] },
+    { composite: ['externalUserId', 'emailId'] },
   );
 
 export default schema.build();

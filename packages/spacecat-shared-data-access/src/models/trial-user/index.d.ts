@@ -24,19 +24,28 @@ export interface TrialUser extends BaseModel {
   getLastSeenAt(): Date | null;
   getMetadata(): object | null;
   getOrganization(): Promise<Organization>;
+  getEmailId(): string;
+  getFirstName(): string | null;
+  getLastName(): string | null;
+  getTrialUserActivities(): Promise<TrialUserActivity[]>;
   setExternalUserId(externalUserId: string): TrialUser;
   setStatus(status: Status): TrialUser;
   setProvider(provider: ProviderType): TrialUser;
   setLastSeenAt(lastSeenAt: Date): TrialUser;
   setMetadata(metadata: object): TrialUser;
+  setEmailId(emailId: string): TrialUser;
+  setFirstName(firstName: string): TrialUser;
+  setLastName(lastName: string): TrialUser;
 }
 
 export interface TrialUserCollection extends BaseCollection<TrialUser> {
   allByProvider(provider: ProviderType): Promise<TrialUser[]>;
   allByProviderAndExternalUserId(provider: ProviderType, externalId: string): Promise<TrialUser[]>;
   allByOrganizationId(organizationId: string): Promise<TrialUser[]>;
+  allByProviderAndEmailId(provider: ProviderType, emailId: string): Promise<TrialUser[]>;
   findByProvider(provider: ProviderType): Promise<TrialUser[]>;
   findByProviderAndExternalUserId(provider: ProviderType, externalId: string):
     Promise<TrialUser[]>;
   findByOrganizationId(organizationId: string): Promise<TrialUser[]>;
+  findByProviderAndEmailId(provider: ProviderType, emailId: string): Promise<TrialUser[]>;
 }

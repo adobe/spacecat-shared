@@ -20,12 +20,6 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class SiteEnrollment extends BaseModel {
-  static STATUSES = {
-    ACTIVE: 'ACTIVE',
-    SUSPENDED: 'SUSPENDED',
-    ENDED: 'ENDED',
-  };
-
   // add your custom methods or overrides here
 }
 

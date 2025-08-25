@@ -63,7 +63,17 @@ describe('AzureOpenAIClient', () => {
       expect(() => AzureOpenAIClient.createFrom(mockContext)).to.throw('Missing Azure OpenAI API key');
     });
 
-    it('creates client with default values', () => {
+    it('throws an error if the API version is missing', () => {
+      mockContext.env.AZURE_API_VERSION = '';
+      expect(() => AzureOpenAIClient.createFrom(mockContext)).to.throw('Missing Azure OpenAI API version');
+    });
+
+    it('throws an error if the deployment name is missing', () => {
+      mockContext.env.AZURE_COMPLETION_DEPLOYMENT = '';
+      expect(() => AzureOpenAIClient.createFrom(mockContext)).to.throw('Missing Azure OpenAI deployment name');
+    });
+
+    it('creates client with all required values', () => {
       const client = AzureOpenAIClient.createFrom(mockContext);
       expect(client.config.apiVersion).to.equal('2024-02-01');
       expect(client.config.deploymentName).to.equal('gpt-4o');

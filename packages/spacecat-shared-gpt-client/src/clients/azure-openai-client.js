@@ -39,8 +39,8 @@ export default class AzureOpenAIClient {
     const {
       AZURE_OPENAI_ENDPOINT: apiEndpoint,
       AZURE_OPENAI_KEY: apiKey,
-      AZURE_API_VERSION: apiVersion = '2024-02-01',
-      AZURE_COMPLETION_DEPLOYMENT: deploymentName = 'gpt-4o',
+      AZURE_API_VERSION: apiVersion,
+      AZURE_COMPLETION_DEPLOYMENT: deploymentName,
     } = context.env;
 
     if (!isValidUrl(apiEndpoint)) {
@@ -49,6 +49,14 @@ export default class AzureOpenAIClient {
 
     if (!hasText(apiKey)) {
       throw new Error('Missing Azure OpenAI API key');
+    }
+
+    if (!hasText(apiVersion)) {
+      throw new Error('Missing Azure OpenAI API version');
+    }
+
+    if (!hasText(deploymentName)) {
+      throw new Error('Missing Azure OpenAI deployment name');
     }
 
     return new AzureOpenAIClient({

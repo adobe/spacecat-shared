@@ -10,8 +10,10 @@ To use the `AzureOpenAIClient`, you need to configure it with the following para
 
 - `AZURE_OPENAI_ENDPOINT`: The endpoint URL for your Azure OpenAI resource (e.g., `https://your-resource.openai.azure.com`).
 - `AZURE_OPENAI_KEY`: Your API key for accessing the Azure OpenAI API.
-- `AZURE_API_VERSION`: The API version to use (default: `2024-02-01`).
-- `AZURE_COMPLETION_DEPLOYMENT`: The deployment name for your Azure OpenAI model (default: `gpt-4o`).
+- `AZURE_API_VERSION`: The API version to use (e.g., `2024-02-01`).
+- `AZURE_COMPLETION_DEPLOYMENT`: The deployment name for your Azure OpenAI model (e.g., `gpt-4o`).
+
+**All parameters are required.** The client will throw an error if any of these configuration values are missing or invalid.
 
 These parameters can be set through environment variables or passed directly to the `AzureOpenAIClient.createFrom` method.
 

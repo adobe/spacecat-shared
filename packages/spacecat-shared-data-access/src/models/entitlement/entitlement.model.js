@@ -20,12 +20,6 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Entitlement extends BaseModel {
-  static STATUSES = {
-    ACTIVE: 'ACTIVE',
-    SUSPENDED: 'SUSPENDED',
-    ENDED: 'ENDED',
-  };
-
   static TIERS = {
     FREE_TRIAL: 'FREE_TRIAL',
     PAID: 'PAID',

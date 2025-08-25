@@ -33,10 +33,6 @@ const schema = new SchemaBuilder(Entitlement, EntitlementCollection)
     type: Object.values(Entitlement.TIERS),
     required: true,
   })
-  .addAttribute('status', {
-    type: Object.values(Entitlement.STATUSES),
-    required: true,
-  })
   .addAttribute('quotas', {
     type: 'map',
     required: false,
@@ -47,10 +43,6 @@ const schema = new SchemaBuilder(Entitlement, EntitlementCollection)
   .addIndex(
     { composite: ['organizationId'] },
     { composite: ['productCode'] },
-  )
-  .addIndex(
-    { composite: ['status'] },
-    { composite: ['updatedAt'] },
   );
 
 export default schema.build();

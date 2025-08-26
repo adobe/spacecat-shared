@@ -25,8 +25,8 @@ class TrialUser extends BaseModel {
    * Any change to this object needs to be reflected in the index.d.ts file as well.
    */
   static STATUSES = {
-    REGISTERED: 'REGISTERED',
-    VERIFIED: 'VERIFIED',
+    INVITED: 'INVITED',
+    REGISTERED: 'REGISTERED', // User has logged in at least once
     BLOCKED: 'BLOCKED',
     DELETED: 'DELETED',
   };

@@ -15,7 +15,7 @@ import type {
 } from '../index';
 import type { ProviderType } from '../organization-identity-provider';
 
-export type Status = 'REGISTERED' | 'VERIFIED' | 'BLOCKED' | 'DELETED';
+export type Status = 'INVITED' | 'REGISTERED' | 'BLOCKED' | 'DELETED';
 
 export interface TrialUser extends BaseModel {
   getExternalUserId(): string;
@@ -43,9 +43,11 @@ export interface TrialUserCollection extends BaseCollection<TrialUser> {
   allByProviderAndExternalUserId(provider: ProviderType, externalId: string): Promise<TrialUser[]>;
   allByOrganizationId(organizationId: string): Promise<TrialUser[]>;
   allByProviderAndEmailId(provider: ProviderType, emailId: string): Promise<TrialUser[]>;
+  allByEmailId(emailId: string): Promise<TrialUser[]>;
   findByProvider(provider: ProviderType): Promise<TrialUser[]>;
   findByProviderAndExternalUserId(provider: ProviderType, externalId: string):
     Promise<TrialUser[]>;
   findByOrganizationId(organizationId: string): Promise<TrialUser[]>;
   findByProviderAndEmailId(provider: ProviderType, emailId: string): Promise<TrialUser[]>;
+  findByEmailId(emailId: string): Promise<TrialUser[]>;
 }

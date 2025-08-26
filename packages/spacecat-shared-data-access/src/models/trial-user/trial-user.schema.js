@@ -31,7 +31,7 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
   .addReference('has_many', 'TrialUserActivities')
   .addAttribute('externalUserId', {
     type: 'string',
-    required: true,
+    required: false,
   })
   .addAttribute('status', {
     type: Object.values(TrialUser.STATUSES),
@@ -39,7 +39,7 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
   })
   .addAttribute('provider', {
     type: Object.values(OrganizationIdentityProvider.PROVIDER_TYPES),
-    required: true,
+    required: false,
   })
   .addAttribute('lastSeenAt', {
     type: 'string',
@@ -62,9 +62,10 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
     validate: (value) => !value || isObject(value),
   })
   .addAllIndex(['organizationId'])
+  .addAllIndex(['emailId'])
   .addIndex(
     { composite: ['provider'] },
-    { composite: ['externalUserId', 'emailId'] },
+    { composite: ['externalUserId'] },
   );
 
 export default schema.build();

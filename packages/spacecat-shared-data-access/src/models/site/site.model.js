@@ -10,12 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import {
-  composeAuditURL,
-  hasText,
-  isValidUrl,
-  DELIVERY_TYPES,
-} from '@adobe/spacecat-shared-utils';
+import { composeAuditURL, hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
 
 const HLX_HOST = /\.(?:aem|hlx)\.(?:page|live)$/i;
@@ -69,7 +64,12 @@ export const getAuthoringType = (hostname, authoringTypes) => {
  * @extends BaseModel
  */
 class Site extends BaseModel {
-  static DELIVERY_TYPES = DELIVERY_TYPES;
+  static DELIVERY_TYPES = {
+    AEM_CS: 'aem_cs',
+    AEM_EDGE: 'aem_edge',
+    AEM_AMS: 'aem_ams',
+    OTHER: 'other',
+  };
 
   static DEFAULT_DELIVERY_TYPE = Site.DELIVERY_TYPES.AEM_EDGE;
 

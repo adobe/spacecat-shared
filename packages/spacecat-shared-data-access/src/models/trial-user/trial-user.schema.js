@@ -43,7 +43,7 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
   })
   .addAttribute('lastSeenAt', {
     type: 'string',
-    validate: (value) => isIsoDate(value),
+    validate: (value) => !value || isIsoDate(value),
   })
   .addAttribute('emailId', {
     type: 'string',
@@ -61,7 +61,6 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
     type: 'any',
     validate: (value) => !value || isObject(value),
   })
-  .addAllIndex(['organizationId'])
   .addAllIndex(['emailId'])
   .addIndex(
     { composite: ['provider'] },

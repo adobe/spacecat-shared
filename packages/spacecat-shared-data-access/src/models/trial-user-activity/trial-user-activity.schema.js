@@ -40,7 +40,7 @@ const schema = new SchemaBuilder(TrialUserActivity, TrialUserActivityCollection)
     required: true,
   })
   .addIndex(
-    { composite: ['productCode', 'siteId', 'entitlementId'] },
+    { composite: ['productCode'] },
     { composite: ['createdAt'] },
   );
 

@@ -45,7 +45,6 @@ const schema = new SchemaBuilder(
   .addIndex(
     { composite: ['provider'] },
     { composite: ['externalId'] },
-  )
-  .addAllIndex(['organizationId']);
+  );
 
 export default schema.build();

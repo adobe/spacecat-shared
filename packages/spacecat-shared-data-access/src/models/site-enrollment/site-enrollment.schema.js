@@ -24,8 +24,6 @@ const schema = new SchemaBuilder(SiteEnrollment, SiteEnrollmentCollection)
   // Reference to Site (many-to-one relationship)
   .addReference('belongs_to', 'Site')
   // Reference to Entitlement (many-to-one relationship)
-  .addReference('belongs_to', 'Entitlement')
-  .addAllIndex(['siteId'])
-  .addAllIndex(['entitlementId']);
+  .addReference('belongs_to', 'Entitlement');
 
 export default schema.build();

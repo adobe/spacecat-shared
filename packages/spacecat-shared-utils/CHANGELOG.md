@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.48.0...@adobe/spacecat-shared-utils-v1.49.0) (2025-08-26)
+
+
+### Features
+
+* AEM utils ([#927](https://github.com/adobe/spacecat-shared/issues/927)) ([57fc3df](https://github.com/adobe/spacecat-shared/commit/57fc3df80cbacfdc66443090e073367856ec2f7c))
+
 # [@adobe/spacecat-shared-utils-v1.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.47.0...@adobe/spacecat-shared-utils-v1.48.0) (2025-08-18)
 
 

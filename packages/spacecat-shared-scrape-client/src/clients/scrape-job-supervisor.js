@@ -122,7 +122,7 @@ function ScrapeJobSupervisor(services, config) {
    * @param {object} scrapeJob - The scrape job record.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
    * @param {string} maxScrapeAge - The maximum age of the scrape job
-   * @param auditContext
+   * @param {object} auditData - Step-Audit specific data
    */
   // eslint-disable-next-line max-len
   async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders, maxScrapeAge, auditData) {

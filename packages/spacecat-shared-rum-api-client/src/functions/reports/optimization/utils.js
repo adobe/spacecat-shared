@@ -11,7 +11,8 @@
  */
 import { DataChunks, series, facets } from '@adobe/rum-distiller';
 import { computeConversionRate } from '@adobe/rum-distiller/utils.js';
-import { loadBundles } from '../../../../utils.js';
+import { urlMatchesFilter } from '@adobe/spacecat-shared-utils';
+import { loadBundles } from '../../../utils.js';
 
 /**
  * Initialize DataChunks with common configuration
@@ -70,4 +71,36 @@ export function calculateMetrics(chunk) {
       rate: computeConversionRate(t.conversions?.sum || 0, t.pageViews?.sum || 0) || 0,
     },
   };
+}
+
+/**
+ * Filter bundles based on the outlierUrls and urls
+ * @param {*} bundles
+ * @param {*} opts
+ * @returns
+ */
+export function filterBundles(bundles, opts) {
+  const {
+    outlierUrls,
+    urls,
+  } = opts;
+
+  let processedBundles = bundles;
+
+  if (!bundles || !Array.isArray(bundles)) {
+    processedBundles = [];
+  }
+
+  // Filter bundles by outlier URLs if provided
+  let filteredBundles = processedBundles;
+  if (outlierUrls && outlierUrls.length > 0) {
+    filteredBundles = processedBundles
+      .filter((item) => !urlMatchesFilter(item.url, outlierUrls));
+  }
+
+  // If urls filter is provided, keep only those URLs
+  if (urls && urls.length > 0) {
+    filteredBundles = filteredBundles.filter((item) => urlMatchesFilter(item.url, urls));
+  }
+  return filteredBundles;
 }

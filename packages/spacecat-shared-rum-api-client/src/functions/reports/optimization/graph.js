@@ -12,6 +12,7 @@
 import { urlMatchesFilter } from '@adobe/spacecat-shared-utils';
 import { DataChunks, series, facets } from '@adobe/rum-distiller';
 import { loadBundles } from '../../../utils.js';
+import { filterBundles } from './utils.js';
 
 /**
  * Validate date range
@@ -30,21 +31,21 @@ function validateDateRange(startTime, endTime) {
  * @param {string[]} filterUrls - URLs to filter by
  * @returns {DataChunks} Configured DataChunks instance
  */
-function initializeDataChunksWithDateAggregation(bundles, granularity = 'DAILY') {
+function initializeDataChunksWithDateAggregation(bundles, opts) {
+  const {
+    granularity = 'DAILY',
+  } = opts;
+
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
 
   const conversionSpec = { checkpoint: ['click'] };
 
-  // Add facets
   dataChunks.addFacet('checkpoint', facets.checkpoint, 'every', 'none');
 
-  // Add URL facet for filtering and categorization
   dataChunks.addFacet('url', facets.url, 'some', 'none');
 
-  // Add date facet based on granularity
   if (granularity.toUpperCase() === 'HOURLY') {
-    // For hourly: aggregate by date and hour
     dataChunks.addFacet('dateHour', (bundle) => {
       const date = new Date(bundle.time);
       const year = date.getUTCFullYear();
@@ -79,7 +80,10 @@ function initializeDataChunksWithDateAggregation(bundles, granularity = 'DAILY')
  * @param {string[]} filterUrls - URLs to filter by
  * @returns {Object} Aggregated traffic data
  */
-function processBundles(bundles, granularity = 'DAILY', filterUrls = []) {
+function processBundles(bundles, opts) {
+  const {
+    granularity = 'DAILY', filterUrls = [],
+  } = opts;
   const dataChunks = initializeDataChunksWithDateAggregation(bundles, granularity);
 
   let trafficData = [];
@@ -210,26 +214,12 @@ function handler(bundles, opts) {
   }
 
   const {
-    startTime, endTime, urls = [], outlierUrls = [], granularity = 'DAILY',
+    startTime, endTime, urls = [], granularity = 'DAILY',
   } = opts;
 
-  // Handle null/undefined bundles
-  let processedBundles = bundles;
-  if (!bundles || !Array.isArray(bundles)) {
-    processedBundles = [];
-  }
-
-  // Filter bundles by outlier URLs if provided
-  let filteredBundles = processedBundles;
-  if (outlierUrls && outlierUrls.length > 0) {
-    filteredBundles = processedBundles.filter((item) => !urlMatchesFilter(item.url, outlierUrls));
-  }
-
-  if (urls && urls.length > 0) {
-    filteredBundles = processedBundles;
-  }
-
   validateDateRange(startTime, endTime);
+
+  const filteredBundles = filterBundles(bundles, opts);
   const result = processBundles(filteredBundles, granularity, urls);
 
   // Calculate totals from trafficData

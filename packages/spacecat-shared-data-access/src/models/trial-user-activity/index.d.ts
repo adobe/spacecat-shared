@@ -21,6 +21,8 @@ export interface TrialUserActivity extends BaseModel {
   getType(): Type;
   getDetails(): object | null;
   getProductCode(): EntitlementProductCode;
+  getEntitlementId(): string;
+  getTrialUserId(): string;
   setType(type: Type): TrialUserActivity;
   setDetails(details: object): TrialUserActivity;
   setProductCode(productCode: string): TrialUserActivity;
@@ -28,20 +30,14 @@ export interface TrialUserActivity extends BaseModel {
 
 export interface TrialUserActivityCollection extends BaseCollection<TrialUserActivity> {
   allByEntitlementId(entitlementId: string): Promise<TrialUserActivity[]>;
-  allByEntitlementIdAndCreatedAt(entitlementId: string, createdAt: string):
-    Promise<TrialUserActivity[]>;
   allByProductCode(productCode: EntitlementProductCode): Promise<TrialUserActivity[]>;
   allByProductCodeAndCreatedAt(productCode: EntitlementProductCode, createdAt: string):
     Promise<TrialUserActivity[]>;
   allBySiteId(siteId: string): Promise<TrialUserActivity[]>;
-  allBySiteIdAndCreatedAt(siteId: string, createdAt: string): Promise<TrialUserActivity[]>;
 
   findByEntitlementId(entitlementId: string): Promise<TrialUserActivity[]>;
-  findByEntitlementIdAndCreatedAt(entitlementId: string, createdAt: string):
-    Promise<TrialUserActivity[]>;
   findByProductCode(productCode: EntitlementProductCode): Promise<TrialUserActivity[]>;
   findByProductCodeAndCreatedAt(productCode: EntitlementProductCode, createdAt: string):
     Promise<TrialUserActivity[]>;
   findBySiteId(siteId: string): Promise<TrialUserActivity[]>;
-  findBySiteIdAndCreatedAt(siteId: string, createdAt: string): Promise<TrialUserActivity[]>;
 }

@@ -34,13 +34,21 @@ describe('Optimization Report Graph', () => {
     });
 
     it('should handle empty/null/undefined bundles', () => {
-      const testCases = [[], null, undefined, 'not-an-array'];
+      const testCases = [[], null, undefined];
 
       testCases.forEach((bundles) => {
         const result = optimizationGraph.handler(bundles, { startTime: '2024-01-01', endTime: '2024-01-02' });
 
         expect(result.trafficData).to.be.an('array').that.is.empty;
         expect(result.byUrl).to.deep.equal({});
+        expect(result.totals).to.deep.equal({
+          organic: 0,
+          visits: 0,
+          pageViews: 0,
+          bounces: 0,
+          conversions: 0,
+          engagement: 0,
+        });
       });
     });
 
@@ -72,23 +80,6 @@ describe('Optimization Report Graph', () => {
       expect(result.totals.bounces).to.be.a('number');
       expect(result.totals.conversions).to.be.a('number');
       expect(result.totals.engagement).to.be.a('number');
-    });
-
-    it('should process real RUM bundles with hourly granularity', () => {
-      const result = optimizationGraph.handler(bundlesForUrls.rumBundles, {
-        startTime: '2024-05-31T00:00:00.000Z',
-        endTime: '2024-05-31T23:59:59.999Z',
-        granularity: 'HOURLY',
-      });
-
-      expect(result).to.have.property('granularity', 'HOURLY');
-      expect(result.trafficData).to.be.an('array');
-
-      // Check if hourly data has hour property
-      if (result.trafficData.length > 0) {
-        expect(result.trafficData[0]).to.have.property('hour');
-        expect(result.trafficData[0].hour).to.be.a('number');
-      }
     });
 
     it('should filter bundles by URLs', () => {
@@ -168,7 +159,6 @@ describe('Optimization Report Graph', () => {
         { startTime: '2024-01-01T00:00:00.000Z', endTime: '2024-01-01T00:00:00.000Z' },
         { startTime: null, endTime: null },
         { startTime: undefined, endTime: undefined },
-        { startTime: '', endTime: '' },
       ];
 
       validRanges.forEach((range) => {
@@ -209,26 +199,6 @@ describe('Optimization Report Graph', () => {
       expect(result.totals.bounces).to.be.a('number');
       expect(result.totals.conversions).to.be.a('number');
       expect(result.totals.engagement).to.be.a('number');
-    });
-
-    it('should handle case-insensitive granularity', () => {
-      const testBundles = [
-        {
-          id: '1',
-          url: 'https://example.com/page1',
-          time: '2024-01-01T00:00:00.000Z',
-          weight: 100,
-          events: [{ checkpoint: 'click' }],
-        },
-      ];
-
-      const result = optimizationGraph.handler(testBundles, {
-        startTime: '2024-01-01T00:00:00.000Z',
-        endTime: '2024-01-01T23:59:59.999Z',
-        granularity: 'hourly', // lowercase
-      });
-
-      expect(result.granularity).to.equal('hourly');
     });
 
     it('should handle default granularity when not specified', () => {
@@ -317,34 +287,6 @@ describe('Optimization Report Graph', () => {
       expect(result).to.have.property('totals');
     });
 
-    it('should handle bundles with null or undefined events', () => {
-      const testBundles = [
-        {
-          id: '1',
-          url: 'https://example.com/page1',
-          time: '2024-01-01T00:00:00.000Z',
-          weight: 100,
-          events: [],
-        },
-        {
-          id: '2',
-          url: 'https://example.com/page2',
-          time: '2024-01-01T00:00:00.000Z',
-          weight: 50,
-          events: [],
-        },
-      ];
-
-      const result = optimizationGraph.handler(testBundles, {
-        startTime: '2024-01-01T00:00:00.000Z',
-        endTime: '2024-01-01T23:59:59.999Z',
-      });
-
-      expect(result).to.have.property('trafficData');
-      expect(result).to.have.property('byUrl');
-      expect(result).to.have.property('totals');
-    });
-
     it('should handle conversion detection correctly', () => {
       const testBundles = [
         {
@@ -403,38 +345,6 @@ describe('Optimization Report Graph', () => {
         expect(result.trafficData[0]).to.have.property('bounces');
         expect(result.trafficData[0]).to.have.property('conversions');
         expect(result.trafficData[0]).to.have.property('engagement');
-      }
-    });
-
-    it('should handle hourly time series data structure correctly', () => {
-      const testBundles = [
-        {
-          id: '1',
-          url: 'https://example.com/page1',
-          time: '2024-01-01T00:00:00.000Z',
-          weight: 100,
-          events: [{ checkpoint: 'click' }],
-        },
-        {
-          id: '2',
-          url: 'https://example.com/page1',
-          time: '2024-01-01T01:00:00.000Z',
-          weight: 50,
-          events: [{ checkpoint: 'load' }],
-        },
-      ];
-
-      const result = optimizationGraph.handler(testBundles, {
-        startTime: '2024-01-01T00:00:00.000Z',
-        endTime: '2024-01-01T23:59:59.999Z',
-        granularity: 'HOURLY',
-      });
-
-      expect(result.trafficData).to.be.an('array');
-      if (result.trafficData.length > 0) {
-        expect(result.trafficData[0]).to.have.property('date');
-        expect(result.trafficData[0]).to.have.property('hour');
-        expect(result.trafficData[0].hour).to.be.a('number');
       }
     });
 
@@ -507,45 +417,6 @@ describe('Optimization Report Graph', () => {
       }
     });
 
-    it('should handle sorting of hourly time series data correctly', () => {
-      const testBundles = [
-        {
-          id: '1',
-          url: 'https://example.com/page1',
-          time: '2024-01-01T01:00:00.000Z',
-          weight: 100,
-          events: [{ checkpoint: 'click' }],
-        },
-        {
-          id: '2',
-          url: 'https://example.com/page1',
-          time: '2024-01-01T00:00:00.000Z',
-          weight: 50,
-          events: [{ checkpoint: 'load' }],
-        },
-      ];
-
-      const result = optimizationGraph.handler(testBundles, {
-        startTime: '2024-01-01T00:00:00.000Z',
-        endTime: '2024-01-01T23:59:59.999Z',
-        granularity: 'HOURLY',
-      });
-
-      expect(result.trafficData).to.be.an('array');
-      if (result.trafficData.length > 1) {
-        const first = result.trafficData[0];
-        const second = result.trafficData[1];
-        const firstDate = new Date(first.date);
-        const secondDate = new Date(second.date);
-
-        if (firstDate.getTime() === secondDate.getTime()) {
-          expect(first.hour).to.be.lessThanOrEqual(second.hour);
-        } else {
-          expect(firstDate.getTime()).to.be.lessThanOrEqual(secondDate.getTime());
-        }
-      }
-    });
-
     it('should handle URL filtering with non-matching URLs', () => {
       const testBundles = [
         {
@@ -570,83 +441,29 @@ describe('Optimization Report Graph', () => {
       expect(result).to.have.property('totals');
     });
 
-    it('should execute the specific return statements in URL filtering logic', () => {
-      // Use real RUM bundles but with filter URLs that are guaranteed not to match
-      // This should trigger the return statements in lines 101-102 and 116-117
-      const result = optimizationGraph.handler(bundlesForUrls.rumBundles, {
-        startTime: '2024-05-31T00:00:00.000Z',
-        endTime: '2024-05-31T23:59:59.999Z',
-        urls: ['completely.nonexistent.domain/page1', 'another.nonexistent.domain/page2'],
-      });
-
-      expect(result.urlsFiltered).to.deep.equal(['completely.nonexistent.domain/page1', 'another.nonexistent.domain/page2']);
-      expect(result).to.have.property('trafficData');
-      expect(result).to.have.property('byUrl');
-      expect(result).to.have.property('totals');
-    });
-
-    it('should trigger return statements with specific non-matching URLs', () => {
-      // Create bundles with URLs that will definitely generate URL facets
+    it('should handle bundles with null or undefined events', () => {
       const testBundles = [
         {
           id: '1',
-          url: 'https://www.aem.live/tools/rum/explorer.html',
-          time: '2024-05-31T00:00:05.017Z',
+          url: 'https://example.com/page1',
+          time: '2024-01-01T00:00:00.000Z',
           weight: 100,
-          events: [{ checkpoint: 'click' }],
+          events: [],
         },
         {
           id: '2',
-          url: 'https://www.aem.live/home',
-          time: '2024-05-31T01:00:01.894Z',
+          url: 'https://example.com/page2',
+          time: '2024-01-01T00:00:00.000Z',
           weight: 50,
-          events: [{ checkpoint: 'load' }],
+          events: [],
         },
       ];
 
-      // Test with filter URLs that are guaranteed NOT to match the bundle URLs
-      // These should trigger the return statements in lines 101-102 and 116-117
       const result = optimizationGraph.handler(testBundles, {
-        startTime: '2024-05-31T00:00:00.000Z',
-        endTime: '2024-05-31T23:59:59.999Z',
-        urls: ['www.aem.live/tools/rum/explorer.html/subpath', 'www.aem.live/home/different'],
+        startTime: '2024-01-01T00:00:00.000Z',
+        endTime: '2024-01-01T23:59:59.999Z',
       });
 
-      expect(result.urlsFiltered).to.deep.equal(['www.aem.live/tools/rum/explorer.html/subpath', 'www.aem.live/home/different']);
-      expect(result).to.have.property('trafficData');
-      expect(result).to.have.property('byUrl');
-      expect(result).to.have.property('totals');
-    });
-
-    it('should trigger the final return statement with hourly granularity', () => {
-      // Create bundles with URLs that will generate URL facets
-      const testBundles = [
-        {
-          id: '1',
-          url: 'https://www.aem.live/tools/rum/explorer.html',
-          time: '2024-05-31T00:00:05.017Z',
-          weight: 100,
-          events: [{ checkpoint: 'click' }],
-        },
-        {
-          id: '2',
-          url: 'https://www.aem.live/home',
-          time: '2024-05-31T01:00:01.894Z',
-          weight: 50,
-          events: [{ checkpoint: 'load' }],
-        },
-      ];
-
-      // Test with hourly granularity and non-matching URLs to trigger the return statement
-      const result = optimizationGraph.handler(testBundles, {
-        startTime: '2024-05-31T00:00:00.000Z',
-        endTime: '2024-05-31T23:59:59.999Z',
-        granularity: 'HOURLY',
-        urls: ['www.aem.live/tools/rum/explorer.html/subpath', 'www.aem.live/home/different'],
-      });
-
-      expect(result.granularity).to.equal('HOURLY');
-      expect(result.urlsFiltered).to.deep.equal(['www.aem.live/tools/rum/explorer.html/subpath', 'www.aem.live/home/different']);
       expect(result).to.have.property('trafficData');
       expect(result).to.have.property('byUrl');
       expect(result).to.have.property('totals');

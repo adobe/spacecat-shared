@@ -12,9 +12,17 @@
 
 import { initializeDataChunks, calculateMetrics, filterBundles } from './utils.js';
 
+/**
+ * Handler for optimization reports metrics
+ * @param {*} bundles
+ * @param {*} opts
+ * @returns
+ */
 function handler(bundles, opts) {
-  // Handle null/undefined bundles
-  const filteredBundles = filterBundles(bundles, opts);
+  // Handle null/undefined opts
+  const options = opts || {};
+
+  const filteredBundles = filterBundles(bundles, options);
   const dataChunks = initializeDataChunks(filteredBundles);
   const result = calculateMetrics(dataChunks);
   return result;

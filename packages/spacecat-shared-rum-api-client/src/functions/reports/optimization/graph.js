@@ -9,7 +9,6 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-import { urlMatchesFilter } from '@adobe/spacecat-shared-utils';
 import { DataChunks, series, facets } from '@adobe/rum-distiller';
 import { loadBundles } from '../../../utils.js';
 import { filterBundles } from './utils.js';
@@ -24,43 +23,58 @@ function validateDateRange(startTime, endTime) {
     throw new Error('Start time must be before end time');
   }
 }
+
 /**
  * Initialize DataChunks with date-based aggregation
  * @param {Object[]} bundles - Array of RUM bundles
- * @param {string} granularity - Granularity (DAILY/HOURLY)
- * @param {string[]} filterUrls - URLs to filter by
+ * @param {Object} opts - Options object
  * @returns {DataChunks} Configured DataChunks instance
  */
-function initializeDataChunksWithDateAggregation(bundles, opts) {
-  const {
-    granularity = 'DAILY',
-  } = opts;
-
+function initializeDataChunksWithDateAggregation(bundles) {
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
 
   const conversionSpec = { checkpoint: ['click'] };
 
   dataChunks.addFacet('checkpoint', facets.checkpoint, 'every', 'none');
-
   dataChunks.addFacet('url', facets.url, 'some', 'none');
 
-  if (granularity.toUpperCase() === 'HOURLY') {
-    dataChunks.addFacet('dateHour', (bundle) => {
-      const date = new Date(bundle.time);
-      const year = date.getUTCFullYear();
-      const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
-      const day = date.getUTCDate().toString().padStart(2, '0');
-      const hour = date.getUTCHours().toString().padStart(2, '0');
-      return `${year}-${month}-${day}-${hour}`;
-    });
-  } else {
-    // For daily: aggregate by date only
-    dataChunks.addFacet('date', (bundle) => {
-      const date = new Date(bundle.time);
-      return date.toISOString().split('T')[0]; // YYYY-MM-DD format
-    });
-  }
+  // Aggregate by date only
+  dataChunks.addFacet('date', (bundle) => {
+    const date = new Date(bundle.time);
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+  });
+
+  // Add metrics series
+  dataChunks.addSeries('pageViews', series.pageViews);
+  dataChunks.addSeries('engagement', series.engagement);
+  dataChunks.addSeries('bounces', series.bounces);
+  dataChunks.addSeries('organic', series.organic);
+  dataChunks.addSeries('visits', series.visits);
+  dataChunks.addSeries('conversions', (bundle) => (bundle && dataChunks.hasConversion(bundle, conversionSpec) ? bundle.weight : 0));
+
+  return dataChunks;
+}
+
+/**
+ * Initialize DataChunks for URL-specific aggregation
+ * @param {Object[]} bundles - Array of RUM bundles for a specific URL
+ * @returns {DataChunks} Configured DataChunks instance
+ */
+function initializeDataChunksForUrl(bundles) {
+  const dataChunks = new DataChunks();
+  loadBundles(bundles, dataChunks);
+
+  const conversionSpec = { checkpoint: ['click'] };
+
+  // Add checkpoint facet for conversion detection
+  dataChunks.addFacet('checkpoint', facets.checkpoint, 'every', 'none');
+
+  // Aggregate by date only
+  dataChunks.addFacet('date', (bundle) => {
+    const date = new Date(bundle.time);
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+  });
 
   // Add metrics series
   dataChunks.addSeries('pageViews', series.pageViews);
@@ -76,15 +90,11 @@ function initializeDataChunksWithDateAggregation(bundles, opts) {
 /**
  * Process bundles into aggregated graph data
  * @param {Object[]} bundles - Array of RUM bundles
- * @param {string} granularity - Granularity (DAILY/HOURLY)
- * @param {string[]} filterUrls - URLs to filter by
+ * @param {Object} opts - Options object
  * @returns {Object} Aggregated traffic data
  */
-function processBundles(bundles, opts) {
-  const {
-    granularity = 'DAILY', filterUrls = [],
-  } = opts;
-  const dataChunks = initializeDataChunksWithDateAggregation(bundles, granularity);
+function processBundles(bundles) {
+  const dataChunks = initializeDataChunksWithDateAggregation(bundles);
 
   let trafficData = [];
   const byUrl = {};
@@ -93,12 +103,11 @@ function processBundles(bundles, opts) {
   if (dataChunks.facets.url) {
     dataChunks.facets.url.forEach((urlFacet) => {
       const url = urlFacet.value;
+      // Get bundles for this specific URL
+      const urlBundles = urlFacet.entries;
 
-      // Skip if not in filter URLs (if filter is applied)
-      // This condition ensures we have filter URLs and the URL doesn't match any filter
-      if (filterUrls && filterUrls.length > 0 && !urlMatchesFilter(url, filterUrls)) {
-        return; // Skip this URL facet as it doesn't match the filter criteria
-      }
+      // Create separate DataChunks for this URL to get URL-specific time series
+      const urlDataChunks = initializeDataChunksForUrl(urlBundles);
 
       byUrl[url] = {
         total: {
@@ -113,86 +122,32 @@ function processBundles(bundles, opts) {
       };
 
       // Add time series data for this URL
-      if (granularity.toUpperCase() === 'HOURLY') {
-        // For hourly: include hour information
-        const urlHourlyData = dataChunks.facets.dateHour
-          .filter(() => true)
-          .map((facet) => {
-            const parts = facet.value.split('-');
-            const [year, month, day, hour] = parts;
+      const urlDailyData = urlDataChunks.facets.date
+        .map((facet) => ({
+          date: facet.value,
+          organic: facet.metrics.organic?.sum || 0,
+          visits: facet.metrics.visits?.sum || 0,
+          pageViews: facet.metrics.pageViews?.sum || 0,
+          bounces: facet.metrics.bounces?.sum || 0,
+          conversions: facet.metrics.conversions?.sum || 0,
+          engagement: facet.metrics.engagement?.sum || 0,
+        }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-            return {
-              date: `${year}-${month}-${day}`,
-              hour: parseInt(hour, 10),
-              organic: facet.metrics.organic?.sum || 0,
-              visits: facet.metrics.visits?.sum || 0,
-              pageViews: facet.metrics.pageViews?.sum || 0,
-              bounces: facet.metrics.bounces?.sum || 0,
-              conversions: facet.metrics.conversions?.sum || 0,
-              engagement: facet.metrics.engagement?.sum || 0,
-            };
-          })
-          .sort((a, b) => {
-            const dateComparison = new Date(a.date) - new Date(b.date);
-            if (dateComparison !== 0) return dateComparison;
-            return a.hour - b.hour;
-          });
-
-        byUrl[url].timeSeries = urlHourlyData;
-      } else {
-        // For daily: date-only format
-        const urlDailyData = dataChunks.facets.date
-          .map((facet) => ({
-            date: facet.value,
-            organic: facet.metrics.organic?.sum || 0,
-            visits: facet.metrics.visits?.sum || 0,
-            pageViews: facet.metrics.pageViews?.sum || 0,
-            bounces: facet.metrics.bounces?.sum || 0,
-            conversions: facet.metrics.conversions?.sum || 0,
-            engagement: facet.metrics.engagement?.sum || 0,
-          }))
-          .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-        byUrl[url].timeSeries = urlDailyData;
-      }
+      byUrl[url].timeSeries = urlDailyData;
     });
   }
 
-  // Process overall traffic data (filtered by URLs if specified)
-  if (granularity.toUpperCase() === 'HOURLY') {
-    // For hourly: include hour information
-    trafficData = dataChunks.facets.dateHour.map((facet) => {
-      const parts = facet.value.split('-');
-      const [year, month, day, hour] = parts;
-
-      return {
-        date: `${year}-${month}-${day}`,
-        hour: parseInt(hour, 10),
-        organic: facet.metrics.organic?.sum || 0,
-        visits: facet.metrics.visits?.sum || 0,
-        pageViews: facet.metrics.pageViews?.sum || 0,
-        bounces: facet.metrics.bounces?.sum || 0,
-        conversions: facet.metrics.conversions?.sum || 0,
-        engagement: facet.metrics.engagement?.sum || 0,
-      };
-    }).sort((a, b) => {
-      // Sort by date first, then by hour
-      const dateComparison = new Date(a.date) - new Date(b.date);
-      if (dateComparison !== 0) return dateComparison;
-      return a.hour - b.hour;
-    });
-  } else {
-    // For daily: date-only format
-    trafficData = dataChunks.facets.date.map((facet) => ({
-      date: facet.value,
-      organic: facet.metrics.organic?.sum || 0,
-      visits: facet.metrics.visits?.sum || 0,
-      pageViews: facet.metrics.pageViews?.sum || 0,
-      bounces: facet.metrics.bounces?.sum || 0,
-      conversions: facet.metrics.conversions?.sum || 0,
-      engagement: facet.metrics.engagement?.sum || 0,
-    })).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }
+  // Process overall traffic data
+  trafficData = dataChunks.facets.date.map((facet) => ({
+    date: facet.value,
+    organic: facet.metrics.organic?.sum || 0,
+    visits: facet.metrics.visits?.sum || 0,
+    pageViews: facet.metrics.pageViews?.sum || 0,
+    bounces: facet.metrics.bounces?.sum || 0,
+    conversions: facet.metrics.conversions?.sum || 0,
+    engagement: facet.metrics.engagement?.sum || 0,
+  })).sort((a, b) => new Date(a.date) - new Date(b.date));
 
   return { trafficData, byUrl };
 }
@@ -214,13 +169,13 @@ function handler(bundles, opts) {
   }
 
   const {
-    startTime, endTime, urls = [], granularity = 'DAILY',
+    startTime, endTime, urls = [],
   } = opts;
 
   validateDateRange(startTime, endTime);
 
   const filteredBundles = filterBundles(bundles, opts);
-  const result = processBundles(filteredBundles, granularity, urls);
+  const result = processBundles(filteredBundles);
 
   // Calculate totals from trafficData
   const totals = result.trafficData.reduce((acc, data) => ({
@@ -239,12 +194,11 @@ function handler(bundles, opts) {
     engagement: 0,
   });
 
-  // Add granularity info to response
   return {
     ...result,
-    granularity,
     totals,
     urlsFiltered: urls || [],
+    granularity: opts.granularity || 'DAILY',
   };
 }
 

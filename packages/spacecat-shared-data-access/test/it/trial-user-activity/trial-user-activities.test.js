@@ -30,7 +30,6 @@ describe('TrialUserActivity IT', async () => {
 
     const dataAccess = getDataAccess();
     TrialUserActivity = dataAccess.TrialUserActivity;
-    // console.log(`schema here: ${TrialUserActivity.schema}`);
   });
 
   it('gets a trialUserActivity by id', async () => {
@@ -38,6 +37,8 @@ describe('TrialUserActivity IT', async () => {
     const trialUserActivity = await TrialUserActivity.findById(sampleTrialUserActivity.getId());
 
     expect(trialUserActivity).to.be.an('object');
+    expect(trialUserActivity.getType()).to.equal(sampleTrialUserActivity.getType());
+    expect(trialUserActivity.getDetails()).to.deep.equal(sampleTrialUserActivity.getDetails());
     expect(
       sanitizeTimestamps(trialUserActivity.toJSON()),
     ).to.eql(
@@ -56,6 +57,8 @@ describe('TrialUserActivity IT', async () => {
 
     for (const trialUserActivity of allTrialUserActivities) {
       expect(trialUserActivity.getTrialUserId()).to.equal(sampleTrialUserActivity.getTrialUserId());
+      expect(trialUserActivity.getType()).to.be.a('string');
+      expect(['SIGN_UP', 'CREATE_SITE', 'RUN_AUDIT', 'PROMPT_RUN', 'DOWNLOAD', 'SIGN_IN']).to.include(trialUserActivity.getType());
     }
   });
 
@@ -70,6 +73,8 @@ describe('TrialUserActivity IT', async () => {
 
     for (const trialUserActivity of allTrialUserActivities) {
       expect(trialUserActivity.getCreatedAt()).to.equal(sampleTrialUserActivity.getCreatedAt());
+      expect(trialUserActivity.getProductCode()).to.equal(productCode);
+      expect(trialUserActivity.getType()).to.be.a('string');
     }
   });
 
@@ -103,6 +108,12 @@ describe('TrialUserActivity IT', async () => {
 
     for (const trialUserActivity of allTrialUserActivities) {
       expect(trialUserActivity.getCreatedAt()).to.equal(sampleTrialUserActivity.getCreatedAt());
+      expect(trialUserActivity.getSiteId()).to.equal(siteId);
+      expect(trialUserActivity.getType()).to.be.a('string');
+
+      if (trialUserActivity.getDetails()) {
+        expect(trialUserActivity.getDetails()).to.be.an('object');
+      }
     }
   });
 
@@ -121,12 +132,18 @@ describe('TrialUserActivity IT', async () => {
       updatedBy: 'system',
     };
 
-    const trialUserActivities = await TrialUserActivity.create(data);
+    const trialUserActivity = await TrialUserActivity.create(data);
 
-    expect(trialUserActivities).to.be.an('object');
+    expect(trialUserActivity).to.be.an('object');
+    expect(trialUserActivity.getType()).to.equal('PROMPT_RUN');
+    expect(trialUserActivity.getDetails()).to.deep.equal({
+      promptType: 'seo_optimization',
+      tokensUsed: 200,
+      responseLength: 600,
+    });
 
     expect(
-      sanitizeIdAndAuditFields('trialUserActivities', trialUserActivities.toJSON()),
+      sanitizeIdAndAuditFields('trialUserActivities', trialUserActivity.toJSON()),
     ).to.eql(data);
   });
 

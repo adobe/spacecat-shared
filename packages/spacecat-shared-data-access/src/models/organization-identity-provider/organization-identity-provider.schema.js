@@ -27,8 +27,6 @@ const schema = new SchemaBuilder(
 )
   // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Organization')
-  // Reference to TrialUsers (one-to-many relationship)
-  .addReference('has_many', 'TrialUsers')
   .addAttribute('metadata', {
     type: 'any',
     required: false,

@@ -23,8 +23,6 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 */
 
 const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
-  // Reference to OrganizationIdentityProvider (many-to-one relationship)
-  .addReference('belongs_to', 'OrganizationIdentityProvider')
   // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Organization')
   // Reference to TrialUserActivity (one-to-many relationship)

@@ -13,7 +13,6 @@
 const trialUsers = [
   {
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
-    organizationIdentityProviderId: '0d86eeb9-6052-4355-bf07-4ce91d6682fa',
     trialUserId: '9b4f4013-63eb-44f7-9a3a-726930b923b5',
     externalUserId: 'ext-user-123',
     status: 'REGISTERED',
@@ -31,7 +30,6 @@ const trialUsers = [
   },
   {
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
-    organizationIdentityProviderId: '06c51b9d-728e-46f7-a447-86cb1de0bd12',
     trialUserId: '8a8115fb-0514-49e4-99a6-e720218f0c6d',
     status: 'INVITED',
     emailId: 'user2@example.com',
@@ -39,7 +37,6 @@ const trialUsers = [
   },
   {
     organizationId: '5d42bdf8-b65d-4de8-b849-a4f28ebc93cd',
-    organizationIdentityProviderId: '5864faf5-bcae-4028-8b96-ed331c375e69',
     trialUserId: 'c7faffcc-cc68-4f66-9020-fa71b67cce6d',
     externalUserId: 'ext-user-789',
     status: 'BLOCKED',

@@ -209,16 +209,20 @@ export function detectAEMVersion(htmlSource, headers = {}) {
  * @param {string} bearerToken - The access token for the page
  * @return {string|null} - The AEM CS page ID
  */
-export async function determineAEMCSPageId(pageURL, authorURL, bearerToken) {
+export async function determineAEMCSPageId(pageURL, authorURL, bearerToken, log = console) {
   try {
+    log.info(`Processing page id for ${pageURL}`);
     const htmlResponse = await fetch(pageURL);
     if (!htmlResponse.ok) {
+      log.error(`Failed to fetch page ${pageURL}: ${htmlResponse.statusText}`);
       return null;
     }
     const html = await htmlResponse.text();
+    log.info(`Successfully fetched page ${pageURL}`);
     let pageId = null;
     /* c8 ignore start */
     if (authorURL && bearerToken) {
+      log.info('Trying to resolve page id for from content-page-ref');
       // try content-page-ref
       const contentPageRefRegex = /<meta\s+name=['"]content-page-ref['"]\s+content=['"]([^'"]*)['"]\s*\/?>/i;
       const contentPageRefMatch = html.match(contentPageRefRegex);
@@ -240,12 +244,14 @@ export async function determineAEMCSPageId(pageURL, authorURL, bearerToken) {
       }
     }
     if (!pageId) {
+      log.info('Page id not found in content-page-ref, trying content-page-id');
       const contentPageIdRegex = /<meta\s+name=['"]content-page-id['"]\s+content=['"]([^'"]*)['"]\s*\/?>/i;
       const contentPageIdMatch = html.match(contentPageIdRegex);
       if (contentPageIdMatch?.[1]?.trim()) {
         pageId = contentPageIdMatch[1].trim();
       }
     }
+    log.info(`Page id from content-page-id: ${pageId}`);
     return pageId;
   } catch (error) {
     throw new Error(`Failed to determine AEM CS page ID for ${pageURL}: ${error.message}`);

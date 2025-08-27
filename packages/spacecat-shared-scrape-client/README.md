@@ -285,7 +285,7 @@ npm run clean
 
 ### ScrapeClient Workflow Overview
 
-insert image here
+<img width="889" height="508" alt="Screenshot 2025-08-27 at 08 56 16" src="https://github.com/user-attachments/assets/9ccc1388-ed6b-4bf0-a059-d40e6e90aff8" />
 
 When a new scrape job is created, the client performs the following steps:
 1. Creates a new job entry in the database with status `PENDING`.

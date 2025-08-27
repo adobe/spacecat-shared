@@ -14,6 +14,7 @@ import { isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils'
 
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
 import BaseModel from '../base/base.model.js';
+import { checkConfiguration } from './configuration.schema.js';
 
 /**
  * Configuration - A class representing an Configuration entity.
@@ -86,6 +87,11 @@ class Configuration extends BaseModel {
   }
 
   isHandlerEnabledForSite(type, site) {
+    // Check if it's a sandbox site and the audit type is enabled for sandboxes
+    if (site.isSandbox && this.isAuditEnabledForSandbox(type)) {
+      return true;
+    }
+
     const handler = this.getHandlers()?.[type];
     if (!handler) return false;
 
@@ -110,6 +116,36 @@ class Configuration extends BaseModel {
     }
 
     return false;
+  }
+
+  // Check if an audit type is enabled for sandbox sites
+  isAuditEnabledForSandbox(auditType) {
+    return !!this.getSandboxAuditConfig(auditType);
+  }
+
+  // Get configuration for a sandbox audit type
+  getSandboxAuditConfig(auditType) {
+    return this.state?.sandboxAudits?.enabledAudits?.[auditType] || null;
+  }
+
+  // Get all enabled sandbox audit types
+  getEnabledSandboxAudits() {
+    return Object.keys(this.state?.sandboxAudits?.enabledAudits || {});
+  }
+
+  // Update sandbox audit configuration
+  updateSandboxAuditConfig(auditType, config = {}) {
+    this.state.sandboxAudits = this.state.sandboxAudits || { enabledAudits: {} };
+    this.state.sandboxAudits.enabledAudits[auditType] = config;
+    checkConfiguration(this.state);
+  }
+
+  // Remove a sandbox audit configuration
+  removeSandboxAuditConfig(auditType) {
+    if (this.state?.sandboxAudits?.enabledAudits) {
+      delete this.state.sandboxAudits.enabledAudits[auditType];
+      checkConfiguration(this.state);
+    }
   }
 
   isHandlerEnabledForOrg(type, org) {

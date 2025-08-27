@@ -47,11 +47,22 @@ const jobsSchema = Joi.array().required();
 
 const queueSchema = Joi.object().required();
 
+const sandboxAuditConfigSchema = Joi.object({
+  enabledAudits: Joi.object().pattern(
+    Joi.string(), // audit type key
+    Joi.object({
+      expire: Joi.string(), // for cwv
+      // other audit-specific configs as needed
+    }).optional().default({}),
+  ),
+}).optional();
+
 const configurationSchema = Joi.object({
   version: Joi.number().required(),
   queues: queueSchema,
   handlers: handlerSchema,
   jobs: jobsSchema,
+  sandboxAudits: sandboxAuditConfigSchema,
 }).unknown(true);
 
 export const checkConfiguration = (data, schema = configurationSchema) => {
@@ -94,6 +105,10 @@ const schema = new SchemaBuilder(Configuration, ConfigurationCollection)
   .addAttribute('slackRoles', {
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),
+  })
+  .addAttribute('sandboxAudits', {
+    type: 'any',
+    validate: (value) => !value || checkConfiguration(value, sandboxAuditConfigSchema),
   })
   .addAttribute('version', {
     type: 'number',

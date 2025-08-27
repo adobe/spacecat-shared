@@ -268,7 +268,7 @@ function isValidIMSOrgId(imsOrgId) {
  * @returns {boolean} True if the given string is a valid email address, false otherwise.
  */
 function isValidEmail(email) {
-  return isEmail(email);
+  return typeof email === 'string' && isEmail(email);
 }
 
 /**

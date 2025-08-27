@@ -23,7 +23,7 @@ export const DELIVERY_TYPES = {
   OTHER: 'other',
 };
 
-const CONTENT_API_PAGES_RESOLVE_ENDPOINT = '/pages/resolve';
+const CONTENT_API_PAGES_RESOLVE_ENDPOINT = '/adobe/pages/resolve';
 
 /**
  * Detects the AEM delivery type from HTML source code
@@ -205,42 +205,50 @@ export function detectAEMVersion(htmlSource, headers = {}) {
 /**
  * Determines the AEM CS page ID for Content API, from the page URL
  * @param {string} pageURL - The URL of the page
- * @param {string} accessToken - The access token for the page
+ * @param {string} authorURL - The URL of the author instance
+ * @param {string} bearerToken - The access token for the page
  * @return {string|null} - The AEM CS page ID
  */
-export async function determineAEMCSPageId(pageURL, accessToken) {
-  const htmlResponse = await fetch(pageURL);
-  if (!htmlResponse.ok) {
-    return null;
-  }
-  const html = await htmlResponse.text();
-  const contentPageIdRegex = /<meta\s+name=['"]content-page-id['"]\s+content=['"]([^'"]*)['"]\s*\/?>/i;
-  const contentPageIdMatch = html.match(contentPageIdRegex);
-
-  let pageId = null;
-  if (contentPageIdMatch?.[1]?.trim()) {
-    pageId = contentPageIdMatch[1].trim();
-  }
-  /* c8 ignore start */
-  if (!pageId && accessToken) {
-    // try content-page-ref
-    const contentPageRefRegex = /<meta\s+name=['"]content-page-ref['"]\s+content=['"]([^'"]*)['"]\s*\/?>/i;
-    const contentPageRefMatch = html.match(contentPageRefRegex);
-    let contentPageRef = null;
-    if (contentPageRefMatch?.[1]?.trim()) {
-      contentPageRef = contentPageRefMatch[1].trim();
-      const { origin } = new URL(pageURL);
-      const referenceResolveResponse = await fetch(`${origin}${CONTENT_API_PAGES_RESOLVE_ENDPOINT}?pageRef=${contentPageRef}`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (referenceResolveResponse.ok) {
-        const referenceResolveData = await referenceResolveResponse.json();
-        pageId = referenceResolveData.pageId;
+export async function determineAEMCSPageId(pageURL, authorURL, bearerToken) {
+  try {
+    const htmlResponse = await fetch(pageURL);
+    if (!htmlResponse.ok) {
+      return null;
+    }
+    const html = await htmlResponse.text();
+    let pageId = null;
+    /* c8 ignore start */
+    if (authorURL && bearerToken) {
+      // try content-page-ref
+      const contentPageRefRegex = /<meta\s+name=['"]content-page-ref['"]\s+content=['"]([^'"]*)['"]\s*\/?>/i;
+      const contentPageRefMatch = html.match(contentPageRefRegex);
+      let contentPageRef = null;
+      if (contentPageRefMatch?.[1]?.trim()) {
+        contentPageRef = contentPageRefMatch[1].trim();
+        const referenceResolveResponse = await fetch(
+          `${authorURL}${CONTENT_API_PAGES_RESOLVE_ENDPOINT}?pageRef=${contentPageRef}`,
+          {
+            method: 'GET',
+            headers: { Authorization: bearerToken },
+            redirect: 'follow', // ensure redirects are followed
+          },
+        );
+        if (referenceResolveResponse.ok) {
+          const referenceResolveData = await referenceResolveResponse.json();
+          pageId = referenceResolveData.id;
+        }
       }
     }
+    if (!pageId) {
+      const contentPageIdRegex = /<meta\s+name=['"]content-page-id['"]\s+content=['"]([^'"]*)['"]\s*\/?>/i;
+      const contentPageIdMatch = html.match(contentPageIdRegex);
+      if (contentPageIdMatch?.[1]?.trim()) {
+        pageId = contentPageIdMatch[1].trim();
+      }
+    }
+    return pageId;
+  } catch (error) {
+    throw new Error(`Failed to determine AEM CS page ID for ${pageURL}: ${error.message}`);
   }
   /* c8 ignore end */
-
-  return pageId;
 }

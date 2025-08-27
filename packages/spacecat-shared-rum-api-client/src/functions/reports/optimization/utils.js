@@ -94,7 +94,7 @@ export function filterBundles(bundles, opts) {
   // Filter bundles by outlier URLs if provided
   let filteredBundles = processedBundles;
   if (outlierUrls && outlierUrls.length > 0) {
-    filteredBundles = processedBundles
+    filteredBundles = filteredBundles
       .filter((item) => !urlMatchesFilter(item.url, outlierUrls));
   }
 

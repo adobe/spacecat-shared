@@ -18,6 +18,7 @@ import AsyncJobCollection from '../async-job/async-job.collection.js';
 import AuditCollection from '../audit/audit.collection.js';
 import ConfigurationCollection from '../configuration/configuration.collection.js';
 import ExperimentCollection from '../experiment/experiment.collection.js';
+import EntitlementCollection from '../entitlement/entitlement.collection.js';
 import FixEntityCollection from '../fix-entity/fix-entity.collection.js';
 import ImportJobCollection from '../import-job/import-job.collection.js';
 import ImportUrlCollection from '../import-url/import-url.collection.js';
@@ -25,20 +26,25 @@ import KeyEventCollection from '../key-event/key-event.collection.js';
 import LatestAuditCollection from '../latest-audit/latest-audit.collection.js';
 import OpportunityCollection from '../opportunity/opportunity.collection.js';
 import OrganizationCollection from '../organization/organization.collection.js';
+import OrganizationIdentityProviderCollection from '../organization-identity-provider/organization-identity-provider.collection.js';
 import ScrapeJobCollection from '../scrape-job/scrape-job.collection.js';
 import ScrapeUrlCollection from '../scrape-url/scrape-url.collection.js';
 import SiteCandidateCollection from '../site-candidate/site-candidate.collection.js';
 import SiteCollection from '../site/site.collection.js';
+import SiteEnrollmentCollection from '../site-enrollment/site-enrollment.collection.js';
 import SiteTopFormCollection from '../site-top-form/site-top-form.collection.js';
 import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js';
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
 import PageIntentCollection from '../page-intent/page-intent.collection.js';
 import ReportCollection from '../report/report.collection.js';
+import TrialUserCollection from '../trial-user/trial-user.collection.js';
+import TrialUserActivityCollection from '../trial-user-activity/trial-user-activity.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
 import AuditSchema from '../audit/audit.schema.js';
 import ConfigurationSchema from '../configuration/configuration.schema.js';
+import EntitlementSchema from '../entitlement/entitlement.schema.js';
 import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
 import ExperimentSchema from '../experiment/experiment.schema.js';
 import ImportJobSchema from '../import-job/import-job.schema.js';
@@ -47,15 +53,19 @@ import KeyEventSchema from '../key-event/key-event.schema.js';
 import LatestAuditSchema from '../latest-audit/latest-audit.schema.js';
 import OpportunitySchema from '../opportunity/opportunity.schema.js';
 import OrganizationSchema from '../organization/organization.schema.js';
+import OrganizationIdentityProviderSchema from '../organization-identity-provider/organization-identity-provider.schema.js';
 import ScrapeJobSchema from '../scrape-job/scrape-job.schema.js';
 import ScrapeUrlSchema from '../scrape-url/scrape-url.schema.js';
 import SiteSchema from '../site/site.schema.js';
 import SiteCandidateSchema from '../site-candidate/site-candidate.schema.js';
+import SiteEnrollmentSchema from '../site-enrollment/site-enrollment.schema.js';
 import SiteTopFormSchema from '../site-top-form/site-top-form.schema.js';
 import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
 import SuggestionSchema from '../suggestion/suggestion.schema.js';
 import PageIntentSchema from '../page-intent/page-intent.schema.js';
 import ReportSchema from '../report/report.schema.js';
+import TrialUserSchema from '../trial-user/trial-user.schema.js';
+import TrialUserActivitySchema from '../trial-user-activity/trial-user-activity.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -142,6 +152,7 @@ EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
 EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(ConfigurationSchema, ConfigurationCollection);
+EntityRegistry.registerEntity(EntitlementSchema, EntitlementCollection);
 EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);
 EntityRegistry.registerEntity(ExperimentSchema, ExperimentCollection);
 EntityRegistry.registerEntity(ImportJobSchema, ImportJobCollection);
@@ -150,14 +161,21 @@ EntityRegistry.registerEntity(KeyEventSchema, KeyEventCollection);
 EntityRegistry.registerEntity(LatestAuditSchema, LatestAuditCollection);
 EntityRegistry.registerEntity(OpportunitySchema, OpportunityCollection);
 EntityRegistry.registerEntity(OrganizationSchema, OrganizationCollection);
+EntityRegistry.registerEntity(
+  OrganizationIdentityProviderSchema,
+  OrganizationIdentityProviderCollection,
+);
 EntityRegistry.registerEntity(ScrapeJobSchema, ScrapeJobCollection);
 EntityRegistry.registerEntity(ScrapeUrlSchema, ScrapeUrlCollection);
 EntityRegistry.registerEntity(SiteSchema, SiteCollection);
 EntityRegistry.registerEntity(SiteCandidateSchema, SiteCandidateCollection);
+EntityRegistry.registerEntity(SiteEnrollmentSchema, SiteEnrollmentCollection);
 EntityRegistry.registerEntity(SiteTopFormSchema, SiteTopFormCollection);
 EntityRegistry.registerEntity(SiteTopPageSchema, SiteTopPageCollection);
 EntityRegistry.registerEntity(SuggestionSchema, SuggestionCollection);
 EntityRegistry.registerEntity(PageIntentSchema, PageIntentCollection);
 EntityRegistry.registerEntity(ReportSchema, ReportCollection);
+EntityRegistry.registerEntity(TrialUserSchema, TrialUserCollection);
+EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollection);
 
 export default EntityRegistry;

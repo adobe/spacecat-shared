@@ -116,22 +116,24 @@ export function createTimeSeriesData(dateFacets) {
  * @returns {Object} Calculated metrics
  */
 export function calculateMetrics(chunk) {
-  const t = chunk.totals;
+  const {
+    totals,
+  } = chunk;
   return {
-    pageViews: { total: t.pageViews?.sum || 0 },
-    visits: { total: t.visits?.sum || 0 },
-    organicTraffic: { total: t.organic?.sum || 0 },
+    pageViews: { total: totals.pageViews?.sum || 0 },
+    visits: { total: totals.visits?.sum || 0 },
+    organicTraffic: { total: totals.organic?.sum || 0 },
     bounces: {
-      total: t.bounces?.sum || 0,
-      rate: computeConversionRate(t.bounces?.sum || 0, t.visits?.sum || 0) || 0,
+      total: totals.bounces?.sum || 0,
+      rate: computeConversionRate(totals.bounces?.sum || 0, totals.visits?.sum || 0) || 0,
     },
     engagement: {
-      total: t.engagement?.sum || 0,
-      rate: computeConversionRate(t.conversions?.sum || 0, t.engagement?.sum || 0) || 0,
+      total: totals.engagement?.sum || 0,
+      rate: computeConversionRate(totals.conversions?.sum || 0, totals.engagement?.sum || 0) || 0,
     },
     conversions: {
-      total: t.conversions?.sum || 0,
-      rate: computeConversionRate(t.conversions?.sum || 0, t.pageViews?.sum || 0) || 0,
+      total: totals.conversions?.sum || 0,
+      rate: computeConversionRate(totals.conversions?.sum || 0, totals.pageViews?.sum || 0) || 0,
     },
   };
 }

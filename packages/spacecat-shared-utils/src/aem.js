@@ -202,6 +202,18 @@ export function detectAEMVersion(htmlSource, headers = {}) {
   return found[0];
 }
 
+/* c8 ignore start */
+async function getPublicIP() {
+  try {
+    const response = await fetch('https://api.ipify.org');
+    const publicIP = await response.text();
+    return publicIP.trim();
+  } catch (error) {
+    throw new Error(`Failed to get public IP: ${error.message}`);
+  }
+}
+/* c8 ignore end */
+
 /**
  * Determines the AEM CS page ID for Content API, from the page URL
  * @param {string} pageURL - The URL of the page
@@ -214,7 +226,8 @@ export async function determineAEMCSPageId(pageURL, authorURL, bearerToken, log 
     log.info(`Processing page id for ${pageURL}`);
     const htmlResponse = await fetch(pageURL);
     if (!htmlResponse.ok) {
-      log.error(`Failed to fetch page ${pageURL}: ${htmlResponse.statusText}`);
+      log.error(`Failed to fetch page ${pageURL}: ${htmlResponse.statusText} ${htmlResponse.status}`);
+      log.info(`Public IP: ${await getPublicIP()}`);
       return null;
     }
     const html = await htmlResponse.text();

@@ -95,6 +95,10 @@ const schema = new SchemaBuilder(Configuration, ConfigurationCollection)
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),
   })
+  .addAttribute('sandboxAudits', {
+    type: 'any',
+    validate: (value) => !value || isNonEmptyObject(value),
+  })
   .addAttribute('version', {
     type: 'number',
     required: true,

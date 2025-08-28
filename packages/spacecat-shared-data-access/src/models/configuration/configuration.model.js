@@ -14,7 +14,6 @@ import { isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils'
 
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
 import BaseModel from '../base/base.model.js';
-import { checkConfiguration } from './configuration.schema.js';
 
 /**
  * Configuration - A class representing an Configuration entity.
@@ -137,14 +136,12 @@ class Configuration extends BaseModel {
   updateSandboxAuditConfig(auditType, config = {}) {
     this.state.sandboxAudits = this.state.sandboxAudits || { enabledAudits: {} };
     this.state.sandboxAudits.enabledAudits[auditType] = config;
-    checkConfiguration(this.state);
   }
 
   // Remove a sandbox audit configuration
   removeSandboxAuditConfig(auditType) {
     if (this.state?.sandboxAudits?.enabledAudits) {
       delete this.state.sandboxAudits.enabledAudits[auditType];
-      checkConfiguration(this.state);
     }
   }
 

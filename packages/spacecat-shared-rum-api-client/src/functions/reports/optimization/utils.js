@@ -22,11 +22,9 @@ const CONVERSION_SPEC = { checkpoint: ['click'] };
  * Create date facet function for YYYY-MM-DD format
  * @returns {Function} Date facet function
  */
-function createDateFacet() {
-  return (bundle) => {
-    const date = new Date(bundle.time);
-    return date.toISOString().split('T')[0];
-  };
+function createDateFacet(bundle) {
+  const date = new Date(bundle.time);
+  return date.toISOString().split('T')[0];
 }
 
 /**
@@ -70,7 +68,7 @@ export function initializeDataChunks(bundles, options = {}) {
 
   // Add date facet if requested
   if (includeDateFacet) {
-    dataChunks.addFacet('date', createDateFacet());
+    dataChunks.addFacet('date', createDateFacet);
   }
 
   // Add metrics series

@@ -29,7 +29,6 @@ describe('Optimization Utils', () => {
       const dataChunks = initializeDataChunks(testBundles);
 
       expect(dataChunks).to.be.an('object');
-      expect(dataChunks.facets).to.have.property('url');
       expect(dataChunks.facets).to.have.property('checkpoint');
       expect(dataChunks.series).to.have.property('pageViews');
       expect(dataChunks.series).to.have.property('engagement');
@@ -37,14 +36,66 @@ describe('Optimization Utils', () => {
       expect(dataChunks.series).to.have.property('organic');
       expect(dataChunks.series).to.have.property('visits');
       expect(dataChunks.series).to.have.property('conversions');
-      expect(dataChunks.series).to.have.property('trafficData');
+    });
+
+    it('should include URL facet when includeUrlFacet is true', () => {
+      const testBundles = [
+        {
+          id: '1',
+          url: 'https://example.com/page1',
+          time: '2024-01-01T00:00:00.000Z',
+          weight: 100,
+          events: [{ checkpoint: 'click' }],
+        },
+      ];
+
+      const dataChunks = initializeDataChunks(testBundles, { includeUrlFacet: true });
+
+      expect(dataChunks).to.be.an('object');
+      expect(dataChunks.facets).to.have.property('url');
+      expect(dataChunks.facets).to.have.property('checkpoint');
+    });
+
+    it('should not include URL facet when includeUrlFacet is false', () => {
+      const testBundles = [
+        {
+          id: '1',
+          url: 'https://example.com/page1',
+          time: '2024-01-01T00:00:00.000Z',
+          weight: 100,
+          events: [{ checkpoint: 'click' }],
+        },
+      ];
+
+      const dataChunks = initializeDataChunks(testBundles, { includeUrlFacet: false });
+
+      expect(dataChunks).to.be.an('object');
+      expect(dataChunks.facets).to.not.have.property('url');
+      expect(dataChunks.facets).to.have.property('checkpoint');
+    });
+
+    it('should include date facet when includeDateFacet is true', () => {
+      const testBundles = [
+        {
+          id: '1',
+          url: 'https://example.com/page1',
+          time: '2024-01-01T00:00:00.000Z',
+          weight: 100,
+          events: [{ checkpoint: 'click' }],
+        },
+      ];
+
+      const dataChunks = initializeDataChunks(testBundles, { includeDateFacet: true });
+
+      expect(dataChunks).to.be.an('object');
+      expect(dataChunks.facets).to.have.property('date');
+      expect(dataChunks.facets).to.have.property('checkpoint');
     });
 
     it('should handle empty bundles array', () => {
       const dataChunks = initializeDataChunks([]);
 
       expect(dataChunks).to.be.an('object');
-      expect(dataChunks.facets).to.have.property('url');
       expect(dataChunks.facets).to.have.property('checkpoint');
     });
 
@@ -52,7 +103,6 @@ describe('Optimization Utils', () => {
       const dataChunks = initializeDataChunks(null);
 
       expect(dataChunks).to.be.an('object');
-      expect(dataChunks.facets).to.have.property('url');
       expect(dataChunks.facets).to.have.property('checkpoint');
     });
 
@@ -60,7 +110,6 @@ describe('Optimization Utils', () => {
       const dataChunks = initializeDataChunks(undefined);
 
       expect(dataChunks).to.be.an('object');
-      expect(dataChunks.facets).to.have.property('url');
       expect(dataChunks.facets).to.have.property('checkpoint');
     });
 
@@ -77,7 +126,6 @@ describe('Optimization Utils', () => {
       const dataChunks = initializeDataChunks(testBundles);
 
       expect(dataChunks).to.be.an('object');
-      expect(dataChunks.facets).to.have.property('url');
       expect(dataChunks.facets).to.have.property('checkpoint');
     });
 

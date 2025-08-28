@@ -14,18 +14,15 @@ import { initializeDataChunks, calculateMetrics, filterBundles } from './utils.j
 
 /**
  * Handler for optimization reports metrics
- * @param {*} bundles
- * @param {*} opts
- * @returns
+ * @param {Object[]} bundles - Array of RUM bundles
+ * @param {Object} opts - Options object
+ * @returns {Object} Calculated metrics
  */
 function handler(bundles, opts) {
-  // Handle null/undefined opts
   const options = opts || {};
-
   const filteredBundles = filterBundles(bundles, options);
   const dataChunks = initializeDataChunks(filteredBundles);
-  const result = calculateMetrics(dataChunks);
-  return result;
+  return calculateMetrics(dataChunks);
 }
 
 export default {

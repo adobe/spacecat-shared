@@ -30,6 +30,8 @@ describe('Optimization Report Graph', () => {
         trafficData: [],
         byUrl: {},
         totals: {},
+        granularity: 'DAILY',
+        urlsFiltered: [],
       });
     });
 

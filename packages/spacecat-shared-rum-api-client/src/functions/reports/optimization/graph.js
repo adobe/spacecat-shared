@@ -67,10 +67,11 @@ function processBundles(bundles) {
 function handler(bundles, opts) {
   if (!opts) {
     return {
-      timePeriod: { startTime: null, endTime: null },
       trafficData: [],
       byUrl: {},
       totals: {},
+      urlsFiltered: [],
+      granularity: 'DAILY',
     };
   }
 

@@ -229,6 +229,11 @@ export default class ScrapeClient {
     }
   }
 
+  /**
+    * Get the result paths of a scrape job
+    * @param {string} jobId - The ID of the job to fetch.
+    * @return {Promise<Map<string, string>>} A map of URLs to their corresponding result paths.
+   */
   async getScrapeResultPaths(jobId) {
     try {
       const job = await this.scrapeSupervisor.getScrapeJob(jobId);

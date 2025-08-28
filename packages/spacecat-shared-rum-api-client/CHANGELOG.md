@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.36.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.4...@adobe/spacecat-shared-rum-api-client-v2.36.5) (2025-08-25)
+
+
+### Bug Fixes
+
+* make max opportunities configurable ([#930](https://github.com/adobe/spacecat-shared/issues/930)) ([2b18c25](https://github.com/adobe/spacecat-shared/commit/2b18c25e8dc3303af0e1a09ebcbe830672368d13))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.36.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.3...@adobe/spacecat-shared-rum-api-client-v2.36.4) (2025-08-15)
 
 

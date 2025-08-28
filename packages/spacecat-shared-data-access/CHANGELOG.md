@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.57.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.57.0...@adobe/spacecat-shared-data-access-v2.57.1) (2025-08-26)
+
+
+### Bug Fixes
+
+* use DELIVERY_TYPES from shared-utils ([#933](https://github.com/adobe/spacecat-shared/issues/933)) ([3592540](https://github.com/adobe/spacecat-shared/commit/3592540fc3cee05333fbf854447755b727dafae1))
+
 # [@adobe/spacecat-shared-data-access-v2.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.56.1...@adobe/spacecat-shared-data-access-v2.57.0) (2025-08-22)
 
 

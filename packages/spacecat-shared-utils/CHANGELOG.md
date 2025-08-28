@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.49.0...@adobe/spacecat-shared-utils-v1.50.0) (2025-08-28)
+
+
+### Features
+
+* add email validation function using validator package ([#938](https://github.com/adobe/spacecat-shared/issues/938)) ([5ec8aec](https://github.com/adobe/spacecat-shared/commit/5ec8aec460abbf19fc0756a05da5f50ff7fed79a))
+
 # [@adobe/spacecat-shared-utils-v1.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.48.0...@adobe/spacecat-shared-utils-v1.49.0) (2025-08-26)
 
 

@@ -617,4 +617,138 @@ describe('determineAEMCSPageId', () => {
     const result = await determineAEMCSPageId(pageURL);
     expect(result).to.be.null;
   });
+
+  describe('with authorURL and bearerToken', () => {
+    const authorURL = 'https://author.example.com';
+    const bearerToken = 'Bearer token123';
+    const pageURL = 'https://example.com/page';
+
+    it('should use content-page-ref when available and Content API returns page ID', async () => {
+      const contentPageRef = 'content-ref-abc123';
+      const expectedPageId = 'page-456';
+      const htmlContent = `
+        <html>
+          <head>
+            <meta name="content-page-ref" content="${contentPageRef}">
+            <title>Test Page</title>
+          </head>
+          <body>Content</body>
+        </html>
+      `;
+
+      // Mock the page fetch
+      nock('https://example.com')
+        .get('/page')
+        .reply(200, htmlContent);
+
+      // Mock the Content API call with 303 redirect
+      nock(authorURL)
+        .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-abc123')
+        .reply(303, '', {
+          Location: `/adobe/experimental/aspm-expires-20251231/pages/${expectedPageId}`,
+        });
+
+      // Mock the redirected URL response with JSON containing the page ID
+      nock(authorURL)
+        .get(`/adobe/experimental/aspm-expires-20251231/pages/${expectedPageId}`)
+        .reply(200, { id: expectedPageId });
+
+      const result = await determineAEMCSPageId(pageURL, authorURL, bearerToken);
+      expect(result).to.equal(expectedPageId);
+    });
+
+    it('should fall back to content-page-id when Content API fails', async () => {
+      const contentPageRef = 'content-ref-fail';
+      const expectedPageId = 'fallback-page-id';
+      const htmlContent = `
+        <html>
+          <head>
+            <meta name="content-page-ref" content="${contentPageRef}">
+            <meta name="content-page-id" content="${expectedPageId}">
+            <title>Test Page</title>
+          </head>
+          <body>Content</body>
+        </html>
+      `;
+
+      // Mock the page fetch
+      nock('https://example.com')
+        .get('/page')
+        .reply(200, htmlContent);
+
+      // Mock the Content API call failure
+      nock(authorURL)
+        .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-fail')
+        .reply(500, 'Internal Server Error');
+
+      const result = await determineAEMCSPageId(pageURL, authorURL, bearerToken);
+      expect(result).to.equal(expectedPageId);
+    });
+
+    it('should throw error when Content API returns not ok status', async () => {
+      const contentPageRef = 'content-ref-network-error';
+      const htmlContent = `
+        <html>
+          <head>
+            <meta name="content-page-ref" content="${contentPageRef}">
+            <title>Test Page</title>
+          </head>
+          <body>Content</body>
+        </html>
+      `;
+
+      // Mock the page fetch
+      nock('https://example.com')
+        .get('/page')
+        .reply(200, htmlContent);
+
+      // Mock the Content API call with network error
+      nock(authorURL)
+        .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-network-error')
+        .replyWithError('Content API network error');
+
+      try {
+        await determineAEMCSPageId(pageURL, authorURL, bearerToken);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error.message).to.include('Content API network error');
+      }
+    });
+
+    it('should prioritize content-page-ref over content-page-id when both are present and Content API succeeds', async () => {
+      const contentPageRef = 'content-ref-priority';
+      const contentPageId = 'content-page-id-value';
+      const expectedPageId = 'priority-page-id';
+      const htmlContent = `
+        <html>
+          <head>
+            <meta name="content-page-ref" content="${contentPageRef}">
+            <meta name="content-page-id" content="${contentPageId}">
+            <title>Test Page</title>
+          </head>
+          <body>Content</body>
+        </html>
+      `;
+
+      // Mock the page fetch
+      nock('https://example.com')
+        .get('/page')
+        .reply(200, htmlContent);
+
+      // Mock the Content API call with 303 redirect
+      nock(authorURL)
+        .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-priority')
+        .reply(303, '', {
+          Location: `/adobe/experimental/aspm-expires-20251231/pages/${expectedPageId}`,
+        });
+
+      // Mock the redirected URL response with JSON containing the page ID
+      nock(authorURL)
+        .get(`/adobe/experimental/aspm-expires-20251231/pages/${expectedPageId}`)
+        .reply(200, { id: expectedPageId });
+
+      const result = await determineAEMCSPageId(pageURL, authorURL, bearerToken);
+      expect(result).to.equal(expectedPageId);
+    });
+  });
 });

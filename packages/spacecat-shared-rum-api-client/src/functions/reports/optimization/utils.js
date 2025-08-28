@@ -190,3 +190,14 @@ export function filterBundles(bundles, opts) {
   }
   return filteredBundles;
 }
+
+/**
+ * Validate date range
+ * @param {string} startTime
+ * @param {string} endTime
+ */
+export function validateDateRange(startTime, endTime) {
+  if (startTime && endTime && new Date(startTime) > new Date(endTime)) {
+    throw new Error('Start time must be before end time');
+  }
+}

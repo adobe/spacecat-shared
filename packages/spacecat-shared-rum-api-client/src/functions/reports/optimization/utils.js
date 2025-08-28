@@ -172,14 +172,12 @@ export function filterBundles(bundles, opts) {
     urls,
   } = options;
 
-  let processedBundles = bundles;
-
   if (!bundles || !Array.isArray(bundles)) {
-    processedBundles = [];
+    return [];
   }
 
   // Filter bundles by outlier URLs if provided
-  let filteredBundles = processedBundles;
+  let filteredBundles = bundles;
   if (outlierUrls && outlierUrls.length > 0) {
     filteredBundles = filteredBundles
       .filter((item) => item && item.url && !urlMatchesFilter(item.url, outlierUrls));

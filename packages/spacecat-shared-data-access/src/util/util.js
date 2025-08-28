@@ -36,7 +36,14 @@ const referenceToBaseMethodName = (reference) => {
 
 const entityNameToAllPKValue = (entityName) => `ALL_${pluralize.plural(entityName.toUpperCase())}`;
 
-const idNameToEntityName = (idName) => capitalize(pluralize.singular(idName.replace('Id', '')));
+const idNameToEntityName = (idName) => {
+  let result = idName;
+  if (idName.endsWith('Id')) {
+    result = result.replace('Id', '');
+  }
+
+  return capitalize(pluralize.singular(result));
+};
 
 const isPositiveInteger = (value) => isInteger(value) && value > 0;
 

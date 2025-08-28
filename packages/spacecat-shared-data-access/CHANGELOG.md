@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.57.1...@adobe/spacecat-shared-data-access-v2.58.0) (2025-08-28)
+
+
+### Features
+
+* **dataAccess:** Add entities for LLMO trial onboarding ([#928](https://github.com/adobe/spacecat-shared/issues/928)) ([b5acc3c](https://github.com/adobe/spacecat-shared/commit/b5acc3c3af49d5fd45b8abf91b851fe23da60bc7))
+
 # [@adobe/spacecat-shared-data-access-v2.57.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.57.0...@adobe/spacecat-shared-data-access-v2.57.1) (2025-08-26)
 
 

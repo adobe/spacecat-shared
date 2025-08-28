@@ -32,6 +32,7 @@ import {
   isObject,
   isString,
   isValidDate,
+  isValidEmail,
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
@@ -309,6 +310,42 @@ describe('Shared functions', () => {
 
     it('returns true for valid IMS Org Id', async () => {
       expect(isValidIMSOrgId('36231B56669DEACD0A49402F@AdobeOrg')).to.be.true;
+    });
+  });
+
+  describe('isValidEmail', () => {
+    it('returns false for invalid email addresses', async () => {
+      const invalidEmails = [
+        null,
+        undefined,
+        1234,
+        true,
+        '',
+        'invalid-email',
+        'test@',
+        '@example.com',
+        'test..test@example.com',
+        'test@.com',
+        'test@example.',
+        'test@example..com',
+        'test@example.com.',
+        'test space@example.com',
+        'test@example com',
+      ];
+
+      invalidEmails.forEach((email) => expect(isValidEmail(email)).to.be.false);
+    });
+
+    it('returns true for valid email addresses', async () => {
+      const validEmails = [
+        'test@example.com',
+        'user.name@domain.co.uk',
+        'user+tag@example.org',
+        'user123@subdomain.example.net',
+        'firstname.lastname@company-name.com',
+      ];
+
+      validEmails.forEach((email) => expect(isValidEmail(email)).to.be.true);
     });
   });
 

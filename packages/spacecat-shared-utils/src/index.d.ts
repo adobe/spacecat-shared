@@ -23,6 +23,8 @@ export function isInteger(value: unknown): boolean;
 
 export function isValidDate(value: unknown): boolean;
 
+export function isValidEmail(email: string): boolean;
+
 export function isIsoDate(str: string): boolean;
 
 export function isIsoTimeOffsetsDate(str: string): boolean;

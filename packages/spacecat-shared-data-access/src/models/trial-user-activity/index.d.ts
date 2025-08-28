@@ -23,6 +23,7 @@ export interface TrialUserActivity extends BaseModel {
   getProductCode(): EntitlementProductCode;
   getEntitlementId(): string;
   getTrialUserId(): string;
+  getSiteId(): string;
   setType(type: Type): TrialUserActivity;
   setDetails(details: object): TrialUserActivity;
   setProductCode(productCode: string): TrialUserActivity;

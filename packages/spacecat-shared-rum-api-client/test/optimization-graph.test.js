@@ -26,12 +26,11 @@ describe('Optimization Report Graph', () => {
       const result = optimizationGraph.handler([], null);
 
       expect(result).to.deep.equal({
-        timePeriod: { startTime: null, endTime: null },
         trafficData: [],
         byUrl: {},
         totals: {},
-        granularity: 'DAILY',
         urlsFiltered: [],
+        granularity: 'DAILY',
       });
     });
 

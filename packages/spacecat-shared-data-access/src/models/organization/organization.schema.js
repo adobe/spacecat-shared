@@ -42,6 +42,10 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
     type: 'string',
     required: true,
   })
+  .addAttribute('tenantId', {
+    type: 'string',
+    required: false,
+  })
   .addAttribute('imsOrgId', {
     type: 'string',
     validate: (value) => !value || Organization.IMS_ORG_ID_REGEX.test(value),

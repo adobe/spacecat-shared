@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Site } from '../index';
+import type {
+  BaseCollection, BaseModel, Site, Entitlement, OrganizationIdentityProvider, TrialUser,
+} from '../index';
 
 export interface Organization extends BaseModel {
   getConfig(): object;
@@ -18,6 +20,9 @@ export interface Organization extends BaseModel {
   getImsOrgId(): string;
   getName(): string;
   getSites(): Promise<Site[]>;
+  getEntitlements(): Promise<Entitlement[]>;
+  getOrganizationIdentityProviders(): Promise<OrganizationIdentityProvider[]>;
+  getTrialUsers(): Promise<TrialUser[]>;
   setConfig(config: object): Organization;
   setFulfillableItems(fulfillableItems: object): Organization;
   setImsOrgId(imsOrgId: string): Organization;

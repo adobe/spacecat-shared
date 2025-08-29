@@ -39,9 +39,9 @@ export interface EntitlementCollection extends
     productCode: EntitlementProductCode,
   ): Promise<Entitlement[]>;
 
-  findByOrganizationId(organizationId: string): Promise<Entitlement[]>;
+  findByOrganizationId(organizationId: string): Promise<Entitlement | null>;
   findByOrganizationIdAndProductCode(
     organizationId: string,
     productCode: EntitlementProductCode,
-  ): Promise<Entitlement[]>;
+  ): Promise<Entitlement | null>;
 }

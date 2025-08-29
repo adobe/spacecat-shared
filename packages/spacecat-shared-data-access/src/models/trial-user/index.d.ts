@@ -43,9 +43,9 @@ export interface TrialUserCollection extends BaseCollection<TrialUser> {
   allByProviderAndExternalUserId(provider: ProviderType, externalId: string): Promise<TrialUser[]>;
   allByOrganizationId(organizationId: string): Promise<TrialUser[]>;
   allByEmailId(emailId: string): Promise<TrialUser[]>;
-  findByProvider(provider: ProviderType): Promise<TrialUser[]>;
+  findByProvider(provider: ProviderType): Promise<TrialUser | null>;
   findByProviderAndExternalUserId(provider: ProviderType, externalId: string):
-    Promise<TrialUser[]>;
-  findByOrganizationId(organizationId: string): Promise<TrialUser[]>;
-  findByEmailId(emailId: string): Promise<TrialUser[]>;
+    Promise<TrialUser | null>;
+  findByOrganizationId(organizationId: string): Promise<TrialUser | null>;
+  findByEmailId(emailId: string): Promise<TrialUser | null>;
 }

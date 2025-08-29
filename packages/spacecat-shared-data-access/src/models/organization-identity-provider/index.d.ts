@@ -33,8 +33,8 @@ export interface OrganizationIdentityProviderCollection extends
   allByProviderAndExternalId(provider: ProviderType, externalId: string):
     Promise<OrganizationIdentityProvider[]>;
   allByOrganizationId(organizationId: string): Promise<OrganizationIdentityProvider[]>;
-  findByProvider(provider: ProviderType): Promise<OrganizationIdentityProvider[]>;
+  findByProvider(provider: ProviderType): Promise<OrganizationIdentityProvider | null>;
   findByProviderAndExternalId(provider: ProviderType, externalId: string):
     Promise<OrganizationIdentityProvider | null>;
-  findByOrganizationId(organizationId: string): Promise<OrganizationIdentityProvider[]>;
+  findByOrganizationId(organizationId: string): Promise<OrganizationIdentityProvider | null>;
 }

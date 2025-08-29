@@ -1,3 +1,108 @@
+# [@adobe/spacecat-shared-utils-v1.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.49.0...@adobe/spacecat-shared-utils-v1.50.0) (2025-08-28)
+
+
+### Features
+
+* add email validation function using validator package ([#938](https://github.com/adobe/spacecat-shared/issues/938)) ([5ec8aec](https://github.com/adobe/spacecat-shared/commit/5ec8aec460abbf19fc0756a05da5f50ff7fed79a))
+
+# [@adobe/spacecat-shared-utils-v1.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.48.0...@adobe/spacecat-shared-utils-v1.49.0) (2025-08-26)
+
+
+### Features
+
+* AEM utils ([#927](https://github.com/adobe/spacecat-shared/issues/927)) ([57fc3df](https://github.com/adobe/spacecat-shared/commit/57fc3df80cbacfdc66443090e073367856ec2f7c))
+
+# [@adobe/spacecat-shared-utils-v1.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.47.0...@adobe/spacecat-shared-utils-v1.48.0) (2025-08-18)
+
+
+### Features
+
+* added `urlMatchesFilter` in `spacecat-shared-utils` ([#921](https://github.com/adobe/spacecat-shared/issues/921)) ([74e11e4](https://github.com/adobe/spacecat-shared/commit/74e11e4124137b13942b0c58ead620905c438538))
+
+# [@adobe/spacecat-shared-utils-v1.47.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.46.0...@adobe/spacecat-shared-utils-v1.47.0) (2025-08-15)
+
+
+### Features
+
+* add support for month and last full week and last full month in shared ([#915](https://github.com/adobe/spacecat-shared/issues/915)) ([bdf3f3e](https://github.com/adobe/spacecat-shared/commit/bdf3f3e5bd6b9e749368cd72cc375bdb6fa83e2c))
+
+# [@adobe/spacecat-shared-utils-v1.46.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.45.0...@adobe/spacecat-shared-utils-v1.46.0) (2025-08-14)
+
+
+### Features
+
+* return null instead of throwing error ([#914](https://github.com/adobe/spacecat-shared/issues/914)) ([90760c0](https://github.com/adobe/spacecat-shared/commit/90760c040c46eab127c1bfc780a454875475fb64))
+
+# [@adobe/spacecat-shared-utils-v1.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.44.3...@adobe/spacecat-shared-utils-v1.45.0) (2025-08-11)
+
+
+### Features
+
+* Create shared utils method for resolving canonical url ([#895](https://github.com/adobe/spacecat-shared/issues/895)) ([054ebf7](https://github.com/adobe/spacecat-shared/commit/054ebf7c0ef90269eac75558d3050ebee712c725))
+
+# [@adobe/spacecat-shared-utils-v1.44.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.44.2...@adobe/spacecat-shared-utils-v1.44.3) (2025-08-09)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#899](https://github.com/adobe/spacecat-shared/issues/899)) ([c2cc342](https://github.com/adobe/spacecat-shared/commit/c2cc3422a0a4a3f8d1a2724847da456bf801ff59))
+
+# [@adobe/spacecat-shared-utils-v1.44.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.44.1...@adobe/spacecat-shared-utils-v1.44.2) (2025-08-04)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#888](https://github.com/adobe/spacecat-shared/issues/888)) ([45ccd67](https://github.com/adobe/spacecat-shared/commit/45ccd679577031d01771aa642ac0c2e33b22af6f))
+
+# [@adobe/spacecat-shared-utils-v1.44.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.44.0...@adobe/spacecat-shared-utils-v1.44.1) (2025-07-28)
+
+
+### Bug Fixes
+
+* expose calendar week helper function ([#881](https://github.com/adobe/spacecat-shared/issues/881)) ([5e178a8](https://github.com/adobe/spacecat-shared/commit/5e178a8eeaf426612f593f016f765b76cd565c03))
+
+# [@adobe/spacecat-shared-utils-v1.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.43.1...@adobe/spacecat-shared-utils-v1.44.0) (2025-07-28)
+
+
+### Features
+
+* add function for extracting list of calendar weeks ([#880](https://github.com/adobe/spacecat-shared/issues/880)) ([f69a808](https://github.com/adobe/spacecat-shared/commit/f69a808b96ee5e977e5cf5936e3effa378b51581))
+
+# [@adobe/spacecat-shared-utils-v1.43.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.43.0...@adobe/spacecat-shared-utils-v1.43.1) (2025-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#878](https://github.com/adobe/spacecat-shared/issues/878)) ([b049828](https://github.com/adobe/spacecat-shared/commit/b04982839c0ff5e4de4ab0e37508c5eb5272a679))
+
+# [@adobe/spacecat-shared-utils-v1.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.42.4...@adobe/spacecat-shared-utils-v1.43.0) (2025-07-23)
+
+
+### Features
+
+* add shared get-calendar-week to shared ([#865](https://github.com/adobe/spacecat-shared/issues/865)) ([f44c57f](https://github.com/adobe/spacecat-shared/commit/f44c57f8d0517af7a2c95f41e097f866e2722651))
+
+# [@adobe/spacecat-shared-utils-v1.42.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.42.3...@adobe/spacecat-shared-utils-v1.42.4) (2025-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#859](https://github.com/adobe/spacecat-shared/issues/859)) ([7ca9099](https://github.com/adobe/spacecat-shared/commit/7ca90994d61d07f71e580301365447b94ad07a52))
+
+# [@adobe/spacecat-shared-utils-v1.42.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.42.2...@adobe/spacecat-shared-utils-v1.42.3) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#845](https://github.com/adobe/spacecat-shared/issues/845)) ([23bd3a2](https://github.com/adobe/spacecat-shared/commit/23bd3a2235686480cb89d6379276d9ed000baea3))
+
+# [@adobe/spacecat-shared-utils-v1.42.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.42.1...@adobe/spacecat-shared-utils-v1.42.2) (2025-07-05)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#837](https://github.com/adobe/spacecat-shared/issues/837)) ([acfbbe7](https://github.com/adobe/spacecat-shared/commit/acfbbe712d90fe2f4b0cab97e8a941eb1bd5c8ea))
+
 # [@adobe/spacecat-shared-utils-v1.42.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.42.0...@adobe/spacecat-shared-utils-v1.42.1) (2025-06-28)
 
 

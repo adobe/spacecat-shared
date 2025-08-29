@@ -41,6 +41,7 @@ describe('Index Exports', () => {
     'isObject',
     'isString',
     'isValidDate',
+    'isValidEmail',
     'isValidUrl',
     'isValidUUID',
     'isValidIMSOrgId',
@@ -68,6 +69,18 @@ describe('Index Exports', () => {
     'isAWSLambda',
     'instrumentAWSClient',
     'retrievePageAuthentication',
+    'getDateRanges',
+    'getLastNumberOfWeeks',
+    'resolveCanonicalUrl',
+    'getSpacecatRequestHeaders',
+    'ensureHttps',
+    'getWeekInfo',
+    'getMonthInfo',
+    'getTemporalCondition',
+    'urlMatchesFilter',
+    'detectAEMVersion',
+    'determineAEMCSPageId',
+    'DELIVERY_TYPES',
   ];
 
   it('exports all expected functions', () => {

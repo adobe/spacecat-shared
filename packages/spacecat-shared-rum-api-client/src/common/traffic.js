@@ -27,9 +27,8 @@ import URI from 'urijs';
 export function getSecondLevelDomain(url) {
   if (!hasText(url)) return url;
   const uri = new URI(url);
-  const domain = uri.domain();
   const tld = uri.tld();
-  return domain.split(`.${tld}`)[0];
+  return uri.hostname().split(`.${tld}`)[0];
 }
 
 /*
@@ -39,9 +38,10 @@ export function getSecondLevelDomain(url) {
 // Referrer related
 const referrers = {
   search: /google|yahoo|bing|yandex|baidu|duckduckgo|brave|ecosia|aol|startpage|ask/,
-  social: /^\b(x)\b|(.*(facebook|tiktok|snapchat|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
+  social: /^\b((www\.)?x)\b|(.*(facebook|tiktok|snapchat|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
   ad: /googlesyndication|2mdn|doubleclick|syndicatedsearch/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
+  llm: /\b(chatgpt|openai)\b|perplexity|claude|gemini\.google|copilot\.microsoft/,
 };
 
 const mediums = {
@@ -66,6 +66,7 @@ const sources = {
   display: /optumib2b|jun|googleads|dv360|dv36|microsoft|flipboard|programmatic|yext|gdn|banner|newsshowcase/,
   affiliate: /brandreward|yieldkit|fashionistatop|partner|linkbux|stylesblog|linkinbio|affiliate/,
   email: /sfmc|email/,
+  llm: /chatgpt/,
 };
 
 /**
@@ -74,7 +75,7 @@ const sources = {
  * Using full word match for social media shorts like ig, fb, x
  */
 const vendorClassifications = [
-  { regex: /google|googleads|google-ads|google_search|google_deman|adwords|dv360|gdn|doubleclick|dbm|gmb/i, result: 'google' },
+  { regex: /google|googleads|google-ads|google_search|google_deman|adwords|dv360|gdn|doubleclick|dbm|gmb|gemini/i, result: 'google' },
   { regex: /instagram|\b(ig)\b/i, result: 'instagram' },
   { regex: /facebook|\b(fb)\b|meta/i, result: 'facebook' },
   { regex: /bing/i, result: 'bing' },
@@ -83,7 +84,7 @@ const vendorClassifications = [
   { regex: /linkedin/i, result: 'linkedin' },
   { regex: /twitter|^\b(x)\b/i, result: 'x' },
   { regex: /snapchat/i, result: 'snapchat' },
-  { regex: /microsoft/i, result: 'microsoft' },
+  { regex: /microsoft|copilot/i, result: 'microsoft' },
   { regex: /pinterest/i, result: 'pinterest' },
   { regex: /reddit/i, result: 'reddit' },
   { regex: /spotify/i, result: 'spotify' },
@@ -102,6 +103,9 @@ const vendorClassifications = [
   { regex: /amazon|ctv/i, result: 'amazon' },
   { regex: /dailymotion/i, result: 'dailymotion' },
   { regex: /twitch/i, result: 'twitch' },
+  { regex: /\b(chatgpt|openai)\b/i, result: 'openai' },
+  { regex: /perplexity/i, result: 'perplexity' },
+  { regex: /claude/i, result: 'claude' },
   { regex: /direct/i, result: 'direct' },
 ];
 
@@ -176,6 +180,8 @@ const RULES = (domain) => ([
   { type: 'paid', category: 'uncategorized', referrer: not(domain), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
 
   // EARNED
+  { type: 'earned', category: 'llm', referrer: anyOf(referrers.llm), utmSource: any, utmMedium: any, tracking: none },
+  { type: 'earned', category: 'llm', referrer: any, utmSource: anyOf(sources.llm), utmMedium: any, tracking: none },
   { type: 'earned', category: 'search', referrer: anyOf(referrers.search), utmSource: none, utmMedium: none, tracking: none },
   { type: 'earned', category: 'search', referrer: anyOf(referrers.search), utmSource: any, utmMedium: not(mediums.paidall), tracking: not(paidTrackingParams) },
   { type: 'earned', category: 'search', referrer: anyOf(referrers.search), utmSource: any, utmMedium: anyOf(mediums.organic), tracking: none },

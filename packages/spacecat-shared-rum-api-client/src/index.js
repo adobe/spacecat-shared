@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 import { hasText, fetch } from '@adobe/spacecat-shared-utils';
-import { fetchBundles } from './common/rum-bundler-client.js';
+import { fetchBundles, createBundleStream } from './common/rum-bundler-client.js';
 import notfound from './functions/404.js';
 import notfoundInternalLinks from './functions/404-internal-links.js';
 import cwv from './functions/cwv.js';
@@ -24,6 +24,9 @@ import trafficMetrics from './functions/traffic-metrics.js';
 import rageclick from './functions/opportunities/rageclick.js';
 import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
 import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
+import trafficAnalysis from './functions/traffic-analysis.js';
+import optimizationReportMetrics from './functions/reports/optimization/metrics.js';
+import optimizationReportGraph from './functions/reports/optimization/graph.js';
 
 // exported for tests
 export const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
@@ -42,6 +45,9 @@ const HANDLERS = {
   'high-organic-low-ctr': highOrganicLowCtr,
   pageviews,
   trafficMetrics,
+  'traffic-analysis': trafficAnalysis,
+  'optimization-report-metrics': optimizationReportMetrics,
+  'optimization-report-graph': optimizationReportGraph,
 };
 
 function sanitize(opts) {
@@ -122,7 +128,6 @@ export default class RUMAPIClient {
 
     try {
       const domainkey = await this._getDomainkey(opts);
-
       const bundles = await fetchBundles({
         ...opts,
         domainkey,
@@ -130,7 +135,6 @@ export default class RUMAPIClient {
       }, this.log);
 
       this.log.info(`Query "${query}" fetched ${bundles.length} bundles`);
-
       return handler(bundles, opts);
     } catch (e) {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
@@ -164,7 +168,6 @@ export default class RUMAPIClient {
       }, this.log);
 
       const results = {};
-
       this.log.info(`Multi query ${JSON.stringify(queries.join(', '))} fetched ${bundles.length} bundles`);
 
       // Execute each query handler sequentially
@@ -176,6 +179,23 @@ export default class RUMAPIClient {
       return results;
     } catch (e) {
       throw new Error(`Multi query failed. Queries: ${JSON.stringify(queries)}, Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
+    }
+  }
+
+  async queryStream(query, opts) {
+    const { handler, checkpoints } = HANDLERS[query] || {};
+    if (!handler) throw new Error(`Unknown query ${query}`);
+
+    try {
+      const domainkey = await this._getDomainkey(opts);
+      return createBundleStream({
+        ...opts,
+        domainkey,
+        checkpoints,
+        handler,
+      }, this.log);
+    } catch (e) {
+      throw new Error(`Query stream '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
     }
   }
 }

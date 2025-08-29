@@ -1,3 +1,78 @@
+# [@adobe/spacecat-shared-scrape-client-v2.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.0...@adobe/spacecat-shared-scrape-client-v2.1.1) (2025-08-28)
+
+
+### Bug Fixes
+
+* enhance validation for scrape job configuration ([#940](https://github.com/adobe/spacecat-shared/issues/940)) ([54d0a6a](https://github.com/adobe/spacecat-shared/commit/54d0a6aa322547e13da25f2f97e1542fd5688849))
+
+# [@adobe/spacecat-shared-scrape-client-v2.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.0.0...@adobe/spacecat-shared-scrape-client-v2.1.0) (2025-08-20)
+
+
+### Features
+
+* add scrape-client destination  ([#913](https://github.com/adobe/spacecat-shared/issues/913)) ([e208a87](https://github.com/adobe/spacecat-shared/commit/e208a87214874a2708ac2d7614fcfd4c0770fe17))
+
+# [@adobe/spacecat-shared-scrape-client-v2.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.7...@adobe/spacecat-shared-scrape-client-v2.0.0) (2025-08-13)
+
+
+### Features
+
+* re-scraping of URLs ([b889a19](https://github.com/adobe/spacecat-shared/commit/b889a19b1cec20b1f1dc32a89b34ab5125fa90e6))
+
+
+### BREAKING CHANGES
+
+* ScrapeClient does not choose a scrape queue anymore. This is done in Scrape Job Manager.
+
+# [@adobe/spacecat-shared-scrape-client-v1.0.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.6...@adobe/spacecat-shared-scrape-client-v1.0.7) (2025-08-09)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#899](https://github.com/adobe/spacecat-shared/issues/899)) ([c2cc342](https://github.com/adobe/spacecat-shared/commit/c2cc3422a0a4a3f8d1a2724847da456bf801ff59))
+
+# [@adobe/spacecat-shared-scrape-client-v1.0.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.5...@adobe/spacecat-shared-scrape-client-v1.0.6) (2025-08-04)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#888](https://github.com/adobe/spacecat-shared/issues/888)) ([45ccd67](https://github.com/adobe/spacecat-shared/commit/45ccd679577031d01771aa642ac0c2e33b22af6f))
+
+# [@adobe/spacecat-shared-scrape-client-v1.0.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.4...@adobe/spacecat-shared-scrape-client-v1.0.5) (2025-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#878](https://github.com/adobe/spacecat-shared/issues/878)) ([b049828](https://github.com/adobe/spacecat-shared/commit/b04982839c0ff5e4de4ab0e37508c5eb5272a679))
+
+# [@adobe/spacecat-shared-scrape-client-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.3...@adobe/spacecat-shared-scrape-client-v1.0.4) (2025-07-24)
+
+
+### Bug Fixes
+
+* (scrape-job-supervisor): add offset for URL numbering in batches ([#868](https://github.com/adobe/spacecat-shared/issues/868)) ([12789c0](https://github.com/adobe/spacecat-shared/commit/12789c0cabe33ad5e526793d645bfef421a851af))
+
+# [@adobe/spacecat-shared-scrape-client-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.2...@adobe/spacecat-shared-scrape-client-v1.0.3) (2025-07-21)
+
+
+### Bug Fixes
+
+* ScrapeClient handle large url lists ([#854](https://github.com/adobe/spacecat-shared/issues/854)) ([d0768db](https://github.com/adobe/spacecat-shared/commit/d0768db101d65bc604c64473648cba0344612025))
+
+# [@adobe/spacecat-shared-scrape-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.1...@adobe/spacecat-shared-scrape-client-v1.0.2) (2025-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#859](https://github.com/adobe/spacecat-shared/issues/859)) ([7ca9099](https://github.com/adobe/spacecat-shared/commit/7ca90994d61d07f71e580301365447b94ad07a52))
+
+# [@adobe/spacecat-shared-scrape-client-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.0...@adobe/spacecat-shared-scrape-client-v1.0.1) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#845](https://github.com/adobe/spacecat-shared/issues/845)) ([23bd3a2](https://github.com/adobe/spacecat-shared/commit/23bd3a2235686480cb89d6379276d9ed000baea3))
+
 # @adobe/spacecat-shared-scrape-client-v1.0.0 (2025-06-19)
 
 

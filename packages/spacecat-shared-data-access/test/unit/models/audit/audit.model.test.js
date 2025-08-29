@@ -158,6 +158,7 @@ describe('AuditModel', () => {
       404: '404',
       SITEMAP: 'sitemap',
       CANONICAL: 'canonical',
+      REDIRECT_CHAINS: 'redirect-chains',
       BROKEN_BACKLINKS: 'broken-backlinks',
       BROKEN_INTERNAL_LINKS: 'broken-internal-links',
       EXPERIMENTATION: 'experimentation',
@@ -177,11 +178,15 @@ describe('AuditModel', () => {
       ACCESSIBILITY: 'accessibility',
       SECURITY_CSP: 'security-csp',
       PAID: 'paid',
+      HREFLANG: 'hreflang',
+      PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
+      PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
+      READABILITY: 'readability',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(26);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(31);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {
@@ -200,10 +205,11 @@ describe('AuditModel', () => {
       const expectedAuditStepDestinations = {
         CONTENT_SCRAPER: 'content-scraper',
         IMPORT_WORKER: 'import-worker',
+        SCRAPE_CLIENT: 'scrape-client',
       };
 
       expect(auditStepDestinations).to.eql(expectedAuditStepDestinations);
-      expect(Object.keys(auditStepDestinations)).to.have.lengthOf(2);
+      expect(Object.keys(auditStepDestinations)).to.have.lengthOf(3);
     });
 
     it('does not have unexpected audit step destinations in AUDIT_STEP_DESTINATIONS', () => {
@@ -223,6 +229,9 @@ describe('AuditModel', () => {
           queueUrl: process.env.IMPORT_WORKER_QUEUE_URL,
           formatPayload: sinon.match.func,
         },
+        [auditStepDestinations.SCRAPE_CLIENT]: {
+          formatPayload: sinon.match.func,
+        },
       };
 
       sinon.assert.match(auditStepDestinationConfigs, expectedAuditStepDestinationConfigs);
@@ -236,7 +245,12 @@ describe('AuditModel', () => {
     });
 
     it('formats import worker payload correctly', () => {
-      const stepResult = { type: 'someType', siteId: 'someSiteId' };
+      const stepResult = {
+        type: 'someType',
+        siteId: 'someSiteId',
+        endDate: '2025-08-12T15:46:00.000Z',
+        urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
+      };
       const auditContext = { some: 'context' };
       const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.IMPORT_WORKER]
         .formatPayload(stepResult, auditContext);
@@ -244,6 +258,10 @@ describe('AuditModel', () => {
       expect(formattedPayload).to.deep.equal({
         type: 'someType',
         siteId: 'someSiteId',
+        pageUrl: undefined,
+        startDate: undefined,
+        endDate: '2025-08-12T15:46:00.000Z',
+        urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
         allowCache: true,
         auditContext: { some: 'context' },
       });
@@ -273,6 +291,34 @@ describe('AuditModel', () => {
         allowCache: true,
         options: {},
         auditContext: { some: 'context' },
+      });
+    });
+    it('formats scrape client payload correctly', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.SCRAPE_CLIENT]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: ['someUrl'],
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+        maxScrapeAge: 24,
+        auditData: {
+          siteId: 'someSiteId',
+          completionQueueUrl: 'audit-jobs-queue-url',
+          auditContext: { some: 'context' },
+        },
       });
     });
   });

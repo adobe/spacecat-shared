@@ -26,6 +26,7 @@ export {
   isObject,
   isString,
   isValidDate,
+  isValidEmail,
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
@@ -61,6 +62,10 @@ export {
   stripTrailingDot,
   stripTrailingSlash,
   stripWWW,
+  resolveCanonicalUrl,
+  getSpacecatRequestHeaders,
+  ensureHttps,
+  urlMatchesFilter,
 } from './url-helpers.js';
 
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';
@@ -77,3 +82,13 @@ export {
 } from './formcalc.js';
 
 export { retrievePageAuthentication, getAccessToken } from './auth.js';
+
+export {
+  getDateRanges,
+  getLastNumberOfWeeks,
+  getWeekInfo,
+  getMonthInfo,
+  getTemporalCondition,
+} from './calendar-week-helper.js';
+
+export { detectAEMVersion, determineAEMCSPageId, DELIVERY_TYPES } from './aem.js';

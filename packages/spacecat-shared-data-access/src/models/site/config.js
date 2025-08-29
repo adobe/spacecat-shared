@@ -11,8 +11,10 @@
  */
 
 import Joi from 'joi';
+import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
+  LLMO_QUESTIONS_IMPORT_TYPE: 'llmo-prompts-ahrefs',
   ORGANIC_KEYWORDS: 'organic-keywords',
   ORGANIC_KEYWORDS_NONBRANDED: 'organic-keywords-nonbranded',
   ORGANIC_KEYWORDS_AI_OVERVIEW: 'organic-keywords-ai-overview',
@@ -23,6 +25,8 @@ export const IMPORT_TYPES = {
   ALL_TRAFFIC: 'all-traffic',
   CWV_DAILY: 'cwv-daily',
   CWV_WEEKLY: 'cwv-weekly',
+  TRAFFIC_ANALYSIS: 'traffic-analysis',
+  TOP_FORMS: 'top-forms',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -35,6 +39,32 @@ export const IMPORT_SOURCES = {
   RUM: 'rum',
 };
 
+const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
+const LLMO_TAG = Joi.alternatives()
+  .try(
+    // Tag market, product, topic like this: "market: ch", "product: firefly", "topic: copyright"
+    Joi.string().pattern(LLMO_TAG_PATTERN),
+    Joi.string(),
+  );
+
+// LLMO question schema for both Human and AI questions
+const QUESTION_SCHEMA = Joi.object({
+  key: Joi.string().required(),
+  question: Joi.string().required(),
+  source: Joi.string().optional(),
+  volume: Joi.string().optional(),
+  keyword: Joi.string().optional(),
+  url: Joi.string().uri().optional(),
+  tags: Joi.array().items(LLMO_TAG).optional(),
+  importTime: Joi.string().isoDate().optional(),
+});
+
+const LLMO_URL_PATTERN_SCHEMA = {
+  urlPattern: Joi.string().uri().required(),
+  tags: Joi.array().items(LLMO_TAG).optional(),
+};
+const LLMO_URL_PATTERNS_SCHEMA = Joi.array().items(LLMO_URL_PATTERN_SCHEMA);
+
 const IMPORT_BASE_KEYS = {
   destinations: Joi.array().items(Joi.string().valid(IMPORT_DESTINATIONS.DEFAULT)).required(),
   sources: Joi.array().items(Joi.string().valid(...Object.values(IMPORT_SOURCES))).required(),
@@ -44,6 +74,12 @@ const IMPORT_BASE_KEYS = {
 };
 
 export const IMPORT_TYPE_SCHEMAS = {
+  [IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.LLMO_QUESTIONS_IMPORT_TYPE).required(),
+    enabled: Joi.boolean().default(true),
+    limit: Joi.number().integer().min(1).max(100)
+      .optional(),
+  }),
   [IMPORT_TYPES.ORGANIC_KEYWORDS]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.ORGANIC_KEYWORDS).required(),
     ...IMPORT_BASE_KEYS,
@@ -103,6 +139,18 @@ export const IMPORT_TYPE_SCHEMAS = {
   [IMPORT_TYPES.CWV_WEEKLY]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.CWV_WEEKLY).required(),
     ...IMPORT_BASE_KEYS,
+  }),
+  [IMPORT_TYPES.TRAFFIC_ANALYSIS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.TRAFFIC_ANALYSIS).required(),
+    year: Joi.number().integer().optional(),
+    week: Joi.number().integer().optional(),
+    ...IMPORT_BASE_KEYS,
+  }),
+  [IMPORT_TYPES.TOP_FORMS]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.TOP_FORMS).required(),
+    ...IMPORT_BASE_KEYS,
+    limit: Joi.number().integer().min(1).max(2000)
+      .optional(),
   }),
 };
 
@@ -168,6 +216,18 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['rum'],
     enabled: true,
   },
+  'traffic-analysis': {
+    type: 'traffic-analysis',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
+  'top-forms': {
+    type: 'top-forms',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
 };
 
 export const configSchema = Joi.object({
@@ -181,17 +241,49 @@ export const configSchema = Joi.object({
   ),
   brandConfig: Joi.object({
     brandId: Joi.string().required(),
+    userId: Joi.string().required(),
   }).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
+  }).optional(),
+  llmo: Joi.object({
+    dataFolder: Joi.string().required(),
+    brand: Joi.string().required(),
+    questions: Joi.object({
+      Human: Joi.array().items(QUESTION_SCHEMA).optional(),
+      AI: Joi.array().items(QUESTION_SCHEMA).optional(),
+    }).optional(),
+    urlPatterns: LLMO_URL_PATTERNS_SCHEMA.optional(),
+    customerIntent: Joi.array().items(
+      Joi.object({
+        key: Joi.string().required(),
+        value: Joi.string().required(),
+      }),
+    ).optional(),
+    filterConfig: Joi.array().items(
+      Joi.object({
+        key: Joi.string().required(),
+        value: Joi.string().required(),
+        records: Joi.array().items(Joi.string()).optional(),
+      }),
+    ).optional(),
+    tags: Joi.array().items(Joi.string()).optional(),
+    cdnlogsFilter: Joi.array().items(
+      Joi.object({
+        key: Joi.string().required(),
+        value: Joi.array().items(Joi.string()).required(),
+        type: Joi.string().valid('include', 'exclude').optional(),
+      }),
+    ).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
     filters: Joi.array().items(
       Joi.object({
         key: Joi.string().required(),
-        value: Joi.string().required(),
+        value: Joi.array().items(Joi.string()).required(),
+        type: Joi.string().valid('include', 'exclude').optional(),
       }),
     ).optional(),
     outputLocation: Joi.string().required(),
@@ -241,11 +333,38 @@ export function validateConfiguration(config) {
   return value; // Validated and sanitized configuration
 }
 
-export const Config = (data = {}) => {
-  const validConfig = validateConfiguration(data);
+export function extractWellKnownTags(tags) {
+  const wellKnownTags = {};
+  for (const tag of tags) {
+    if (LLMO_TAG_PATTERN.test(tag)) {
+      const colonIdx = tag.indexOf(':');
+      const value = tag.slice(colonIdx + 1).trim();
+      if (colonIdx !== -1 && value) {
+        wellKnownTags[tag.slice(0, colonIdx).trim()] = value;
+      }
+    }
+  }
+  return wellKnownTags;
+}
 
-  const state = { ...validConfig };
-  const self = { state };
+export const Config = (data = {}) => {
+  let configData;
+
+  try {
+    configData = validateConfiguration(data);
+  } catch (error) {
+    const logger = getLogger();
+    if (logger && logger !== console) {
+      logger.error('Site configuration validation failed, using provided data', {
+        error: error.message,
+        invalidConfig: data,
+      });
+    }
+    configData = { ...data };
+  }
+
+  const state = { ...configData };
+  const self = { state, extractWellKnownTags };
   self.getSlackConfig = () => state.slack;
   self.isInternalCustomer = () => state?.slack?.workspace === 'internal';
   self.getSlackMentions = (type) => state?.handlers?.[type]?.mentions?.slack;
@@ -262,6 +381,17 @@ export const Config = (data = {}) => {
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
+  self.getLlmoConfig = () => state?.llmo;
+  self.getLlmoDataFolder = () => state?.llmo?.dataFolder;
+  self.getLlmoBrand = () => state?.llmo?.brand;
+  self.getLlmoHumanQuestions = () => state?.llmo?.questions?.Human;
+  self.getLlmoAIQuestions = () => state?.llmo?.questions?.AI;
+  self.getLlmoUrlPatterns = () => state?.llmo?.urlPatterns;
+  self.getLlmoCustomerIntent = () => {
+    const llmoConfig = self.getLlmoConfig();
+    return llmoConfig?.customerIntent || [];
+  };
+  self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -269,6 +399,143 @@ export const Config = (data = {}) => {
       workspace,
       invitedUserCount,
     };
+  };
+
+  self.updateLlmoConfig = (dataFolder, brand, questions = {}, urlPatterns = undefined) => {
+    const currentLlmoConfig = state.llmo || {};
+    state.llmo = {
+      ...currentLlmoConfig,
+      dataFolder,
+      brand,
+      questions,
+      urlPatterns,
+    };
+  };
+
+  self.updateLlmoDataFolder = (dataFolder) => {
+    state.llmo = state.llmo || {};
+    state.llmo.dataFolder = dataFolder;
+  };
+
+  self.updateLlmoBrand = (brand) => {
+    state.llmo = state.llmo || {};
+    state.llmo.brand = brand;
+  };
+
+  self.addLlmoHumanQuestions = (questions) => {
+    state.llmo = state.llmo || {};
+    state.llmo.questions = state.llmo.questions || {};
+    state.llmo.questions.Human = state.llmo.questions.Human || [];
+    state.llmo.questions.Human.push(...questions);
+  };
+
+  self.addLlmoAIQuestions = (questions) => {
+    state.llmo = state.llmo || {};
+    state.llmo.questions = state.llmo.questions || {};
+    state.llmo.questions.AI = state.llmo.questions.AI || [];
+    state.llmo.questions.AI.push(...questions);
+  };
+
+  self.addLlmoCustomerIntent = (customerIntentItems) => {
+    state.llmo = state.llmo || {};
+    state.llmo.customerIntent = state.llmo.customerIntent || [];
+    state.llmo.customerIntent.push(...customerIntentItems);
+  };
+
+  self.removeLlmoCustomerIntent = (intentKey) => {
+    state.llmo = state.llmo || {};
+    state.llmo.customerIntent = state.llmo.customerIntent || [];
+
+    const currentCustomerIntent = state.llmo.customerIntent;
+    const firstOccurrenceIndex = currentCustomerIntent.findIndex(
+      (item) => item.key === intentKey,
+    );
+
+    if (firstOccurrenceIndex !== -1) {
+      state.llmo.customerIntent = currentCustomerIntent.filter(
+        (item, index) => index !== firstOccurrenceIndex,
+      );
+    }
+  };
+
+  self.updateLlmoCustomerIntent = (intentKey, updateData) => {
+    state.llmo = state.llmo || {};
+    state.llmo.customerIntent = state.llmo.customerIntent || [];
+
+    const currentCustomerIntent = state.llmo.customerIntent;
+    const firstOccurrenceIndex = currentCustomerIntent.findIndex(
+      (item) => item.key === intentKey,
+    );
+
+    if (firstOccurrenceIndex !== -1) {
+      state.llmo.customerIntent = currentCustomerIntent.map((item, index) => {
+        if (index === firstOccurrenceIndex) {
+          return { ...item, ...updateData };
+        }
+        return item;
+      });
+    }
+  };
+
+  self.removeLlmoQuestion = (key) => {
+    state.llmo = state.llmo || {};
+    state.llmo.questions = state.llmo.questions || {};
+    state.llmo.questions.Human = state.llmo.questions.Human || [];
+    state.llmo.questions.Human = state.llmo.questions.Human.filter(
+      (question) => question.key !== key,
+    );
+    state.llmo.questions.AI = state.llmo.questions.AI || [];
+    state.llmo.questions.AI = state.llmo.questions.AI.filter(
+      (question) => question.key !== key,
+    );
+  };
+
+  self.updateLlmoQuestion = (key, questionUpdate) => {
+    state.llmo = state.llmo || {};
+    state.llmo.questions = state.llmo.questions || {};
+    state.llmo.questions.Human = state.llmo.questions.Human || [];
+    state.llmo.questions.Human = state.llmo.questions.Human.map(
+      (question) => (question.key === key ? { ...question, ...questionUpdate, key } : question),
+    );
+    state.llmo.questions.AI = state.llmo.questions.AI || [];
+    state.llmo.questions.AI = state.llmo.questions.AI.map(
+      (question) => (question.key === key ? { ...question, ...questionUpdate, key } : question),
+    );
+  };
+
+  self.addLlmoUrlPatterns = (urlPatterns) => {
+    Joi.assert(urlPatterns, LLMO_URL_PATTERNS_SCHEMA, 'Invalid URL patterns');
+
+    state.llmo ??= {};
+    state.llmo.urlPatterns ??= [];
+    const byPattern = new Map(
+      state.llmo.urlPatterns.map((p) => [p.urlPattern, p]),
+    );
+    for (const p of urlPatterns) {
+      byPattern.set(p.urlPattern, p);
+    }
+
+    state.llmo.urlPatterns = [...byPattern.values()];
+  };
+
+  self.replaceLlmoUrlPatterns = (urlPatterns) => {
+    Joi.assert(urlPatterns, LLMO_URL_PATTERNS_SCHEMA, 'Invalid URL patterns');
+    state.llmo ??= {};
+    state.llmo.urlPatterns = urlPatterns;
+  };
+
+  self.removeLlmoUrlPattern = (urlPattern) => {
+    const urlPatterns = state.llmo?.urlPatterns;
+    if (!urlPatterns) return;
+
+    state.llmo.urlPatterns = urlPatterns.filter(
+      (pattern) => pattern.urlPattern !== urlPattern,
+    );
+  };
+
+  self.updateLlmoCdnlogsFilter = (cdnlogsFilter) => {
+    state.llmo = state.llmo || {};
+    state.llmo.cdnlogsFilter = cdnlogsFilter;
   };
 
   self.updateImports = (imports) => {
@@ -380,4 +647,5 @@ Config.toDynamoItem = (config) => ({
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
   cdnLogsConfig: config.getCdnLogsConfig(),
+  llmo: config.getLlmoConfig(),
 });

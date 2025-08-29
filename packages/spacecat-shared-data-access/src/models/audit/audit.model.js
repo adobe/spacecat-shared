@@ -31,6 +31,7 @@ class Audit extends BaseModel {
     404: '404',
     SITEMAP: 'sitemap',
     CANONICAL: 'canonical',
+    REDIRECT_CHAINS: 'redirect-chains',
     BROKEN_BACKLINKS: 'broken-backlinks',
     BROKEN_INTERNAL_LINKS: 'broken-internal-links',
     EXPERIMENTATION: 'experimentation',
@@ -50,6 +51,10 @@ class Audit extends BaseModel {
     ACCESSIBILITY: 'accessibility',
     SECURITY_CSP: 'security-csp',
     PAID: 'paid',
+    HREFLANG: 'hreflang',
+    PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
+    PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
+    READABILITY: 'readability',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
@@ -70,6 +75,7 @@ class Audit extends BaseModel {
   static AUDIT_STEP_DESTINATIONS = {
     CONTENT_SCRAPER: 'content-scraper',
     IMPORT_WORKER: 'import-worker',
+    SCRAPE_CLIENT: 'scrape-client',
   };
 
   /**
@@ -83,7 +89,9 @@ class Audit extends BaseModel {
    *   [Audit.AUDIT_STEP_DESTINATIONS.IMPORT_WORKER]: {
    *     getQueueUrl: function,
    *     formatPayload: function
-   *   }
+   *   },
+   *   [Audit.AUDIT_STEP_DESTINATIONS.SCRAPE_CLIENT]: {
+   *   formatPayload: function
    * }}
    */
   static AUDIT_STEP_DESTINATION_CONFIGS = {
@@ -94,6 +102,11 @@ class Audit extends BaseModel {
        * @param {object} stepResult - The result of the audit step.
        * @param {string} stepResult.type - The import type to trigger.
        * @param {string} stepResult.siteId - The site ID for which the import is triggered.
+       * @param {string} [stepResult.pageUrl] - The page URL for which the import is triggered.
+       * @param {string} [stepResult.startDate] - The start date for the import (optional).
+       * @param {string} [stepResult.endDate] - The end date for the import (optional).
+       * @param {object[]}[ stepResult.urlConfigs] - The list of URL configs for which the import is
+       * triggered.
        * @param {object} auditContext - The audit context.
        * @param {object} auditContext.next - The next audit step to run.
        * @param {string} auditContext.auditId - The audit ID.
@@ -107,6 +120,10 @@ class Audit extends BaseModel {
       formatPayload: (stepResult, auditContext) => ({
         type: stepResult.type,
         siteId: stepResult.siteId,
+        pageUrl: stepResult.pageUrl,
+        startDate: stepResult.startDate,
+        endDate: stepResult.endDate,
+        urlConfigs: stepResult.urlConfigs,
         allowCache: true,
         auditContext,
       }),
@@ -139,6 +156,26 @@ class Audit extends BaseModel {
         options: stepResult.options || {},
         completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
         auditContext,
+      }),
+    },
+    [Audit.AUDIT_STEP_DESTINATIONS.SCRAPE_CLIENT]: {
+      /**
+       *
+       * @param stepResult - The result of the audit step.
+       * @param auditContext - The audit context.
+       * @param context - The context object.
+       * @returns {object} - The formatted payload for the scrape client.
+       */
+      formatPayload: (stepResult, auditContext, context) => ({
+        urls: stepResult.urls.map((urlObj) => urlObj.url),
+        processingType: stepResult.processingType || 'default',
+        options: stepResult.options || {},
+        maxScrapeAge: stepResult.maxScrapeAge || 24,
+        auditData: {
+          siteId: stepResult.siteId,
+          completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
+          auditContext,
+        },
       }),
     },
   };

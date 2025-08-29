@@ -1,3 +1,50 @@
+# [@adobe/spacecat-shared-http-utils-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.16.0...@adobe/spacecat-shared-http-utils-v1.17.0) (2025-08-28)
+
+
+### Features
+
+* adding email id for trail users ([#936](https://github.com/adobe/spacecat-shared/issues/936)) ([2ea524b](https://github.com/adobe/spacecat-shared/commit/2ea524b6c3f7e03b183d93e614b5e16278ed9fc7))
+
+# [@adobe/spacecat-shared-http-utils-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.2...@adobe/spacecat-shared-http-utils-v1.16.0) (2025-08-20)
+
+
+### Bug Fixes
+
+* Change the log level from info to debug ([#922](https://github.com/adobe/spacecat-shared/issues/922)) ([e291a2a](https://github.com/adobe/spacecat-shared/commit/e291a2ad83b31eb258fb65be4201ea6948af85c3))
+
+
+### Features
+
+* add threshold for pageviews ([#923](https://github.com/adobe/spacecat-shared/issues/923)) ([5b989cd](https://github.com/adobe/spacecat-shared/commit/5b989cd7c38ac946609143ed5402d2ff1600c581))
+
+# [@adobe/spacecat-shared-http-utils-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.1...@adobe/spacecat-shared-http-utils-v1.15.2) (2025-07-21)
+
+
+### Bug Fixes
+
+* auth handlers log level adjustments ([#861](https://github.com/adobe/spacecat-shared/issues/861)) ([f2511b3](https://github.com/adobe/spacecat-shared/commit/f2511b32e817a9a899cb87bcf89ef35ca69a27ca))
+
+# [@adobe/spacecat-shared-http-utils-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.0...@adobe/spacecat-shared-http-utils-v1.15.1) (2025-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#859](https://github.com/adobe/spacecat-shared/issues/859)) ([7ca9099](https://github.com/adobe/spacecat-shared/commit/7ca90994d61d07f71e580301365447b94ad07a52))
+
+# [@adobe/spacecat-shared-http-utils-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.4...@adobe/spacecat-shared-http-utils-v1.15.0) (2025-07-18)
+
+
+### Features
+
+* gzip support ([#858](https://github.com/adobe/spacecat-shared/issues/858)) ([b2ccb4c](https://github.com/adobe/spacecat-shared/commit/b2ccb4c83b220837b01ba1fe086e0f635a8eb07b))
+
+# [@adobe/spacecat-shared-http-utils-v1.14.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.3...@adobe/spacecat-shared-http-utils-v1.14.4) (2025-07-12)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#845](https://github.com/adobe/spacecat-shared/issues/845)) ([23bd3a2](https://github.com/adobe/spacecat-shared/commit/23bd3a2235686480cb89d6379276d9ed000baea3))
+
 # [@adobe/spacecat-shared-http-utils-v1.14.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.14.2...@adobe/spacecat-shared-http-utils-v1.14.3) (2025-06-23)
 
 

@@ -85,6 +85,20 @@ describe('Traffic classification', () => {
     assert(expected, { referrer: 'not-empty', utmSource: 'some-source', utmMedium: 'affiliate', tracking: null });
   });
 
+  it('earned llm', () => {
+    const expected = { type: 'earned', category: 'llm', vendor: '' };
+
+    assert({ ...expected, vendor: 'openai' }, { referrer: 'https://chatgpt.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: '', utmSource: 'chatgpt.com', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: 'https://openai.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: 'https://subdomain.chatgpt.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: 'https://subdomain.openai.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'perplexity' }, { referrer: 'https://www.perplexity.ai/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'claude' }, { referrer: 'https://claude.ai/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'microsoft' }, { referrer: 'https://copilot.microsoft.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'google' }, { referrer: 'https://gemini.google.com/', utmSource: '', utmMedium: '', tracking: null });
+  });
+
   it('earned search', () => {
     const expected = { type: 'earned', category: 'search', vendor: '' };
 
@@ -164,5 +178,17 @@ describe('Traffic classification', () => {
 
     assert(expected, { referrer: 'some', utmSource: 'some', utmMedium: 'some', tracking: null });
     assert(expected, { referrer: '', utmSource: 'some', utmMedium: 'some', tracking: null });
+  });
+
+  describe('Remediated cases', () => {
+    it('does not falsely classify vendor as openai', () => {
+      const expected = { type: 'paid', category: 'display', vendor: '' };
+      assert(expected, { referrer: 'https://example.chatopenai.com', utmSource: 'display', utmMedium: 'display', tracking: null });
+    });
+
+    it('does not falsely classify referrer as llm', () => {
+      const expected = { type: 'earned', category: 'referral', vendor: '' };
+      assert(expected, { referrer: 'https://example.chatopenai.com/', utmSource: '', utmMedium: '', tracking: null });
+    });
   });
 });

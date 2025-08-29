@@ -26,6 +26,7 @@ export {
   isObject,
   isString,
   isValidDate,
+  isValidEmail,
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
@@ -64,6 +65,7 @@ export {
   resolveCanonicalUrl,
   getSpacecatRequestHeaders,
   ensureHttps,
+  urlMatchesFilter,
 } from './url-helpers.js';
 
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';
@@ -88,3 +90,5 @@ export {
   getMonthInfo,
   getTemporalCondition,
 } from './calendar-week-helper.js';
+
+export { detectAEMVersion, determineAEMCSPageId, DELIVERY_TYPES } from './aem.js';

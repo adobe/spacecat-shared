@@ -31,6 +31,7 @@ class Audit extends BaseModel {
     404: '404',
     SITEMAP: 'sitemap',
     CANONICAL: 'canonical',
+    REDIRECT_CHAINS: 'redirect-chains',
     BROKEN_BACKLINKS: 'broken-backlinks',
     BROKEN_INTERNAL_LINKS: 'broken-internal-links',
     EXPERIMENTATION: 'experimentation',
@@ -54,6 +55,7 @@ class Audit extends BaseModel {
     HREFLANG: 'hreflang',
     PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
     PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
+    READABILITY: 'readability',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
@@ -74,6 +76,7 @@ class Audit extends BaseModel {
   static AUDIT_STEP_DESTINATIONS = {
     CONTENT_SCRAPER: 'content-scraper',
     IMPORT_WORKER: 'import-worker',
+    SCRAPE_CLIENT: 'scrape-client',
   };
 
   /**
@@ -87,7 +90,9 @@ class Audit extends BaseModel {
    *   [Audit.AUDIT_STEP_DESTINATIONS.IMPORT_WORKER]: {
    *     getQueueUrl: function,
    *     formatPayload: function
-   *   }
+   *   },
+   *   [Audit.AUDIT_STEP_DESTINATIONS.SCRAPE_CLIENT]: {
+   *   formatPayload: function
    * }}
    */
   static AUDIT_STEP_DESTINATION_CONFIGS = {
@@ -152,6 +157,26 @@ class Audit extends BaseModel {
         options: stepResult.options || {},
         completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
         auditContext,
+      }),
+    },
+    [Audit.AUDIT_STEP_DESTINATIONS.SCRAPE_CLIENT]: {
+      /**
+       *
+       * @param stepResult - The result of the audit step.
+       * @param auditContext - The audit context.
+       * @param context - The context object.
+       * @returns {object} - The formatted payload for the scrape client.
+       */
+      formatPayload: (stepResult, auditContext, context) => ({
+        urls: stepResult.urls.map((urlObj) => urlObj.url),
+        processingType: stepResult.processingType || 'default',
+        options: stepResult.options || {},
+        maxScrapeAge: stepResult.maxScrapeAge || 24,
+        auditData: {
+          siteId: stepResult.siteId,
+          completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
+          auditContext,
+        },
       }),
     },
   };

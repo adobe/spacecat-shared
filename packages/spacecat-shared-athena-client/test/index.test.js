@@ -335,6 +335,50 @@ describe('Traffic analysis query functions', () => {
       expect(sql).to.be.a('string');
       expect(sql.length).to.be.greaterThan(0);
     });
+
+    it('should filter by path with default threshold', () => {
+      const params = {
+        week: 23,
+        month: 6,
+        year: 2024,
+        siteId: 'mysite',
+        dimensions: ['utm_campaign', 'device'],
+        tableName: 'my_table',
+        pageTypes: null,
+        trfTypes: ['paid'],
+      };
+
+      const placeholders = getTrafficAnalysisQueryPlaceholdersFilled(params);
+      const sql = getTrafficAnalysisQuery(placeholders);
+
+      expect(sql).to.include('WITH min_totals AS');
+      expect(sql).to.include('GROUP BY path');
+      expect(sql).to.include('JOIN min_totals t ON m.path = t.min_key');
+      expect(sql).to.include('HAVING SUM(pageviews) >= 1000');
+    });
+
+    it('should respect provided pageViewThreshold (path-based)', () => {
+      const params = {
+        week: 23,
+        month: 6,
+        year: 2024,
+        siteId: 'mysite',
+        dimensions: ['utm_campaign', 'device'],
+        tableName: 'my_table',
+        pageTypes: null,
+        trfTypes: ['paid'],
+        pageViewThreshold: 5000,
+      };
+
+      const placeholders = getTrafficAnalysisQueryPlaceholdersFilled(params);
+      const sql = getTrafficAnalysisQuery(placeholders);
+      console.log(sql);
+
+      expect(sql).to.include('WITH min_totals AS');
+      expect(sql).to.include('GROUP BY path');
+      expect(sql).to.include('JOIN min_totals t ON m.path = t.min_key');
+      expect(sql).to.include('HAVING SUM(pageviews) >= 5000');
+    });
   });
 
   describe('getTrafficAnalysisQueryPlaceholders', () => {
@@ -418,6 +462,24 @@ describe('Traffic analysis query functions', () => {
   });
 
   describe('getTrafficAnalysisQueryPlaceholdersFilled', () => {
+    it('should support month-based temporal condition (no week)', () => {
+      const params = {
+        month: 6,
+        year: 2024,
+        siteId: 'month-site',
+        dimensions: ['device'],
+        tableName: 'traffic_data',
+      };
+
+      const result = getTrafficAnalysisQueryPlaceholdersFilled(params);
+
+      expect(result.temporalCondition).to.include('month=');
+      expect(result.temporalCondition).to.include('year=');
+
+      const sql = getTrafficAnalysisQuery(result);
+      expect(sql).to.include('month=6');
+      expect(sql).to.include('year=2024');
+    });
     it('should generate complete placeholder values for valid input (2 dimensions - even)', () => {
       const params = {
         week: 23,
@@ -520,7 +582,7 @@ describe('Traffic analysis query functions', () => {
       };
 
       expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing required parameters: week, year, siteId, or tableName');
+        .to.throw('Missing required parameters: week, month or year');
     });
 
     it('should throw error for missing year', () => {
@@ -532,7 +594,7 @@ describe('Traffic analysis query functions', () => {
       };
 
       expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing required parameters: week, year, siteId, or tableName');
+        .to.throw('Missing required parameters: week, month or year');
     });
 
     it('should throw error for missing siteId', () => {
@@ -544,7 +606,7 @@ describe('Traffic analysis query functions', () => {
       };
 
       expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing required parameters: week, year, siteId, or tableName');
+        .to.throw('Missing required parameters: siteId, or tableName');
     });
 
     it('should throw error for missing tableName', () => {
@@ -556,7 +618,7 @@ describe('Traffic analysis query functions', () => {
       };
 
       expect(() => getTrafficAnalysisQueryPlaceholdersFilled(params))
-        .to.throw('Missing required parameters: week, year, siteId, or tableName');
+        .to.throw('Missing required parameters: siteId, or tableName');
     });
 
     it('should throw error for empty dimensions array', () => {
@@ -663,7 +725,7 @@ describe('Traffic analysis query functions', () => {
     it('should handle cross-month year correctly', () => {
       const params = {
         week: 53, // Week 53 often spans into the next year
-        year: 2024,
+        year: 2020, // use a year that actually has ISO week 53
         siteId: 'cross-month-site',
         dimensions: ['device'],
         tableName: 'cross_month_table',
@@ -716,7 +778,7 @@ describe('Traffic analysis query functions', () => {
       expect(sql).to.not.match(/undefined/);
 
       // Verify SQL structure is reasonable
-      expect(sql).to.include('WITH raw AS');
+      expect(sql).to.include('WITH min_totals AS');
       expect(sql).to.include('agg AS');
       expect(sql).to.include('grand_total AS');
       expect(sql).to.include('FROM rum_bundles_2024');
@@ -806,7 +868,7 @@ describe('DTO Tests', () => {
         click_rate: 0.15,
         engagement_rate: 0.8,
         bounce_rate: 0.2,
-        engaged_scroll: 0.6,
+        engaged_scroll_rate: 0.6,
         p70_scroll: 0.75,
       };
 
@@ -825,7 +887,7 @@ describe('DTO Tests', () => {
         click_rate: 0.15,
         engagement_rate: 0.8,
         bounce_rate: 0.2,
-        engaged_scroll: 0.6,
+        engaged_scroll_rate: 0.6,
         p70_scroll: 0.75,
       });
     });
@@ -846,7 +908,7 @@ describe('DTO Tests', () => {
         click_rate: 0.15,
         engagement_rate: 0.8,
         bounce_rate: 0.2,
-        engaged_scroll: 0.6,
+        engaged_scroll_rate: 0.6,
         p70_scroll: 0.75,
         path: '/home',
         page_type: 'Home Page',

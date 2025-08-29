@@ -60,6 +60,10 @@ const transformProfile = (payload) => {
   const profile = { ...payload };
 
   profile.email = payload.user_id;
+  profile.trial_email = payload.email;
+  profile.provider = 'IMS';
+  profile.first_name = payload.first_name;
+  profile.last_name = payload.last_name;
   IGNORED_PROFILE_PROPS.forEach((prop) => delete profile[prop]);
 
   return profile;
@@ -168,6 +172,9 @@ export default class AdobeImsHandler extends AbstractHandler {
           (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
         ));
       }
+      payload.email = imsProfile.email;
+      payload.first_name = imsProfile.first_name;
+      payload.last_name = imsProfile.last_name;
       const profile = transformProfile(payload);
 
       return new AuthInfo()

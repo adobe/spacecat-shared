@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-scrape-client-v2.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.0...@adobe/spacecat-shared-scrape-client-v2.1.1) (2025-08-28)
+
+
+### Bug Fixes
+
+* enhance validation for scrape job configuration ([#940](https://github.com/adobe/spacecat-shared/issues/940)) ([54d0a6a](https://github.com/adobe/spacecat-shared/commit/54d0a6aa322547e13da25f2f97e1542fd5688849))
+
+# [@adobe/spacecat-shared-scrape-client-v2.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.0.0...@adobe/spacecat-shared-scrape-client-v2.1.0) (2025-08-20)
+
+
+### Features
+
+* add scrape-client destination  ([#913](https://github.com/adobe/spacecat-shared/issues/913)) ([e208a87](https://github.com/adobe/spacecat-shared/commit/e208a87214874a2708ac2d7614fcfd4c0770fe17))
+
 # [@adobe/spacecat-shared-scrape-client-v2.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v1.0.7...@adobe/spacecat-shared-scrape-client-v2.0.0) (2025-08-13)
 
 

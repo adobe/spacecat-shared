@@ -42,7 +42,7 @@ export default class ScopedApiKeyHandler extends AbstractHandler {
     const apiKeyEntity = await ApiKey.findByHashedApiKey(hashedApiKey);
 
     if (!apiKeyEntity) {
-      this.log(`No API key entity found in the data layer for the provided API key: ${apiKeyFromHeader}`, 'error');
+      this.log(`No API key entity found in the data layer for the provided API key: ${apiKeyFromHeader}`, 'debug');
       return null;
     }
     this.log(`Valid API key entity found. Id: ${apiKeyEntity.getId()}, name: ${apiKeyEntity.getName()}, scopes: ${apiKeyEntity.getScopes()}`, 'debug');

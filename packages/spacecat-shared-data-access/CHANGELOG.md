@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.59.0...@adobe/spacecat-shared-data-access-v2.60.0) (2025-08-29)
+
+
+### Features
+
+* add headings audit ([#943](https://github.com/adobe/spacecat-shared/issues/943)) ([17d45dd](https://github.com/adobe/spacecat-shared/commit/17d45dd624d5ada1feafa25ea541ff841a490d34))
+
 # [@adobe/spacecat-shared-data-access-v2.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.58.0...@adobe/spacecat-shared-data-access-v2.59.0) (2025-08-29)
 
 

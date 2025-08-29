@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.60.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.60.0...@adobe/spacecat-shared-data-access-v2.60.1) (2025-08-29)
+
+
+### Bug Fixes
+
+* Fix findBy typescript definitions for LLMO tier types ([#942](https://github.com/adobe/spacecat-shared/issues/942)) ([396ca6f](https://github.com/adobe/spacecat-shared/commit/396ca6f1c4a251652c63449f9d67b89472f0065c))
+
 # [@adobe/spacecat-shared-data-access-v2.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.59.0...@adobe/spacecat-shared-data-access-v2.60.0) (2025-08-29)
 
 

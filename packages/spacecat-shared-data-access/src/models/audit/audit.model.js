@@ -53,6 +53,7 @@ class Audit extends BaseModel {
     SECURITY_CSP: 'security-csp',
     PAID: 'paid',
     HREFLANG: 'hreflang',
+    HEADINGS: 'headings',
     PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
     PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
     READABILITY: 'readability',
@@ -93,7 +94,7 @@ class Audit extends BaseModel {
    *   },
    *   [Audit.AUDIT_STEP_DESTINATIONS.SCRAPE_CLIENT]: {
    *   formatPayload: function
-   * }}
+   * }}}
    */
   static AUDIT_STEP_DESTINATION_CONFIGS = {
     [Audit.AUDIT_STEP_DESTINATIONS.IMPORT_WORKER]: {

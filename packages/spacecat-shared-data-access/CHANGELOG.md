@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.60.1...@adobe/spacecat-shared-data-access-v2.61.0) (2025-09-01)
+
+
+### Features
+
+* add bucket config inside llmo ([#944](https://github.com/adobe/spacecat-shared/issues/944)) ([0153f33](https://github.com/adobe/spacecat-shared/commit/0153f33615b3ccc51f6adee0475027ad93a41480))
+
 # [@adobe/spacecat-shared-data-access-v2.60.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.60.0...@adobe/spacecat-shared-data-access-v2.60.1) (2025-08-29)
 
 

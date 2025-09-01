@@ -2259,6 +2259,46 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO CDN Bucket Config', () => {
+    it('creates a Config with llmo cdnBucketConfig property', () => {
+      const data = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          cdnBucketConfig: [
+            { bucketName: 'testBucket', orgId: 'testOrgId', cdnProvider: 'testCdnProvider' },
+          ],
+        },
+      };
+      const config = Config(data);
+      expect(config.getLlmoCdnBucketConfig()).to.deep.equal(data.llmo.cdnBucketConfig);
+    });
+
+    it('has undefined cdnBucketConfig in default config', () => {
+      const config = Config();
+      expect(config.getLlmoCdnBucketConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for cdnBucketConfig if not provided', () => {
+      const config = Config({
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+        },
+      });
+      expect(config.getLlmoCdnBucketConfig()).to.be.undefined;
+    });
+
+    it('should be able to update cdnBucketConfig', () => {
+      const config = Config();
+      const cdnBucketConfig = [
+        { bucketName: 'testBucket', orgId: 'testOrgId', cdnProvider: 'testCdnProvider' },
+      ];
+      config.updateLlmoCdnBucketConfig(cdnBucketConfig);
+      expect(config.getLlmoCdnBucketConfig()).to.deep.equal(cdnBucketConfig);
+    });
+  });
+
   describe('LLMO Well Known Tags', () => {
     const { extractWellKnownTags } = Config();
 

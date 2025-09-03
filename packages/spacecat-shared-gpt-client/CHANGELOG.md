@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-gpt-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.21...@adobe/spacecat-shared-gpt-client-v1.6.0) (2025-09-03)
+
+
+### Features
+
+* **gpt-client:** add optional system prompt to Azure OpenAI client ([#945](https://github.com/adobe/spacecat-shared/issues/945)) ([90f93e5](https://github.com/adobe/spacecat-shared/commit/90f93e5074ad0fd2df464f01b30edc4fe98b94cc))
+
 # [@adobe/spacecat-shared-gpt-client-v1.5.21](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.20...@adobe/spacecat-shared-gpt-client-v1.5.21) (2025-08-25)
 
 

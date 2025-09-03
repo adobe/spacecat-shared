@@ -131,6 +131,7 @@ export default class AzureOpenAIClient {
     const {
       imageUrls,
       responseFormat,
+      systemPrompt,
     } = options || {};
     const hasImageUrls = imageUrls && imageUrls.length > 0;
 
@@ -164,7 +165,12 @@ export default class AzureOpenAIClient {
         ],
       };
 
-      if (responseFormat === JSON_OBJECT_RESPONSE_FORMAT) {
+      if (systemPrompt) {
+        body.messages.unshift({
+          role: SYSTEM_ROLE,
+          content: systemPrompt,
+        });
+      } else if (responseFormat === JSON_OBJECT_RESPONSE_FORMAT) {
         body.response_format = {
           type: JSON_OBJECT_RESPONSE_FORMAT,
         };

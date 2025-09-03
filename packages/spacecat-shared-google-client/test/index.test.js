@@ -511,4 +511,225 @@ describe('GoogleClient', () => {
       }
     });
   });
+
+  describe('getChromeUXReport', () => {
+    const apiEndpoint = 'https://chromeuxreport.googleapis.com';
+    const apiPath = '/v1/records:queryRecord';
+
+    beforeEach(() => {
+      stubSecretManager(defaultConfig);
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+    });
+
+    it('returns the Chrome UX Report for a given url and form factor', async () => {
+      const url = 'https://example.com/page';
+
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(200, {
+          record: {
+            url,
+            formFactor: 'DESKTOP',
+            metrics: {
+              LCP: 100,
+              FID: 100,
+              CLS: 100,
+            },
+          },
+        });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.getChromeUXReport(url, 'DESKTOP');
+      expect(result.data).to.deep.equal({
+        record: {
+          url,
+          formFactor: 'DESKTOP',
+          metrics: {
+            LCP: 100,
+            FID: 100,
+            CLS: 100,
+          },
+        },
+      });
+    });
+
+    it('returns the Chrome UX Report for PHONE if no form factor is provided', async () => {
+      const url = 'https://example.com/page';
+
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(200, {
+          record: {
+            url,
+            formFactor: 'PHONE',
+            metrics: {
+              LCP: 100,
+              FID: 100,
+              CLS: 100,
+            },
+          },
+        });
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.getChromeUXReport(url);
+      expect(result.data).to.deep.equal({
+        record: {
+          url,
+          formFactor: 'PHONE',
+          metrics: {
+            LCP: 100,
+            FID: 100,
+            CLS: 100,
+          },
+        },
+      });
+    });
+
+    it('should throw an error if the API response is not ok', async () => {
+      const url = 'https://example.com/page';
+
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(500, 'Internal Server Error');
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getChromeUXReport(url, 'PHONE');
+      } catch (error) {
+        expect(error.message).to.equal('Error retrieving Chrome UX report from Google API: Internal Server Error');
+      }
+    });
+
+    it('should throw an error when the response cannot be parsed to json', async () => {
+      const url = 'https://example.com/page';
+
+      nock(apiEndpoint)
+        .post(apiPath)
+        .reply(200, 'Invalid JSON');
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      try {
+        await googleClient.getChromeUXReport(url, 'PHONE');
+      } catch (error) {
+        expect(error.message).to.equal(`Error parsing result of Chrome UX Report for ${url}: Unexpected token 'I', "Invalid JSON" is not valid JSON`);
+      }
+    });
+  });
+
+  describe('getPageSpeedInsights', () => {
+    const apiEndpoint = 'https://pagespeedonline.googleapis.com';
+    const apiPath = '/pagespeedonline/v5/runPagespeed';
+
+    beforeEach(() => {
+      stubSecretManager(defaultConfig);
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+    });
+
+    it('should return Page Speed Insights data for the provided URL with default parameters', async () => {
+      const url = 'https://example.com/page';
+      const testResult = {
+        id: url,
+        loadingExperience: {
+          id: url,
+          metrics: {
+            FIRST_CONTENTFUL_PAINT_MS: {
+              percentile: 1500,
+              distributions: [
+                {
+                  min: 0,
+                  max: 1800,
+                  proportion: 0.7,
+                },
+              ],
+            },
+          },
+        },
+        lighthouseResult: {
+          audits: {
+            'first-contentful-paint': {
+              id: 'first-contentful-paint',
+              title: 'First Contentful Paint',
+              description: 'First Contentful Paint marks the time at which the first text or image is painted.',
+              score: 0.9,
+              displayValue: '1.5 s',
+            },
+          },
+        },
+      };
+
+      nock(apiEndpoint)
+        .get(apiPath)
+        .query({
+          url,
+          category: 'performance',
+          strategy: 'mobile',
+        })
+        .reply(200, testResult);
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.getPageSpeedInsights(url);
+
+      expect(result.data).to.eql(testResult);
+    });
+
+    it('should return Page Speed Insights data with custom strategy and category', async () => {
+      const url = 'https://example.com/page';
+      const strategy = 'desktop';
+      const category = 'performance';
+      const testResult = {
+        id: url,
+        audits: {
+          'first-contentful-paint': {
+            id: 'first-contentful-paint',
+            title: 'First Contentful Paint',
+            description: 'First Contentful Paint marks the time at which the first text or image is painted.',
+            score: 0.9,
+            displayValue: '1.5 s',
+          },
+        },
+      };
+
+      nock(apiEndpoint)
+        .get(apiPath)
+        .query({
+          url,
+          category,
+          strategy,
+        })
+        .reply(200, testResult);
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+      const result = await googleClient.getPageSpeedInsights(url, strategy, category);
+
+      expect(result.data).to.eql(testResult);
+    });
+
+    it('should handle errors when the Google API call fails', async () => {
+      const url = 'https://example.com/page';
+      const failMessage = 'Google API call failed';
+
+      nock(apiEndpoint)
+        .get(apiPath)
+        .query({
+          url,
+          strategy: 'mobile',
+          category: 'performance',
+        })
+        .reply(500, failMessage);
+
+      const googleClient = await GoogleClient.createFrom(context, baseURL);
+
+      try {
+        await googleClient.getPageSpeedInsights(url);
+      } catch (error) {
+        expect(error.message).to.equal(`Error retrieving Page Speed Insights from Google API: ${failMessage}`);
+      }
+    });
+  });
 });

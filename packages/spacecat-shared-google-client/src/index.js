@@ -146,7 +146,7 @@ export default class GoogleClient {
           ],
         },
       };
-      this.log.info(`Retrieving organic search data: ${JSON.stringify(params)}`);
+      this.log.debug(`Retrieving organic search data: ${JSON.stringify(params)}`);
       return await webmasters.searchanalytics.query(params);
     } catch (error) {
       this.log.error('Error retrieving organic search data:', error.message);

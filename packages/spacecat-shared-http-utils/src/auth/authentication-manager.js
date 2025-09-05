@@ -65,7 +65,7 @@ export default class AuthenticationManager {
       }
     }
 
-    this.log.info('No authentication handler was able to authenticate the request');
+    this.log.debug('No authentication handler was able to authenticate the request');
     throw new NotAuthenticatedError();
   }
 

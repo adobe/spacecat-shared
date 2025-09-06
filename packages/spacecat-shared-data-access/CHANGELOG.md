@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.61.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.1...@adobe/spacecat-shared-data-access-v2.61.2) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency electrodb to v3.4.5 ([#948](https://github.com/adobe/spacecat-shared/issues/948)) ([d02e298](https://github.com/adobe/spacecat-shared/commit/d02e298ccf4b3243cc8f07271c37bb587b3e23e7))
+
 # [@adobe/spacecat-shared-data-access-v2.61.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.0...@adobe/spacecat-shared-data-access-v2.61.1) (2025-09-06)
 
 

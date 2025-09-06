@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.50.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.1...@adobe/spacecat-shared-utils-v1.50.2) (2025-09-06)
+
+
+### Bug Fixes
+
+* get pageId from content-page-ref if content-page-id not available ([#935](https://github.com/adobe/spacecat-shared/issues/935)) ([df585ce](https://github.com/adobe/spacecat-shared/commit/df585ce09d01a1e1c3b282d3a967b9ab138e3fa4))
+
 # [@adobe/spacecat-shared-utils-v1.50.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.0...@adobe/spacecat-shared-utils-v1.50.1) (2025-09-06)
 
 

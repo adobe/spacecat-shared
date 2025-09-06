@@ -436,15 +436,21 @@ describe('AEM Detection', () => {
 });
 
 describe('determineAEMCSPageId', () => {
+  let mockLog;
+
   beforeEach(() => {
     nock.cleanAll();
+    mockLog = {
+      info: sinon.spy(),
+      error: sinon.spy(),
+      warn: sinon.spy(),
+    };
   });
 
   afterEach(() => {
     nock.cleanAll();
     sinon.restore();
   });
-
   it('should extract page ID from valid meta tag', async () => {
     const pageURL = 'https://example.com/page';
     const expectedPageId = 'page-12345';
@@ -618,137 +624,380 @@ describe('determineAEMCSPageId', () => {
     expect(result).to.be.null;
   });
 
-  describe('with authorURL and bearerToken', () => {
-    const authorURL = 'https://author.example.com';
-    const bearerToken = 'Bearer token123';
+  it('should return null when content-page-ref available but authentication is missing', async () => {
+    const pageURL1 = 'https://example.com/page1';
+    const pageURL2 = 'https://example.com/page2';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="content-ref-abc123">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page1')
+      .reply(200, htmlContent);
+
+    nock('https://example.com')
+      .get('/page2')
+      .reply(200, htmlContent);
+
+    // Test missing authorURL
+    const result1 = await determineAEMCSPageId(pageURL1);
+    expect(result1).to.be.null;
+
+    // Test missing bearerToken
+    const result2 = await determineAEMCSPageId(pageURL2, 'https://author.example.com');
+    expect(result2).to.be.null;
+  });
+
+  it('should fallback to content-page-id when content-page-ref is empty', async () => {
     const pageURL = 'https://example.com/page';
+    const expectedPageId = 'fallback-page-id';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="">
+          <meta name="content-page-id" content="${expectedPageId}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
 
-    it('should use content-page-ref when available and Content API returns page ID', async () => {
-      const contentPageRef = 'content-ref-abc123';
-      const expectedPageId = 'page-456';
-      const htmlContent = `
-        <html>
-          <head>
-            <meta name="content-page-ref" content="${contentPageRef}">
-            <title>Test Page</title>
-          </head>
-          <body>Content</body>
-        </html>
-      `;
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
 
-      // Mock the page fetch
-      nock('https://example.com')
-        .get('/page')
-        .reply(200, htmlContent);
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123');
+    expect(result).to.equal(expectedPageId);
+  });
 
-      // Mock the Content API call with 303 redirect
-      nock(authorURL)
-        .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-abc123')
-        .reply(303, '', {
-          Location: `/adobe/experimental/aspm-expires-20251231/pages/${expectedPageId}`,
-        });
+  it('should trim whitespace from content-page-ref', async () => {
+    const pageURL = 'https://example.com/page';
+    const contentPageRef = '  content-ref-abc123  ';
+    const expectedPageId = 'page-456';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="${contentPageRef}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
 
-      // Mock the redirected URL response with JSON containing the page ID
-      nock(authorURL)
-        .get(`/adobe/experimental/aspm-expires-20251231/pages/${expectedPageId}`)
-        .reply(200, { id: expectedPageId });
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
 
-      const result = await determineAEMCSPageId(pageURL, authorURL, bearerToken);
-      expect(result).to.equal(expectedPageId);
-    });
+    nock('https://author.example.com')
+      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-abc123')
+      .reply(200, { id: expectedPageId });
 
-    it('should fall back to content-page-id when Content API fails', async () => {
-      const contentPageRef = 'content-ref-fail';
-      const expectedPageId = 'fallback-page-id';
-      const htmlContent = `
-        <html>
-          <head>
-            <meta name="content-page-ref" content="${contentPageRef}">
-            <meta name="content-page-id" content="${expectedPageId}">
-            <title>Test Page</title>
-          </head>
-          <body>Content</body>
-        </html>
-      `;
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
+    expect(result).to.equal(expectedPageId);
+    expect(mockLog.info).to.have.been.calledWith('Resolving content-page-ref via https://author.example.com/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-abc123 (preferContentApi=true)');
+  });
 
-      // Mock the page fetch
-      nock('https://example.com')
-        .get('/page')
-        .reply(200, htmlContent);
+  it('should use Content API and return page ID from JSON response', async () => {
+    const pageURL = 'https://example.com/page';
+    const contentPageRef = 'content-ref-abc123';
+    const expectedPageId = 'page-456';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="${contentPageRef}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
 
-      // Mock the Content API call failure
-      nock(authorURL)
-        .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-fail')
-        .reply(500, 'Internal Server Error');
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
 
-      const result = await determineAEMCSPageId(pageURL, authorURL, bearerToken);
-      expect(result).to.equal(expectedPageId);
-    });
+    nock('https://author.example.com')
+      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-abc123')
+      .reply(200, { id: expectedPageId });
 
-    it('should throw error when Content API returns not ok status', async () => {
-      const contentPageRef = 'content-ref-network-error';
-      const htmlContent = `
-        <html>
-          <head>
-            <meta name="content-page-ref" content="${contentPageRef}">
-            <title>Test Page</title>
-          </head>
-          <body>Content</body>
-        </html>
-      `;
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
+    expect(result).to.equal(expectedPageId);
+    expect(mockLog.info).to.have.been.calledWith(`Resolved pageId: "${expectedPageId}" from JSON directly for ref "${contentPageRef}"`);
+  });
 
-      // Mock the page fetch
-      nock('https://example.com')
-        .get('/page')
-        .reply(200, htmlContent);
+  it('should return null when Content API returns JSON without id field', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="content-ref-no-id">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
 
-      // Mock the Content API call with network error
-      nock(authorURL)
-        .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-network-error')
-        .replyWithError('Content API network error');
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
 
-      try {
-        await determineAEMCSPageId(pageURL, authorURL, bearerToken);
-        expect.fail('Should have thrown an error');
-      } catch (error) {
-        expect(error.message).to.include('Content API network error');
-      }
-    });
+    nock('https://author.example.com')
+      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-no-id')
+      .reply(200, { name: 'some-name' });
 
-    it('should prioritize content-page-ref over content-page-id when both are present and Content API succeeds', async () => {
-      const contentPageRef = 'content-ref-priority';
-      const contentPageId = 'content-page-id-value';
-      const expectedPageId = 'priority-page-id';
-      const htmlContent = `
-        <html>
-          <head>
-            <meta name="content-page-ref" content="${contentPageRef}">
-            <meta name="content-page-id" content="${contentPageId}">
-            <title>Test Page</title>
-          </head>
-          <body>Content</body>
-        </html>
-      `;
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
+    expect(result).to.be.null;
+    expect(mockLog.error).to.have.been.calledWith('resolve response did not contain an "id" property.');
+  });
 
-      // Mock the page fetch
-      nock('https://example.com')
-        .get('/page')
-        .reply(200, htmlContent);
+  it('should return null when Content API returns empty JSON', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="content-ref-empty">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
 
-      // Mock the Content API call with 303 redirect
-      nock(authorURL)
-        .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-priority')
-        .reply(303, '', {
-          Location: `/adobe/experimental/aspm-expires-20251231/pages/${expectedPageId}`,
-        });
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
 
-      // Mock the redirected URL response with JSON containing the page ID
-      nock(authorURL)
-        .get(`/adobe/experimental/aspm-expires-20251231/pages/${expectedPageId}`)
-        .reply(200, { id: expectedPageId });
+    nock('https://author.example.com')
+      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-empty')
+      .reply(200, {});
 
-      const result = await determineAEMCSPageId(pageURL, authorURL, bearerToken);
-      expect(result).to.equal(expectedPageId);
-    });
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
+    expect(result).to.be.null;
+    expect(mockLog.error).to.have.been.calledWith('resolve response did not contain an "id" property.');
+  });
+
+  it('should return null when Content API returns non-200 status', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="content-ref-fail">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-fail')
+      .reply(500, 'Internal Server Error');
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
+    expect(result).to.be.null;
+    expect(mockLog.warn).to.have.been.calledWith('Unexpected status 500 when resolving content-page-ref.');
+  });
+
+  it('should return null when Content API fails and no fallback', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="content-ref-fail-no-fallback">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-fail-no-fallback')
+      .reply(500, 'Internal Server Error');
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true);
+    expect(result).to.be.null;
+  });
+
+  it('should handle Content API network errors gracefully', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="content-ref-network-error">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-network-error')
+      .replyWithError('Content API network error');
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
+    expect(result).to.be.null;
+    expect(mockLog.error).to.have.been.calledWith('Error while resolving content-page-ref: Content API network error');
+  });
+
+  it('should use PSS API and return page ID from text response', async () => {
+    const pageURL = 'https://example.com/page';
+    const contentPageRef = 'content-ref-abc123';
+    const expectedPageId = 'page-456';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="${contentPageRef}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get('/adobe/experimental/pss/pages/resolve?pageRef=content-ref-abc123')
+      .reply(200, expectedPageId);
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', false, mockLog);
+    expect(result).to.equal(expectedPageId);
+    expect(mockLog.info).to.have.been.calledWith(`Resolved pageId: "${expectedPageId}" from JSON directly for ref "${contentPageRef}"`);
+  });
+
+  it('should return null when PSS API returns empty text response', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="content-ref-empty">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get('/adobe/experimental/pss/pages/resolve?pageRef=content-ref-empty')
+      .reply(200, '');
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', false, mockLog);
+    expect(result).to.be.null;
+    expect(mockLog.error).to.have.been.calledWith('resolve response did not contain an "id" property.');
+  });
+
+  it('should return null when PSS API returns non-200 status', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="content-ref-fail">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get('/adobe/experimental/pss/pages/resolve?pageRef=content-ref-fail')
+      .reply(500, 'Internal Server Error');
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', false, mockLog);
+    expect(result).to.be.null;
+    expect(mockLog.warn).to.have.been.calledWith('Unexpected status 500 when resolving content-page-ref.');
+  });
+
+  it('should prioritize content-page-ref over content-page-id when both are present and API succeeds', async () => {
+    const pageURL = 'https://example.com/page';
+    const contentPageRef = 'content-ref-priority';
+    const contentPageId = 'content-page-id-value';
+    const expectedPageId = 'priority-page-id';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="${contentPageRef}">
+          <meta name="content-page-id" content="${contentPageId}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    nock('https://author.example.com')
+      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-priority')
+      .reply(200, { id: expectedPageId });
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true);
+    expect(result).to.equal(expectedPageId);
+  });
+
+  it('should fallback to content-page-id when content-page-ref has whitespace-only content', async () => {
+    const pageURL = 'https://example.com/page';
+    const expectedPageId = 'fallback-page-id';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-ref" content="   ">
+          <meta name="content-page-id" content="${expectedPageId}">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true);
+    expect(result).to.equal(expectedPageId);
+  });
+
+  it('should handle content-page-id with whitespace-only content', async () => {
+    const pageURL = 'https://example.com/page';
+    const htmlContent = `
+      <html>
+        <head>
+          <meta name="content-page-id" content="   ">
+          <title>Test Page</title>
+        </head>
+        <body>Content</body>
+      </html>
+    `;
+
+    nock('https://example.com')
+      .get('/page')
+      .reply(200, htmlContent);
+
+    const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true);
+    expect(result).to.be.null;
   });
 });

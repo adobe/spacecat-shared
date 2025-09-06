@@ -40,7 +40,7 @@
     "@aws-sdk/lib-dynamodb": "3.883.0",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.10.3",
-    "electrodb": "3.4.4",
+    "electrodb": "3.4.5",
     "joi": "17.13.3",
     "pluralize": "8.0.0",
     "uuid": "11.1.0"

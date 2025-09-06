@@ -36,21 +36,21 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.49.0",
-    "@aws-sdk/client-dynamodb": "3.864.0",
-    "@aws-sdk/lib-dynamodb": "3.864.0",
+    "@aws-sdk/client-dynamodb": "3.883.0",
+    "@aws-sdk/lib-dynamodb": "3.883.0",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.10.3",
-    "electrodb": "3.4.3",
+    "electrodb": "3.4.5",
     "joi": "17.13.3",
     "pluralize": "8.0.0",
     "uuid": "11.1.0"
   },
   "devDependencies": {
-    "chai": "5.2.1",
-    "chai-as-promised": "8.0.1",
+    "chai": "5.3.3",
+    "chai-as-promised": "8.0.2",
     "dynamo-db-local": "9.6.0",
-    "nock": "14.0.9",
+    "nock": "14.0.10",
     "sinon": "20.0.0",
-    "sinon-chai": "4.0.0"
+    "sinon-chai": "4.0.1"
   }
 }

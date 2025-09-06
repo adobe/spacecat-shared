@@ -1,3 +1,52 @@
+# [@adobe/spacecat-shared-data-access-v2.61.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.1...@adobe/spacecat-shared-data-access-v2.61.2) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency electrodb to v3.4.5 ([#948](https://github.com/adobe/spacecat-shared/issues/948)) ([d02e298](https://github.com/adobe/spacecat-shared/commit/d02e298ccf4b3243cc8f07271c37bb587b3e23e7))
+
+# [@adobe/spacecat-shared-data-access-v2.61.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.0...@adobe/spacecat-shared-data-access-v2.61.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
+# [@adobe/spacecat-shared-data-access-v2.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.60.1...@adobe/spacecat-shared-data-access-v2.61.0) (2025-09-01)
+
+
+### Features
+
+* add bucket config inside llmo ([#944](https://github.com/adobe/spacecat-shared/issues/944)) ([0153f33](https://github.com/adobe/spacecat-shared/commit/0153f33615b3ccc51f6adee0475027ad93a41480))
+
+# [@adobe/spacecat-shared-data-access-v2.60.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.60.0...@adobe/spacecat-shared-data-access-v2.60.1) (2025-08-29)
+
+
+### Bug Fixes
+
+* Fix findBy typescript definitions for LLMO tier types ([#942](https://github.com/adobe/spacecat-shared/issues/942)) ([396ca6f](https://github.com/adobe/spacecat-shared/commit/396ca6f1c4a251652c63449f9d67b89472f0065c))
+
+# [@adobe/spacecat-shared-data-access-v2.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.59.0...@adobe/spacecat-shared-data-access-v2.60.0) (2025-08-29)
+
+
+### Features
+
+* add headings audit ([#943](https://github.com/adobe/spacecat-shared/issues/943)) ([17d45dd](https://github.com/adobe/spacecat-shared/commit/17d45dd624d5ada1feafa25ea541ff841a490d34))
+
+# [@adobe/spacecat-shared-data-access-v2.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.58.0...@adobe/spacecat-shared-data-access-v2.59.0) (2025-08-29)
+
+
+### Features
+
+* added new audit-type LLM Error Pages ([#918](https://github.com/adobe/spacecat-shared/issues/918)) ([2f4ffbd](https://github.com/adobe/spacecat-shared/commit/2f4ffbd2b9cfbbf6fe534e92409649f97e9ee540))
+
+# [@adobe/spacecat-shared-data-access-v2.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.57.1...@adobe/spacecat-shared-data-access-v2.58.0) (2025-08-28)
+
+
+### Features
+
+* **dataAccess:** Add entities for LLMO trial onboarding ([#928](https://github.com/adobe/spacecat-shared/issues/928)) ([b5acc3c](https://github.com/adobe/spacecat-shared/commit/b5acc3c3af49d5fd45b8abf91b851fe23da60bc7))
+
 # [@adobe/spacecat-shared-data-access-v2.57.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.57.0...@adobe/spacecat-shared-data-access-v2.57.1) (2025-08-26)
 
 

@@ -41,6 +41,7 @@ describe('Index Exports', () => {
     'isObject',
     'isString',
     'isValidDate',
+    'isValidEmail',
     'isValidUrl',
     'isValidUUID',
     'isValidIMSOrgId',

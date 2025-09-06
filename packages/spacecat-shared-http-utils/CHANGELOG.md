@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-http-utils-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.0...@adobe/spacecat-shared-http-utils-v1.17.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
+# [@adobe/spacecat-shared-http-utils-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.16.0...@adobe/spacecat-shared-http-utils-v1.17.0) (2025-08-28)
+
+
+### Features
+
+* adding email id for trail users ([#936](https://github.com/adobe/spacecat-shared/issues/936)) ([2ea524b](https://github.com/adobe/spacecat-shared/commit/2ea524b6c3f7e03b183d93e614b5e16278ed9fc7))
+
 # [@adobe/spacecat-shared-http-utils-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.2...@adobe/spacecat-shared-http-utils-v1.16.0) (2025-08-20)
 
 

@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-content-client-v1.7.24](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.23...@adobe/spacecat-shared-content-client-v1.7.24) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
+# [@adobe/spacecat-shared-content-client-v1.7.23](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.22...@adobe/spacecat-shared-content-client-v1.7.23) (2025-09-03)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#901](https://github.com/adobe/spacecat-shared/issues/901)) ([0c2bf8f](https://github.com/adobe/spacecat-shared/commit/0c2bf8fdca1ff2d89eede2cf4cb530684bf30e93))
+
 # [@adobe/spacecat-shared-content-client-v1.7.22](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.21...@adobe/spacecat-shared-content-client-v1.7.22) (2025-08-09)
 
 

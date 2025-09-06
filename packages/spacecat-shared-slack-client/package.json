@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-slack-client",
-  "version": "1.5.23",
+  "version": "1.5.24",
   "description": "Shared modules of the Spacecat Services - Slack Client",
   "type": "module",
   "engines": {
@@ -35,14 +35,14 @@
   "dependencies": {
     "@adobe/helix-universal": "5.2.2",
     "@adobe/spacecat-shared-utils": "1.26.4",
-    "@slack/web-api": "7.9.3"
+    "@slack/web-api": "7.10.0"
   },
   "devDependencies": {
-    "chai": "5.2.1",
-    "chai-as-promised": "8.0.1",
-    "nock": "14.0.9",
+    "chai": "5.3.3",
+    "chai-as-promised": "8.0.2",
+    "nock": "14.0.10",
     "sinon": "20.0.0",
-    "sinon-chai": "4.0.0",
+    "sinon-chai": "4.0.1",
     "slack-block-builder": "2.8.0",
     "typescript": "5.9.2"
   }

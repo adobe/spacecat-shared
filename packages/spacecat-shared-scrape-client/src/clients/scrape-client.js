@@ -34,6 +34,59 @@ export default class ScrapeClient {
     }
   }
 
+  static validateScrapeConfiguration(scrapeJobConfiguration) {
+    if (!isObject(scrapeJobConfiguration)) {
+      throw new Error('Invalid scrape configuration: configuration must be an object');
+    }
+
+    // Validate scrapeWorkerQueue
+    if (!hasText(scrapeJobConfiguration.scrapeWorkerQueue)) {
+      throw new Error('Invalid scrape configuration: scrapeWorkerQueue must be a non-empty string');
+    }
+
+    if (!isValidUrl(scrapeJobConfiguration.scrapeWorkerQueue)) {
+      throw new Error('Invalid scrape configuration: scrapeWorkerQueue must be a valid URL');
+    }
+
+    // Validate s3Bucket
+    if (!hasText(scrapeJobConfiguration.s3Bucket)) {
+      throw new Error('Invalid scrape configuration: s3Bucket must be a non-empty string');
+    }
+
+    // Validate options
+    if (scrapeJobConfiguration.options !== undefined) {
+      if (!isObject(scrapeJobConfiguration.options)) {
+        throw new Error('Invalid scrape configuration: options must be an object');
+      }
+
+      const { options } = scrapeJobConfiguration;
+
+      if (options.enableJavascript !== undefined && typeof options.enableJavascript !== 'boolean') {
+        throw new Error('Invalid scrape configuration: options.enableJavascript must be a boolean');
+      }
+
+      if (options.hideConsentBanners !== undefined && typeof options.hideConsentBanners !== 'boolean') {
+        throw new Error('Invalid scrape configuration: options.hideConsentBanners must be a boolean');
+      }
+    }
+
+    // Validate maxUrlsPerJob
+    if (scrapeJobConfiguration.maxUrlsPerJob !== undefined) {
+      if (!Number.isInteger(scrapeJobConfiguration.maxUrlsPerJob)
+          || scrapeJobConfiguration.maxUrlsPerJob <= 0) {
+        throw new Error('Invalid scrape configuration: maxUrlsPerJob must be a positive integer');
+      }
+    }
+
+    // Validate maxUrlsPerMessage
+    if (scrapeJobConfiguration.maxUrlsPerMessage !== undefined) {
+      if (!Number.isInteger(scrapeJobConfiguration.maxUrlsPerMessage)
+          || scrapeJobConfiguration.maxUrlsPerMessage <= 0) {
+        throw new Error('Invalid scrape configuration: maxUrlsPerMessage must be a positive integer');
+      }
+    }
+  }
+
   validateRequestData(data) {
     if (!isObject(data)) {
       throw new Error('Invalid request: missing application/json request data');
@@ -103,8 +156,10 @@ export default class ScrapeClient {
     let scrapeConfiguration = {};
     try {
       scrapeConfiguration = JSON.parse(this.config.env.SCRAPE_JOB_CONFIGURATION);
+      ScrapeClient.validateScrapeConfiguration(scrapeConfiguration);
     } catch (error) {
-      this.config.log.error(`Failed to parse scrape job configuration: ${error.message}`);
+      this.config.log.error(`Failed to parse or validate scrape job configuration: ${error.message}`);
+      throw new Error(`Invalid scrape job configuration: ${error.message}`);
     }
     this.scrapeConfiguration = scrapeConfiguration;
 
@@ -229,6 +284,11 @@ export default class ScrapeClient {
     }
   }
 
+  /**
+    * Get the result paths of a scrape job
+    * @param {string} jobId - The ID of the job to fetch.
+    * @return {Promise<Map<string, string>>} A map of URLs to their corresponding result paths.
+   */
   async getScrapeResultPaths(jobId) {
     try {
       const job = await this.scrapeSupervisor.getScrapeJob(jobId);

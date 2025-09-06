@@ -42,6 +42,7 @@ class Audit extends BaseModel {
     EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
     EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
     META_TAGS: 'meta-tags',
+    LLM_ERROR_PAGES: 'llm-error-pages',
     COSTS: 'costs',
     STRUCTURED_DATA: 'structured-data',
     STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
@@ -52,6 +53,7 @@ class Audit extends BaseModel {
     SECURITY_CSP: 'security-csp',
     PAID: 'paid',
     HREFLANG: 'hreflang',
+    HEADINGS: 'headings',
     PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
     PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
     READABILITY: 'readability',
@@ -92,7 +94,7 @@ class Audit extends BaseModel {
    *   },
    *   [Audit.AUDIT_STEP_DESTINATIONS.SCRAPE_CLIENT]: {
    *   formatPayload: function
-   * }}
+   * }}}
    */
   static AUDIT_STEP_DESTINATION_CONFIGS = {
     [Audit.AUDIT_STEP_DESTINATIONS.IMPORT_WORKER]: {

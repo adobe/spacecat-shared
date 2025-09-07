@@ -10,7 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Opportunity } from '../index';
+import type {
+  BaseCollection,
+  BaseModel,
+  Opportunity,
+  QueryOptions,
+  QueryResult,
+} from '../index';
 
 export interface Suggestion extends BaseModel {
   getData(): object;
@@ -30,10 +36,49 @@ export interface Suggestion extends BaseModel {
 }
 
 export interface SuggestionCollection extends BaseCollection<Suggestion> {
+  // Standard methods (backward compatible)
   allByOpportunityId(opportunityId: string): Promise<Suggestion[]>;
   allByFixEntityId(fixEntityId: string): Promise<Suggestion[]>;
   allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion[]>;
   bulkUpdateStatus(suggestions: Suggestion[], status: string): Promise<Suggestion[]>;
   findByOpportunityId(opportunityId: string): Promise<Suggestion | null>;
   findByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion | null>;
+
+  // Enhanced methods with options (overloads for type safety)
+  allByOpportunityId(
+    opportunityId: string,
+    options: QueryOptions & { returnMetadata: true }
+  ): Promise<QueryResult<Suggestion[]>>;
+  allByOpportunityId(opportunityId: string, options?: QueryOptions): Promise<Suggestion[]>;
+
+  allByOpportunityIdAndStatus(
+    opportunityId: string,
+    status: string,
+    options: QueryOptions & { returnMetadata: true }
+  ): Promise<QueryResult<Suggestion[]>>;
+  allByOpportunityIdAndStatus(
+    opportunityId: string,
+    status: string,
+    options?: QueryOptions
+  ): Promise<Suggestion[]>;
+
+  findByOpportunityId(
+    opportunityId: string,
+    options: QueryOptions & { returnMetadata: true }
+  ): Promise<QueryResult<Suggestion | null>>;
+  findByOpportunityId(
+    opportunityId: string,
+    options?: QueryOptions
+  ): Promise<Suggestion | null>;
+
+  findByOpportunityIdAndStatus(
+    opportunityId: string,
+    status: string,
+    options: QueryOptions & { returnMetadata: true }
+  ): Promise<QueryResult<Suggestion | null>>;
+  findByOpportunityIdAndStatus(
+    opportunityId: string,
+    status: string,
+    options?: QueryOptions
+  ): Promise<Suggestion | null>;
 }

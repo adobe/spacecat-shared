@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.61.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.2...@adobe/spacecat-shared-data-access-v2.61.3) (2025-09-08)
+
+
+### Bug Fixes
+
+* getSiblings not a function ([#951](https://github.com/adobe/spacecat-shared/issues/951)) ([f3af04a](https://github.com/adobe/spacecat-shared/commit/f3af04a9f64bd5e78c113f0672572ab374e7fda8))
+
 # [@adobe/spacecat-shared-data-access-v2.61.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.1...@adobe/spacecat-shared-data-access-v2.61.2) (2025-09-06)
 
 

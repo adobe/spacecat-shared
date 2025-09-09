@@ -81,6 +81,7 @@ describe('Index Exports', () => {
     'detectAEMVersion',
     'determineAEMCSPageId',
     'DELIVERY_TYPES',
+    'getPageEditUrl',
   ];
 
   it('exports all expected functions', () => {

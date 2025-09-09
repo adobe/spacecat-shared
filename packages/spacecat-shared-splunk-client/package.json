@@ -40,10 +40,10 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "chai": "5.3.3",
+    "chai": "6.0.1",
     "chai-as-promised": "8.0.2",
     "nock": "14.0.10",
-    "sinon": "20.0.0",
+    "sinon": "21.0.0",
     "sinon-chai": "4.0.1",
     "typescript": "5.9.2"
   }

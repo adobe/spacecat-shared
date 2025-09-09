@@ -12,13 +12,12 @@
 
 /* eslint-env mocha */
 
-import { isIsoDate } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
 import { ValidationError } from '../../../src/index.js';
 
@@ -146,7 +145,7 @@ describe('Opportunity IT', async () => {
   it('creates a new opportunity', async () => {
     const data = {
       siteId,
-      auditId: uuid(),
+      auditId: crypto.randomUUID(),
       title: 'New Opportunity',
       description: 'Description',
       runbook: 'https://example.com',
@@ -162,7 +161,7 @@ describe('Opportunity IT', async () => {
 
     expect(opportunity).to.be.an('object');
 
-    expect(uuidValidate(opportunity.getId())).to.be.true;
+    expect(isValidUUID(opportunity.getId())).to.be.true;
     expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
     expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
@@ -191,7 +190,7 @@ describe('Opportunity IT', async () => {
 
     expect(opportunity).to.be.an('object');
 
-    expect(uuidValidate(opportunity.getId())).to.be.true;
+    expect(isValidUUID(opportunity.getId())).to.be.true;
     expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
     expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
@@ -252,7 +251,7 @@ describe('Opportunity IT', async () => {
     const data = [
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 1',
         description: 'Description',
         runbook: 'https://example.com',
@@ -264,7 +263,7 @@ describe('Opportunity IT', async () => {
       },
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 2',
         description: 'Description',
         runbook: 'https://example.com',
@@ -285,7 +284,7 @@ describe('Opportunity IT', async () => {
     opportunities.createdItems.forEach((opportunity, index) => {
       expect(opportunity).to.be.an('object');
 
-      expect(uuidValidate(opportunity.getId())).to.be.true;
+      expect(isValidUUID(opportunity.getId())).to.be.true;
       expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
       expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
@@ -301,7 +300,7 @@ describe('Opportunity IT', async () => {
     const data = [
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 1',
         description: 'Description',
         runbook: 'https://example.com',
@@ -313,7 +312,7 @@ describe('Opportunity IT', async () => {
       },
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 2',
         description: 'Description',
         runbook: 'https://example.com',
@@ -325,7 +324,7 @@ describe('Opportunity IT', async () => {
       },
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 3',
         description: 'Description',
         runbook: 'https://example.com',

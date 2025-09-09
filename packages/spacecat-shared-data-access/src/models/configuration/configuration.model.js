@@ -133,6 +133,7 @@ class Configuration extends BaseModel {
   }
 
   // Update sandbox audit configuration
+  // This method updates the sandbox audit configuration for a specific audit type
   updateSandboxAuditConfig(auditType, config = {}) {
     // eslint-disable-next-line no-console
     console.log(`[Configuration Model] Updating sandbox audit config for ${auditType}:`, config);

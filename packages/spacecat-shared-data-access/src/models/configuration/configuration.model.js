@@ -124,24 +124,41 @@ class Configuration extends BaseModel {
 
   // Get configuration for a sandbox audit type
   getSandboxAuditConfig(auditType) {
-    return this.state?.sandboxAudits?.enabledAudits?.[auditType] || null;
+    return this.getSandboxAudits()?.enabledAudits?.[auditType] || null;
   }
 
   // Get all enabled sandbox audit types
   getEnabledSandboxAudits() {
-    return Object.keys(this.state?.sandboxAudits?.enabledAudits || {});
+    return Object.keys(this.getSandboxAudits()?.enabledAudits || {});
   }
 
   // Update sandbox audit configuration
   updateSandboxAuditConfig(auditType, config = {}) {
-    this.state.sandboxAudits = this.state.sandboxAudits || { enabledAudits: {} };
-    this.state.sandboxAudits.enabledAudits[auditType] = config;
+    // eslint-disable-next-line no-console
+    console.log(`[Configuration Model] Updating sandbox audit config for ${auditType}:`, config);
+    const currentSandboxAudits = this.getSandboxAudits() || { enabledAudits: {} };
+    const updatedSandboxAudits = {
+      ...currentSandboxAudits,
+      enabledAudits: {
+        ...currentSandboxAudits.enabledAudits,
+        [auditType]: config,
+      },
+    };
+    this.setSandboxAudits(updatedSandboxAudits);
+    // eslint-disable-next-line no-console
+    console.log('[Configuration Model] Updated sandbox audits:', updatedSandboxAudits);
   }
 
   // Remove a sandbox audit configuration
   removeSandboxAuditConfig(auditType) {
-    if (this.state?.sandboxAudits?.enabledAudits) {
-      delete this.state.sandboxAudits.enabledAudits[auditType];
+    const currentSandboxAudits = this.getSandboxAudits();
+    if (currentSandboxAudits?.enabledAudits) {
+      const updatedEnabledAudits = { ...currentSandboxAudits.enabledAudits };
+      delete updatedEnabledAudits[auditType];
+      this.setSandboxAudits({
+        ...currentSandboxAudits,
+        enabledAudits: updatedEnabledAudits,
+      });
     }
   }
 

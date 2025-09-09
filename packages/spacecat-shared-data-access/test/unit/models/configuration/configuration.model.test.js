@@ -295,15 +295,16 @@ describe('ConfigurationModel', () => {
         queues: { test: 'test' },
         jobs: [],
         handlers: {},
-        sandboxAudits: {
-          enabledAudits: {
-            cwv: {
-              expire: '5',
-            },
-            'alt-text': {},
-          },
-        },
       };
+      // Set sandboxAudits using the proper attribute setter
+      instance.setSandboxAudits({
+        enabledAudits: {
+          cwv: {
+            expire: '5',
+          },
+          'alt-text': {},
+        },
+      });
     });
 
     it('checks if audit is enabled for sandbox', () => {
@@ -341,14 +342,97 @@ describe('ConfigurationModel', () => {
     });
 
     it('returns empty array when no sandbox audits configured', () => {
-      delete instance.state.sandboxAudits;
+      instance.setSandboxAudits(null);
       expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
     });
 
     it('handles updating non-existent sandbox config', () => {
-      delete instance.state.sandboxAudits;
+      instance.setSandboxAudits(null);
       instance.updateSandboxAuditConfig('new-audit', { expire: '5' });
       expect(instance.getSandboxAuditConfig('new-audit')).to.deep.equal({ expire: '5' });
+    });
+
+    it('handles getSandboxAuditConfig when sandboxAudits is null', () => {
+      instance.setSandboxAudits(null);
+      expect(instance.getSandboxAuditConfig('any-audit')).to.be.null;
+    });
+
+    it('handles getSandboxAuditConfig when sandboxAudits is undefined', () => {
+      instance.setSandboxAudits(undefined);
+      expect(instance.getSandboxAuditConfig('any-audit')).to.be.null;
+    });
+
+    it('handles getSandboxAuditConfig when enabledAudits is null', () => {
+      instance.setSandboxAudits({ enabledAudits: null });
+      expect(instance.getSandboxAuditConfig('any-audit')).to.be.null;
+    });
+
+    it('handles getEnabledSandboxAudits when sandboxAudits is null', () => {
+      instance.setSandboxAudits(null);
+      expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
+    });
+
+    it('handles getEnabledSandboxAudits when sandboxAudits is undefined', () => {
+      instance.setSandboxAudits(undefined);
+      expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
+    });
+
+    it('handles getEnabledSandboxAudits when enabledAudits is null', () => {
+      instance.setSandboxAudits({ enabledAudits: null });
+      expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
+    });
+
+    it('handles isAuditEnabledForSandbox when sandboxAudits is null', () => {
+      instance.setSandboxAudits(null);
+      expect(instance.isAuditEnabledForSandbox('any-audit')).to.be.false;
+    });
+
+    it('handles isAuditEnabledForSandbox when sandboxAudits is undefined', () => {
+      instance.setSandboxAudits(undefined);
+      expect(instance.isAuditEnabledForSandbox('any-audit')).to.be.false;
+    });
+
+    it('handles isAuditEnabledForSandbox when enabledAudits is null', () => {
+      instance.setSandboxAudits({ enabledAudits: null });
+      expect(instance.isAuditEnabledForSandbox('any-audit')).to.be.false;
+    });
+
+    it('handles removeSandboxAuditConfig when sandboxAudits is null', () => {
+      instance.setSandboxAudits(null);
+      // Should not throw error when trying to remove from null sandboxAudits
+      instance.removeSandboxAuditConfig('any-audit');
+      expect(instance.getSandboxAudits()).to.be.null;
+    });
+
+    it('handles removeSandboxAuditConfig when sandboxAudits is undefined', () => {
+      instance.setSandboxAudits(undefined);
+      // Should not throw error when trying to remove from undefined sandboxAudits
+      instance.removeSandboxAuditConfig('any-audit');
+      expect(instance.getSandboxAudits()).to.be.undefined;
+    });
+
+    it('handles removeSandboxAuditConfig when enabledAudits is null', () => {
+      instance.setSandboxAudits({ enabledAudits: null });
+      // Should not throw error when trying to remove from null enabledAudits
+      instance.removeSandboxAuditConfig('any-audit');
+      expect(instance.getSandboxAudits()).to.deep.equal({ enabledAudits: null });
+    });
+  });
+
+  describe('Handler Management', () => {
+    it('handles disableHandlerForSite when handler is not enabled', () => {
+      const mockSite = {
+        getId: () => 'site2',
+        getOrganizationId: () => 'org2',
+      };
+      // Should not throw error when trying to disable non-enabled handler
+      expect(() => instance.disableHandlerForSite('cwv', mockSite)).to.not.throw();
+    });
+
+    it('handles disableHandlerForOrg when handler is not enabled', () => {
+      const mockOrg = { getId: () => 'org2' };
+      // Should not throw error when trying to disable non-enabled handler
+      expect(() => instance.disableHandlerForOrg('cwv', mockOrg)).to.not.throw();
     });
   });
 

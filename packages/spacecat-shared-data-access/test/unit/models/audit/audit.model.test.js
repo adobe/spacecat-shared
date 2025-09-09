@@ -18,6 +18,7 @@ import sinon, { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import Audit from '../../../../src/models/audit/audit.model.js';
+import { ValidationError } from '../../../../src/errors/index.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -145,6 +146,26 @@ describe('AuditModel', () => {
     it('returns true if auditResult is an array', () => {
       mockRecord.auditResult = [{ scores: { foo: 'bar' } }];
       expect(Audit.validateAuditResult(mockRecord.auditResult, 'experimentation')).to.be.true;
+    });
+
+    it('returns true if auditResult has runtimeError', () => {
+      const auditResultWithError = {
+        runtimeError: {
+          message: 'Some error occurred',
+          stack: 'error stack trace',
+        },
+      };
+      expect(Audit.validateAuditResult(auditResultWithError, 'lhs-mobile')).to.be.true;
+    });
+
+    it('throws error if audit type has expected properties but they are missing', () => {
+      const auditResult = {
+        scores: {
+          // Missing required properties for lhs-mobile
+        },
+      };
+      expect(() => Audit.validateAuditResult(auditResult, 'lhs-mobile'))
+        .to.throw(ValidationError, 'Missing expected property');
     });
   });
 
@@ -315,6 +336,61 @@ describe('AuditModel', () => {
         urls: ['someUrl'],
         options: { someOption: 'someValue' },
         processingType: 'someProcessingType',
+        maxScrapeAge: 24,
+        auditData: {
+          siteId: 'someSiteId',
+          completionQueueUrl: 'audit-jobs-queue-url',
+          auditContext: { some: 'context' },
+        },
+      });
+    });
+
+    it('formats content scraper payload with default processingType when not provided', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        // No processingType provided
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.CONTENT_SCRAPER]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: [{ url: 'someUrl' }],
+        jobId: 'someSiteId',
+        processingType: 'default', // Should default to 'default'
+        completionQueueUrl: 'audit-jobs-queue-url',
+        skipMessage: false,
+        allowCache: true,
+        options: {},
+        auditContext: { some: 'context' },
+      });
+    });
+
+    it('formats scrape client payload with default processingType when not provided', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        // No processingType provided
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.SCRAPE_CLIENT]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: ['someUrl'],
+        options: {},
+        processingType: 'default', // Should default to 'default'
         maxScrapeAge: 24,
         auditData: {
           siteId: 'someSiteId',

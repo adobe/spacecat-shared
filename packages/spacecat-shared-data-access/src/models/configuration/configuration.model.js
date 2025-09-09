@@ -117,11 +117,6 @@ class Configuration extends BaseModel {
     return false;
   }
 
-  // Check if an audit type is enabled for sandbox sites
-  isAuditEnabledForSandbox(auditType) {
-    return !!this.getSandboxAuditConfig(auditType);
-  }
-
   // Get configuration for a sandbox audit type
   getSandboxAuditConfig(auditType) {
     return this.getSandboxAudits()?.enabledAudits?.[auditType] || null;
@@ -132,8 +127,14 @@ class Configuration extends BaseModel {
     return Object.keys(this.getSandboxAudits()?.enabledAudits || {});
   }
 
+  // Check if a specific audit type is enabled for sandbox
+  isAuditEnabledForSandbox(auditType) {
+    return this.getSandboxAudits()?.enabledAudits?.[auditType] !== undefined;
+  }
+
   // Update sandbox audit configuration
   // This method updates the sandbox audit configuration for a specific audit type
+  // Updated to use proper attribute accessors for ESLint 9 compatibility
   updateSandboxAuditConfig(auditType, config = {}) {
     // eslint-disable-next-line no-console
     console.log(`[Configuration Model] Updating sandbox audit config for ${auditType}:`, config);

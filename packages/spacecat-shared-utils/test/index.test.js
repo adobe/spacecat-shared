@@ -41,6 +41,7 @@ describe('Index Exports', () => {
     'isObject',
     'isString',
     'isValidDate',
+    'isValidEmail',
     'isValidUrl',
     'isValidUUID',
     'isValidIMSOrgId',
@@ -77,6 +78,9 @@ describe('Index Exports', () => {
     'getMonthInfo',
     'getTemporalCondition',
     'urlMatchesFilter',
+    'detectAEMVersion',
+    'determineAEMCSPageId',
+    'DELIVERY_TYPES',
   ];
 
   it('exports all expected functions', () => {

@@ -26,6 +26,7 @@ export {
   isObject,
   isString,
   isValidDate,
+  isValidEmail,
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
@@ -89,3 +90,5 @@ export {
   getMonthInfo,
   getTemporalCondition,
 } from './calendar-week-helper.js';
+
+export { detectAEMVersion, determineAEMCSPageId, DELIVERY_TYPES } from './aem.js';

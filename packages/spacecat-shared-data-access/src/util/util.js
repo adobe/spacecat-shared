@@ -36,7 +36,14 @@ const referenceToBaseMethodName = (reference) => {
 
 const entityNameToAllPKValue = (entityName) => `ALL_${pluralize.plural(entityName.toUpperCase())}`;
 
-const idNameToEntityName = (idName) => capitalize(pluralize.singular(idName.replace('Id', '')));
+const idNameToEntityName = (idName) => {
+  let result = idName;
+  if (idName.endsWith('Id')) {
+    result = result.replace('Id', '');
+  }
+
+  return capitalize(pluralize.singular(result));
+};
 
 const isPositiveInteger = (value) => isInteger(value) && value > 0;
 
@@ -66,14 +73,14 @@ const removeElectroProperties = (record) => { /* eslint-disable no-underscore-da
 };
 
 const sanitizeTimestamps = (data) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   const { createdAt, updatedAt, ...rest } = data;
   return rest;
 };
 
 const sanitizeIdAndAuditFields = (entityName, data) => {
   const idName = entityNameToIdName(entityName);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   const { [idName]: _, ...rest } = data;
   return sanitizeTimestamps(rest);
 };

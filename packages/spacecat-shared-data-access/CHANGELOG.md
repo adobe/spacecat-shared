@@ -1,3 +1,101 @@
+# [@adobe/spacecat-shared-data-access-v2.61.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.3...@adobe/spacecat-shared-data-access-v2.61.4) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
+# [@adobe/spacecat-shared-data-access-v2.61.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.2...@adobe/spacecat-shared-data-access-v2.61.3) (2025-09-08)
+
+
+### Bug Fixes
+
+* getSiblings not a function ([#951](https://github.com/adobe/spacecat-shared/issues/951)) ([f3af04a](https://github.com/adobe/spacecat-shared/commit/f3af04a9f64bd5e78c113f0672572ab374e7fda8))
+
+# [@adobe/spacecat-shared-data-access-v2.61.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.1...@adobe/spacecat-shared-data-access-v2.61.2) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency electrodb to v3.4.5 ([#948](https://github.com/adobe/spacecat-shared/issues/948)) ([d02e298](https://github.com/adobe/spacecat-shared/commit/d02e298ccf4b3243cc8f07271c37bb587b3e23e7))
+
+# [@adobe/spacecat-shared-data-access-v2.61.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.0...@adobe/spacecat-shared-data-access-v2.61.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
+# [@adobe/spacecat-shared-data-access-v2.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.60.1...@adobe/spacecat-shared-data-access-v2.61.0) (2025-09-01)
+
+
+### Features
+
+* add bucket config inside llmo ([#944](https://github.com/adobe/spacecat-shared/issues/944)) ([0153f33](https://github.com/adobe/spacecat-shared/commit/0153f33615b3ccc51f6adee0475027ad93a41480))
+
+# [@adobe/spacecat-shared-data-access-v2.60.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.60.0...@adobe/spacecat-shared-data-access-v2.60.1) (2025-08-29)
+
+
+### Bug Fixes
+
+* Fix findBy typescript definitions for LLMO tier types ([#942](https://github.com/adobe/spacecat-shared/issues/942)) ([396ca6f](https://github.com/adobe/spacecat-shared/commit/396ca6f1c4a251652c63449f9d67b89472f0065c))
+
+# [@adobe/spacecat-shared-data-access-v2.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.59.0...@adobe/spacecat-shared-data-access-v2.60.0) (2025-08-29)
+
+
+### Features
+
+* add headings audit ([#943](https://github.com/adobe/spacecat-shared/issues/943)) ([17d45dd](https://github.com/adobe/spacecat-shared/commit/17d45dd624d5ada1feafa25ea541ff841a490d34))
+
+# [@adobe/spacecat-shared-data-access-v2.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.58.0...@adobe/spacecat-shared-data-access-v2.59.0) (2025-08-29)
+
+
+### Features
+
+* added new audit-type LLM Error Pages ([#918](https://github.com/adobe/spacecat-shared/issues/918)) ([2f4ffbd](https://github.com/adobe/spacecat-shared/commit/2f4ffbd2b9cfbbf6fe534e92409649f97e9ee540))
+
+# [@adobe/spacecat-shared-data-access-v2.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.57.1...@adobe/spacecat-shared-data-access-v2.58.0) (2025-08-28)
+
+
+### Features
+
+* **dataAccess:** Add entities for LLMO trial onboarding ([#928](https://github.com/adobe/spacecat-shared/issues/928)) ([b5acc3c](https://github.com/adobe/spacecat-shared/commit/b5acc3c3af49d5fd45b8abf91b851fe23da60bc7))
+
+# [@adobe/spacecat-shared-data-access-v2.57.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.57.0...@adobe/spacecat-shared-data-access-v2.57.1) (2025-08-26)
+
+
+### Bug Fixes
+
+* use DELIVERY_TYPES from shared-utils ([#933](https://github.com/adobe/spacecat-shared/issues/933)) ([3592540](https://github.com/adobe/spacecat-shared/commit/3592540fc3cee05333fbf854447755b727dafae1))
+
+# [@adobe/spacecat-shared-data-access-v2.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.56.1...@adobe/spacecat-shared-data-access-v2.57.0) (2025-08-22)
+
+
+### Features
+
+* add new redirect-chains audit ([#929](https://github.com/adobe/spacecat-shared/issues/929)) ([256c924](https://github.com/adobe/spacecat-shared/commit/256c924ce953a440dbd27d94a73cd6051f5e83b5))
+
+# [@adobe/spacecat-shared-data-access-v2.56.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.56.0...@adobe/spacecat-shared-data-access-v2.56.1) (2025-08-20)
+
+
+### Bug Fixes
+
+* add readability as audit type ([#926](https://github.com/adobe/spacecat-shared/issues/926)) ([c9cec04](https://github.com/adobe/spacecat-shared/commit/c9cec041b4302eb792c5d715658e6f9e306e35b8))
+
+# [@adobe/spacecat-shared-data-access-v2.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.55.0...@adobe/spacecat-shared-data-access-v2.56.0) (2025-08-20)
+
+
+### Features
+
+* add cdn filters in llmo config ([#925](https://github.com/adobe/spacecat-shared/issues/925)) ([021110b](https://github.com/adobe/spacecat-shared/commit/021110bbf7da221d41a808af54ed43f5e5f513ea))
+
+# [@adobe/spacecat-shared-data-access-v2.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.54.0...@adobe/spacecat-shared-data-access-v2.55.0) (2025-08-20)
+
+
+### Features
+
+* add scrape-client destination  ([#913](https://github.com/adobe/spacecat-shared/issues/913)) ([e208a87](https://github.com/adobe/spacecat-shared/commit/e208a87214874a2708ac2d7614fcfd4c0770fe17))
+
 # [@adobe/spacecat-shared-data-access-v2.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.53.0...@adobe/spacecat-shared-data-access-v2.54.0) (2025-08-13)
 
 

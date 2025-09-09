@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.37.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.1...@adobe/spacecat-shared-rum-api-client-v2.37.2) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.37.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.0...@adobe/spacecat-shared-rum-api-client-v2.37.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.5...@adobe/spacecat-shared-rum-api-client-v2.37.0) (2025-08-28)
+
+
+### Features
+
+* added metrics and graph data functions for optimization-report ([#919](https://github.com/adobe/spacecat-shared/issues/919)) ([29461b2](https://github.com/adobe/spacecat-shared/commit/29461b246b74423dcd39b0af4e1d140f1a3d3af1))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.36.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.4...@adobe/spacecat-shared-rum-api-client-v2.36.5) (2025-08-25)
+
+
+### Bug Fixes
+
+* make max opportunities configurable ([#930](https://github.com/adobe/spacecat-shared/issues/930)) ([2b18c25](https://github.com/adobe/spacecat-shared/commit/2b18c25e8dc3303af0e1a09ebcbe830672368d13))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.36.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.36.3...@adobe/spacecat-shared-rum-api-client-v2.36.4) (2025-08-15)
 
 

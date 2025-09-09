@@ -1,3 +1,36 @@
+# [@adobe/spacecat-shared-http-utils-v1.17.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.1...@adobe/spacecat-shared-http-utils-v1.17.2) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
+# [@adobe/spacecat-shared-http-utils-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.0...@adobe/spacecat-shared-http-utils-v1.17.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
+# [@adobe/spacecat-shared-http-utils-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.16.0...@adobe/spacecat-shared-http-utils-v1.17.0) (2025-08-28)
+
+
+### Features
+
+* adding email id for trail users ([#936](https://github.com/adobe/spacecat-shared/issues/936)) ([2ea524b](https://github.com/adobe/spacecat-shared/commit/2ea524b6c3f7e03b183d93e614b5e16278ed9fc7))
+
+# [@adobe/spacecat-shared-http-utils-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.2...@adobe/spacecat-shared-http-utils-v1.16.0) (2025-08-20)
+
+
+### Bug Fixes
+
+* Change the log level from info to debug ([#922](https://github.com/adobe/spacecat-shared/issues/922)) ([e291a2a](https://github.com/adobe/spacecat-shared/commit/e291a2ad83b31eb258fb65be4201ea6948af85c3))
+
+
+### Features
+
+* add threshold for pageviews ([#923](https://github.com/adobe/spacecat-shared/issues/923)) ([5b989cd](https://github.com/adobe/spacecat-shared/commit/5b989cd7c38ac946609143ed5402d2ff1600c581))
+
 # [@adobe/spacecat-shared-http-utils-v1.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.15.1...@adobe/spacecat-shared-http-utils-v1.15.2) (2025-07-21)
 
 

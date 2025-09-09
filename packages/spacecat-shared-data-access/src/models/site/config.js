@@ -269,6 +269,18 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
     tags: Joi.array().items(Joi.string()).optional(),
+    cdnlogsFilter: Joi.array().items(
+      Joi.object({
+        key: Joi.string().required(),
+        value: Joi.array().items(Joi.string()).required(),
+        type: Joi.string().valid('include', 'exclude').optional(),
+      }),
+    ).optional(),
+    cdnBucketConfig: Joi.object({
+      bucketName: Joi.string().optional(),
+      orgId: Joi.string().optional(),
+      cdnProvider: Joi.string().optional(),
+    }).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
@@ -384,6 +396,8 @@ export const Config = (data = {}) => {
     const llmoConfig = self.getLlmoConfig();
     return llmoConfig?.customerIntent || [];
   };
+  self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
+  self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -523,6 +537,16 @@ export const Config = (data = {}) => {
     state.llmo.urlPatterns = urlPatterns.filter(
       (pattern) => pattern.urlPattern !== urlPattern,
     );
+  };
+
+  self.updateLlmoCdnlogsFilter = (cdnlogsFilter) => {
+    state.llmo = state.llmo || {};
+    state.llmo.cdnlogsFilter = cdnlogsFilter;
+  };
+
+  self.updateLlmoCdnBucketConfig = (cdnBucketConfig) => {
+    state.llmo = state.llmo || {};
+    state.llmo.cdnBucketConfig = cdnBucketConfig;
   };
 
   self.updateImports = (imports) => {

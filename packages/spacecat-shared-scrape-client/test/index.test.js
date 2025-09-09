@@ -178,6 +178,7 @@ describe('ScrapeJobController tests', () => {
       queues: ['spacecat-scrape-queue-1', 'spacecat-scrape-queue-2', 'spacecat-scrape-queue-3'],
       scrapeWorkerQueue: 'https://sqs.us-east-1.amazonaws.com/1234567890/scrape-worker-queue',
       scrapeQueueUrlPrefix: 'https://sqs.us-east-1.amazonaws.com/1234567890/',
+      s3Bucket: 'spacecat-dev-scraper',
       options: {
         enableJavascript: true,
         hideConsentBanners: false,
@@ -222,13 +223,178 @@ describe('ScrapeJobController tests', () => {
 
   it('should fail for a bad SCRAPE_JOB_CONFIGURATION', () => {
     baseContext.env.SCRAPE_JOB_CONFIGURATION = 'not a JSON string';
-    ScrapeClient.createFrom(baseContext);
-    expect(baseContext.log.error.getCall(0).args[0]).to.equal('Failed to parse scrape job configuration: Unexpected token \'o\', "not a JSON string" is not valid JSON');
+    try {
+      ScrapeClient.createFrom(baseContext);
+    } catch (err) {
+      expect(err).to.be.instanceOf(Error);
+      expect(baseContext.log.error.getCall(0).args[0]).to.equal('Failed to parse or validate scrape job configuration: Unexpected token \'o\', "not a JSON string" is not valid JSON');
+    }
   });
 
   it('should fail if a service is missing', () => {
     baseContext.sqs = undefined;
     expect(() => ScrapeClient.createFrom(baseContext)).to.throw('Invalid services: sqs is required');
+  });
+
+  describe('validateScrapeConfiguration', () => {
+    it('should throw error when configuration is not an object', () => {
+      expect(() => ScrapeClient.validateScrapeConfiguration(null)).to.throw('Invalid scrape configuration: configuration must be an object');
+      expect(() => ScrapeClient.validateScrapeConfiguration('string')).to.throw('Invalid scrape configuration: configuration must be an object');
+      expect(() => ScrapeClient.validateScrapeConfiguration(123)).to.throw('Invalid scrape configuration: configuration must be an object');
+    });
+
+    it('should throw error when scrapeWorkerQueue is missing or invalid', () => {
+      const baseConfig = {};
+
+      expect(() => ScrapeClient.validateScrapeConfiguration(baseConfig)).to.throw('Invalid scrape configuration: scrapeWorkerQueue must be a non-empty string');
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        scrapeWorkerQueue: '',
+      })).to.throw('Invalid scrape configuration: scrapeWorkerQueue must be a non-empty string');
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        scrapeWorkerQueue: 'not-a-valid-url',
+      })).to.throw('Invalid scrape configuration: scrapeWorkerQueue must be a valid URL');
+    });
+
+    it('should throw error when s3Bucket is missing or empty', () => {
+      const baseConfig = {
+        scrapeWorkerQueue: 'https://example.com/queue',
+      };
+
+      expect(() => ScrapeClient.validateScrapeConfiguration(baseConfig)).to.throw('Invalid scrape configuration: s3Bucket must be a non-empty string');
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        s3Bucket: '',
+      })).to.throw('Invalid scrape configuration: s3Bucket must be a non-empty string');
+    });
+
+    it('should throw error when options is not an object', () => {
+      const baseConfig = {
+        scrapeWorkerQueue: 'https://example.com/queue',
+        s3Bucket: 'my-bucket',
+      };
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        options: 'not-an-object',
+      })).to.throw('Invalid scrape configuration: options must be an object');
+    });
+
+    it('should throw error when options properties have wrong types', () => {
+      const baseConfig = {
+        scrapeWorkerQueue: 'https://example.com/queue',
+        s3Bucket: 'my-bucket',
+      };
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        options: { enableJavascript: 'true' },
+      })).to.throw('Invalid scrape configuration: options.enableJavascript must be a boolean');
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        options: { hideConsentBanners: 1 },
+      })).to.throw('Invalid scrape configuration: options.hideConsentBanners must be a boolean');
+    });
+
+    it('should throw error when maxUrlsPerJob is not a positive integer', () => {
+      const baseConfig = {
+        scrapeWorkerQueue: 'https://example.com/queue',
+        s3Bucket: 'my-bucket',
+      };
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        maxUrlsPerJob: 0,
+      })).to.throw('Invalid scrape configuration: maxUrlsPerJob must be a positive integer');
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        maxUrlsPerJob: -1,
+      })).to.throw('Invalid scrape configuration: maxUrlsPerJob must be a positive integer');
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        maxUrlsPerJob: 1.5,
+      })).to.throw('Invalid scrape configuration: maxUrlsPerJob must be a positive integer');
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        maxUrlsPerJob: 'not-a-number',
+      })).to.throw('Invalid scrape configuration: maxUrlsPerJob must be a positive integer');
+    });
+
+    it('should throw error when maxUrlsPerMessage is not a positive integer', () => {
+      const baseConfig = {
+        scrapeWorkerQueue: 'https://example.com/queue',
+        s3Bucket: 'my-bucket',
+      };
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        maxUrlsPerMessage: 0,
+      })).to.throw('Invalid scrape configuration: maxUrlsPerMessage must be a positive integer');
+
+      expect(() => ScrapeClient.validateScrapeConfiguration({
+        ...baseConfig,
+        maxUrlsPerMessage: -5,
+      })).to.throw('Invalid scrape configuration: maxUrlsPerMessage must be a positive integer');
+    });
+
+    it('should pass validation with valid configuration', () => {
+      const validConfig = {
+        scrapeWorkerQueue: 'https://sqs.us-east-1.amazonaws.com/682033462621/spacecat-scrape-job-manager-queue-jhoffmann.fifo',
+        s3Bucket: 'spacecat-dev-scraper',
+        options: {
+          enableJavascript: true,
+          hideConsentBanners: false,
+        },
+        maxUrlsPerJob: 5000,
+        maxUrlsPerMessage: 1000,
+      };
+
+      expect(() => ScrapeClient.validateScrapeConfiguration(validConfig)).to.not.throw();
+    });
+
+    it('should pass validation with minimal valid configuration', () => {
+      const minimalConfig = {
+        scrapeWorkerQueue: 'https://example.com/queue',
+        s3Bucket: 'my-bucket',
+      };
+
+      expect(() => ScrapeClient.validateScrapeConfiguration(minimalConfig)).to.not.throw();
+    });
+
+    it('should pass validation when optional fields are undefined', () => {
+      const configWithUndefined = {
+        scrapeWorkerQueue: 'https://example.com/queue',
+        s3Bucket: 'my-bucket',
+        options: undefined,
+        maxUrlsPerJob: undefined,
+        maxUrlsPerMessage: undefined,
+      };
+
+      expect(() => ScrapeClient.validateScrapeConfiguration(configWithUndefined)).to.not.throw();
+    });
+
+    it('should fail validation during construction with invalid configuration', () => {
+      const invalidConfig = {
+        scrapeWorkerQueue: 'invalid-url',
+        s3Bucket: '',
+      };
+
+      baseContext.env.SCRAPE_JOB_CONFIGURATION = JSON.stringify(invalidConfig);
+      try {
+        ScrapeClient.createFrom(baseContext);
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+        expect(baseContext.log.error.getCall(0).args[0]).to.include('Failed to parse or validate scrape job configuration');
+      }
+    });
   });
 
   describe('createScrapeJob', () => {
@@ -663,6 +829,148 @@ describe('ScrapeJobController tests', () => {
         dataAccess: undefined,
       };
       expect(() => ScrapeClient.createFrom(context)).to.throw('Invalid services: dataAccess is required');
+    });
+  });
+
+  describe('getScrapeResultPaths', () => {
+    it('should return a Map of URL to path for complete scrape URLs', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getPath: () => 'path/to/result1',
+            getUrl: () => 'https://example.com/page1',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getPath: () => 'path/to/result2',
+            getUrl: () => 'https://example.com/page2',
+          },
+        ]);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        expect(resultPaths).to.be.an.instanceOf(Map);
+        expect(resultPaths.size).to.equal(2);
+        expect(resultPaths.get('https://example.com/page1')).to.equal('path/to/result1');
+        expect(resultPaths.get('https://example.com/page2')).to.equal('path/to/result2');
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should return null when job is not found', async () => {
+      try {
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(null);
+        scrapeJobController = ScrapeClient.createFrom(baseContext);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths('3ec88567-c9f8-4fb1-8361-b53985a2898b');
+        expect(resultPaths).to.be.null;
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should only include URLs with COMPLETE status', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.COMPLETE,
+            getPath: () => 'path/to/result1',
+            getUrl: () => 'https://example.com/page1',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.RUNNING,
+            getPath: () => 'path/to/result2',
+            getUrl: () => 'https://example.com/page2',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.FAILED,
+            getPath: () => 'path/to/result3',
+            getUrl: () => 'https://example.com/page3',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.PENDING,
+            getPath: () => 'path/to/result4',
+            getUrl: () => 'https://example.com/page4',
+          },
+        ]);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        expect(resultPaths).to.be.an.instanceOf(Map);
+        expect(resultPaths.size).to.equal(1);
+        expect(resultPaths.get('https://example.com/page1')).to.equal('path/to/result1');
+        expect(resultPaths.has('https://example.com/page2')).to.be.false;
+        expect(resultPaths.has('https://example.com/page3')).to.be.false;
+        expect(resultPaths.has('https://example.com/page4')).to.be.false;
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should return empty Map when no URLs have COMPLETE status', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.RUNNING,
+            getPath: () => 'path/to/result1',
+            getUrl: () => 'https://example.com/page1',
+          },
+          {
+            getStatus: () => ScrapeJob.ScrapeUrlStatus.FAILED,
+            getPath: () => 'path/to/result2',
+            getUrl: () => 'https://example.com/page2',
+          },
+        ]);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        expect(resultPaths).to.be.an.instanceOf(Map);
+        expect(resultPaths.size).to.equal(0);
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should return empty Map when no scrape URLs exist for the job', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().resolves([]);
+
+        const resultPaths = await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        expect(resultPaths).to.be.an.instanceOf(Map);
+        expect(resultPaths.size).to.equal(0);
+      } catch (err) {
+        assert.fail(err);
+      }
+    });
+
+    it('should handle errors when fetching scrape job gracefully', async () => {
+      try {
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().rejects(new Error('Database connection failed'));
+        await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        assert.fail('Expected error to be thrown');
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch the scrape job result: Database connection failed');
+      }
+    });
+
+    it('should handle errors when fetching scrape URLs gracefully', async () => {
+      try {
+        const job = createScrapeJob(exampleJob);
+        baseContext.dataAccess.ScrapeJob.findById = sandbox.stub().resolves(job);
+        baseContext.dataAccess.ScrapeUrl.allByScrapeJobId = sandbox.stub().rejects(new Error('Failed to fetch scrape URLs'));
+
+        await scrapeJobController.getScrapeResultPaths(exampleJob.scrapeJobId);
+        assert.fail('Expected error to be thrown');
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch the scrape job result: Failed to fetch scrape URLs');
+      }
     });
   });
 

@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-utils-v1.50.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.2...@adobe/spacecat-shared-utils-v1.50.3) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
+# [@adobe/spacecat-shared-utils-v1.50.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.1...@adobe/spacecat-shared-utils-v1.50.2) (2025-09-06)
+
+
+### Bug Fixes
+
+* get pageId from content-page-ref if content-page-id not available ([#935](https://github.com/adobe/spacecat-shared/issues/935)) ([df585ce](https://github.com/adobe/spacecat-shared/commit/df585ce09d01a1e1c3b282d3a967b9ab138e3fa4))
+
+# [@adobe/spacecat-shared-utils-v1.50.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.0...@adobe/spacecat-shared-utils-v1.50.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
+# [@adobe/spacecat-shared-utils-v1.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.49.0...@adobe/spacecat-shared-utils-v1.50.0) (2025-08-28)
+
+
+### Features
+
+* add email validation function using validator package ([#938](https://github.com/adobe/spacecat-shared/issues/938)) ([5ec8aec](https://github.com/adobe/spacecat-shared/commit/5ec8aec460abbf19fc0756a05da5f50ff7fed79a))
+
+# [@adobe/spacecat-shared-utils-v1.49.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.48.0...@adobe/spacecat-shared-utils-v1.49.0) (2025-08-26)
+
+
+### Features
+
+* AEM utils ([#927](https://github.com/adobe/spacecat-shared/issues/927)) ([57fc3df](https://github.com/adobe/spacecat-shared/commit/57fc3df80cbacfdc66443090e073367856ec2f7c))
+
 # [@adobe/spacecat-shared-utils-v1.48.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.47.0...@adobe/spacecat-shared-utils-v1.48.0) (2025-08-18)
 
 

@@ -42,8 +42,7 @@
     "aws-xray-sdk": "3.10.3",
     "electrodb": "3.4.5",
     "joi": "18.0.1",
-    "pluralize": "8.0.0",
-    "uuid": "13.0.0"
+    "pluralize": "8.0.0"
   },
   "devDependencies": {
     "chai": "6.0.1",

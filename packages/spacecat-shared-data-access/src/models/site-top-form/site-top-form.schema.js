@@ -12,9 +12,12 @@
 
 /* c8 ignore start */
 
-import { isInteger, isIsoDate, isValidUrl } from '@adobe/spacecat-shared-utils';
-
-import { validate as uuidValidate } from 'uuid';
+import {
+  isInteger,
+  isIsoDate,
+  isValidUrl,
+  isValidUUID,
+} from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import SiteTopForm from './site-top-form.model.js';
@@ -31,7 +34,7 @@ const schema = new SchemaBuilder(SiteTopForm, SiteTopFormCollection)
   .addAttribute('siteId', {
     type: 'string',
     required: true,
-    validate: (value) => uuidValidate(value),
+    validate: (value) => isValidUUID(value),
   })
   .addAttribute('url', {
     type: 'string',

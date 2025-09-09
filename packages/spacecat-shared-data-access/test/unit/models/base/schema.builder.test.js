@@ -13,11 +13,10 @@
 /* eslint-env mocha */
 
 // eslint-disable-next-line max-classes-per-file
-import { isIsoDate } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isValidUUID } from '@adobe/spacecat-shared-utils';
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
-import { validate as uuidValidate } from 'uuid';
 
 import SchemaBuilder from '../../../../src/models/base/schema.builder.js';
 import { BaseCollection, BaseModel, SchemaBuilderError } from '../../../../src/index.js';
@@ -379,7 +378,7 @@ describe('SchemaBuilder', () => {
     });
 
     it('sets default for id attribute', () => {
-      expect(uuidValidate(instance.attributes.mockModelId.default())).to.be.true;
+      expect(isValidUUID(instance.attributes.mockModelId.default())).to.be.true;
     });
 
     it('validates id attribute', () => {

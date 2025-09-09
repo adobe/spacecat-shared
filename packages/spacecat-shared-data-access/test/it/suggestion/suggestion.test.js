@@ -12,11 +12,10 @@
 
 /* eslint-env mocha */
 
-import { isIsoDate } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { validate as uuidValidate } from 'uuid';
 
 import { ValidationError } from '../../../src/index.js';
 import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/util.js';
@@ -195,7 +194,7 @@ describe('Suggestion IT', async () => {
       expect(suggestion).to.be.an('object');
 
       expect(suggestion.getOpportunityId()).to.equal(opportunity.getId());
-      expect(uuidValidate(suggestion.getId())).to.be.true;
+      expect(isValidUUID(suggestion.getId())).to.be.true;
       expect(isIsoDate(suggestion.getCreatedAt())).to.be.true;
       expect(isIsoDate(suggestion.getUpdatedAt())).to.be.true;
 

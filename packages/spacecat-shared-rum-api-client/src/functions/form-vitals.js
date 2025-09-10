@@ -326,10 +326,16 @@ function handler(bundles) {
   // keeping on top 5 by page views count internal navigation
   Object.values(updatedFormVitals).forEach((item) => {
     if (item.forminternalnavigation) {
-      // eslint-disable-next-line max-len
-      item.forminternalnavigation.sort((a, b) => (b.totalClicksOnPage || 0) - (a.totalClicksOnPage || 0));
+      item.forminternalnavigation.sort((a, b) => {
+        // eslint-disable-next-line max-len
+        const sumA = a.pageview ? Object.values(a.pageview).reduce((sum, val) => sum + (val || 0), 0) : 0;
+        // eslint-disable-next-line max-len
+        const sumB = b.pageview ? Object.values(b.pageview).reduce((sum, val) => sum + (val || 0), 0) : 0;
+        return sumB - sumA;
+      });
+
       // eslint-disable-next-line no-param-reassign
-      item.forminternalnavigation = item.forminternalnavigation.slice(0, 5);
+      item.forminternalnavigation = item.forminternalnavigation.slice(0, 10);
     }
   });
 

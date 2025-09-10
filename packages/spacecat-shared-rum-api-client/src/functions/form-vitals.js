@@ -326,14 +326,8 @@ function handler(bundles) {
   // keeping on top 5 by page views count internal navigation
   Object.values(updatedFormVitals).forEach((item) => {
     if (item.forminternalnavigation) {
-      item.forminternalnavigation.sort((a, b) => {
-        // eslint-disable-next-line max-len
-        const totalA = a.pageview ? (a.pageview.mobile || 0) + (a.pageview.desktop || 0) + (a.pageview.other || 0) : 0;
-        // eslint-disable-next-line max-len
-        const totalB = b.pageview ? (b.pageview.mobile || 0) + (b.pageview.desktop || 0) + (b.pageview.other || 0) : 0;
-        return totalB - totalA; // highest pageviews first
-      });
-
+      // eslint-disable-next-line max-len
+      item.forminternalnavigation.sort((a, b) => (b.totalClicksOnPage || 0) - (a.totalClicksOnPage || 0));
       // eslint-disable-next-line no-param-reassign
       item.forminternalnavigation = item.forminternalnavigation.slice(0, 5);
     }

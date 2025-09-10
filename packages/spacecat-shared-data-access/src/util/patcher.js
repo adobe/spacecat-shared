@@ -122,7 +122,7 @@ class Patcher {
   #set(attribute, value) {
     this.patchRecord = this.#getPatchRecord().set({ [attribute.name]: value });
 
-    const transmutedValue = attribute.get(value);
+    const transmutedValue = attribute.get(value, () => {});
     const update = {
       [attribute.name]: {
         previous: this.record[attribute.name],

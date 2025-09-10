@@ -183,7 +183,7 @@ class BaseCollection {
    * @async
    * @protected
    */
-  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+  // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreate(item) {
     // no-op
   }
@@ -197,7 +197,7 @@ class BaseCollection {
    * @async
    * @protected
    */
-  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+  // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreateMany({ createdItems, errorItems }) {
     // no-op
   }

@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.61.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.3...@adobe/spacecat-shared-data-access-v2.61.4) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
+# [@adobe/spacecat-shared-data-access-v2.61.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.2...@adobe/spacecat-shared-data-access-v2.61.3) (2025-09-08)
+
+
+### Bug Fixes
+
+* getSiblings not a function ([#951](https://github.com/adobe/spacecat-shared/issues/951)) ([f3af04a](https://github.com/adobe/spacecat-shared/commit/f3af04a9f64bd5e78c113f0672572ab374e7fda8))
+
+# [@adobe/spacecat-shared-data-access-v2.61.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.1...@adobe/spacecat-shared-data-access-v2.61.2) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update dependency electrodb to v3.4.5 ([#948](https://github.com/adobe/spacecat-shared/issues/948)) ([d02e298](https://github.com/adobe/spacecat-shared/commit/d02e298ccf4b3243cc8f07271c37bb587b3e23e7))
+
+# [@adobe/spacecat-shared-data-access-v2.61.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.0...@adobe/spacecat-shared-data-access-v2.61.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
 # [@adobe/spacecat-shared-data-access-v2.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.60.1...@adobe/spacecat-shared-data-access-v2.61.0) (2025-09-01)
 
 

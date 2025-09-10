@@ -65,7 +65,7 @@ function sanitizeURL(url) {
     }
     return parsedUrl.toString();
     /* c8 ignore next 4 */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line no-unused-vars
   } catch (e) {
     return url;
   }

@@ -10,13 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { validate as uuidValidate } from 'uuid';
 import isEmail from 'validator/lib/isEmail.js';
 
 // Precompile regular expressions
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
 const REGEX_TIME_OFFSET_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}(Z|[+-]\d{2}:\d{2})/;
 const IMS_ORG_ID_REGEX = /[a-z0-9]{24}@AdobeOrg/i;
+const UUID_V4_REGEX = /^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/;
 
 /**
  * Determines if the given parameter is an array.
@@ -204,7 +204,7 @@ function isValidUrl(urlString) {
  * @return {boolean} True if the given string is a valid UUID.
  */
 function isValidUUID(uuid) {
-  return uuidValidate(uuid);
+  return UUID_V4_REGEX.test(uuid);
 }
 
 /**

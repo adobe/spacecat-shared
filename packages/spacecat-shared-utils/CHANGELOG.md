@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.50.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.3...@adobe/spacecat-shared-utils-v1.50.4) (2025-09-10)
+
+
+### Bug Fixes
+
+* getPageEditUrl util ([#952](https://github.com/adobe/spacecat-shared/issues/952)) ([aef026d](https://github.com/adobe/spacecat-shared/commit/aef026db3452606936c271e87f3d376fc8a38642))
+
+# [@adobe/spacecat-shared-utils-v1.50.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.2...@adobe/spacecat-shared-utils-v1.50.3) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
+# [@adobe/spacecat-shared-utils-v1.50.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.1...@adobe/spacecat-shared-utils-v1.50.2) (2025-09-06)
+
+
+### Bug Fixes
+
+* get pageId from content-page-ref if content-page-id not available ([#935](https://github.com/adobe/spacecat-shared/issues/935)) ([df585ce](https://github.com/adobe/spacecat-shared/commit/df585ce09d01a1e1c3b282d3a967b9ab138e3fa4))
+
+# [@adobe/spacecat-shared-utils-v1.50.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.0...@adobe/spacecat-shared-utils-v1.50.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
 # [@adobe/spacecat-shared-utils-v1.50.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.49.0...@adobe/spacecat-shared-utils-v1.50.0) (2025-08-28)
 
 

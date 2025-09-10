@@ -73,14 +73,14 @@ const removeElectroProperties = (record) => { /* eslint-disable no-underscore-da
 };
 
 const sanitizeTimestamps = (data) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   const { createdAt, updatedAt, ...rest } = data;
   return rest;
 };
 
 const sanitizeIdAndAuditFields = (entityName, data) => {
   const idName = entityNameToIdName(entityName);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   const { [idName]: _, ...rest } = data;
   return sanitizeTimestamps(rest);
 };

@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { fetch } from './adobe-fetch.js';
-
 /**
  * Delivery types for AEM deployment
  */
@@ -198,25 +196,4 @@ export function detectAEMVersion(htmlSource, headers = {}) {
   ];
   const found = types.find(([, count]) => count === maxMatches);
   return found[0];
-}
-
-/**
- * Determines the AEM CS page ID for Content API, from the page URL
- * @param {string} pageURL - The URL of the page
- * @return {string|null} - The AEM CS page ID
- */
-export async function determineAEMCSPageId(pageURL) {
-  const htmlResponse = await fetch(pageURL);
-  if (!htmlResponse.ok) {
-    return null;
-  }
-  const html = await htmlResponse.text();
-  const metaTagRegex = /<meta\s+name=['"]content-page-id['"]\s+content=['"]([^'"]*)['"]\s*\/?>/i;
-  const match = html.match(metaTagRegex);
-
-  let pageId = null;
-  if (match && match[1] && match[1].trim() !== '') {
-    pageId = match[1].trim();
-  }
-  return pageId;
 }

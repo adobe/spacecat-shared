@@ -31,7 +31,7 @@ const createHandler = (
     super(name, log);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars,class-methods-use-this
+  // eslint-disable-next-line no-unused-vars,class-methods-use-this
   async checkAuth(request, ctx) {
     if (shouldThrowError) {
       throw new Error('Authentication error');

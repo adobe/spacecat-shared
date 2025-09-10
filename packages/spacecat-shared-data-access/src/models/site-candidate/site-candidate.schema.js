@@ -12,9 +12,7 @@
 
 /* c8 ignore start */
 
-import { isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
-
-import { validate as uuidValidate } from 'uuid';
+import { isObject, isValidUrl, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import SiteCandidate from './site-candidate.model.js';
@@ -30,7 +28,7 @@ const schema = new SchemaBuilder(SiteCandidate, SiteCandidateCollection)
   .addReference('belongs_to', 'Site')
   .addAttribute('siteId', {
     type: 'string',
-    validate: (value) => !value || uuidValidate(value),
+    validate: (value) => !value || isValidUUID(value),
   })
   .addAttribute('baseURL', {
     type: 'string',

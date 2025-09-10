@@ -51,6 +51,8 @@ class Audit extends BaseModel {
     ALT_TEXT: 'alt-text',
     ACCESSIBILITY: 'accessibility',
     SECURITY_CSP: 'security-csp',
+    SECURITY_VULNERABILITIES: 'security-vulnerabilities',
+    SECURITY_PERMISSIONS: 'security-permissions',
     PAID: 'paid',
     HREFLANG: 'hreflang',
     HEADINGS: 'headings',

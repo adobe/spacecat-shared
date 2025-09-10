@@ -335,7 +335,7 @@ function handler(bundles) {
       });
 
       // eslint-disable-next-line no-param-reassign
-      item.forminternalnavigation = item.forminternalnavigation.slice(0, 10);
+      item.forminternalnavigation = item.forminternalnavigation.slice(0, 5);
     }
   });
 

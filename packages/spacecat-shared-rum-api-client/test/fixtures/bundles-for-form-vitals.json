@@ -31016,6 +31016,7 @@
       "events": [
         {
           "checkpoint": "viewblock",
+          "source": ".form",
           "timeDelta": 1087
         }
       ]
@@ -61537,6 +61538,113 @@
       ]
     },
     {
+      "id": "g3jr",
+      "host": "rum.hlx.page",
+      "time": "2024-10-29T08:00:33.406Z",
+      "timeSlot": "2024-10-29T08:00:00.000Z",
+      "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html",
+      "userAgent": "desktop:windows",
+      "weight": 100,
+      "events": [
+        {
+          "checkpoint": "navigate",
+          "target": "visible",
+          "source": "https://business.adobe.com/uk/products/marketo.html",
+          "timeDelta": 5750
+        },
+        {
+          "checkpoint": "click",
+          "target": "https://pps.services.adobe.com/api/profile/image/default/bb99dbb8-eab4-438d-ab41-f2f9f1b8ead3/138",
+          "source": ".button",
+          "timeDelta": 28958
+        },
+        {
+          "checkpoint": "click",
+          "source": "#tab-1-b2bとb2c",
+          "timeDelta": 13684
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "#tab-panel-1-アドビ製品との連携",
+          "timeDelta": 19813
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "#tab-panel-1-プラットフォームアーキテクチャ",
+          "timeDelta": 17034
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "#tab-panel-1-拡張性の高い運用",
+          "timeDelta": 18400
+        },
+        {
+          "checkpoint": "click",
+          "source": "#feds-nav-wrapper",
+          "timeDelta": 32407
+        },
+        {
+          "checkpoint": "viewblock",
+          "timeDelta": 1680
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "#tab-panel-1-b2bとb2c",
+          "timeDelta": 13697
+        },
+        {
+          "checkpoint": "click",
+          "source": "#tab-1-プラットフォームアーキテクチャ",
+          "timeDelta": 17031
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "#tab-panel-1-ネイティブai",
+          "timeDelta": 6155
+        },
+        {
+          "checkpoint": "click",
+          "source": "#tab-1-拡張性の高い運用",
+          "timeDelta": 18396
+        },
+        {
+          "checkpoint": "click",
+          "source": "#tab-1-ネイティブai",
+          "timeDelta": 30952
+        },
+        {
+          "checkpoint": "viewblock",
+          "source": "#tabs-1",
+          "timeDelta": 6155
+        },
+        {
+          "checkpoint": "click",
+          "target": "https://business.adobe.com/jp/products/magento/pricing.html",
+          "source": "#feds-nav-wrapper",
+          "timeDelta": 33324
+        },
+        {
+          "checkpoint": "viewblock",
+          "timeDelta": 2819
+        },
+        {
+          "checkpoint": "click",
+          "source": "#tab-1-アドビ製品との連携",
+          "timeDelta": 19802
+        },
+        {
+          "checkpoint": "click",
+          "source": "form#abc input[type=text] firstName",
+          "timeDelta": 19802
+        },
+        {
+          "checkpoint": "formsubmit",
+          "source": "form#abc",
+          "timeDelta": 19802
+        }
+      ]
+    },
+    {
       "id": "pkow",
       "host": "rum.hlx.page",
       "time": "2024-10-29T08:00:01.654Z",
@@ -61706,6 +61814,7 @@
       "events": [
         {
           "checkpoint": "viewblock",
+          "source": ".form",
           "timeDelta": 1039
         }
       ]

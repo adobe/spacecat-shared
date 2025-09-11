@@ -140,34 +140,23 @@ class Configuration extends BaseModel {
 
   // Update sandbox audit configuration
   // This method updates the sandbox audit configuration for a specific audit type
-  // Updated to use proper attribute accessors for ESLint 9 compatibility
   updateSandboxAuditConfig(auditType, config = {}) {
-    // eslint-disable-next-line no-console
-    console.log(`[Configuration Model] Updating sandbox audit config for ${auditType}:`, config);
     const currentSandboxAudits = this.getSandboxAudits() || { enabledAudits: {} };
+    const updatedEnabledAudits = { ...currentSandboxAudits.enabledAudits };
+
+    if (config === null) {
+      // Remove the audit type when config is null
+      delete updatedEnabledAudits[auditType];
+    } else {
+      // Add or update the audit type configuration
+      updatedEnabledAudits[auditType] = config;
+    }
+
     const updatedSandboxAudits = {
       ...currentSandboxAudits,
-      enabledAudits: {
-        ...currentSandboxAudits.enabledAudits,
-        [auditType]: config,
-      },
+      enabledAudits: updatedEnabledAudits,
     };
     this.setSandboxAudits(updatedSandboxAudits);
-    // eslint-disable-next-line no-console
-    console.log('[Configuration Model] Updated sandbox audits:', updatedSandboxAudits);
-  }
-
-  // Remove a sandbox audit configuration
-  removeSandboxAuditConfig(auditType) {
-    const currentSandboxAudits = this.getSandboxAudits();
-    if (currentSandboxAudits?.enabledAudits) {
-      const updatedEnabledAudits = { ...currentSandboxAudits.enabledAudits };
-      delete updatedEnabledAudits[auditType];
-      this.setSandboxAudits({
-        ...currentSandboxAudits,
-        enabledAudits: updatedEnabledAudits,
-      });
-    }
   }
 
   isHandlerEnabledForOrg(type, org) {

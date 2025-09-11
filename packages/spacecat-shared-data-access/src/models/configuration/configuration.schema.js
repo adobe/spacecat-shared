@@ -47,14 +47,14 @@ const jobsSchema = Joi.array().required();
 
 const queueSchema = Joi.object().required();
 
-// Schema for individual sandbox audit configuration
+// Schema for individual sandbox audit configuration - simple and flexible
 const sandboxAuditConfigSchema = Joi.object({
-  disabled: Joi.boolean().optional(),
-  threshold: Joi.number().min(0).max(100).optional(),
-  timeout: Joi.number().min(1000).max(300000).optional(), // 1s to 5min in milliseconds
-  retries: Joi.number().min(0).max(10).optional(),
-  customParams: Joi.object().optional(),
-}).unknown(false); // Strict validation - no unknown properties
+  enabled: Joi.boolean().required(), // Required: whether audit is enabled
+  expire: Joi.alternatives().try(
+    Joi.string(), // Accept string like "3", "10"
+    Joi.number().min(0), // Accept number like 3, 10
+  ).required(), // Required: rate limit time in minutes
+}).unknown(true); // Allow additional properties for future extensibility
 
 // Schema for the entire sandboxAudits object
 const sandboxAuditsSchema = Joi.object().pattern(

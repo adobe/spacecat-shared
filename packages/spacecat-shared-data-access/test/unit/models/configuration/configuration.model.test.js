@@ -329,7 +329,7 @@ describe('ConfigurationModel', () => {
     });
 
     it('removes sandbox audit config', () => {
-      instance.removeSandboxAuditConfig('cwv');
+      instance.updateSandboxAuditConfig('cwv', null);
       expect(instance.isAuditEnabledForSandbox('cwv')).to.be.false;
     });
 
@@ -395,27 +395,6 @@ describe('ConfigurationModel', () => {
     it('handles isAuditEnabledForSandbox when enabledAudits is null', () => {
       instance.setSandboxAudits({ enabledAudits: null });
       expect(instance.isAuditEnabledForSandbox('any-audit')).to.be.false;
-    });
-
-    it('handles removeSandboxAuditConfig when sandboxAudits is null', () => {
-      instance.setSandboxAudits(null);
-      // Should not throw error when trying to remove from null sandboxAudits
-      instance.removeSandboxAuditConfig('any-audit');
-      expect(instance.getSandboxAudits()).to.be.null;
-    });
-
-    it('handles removeSandboxAuditConfig when sandboxAudits is undefined', () => {
-      instance.setSandboxAudits(undefined);
-      // Should not throw error when trying to remove from undefined sandboxAudits
-      instance.removeSandboxAuditConfig('any-audit');
-      expect(instance.getSandboxAudits()).to.be.undefined;
-    });
-
-    it('handles removeSandboxAuditConfig when enabledAudits is null', () => {
-      instance.setSandboxAudits({ enabledAudits: null });
-      // Should not throw error when trying to remove from null enabledAudits
-      instance.removeSandboxAuditConfig('any-audit');
-      expect(instance.getSandboxAudits()).to.deep.equal({ enabledAudits: null });
     });
 
     it('checks if configuration has sandbox audits', () => {

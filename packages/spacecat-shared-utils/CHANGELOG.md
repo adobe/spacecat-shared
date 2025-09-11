@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.50.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.3...@adobe/spacecat-shared-utils-v1.50.4) (2025-09-10)
+
+
+### Bug Fixes
+
+* getPageEditUrl util ([#952](https://github.com/adobe/spacecat-shared/issues/952)) ([aef026d](https://github.com/adobe/spacecat-shared/commit/aef026db3452606936c271e87f3d376fc8a38642))
+
 # [@adobe/spacecat-shared-utils-v1.50.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.2...@adobe/spacecat-shared-utils-v1.50.3) (2025-09-09)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.37.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.2...@adobe/spacecat-shared-rum-api-client-v2.37.3) (2025-09-11)
+
+
+### Bug Fixes
+
+* filtering and keeping top 5 form internal navigation to reduce a… ([#954](https://github.com/adobe/spacecat-shared/issues/954)) ([bb53e01](https://github.com/adobe/spacecat-shared/commit/bb53e01c7f8776de2f7c1b0465a95c9fed289305))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.37.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.1...@adobe/spacecat-shared-rum-api-client-v2.37.2) (2025-09-09)
 
 

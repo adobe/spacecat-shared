@@ -71,7 +71,7 @@ class SQS {
 
     try {
       const data = await this.sqsClient.send(msgCommand);
-      this.log.info(`Success, message sent. MessageID:  ${data.MessageId}`);
+      this.log.debug(`Success, message sent. MessageID:  ${data.MessageId}`);
     } catch (e) {
       const { type, code, message: msg } = e;
       this.log.error(`Message sent failed. Type: ${type}, Code: ${code}, Message: ${msg}`);
@@ -120,7 +120,7 @@ export function sqsEventAdapter(fn) {
 
     const record = records[0];
 
-    log.info(`Received ${records.length} records. ID of the first message in the batch: ${record.messageId}`);
+    log.debug(`Received ${records.length} records. ID of the first message in the batch: ${record.messageId}`);
 
     try {
       message = JSON.parse(record.body);

@@ -32,6 +32,7 @@ describe('GoogleClient', () => {
     log: {
       info: sinon.stub(),
       error: sinon.stub(),
+      debug: sinon.stub(),
     },
   };
 
@@ -189,7 +190,7 @@ describe('GoogleClient', () => {
         },
       };
       const result = await googleClient.getOrganicSearchData(startDate, endDate, ['page']);
-      expect(context.log.info.calledWith(`Retrieving organic search data: ${JSON.stringify(expectedRequest)}`)).to.be.true;
+      expect(context.log.debug.calledWith(`Retrieving organic search data: ${JSON.stringify(expectedRequest)}`)).to.be.true;
       expect(result).to.eql(testResult);
       expect(webmastersStub.calledOnce).to.be.true;
     });
@@ -228,7 +229,7 @@ describe('GoogleClient', () => {
         },
       };
       const result = await googleClient.getOrganicSearchData(startDate, endDate, ['page']);
-      expect(context.log.info.calledWith(`Retrieving organic search data: ${JSON.stringify(expectedRequest)}`)).to.be.true;
+      expect(context.log.debug.calledWith(`Retrieving organic search data: ${JSON.stringify(expectedRequest)}`)).to.be.true;
       expect(result).to.eql(testResult);
       expect(webmastersStub.calledOnce).to.be.true;
     });

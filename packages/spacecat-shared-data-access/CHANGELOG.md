@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.62.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.4...@adobe/spacecat-shared-data-access-v2.62.0) (2025-09-10)
+
+
+### Features
+
+* add security audit types ([#953](https://github.com/adobe/spacecat-shared/issues/953)) ([8d4827b](https://github.com/adobe/spacecat-shared/commit/8d4827be6f90689d4a49d8113bfaccc52d85b3a2))
+
 # [@adobe/spacecat-shared-data-access-v2.61.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.3...@adobe/spacecat-shared-data-access-v2.61.4) (2025-09-09)
 
 

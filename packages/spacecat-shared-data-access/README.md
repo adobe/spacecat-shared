@@ -107,6 +107,13 @@ The module includes comprehensive integration tests embedding a local DynamoDB s
 npm run test:it
 ```
 
+Before that, run this command both in the `spacecat-shared` and `spacecat-shared-data-access` directories to install 
+the required dependencies:
+
+```bash
+npm run install
+```
+
 These tests create the schema, generate sample data, and test the data access patterns against the local DynamoDB instance.
 
 ## Data Access API

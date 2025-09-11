@@ -47,11 +47,27 @@ const jobsSchema = Joi.array().required();
 
 const queueSchema = Joi.object().required();
 
+// Schema for individual sandbox audit configuration
+const sandboxAuditConfigSchema = Joi.object({
+  disabled: Joi.boolean().optional(),
+  threshold: Joi.number().min(0).max(100).optional(),
+  timeout: Joi.number().min(1000).max(300000).optional(), // 1s to 5min in milliseconds
+  retries: Joi.number().min(0).max(10).optional(),
+  customParams: Joi.object().optional(),
+}).unknown(false); // Strict validation - no unknown properties
+
+// Schema for the entire sandboxAudits object
+const sandboxAuditsSchema = Joi.object().pattern(
+  Joi.string().pattern(/^[a-zA-Z0-9-_]+$/), // Audit type names: alphanumeric, hyphens, underscores
+  sandboxAuditConfigSchema,
+).optional();
+
 const configurationSchema = Joi.object({
   version: Joi.number().required(),
   queues: queueSchema,
   handlers: handlerSchema,
   jobs: jobsSchema,
+  sandboxAudits: sandboxAuditsSchema,
 }).unknown(true);
 
 export const checkConfiguration = (data, schema = configurationSchema) => {
@@ -97,7 +113,16 @@ const schema = new SchemaBuilder(Configuration, ConfigurationCollection)
   })
   .addAttribute('sandboxAudits', {
     type: 'any',
-    validate: (value) => !value || isNonEmptyObject(value),
+    validate: (value) => {
+      if (!value) return true; // Allow null/undefined
+
+      // Use Joi schema validation
+      const { error } = sandboxAuditsSchema.validate(value);
+      if (error) {
+        throw new Error(`Sandbox audits validation error: ${error.message}`);
+      }
+      return true;
+    },
   })
   .addAttribute('version', {
     type: 'number',

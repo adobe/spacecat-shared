@@ -417,6 +417,31 @@ describe('ConfigurationModel', () => {
       instance.removeSandboxAuditConfig('any-audit');
       expect(instance.getSandboxAudits()).to.deep.equal({ enabledAudits: null });
     });
+
+    it('checks if configuration has sandbox audits', () => {
+      // Should return true when sandbox audits are configured
+      expect(instance.hasSandboxAudits()).to.be.true;
+
+      // Should return false when sandbox audits are null
+      instance.setSandboxAudits(null);
+      expect(instance.hasSandboxAudits()).to.be.false;
+
+      // Should return false when sandbox audits are undefined
+      instance.setSandboxAudits(undefined);
+      expect(instance.hasSandboxAudits()).to.be.false;
+
+      // Should return false when enabledAudits is empty
+      instance.setSandboxAudits({ enabledAudits: {} });
+      expect(instance.hasSandboxAudits()).to.be.false;
+
+      // Should return false when enabledAudits is null
+      instance.setSandboxAudits({ enabledAudits: null });
+      expect(instance.hasSandboxAudits()).to.be.false;
+
+      // Should return true when enabledAudits has content
+      instance.setSandboxAudits({ enabledAudits: { cwv: {} } });
+      expect(instance.hasSandboxAudits()).to.be.true;
+    });
   });
 
   describe('Handler Management', () => {

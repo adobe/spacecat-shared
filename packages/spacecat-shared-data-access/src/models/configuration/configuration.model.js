@@ -132,6 +132,12 @@ class Configuration extends BaseModel {
     return this.getSandboxAudits()?.enabledAudits?.[auditType] !== undefined;
   }
 
+  // Check if this configuration has any sandbox audits configured
+  hasSandboxAudits() {
+    const sandboxAudits = this.getSandboxAudits();
+    return !!(sandboxAudits && Object.keys(sandboxAudits.enabledAudits || {}).length > 0);
+  }
+
   // Update sandbox audit configuration
   // This method updates the sandbox audit configuration for a specific audit type
   // Updated to use proper attribute accessors for ESLint 9 compatibility

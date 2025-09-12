@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.62.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.62.0...@adobe/spacecat-shared-data-access-v2.62.1) (2025-09-12)
+
+
+### Bug Fixes
+
+* Update entitlement.schema.js for consume numbers ([#955](https://github.com/adobe/spacecat-shared/issues/955)) ([0a65569](https://github.com/adobe/spacecat-shared/commit/0a65569c25d9a7abd13b8bce1e28d021d9b29967))
+
 # [@adobe/spacecat-shared-data-access-v2.62.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.4...@adobe/spacecat-shared-data-access-v2.62.0) (2025-09-10)
 
 

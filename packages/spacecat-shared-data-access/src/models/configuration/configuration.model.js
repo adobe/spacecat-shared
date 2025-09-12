@@ -86,6 +86,11 @@ class Configuration extends BaseModel {
   }
 
   isHandlerEnabledForSite(type, site) {
+    // Check if it's a sandbox site and the audit type is enabled for sandboxes
+    if (site.isSandbox && this.isAuditEnabledForSandbox(type)) {
+      return true;
+    }
+
     const handler = this.getHandlers()?.[type];
     if (!handler) return false;
 
@@ -110,6 +115,48 @@ class Configuration extends BaseModel {
     }
 
     return false;
+  }
+
+  // Get configuration for a sandbox audit type
+  getSandboxAuditConfig(auditType) {
+    return this.getSandboxAudits()?.enabledAudits?.[auditType] || null;
+  }
+
+  // Get all enabled sandbox audit types
+  getEnabledSandboxAudits() {
+    return Object.keys(this.getSandboxAudits()?.enabledAudits || {});
+  }
+
+  // Check if a specific audit type is enabled for sandbox
+  isAuditEnabledForSandbox(auditType) {
+    return this.getSandboxAudits()?.enabledAudits?.[auditType] !== undefined;
+  }
+
+  // Check if this configuration has any sandbox audits configured
+  hasSandboxAudits() {
+    const sandboxAudits = this.getSandboxAudits();
+    return !!(sandboxAudits && Object.keys(sandboxAudits.enabledAudits || {}).length > 0);
+  }
+
+  // Update sandbox audit configuration
+  // This method updates the sandbox audit configuration for a specific audit type
+  updateSandboxAuditConfig(auditType, config = {}) {
+    const currentSandboxAudits = this.getSandboxAudits() || { enabledAudits: {} };
+    const updatedEnabledAudits = { ...currentSandboxAudits.enabledAudits };
+
+    if (config === null) {
+      // Remove the audit type when config is null
+      delete updatedEnabledAudits[auditType];
+    } else {
+      // Add or update the audit type configuration
+      updatedEnabledAudits[auditType] = config;
+    }
+
+    const updatedSandboxAudits = {
+      ...currentSandboxAudits,
+      enabledAudits: updatedEnabledAudits,
+    };
+    this.setSandboxAudits(updatedSandboxAudits);
   }
 
   isHandlerEnabledForOrg(type, org) {

@@ -47,11 +47,27 @@ const jobsSchema = Joi.array().required();
 
 const queueSchema = Joi.object().required();
 
+// Schema for individual sandbox audit configuration - simple and flexible
+const sandboxAuditConfigSchema = Joi.object({
+  enabled: Joi.boolean().required(), // Required: whether audit is enabled
+  expire: Joi.alternatives().try(
+    Joi.string(), // Accept string like "3", "10"
+    Joi.number().min(0), // Accept number like 3, 10
+  ).required(), // Required: rate limit time in minutes
+}).unknown(true); // Allow additional properties for future extensibility
+
+// Schema for the entire sandboxAudits object
+const sandboxAuditsSchema = Joi.object().pattern(
+  Joi.string().pattern(/^[a-zA-Z0-9-_]+$/), // Audit type names: alphanumeric, hyphens, underscores
+  sandboxAuditConfigSchema,
+).optional();
+
 const configurationSchema = Joi.object({
   version: Joi.number().required(),
   queues: queueSchema,
   handlers: handlerSchema,
   jobs: jobsSchema,
+  sandboxAudits: sandboxAuditsSchema,
 }).unknown(true);
 
 export const checkConfiguration = (data, schema = configurationSchema) => {
@@ -94,6 +110,19 @@ const schema = new SchemaBuilder(Configuration, ConfigurationCollection)
   .addAttribute('slackRoles', {
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),
+  })
+  .addAttribute('sandboxAudits', {
+    type: 'any',
+    validate: (value) => {
+      if (!value) return true; // Allow null/undefined
+
+      // Use Joi schema validation
+      const { error } = sandboxAuditsSchema.validate(value);
+      if (error) {
+        throw new Error(`Sandbox audits validation error: ${error.message}`);
+      }
+      return true;
+    },
   })
   .addAttribute('version', {
     type: 'number',

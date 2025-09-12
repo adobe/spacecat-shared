@@ -77,4 +77,45 @@ describe('SiteEnrollmentModel', () => {
       expect(instance.getEntitlementId()).to.equal('3fe5ca60-4850-431c-97b3-f88a80f07e9c');
     });
   });
+
+  describe('config', () => {
+    it('gets config', () => {
+      const expectedConfig = {
+        feature1: 'enabled',
+        theme: 'dark',
+      };
+      expect(instance.getConfig()).to.deep.equal(expectedConfig);
+    });
+
+    it('gets empty config when not set', () => {
+      const instanceWithoutConfig = createElectroMocks(SiteEnrollment, {
+        siteId: '5d6d4439-6659-46c2-b646-92d110fa5a52',
+        siteEnrollmentId: '0e07949e-8845-4fac-b903-24a42c5533b9',
+        entitlementId: '3fe5ca60-4850-431c-97b3-f88a80f07e9b',
+      }).model;
+
+      expect(instanceWithoutConfig.getConfig()).to.deep.equal({});
+    });
+
+    it('sets config', () => {
+      const newConfig = {
+        newFeature: 'active',
+        environment: 'production',
+      };
+
+      const result = instance.setConfig(newConfig);
+      expect(result).to.equal(instance); // should return this for chaining
+      expect(instance.getConfig()).to.deep.equal(newConfig);
+    });
+
+    it('sets empty config when null is passed', () => {
+      instance.setConfig(null);
+      expect(instance.getConfig()).to.deep.equal({});
+    });
+
+    it('sets empty config when undefined is passed', () => {
+      instance.setConfig(undefined);
+      expect(instance.getConfig()).to.deep.equal({});
+    });
+  });
 });

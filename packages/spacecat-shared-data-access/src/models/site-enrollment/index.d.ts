@@ -21,6 +21,8 @@ export interface SiteEnrollment extends BaseModel {
   getSite(): Promise<Site>;
   getEntitlement(): Promise<Entitlement>;
   setStatus(status: SiteEnrollmentStatus): SiteEnrollment;
+  getConfig(): Record<string, string>;
+  setConfig(config: Record<string, string>): SiteEnrollment;
 }
 
 export interface SiteEnrollmentCollection extends

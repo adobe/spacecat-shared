@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import Joi from 'joi';
+
 import SchemaBuilder from '../base/schema.builder.js';
 import SiteEnrollment from './site-enrollment.model.js';
 import SiteEnrollmentCollection from './site-enrollment.collection.js';
@@ -24,6 +26,18 @@ const schema = new SchemaBuilder(SiteEnrollment, SiteEnrollmentCollection)
   // Reference to Site (many-to-one relationship)
   .addReference('belongs_to', 'Site')
   // Reference to Entitlement (many-to-one relationship)
-  .addReference('belongs_to', 'Entitlement');
+  .addReference('belongs_to', 'Entitlement')
+  .addAttribute('config', {
+    type: 'any',
+    required: false,
+    default: {},
+    validate: (value) => {
+      if (!value) return true;
+      // Use Joi to validate dynamic string key-value pairs
+      const schemaToValidate = Joi.object().pattern(Joi.string(), Joi.string());
+      const { error } = schemaToValidate.validate(value);
+      return !error;
+    },
+  });
 
 export default schema.build();

@@ -20,7 +20,23 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class SiteEnrollment extends BaseModel {
-  // add your custom methods or overrides here
+  /**
+   * Gets the configuration map for this site enrollment.
+   * @returns {Record<string, string>} The configuration key-value pairs.
+   */
+  getConfig() {
+    return this.record.config || {};
+  }
+
+  /**
+   * Sets the configuration map for this site enrollment.
+   * @param {Record<string, string>} config - The configuration key-value pairs.
+   * @returns {SiteEnrollment} This instance for method chaining.
+   */
+  setConfig(config) {
+    this.record.config = config || {};
+    return this;
+  }
 }
 
 export default SiteEnrollment;

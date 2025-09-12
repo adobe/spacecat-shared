@@ -39,6 +39,7 @@ const schema = new SchemaBuilder(Entitlement, EntitlementCollection)
     required: false,
     properties: {
       llmo_trial_prompts: { type: 'number' },
+      llmo_trial_prompts_consumed: { type: 'number' },
     },
   })
   .addIndex(

@@ -34,6 +34,21 @@ export interface QueryOptions {
   limit?: number;
   order?: string;
   attributes?: string[];
+  fetchAllPages?: boolean;
+  returnMetadata?: boolean;
+}
+
+export interface QueryMetadata {
+  totalFetched: number;
+  wasTruncated: boolean;
+  hasMore: boolean;
+  cursor?: string;
+  pagesRetrieved: number;
+}
+
+export interface QueryResult<T> {
+  data: T;
+  metadata: QueryMetadata;
 }
 
 export interface BaseCollection<T extends BaseModel> {

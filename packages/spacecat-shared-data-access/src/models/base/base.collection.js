@@ -141,6 +141,44 @@ class BaseCollection {
   }
 
   /**
+   * Logs a warning when query results are potentially truncated due to pagination.
+   * This helps developers identify when they should use fetchAllPages: true.
+   * @private
+   * @param {string|null} initialCursor - The cursor from the first query result.
+   * @param {number} itemCount - The number of items returned.
+   * @param {Object} options - The query options.
+   */
+  #logTruncationWarning(initialCursor, itemCount, options) {
+    if (!options.fetchAllPages && initialCursor) {
+      const message = `Query returned truncated results for [${this.entityName}]. `
+        + 'Consider using fetchAllPages: true for complete data. '
+        + `Got ${itemCount} items, but more available.`;
+      this.log.warn(message);
+    }
+  }
+
+  /**
+   * Builds the appropriate response based on whether metadata is requested.
+   * Maintains backward compatibility by returning raw data when metadata is not requested.
+   * @private
+   * @param {BaseModel|Array<BaseModel>|null} data - The query result data.
+   * @param {Object} metadata - The pagination metadata.
+   * @param {Object} options - The query options.
+   * @returns {BaseModel|Array<BaseModel>|Object|null} - The response data or wrapped response.
+   */
+  // eslint-disable-next-line class-methods-use-this
+  #buildQueryResponse(data, metadata, options) {
+    if (!options.returnMetadata) {
+      return data;
+    }
+
+    return {
+      data,
+      metadata,
+    };
+  }
+
+  /**
    * Internal on-create handler. This method is called after the create method has successfully
    * created an entity. It will call the on-create handler defined in the subclass and handles
    * any errors that occur.
@@ -212,7 +250,12 @@ class BaseCollection {
    * @async
    * @param {Object} keys - The index keys to use for the query.
    * @param {Object} options - Additional options for the query.
-   * @returns {Promise<BaseModel|Array<BaseModel>|null>} - The query result.
+   * @param {boolean} [options.fetchAllPages=false] - Fetch all pages automatically.
+   * @param {boolean} [options.returnMetadata=false] - Return pagination metadata along with data.
+   * @param {number} [options.limit] - Limit results per page.
+   * @param {string} [options.order='desc'] - Sort order for results.
+   * @param {Array<string>} [options.attributes] - Specific attributes to return.
+   * @returns {Promise<BaseModel|Array<BaseModel>|QueryResult|null>} - The query result or metadata.
    * @throws {DataAccessError} - Throws an error if the keys are not provided,
    * if options are invalid or if the query operation fails.
    */
@@ -223,6 +266,17 @@ class BaseCollection {
 
     if (!isObject(options)) {
       return this.#logAndThrowError(`Failed to query [${this.entityName}]: options must be an object`);
+    }
+
+    // validate pagination options following established patterns
+    if (options.returnMetadata !== undefined && typeof options.returnMetadata !== 'boolean') {
+      const message = `Failed to query [${this.entityName}]: returnMetadata must be a boolean`;
+      return this.#logAndThrowError(message);
+    }
+
+    if (options.fetchAllPages !== undefined && typeof options.fetchAllPages !== 'boolean') {
+      const message = `Failed to query [${this.entityName}]: fetchAllPages must be a boolean`;
+      return this.#logAndThrowError(message);
     }
 
     const indexName = options.index || this.schema.findIndexNameByKeys(keys);
@@ -251,6 +305,8 @@ class BaseCollection {
       // execute the initial query
       let result = await query.go(queryOptions);
       let allData = result.data;
+      const initialCursor = result.cursor;
+      let pagesRetrieved = 1;
 
       // if the caller requests ALL pages and we're not using limit: 1,
       // continue to fetch until there is no cursor.
@@ -260,14 +316,35 @@ class BaseCollection {
           // eslint-disable-next-line no-await-in-loop
           result = await query.go(queryOptions);
           allData = allData.concat(result.data);
+          pagesRetrieved += 1;
         }
       }
 
+      // handle single item queries
       if (options.limit === 1) {
-        return allData.length ? this.#createInstance(allData[0]) : null;
-      } else {
-        return this.#createInstances(allData);
+        const instance = allData.length ? this.#createInstance(allData[0]) : null;
+        return this.#buildQueryResponse(instance, {
+          totalFetched: instance ? 1 : 0,
+          wasTruncated: false,
+          hasMore: false,
+          cursor: null,
+          pagesRetrieved: 1,
+        }, options);
       }
+
+      // handle multiple item queries
+      const instances = this.#createInstances(allData);
+
+      // log warning for potentially incomplete results
+      this.#logTruncationWarning(initialCursor, allData.length, options);
+
+      return this.#buildQueryResponse(instances, {
+        totalFetched: allData.length,
+        wasTruncated: !options.fetchAllPages && !!initialCursor,
+        hasMore: !!result.cursor,
+        cursor: result.cursor,
+        pagesRetrieved: options.fetchAllPages ? pagesRetrieved : 1,
+      }, options);
     } catch (error) {
       return this.#logAndThrowError('Failed to query', error);
     }

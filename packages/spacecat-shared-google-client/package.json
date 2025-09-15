@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-google-client",
-  "version": "1.4.43",
+  "version": "1.4.44",
   "description": "Shared modules of the Spacecat Services - Google Client",
   "type": "module",
   "engines": {

@@ -18,6 +18,7 @@ import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import SiteEnrollment from '../../../../src/models/site-enrollment/site-enrollment.model.js';
+import SiteEnrollmentSchema from '../../../../src/models/site-enrollment/site-enrollment.schema.js';
 import siteEnrollmentFixtures from '../../../fixtures/site-enrollments.fixture.js';
 import { createElectroMocks } from '../../util.js';
 
@@ -116,6 +117,64 @@ describe('SiteEnrollmentModel', () => {
     it('sets empty config when undefined is passed', () => {
       instance.setConfig(undefined);
       expect(instance.getConfig()).to.deep.equal({});
+    });
+  });
+
+  describe('config validation', () => {
+    it('validates config with valid string key-value pairs', () => {
+      const validConfig = {
+        feature1: 'enabled',
+        environment: 'production',
+        theme: 'dark',
+      };
+
+      // This should not throw an error
+      expect(() => {
+        instance.setConfig(validConfig);
+      }).to.not.throw();
+
+      expect(instance.getConfig()).to.deep.equal(validConfig);
+    });
+
+    it('handles null config gracefully', () => {
+      // This should not throw an error and should set empty config
+      expect(() => {
+        instance.setConfig(null);
+      }).to.not.throw();
+
+      expect(instance.getConfig()).to.deep.equal({});
+    });
+
+    it('handles empty object config', () => {
+      const emptyConfig = {};
+
+      expect(() => {
+        instance.setConfig(emptyConfig);
+      }).to.not.throw();
+
+      expect(instance.getConfig()).to.deep.equal(emptyConfig);
+    });
+
+    it('validates schema-level config validation with invalid data', () => {
+      // Test the validation function directly by accessing the built schema
+      const builtSchema = SiteEnrollmentSchema.toElectroDBSchema();
+      const configAttribute = builtSchema.attributes.config;
+
+      // Test with null/undefined (should return true - line 35)
+      expect(configAttribute.validate(null)).to.be.true;
+      expect(configAttribute.validate(undefined)).to.be.true;
+      expect(configAttribute.validate('')).to.be.true;
+      expect(configAttribute.validate(false)).to.be.true;
+
+      // Test with valid object (should return true - lines 37-39)
+      expect(configAttribute.validate({ key1: 'value1', key2: 'value2' })).to.be.true;
+      expect(configAttribute.validate({})).to.be.true;
+
+      // Test with invalid data (should return false - lines 37-39)
+      expect(configAttribute.validate({ key1: 123 })).to.be.false; // number value
+      expect(configAttribute.validate('not an object')).to.be.false;
+      expect(configAttribute.validate(123)).to.be.false;
+      expect(configAttribute.validate(['array'])).to.be.false;
     });
   });
 });

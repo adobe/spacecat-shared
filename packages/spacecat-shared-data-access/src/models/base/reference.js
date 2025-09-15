@@ -45,7 +45,7 @@ const createSortKeyAccessorConfigs = (
 
   const sortKeys = belongsToRef.getSortKeys();
   if (!isNonEmptyArray(sortKeys)) {
-    log.debug(`No sort keys defined for ${entity.schema.getModelName()} to ${target}`);
+    // log.debug(`No sort keys defined for ${entity.schema.getModelName()} to ${target}`);
     return configs;
   }
 

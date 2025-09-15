@@ -15,3 +15,5 @@ process.env.HELIX_FETCH_FORCE_HTTP1 = 'true';
 console.log('Disabling AWS XRay');
 process.env.AWS_XRAY_SDK_ENABLED = 'false';
 process.env.AWS_XRAY_CONTEXT_MISSING = 'IGNORE_ERROR';
+console.log('Suppressing AWS SDK debug logs');
+process.env.AWS_LOG_LEVEL = 'error';

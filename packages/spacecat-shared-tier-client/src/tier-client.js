@@ -14,7 +14,6 @@ import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
 import {
   Site,
   Entitlement as EntitlementModel,
-  OrganizationIdentityProvider as OrganizationIdentityProviderModel,
   Organization,
 } from '@adobe/spacecat-shared-data-access';
 
@@ -79,7 +78,6 @@ class TierClient {
       SiteEnrollment: SiteEnrollmentCollection,
       Organization: OrganizationCollection,
       Site: SiteCollection,
-      OrganizationIdentityProvider: OrganizationIdentityProviderCollection,
     } = dataAccess;
 
     const { log } = context;
@@ -96,7 +94,6 @@ class TierClient {
     this.SiteEnrollment = SiteEnrollmentCollection;
     this.Organization = OrganizationCollection;
     this.Site = SiteCollection;
-    this.OrganizationIdentityProvider = OrganizationIdentityProviderCollection;
   }
 
   /**
@@ -194,23 +191,6 @@ class TierClient {
           entitlement: existing.entitlement,
           siteEnrollment,
         };
-      }
-
-      // Create organization identity provider if not exists
-      const identityProviders = await this.OrganizationIdentityProvider.allByOrganizationId(orgId);
-      const defaultProvider = OrganizationIdentityProviderModel.PROVIDER_TYPES.IMS;
-      let providerId = identityProviders.find((idp) => idp.getProvider() === defaultProvider);
-
-      // If no identity provider exists for this provider, create one
-      if (!providerId) {
-        providerId = await this.OrganizationIdentityProvider.create({
-          organizationId: orgId,
-          provider: defaultProvider,
-          externalId: this.organization.getImsOrgId(),
-        });
-        this.log.info(`Created identity provider: ${providerId.getId()}`);
-      } else {
-        this.log.info(`Identity provider already exists: ${providerId.getId()}`);
       }
 
       // Create entitlement

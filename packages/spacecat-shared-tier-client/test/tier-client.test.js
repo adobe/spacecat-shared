@@ -62,12 +62,6 @@ describe('TierClient', () => {
   const siteInstance = Object.create(Site.prototype);
   Object.assign(siteInstance, mockSite);
 
-  const mockIdentityProvider = {
-    getId: () => 'idp-123',
-    getProvider: () => 'IMS',
-    getOrganizationId: () => orgId,
-  };
-
   const mockDataAccess = {
     Entitlement: {
       findByOrganizationIdAndProductCode: sandbox.stub(),
@@ -83,10 +77,6 @@ describe('TierClient', () => {
     },
     Site: {
       findById: sandbox.stub(),
-    },
-    OrganizationIdentityProvider: {
-      allByOrganizationId: sandbox.stub(),
-      create: sandbox.stub(),
     },
   };
 
@@ -330,8 +320,6 @@ describe('TierClient', () => {
 
     it('should create everything when nothing exists', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
-      mockDataAccess.OrganizationIdentityProvider.allByOrganizationId.resolves([]);
-      mockDataAccess.OrganizationIdentityProvider.create.resolves(mockIdentityProvider);
       mockDataAccess.Entitlement.create.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
 
@@ -340,11 +328,6 @@ describe('TierClient', () => {
       expect(result).to.deep.equal({
         entitlement: mockEntitlement,
         siteEnrollment: mockSiteEnrollment,
-      });
-      expect(mockDataAccess.OrganizationIdentityProvider.create).to.have.been.calledWith({
-        organizationId: orgId,
-        provider: 'IMS',
-        externalId: mockOrganization.getImsOrgId(),
       });
       expect(mockDataAccess.Entitlement.create).to.have.been.calledWith({
         organizationId: orgId,
@@ -356,23 +339,6 @@ describe('TierClient', () => {
         siteId,
         entitlementId: mockEntitlement.getId(),
       });
-    });
-
-    it('should reuse existing identity provider when it exists', async () => {
-      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
-      mockDataAccess.OrganizationIdentityProvider.allByOrganizationId
-        .resolves([mockIdentityProvider]);
-      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
-
-      const result = await tierClient.createEntitlement('FREE_TRIAL');
-
-      expect(result).to.deep.equal({
-        entitlement: mockEntitlement,
-        siteEnrollment: mockSiteEnrollment,
-      });
-      // The create method should not be called because identity provider already exists
-      expect(mockDataAccess.OrganizationIdentityProvider.create).to.not.have.been.called;
     });
 
     it('should throw error for invalid tier', async () => {
@@ -407,8 +373,6 @@ describe('TierClient', () => {
 
     it('should handle database errors during creation', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
-      mockDataAccess.OrganizationIdentityProvider.allByOrganizationId.resolves([]);
-      mockDataAccess.OrganizationIdentityProvider.create.resolves(mockIdentityProvider);
       mockDataAccess.Entitlement.create.rejects(new Error('Database error'));
 
       await expect(tierClient.createEntitlement('FREE_TRIAL')).to.be.rejectedWith('Database error');
@@ -431,8 +395,6 @@ describe('TierClient', () => {
       mockDataAccess.Organization.findById.resolves(mockOrganization);
       mockDataAccess.Site.findById.resolves(mockSite);
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
-      mockDataAccess.OrganizationIdentityProvider.allByOrganizationId.resolves([]);
-      mockDataAccess.OrganizationIdentityProvider.create.resolves(mockIdentityProvider);
       mockDataAccess.Entitlement.create.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
 

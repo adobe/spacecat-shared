@@ -34,7 +34,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.2.2",
+    "@adobe/fetch": "4.2.3",
     "@adobe/spacecat-shared-data-access": "2.45.0",
     "@adobe/spacecat-shared-utils": "1.26.4",
     "jose": "6.1.0"

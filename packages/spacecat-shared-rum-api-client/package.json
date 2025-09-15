@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-rum-api-client",
-  "version": "2.37.4",
+  "version": "2.37.5",
   "description": "Shared modules of the Spacecat Services - Rum API client",
   "type": "module",
   "engines": {

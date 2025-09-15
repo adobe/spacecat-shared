@@ -77,6 +77,7 @@ describe('SiteEnrollment IT', async () => {
       siteId: sampleData.sites[0].getId(),
       entitlementId: sampleData.entitlements[0].getId(),
       updatedBy: 'system',
+      config: {},
     };
 
     const siteEnrollment = await SiteEnrollment.create(data);

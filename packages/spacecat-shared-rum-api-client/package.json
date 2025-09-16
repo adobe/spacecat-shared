@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-rum-api-client",
-  "version": "2.37.4",
+  "version": "2.37.5",
   "description": "Shared modules of the Spacecat Services - Rum API client",
   "type": "module",
   "engines": {
@@ -35,7 +35,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.2.2",
+    "@adobe/fetch": "4.2.3",
     "@adobe/helix-shared-wrap": "2.0.2",
     "@adobe/helix-universal": "5.2.2",
     "@adobe/rum-distiller": "1.19.0",

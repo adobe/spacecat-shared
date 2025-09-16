@@ -1,3 +1,10 @@
+# @adobe/spacecat-shared-tier-client-v1.0.0 (2025-09-16)
+
+
+### Features
+
+* Tier client ([#961](https://github.com/adobe/spacecat-shared/issues/961)) ([2d95d07](https://github.com/adobe/spacecat-shared/commit/2d95d070a55e2ec702faf3bf94c046836b79528a))
+
 # [@adobe/spacecat-shared-tier-client-v1.0.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.0.0...@adobe/spacecat-shared-tier-client-v1.0.0) (2025-01-27)
 
 ### Features

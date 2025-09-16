@@ -114,37 +114,32 @@ class Configuration extends BaseModel {
 
   // Get configuration for a sandbox audit type
   getSandboxAuditConfig(auditType) {
-    return this.getSandboxAudits()?.enabledAudits?.[auditType] || null;
+    return this.getSandboxAudits()?.[auditType] || null;
   }
 
   // Get all enabled sandbox audit types
   getEnabledSandboxAudits() {
-    return Object.keys(this.getSandboxAudits()?.enabledAudits || {});
+    return Object.keys(this.getSandboxAudits() || {});
   }
 
   // Check if a specific audit type is enabled for sandbox
   isAuditEnabledForSandbox(auditType) {
-    return this.getSandboxAudits()?.enabledAudits?.[auditType] !== undefined;
+    return this.getSandboxAudits()?.[auditType] !== undefined;
   }
 
   // Check if this configuration has any sandbox audits configured
   hasSandboxAudits() {
     const sandboxAudits = this.getSandboxAudits();
-    return !!(sandboxAudits && Object.keys(sandboxAudits.enabledAudits || {}).length > 0);
+    return !!(sandboxAudits && Object.keys(sandboxAudits || {}).length > 0);
   }
 
   // Update sandbox audit configuration
   // This method updates the sandbox audit configuration for a specific audit type
   updateSandboxAuditConfig(auditType, config) {
-    const currentSandboxAudits = this.getSandboxAudits() || { enabledAudits: {} };
-    const updatedEnabledAudits = {
-      ...currentSandboxAudits.enabledAudits,
-      [auditType]: config,
-    };
-
+    const currentSandboxAudits = this.getSandboxAudits() || {};
     const updatedSandboxAudits = {
       ...currentSandboxAudits,
-      enabledAudits: updatedEnabledAudits,
+      [auditType]: config,
     };
     this.setSandboxAudits(updatedSandboxAudits);
   }

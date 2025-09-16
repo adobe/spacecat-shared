@@ -292,12 +292,10 @@ describe('ConfigurationModel', () => {
       };
       // Set sandboxAudits using the proper attribute setter
       instance.setSandboxAudits({
-        enabledAudits: {
-          cwv: {
-            cooldownHours: '5',
-          },
-          'alt-text': {},
+        cwv: {
+          cooldownHours: '5',
         },
+        'alt-text': {},
       });
     });
 
@@ -348,8 +346,8 @@ describe('ConfigurationModel', () => {
       expect(instance.getSandboxAuditConfig('any-audit')).to.be.null;
     });
 
-    it('handles getSandboxAuditConfig when enabledAudits is null', () => {
-      instance.setSandboxAudits({ enabledAudits: null });
+    it('handles getSandboxAuditConfig when sandboxAudits is null', () => {
+      instance.setSandboxAudits(null);
       expect(instance.getSandboxAuditConfig('any-audit')).to.be.null;
     });
 
@@ -363,8 +361,8 @@ describe('ConfigurationModel', () => {
       expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
     });
 
-    it('handles getEnabledSandboxAudits when enabledAudits is null', () => {
-      instance.setSandboxAudits({ enabledAudits: null });
+    it('handles getEnabledSandboxAudits when sandboxAudits is empty', () => {
+      instance.setSandboxAudits({});
       expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
     });
 
@@ -378,8 +376,8 @@ describe('ConfigurationModel', () => {
       expect(instance.isAuditEnabledForSandbox('any-audit')).to.be.false;
     });
 
-    it('handles isAuditEnabledForSandbox when enabledAudits is null', () => {
-      instance.setSandboxAudits({ enabledAudits: null });
+    it('handles isAuditEnabledForSandbox when sandboxAudits is empty', () => {
+      instance.setSandboxAudits({});
       expect(instance.isAuditEnabledForSandbox('any-audit')).to.be.false;
     });
 
@@ -395,16 +393,16 @@ describe('ConfigurationModel', () => {
       instance.setSandboxAudits(undefined);
       expect(instance.hasSandboxAudits()).to.be.false;
 
-      // Should return false when enabledAudits is empty
-      instance.setSandboxAudits({ enabledAudits: {} });
+      // Should return false when sandboxAudits is empty
+      instance.setSandboxAudits({});
       expect(instance.hasSandboxAudits()).to.be.false;
 
-      // Should return false when enabledAudits is null
-      instance.setSandboxAudits({ enabledAudits: null });
+      // Should return false when sandboxAudits is null
+      instance.setSandboxAudits(null);
       expect(instance.hasSandboxAudits()).to.be.false;
 
-      // Should return true when enabledAudits has content
-      instance.setSandboxAudits({ enabledAudits: { cwv: {} } });
+      // Should return true when sandboxAudits has content
+      instance.setSandboxAudits({ cwv: {} });
       expect(instance.hasSandboxAudits()).to.be.true;
     });
   });

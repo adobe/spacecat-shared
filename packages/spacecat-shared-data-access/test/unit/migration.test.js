@@ -11,7 +11,7 @@
  */
 
 /* eslint-env mocha */
-/* eslint-disable no-await-in-loop */
+/* eslint-disable no-await-in-loop, no-continue */
 
 import TierClient from '@adobe/spacecat-shared-tier-client';
 
@@ -38,6 +38,7 @@ describe.skip('ASO Migration Script', () => {
     const { Organization, Site } = context.dataAccess;
 
     const LLMO_ONLY_ORG_IDS = [];
+    const ASO_ORG_IDS_PAID_TIER = [];
 
     // Get all orgs and filter out the LLMO only orgs
     const orgs = (await Organization.all())
@@ -54,7 +55,12 @@ describe.skip('ASO Migration Script', () => {
         const result = await tierClient.checkValidEntitlement();
         console.log('    has entitlement?', result.entitlement ? 'yes' : 'no');
         console.log('    has site enrollment?', result.siteEnrollment ? 'yes' : 'no');
-        tierClient.createEntitlement('PAID');
+        if (result.entitlement && result.siteEnrollment) {
+          continue;
+        }
+        const isPaidTier = ASO_ORG_IDS_PAID_TIER.includes(org.getId());
+        await tierClient.createEntitlement(isPaidTier ? 'PAID' : 'FREE_TRIAL');
+        console.log('    created entitlement', isPaidTier ? 'PAID' : 'FREE_TRIAL');
       }
     }
 

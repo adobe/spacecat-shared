@@ -11,10 +11,8 @@
  */
 
 import {
-  hasText, isBoolean, isInteger, isNonEmptyArray, isNonEmptyObject,
+  hasText, isBoolean, isInteger, isNonEmptyArray, isNonEmptyObject, isValidUUID,
 } from '@adobe/spacecat-shared-utils';
-
-import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
 import { SchemaBuilderError } from '../../errors/index.js';
 import {
@@ -41,9 +39,9 @@ const ID_ATTRIBUTE_DATA = {
   required: true,
   readOnly: true,
   // https://electrodb.dev/en/modeling/attributes/#default
-  default: () => uuid(),
+  default: () => crypto.randomUUID(),
   // https://electrodb.dev/en/modeling/attributes/#attribute-validation
-  validate: (value) => uuidValidate(value),
+  validate: (value) => isValidUUID(value),
 };
 
 /**
@@ -394,7 +392,7 @@ class SchemaBuilder {
         required: reference.options.required,
         validate: (
           value,
-        ) => (reference.options.required ? uuidValidate(value) : !value || uuidValidate(value)),
+        ) => (reference.options.required ? isValidUUID(value) : !value || isValidUUID(value)),
       });
 
       this.#internalAddIndex(

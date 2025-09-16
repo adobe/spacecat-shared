@@ -10,8 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isNumber, isObject } from '@adobe/spacecat-shared-utils';
-import { validate as validateUUID } from 'uuid';
+import {
+  hasText,
+  isNumber,
+  isObject,
+  isValidUUID,
+} from '@adobe/spacecat-shared-utils';
 
 import { ValidationError } from '../errors/index.js';
 
@@ -146,7 +150,7 @@ export const guardEnum = (propertyName, value, enumValues, entityName, nullable 
  */
 export const guardId = (propertyName, value, entityName, nullable = false) => {
   if (checkNullable(value, nullable)) return;
-  if (!validateUUID(value)) {
+  if (!isValidUUID(value)) {
     throw new ValidationError(`Validation failed in ${entityName}: ${propertyName} must be a valid UUID`);
   }
 };

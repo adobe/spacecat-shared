@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-content-client",
-  "version": "1.7.25",
+  "version": "1.7.27",
   "description": "Shared modules of the Spacecat Services - Content Client",
   "type": "module",
   "engines": {
@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@adobe/helix-universal": "5.2.2",
-    "@adobe/spacecat-helix-content-sdk": "1.4.21",
+    "@adobe/spacecat-helix-content-sdk": "1.4.22",
     "@adobe/spacecat-shared-data-access": "2.45.0",
     "@adobe/spacecat-shared-utils": "1.38.0",
     "@aws-sdk/client-secrets-manager": "3.883.0",
@@ -43,11 +43,11 @@
     "graph-data-structure": "4.5.0"
   },
   "devDependencies": {
-    "chai": "5.3.3",
+    "chai": "6.0.1",
     "chai-as-promised": "8.0.2",
     "esmock": "2.7.2",
     "nock": "14.0.10",
-    "sinon": "20.0.0",
+    "sinon": "21.0.0",
     "sinon-chai": "4.0.1",
     "typescript": "5.9.2"
   }

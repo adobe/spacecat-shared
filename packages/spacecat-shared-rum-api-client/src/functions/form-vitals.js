@@ -295,6 +295,7 @@ function handler(bundles) {
 
   // populate internal navigation data
   populateFormsInternalNavigation(bundles, formVitals);
+
   // filter out pages with no form vitals
   const filteredFormVitals = Object.values(formVitals).filter(
     (formVital) => containsFormVitals(formVital) && !isUnderExperiment(formVital, experimentUrls),
@@ -320,6 +321,22 @@ function handler(bundles) {
       });
     }
     return formVitalCopy;
+  });
+
+  // keeping on top 5 by page views count internal navigation
+  Object.values(updatedFormVitals).forEach((item) => {
+    if (item.forminternalnavigation) {
+      item.forminternalnavigation.sort((a, b) => {
+        // eslint-disable-next-line max-len
+        const sumA = a.pageview ? Object.values(a.pageview).reduce((sum, val) => sum + (val || 0), 0) : 0;
+        // eslint-disable-next-line max-len
+        const sumB = b.pageview ? Object.values(b.pageview).reduce((sum, val) => sum + (val || 0), 0) : 0;
+        return sumB - sumA;
+      });
+
+      // eslint-disable-next-line no-param-reassign
+      item.forminternalnavigation = item.forminternalnavigation.slice(0, 5);
+    }
   });
 
   return [...updatedFormVitals];

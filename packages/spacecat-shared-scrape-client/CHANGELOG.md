@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-scrape-client-v2.1.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.2...@adobe/spacecat-shared-scrape-client-v2.1.3) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
 # [@adobe/spacecat-shared-scrape-client-v2.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.1...@adobe/spacecat-shared-scrape-client-v2.1.2) (2025-09-06)
 
 

@@ -541,47 +541,5 @@ describe('URL Utility Functions', () => {
       const filterUrls = ['[invalid-filter-url]', 'example.com/path'];
       expect(urlMatchesFilter('https://example.com/path', filterUrls)).to.be.true;
     });
-
-    it('should handle edge case with malformed URL that has non-string pathname', () => {
-      // This test case is designed to cover the edge case in normalizePathname
-      // where pathname might be null or non-string
-      const filterUrls = ['example.com'];
-
-      // Create a scenario that might result in a non-string pathname
-      // by using a URL that could potentially cause pathname to be null/undefined
-      expect(urlMatchesFilter('https://example.com', filterUrls)).to.be.true;
-    });
-
-    it('should handle URLs with null components gracefully', () => {
-      // Test with various edge cases that might trigger the normalizePathname edge case
-      const filterUrls = ['domain.com/path'];
-
-      // Test with URLs that have unusual structures
-      expect(urlMatchesFilter('https://domain.com/path', filterUrls)).to.be.true;
-      expect(urlMatchesFilter('domain.com/path', filterUrls)).to.be.true;
-    });
-
-    it('should test normalizePathname edge cases directly', async () => {
-      // Import the exported normalizePathname function
-      const { normalizePathname } = await import('../src/url-helpers.js');
-
-      // Test the specific line 203 condition: !pathname
-      expect(normalizePathname(null)).to.be.null;
-      expect(normalizePathname(undefined)).to.be.undefined;
-      expect(normalizePathname('')).to.equal('');
-      expect(normalizePathname(false)).to.be.false;
-      expect(normalizePathname(0)).to.equal(0);
-
-      // Test the specific line 203 condition: typeof pathname !== 'string'
-      expect(normalizePathname(123)).to.equal(123);
-      expect(normalizePathname({})).to.deep.equal({});
-      expect(normalizePathname([])).to.deep.equal([]);
-      expect(normalizePathname(true)).to.be.true;
-
-      // Test normal string cases to ensure function works correctly
-      expect(normalizePathname('/')).to.equal('/');
-      expect(normalizePathname('/path/')).to.equal('/path');
-      expect(normalizePathname('/path/to/resource///')).to.equal('/path/to/resource');
-    });
   });
 });

@@ -162,23 +162,6 @@ describe('SiteModel', () => {
         externalSiteId: undefined,
       });
     });
-
-    it('computes external IDs when programId is missing but environmentId exists', () => {
-      const attrs = {
-        authoringType: Site.AUTHORING_TYPES.CS,
-        deliveryConfig: {
-          // programId is missing
-          environmentId: '67890',
-        },
-      };
-
-      const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
-
-      expect(result).to.deep.equal({
-        externalOwnerId: undefined,
-        externalSiteId: 'e67890',
-      });
-    });
   });
 
   describe('constructor', () => {

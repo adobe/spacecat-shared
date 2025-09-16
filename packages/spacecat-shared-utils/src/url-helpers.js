@@ -205,9 +205,6 @@ function normalizePathname(pathname) {
   return pathname.replace(/\/+$/, '');
 }
 
-// Export for testing purposes
-export { normalizePathname };
-
 /**
  * Check if a URL matches any of the filter URLs by comparing pathnames
  * @param {string} url - URL to check (format: https://domain.com/path)

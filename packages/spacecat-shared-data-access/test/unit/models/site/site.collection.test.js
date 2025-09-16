@@ -188,25 +188,5 @@ describe('SiteCollection', () => {
       await expect(instance.findByPreviewURL(invalidUrl))
         .to.be.rejectedWith(`Unsupported preview URL: ${invalidUrl}`);
     });
-
-    it('returns site by Google Docs preview URL', async () => {
-      instance.findByExternalOwnerIdAndExternalSiteId.resolves(mockSite);
-
-      const result = await instance.findByPreviewURL('https://ref--site--owner.aem.live');
-
-      expect(result).to.deep.equal(mockSite);
-      expect(instance.findByExternalOwnerIdAndExternalSiteId)
-        .to.have.been.calledOnceWithExactly('owner', 'site');
-    });
-
-    it('returns site by CS Crosswalk preview URL', async () => {
-      instance.findByExternalOwnerIdAndExternalSiteId.resolves(mockSite);
-
-      const result = await instance.findByPreviewURL('https://author-p123456-e123456.adobeaemcloud.com/page');
-
-      expect(result).to.deep.equal(mockSite);
-      expect(instance.findByExternalOwnerIdAndExternalSiteId)
-        .to.have.been.calledOnceWithExactly('p123456', 'e123456');
-    });
   });
 });

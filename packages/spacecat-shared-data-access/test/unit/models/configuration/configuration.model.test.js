@@ -282,12 +282,6 @@ describe('ConfigurationModel', () => {
   });
 
   describe('sandbox audit configuration', () => {
-    const sandboxSite = {
-      getId: () => 'sandbox-site-id',
-      getOrganizationId: () => 'sandbox-org-id',
-      isSandbox: true,
-    };
-
     beforeEach(() => {
       // Add sandbox audit config to the test configuration
       instance.state = {
@@ -323,22 +317,14 @@ describe('ConfigurationModel', () => {
       expect(instance.getEnabledSandboxAudits()).to.deep.equal(['cwv', 'alt-text']);
     });
 
-    it('updates sandbox audit config', () => {
+    it('adds new sandbox audit config', () => {
       instance.updateSandboxAuditConfig('new-audit', { expire: '5' });
       expect(instance.getSandboxAuditConfig('new-audit')).to.deep.equal({ expire: '5' });
     });
 
-    it('removes sandbox audit config', () => {
-      instance.updateSandboxAuditConfig('cwv', null);
-      expect(instance.isAuditEnabledForSandbox('cwv')).to.be.false;
-    });
-
-    it('enables handler for sandbox site regardless of other settings', () => {
-      // Even though cwv is disabled for the site in the regular handlers config
-      expect(instance.isHandlerEnabledForSite('cwv', sandboxSite)).to.be.true;
-
-      // Should still respect regular config for non-sandbox sites
-      expect(instance.isHandlerEnabledForSite('cwv', site)).to.be.false;
+    it('updates existing sandbox audit config', () => {
+      instance.updateSandboxAuditConfig('cwv', { expire: '10', enabled: false });
+      expect(instance.getSandboxAuditConfig('cwv')).to.deep.equal({ expire: '10', enabled: false });
     });
 
     it('returns empty array when no sandbox audits configured', () => {

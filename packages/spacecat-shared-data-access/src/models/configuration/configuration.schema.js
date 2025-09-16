@@ -58,7 +58,7 @@ const sandboxAuditConfigSchema = Joi.object({
 
 // Schema for the entire sandboxAudits object
 const sandboxAuditsSchema = Joi.object().pattern(
-  Joi.string().pattern(/^[a-zA-Z0-9-_]+$/), // Audit type names: alphanumeric, hyphens, underscores
+  Joi.string().pattern(/^[a-zA-Z0-9_-]+$/), // Audit type names: alphanumeric, hyphens, underscores
   sandboxAuditConfigSchema,
 ).optional();
 
@@ -114,8 +114,6 @@ const schema = new SchemaBuilder(Configuration, ConfigurationCollection)
   .addAttribute('sandboxAudits', {
     type: 'any',
     validate: (value) => {
-      if (!value) return true; // Allow null/undefined
-
       // Use Joi schema validation
       const { error } = sandboxAuditsSchema.validate(value);
       if (error) {

@@ -86,11 +86,6 @@ class Configuration extends BaseModel {
   }
 
   isHandlerEnabledForSite(type, site) {
-    // Check if it's a sandbox site and the audit type is enabled for sandboxes
-    if (site.isSandbox && this.isAuditEnabledForSandbox(type)) {
-      return true;
-    }
-
     const handler = this.getHandlers()?.[type];
     if (!handler) return false;
 
@@ -140,17 +135,12 @@ class Configuration extends BaseModel {
 
   // Update sandbox audit configuration
   // This method updates the sandbox audit configuration for a specific audit type
-  updateSandboxAuditConfig(auditType, config = {}) {
+  updateSandboxAuditConfig(auditType, config) {
     const currentSandboxAudits = this.getSandboxAudits() || { enabledAudits: {} };
-    const updatedEnabledAudits = { ...currentSandboxAudits.enabledAudits };
-
-    if (config === null) {
-      // Remove the audit type when config is null
-      delete updatedEnabledAudits[auditType];
-    } else {
-      // Add or update the audit type configuration
-      updatedEnabledAudits[auditType] = config;
-    }
+    const updatedEnabledAudits = {
+      ...currentSandboxAudits.enabledAudits,
+      [auditType]: config,
+    };
 
     const updatedSandboxAudits = {
       ...currentSandboxAudits,

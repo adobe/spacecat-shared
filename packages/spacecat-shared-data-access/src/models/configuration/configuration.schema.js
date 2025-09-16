@@ -50,10 +50,10 @@ const queueSchema = Joi.object().required();
 // Schema for individual sandbox audit configuration - simple and flexible
 const sandboxAuditConfigSchema = Joi.object({
   enabled: Joi.boolean().required(), // Required: whether audit is enabled
-  expire: Joi.alternatives().try(
+  cooldownHours: Joi.alternatives().try(
     Joi.string(), // Accept string like "3", "10"
     Joi.number().min(0), // Accept number like 3, 10
-  ).required(), // Required: rate limit time in minutes
+  ).required(), // Required: cooldown time in hours before next audit allowed
 }).unknown(true); // Allow additional properties for future extensibility
 
 // Schema for the entire sandboxAudits object

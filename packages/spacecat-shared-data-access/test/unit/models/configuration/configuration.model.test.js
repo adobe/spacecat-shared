@@ -294,7 +294,7 @@ describe('ConfigurationModel', () => {
       instance.setSandboxAudits({
         enabledAudits: {
           cwv: {
-            expire: '5',
+            cooldownHours: '5',
           },
           'alt-text': {},
         },
@@ -308,7 +308,7 @@ describe('ConfigurationModel', () => {
     });
 
     it('gets sandbox audit config', () => {
-      expect(instance.getSandboxAuditConfig('cwv')).to.deep.equal({ expire: '5' });
+      expect(instance.getSandboxAuditConfig('cwv')).to.deep.equal({ cooldownHours: '5' });
       expect(instance.getSandboxAuditConfig('alt-text')).to.deep.equal({});
       expect(instance.getSandboxAuditConfig('non-existent')).to.be.null;
     });
@@ -318,13 +318,13 @@ describe('ConfigurationModel', () => {
     });
 
     it('adds new sandbox audit config', () => {
-      instance.updateSandboxAuditConfig('new-audit', { expire: '5' });
-      expect(instance.getSandboxAuditConfig('new-audit')).to.deep.equal({ expire: '5' });
+      instance.updateSandboxAuditConfig('new-audit', { cooldownHours: '5' });
+      expect(instance.getSandboxAuditConfig('new-audit')).to.deep.equal({ cooldownHours: '5' });
     });
 
     it('updates existing sandbox audit config', () => {
-      instance.updateSandboxAuditConfig('cwv', { expire: '10', enabled: false });
-      expect(instance.getSandboxAuditConfig('cwv')).to.deep.equal({ expire: '10', enabled: false });
+      instance.updateSandboxAuditConfig('cwv', { cooldownHours: '10', enabled: false });
+      expect(instance.getSandboxAuditConfig('cwv')).to.deep.equal({ cooldownHours: '10', enabled: false });
     });
 
     it('returns empty array when no sandbox audits configured', () => {
@@ -334,8 +334,8 @@ describe('ConfigurationModel', () => {
 
     it('handles updating non-existent sandbox config', () => {
       instance.setSandboxAudits(null);
-      instance.updateSandboxAuditConfig('new-audit', { expire: '5' });
-      expect(instance.getSandboxAuditConfig('new-audit')).to.deep.equal({ expire: '5' });
+      instance.updateSandboxAuditConfig('new-audit', { cooldownHours: '5' });
+      expect(instance.getSandboxAuditConfig('new-audit')).to.deep.equal({ cooldownHours: '5' });
     });
 
     it('handles getSandboxAuditConfig when sandboxAudits is null', () => {

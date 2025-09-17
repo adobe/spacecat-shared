@@ -56,6 +56,7 @@ describe('TierClient', () => {
     getId: () => siteId,
     getName: () => 'Test Site',
     getOrganization: () => organizationInstance,
+    getOrganizationId: () => orgId,
   };
 
   // Create actual Site instance for instanceof checks
@@ -260,7 +261,7 @@ describe('TierClient', () => {
     });
 
     it('should return only entitlement when no site is provided', async () => {
-      // Create a TierClient without site
+      // Create TierClient with null site to test the else branch
       const tierClientWithoutSite = new TierClient(
         mockContext,
         organizationInstance,

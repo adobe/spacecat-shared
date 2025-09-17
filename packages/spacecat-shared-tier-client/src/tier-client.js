@@ -102,7 +102,7 @@ class TierClient {
    */
   async checkValidEntitlement() {
     try {
-      const orgId = this.organization.getId();
+      const orgId = this.site ? this.site.getOrganizationId() : this.organization.getId();
       this.log.info(`Checking for valid entitlement for org ${orgId} and product ${this.productCode}`);
 
       const entitlement = await this.Entitlement
@@ -162,7 +162,7 @@ class TierClient {
         throw new Error('Site required for creating entitlements');
       }
 
-      const orgId = this.organization.getId();
+      const orgId = this.site.getOrganizationId();
       const siteId = this.site.getId();
       this.log.info(`Creating entitlement for org ${orgId}, site ${siteId}, product ${this.productCode}, tier ${tier}`);
 

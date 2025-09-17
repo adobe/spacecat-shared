@@ -256,8 +256,6 @@ class BaseCollection {
       // This ensures complete data retrieval to prevent truncation issues
       const shouldFetchAllPages = options.fetchAllPages !== false && options.limit !== 1;
 
-      // Only log when we actually fetch multiple pages (see below)
-
       if (shouldFetchAllPages) {
         let pageCount = 1;
         const startTime = Date.now();
@@ -270,7 +268,7 @@ class BaseCollection {
           allData = allData.concat(result.data);
         }
 
-        // Log pagination completion metrics
+        // Logging for observation of pagination behavior - can be removed if not needed
         if (pageCount > 1) {
           this.log.info(`Pagination completed for ${this.entityName}`, {
             entityName: this.entityName,
@@ -280,7 +278,6 @@ class BaseCollection {
           });
         }
       } else if (options.fetchAllPages === false && result.cursor) {
-        // IMPORTANT: Log when pagination is explicitly disabled but more data exists
         this.log.warn('Data truncation risk: pagination explicitly disabled', {
           entityName: this.entityName,
           returnedRecords: allData.length,

@@ -256,13 +256,36 @@ class BaseCollection {
       // This ensures complete data retrieval to prevent truncation issues
       const shouldFetchAllPages = options.fetchAllPages !== false && options.limit !== 1;
 
+      // Only log when we actually fetch multiple pages (see below)
+
       if (shouldFetchAllPages) {
+        let pageCount = 1;
+        const startTime = Date.now();
+
         while (result.cursor) {
+          pageCount += 1;
           queryOptions.cursor = result.cursor;
           // eslint-disable-next-line no-await-in-loop
           result = await query.go(queryOptions);
           allData = allData.concat(result.data);
         }
+
+        // Log pagination completion metrics
+        if (pageCount > 1) {
+          this.log.info(`Pagination completed for ${this.entityName}`, {
+            entityName: this.entityName,
+            totalPages: pageCount,
+            totalRecords: allData.length,
+            queryDuration: Date.now() - startTime,
+          });
+        }
+      } else if (options.fetchAllPages === false && result.cursor) {
+        // IMPORTANT: Log when pagination is explicitly disabled but more data exists
+        this.log.warn('Data truncation risk: pagination explicitly disabled', {
+          entityName: this.entityName,
+          returnedRecords: allData.length,
+          hasMoreData: true,
+        });
       }
 
       if (options.limit === 1) {

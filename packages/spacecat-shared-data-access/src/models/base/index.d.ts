@@ -34,6 +34,11 @@ export interface QueryOptions {
   limit?: number;
   order?: string;
   attributes?: string[];
+  /** 
+   * Whether to automatically fetch all pages of results. Defaults to true.
+   * Set to false to only fetch the first page (for performance optimization).
+   */
+  fetchAllPages?: boolean;
 }
 
 export interface BaseCollection<T extends BaseModel> {

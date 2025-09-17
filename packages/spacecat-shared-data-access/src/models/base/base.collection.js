@@ -252,9 +252,11 @@ class BaseCollection {
       let result = await query.go(queryOptions);
       let allData = result.data;
 
-      // if the caller requests ALL pages and we're not using limit: 1,
-      // continue to fetch until there is no cursor.
-      if (options.fetchAllPages && options.limit !== 1) {
+      // By default, fetch ALL pages unless explicitly disabled or using limit: 1
+      // This ensures complete data retrieval to prevent truncation issues
+      const shouldFetchAllPages = options.fetchAllPages !== false && options.limit !== 1;
+
+      if (shouldFetchAllPages) {
         while (result.cursor) {
           queryOptions.cursor = result.cursor;
           // eslint-disable-next-line no-await-in-loop

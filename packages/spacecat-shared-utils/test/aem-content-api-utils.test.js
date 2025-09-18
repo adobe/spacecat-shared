@@ -15,7 +15,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import nock from 'nock';
-import { determineAEMCSPageId, getPageEditUrl } from '../src/aem-content-api-utils.js';
+import { determineAEMCSPageId, getPageEditUrl, CONTENT_API_PREFIX } from '../src/aem-content-api-utils.js';
 
 describe('determineAEMCSPageId', () => {
   let mockLog;
@@ -277,12 +277,12 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-abc123')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-abc123`)
       .reply(200, { id: expectedPageId });
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
     expect(result).to.equal(expectedPageId);
-    expect(mockLog.info).to.have.been.calledWith('Resolving content-page-ref via https://author.example.com/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-abc123 (preferContentApi=true)');
+    expect(mockLog.info).to.have.been.calledWith(`Resolving content-page-ref via https://author.example.com${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-abc123 (preferContentApi=true)`);
   });
 
   it('should use Content API and return page ID from JSON response', async () => {
@@ -304,7 +304,7 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-abc123')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-abc123`)
       .reply(200, { id: expectedPageId });
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
@@ -329,7 +329,7 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-no-id')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-no-id`)
       .reply(200, { name: 'some-name' });
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
@@ -354,7 +354,7 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-empty')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-empty`)
       .reply(200, {});
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
@@ -379,7 +379,7 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-fail')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-fail`)
       .reply(500, 'Internal Server Error');
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
@@ -404,7 +404,7 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-fail-no-fallback')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-fail-no-fallback`)
       .reply(500, 'Internal Server Error');
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true);
@@ -428,7 +428,7 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-network-error')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-network-error`)
       .replyWithError('Content API network error');
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true, mockLog);
@@ -534,7 +534,7 @@ describe('determineAEMCSPageId', () => {
       .reply(200, htmlContent);
 
     nock('https://author.example.com')
-      .get('/adobe/experimental/aspm-expires-20251231/pages/resolve?pageRef=content-ref-priority')
+      .get(`${CONTENT_API_PREFIX}/pages/resolve?pageRef=content-ref-priority`)
       .reply(200, { id: expectedPageId });
 
     const result = await determineAEMCSPageId(pageURL, 'https://author.example.com', 'Bearer token123', true);
@@ -588,7 +588,6 @@ describe('getPageEditUrl', () => {
   const AUTHOR_URL = 'https://author.example.com';
   const BEARER_TOKEN = 'Bearer test-token';
   const PAGE_ID = 'test-page-id';
-  const CONTENT_API_PREFIX = '/adobe/experimental/aspm-expires-20251231';
 
   beforeEach(() => {
     nock.cleanAll();

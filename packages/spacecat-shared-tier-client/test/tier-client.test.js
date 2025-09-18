@@ -128,7 +128,7 @@ describe('TierClient', () => {
     const testSiteWithOrgRef = Object.create(Site.prototype);
     Object.assign(testSiteWithOrgRef, {
       getId: () => siteId,
-      getOrganization: () => testOrganization,
+      getOrganizationId: () => orgId,
     });
 
     describe('createForOrg', () => {
@@ -165,19 +165,23 @@ describe('TierClient', () => {
 
     describe('createForSite', () => {
       it('should create TierClient for site with getOrganizationId', async () => {
+        mockDataAccess.Organization.findById.resolves(testOrganization);
         const client = await TierClient.createForSite(mockContext, testSite, productCode);
 
         expect(client).to.be.an('object');
         expect(client.checkValidEntitlement).to.be.a('function');
         expect(client.createEntitlement).to.be.a('function');
+        expect(mockDataAccess.Organization.findById).to.have.been.calledWith(orgId);
       });
 
-      it('should create TierClient for site with getOrganization', async () => {
+      it('should create TierClient for site with getOrganizationId (alternative)', async () => {
+        mockDataAccess.Organization.findById.resolves(testOrganization);
         const client = await TierClient.createForSite(mockContext, testSiteWithOrgRef, productCode);
 
         expect(client).to.be.an('object');
         expect(client.checkValidEntitlement).to.be.a('function');
         expect(client.createEntitlement).to.be.a('function');
+        expect(mockDataAccess.Organization.findById).to.have.been.calledWith(orgId);
       });
 
       it('should throw error when site is not provided', async () => {
@@ -199,7 +203,7 @@ describe('TierClient', () => {
 
       it('should throw error when dataAccess is missing', async () => {
         const invalidContext = { log: {} };
-        await expect(TierClient.createForSite(invalidContext, testSite, productCode)).to.be.rejectedWith('Cannot destructure property');
+        await expect(TierClient.createForSite(invalidContext, testSite, productCode)).to.be.rejectedWith('Cannot read properties of undefined');
       });
     });
   });

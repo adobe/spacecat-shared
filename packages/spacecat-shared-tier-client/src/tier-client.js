@@ -58,7 +58,8 @@ class TierClient {
     if (!isNonEmptyObject(context)) {
       throw new Error('Context is required');
     }
-    const organization = await site.getOrganization();
+    const organizationId = await site.getOrganizationId();
+    const organization = await context.dataAccess.Organization.findById(organizationId);
     return new TierClient(context, organization, site, productCode);
   }
 

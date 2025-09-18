@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.0.0...@adobe/spacecat-shared-tier-client-v1.0.1) (2025-09-18)
+
+
+### Bug Fixes
+
+* fix in create org entity ([#965](https://github.com/adobe/spacecat-shared/issues/965)) ([406cbf3](https://github.com/adobe/spacecat-shared/commit/406cbf3cd214f3ec3b332ca48d8a743c123a2ddd))
+
 # @adobe/spacecat-shared-tier-client-v1.0.0 (2025-09-16)
 
 

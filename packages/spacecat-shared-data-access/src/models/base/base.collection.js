@@ -256,21 +256,28 @@ class BaseCollection {
       // This ensures complete data retrieval to prevent truncation issues
       const shouldFetchAllPages = options.fetchAllPages !== false && options.limit !== 1;
 
+      // To see logs on CloudWatch, then I will remove
+      this.log.info(`🔍 PAGINATION CHECK: ${this.entityName} - records: ${result.data.length}, hasCursor: ${!!result.cursor}, fetchAll: ${shouldFetchAllPages}`);
+
       if (shouldFetchAllPages) {
         let pageCount = 1;
         const startTime = Date.now();
 
         while (result.cursor) {
           pageCount += 1;
+          // To see logs on CloudWatch, then I will remove
+          this.log.info(`📄 FETCHING PAGE ${pageCount} for ${this.entityName} - cursor exists, getting next page`);
           queryOptions.cursor = result.cursor;
           // eslint-disable-next-line no-await-in-loop
           result = await query.go(queryOptions);
           allData = allData.concat(result.data);
+          // To see logs on CloudWatch, then I will remove
+          this.log.info(`✅ PAGE ${pageCount} FETCHED for ${this.entityName} - got ${result.data.length} more records, total: ${allData.length}, stillHasCursor: ${!!result.cursor}`);
         }
 
         // Logging for observation of pagination behavior - can be removed if not needed
         if (pageCount > 1) {
-          this.log.info(`Pagination completed for ${this.entityName}`, {
+          this.log.debug(`Pagination completed for ${this.entityName}`, {
             entityName: this.entityName,
             totalPages: pageCount,
             totalRecords: allData.length,

@@ -157,7 +157,7 @@ describe('Accessor Utils', () => { /* eslint-disable no-underscore-dangle */
       expect(mockCollection.allByIndexKeys).to.have.been.calledOnceWith({ test: 'test' }, { fetchAllPages: true });
     });
 
-    it('calling accessor with all: true sets fetchAllPages: true by default', async () => {
+    it('calling accessor with all: true respects limit by setting fetchAllPages: false', async () => {
       const config = {
         collection: mockCollection,
         context: mockContext,
@@ -171,7 +171,7 @@ describe('Accessor Utils', () => { /* eslint-disable no-underscore-dangle */
       await expect(mockContext.test('test', { limit: 10 })).to.be.eventually.deep.equal([{}]);
       expect(mockCollection.allByIndexKeys).to.have.been.calledOnceWith(
         { test: 'test' },
-        { fetchAllPages: true, limit: 10 },
+        { limit: 10, fetchAllPages: false },
       );
     });
 
@@ -190,6 +190,24 @@ describe('Accessor Utils', () => { /* eslint-disable no-underscore-dangle */
       expect(mockCollection.allByIndexKeys).to.have.been.calledOnceWith(
         { test: 'test' },
         { fetchAllPages: false, limit: 10 },
+      );
+    });
+
+    it('calling accessor with all: true allows explicit fetchAllPages: true override', async () => {
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'test',
+        requiredKeys: ['test'],
+        all: true,
+      };
+
+      createAccessor(config);
+
+      await expect(mockContext.test('test', { fetchAllPages: true, limit: 10 })).to.be.eventually.deep.equal([{}]);
+      expect(mockCollection.allByIndexKeys).to.have.been.calledOnceWith(
+        { test: 'test' },
+        { fetchAllPages: true, limit: 10 },
       );
     });
 

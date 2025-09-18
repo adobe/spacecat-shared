@@ -131,7 +131,10 @@ export function createAccessor(config) { /* eslint-disable no-underscore-dangle 
       const { keys, options } = parseAccessorArgs(collection, requiredKeys, args);
       const allKeys = { ...foreignKeys, ...keys };
       const finalOptions = all
-        ? { fetchAllPages: options?.fetchAllPages ?? true, ...options }
+        ? {
+          ...options,
+          fetchAllPages: options?.fetchAllPages ?? !options?.limit,
+        }
         : options;
 
       result = all

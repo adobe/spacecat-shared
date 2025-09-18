@@ -35,8 +35,10 @@ export interface QueryOptions {
   order?: string;
   attributes?: string[];
   /** 
-   * Whether to automatically fetch all pages of results. Defaults to true.
-   * Set to false to only fetch the first page (for performance optimization).
+   * Whether to automatically fetch all pages of results. 
+   * - `true`: Always paginate through all results
+   * - `false`: Only fetch first page
+   * - `undefined`: Auto-paginate when no limit specified, respect limits otherwise
    */
   fetchAllPages?: boolean;
 }

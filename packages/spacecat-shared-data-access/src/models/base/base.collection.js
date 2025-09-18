@@ -252,8 +252,10 @@ class BaseCollection {
       let result = await query.go(queryOptions);
       let allData = result.data;
 
-      // Auto-paginate by default only when no limit is specified, or when explicitly opted in
-      // This prevents breaking callers who expect limited results
+      // Smart pagination behavior:
+      // - fetchAllPages: true → Always paginate through all results
+      // - fetchAllPages: false → Only fetch first page
+      // - undefined → Auto-paginate when no limit specified, respect limits otherwise
       const shouldFetchAllPages = options.fetchAllPages === true
                                  || (options.fetchAllPages !== false && !options.limit);
 

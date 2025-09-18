@@ -252,9 +252,10 @@ class BaseCollection {
       let result = await query.go(queryOptions);
       let allData = result.data;
 
-      // By default, fetch ALL pages unless explicitly disabled or using limit: 1
-      // This ensures complete data retrieval to prevent truncation issues
-      const shouldFetchAllPages = options.fetchAllPages !== false && options.limit !== 1;
+      // Auto-paginate by default only when no limit is specified, or when explicitly opted in
+      // This prevents breaking callers who expect limited results
+      const shouldFetchAllPages = options.fetchAllPages === true
+                                 || (options.fetchAllPages !== false && !options.limit);
 
       if (shouldFetchAllPages) {
         let pageCount = 1;
@@ -268,7 +269,7 @@ class BaseCollection {
           allData = allData.concat(result.data);
         }
 
-        // Debug logging to track pagination behavior without consuming Coralogix quota
+        // Debug logging to track pagination behavior
         if (pageCount > 1) {
           this.log.debug(`Pagination completed for ${this.entityName}`, {
             entityName: this.entityName,

@@ -154,7 +154,61 @@ describe('Accessor Utils', () => { /* eslint-disable no-underscore-dangle */
 
       await expect(mockContext.test('test')).to.be.eventually.deep.equal([{}]);
       expect(mockCollection.schema.getAttribute).to.have.been.calledOnceWith('test');
-      expect(mockCollection.allByIndexKeys).to.have.been.calledOnceWith({ test: 'test' });
+      expect(mockCollection.allByIndexKeys).to.have.been.calledOnceWith({ test: 'test' }, { fetchAllPages: true });
+    });
+
+    it('calling accessor with all: true sets fetchAllPages: true by default', async () => {
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'test',
+        requiredKeys: ['test'],
+        all: true,
+      };
+
+      createAccessor(config);
+
+      await expect(mockContext.test('test', { limit: 10 })).to.be.eventually.deep.equal([{}]);
+      expect(mockCollection.allByIndexKeys).to.have.been.calledOnceWith(
+        { test: 'test' },
+        { fetchAllPages: true, limit: 10 },
+      );
+    });
+
+    it('calling accessor with all: true respects explicit fetchAllPages: false', async () => {
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'test',
+        requiredKeys: ['test'],
+        all: true,
+      };
+
+      createAccessor(config);
+
+      await expect(mockContext.test('test', { fetchAllPages: false, limit: 10 })).to.be.eventually.deep.equal([{}]);
+      expect(mockCollection.allByIndexKeys).to.have.been.calledOnceWith(
+        { test: 'test' },
+        { fetchAllPages: false, limit: 10 },
+      );
+    });
+
+    it('calling accessor with all: false does not add fetchAllPages option', async () => {
+      const config = {
+        collection: mockCollection,
+        context: mockContext,
+        name: 'test',
+        requiredKeys: ['test'],
+        all: false,
+      };
+
+      createAccessor(config);
+
+      await expect(mockContext.test('test', { limit: 10 })).to.be.eventually.deep.equal({});
+      expect(mockCollection.findByIndexKeys).to.have.been.calledOnceWith(
+        { test: 'test' },
+        { limit: 10 },
+      );
     });
 
     it('calling accessor calls findBYId', async () => {

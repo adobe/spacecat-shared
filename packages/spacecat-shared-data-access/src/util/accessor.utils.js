@@ -130,10 +130,13 @@ export function createAccessor(config) { /* eslint-disable no-underscore-dangle 
     } else {
       const { keys, options } = parseAccessorArgs(collection, requiredKeys, args);
       const allKeys = { ...foreignKeys, ...keys };
+      const finalOptions = all
+        ? { fetchAllPages: options?.fetchAllPages ?? true, ...options }
+        : options;
 
       result = all
-        ? collection.allByIndexKeys(allKeys, options)
-        : collection.findByIndexKeys(allKeys, options);
+        ? collection.allByIndexKeys(allKeys, finalOptions)
+        : collection.findByIndexKeys(allKeys, finalOptions);
     }
 
     result = await result;

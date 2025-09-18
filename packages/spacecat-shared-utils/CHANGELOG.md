@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.50.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.6...@adobe/spacecat-shared-utils-v1.50.7) (2025-09-18)
+
+
+### Bug Fixes
+
+* need to switch to /adobe/pages because experimental endpoints do not exist in AMS ([#967](https://github.com/adobe/spacecat-shared/issues/967)) ([73a7238](https://github.com/adobe/spacecat-shared/commit/73a7238a936cc1a656c55f456f084026327fbb87))
+
 # [@adobe/spacecat-shared-utils-v1.50.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.5...@adobe/spacecat-shared-utils-v1.50.6) (2025-09-16)
 
 

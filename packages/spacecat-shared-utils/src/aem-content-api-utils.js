@@ -12,7 +12,8 @@
 
 import { fetch } from './adobe-fetch.js';
 
-const CONTENT_API_PREFIX = '/adobe/experimental/aspm-expires-20251231';
+export const CONTENT_API_PREFIX = '/adobe';
+// export const CONTENT_API_PREFIX = '${CONTENT_API_PREFIX}';
 
 /**
  * Determines the AEM CS/AMS page ID for Content API, from the page URL

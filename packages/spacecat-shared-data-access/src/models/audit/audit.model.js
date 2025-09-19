@@ -59,6 +59,7 @@ class Audit extends BaseModel {
     PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
     PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
     READABILITY: 'readability',
+    PRERENDER: 'prerender',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

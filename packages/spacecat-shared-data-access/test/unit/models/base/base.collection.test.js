@@ -797,6 +797,50 @@ describe('BaseCollection', () => {
       const secondCallArgs = goStub.secondCall.args[0];
       expect(secondCallArgs).to.deep.include({ order: 'desc', cursor: 'key1' });
     });
+
+    it('fetches all pages by default (system-wide fix)', async () => {
+      const firstResult = { data: [mockRecord], cursor: 'key1' };
+      const secondRecord = { id: '2', foo: 'bar' };
+      const secondResult = { data: [secondRecord] };
+
+      const goStub = stub();
+      goStub.onFirstCall().resolves(firstResult);
+      goStub.onSecondCall().resolves(secondResult);
+
+      mockElectroService.entities.mockEntityModel.query.all.returns({
+        go: goStub,
+      });
+
+      // No fetchAllPages specified - should default to true
+      const result = await baseCollectionInstance.all();
+      expect(result).to.be.an('array').that.has.length(2);
+      expect(result[0].record).to.deep.include(mockRecord);
+      expect(result[1].record).to.deep.include(secondRecord);
+
+      expect(goStub.callCount).to.equal(2);
+
+      const secondCallArgs = goStub.secondCall.args[0];
+      expect(secondCallArgs).to.deep.include({ order: 'desc', cursor: 'key1' });
+    });
+
+    it('allows opting out of pagination with fetchAllPages: false', async () => {
+      const firstResult = { data: [mockRecord], cursor: 'key1' };
+
+      const goStub = stub();
+      goStub.onFirstCall().resolves(firstResult);
+
+      mockElectroService.entities.mockEntityModel.query.all.returns({
+        go: goStub,
+      });
+
+      // Explicitly disable pagination
+      const result = await baseCollectionInstance.all({}, { fetchAllPages: false });
+      expect(result).to.be.an('array').that.has.length(1);
+      expect(result[0].record).to.deep.include(mockRecord);
+
+      // Should only call once (not fetch additional pages)
+      expect(goStub.callCount).to.equal(1);
+    });
   });
 
   describe('allByIndexKeys', () => {

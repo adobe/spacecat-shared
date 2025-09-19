@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.64.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.63.0...@adobe/spacecat-shared-data-access-v2.64.0) (2025-09-19)
+
+
+### Features
+
+* adding new prerender audit type ([#959](https://github.com/adobe/spacecat-shared/issues/959)) ([7bebd89](https://github.com/adobe/spacecat-shared/commit/7bebd8992fa997f8dcb8db4c736b49d705fef905))
+
 # [@adobe/spacecat-shared-data-access-v2.63.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.62.2...@adobe/spacecat-shared-data-access-v2.63.0) (2025-09-19)
 
 

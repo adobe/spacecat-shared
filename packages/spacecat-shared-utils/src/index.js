@@ -94,3 +94,5 @@ export {
 export { detectAEMVersion, DELIVERY_TYPES } from './aem.js';
 
 export { determineAEMCSPageId, getPageEditUrl } from './aem-content-api-utils.js';
+
+export { calculateConfidence } from './experiment-stats.js';

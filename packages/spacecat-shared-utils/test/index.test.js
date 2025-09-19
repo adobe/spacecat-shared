@@ -82,6 +82,7 @@ describe('Index Exports', () => {
     'determineAEMCSPageId',
     'DELIVERY_TYPES',
     'getPageEditUrl',
+    'calculateConfidence',
   ];
 
   it('exports all expected functions', () => {

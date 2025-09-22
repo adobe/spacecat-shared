@@ -45,7 +45,7 @@
     "pluralize": "8.0.0"
   },
   "devDependencies": {
-    "@adobe/spacecat-shared-tier-client": "1.0.0",
+    "@adobe/spacecat-shared-tier-client": "1.1.0",
     "chai": "6.0.1",
     "chai-as-promised": "8.0.2",
     "dynamo-db-local": "9.6.0",

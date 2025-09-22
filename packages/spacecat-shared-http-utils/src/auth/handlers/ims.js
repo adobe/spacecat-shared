@@ -61,7 +61,6 @@ const transformProfile = (payload) => {
 
   profile.email = payload.user_id;
   profile.trial_email = payload.email;
-  profile.provider = 'IMS';
   profile.first_name = payload.first_name;
   profile.last_name = payload.last_name;
   IGNORED_PROFILE_PROPS.forEach((prop) => delete profile[prop]);

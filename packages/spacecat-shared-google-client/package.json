@@ -41,7 +41,7 @@
     "@aws-sdk/client-secrets-manager": "3.893.0",
     "aws-xray-sdk": "3.10.3",
     "google-auth-library": "10.3.0",
-    "googleapis": "159.0.0"
+    "googleapis": "160.0.0"
   },
   "devDependencies": {
     "chai": "6.0.1",

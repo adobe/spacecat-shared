@@ -25,6 +25,7 @@ export {
   filterHtmlContent,
   stripTagsToText,
   extractWordCount,
+  filterNavigationAndFooterBrowser,
 } from './html-filter.js';
 
 export {

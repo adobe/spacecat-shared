@@ -115,11 +115,12 @@ function removeCookieBanners(element) {
 }
 
 /**
- * Remove navigation and footer elements (browser environment)
+ * Remove navigation and footer elements from DOM element (browser environment)
+ * For Chrome extension DOM manipulation use cases
  * Optimized: single DOM query instead of 35 separate queries (35x performance improvement)
  * @param {Element} element - DOM element to filter
  */
-function filterNavigationAndFooterBrowser(element) {
+export function filterNavigationAndFooterBrowser(element) {
   // Use pre-optimized selector for single efficient DOM query
   const elements = element.querySelectorAll(NAVIGATION_FOOTER_SELECTOR);
   elements.forEach((el) => el.remove());

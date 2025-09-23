@@ -27,6 +27,7 @@ import {
   stripTagsToText,
   filterHtmlContent,
   extractWordCount,
+  filterNavigationAndFooterBrowser,
   tokenize,
   normalizeText,
   countWords,
@@ -52,6 +53,7 @@ const HTMLAnalyzer = {
   stripTagsToText,
   filterHtmlContent,
   extractWordCount,
+  filterNavigationAndFooterBrowser,
 
   // Text processing functions
   tokenize,

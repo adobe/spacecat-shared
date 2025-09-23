@@ -750,5 +750,226 @@ describe('Site IT', async () => {
       // Clean up
       await updatedSite.remove();
     });
+
+    describe('CODE Import Type Integration Tests', () => {
+      it('creates a site with CODE import configuration', async () => {
+        const newSiteData = {
+          baseURL: 'https://code-import-example.com',
+          gitHubURL: 'https://github.com/some-org/code-import-test-repo',
+          name: 'code-import-test-site',
+          organizationId: sampleData.organizations[0].getId(),
+          isLive: true,
+          isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+          code: {
+            type: 'github',
+            owner: 'some-org',
+            repo: 'code-import-test-repo',
+            ref: 'main',
+            url: 'https://github.com/some-org/code-import-test-repo',
+          },
+          config: {
+            imports: [{
+              type: 'code',
+              destinations: ['default'],
+              sources: ['github'],
+              enabled: true,
+              installationId: 'github-app-12345',
+            }],
+          },
+        };
+
+        const site = await Site.create(newSiteData);
+        const config = site.getConfig();
+
+        expect(config.getImports()).to.deep.equal(newSiteData.config.imports);
+        expect(config.isImportEnabled('code')).to.be.true;
+        expect(config.getImportConfig('code')).to.deep.equal(newSiteData.config.imports[0]);
+        expect(site.getCode()).to.deep.equal(newSiteData.code);
+
+        // Clean up
+        await site.remove();
+      });
+
+      it('updates site CODE import configuration with different sources', async () => {
+        const site = await Site.create({
+          baseURL: 'https://code-update-example.com',
+          gitHubURL: 'https://github.com/some-org/code-update-test-repo',
+          name: 'code-update-test-site',
+          organizationId: sampleData.organizations[0].getId(),
+          isLive: true,
+          isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+          code: {
+            type: 'github',
+            owner: 'some-org',
+            repo: 'code-update-test-repo',
+            ref: 'main',
+            url: 'https://github.com/some-org/code-update-test-repo',
+          },
+          config: {
+            imports: [{
+              type: 'code',
+              destinations: ['default'],
+              sources: ['github'],
+              enabled: true,
+              installationId: 'github-app-12345',
+            }],
+          },
+        });
+
+        // Update to bitbucket source
+        const config = site.getConfig();
+        config.enableImport('code', {
+          sources: ['bitbucket'],
+          installationId: 'bitbucket-app-67890',
+        });
+
+        // Update code attribute to match
+        site.setCode({
+          type: 'bitbucket',
+          owner: 'some-org',
+          repo: 'code-update-test-repo',
+          ref: 'develop',
+          url: 'https://bitbucket.org/some-org/code-update-test-repo',
+        });
+
+        site.setConfig(Config.toDynamoItem(config));
+        await site.save();
+
+        const updatedSite = await Site.findById(site.getId());
+        const updatedConfig = updatedSite.getConfig();
+
+        expect(updatedConfig.getImportConfig('code')).to.deep.equal({
+          type: 'code',
+          destinations: ['default'],
+          sources: ['bitbucket'],
+          enabled: true,
+          installationId: 'bitbucket-app-67890',
+        });
+        expect(updatedSite.getCode().type).to.equal('bitbucket');
+
+        // Clean up
+        await updatedSite.remove();
+      });
+
+      it('handles CODE import with gitlab source', async () => {
+        const site = await Site.create({
+          baseURL: 'https://gitlab-code-example.com',
+          gitHubURL: 'https://gitlab.com/some-org/gitlab-code-test-repo',
+          name: 'gitlab-code-test-site',
+          organizationId: sampleData.organizations[0].getId(),
+          isLive: true,
+          isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+          code: {
+            type: 'gitlab',
+            owner: 'some-org',
+            repo: 'gitlab-code-test-repo',
+            ref: 'feature-branch',
+            url: 'https://gitlab.com/some-org/gitlab-code-test-repo',
+          },
+        });
+
+        const config = site.getConfig();
+        config.enableImport('code', {
+          sources: ['gitlab'],
+          installationId: 'gitlab-app-54321',
+        });
+
+        site.setConfig(Config.toDynamoItem(config));
+        await site.save();
+
+        const updatedSite = await Site.findById(site.getId());
+        const updatedConfig = updatedSite.getConfig();
+
+        expect(updatedConfig.isImportEnabled('code')).to.be.true;
+        expect(updatedConfig.getImportConfig('code').sources).to.deep.equal(['gitlab']);
+        expect(updatedSite.getCode().type).to.equal('gitlab');
+
+        // Clean up
+        await updatedSite.remove();
+      });
+
+      it('disables CODE import while keeping code attribute', async () => {
+        const site = await Site.create({
+          baseURL: 'https://disable-code-example.com',
+          gitHubURL: 'https://github.com/some-org/disable-code-test-repo',
+          name: 'disable-code-test-site',
+          organizationId: sampleData.organizations[0].getId(),
+          isLive: true,
+          isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+          code: {
+            type: 'github',
+            owner: 'some-org',
+            repo: 'disable-code-test-repo',
+            ref: 'main',
+            url: 'https://github.com/some-org/disable-code-test-repo',
+          },
+          config: {
+            imports: [{
+              type: 'code',
+              destinations: ['default'],
+              sources: ['github'],
+              enabled: true,
+              installationId: 'github-app-12345',
+            }],
+          },
+        });
+
+        const originalCode = site.getCode();
+        const config = site.getConfig();
+        config.disableImport('code');
+
+        site.setConfig(Config.toDynamoItem(config));
+        await site.save();
+
+        const updatedSite = await Site.findById(site.getId());
+        const updatedConfig = updatedSite.getConfig();
+
+        expect(updatedConfig.isImportEnabled('code')).to.be.false;
+        expect(updatedSite.getCode()).to.deep.equal(originalCode); // Code attribute should remain
+
+        // Clean up
+        await updatedSite.remove();
+      });
+
+      it('validates CODE import configuration with invalid source', async () => {
+        const site = await Site.create({
+          baseURL: 'https://invalid-code-example.com',
+          gitHubURL: 'https://github.com/some-org/invalid-code-test-repo',
+          name: 'invalid-code-test-site',
+          organizationId: sampleData.organizations[0].getId(),
+          isLive: true,
+          isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+        });
+
+        const config = site.getConfig();
+
+        expect(() => config.enableImport('code', {
+          sources: ['invalid-source'],
+        })).to.throw('Invalid import config');
+
+        // Clean up
+        await site.remove();
+      });
+
+      it('validates CODE import configuration with multiple sources', async () => {
+        const site = await Site.create({
+          baseURL: 'https://multi-source-code-example.com',
+          gitHubURL: 'https://github.com/some-org/multi-source-code-test-repo',
+          name: 'multi-source-code-test-site',
+          organizationId: sampleData.organizations[0].getId(),
+          isLive: true,
+          isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+        });
+
+        const config = site.getConfig();
+
+        expect(() => config.enableImport('code', {
+          sources: ['github', 'bitbucket'],
+        })).to.throw('Invalid import config');
+
+        // Clean up
+        await site.remove();
+      });
+    });
   });
 });

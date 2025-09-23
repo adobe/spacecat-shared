@@ -26,7 +26,6 @@ import KeyEventCollection from '../key-event/key-event.collection.js';
 import LatestAuditCollection from '../latest-audit/latest-audit.collection.js';
 import OpportunityCollection from '../opportunity/opportunity.collection.js';
 import OrganizationCollection from '../organization/organization.collection.js';
-import OrganizationIdentityProviderCollection from '../organization-identity-provider/organization-identity-provider.collection.js';
 import ScrapeJobCollection from '../scrape-job/scrape-job.collection.js';
 import ScrapeUrlCollection from '../scrape-url/scrape-url.collection.js';
 import SiteCandidateCollection from '../site-candidate/site-candidate.collection.js';
@@ -53,7 +52,6 @@ import KeyEventSchema from '../key-event/key-event.schema.js';
 import LatestAuditSchema from '../latest-audit/latest-audit.schema.js';
 import OpportunitySchema from '../opportunity/opportunity.schema.js';
 import OrganizationSchema from '../organization/organization.schema.js';
-import OrganizationIdentityProviderSchema from '../organization-identity-provider/organization-identity-provider.schema.js';
 import ScrapeJobSchema from '../scrape-job/scrape-job.schema.js';
 import ScrapeUrlSchema from '../scrape-url/scrape-url.schema.js';
 import SiteSchema from '../site/site.schema.js';
@@ -161,10 +159,6 @@ EntityRegistry.registerEntity(KeyEventSchema, KeyEventCollection);
 EntityRegistry.registerEntity(LatestAuditSchema, LatestAuditCollection);
 EntityRegistry.registerEntity(OpportunitySchema, OpportunityCollection);
 EntityRegistry.registerEntity(OrganizationSchema, OrganizationCollection);
-EntityRegistry.registerEntity(
-  OrganizationIdentityProviderSchema,
-  OrganizationIdentityProviderCollection,
-);
 EntityRegistry.registerEntity(ScrapeJobSchema, ScrapeJobCollection);
 EntityRegistry.registerEntity(ScrapeUrlSchema, ScrapeUrlCollection);
 EntityRegistry.registerEntity(SiteSchema, SiteCollection);

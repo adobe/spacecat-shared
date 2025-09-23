@@ -10,10 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import * as z from 'zod';
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { llmoConfig } from './schemas.js';
 
 /**
- * @typedef {Object} LLMOConfig
+ * @import { S3Client } from "@aws-sdk/client-s3"
+ * @import { LLMOConfig } from "./schemas.js"
  */
 
 /**
@@ -29,69 +31,88 @@ export function lmmoConfigDir(siteId) {
  * @returns {string} The latest configuration file path for the given site ID.
  */
 export function llmoConfigPath(siteId) {
-  // TODO
+  return `${lmmoConfigDir(siteId)}/lmmo-config.json`;
+}
+
+/**
+ * Returns the default LLMO configuration.
+ * @returns {LLMOConfig} The default configuration object.
+ */
+export function defaultConfig() {
+  return {
+    entities: {},
+    brands: {
+      aliases: [],
+    },
+    competitors: {
+      competitors: [],
+    },
+  };
+}
+
+/**
+ * Reads the LLMO configuration for a given site.
+ * Returns an empty configuration if the configuration does not exist.
+ *
+ * @param {string} sideId The ID of the site.
+ * @param {S3Client} s3Client The S3 client to use for reading the configuration.
+ * @param {object} [options]
+ * @param {string} [options.version] Optional version ID of the configuration to read.
+ *        Defaults to the latest version.
+ * @param {string} [options.s3Bucket] Optional S3 bucket name.
+ * @returns {Promise<{config: LLMOConfig, exists: boolean}>} The configuration object and
+ *        a flag indicating if it existed.
+ */
+export async function readConfig(sideId, s3Client, options) {
+  const version = options?.version;
+  const s3Bucket = options?.s3Bucket || process.env.S3_BUCKET_NAME;
+
+  const getObjectCommand = new GetObjectCommand({
+    Bucket: s3Bucket,
+    Key: llmoConfigPath(sideId),
+    VersionId: version,
+  });
+  let res;
+  try {
+    res = await s3Client.send(getObjectCommand);
+  } catch (e) {
+    if (e.name === 'NoSuchKey' || e.name === 'NotFound') {
+      // Config does not exist yet. Return empty config.
+      return { config: defaultConfig(), exists: false };
+    }
+    throw e;
+  }
+
+  const body = res.Body;
+  if (!body) {
+    throw new Error('LLMO config body is empty');
+  }
+  const text = await body.transformToString();
+  const config = llmoConfig.parse(JSON.parse(text));
+  return { config, exists: true };
 }
 
 /**
  * Writes the LLMO configuration for a given site.
  * @param {string} siteId The ID of the site.
  * @param {LLMOConfig} config The configuration object to write.
- * @returns {Promise<string>} The version of the configuration written.
+ * @param {S3Client} s3Client The S3 client to use for reading the configuration.
+ * @param {object} [options]
+ * @param {string} [options.s3Bucket] Optional S3 bucket name.
+ * @returns {Promise<{ version: string }>} The version of the configuration written.
  */
-export async function writeConfig(siteId, config) {
-  // TODO
+export async function writeConfig(siteId, config, s3Client, options) {
+  const s3Bucket = options?.s3Bucket || process.env.S3_BUCKET_NAME;
+
+  const putObjectCommand = new PutObjectCommand({
+    Bucket: s3Bucket,
+    Key: llmoConfigPath(siteId),
+    Body: JSON.stringify(config, null, 2),
+    ContentType: 'application/json',
+  });
+  const res = await s3Client.send(putObjectCommand);
+  if (!res.VersionId) {
+    throw new Error('Failed to get version ID after writing LLMO config');
+  }
+  return { version: res.VersionId };
 }
-
-// ===== SCHEMA DEFINITION ====================================================
-// This schema must be forward- and backward-compatible when making changes.
-// This means:
-// - Always wrap arrays in an object, so that extra properties can be added later.
-// - When using unions, always include a catchall case to cover unknown future cases.
-// - Always allow extra properties in objects, so that future config versions don't break parsing.
-//   (this is the default. Do not add `.strict()`!)
-// - it is ok to add new optional properties to objects, but not to remove existing ones.
-// - enums (z.enum([...])) are not forward-compatible.
-//   Use z.string() or `z.union([..., z.string()])` instead.
-// - never rename properties, only add new ones.
-// - never broaden or narrow types.
-//   E.g., don't change `z.string()` to `z.union([z.string(), z.number()])` or vice versa.
-//   If you anticipate that need, use the union from the start.
-// ============================================================================
-
-const nonEmptyString = z.string().min(1);
-
-const entity = z.discriminatedUnion(
-  'type',
-  [
-    z.object({ type: z.literal('category'), name: nonEmptyString }),
-    z.object({ type: z.literal('topic'), name: nonEmptyString }),
-    z.object({ type: nonEmptyString }),
-  ],
-);
-
-const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
-
-export const llmoConfig = z.object({
-  entities: z.record(z.uuid(), entity),
-  brands: z.object({
-    aliases: z.array(
-      z.object({
-        aliases: z.array(nonEmptyString),
-        category: z.uuid(),
-        region: z.union([region, z.array(region)]),
-        topic: z.uuid(),
-      }),
-    ),
-  }),
-  competitors: z.object({
-    competitors: z.array(
-      z.object({
-        category: z.uuid(),
-        region: z.union([region, z.array(region)]),
-        name: nonEmptyString,
-        aliases: z.array(nonEmptyString),
-        urls: z.array(z.url().optional()),
-      }),
-    ),
-  }),
-});

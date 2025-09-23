@@ -16,6 +16,7 @@
  */
 
 import { isBrowser } from './utils.js';
+import { tokenize } from './tokenizer.js';
 
 // Optimized navigation and footer selectors - combined for single DOM query performance
 // Ordered by frequency: semantic elements (most common) → classes → IDs → ARIA (least common)
@@ -262,12 +263,12 @@ export function extractWordCount(htmlContent, ignoreNavFooter = true) {
   if (textContent && typeof textContent.then === 'function') {
     // Node.js - async
     return textContent.then((text) => {
-      const words = text.trim().split(/\s+/).filter((word) => word.length > 0);
-      return { word_count: words.length };
+      const wordCount = tokenize(text, 'word').length;
+      return { word_count: wordCount };
     });
   } else {
     // Browser - sync
-    const words = textContent.trim().split(/\s+/).filter((word) => word.length > 0);
-    return { word_count: words.length };
+    const wordCount = tokenize(textContent, 'word').length;
+    return { word_count: wordCount };
   }
 }

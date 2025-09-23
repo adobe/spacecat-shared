@@ -38,7 +38,6 @@ export {
   diffTokens,
   generateDiffReport,
   calculateSimilarity,
-  generateHtmlDiff,
 } from './diff-engine.js';
 
 export {
@@ -52,10 +51,6 @@ export {
   pct,
   formatNumberToK,
   isBrowser,
-  isNode,
-  safeJsonParse,
-  debounce,
-  throttle,
 } from './utils.js';
 
 // analyzeVisibility() removed - use analyzeTextComparison() directly

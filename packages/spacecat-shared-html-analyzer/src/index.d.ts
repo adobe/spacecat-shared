@@ -36,25 +36,6 @@ export function formatNumberToK(num: number): string;
  */
 export function isBrowser(): boolean;
 
-/**
- * Check if code is running in Node.js environment
- */
-export function isNode(): boolean;
-
-/**
- * Safe JSON parse with fallback
- */
-export function safeJsonParse(str: string, fallback?: any): any;
-
-/**
- * Debounce function calls
- */
-export function debounce(func: Function, wait: number): Function;
-
-/**
- * Throttle function calls
- */
-export function throttle(func: Function, limit: number): Function;
 
 /** TOKENIZATION FUNCTIONS */
 
@@ -93,10 +74,7 @@ interface DiffReport {
   summary: string;
 }
 
-interface HtmlDiff {
-  leftHtml: string;
-  rightHtml: string;
-}
+// HtmlDiff interface removed - was unused
 
 /**
  * Generate LCS-based diff between two strings
@@ -113,10 +91,7 @@ export function generateDiffReport(initText: string, finText: string, mode?: "wo
  */
 export function calculateSimilarity(text1: string, text2: string, mode?: "word" | "line"): number;
 
-/**
- * Generate HTML diff visualization
- */
-export function generateHtmlDiff(diffOps: DiffOperation[], mode?: "word" | "line"): HtmlDiff;
+// generateHtmlDiff() removed - was unused
 
 /** HTML FILTERING FUNCTIONS */
 

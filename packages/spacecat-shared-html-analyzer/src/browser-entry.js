@@ -34,15 +34,10 @@ import {
   diffTokens,
   generateDiffReport,
   calculateSimilarity,
-  generateHtmlDiff,
   hashDJB2,
   pct,
   formatNumberToK,
   isBrowser,
-  isNode,
-  safeJsonParse,
-  debounce,
-  throttle,
 } from './index.js';
 
 // Create global object for Chrome extension
@@ -68,17 +63,12 @@ const HTMLAnalyzer = {
   diffTokens,
   generateDiffReport,
   calculateSimilarity,
-  generateHtmlDiff,
 
   // Utility functions
   hashDJB2,
   pct,
   formatNumberToK,
   isBrowser,
-  isNode,
-  safeJsonParse,
-  debounce,
-  throttle,
 
   // Version info
   version: '1.0.0',

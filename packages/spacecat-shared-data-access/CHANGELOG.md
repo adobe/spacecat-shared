@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.64.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.1...@adobe/spacecat-shared-data-access-v2.64.2) (2025-09-23)
+
+
+### Bug Fixes
+
+* remove IDP support ([#977](https://github.com/adobe/spacecat-shared/issues/977)) ([f2b4ad9](https://github.com/adobe/spacecat-shared/commit/f2b4ad95feeb6755cb6203c343c0ae4552cf8a76))
+
 # [@adobe/spacecat-shared-data-access-v2.64.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.0...@adobe/spacecat-shared-data-access-v2.64.1) (2025-09-20)
 
 

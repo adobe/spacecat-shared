@@ -187,6 +187,7 @@ describe('AuditModel', () => {
       PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
       READABILITY: 'readability',
       PRERENDER: 'prerender',
+      SUMMARIZATION: 'summarization',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

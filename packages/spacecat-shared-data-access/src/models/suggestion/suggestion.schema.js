@@ -26,7 +26,7 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 
 const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
   .addReference('belongs_to', 'Opportunity', ['status', 'rank'])
-  .addReference('belongs_to', 'FixEntity', ['updatedAt'], { required: false })
+  .addReference('has_many', 'FixEntitySuggestion')
   .addAttribute('type', {
     type: Object.values(Suggestion.TYPES),
     required: true,

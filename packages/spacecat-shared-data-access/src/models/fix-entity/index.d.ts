@@ -11,7 +11,7 @@
  */
 
 import type {
-  BaseCollection, BaseModel, Opportunity, Suggestion,
+  BaseCollection, BaseModel, Opportunity, FixEntitySuggestion,
 } from '../index';
 
 export interface FixEntity extends BaseModel {
@@ -28,8 +28,7 @@ export interface FixEntity extends BaseModel {
   setPublishedAt(value: string): this;
   getStatus(): string;
   setStatus(value: string): this;
-  getSuggestions(): Promise<Suggestion[]>;
-  getSuggestionsByUpdatedAt(updatedAt: string): Promise<Suggestion[]>;
+  getFixEntitySuggestions(): Promise<FixEntitySuggestion[]>;
   getType(): string;
 }
 

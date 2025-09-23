@@ -10,18 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Opportunity } from '../index';
+import type { BaseCollection, BaseModel, Opportunity, FixEntitySuggestion } from '../index';
 
 export interface Suggestion extends BaseModel {
   getData(): object;
   getKpiDeltas(): object;
   getOpportunity(): Promise<Opportunity>;
   getOpportunityId(): string;
-  getFixEntityId(): string;
-  getFixEntity(): Promise<object>;
   getRank(): number;
   getStatus(): string;
   getType(): string;
+  getFixEntitySuggestions(): Promise<FixEntitySuggestion[]>;
   setData(data: object): Suggestion;
   setKpiDeltas(kpiDeltas: object): Suggestion;
   setOpportunityId(opportunityId: string): Suggestion;

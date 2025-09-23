@@ -54,6 +54,7 @@
     "@json2csv/plainjs": "7.0.6",
     "aws-xray-sdk": "3.10.3",
     "date-fns": "4.1.0",
-    "validator": "^13.15.15"
+    "validator": "^13.15.15",
+    "zod": "4.1.11"
   }
 }

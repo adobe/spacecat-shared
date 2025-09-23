@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -17,30 +17,25 @@
 
 import { stripTagsToText } from './html-filter.js';
 import { tokenize } from './tokenizer.js';
-import { generateDiffReport, calculateSimilarity } from './diff-engine.js';
-import { hashDJB2, formatNumberToK, pct } from './utils.js';
+import { generateDiffReport } from './diff-engine.js';
+import { hashDJB2, pct } from './utils.js';
 
 /**
- * Calculate citation readability score (how well AI can cite the content)
- * @param {number} initialWordCount - Word count in initial HTML
- * @param {number} finalWordCount - Word count in final HTML
- * @returns {number} Citation readability score (0-100)
- */
-export function calculateCitationReadability(initialWordCount, finalWordCount) {
-  if (finalWordCount === 0) return 100; // If there's no final content, initial is fully visible
-  return Math.min(100, (initialWordCount / finalWordCount) * 100);
-}
-
-/**
- * Comprehensive analysis between initial and final HTML content
+ * Comprehensive text-only analysis between initial and final HTML
  * @param {string} initHtml - Initial HTML content (what crawlers see)
  * @param {string} finHtml - Final HTML content (what users see)
- * @param {Object} [options={}] - Analysis options
- * @param {boolean} [options.ignoreNavFooter=true] - Whether to ignore navigation/footer elements
+ * @param {boolean} [ignoreNavFooter=true] - Whether to ignore navigation/footer elements
  * @returns {Promise<Object>} Comprehensive analysis results
  */
-export async function analyzeContentDifference(initHtml, finHtml, options = {}) {
-  const { ignoreNavFooter = true } = options;
+export async function analyzeTextComparison(initHtml, finHtml, ignoreNavFooter = true) {
+  // Input validation: prevent memory issues with excessively large inputs
+  const MAX_HTML_SIZE = 500 * 1024; // 500KB limit per HTML input
+  if (initHtml && initHtml.length > MAX_HTML_SIZE) {
+    throw new Error(`Initial HTML content too large. Max size: ${MAX_HTML_SIZE} bytes (${Math.round(MAX_HTML_SIZE / 1024)}KB)`);
+  }
+  if (finHtml && finHtml.length > MAX_HTML_SIZE) {
+    throw new Error(`Final HTML content too large. Max size: ${MAX_HTML_SIZE} bytes (${Math.round(MAX_HTML_SIZE / 1024)}KB)`);
+  }
 
   // Handle both sync (browser) and async (Node.js) stripTagsToText
   const initTextResult = stripTagsToText(initHtml, ignoreNavFooter);
@@ -56,15 +51,6 @@ export async function analyzeContentDifference(initHtml, finHtml, options = {}) 
   const wordDiff = generateDiffReport(initText, finText, 'word');
   const lineDiff = generateDiffReport(initText, finText, 'line');
 
-  // Calculate additional metrics
-  const initTokens = tokenize(initText, 'word');
-  const finTokens = tokenize(finText, 'word');
-
-  const contentGain = initTokens.length > 0 ? finTokens.length / initTokens.length : 1;
-  const missingWords = Math.abs(finTokens.length - initTokens.length);
-  const citationReadability = calculateCitationReadability(initTokens.length, finTokens.length);
-  const similarity = calculateSimilarity(initText, finText, 'word');
-
   return {
     initialText: initText,
     finalText: finText,
@@ -76,101 +62,83 @@ export async function analyzeContentDifference(initHtml, finHtml, options = {}) 
     lineDiff,
     initialTextHash: hashDJB2(initText),
     finalTextHash: hashDJB2(finText),
-    metrics: {
-      contentGain: Math.round(contentGain * 10) / 10,
-      contentGainFormatted: `${Math.round(contentGain * 10) / 10}x`,
-      missingWords,
-      missingWordsFormatted: formatNumberToK(missingWords),
-      citationReadability: Math.round(citationReadability),
-      similarity: Math.round(similarity * 10) / 10,
-      wordCount: {
-        initial: initTokens.length,
-        final: finTokens.length,
-        difference: finTokens.length - initTokens.length,
-      },
-    },
   };
 }
 
 /**
- * Analyze both scenarios: with and without navigation/footer filtering
- * @param {string} initHtml - Initial HTML content
- * @param {string} finHtml - Final HTML content
- * @returns {Promise<Object>} Analysis results for both scenarios
+ * Calculate basic stats from HTML comparison
+ * @param {string} originalHTML - Initial HTML content
+ * @param {string} currentHTML - Final HTML content
+ * @param {boolean} [ignoreNavFooter=true] - Whether to ignore navigation/footer elements
+ * @returns {Promise<Object>} Basic statistics
  */
-export async function analyzeBothScenarios(initHtml, finHtml) {
-  const withNavFooterIgnored = await analyzeContentDifference(
-    initHtml,
-    finHtml,
-    { ignoreNavFooter: true },
-  );
-  const withoutNavFooterIgnored = await analyzeContentDifference(
-    initHtml,
-    finHtml,
-    { ignoreNavFooter: false },
-  );
-
-  return {
-    withNavFooterIgnored: {
-      ...withNavFooterIgnored.metrics,
-      fullAnalysis: withNavFooterIgnored,
-    },
-    withoutNavFooterIgnored: {
-      ...withoutNavFooterIgnored.metrics,
-      fullAnalysis: withoutNavFooterIgnored,
-    },
-  };
-}
-
-/**
- * Generate a summary score for content visibility
- * @param {Object} analysis - Analysis results from analyzeContentDifference
- * @returns {Object} Summary with score and description
- */
-export function generateVisibilityScore(analysis) {
-  const { citationReadability, similarity, contentGain } = analysis.metrics;
-
-  // Weight the different factors
-  const readabilityWeight = 0.5;
-  const similarityWeight = 0.3;
-  const contentGainWeight = 0.2;
-
-  // Normalize content gain (higher gain = lower score for visibility)
-  const normalizedContentGain = Math.min(100, Math.max(0, 100 - ((contentGain - 1) * 50)));
-
-  const weightedScore = (
-    citationReadability * readabilityWeight
-    + similarity * similarityWeight
-    + normalizedContentGain * contentGainWeight
-  );
-
-  const score = Math.round(weightedScore);
-
-  let description;
-  let category;
-
-  if (score >= 90) {
-    category = 'excellent';
-    description = 'Excellent - AI models can easily read and cite your content';
-  } else if (score >= 70) {
-    category = 'good';
-    description = 'Good - Most of your content is visible to AI models';
-  } else if (score >= 50) {
-    category = 'fair';
-    description = 'Fair - Some content may be missed by AI crawlers';
-  } else {
-    category = 'poor';
-    description = 'Poor - Significant content is hidden from AI models';
+export async function calculateStats(originalHTML, currentHTML, ignoreNavFooter = true) {
+  // Input validation: prevent memory issues with excessively large inputs
+  const MAX_HTML_SIZE = 500 * 1024; // 500KB limit per HTML input
+  if (originalHTML && originalHTML.length > MAX_HTML_SIZE) {
+    throw new Error(`Original HTML content too large. Max size: ${MAX_HTML_SIZE} bytes (${Math.round(MAX_HTML_SIZE / 1024)}KB)`);
+  }
+  if (currentHTML && currentHTML.length > MAX_HTML_SIZE) {
+    throw new Error(`Current HTML content too large. Max size: ${MAX_HTML_SIZE} bytes (${Math.round(MAX_HTML_SIZE / 1024)}KB)`);
   }
 
+  // Handle both sync (browser) and async (Node.js) stripTagsToText
+  const originalTextResult = stripTagsToText(originalHTML, ignoreNavFooter);
+  const currentTextResult = stripTagsToText(currentHTML, ignoreNavFooter);
+
+  const originalText = await Promise.resolve(originalTextResult);
+  const currentText = await Promise.resolve(currentTextResult);
+
+  // Calculate word counts using consistent tokenization
+  const originalTokens = tokenize(originalText, 'word');
+  const currentTokens = tokenize(currentText, 'word');
+  const wordDiff = Math.abs(currentTokens.length - originalTokens.length);
+
+  // Calculate content increase ratio (how many times content increased)
+  let contentIncreaseRatio;
+  if (originalTokens.length > 0) {
+    contentIncreaseRatio = currentTokens.length / originalTokens.length;
+  } else {
+    contentIncreaseRatio = currentTokens.length > 0 ? currentTokens.length : 1;
+  }
+
+  // Calculate citation readability (percentage of original content available in current)
+  const citationReadability = currentTokens.length > 0
+    ? Math.min(100, (originalTokens.length / currentTokens.length) * 100) : 100;
+
   return {
-    score,
-    category,
-    description,
-    breakdown: {
-      citationReadability,
-      similarity,
-      contentGain: normalizedContentGain,
+    wordDiff,
+    contentIncreaseRatio: Math.round(contentIncreaseRatio * 100) / 100, // Round to 1 decimal place
+    citationReadability: Math.round(citationReadability),
+  };
+}
+
+/**
+ * Calculate stats for both nav/footer scenarios
+ * @param {string} originalHTML - Initial HTML content
+ * @param {string} currentHTML - Final HTML content
+ * @returns {Promise<Object>} Analysis results for both scenarios
+ */
+export async function calculateBothScenarioStats(originalHTML, currentHTML) {
+  // Calculate stats with nav/footer ignored
+  const statsIgnored = await calculateStats(originalHTML, currentHTML, true);
+
+  // Calculate stats without nav/footer ignored
+  const statsNotIgnored = await calculateStats(originalHTML, currentHTML, false);
+  return {
+    withNavFooterIgnored: {
+      wordDiff: statsIgnored.wordDiff,
+      contentIncreaseRatio: statsIgnored.contentIncreaseRatio,
+      citationReadability: statsIgnored.citationReadability,
+      contentGain: `${Math.round(statsIgnored.contentIncreaseRatio * 10) / 10}x`,
+      missingWords: statsIgnored.wordDiff,
+    },
+    withoutNavFooterIgnored: {
+      wordDiff: statsNotIgnored.wordDiff,
+      contentIncreaseRatio: statsNotIgnored.contentIncreaseRatio,
+      citationReadability: statsNotIgnored.citationReadability,
+      contentGain: `${Math.round(statsNotIgnored.contentIncreaseRatio * 10) / 10}x`,
+      missingWords: statsNotIgnored.wordDiff,
     },
   };
 }

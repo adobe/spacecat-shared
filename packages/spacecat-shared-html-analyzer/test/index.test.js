@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -12,9 +12,10 @@
 
 import { expect } from 'chai';
 import {
-  analyzeVisibility,
+  analyzeTextComparison,
+  calculateStats,
+  calculateBothScenarioStats,
   quickCompare,
-  getCitationReadiness,
   stripTagsToText,
   calculateSimilarity,
 } from '../src/index.js';
@@ -23,33 +24,29 @@ describe('HTML Visibility Analyzer', () => {
   const simpleHtml = '<html><body><h1>Title</h1><p>Content here</p></body></html>';
   const richHtml = '<html><body><h1>Title</h1><p>Content here</p><script>console.log("loaded")</script><div class="dynamic">Dynamic content</div></body></html>';
 
-  describe('analyzeVisibility', () => {
+  describe('analyzeTextComparison', () => {
     it('should analyze content differences', async () => {
-      const result = await analyzeVisibility(simpleHtml, richHtml);
+      const result = await analyzeTextComparison(simpleHtml, richHtml);
 
-      expect(result).to.have.property('metrics');
-      expect(result.metrics).to.have.property('contentGain');
-      expect(result.metrics).to.have.property('citationReadability');
-      expect(result.metrics).to.have.property('missingWords');
-      expect(result.metrics).to.have.property('similarity');
-      expect(result).to.have.property('visibilityScore');
+      expect(result).to.have.property('initialText');
+      expect(result).to.have.property('finalText');
+      expect(result).to.have.property('textRetention');
+      expect(result).to.have.property('wordDiff');
+      expect(result).to.have.property('lineDiff');
     });
 
     it('should handle identical content', async () => {
-      const result = await analyzeVisibility(simpleHtml, simpleHtml);
+      const result = await analyzeTextComparison(simpleHtml, simpleHtml);
 
-      expect(result.metrics.contentGain).to.equal(1);
-      expect(result.metrics.missingWords).to.equal(0);
-      expect(result.metrics.citationReadability).to.equal(100);
-      expect(result.visibilityScore.score).to.be.greaterThan(90);
+      expect(result.textRetention).to.equal(1);
+      expect(result.initialText).to.equal(result.finalText);
     });
 
     it('should handle empty content', async () => {
-      const result = await analyzeVisibility('', richHtml);
+      const result = await analyzeTextComparison('', richHtml);
 
-      expect(result.metrics.contentGain).to.be.at.least(1);
-      // Empty initial HTML = 0% visible to crawlers
-      expect(result.metrics.citationReadability).to.equal(0);
+      expect(result.initialText).to.equal('');
+      expect(result.finalText.length).to.be.greaterThan(0);
     });
   });
 
@@ -68,20 +65,28 @@ describe('HTML Visibility Analyzer', () => {
     });
   });
 
-  describe('getCitationReadiness', () => {
-    it('should provide citation readiness score', async () => {
-      const result = await getCitationReadiness(simpleHtml, richHtml);
+  describe('calculateStats', () => {
+    it('should provide basic comparison statistics', async () => {
+      const result = await calculateStats(simpleHtml, richHtml);
 
-      expect(result).to.have.property('score');
-      expect(result).to.have.property('category');
-      expect(result).to.have.property('description');
-      expect(result).to.have.property('metrics');
-      expect(result).to.have.property('recommendations');
+      expect(result).to.have.property('wordDiff');
+      expect(result).to.have.property('contentIncreaseRatio');
+      expect(result).to.have.property('citationReadability');
 
-      expect(result.score).to.be.a('number');
-      expect(result.score).to.be.at.least(0);
-      expect(result.score).to.be.at.most(100);
-      expect(result.recommendations).to.be.an('array');
+      expect(result.wordDiff).to.be.a('number');
+      expect(result.contentIncreaseRatio).to.be.a('number');
+      expect(result.citationReadability).to.be.a('number');
+    });
+  });
+
+  describe('calculateBothScenarioStats', () => {
+    it('should provide statistics for both scenarios', async () => {
+      const result = await calculateBothScenarioStats(simpleHtml, richHtml);
+
+      expect(result).to.have.property('withNavFooterIgnored');
+      expect(result).to.have.property('withoutNavFooterIgnored');
+      expect(result.withNavFooterIgnored).to.have.property('contentGain');
+      expect(result.withoutNavFooterIgnored).to.have.property('missingWords');
     });
   });
 

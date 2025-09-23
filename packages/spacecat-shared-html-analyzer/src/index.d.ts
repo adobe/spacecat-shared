@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -135,36 +135,9 @@ export function stripTagsToText(htmlContent: string, ignoreNavFooter?: boolean):
  */
 export function extractWordCount(htmlContent: string, ignoreNavFooter?: boolean): Promise<{ word_count: number }>;
 
-/** ANALYSIS FUNCTIONS */
+/** ANALYSIS FUNCTIONS (Original Chrome Extension Logic) */
 
-interface WordCount {
-  initial: number;
-  final: number;
-  difference: number;
-}
-
-interface AnalysisMetrics {
-  contentGain: number;
-  contentGainFormatted: string;
-  missingWords: number;
-  missingWordsFormatted: string;
-  citationReadability: number;
-  similarity: number;
-  wordCount: WordCount;
-}
-
-interface VisibilityScore {
-  score: number;
-  category: "excellent" | "good" | "fair" | "poor";
-  description: string;
-  breakdown?: {
-    citationReadability: number;
-    similarity: number;
-    contentGain: number;
-  };
-}
-
-interface ContentAnalysis {
+interface TextComparison {
   initialText: string;
   finalText: string;
   initialTextLength: number;
@@ -175,13 +148,25 @@ interface ContentAnalysis {
   lineDiff: DiffReport;
   initialTextHash: string;
   finalTextHash: string;
-  metrics: AnalysisMetrics;
-  visibilityScore?: VisibilityScore;
 }
 
-interface AnalysisOptions {
-  ignoreNavFooter?: boolean;
-  includeScore?: boolean;
+interface BasicStats {
+  wordDiff: number;
+  contentIncreaseRatio: number;
+  citationReadability: number;
+}
+
+interface ScenarioStats {
+  wordDiff: number;
+  contentIncreaseRatio: number;
+  citationReadability: number;
+  contentGain: string;
+  missingWords: number;
+}
+
+interface BothScenariosStats {
+  withNavFooterIgnored: ScenarioStats;
+  withoutNavFooterIgnored: ScenarioStats;
 }
 
 interface QuickCompareOptions {
@@ -199,58 +184,33 @@ interface QuickCompareResult {
   similarity: number;
 }
 
-interface CitationReadinessResult {
-  score: number;
-  category: string;
-  description: string;
-  metrics: {
-    citationReadability: number;
-    contentGain: number;
-    missingWords: number;
-    similarity: number;
-  };
-  recommendations: string[];
-}
-
-interface BothScenariosResult {
-  withNavFooterIgnored: AnalysisMetrics & { fullAnalysis: ContentAnalysis };
-  withoutNavFooterIgnored: AnalysisMetrics & { fullAnalysis: ContentAnalysis };
-}
-
 /**
- * Comprehensive analysis between initial and final HTML content
+ * Comprehensive text-only analysis between initial and final HTML (original chrome extension logic)
  */
-export function analyzeContentDifference(
+export function analyzeTextComparison(
   initHtml: string, 
   finHtml: string, 
-  options?: { ignoreNavFooter?: boolean }
-): Promise<ContentAnalysis>;
+  ignoreNavFooter?: boolean
+): Promise<TextComparison>;
 
 /**
- * Calculate citation readability score (how well AI can cite the content)
+ * Calculate basic stats from HTML comparison (original chrome extension logic)
  */
-export function calculateCitationReadability(initialWordCount: number, finalWordCount: number): number;
+export function calculateStats(
+  originalHTML: string, 
+  currentHTML: string, 
+  ignoreNavFooter?: boolean
+): Promise<BasicStats>;
 
 /**
- * Analyze both scenarios: with and without navigation/footer filtering
+ * Calculate stats for both nav/footer scenarios (original chrome extension logic)
  */
-export function analyzeBothScenarios(initHtml: string, finHtml: string): Promise<BothScenariosResult>;
-
-/**
- * Generate a summary score for content visibility
- */
-export function generateVisibilityScore(analysis: ContentAnalysis): VisibilityScore;
+export function calculateBothScenarioStats(
+  originalHTML: string, 
+  currentHTML: string
+): Promise<BothScenariosStats>;
 
 /** MAIN API FUNCTIONS */
-
-/**
- * Quick analysis function for common use cases
- */
-export function analyzeVisibility(
-  initialHtml: string, 
-  renderedHtml: string, 
-  options?: AnalysisOptions
-): Promise<ContentAnalysis>;
 
 /**
  * Compare two HTML contents and get quick metrics
@@ -260,12 +220,3 @@ export function quickCompare(
   html2: string, 
   options?: QuickCompareOptions
 ): Promise<QuickCompareResult>;
-
-/**
- * Get citation readiness score for a webpage
- */
-export function getCitationReadiness(
-  initialHtml: string, 
-  renderedHtml: string, 
-  options?: AnalysisOptions
-): Promise<CitationReadinessResult>;

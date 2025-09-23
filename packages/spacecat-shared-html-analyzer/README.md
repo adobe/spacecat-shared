@@ -11,24 +11,35 @@ npm install @adobe/spacecat-shared-html-analyzer
 ## Usage
 
 ```javascript
-import { analyzeVisibility, quickCompare, getCitationReadiness } from '@adobe/spacecat-shared-html-analyzer';
+import { 
+  analyzeTextComparison, 
+  calculateStats, 
+  calculateBothScenarioStats,
+  quickCompare
+} from '@adobe/spacecat-shared-html-analyzer';
 
 // Compare initial HTML (what crawlers see) vs rendered HTML (what users see)
-const initialHtml = '<html><body><h1>Title</h1></body></html>';
-const renderedHtml = '<html><body><h1>Title</h1><p>Dynamic content loaded by JS</p></body></html>';
+const originalHtml = '<html><body><h1>Title</h1></body></html>';
+const currentHtml = '<html><body><h1>Title</h1><p>Dynamic content loaded by JS</p></body></html>';
 
-// Full analysis
-const analysis = await analyzeVisibility(initialHtml, renderedHtml);
-console.log(analysis.visibilityScore); // { score: 75, category: "good", description: "..." }
-console.log(analysis.metrics.citationReadability); // 50 (50% of content visible to AI)
+// Full text analysis (original chrome extension logic)
+const analysis = await analyzeTextComparison(originalHtml, currentHtml);
+console.log(analysis.textRetention); // 0.5 (50% text retention)
+console.log(analysis.wordDiff); // Detailed word differences
+
+// Basic comparison statistics
+const stats = await calculateStats(originalHtml, currentHtml);
+console.log(stats.citationReadability); // 50 (50% of content visible to AI)
+console.log(stats.contentIncreaseRatio); // 2.3 (2.3x more content in rendered)
+
+// Both scenarios (with/without nav filtering)
+const bothStats = await calculateBothScenarioStats(originalHtml, currentHtml);
+console.log(bothStats.withNavFooterIgnored.contentGain); // "2.3x"
+console.log(bothStats.withoutNavFooterIgnored.missingWords); // Number of missing words
 
 // Quick comparison
-const quick = await quickCompare(initialHtml, renderedHtml);
+const quick = await quickCompare(originalHtml, currentHtml);
 console.log(quick.contentGain); // 2.3 (2.3x more content in rendered)
-
-// Citation readiness
-const readiness = await getCitationReadiness(initialHtml, renderedHtml);
-console.log(readiness.recommendations); // Array of optimization suggestions
 ```
 
 ## Environment Support
@@ -42,18 +53,16 @@ This package works in both Node.js and browser environments (including Chrome ex
 
 ### Main Functions
 
-#### `analyzeVisibility(initialHtml, renderedHtml, options)`
+#### `analyzeVisibility(initialHtml, renderedHtml, ignoreNavFooter)`
 
-Comprehensive analysis of content visibility between two HTML versions.
+Comprehensive text analysis between two HTML versions (original chrome extension logic).
 
 **Parameters:**
 - `initialHtml` (string): HTML as seen by crawlers/AI
 - `renderedHtml` (string): HTML as seen by users (fully loaded)
-- `options` (object, optional):
-  - `ignoreNavFooter` (boolean, default: true): Remove nav/footer elements
-  - `includeScore` (boolean, default: true): Include visibility score
+- `ignoreNavFooter` (boolean, default: true): Remove nav/footer elements
 
-**Returns:** Promise<Object> with metrics, visibility score, and analysis data
+**Returns:** Promise<Object> with text comparison data, diffs, and retention metrics
 
 #### `quickCompare(html1, html2, options)`
 
@@ -61,11 +70,26 @@ Fast comparison for basic metrics.
 
 **Returns:** Promise<Object> with word counts, content gain, and similarity
 
-#### `getCitationReadiness(initialHtml, renderedHtml, options)`
+#### `getComparisonStats(originalHtml, currentHtml, ignoreNavFooter)`
 
-Get citation-focused analysis with recommendations.
+Get basic comparison statistics (original chrome extension logic).
 
-**Returns:** Promise<Object> with score, category, description, and recommendations
+**Parameters:**
+- `originalHtml` (string): Initial HTML content
+- `currentHtml` (string): Final HTML content
+- `ignoreNavFooter` (boolean, default: true): Whether to ignore navigation/footer elements
+
+**Returns:** Promise<Object> with wordDiff, contentIncreaseRatio, and citationReadability
+
+#### `getBothScenarioStats(originalHtml, currentHtml)`
+
+Get comparison statistics for both nav/footer scenarios (original chrome extension logic).
+
+**Parameters:**
+- `originalHtml` (string): Initial HTML content
+- `currentHtml` (string): Final HTML content
+
+**Returns:** Promise<Object> with statistics for both withNavFooterIgnored and withoutNavFooterIgnored scenarios
 
 ### Utility Functions
 
@@ -79,35 +103,6 @@ Get citation-focused analysis with recommendations.
 - `diffTokens(text1, text2, mode)`: Generate LCS-based diff
 - `generateDiffReport(text1, text2, mode)`: Comprehensive diff statistics
 - `calculateSimilarity(text1, text2, mode)`: Calculate similarity percentage
-
-## Use Cases
-
-### AI Content Optimization
-```javascript
-// Check if your content is properly crawlable by AI models
-const readiness = await getCitationReadiness(staticHtml, dynamicHtml);
-if (readiness.score < 70) {
-  console.log("Consider implementing SSR for better AI visibility");
-  console.log(readiness.recommendations);
-}
-```
-
-### SEO Analysis
-```javascript
-// Analyze content differences for SEO optimization
-const analysis = await analyzeVisibility(initialHtml, renderedHtml);
-console.log(`Content gain: ${analysis.metrics.contentGain}x`);
-console.log(`Missing from crawlers: ${analysis.metrics.missingWords} words`);
-```
-
-### Performance Monitoring
-```javascript
-// Monitor how much content loads after initial page render
-const metrics = await quickCompare(serverHtml, clientHtml);
-if (metrics.contentGain > 3) {
-  console.log("High content gain - consider server-side rendering");
-}
-```
 
 ## Technical Implementation
 
@@ -123,6 +118,21 @@ Uses optimized Longest Common Subsequence with integer mapping for 3-5x faster c
 - **Time Complexity**: O(mn) - optimal for LCS
 - **Memory Usage**: ~40MB for 100K tokens
 - **Content Limit**: Handles up to 500KB smoothly
+
+## Build Scripts
+
+### Standard Build
+```bash
+npm run build
+```
+
+### Chrome Extension Bundle
+Generate a minified bundle for Chrome extensions:
+```bash
+npm run build:chrome
+```
+
+This creates `dist/html-analyzer.min.js` that can be included directly in Chrome extension manifest files. The bundle exposes `HTMLAnalyzer` and `HTMLComparisonUtils` globally.
 
 ## Testing
 

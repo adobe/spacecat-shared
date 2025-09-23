@@ -12,7 +12,9 @@
   "scripts": {
     "test": "c8 mocha",
     "lint": "eslint .",
-    "clean": "rm -rf package-lock.json node_modules"
+    "clean": "rm -rf package-lock.json node_modules",
+    "build": "rollup -c",
+    "build:chrome": "rollup -c && echo '✅ Chrome extension bundle ready: dist/html-analyzer.min.js'"
   },
   "mocha": {
     "require": "test/setup-env.js",
@@ -37,8 +39,11 @@
     "cheerio": "^1.0.0-rc.12"
   },
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
     "chai": "6.0.1",
     "chai-as-promised": "8.0.2",
+    "rollup": "^4.52.2",
     "sinon": "21.0.0",
     "sinon-chai": "4.0.1"
   },

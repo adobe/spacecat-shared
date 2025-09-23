@@ -16,11 +16,6 @@
  * Compatible with both Node.js and browser environments (including Chrome extensions)
  */
 
-// Import functions for internal use
-import { stripTagsToText } from './html-filter.js';
-import { countWords } from './tokenizer.js';
-import { calculateSimilarity } from './diff-engine.js';
-
 export {
   filterHtmlContent,
   stripTagsToText,
@@ -38,7 +33,6 @@ export {
 export {
   diffTokens,
   generateDiffReport,
-  calculateSimilarity,
 } from './diff-engine.js';
 
 export {
@@ -53,45 +47,3 @@ export {
   formatNumberToK,
   isBrowser,
 } from './utils.js';
-
-// analyzeVisibility() removed - use analyzeTextComparison() directly
-
-/**
- * Compare two HTML contents and get quick metrics
- * @param {string} html1 - First HTML content
- * @param {string} html2 - Second HTML content
- * @param {Object} [options={}] - Comparison options
- * @param {boolean} [options.ignoreNavFooter=true] - Ignore navigation/footer elements
- * @returns {Promise<Object>} Quick comparison metrics
- */
-export async function quickCompare(html1, html2, options = {}) {
-  const { ignoreNavFooter = true } = options;
-
-  // Handle both sync (browser) and async (Node.js) stripTagsToText
-  const text1Result = stripTagsToText(html1, ignoreNavFooter);
-  const text2Result = stripTagsToText(html2, ignoreNavFooter);
-
-  const text1 = await Promise.resolve(text1Result);
-  const text2 = await Promise.resolve(text2Result);
-
-  const words1 = countWords(text1);
-  const words2 = countWords(text2);
-
-  const similarity = calculateSimilarity(text1, text2);
-  const contentGain = words1 > 0 ? words2 / words1 : 1;
-  const missingWords = Math.abs(words2 - words1);
-
-  return {
-    wordCount: {
-      first: words1,
-      second: words2,
-      difference: words2 - words1,
-    },
-    contentGain: Math.round(contentGain * 10) / 10,
-    missingWords,
-    similarity: Math.round(similarity * 10) / 10,
-  };
-}
-
-// getComparisonStats() removed - use calculateStats() directly
-// getBothScenarioStats() removed - use calculateBothScenarioStats() directly

@@ -23,7 +23,6 @@ import {
   analyzeTextComparison,
   calculateStats,
   calculateBothScenarioStats,
-  quickCompare,
   stripTagsToText,
   filterHtmlContent,
   extractWordCount,
@@ -34,7 +33,6 @@ import {
   countLines,
   diffTokens,
   generateDiffReport,
-  calculateSimilarity,
   hashDJB2,
   pct,
   formatNumberToK,
@@ -47,7 +45,6 @@ const HTMLAnalyzer = {
   analyzeTextComparison,
   calculateStats,
   calculateBothScenarioStats,
-  quickCompare,
 
   // HTML processing functions
   stripTagsToText,
@@ -64,7 +61,6 @@ const HTMLAnalyzer = {
   // Diff engine functions
   diffTokens,
   generateDiffReport,
-  calculateSimilarity,
 
   // Utility functions
   hashDJB2,
@@ -92,8 +88,6 @@ const HTMLAnalyzer = {
 
   // Assign to global scope
   globalObject.HTMLAnalyzer = HTMLAnalyzer;
-  // Also expose as HTMLComparisonUtils for compatibility with existing Chrome extension
-  globalObject.HTMLComparisonUtils = HTMLAnalyzer;
 }());
 
 // Export for ES modules

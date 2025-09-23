@@ -127,6 +127,63 @@ export function filterNavigationAndFooterBrowser(element) {
 }
 
 /**
+ * Comprehensive cookie banner detection and removal for Cheerio (Node.js environment)
+ * Adapted from browser version using Cheerio's jQuery-like API
+ * @param {CheerioAPI} $ - Cheerio instance
+ */
+function removeCookieBannersCheerio($) {
+  const classBasedSelectors = [
+    '.cc-banner', '.cc-grower', '.consent-banner', '.cookie-banner',
+    '.privacy-banner', '.gdpr-banner', '.cookie-consent', '.privacy-consent',
+    '.cookie-notice', '.privacy-notice', '.cookie-policy', '.privacy-policy',
+    '.cookie-bar', '.privacy-bar', '.consent-bar', '.gdpr-bar',
+    '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
+    '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
+    '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
+  ];
+
+  const idBasedSelectors = [
+    '#cookie-banner', '#privacy-banner', '#consent-banner', '#gdpr-banner',
+    '#cookie-notice', '#privacy-notice', '#cookie-consent', '#privacy-consent',
+    '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar',
+    '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
+  ];
+
+  const ariaSelectors = [
+    '[role="dialog"][aria-label*="cookie" i]',
+    '[role="dialog"][aria-label*="privacy" i]',
+    '[role="dialog"][aria-label*="consent" i]',
+    '[role="alertdialog"][aria-label*="cookie" i]',
+    '[role="alertdialog"][aria-label*="privacy" i]',
+    '[aria-describedby*="cookie" i]',
+    '[aria-describedby*="privacy" i]',
+  ];
+
+  // Combine all selectors for efficient removal
+  const allSelectors = [...classBasedSelectors, ...idBasedSelectors, ...ariaSelectors];
+
+  // Apply class/ID/ARIA based detection with text validation
+  allSelectors.forEach((selector) => {
+    $(selector).each((i, element) => {
+      const $element = $(element);
+      const text = $element.text().toLowerCase();
+
+      // Validate if it's actually a cookie banner by checking text content
+      if (text.includes('cookie') || text.includes('consent') || text.includes('privacy')) {
+        $element.remove();
+        return;
+      }
+
+      // Check against keyword set
+      const hasKeyword = Array.from(COOKIE_KEYWORDS).some((keyword) => text.includes(keyword));
+      if (hasKeyword) {
+        $element.remove();
+      }
+    });
+  });
+}
+
+/**
  * Remove navigation and footer elements (Node.js environment)
  * Optimized: single cheerio query instead of 35 separate queries (35x performance improvement)
  * @param {CheerioAPI} $ - Cheerio instance
@@ -194,8 +251,8 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   $('img, video, audio, picture, svg, canvas, embed, object, iframe').remove();
 
-  // Remove cookie banners (Note: cheerio implementation would need adaptation)
-  // For Node.js environment, cookie banner removal is simplified
+  // Remove cookie banners with comprehensive detection
+  removeCookieBannersCheerio($);
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {

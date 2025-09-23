@@ -86,10 +86,6 @@ export function diffTokens(aStr: string, bStr: string, mode?: "word" | "line"): 
  */
 export function generateDiffReport(initText: string, finText: string, mode?: "word" | "line"): DiffReport;
 
-/**
- * Calculate similarity percentage between two texts
- */
-export function calculateSimilarity(text1: string, text2: string, mode?: "word" | "line"): number;
 
 // generateHtmlDiff() removed - was unused
 
@@ -151,20 +147,6 @@ interface BothScenariosStats {
   withoutNavFooterIgnored: ScenarioStats;
 }
 
-interface QuickCompareOptions {
-  ignoreNavFooter?: boolean;
-}
-
-interface QuickCompareResult {
-  wordCount: {
-    first: number;
-    second: number;
-    difference: number;
-  };
-  contentGain: number;
-  missingWords: number;
-  similarity: number;
-}
 
 /**
  * Comprehensive text-only analysis between initial and final HTML (original chrome extension logic)
@@ -192,13 +174,3 @@ export function calculateBothScenarioStats(
   currentHTML: string
 ): Promise<BothScenariosStats>;
 
-/** MAIN API FUNCTIONS */
-
-/**
- * Compare two HTML contents and get quick metrics
- */
-export function quickCompare(
-  html1: string, 
-  html2: string, 
-  options?: QuickCompareOptions
-): Promise<QuickCompareResult>;

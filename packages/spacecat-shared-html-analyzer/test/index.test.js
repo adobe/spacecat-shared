@@ -15,9 +15,7 @@ import {
   analyzeTextComparison,
   calculateStats,
   calculateBothScenarioStats,
-  quickCompare,
   stripTagsToText,
-  calculateSimilarity,
 } from '../src/index.js';
 
 describe('HTML Visibility Analyzer', () => {
@@ -47,21 +45,6 @@ describe('HTML Visibility Analyzer', () => {
 
       expect(result.initialText).to.equal('');
       expect(result.finalText.length).to.be.greaterThan(0);
-    });
-  });
-
-  describe('quickCompare', () => {
-    it('should provide quick comparison metrics', async () => {
-      const result = await quickCompare(simpleHtml, richHtml);
-
-      expect(result).to.have.property('wordCount');
-      expect(result).to.have.property('contentGain');
-      expect(result).to.have.property('missingWords');
-      expect(result).to.have.property('similarity');
-
-      expect(result.wordCount).to.have.property('first');
-      expect(result.wordCount).to.have.property('second');
-      expect(result.wordCount).to.have.property('difference');
     });
   });
 
@@ -121,32 +104,6 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Content');
       expect(text).to.include('Navigation');
       expect(text).to.include('Footer');
-    });
-  });
-
-  describe('calculateSimilarity', () => {
-    it('should calculate similarity between identical texts', () => {
-      const text = 'This is a test text';
-      const similarity = calculateSimilarity(text, text);
-
-      expect(similarity).to.equal(100);
-    });
-
-    it('should calculate similarity between different texts', () => {
-      const text1 = 'This is a test';
-      const text2 = 'This is another test';
-      const similarity = calculateSimilarity(text1, text2);
-
-      expect(similarity).to.be.greaterThan(0);
-      expect(similarity).to.be.lessThan(100);
-    });
-
-    it('should return 0 for completely different texts', () => {
-      const text1 = 'Hello world';
-      const text2 = 'Goodbye universe';
-      const similarity = calculateSimilarity(text1, text2);
-
-      expect(similarity).to.equal(0);
     });
   });
 });

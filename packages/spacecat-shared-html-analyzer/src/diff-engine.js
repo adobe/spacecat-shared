@@ -38,7 +38,6 @@ export function diffTokens(aStr, bStr, mode = 'word') {
   const b = B.map(mapTok);
 
   // Build LCS length table using space-optimized dynamic programming
-  // Uses O(min(m,n)) space instead of O(mn) - 99% memory reduction for large inputs
   const m = a.length;
   const n = b.length;
 
@@ -87,7 +86,6 @@ export function diffTokens(aStr, bStr, mode = 'word') {
   }
 
   // Rebuild LCS table for backtracking - using smaller dimension first
-  // Memory usage: O(min(m,n) * max(m,n)) instead of O(m*n)
   const dp = Array(rows + 1).fill(0).map(() => Array(cols + 1).fill(0));
 
   for (let i = 1; i <= rows; i += 1) {
@@ -184,28 +182,3 @@ export function generateDiffReport(initText, finText, mode = 'word') {
     summary: `Added: ${addCount.toLocaleString()} • Removed: ${delCount.toLocaleString()} • Same: ${sameCount.toLocaleString()} • Granularity: ${mode}`,
   };
 }
-
-/**
- * Calculate similarity percentage between two texts
- * @param {string} text1 - First text
- * @param {string} text2 - Second text
- * @param {string} [mode="word"] - Tokenization mode
- * @returns {number} Similarity percentage (0-100)
- */
-export function calculateSimilarity(text1, text2, mode = 'word') {
-  if (!text1 && !text2) return 100;
-  if (!text1 || !text2) return 0;
-
-  const tokens1 = tokenize(text1, mode);
-  const tokens2 = tokenize(text2, mode);
-
-  if (tokens1.length === 0 && tokens2.length === 0) return 100;
-  if (tokens1.length === 0 || tokens2.length === 0) return 0;
-
-  const report = generateDiffReport(text1, text2, mode);
-  const totalTokens = Math.max(tokens1.length, tokens2.length);
-
-  return (report.sameCount / totalTokens) * 100;
-}
-
-// generateHtmlDiff() removed - was unused

@@ -14,8 +14,7 @@ npm install @adobe/spacecat-shared-html-analyzer
 import { 
   analyzeTextComparison, 
   calculateStats, 
-  calculateBothScenarioStats,
-  quickCompare
+  calculateBothScenarioStats
 } from '@adobe/spacecat-shared-html-analyzer';
 
 // Compare initial HTML (what crawlers see) vs rendered HTML (what users see)
@@ -36,10 +35,6 @@ console.log(stats.contentIncreaseRatio); // 2.3 (2.3x more content in rendered)
 const bothStats = await calculateBothScenarioStats(originalHtml, currentHtml);
 console.log(bothStats.withNavFooterIgnored.contentGain); // "2.3x"
 console.log(bothStats.withoutNavFooterIgnored.missingWords); // Number of missing words
-
-// Quick comparison
-const quick = await quickCompare(originalHtml, currentHtml);
-console.log(quick.contentGain); // 2.3 (2.3x more content in rendered)
 ```
 
 ## Environment Support
@@ -53,24 +48,18 @@ This package works in both Node.js and browser environments (including Chrome ex
 
 ### Main Functions
 
-#### `analyzeVisibility(initialHtml, renderedHtml, ignoreNavFooter)`
+#### `analyzeTextComparison(initHtml, finHtml, ignoreNavFooter)`
 
 Comprehensive text analysis between two HTML versions (original chrome extension logic).
 
 **Parameters:**
-- `initialHtml` (string): HTML as seen by crawlers/AI
-- `renderedHtml` (string): HTML as seen by users (fully loaded)
+- `initHtml` (string): HTML as seen by crawlers/AI
+- `finHtml` (string): HTML as seen by users (fully loaded)
 - `ignoreNavFooter` (boolean, default: true): Remove nav/footer elements
 
 **Returns:** Promise<Object> with text comparison data, diffs, and retention metrics
 
-#### `quickCompare(html1, html2, options)`
-
-Fast comparison for basic metrics.
-
-**Returns:** Promise<Object> with word counts, content gain, and similarity
-
-#### `getComparisonStats(originalHtml, currentHtml, ignoreNavFooter)`
+#### `calculateStats(originalHtml, currentHtml, ignoreNavFooter)`
 
 Get basic comparison statistics (original chrome extension logic).
 
@@ -81,7 +70,7 @@ Get basic comparison statistics (original chrome extension logic).
 
 **Returns:** Promise<Object> with wordDiff, contentIncreaseRatio, and citationReadability
 
-#### `getBothScenarioStats(originalHtml, currentHtml)`
+#### `calculateBothScenarioStats(originalHtml, currentHtml)`
 
 Get comparison statistics for both nav/footer scenarios (original chrome extension logic).
 
@@ -102,7 +91,6 @@ Get comparison statistics for both nav/footer scenarios (original chrome extensi
 #### Diff Analysis
 - `diffTokens(text1, text2, mode)`: Generate LCS-based diff
 - `generateDiffReport(text1, text2, mode)`: Comprehensive diff statistics
-- `calculateSimilarity(text1, text2, mode)`: Calculate similarity percentage
 
 ## Technical Implementation
 
@@ -133,6 +121,25 @@ npm run build:chrome
 ```
 
 This creates `dist/html-analyzer.min.js` that can be included directly in Chrome extension manifest files. The bundle exposes `HTMLAnalyzer` and `HTMLComparisonUtils` globally.
+
+## Version Information
+
+To check the current package version:
+
+### In Node.js
+```javascript
+import packageJson from '@adobe/spacecat-shared-html-analyzer/package.json';
+console.log('Version:', packageJson.version);
+```
+
+### In Browser/Chrome Extension
+```javascript
+// After loading the bundle
+console.log('Version:', HTMLAnalyzer.version); // "1.0.0"
+console.log('Build target:', HTMLAnalyzer.buildFor); // "chrome-extension"
+```
+
+The version follows [Semantic Versioning (SemVer)](https://semver.org/) - see `package.json` for the official version.
 
 ## Testing
 

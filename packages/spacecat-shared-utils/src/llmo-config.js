@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import * as z from 'zod';
+
 /**
  * @typedef {Object} LLMOConfig
  */
@@ -39,3 +41,57 @@ export function llmoConfigPath(siteId) {
 export async function writeConfig(siteId, config) {
   // TODO
 }
+
+// ===== SCHEMA DEFINITION ====================================================
+// This schema must be forward- and backward-compatible when making changes.
+// This means:
+// - Always wrap arrays in an object, so that extra properties can be added later.
+// - When using unions, always include a catchall case to cover unknown future cases.
+// - Always allow extra properties in objects, so that future config versions don't break parsing.
+//   (this is the default. Do not add `.strict()`!)
+// - it is ok to add new optional properties to objects, but not to remove existing ones.
+// - enums (z.enum([...])) are not forward-compatible.
+//   Use z.string() or `z.union([..., z.string()])` instead.
+// - never rename properties, only add new ones.
+// - never broaden or narrow types.
+//   E.g., don't change `z.string()` to `z.union([z.string(), z.number()])` or vice versa.
+//   If you anticipate that need, use the union from the start.
+// ============================================================================
+
+const nonEmptyString = z.string().min(1);
+
+const entity = z.discriminatedUnion(
+  'type',
+  [
+    z.object({ type: z.literal('category'), name: nonEmptyString }),
+    z.object({ type: z.literal('topic'), name: nonEmptyString }),
+    z.object({ type: nonEmptyString }),
+  ],
+);
+
+const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
+
+export const llmoConfig = z.object({
+  entities: z.record(z.uuid(), entity),
+  brands: z.object({
+    aliases: z.array(
+      z.object({
+        aliases: z.array(nonEmptyString),
+        category: z.uuid(),
+        region: z.union([region, z.array(region)]),
+        topic: z.uuid(),
+      }),
+    ),
+  }),
+  competitors: z.object({
+    competitors: z.array(
+      z.object({
+        category: z.uuid(),
+        region: z.union([region, z.array(region)]),
+        name: nonEmptyString,
+        aliases: z.array(nonEmptyString),
+        urls: z.array(z.url().optional()),
+      }),
+    ),
+  }),
+});

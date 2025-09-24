@@ -34,14 +34,11 @@ import * as z from 'zod';
 
 const nonEmptyString = z.string().min(1);
 
-const entity = z.discriminatedUnion(
-  'type',
-  [
-    z.object({ type: z.literal('category'), name: nonEmptyString }),
-    z.object({ type: z.literal('topic'), name: nonEmptyString }),
-    z.object({ type: nonEmptyString }),
-  ],
-);
+const entity = z.union([
+  z.object({ type: z.literal('category'), name: nonEmptyString }),
+  z.object({ type: z.literal('topic'), name: nonEmptyString }),
+  z.object({ type: nonEmptyString }),
+]);
 
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 
@@ -68,4 +65,34 @@ export const llmoConfig = z.object({
       }),
     ),
   }),
+}).superRefine((value, ctx) => {
+  const { entities, brands, competitors } = value;
+  const ensureEntityType = (id, expectedType, path, refLabel) => {
+    const entityValue = entities[id];
+    if (!entityValue) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path,
+        message: `Unknown ${refLabel} entity: ${id}`,
+      });
+      return;
+    }
+
+    if (entityValue.type !== expectedType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path,
+        message: `Entity ${id} referenced as ${refLabel} must have type "${expectedType}" but was "${entityValue.type}"`,
+      });
+    }
+  };
+
+  brands.aliases.forEach((alias, index) => {
+    ensureEntityType(alias.category, 'category', ['brands', 'aliases', index, 'category'], 'category');
+    ensureEntityType(alias.topic, 'topic', ['brands', 'aliases', index, 'topic'], 'topic');
+  });
+
+  competitors.competitors.forEach((competitor, index) => {
+    ensureEntityType(competitor.category, 'category', ['competitors', 'competitors', index, 'category'], 'category');
+  });
 });

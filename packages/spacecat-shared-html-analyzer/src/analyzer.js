@@ -21,20 +21,6 @@ import { generateDiffReport } from './diff-engine.js';
 import { hashDJB2, pct } from './utils.js';
 
 /**
- * Validate HTML input sizes to prevent memory issues
- * @param {...Array} htmlInputs - Array of [html, paramName] pairs to validate
- */
-function validateHtmlInputSizes(...htmlInputs) {
-  const MAX_HTML_SIZE = 500 * 1024; // 500KB limit per HTML input
-
-  for (const [html, paramName] of htmlInputs) {
-    if (html && html.length > MAX_HTML_SIZE) {
-      throw new Error(`${paramName} HTML content too large. Max size: ${MAX_HTML_SIZE} bytes (${Math.round(MAX_HTML_SIZE / 1024)}KB)`);
-    }
-  }
-}
-
-/**
  * Comprehensive text-only analysis between initial and final HTML
  * @param {string} initHtml - Initial HTML content (what crawlers see)
  * @param {string} finHtml - Final HTML content (what users see)
@@ -42,9 +28,6 @@ function validateHtmlInputSizes(...htmlInputs) {
  * @returns {Promise<Object>} Comprehensive analysis results
  */
 export async function analyzeTextComparison(initHtml, finHtml, ignoreNavFooter = true) {
-  // Input validation: prevent memory issues with excessively large inputs
-  validateHtmlInputSizes([initHtml, 'Initial'], [finHtml, 'Final']);
-
   // Handle both sync (browser) and async (Node.js) stripTagsToText
   const initTextResult = stripTagsToText(initHtml, ignoreNavFooter);
   const finTextResult = stripTagsToText(finHtml, ignoreNavFooter);
@@ -81,9 +64,6 @@ export async function analyzeTextComparison(initHtml, finHtml, ignoreNavFooter =
  * @returns {Promise<Object>} Basic statistics
  */
 export async function calculateStats(originalHTML, currentHTML, ignoreNavFooter = true) {
-  // Input validation: prevent memory issues with excessively large inputs
-  validateHtmlInputSizes([originalHTML, 'Original'], [currentHTML, 'Current']);
-
   // Handle both sync (browser) and async (Node.js) stripTagsToText
   const originalTextResult = stripTagsToText(originalHTML, ignoreNavFooter);
   const currentTextResult = stripTagsToText(currentHTML, ignoreNavFooter);

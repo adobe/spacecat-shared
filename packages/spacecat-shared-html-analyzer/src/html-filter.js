@@ -278,12 +278,6 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
 export function filterHtmlContent(htmlContent, ignoreNavFooter = true, returnText = true) {
   if (!htmlContent) return '';
 
-  // Input validation: prevent memory issues with excessively large inputs
-  const MAX_HTML_SIZE = 1024 * 1024; // 1MB limit for HTML filtering (more generous than analysis)
-  if (htmlContent.length > MAX_HTML_SIZE) {
-    throw new Error(`HTML content too large for filtering. Max size: ${MAX_HTML_SIZE} bytes (${Math.round(MAX_HTML_SIZE / 1024)}KB)`);
-  }
-
   // Browser environment (DOMParser) - works in Chrome extensions too - SYNCHRONOUS
   if (isBrowser()) {
     return filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText);

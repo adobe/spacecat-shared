@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.17.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.4...@adobe/spacecat-shared-http-utils-v1.17.5) (2025-09-24)
+
+
+### Bug Fixes
+
+* track IMS handler usage ([#979](https://github.com/adobe/spacecat-shared/issues/979)) ([ba09d1d](https://github.com/adobe/spacecat-shared/commit/ba09d1d4510ffd8f4518edb0738db451b11d133a))
+
 # [@adobe/spacecat-shared-http-utils-v1.17.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.3...@adobe/spacecat-shared-http-utils-v1.17.4) (2025-09-22)
 
 

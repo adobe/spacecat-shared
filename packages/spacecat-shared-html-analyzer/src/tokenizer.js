@@ -98,20 +98,6 @@ export function tokenize(text, mode = 'word') {
 }
 
 /**
- * Normalize text for consistent comparison
- * @param {string} text - Input text
- * @returns {string} Normalized text
- */
-export function normalizeText(text) {
-  if (!text) return '';
-
-  return text
-    .replace(/\r\n?|\n/g, ' ') // Convert newlines to spaces
-    .replace(/\s+/g, ' ') // Collapse multiple whitespace
-    .trim(); // Remove leading/trailing whitespace
-}
-
-/**
  * Count words in text using tokenization
  * @param {string} text - Input text
  * @returns {number} Word count

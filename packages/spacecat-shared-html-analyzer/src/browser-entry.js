@@ -28,7 +28,6 @@ import {
   extractWordCount,
   filterNavigationAndFooterBrowser,
   tokenize,
-  normalizeText,
   countWords,
   countLines,
   diffTokens,
@@ -54,7 +53,6 @@ const HTMLAnalyzer = {
 
   // Text processing functions
   tokenize,
-  normalizeText,
   countWords,
   countLines,
 

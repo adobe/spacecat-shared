@@ -44,10 +44,6 @@ export function isBrowser(): boolean;
  */
 export function tokenize(text: string, mode?: "word" | "line"): string[];
 
-/**
- * Normalize text for consistent comparison
- */
-export function normalizeText(text: string): string;
 
 /**
  * Count words in text using tokenization

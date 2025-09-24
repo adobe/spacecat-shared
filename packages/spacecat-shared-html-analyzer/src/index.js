@@ -25,7 +25,6 @@ export {
 
 export {
   tokenize,
-  normalizeText,
   countWords,
   countLines,
 } from './tokenizer.js';

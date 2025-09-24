@@ -104,41 +104,28 @@ class TierClient {
   async checkValidEntitlement() {
     try {
       const orgId = this.organization.getId();
-      this.log.debug(`Checking for valid entitlement for org ${orgId} and product ${this.productCode}`);
-
       const entitlement = await this.Entitlement
         .findByOrganizationIdAndProductCode(orgId, this.productCode);
 
       if (!entitlement) {
-        this.log.debug(`No valid entitlement found for org ${orgId} and product ${this.productCode}`);
         return {};
       }
-
-      this.log.info(`Found valid entitlement: ${entitlement.getId()}`);
-
       // Only check for site enrollment if site is provided
       if (this.site) {
         const siteId = this.site.getId();
-        this.log.debug(`Checking for valid site enrollment for site ${siteId} and entitlement ${entitlement.getId()}`);
-
         const siteEnrollments = await this.SiteEnrollment.allBySiteId(siteId);
         const validSiteEnrollment = siteEnrollments.find(
           (se) => se.getEntitlementId() === entitlement.getId(),
         );
 
         if (!validSiteEnrollment) {
-          this.log.debug(`No valid site enrollment found for site ${siteId} and entitlement ${entitlement.getId()}`);
           return { entitlement };
         }
-
-        this.log.debug(`Found valid site enrollment: ${validSiteEnrollment.getId()}`);
-
         return {
           entitlement,
           siteEnrollment: validSiteEnrollment,
         };
       } else {
-        this.log.debug(`No site provided, returning entitlement only for org ${orgId}`);
         return { entitlement };
       }
     } catch (error) {
@@ -159,10 +146,7 @@ class TierClient {
       if (!Object.values(EntitlementModel.TIERS).includes(tier)) {
         throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(EntitlementModel.TIERS).join(', ')}`);
       }
-
       const orgId = this.organization.getId();
-      this.log.info(`Creating/updating entitlement for org ${orgId}, product ${this.productCode}, tier ${tier}`);
-
       // Check what already exists
       const existing = await this.checkValidEntitlement();
 
@@ -172,7 +156,6 @@ class TierClient {
 
         // If tier doesn't match, update it
         if (currentTier !== tier) {
-          this.log.info(`Updating entitlement tier from ${currentTier} to ${tier} for org ${orgId}`);
           existing.entitlement.setTier(tier);
           await existing.entitlement.save();
         }
@@ -184,7 +167,6 @@ class TierClient {
             siteId,
             entitlementId: existing.entitlement.getId(),
           });
-          this.log.info(`Created site enrollment: ${siteEnrollment.getId()}`);
           return {
             entitlement: existing.entitlement,
             siteEnrollment,
@@ -205,8 +187,6 @@ class TierClient {
         },
       });
 
-      this.log.info(`Created new entitlement: ${entitlement.getId()}`);
-
       // If no site provided, return entitlement only
       if (!this.site) {
         return { entitlement };
@@ -218,8 +198,6 @@ class TierClient {
         siteId,
         entitlementId: entitlement.getId(),
       });
-
-      this.log.info(`Created site enrollment: ${siteEnrollment.getId()}`);
 
       return {
         entitlement,

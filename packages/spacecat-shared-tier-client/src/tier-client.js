@@ -104,13 +104,13 @@ class TierClient {
   async checkValidEntitlement() {
     try {
       const orgId = this.organization.getId();
-      this.log.info(`Checking for valid entitlement for org ${orgId} and product ${this.productCode}`);
+      this.log.debug(`Checking for valid entitlement for org ${orgId} and product ${this.productCode}`);
 
       const entitlement = await this.Entitlement
         .findByOrganizationIdAndProductCode(orgId, this.productCode);
 
       if (!entitlement) {
-        this.log.info(`No valid entitlement found for org ${orgId} and product ${this.productCode}`);
+        this.log.debug(`No valid entitlement found for org ${orgId} and product ${this.productCode}`);
         return {};
       }
 
@@ -119,7 +119,7 @@ class TierClient {
       // Only check for site enrollment if site is provided
       if (this.site) {
         const siteId = this.site.getId();
-        this.log.info(`Checking for valid site enrollment for site ${siteId} and entitlement ${entitlement.getId()}`);
+        this.log.debug(`Checking for valid site enrollment for site ${siteId} and entitlement ${entitlement.getId()}`);
 
         const siteEnrollments = await this.SiteEnrollment.allBySiteId(siteId);
         const validSiteEnrollment = siteEnrollments.find(
@@ -127,18 +127,18 @@ class TierClient {
         );
 
         if (!validSiteEnrollment) {
-          this.log.info(`No valid site enrollment found for site ${siteId} and entitlement ${entitlement.getId()}`);
+          this.log.debug(`No valid site enrollment found for site ${siteId} and entitlement ${entitlement.getId()}`);
           return { entitlement };
         }
 
-        this.log.info(`Found valid site enrollment: ${validSiteEnrollment.getId()}`);
+        this.log.debug(`Found valid site enrollment: ${validSiteEnrollment.getId()}`);
 
         return {
           entitlement,
           siteEnrollment: validSiteEnrollment,
         };
       } else {
-        this.log.info(`No site provided, returning entitlement only for org ${orgId}`);
+        this.log.debug(`No site provided, returning entitlement only for org ${orgId}`);
         return { entitlement };
       }
     } catch (error) {

@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+/* eslint-disable no-use-before-define */
+
 import * as z from 'zod';
 
 // ===== SCHEMA DEFINITIONS ====================================================
@@ -67,32 +69,41 @@ export const llmoConfig = z.object({
   }),
 }).superRefine((value, ctx) => {
   const { entities, brands, competitors } = value;
-  const ensureEntityType = (id, expectedType, path, refLabel) => {
-    const entityValue = entities[id];
-    if (!entityValue) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path,
-        message: `Unknown ${refLabel} entity: ${id}`,
-      });
-      return;
-    }
-
-    if (entityValue.type !== expectedType) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path,
-        message: `Entity ${id} referenced as ${refLabel} must have type "${expectedType}" but was "${entityValue.type}"`,
-      });
-    }
-  };
 
   brands.aliases.forEach((alias, index) => {
-    ensureEntityType(alias.category, 'category', ['brands', 'aliases', index, 'category'], 'category');
-    ensureEntityType(alias.topic, 'topic', ['brands', 'aliases', index, 'topic'], 'topic');
+    ensureEntityType(entities, ctx, alias.category, 'category', ['brands', 'aliases', index, 'category'], 'category');
+    ensureEntityType(entities, ctx, alias.topic, 'topic', ['brands', 'aliases', index, 'topic'], 'topic');
   });
 
   competitors.competitors.forEach((competitor, index) => {
-    ensureEntityType(competitor.category, 'category', ['competitors', 'competitors', index, 'category'], 'category');
+    ensureEntityType(entities, ctx, competitor.category, 'category', ['competitors', 'competitors', index, 'category'], 'category');
   });
 });
+
+/**
+   * @param {LLMOConfig['entities']} entities
+   * @param {z.RefinementCtx} ctx
+   * @param {string} id
+   * @param {string} expectedType
+   * @param {Array<number | string>} path
+   * @param {string} refLabel
+   */
+function ensureEntityType(entities, ctx, id, expectedType, path, refLabel) {
+  const entityValue = entities[id];
+  if (!entityValue) {
+    ctx.addIssue({
+      code: 'custom',
+      path,
+      message: `Unknown ${refLabel} entity: ${id}`,
+    });
+    return;
+  }
+
+  if (entityValue.type !== expectedType) {
+    ctx.addIssue({
+      code: 'custom',
+      path,
+      message: `Entity ${id} referenced as ${refLabel} must have type "${expectedType}" but was "${entityValue.type}"`,
+    });
+  }
+}

@@ -145,6 +145,11 @@ export default class AdobeImsHandler extends AbstractHandler {
   }
 
   async checkAuth(request, context) {
+    // Log to trace usage of IMS handler
+    const { pathInfo } = context;
+    const { method, suffix } = pathInfo;
+    const route = `${method.toUpperCase()} ${suffix}`;
+    this.log(`Checking authentication with IMS for product ${pathInfo.headers['x-product']} at route ${route}`, 'debug');
     const token = getBearerToken(context);
     if (!hasText(token)) {
       this.log('No bearer token provided', 'debug');

@@ -1,3 +1,15 @@
+# @adobe/spacecat-shared-html-analyzer-v1.0.0 (2025-09-24)
+
+
+### Bug Fixes
+
+* release package ([#984](https://github.com/adobe/spacecat-shared/issues/984)) ([15a620e](https://github.com/adobe/spacecat-shared/commit/15a620ecb276d37b14cc2b5e7ca787f7c478ca2b))
+
+
+### Features
+
+* package for html comparison ([#968](https://github.com/adobe/spacecat-shared/issues/968)) ([5934c0a](https://github.com/adobe/spacecat-shared/commit/5934c0a1e04b91916a823a1835e65178391e0d76))
+
 # Changelog
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.17.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.3...@adobe/spacecat-shared-http-utils-v1.17.4) (2025-09-22)
+
+
+### Bug Fixes
+
+* add entitlement in scope ([#973](https://github.com/adobe/spacecat-shared/issues/973)) ([2837acf](https://github.com/adobe/spacecat-shared/commit/2837acf2acaaefb663ef0a42855474706ce25d06))
+
 # [@adobe/spacecat-shared-http-utils-v1.17.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.2...@adobe/spacecat-shared-http-utils-v1.17.3) (2025-09-15)
 
 

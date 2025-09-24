@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-tier-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.1.0...@adobe/spacecat-shared-tier-client-v1.1.1) (2025-09-22)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#974](https://github.com/adobe/spacecat-shared/issues/974)) ([994e488](https://github.com/adobe/spacecat-shared/commit/994e488e04fa44585b8d41a6daa9c7f86f1cee37))
+
+# [@adobe/spacecat-shared-tier-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.0.1...@adobe/spacecat-shared-tier-client-v1.1.0) (2025-09-22)
+
+
+### Features
+
+* entitlement with out site and upgrade ([#971](https://github.com/adobe/spacecat-shared/issues/971)) ([1f042df](https://github.com/adobe/spacecat-shared/commit/1f042df62439383ff4a7cea6b0eb75649439e72a))
+
 # [@adobe/spacecat-shared-tier-client-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.0.0...@adobe/spacecat-shared-tier-client-v1.0.1) (2025-09-18)
 
 

@@ -187,11 +187,12 @@ describe('AuditModel', () => {
       PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
       READABILITY: 'readability',
       PRERENDER: 'prerender',
+      PRODUCT_METATAGS: 'product-metatags',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(36);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(37);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

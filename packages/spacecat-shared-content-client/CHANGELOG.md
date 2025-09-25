@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-content-client-v1.7.32](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.31...@adobe/spacecat-shared-content-client-v1.7.32) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
 # [@adobe/spacecat-shared-content-client-v1.7.31](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.30...@adobe/spacecat-shared-content-client-v1.7.31) (2025-09-21)
 
 

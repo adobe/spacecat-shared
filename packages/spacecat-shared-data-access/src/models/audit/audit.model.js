@@ -129,7 +129,7 @@ class Audit extends BaseModel {
         startDate: stepResult.startDate,
         endDate: stepResult.endDate,
         urlConfigs: stepResult.urlConfigs,
-        allowCache: true,
+        allowCache: isBoolean(stepResult.allowCache) ? stepResult.allowCache : true,
         auditContext,
       }),
     },

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.8...@adobe/spacecat-shared-utils-v1.51.0) (2025-09-25)
+
+
+### Features
+
+* schema + file read/write for llmo config ([#981](https://github.com/adobe/spacecat-shared/issues/981)) ([93b0aae](https://github.com/adobe/spacecat-shared/commit/93b0aae0daeb1a81c6914d21b30f39b448784599))
+
 # [@adobe/spacecat-shared-utils-v1.50.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.7...@adobe/spacecat-shared-utils-v1.50.8) (2025-09-20)
 
 

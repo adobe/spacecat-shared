@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.64.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.4...@adobe/spacecat-shared-data-access-v2.64.5) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
+# [@adobe/spacecat-shared-data-access-v2.64.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.3...@adobe/spacecat-shared-data-access-v2.64.4) (2025-09-24)
+
+
+### Bug Fixes
+
+* dummy update readme ([#983](https://github.com/adobe/spacecat-shared/issues/983)) ([a631f36](https://github.com/adobe/spacecat-shared/commit/a631f36443ae96098a36412c1aab7995416c57d1))
+
+# [@adobe/spacecat-shared-data-access-v2.64.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.2...@adobe/spacecat-shared-data-access-v2.64.3) (2025-09-23)
+
+
+### Bug Fixes
+
+* remove IDP left over ([#978](https://github.com/adobe/spacecat-shared/issues/978)) ([a8129e4](https://github.com/adobe/spacecat-shared/commit/a8129e40cbf6da1c0463d68a993d7e520c7542e6))
+
+# [@adobe/spacecat-shared-data-access-v2.64.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.1...@adobe/spacecat-shared-data-access-v2.64.2) (2025-09-23)
+
+
+### Bug Fixes
+
+* remove IDP support ([#977](https://github.com/adobe/spacecat-shared/issues/977)) ([f2b4ad9](https://github.com/adobe/spacecat-shared/commit/f2b4ad95feeb6755cb6203c343c0ae4552cf8a76))
+
 # [@adobe/spacecat-shared-data-access-v2.64.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.0...@adobe/spacecat-shared-data-access-v2.64.1) (2025-09-20)
 
 

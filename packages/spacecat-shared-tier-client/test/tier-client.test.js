@@ -85,6 +85,7 @@ describe('TierClient', () => {
     log: {
       info: sandbox.stub(),
       error: sandbox.stub(),
+      debug: sandbox.stub(),
     },
     attributes: {
       authInfo: {

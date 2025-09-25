@@ -14,7 +14,6 @@ import { isIsoDate, isObject } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
 import TrialUser from './trial-user.model.js';
 import TrialUserCollection from './trial-user.collection.js';
-import OrganizationIdentityProvider from '../organization-identity-provider/organization-identity-provider.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -34,10 +33,6 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
   .addAttribute('status', {
     type: Object.values(TrialUser.STATUSES),
     required: true,
-  })
-  .addAttribute('provider', {
-    type: Object.values(OrganizationIdentityProvider.PROVIDER_TYPES),
-    required: false,
   })
   .addAttribute('lastSeenAt', {
     type: 'string',
@@ -59,10 +54,6 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
     type: 'any',
     validate: (value) => !value || isObject(value),
   })
-  .addAllIndex(['emailId'])
-  .addIndex(
-    { composite: ['provider'] },
-    { composite: ['externalUserId'] },
-  );
+  .addAllIndex(['emailId']);
 
 export default schema.build();

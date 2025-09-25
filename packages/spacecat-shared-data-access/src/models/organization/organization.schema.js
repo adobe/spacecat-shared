@@ -29,7 +29,6 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
   // this will add an attribute 'organizationId' as well as an index 'byOrganizationId'
   .addReference('has_many', 'Sites')
   .addReference('has_many', 'Entitlements')
-  .addReference('has_many', 'OrganizationIdentityProviders')
   .addReference('has_many', 'TrialUsers')
   .addAttribute('config', {
     type: 'any',

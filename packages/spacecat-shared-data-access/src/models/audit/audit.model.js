@@ -51,12 +51,15 @@ class Audit extends BaseModel {
     ALT_TEXT: 'alt-text',
     ACCESSIBILITY: 'accessibility',
     SECURITY_CSP: 'security-csp',
+    SECURITY_VULNERABILITIES: 'security-vulnerabilities',
+    SECURITY_PERMISSIONS: 'security-permissions',
     PAID: 'paid',
     HREFLANG: 'hreflang',
     HEADINGS: 'headings',
     PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
     PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
     READABILITY: 'readability',
+    PRERENDER: 'prerender',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

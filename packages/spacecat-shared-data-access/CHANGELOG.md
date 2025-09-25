@@ -1,3 +1,66 @@
+# [@adobe/spacecat-shared-data-access-v2.64.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.3...@adobe/spacecat-shared-data-access-v2.64.4) (2025-09-24)
+
+
+### Bug Fixes
+
+* dummy update readme ([#983](https://github.com/adobe/spacecat-shared/issues/983)) ([a631f36](https://github.com/adobe/spacecat-shared/commit/a631f36443ae96098a36412c1aab7995416c57d1))
+
+# [@adobe/spacecat-shared-data-access-v2.64.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.2...@adobe/spacecat-shared-data-access-v2.64.3) (2025-09-23)
+
+
+### Bug Fixes
+
+* remove IDP left over ([#978](https://github.com/adobe/spacecat-shared/issues/978)) ([a8129e4](https://github.com/adobe/spacecat-shared/commit/a8129e40cbf6da1c0463d68a993d7e520c7542e6))
+
+# [@adobe/spacecat-shared-data-access-v2.64.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.1...@adobe/spacecat-shared-data-access-v2.64.2) (2025-09-23)
+
+
+### Bug Fixes
+
+* remove IDP support ([#977](https://github.com/adobe/spacecat-shared/issues/977)) ([f2b4ad9](https://github.com/adobe/spacecat-shared/commit/f2b4ad95feeb6755cb6203c343c0ae4552cf8a76))
+
+# [@adobe/spacecat-shared-data-access-v2.64.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.0...@adobe/spacecat-shared-data-access-v2.64.1) (2025-09-20)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#969](https://github.com/adobe/spacecat-shared/issues/969)) ([d722c62](https://github.com/adobe/spacecat-shared/commit/d722c623193fdbf292d96d71236cb4396db7ce3b))
+
+# [@adobe/spacecat-shared-data-access-v2.64.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.63.0...@adobe/spacecat-shared-data-access-v2.64.0) (2025-09-19)
+
+
+### Features
+
+* adding new prerender audit type ([#959](https://github.com/adobe/spacecat-shared/issues/959)) ([7bebd89](https://github.com/adobe/spacecat-shared/commit/7bebd8992fa997f8dcb8db4c736b49d705fef905))
+
+# [@adobe/spacecat-shared-data-access-v2.63.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.62.2...@adobe/spacecat-shared-data-access-v2.63.0) (2025-09-19)
+
+
+### Features
+
+* System-Wide Pagination Fix for DynamoDB Data Truncation ([#964](https://github.com/adobe/spacecat-shared/issues/964)) ([8f82e5f](https://github.com/adobe/spacecat-shared/commit/8f82e5fe2d5ed9ecd8ad2ff4e139b0588b3d8c01))
+
+# [@adobe/spacecat-shared-data-access-v2.62.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.62.1...@adobe/spacecat-shared-data-access-v2.62.2) (2025-09-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#949](https://github.com/adobe/spacecat-shared/issues/949)) ([c25e099](https://github.com/adobe/spacecat-shared/commit/c25e099d2097b134f606e9a369b831d81143966d))
+
+# [@adobe/spacecat-shared-data-access-v2.62.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.62.0...@adobe/spacecat-shared-data-access-v2.62.1) (2025-09-12)
+
+
+### Bug Fixes
+
+* Update entitlement.schema.js for consume numbers ([#955](https://github.com/adobe/spacecat-shared/issues/955)) ([0a65569](https://github.com/adobe/spacecat-shared/commit/0a65569c25d9a7abd13b8bce1e28d021d9b29967))
+
+# [@adobe/spacecat-shared-data-access-v2.62.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.4...@adobe/spacecat-shared-data-access-v2.62.0) (2025-09-10)
+
+
+### Features
+
+* add security audit types ([#953](https://github.com/adobe/spacecat-shared/issues/953)) ([8d4827b](https://github.com/adobe/spacecat-shared/commit/8d4827be6f90689d4a49d8113bfaccc52d85b3a2))
+
 # [@adobe/spacecat-shared-data-access-v2.61.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.61.3...@adobe/spacecat-shared-data-access-v2.61.4) (2025-09-09)
 
 

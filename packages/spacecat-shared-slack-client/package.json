@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-slack-client",
-  "version": "1.5.25",
+  "version": "1.5.26",
   "description": "Shared modules of the Spacecat Services - Slack Client",
   "type": "module",
   "engines": {
@@ -33,7 +33,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/helix-universal": "5.2.2",
+    "@adobe/helix-universal": "5.2.3",
     "@adobe/spacecat-shared-utils": "1.26.4",
     "@slack/web-api": "7.10.0"
   },

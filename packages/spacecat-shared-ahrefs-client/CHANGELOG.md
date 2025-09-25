@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.9.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.8...@adobe/spacecat-shared-ahrefs-client-v1.9.9) (2025-09-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.3 ([#963](https://github.com/adobe/spacecat-shared/issues/963)) ([6a433ea](https://github.com/adobe/spacecat-shared/commit/6a433ea495c0a68cb3129a51beed9388af277952))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.9.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.7...@adobe/spacecat-shared-ahrefs-client-v1.9.8) (2025-09-15)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#962](https://github.com/adobe/spacecat-shared/issues/962)) ([73831d9](https://github.com/adobe/spacecat-shared/commit/73831d9281898c9ea2395d78c569afe6ae942dce))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.9.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.6...@adobe/spacecat-shared-ahrefs-client-v1.9.7) (2025-09-09)
 
 

@@ -178,17 +178,20 @@ describe('AuditModel', () => {
       ALT_TEXT: 'alt-text',
       ACCESSIBILITY: 'accessibility',
       SECURITY_CSP: 'security-csp',
+      SECURITY_VULNERABILITIES: 'security-vulnerabilities',
+      SECURITY_PERMISSIONS: 'security-permissions',
       PAID: 'paid',
       HREFLANG: 'hreflang',
       HEADINGS: 'headings',
       PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
       PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
       READABILITY: 'readability',
+      PRERENDER: 'prerender',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(33);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(36);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

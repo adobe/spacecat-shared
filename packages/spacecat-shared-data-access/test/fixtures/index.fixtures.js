@@ -31,7 +31,6 @@ import fixEntities from './fix-entity.fixture.js';
 import pageIntents from './page-intents.fixture.js';
 import reports from './reports.fixture.js';
 import entitlements from './entitlements.fixture.js';
-import organizationIdentityProviders from './organization-identity-providers.fixture.js';
 import trialUsers from './trial-users.fixture.js';
 import trialUserActivities from './trial-user-activities.fixture.js';
 import siteEnrollments from './site-enrollments.fixture.js';
@@ -58,7 +57,6 @@ export default {
   pageIntents,
   reports,
   entitlements,
-  organizationIdentityProviders,
   trialUsers,
   trialUserActivities,
   siteEnrollments,

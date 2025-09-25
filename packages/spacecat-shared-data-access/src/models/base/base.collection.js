@@ -252,14 +252,33 @@ class BaseCollection {
       let result = await query.go(queryOptions);
       let allData = result.data;
 
-      // if the caller requests ALL pages and we're not using limit: 1,
-      // continue to fetch until there is no cursor.
-      if (options.fetchAllPages && options.limit !== 1) {
+      // Smart pagination behavior:
+      // - fetchAllPages: true → Always paginate through all results
+      // - fetchAllPages: false → Only fetch first page
+      // - undefined → Auto-paginate when no limit specified, respect limits otherwise
+      const shouldFetchAllPages = options.fetchAllPages === true
+                                 || (options.fetchAllPages !== false && !options.limit);
+
+      if (shouldFetchAllPages) {
+        let pageCount = 1;
+        const startTime = Date.now();
+
         while (result.cursor) {
+          pageCount += 1;
           queryOptions.cursor = result.cursor;
           // eslint-disable-next-line no-await-in-loop
           result = await query.go(queryOptions);
           allData = allData.concat(result.data);
+        }
+
+        // Debug logging to track pagination behavior
+        if (pageCount > 1) {
+          this.log.debug(`Pagination completed for ${this.entityName}`, {
+            entityName: this.entityName,
+            totalPages: pageCount,
+            totalRecords: allData.length,
+            queryDuration: Date.now() - startTime,
+          });
         }
       }
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.64.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.5...@adobe/spacecat-shared-data-access-v2.64.6) (2025-09-25)
+
+
+### Bug Fixes
+
+* allow configurable cache flag on import step ([#988](https://github.com/adobe/spacecat-shared/issues/988)) ([219d9ab](https://github.com/adobe/spacecat-shared/commit/219d9ab098ce1bc91d90c9e5ac8624ffd576dc14))
+
 # [@adobe/spacecat-shared-data-access-v2.64.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.4...@adobe/spacecat-shared-data-access-v2.64.5) (2025-09-25)
 
 

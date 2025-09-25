@@ -62,6 +62,7 @@ export function defaultConfig() {
  * @param {string} [options.s3Bucket] Optional S3 bucket name.
  * @returns {Promise<{config: LLMOConfig, exists: boolean}>} The configuration object and
  *        a flag indicating if it existed.
+ * @throws {Error} If reading the configuration fails for reasons other than it not existing.
  */
 export async function readConfig(sideId, s3Client, options) {
   const version = options?.version;

@@ -189,7 +189,7 @@ export default class ScrapeClient {
         auditData = {},
       } = data;
 
-      this.config.log.info(`Creating a new scrape job with ${urls.length} URLs.`);
+      this.config.log.debug(`Creating a new scrape job with ${urls.length} URLs.`);
 
       // Merge the scrape configuration options with the request options allowing the user options
       // to override the defaults

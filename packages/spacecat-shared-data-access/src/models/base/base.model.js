@@ -267,7 +267,7 @@ class BaseModel {
         }
       });
 
-      this.log.info(`Removing entity ${this.entityName} with ID ${this.getId()} and ${dependents.length} dependents`);
+      this.log.debug(`Removing entity ${this.entityName} with ID ${this.getId()} and ${dependents.length} dependents`);
 
       await Promise.all(removePromises);
 
@@ -297,7 +297,7 @@ class BaseModel {
   async save() {
     // todo: validate associations
     try {
-      this.log.info(`Saving entity ${this.entityName} with ID ${this.getId()}`);
+      this.log.debug(`Saving entity ${this.entityName} with ID ${this.getId()}`);
 
       await this.patcher.save();
       this.#invalidateCache();

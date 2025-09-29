@@ -60,6 +60,7 @@ class Audit extends BaseModel {
     PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
     READABILITY: 'readability',
     PRERENDER: 'prerender',
+    PRODUCT_METATAGS: 'product-metatags',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

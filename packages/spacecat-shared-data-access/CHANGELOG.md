@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.65.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.6...@adobe/spacecat-shared-data-access-v2.65.0) (2025-09-29)
+
+
+### Features
+
+* **COMOPT-1168:** add PRODUCT_METATAGS to AUDIT_TYPES and update tests ([#972](https://github.com/adobe/spacecat-shared/issues/972)) ([236086f](https://github.com/adobe/spacecat-shared/commit/236086f459622e59b7ce7caf764323a9e9f1da3c))
+
+# [@adobe/spacecat-shared-data-access-v2.64.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.5...@adobe/spacecat-shared-data-access-v2.64.6) (2025-09-25)
+
+
+### Bug Fixes
+
+* allow configurable cache flag on import step ([#988](https://github.com/adobe/spacecat-shared/issues/988)) ([219d9ab](https://github.com/adobe/spacecat-shared/commit/219d9ab098ce1bc91d90c9e5ac8624ffd576dc14))
+
 # [@adobe/spacecat-shared-data-access-v2.64.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.4...@adobe/spacecat-shared-data-access-v2.64.5) (2025-09-25)
 
 

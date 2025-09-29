@@ -22,6 +22,15 @@ const hasEngagement = (bundle) => {
   return clickEngagement || contentEngagement;
 };
 
+/**
+ * Calculates engagement metrics for all pages from RUM data.
+ * A page view is considered engaged if there has been at least some user interaction (click events)
+ * or significant content has been viewed (4 or more viewmedia or viewblock events).
+ * Ref. - https://github.com/adobe/rum-distiller/blob/22f8b3caa6d700f4d1cbe29a94b7da34b9d50764/series.js#L89
+ *
+ * @param {Array} bundles - The RUM bundles to calculate engagement metrics for.
+ * @returns {Array} An array of engagement metrics for each page.
+ */
 function handler(bundles) {
   const urlsData = {};
   bundles.forEach((bundle) => {

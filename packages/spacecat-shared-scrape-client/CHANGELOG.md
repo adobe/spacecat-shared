@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-scrape-client-v2.1.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.4...@adobe/spacecat-shared-scrape-client-v2.1.5) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
 # [@adobe/spacecat-shared-scrape-client-v2.1.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.3...@adobe/spacecat-shared-scrape-client-v2.1.4) (2025-09-16)
 
 

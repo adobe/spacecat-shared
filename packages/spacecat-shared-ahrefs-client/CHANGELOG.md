@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.9.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.9...@adobe/spacecat-shared-ahrefs-client-v1.9.10) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.9.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.8...@adobe/spacecat-shared-ahrefs-client-v1.9.9) (2025-09-16)
 
 

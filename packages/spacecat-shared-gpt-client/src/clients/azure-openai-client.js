@@ -102,7 +102,7 @@ export default class AzureOpenAIClient {
       'api-key': this.config.apiKey,
     };
 
-    this.log.info(`[Azure OpenAI API Call]: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
+    this.log.debug(`[Azure OpenAI API Call]: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
     const response = await httpFetch(url, {
       method: 'POST',

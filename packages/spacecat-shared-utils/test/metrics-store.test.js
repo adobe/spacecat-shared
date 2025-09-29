@@ -36,6 +36,7 @@ describe('Metrics Store', () => {
       log: {
         info: sinon.stub(),
         error: sinon.stub(),
+        debug: sinon.stub(),
       },
       s3: {
         s3Client: {
@@ -109,7 +110,7 @@ describe('Metrics Store', () => {
         context.s3.s3Bucket,
       ))).to.be.true;
       expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested('input.Key', 'metrics/testSite/testSource/testMetric.json'))).to.be.true;
-      expect(context.log.info).to.have.been.calledWith('Successfully retrieved 2 metrics from metrics/testSite/testSource/testMetric.json');
+      expect(context.log.debug).to.have.been.calledWith('Successfully retrieved 2 metrics from metrics/testSite/testSource/testMetric.json');
     });
 
     it('should return empty array when retrieval fails', async () => {
@@ -179,7 +180,7 @@ describe('Metrics Store', () => {
       expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested('input.Key', 'metrics/testSite/testSource/testMetric.json'))).to.be.true;
       expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested('input.Body', JSON.stringify(content, null, 2)))).to.be.true;
       expect(context.s3.s3Client.send.calledWith(sinon.match.hasNested('input.ContentType', 'application/json'))).to.be.true;
-      expect(context.log.info).to.have.been.calledWith('Successfully uploaded metrics to'
+      expect(context.log.debug).to.have.been.calledWith('Successfully uploaded metrics to'
         + ' metrics/testSite/testSource/testMetric.json, response: {"foo":"bar"}');
     });
 

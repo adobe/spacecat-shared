@@ -125,7 +125,7 @@ export default class FirefallClient {
       'x-gw-ims-org-id': this.config.imsOrg,
     };
 
-    this.log.info(`[Firefall API Call]]: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
+    this.log.debug(`[Firefall API Call]]: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
     const response = await httpFetch(url, {
       method: 'POST',
@@ -158,7 +158,7 @@ export default class FirefallClient {
         'x-gw-ims-org-id': this.config.imsOrg,
       };
 
-      this.log.info(`URL: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
+      this.log.debug(`URL: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
       const response = await httpFetch(
         createUrl(url),
@@ -313,7 +313,7 @@ export default class FirefallClient {
 
       const result = output.capability_response.generations[0][0];
 
-      this.log.info(`Generation Info: ${JSON.stringify(result.generation_info)}`);
+      this.log.debug(`Generation Info: ${JSON.stringify(result.generation_info)}`);
 
       return result.text;
     } catch (error) {

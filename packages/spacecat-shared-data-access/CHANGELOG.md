@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.64.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.5...@adobe/spacecat-shared-data-access-v2.64.6) (2025-09-25)
+
+
+### Bug Fixes
+
+* allow configurable cache flag on import step ([#988](https://github.com/adobe/spacecat-shared/issues/988)) ([219d9ab](https://github.com/adobe/spacecat-shared/commit/219d9ab098ce1bc91d90c9e5ac8624ffd576dc14))
+
+# [@adobe/spacecat-shared-data-access-v2.64.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.4...@adobe/spacecat-shared-data-access-v2.64.5) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
 # [@adobe/spacecat-shared-data-access-v2.64.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.64.3...@adobe/spacecat-shared-data-access-v2.64.4) (2025-09-24)
 
 

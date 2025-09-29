@@ -192,7 +192,7 @@ export class AWSAthenaClient {
       maxPollAttempts = this.maxPollAttempts,
     } = opts;
 
-    this.log.info(`[Athena Client] Executing: ${description}`);
+    this.log.debug(`[Athena Client] Executing: ${description}`);
 
     const queryExecutionId = await this.#startQueryWithRetry(
       sql,
@@ -251,7 +251,7 @@ export class AWSAthenaClient {
     }
     /* c8 ignore stop */
 
-    this.log.info(`[Athena Client] Fetched ${totalRows} total rows across ${pageCount} pages`);
+    this.log.debug(`[Athena Client] Fetched ${totalRows} total rows across ${pageCount} pages`);
     return allResults;
   }
 }

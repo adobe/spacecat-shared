@@ -12,10 +12,10 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import engagement from '../src/functions/engagement.js';
+import userEngagement from '../src/functions/user-engagement.js';
 
-describe('engagement', () => {
-  it('calculates engagement metrics correctly', () => {
+describe('userEngagement', () => {
+  it('calculates user engagement metrics correctly', () => {
     const mockBundles = [
       {
         id: 'bundle1',
@@ -44,7 +44,7 @@ describe('engagement', () => {
       },
     ];
 
-    const result = engagement.handler(mockBundles);
+    const result = userEngagement.handler(mockBundles);
 
     expect(result).to.be.an('array');
     expect(result).to.have.length(2);
@@ -63,7 +63,7 @@ describe('engagement', () => {
   });
 
   it('handles empty bundles array', () => {
-    const result = engagement.handler([]);
+    const result = userEngagement.handler([]);
     expect(result).to.be.an('array');
     expect(result).to.have.length(0);
   });
@@ -78,7 +78,7 @@ describe('engagement', () => {
       },
     ];
 
-    const result = engagement.handler(mockBundles);
+    const result = userEngagement.handler(mockBundles);
 
     expect(result).to.be.an('array');
     expect(result).to.have.length(1);
@@ -104,7 +104,7 @@ describe('engagement', () => {
       },
     ];
 
-    const result = engagement.handler(mockBundles);
+    const result = userEngagement.handler(mockBundles);
 
     expect(result).to.be.an('array');
     expect(result).to.have.length(1);
@@ -138,7 +138,7 @@ describe('engagement', () => {
       },
     ];
 
-    const result = engagement.handler(mockBundles);
+    const result = userEngagement.handler(mockBundles);
 
     expect(result).to.be.an('array');
     expect(result).to.have.length(1);
@@ -150,6 +150,6 @@ describe('engagement', () => {
   });
 
   it('has correct checkpoints', () => {
-    expect(engagement.checkpoints).to.deep.equal(['click', 'viewmedia', 'viewblock']);
+    expect(userEngagement.checkpoints).to.deep.equal(['click', 'viewmedia', 'viewblock']);
   });
 });

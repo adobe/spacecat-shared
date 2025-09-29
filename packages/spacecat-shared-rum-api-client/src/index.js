@@ -27,7 +27,7 @@ import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js
 import trafficAnalysis from './functions/traffic-analysis.js';
 import optimizationReportMetrics from './functions/reports/optimization/metrics.js';
 import optimizationReportGraph from './functions/reports/optimization/graph.js';
-import engagement from './functions/engagement.js';
+import userEngagement from './functions/user-engagement.js';
 
 // exported for tests
 export const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
@@ -49,7 +49,7 @@ const HANDLERS = {
   'traffic-analysis': trafficAnalysis,
   'optimization-report-metrics': optimizationReportMetrics,
   'optimization-report-graph': optimizationReportGraph,
-  engagement,
+  'user-engagement': userEngagement,
 };
 
 function sanitize(opts) {

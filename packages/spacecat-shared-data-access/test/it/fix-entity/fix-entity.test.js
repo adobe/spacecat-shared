@@ -27,6 +27,7 @@ function checkFixEntity(fixEntity) {
   expect(fixEntity.getStatus()).to.be.a('string');
   expect(fixEntity.getType()).to.be.a('string');
   expect(fixEntity.getChangeDetails()).to.be.an('object');
+  expect(fixEntity.getOrigin()).to.be.a('string');
 }
 
 describe('FixEntity IT', async () => {
@@ -122,5 +123,110 @@ describe('FixEntity IT', async () => {
 
     const notFound = await FixEntity.findById(sampleData.fixEntities[0].getId());
     expect(notFound).to.equal(null);
+  });
+
+  describe('origin attribute', () => {
+    it('creates a fix entity with explicit origin "spacecat"', async () => {
+      const data = {
+        opportunityId: 'd27f4e5a-850c-441e-9c22-8e5e08b1e687',
+        status: 'PENDING',
+        type: 'CONTENT_UPDATE',
+        origin: 'spacecat',
+        changeDetails: {
+          description: 'Fixes a typo in the content',
+          changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
+        },
+      };
+
+      const fixEntity = await FixEntity.create(data);
+
+      checkFixEntity(fixEntity);
+      expect(fixEntity.getOrigin()).to.equal('spacecat');
+    });
+
+    it('creates a fix entity with explicit origin "aso"', async () => {
+      const data = {
+        opportunityId: 'd27f4e5a-850c-441e-9c22-8e5e08b1e687',
+        status: 'PENDING',
+        type: 'CONTENT_UPDATE',
+        origin: 'aso',
+        changeDetails: {
+          description: 'Fixes a typo in the content',
+          changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
+        },
+      };
+
+      const fixEntity = await FixEntity.create(data);
+
+      checkFixEntity(fixEntity);
+      expect(fixEntity.getOrigin()).to.equal('aso');
+    });
+
+    it('creates a fix entity without origin (defaults to "spacecat")', async () => {
+      const data = {
+        opportunityId: 'd27f4e5a-850c-441e-9c22-8e5e08b1e687',
+        status: 'PENDING',
+        type: 'CONTENT_UPDATE',
+        changeDetails: {
+          description: 'Fixes a typo in the content',
+          changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
+        },
+      };
+
+      const fixEntity = await FixEntity.create(data);
+
+      checkFixEntity(fixEntity);
+      expect(fixEntity.getOrigin()).to.equal('spacecat'); // default value
+    });
+
+    it('rejects invalid origin values', async () => {
+      const data = {
+        opportunityId: 'd27f4e5a-850c-441e-9c22-8e5e08b1e687',
+        status: 'PENDING',
+        type: 'CONTENT_UPDATE',
+        origin: 'invalid-origin',
+        changeDetails: {
+          description: 'Fixes a typo in the content',
+          changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
+        },
+      };
+
+      await expect(FixEntity.create(data)).to.be.rejected;
+    });
+
+    it('updates a fix entity origin', async () => {
+      const data = {
+        opportunityId: 'd27f4e5a-850c-441e-9c22-8e5e08b1e687',
+        status: 'PENDING',
+        type: 'CONTENT_UPDATE',
+        origin: 'spacecat',
+        changeDetails: {
+          description: 'Fixes a typo in the content',
+          changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
+        },
+      };
+
+      const fixEntity = await FixEntity.create(data);
+      expect(fixEntity.getOrigin()).to.equal('spacecat');
+
+      // Update origin
+      fixEntity.setOrigin('aso');
+      await fixEntity.save();
+
+      // Verify the update persisted
+      const updatedFixEntity = await FixEntity.findById(fixEntity.getId());
+      expect(updatedFixEntity.getOrigin()).to.equal('aso');
+    });
+
+    it('validates existing fix entities have origin attribute', async () => {
+      const { opportunityId } = fixEntityFixtures[0];
+      const fixEntities = await FixEntity.allByOpportunityId(opportunityId);
+
+      fixEntities.forEach((fixEntity) => {
+        checkFixEntity(fixEntity);
+        // Should have origin from fixtures or default to 'spacecat'
+        expect(['spacecat', 'aso']).to.include(fixEntity.getOrigin());
+      });
+    });
   });
 });

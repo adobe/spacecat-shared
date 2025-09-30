@@ -28,6 +28,11 @@ class FixEntity extends BaseModel {
     FAILED: 'FAILED', // failed to apply the fix
     ROLLED_BACK: 'ROLLED_BACK', // the fix has been rolled_back
   };
+
+  static ORIGINS = {
+    SPACECAT: 'spacecat',
+    ASO: 'aso',
+  };
 }
 
 export default FixEntity;

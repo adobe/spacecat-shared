@@ -15,6 +15,7 @@ const fixEntities = [
     opportunityId: '742c49a7-d61f-4c62-9f7c-3207f520ed1e',
     status: 'PENDING',
     type: 'CONTENT_UPDATE',
+    origin: 'spacecat',
     changeDetails: {
       description: 'Fixes a broken internal link issue',
       changes: [
@@ -29,6 +30,7 @@ const fixEntities = [
     opportunityId: 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4',
     status: 'DEPLOYED',
     type: 'REDIRECT_UPDATE',
+    origin: 'aso',
     changeDetails: {
       description: 'Adds a new feature to the dashboard',
       changes: [

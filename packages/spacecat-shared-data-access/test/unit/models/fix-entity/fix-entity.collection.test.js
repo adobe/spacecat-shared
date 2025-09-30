@@ -58,4 +58,33 @@ describe('FixEntityCollection', () => {
       expect(model).to.be.an('object');
     });
   });
+
+  describe('FixEntity model constants', () => {
+    it('has ORIGINS enum with correct values', () => {
+      expect(FixEntity.ORIGINS).to.be.an('object');
+      expect(FixEntity.ORIGINS.SPACECAT).to.equal('spacecat');
+      expect(FixEntity.ORIGINS.ASO).to.equal('aso');
+    });
+
+    it('has STATUSES enum', () => {
+      expect(FixEntity.STATUSES).to.be.an('object');
+      expect(FixEntity.STATUSES.PENDING).to.equal('PENDING');
+      expect(FixEntity.STATUSES.DEPLOYED).to.equal('DEPLOYED');
+      expect(FixEntity.STATUSES.PUBLISHED).to.equal('PUBLISHED');
+      expect(FixEntity.STATUSES.FAILED).to.equal('FAILED');
+      expect(FixEntity.STATUSES.ROLLED_BACK).to.equal('ROLLED_BACK');
+    });
+
+    it('ORIGINS enum has exactly 2 values', () => {
+      const originValues = Object.values(FixEntity.ORIGINS);
+      expect(originValues).to.have.lengthOf(2);
+      expect(originValues).to.include.members(['spacecat', 'aso']);
+    });
+
+    it('ORIGINS enum keys match expected format', () => {
+      const originKeys = Object.keys(FixEntity.ORIGINS);
+      expect(originKeys).to.have.lengthOf(2);
+      expect(originKeys).to.include.members(['SPACECAT', 'ASO']);
+    });
+  });
 });

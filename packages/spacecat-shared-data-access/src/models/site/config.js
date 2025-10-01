@@ -153,6 +153,10 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
   }),
+  [IMPORT_TYPES.USER_ENGAGEMENT]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.USER_ENGAGEMENT).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {

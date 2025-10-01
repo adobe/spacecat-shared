@@ -39,11 +39,7 @@ const ID_ATTRIBUTE_DATA = {
   required: true,
   readOnly: true,
   // https://electrodb.dev/en/modeling/attributes/#default
-  default: () => globalThis.crypto?.randomUUID() || (() => {
-    // eslint-disable-next-line global-require
-    const crypto = require('crypto');
-    return crypto.randomUUID();
-  })(),
+  default: () => crypto.randomUUID(),
   // https://electrodb.dev/en/modeling/attributes/#attribute-validation
   validate: (value) => isValidUUID(value),
 };

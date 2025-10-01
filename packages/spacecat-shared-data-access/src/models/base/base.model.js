@@ -267,8 +267,6 @@ class BaseModel {
         }
       });
 
-      this.log.debug(`Removing entity ${this.entityName} with ID ${this.getId()} and ${dependents.length} dependents`);
-
       await Promise.all(removePromises);
 
       await this.entity.remove({ [this.idName]: this.getId() }).go();
@@ -297,8 +295,6 @@ class BaseModel {
   async save() {
     // todo: validate associations
     try {
-      this.log.debug(`Saving entity ${this.entityName} with ID ${this.getId()}`);
-
       await this.patcher.save();
       this.#invalidateCache();
 

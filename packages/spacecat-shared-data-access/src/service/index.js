@@ -32,14 +32,20 @@ const createRawClient = (client = undefined) => {
   });
 };
 
-const createElectroService = (client, config) => {
+const createElectroService = (client, config, log) => {
   const { tableNameData: table } = config;
+  /* c8 ignore start */
+  const logger = (event) => {
+    log.debug(JSON.stringify(event, null, 4));
+  };
+  /* c8 ignore end */
 
   return new Service(
     EntityRegistry.getEntities(),
     {
       client,
       table,
+      logger,
     },
   );
 };
@@ -56,7 +62,7 @@ export const createDataAccess = (config, log = console, client = undefined) => {
   registerLogger(log);
 
   const rawClient = createRawClient(client);
-  const electroService = createElectroService(rawClient, config);
+  const electroService = createElectroService(rawClient, config, log);
   const entityRegistry = new EntityRegistry(electroService, log);
 
   return entityRegistry.getCollections();

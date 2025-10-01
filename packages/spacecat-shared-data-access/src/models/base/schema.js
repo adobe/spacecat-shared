@@ -322,6 +322,7 @@ class Schema {
 
     const indexAccessors = this.getIndexAccessors();
     const accessorConfigs = [];
+    const createdAccessors = [];
 
     indexAccessors.forEach(({ indexName, keySets }) => {
       // generate a method for each prefix of the keySets array
@@ -345,10 +346,13 @@ class Schema {
           name: keyNamesToMethodName(subset, 'findBy'),
           requiredKeys: subset,
         });
-
-        log.debug(`Created accessors for index [${indexName}] with keys [${subset.join(', ')}]`);
+        createdAccessors.push(`index [${indexName}] with keys [${subset.join(', ')}]`);
       });
     });
+
+    if (createdAccessors.length > 0) {
+      log.debug(`Created accessors:\n${createdAccessors.map((accessor) => `  - ${accessor}`).join('\n')}`);
+    }
 
     return accessorConfigs;
   }

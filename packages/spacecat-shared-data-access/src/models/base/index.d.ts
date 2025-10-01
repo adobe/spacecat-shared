@@ -34,6 +34,13 @@ export interface QueryOptions {
   limit?: number;
   order?: string;
   attributes?: string[];
+  /** 
+   * Whether to automatically fetch all pages of results. 
+   * - `true`: Always paginate through all results
+   * - `false`: Only fetch first page
+   * - `undefined`: Auto-paginate when no limit specified, respect limits otherwise
+   */
+  fetchAllPages?: boolean;
 }
 
 export interface BaseCollection<T extends BaseModel> {

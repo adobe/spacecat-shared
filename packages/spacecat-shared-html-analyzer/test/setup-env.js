@@ -10,19 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseCollection from '../base/base.collection.js';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { use } from 'chai';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import chaiAsPromised from 'chai-as-promised';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import sinonChai from 'sinon-chai';
 
-/**
- * OrganizationIdentityProviderCollection - A collection class responsible for
- * managing OrganizationIdentityProvider entities.
- * Extends the BaseCollection to provide specific methods for interacting with
- * OrganizationIdentityProvider records.
- *
- * @class OrganizationIdentityProviderCollection
- * @extends BaseCollection
- */
-class OrganizationIdentityProviderCollection extends BaseCollection {
-  // add custom methods here
-}
-
-export default OrganizationIdentityProviderCollection;
+use(chaiAsPromised);
+use(sinonChai);

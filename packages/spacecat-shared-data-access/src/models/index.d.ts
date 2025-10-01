@@ -23,7 +23,6 @@ export type * from './key-event';
 export type * from './latest-audit';
 export type * from './opportunity';
 export type * from './organization';
-export type * from './organization-identity-provider';
 export type * from './scrape-job';
 export type * from './scrape-url';
 export type * from './site';

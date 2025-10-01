@@ -10,10 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import OrganizationIdentityProvider from './organization-identity-provider.model.js';
-import OrganizationIdentityProviderCollection from './organization-identity-provider.collection.js';
+import TierClient from './tier-client.js';
 
-export {
-  OrganizationIdentityProvider,
-  OrganizationIdentityProviderCollection,
-};
+export { TierClient };
+export default TierClient;

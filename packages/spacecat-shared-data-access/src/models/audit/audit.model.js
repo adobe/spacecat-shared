@@ -42,6 +42,7 @@ class Audit extends BaseModel {
     EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
     EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
     META_TAGS: 'meta-tags',
+    LLM_ERROR_PAGES: 'llm-error-pages',
     COSTS: 'costs',
     STRUCTURED_DATA: 'structured-data',
     STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
@@ -50,11 +51,16 @@ class Audit extends BaseModel {
     ALT_TEXT: 'alt-text',
     ACCESSIBILITY: 'accessibility',
     SECURITY_CSP: 'security-csp',
+    SECURITY_VULNERABILITIES: 'security-vulnerabilities',
+    SECURITY_PERMISSIONS: 'security-permissions',
     PAID: 'paid',
     HREFLANG: 'hreflang',
+    HEADINGS: 'headings',
     PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
     PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
     READABILITY: 'readability',
+    PRERENDER: 'prerender',
+    PRODUCT_METATAGS: 'product-metatags',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
@@ -92,7 +98,7 @@ class Audit extends BaseModel {
    *   },
    *   [Audit.AUDIT_STEP_DESTINATIONS.SCRAPE_CLIENT]: {
    *   formatPayload: function
-   * }}
+   * }}}
    */
   static AUDIT_STEP_DESTINATION_CONFIGS = {
     [Audit.AUDIT_STEP_DESTINATIONS.IMPORT_WORKER]: {
@@ -124,7 +130,7 @@ class Audit extends BaseModel {
         startDate: stepResult.startDate,
         endDate: stepResult.endDate,
         urlConfigs: stepResult.urlConfigs,
-        allowCache: true,
+        allowCache: isBoolean(stepResult.allowCache) ? stepResult.allowCache : true,
         auditContext,
       }),
     },

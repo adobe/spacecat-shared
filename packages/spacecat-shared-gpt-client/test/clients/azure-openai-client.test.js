@@ -225,6 +225,70 @@ describe('AzureOpenAIClient', () => {
       expect(result.choices[0].message.content).to.equal('Test response');
     });
 
+    it('should prioritize systemPrompt over json_object and not set response_format', async () => {
+      let capturedBody;
+      nock(mockContext.env.AZURE_OPENAI_ENDPOINT)
+        .post(chatPath, (body) => {
+          capturedBody = typeof body === 'string' ? JSON.parse(body) : body;
+          return true;
+        })
+        .query({ 'api-version': '2024-02-01' })
+        .reply(200, chatResponse);
+
+      const result = await client.fetchChatCompletion(
+        'Test prompt',
+        {
+          systemPrompt: 'Use strict system prompt',
+          responseFormat: 'json_object',
+        },
+      );
+      expect(result.choices[0].message.content).to.equal('Test response');
+
+      expect(capturedBody).to.be.an('object');
+      expect(capturedBody.response_format).to.be.undefined;
+      expect(capturedBody.messages[0]).to.deep.equal({
+        role: 'system',
+        content: 'Use strict system prompt',
+      });
+      expect(capturedBody.messages.filter((m) => m.role === 'system')).to.have.length(1);
+      expect(capturedBody.messages[1].role).to.equal('user');
+      expect(capturedBody.messages[1].content[0]).to.deep.include({
+        type: 'text',
+        text: 'Test prompt',
+      });
+    });
+
+    it('should request json_object response and include default JSON system instructions when no systemPrompt', async () => {
+      let capturedBody;
+      nock(mockContext.env.AZURE_OPENAI_ENDPOINT)
+        .post(chatPath, (body) => {
+          capturedBody = typeof body === 'string' ? JSON.parse(body) : body;
+          return true;
+        })
+        .query({ 'api-version': '2024-02-01' })
+        .reply(200, chatResponse);
+
+      const result = await client.fetchChatCompletion(
+        'Test prompt',
+        {
+          responseFormat: 'json_object',
+        },
+      );
+      expect(result.choices[0].message.content).to.equal('Test response');
+
+      expect(capturedBody.response_format).to.deep.equal({ type: 'json_object' });
+      expect(capturedBody.messages[0]).to.deep.equal({
+        role: 'system',
+        content: 'You are a helpful assistant designed to output JSON.',
+      });
+      expect(capturedBody.messages.filter((m) => m.role === 'system')).to.have.length(1);
+      expect(capturedBody.messages[1].role).to.equal('user');
+      expect(capturedBody.messages[1].content[0]).to.deep.include({
+        type: 'text',
+        text: 'Test prompt',
+      });
+    });
+
     it('should handle both images and JSON format', async () => {
       nock(mockContext.env.AZURE_OPENAI_ENDPOINT)
         .post(chatPath)

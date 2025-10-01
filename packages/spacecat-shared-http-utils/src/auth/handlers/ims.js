@@ -61,7 +61,6 @@ const transformProfile = (payload) => {
 
   profile.email = payload.user_id;
   profile.trial_email = payload.email;
-  profile.provider = 'IMS';
   profile.first_name = payload.first_name;
   profile.last_name = payload.last_name;
   IGNORED_PROFILE_PROPS.forEach((prop) => delete profile[prop]);
@@ -146,6 +145,11 @@ export default class AdobeImsHandler extends AbstractHandler {
   }
 
   async checkAuth(request, context) {
+    // Log to trace usage of IMS handler
+    const { pathInfo } = context;
+    const { method, suffix } = pathInfo;
+    const route = `${method.toUpperCase()} ${suffix}`;
+    this.log(`Checking authentication with IMS for product ${pathInfo.headers['x-product']} at route ${route}`, 'debug');
     const token = getBearerToken(context);
     if (!hasText(token)) {
       this.log('No bearer token provided', 'debug');

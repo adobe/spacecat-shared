@@ -31,7 +31,7 @@ const createHandler = (
     super(name, log);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars,class-methods-use-this
+  // eslint-disable-next-line no-unused-vars,class-methods-use-this
   async checkAuth(request, ctx) {
     if (shouldThrowError) {
       throw new Error('Authentication error');
@@ -71,7 +71,7 @@ describe('AuthenticationManager', () => {
 
     await expect(manager.authenticate(request, context)).to.be.rejectedWith(NotAuthenticatedError);
     expect(logStub.error.calledWith('Failed to authenticate with ErrorAuthHandler:')).to.be.true;
-    expect(logStub.info.calledWith('No authentication handler was able to authenticate the request')).to.be.true;
+    expect(logStub.debug.calledWith('No authentication handler was able to authenticate the request')).to.be.true;
   });
 
   it('creates an instance with registered handlers', () => {
@@ -101,7 +101,7 @@ describe('AuthenticationManager', () => {
     const context = {};
 
     await expect(manager.authenticate(request, context)).to.be.rejectedWith(NotAuthenticatedError);
-    expect(logStub.info.calledWith('No authentication handler was able to authenticate the request')).to.be.true;
+    expect(logStub.debug.calledWith('No authentication handler was able to authenticate the request')).to.be.true;
   });
 
   it('tries all handlers before failing', async () => {

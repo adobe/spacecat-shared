@@ -37,7 +37,7 @@ export default class AbstractHandler {
    * @return {Promise<AuthInfo|null>} The authentication info
    * or null if the request is not authenticated
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars,class-methods-use-this
+  // eslint-disable-next-line no-unused-vars,class-methods-use-this
   async checkAuth(request, context) {
     throw new Error('checkAuth method must be implemented');
   }

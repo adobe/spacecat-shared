@@ -37,6 +37,7 @@ class Suggestion extends BaseModel {
     REDIRECT_UPDATE: 'REDIRECT_UPDATE',
     METADATA_UPDATE: 'METADATA_UPDATE',
     AI_INSIGHTS: 'AI_INSIGHTS',
+    CONFIG_UPDATE: 'CONFIG_UPDATE',
   };
 
   // add your customized methods here

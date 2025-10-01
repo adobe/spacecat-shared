@@ -36,9 +36,9 @@ export interface TrialUserActivityCollection extends BaseCollection<TrialUserAct
     Promise<TrialUserActivity[]>;
   allBySiteId(siteId: string): Promise<TrialUserActivity[]>;
 
-  findByEntitlementId(entitlementId: string): Promise<TrialUserActivity[]>;
-  findByProductCode(productCode: EntitlementProductCode): Promise<TrialUserActivity[]>;
+  findByEntitlementId(entitlementId: string): Promise<TrialUserActivity | null>;
+  findByProductCode(productCode: EntitlementProductCode): Promise<TrialUserActivity | null>;
   findByProductCodeAndCreatedAt(productCode: EntitlementProductCode, createdAt: string):
-    Promise<TrialUserActivity[]>;
-  findBySiteId(siteId: string): Promise<TrialUserActivity[]>;
+    Promise<TrialUserActivity | null>;
+  findBySiteId(siteId: string): Promise<TrialUserActivity | null>;
 }

@@ -183,7 +183,7 @@ class BaseCollection {
    * @async
    * @protected
    */
-  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+  // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreate(item) {
     // no-op
   }
@@ -197,7 +197,7 @@ class BaseCollection {
    * @async
    * @protected
    */
-  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+  // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreateMany({ createdItems, errorItems }) {
     // no-op
   }
@@ -252,14 +252,33 @@ class BaseCollection {
       let result = await query.go(queryOptions);
       let allData = result.data;
 
-      // if the caller requests ALL pages and we're not using limit: 1,
-      // continue to fetch until there is no cursor.
-      if (options.fetchAllPages && options.limit !== 1) {
+      // Smart pagination behavior:
+      // - fetchAllPages: true → Always paginate through all results
+      // - fetchAllPages: false → Only fetch first page
+      // - undefined → Auto-paginate when no limit specified, respect limits otherwise
+      const shouldFetchAllPages = options.fetchAllPages === true
+                                 || (options.fetchAllPages !== false && !options.limit);
+
+      if (shouldFetchAllPages) {
+        let pageCount = 1;
+        const startTime = Date.now();
+
         while (result.cursor) {
+          pageCount += 1;
           queryOptions.cursor = result.cursor;
           // eslint-disable-next-line no-await-in-loop
           result = await query.go(queryOptions);
           allData = allData.concat(result.data);
+        }
+
+        // Debug logging to track pagination behavior
+        if (pageCount > 1) {
+          this.log.debug(`Pagination completed for ${this.entityName}`, {
+            entityName: this.entityName,
+            totalPages: pageCount,
+            totalRecords: allData.length,
+            queryDuration: Date.now() - startTime,
+          });
         }
       }
 
@@ -396,7 +415,7 @@ class BaseCollection {
 
       this.#invalidateCache();
 
-      this.log.info(`Created item for [${this.entityName}]`);
+      this.log.debug(`Created item for [${this.entityName}]`); // ~100k logs
 
       await this.#onCreate(instance);
 
@@ -476,7 +495,7 @@ class BaseCollection {
 
       this.#invalidateCache();
 
-      this.log.info(`Created ${createdItems.length} items for [${this.entityName}]`);
+      this.log.debug(`Created ${createdItems.length} items for [${this.entityName}]`);
 
       await this.#onCreateMany({ createdItems, errorItems });
 
@@ -518,7 +537,7 @@ class BaseCollection {
         this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
       }
 
-      this.log.info(`Updated ${items.length} items for [${this.entityName}]`);
+      this.log.debug(`Updated ${items.length} items for [${this.entityName}]`);
 
       return this.#invalidateCache();
     } catch (error) {
@@ -546,7 +565,7 @@ class BaseCollection {
 
       await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
 
-      this.log.info(`Removed ${ids.length} items for [${this.entityName}]`);
+      this.log.debug(`Removed ${ids.length} items for [${this.entityName}]`);
 
       return this.#invalidateCache();
     } catch (error) {

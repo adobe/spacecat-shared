@@ -10,23 +10,5 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseModel from '../base/base.model.js';
-
-/**
- * OrganizationIdentityProvider - A class representing an OrganizationIdentityProvider entity.
- * Provides methods to access and manipulate OrganizationIdentityProvider-specific data.
- *
- * @class OrganizationIdentityProvider
- * @extends BaseModel
- */
-class OrganizationIdentityProvider extends BaseModel {
-  static PROVIDER_TYPES = {
-    IMS: 'IMS',
-    MICROSOFT: 'MICROSOFT',
-    GOOGLE: 'GOOGLE',
-  };
-
-  // add your custom methods or overrides here
-}
-
-export default OrganizationIdentityProvider;
+// Test setup file
+export default {};

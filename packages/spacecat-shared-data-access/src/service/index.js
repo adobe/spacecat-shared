@@ -32,20 +32,14 @@ const createRawClient = (client = undefined) => {
   });
 };
 
-const createElectroService = (client, config, log) => {
+const createElectroService = (client, config) => {
   const { tableNameData: table } = config;
-  /* c8 ignore start */
-  const logger = (event) => {
-    log.debug(JSON.stringify(event, null, 4));
-  };
-  /* c8 ignore end */
 
   return new Service(
     EntityRegistry.getEntities(),
     {
       client,
       table,
-      logger,
     },
   );
 };

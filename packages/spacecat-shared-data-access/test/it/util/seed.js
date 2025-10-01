@@ -31,7 +31,6 @@ const resetDatabase = async () => {
     TEST_DA_CONFIG.tableNameKeyEvents,
     TEST_DA_CONFIG.tableNameLatestAudits,
     TEST_DA_CONFIG.tableNameOrganizations,
-    TEST_DA_CONFIG.tableNameProjects,
     TEST_DA_CONFIG.tableNameSiteCandidates,
     TEST_DA_CONFIG.tableNameSiteTopPages,
     TEST_DA_CONFIG.tableNameSites,

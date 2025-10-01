@@ -102,6 +102,57 @@ class SiteCollection extends BaseCollection {
         throw new DataAccessError(`Unsupported preview URL: ${previewURL}`, this);
     }
   }
+
+  async getSitesByProjectName(projectName) {
+    if (!hasText(projectName)) {
+      throw new DataAccessError('projectName is required', this);
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const project = await projectCollection.findByProjectName(projectName);
+
+    if (!project) {
+      return [];
+    }
+    return this.allByProjectId(project.getId());
+  }
+
+  async getSitesByOrganizationIdAndProjectId(organizationId, projectId) {
+    if (!hasText(organizationId)) {
+      throw new DataAccessError('organizationId is required', this);
+    }
+    if (!hasText(projectId)) {
+      throw new DataAccessError('projectId is required', this);
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const project = await projectCollection.findById(projectId);
+
+    if (!project || project.getOrganizationId() !== organizationId) {
+      return [];
+    }
+
+    return this.allByProjectId(projectId);
+  }
+
+  async getSitesByOrganizationIdAndProjectName(organizationId, projectName) {
+    if (!hasText(organizationId)) {
+      throw new DataAccessError('organizationId is required', this);
+    }
+    if (!hasText(projectName)) {
+      throw new DataAccessError('projectName is required', this);
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const projects = await projectCollection.allByOrganizationId(organizationId);
+    const project = projects.find((p) => p.getProjectName() === projectName);
+
+    if (!project) {
+      return [];
+    }
+
+    return this.allByProjectId(project.getId());
+  }
 }
 
 export default SiteCollection;

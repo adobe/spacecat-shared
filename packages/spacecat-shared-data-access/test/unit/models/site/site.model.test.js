@@ -394,4 +394,89 @@ describe('SiteModel', () => {
       expect(() => instance.setpageTypes(missingPattern)).to.throw();
     });
   });
+
+  describe('localization fields', () => {
+    describe('primaryLocale', () => {
+      it('gets primaryLocale', () => {
+        expect(instance.getPrimaryLocale()).to.equal(undefined);
+      });
+
+      it('sets primaryLocale', () => {
+        instance.setPrimaryLocale('en-US');
+        expect(instance.getPrimaryLocale()).to.equal('en-US');
+      });
+    });
+
+    describe('language', () => {
+      it('gets language', () => {
+        expect(instance.getLanguage()).to.equal(undefined);
+      });
+
+      it('sets valid language (ISO 639-1)', () => {
+        instance.setLanguage('en');
+        expect(instance.getLanguage()).to.equal('en');
+      });
+
+      it('sets valid language (ISO 639-1)', () => {
+        instance.setLanguage('fr');
+        expect(instance.getLanguage()).to.equal('fr');
+      });
+
+      it('accepts invalid language format (validation happens on save)', () => {
+        // Note: Validation happens on save, not on setter
+        instance.setLanguage('english');
+        expect(instance.getLanguage()).to.equal('english');
+
+        instance.setLanguage('EN');
+        expect(instance.getLanguage()).to.equal('EN');
+
+        instance.setLanguage('123');
+        expect(instance.getLanguage()).to.equal('123');
+      });
+    });
+
+    describe('region', () => {
+      it('gets region', () => {
+        expect(instance.getRegion()).to.equal(undefined);
+      });
+
+      it('sets valid region (ISO 3166-1 alpha-2)', () => {
+        instance.setRegion('US');
+        expect(instance.getRegion()).to.equal('US');
+      });
+
+      it('sets valid region (ISO 3166-1 alpha-2)', () => {
+        instance.setRegion('FR');
+        expect(instance.getRegion()).to.equal('FR');
+      });
+
+      it('accepts invalid region format (validation happens on save)', () => {
+        // Note: Validation happens on save, not on setter
+        instance.setRegion('usa');
+        expect(instance.getRegion()).to.equal('usa');
+
+        instance.setRegion('us');
+        expect(instance.getRegion()).to.equal('us');
+
+        instance.setRegion('123');
+        expect(instance.getRegion()).to.equal('123');
+      });
+    });
+
+    describe('projectId', () => {
+      it('gets projectId', () => {
+        expect(instance.getProjectId()).to.equal(undefined);
+      });
+
+      it('sets projectId', () => {
+        instance.setProjectId('1e9c6f94-f226-41f3-9005-4bb766765ac2');
+        expect(instance.getProjectId()).to.equal('1e9c6f94-f226-41f3-9005-4bb766765ac2');
+      });
+
+      it('throws for invalid projectId format', () => {
+        expect(() => instance.setProjectId('invalid-id')).to.throw();
+        expect(() => instance.setProjectId('123')).to.throw();
+      });
+    });
+  });
 });

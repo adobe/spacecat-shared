@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "generatedAt": "2025-09-23T05:02:59.079Z",
+    "generatedAt": "2025-09-23T05:08:20.005Z",
     "totalEntities": 27,
-    "description": "Complete ElectroDB schemas for all SpaceCat entities including the corrected many-to-many relationship between FixEntity and Suggestion via FixEntitySuggestion junction table (fixed duplicate index issue)"
+    "description": "Optimized ElectroDB schemas with efficient index usage for FixEntitySuggestion junction table"
   },
   "entities": {
     "apiKey": {
@@ -804,11 +804,11 @@
           "readOnly": false,
           "watch": "*"
         },
-        "fixEntityId": {
+        "suggestionId": {
           "type": "string",
           "required": true
         },
-        "suggestionId": {
+        "fixEntityId": {
           "type": "string",
           "required": true
         }
@@ -818,12 +818,14 @@
           "pk": {
             "field": "pk",
             "composite": [
-              "fixEntitySuggestionId"
+              "suggestionId"
             ]
           },
           "sk": {
             "field": "sk",
-            "composite": []
+            "composite": [
+              "fixEntityId"
+            ]
           }
         },
         "spacecat-data-gsi1pk-gsi1sk": {
@@ -837,22 +839,6 @@
           },
           "sk": {
             "field": "gsi1sk",
-            "composite": [
-              "updatedAt"
-            ]
-          }
-        },
-        "spacecat-data-gsi2pk-gsi2sk": {
-          "index": "spacecat-data-gsi2pk-gsi2sk",
-          "indexType": "belongs_to",
-          "pk": {
-            "field": "gsi2pk",
-            "composite": [
-              "suggestionId"
-            ]
-          },
-          "sk": {
-            "field": "gsi2sk",
             "composite": [
               "updatedAt"
             ]

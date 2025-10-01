@@ -21,9 +21,16 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
 const schema = new SchemaBuilder(FixEntitySuggestion, FixEntitySuggestionCollection)
+  // Use composite primary key: suggestionId (PK) + fixEntityId (SK)
+  .withPrimaryPartitionKeys(['suggestionId'])
+  .withPrimarySortKeys(['fixEntityId'])
+  // Manually add suggestionId attribute since we're not using belongs_to reference
+  .addAttribute('suggestionId', {
+    type: 'string',
+    required: true,
+  })
   // Reference to FixEntity (many-to-one relationship from junction table)
-  .addReference('belongs_to', 'FixEntity')
-  // Reference to Suggestion (many-to-one relationship from junction table)
-  .addReference('belongs_to', 'Suggestion');
+  // This creates GSI1 for querying by fixEntityId
+  .addReference('belongs_to', 'FixEntity');
 
 export default schema.build();

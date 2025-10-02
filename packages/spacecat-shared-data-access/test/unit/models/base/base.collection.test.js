@@ -986,4 +986,185 @@ describe('BaseCollection', () => {
         ]);
     });
   });
+
+  describe('batchGetByIds', () => {
+    it('should successfully batch get entities by IDs', async () => {
+      const ids = ['ef39921f-9a02-41db-b491-02c98987d956', 'ef39921f-9a02-41db-b491-02c98987d957'];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByIds(ids);
+
+      expect(result.data).to.have.length(2);
+      expect(result.data[0].record.mockEntityModelId).to.equal('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(result.data[1].record.mockEntityModelId).to.equal('ef39921f-9a02-41db-b491-02c98987d957');
+      expect(result.unprocessed).to.deep.equal([]);
+
+      expect(mockElectroService.entities.mockEntityModel.get).to.have.been.calledOnceWith([
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ]);
+    });
+
+    it('should handle partial results with unprocessed items', async () => {
+      const ids = ['ef39921f-9a02-41db-b491-02c98987d956', 'ef39921f-9a02-41db-b491-02c98987d957', 'ef39921f-9a02-41db-b491-02c98987d958'];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [{ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d958' }],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByIds(ids);
+
+      expect(result.data).to.have.length(2);
+      expect(result.data[0].record.mockEntityModelId).to.equal('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(result.data[1].record.mockEntityModelId).to.equal('ef39921f-9a02-41db-b491-02c98987d957');
+      expect(result.unprocessed).to.deep.equal(['ef39921f-9a02-41db-b491-02c98987d958']);
+
+      expect(result.data).to.have.length(2);
+      expect(result.unprocessed).to.have.length(1);
+    });
+
+    it('should return empty arrays when no entities found', async () => {
+      const ids = ['ef39921f-9a02-41db-b491-02c98987d999'];
+
+      const mockElectroResult = {
+        data: [],
+        unprocessed: [{ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d999' }],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByIds(ids);
+
+      expect(result).to.deep.equal({
+        data: [],
+        unprocessed: ['ef39921f-9a02-41db-b491-02c98987d999'],
+      });
+    });
+
+    it('should throw error when ids is not provided', async () => {
+      await expect(baseCollectionInstance.batchGetByIds()).to.be.rejectedWith(DataAccessError);
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Failed to batch get [mockEntityModel]: ids must be a non-empty array',
+      );
+    });
+
+    it('should throw error when ids is not an array', async () => {
+      await expect(baseCollectionInstance.batchGetByIds('not-an-array')).to.be.rejectedWith(DataAccessError);
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Failed to batch get [mockEntityModel]: ids must be a non-empty array',
+      );
+    });
+
+    it('should throw error when ids is an empty array', async () => {
+      await expect(baseCollectionInstance.batchGetByIds([])).to.be.rejectedWith(DataAccessError);
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Failed to batch get [mockEntityModel]: ids must be a non-empty array',
+      );
+    });
+
+    it('should throw error when ids contains null values', async () => {
+      await expect(baseCollectionInstance.batchGetByIds(['ef39921f-9a02-41db-b491-02c98987d956', null, 'ef39921f-9a02-41db-b491-02c98987d957'])).to.be.rejectedWith(DataAccessError, 'Invalid ID at index 1');
+    });
+
+    it('should throw error when ids contains undefined values', async () => {
+      await expect(baseCollectionInstance.batchGetByIds(['ef39921f-9a02-41db-b491-02c98987d956', undefined, 'ef39921f-9a02-41db-b491-02c98987d957'])).to.be.rejectedWith(DataAccessError, 'Invalid ID at index 1');
+    });
+
+    it('should throw error when ids contains empty strings', async () => {
+      await expect(baseCollectionInstance.batchGetByIds(['ef39921f-9a02-41db-b491-02c98987d956', '', 'ef39921f-9a02-41db-b491-02c98987d957'])).to.be.rejectedWith(DataAccessError, 'Invalid ID at index 1');
+    });
+
+    it('should throw error when ids contains non-string values', async () => {
+      await expect(baseCollectionInstance.batchGetByIds(['ef39921f-9a02-41db-b491-02c98987d956', 123, 'ef39921f-9a02-41db-b491-02c98987d957'])).to.be.rejectedWith(DataAccessError, 'Invalid ID at index 1');
+    });
+
+    it('should handle database errors and throw DataAccessError', async () => {
+      const ids = ['ef39921f-9a02-41db-b491-02c98987d956'];
+      const error = new Error('Database connection failed');
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().rejects(error),
+      });
+
+      await expect(baseCollectionInstance.batchGetByIds(ids)).to.be.rejectedWith(DataAccessError);
+      expect(mockLogger.error).to.have.been.calledWith('Failed to batch get [mockEntityModel]', error);
+    });
+
+    it('should handle null records in results', async () => {
+      const ids = ['ef39921f-9a02-41db-b491-02c98987d956', 'ef39921f-9a02-41db-b491-02c98987d957'];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByIds(ids);
+
+      expect(result.data).to.have.length(2);
+      expect(result.unprocessed).to.deep.equal([]);
+    });
+
+    it('should handle large batch sizes', async () => {
+      const ids = Array.from({ length: 100 }, (_, i) => `ef39921f-9a02-41db-b491-02c98987d${i.toString().padStart(3, '0')}`);
+      const mockRecords = ids.map((id) => ({ ...mockRecord, mockEntityModelId: id }));
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByIds(ids);
+
+      expect(result.data).to.have.length(100);
+      expect(result.unprocessed).to.have.length(0);
+      expect(mockElectroService.entities.mockEntityModel.get).to.have.been.calledOnce;
+    });
+
+    it('should handle mixed valid and invalid IDs', async () => {
+      const ids = ['ef39921f-9a02-41db-b491-02c98987d956', '', 'ef39921f-9a02-41db-b491-02c98987d957', null, 'ef39921f-9a02-41db-b491-02c98987d958'];
+
+      await expect(baseCollectionInstance.batchGetByIds(ids)).to.be.rejectedWith(DataAccessError, 'Invalid ID at index 1');
+    });
+
+    it('should log error and throw DataAccessError on validation failure', async () => {
+      const ids = ['ef39921f-9a02-41db-b491-02c98987d956', 'invalid-id-format'];
+
+      await expect(baseCollectionInstance.batchGetByIds(ids)).to.be.rejectedWith(DataAccessError, 'Invalid ID at index 1');
+    });
+  });
 });

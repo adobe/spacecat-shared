@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Opportunity, FixEntitySuggestion } from '../index';
+import type { BaseCollection, BaseModel, Opportunity, FixEntitySuggestion, FixEntity } from '../index';
 
 export interface Suggestion extends BaseModel {
   getData(): object;
@@ -35,4 +35,6 @@ export interface SuggestionCollection extends BaseCollection<Suggestion> {
   bulkUpdateStatus(suggestions: Suggestion[], status: string): Promise<Suggestion[]>;
   findByOpportunityId(opportunityId: string): Promise<Suggestion | null>;
   findByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion | null>;
+  getFixEntitiesBySuggestionId(suggestionId: string): Promise<{data: Array<FixEntity>, unprocessed: Array<string>}>;
+  setFixEntitiesBySuggestionId(suggestionId: string, fixEntities: Array<string|Object>): Promise<{createdItems: Array<FixEntitySuggestion>, errorItems: Array<FixEntitySuggestion>, removedCount: number}>;
 }

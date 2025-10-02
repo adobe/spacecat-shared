@@ -376,6 +376,59 @@ class BaseCollection {
   }
 
   /**
+   * Retrieves multiple entities by their IDs in a single batch operation.
+   * This method is more efficient than calling findById multiple times.
+   *
+   * @async
+   * @param {Array<string>} ids - An array of entity IDs to retrieve.
+   * @returns {Promise<{data: Array<BaseModel>, unprocessed: Array<string>}>} - A promise that
+   *   resolves
+   *   to an object containing:
+   *   - data: Array of found model instances
+   *   - unprocessed: Array of IDs that couldn't be processed (due to throttling, etc.)
+   * @throws {DataAccessError} - Throws an error if the IDs are not provided or if the batch
+   *   operation fails.
+   */
+  async batchGetByIds(ids) {
+    if (!isNonEmptyArray(ids)) {
+      const message = `Failed to batch get [${this.entityName}]: ids must be a non-empty array`;
+      this.log.error(message);
+      throw new DataAccessError(message);
+    }
+
+    // Validate all IDs
+    ids.forEach((id, index) => {
+      try {
+        guardId(this.idName, id, this.entityName);
+      } catch (error) {
+        throw new DataAccessError(`Invalid ID at index ${index}: ${error.message}`, this, error);
+      }
+    });
+
+    try {
+      // Use ElectroDB's batch get
+      const result = await this.entity.get(
+        ids.map((id) => ({ [this.idName]: id })),
+      ).go();
+
+      // Process found entities
+      const data = result.data
+        .map((record) => this.#createInstance(record))
+        .filter((entity) => entity !== null);
+
+      // Extract unprocessed IDs
+      const unprocessed = result.unprocessed
+        ? result.unprocessed.map((item) => item[this.idName])
+        : [];
+
+      return { data, unprocessed };
+    } catch (error) {
+      this.log.error(`Failed to batch get [${this.entityName}]`, error);
+      throw new DataAccessError('Failed to batch get entities', this, error);
+    }
+  }
+
+  /**
    * Finds a single entity by index keys.
    * @param {Object} keys - The index keys to use for the query.
    * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.

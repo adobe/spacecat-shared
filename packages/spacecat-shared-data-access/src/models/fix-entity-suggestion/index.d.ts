@@ -10,10 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, FixEntity } from '../index';
+import type { BaseCollection, BaseModel, FixEntity, Suggestion } from '../index';
 
 export interface FixEntitySuggestion extends BaseModel {
   getFixEntity(): Promise<FixEntity>;
+  getSuggestion(): Promise<Suggestion>;
   getFixEntityId(): string;
   setFixEntityId(value: string): this;
   getSuggestionId(): string;
@@ -23,7 +24,4 @@ export interface FixEntitySuggestion extends BaseModel {
 export interface FixEntitySuggestionCollection extends BaseCollection<FixEntitySuggestion> {
   allByFixEntityId(fixEntityId: string): Promise<FixEntitySuggestion[]>;
   allBySuggestionId(suggestionId: string): Promise<FixEntitySuggestion[]>;
-  createRelationship(fixEntityId: string, suggestionId: string): Promise<FixEntitySuggestion>;
-  findRelationship(suggestionId: string, fixEntityId: string): Promise<FixEntitySuggestion | null>;
-  removeRelationship(suggestionId: string, fixEntityId: string): Promise<void>;
 }

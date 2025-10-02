@@ -21,77 +21,7 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class FixEntitySuggestionCollection extends BaseCollection {
-  /**
-   * Find all suggestions for a given fix entity
-   * @param {string} fixEntityId - The ID of the fix entity
-   * @returns {Promise<FixEntitySuggestion[]>} Array of junction records
-   */
-  async allByFixEntityId(fixEntityId) {
-    return this.allByForeignKey('fixEntityId', fixEntityId);
-  }
 
-  /**
-   * Find all fix entities for a given suggestion using primary index
-   * @param {string} suggestionId - The ID of the suggestion
-   * @returns {Promise<FixEntitySuggestion[]>} Array of junction records
-   */
-  async allBySuggestionId(suggestionId) {
-    try {
-      const result = await this.entity.query.primary({ suggestionId }).go();
-      return result.data.map((item) => this.createInstance(item));
-    } catch (error) {
-      this.log.error(`Failed to query FixEntitySuggestions by suggestionId: ${error.message}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Create a relationship between a fix entity and suggestion
-   * @param {string} fixEntityId - The ID of the fix entity
-   * @param {string} suggestionId - The ID of the suggestion
-   * @returns {Promise<FixEntitySuggestion>} The created junction record
-   */
-  async createRelationship(fixEntityId, suggestionId) {
-    return this.create({
-      fixEntityId,
-      suggestionId,
-    });
-  }
-
-  /**
-   * Find a specific relationship between a fix entity and suggestion
-   * @param {string} suggestionId - The ID of the suggestion (PK)
-   * @param {string} fixEntityId - The ID of the fix entity (SK)
-   * @returns {Promise<FixEntitySuggestion|null>} The junction record or null
-   */
-  async findRelationship(suggestionId, fixEntityId) {
-    try {
-      const result = await this.entity.get({ suggestionId, fixEntityId }).go();
-      return this.createInstance(result.data);
-    } catch (error) {
-      if (error.message?.includes('not found')) {
-        return null;
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Remove a relationship between a fix entity and suggestion
-   * @param {string} suggestionId - The ID of the suggestion (PK)
-   * @param {string} fixEntityId - The ID of the fix entity (SK)
-   * @returns {Promise<void>}
-   */
-  async removeRelationship(suggestionId, fixEntityId) {
-    try {
-      await this.entity.delete({ suggestionId, fixEntityId }).go();
-    } catch (error) {
-      // Ignore "not found" errors since the goal is to ensure the relationship doesn't exist
-      if (!error.message?.includes('not found')) {
-        throw error;
-      }
-    }
-  }
 }
 
 export default FixEntitySuggestionCollection;

@@ -22,8 +22,6 @@ import BaseModel from '../base/base.model.js';
  */
 class FixEntitySuggestion extends BaseModel {
   static DEFAULT_UPDATED_BY = 'spacecat';
-
-  // Add custom methods here for junction-specific functionality
 }
 
 export default FixEntitySuggestion;

@@ -39,9 +39,17 @@ describe('Project IT', async () => {
     expect(projects).to.be.an('array');
     expect(projects.length).to.equal(sampleData.projects.length);
 
-    for (let i = 0; i < projects.length; i += 1) {
-      const project = projects[i];
-      const sampleProject = sampleData.projects[i];
+    // Sort both arrays by project name for consistent comparison
+    const sortedProjects = projects.sort(
+      (a, b) => a.getProjectName().localeCompare(b.getProjectName()),
+    );
+    const sortedSampleProjects = sampleData.projects.sort(
+      (a, b) => a.getProjectName().localeCompare(b.getProjectName()),
+    );
+
+    for (let i = 0; i < sortedProjects.length; i += 1) {
+      const project = sortedProjects[i];
+      const sampleProject = sortedSampleProjects[i];
 
       expect(project).to.be.an('object');
       expect(project.getId()).to.be.a('string');
@@ -141,7 +149,7 @@ describe('Project IT', async () => {
 
     it('gets sites by project name', async () => {
       const projectName = sampleData.projects[0].getProjectName();
-      const sites = await Site.getSitesByProjectName(projectName);
+      const sites = await Site.allByProjectName(projectName);
 
       expect(sites).to.be.an('array');
 
@@ -154,7 +162,7 @@ describe('Project IT', async () => {
     it('gets sites by organization id and project id', async () => {
       const organizationId = sampleData.organizations[0].getId();
       const projectId = sampleData.projects[0].getId();
-      const sites = await Site.getSitesByOrganizationIdAndProjectId(organizationId, projectId);
+      const sites = await Site.allByOrganizationIdAndProjectId(organizationId, projectId);
 
       expect(sites).to.be.an('array');
 
@@ -168,7 +176,7 @@ describe('Project IT', async () => {
     it('gets sites by organization id and project name', async () => {
       const organizationId = sampleData.organizations[0].getId();
       const projectName = sampleData.projects[0].getProjectName();
-      const sites = await Site.getSitesByOrganizationIdAndProjectName(organizationId, projectName);
+      const sites = await Site.allByOrganizationIdAndProjectName(organizationId, projectName);
 
       expect(sites).to.be.an('array');
 

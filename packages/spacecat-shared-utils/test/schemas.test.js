@@ -31,7 +31,6 @@ describe('schemas', () => {
           aliases: ['Brand Alias'],
           category: categoryId,
           region: 'US',
-          topic: topicId,
         }],
       },
       competitors: {
@@ -52,7 +51,6 @@ describe('schemas', () => {
 
     it('fails when brand references unknown entities', () => {
       const unknownCategoryId = '11111111-1111-4111-8111-111111111111';
-      const unknownTopicId = '22222222-2222-4222-8222-222222222222';
       const config = {
         ...baseConfig,
         brands: {
@@ -60,7 +58,6 @@ describe('schemas', () => {
             aliases: ['Brand Alias'],
             category: unknownCategoryId,
             region: 'US',
-            topic: unknownTopicId,
           }],
         },
       };
@@ -71,7 +68,6 @@ describe('schemas', () => {
         throw new Error('Expected validation to fail');
       }
       expect(result.error.issues[0].message).equals(`Unknown category entity: ${unknownCategoryId}`);
-      expect(result.error.issues[1].message).equals(`Unknown topic entity: ${unknownTopicId}`);
     });
 
     it('fails when competitor references a non-category entity', () => {
@@ -100,23 +96,6 @@ describe('schemas', () => {
       expect(result.error.issues[0].message).equals(`Entity ${topicId} referenced as category must have type "category" but was "topic"`);
     });
 
-    it('fails when brand references a non-topic entity as topic', () => {
-      const config = {
-        ...baseConfig,
-        entities: {
-          [categoryId]: { type: 'category', name: 'Category One' },
-          [topicId]: { type: 'category', name: 'Category Two' },
-        },
-      };
-
-      const result = llmoConfig.safeParse(config);
-      expect(result.success).false;
-      if (result.success) {
-        throw new Error('Expected validation to fail');
-      }
-      expect(result.error.issues[0].message).equals(`Entity ${topicId} referenced as topic must have type "topic" but was "category"`);
-    });
-
     it('fails when competitor references unknown entity', () => {
       const unknownCategoryId = '33333333-3333-4333-8333-333333333333';
       const config = {
@@ -142,12 +121,10 @@ describe('schemas', () => {
 
     describe('region validation', () => {
       const categoryWithRegionsId = '444e4444-e44b-44d4-a444-444444444444';
-      const categoryWithoutRegionsId = '555e5555-e55b-55d5-a555-555555555555';
 
       const configWithRegions = {
         entities: {
           [categoryWithRegionsId]: { type: 'category', name: 'Category With Regions', region: ['us', 'ca'] },
-          [categoryWithoutRegionsId]: { type: 'category', name: 'Category Without Regions' },
           [topicId]: { type: 'topic', name: 'Topic One' },
         },
         brands: { aliases: [] },
@@ -163,7 +140,6 @@ describe('schemas', () => {
                 aliases: ['Brand Alias'],
                 category: categoryWithRegionsId,
                 region: 'us', // single region that exists in category
-                topic: topicId,
               }],
             },
           };
@@ -180,7 +156,6 @@ describe('schemas', () => {
                 aliases: ['Brand Alias'],
                 category: categoryWithRegionsId,
                 region: ['us', 'ca'], // array that matches category regions
-                topic: topicId,
               }],
             },
           };
@@ -197,7 +172,6 @@ describe('schemas', () => {
                 aliases: ['Brand Alias'],
                 category: categoryWithRegionsId,
                 region: ['us', 'mx'], // mx not in category regions
-                topic: topicId,
               }],
             },
           };
@@ -210,27 +184,6 @@ describe('schemas', () => {
           expect(result.error.issues[0].message).equals('brand alias regions [mx] are not allowed. Category only supports regions: [us, ca]');
         });
 
-        it('fails when brand alias has regions but category has none', () => {
-          const config = {
-            ...configWithRegions,
-            brands: {
-              aliases: [{
-                aliases: ['Brand Alias'],
-                category: categoryWithoutRegionsId,
-                region: 'us',
-                topic: topicId,
-              }],
-            },
-          };
-
-          const result = llmoConfig.safeParse(config);
-          expect(result.success).false;
-          if (result.success) {
-            throw new Error('Expected validation to fail');
-          }
-          expect(result.error.issues[0].message).equals('brand alias cannot have regions when the referenced category has no regions defined');
-        });
-
         it('fails when brand alias has single region not in category', () => {
           const config = {
             ...configWithRegions,
@@ -239,7 +192,6 @@ describe('schemas', () => {
                 aliases: ['Brand Alias'],
                 category: categoryWithRegionsId,
                 region: 'mx', // single region not in category
-                topic: topicId,
               }],
             },
           };
@@ -293,28 +245,6 @@ describe('schemas', () => {
           }
           expect(result.error.issues[0].message).equals('competitor regions [mx, uk] are not allowed. Category only supports regions: [us, ca]');
         });
-
-        it('fails when competitor has regions but category has none', () => {
-          const config = {
-            ...configWithRegions,
-            competitors: {
-              competitors: [{
-                category: categoryWithoutRegionsId,
-                region: 'us',
-                name: 'Competitor One',
-                aliases: ['Competitor Alias'],
-                urls: [],
-              }],
-            },
-          };
-
-          const result = llmoConfig.safeParse(config);
-          expect(result.success).false;
-          if (result.success) {
-            throw new Error('Expected validation to fail');
-          }
-          expect(result.error.issues[0].message).equals('competitor cannot have regions when the referenced category has no regions defined');
-        });
       });
 
       describe('category with single region', () => {
@@ -337,7 +267,6 @@ describe('schemas', () => {
                 aliases: ['Brand Alias'],
                 category: singleRegionCategoryId,
                 region: 'us',
-                topic: topicId,
               }],
             },
           };
@@ -354,7 +283,6 @@ describe('schemas', () => {
                 aliases: ['Brand Alias'],
                 category: singleRegionCategoryId,
                 region: 'ca',
-                topic: topicId,
               }],
             },
           };

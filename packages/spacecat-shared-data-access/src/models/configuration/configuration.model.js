@@ -14,6 +14,7 @@ import { isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils'
 
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
 import BaseModel from '../base/base.model.js';
+import { Audit } from '../audit/index.js';
 
 /**
  * Configuration - A class representing an Configuration entity.
@@ -246,6 +247,70 @@ class Configuration extends BaseModel {
     if (!this.isHandlerEnabledForOrg(type, org)) return;
 
     this.updateHandlerOrgs(type, orgId, false);
+  }
+
+  registerAudit(type, enabledByDefault = false, interval = Configuration.JOB_INTERVALS.NEVER) {
+    // Validate audit type
+    if (!Object.values(Audit.AUDIT_TYPES).includes(type)) {
+      throw new Error(`Audit type ${type} is not registered`);
+    }
+
+    // Validate job interval
+    if (!Object.values(Configuration.JOB_INTERVALS).includes(interval)) {
+      throw new Error(`Invalid interval ${interval}`);
+    }
+
+    // Add to handlers if not already registered
+    const handlers = this.getHandlers();
+    if (!handlers[type]) {
+      handlers[type] = {
+        enabledByDefault,
+        enabled: {
+          sites: [],
+          orgs: [],
+        },
+        disabled: {
+          sites: [],
+          orgs: [],
+        },
+        dependencies: [],
+      };
+      this.setHandlers(handlers);
+    }
+
+    // Add to jobs if not already registered
+    const jobs = this.getJobs();
+    const exists = jobs.find((job) => job.group === 'audits' && job.type === type);
+    if (!exists) {
+      jobs.push({
+        group: 'audits',
+        type,
+        interval,
+      });
+      this.setJobs(jobs);
+    }
+  }
+
+  unregisterAudit(type) {
+    // Validate audit type
+    if (!Object.values(Audit.AUDIT_TYPES).includes(type)) {
+      throw new Error(`Audit type ${type} is not registered`);
+    }
+
+    // Remove from handlers
+    const handlers = this.getHandlers();
+    if (handlers[type]) {
+      delete handlers[type];
+      this.setHandlers(handlers);
+    }
+
+    // Remove from jobs
+    const jobs = this.getJobs();
+    const jobIndex = jobs.findIndex((job) => job.group === 'audits' && job.type === type);
+    if (jobIndex !== -1) {
+      jobs.splice(jobIndex, 1);
+      this.setJobs(jobs);
+    }
   }
 
   async save() {

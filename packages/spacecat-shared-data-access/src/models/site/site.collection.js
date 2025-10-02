@@ -103,7 +103,7 @@ class SiteCollection extends BaseCollection {
     }
   }
 
-  async allSitesByProjectName(projectName) {
+  async allByProjectName(projectName) {
     if (!hasText(projectName)) {
       throw new DataAccessError('projectName is required', this);
     }
@@ -117,7 +117,7 @@ class SiteCollection extends BaseCollection {
     return this.allByProjectId(project.getId());
   }
 
-  async allSitesByOrganizationIdAndProjectId(organizationId, projectId) {
+  async allByOrganizationIdAndProjectId(organizationId, projectId) {
     if (!hasText(organizationId)) {
       throw new DataAccessError('organizationId is required', this);
     }
@@ -135,7 +135,7 @@ class SiteCollection extends BaseCollection {
     return this.allByProjectId(projectId);
   }
 
-  async allSitesByOrganizationIdAndProjectName(organizationId, projectName) {
+  async allByOrganizationIdAndProjectName(organizationId, projectName) {
     if (!hasText(organizationId)) {
       throw new DataAccessError('organizationId is required', this);
     }

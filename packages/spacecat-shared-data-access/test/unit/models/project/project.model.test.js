@@ -14,36 +14,36 @@
 
 import { expect } from 'chai';
 
-import { Project } from '../../../../src/models/project/index.js';
+import { stub } from 'sinon';
 import { createElectroMocks } from '../../util.js';
+import projectsFixture from '../../../fixtures/projects.fixture.js';
+import { Project } from '../../../../src/index.js';
 
 describe('Project Model', () => {
   let project;
-  let mockRecord;
+  const mockRecord = projectsFixture[0];
+
+  let mockElectroService;
 
   beforeEach(() => {
-    mockRecord = {
-      projectId: 'test-project-id',
-      projectName: 'Test Project',
-      organizationId: 'test-org-id',
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
-    };
-
     ({
+      mockElectroService,
       model: project,
     } = createElectroMocks(Project, mockRecord));
+
+    mockElectroService.entities.patch = stub().returns({ set: stub() });
   });
 
   describe('getProjectName', () => {
     it('should return the project name', () => {
-      expect(project.getProjectName()).to.equal('Test Project');
+      expect(project).to.be.an('object');
+      expect(project.getProjectName()).to.equal('Test Project 1');
     });
   });
 
   describe('getOrganizationId', () => {
     it('should return the organization ID', () => {
-      expect(project.getOrganizationId()).to.equal('test-org-id');
+      expect(project.getOrganizationId()).to.equal('4854e75e-894b-4a74-92bf-d674abad1423');
     });
   });
 

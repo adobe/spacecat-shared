@@ -170,7 +170,8 @@ class Schema {
         const allKeys = [...(pk?.facets || []), ...(sk?.facets || [])];
 
         // check if all keys in the index are in the sort keys
-        return subKeyNames.every((key) => allKeys.includes(key));
+        return pk?.facets.every((key) => subKeyNames.includes(key))
+          && subKeyNames.every((key) => allKeys.includes(key));
       });
 
       if (isNonEmptyObject(index)) {

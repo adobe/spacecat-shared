@@ -356,6 +356,8 @@ class SchemaBuilder {
    * BELONGS_TO references.
    * @param {boolean} [options.removeDependents=false] - Whether to remove dependent entities
    * on delete. Only applies to HAS_MANY and HAS_ONE references.
+   * @param {boolean} [options.skipForeignKeyIndex=false] - Whether to skip
+   *  adding a foreign key index. Only applies to BELONGS_TO references.
    * @returns {SchemaBuilder} Returns this builder for method chaining.
    * @throws {SchemaBuilderError} If type or entityName are invalid.
    */
@@ -395,11 +397,13 @@ class SchemaBuilder {
         ) => (reference.options.required ? isValidUUID(value) : !value || isValidUUID(value)),
       });
 
-      this.#internalAddIndex(
-        { composite: [decapitalize(foreignKeyName)] },
-        { composite: isNonEmptyArray(sortKeys) ? sortKeys : ['updatedAt'] },
-        Schema.INDEX_TYPES.BELONGS_TO,
-      );
+      if (!options.skipForeignKeyIndex) {
+        this.#internalAddIndex(
+          { composite: [decapitalize(foreignKeyName)] },
+          { composite: isNonEmptyArray(sortKeys) ? sortKeys : ['updatedAt'] },
+          Schema.INDEX_TYPES.BELONGS_TO,
+        );
+      }
     }
 
     this.references.push(Reference.fromJSON(reference));

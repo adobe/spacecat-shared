@@ -625,6 +625,51 @@ class BaseCollection {
       return this.#logAndThrowError('Failed to remove by IDs', error);
     }
   }
+
+  /**
+   * Removes records from the collection using an array of key objects for batch deletion.
+   * This method is particularly useful for junction tables in many-to-many relationships
+   * where you need to remove multiple records based on their composite keys.
+   *
+   * Each key object in the array represents a record to be deleted, identified by its
+   * key attributes (typically partition key + sort key combinations).
+   *
+   * @async
+   * @param {Array<Object>} keys - Array of key objects to match for deletion.
+   *   Each object should contain the key attributes that uniquely identify a record.
+   * @returns {Promise<void>} A promise that resolves when the deletion is complete.
+   *   The method also invalidates the cache after successful deletion.
+   * @throws {DataAccessError} Throws an error if:
+   *   - The keys parameter is not a non-empty array
+   *   - Any key object in the array is empty or invalid
+   *   - The database operation fails
+   *
+   * @since 2.64.1
+   * @memberof BaseCollection
+   */
+  async removeByIndexKeys(keys) {
+    if (!isNonEmptyArray(keys)) {
+      const message = `Failed to remove by index keys [${this.entityName}]: keys must be a non-empty array`;
+      this.log.error(message);
+      throw new DataAccessError(message);
+    }
+
+    keys.forEach((key) => {
+      if (!isNonEmptyObject(key)) {
+        const message = `Failed to remove by index keys [${this.entityName}]: key must be a non-empty object`;
+        this.log.error(message);
+        throw new DataAccessError(message);
+      }
+    });
+
+    try {
+      await this.entity.delete(keys).go();
+      this.log.info(`Removed ${keys.length} items for [${this.entityName}]`);
+      return this.#invalidateCache();
+    } catch (error) {
+      return this.#logAndThrowError('Failed to remove by index keys', error);
+    }
+  }
 }
 
 export default BaseCollection;

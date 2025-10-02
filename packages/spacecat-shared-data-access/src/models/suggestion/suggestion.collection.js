@@ -74,7 +74,7 @@ class SuggestionCollection extends BaseCollection {
     }
 
     try {
-      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestion');
+      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
 
       // Get all junction records for this suggestion
       const fixEntitySuggestions = await fixEntitySuggestionCollection
@@ -88,7 +88,7 @@ class SuggestionCollection extends BaseCollection {
       }
 
       // Get the FixEntity collection from the entity registry
-      const fixEntityCollection = this.entityRegistry.getCollection('FixEntity');
+      const fixEntityCollection = this.entityRegistry.getCollection('FixEntityCollection');
 
       // Get all fix entities by their IDs using batch get
       return await fixEntityCollection.batchGetByIds(fixEntityIds).then((result) => ({
@@ -133,7 +133,7 @@ class SuggestionCollection extends BaseCollection {
     }
 
     try {
-      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestion');
+      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
 
       // Get current fix entity IDs
       const currentFixEntityIds = new Set();
@@ -155,12 +155,20 @@ class SuggestionCollection extends BaseCollection {
         (rel) => !newFixEntityIds.has(rel.getFixEntityId()),
       );
 
-      // Find what to add (new but not existing)
+      // Find what to add (new but not existing), removing duplicates
+      const seenFixEntityIds = new Set();
       const toAdd = fixEntities.filter((fixEntity) => {
         const fixEntityId = typeof fixEntity === 'string'
           ? fixEntity
           : fixEntity.getId();
-        return !currentFixEntityIds.has(fixEntityId);
+
+        // Skip if already seen (duplicate) or already exists
+        if (seenFixEntityIds.has(fixEntityId) || currentFixEntityIds.has(fixEntityId)) {
+          return false;
+        }
+
+        seenFixEntityIds.add(fixEntityId);
+        return true;
       });
 
       let removedCount = 0;
@@ -169,8 +177,12 @@ class SuggestionCollection extends BaseCollection {
 
       // Remove relationships that are no longer needed
       if (toRemove.length > 0) {
-        const removeIds = toRemove.map((rel) => rel.getId());
-        await fixEntitySuggestionCollection.removeByIds(removeIds);
+        const removeIds = toRemove.map((rel) => rel.getFixEntityId());
+        await fixEntitySuggestionCollection.removeByIndexKeys(removeIds.map((id) => (
+          {
+            suggestionId,
+            fixEntityId: id,
+          })));
         removedCount = removeIds.length;
       }
 

@@ -28,6 +28,7 @@ import siteTopPages from './site-top-pages.fixture.js';
 import sites from './sites.fixture.js';
 import suggestions from './suggestions.fixture.js';
 import fixEntities from './fix-entity.fixture.js';
+import fixEntitySuggestions from './fix-entity-suggestions.fixture.js';
 import pageIntents from './page-intents.fixture.js';
 import reports from './reports.fixture.js';
 import entitlements from './entitlements.fixture.js';
@@ -43,6 +44,7 @@ export default {
   configurations,
   experiments,
   fixEntities,
+  fixEntitySuggestions,
   importJobs,
   importUrls,
   keyEvents,

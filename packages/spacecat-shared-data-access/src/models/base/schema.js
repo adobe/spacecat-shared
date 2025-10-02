@@ -348,7 +348,7 @@ class Schema {
           requiredKeys: subset,
         });
 
-        log.debug(`Created accessors for index [${indexName}] with keys [${subset.join(', ')}]`);
+        log.debug(`Created accessors ${keyNamesToMethodName(subset, 'allBy')} and ${keyNamesToMethodName(subset, 'findBy')} for index [${indexName}] with keys [${subset.join(', ')}] for entity ${entity.clazz.name}`);
       });
     });
 

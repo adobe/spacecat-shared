@@ -70,10 +70,10 @@ describe('FixEntityCollection', () => {
       };
 
       mockEntityRegistry.getCollection
-        .withArgs('FixEntitySuggestion')
+        .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
       mockEntityRegistry.getCollection
-        .withArgs('Suggestion')
+        .withArgs('SuggestionCollection')
         .returns(mockSuggestionCollection);
 
       const result = await fixEntityCollection.getSuggestionsByFixEntityId(fixEntityId);
@@ -93,10 +93,11 @@ describe('FixEntityCollection', () => {
       const fixEntityId = 'fix-123';
       const mockFixEntitySuggestionCollection = {
         allByFixEntityId: stub().resolves([]),
+        removeByIndexKeys: stub().resolves(),
       };
 
       mockEntityRegistry.getCollection
-        .withArgs('FixEntitySuggestion')
+        .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection.getSuggestionsByFixEntityId(fixEntityId);
@@ -122,10 +123,11 @@ describe('FixEntityCollection', () => {
 
       const mockFixEntitySuggestionCollection = {
         allByFixEntityId: stub().rejects(error),
+        removeByIndexKeys: stub().resolves(),
       };
 
       mockEntityRegistry.getCollection
-        .withArgs('FixEntitySuggestion')
+        .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
       await expect(fixEntityCollection.getSuggestionsByFixEntityId(fixEntityId))
@@ -147,6 +149,7 @@ describe('FixEntityCollection', () => {
       const mockFixEntitySuggestionCollection = {
         allByFixEntityId: stub().resolves(existingJunctionRecords),
         removeByIds: stub().resolves(),
+        removeByIndexKeys: stub().resolves(),
         createMany: stub().resolves({
           createdItems: [{ id: 'junction-3' }],
           errorItems: [],
@@ -154,7 +157,7 @@ describe('FixEntityCollection', () => {
       };
 
       mockEntityRegistry.getCollection
-        .withArgs('FixEntitySuggestion')
+        .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
@@ -168,7 +171,12 @@ describe('FixEntityCollection', () => {
 
       expect(mockFixEntitySuggestionCollection.allByFixEntityId)
         .to.have.been.calledOnceWith(fixEntityId);
-      expect(mockFixEntitySuggestionCollection.removeByIds).to.have.been.calledOnceWith(['junction-2']);
+      expect(mockFixEntitySuggestionCollection.removeByIndexKeys).to.have.been.calledOnceWith([
+        {
+          suggestionId: 'suggestion-3',
+          fixEntityId,
+        },
+      ]);
       expect(mockFixEntitySuggestionCollection.createMany).to.have.been.calledOnceWith([
         { fixEntityId, suggestionId: 'suggestion-2' },
       ]);
@@ -183,6 +191,7 @@ describe('FixEntityCollection', () => {
 
       const mockFixEntitySuggestionCollection = {
         allByFixEntityId: stub().resolves([]),
+        removeByIndexKeys: stub().resolves(),
         createMany: stub().resolves({
           createdItems: [{ id: 'junction-1' }, { id: 'junction-2' }],
           errorItems: [],
@@ -190,7 +199,7 @@ describe('FixEntityCollection', () => {
       };
 
       mockEntityRegistry.getCollection
-        .withArgs('FixEntitySuggestion')
+        .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
@@ -228,10 +237,11 @@ describe('FixEntityCollection', () => {
 
       const mockFixEntitySuggestionCollection = {
         allByFixEntityId: stub().rejects(error),
+        removeByIndexKeys: stub().resolves(),
       };
 
       mockEntityRegistry.getCollection
-        .withArgs('FixEntitySuggestion')
+        .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
       await expect(fixEntityCollection.setSuggestionsByFixEntityId(fixEntityId, suggestions))
@@ -245,6 +255,7 @@ describe('FixEntityCollection', () => {
 
       const mockFixEntitySuggestionCollection = {
         allByFixEntityId: stub().resolves([]),
+        removeByIndexKeys: stub().resolves(),
         createMany: stub().resolves({
           createdItems: [{ id: 'junction-1' }],
           errorItems: [],
@@ -252,7 +263,7 @@ describe('FixEntityCollection', () => {
       };
 
       mockEntityRegistry.getCollection
-        .withArgs('FixEntitySuggestion')
+        .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
       await fixEntityCollection.setSuggestionsByFixEntityId(fixEntityId, suggestions);

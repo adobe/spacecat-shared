@@ -22,6 +22,7 @@ export interface FixEntitySuggestion extends BaseModel {
 }
 
 export interface FixEntitySuggestionCollection extends BaseCollection<FixEntitySuggestion> {
-  allByFixEntityId(fixEntityId: string): Promise<FixEntitySuggestion[]>;
+  allByFixEntityIdAndSuggestionId(fixEntityId: string, suggestionId: string): Promise<FixEntitySuggestion[]>;
   allBySuggestionId(suggestionId: string): Promise<FixEntitySuggestion[]>;
+  allByFixEntityId(fixEntityId: string): Promise<FixEntitySuggestion[]>;
 }

@@ -41,7 +41,7 @@ class FixEntityCollection extends BaseCollection {
     }
 
     try {
-      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestion');
+      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
 
       const fixEntitySuggestions = await fixEntitySuggestionCollection
         .allByFixEntityId(fixEntityId);
@@ -52,7 +52,7 @@ class FixEntityCollection extends BaseCollection {
         return { data: [], unprocessed: [] };
       }
 
-      const suggestionCollection = this.entityRegistry.getCollection('Suggestion');
+      const suggestionCollection = this.entityRegistry.getCollection('SuggestionCollection');
 
       return await suggestionCollection.batchGetByIds(suggestionIds).then((result) => ({
         data: result.data,
@@ -75,7 +75,7 @@ class FixEntityCollection extends BaseCollection {
    *   model instances.
    * @returns {Promise<{createdItems: Array, errorItems: Array, removedCount: number}>} - A promise
    *   that resolves to an object containing:
-   *   - createdItems: Array of created FixEntitySuggestion junction records
+   *   - createdItems: Array of created FixEntitySuggestionCollection junction records
    *   - errorItems: Array of items that failed validation
    *   - removedCount: Number of existing relationships that were removed
    * @throws {DataAccessError} - Throws an error if the fixEntityId is not provided or if the
@@ -95,7 +95,7 @@ class FixEntityCollection extends BaseCollection {
     }
 
     try {
-      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestion');
+      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
 
       // Get current suggestion IDs
       const currentSuggestionIds = new Set();
@@ -117,12 +117,20 @@ class FixEntityCollection extends BaseCollection {
         (rel) => !newSuggestionIds.has(rel.getSuggestionId()),
       );
 
-      // Find what to add (new but not existing)
+      // Find what to add (new but not existing), removing duplicates
+      const seenSuggestionIds = new Set();
       const toAdd = suggestions.filter((suggestion) => {
         const suggestionId = typeof suggestion === 'string'
           ? suggestion
           : suggestion.getId();
-        return !currentSuggestionIds.has(suggestionId);
+
+        // Skip if already seen (duplicate) or already exists
+        if (seenSuggestionIds.has(suggestionId) || currentSuggestionIds.has(suggestionId)) {
+          return false;
+        }
+
+        seenSuggestionIds.add(suggestionId);
+        return true;
       });
 
       let removedCount = 0;
@@ -131,8 +139,14 @@ class FixEntityCollection extends BaseCollection {
 
       // Remove relationships that are no longer needed
       if (toRemove.length > 0) {
-        const removeIds = toRemove.map((rel) => rel.getId());
-        await fixEntitySuggestionCollection.removeByIds(removeIds);
+        const removeIds = toRemove.map((rel) => rel.getSuggestionId());
+        await fixEntitySuggestionCollection.removeByIndexKeys(
+          removeIds.map((id) => (
+            {
+              suggestionId: id,
+              fixEntityId,
+            })),
+        );
         removedCount = removeIds.length;
       }
 

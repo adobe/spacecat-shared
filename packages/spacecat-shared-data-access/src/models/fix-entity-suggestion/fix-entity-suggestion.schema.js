@@ -23,7 +23,7 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 const schema = new SchemaBuilder(FixEntitySuggestion, FixEntitySuggestionCollection)
   .withPrimaryPartitionKeys(['suggestionId'])
   .withPrimarySortKeys(['fixEntityId'])
-  .addReference('belongs_to', 'Suggestion', [], { skipForeignKeyIndex: true })
+  .addReference('belongs_to', 'Suggestion', ['fixEntityId'])
   .addReference('belongs_to', 'FixEntity');
 
 export default schema.build();

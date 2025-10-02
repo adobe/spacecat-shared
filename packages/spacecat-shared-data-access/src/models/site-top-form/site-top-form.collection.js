@@ -150,7 +150,7 @@ class SiteTopFormCollection extends BaseCollection {
           });
         } catch (legacyError) {
           // If the null search also fails, ignore and return the original null result
-          this.log.debug(`Legacy null formSource search failed: ${legacyError.message}`);
+          this.log.error(`Legacy null formSource search failed: ${legacyError.message}`);
         }
       }
 

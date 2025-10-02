@@ -97,18 +97,6 @@ class EntityRegistry {
       const collection = new Collection(this.service, this, schema, this.log);
       this.collections.set(Collection.name, collection);
     });
-
-    this.#logIndexes();
-  }
-
-  #logIndexes() {
-    // reduce collection schema indexes into object
-    const indexes = Object.values(EntityRegistry.entities).reduce((acc, { schema }) => {
-      acc[schema.getEntityName()] = schema.indexes;
-      return acc;
-    }, {});
-
-    this.log.debug('Indexes:', JSON.stringify(indexes, null, 2));
   }
 
   /**

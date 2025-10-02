@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.65.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.65.1...@adobe/spacecat-shared-data-access-v2.65.2) (2025-10-01)
+
+
+### Bug Fixes
+
+* remove all debug logs from data access ([#994](https://github.com/adobe/spacecat-shared/issues/994)) ([453d55b](https://github.com/adobe/spacecat-shared/commit/453d55bde5373519b9102ffdc8ca1ea523338078))
+
 # [@adobe/spacecat-shared-data-access-v2.65.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.65.0...@adobe/spacecat-shared-data-access-v2.65.1) (2025-10-01)
 
 

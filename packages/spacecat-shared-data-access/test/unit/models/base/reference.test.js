@@ -288,30 +288,6 @@ describe('Reference', () => {
       expect(mockLogger.warn).to.have.been.calledOnceWithExactly('Reciprocal reference not found for Test to Test');
     });
 
-    it('logs debug for no sort keys defined', () => {
-      const schema = {
-        getReferenceByTypeAndTarget: stub().returns(new Reference('belongs_to', 'Test')),
-        getModelName: () => 'Test',
-      };
-      const registry = {
-        log: mockLogger,
-        getCollection: stub().returns({
-          name: 'TestCollection',
-          schema,
-        }),
-      };
-      const reference = new Reference('has_many', 'Test');
-      const entity = {
-        entityName: 'Test',
-        getId: () => '123',
-        schema,
-      };
-
-      reference.toAccessorConfigs(registry, entity);
-
-      expect(mockLogger.debug).to.have.been.calledOnceWithExactly('No sort keys defined for Test to Test');
-    });
-
     it('throws an error for an invalid type', () => {
       const reference = new Reference('has_many', 'Test');
       reference.type = 'invalid';

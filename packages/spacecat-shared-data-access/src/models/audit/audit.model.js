@@ -59,6 +59,8 @@ class Audit extends BaseModel {
     PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
     PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
     READABILITY: 'readability',
+    PRERENDER: 'prerender',
+    PRODUCT_METATAGS: 'product-metatags',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
@@ -128,7 +130,7 @@ class Audit extends BaseModel {
         startDate: stepResult.startDate,
         endDate: stepResult.endDate,
         urlConfigs: stepResult.urlConfigs,
-        allowCache: true,
+        allowCache: isBoolean(stepResult.allowCache) ? stepResult.allowCache : true,
         auditContext,
       }),
     },

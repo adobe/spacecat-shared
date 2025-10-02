@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-ahrefs-client",
-  "version": "1.9.8",
+  "version": "1.9.10",
   "description": "Shared modules of the Spacecat Services - Ahrefs Client",
   "type": "module",
   "engines": {
@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.2.3",
-    "@adobe/helix-universal": "5.2.2",
+    "@adobe/helix-universal": "5.2.3",
     "@adobe/spacecat-shared-utils": "1.26.4"
   },
   "devDependencies": {

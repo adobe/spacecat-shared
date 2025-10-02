@@ -252,9 +252,14 @@ class BaseCollection {
       let result = await query.go(queryOptions);
       let allData = result.data;
 
-      // if the caller requests ALL pages and we're not using limit: 1,
-      // continue to fetch until there is no cursor.
-      if (options.fetchAllPages && options.limit !== 1) {
+      // Smart pagination behavior:
+      // - fetchAllPages: true → Always paginate through all results
+      // - fetchAllPages: false → Only fetch first page
+      // - undefined → Auto-paginate when no limit specified, respect limits otherwise
+      const shouldFetchAllPages = options.fetchAllPages === true
+                                 || (options.fetchAllPages !== false && !options.limit);
+
+      if (shouldFetchAllPages) {
         while (result.cursor) {
           queryOptions.cursor = result.cursor;
           // eslint-disable-next-line no-await-in-loop
@@ -396,8 +401,6 @@ class BaseCollection {
 
       this.#invalidateCache();
 
-      this.log.info(`Created item for [${this.entityName}]`);
-
       await this.#onCreate(instance);
 
       return instance;
@@ -476,8 +479,6 @@ class BaseCollection {
 
       this.#invalidateCache();
 
-      this.log.info(`Created ${createdItems.length} items for [${this.entityName}]`);
-
       await this.#onCreateMany({ createdItems, errorItems });
 
       return { createdItems, errorItems };
@@ -518,8 +519,6 @@ class BaseCollection {
         this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
       }
 
-      this.log.info(`Updated ${items.length} items for [${this.entityName}]`);
-
       return this.#invalidateCache();
     } catch (error) {
       return this.#logAndThrowError('Failed to save many', error);
@@ -545,8 +544,6 @@ class BaseCollection {
       // todo: consider removing dependent records
 
       await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
-
-      this.log.info(`Removed ${ids.length} items for [${this.entityName}]`);
 
       return this.#invalidateCache();
     } catch (error) {

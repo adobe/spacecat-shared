@@ -262,3 +262,6 @@ export function tracingFetch(url: string | Request, options?: RequestOptions): P
 export const SPACECAT_USER_AGENT: string;
 
 export function retrievePageAuthentication(site: object, context: object): Promise<string>;
+
+export * as llmoConfig from './llmo-config.js';
+export * as schemas from './schemas.js';

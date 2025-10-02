@@ -1,3 +1,52 @@
+# [@adobe/spacecat-shared-utils-v1.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.53.0...@adobe/spacecat-shared-utils-v1.54.0) (2025-10-02)
+
+
+### Features
+
+* remove topic from brand alias and make regions mandatory in categories + make regions mandatory for categories ([#997](https://github.com/adobe/spacecat-shared/issues/997)) ([78e609a](https://github.com/adobe/spacecat-shared/commit/78e609a336cb2a2645199d94d4464c4843bd8c4a))
+
+# [@adobe/spacecat-shared-utils-v1.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.52.0...@adobe/spacecat-shared-utils-v1.53.0) (2025-10-02)
+
+
+### Features
+
+* Add regions to categories and related validation on dependent entities ([#996](https://github.com/adobe/spacecat-shared/issues/996)) ([60c52e2](https://github.com/adobe/spacecat-shared/commit/60c52e2d9c7e79a67132ae2b26e40e617e8af358))
+
+# [@adobe/spacecat-shared-utils-v1.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.51.1...@adobe/spacecat-shared-utils-v1.52.0) (2025-09-29)
+
+
+### Features
+
+* llmo config types and version ([#990](https://github.com/adobe/spacecat-shared/issues/990)) ([2dfe331](https://github.com/adobe/spacecat-shared/commit/2dfe33156754f044b6e9ff18d32e13baabaa47f1))
+
+# [@adobe/spacecat-shared-utils-v1.51.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.51.0...@adobe/spacecat-shared-utils-v1.51.1) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
+# [@adobe/spacecat-shared-utils-v1.51.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.8...@adobe/spacecat-shared-utils-v1.51.0) (2025-09-25)
+
+
+### Features
+
+* schema + file read/write for llmo config ([#981](https://github.com/adobe/spacecat-shared/issues/981)) ([93b0aae](https://github.com/adobe/spacecat-shared/commit/93b0aae0daeb1a81c6914d21b30f39b448784599))
+
+# [@adobe/spacecat-shared-utils-v1.50.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.7...@adobe/spacecat-shared-utils-v1.50.8) (2025-09-20)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#969](https://github.com/adobe/spacecat-shared/issues/969)) ([d722c62](https://github.com/adobe/spacecat-shared/commit/d722c623193fdbf292d96d71236cb4396db7ce3b))
+
+# [@adobe/spacecat-shared-utils-v1.50.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.6...@adobe/spacecat-shared-utils-v1.50.7) (2025-09-18)
+
+
+### Bug Fixes
+
+* need to switch to /adobe/pages because experimental endpoints do not exist in AMS ([#967](https://github.com/adobe/spacecat-shared/issues/967)) ([73a7238](https://github.com/adobe/spacecat-shared/commit/73a7238a936cc1a656c55f456f084026327fbb87))
+
 # [@adobe/spacecat-shared-utils-v1.50.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.50.5...@adobe/spacecat-shared-utils-v1.50.6) (2025-09-16)
 
 

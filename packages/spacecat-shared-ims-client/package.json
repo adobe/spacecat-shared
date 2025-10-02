@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-ims-client",
-  "version": "1.8.11",
+  "version": "1.8.13",
   "description": "Shared modules of the Spacecat Services - IMS Client",
   "type": "module",
   "engines": {
@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.2.3",
-    "@adobe/helix-universal": "5.2.2",
+    "@adobe/helix-universal": "5.2.3",
     "@adobe/spacecat-shared-utils": "1.26.4"
   },
   "devDependencies": {

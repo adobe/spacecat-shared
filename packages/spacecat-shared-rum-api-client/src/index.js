@@ -134,7 +134,7 @@ export default class RUMAPIClient {
         checkpoints,
       }, this.log);
 
-      this.log.info(`Query "${query}" fetched ${bundles.length} bundles`);
+      this.log.debug(`Query "${query}" fetched ${bundles.length} bundles`); // maybe even remove?
       return handler(bundles, opts);
     } catch (e) {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
@@ -168,7 +168,7 @@ export default class RUMAPIClient {
       }, this.log);
 
       const results = {};
-      this.log.info(`Multi query ${JSON.stringify(queries.join(', '))} fetched ${bundles.length} bundles`);
+      this.log.debug(`Multi query ${JSON.stringify(queries.join(', '))} fetched ${bundles.length} bundles`); // maybe even remove?
 
       // Execute each query handler sequentially
       for (const { query, handler } of queryHandlers) {

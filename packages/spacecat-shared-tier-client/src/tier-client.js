@@ -58,7 +58,8 @@ class TierClient {
     if (!isNonEmptyObject(context)) {
       throw new Error('Context is required');
     }
-    const organization = await site.getOrganization();
+    const organizationId = await site.getOrganizationId();
+    const organization = await context.dataAccess.Organization.findById(organizationId);
     return new TierClient(context, organization, site, productCode);
   }
 
@@ -103,41 +104,28 @@ class TierClient {
   async checkValidEntitlement() {
     try {
       const orgId = this.organization.getId();
-      this.log.info(`Checking for valid entitlement for org ${orgId} and product ${this.productCode}`);
-
       const entitlement = await this.Entitlement
         .findByOrganizationIdAndProductCode(orgId, this.productCode);
 
       if (!entitlement) {
-        this.log.info(`No valid entitlement found for org ${orgId} and product ${this.productCode}`);
         return {};
       }
-
-      this.log.info(`Found valid entitlement: ${entitlement.getId()}`);
-
       // Only check for site enrollment if site is provided
       if (this.site) {
         const siteId = this.site.getId();
-        this.log.info(`Checking for valid site enrollment for site ${siteId} and entitlement ${entitlement.getId()}`);
-
         const siteEnrollments = await this.SiteEnrollment.allBySiteId(siteId);
         const validSiteEnrollment = siteEnrollments.find(
           (se) => se.getEntitlementId() === entitlement.getId(),
         );
 
         if (!validSiteEnrollment) {
-          this.log.info(`No valid site enrollment found for site ${siteId} and entitlement ${entitlement.getId()}`);
           return { entitlement };
         }
-
-        this.log.info(`Found valid site enrollment: ${validSiteEnrollment.getId()}`);
-
         return {
           entitlement,
           siteEnrollment: validSiteEnrollment,
         };
       } else {
-        this.log.info(`No site provided, returning entitlement only for org ${orgId}`);
         return { entitlement };
       }
     } catch (error) {
@@ -148,52 +136,47 @@ class TierClient {
 
   /**
    * Creates entitlement for organization and site enrollment for site.
-   * First validates that org and site don't already have an entitlement for this product.
+   * If entitlement exists with different tier, updates the tier.
    * @param {string} tier - Entitlement tier.
-   * @returns {Promise<object>} Object with created entitlement and siteEnrollment.
+   * @returns {Promise<object>} Object with created/updated
+   * entitlement and siteEnrollment (if site provided).
    */
   async createEntitlement(tier) {
     try {
       if (!Object.values(EntitlementModel.TIERS).includes(tier)) {
         throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(EntitlementModel.TIERS).join(', ')}`);
       }
-
-      if (!this.site) {
-        throw new Error('Site required for creating entitlements');
-      }
-
       const orgId = this.organization.getId();
-      const siteId = this.site.getId();
-      this.log.info(`Creating entitlement for org ${orgId}, site ${siteId}, product ${this.productCode}, tier ${tier}`);
-
       // Check what already exists
       const existing = await this.checkValidEntitlement();
 
-      // If both entitlement and site enrollment exist, return them
-      if (existing.entitlement && existing.siteEnrollment) {
-        this.log.info(`Entitlement and site enrollment already exist for org ${orgId}, site ${siteId} and product ${this.productCode}`);
+      // If entitlement exists, handle tier update and return
+      if (existing.entitlement) {
+        const currentTier = existing.entitlement.getTier();
+
+        // If tier doesn't match, update it
+        if (currentTier !== tier) {
+          existing.entitlement.setTier(tier);
+          await existing.entitlement.save();
+        }
+
+        // If site provided but no site enrollment, create it
+        if (this.site && !existing.siteEnrollment) {
+          const siteId = this.site.getId();
+          const siteEnrollment = await this.SiteEnrollment.create({
+            siteId,
+            entitlementId: existing.entitlement.getId(),
+          });
+          return {
+            entitlement: existing.entitlement,
+            siteEnrollment,
+          };
+        }
+
         return existing;
       }
 
-      // If only entitlement exists, we need to create site enrollment
-      if (existing.entitlement && !existing.siteEnrollment) {
-        this.log.info(`Entitlement exists but site enrollment missing for org ${orgId}, site ${siteId} and product ${this.productCode}`);
-
-        // Create site enrollment for existing entitlement
-        const siteEnrollment = await this.SiteEnrollment.create({
-          siteId,
-          entitlementId: existing.entitlement.getId(),
-        });
-
-        this.log.info(`Created site enrollment: ${siteEnrollment.getId()}`);
-
-        return {
-          entitlement: existing.entitlement,
-          siteEnrollment,
-        };
-      }
-
-      // Create entitlement
+      // No existing entitlement, create new one
       const entitlement = await this.Entitlement.create({
         organizationId: orgId,
         productCode: this.productCode,
@@ -204,22 +187,24 @@ class TierClient {
         },
       });
 
-      this.log.info(`Created entitlement: ${entitlement.getId()}`);
+      // If no site provided, return entitlement only
+      if (!this.site) {
+        return { entitlement };
+      }
 
       // Create site enrollment
+      const siteId = this.site.getId();
       const siteEnrollment = await this.SiteEnrollment.create({
         siteId,
         entitlementId: entitlement.getId(),
       });
-
-      this.log.info(`Created site enrollment: ${siteEnrollment.getId()}`);
 
       return {
         entitlement,
         siteEnrollment,
       };
     } catch (error) {
-      this.log.error(`Error creating entitlement and site enrollment: ${error.message}`);
+      this.log.error(`Error creating/updating entitlement: ${error.message}`);
       throw error;
     }
   }

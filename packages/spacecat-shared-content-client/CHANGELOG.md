@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-content-client-v1.7.33](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.32...@adobe/spacecat-shared-content-client-v1.7.33) (2025-09-28)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.4.24 ([#989](https://github.com/adobe/spacecat-shared/issues/989)) ([2f16116](https://github.com/adobe/spacecat-shared/commit/2f161166d29d6c345f9e27c2d847746f0d429c3a))
+
+# [@adobe/spacecat-shared-content-client-v1.7.32](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.31...@adobe/spacecat-shared-content-client-v1.7.32) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
+# [@adobe/spacecat-shared-content-client-v1.7.31](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.30...@adobe/spacecat-shared-content-client-v1.7.31) (2025-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.4.23 ([#970](https://github.com/adobe/spacecat-shared/issues/970)) ([d9d149a](https://github.com/adobe/spacecat-shared/commit/d9d149a359064e47d3158a4b08cb726498fe7dfe))
+
+# [@adobe/spacecat-shared-content-client-v1.7.30](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.29...@adobe/spacecat-shared-content-client-v1.7.30) (2025-09-20)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#969](https://github.com/adobe/spacecat-shared/issues/969)) ([d722c62](https://github.com/adobe/spacecat-shared/commit/d722c623193fdbf292d96d71236cb4396db7ce3b))
+
+# [@adobe/spacecat-shared-content-client-v1.7.29](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.28...@adobe/spacecat-shared-content-client-v1.7.29) (2025-09-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.3 ([#963](https://github.com/adobe/spacecat-shared/issues/963)) ([6a433ea](https://github.com/adobe/spacecat-shared/commit/6a433ea495c0a68cb3129a51beed9388af277952))
+
 # [@adobe/spacecat-shared-content-client-v1.7.28](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.27...@adobe/spacecat-shared-content-client-v1.7.28) (2025-09-16)
 
 

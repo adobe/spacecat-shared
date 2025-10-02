@@ -89,17 +89,6 @@ describe('TrialUserModel', () => {
     });
   });
 
-  describe('provider', () => {
-    it('gets provider', () => {
-      expect(instance.getProvider()).to.equal('IMS');
-    });
-
-    it('sets provider', () => {
-      instance.setProvider('GOOGLE');
-      expect(instance.getProvider()).to.equal('GOOGLE');
-    });
-  });
-
   describe('lastSeenAt', () => {
     it('gets lastSeenAt', () => {
       expect(instance.getLastSeenAt()).to.equal('2024-01-15T10:30:00.000Z');

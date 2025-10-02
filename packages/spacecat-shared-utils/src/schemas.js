@@ -36,13 +36,13 @@ import * as z from 'zod';
 
 const nonEmptyString = z.string().min(1);
 
+const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
+
 const entity = z.union([
-  z.object({ type: z.literal('category'), name: nonEmptyString }),
+  z.object({ type: z.literal('category'), name: nonEmptyString, region: z.union([region, z.array(region)]).optional() }),
   z.object({ type: z.literal('topic'), name: nonEmptyString }),
   z.object({ type: nonEmptyString }),
 ]);
-
-const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 
 export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
@@ -73,10 +73,12 @@ export const llmoConfig = z.object({
   brands.aliases.forEach((alias, index) => {
     ensureEntityType(entities, ctx, alias.category, 'category', ['brands', 'aliases', index, 'category'], 'category');
     ensureEntityType(entities, ctx, alias.topic, 'topic', ['brands', 'aliases', index, 'topic'], 'topic');
+    ensureRegionCompatibility(entities, ctx, alias.category, alias.region, ['brands', 'aliases', index, 'region'], 'brand alias');
   });
 
   competitors.competitors.forEach((competitor, index) => {
     ensureEntityType(entities, ctx, competitor.category, 'category', ['competitors', 'competitors', index, 'category'], 'category');
+    ensureRegionCompatibility(entities, ctx, competitor.category, competitor.region, ['competitors', 'competitors', index, 'region'], 'competitor');
   });
 });
 
@@ -104,6 +106,50 @@ function ensureEntityType(entities, ctx, id, expectedType, path, refLabel) {
       code: 'custom',
       path,
       message: `Entity ${id} referenced as ${refLabel} must have type "${expectedType}" but was "${entityValue.type}"`,
+    });
+  }
+}
+
+/**
+ * @param {LLMOConfig['entities']} entities
+ * @param {z.RefinementCtx} ctx
+ * @param {string} categoryId
+ * @param {string | string[]} itemRegion
+ * @param {Array<number | string>} path
+ * @param {string} itemLabel
+ */
+function ensureRegionCompatibility(entities, ctx, categoryId, itemRegion, path, itemLabel) {
+  const categoryEntity = entities[categoryId];
+  if (!categoryEntity) {
+    // Category validation is handled by ensureEntityType
+    return;
+  }
+
+  const categoryRegions = categoryEntity.region;
+
+  // If category has no regions defined, item should not have regions
+  if (!categoryRegions) {
+    ctx.addIssue({
+      code: 'custom',
+      path,
+      message: `${itemLabel} cannot have regions when the referenced category has no regions defined`,
+    });
+    return;
+  }
+
+  // Normalize regions to arrays for comparison
+  const categoryRegionArray = Array.isArray(categoryRegions) ? categoryRegions : [categoryRegions];
+  const itemRegionArray = Array.isArray(itemRegion) ? itemRegion : [itemRegion];
+
+  // Check if all item regions are contained in category regions
+  const invalidRegions = itemRegionArray.filter(
+    (regionItem) => !categoryRegionArray.includes(regionItem),
+  );
+  if (invalidRegions.length > 0) {
+    ctx.addIssue({
+      code: 'custom',
+      path,
+      message: `${itemLabel} regions [${invalidRegions.join(', ')}] are not allowed. Category only supports regions: [${categoryRegionArray.join(', ')}]`,
     });
   }
 }

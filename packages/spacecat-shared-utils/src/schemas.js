@@ -39,7 +39,7 @@ const nonEmptyString = z.string().min(1);
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 
 const entity = z.union([
-  z.object({ type: z.literal('category'), name: nonEmptyString, region: z.union([region, z.array(region)]).optional() }),
+  z.object({ type: z.literal('category'), name: nonEmptyString, region: z.union([region, z.array(region)]) }),
   z.object({ type: z.literal('topic'), name: nonEmptyString }),
   z.object({ type: nonEmptyString }),
 ]);
@@ -52,7 +52,6 @@ export const llmoConfig = z.object({
         aliases: z.array(nonEmptyString),
         category: z.uuid(),
         region: z.union([region, z.array(region)]),
-        topic: z.uuid(),
       }),
     ),
   }),
@@ -72,7 +71,6 @@ export const llmoConfig = z.object({
 
   brands.aliases.forEach((alias, index) => {
     ensureEntityType(entities, ctx, alias.category, 'category', ['brands', 'aliases', index, 'category'], 'category');
-    ensureEntityType(entities, ctx, alias.topic, 'topic', ['brands', 'aliases', index, 'topic'], 'topic');
     ensureRegionCompatibility(entities, ctx, alias.category, alias.region, ['brands', 'aliases', index, 'region'], 'brand alias');
   });
 
@@ -126,16 +124,6 @@ function ensureRegionCompatibility(entities, ctx, categoryId, itemRegion, path, 
   }
 
   const categoryRegions = categoryEntity.region;
-
-  // If category has no regions defined, item should not have regions
-  if (!categoryRegions) {
-    ctx.addIssue({
-      code: 'custom',
-      path,
-      message: `${itemLabel} cannot have regions when the referenced category has no regions defined`,
-    });
-    return;
-  }
 
   // Normalize regions to arrays for comparison
   const categoryRegionArray = Array.isArray(categoryRegions) ? categoryRegions : [categoryRegions];

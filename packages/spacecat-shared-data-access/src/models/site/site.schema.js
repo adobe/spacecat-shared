@@ -35,7 +35,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   // this will add an attribute 'organizationId' as well as an index 'byOrganizationId'
   .addReference('belongs_to', 'Organization')
   // this will add an attribute 'projectId' as well as an index 'byProjectId'
-  .addReference('belongs_to', 'Project')
+  .addReference('belongs_to', 'Project', ['updatedAt'], { required: false })
   // has_many references do not add attributes or indexes
   .addReference('has_many', 'Audits')
   .addReference('has_many', 'Experiments')

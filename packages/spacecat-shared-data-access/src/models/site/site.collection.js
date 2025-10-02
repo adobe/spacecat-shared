@@ -125,10 +125,18 @@ class SiteCollection extends BaseCollection {
       throw new DataAccessError('projectId is required', this);
     }
 
-    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
-    const project = await projectCollection.findById(projectId);
+    const organizationCollection = this.entityRegistry.getCollection('OrganizationCollection');
+    const organization = await organizationCollection.findById(organizationId);
 
-    if (!project || project.getOrganizationId() !== organizationId) {
+    if (!organization) {
+      return [];
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const projects = await projectCollection.allByOrganizationId(organizationId);
+    const project = projects.find((p) => p.getId() === projectId);
+
+    if (!project) {
       return [];
     }
 
@@ -141,6 +149,13 @@ class SiteCollection extends BaseCollection {
     }
     if (!hasText(projectName)) {
       throw new DataAccessError('projectName is required', this);
+    }
+
+    const organizationCollection = this.entityRegistry.getCollection('OrganizationCollection');
+    const organization = await organizationCollection.findById(organizationId);
+
+    if (!organization) {
+      return [];
     }
 
     const projectCollection = this.entityRegistry.getCollection('ProjectCollection');

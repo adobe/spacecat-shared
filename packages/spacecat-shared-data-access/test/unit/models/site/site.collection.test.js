@@ -262,37 +262,50 @@ describe('SiteCollection', () => {
     });
 
     describe('allByOrganizationIdAndProjectId', () => {
-      it('should return sites when project belongs to organization', async () => {
-        mockProjectCollection.findById.resolves(mockProject);
+      let mockOrganizationCollection;
+      let mockOrganization;
+
+      beforeEach(() => {
+        mockOrganization = {
+          getId: () => 'org-123',
+        };
+        mockOrganizationCollection = {
+          findById: stub(),
+        };
+        instance.entityRegistry.getCollection.withArgs('OrganizationCollection').returns(mockOrganizationCollection);
+      });
+
+      it('should return sites when organization and project exist', async () => {
+        mockOrganizationCollection.findById.resolves(mockOrganization);
+        mockProjectCollection.allByOrganizationId.resolves([mockProject]);
         instance.allByProjectId = stub().resolves(mockSites);
 
         const result = await instance.allByOrganizationIdAndProjectId('org-123', 'project-123');
 
         expect(result).to.deep.equal(mockSites);
-        expect(mockProjectCollection.findById).to.have.been.calledOnceWith('project-123');
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+        expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
         expect(instance.allByProjectId).to.have.been.calledOnceWith('project-123');
       });
 
-      it('should return empty array when project does not belong to organization', async () => {
-        const differentOrgProject = {
-          getId: () => 'project-123',
-          getOrganizationId: () => 'different-org',
-        };
-        mockProjectCollection.findById.resolves(differentOrgProject);
+      it('should return empty array when organization does not exist', async () => {
+        mockOrganizationCollection.findById.resolves(null);
 
         const result = await instance.allByOrganizationIdAndProjectId('org-123', 'project-123');
 
         expect(result).to.deep.equal([]);
-        expect(mockProjectCollection.findById).to.have.been.calledOnceWith('project-123');
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
       });
 
-      it('should return empty array when project is not found', async () => {
-        mockProjectCollection.findById.resolves(null);
+      it('should return empty array when project is not found in organization', async () => {
+        mockOrganizationCollection.findById.resolves(mockOrganization);
+        mockProjectCollection.allByOrganizationId.resolves([]);
 
         const result = await instance.allByOrganizationIdAndProjectId('org-123', 'project-123');
 
         expect(result).to.deep.equal([]);
-        expect(mockProjectCollection.findById).to.have.been.calledOnceWith('project-123');
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+        expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
       });
 
       it('should throw error for empty organization ID', async () => {
@@ -307,23 +320,49 @@ describe('SiteCollection', () => {
     });
 
     describe('allByOrganizationIdAndProjectName', () => {
-      it('should return sites when project belongs to organization', async () => {
+      let mockOrganizationCollection;
+      let mockOrganization;
+
+      beforeEach(() => {
+        mockOrganization = {
+          getId: () => 'org-123',
+        };
+        mockOrganizationCollection = {
+          findById: stub(),
+        };
+        instance.entityRegistry.getCollection.withArgs('OrganizationCollection').returns(mockOrganizationCollection);
+      });
+
+      it('should return sites when organization and project exist', async () => {
+        mockOrganizationCollection.findById.resolves(mockOrganization);
         mockProjectCollection.allByOrganizationId.resolves([mockProject]);
         instance.allByProjectId = stub().resolves(mockSites);
 
         const result = await instance.allByOrganizationIdAndProjectName('org-123', 'Test Project');
 
         expect(result).to.deep.equal(mockSites);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
         expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
         expect(instance.allByProjectId).to.have.been.calledOnceWith('project-123');
       });
 
+      it('should return empty array when organization does not exist', async () => {
+        mockOrganizationCollection.findById.resolves(null);
+
+        const result = await instance.allByOrganizationIdAndProjectName('org-123', 'Test Project');
+
+        expect(result).to.deep.equal([]);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+      });
+
       it('should return empty array when project is not found in organization', async () => {
+        mockOrganizationCollection.findById.resolves(mockOrganization);
         mockProjectCollection.allByOrganizationId.resolves([]);
 
         const result = await instance.allByOrganizationIdAndProjectName('org-123', 'Non-existent Project');
 
         expect(result).to.deep.equal([]);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
         expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
       });
 
@@ -333,11 +372,13 @@ describe('SiteCollection', () => {
           getOrganizationId: () => 'org-123',
           getProjectName: () => 'Different Project',
         };
+        mockOrganizationCollection.findById.resolves(mockOrganization);
         mockProjectCollection.allByOrganizationId.resolves([differentProject]);
 
         const result = await instance.allByOrganizationIdAndProjectName('org-123', 'Test Project');
 
         expect(result).to.deep.equal([]);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
         expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
       });
 

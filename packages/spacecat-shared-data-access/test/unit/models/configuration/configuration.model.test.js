@@ -303,7 +303,7 @@ describe('ConfigurationModel', () => {
     });
 
     it('throws error when registering an invalid audit type', () => {
-      expect(() => instance.registerAudit('invalid-audit-type', true, 'weekly')).to.throw(Error, 'Audit type invalid-audit-type is not registered');
+      expect(() => instance.registerAudit('invalid-audit-type', true, 'weekly')).to.throw(Error, 'Audit type invalid-audit-type is not a valid audit type in the data model');
     });
 
     it('throws error when registering an invalid job interval', () => {
@@ -318,7 +318,7 @@ describe('ConfigurationModel', () => {
     });
 
     it('throws error when unregistering an invalid audit type', () => {
-      expect(() => instance.unregisterAudit('invalid-audit-type')).to.throw(Error, 'Audit type invalid-audit-type is not registered');
+      expect(() => instance.unregisterAudit('invalid-audit-type')).to.throw(Error, 'Audit type invalid-audit-type is not a valid audit type in the data model');
     });
   });
 

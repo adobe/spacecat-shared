@@ -252,7 +252,7 @@ class Configuration extends BaseModel {
   registerAudit(type, enabledByDefault = false, interval = Configuration.JOB_INTERVALS.NEVER) {
     // Validate audit type
     if (!Object.values(Audit.AUDIT_TYPES).includes(type)) {
-      throw new Error(`Audit type ${type} is not registered`);
+      throw new Error(`Audit type ${type} is not a valid audit type in the data model`);
     }
 
     // Validate job interval
@@ -294,7 +294,7 @@ class Configuration extends BaseModel {
   unregisterAudit(type) {
     // Validate audit type
     if (!Object.values(Audit.AUDIT_TYPES).includes(type)) {
-      throw new Error(`Audit type ${type} is not registered`);
+      throw new Error(`Audit type ${type} is not a valid audit type in the data model`);
     }
 
     // Remove from handlers

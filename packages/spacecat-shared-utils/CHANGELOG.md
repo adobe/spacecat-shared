@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.54.0...@adobe/spacecat-shared-utils-v1.55.0) (2025-10-03)
+
+
+### Features
+
+* add topics with nested prompts + make categories and prompts top level entities ([#999](https://github.com/adobe/spacecat-shared/issues/999)) ([1b43970](https://github.com/adobe/spacecat-shared/commit/1b43970912478361b2eb4eaf1e7f173e77ad80e9))
+
 # [@adobe/spacecat-shared-utils-v1.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.53.0...@adobe/spacecat-shared-utils-v1.54.0) (2025-10-02)
 
 

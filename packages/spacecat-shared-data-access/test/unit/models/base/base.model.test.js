@@ -207,6 +207,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
 
       mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(collectionMethods);
       mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(collectionMethods);
+      mockEntityRegistry.getCollection.withArgs('FixEntitySuggestionCollection').returns(collectionMethods);
       mockEntityRegistry.getCollection.withArgs('SomeModelCollection').returns(collectionMethods);
       mockElectroService.entities.opportunity.remove.returns({ go: () => Promise.resolve() });
     });
@@ -223,16 +224,23 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
     });
 
     it('removes record with dependents', async () => {
-      const reference = Reference.fromJSON({
+      const hasOneReference = Reference.fromJSON({
         type: Reference.TYPES.HAS_ONE,
         target: 'SomeModel',
+        options: { removeDependents: true },
+      });
+
+      const hasManyReference = Reference.fromJSON({
+        type: Reference.TYPES.HAS_MANY,
+        target: 'Suggestions',
         options: { removeDependents: true },
       });
 
       baseModelInstance.getSomeModel = stub().resolves(dependent);
       baseModelInstance.getSuggestions = stub().resolves(dependents);
 
-      schema.references.push(reference);
+      // Clear existing references and add the ones we're testing
+      schema.references = [hasOneReference, hasManyReference];
 
       await expect(baseModelInstance.remove()).to.eventually.equal(baseModelInstance);
 
@@ -241,6 +249,7 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
       // dependents remove: 3 = has_many, 1 = has_one
       expect(dependent._remove).to.have.callCount(4);
       expect(baseModelInstance.getSomeModel).to.have.been.calledOnce;
+      expect(baseModelInstance.getSuggestions).to.have.been.calledOnce;
       expect(mockLogger.error).to.not.have.been.called;
     });
 

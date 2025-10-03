@@ -242,6 +242,9 @@ describe('Opportunity IT', async () => {
     expect(stillThere).to.be.an('object');
 
     // make sure the other suggestions are removed
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1000);
+    });
     const remainingSuggestions = await Suggestion.allByOpportunityId(opportunity.getId());
     expect(remainingSuggestions).to.be.an('array').with.length(1);
     expect(remainingSuggestions[0].getId()).to.equal(suggestions[0].getId());

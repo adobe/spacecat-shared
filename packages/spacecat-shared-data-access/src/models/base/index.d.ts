@@ -49,6 +49,7 @@ export interface BaseCollection<T extends BaseModel> {
   _saveMany(items: T[]): Promise<T[]>;
   all(sortKeys?: object, options?: QueryOptions): Promise<T[]>;
   allByIndexKeys(keys: object, options?: QueryOptions): Promise<T[]>;
+  batchGetByKeys(keys: object[]): Promise<{ data: T[]; unprocessed: object[] }>;
   create(item: object): Promise<T>;
   createMany(items: object[], parent?: T): Promise<MultiStatusCreateResult<T>>;
   existsById(id: string): Promise<boolean>;

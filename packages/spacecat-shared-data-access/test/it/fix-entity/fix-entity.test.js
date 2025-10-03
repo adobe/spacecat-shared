@@ -20,6 +20,14 @@ import fixEntityFixtures from '../../fixtures/fix-entity.fixture.js';
 
 use(chaiAsPromised);
 
+function checkSuggestion(suggestion) {
+  expect(suggestion).to.be.an('object');
+  expect(suggestion.getId()).to.be.a('string');
+  expect(suggestion.getOpportunityId()).to.be.a('string');
+  expect(suggestion.getStatus()).to.be.a('string');
+  expect(suggestion.getType()).to.be.a('string');
+}
+
 function checkFixEntity(fixEntity) {
   expect(fixEntity).to.be.an('object');
   expect(fixEntity.getId()).to.be.a('string');
@@ -122,5 +130,26 @@ describe('FixEntity IT', async () => {
 
     const notFound = await FixEntity.findById(sampleData.fixEntities[0].getId());
     expect(notFound).to.equal(null);
+  });
+
+  it('gets suggestions for a fix entity', async () => {
+    const fixEntity = sampleData.fixEntities[0];
+
+    // First, set up some suggestions for this fix entity
+    const suggestionIds = [
+      sampleData.suggestions[0].getId(),
+      sampleData.suggestions[1].getId(),
+    ];
+
+    await FixEntity.setSuggestionsByFixEntityId(fixEntity.getId(), suggestionIds);
+
+    // Test the model method
+    const suggestions = await fixEntity.getSuggestions();
+
+    expect(suggestions).to.be.an('array').with.length(2);
+    suggestions.forEach((suggestion) => {
+      checkSuggestion(suggestion);
+      expect(suggestionIds).to.include(suggestion.getId());
+    });
   });
 });

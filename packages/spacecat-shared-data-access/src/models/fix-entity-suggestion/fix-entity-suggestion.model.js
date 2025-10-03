@@ -9,31 +9,30 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+
 import BaseModel from '../base/base.model.js';
 
 /**
- * FixEntity - A class representing a FixEntity for a Suggestion.
- * Provides methods to access and manipulate FixEntity-specific data.
+ * FixEntitySuggestion - A junction table class representing the many-to-many relationship
+ * between FixEntity and Suggestion entities. This allows one fix entity to be associated
+ * with multiple suggestions and one suggestion to be associated with multiple fix entities.
  *
- * @class FixEntity
+ * @class FixEntitySuggestion
  * @extends BaseModel
  */
-class FixEntity extends BaseModel {
+class FixEntitySuggestion extends BaseModel {
   static DEFAULT_UPDATED_BY = 'spacecat';
 
-  static STATUSES = {
-    PENDING: 'PENDING', // the fix is pending to be deployed
-    DEPLOYED: 'DEPLOYED', // the fix was successfully applied
-    PUBLISHED: 'PUBLISHED', // the fix is live in production
-    FAILED: 'FAILED', // failed to apply the fix
-    ROLLED_BACK: 'ROLLED_BACK', // the fix has been rolled_back
-  };
-
-  async getSuggestions() {
-    const fixEntityCollection = this.entityRegistry.getCollection('FixEntityCollection');
-    return fixEntityCollection
-      .getSuggestionsByFixEntityId(this.getId());
+  /**
+   * Generates the composite keys for the FixEntitySuggestion model.
+   * @returns {Object} - The composite keys.
+   */
+  generateCompositeKeys() {
+    return {
+      suggestionId: this.getSuggestionId(),
+      fixEntityId: this.getFixEntityId(),
+    };
   }
 }
 
-export default FixEntity;
+export default FixEntitySuggestion;

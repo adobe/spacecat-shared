@@ -17,11 +17,11 @@ import { isIsoDate, isValidUUID } from '@adobe/spacecat-shared-utils';
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import { ValidationError } from '../../../src/index.js';
 import { sanitizeIdAndAuditFields, sanitizeTimestamps } from '../../../src/util/util.js';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import ValidationError from '../../../src/errors/validation.error.js';
 
 use(chaiAsPromised);
 
@@ -29,7 +29,7 @@ describe('Suggestion IT', async () => {
   let sampleData;
   let Suggestion;
 
-  before(async () => {
+  beforeEach(async () => {
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -253,5 +253,44 @@ describe('Suggestion IT', async () => {
 
     const notFound = await Suggestion.findById(sampleData.suggestions[0].getId());
     expect(notFound).to.be.null;
+  });
+
+  it('gets fix entities for a single suggestion ID', async () => {
+    const suggestion = sampleData.suggestions[2];
+    const fixEntityIds = [
+      sampleData.fixEntities[0].getId(),
+      sampleData.fixEntities[2].getId(),
+    ];
+
+    // First, set up some fix entities for this suggestion
+    await Suggestion.setFixEntitiesBySuggestionId(suggestion.getId(), fixEntityIds);
+
+    // Test the single suggestion method
+    const fixEntities = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());
+
+    expect(fixEntities).to.be.an('array').with.length(2);
+    fixEntities.forEach((fixEntity) => {
+      expect(fixEntity).to.be.an('object');
+      expect(fixEntity.getId()).to.be.a('string');
+      expect(fixEntity.getOpportunityId()).to.be.a('string');
+      expect(fixEntity.getStatus()).to.be.a('string');
+      expect(fixEntity.getType()).to.be.a('string');
+      expect(fixEntityIds).to.include(fixEntity.getId());
+    });
+  });
+
+  it('handles non-existent suggestion ID in single operations', async () => {
+    const nonExistentId = '123e4567-e89b-12d3-a456-426614174999';
+
+    const fixEntities = await Suggestion.getFixEntitiesBySuggestionId(nonExistentId);
+    expect(fixEntities).to.be.an('array').with.length(0);
+  });
+
+  it('validates suggestion ID in single operations', async () => {
+    const invalidId = 'invalid-id';
+
+    await expect(
+      Suggestion.getFixEntitiesBySuggestionId(invalidId),
+    ).to.be.rejectedWith('Validation failed');
   });
 });

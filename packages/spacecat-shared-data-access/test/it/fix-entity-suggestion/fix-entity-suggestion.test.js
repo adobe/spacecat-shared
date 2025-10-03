@@ -512,4 +512,179 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     expect(suggestionsFromFixEntity2).to.be.an('array').with.length(1);
     expect(suggestionsFromFixEntity2[0].getId()).to.equal(suggestion.getId());
   });
+
+  it('cascades delete of junction records when fix entity is deleted', async () => {
+    const fixEntity = sampleData.fixEntities[0];
+    const suggestion1 = sampleData.suggestions[0];
+    const suggestion2 = sampleData.suggestions[1];
+
+    // Create relationships between fix entity and suggestions
+    await FixEntity.setSuggestionsByFixEntityId(
+      fixEntity.getId(),
+      [suggestion1.getId(), suggestion2.getId()],
+    );
+
+    // Verify relationships existy
+    const firstJunctionRecord = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion1.getId(),
+      fixEntityId: fixEntity.getId(),
+    });
+    const secondJunctionRecord = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion2.getId(),
+      fixEntityId: fixEntity.getId(),
+    });
+    expect(firstJunctionRecord).to.be.an('array').with.length(1);
+    expect(secondJunctionRecord).to.be.an('array').with.length(1);
+
+    // Delete the fix entity (this should cascade delete junction records)
+    await fixEntity.remove();
+
+    // Verify junction records are deleted
+    const firstJunctionRecordAfter = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion1.getId(),
+      fixEntityId: fixEntity.getId(),
+    });
+    const secondJunctionRecordAfter = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion2.getId(),
+      fixEntityId: fixEntity.getId(),
+    });
+    expect(firstJunctionRecordAfter).to.be.an('array').with.length(0);
+    expect(secondJunctionRecordAfter).to.be.an('array').with.length(0);
+
+    // Verify suggestions still exist (they should not be deleted)
+    const suggestion1After = await Suggestion.findById(suggestion1.getId());
+    const suggestion2After = await Suggestion.findById(suggestion2.getId());
+    expect(suggestion1After).to.not.be.null;
+    expect(suggestion2After).to.not.be.null;
+  });
+
+  it('cascades delete of junction records when suggestion is deleted', async () => {
+    const suggestion = sampleData.suggestions[2];
+    const fixEntity1 = sampleData.fixEntities[1];
+    const fixEntity2 = sampleData.fixEntities[2];
+
+    // Create relationships between suggestion and fix entities
+    await Suggestion.setFixEntitiesBySuggestionId(
+      suggestion.getId(),
+      [fixEntity1.getId(), fixEntity2.getId()],
+    );
+
+    // Verify relationships exist
+    const firstJunctionRecordBefore = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion.getId(),
+      fixEntityId: fixEntity1.getId(),
+    });
+    const secondJunctionRecordBefore = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion.getId(),
+      fixEntityId: fixEntity2.getId(),
+    });
+    expect(firstJunctionRecordBefore).to.be.an('array').with.length(1);
+    expect(secondJunctionRecordBefore).to.be.an('array').with.length(1);
+
+    // Delete the suggestion (this should cascade delete junction records)
+    await suggestion.remove();
+
+    // Verify junction records are deleted
+    const firstJunctionRecordAfter = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion.getId(),
+      fixEntityId: fixEntity1.getId(),
+    });
+    const secondJunctionRecordAfter = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion.getId(),
+      fixEntityId: fixEntity2.getId(),
+    });
+    expect(firstJunctionRecordAfter).to.be.an('array').with.length(0);
+    expect(secondJunctionRecordAfter).to.be.an('array').with.length(0);
+
+    // Verify fix entities still exist (they should not be deleted)
+    const fixEntity1After = await FixEntity.findById(fixEntity1.getId());
+    const fixEntity2After = await FixEntity.findById(fixEntity2.getId());
+    expect(fixEntity1After).to.not.be.null;
+    expect(fixEntity2After).to.not.be.null;
+  });
+
+  it('only deletes junction records for the deleted entity, not others', async () => {
+    const fixEntity1 = sampleData.fixEntities[3];
+    const fixEntity2 = sampleData.fixEntities[4];
+    const suggestion1 = sampleData.suggestions[3];
+    const suggestion2 = sampleData.suggestions[4];
+
+    // Create multiple relationships
+    await FixEntity.setSuggestionsByFixEntityId(
+      fixEntity1.getId(),
+      [suggestion1.getId(), suggestion2.getId()],
+    );
+    await FixEntity.setSuggestionsByFixEntityId(
+      fixEntity2.getId(),
+      [suggestion1.getId()], // suggestion1 is related to both fix entities
+    );
+
+    // Verify initial state
+    const firstJunctionRecords = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion1.getId(),
+      fixEntityId: fixEntity1.getId(),
+    });
+    const secondJunctionRecords = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion1.getId(),
+      fixEntityId: fixEntity2.getId(),
+    });
+    const thirdJunctionRecords = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion2.getId(),
+      fixEntityId: fixEntity1.getId(),
+    });
+    expect(firstJunctionRecords).to.be.an('array').with.length(1);
+    expect(secondJunctionRecords).to.be.an('array').with.length(1);
+    expect(thirdJunctionRecords).to.be.an('array').with.length(1);
+
+    // Delete fixEntity1 (this should only delete its junction records)
+    await fixEntity1.remove();
+
+    // Verify only fixEntity1's junction records are deleted
+    const firstJunctionRecordsAfter = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion1.getId(),
+      fixEntityId: fixEntity1.getId(),
+    });
+    const secondJunctionRecordsAfter = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion1.getId(),
+      fixEntityId: fixEntity2.getId(),
+    });
+    const thirdJunctionRecordsAfter = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion2.getId(),
+      fixEntityId: fixEntity1.getId(),
+    });
+
+    expect(firstJunctionRecordsAfter).to.be.an('array').with.length(0);
+    expect(secondJunctionRecordsAfter).to.be.an('array').with.length(1); // Should remain unchanged
+    expect(thirdJunctionRecordsAfter).to.be.an('array').with.length(0); // Only one relationship remains
+
+    // Verify other entities still exist
+    const fixEntity2After = await FixEntity.findById(fixEntity2.getId());
+    const suggestion1After = await Suggestion.findById(suggestion1.getId());
+    const suggestion2After = await Suggestion.findById(suggestion2.getId());
+    expect(fixEntity2After).to.not.be.null;
+    expect(suggestion1After).to.not.be.null;
+    expect(suggestion2After).to.not.be.null;
+  });
+
+  it('handles cascading delete when entity has no relationships', async () => {
+    const fixEntity = sampleData.fixEntities[5]; // Use an entity with no relationships
+    const suggestion = sampleData.suggestions[5]; // Use an entity with no relationships
+
+    // Verify no relationships exist initially
+    const junctionRecordsFixEntityBefore = await FixEntitySuggestion.allByIndexKeys({
+      suggestionId: suggestion.getId(),
+      fixEntityId: fixEntity.getId(),
+    });
+    expect(junctionRecordsFixEntityBefore).to.be.an('array').with.length(0);
+
+    // Delete entities (should not cause any errors)
+    await fixEntity.remove();
+    await suggestion.remove();
+
+    // Verify entities are deleted
+    const fixEntityAfter = await FixEntity.findById(fixEntity.getId());
+    const suggestionAfter = await Suggestion.findById(suggestion.getId());
+    expect(fixEntityAfter).to.be.null;
+    expect(suggestionAfter).to.be.null;
+  });
 });

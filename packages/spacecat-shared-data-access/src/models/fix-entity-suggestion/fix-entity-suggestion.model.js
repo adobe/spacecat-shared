@@ -22,6 +22,17 @@ import BaseModel from '../base/base.model.js';
  */
 class FixEntitySuggestion extends BaseModel {
   static DEFAULT_UPDATED_BY = 'spacecat';
+
+  /**
+   * Generates the composite keys for the FixEntitySuggestion model.
+   * @returns {Object} - The composite keys.
+   */
+  generateCompositeKeys() {
+    return {
+      suggestionId: this.getSuggestionId(),
+      fixEntityId: this.getFixEntityId(),
+    };
+  }
 }
 
 export default FixEntitySuggestion;

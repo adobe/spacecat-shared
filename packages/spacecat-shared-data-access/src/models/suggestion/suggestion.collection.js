@@ -51,8 +51,6 @@ class SuggestionCollection extends BaseCollection {
 
     await this._saveMany(suggestions);
 
-    this.log.info(`Bulk updated ${suggestions.length} suggestions to status: ${status}`);
-
     return suggestions;
   }
 

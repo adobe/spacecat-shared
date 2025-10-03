@@ -131,7 +131,7 @@ describe('Utilities', () => {
     });
 
     it('does not change names containing "Identity"', () => {
-      expect(idNameToEntityName('OrganizationIdentityProvider')).to.equal('OrganizationIdentityProvider');
+      expect(idNameToEntityName('ABCDIdentityXYZ')).to.equal('ABCDIdentityXYZ');
     });
   });
 

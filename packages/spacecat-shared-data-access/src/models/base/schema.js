@@ -317,7 +317,7 @@ class Schema {
    * @throws {SchemaError} - Throws an error if the entity is not a BaseModel or BaseCollection.
    * @return {Object[]}
    */
-  toAccessorConfigs(entity, log = console) {
+  toAccessorConfigs(entity) {
     if (!(entity instanceof BaseModel) && !(entity instanceof BaseCollection)) {
       throw new SchemaError(this, 'Entity must extend BaseModel or BaseCollection');
     }
@@ -325,7 +325,7 @@ class Schema {
     const indexAccessors = this.getIndexAccessors();
     const accessorConfigs = [];
 
-    indexAccessors.forEach(({ indexName, keySets }) => {
+    indexAccessors.forEach(({ keySets }) => {
       // generate a method for each prefix of the keySets array
       // for example, if keySets = ['opportunityId', 'status'], we create:
       //   allByOpportunityId(...)
@@ -347,8 +347,6 @@ class Schema {
           name: keyNamesToMethodName(subset, 'findBy'),
           requiredKeys: subset,
         });
-
-        log.debug(`Created accessors ${keyNamesToMethodName(subset, 'allBy')} and ${keyNamesToMethodName(subset, 'findBy')} for index [${indexName}] with keys [${subset.join(', ')}] for entity ${entity.clazz.name}`);
       });
     });
 

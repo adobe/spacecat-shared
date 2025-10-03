@@ -49,7 +49,6 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
 
   beforeEach(() => {
     mockLogger = {
-      debug: spy(),
       error: spy(),
       info: spy(),
       warn: spy(),
@@ -359,21 +358,6 @@ describe('BaseModel', () => { /* eslint-disable no-underscore-dangle */
 
         expect(result).to.be.an.instanceOf(BaseModel);
         expect(mockLogger.warn).to.have.been.calledOnceWithExactly('Reciprocal reference not found for Opportunity to Foos');
-      });
-
-      it('logs a debug message if reference sort keys are empty', async () => {
-        SuggestionSchema.references = [new Reference('belongs_to', 'Opportunity', { sortKeys: [] })];
-
-        const result = new BaseModel(
-          mockElectroService,
-          mockEntityRegistry,
-          OpportunitySchema,
-          mockRecord,
-          mockLogger,
-        );
-
-        expect(result).to.be.an.instanceOf(BaseModel);
-        expect(mockLogger.debug).to.have.been.calledWithExactly('No sort keys defined for Opportunity to Suggestions');
       });
     });
   });

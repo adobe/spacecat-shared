@@ -61,6 +61,7 @@ class Audit extends BaseModel {
     READABILITY: 'readability',
     PRERENDER: 'prerender',
     PRODUCT_METATAGS: 'product-metatags',
+    SUMMARIZATION: 'summarization',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

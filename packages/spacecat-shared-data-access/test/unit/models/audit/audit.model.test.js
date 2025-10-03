@@ -188,6 +188,7 @@ describe('AuditModel', () => {
       READABILITY: 'readability',
       PRERENDER: 'prerender',
       PRODUCT_METATAGS: 'product-metatags',
+      SUMMARIZATION: 'summarization',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

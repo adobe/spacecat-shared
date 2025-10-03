@@ -12,14 +12,17 @@
 
 export default [
   {
+    projectId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     projectName: 'Test Project 1',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
   },
   {
+    projectId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
     projectName: 'Test Project 2',
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
   },
   {
+    projectId: '6ba7b811-9dad-11d1-80b4-00c04fd430c8',
     projectName: 'Another Project',
     organizationId: '5965f86f-9a5c-5b85-a3c0-e785bcbe2534',
   },

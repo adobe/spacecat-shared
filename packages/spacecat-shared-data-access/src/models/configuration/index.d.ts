@@ -39,6 +39,8 @@ export interface Configuration extends BaseModel {
   setSlackRoles(slackRoles: object): void;
   updateHandlerOrgs(type: string, orgId: string, enabled: boolean): void;
   updateHandlerSites(type: string, siteId: string, enabled: boolean): void;
+  registerAudit(type: string, enabledByDefault?: boolean, interval?: string): void;
+  unregisterAudit(type: string): void;
 }
 
 export interface ConfigurationCollection extends BaseCollection<Configuration> {

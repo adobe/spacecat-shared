@@ -63,6 +63,8 @@ describe('llmo-config utilities', () => {
     it('returns the expected empty configuration structure', () => {
       expect(defaultConfig()).to.deep.equals({
         entities: {},
+        categories: {},
+        topics: {},
         brands: {
           aliases: [],
         },

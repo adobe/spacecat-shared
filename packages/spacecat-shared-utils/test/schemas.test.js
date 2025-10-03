@@ -22,9 +22,23 @@ describe('schemas', () => {
     const topicId = '123e4567-e89b-12d3-a456-426614174001';
 
     const baseConfig = {
-      entities: {
-        [categoryId]: { type: 'category', name: 'Category One', region: 'US' },
-        [topicId]: { type: 'topic', name: 'Topic One' },
+      entities: {},
+      categories: {
+        [categoryId]: { name: 'Category One', region: 'US' },
+      },
+      topics: {
+        [topicId]: {
+          name: 'Topic One',
+          prompts: [
+            {
+              prompt: 'Test prompt',
+              regions: ['US'],
+              origin: 'human',
+              source: 'config',
+            },
+          ],
+          category: categoryId,
+        },
       },
       brands: {
         aliases: [{
@@ -67,19 +81,16 @@ describe('schemas', () => {
       if (result.success) {
         throw new Error('Expected validation to fail');
       }
-      expect(result.error.issues[0].message).equals(`Unknown category entity: ${unknownCategoryId}`);
+      expect(result.error.issues[0].message).equals(`Category ${unknownCategoryId} does not exist`);
     });
 
-    it('fails when competitor references a non-category entity', () => {
+    it('fails when competitor references unknown category', () => {
+      const unknownCategoryId = '22222222-2222-4222-8222-222222222222';
       const config = {
         ...baseConfig,
-        entities: {
-          [categoryId]: { type: 'category', name: 'Category One', region: 'US' },
-          [topicId]: { type: 'topic', name: 'Topic One', region: 'US' }, // Add region to topic so region validation passes
-        },
         competitors: {
           competitors: [{
-            category: topicId,
+            category: unknownCategoryId,
             region: 'US',
             name: 'Competitor One',
             aliases: ['Competitor Alias'],
@@ -93,7 +104,7 @@ describe('schemas', () => {
       if (result.success) {
         throw new Error('Expected validation to fail');
       }
-      expect(result.error.issues[0].message).equals(`Entity ${topicId} referenced as category must have type "category" but was "topic"`);
+      expect(result.error.issues[0].message).equals(`Category ${unknownCategoryId} does not exist`);
     });
 
     it('fails when competitor references unknown entity', () => {
@@ -116,16 +127,30 @@ describe('schemas', () => {
       if (result.success) {
         throw new Error('Expected validation to fail');
       }
-      expect(result.error.issues[0].message).equals(`Unknown category entity: ${unknownCategoryId}`);
+      expect(result.error.issues[0].message).equals(`Category ${unknownCategoryId} does not exist`);
     });
 
     describe('region validation', () => {
       const categoryWithRegionsId = '444e4444-e44b-44d4-a444-444444444444';
 
       const configWithRegions = {
-        entities: {
-          [categoryWithRegionsId]: { type: 'category', name: 'Category With Regions', region: ['us', 'ca'] },
-          [topicId]: { type: 'topic', name: 'Topic One' },
+        entities: {},
+        categories: {
+          [categoryWithRegionsId]: { name: 'Category With Regions', region: ['us', 'ca'] },
+        },
+        topics: {
+          [topicId]: {
+            name: 'Topic One',
+            prompts: [
+              {
+                prompt: 'Test prompt',
+                regions: ['us'],
+                origin: 'human',
+                source: 'config',
+              },
+            ],
+            category: categoryWithRegionsId,
+          },
         },
         brands: { aliases: [] },
         competitors: { competitors: [] },
@@ -248,12 +273,26 @@ describe('schemas', () => {
       });
 
       describe('category with single region', () => {
-        const singleRegionCategoryId = '666e6666-e66b-66d6-a666-666666666666';
+        const singleRegionCategoryId = '666e6666-e66b-46d6-a666-666666666666';
 
         const configWithSingleRegion = {
-          entities: {
-            [singleRegionCategoryId]: { type: 'category', name: 'Single Region Category', region: 'us' },
-            [topicId]: { type: 'topic', name: 'Topic One' },
+          entities: {},
+          categories: {
+            [singleRegionCategoryId]: { name: 'Single Region Category', region: 'us' },
+          },
+          topics: {
+            [topicId]: {
+              name: 'Topic One',
+              prompts: [
+                {
+                  prompt: 'Test prompt',
+                  regions: ['us'],
+                  origin: 'human',
+                  source: 'config',
+                },
+              ],
+              category: singleRegionCategoryId,
+            },
           },
           brands: { aliases: [] },
           competitors: { competitors: [] },
@@ -293,6 +332,136 @@ describe('schemas', () => {
             throw new Error('Expected validation to fail');
           }
           expect(result.error.issues[0].message).equals('brand alias regions [ca] are not allowed. Category only supports regions: [us]');
+        });
+      });
+
+      describe('topic prompts', () => {
+        it('validates when topic prompt regions are subset of category regions', () => {
+          const testTopicId = '777e7777-e77b-77d7-a777-777777777777';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Test prompt 1',
+                    regions: ['us'],
+                    origin: 'human',
+                    source: 'config',
+                  },
+                  {
+                    prompt: 'Test prompt 2',
+                    regions: ['ca', 'us'],
+                    origin: 'ai',
+                    source: 'api',
+                  },
+                ],
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
+
+        it('fails when topic prompt has regions not in category', () => {
+          const testTopicId = '888e8888-e88b-48d8-a888-888888888888';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Test prompt',
+                    regions: ['us', 'mx'], // mx not in category regions
+                    origin: 'human',
+                    source: 'config',
+                  },
+                ],
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+          if (result.success) {
+            throw new Error('Expected validation to fail');
+          }
+          expect(result.error.issues[0].message).equals('topic prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
+        });
+
+        it('validates when topic category is a string name (no region validation)', () => {
+          const testTopicId = '777e7777-e77b-47d7-a777-777777777777';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Test prompt',
+                    regions: ['mx'], // Any regions allowed when category is string
+                    origin: 'human',
+                    source: 'config',
+                  },
+                ],
+                category: 'Test Category Name', // String name, not UUID
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
+
+        it('fails when topic has no prompts', () => {
+          const testTopicId = 'aaae1111-e11b-41d1-a111-111111111111';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [], // Empty prompts array should fail
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+        });
+
+        it('fails when topic has no category', () => {
+          const testTopicId = 'bbbb2222-e22b-42d2-a222-222222222222';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Test prompt',
+                    regions: ['us'],
+                    origin: 'human',
+                    source: 'config',
+                  },
+                ],
+                // Missing category field
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
         });
       });
     });

@@ -116,8 +116,6 @@ export const llmoConfig = z.object({
           );
         });
       }
-      // If category is a string name, we can't validate regions
-      // without the category entity reference
     }
   });
 });

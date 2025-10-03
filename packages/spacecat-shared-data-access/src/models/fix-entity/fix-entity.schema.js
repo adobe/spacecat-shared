@@ -51,6 +51,10 @@ const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
     type: Object.values(FixEntity.STATUSES),
     required: true,
     default: FixEntity.STATUSES.PENDING,
+  })
+  .addAttribute('origin', {
+    type: Object.values(FixEntity.ORIGINS),
+    default: FixEntity.ORIGINS.SPACECAT,
   });
 
 export default schema.build();

@@ -22,7 +22,7 @@ import { ElectroValidationError } from 'electrodb';
 import DataAccessError from '../../errors/data-access.error.js';
 import ValidationError from '../../errors/validation.error.js';
 import { createAccessors } from '../../util/accessor.utils.js';
-import { guardId } from '../../util/guards.js';
+import { guardId, guardArray } from '../../util/guards.js';
 import {
   entityNameToAllPKValue,
   removeElectroProperties,
@@ -389,26 +389,12 @@ class BaseCollection {
    * @throws {DataAccessError} - Throws an error if the IDs are not provided or if the batch
    *   operation fails.
    */
-  async batchGetByIds(ids) {
-    if (!isNonEmptyArray(ids)) {
-      const message = `Failed to batch get [${this.entityName}]: ids must be a non-empty array`;
-      this.log.error(message);
-      throw new DataAccessError(message);
-    }
-
-    // Validate all IDs
-    ids.forEach((id, index) => {
-      try {
-        guardId(this.idName, id, this.entityName);
-      } catch (error) {
-        throw new DataAccessError(`Invalid ID at index ${index}: ${error.message}`, this, error);
-      }
-    });
+  async batchGetByKeys(keys) {
+    guardArray('keys', keys, this.entityName, 'any');
 
     try {
-      // Use ElectroDB's batch get
       const result = await this.entity.get(
-        ids.map((id) => ({ [this.idName]: id })),
+        keys,
       ).go();
 
       // Process found entities
@@ -416,15 +402,15 @@ class BaseCollection {
         .map((record) => this.#createInstance(record))
         .filter((entity) => entity !== null);
 
-      // Extract unprocessed IDs
+      // Extract unprocessed keys
       const unprocessed = result.unprocessed
-        ? result.unprocessed.map((item) => item[this.idName])
+        ? result.unprocessed.map((item) => item)
         : [];
 
       return { data, unprocessed };
     } catch (error) {
-      this.log.error(`Failed to batch get [${this.entityName}]`, error);
-      throw new DataAccessError('Failed to batch get entities', this, error);
+      this.log.error(`Failed to batch get by keys [${this.entityName}]`, error);
+      throw new DataAccessError('Failed to batch get by keys', this, error);
     }
   }
 

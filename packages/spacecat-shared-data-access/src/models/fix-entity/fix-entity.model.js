@@ -28,6 +28,12 @@ class FixEntity extends BaseModel {
     FAILED: 'FAILED', // failed to apply the fix
     ROLLED_BACK: 'ROLLED_BACK', // the fix has been rolled_back
   };
+
+  async getSuggestions() {
+    const fixEntityCollection = this.entityRegistry.getCollection('FixEntityCollection');
+    return fixEntityCollection
+      .getSuggestionsByFixEntityId(this.getId());
+  }
 }
 
 export default FixEntity;

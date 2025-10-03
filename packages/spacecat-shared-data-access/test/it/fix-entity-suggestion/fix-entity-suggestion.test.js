@@ -75,8 +75,8 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
   it('sets suggestions for a fix entity using suggestion objects', async () => {
     const fixEntity = sampleData.fixEntities[1];
     const suggestions = [
-      sampleData.suggestions[3],
-      sampleData.suggestions[4],
+      sampleData.suggestions[3].getId(),
+      sampleData.suggestions[4].getId(),
     ];
 
     const result = await FixEntity.setSuggestionsByFixEntityId(
@@ -92,7 +92,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     // Verify the relationships were created
     result.createdItems.forEach((item, index) => {
       expect(item.getFixEntityId()).to.equal(fixEntity.getId());
-      expect(item.getSuggestionId()).to.equal(suggestions[index].getId());
+      expect(item.getSuggestionId()).to.equal(suggestions[index]);
     });
   });
 
@@ -128,9 +128,9 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Verify final state
     const finalSuggestions = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
-    expect(finalSuggestions.data).to.be.an('array').with.length(3);
+    expect(finalSuggestions).to.be.an('array').with.length(3);
 
-    const finalSuggestionIds = finalSuggestions.data.map((s) => s.getId()).sort();
+    const finalSuggestionIds = finalSuggestions.map((s) => s.getId()).sort();
     expect(finalSuggestionIds).to.deep.equal(newSuggestionIds.sort());
   });
 
@@ -156,13 +156,13 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Verify no suggestions remain
     const suggestions = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
-    expect(suggestions.data).to.be.an('array').with.length(0);
+    expect(suggestions).to.be.an('array').with.length(0);
   });
 
   it('throws error when fixEntityId is not provided', async () => {
     await expect(
       FixEntity.setSuggestionsByFixEntityId(null, []),
-    ).to.be.rejectedWith('Failed to set suggestions: fixEntityId is required');
+    ).to.be.rejectedWith('Validation failed in FixEntityCollection: fixEntityId must be a valid UUID');
   });
 
   it('sets fix entities for a suggestion using fix entity IDs', async () => {
@@ -192,8 +192,8 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
   it('sets fix entities for a suggestion using fix entity objects', async () => {
     const suggestion = sampleData.suggestions[1];
     const fixEntities = [
-      sampleData.fixEntities[0],
-      sampleData.fixEntities[2],
+      sampleData.fixEntities[0].getId(),
+      sampleData.fixEntities[2].getId(),
     ];
 
     const result = await Suggestion.setFixEntitiesBySuggestionId(
@@ -209,7 +209,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     // Verify the relationships were created
     result.createdItems.forEach((item, index) => {
       expect(item.getSuggestionId()).to.equal(suggestion.getId());
-      expect(item.getFixEntityId()).to.equal(fixEntities[index].getId());
+      expect(item.getFixEntityId()).to.equal(fixEntities[index]);
     });
   });
 
@@ -244,16 +244,16 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Verify final state
     const finalFixEntities = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());
-    expect(finalFixEntities.data).to.be.an('array').with.length(2);
+    expect(finalFixEntities).to.be.an('array').with.length(2);
 
-    const finalFixEntityIds = finalFixEntities.data.map((f) => f.getId()).sort();
+    const finalFixEntityIds = finalFixEntities.map((f) => f.getId()).sort();
     expect(finalFixEntityIds).to.deep.equal(newFixEntityIds.sort());
   });
 
   it('throws error when suggestionId is not provided', async () => {
     await expect(
       Suggestion.setFixEntitiesBySuggestionId(null, []),
-    ).to.be.rejectedWith('Failed to set fix entities: suggestionId is required');
+    ).to.be.rejectedWith('Validation failed in SuggestionCollection: suggestionId must be a valid UUID');
   });
 
   it('gets all suggestions for a fix entity', async () => {
@@ -269,16 +269,14 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     // Then retrieve them
     const result = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
 
-    expect(result).to.be.an('object');
-    expect(result.data).to.be.an('array').with.length(2);
-    expect(result.unprocessed).to.be.an('array').with.length(0);
+    expect(result).to.be.an('array').with.length(2);
 
     // Verify the suggestions are correct
-    const retrievedIds = result.data.map((s) => s.getId()).sort();
+    const retrievedIds = result.map((s) => s.getId()).sort();
     expect(retrievedIds).to.deep.equal(suggestionIds.sort());
 
     // Verify they are proper suggestion objects
-    result.data.forEach((suggestion) => {
+    result.forEach((suggestion) => {
       expect(suggestion).to.be.an('object');
       expect(suggestion.getId()).to.be.a('string');
       expect(suggestion.getOpportunityId()).to.be.a('string');
@@ -292,15 +290,13 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     const result = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
 
-    expect(result).to.be.an('object');
-    expect(result.data).to.be.an('array').with.length(0);
-    expect(result.unprocessed).to.be.an('array').with.length(0);
+    expect(result).to.be.an('array').with.length(0);
   });
 
   it('throws error when fixEntityId is not provided', async () => {
     await expect(
       FixEntity.getSuggestionsByFixEntityId(null),
-    ).to.be.rejectedWith('Failed to get suggestions: fixEntityId is required');
+    ).to.be.rejectedWith('Validation failed in FixEntityCollection: fixEntityId must be a valid UUID');
   });
 
   it('gets all fix entities for a suggestion', async () => {
@@ -316,16 +312,14 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     // Then retrieve them
     const result = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());
 
-    expect(result).to.be.an('object');
-    expect(result.data).to.be.an('array').with.length(2);
-    expect(result.unprocessed).to.be.an('array').with.length(0);
+    expect(result).to.be.an('array').with.length(2);
 
     // Verify the fix entities are correct
-    const retrievedIds = result.data.map((f) => f.getId()).sort();
+    const retrievedIds = result.map((f) => f.getId()).sort();
     expect(retrievedIds).to.deep.equal(fixEntityIds.sort());
 
     // Verify they are proper fix entity objects
-    result.data.forEach((fixEntity) => {
+    result.forEach((fixEntity) => {
       expect(fixEntity).to.be.an('object');
       expect(fixEntity.getId()).to.be.a('string');
       expect(fixEntity.getOpportunityId()).to.be.a('string');
@@ -339,15 +333,13 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     const result = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());
 
-    expect(result).to.be.an('object');
-    expect(result.data).to.be.an('array').with.length(0);
-    expect(result.unprocessed).to.be.an('array').with.length(0);
+    expect(result).to.be.an('array').with.length(0);
   });
 
   it('throws error when suggestionId is not provided', async () => {
     await expect(
       Suggestion.getFixEntitiesBySuggestionId(null),
-    ).to.be.rejectedWith('Failed to get fix entities: suggestionId is required');
+    ).to.be.rejectedWith('Validation failed in SuggestionCollection: suggestionId must be a valid UUID');
   });
 
   it('creates junction records directly', async () => {
@@ -480,7 +472,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Verify final state
     const suggestions = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
-    expect(suggestions.data).to.be.an('array').with.length(2);
+    expect(suggestions).to.be.an('array').with.length(2);
   });
 
   it('maintains consistency when setting relationships from both sides', async () => {
@@ -497,8 +489,8 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     const fixEntitiesFromSuggestion = await Suggestion.getFixEntitiesBySuggestionId(
       suggestion.getId(),
     );
-    expect(fixEntitiesFromSuggestion.data).to.be.an('array').with.length(1);
-    expect(fixEntitiesFromSuggestion.data[0].getId()).to.equal(fixEntity.getId());
+    expect(fixEntitiesFromSuggestion).to.be.an('array').with.length(1);
+    expect(fixEntitiesFromSuggestion[0].getId()).to.equal(fixEntity.getId());
 
     // Set additional relationship from Suggestion side
     await Suggestion.setFixEntitiesBySuggestionId(
@@ -514,10 +506,10 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
       sampleData.fixEntities[1].getId(),
     );
 
-    expect(suggestionsFromFixEntity1.data).to.be.an('array').with.length(1);
-    expect(suggestionsFromFixEntity1.data[0].getId()).to.equal(suggestion.getId());
+    expect(suggestionsFromFixEntity1).to.be.an('array').with.length(1);
+    expect(suggestionsFromFixEntity1[0].getId()).to.equal(suggestion.getId());
 
-    expect(suggestionsFromFixEntity2.data).to.be.an('array').with.length(1);
-    expect(suggestionsFromFixEntity2.data[0].getId()).to.equal(suggestion.getId());
+    expect(suggestionsFromFixEntity2).to.be.an('array').with.length(1);
+    expect(suggestionsFromFixEntity2[0].getId()).to.equal(suggestion.getId());
   });
 });

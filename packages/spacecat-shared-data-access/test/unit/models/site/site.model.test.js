@@ -431,7 +431,7 @@ describe('SiteModel', () => {
 
     describe('projectId', () => {
       it('gets projectId', () => {
-        expect(instance.getProjectId()).to.equal(undefined);
+        expect(instance.getProjectId()).to.equal('f47ac10b-58cc-4372-a567-0e02b2c3d479');
       });
 
       it('sets projectId', () => {

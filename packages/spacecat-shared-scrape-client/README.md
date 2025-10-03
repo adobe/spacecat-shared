@@ -316,3 +316,8 @@ in the content-processor the following steps are performed:
     - updates the counts of the job again.
     - sets the job status to COMPLETE and sets the endedAt timestamp.
     - Optionally, it can send a SQS message (e.g. to trigger the next audit step).
+
+  
+Example with completionMessage
+
+<img width="871" height="469" alt="Screenshot 2025-08-28 at 12 16 29" src="https://github.com/user-attachments/assets/84503b37-05cc-44e9-bcb5-29f8dffff234" />

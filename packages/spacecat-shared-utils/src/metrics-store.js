@@ -45,7 +45,7 @@ export async function getStoredMetrics(config, context) {
     const response = await s3.s3Client.send(command);
     const content = await response.Body?.transformToString();
     const metrics = JSON.parse(content);
-    log.info(`Successfully retrieved ${metrics.length} metrics from ${filePath}`);
+    log.debug(`Successfully retrieved ${metrics.length} metrics from ${filePath}`);
 
     return metrics;
   } catch (e) {
@@ -72,7 +72,7 @@ export async function storeMetrics(content, config, context) {
 
   try {
     const response = await s3.s3Client.send(command);
-    log.info(`Successfully uploaded metrics to ${filePath}, response: ${JSON.stringify(response)}`);
+    log.debug(`Successfully uploaded metrics to ${filePath}, response: ${JSON.stringify(response)}`);
 
     return filePath;
   } catch (e) {

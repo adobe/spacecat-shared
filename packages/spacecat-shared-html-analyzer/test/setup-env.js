@@ -10,23 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseModel from '../base/base.model.js';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { use } from 'chai';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import chaiAsPromised from 'chai-as-promised';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import sinonChai from 'sinon-chai';
 
-/**
- * OrganizationIdentityProvider - A class representing an OrganizationIdentityProvider entity.
- * Provides methods to access and manipulate OrganizationIdentityProvider-specific data.
- *
- * @class OrganizationIdentityProvider
- * @extends BaseModel
- */
-class OrganizationIdentityProvider extends BaseModel {
-  static PROVIDER_TYPES = {
-    IMS: 'IMS',
-    MICROSOFT: 'MICROSOFT',
-    GOOGLE: 'GOOGLE',
-  };
-
-  // add your custom methods or overrides here
-}
-
-export default OrganizationIdentityProvider;
+use(chaiAsPromised);
+use(sinonChai);

@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-google-client-v1.4.49](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.48...@adobe/spacecat-shared-google-client-v1.4.49) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
+# [@adobe/spacecat-shared-google-client-v1.4.48](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.47...@adobe/spacecat-shared-google-client-v1.4.48) (2025-09-22)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#974](https://github.com/adobe/spacecat-shared/issues/974)) ([994e488](https://github.com/adobe/spacecat-shared/commit/994e488e04fa44585b8d41a6daa9c7f86f1cee37))
+
 # [@adobe/spacecat-shared-google-client-v1.4.47](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.46...@adobe/spacecat-shared-google-client-v1.4.47) (2025-09-20)
 
 

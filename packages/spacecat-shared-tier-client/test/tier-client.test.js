@@ -85,6 +85,7 @@ describe('TierClient', () => {
     log: {
       info: sandbox.stub(),
       error: sandbox.stub(),
+      debug: sandbox.stub(),
     },
     attributes: {
       authInfo: {
@@ -351,7 +352,7 @@ describe('TierClient', () => {
       await expect(tierClient.createEntitlement('INVALID_TIER')).to.be.rejectedWith('Invalid tier: INVALID_TIER');
     });
 
-    it('should throw error when site is not provided for createEntitlement', async () => {
+    it('should work without site for createEntitlement (organization only)', async () => {
       // Create a TierClient without site
       const tierClientWithoutSite = new TierClient(
         mockContext,
@@ -360,7 +361,64 @@ describe('TierClient', () => {
         productCode,
       );
 
-      await expect(tierClientWithoutSite.createEntitlement('FREE_TRIAL')).to.be.rejectedWith('Site required for creating entitlements');
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+
+      const result = await tierClientWithoutSite.createEntitlement('FREE_TRIAL');
+
+      expect(result).to.deep.equal({
+        entitlement: mockEntitlement,
+      });
+      expect(mockDataAccess.Entitlement.create).to.have.been.calledWith({
+        organizationId: orgId,
+        productCode,
+        tier: 'FREE_TRIAL',
+        quotas: { llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 },
+      });
+      expect(mockDataAccess.SiteEnrollment.create).to.not.have.been.called;
+    });
+
+    it('should return existing entitlement when site is not provided and entitlement exists', async () => {
+      // Create a TierClient without site
+      const tierClientWithoutSite = new TierClient(
+        mockContext,
+        organizationInstance,
+        null,
+        productCode,
+      );
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+
+      const result = await tierClientWithoutSite.createEntitlement('FREE_TRIAL');
+
+      expect(result).to.deep.equal({
+        entitlement: mockEntitlement,
+      });
+      expect(mockDataAccess.Entitlement.create).to.not.have.been.called;
+      expect(mockDataAccess.SiteEnrollment.create).to.not.have.been.called;
+    });
+
+    it('should update tier when entitlement exists with different tier', async () => {
+      const mockEntitlementWithDifferentTier = {
+        ...mockEntitlement,
+        getTier: () => 'PAID',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(mockEntitlementWithDifferentTier);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      const result = await tierClient.createEntitlement('FREE_TRIAL');
+
+      expect(mockEntitlementWithDifferentTier.setTier).to.have.been.calledWith('FREE_TRIAL');
+      expect(mockEntitlementWithDifferentTier.save).to.have.been.called;
+      expect(result).to.deep.equal({
+        entitlement: mockEntitlementWithDifferentTier,
+        siteEnrollment: mockSiteEnrollment,
+      });
+      expect(mockDataAccess.Entitlement.create).to.not.have.been.called;
     });
 
     it('should throw error when organization not found', async () => {

@@ -73,39 +73,6 @@ describe('TrialUser IT', async () => {
     );
   });
 
-  it('gets all trial users by provider', async () => {
-    const sampleTrialUser = sampleData.trialUsers[0];
-    const provider = sampleTrialUser.getProvider();
-
-    const trialUsers = await TrialUser.allByProvider(provider);
-
-    expect(trialUsers).to.be.an('array');
-    expect(trialUsers.length).to.be.greaterThan(0);
-
-    for (const trialUser of trialUsers) {
-      expect(trialUser.getProvider()).to.equal(provider);
-    }
-  });
-
-  it('gets all trial users by provider and external user id', async () => {
-    const sampleTrialUser = sampleData.trialUsers[0];
-    const provider = sampleTrialUser.getProvider();
-    const externalUserId = sampleTrialUser.getExternalUserId();
-
-    const trialUsers = await TrialUser.allByProviderAndExternalUserId(
-      provider,
-      externalUserId,
-    );
-
-    expect(trialUsers).to.be.an('array');
-    expect(trialUsers.length).to.be.greaterThan(0);
-
-    for (const trialUser of trialUsers) {
-      expect(trialUser.getProvider()).to.equal(provider);
-      expect(trialUser.getExternalUserId()).to.equal(externalUserId);
-    }
-  });
-
   it('gets all trial users by organization id', async () => {
     const sampleTrialUser = sampleData.trialUsers[0];
     const organizationId = sampleTrialUser.getOrganizationId();
@@ -126,7 +93,6 @@ describe('TrialUser IT', async () => {
       emailId: 'newuser@example.com',
       externalUserId: 'ext-user-new',
       status: 'INVITED',
-      provider: 'GOOGLE',
       firstName: 'Jane',
       lastName: 'Smith',
       metadata: {

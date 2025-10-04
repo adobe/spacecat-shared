@@ -312,10 +312,10 @@ describe('ContentClient', () => {
       const metadata = await client.getPageMetadata(path);
 
       expect(metadata).to.deep.equal(sampleMetadata);
-      expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
       expect(documentSdk.getMetadata.calledOnce).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('gets page metadata and logs duration for OneDrive', async () => {
@@ -324,10 +324,10 @@ describe('ContentClient', () => {
       const metadata = await client.getPageMetadata(path);
 
       expect(metadata).to.deep.equal(sampleMetadata);
-      expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
       expect(documentSdk.getMetadata.calledOnce).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('throws an error if path is invalid', async () => {
@@ -381,8 +381,8 @@ describe('ContentClient', () => {
       expect(updatedMetadata).to.deep.equal(expectedMetadata);
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
       expect(documentSdk.updateMetadata.calledOnceWith(expectedMetadata)).to.be.true;
-      expect(log.info.calledOnce).to.be.true;
-      expect(log.info.firstCall.args[0]).to.equal(`Updating page metadata for test-site and path ${path}`);
+      expect(log.debug).to.have.been.calledWith(`Updating page metadata for test-site and path ${path}`);
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('throws an error if metadata is not a Map', async () => {
@@ -478,9 +478,9 @@ describe('ContentClient', () => {
       const redirects = await client.getRedirects();
 
       expect(redirects).to.deep.equal(expectedRedirects);
-      expect(log.info.calledOnceWith('Getting redirects for test-site')).to.be.true;
+      expect(log.debug.calledWith('Getting redirects for test-site')).to.be.true;
       expect(redirectsSdk.get.calledOnce).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('returns an empty array when there are no redirects', async () => {
@@ -896,9 +896,9 @@ describe('ContentClient', () => {
       const links = await client.getDocumentLinks(path);
 
       expect(links).to.deep.equal(sampleLinks);
-      expect(log.info.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('should get document links and log duration for OneDrive', async () => {
@@ -908,9 +908,9 @@ describe('ContentClient', () => {
       const links = await client.getDocumentLinks(path);
 
       expect(links).to.deep.equal(sampleLinks);
-      expect(log.info.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('should return empty array when document has no links', async () => {
@@ -920,7 +920,7 @@ describe('ContentClient', () => {
       const links = await client.getDocumentLinks(path);
 
       expect(links).to.be.an('array').that.is.empty;
-      expect(log.info.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
     });
 

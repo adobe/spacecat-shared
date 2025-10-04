@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.37.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.6...@adobe/spacecat-shared-rum-api-client-v2.37.7) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.37.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.5...@adobe/spacecat-shared-rum-api-client-v2.37.6) (2025-09-16)
 
 

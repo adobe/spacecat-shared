@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.8.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.12...@adobe/spacecat-shared-ims-client-v1.8.13) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
 # [@adobe/spacecat-shared-ims-client-v1.8.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.11...@adobe/spacecat-shared-ims-client-v1.8.12) (2025-09-16)
 
 

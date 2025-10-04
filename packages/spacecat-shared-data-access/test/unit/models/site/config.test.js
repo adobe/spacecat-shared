@@ -14,7 +14,9 @@
 
 import { expect } from 'chai';
 
-import { Config, validateConfiguration } from '../../../../src/models/site/config.js';
+import {
+  Config, validateConfiguration,
+} from '../../../../src/models/site/config.js';
 import { registerLogger } from '../../../../src/util/logger-registry.js';
 
 describe('Config Tests', () => {

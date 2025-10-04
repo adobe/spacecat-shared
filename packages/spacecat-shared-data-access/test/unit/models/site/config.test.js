@@ -15,8 +15,7 @@
 import { expect } from 'chai';
 
 import {
-  Config, validateConfiguration, CODE_SOURCES,
-  IMPORT_TYPE_SCHEMAS, IMPORT_TYPES, DEFAULT_IMPORT_CONFIGS,
+  Config, validateConfiguration,
 } from '../../../../src/models/site/config.js';
 import { registerLogger } from '../../../../src/util/logger-registry.js';
 
@@ -1082,7 +1081,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [code]');
+            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -1211,17 +1210,6 @@ describe('Config Tests', () => {
                 type: 'any.only',
                 context: {
                   valids: ['top-forms'],
-                  label: 'imports[0].type',
-                  value: 'organic-keywords',
-                  key: 'type',
-                },
-              },
-              {
-                message: '"imports[0].type" must be [code]',
-                path: ['imports', 0, 'type'],
-                type: 'any.only',
-                context: {
-                  valids: ['code'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',
@@ -2330,198 +2318,6 @@ describe('Config Tests', () => {
       expect(extractWellKnownTags(tags)).to.deep.equal({
         product: 'The Product',
         topic: 'A Topic',
-      });
-    });
-  });
-
-  describe('CODE Import Type', () => {
-    describe('CODE_SOURCES constants', () => {
-      it('should have all required code sources', () => {
-        expect(CODE_SOURCES.GITHUB).to.equal('github');
-        expect(CODE_SOURCES.BITBUCKET).to.equal('bitbucket');
-        expect(CODE_SOURCES.GITLAB).to.equal('gitlab');
-      });
-    });
-
-    describe('CODE import schema validation', () => {
-      it('should validate valid CODE import config', () => {
-        const validConfig = {
-          type: 'code',
-          destinations: ['default'],
-          sources: ['github'],
-          enabled: true,
-          installationId: '12345',
-        };
-
-        const { error } = IMPORT_TYPE_SCHEMAS[IMPORT_TYPES.CODE].validate(validConfig);
-        expect(error).to.be.undefined;
-      });
-
-      it('should validate CODE import config with bitbucket source', () => {
-        const validConfig = {
-          type: 'code',
-          destinations: ['default'],
-          sources: ['bitbucket'],
-          enabled: true,
-        };
-
-        const { error } = IMPORT_TYPE_SCHEMAS[IMPORT_TYPES.CODE].validate(validConfig);
-        expect(error).to.be.undefined;
-      });
-
-      it('should validate CODE import config with gitlab source', () => {
-        const validConfig = {
-          type: 'code',
-          destinations: ['default'],
-          sources: ['gitlab'],
-          enabled: true,
-        };
-
-        const { error } = IMPORT_TYPE_SCHEMAS[IMPORT_TYPES.CODE].validate(validConfig);
-        expect(error).to.be.undefined;
-      });
-
-      it('should reject CODE import config with invalid source', () => {
-        const invalidConfig = {
-          type: 'code',
-          destinations: ['default'],
-          sources: ['invalid-source'],
-          enabled: true,
-        };
-
-        const { error } = IMPORT_TYPE_SCHEMAS[IMPORT_TYPES.CODE].validate(invalidConfig);
-        expect(error).to.not.be.undefined;
-        expect(error.details[0].message).to.include('must be one of');
-      });
-
-      it('should reject CODE import config with multiple sources', () => {
-        const invalidConfig = {
-          type: 'code',
-          destinations: ['default'],
-          sources: ['github', 'bitbucket'],
-          enabled: true,
-        };
-
-        const { error } = IMPORT_TYPE_SCHEMAS[IMPORT_TYPES.CODE].validate(invalidConfig);
-        expect(error).to.not.be.undefined;
-        expect(error.details[0].message).to.include('must contain 1 items');
-      });
-
-      it('should reject CODE import config with empty sources array', () => {
-        const invalidConfig = {
-          type: 'code',
-          destinations: ['default'],
-          sources: [],
-          enabled: true,
-        };
-
-        const { error } = IMPORT_TYPE_SCHEMAS[IMPORT_TYPES.CODE].validate(invalidConfig);
-        expect(error).to.not.be.undefined;
-      });
-
-      it('should accept CODE import config without installationId', () => {
-        const validConfig = {
-          type: 'code',
-          destinations: ['default'],
-          sources: ['github'],
-          enabled: true,
-        };
-
-        const { error } = IMPORT_TYPE_SCHEMAS[IMPORT_TYPES.CODE].validate(validConfig);
-        expect(error).to.be.undefined;
-      });
-    });
-
-    describe('DEFAULT_IMPORT_CONFIGS for CODE', () => {
-      it('should have correct default CODE import config', () => {
-        const defaultConfig = DEFAULT_IMPORT_CONFIGS.code;
-        expect(defaultConfig).to.deep.equal({
-          type: 'code',
-          destinations: ['default'],
-          sources: ['github'],
-          enabled: false,
-        });
-      });
-    });
-
-    describe('enableImport method for CODE', () => {
-      it('should enable CODE import with default config', () => {
-        const config = Config();
-        config.enableImport('code');
-
-        const importConfig = config.getImportConfig('code');
-        expect(importConfig).to.deep.equal({
-          type: 'code',
-          destinations: ['default'],
-          sources: ['github'],
-          enabled: true,
-        });
-      });
-
-      it('should enable CODE import with custom config', () => {
-        const config = Config();
-        config.enableImport('code', {
-          sources: ['bitbucket'],
-          installationId: 'custom-installation-id',
-        });
-
-        const importConfig = config.getImportConfig('code');
-        expect(importConfig).to.deep.equal({
-          type: 'code',
-          destinations: ['default'],
-          sources: ['bitbucket'],
-          enabled: true,
-          installationId: 'custom-installation-id',
-        });
-      });
-
-      it('should throw error when enabling CODE import with invalid source', () => {
-        const config = Config();
-        expect(() => config.enableImport('code', {
-          sources: ['invalid-source'],
-        })).to.throw('Invalid import config');
-      });
-
-      it('should throw error when enabling CODE import with multiple sources', () => {
-        const config = Config();
-        expect(() => config.enableImport('code', {
-          sources: ['github', 'bitbucket'],
-        })).to.throw('Invalid import config');
-      });
-    });
-
-    describe('disableImport method for CODE', () => {
-      it('should disable CODE import', () => {
-        const config = Config({
-          imports: [{
-            type: 'code',
-            destinations: ['default'],
-            sources: ['github'],
-            enabled: true,
-          }],
-        });
-
-        config.disableImport('code');
-        expect(config.isImportEnabled('code')).to.be.false;
-      });
-    });
-
-    describe('isImportEnabled method for CODE', () => {
-      it('should return false for disabled CODE import', () => {
-        const config = Config();
-        expect(config.isImportEnabled('code')).to.be.false;
-      });
-
-      it('should return true for enabled CODE import', () => {
-        const config = Config({
-          imports: [{
-            type: 'code',
-            destinations: ['default'],
-            sources: ['github'],
-            enabled: true,
-          }],
-        });
-        expect(config.isImportEnabled('code')).to.be.true;
       });
     });
   });

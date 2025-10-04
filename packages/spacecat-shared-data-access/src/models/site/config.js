@@ -40,12 +40,6 @@ export const IMPORT_SOURCES = {
   RUM: 'rum',
 };
 
-export const CODE_SOURCES = {
-  GITHUB: 'github',
-  BITBUCKET: 'bitbucket',
-  GITLAB: 'gitlab',
-};
-
 const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
 const LLMO_TAG = Joi.alternatives()
   .try(
@@ -159,13 +153,6 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
   }),
-  [IMPORT_TYPES.CODE]: Joi.object({
-    type: Joi.string().valid(IMPORT_TYPES.CODE).required(),
-    ...IMPORT_BASE_KEYS,
-    sources: Joi.array().items(Joi.string().valid(...Object.values(CODE_SOURCES)))
-      .required().length(1),
-    installationId: Joi.string().optional(),
-  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
@@ -241,12 +228,6 @@ export const DEFAULT_IMPORT_CONFIGS = {
     destinations: ['default'],
     sources: ['rum'],
     enabled: true,
-  },
-  code: {
-    type: 'code',
-    destinations: ['default'],
-    sources: ['github'],
-    enabled: false,
   },
 };
 

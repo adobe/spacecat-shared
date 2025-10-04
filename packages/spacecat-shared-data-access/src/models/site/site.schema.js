@@ -72,6 +72,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
       owner: { type: 'string', required: true },
       repo: { type: 'string', required: true },
       ref: { type: 'string', required: true },
+      installationId: { type: 'string', required: false },
       url: { type: 'string', required: true, validate: (value) => isValidUrl(value) },
     },
   })

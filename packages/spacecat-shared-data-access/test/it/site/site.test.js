@@ -766,6 +766,7 @@ describe('Site IT', async () => {
             repo: 'code-import-test-repo',
             ref: 'main',
             url: 'https://github.com/some-org/code-import-test-repo',
+            installationId: 'github-app-12345',
           },
           config: {
             imports: [{
@@ -773,7 +774,6 @@ describe('Site IT', async () => {
               destinations: ['default'],
               sources: ['github'],
               enabled: true,
-              installationId: 'github-app-12345',
             }],
           },
         };
@@ -804,6 +804,7 @@ describe('Site IT', async () => {
             repo: 'code-update-test-repo',
             ref: 'main',
             url: 'https://github.com/some-org/code-update-test-repo',
+            installationId: 'github-app-12345',
           },
           config: {
             imports: [{
@@ -811,7 +812,7 @@ describe('Site IT', async () => {
               destinations: ['default'],
               sources: ['github'],
               enabled: true,
-              installationId: 'github-app-12345',
+
             }],
           },
         });
@@ -820,7 +821,6 @@ describe('Site IT', async () => {
         const config = site.getConfig();
         config.enableImport('code', {
           sources: ['bitbucket'],
-          installationId: 'bitbucket-app-67890',
         });
 
         // Update code attribute to match
@@ -830,6 +830,7 @@ describe('Site IT', async () => {
           repo: 'code-update-test-repo',
           ref: 'develop',
           url: 'https://bitbucket.org/some-org/code-update-test-repo',
+          installationId: 'bitbucket-app-67890',
         });
 
         site.setConfig(Config.toDynamoItem(config));
@@ -843,7 +844,6 @@ describe('Site IT', async () => {
           destinations: ['default'],
           sources: ['bitbucket'],
           enabled: true,
-          installationId: 'bitbucket-app-67890',
         });
         expect(updatedSite.getCode().type).to.equal('bitbucket');
 
@@ -865,13 +865,13 @@ describe('Site IT', async () => {
             repo: 'gitlab-code-test-repo',
             ref: 'feature-branch',
             url: 'https://gitlab.com/some-org/gitlab-code-test-repo',
+            installationId: 'gitlab-app-54321',
           },
         });
 
         const config = site.getConfig();
         config.enableImport('code', {
           sources: ['gitlab'],
-          installationId: 'gitlab-app-54321',
         });
 
         site.setConfig(Config.toDynamoItem(config));
@@ -902,6 +902,7 @@ describe('Site IT', async () => {
             repo: 'disable-code-test-repo',
             ref: 'main',
             url: 'https://github.com/some-org/disable-code-test-repo',
+            installationId: 'github-app-12345',
           },
           config: {
             imports: [{
@@ -909,7 +910,6 @@ describe('Site IT', async () => {
               destinations: ['default'],
               sources: ['github'],
               enabled: true,
-              installationId: 'github-app-12345',
             }],
           },
         });

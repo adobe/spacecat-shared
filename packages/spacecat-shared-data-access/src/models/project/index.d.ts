@@ -19,6 +19,7 @@ export interface Project extends BaseModel {
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
   getSites(): Promise<Site[]>;
+  getPrimaryLocaleSites(): Promise<Site[]>;
   setProjectName(projectName: string): Project;
   setOrganizationId(organizationId: string): Project;
 }

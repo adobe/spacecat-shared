@@ -62,4 +62,40 @@ describe('Project Model', () => {
       expect(project.getOrganizationId()).to.equal('1e9c6f94-f226-41f3-9005-4bb766765ac2');
     });
   });
+
+  describe('getPrimaryLocaleSites', () => {
+    it('should return an empty array when no sites exist', async () => {
+      project.getSites = stub().resolves([]);
+
+      const result = await project.getPrimaryLocaleSites();
+
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(0);
+    });
+
+    it('should return only sites where getPrimaryLocale is true', async () => {
+      const mockSite1 = {
+        getIsPrimaryLocale: stub().returns(false),
+        getBaseURL: () => 'https://example1.com',
+      };
+      const mockSite2 = {
+        getIsPrimaryLocale: stub().returns(true),
+        getBaseURL: () => 'https://example2.com',
+      };
+      const mockSite3 = {
+        getIsPrimaryLocale: stub().returns(false),
+        getBaseURL: () => 'https://example3.com',
+      };
+      const mockSite4 = {
+        getIsPrimaryLocale: stub().returns(undefined),
+        getBaseURL: () => 'https://example4.com',
+      };
+
+      project.getSites = stub().resolves([mockSite1, mockSite2, mockSite3, mockSite4]);
+
+      const result = await project.getPrimaryLocaleSites();
+
+      expect(result).to.deep.equal([mockSite2]);
+    });
+  });
 });

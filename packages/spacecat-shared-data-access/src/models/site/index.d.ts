@@ -217,7 +217,7 @@ export interface Site extends BaseModel {
   getOrganizationId(): string;
   getProject(): Promise<Project>;
   getProjectId(): string;
-  getPrimaryLocale(): string;
+  getIsPrimaryLocale(): boolean;
   getLanguage(): string;
   getRegion(): string;
   getSiteCandidates(): Promise<SiteCandidate[]>;
@@ -241,7 +241,7 @@ export interface Site extends BaseModel {
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
   setProjectId(projectId: string): Site;
-  setPrimaryLocale(primaryLocale: string): Site;
+  setIsPrimaryLocale(primaryLocale: boolean): Site;
   setLanguage(language: string): Site;
   setRegion(region: string): Site;
   toggleLive(): Site;

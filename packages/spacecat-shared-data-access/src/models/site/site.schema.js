@@ -57,8 +57,8 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAttribute('name', {
     type: 'string',
   })
-  .addAttribute('primaryLocale', {
-    type: 'string',
+  .addAttribute('isPrimaryLocale', {
+    type: 'boolean',
     required: false,
   })
   .addAttribute('language', {

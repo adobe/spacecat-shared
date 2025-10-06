@@ -812,7 +812,7 @@ describe('Site IT', async () => {
         name: 'localized-site',
         organizationId: sampleData.organizations[0].getId(),
         projectId: sampleData.projects[0].getId(),
-        primaryLocale: 'en-US',
+        isPrimaryLocale: false,
         language: 'en',
         region: 'US',
         isLive: true,
@@ -821,7 +821,7 @@ describe('Site IT', async () => {
 
       const site = await Site.create(siteData);
 
-      expect(site.getPrimaryLocale()).to.equal('en-US');
+      expect(site.getIsPrimaryLocale()).to.equal(false);
       expect(site.getLanguage()).to.equal('en');
       expect(site.getRegion()).to.equal('US');
       expect(site.getProjectId()).to.equal(sampleData.projects[0].getId());
@@ -833,7 +833,7 @@ describe('Site IT', async () => {
     it('updates site localization data', async () => {
       const site = await Site.findById(sampleData.sites[1].getId());
 
-      site.setPrimaryLocale('fr-FR');
+      site.setIsPrimaryLocale(true);
       site.setLanguage('fr');
       site.setRegion('FR');
       site.setProjectId(sampleData.projects[0].getId());
@@ -842,7 +842,7 @@ describe('Site IT', async () => {
 
       const updatedSite = await Site.findById(site.getId());
 
-      expect(updatedSite.getPrimaryLocale()).to.equal('fr-FR');
+      expect(updatedSite.getIsPrimaryLocale()).to.equal(true);
       expect(updatedSite.getLanguage()).to.equal('fr');
       expect(updatedSite.getRegion()).to.equal('FR');
       expect(updatedSite.getProjectId()).to.equal(sampleData.projects[0].getId());

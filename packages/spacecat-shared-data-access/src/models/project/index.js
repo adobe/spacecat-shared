@@ -12,4 +12,3 @@
 
 export { default as Project } from './project.model.js';
 export { default as ProjectCollection } from './project.collection.js';
-export { default as ProjectSchema } from './project.schema.js';

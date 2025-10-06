@@ -398,12 +398,12 @@ describe('SiteModel', () => {
   describe('localization fields', () => {
     describe('primaryLocale', () => {
       it('gets primaryLocale', () => {
-        expect(instance.getPrimaryLocale()).to.equal(undefined);
+        expect(instance.getIsPrimaryLocale()).to.equal(undefined);
       });
 
       it('sets primaryLocale', () => {
-        instance.setPrimaryLocale('en-US');
-        expect(instance.getPrimaryLocale()).to.equal('en-US');
+        instance.setIsPrimaryLocale(false);
+        expect(instance.getIsPrimaryLocale()).to.equal(false);
       });
     });
 

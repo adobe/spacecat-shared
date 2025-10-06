@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.66.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.65.2...@adobe/spacecat-shared-data-access-v2.66.0) (2025-10-03)
+
+
+### Features
+
+* Add configuration methods to register audits ([#1000](https://github.com/adobe/spacecat-shared/issues/1000)) ([f58670e](https://github.com/adobe/spacecat-shared/commit/f58670e5b3561bef09911102cc947fa6ba2a4955))
+
 # [@adobe/spacecat-shared-data-access-v2.65.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.65.1...@adobe/spacecat-shared-data-access-v2.65.2) (2025-10-01)
 
 

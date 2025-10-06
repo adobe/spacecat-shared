@@ -233,6 +233,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['rum'],
     enabled: true,
   },
+  'user-engagement': {
+    type: 'user-engagement',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
 };
 
 export const configSchema = Joi.object({

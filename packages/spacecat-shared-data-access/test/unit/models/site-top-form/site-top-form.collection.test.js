@@ -377,7 +377,7 @@ describe('SiteTopFormCollection', () => {
       const result = await instance.findByUrlAndFormSource(url, '');
 
       expect(result).to.be.null;
-      expect(mockLogger.debug).to.have.been.calledWith('Legacy null formSource search failed: Legacy search error');
+      expect(mockLogger.error).to.have.been.calledWith('Legacy null formSource search failed: Legacy search error');
 
       mockFindByIndexKeys.restore();
     });

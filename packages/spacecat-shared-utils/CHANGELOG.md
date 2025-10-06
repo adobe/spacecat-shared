@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-utils-v1.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.54.0...@adobe/spacecat-shared-utils-v1.55.0) (2025-10-03)
+
+
+### Features
+
+* add topics with nested prompts + make categories and prompts top level entities ([#999](https://github.com/adobe/spacecat-shared/issues/999)) ([1b43970](https://github.com/adobe/spacecat-shared/commit/1b43970912478361b2eb4eaf1e7f173e77ad80e9))
+
+# [@adobe/spacecat-shared-utils-v1.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.53.0...@adobe/spacecat-shared-utils-v1.54.0) (2025-10-02)
+
+
+### Features
+
+* remove topic from brand alias and make regions mandatory in categories + make regions mandatory for categories ([#997](https://github.com/adobe/spacecat-shared/issues/997)) ([78e609a](https://github.com/adobe/spacecat-shared/commit/78e609a336cb2a2645199d94d4464c4843bd8c4a))
+
+# [@adobe/spacecat-shared-utils-v1.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.52.0...@adobe/spacecat-shared-utils-v1.53.0) (2025-10-02)
+
+
+### Features
+
+* Add regions to categories and related validation on dependent entities ([#996](https://github.com/adobe/spacecat-shared/issues/996)) ([60c52e2](https://github.com/adobe/spacecat-shared/commit/60c52e2d9c7e79a67132ae2b26e40e617e8af358))
+
 # [@adobe/spacecat-shared-utils-v1.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.51.1...@adobe/spacecat-shared-utils-v1.52.0) (2025-09-29)
 
 

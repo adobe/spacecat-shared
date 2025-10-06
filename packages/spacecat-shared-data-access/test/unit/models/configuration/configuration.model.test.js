@@ -279,6 +279,47 @@ describe('ConfigurationModel', () => {
       instance.disableHandlerForOrg('organic-keywords', org);
       expect(instance.getHandler('organic-keywords').enabled.orgs).to.not.include(org.getId());
     });
+
+    it('registers a new audit', () => {
+      const auditType = 'structured-data';
+      instance.registerAudit(auditType, true, 'weekly');
+      expect(instance.getHandler(auditType)).to.deep.equal({
+        enabledByDefault: true,
+        dependencies: [],
+        disabled: {
+          sites: [],
+          orgs: [],
+        },
+        enabled: {
+          sites: [],
+          orgs: [],
+        },
+      });
+      expect(instance.getJobs().find((job) => job.group === 'audits' && job.type === auditType)).to.deep.equal({
+        group: 'audits',
+        type: 'structured-data',
+        interval: 'weekly',
+      });
+    });
+
+    it('throws error when registering an invalid audit type', () => {
+      expect(() => instance.registerAudit('invalid-audit-type', true, 'weekly')).to.throw(Error, 'Audit type invalid-audit-type is not a valid audit type in the data model');
+    });
+
+    it('throws error when registering an invalid job interval', () => {
+      expect(() => instance.registerAudit('lhs-mobile', true, 'invalid-interval')).to.throw(Error, 'Invalid interval invalid-interval');
+    });
+
+    it('unregisters an audit', () => {
+      const auditType = 'lhs-mobile';
+      instance.unregisterAudit(auditType);
+      expect(instance.getHandler(auditType)).to.be.undefined;
+      expect(instance.getJobs().find((job) => job.group === 'audits' && job.type === auditType)).to.be.undefined;
+    });
+
+    it('throws error when unregistering an invalid audit type', () => {
+      expect(() => instance.unregisterAudit('invalid-audit-type')).to.throw(Error, 'Audit type invalid-audit-type is not a valid audit type in the data model');
+    });
   });
 
   describe('save', () => {

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.67.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.66.0...@adobe/spacecat-shared-data-access-v2.67.0) (2025-10-07)
+
+
+### Features
+
+* add support for region/language configurations ([#995](https://github.com/adobe/spacecat-shared/issues/995)) ([c5219da](https://github.com/adobe/spacecat-shared/commit/c5219da283370e7de5411aa778773315efdeb869))
+
 # [@adobe/spacecat-shared-data-access-v2.66.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.65.2...@adobe/spacecat-shared-data-access-v2.66.0) (2025-10-03)
 
 

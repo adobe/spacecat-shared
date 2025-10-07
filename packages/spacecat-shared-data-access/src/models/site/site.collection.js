@@ -98,8 +98,9 @@ class SiteCollection extends BaseCollection {
         const [, site, owner] = host.split('--');
         this.log.info(`Site: ${site}`);
         this.log.info(`Owner: ${owner}`);
-        const result = this.findByExternalOwnerIdAndExternalSiteId(owner, site);
+        const result = await this.findByExternalOwnerIdAndExternalSiteId(owner, site);
         this.log.info(`Result: ${result}`);
+        this.log.info(`Result: ${JSON.stringify(result)}`);
         return result;
       }
       case Site.AUTHORING_TYPES.CS_CW:

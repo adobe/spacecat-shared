@@ -84,6 +84,7 @@ describe('Index Exports', () => {
     'getPageEditUrl',
     'llmoConfig',
     'schemas',
+    'detectLocale',
   ];
 
   it('exports all expected functions', () => {

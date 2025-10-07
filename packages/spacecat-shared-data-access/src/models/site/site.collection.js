@@ -73,23 +73,34 @@ class SiteCollection extends BaseCollection {
   }
 
   async findByPreviewURL(previewURL) {
+    this.log.info(`Finding site by preview URL: ${previewURL}`);
     if (!isValidUrl(previewURL)) {
+      this.log.info(`Invalid preview URL: ${previewURL}`);
       throw new DataAccessError(`Invalid preview URL: ${previewURL}`, this);
     }
 
     const { hostname } = new URL(previewURL);
+    this.log.info(`Hostname: ${hostname}`);
     const previewType = getAuthoringType(hostname, Site.AUTHORING_TYPES);
+    this.log.info(`Preview type: ${previewType}`);
 
     switch (previewType) {
       case Site.AUTHORING_TYPES.SP:
       case Site.AUTHORING_TYPES.GD:
       case Site.AUTHORING_TYPES.DA: {
+        this.log.info(`Validating Helix preview URL: ${previewURL}`);
         if (!isValidHelixPreviewUrl(previewURL)) {
+          this.log.info(`Invalid Helix preview URL: ${previewURL}`);
           throw new DataAccessError(`Invalid Helix preview URL: ${previewURL}`, this);
         }
         const [host] = hostname.split('.');
+        this.log.info(`Host: ${host}`);
         const [, site, owner] = host.split('--');
-        return this.findByExternalOwnerIdAndExternalSiteId(owner, site);
+        this.log.info(`Site: ${site}`);
+        this.log.info(`Owner: ${owner}`);
+        const result = this.findByExternalOwnerIdAndExternalSiteId(owner, site);
+        this.log.info(`Result: ${result}`);
+        return result;
       }
       case Site.AUTHORING_TYPES.CS_CW:
       case Site.AUTHORING_TYPES.CS: {
@@ -99,6 +110,7 @@ class SiteCollection extends BaseCollection {
         return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, externalSiteId);
       }
       default:
+        this.log.info(`Unsupported preview URL: ${previewURL}`);
         throw new DataAccessError(`Unsupported preview URL: ${previewURL}`, this);
     }
   }

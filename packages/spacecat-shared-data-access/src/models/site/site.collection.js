@@ -103,7 +103,7 @@ class SiteCollection extends BaseCollection {
         this.log.info(`Found ${allByOwner.length} sites with externalOwnerId: '${owner}'`);
         if (allByOwner.length > 0) {
           allByOwner.forEach((s) => {
-            this.log.info(`  - Site: ${s.getId()}, externalOwnerId: '${s.getExternalOwnerId()}', externalSiteId: '${s.getExternalSiteId()}'`);
+            this.log.info(`  - Site: ${s.getId()}, baseURL: '${s.getBaseURL()}', externalOwnerId: '${s.record?.externalOwnerId}', externalSiteId: '${s.record?.externalSiteId}'`);
           });
         }
         const result = await this.findByExternalOwnerIdAndExternalSiteId(owner, site);

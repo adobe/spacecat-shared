@@ -193,6 +193,8 @@ export interface Site extends BaseModel {
   getConfig(): SiteConfig;
   getDeliveryType(): string;
   getAuthoringType(): string;
+  getExternalOwnerId(): string;
+  getExternalSiteId(): string;
   getExperiments(): Promise<Experiment[]>;
   getExperimentsByExpId(expId: string): Promise<Experiment[]>;
   getExperimentsByExpIdAndUrl(expId: string, url: string): Promise<Experiment[]>;
@@ -255,6 +257,7 @@ export interface SiteCollection extends BaseCollection<Site> {
   allByProjectName(projectName: string): Promise<Site[]>;
   allByOrganizationIdAndProjectId(organizationId: string, projectId: string): Promise<Site[]>;
   allByOrganizationIdAndProjectName(organizationId: string, projectName: string): Promise<Site[]>;
+  allByExternalOwnerId(externalOwnerId: string): Promise<Site[]>;
   allSitesToAudit(): Promise<string[]>;
   allWithLatestAudit(auditType: string, order?: string, deliveryType?: string): Promise<Site[]>;
   findByBaseURL(baseURL: string): Promise<Site | null>;

@@ -34,6 +34,8 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 const schema = new SchemaBuilder(Site, SiteCollection)
   // this will add an attribute 'organizationId' as well as an index 'byOrganizationId'
   .addReference('belongs_to', 'Organization')
+  // this will add an attribute 'projectId' as well as an index 'byProjectId'
+  .addReference('belongs_to', 'Project', ['updatedAt'], { required: false })
   // has_many references do not add attributes or indexes
   .addReference('has_many', 'Audits')
   .addReference('has_many', 'Experiments')
@@ -54,6 +56,20 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   })
   .addAttribute('name', {
     type: 'string',
+  })
+  .addAttribute('isPrimaryLocale', {
+    type: 'boolean',
+    required: false,
+  })
+  .addAttribute('language', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || /^[a-z]{2}$/.test(value), // ISO 639-1 format
+  })
+  .addAttribute('region', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || /^[A-Z]{2}$/.test(value), // ISO 3166-1 alpha-2 format
   })
   .addAttribute('config', {
     type: 'any',

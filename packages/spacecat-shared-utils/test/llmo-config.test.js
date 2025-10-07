@@ -63,11 +63,16 @@ describe('llmo-config utilities', () => {
     it('returns the expected empty configuration structure', () => {
       expect(defaultConfig()).to.deep.equals({
         entities: {},
+        categories: {},
+        topics: {},
         brands: {
           aliases: [],
         },
         competitors: {
           competitors: [],
+        },
+        deleted: {
+          prompts: {},
         },
       });
     });
@@ -82,7 +87,7 @@ describe('llmo-config utilities', () => {
 
       const result = await readConfig(siteId, s3Client);
 
-      expect(result).deep.equals({ config: validConfig, exists: true });
+      expect(result).deep.equals({ config: validConfig, exists: true, version: undefined });
       expect(s3Client.send).calledOnce;
       const command = s3Client.send.firstCall.args[0];
       expect(command).instanceOf(GetObjectCommand);
@@ -106,6 +111,17 @@ describe('llmo-config utilities', () => {
       const command = s3Client.send.firstCall.args[0];
       expect(command.input.Bucket).equals('custom-bucket');
       expect(command.input.VersionId).equals('abc123');
+    });
+
+    it('returns version ID when S3 response includes VersionId', async () => {
+      const body = {
+        transformToString: sinon.stub().resolves(JSON.stringify(validConfig)),
+      };
+      s3Client.send.resolves({ Body: body, VersionId: 'v123' });
+
+      const result = await readConfig(siteId, s3Client);
+
+      expect(result).deep.equals({ config: validConfig, exists: true, version: 'v123' });
     });
 
     it('returns default config when the file does not exist', async () => {

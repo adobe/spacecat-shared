@@ -41,11 +41,16 @@ export function llmoConfigPath(siteId) {
 export function defaultConfig() {
   return {
     entities: {},
+    categories: {},
+    topics: {},
     brands: {
       aliases: [],
     },
     competitors: {
       competitors: [],
+    },
+    deleted: {
+      prompts: {},
     },
   };
 }
@@ -60,8 +65,8 @@ export function defaultConfig() {
  * @param {string} [options.version] Optional version ID of the configuration to read.
  *        Defaults to the latest version.
  * @param {string} [options.s3Bucket] Optional S3 bucket name.
- * @returns {Promise<{config: LLMOConfig, exists: boolean}>} The configuration object and
- *        a flag indicating if it existed.
+ * @returns {Promise<{config: LLMOConfig, exists: boolean, version?: string}>} The configuration,
+ *        a flag indicating if it existed, and the version ID if it exists.
  * @throws {Error} If reading the configuration fails for reasons other than it not existing.
  */
 export async function readConfig(sideId, s3Client, options) {
@@ -79,7 +84,7 @@ export async function readConfig(sideId, s3Client, options) {
   } catch (e) {
     if (e.name === 'NoSuchKey' || e.name === 'NotFound') {
       // Config does not exist yet. Return empty config.
-      return { config: defaultConfig(), exists: false };
+      return { config: defaultConfig(), exists: false, version: undefined };
     }
     throw e;
   }
@@ -90,7 +95,7 @@ export async function readConfig(sideId, s3Client, options) {
   }
   const text = await body.transformToString();
   const config = llmoConfig.parse(JSON.parse(text));
-  return { config, exists: true };
+  return { config, exists: true, version: res.VersionId || undefined };
 }
 
 /**

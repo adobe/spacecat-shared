@@ -73,6 +73,8 @@ describe('llmo-config utilities', () => {
         },
         deleted: {
           prompts: {},
+          topics: {},
+          categories: {},
         },
       });
     });

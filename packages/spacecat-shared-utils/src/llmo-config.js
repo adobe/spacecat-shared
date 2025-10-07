@@ -51,6 +51,8 @@ export function defaultConfig() {
     },
     deleted: {
       prompts: {},
+      topics: {},
+      categories: {},
     },
   };
 }

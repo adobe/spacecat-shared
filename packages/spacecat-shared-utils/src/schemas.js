@@ -62,14 +62,10 @@ const topic = z.object({
 });
 
 const deletedPrompt = prompt.extend({
-  topic: z.uuid(),
-  category: z.uuid(),
+  topic: nonEmptyString,
+  category: nonEmptyString,
   regions: z.array(region).min(1),
 });
-
-const deletedTopic = topic.omit({ prompts: true });
-
-const deletedCategory = category;
 
 export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
@@ -97,8 +93,6 @@ export const llmoConfig = z.object({
   }),
   deleted: z.object({
     prompts: z.record(z.uuid(), deletedPrompt).optional(),
-    topics: z.record(z.uuid(), deletedTopic).optional(),
-    categories: z.record(z.uuid(), deletedCategory).optional(),
   }).optional(),
 }).superRefine((value, ctx) => {
   const {

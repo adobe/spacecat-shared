@@ -469,21 +469,17 @@ describe('schemas', () => {
     describe('deleted', () => {
       const deletedPromptId1 = 'dddd1111-d11b-41d1-a111-111111111111';
       const deletedPromptId2 = 'dddd2222-d22b-42d2-a222-222222222222';
-      const deletedTopicId = 'eeee1111-e11b-41e1-a111-111111111111';
-      const deletedCategoryId = 'ffff1111-f11b-41f1-a111-111111111111';
 
       it('validates configuration without deleted (optional field)', () => {
         const result = llmoConfig.safeParse(baseConfig);
         expect(result.success).true;
       });
 
-      it('validates configuration with empty deleted records', () => {
+      it('validates configuration with empty deleted prompts record', () => {
         const config = {
           ...baseConfig,
           deleted: {
             prompts: {},
-            topics: {},
-            categories: {},
           },
         };
 
@@ -491,7 +487,7 @@ describe('schemas', () => {
         expect(result.success).true;
       });
 
-      it('validates configuration without fields in deleted', () => {
+      it('validates configuration without prompts field in deleted', () => {
         const config = {
           ...baseConfig,
           deleted: {},
@@ -508,17 +504,17 @@ describe('schemas', () => {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Deleted prompt one',
-                topic: deletedTopicId,
+                topic: 'Deleted Topic Name',
                 regions: ['us'],
-                category: deletedCategoryId,
+                category: 'Deleted Category Name',
                 origin: 'human',
                 source: 'config',
               },
               [deletedPromptId2]: {
                 prompt: 'Deleted prompt two',
-                topic: topicId,
+                topic: 'Another Deleted Topic',
                 regions: ['ca', 'us'],
-                category: categoryId,
+                category: 'Another Deleted Category',
                 origin: 'ai',
                 source: 'api',
               },
@@ -537,9 +533,9 @@ describe('schemas', () => {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: deletedTopicId,
+                topic: 'Test Topic',
                 regions: ['us'],
-                category: deletedCategoryId,
+                category: 'Test Category',
                 origin: 'custom-origin',
                 source: 'custom-source',
               },
@@ -558,9 +554,9 @@ describe('schemas', () => {
             prompts: {
               [deletedPromptId1]: {
                 prompt: '',
-                topic: deletedTopicId,
+                topic: 'Test Topic',
                 regions: ['us'],
-                category: deletedCategoryId,
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -572,16 +568,16 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('fails when deleted prompt has invalid topic UUID', () => {
+      it('fails when deleted prompt has empty topic', () => {
         const config = {
           ...baseConfig,
           deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: 'not-a-uuid',
+                topic: '',
                 regions: ['us'],
-                category: deletedCategoryId,
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -593,16 +589,16 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('fails when deleted prompt has invalid category UUID', () => {
+      it('fails when deleted prompt has empty category', () => {
         const config = {
           ...baseConfig,
           deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: deletedTopicId,
+                topic: 'Test Topic',
                 regions: ['us'],
-                category: 'not-a-uuid',
+                category: '',
                 origin: 'human',
                 source: 'config',
               },
@@ -621,9 +617,9 @@ describe('schemas', () => {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: deletedTopicId,
+                topic: 'Test Topic',
                 regions: ['usa'], // Invalid - must be 2 characters
-                category: deletedCategoryId,
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -642,9 +638,9 @@ describe('schemas', () => {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: deletedTopicId,
+                topic: 'Test Topic',
                 regions: [],
-                category: deletedCategoryId,
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -680,9 +676,9 @@ describe('schemas', () => {
             prompts: {
               'not-a-uuid': {
                 prompt: 'Test prompt',
-                topic: deletedTopicId,
+                topic: 'Test Topic',
                 regions: ['us'],
-                category: deletedCategoryId,
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -692,141 +688,6 @@ describe('schemas', () => {
 
         const result = llmoConfig.safeParse(config);
         expect(result.success).false;
-      });
-
-      it('validates configuration with valid deleted topics', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            topics: {
-              [deletedTopicId]: {
-                name: 'Deleted Topic Name',
-                category: deletedCategoryId,
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
-      });
-
-      it('fails when deleted topic has empty name', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            topics: {
-              [deletedTopicId]: {
-                name: '',
-                category: deletedCategoryId,
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).false;
-      });
-
-      it('validates deleted topic with string category', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            topics: {
-              [deletedTopicId]: {
-                name: 'Deleted Topic',
-                category: 'Category Name',
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
-      });
-
-      it('validates configuration with valid deleted categories', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            categories: {
-              [deletedCategoryId]: {
-                name: 'Deleted Category',
-                region: 'us',
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
-      });
-
-      it('validates deleted category with multiple regions', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            categories: {
-              [deletedCategoryId]: {
-                name: 'Deleted Category',
-                region: ['us', 'ca'],
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
-      });
-
-      it('fails when deleted category has empty name', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            categories: {
-              [deletedCategoryId]: {
-                name: '',
-                region: 'us',
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).false;
-      });
-
-      it('validates complete deleted structure with all entity types', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            prompts: {
-              [deletedPromptId1]: {
-                prompt: 'Deleted prompt',
-                topic: deletedTopicId,
-                regions: ['us'],
-                category: deletedCategoryId,
-                origin: 'human',
-                source: 'config',
-              },
-            },
-            topics: {
-              [deletedTopicId]: {
-                name: 'Deleted Topic',
-                category: deletedCategoryId,
-              },
-            },
-            categories: {
-              [deletedCategoryId]: {
-                name: 'Deleted Category',
-                region: 'us',
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
       });
 
       it('allows extra properties in deleted (forward compatibility)', () => {
@@ -836,9 +697,9 @@ describe('schemas', () => {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: deletedTopicId,
+                topic: 'Test Topic',
                 regions: ['us'],
-                category: deletedCategoryId,
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
                 deletedAt: '2025-01-01T00:00:00Z', // Extra field for future compatibility

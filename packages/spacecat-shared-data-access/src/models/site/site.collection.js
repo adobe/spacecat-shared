@@ -98,6 +98,14 @@ class SiteCollection extends BaseCollection {
         const [, site, owner] = host.split('--');
         this.log.info(`Site: ${site}`);
         this.log.info(`Owner: ${owner}`);
+        // Debug: Try to find all sites with this externalOwnerId
+        const allByOwner = await this.allByExternalOwnerId(owner);
+        this.log.info(`Found ${allByOwner.length} sites with externalOwnerId: '${owner}'`);
+        if (allByOwner.length > 0) {
+          allByOwner.forEach((s) => {
+            this.log.info(`  - Site: ${s.getId()}, externalOwnerId: '${s.getExternalOwnerId()}', externalSiteId: '${s.getExternalSiteId()}'`);
+          });
+        }
         const result = await this.findByExternalOwnerIdAndExternalSiteId(owner, site);
         this.log.info(`Result: ${result}`);
         this.log.info(`Result: ${JSON.stringify(result)}`);

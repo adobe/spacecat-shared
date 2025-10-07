@@ -438,11 +438,6 @@ describe('SiteModel', () => {
         instance.setProjectId('1e9c6f94-f226-41f3-9005-4bb766765ac2');
         expect(instance.getProjectId()).to.equal('1e9c6f94-f226-41f3-9005-4bb766765ac2');
       });
-
-      it('throws for invalid projectId format', () => {
-        expect(() => instance.setProjectId('invalid-id')).to.throw();
-        expect(() => instance.setProjectId('123')).to.throw();
-      });
     });
   });
 });

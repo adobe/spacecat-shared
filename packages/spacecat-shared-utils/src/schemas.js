@@ -61,6 +61,15 @@ const topic = z.object({
   category: z.union([z.uuid(), nonEmptyString]),
 });
 
+const deletedPrompt = z.object({
+  prompt: nonEmptyString,
+  topic: nonEmptyString,
+  regions: z.array(region).min(1),
+  category: nonEmptyString,
+  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
+  source: z.union([z.literal('config'), z.literal('api'), z.string()]),
+});
+
 export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
   categories: z.record(z.uuid(), category),
@@ -85,6 +94,9 @@ export const llmoConfig = z.object({
       }),
     ),
   }),
+  deletedEntities: z.object({
+    prompts: z.record(z.uuid(), deletedPrompt),
+  }).optional(),
 }).superRefine((value, ctx) => {
   const {
     categories, topics, brands, competitors,

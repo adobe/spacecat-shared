@@ -465,5 +465,244 @@ describe('schemas', () => {
         });
       });
     });
+
+    describe('deletedEntities', () => {
+      const deletedPromptId1 = 'dddd1111-d11b-41d1-a111-111111111111';
+      const deletedPromptId2 = 'dddd2222-d22b-42d2-a222-222222222222';
+
+      it('validates configuration without deletedEntities (optional field)', () => {
+        const result = llmoConfig.safeParse(baseConfig);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with empty deletedEntities prompts record', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {},
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with valid deleted prompts', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Deleted prompt one',
+                topic: 'Topic Name',
+                regions: ['us'],
+                category: 'Category Name',
+                origin: 'human',
+                source: 'config',
+              },
+              [deletedPromptId2]: {
+                prompt: 'Deleted prompt two',
+                topic: 'Another Topic',
+                regions: ['ca', 'us'],
+                category: categoryId,
+                origin: 'ai',
+                source: 'api',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates with custom origin and source values', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Topic Name',
+                regions: ['us'],
+                category: 'Category Name',
+                origin: 'custom-origin',
+                source: 'custom-source',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails when deleted prompt has empty prompt text', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: '',
+                topic: 'Topic Name',
+                regions: ['us'],
+                category: 'Category Name',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has empty topic', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: '',
+                regions: ['us'],
+                category: 'Category Name',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has empty category', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Topic Name',
+                regions: ['us'],
+                category: '',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has invalid region format', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Topic Name',
+                regions: ['usa'], // Invalid - must be 2 characters
+                category: 'Category Name',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has empty regions array', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Topic Name',
+                regions: [],
+                category: 'Category Name',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt is missing required fields', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                // Missing topic, regions, category, origin, source
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has invalid UUID key', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              'not-a-uuid': {
+                prompt: 'Test prompt',
+                topic: 'Topic Name',
+                regions: ['us'],
+                category: 'Category Name',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('allows extra properties in deletedEntities (forward compatibility)', () => {
+        const config = {
+          ...baseConfig,
+          deletedEntities: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Topic Name',
+                regions: ['us'],
+                category: 'Category Name',
+                origin: 'human',
+                source: 'config',
+                deletedAt: '2025-01-01T00:00:00Z', // Extra field for future compatibility
+                deletedBy: 'user@example.com', // Extra field
+              },
+            },
+            futureEntityType: {}, // Extra property at deletedEntities level
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+    });
   });
 });

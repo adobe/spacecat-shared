@@ -49,6 +49,9 @@ export function defaultConfig() {
     competitors: {
       competitors: [],
     },
+    deletedEntities: {
+      prompts: {},
+    },
   };
 }
 

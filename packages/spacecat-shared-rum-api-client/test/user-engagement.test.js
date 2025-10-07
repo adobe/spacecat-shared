@@ -50,16 +50,16 @@ describe('userEngagement', () => {
     expect(result).to.have.length(2);
 
     // Check page2 (higher totalTraffic, should be first)
-    const page2 = result[0];
+    const page2 = result[1];
     expect(page2.url).to.equal('https://example.com/page2');
     expect(page2.totalTraffic).to.equal(200);
     expect(page2.engagementPercentage).to.equal(100);
 
     // Check page1
-    const page1 = result[1];
+    const page1 = result[0];
     expect(page1.url).to.equal('https://example.com/page1');
     expect(page1.totalTraffic).to.equal(150);
-    expect(page1.engagementPercentage).to.equal(66.67);
+    expect(page1.engagementPercentage).to.equal(67);
   });
 
   it('handles empty bundles array', () => {

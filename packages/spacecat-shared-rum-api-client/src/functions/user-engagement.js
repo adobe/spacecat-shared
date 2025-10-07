@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-const hasEngagement = (bundle) => {
+const evaluateEngagement = (bundle) => {
   const clickEngagement = bundle.events.filter((evt) => evt.checkpoint === 'click').length > 0
     ? bundle.weight
     : 0;
@@ -34,7 +34,7 @@ const hasEngagement = (bundle) => {
 function handler(bundles) {
   const urlsData = {};
   bundles.forEach((bundle) => {
-    const engagementTraffic = hasEngagement(bundle) ? bundle.weight : 0;
+    const engagementTraffic = evaluateEngagement(bundle);
     if (!urlsData[bundle.url]) {
       urlsData[bundle.url] = {
         url: bundle.url,
@@ -45,9 +45,9 @@ function handler(bundles) {
     } else {
       urlsData[bundle.url].totalTraffic += bundle.weight;
       urlsData[bundle.url].engagementTraffic += engagementTraffic;
-      urlsData[bundle.url].engagementPercentage = (
-        urlsData[bundle.url].engagementTraffic / urlsData[bundle.url].totalTraffic
-      ) * 100;
+      urlsData[bundle.url].engagementPercentage = Math.round(
+        (urlsData[bundle.url].engagementTraffic / urlsData[bundle.url].totalTraffic) * 100,
+      );
     }
   });
 

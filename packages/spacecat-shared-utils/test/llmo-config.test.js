@@ -71,6 +71,9 @@ describe('llmo-config utilities', () => {
         competitors: {
           competitors: [],
         },
+        deleted: {
+          prompts: {},
+        },
       });
     });
   });

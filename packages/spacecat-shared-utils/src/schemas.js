@@ -61,6 +61,12 @@ const topic = z.object({
   category: z.union([z.uuid(), nonEmptyString]),
 });
 
+const deletedPrompt = prompt.extend({
+  topic: nonEmptyString,
+  category: nonEmptyString,
+  regions: z.array(region).min(1),
+});
+
 export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
   categories: z.record(z.uuid(), category),
@@ -85,6 +91,9 @@ export const llmoConfig = z.object({
       }),
     ),
   }),
+  deleted: z.object({
+    prompts: z.record(z.uuid(), deletedPrompt).optional(),
+  }).optional(),
 }).superRefine((value, ctx) => {
   const {
     categories, topics, brands, competitors,

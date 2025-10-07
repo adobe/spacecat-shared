@@ -133,6 +133,18 @@
         {
           "AttributeName": "updatedAt",
           "AttributeType": "S"
+        },
+        {
+          "AttributeName": "projectId",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "externalOwnerId",
+          "AttributeType": "S"
+        },
+        {
+          "AttributeName": "externalSiteId",
+          "AttributeType": "S"
         }
       ],
       "GlobalSecondaryIndexes": [
@@ -173,6 +185,34 @@
             },
             "SortKey": {
               "AttributeName": "deliveryType",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-services-sites-by-external-ids",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "externalOwnerId",
+              "AttributeType": "S"
+            },
+            "SortKey": {
+              "AttributeName": "externalSiteId",
+              "AttributeType": "S"
+            }
+          },
+          "Projection": {
+            "ProjectionType": "ALL"
+          }
+        },
+        {
+          "IndexName": "spacecat-services-all-sites-project",
+          "KeyAttributes": {
+            "PartitionKey": {
+              "AttributeName": "projectId",
               "AttributeType": "S"
             }
           },

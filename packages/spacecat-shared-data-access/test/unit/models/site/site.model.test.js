@@ -394,4 +394,55 @@ describe('SiteModel', () => {
       expect(() => instance.setpageTypes(missingPattern)).to.throw();
     });
   });
+
+  describe('localization fields', () => {
+    describe('primaryLocale', () => {
+      it('gets primaryLocale', () => {
+        expect(instance.getIsPrimaryLocale()).to.equal(undefined);
+      });
+
+      it('sets primaryLocale', () => {
+        instance.setIsPrimaryLocale(false);
+        expect(instance.getIsPrimaryLocale()).to.equal(false);
+      });
+    });
+
+    describe('language', () => {
+      it('gets language', () => {
+        expect(instance.getLanguage()).to.equal(undefined);
+      });
+
+      it('sets language (ISO 639-1)', () => {
+        instance.setLanguage('en');
+        expect(instance.getLanguage()).to.equal('en');
+      });
+    });
+
+    describe('region', () => {
+      it('gets region', () => {
+        expect(instance.getRegion()).to.equal(undefined);
+      });
+
+      it('sets region', () => {
+        instance.setRegion('US');
+        expect(instance.getRegion()).to.equal('US');
+      });
+    });
+
+    describe('projectId', () => {
+      it('gets projectId', () => {
+        expect(instance.getProjectId()).to.equal('f47ac10b-58cc-4372-a567-0e02b2c3d479');
+      });
+
+      it('sets projectId', () => {
+        instance.setProjectId('1e9c6f94-f226-41f3-9005-4bb766765ac2');
+        expect(instance.getProjectId()).to.equal('1e9c6f94-f226-41f3-9005-4bb766765ac2');
+      });
+
+      it('throws for invalid projectId format', () => {
+        expect(() => instance.setProjectId('invalid-id')).to.throw();
+        expect(() => instance.setProjectId('123')).to.throw();
+      });
+    });
+  });
 });

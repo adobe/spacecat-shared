@@ -189,4 +189,208 @@ describe('SiteCollection', () => {
         .to.be.rejectedWith(`Unsupported preview URL: ${invalidUrl}`);
     });
   });
+
+  describe('new project-related methods', () => {
+    let mockProjectCollection;
+    let mockProject;
+    let mockSites;
+
+    beforeEach(() => {
+      mockProject = {
+        getId: () => 'project-123',
+        getOrganizationId: () => 'org-123',
+        getProjectName: () => 'Test Project',
+      };
+
+      mockSites = [
+        { getId: () => 'site-1', getProjectId: () => 'project-123' },
+        { getId: () => 'site-2', getProjectId: () => 'project-123' },
+      ];
+
+      mockProjectCollection = {
+        findByProjectName: stub(),
+        findById: stub(),
+        allByOrganizationId: stub(),
+      };
+
+      mockEntityRegistry.getCollection = stub().returns(mockProjectCollection);
+    });
+
+    describe('allByProjectName', () => {
+      it('should return sites for a valid project name', async () => {
+        mockProjectCollection.findByProjectName.resolves(mockProject);
+        instance.allByProjectId = stub().resolves(mockSites);
+
+        const result = await instance.allByProjectName('Test Project');
+
+        expect(result).to.deep.equal(mockSites);
+        expect(mockProjectCollection.findByProjectName).to.have.been.calledOnceWith('Test Project');
+        expect(instance.allByProjectId).to.have.been.calledOnceWith('project-123');
+      });
+
+      it('should return empty array when project is not found', async () => {
+        mockProjectCollection.findByProjectName.resolves(null);
+
+        const result = await instance.allByProjectName('Non-existent Project');
+
+        expect(result).to.deep.equal([]);
+        expect(mockProjectCollection.findByProjectName).to.have.been.calledOnceWith('Non-existent Project');
+      });
+
+      it('should throw error for empty project name', async () => {
+        await expect(instance.allByProjectName('')).to.be.rejectedWith('projectName is required');
+        await expect(instance.allByProjectName(null)).to.be.rejectedWith('projectName is required');
+        await expect(instance.allByProjectName(undefined)).to.be.rejectedWith('projectName is required');
+      });
+    });
+
+    describe('allByProjectId', () => {
+      it('should return sites for a valid project ID', async () => {
+        instance.allByProjectId = stub().resolves(mockSites);
+
+        const result = await instance.allByProjectId('project-123');
+
+        expect(result).to.deep.equal(mockSites);
+        expect(instance.allByProjectId).to.have.been.calledOnceWith('project-123');
+      });
+
+      it('should throw error for empty project ID', async () => {
+        await expect(instance.allByProjectId('')).to.be.rejectedWith('projectId is required');
+        await expect(instance.allByProjectId(null)).to.be.rejectedWith('projectId is required');
+        await expect(instance.allByProjectId(undefined)).to.be.rejectedWith('projectId is required');
+      });
+    });
+
+    describe('allByOrganizationIdAndProjectId', () => {
+      let mockOrganizationCollection;
+      let mockOrganization;
+
+      beforeEach(() => {
+        mockOrganization = {
+          getId: () => 'org-123',
+        };
+        mockOrganizationCollection = {
+          findById: stub(),
+        };
+        instance.entityRegistry.getCollection.withArgs('OrganizationCollection').returns(mockOrganizationCollection);
+      });
+
+      it('should return sites when organization and project exist', async () => {
+        mockOrganizationCollection.findById.resolves(mockOrganization);
+        mockProjectCollection.allByOrganizationId.resolves([mockProject]);
+        instance.allByProjectId = stub().resolves(mockSites);
+
+        const result = await instance.allByOrganizationIdAndProjectId('org-123', 'project-123');
+
+        expect(result).to.deep.equal(mockSites);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+        expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
+        expect(instance.allByProjectId).to.have.been.calledOnceWith('project-123');
+      });
+
+      it('should return empty array when organization does not exist', async () => {
+        mockOrganizationCollection.findById.resolves(null);
+
+        const result = await instance.allByOrganizationIdAndProjectId('org-123', 'project-123');
+
+        expect(result).to.deep.equal([]);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+      });
+
+      it('should return empty array when project is not found in organization', async () => {
+        mockOrganizationCollection.findById.resolves(mockOrganization);
+        mockProjectCollection.allByOrganizationId.resolves([]);
+
+        const result = await instance.allByOrganizationIdAndProjectId('org-123', 'project-123');
+
+        expect(result).to.deep.equal([]);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+        expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
+      });
+
+      it('should throw error for empty organization ID', async () => {
+        await expect(instance.allByOrganizationIdAndProjectId('', 'project-123'))
+          .to.be.rejectedWith('organizationId is required');
+      });
+
+      it('should throw error for empty project ID', async () => {
+        await expect(instance.allByOrganizationIdAndProjectId('org-123', ''))
+          .to.be.rejectedWith('projectId is required');
+      });
+    });
+
+    describe('allByOrganizationIdAndProjectName', () => {
+      let mockOrganizationCollection;
+      let mockOrganization;
+
+      beforeEach(() => {
+        mockOrganization = {
+          getId: () => 'org-123',
+        };
+        mockOrganizationCollection = {
+          findById: stub(),
+        };
+        instance.entityRegistry.getCollection.withArgs('OrganizationCollection').returns(mockOrganizationCollection);
+      });
+
+      it('should return sites when organization and project exist', async () => {
+        mockOrganizationCollection.findById.resolves(mockOrganization);
+        mockProjectCollection.allByOrganizationId.resolves([mockProject]);
+        instance.allByProjectId = stub().resolves(mockSites);
+
+        const result = await instance.allByOrganizationIdAndProjectName('org-123', 'Test Project');
+
+        expect(result).to.deep.equal(mockSites);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+        expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
+        expect(instance.allByProjectId).to.have.been.calledOnceWith('project-123');
+      });
+
+      it('should return empty array when organization does not exist', async () => {
+        mockOrganizationCollection.findById.resolves(null);
+
+        const result = await instance.allByOrganizationIdAndProjectName('org-123', 'Test Project');
+
+        expect(result).to.deep.equal([]);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+      });
+
+      it('should return empty array when project is not found in organization', async () => {
+        mockOrganizationCollection.findById.resolves(mockOrganization);
+        mockProjectCollection.allByOrganizationId.resolves([]);
+
+        const result = await instance.allByOrganizationIdAndProjectName('org-123', 'Non-existent Project');
+
+        expect(result).to.deep.equal([]);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+        expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
+      });
+
+      it('should return empty array when project name does not match', async () => {
+        const differentProject = {
+          getId: () => 'project-456',
+          getOrganizationId: () => 'org-123',
+          getProjectName: () => 'Different Project',
+        };
+        mockOrganizationCollection.findById.resolves(mockOrganization);
+        mockProjectCollection.allByOrganizationId.resolves([differentProject]);
+
+        const result = await instance.allByOrganizationIdAndProjectName('org-123', 'Test Project');
+
+        expect(result).to.deep.equal([]);
+        expect(mockOrganizationCollection.findById).to.have.been.calledOnceWith('org-123');
+        expect(mockProjectCollection.allByOrganizationId).to.have.been.calledOnceWith('org-123');
+      });
+
+      it('should throw error for empty organization ID', async () => {
+        await expect(instance.allByOrganizationIdAndProjectName('', 'Test Project'))
+          .to.be.rejectedWith('organizationId is required');
+      });
+
+      it('should throw error for empty project name', async () => {
+        await expect(instance.allByOrganizationIdAndProjectName('org-123', ''))
+          .to.be.rejectedWith('projectName is required');
+      });
+    });
+  });
 });

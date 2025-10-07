@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.8...@adobe/spacecat-shared-rum-api-client-v2.38.0) (2025-10-07)
+
+
+### Features
+
+* add query for fetching RUM engagement metrics ([#985](https://github.com/adobe/spacecat-shared/issues/985)) ([0eb8881](https://github.com/adobe/spacecat-shared/commit/0eb88818af000076ea663b2e08ab1fb2b1957510))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.37.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.7...@adobe/spacecat-shared-rum-api-client-v2.37.8) (2025-10-07)
 
 

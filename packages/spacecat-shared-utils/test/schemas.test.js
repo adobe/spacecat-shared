@@ -466,21 +466,31 @@ describe('schemas', () => {
       });
     });
 
-    describe('deletedEntities', () => {
+    describe('deleted', () => {
       const deletedPromptId1 = 'dddd1111-d11b-41d1-a111-111111111111';
       const deletedPromptId2 = 'dddd2222-d22b-42d2-a222-222222222222';
 
-      it('validates configuration without deletedEntities (optional field)', () => {
+      it('validates configuration without deleted (optional field)', () => {
         const result = llmoConfig.safeParse(baseConfig);
         expect(result.success).true;
       });
 
-      it('validates configuration with empty deletedEntities prompts record', () => {
+      it('validates configuration with empty deleted prompts record', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {},
           },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates configuration without prompts field in deleted', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {},
         };
 
         const result = llmoConfig.safeParse(config);
@@ -490,21 +500,21 @@ describe('schemas', () => {
       it('validates configuration with valid deleted prompts', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Deleted prompt one',
-                topic: 'Topic Name',
+                topic: 'Deleted Topic Name',
                 regions: ['us'],
-                category: 'Category Name',
+                category: 'Deleted Category Name',
                 origin: 'human',
                 source: 'config',
               },
               [deletedPromptId2]: {
                 prompt: 'Deleted prompt two',
-                topic: 'Another Topic',
+                topic: 'Another Deleted Topic',
                 regions: ['ca', 'us'],
-                category: categoryId,
+                category: 'Another Deleted Category',
                 origin: 'ai',
                 source: 'api',
               },
@@ -519,13 +529,13 @@ describe('schemas', () => {
       it('validates with custom origin and source values', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: 'Topic Name',
+                topic: 'Test Topic',
                 regions: ['us'],
-                category: 'Category Name',
+                category: 'Test Category',
                 origin: 'custom-origin',
                 source: 'custom-source',
               },
@@ -540,13 +550,13 @@ describe('schemas', () => {
       it('fails when deleted prompt has empty prompt text', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: '',
-                topic: 'Topic Name',
+                topic: 'Test Topic',
                 regions: ['us'],
-                category: 'Category Name',
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -561,13 +571,13 @@ describe('schemas', () => {
       it('fails when deleted prompt has empty topic', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
                 topic: '',
                 regions: ['us'],
-                category: 'Category Name',
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -582,11 +592,11 @@ describe('schemas', () => {
       it('fails when deleted prompt has empty category', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: 'Topic Name',
+                topic: 'Test Topic',
                 regions: ['us'],
                 category: '',
                 origin: 'human',
@@ -603,13 +613,13 @@ describe('schemas', () => {
       it('fails when deleted prompt has invalid region format', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: 'Topic Name',
+                topic: 'Test Topic',
                 regions: ['usa'], // Invalid - must be 2 characters
-                category: 'Category Name',
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -624,13 +634,13 @@ describe('schemas', () => {
       it('fails when deleted prompt has empty regions array', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: 'Topic Name',
+                topic: 'Test Topic',
                 regions: [],
-                category: 'Category Name',
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -645,7 +655,7 @@ describe('schemas', () => {
       it('fails when deleted prompt is missing required fields', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
@@ -662,13 +672,13 @@ describe('schemas', () => {
       it('fails when deleted prompt has invalid UUID key', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               'not-a-uuid': {
                 prompt: 'Test prompt',
-                topic: 'Topic Name',
+                topic: 'Test Topic',
                 regions: ['us'],
-                category: 'Category Name',
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
               },
@@ -680,23 +690,23 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('allows extra properties in deletedEntities (forward compatibility)', () => {
+      it('allows extra properties in deleted (forward compatibility)', () => {
         const config = {
           ...baseConfig,
-          deletedEntities: {
+          deleted: {
             prompts: {
               [deletedPromptId1]: {
                 prompt: 'Test prompt',
-                topic: 'Topic Name',
+                topic: 'Test Topic',
                 regions: ['us'],
-                category: 'Category Name',
+                category: 'Test Category',
                 origin: 'human',
                 source: 'config',
                 deletedAt: '2025-01-01T00:00:00Z', // Extra field for future compatibility
                 deletedBy: 'user@example.com', // Extra field
               },
             },
-            futureEntityType: {}, // Extra property at deletedEntities level
+            futureEntityType: {}, // Extra property at deleted level
           },
         };
 

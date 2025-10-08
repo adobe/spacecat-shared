@@ -483,4 +483,64 @@ describe('TierClient', () => {
       expect(result).to.deep.equal({ entitlement: mockEntitlement });
     });
   });
+
+  describe('revokeSiteEnrollment', () => {
+    it('should successfully revoke site enrollment when it exists', async () => {
+      const mockSiteEnrollmentWithRemove = {
+        ...mockSiteEnrollment,
+        remove: sandbox.stub().resolves(),
+      };
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollmentWithRemove]);
+
+      await tierClient.revokeSiteEnrollment();
+
+      expect(mockSiteEnrollmentWithRemove.remove.calledOnce).to.be.true;
+    });
+
+    it('should throw error when site enrollment does not exist', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+
+      await expect(tierClient.revokeSiteEnrollment()).to.be.rejectedWith('Site enrollment not found');
+    });
+
+    it('should throw error when entitlement does not exist', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+
+      await expect(tierClient.revokeSiteEnrollment()).to.be.rejectedWith('Site enrollment not found');
+    });
+
+    it('should handle database errors during revocation', async () => {
+      const mockSiteEnrollmentWithRemove = {
+        ...mockSiteEnrollment,
+        remove: sandbox.stub().rejects(new Error('Database error')),
+      };
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollmentWithRemove]);
+
+      await expect(tierClient.revokeSiteEnrollment()).to.be.rejectedWith('Database error');
+    });
+
+    it('should handle errors when checking valid entitlement', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.rejects(new Error('Database error'));
+
+      await expect(tierClient.revokeSiteEnrollment()).to.be.rejectedWith('Database error');
+    });
+
+    it('should throw error with organization-only client (no site)', async () => {
+      const orgOnlyClient = new TierClient(
+        mockContext,
+        organizationInstance,
+        null,
+        productCode,
+      );
+
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+
+      await expect(orgOnlyClient.revokeSiteEnrollment()).to.be.rejectedWith('Site enrollment not found');
+    });
+  });
 });

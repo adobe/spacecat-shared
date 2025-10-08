@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.68.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.68.0...@adobe/spacecat-shared-data-access-v2.68.1) (2025-10-07)
+
+
+### Bug Fixes
+
+* site indexes order ([#1008](https://github.com/adobe/spacecat-shared/issues/1008)) ([215a961](https://github.com/adobe/spacecat-shared/commit/215a961a681873f4cb1882e2c8a53f8db13e32ea))
+
 # [@adobe/spacecat-shared-data-access-v2.68.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.67.0...@adobe/spacecat-shared-data-access-v2.68.0) (2025-10-07)
 
 

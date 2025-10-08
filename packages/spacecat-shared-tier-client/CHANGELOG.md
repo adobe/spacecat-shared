@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.1.2...@adobe/spacecat-shared-tier-client-v1.2.0) (2025-10-08)
+
+
+### Features
+
+* revoke enrollment API ([#1009](https://github.com/adobe/spacecat-shared/issues/1009)) ([7617368](https://github.com/adobe/spacecat-shared/commit/7617368082375e37ee1f23a097e7f4cf6b29edd7))
+
 # [@adobe/spacecat-shared-tier-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.1.1...@adobe/spacecat-shared-tier-client-v1.1.2) (2025-09-24)
 
 

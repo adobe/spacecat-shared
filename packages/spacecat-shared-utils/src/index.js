@@ -97,3 +97,5 @@ export { determineAEMCSPageId, getPageEditUrl } from './aem-content-api-utils.js
 
 export * as llmoConfig from './llmo-config.js';
 export * as schemas from './schemas.js';
+
+export { transformCDNSetup } from './cdn-helpers.js';

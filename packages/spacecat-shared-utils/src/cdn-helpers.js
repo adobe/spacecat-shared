@@ -11,51 +11,191 @@
  */
 
 /**
- * CDN-specific transformations for setup payloads
+ * CDN-specific transformations for log forwarding configuration preparation
  */
+
+const FASTLY_LOG_FORMAT = `{
+    "timestamp": "%{strftime(\\{"%Y-%m-%dT%H:%M:%S%z"\\}, time.start)}V",
+    "host": "%{if(req.http.Fastly-Orig-Host, req.http.Fastly-Orig-Host, req.http.Host)}V",
+    "url": "%{json.escape(req.url)}V",
+    "request_method": "%{json.escape(req.method)}V",
+    "request_referer": "%{json.escape(req.http.referer)}V",
+    "request_user_agent": "%{json.escape(req.http.User-Agent)}V",
+    "response_status": %{resp.status}V,
+    "response_content_type": "%{json.escape(resp.http.Content-Type)}V",
+    "client_country_code": "%{client.geo.country_name}V",
+    "time_to_first_byte": "%{time.to_first_byte}V"
+}`;
 const CDN_TRANSFORMATIONS = {
   'byocdn-fastly': (payload) => ({
-    ...payload,
-    allowedPaths: payload.allowedPaths?.map((path) => `${path}additional/path`) || [],
-    newField: 'somejson',
+    'Bucket Name': payload.bucketName,
+    Domain: `s3.${payload.region}.amazonaws.com`,
+    Path: `${payload.allowedPaths?.[0] || ''}%Y/%m/%d/%H/`,
+    'Timestamp Format': '%Y-%m-%dT%H:%M:%S.000',
+    Placement: 'Format Version Default',
+    'Log format': FASTLY_LOG_FORMAT,
+    'Access method': 'User credentials',
+    'Access key': payload.accessKey,
+    'Secret key': payload.secretKey,
+    Period: 300,
+    'Log line format': 'Blank',
+    Compression: 'Gzip',
+    'Redundancy level': 'Standard',
+    ACL: 'None',
+    'Server side encryption': 'None',
+    'Maximum bytes': 0,
   }),
   'byocdn-akamai': (payload) => ({
-    ...payload,
-    // Add Akamai-specific transformations here
+    'Bucket Name': payload.bucketName,
+    Region: payload.region,
+    Path: `${payload.allowedPaths?.[0] || ''}{%Y}/{%m}/{%d}/{%H}`,
+    'Logged Properties': [
+      'reqTimeSec',
+      'country',
+      'reqHost',
+      'reqPath',
+      'queryStr',
+      'reqMethod',
+      'ua',
+      'statusCode',
+      'referer',
+      'rspContentType',
+      'timeToFirstByte',
+    ],
+    'Log file prefix': '{%Y}-{%m}-{%d}T{%H}:{%M}:{%S}.000',
+    'Log file suffix': '.log',
+    'Log interval': '60 seconds',
+    'Access key': payload.accessKey,
+    'Secret key': payload.secretKey,
   }),
   'byocdn-cloudflare': (payload) => ({
-    ...payload,
-    // Add Cloudflare-specific transformations here
+    'Bucket Name': payload.bucketName,
+    Region: payload.region,
+    Path: `${payload.allowedPaths?.[0] || ''}{DATE}/`,
+    'Timestamp format': 'RFC3339',
+    'Sampling rate': 'All logs',
+    'Organize logs into daily subfolders': 'Yes',
+    'Logged Properties': [
+      'EdgeStartTimestamp',
+      'ClientCountry',
+      'ClientRequestHost',
+      'ClientRequestURI',
+      'ClientRequestMethod',
+      'ClientRequestUserAgent',
+      'EdgeResponseStatus',
+      'ClientRequestReferer',
+      'EdgeResponseContentType',
+      'EdgeTimeToFirstByteMs',
+    ],
+    'Ownership token': 'Please reach out to Adobe support for obtaining the token once you completed the configuration.',
   }),
   'byocdn-cloudfront': (payload) => ({
-    ...payload,
-    // Add CloudFront-specific transformations here
+    'Bucket Name': payload.bucketName,
+    Region: payload.region,
+    'Delivery destination ARN': payload.deliveryDestinationArn,
+    'Delivery Destination Name': payload.deliveryDestinationName,
+    'Destination AWS Account ID': '640168421876',
+    'Path suffix': '/{yyyy}/{MM}/{dd}/{HH}',
+    'Logged Properties': [
+      'date',
+      'time',
+      'x-edge-location',
+      'cs-method',
+      'x-host-header',
+      'cs-uri-stem',
+      'sc-status',
+      'cs(Referer)',
+      'cs(User-Agent)',
+      'time-to-first-byte',
+      'sc-content-type',
+    ],
   }),
   'ams-cloudfront': (payload) => ({
-    ...payload,
-    // Add AMS CloudFront-specific transformations here
+    'Bucket Name': payload.bucketName,
+    Region: payload.region,
+    'Delivery destination ARN': payload.deliveryDestinationArn,
+    'Delivery Destination Name': payload.deliveryDestinationName,
+    'Destination AWS Account ID': '640168421876',
+    'Path suffix': '/{yyyy}/{MM}/{dd}/{HH}',
+    'Logged Properties': [
+      'date',
+      'time',
+      'x-edge-location',
+      'cs-method',
+      'x-host-header',
+      'cs-uri-stem',
+      'sc-status',
+      'cs(Referer)',
+      'cs(User-Agent)',
+      'time-to-first-byte',
+      'sc-content-type',
+    ],
   }),
 };
 
 /**
- * Transforms a CDN setup payload based on the log source type
- * @param {Object} payload - The original CDN setup payload
- * @param {string} logSource - The CDN type ('byocdn-fastly' | 'byocdn-akamai'
+ * Prepares log forwarding configuration parameters
+ * from CDN-Logs-Infrastructure-Provisioning API result
+ *
+ * Takes the result of the CDN-Logs-Infrastructure-Provisioning API and prepares all configuration
+ * parameters needed for setting up log forwarding. Some parameters are read from the API result,
+ * while others are static values that don't come from the API.
+ *
+ * @param {Object} payload - The result from CDN-Logs-Infrastructure-Provisioning API
+ * @param {string} payload.logSource - The CDN type ('byocdn-fastly' | 'byocdn-akamai'
  *   | 'byocdn-cloudflare' | 'byocdn-cloudfront' | 'ams-cloudfront')
- * @returns {Object} - The transformed CDN setup payload
- * @throws {Error} - If logSource is not supported
+ * @returns {Object} - The prepared log forwarding configuration parameters
+ * @throws {Error} - If logSource is not supported or missing
  */
-const transformCDNSetup = (payload, logSource) => {
-  if (!logSource) {
-    throw new Error('logSource parameter is required');
+const prettifyLogForwardingConfig = (payload) => {
+  if (!payload) {
+    throw new Error('payload is required as input');
   }
 
-  const transformation = CDN_TRANSFORMATIONS[logSource];
+  if (!payload.logSource) {
+    throw new Error('logSource is required in payload');
+  }
+
+  if (!payload.bucketName) {
+    throw new Error('bucketName is required in payload');
+  }
+
+  if (!payload.region) {
+    throw new Error('region is required in payload');
+  }
+
+  if (!payload.authMethod) {
+    throw new Error('authMethod is required in payload');
+  }
+
+  if (!payload.allowedPaths) {
+    throw new Error('allowedPaths is required in payload');
+  }
+
+  if (payload.logSource === 'byocdn-fastly' || payload.logSource === 'byocdn-akamai') {
+    if (!payload.accessKey) {
+      throw new Error('accessKey is required in payload');
+    }
+    if (!payload.secretKey) {
+      throw new Error('secretKey is required in payload');
+    }
+  }
+
+  if (payload.logSource === 'byocdn-cloudfront' || payload.logSource === 'ams-cloudfront') {
+    if (!payload.deliveryDestinationArn) {
+      throw new Error('deliveryDestinationArn is required in payload');
+    }
+    if (!payload.deliveryDestinationName) {
+      throw new Error('deliveryDestinationName is required in payload');
+    }
+  }
+
+  const transformation = CDN_TRANSFORMATIONS[payload.logSource];
   if (!transformation) {
-    throw new Error(`Unsupported log source: ${logSource}. Supported types: ${Object.keys(CDN_TRANSFORMATIONS).join(', ')}`);
+    throw new Error(`Unsupported log source: ${payload.logSource}. Supported types: ${Object.keys(CDN_TRANSFORMATIONS).join(', ')}`);
   }
 
   return transformation(payload);
 };
 
-export { transformCDNSetup };
+export { prettifyLogForwardingConfig };

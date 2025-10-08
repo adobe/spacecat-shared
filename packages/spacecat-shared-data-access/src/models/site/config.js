@@ -28,6 +28,7 @@ export const IMPORT_TYPES = {
   TRAFFIC_ANALYSIS: 'traffic-analysis',
   TOP_FORMS: 'top-forms',
   CODE: 'code',
+  USER_ENGAGEMENT: 'user-engagement',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -153,6 +154,10 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
   }),
+  [IMPORT_TYPES.USER_ENGAGEMENT]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.USER_ENGAGEMENT).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
@@ -225,6 +230,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
   },
   'top-forms': {
     type: 'top-forms',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
+  'user-engagement': {
+    type: 'user-engagement',
     destinations: ['default'],
     sources: ['rum'],
     enabled: true,

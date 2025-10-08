@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.69.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.68.1...@adobe/spacecat-shared-data-access-v2.69.0) (2025-10-08)
+
+
+### Features
+
+* add summarization audit type ([#987](https://github.com/adobe/spacecat-shared/issues/987)) ([a000227](https://github.com/adobe/spacecat-shared/commit/a000227898df9b08e74eb555fc5a32e6f11ce7fd))
+
+# [@adobe/spacecat-shared-data-access-v2.68.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.68.0...@adobe/spacecat-shared-data-access-v2.68.1) (2025-10-07)
+
+
+### Bug Fixes
+
+* site indexes order ([#1008](https://github.com/adobe/spacecat-shared/issues/1008)) ([215a961](https://github.com/adobe/spacecat-shared/commit/215a961a681873f4cb1882e2c8a53f8db13e32ea))
+
+# [@adobe/spacecat-shared-data-access-v2.68.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.67.0...@adobe/spacecat-shared-data-access-v2.68.0) (2025-10-07)
+
+
+### Features
+
+* add query for fetching RUM engagement metrics ([#985](https://github.com/adobe/spacecat-shared/issues/985)) ([0eb8881](https://github.com/adobe/spacecat-shared/commit/0eb88818af000076ea663b2e08ab1fb2b1957510))
+
+# [@adobe/spacecat-shared-data-access-v2.67.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.66.0...@adobe/spacecat-shared-data-access-v2.67.0) (2025-10-07)
+
+
+### Features
+
+* add support for region/language configurations ([#995](https://github.com/adobe/spacecat-shared/issues/995)) ([c5219da](https://github.com/adobe/spacecat-shared/commit/c5219da283370e7de5411aa778773315efdeb869))
+
 # [@adobe/spacecat-shared-data-access-v2.66.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.65.2...@adobe/spacecat-shared-data-access-v2.66.0) (2025-10-03)
 
 

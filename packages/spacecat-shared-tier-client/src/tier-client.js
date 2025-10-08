@@ -16,7 +16,6 @@ import {
   Entitlement as EntitlementModel,
   Organization,
 } from '@adobe/spacecat-shared-data-access';
-
 /**
  * TierClient provides methods to manage entitlements and site enrollments.
  */
@@ -206,6 +205,19 @@ class TierClient {
     } catch (error) {
       this.log.error(`Error creating/updating entitlement: ${error.message}`);
       throw error;
+    }
+  }
+
+  /**
+   * Revokes site enrollment for the current site.
+   * @returns {Promise<object>} HTTP response object.
+   */
+  async revokeSiteEnrollment() {
+    const existing = await this.checkValidEntitlement();
+    if (existing.siteEnrollment) {
+      await existing.siteEnrollment.remove();
+    } else {
+      throw new Error('Site enrollment not found');
     }
   }
 }

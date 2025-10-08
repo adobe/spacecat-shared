@@ -55,6 +55,20 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAttribute('name', {
     type: 'string',
   })
+  .addAttribute('isPrimaryLocale', {
+    type: 'boolean',
+    required: false,
+  })
+  .addAttribute('language', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || /^[a-z]{2}$/.test(value), // ISO 639-1 format
+  })
+  .addAttribute('region', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || /^[A-Z]{2}$/.test(value), // ISO 3166-1 alpha-2 format
+  })
   .addAttribute('config', {
     type: 'any',
     required: true,
@@ -157,6 +171,15 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addIndex(
     { composite: ['externalOwnerId'] },
     { composite: ['externalSiteId'] },
+  )
+  // Using regular index instead of belongs_to reference to control position
+  .addAttribute('projectId', {
+    type: 'string',
+    required: false,
+  })
+  .addIndex(
+    { composite: ['projectId'] },
+    { composite: ['updatedAt'] },
   );
 
 export default schema.build();

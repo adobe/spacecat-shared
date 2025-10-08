@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.55.0...@adobe/spacecat-shared-utils-v1.56.0) (2025-10-07)
+
+
+### Features
+
+* deletedEntities and prompts ([#1005](https://github.com/adobe/spacecat-shared/issues/1005)) ([c7c0c8f](https://github.com/adobe/spacecat-shared/commit/c7c0c8f635fcde250936579bb42d9942d7b6a1ab))
+
 # [@adobe/spacecat-shared-utils-v1.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.54.0...@adobe/spacecat-shared-utils-v1.55.0) (2025-10-03)
 
 

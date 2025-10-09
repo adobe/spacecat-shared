@@ -95,6 +95,19 @@ describe('CDN Helper Functions', () => {
         // Should use the first path only
         expect(result.Path).to.equal('org1/raw/byocdn-fastly/%Y/%m/%d/%H/');
       });
+
+      it('should handle empty allowed paths array for byocdn-fastly', () => {
+        const payloadWithEmptyPaths = {
+          ...mockPayload,
+          logSource: 'byocdn-fastly',
+          allowedPaths: [],
+        };
+
+        const result = prettifyLogForwardingConfig(payloadWithEmptyPaths);
+
+        // Should use empty string as prefix
+        expect(result.Path).to.equal('%Y/%m/%d/%H/');
+      });
     });
 
     describe('other CDN types', () => {
@@ -199,11 +212,41 @@ describe('CDN Helper Functions', () => {
           ],
         });
       });
+
+      it('should handle empty allowed paths array for byocdn-akamai', () => {
+        const payloadWithEmptyPaths = {
+          ...mockPayload,
+          logSource: 'byocdn-akamai',
+          allowedPaths: [],
+        };
+
+        const result = prettifyLogForwardingConfig(payloadWithEmptyPaths);
+        expect(result.Path).to.equal('{%Y}/{%m}/{%d}/{%H}');
+      });
+
+      it('should handle empty allowed paths array for byocdn-cloudflare', () => {
+        const payloadWithEmptyPaths = {
+          ...mockPayload,
+          logSource: 'byocdn-cloudflare',
+          allowedPaths: [],
+        };
+        delete payloadWithEmptyPaths.accessKey;
+        delete payloadWithEmptyPaths.secretKey;
+
+        const result = prettifyLogForwardingConfig(payloadWithEmptyPaths);
+        expect(result.Path).to.equal('{DATE}/');
+      });
     });
 
     describe('error handling', () => {
       it('should throw error when payload is null', () => {
         expect(() => prettifyLogForwardingConfig(null)).to.throw(
+          'payload is required as input',
+        );
+      });
+
+      it('should throw error when payload is undefined', () => {
+        expect(() => prettifyLogForwardingConfig(undefined)).to.throw(
           'payload is required as input',
         );
       });
@@ -293,6 +336,22 @@ describe('CDN Helper Functions', () => {
         delete payloadWithoutDeliveryDestinationArn.deliveryDestinationArn;
         expect(() => prettifyLogForwardingConfig(payloadWithoutDeliveryDestinationArn)).to.throw(
           'deliveryDestinationArn is required in payload',
+        );
+      });
+
+      it('should throw error when deliveryDestinationName is missing for byocdn-cloudfront', () => {
+        const payloadWithoutDeliveryDestinationName = { ...mockCloudFrontPayload };
+        delete payloadWithoutDeliveryDestinationName.deliveryDestinationName;
+        expect(() => prettifyLogForwardingConfig(payloadWithoutDeliveryDestinationName)).to.throw(
+          'deliveryDestinationName is required in payload',
+        );
+      });
+
+      it('should throw error when deliveryDestinationName is missing for ams-cloudfront', () => {
+        const payloadWithoutDeliveryDestinationName = { ...mockCloudFrontPayload, logSource: 'ams-cloudfront' };
+        delete payloadWithoutDeliveryDestinationName.deliveryDestinationName;
+        expect(() => prettifyLogForwardingConfig(payloadWithoutDeliveryDestinationName)).to.throw(
+          'deliveryDestinationName is required in payload',
         );
       });
 

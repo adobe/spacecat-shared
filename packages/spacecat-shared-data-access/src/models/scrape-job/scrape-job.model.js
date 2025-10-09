@@ -20,7 +20,7 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class ScrapeJob extends BaseModel {
-  static SCRAPE_JOB_EXPIRES_IN_DAYS = 14;
+  static SCRAPE_JOB_EXPIRES_IN_DAYS = 120;
 
   /**
    * Scrape Job Status types.

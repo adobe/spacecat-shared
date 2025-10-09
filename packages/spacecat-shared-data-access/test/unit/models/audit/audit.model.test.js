@@ -194,7 +194,7 @@ describe('AuditModel', () => {
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(38);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(39);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

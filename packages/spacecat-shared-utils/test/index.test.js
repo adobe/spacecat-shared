@@ -85,6 +85,9 @@ describe('Index Exports', () => {
     'llmoConfig',
     'schemas',
     'prettifyLogForwardingConfig',
+    'isoCalendarWeek',
+    'isoCalendarWeekSunday',
+    'isoCalendarWeekMonday',
   ];
 
   it('exports all expected functions', () => {

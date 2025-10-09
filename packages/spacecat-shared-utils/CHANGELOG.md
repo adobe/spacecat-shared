@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.58.1...@adobe/spacecat-shared-utils-v1.59.0) (2025-10-09)
+
+
+### Features
+
+* Add locale detection util ([#1006](https://github.com/adobe/spacecat-shared/issues/1006)) ([cb8dcd6](https://github.com/adobe/spacecat-shared/commit/cb8dcd69e85cf673f9c791f8653e164e1e5a06d8))
+
 # [@adobe/spacecat-shared-utils-v1.58.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.58.0...@adobe/spacecat-shared-utils-v1.58.1) (2025-10-09)
 
 

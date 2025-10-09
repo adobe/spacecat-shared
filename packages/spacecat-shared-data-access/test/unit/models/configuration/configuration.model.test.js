@@ -282,7 +282,7 @@ describe('ConfigurationModel', () => {
 
     it('registers a new audit', () => {
       const auditType = 'structured-data';
-      instance.registerAudit(auditType, true, 'weekly');
+      instance.registerAudit(auditType, true, 'weekly', ['ASO']);
       expect(instance.getHandler(auditType)).to.deep.equal({
         enabledByDefault: true,
         dependencies: [],
@@ -294,6 +294,7 @@ describe('ConfigurationModel', () => {
           sites: [],
           orgs: [],
         },
+        productCodes: ['ASO'],
       });
       expect(instance.getJobs().find((job) => job.group === 'audits' && job.type === auditType)).to.deep.equal({
         group: 'audits',
@@ -308,6 +309,14 @@ describe('ConfigurationModel', () => {
 
     it('throws error when registering an invalid job interval', () => {
       expect(() => instance.registerAudit('lhs-mobile', true, 'invalid-interval')).to.throw(Error, 'Invalid interval invalid-interval');
+    });
+
+    it('throws error when registering an invalid product code', () => {
+      expect(() => instance.registerAudit('lhs-mobile', true, 'weekly', ['invalid'])).to.throw(Error, 'Invalid product codes provided');
+    });
+
+    it('throws error when registering an empty product code', () => {
+      expect(() => instance.registerAudit('lhs-mobile', true, 'weekly', [])).to.throw(Error, 'No product codes provided');
     });
 
     it('unregisters an audit', () => {

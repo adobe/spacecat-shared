@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { guardId } from '../../util/guards.js';
 import BaseCollection from '../base/base.collection.js';
 
 /**
@@ -17,11 +18,28 @@ import BaseCollection from '../base/base.collection.js';
  * FixEntitySuggestion junction records. This collection handles the many-to-many
  * relationship between FixEntity and Suggestion entities.
  *
+ * This collection provides methods to:
+ * - Retrieve junction records by Suggestion ID
+ * - Retrieve junction records by FixEntity ID
+ *
  * @class FixEntitySuggestionCollection
  * @extends BaseCollection
  */
 class FixEntitySuggestionCollection extends BaseCollection {
-
+  /**
+   * Gets all junction records associated with a specific Suggestion.
+   *
+   * @async
+   * @param {string} suggestionId - The ID of the Suggestion.
+   * @param {Object} options - Additional query options.
+   * @returns {Promise<Array>} - A promise that resolves to
+   *  an array of FixEntitySuggestion junction records
+   * @throws {Error} - Throws an error if the suggestionId is not provided
+   */
+  async allBySuggestionId(suggestionId, options = {}) {
+    guardId('suggestionId', suggestionId, 'FixEntitySuggestionCollection');
+    return this.allByIndexKeys({ suggestionId }, options);
+  }
 }
 
 export default FixEntitySuggestionCollection;

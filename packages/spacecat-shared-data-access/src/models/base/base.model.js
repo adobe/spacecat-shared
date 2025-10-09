@@ -276,7 +276,6 @@ class BaseModel {
       await Promise.all(removePromises);
 
       await this.entity.remove(this.generateCompositeKeys()).go();
-      console.log('REMOVED this.generateCompositeKeys()', this.generateCompositeKeys());
 
       this.#invalidateCache();
 

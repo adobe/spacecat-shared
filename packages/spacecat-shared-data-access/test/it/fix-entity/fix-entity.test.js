@@ -39,13 +39,16 @@ function checkFixEntity(fixEntity) {
 
 describe('FixEntity IT', async () => {
   let FixEntity;
+  let Suggestion;
   let sampleData;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
     FixEntity = dataAccess.FixEntity;
+    Suggestion = dataAccess.Suggestion;
   });
 
   it('finds one fix entity by id', async () => {
@@ -136,12 +139,16 @@ describe('FixEntity IT', async () => {
     const fixEntity = sampleData.fixEntities[0];
 
     // First, set up some suggestions for this fix entity
-    const suggestionIds = [
-      sampleData.suggestions[0].getId(),
-      sampleData.suggestions[1].getId(),
+    const suggestionsToSet = [
+      sampleData.suggestions[0],
+      sampleData.suggestions[1],
     ];
 
-    await FixEntity.setSuggestionsByFixEntityId(fixEntity.getId(), suggestionIds);
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
+
+    await FixEntity.setSuggestionsForFixEntity(opportunity, fixEntity, suggestionsToSet);
 
     // Test the model method
     const suggestions = await fixEntity.getSuggestions();
@@ -149,7 +156,151 @@ describe('FixEntity IT', async () => {
     expect(suggestions).to.be.an('array').with.length(2);
     suggestions.forEach((suggestion) => {
       checkSuggestion(suggestion);
-      expect(suggestionIds).to.include(suggestion.getId());
+      expect(suggestionsToSet.map((s) => s.getId())).to.include(suggestion.getId());
     });
+  });
+
+  it('gets all fixes with suggestions by created date', async () => {
+    // First, create some fix entities with specific created dates
+    const opportunityId = 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4';
+    const fixEntityCreatedDate = new Date().toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
+
+    // Create fix entities with the same opportunity and created date
+    const fixEntity1 = await FixEntity.create({
+      opportunityId,
+      status: 'PENDING',
+      type: 'CONTENT_UPDATE',
+      changeDetails: {
+        description: 'Test fix entity 1',
+        changes: [{ field: 'title', oldValue: 'Old', newValue: 'New' }],
+      },
+    });
+
+    const fixEntity2 = await FixEntity.create({
+      opportunityId,
+      status: 'PENDING',
+      type: 'METADATA_UPDATE',
+      changeDetails: {
+        description: 'Test fix entity 2',
+        changes: [{ field: 'description', oldValue: 'Old', newValue: 'New' }],
+      },
+    });
+
+    // Create suggestions
+    const suggestion1 = await Suggestion.create({
+      opportunityId,
+      title: 'Test Suggestion 1',
+      description: 'Description for suggestion 1',
+      data: {
+        foo: 'bar-1',
+      },
+      type: 'CODE_CHANGE',
+      rank: 0,
+      status: 'NEW',
+    });
+
+    const suggestion2 = await Suggestion.create({
+      opportunityId,
+      title: 'Test Suggestion 2',
+      description: 'Description for suggestion 2',
+      data: {
+        foo: 'bar-2',
+      },
+      type: 'CODE_CHANGE',
+      rank: 1,
+      status: 'NEW',
+    });
+
+    const suggestion3 = await Suggestion.create({
+      opportunityId,
+      title: 'Test Suggestion 3',
+      description: 'Description for suggestion 3',
+      data: {
+        foo: 'bar-3',
+      },
+      type: 'CODE_CHANGE',
+      rank: 2,
+      status: 'NEW',
+    });
+
+    // Set up relationships between fix entities and suggestions
+    const opportunity = { getId: () => opportunityId };
+
+    // Associate suggestion1 and suggestion2 with fixEntity1
+    await FixEntity.setSuggestionsForFixEntity(opportunity, fixEntity1, [suggestion1, suggestion2]);
+
+    // Associate suggestion3 with fixEntity2
+    await FixEntity.setSuggestionsForFixEntity(opportunity, fixEntity2, [suggestion3]);
+
+    // Test the getAllFixesWithSuggestionByCreatedAt method
+    const result = await FixEntity.getAllFixesWithSuggestionByCreatedAt(
+      opportunityId,
+      fixEntityCreatedDate,
+    );
+
+    expect(result).to.be.an('array');
+    expect(result.length).to.equal(2);
+
+    // Check the structure of each result
+    result.forEach((item) => {
+      expect(item).to.have.property('fixEntity');
+      expect(item).to.have.property('suggestions');
+      expect(item.suggestions).to.be.an('array');
+
+      checkFixEntity(item.fixEntity);
+      expect(item.fixEntity.getOpportunityId()).to.equal(opportunityId);
+
+      item.suggestions.forEach((suggestion) => {
+        checkSuggestion(suggestion);
+        expect(suggestion.getOpportunityId()).to.equal(opportunityId);
+      });
+    });
+
+    // Verify that we have the correct fix entities
+    const fixEntityIds = result.map((item) => item.fixEntity.getId());
+    expect(fixEntityIds).to.include(fixEntity1.getId());
+    expect(fixEntityIds).to.include(fixEntity2.getId());
+
+    // Verify that fixEntity1 has 2 suggestions and fixEntity2 has 1 suggestion
+    const fixEntity1Result = result.find((item) => item.fixEntity.getId() === fixEntity1.getId());
+    const fixEntity2Result = result.find((item) => item.fixEntity.getId() === fixEntity2.getId());
+
+    expect(fixEntity1Result.suggestions).to.have.length(2);
+    expect(fixEntity2Result.suggestions).to.have.length(1);
+
+    // Verify the suggestion IDs match
+    const fixEntity1SuggestionIds = fixEntity1Result.suggestions.map((s) => s.getId());
+    expect(fixEntity1SuggestionIds).to.include(suggestion1.getId());
+    expect(fixEntity1SuggestionIds).to.include(suggestion2.getId());
+
+    const fixEntity2SuggestionIds = fixEntity2Result.suggestions.map((s) => s.getId());
+    expect(fixEntity2SuggestionIds).to.include(suggestion3.getId());
+  });
+
+  it('returns empty array when no fixes found for given opportunity and date', async () => {
+    const opportunityId = '00000000-0000-0000-0000-000000000000';
+    const fixEntityCreatedDate = new Date().toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
+
+    const result = await FixEntity.getAllFixesWithSuggestionByCreatedAt(
+      opportunityId,
+      fixEntityCreatedDate,
+    );
+
+    expect(result).to.be.an('array');
+    expect(result.length).to.equal(0);
+  });
+
+  it('validates required parameters', async () => {
+    const today = new Date().toISOString().split('T')[0]; // Today's date in YYYY-MM-DD format
+
+    // Test missing opportunityId
+    await expect(
+      FixEntity.getAllFixesWithSuggestionByCreatedAt(null, today),
+    ).to.be.rejectedWith('opportunityId must be a valid UUID');
+
+    // Test missing fixEntityCreatedDate
+    await expect(
+      FixEntity.getAllFixesWithSuggestionByCreatedAt('aeeb4b8d-e771-47ef-99f4-ea4e349c81e4', null),
+    ).to.be.rejectedWith('fixEntityCreatedDate is required');
   });
 });

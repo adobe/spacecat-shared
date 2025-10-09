@@ -11,47 +11,23 @@
  */
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
-import { guardId, guardArray } from '../../util/guards.js';
+import ValidationError from '../../errors/validation.error.js';
+import { guardId, guardArray, guardString } from '../../util/guards.js';
 import { resolveUpdates } from '../../util/util.js';
 
 /**
  * FixEntityCollection - A collection class responsible for managing FixEntities.
  * Extends the BaseCollection to provide specific methods for interacting with
- * FixEntity records.
+ * FixEntity records and their relationships with Suggestions.
+ *
+ * This collection provides methods to:
+ * - Retrieve suggestions associated with a specific FixEntity
+ * - Set suggestions for a FixEntity by managing junction table relationships
  *
  * @class FixEntityCollection
  * @extends BaseCollection
  */
 class FixEntityCollection extends BaseCollection {
-  /**
-   * Gets all Suggestions associated with an array of FixEntitySuggestion junction records.
-   * This is a helper method that takes junction records and retrieves the actual
-   * suggestion entities.
-   *
-   * @async
-   * @param {Array} fixEntitySuggestions - An array of FixEntitySuggestion junction records.
-   * @returns {Promise<Array>} - A promise that resolves to an array of Suggestion models
-   * @throws {DataAccessError} - Throws an error if the fixEntitySuggestions are not provided
-   *   or if the query fails.
-   */
-  async getSuggestionsByFixEntitySuggestions(fixEntitySuggestions) {
-    guardArray('fixEntitySuggestions', fixEntitySuggestions, 'FixEntityCollection', 'any');
-    if (fixEntitySuggestions.length === 0) {
-      return [];
-    }
-
-    try {
-      const suggestionCollection = this.entityRegistry.getCollection('SuggestionCollection');
-      const suggestions = await suggestionCollection
-        .batchGetByKeys(fixEntitySuggestions
-          .map((record) => ({ [suggestionCollection.idName]: record.getSuggestionId() })));
-      return suggestions.data;
-    } catch (error) {
-      this.log.error('Failed to get suggestions for fix entity suggestions', error);
-      throw new DataAccessError('Failed to get suggestions for fix entity suggestions', this, error);
-    }
-  }
-
   /**
    * Gets all suggestions associated with a specific FixEntity.
    *
@@ -70,7 +46,15 @@ class FixEntityCollection extends BaseCollection {
       const fixEntitySuggestions = await fixEntitySuggestionCollection
         .allByFixEntityId(fixEntityId);
 
-      return this.getSuggestionsByFixEntitySuggestions(fixEntitySuggestions);
+      if (fixEntitySuggestions.length === 0) {
+        return [];
+      }
+
+      const suggestionCollection = this.entityRegistry.getCollection('SuggestionCollection');
+      const suggestions = await suggestionCollection
+        .batchGetByKeys(fixEntitySuggestions
+          .map((record) => ({ [suggestionCollection.idName]: record.getSuggestionId() })));
+      return suggestions.data;
     } catch (error) {
       this.log.error(`Failed to get suggestions for fix entity: ${fixEntityId}`, error);
       throw new DataAccessError('Failed to get suggestions for fix entity', this, error);
@@ -83,19 +67,33 @@ class FixEntityCollection extends BaseCollection {
    * new ones.
    *
    * @async
-   * @param {string} fixEntityId - The ID of the FixEntity.
-   * @param {Array<string>} suggestionIds - An array of suggestion IDs (strings).
+   * @param {Opportunity} opportunity - The Opportunity entity.
+   * @param {FixEntity} fixEntity - The FixEntity entity.
+   * @param {Array<Suggestion>} suggestions - An array of Suggestion entities.
    * @returns {Promise<{createdItems: Array, errorItems: Array, removedCount: number}>} - A promise
    *   that resolves to an object containing:
    *   - createdItems: Array of created FixEntitySuggestionCollection junction records
    *   - errorItems: Array of items that failed validation
    *   - removedCount: Number of existing relationships that were removed
-   * @throws {DataAccessError} - Throws an error if the fixEntityId is not provided or if the
+   * @throws {DataAccessError} - Throws an error if the entities are not provided or if the
    *   operation fails.
    */
-  async setSuggestionsByFixEntityId(fixEntityId, suggestionIds) {
-    guardId('fixEntityId', fixEntityId, 'FixEntityCollection');
-    guardArray('suggestionIds', suggestionIds, 'FixEntityCollection');
+  async setSuggestionsForFixEntity(opportunity, fixEntity, suggestions) {
+    guardArray('suggestions', suggestions, 'FixEntityCollection', 'any');
+
+    // Simple null checks
+    if (!opportunity) {
+      throw new ValidationError('opportunity is required');
+    }
+    if (!fixEntity) {
+      throw new ValidationError('fixEntity is required');
+    }
+
+    // Extract IDs and other values from entities
+    const opportunityId = opportunity.getId();
+    const fixEntityId = fixEntity.getId();
+    const fixEntityCreatedAt = fixEntity.getCreatedAt();
+    const suggestionIds = suggestions.map((suggestion) => suggestion.getId());
 
     try {
       const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
@@ -124,6 +122,8 @@ class FixEntityCollection extends BaseCollection {
       if (toCreate.length > 0) {
         createPromise = fixEntitySuggestionCollection.createMany(toCreate.map((suggestionId) => (
           {
+            opportunityId,
+            fixEntityCreatedAt,
             fixEntityId,
             suggestionId,
           })));
@@ -154,6 +154,92 @@ class FixEntityCollection extends BaseCollection {
     } catch (error) {
       this.log.error('Failed to set suggestions for fix entity', error);
       throw new DataAccessError('Failed to set suggestions for fix entity', this, error);
+    }
+  }
+
+  /**
+   * Gets all fixes with their suggestions for a specific opportunity and created date.
+   * This method retrieves all fix entities and their associated suggestions for a given opportunity
+   * and creation date.
+   *
+   * @async
+   * @param {string} opportunityId - The ID of the opportunity.
+   * @param {string} fixEntityCreatedDate - The creation date to filter by (YYYY-MM-DD format).
+   * @returns {Promise<Array>} - A promise that resolves to an array of objects containing:
+   *   - fixEntity: The FixEntity model
+   *   - suggestions: Array of associated Suggestion models
+   * @throws {DataAccessError} - Throws an error if the query fails.
+   * @throws {ValidationError} - Throws an error if opportunityId or
+   *   fixEntityCreatedDate is not provided.
+   */
+  async getAllFixesWithSuggestionByCreatedAt(opportunityId, fixEntityCreatedDate) {
+    guardId('opportunityId', opportunityId, 'FixEntityCollection');
+    guardString('fixEntityCreatedDate', fixEntityCreatedDate, 'FixEntityCollection');
+
+    try {
+      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
+      const suggestionCollection = this.entityRegistry.getCollection('SuggestionCollection');
+
+      // Query fix entity suggestions by opportunity ID and created date
+      const fixEntitySuggestions = await fixEntitySuggestionCollection
+        .allByOpportunityIdAndFixEntityCreatedDate(opportunityId, fixEntityCreatedDate);
+
+      if (fixEntitySuggestions.length === 0) {
+        return [];
+      }
+
+      // Group suggestions by fix entity ID
+      const suggestionsByFixEntityId = {};
+      const fixEntityIds = new Set();
+
+      for (const fixEntitySuggestion of fixEntitySuggestions) {
+        const fixEntityId = fixEntitySuggestion.getFixEntityId();
+        const suggestionId = fixEntitySuggestion.getSuggestionId();
+
+        fixEntityIds.add(fixEntityId);
+
+        if (!suggestionsByFixEntityId[fixEntityId]) {
+          suggestionsByFixEntityId[fixEntityId] = [];
+        }
+        suggestionsByFixEntityId[fixEntityId].push(suggestionId);
+      }
+
+      // Get all fix entities
+      const fixEntities = await this.batchGetByKeys(
+        Array.from(fixEntityIds).map((id) => ({ [this.idName]: id })),
+      );
+
+      // Get all suggestions
+      const allSuggestionIds = Object.values(suggestionsByFixEntityId).flat();
+      const suggestions = await suggestionCollection.batchGetByKeys(
+        allSuggestionIds.map((id) => ({ [suggestionCollection.idName]: id })),
+      );
+
+      // Create a map of suggestions by ID for quick lookup
+      const suggestionsById = {};
+      for (const suggestion of suggestions.data) {
+        suggestionsById[suggestion.getId()] = suggestion;
+      }
+
+      // Combine fix entities with their suggestions
+      const result = [];
+      for (const fixEntity of fixEntities.data) {
+        const fixEntityId = fixEntity.getId();
+        const suggestionIds = suggestionsByFixEntityId[fixEntityId] || [];
+        const suggestionsForFixEntity = suggestionIds
+          .map((id) => suggestionsById[id])
+          .filter(Boolean);
+
+        result.push({
+          fixEntity,
+          suggestions: suggestionsForFixEntity,
+        });
+      }
+
+      return result;
+    } catch (error) {
+      this.log.error('Failed to get all fixes with suggestions by created date', error);
+      throw new DataAccessError('Failed to get all fixes with suggestions by created date', this, error);
     }
   }
 }

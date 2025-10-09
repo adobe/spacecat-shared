@@ -15,6 +15,7 @@ import sinon, { stub, restore } from 'sinon';
 
 import FixEntity from '../../../../src/models/fix-entity/fix-entity.model.js';
 import DataAccessError from '../../../../src/errors/data-access.error.js';
+import ValidationError from '../../../../src/errors/validation.error.js';
 import { createElectroMocks } from '../../util.js';
 
 describe('FixEntityCollection', () => {
@@ -33,6 +34,21 @@ describe('FixEntityCollection', () => {
     publishedAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   };
+
+  // Mock entity objects
+  const mockOpportunity = {
+    getId: () => '123e4567-e89b-12d3-a456-426614174001',
+  };
+
+  const mockFixEntity = {
+    getId: () => '123e4567-e89b-12d3-a456-426614174000',
+    getCreatedAt: () => '2024-01-15T10:30:00.000Z',
+  };
+
+  const mockSuggestions = [
+    { getId: () => 'suggestion-1' },
+    { getId: () => 'suggestion-2' },
+  ];
 
   beforeEach(() => {
     ({
@@ -53,7 +69,7 @@ describe('FixEntityCollection', () => {
         { getSuggestionId: () => 'suggestion-1' },
         { getSuggestionId: () => 'suggestion-2' },
       ];
-      const mockSuggestions = [
+      const mockSuggestionData = [
         { id: 'suggestion-1', title: 'Suggestion 1' },
         { id: 'suggestion-2', title: 'Suggestion 2' },
       ];
@@ -64,7 +80,7 @@ describe('FixEntityCollection', () => {
 
       const mockSuggestionCollection = {
         batchGetByKeys: stub().resolves({
-          data: mockSuggestions,
+          data: mockSuggestionData,
           unprocessed: [],
         }),
         idName: 'suggestionId',
@@ -79,7 +95,7 @@ describe('FixEntityCollection', () => {
 
       const result = await fixEntityCollection.getSuggestionsByFixEntityId(fixEntityId);
 
-      expect(result).to.deep.equal(mockSuggestions);
+      expect(result).to.deep.equal(mockSuggestionData);
 
       expect(mockFixEntitySuggestionCollection.allByFixEntityId)
         .to.have.been.calledOnceWith(fixEntityId);
@@ -131,78 +147,38 @@ describe('FixEntityCollection', () => {
         .to.be.rejectedWith(DataAccessError);
       expect(mockLogger.error).to.have.been.calledWith(`Failed to get suggestions for fix entity: ${fixEntityId}`, error);
     });
-  });
 
-  describe('getSuggestionsByFixEntitySuggestions', () => {
-    it('should get suggestions from fix entity suggestions', async () => {
-      const fixEntitySuggestions = [
-        { getSuggestionId: () => 'suggestion-1' },
-        { getSuggestionId: () => 'suggestion-2' },
-      ];
-      const mockSuggestions = [
-        { id: 'suggestion-1', title: 'Suggestion 1' },
-        { id: 'suggestion-2', title: 'Suggestion 2' },
-      ];
-
-      const mockSuggestionCollection = {
-        batchGetByKeys: stub().resolves({
-          data: mockSuggestions,
-          unprocessed: [],
-        }),
-        idName: 'suggestionId',
-      };
-
-      mockEntityRegistry.getCollection
-        .withArgs('SuggestionCollection')
-        .returns(mockSuggestionCollection);
-
-      const result = await fixEntityCollection
-        .getSuggestionsByFixEntitySuggestions(fixEntitySuggestions);
-
-      expect(result).to.deep.equal(mockSuggestions);
-      expect(mockSuggestionCollection.batchGetByKeys)
-        .to.have.been.calledOnceWith([
-          { suggestionId: 'suggestion-1' },
-          { suggestionId: 'suggestion-2' },
-        ]);
-    });
-
-    it('should return empty array when no fix entity suggestions provided', async () => {
-      const result = await fixEntityCollection.getSuggestionsByFixEntitySuggestions([]);
-      expect(result).to.deep.equal([]);
-    });
-
-    it('should throw error when fixEntitySuggestions is not an array', async () => {
-      await expect(fixEntityCollection.getSuggestionsByFixEntitySuggestions('not-an-array'))
-        .to.be.rejectedWith('Validation failed in FixEntityCollection: fixEntitySuggestions must be an array');
-    });
-
-    it('should handle error in batchGetByKeys', async () => {
-      const fixEntitySuggestions = [
-        { getSuggestionId: () => 'suggestion-1' },
-      ];
-
-      const mockSuggestionCollection = {
-        batchGetByKeys: stub().rejects(new Error('Batch get failed')),
-        idName: 'suggestionId',
-      };
-
-      mockEntityRegistry.getCollection
-        .withArgs('SuggestionCollection')
-        .returns(mockSuggestionCollection);
-
-      await expect(fixEntityCollection.getSuggestionsByFixEntitySuggestions(fixEntitySuggestions))
-        .to.be.rejectedWith(DataAccessError, 'Failed to get suggestions for fix entity suggestions');
-
-      expect(mockLogger.error).to.have.been.calledWith('Failed to get suggestions for fix entity suggestions', sinon.match.instanceOf(Error));
-    });
-  });
-
-  describe('setSuggestionsByFixEntityId', () => {
-    it('should set suggestions for a fix entity with delta updates', async () => {
+    it('should handle errors in batchGetByKeys and throw DataAccessError', async () => {
       const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = ['suggestion-1', 'suggestion-2'];
+      const mockJunctionRecords = [
+        { getSuggestionId: () => 'suggestion-1' },
+      ];
+      const error = new Error('Batch get failed');
 
+      const mockFixEntitySuggestionCollection = {
+        allByFixEntityId: stub().resolves(mockJunctionRecords),
+      };
+
+      const mockSuggestionCollection = {
+        batchGetByKeys: stub().rejects(error),
+        idName: 'suggestionId',
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+      mockEntityRegistry.getCollection
+        .withArgs('SuggestionCollection')
+        .returns(mockSuggestionCollection);
+
+      await expect(fixEntityCollection.getSuggestionsByFixEntityId(fixEntityId))
+        .to.be.rejectedWith(DataAccessError, 'Failed to get suggestions for fix entity');
+      expect(mockLogger.error).to.have.been.calledWith(`Failed to get suggestions for fix entity: ${fixEntityId}`, error);
+    });
+  });
+
+  describe('setSuggestionsForFixEntity', () => {
+    it('should set suggestions for a fix entity with delta updates', async () => {
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getSuggestionId: () => 'suggestion-1' },
         { getId: () => 'junction-2', getSuggestionId: () => 'suggestion-3' },
@@ -225,7 +201,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsByFixEntityId(fixEntityId, suggestions);
+        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-3' }],
@@ -234,33 +210,41 @@ describe('FixEntityCollection', () => {
       });
 
       expect(mockFixEntitySuggestionCollection.allByFixEntityId)
-        .to.have.been.calledOnceWith(fixEntityId);
+        .to.have.been.calledOnceWith('123e4567-e89b-12d3-a456-426614174000');
       expect(mockFixEntitySuggestionCollection.removeByIndexKeys).to.have.been.calledOnceWith([
         {
           suggestionId: 'suggestion-3',
-          fixEntityId,
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174000',
         },
       ]);
       expect(mockFixEntitySuggestionCollection.createMany).to.have.been.calledOnceWith([
-        { fixEntityId, suggestionId: 'suggestion-2' },
+        {
+          opportunityId: '123e4567-e89b-12d3-a456-426614174001',
+          fixEntityCreatedAt: '2024-01-15T10:30:00.000Z',
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174000',
+          suggestionId: 'suggestion-2',
+        },
       ]);
     });
 
-    it('should throw error when fixEntityId is not provided', async () => {
-      await expect(fixEntityCollection.setSuggestionsByFixEntityId())
-        .to.be.rejectedWith('Validation failed in FixEntityCollection: fixEntityId must be a valid UUID');
+    it('should throw error when opportunity is not provided', async () => {
+      await expect(
+        fixEntityCollection.setSuggestionsForFixEntity(null, mockFixEntity, mockSuggestions),
+      ).to.be.rejectedWith(ValidationError, 'opportunity is required');
+    });
+
+    it('should throw error when fixEntity is not provided', async () => {
+      await expect(
+        fixEntityCollection.setSuggestionsForFixEntity(mockOpportunity, null, mockSuggestions),
+      ).to.be.rejectedWith(ValidationError, 'fixEntity is required');
     });
 
     it('should throw error when suggestions is not an array', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-
-      await expect(fixEntityCollection.setSuggestionsByFixEntityId(fixEntityId, 'not-an-array'))
-        .to.be.rejectedWith('Validation failed in FixEntityCollection: suggestionIds must be an array');
+      await expect(fixEntityCollection.setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, 'not-an-array'))
+        .to.be.rejectedWith('Validation failed in FixEntityCollection: suggestions must be an array');
     });
 
     it('should handle errors and throw DataAccessError', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = ['suggestion-1'];
       const error = new Error('Database error');
 
       const mockFixEntitySuggestionCollection = {
@@ -272,14 +256,15 @@ describe('FixEntityCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      await expect(fixEntityCollection.setSuggestionsByFixEntityId(fixEntityId, suggestions))
-        .to.be.rejectedWith(DataAccessError);
+      await expect(
+        fixEntityCollection
+          .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions),
+      ).to.be.rejectedWith(DataAccessError);
       expect(mockLogger.error).to.have.been.calledWith('Failed to set suggestions for fix entity', error);
     });
 
     it('should log info about the operation results', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = ['suggestion-1'];
+      const singleSuggestion = [{ getId: () => 'suggestion-1' }];
 
       const mockFixEntitySuggestionCollection = {
         allByFixEntityId: stub().resolves([]),
@@ -294,17 +279,18 @@ describe('FixEntityCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      await fixEntityCollection.setSuggestionsByFixEntityId(fixEntityId, suggestions);
+      await fixEntityCollection.setSuggestionsForFixEntity(
+        mockOpportunity,
+        mockFixEntity,
+        singleSuggestion,
+      );
 
       expect(mockLogger.info).to.have.been.calledWith(
-        `Set suggestions for fix entity ${fixEntityId}: removed 0, added 1, failed 0`,
+        'Set suggestions for fix entity 123e4567-e89b-12d3-a456-426614174000: removed 0, added 1, failed 0',
       );
     });
 
     it('should handle remove operation failure gracefully', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = ['suggestion-1', 'suggestion-2'];
-
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getSuggestionId: () => 'suggestion-3' },
       ];
@@ -323,7 +309,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsByFixEntityId(fixEntityId, suggestions);
+        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-2' }, { id: 'junction-3' }],
@@ -338,9 +324,6 @@ describe('FixEntityCollection', () => {
     });
 
     it('should handle create operation failure gracefully', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = ['suggestion-1', 'suggestion-2'];
-
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getSuggestionId: () => 'suggestion-3' },
       ];
@@ -356,7 +339,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsByFixEntityId(fixEntityId, suggestions);
+        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [], // Failed operation results in empty array
@@ -371,9 +354,6 @@ describe('FixEntityCollection', () => {
     });
 
     it('should handle both operations failing gracefully', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = ['suggestion-1', 'suggestion-2'];
-
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getSuggestionId: () => 'suggestion-3' },
       ];
@@ -389,7 +369,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsByFixEntityId(fixEntityId, suggestions);
+        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [],
@@ -409,8 +389,7 @@ describe('FixEntityCollection', () => {
     });
 
     it('should handle empty suggestion array (remove all)', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = [];
+      const emptySuggestions = [];
 
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getSuggestionId: () => 'suggestion-1' },
@@ -434,7 +413,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsByFixEntityId(fixEntityId, suggestions);
+        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, emptySuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [],
@@ -443,16 +422,13 @@ describe('FixEntityCollection', () => {
       });
 
       expect(mockFixEntitySuggestionCollection.removeByIndexKeys).to.have.been.calledOnceWith([
-        { suggestionId: 'suggestion-1', fixEntityId },
-        { suggestionId: 'suggestion-2', fixEntityId },
+        { suggestionId: 'suggestion-1', fixEntityId: '123e4567-e89b-12d3-a456-426614174000' },
+        { suggestionId: 'suggestion-2', fixEntityId: '123e4567-e89b-12d3-a456-426614174000' },
       ]);
       expect(mockFixEntitySuggestionCollection.createMany).to.not.have.been.called;
     });
 
     it('should handle no existing relationships (create all)', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = ['suggestion-1', 'suggestion-2'];
-
       const mockFixEntitySuggestionCollection = {
         allByFixEntityId: stub().resolves([]),
         removeByIndexKeys: stub().resolves(),
@@ -467,7 +443,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsByFixEntityId(fixEntityId, suggestions);
+        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-1' }, { id: 'junction-2' }],
@@ -477,14 +453,28 @@ describe('FixEntityCollection', () => {
 
       expect(mockFixEntitySuggestionCollection.removeByIndexKeys).to.not.have.been.called;
       expect(mockFixEntitySuggestionCollection.createMany).to.have.been.calledOnceWith([
-        { fixEntityId, suggestionId: 'suggestion-1' },
-        { fixEntityId, suggestionId: 'suggestion-2' },
+        {
+          opportunityId: '123e4567-e89b-12d3-a456-426614174001',
+          fixEntityCreatedAt: '2024-01-15T10:30:00.000Z',
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174000',
+          suggestionId: 'suggestion-1',
+        },
+        {
+          opportunityId: '123e4567-e89b-12d3-a456-426614174001',
+          fixEntityCreatedAt: '2024-01-15T10:30:00.000Z',
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174000',
+          suggestionId: 'suggestion-2',
+        },
       ]);
     });
 
     it('should handle duplicate suggestion IDs in input', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = ['suggestion-1', 'suggestion-1', 'suggestion-2', 'suggestion-2'];
+      const duplicateSuggestions = [
+        { getId: () => 'suggestion-1' },
+        { getId: () => 'suggestion-1' },
+        { getId: () => 'suggestion-2' },
+        { getId: () => 'suggestion-2' },
+      ];
 
       const mockFixEntitySuggestionCollection = {
         allByFixEntityId: stub().resolves([]),
@@ -500,7 +490,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsByFixEntityId(fixEntityId, suggestions);
+        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, duplicateSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-1' }, { id: 'junction-2' }],
@@ -510,14 +500,23 @@ describe('FixEntityCollection', () => {
 
       // Should only create unique suggestions
       expect(mockFixEntitySuggestionCollection.createMany).to.have.been.calledOnceWith([
-        { fixEntityId, suggestionId: 'suggestion-1' },
-        { fixEntityId, suggestionId: 'suggestion-2' },
+        {
+          opportunityId: '123e4567-e89b-12d3-a456-426614174001',
+          fixEntityCreatedAt: '2024-01-15T10:30:00.000Z',
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174000',
+          suggestionId: 'suggestion-1',
+        },
+        {
+          opportunityId: '123e4567-e89b-12d3-a456-426614174001',
+          fixEntityCreatedAt: '2024-01-15T10:30:00.000Z',
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174000',
+          suggestionId: 'suggestion-2',
+        },
       ]);
     });
 
     it('should handle undefined promises (no operations needed)', async () => {
-      const fixEntityId = '123e4567-e89b-12d3-a456-426614174000';
-      const suggestions = ['suggestion-1'];
+      const singleSuggestion = [{ getId: () => 'suggestion-1' }];
 
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getSuggestionId: () => 'suggestion-1' },
@@ -537,7 +536,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsByFixEntityId(fixEntityId, suggestions);
+        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, singleSuggestion);
 
       expect(result).to.deep.equal({
         createdItems: [],
@@ -548,6 +547,147 @@ describe('FixEntityCollection', () => {
       // No operations should be called since suggestions are identical
       expect(mockFixEntitySuggestionCollection.removeByIndexKeys).to.not.have.been.called;
       expect(mockFixEntitySuggestionCollection.createMany).to.not.have.been.called;
+    });
+  });
+
+  describe('getAllFixesWithSuggestionByCreatedAt', () => {
+    it('should get all fixes with suggestions ordered by created date', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+      const fixEntityCreatedDate = '2024-01-15';
+
+      const mockFixEntitySuggestions = [
+        {
+          getFixEntityId: () => 'fix-1',
+          getSuggestionId: () => 'suggestion-1',
+        },
+        {
+          getFixEntityId: () => 'fix-1',
+          getSuggestionId: () => 'suggestion-2',
+        },
+        {
+          getFixEntityId: () => 'fix-2',
+          getSuggestionId: () => 'suggestion-3',
+        },
+      ];
+
+      const mockFixEntities = {
+        data: [
+          {
+            getId: () => 'fix-1',
+            getCreatedAt: () => '2024-01-15T10:30:00.000Z',
+          },
+          {
+            getId: () => 'fix-2',
+            getCreatedAt: () => '2024-01-15T09:30:00.000Z',
+          },
+        ],
+      };
+
+      const mockSuggestionsData = {
+        data: [
+          { getId: () => 'suggestion-1', title: 'Suggestion 1' },
+          { getId: () => 'suggestion-2', title: 'Suggestion 2' },
+          { getId: () => 'suggestion-3', title: 'Suggestion 3' },
+        ],
+      };
+
+      const mockFixEntitySuggestionCollection = {
+        allByOpportunityIdAndFixEntityCreatedDate: stub().resolves(mockFixEntitySuggestions),
+      };
+
+      const mockSuggestionCollection = {
+        batchGetByKeys: stub().resolves(mockSuggestionsData),
+        idName: 'suggestionId',
+      };
+
+      fixEntityCollection.batchGetByKeys = stub().resolves(mockFixEntities);
+      fixEntityCollection.idName = 'fixEntityId';
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+      mockEntityRegistry.getCollection
+        .withArgs('SuggestionCollection')
+        .returns(mockSuggestionCollection);
+
+      const result = await fixEntityCollection.getAllFixesWithSuggestionByCreatedAt(
+        opportunityId,
+        fixEntityCreatedDate,
+      );
+
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].fixEntity.getId()).to.equal('fix-1');
+      expect(result[0].suggestions).to.have.lengthOf(2);
+      expect(result[1].fixEntity.getId()).to.equal('fix-2');
+      expect(result[1].suggestions).to.have.lengthOf(1);
+
+      expect(mockFixEntitySuggestionCollection.allByOpportunityIdAndFixEntityCreatedDate)
+        .to.have.been.calledWith(opportunityId, fixEntityCreatedDate);
+    });
+
+    it('should handle empty results', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+      const fixEntityCreatedDate = '2024-01-15';
+
+      const mockFixEntitySuggestionCollection = {
+        allByOpportunityIdAndFixEntityCreatedDate: stub().resolves([]),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      const result = await fixEntityCollection.getAllFixesWithSuggestionByCreatedAt(
+        opportunityId,
+        fixEntityCreatedDate,
+      );
+
+      expect(result).to.deep.equal([]);
+    });
+
+    it('should validate required parameters', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+      const fixEntityCreatedDate = '2024-01-15';
+
+      // Test missing opportunityId
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionByCreatedAt(null, fixEntityCreatedDate);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error.message).to.include('opportunityId must be a valid UUID');
+      }
+
+      // Test missing fixEntityCreatedDate
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionByCreatedAt(opportunityId, null);
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error.message).to.include('fixEntityCreatedDate is required');
+      }
+    });
+
+    it('should handle errors gracefully', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174001';
+      const fixEntityCreatedDate = '2024-01-15';
+
+      const mockFixEntitySuggestionCollection = {
+        allByOpportunityIdAndFixEntityCreatedDate: stub().rejects(new Error('Database error')),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      try {
+        await fixEntityCollection.getAllFixesWithSuggestionByCreatedAt(
+          opportunityId,
+          fixEntityCreatedDate,
+        );
+        expect.fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).to.be.instanceOf(DataAccessError);
+        expect(error.message).to.include('Failed to get all fixes with suggestions by created date');
+      }
     });
   });
 });

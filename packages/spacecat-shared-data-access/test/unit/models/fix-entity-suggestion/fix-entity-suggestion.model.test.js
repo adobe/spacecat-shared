@@ -31,6 +31,8 @@ describe('FixEntitySuggestionModel', () => {
     mockRecord = {
       suggestionId: '123e4567-e89b-12d3-a456-426614174000',
       fixEntityId: '123e4567-e89b-12d3-a456-426614174001',
+      fixEntityCreatedAt: '2024-01-01T00:00:00.000Z',
+      fixEntityCreatedDate: '2024-01-01',
       updatedAt: '2024-01-01T00:00:00.000Z',
       updatedBy: 'spacecat',
     };
@@ -108,6 +110,77 @@ describe('FixEntitySuggestionModel', () => {
       expect(result).to.be.an('object');
       expect(result.suggestionId).to.be.null;
       expect(result.fixEntityId).to.be.null;
+    });
+  });
+
+  describe('fixEntityCreatedAt methods', () => {
+    it('should get fixEntityCreatedAt value', () => {
+      const result = instance.getFixEntityCreatedAt();
+      expect(result).to.equal(mockRecord.fixEntityCreatedAt);
+    });
+
+    it('should return undefined when fixEntityCreatedAt is not set', () => {
+      const emptyRecord = {
+        suggestionId: '123e4567-e89b-12d3-a456-426614174000',
+        fixEntityId: '123e4567-e89b-12d3-a456-426614174001',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+        updatedBy: 'spacecat',
+      };
+
+      const { model: emptyInstance } = createElectroMocks(FixEntitySuggestion, emptyRecord);
+      expect(emptyInstance.getFixEntityCreatedAt()).to.be.undefined;
+    });
+  });
+
+  describe('fixEntityCreatedDate methods', () => {
+    it('should get fixEntityCreatedDate value', () => {
+      const result = instance.getFixEntityCreatedDate();
+      expect(result).to.equal(mockRecord.fixEntityCreatedDate);
+    });
+
+    it('should return undefined when fixEntityCreatedDate is not set', () => {
+      const emptyRecord = {
+        suggestionId: '123e4567-e89b-12d3-a456-426614174000',
+        fixEntityId: '123e4567-e89b-12d3-a456-426614174001',
+        fixEntityCreatedAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+        updatedBy: 'spacecat',
+      };
+
+      const { model: emptyInstance } = createElectroMocks(FixEntitySuggestion, emptyRecord);
+      expect(emptyInstance.getFixEntityCreatedDate()).to.be.undefined;
+    });
+  });
+
+  describe('watch pattern for fixEntityCreatedDate', () => {
+    it('should have fixEntityCreatedDate set when fixEntityCreatedAt is provided', () => {
+      // Create a new instance with a different timestamp
+      const testRecord = {
+        suggestionId: '123e4567-e89b-12d3-a456-426614174000',
+        fixEntityId: '123e4567-e89b-12d3-a456-426614174001',
+        fixEntityCreatedAt: '2024-03-15T14:30:45.123Z',
+        fixEntityCreatedDate: '2024-03-15', // This should be set by the watch pattern
+        updatedAt: '2024-01-01T00:00:00.000Z',
+        updatedBy: 'spacecat',
+      };
+
+      const { model: testInstance } = createElectroMocks(FixEntitySuggestion, testRecord);
+
+      // Both fields should be accessible
+      expect(testInstance.getFixEntityCreatedAt()).to.equal('2024-03-15T14:30:45.123Z');
+      expect(testInstance.getFixEntityCreatedDate()).to.equal('2024-03-15');
+    });
+
+    it('should handle undefined fixEntityCreatedAt gracefully', () => {
+      const emptyRecord = {
+        suggestionId: '123e4567-e89b-12d3-a456-426614174000',
+        fixEntityId: '123e4567-e89b-12d3-a456-426614174001',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+        updatedBy: 'spacecat',
+      };
+
+      const { model: emptyInstance } = createElectroMocks(FixEntitySuggestion, emptyRecord);
+      expect(emptyInstance.getFixEntityCreatedDate()).to.be.undefined;
     });
   });
 });

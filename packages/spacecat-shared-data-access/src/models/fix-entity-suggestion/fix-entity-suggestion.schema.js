@@ -23,7 +23,27 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
 const schema = new SchemaBuilder(FixEntitySuggestion, FixEntitySuggestionCollection)
   .withPrimaryPartitionKeys(['suggestionId'])
   .withPrimarySortKeys(['fixEntityId'])
+  .addReference('belongs_to', 'FixEntity')
   .addReference('belongs_to', 'Suggestion')
-  .addReference('belongs_to', 'FixEntity');
+  .addAttribute('opportunityId', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+  })
+  .addAttribute('fixEntityCreatedAt', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+  })
+  .addAttribute('fixEntityCreatedDate', {
+    type: 'string',
+    readOnly: true,
+    watch: ['fixEntityCreatedAt'],
+    set: (_, { fixEntityCreatedAt }) => (fixEntityCreatedAt ? fixEntityCreatedAt.split('T')[0] : undefined),
+  })
+  .addIndex(
+    { composite: ['opportunityId'] },
+    { composite: ['fixEntityCreatedDate', 'updatedAt'] },
+  );
 
 export default schema.build();

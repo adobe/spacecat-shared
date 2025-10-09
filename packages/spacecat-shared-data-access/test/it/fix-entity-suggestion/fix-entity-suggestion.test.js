@@ -49,15 +49,19 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
   it('sets suggestions for a fix entity using suggestion IDs', async () => {
     const fixEntity = sampleData.fixEntities[0];
-    const suggestionIds = [
-      sampleData.suggestions[0].getId(),
-      sampleData.suggestions[1].getId(),
-      sampleData.suggestions[2].getId(),
+    const suggestions = [
+      sampleData.suggestions[0],
+      sampleData.suggestions[1],
+      sampleData.suggestions[2],
     ];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
-    const result = await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      suggestionIds,
+    const result = await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      suggestions,
     );
 
     expect(result).to.be.an('object');
@@ -68,19 +72,23 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     // Verify the relationships were created
     result.createdItems.forEach((item, index) => {
       expect(item.getFixEntityId()).to.equal(fixEntity.getId());
-      expect(item.getSuggestionId()).to.equal(suggestionIds[index]);
+      expect(item.getSuggestionId()).to.equal(suggestions[index].getId());
     });
   });
 
   it('sets suggestions for a fix entity using suggestion objects', async () => {
     const fixEntity = sampleData.fixEntities[1];
     const suggestions = [
-      sampleData.suggestions[3].getId(),
-      sampleData.suggestions[4].getId(),
+      sampleData.suggestions[3],
+      sampleData.suggestions[4],
     ];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
-    const result = await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
+    const result = await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
       suggestions,
     );
 
@@ -92,33 +100,38 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     // Verify the relationships were created
     result.createdItems.forEach((item, index) => {
       expect(item.getFixEntityId()).to.equal(fixEntity.getId());
-      expect(item.getSuggestionId()).to.equal(suggestions[index]);
+      expect(item.getSuggestionId()).to.equal(suggestions[index].getId());
     });
   });
 
   it('updates suggestions for a fix entity (removes old, adds new)', async () => {
     const fixEntity = sampleData.fixEntities[0];
-    const initialSuggestionIds = [
-      sampleData.suggestions[0].getId(),
-      sampleData.suggestions[1].getId(),
+    const initialSuggestions = [
+      sampleData.suggestions[0],
+      sampleData.suggestions[1],
     ];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
     // First, set initial suggestions
-    await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      initialSuggestionIds,
+    await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      initialSuggestions,
     );
 
     // Then update with different suggestions
-    const newSuggestionIds = [
-      sampleData.suggestions[1].getId(), // Keep this one
-      sampleData.suggestions[2].getId(), // Add this one
-      sampleData.suggestions[3].getId(), // Add this one
+    const newSuggestions = [
+      sampleData.suggestions[1], // Keep this one
+      sampleData.suggestions[2], // Add this one
+      sampleData.suggestions[3], // Add this one
     ];
 
-    const result = await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      newSuggestionIds,
+    const result = await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      newSuggestions,
     );
 
     expect(result).to.be.an('object');
@@ -131,21 +144,27 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     expect(finalSuggestions).to.be.an('array').with.length(3);
 
     const finalSuggestionIds = finalSuggestions.map((s) => s.getId()).sort();
-    expect(finalSuggestionIds).to.deep.equal(newSuggestionIds.sort());
+    const newSuggestionIds = newSuggestions.map((s) => s.getId()).sort();
+    expect(finalSuggestionIds).to.deep.equal(newSuggestionIds);
   });
 
   it('sets empty array to remove all suggestions from a fix entity', async () => {
     const fixEntity = sampleData.fixEntities[1];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
     // First add some suggestions
-    await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      [sampleData.suggestions[0].getId(), sampleData.suggestions[1].getId()],
+    await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      [sampleData.suggestions[0], sampleData.suggestions[1]],
     );
 
     // Then remove all by setting empty array
-    const result = await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
+    const result = await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
       [],
     );
 
@@ -155,49 +174,30 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     expect(result.removedCount).to.equal(2);
 
     // Verify no suggestions remain
-    const suggestions = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
-    expect(suggestions).to.be.an('array').with.length(0);
+    const finalSuggestions = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
+    expect(finalSuggestions).to.be.an('array').with.length(0);
   });
 
-  it('throws error when fixEntityId is not provided', async () => {
+  it('throws error when opportunity is not provided', async () => {
+    const fixEntity = sampleData.fixEntities[0];
     await expect(
-      FixEntity.setSuggestionsByFixEntityId(null, []),
-    ).to.be.rejectedWith('Validation failed in FixEntityCollection: fixEntityId must be a valid UUID');
+      FixEntity.setSuggestionsForFixEntity(null, fixEntity, []),
+    ).to.be.rejectedWith('opportunity is required');
   });
 
   it('sets fix entities for a suggestion using fix entity IDs', async () => {
     const suggestion = sampleData.suggestions[0];
-    const fixEntityIds = [
-      sampleData.fixEntities[0].getId(),
-      sampleData.fixEntities[1].getId(),
-    ];
-
-    const result = await Suggestion.setFixEntitiesBySuggestionId(
-      suggestion.getId(),
-      fixEntityIds,
-    );
-
-    expect(result).to.be.an('object');
-    expect(result.createdItems).to.be.an('array').with.length(2);
-    expect(result.errorItems).to.be.an('array').with.length(0);
-    expect(result.removedCount).to.equal(0);
-
-    // Verify the relationships were created
-    result.createdItems.forEach((item, index) => {
-      expect(item.getSuggestionId()).to.equal(suggestion.getId());
-      expect(item.getFixEntityId()).to.equal(fixEntityIds[index]);
-    });
-  });
-
-  it('sets fix entities for a suggestion using fix entity objects', async () => {
-    const suggestion = sampleData.suggestions[1];
     const fixEntities = [
-      sampleData.fixEntities[0].getId(),
-      sampleData.fixEntities[2].getId(),
+      sampleData.fixEntities[0],
+      sampleData.fixEntities[1],
     ];
+    const opportunity = {
+      getId: () => 'opp-123',
+    };
 
-    const result = await Suggestion.setFixEntitiesBySuggestionId(
-      suggestion.getId(),
+    const result = await Suggestion.setFixEntitiesForSuggestion(
+      opportunity,
+      suggestion,
       fixEntities,
     );
 
@@ -209,32 +209,65 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     // Verify the relationships were created
     result.createdItems.forEach((item, index) => {
       expect(item.getSuggestionId()).to.equal(suggestion.getId());
-      expect(item.getFixEntityId()).to.equal(fixEntities[index]);
+      expect(item.getFixEntityId()).to.equal(fixEntities[index].getId());
+    });
+  });
+
+  it('sets fix entities for a suggestion using fix entity objects', async () => {
+    const suggestion = sampleData.suggestions[1];
+    const fixEntities = [
+      sampleData.fixEntities[0],
+      sampleData.fixEntities[2],
+    ];
+    const opportunity = {
+      getId: () => 'opp-123',
+    };
+
+    const result = await Suggestion.setFixEntitiesForSuggestion(
+      opportunity,
+      suggestion,
+      fixEntities,
+    );
+
+    expect(result).to.be.an('object');
+    expect(result.createdItems).to.be.an('array').with.length(2);
+    expect(result.errorItems).to.be.an('array').with.length(0);
+    expect(result.removedCount).to.equal(0);
+
+    // Verify the relationships were created
+    result.createdItems.forEach((item, index) => {
+      expect(item.getSuggestionId()).to.equal(suggestion.getId());
+      expect(item.getFixEntityId()).to.equal(fixEntities[index].getId());
     });
   });
 
   it('updates fix entities for a suggestion (removes old, adds new)', async () => {
     const suggestion = sampleData.suggestions[2];
-    const initialFixEntityIds = [
-      sampleData.fixEntities[0].getId(),
-      sampleData.fixEntities[1].getId(),
+    const initialFixEntities = [
+      sampleData.fixEntities[0],
+      sampleData.fixEntities[1],
     ];
+    const opportunity = {
+      getId: () => 'opp-123',
+    };
 
     // First, set initial fix entities
-    await Suggestion.setFixEntitiesBySuggestionId(
-      suggestion.getId(),
-      initialFixEntityIds,
+    await Suggestion.setFixEntitiesForSuggestion(
+      opportunity,
+      suggestion,
+      initialFixEntities,
     );
 
     // Then update with different fix entities
-    const newFixEntityIds = [
-      sampleData.fixEntities[1].getId(), // Keep this one
-      sampleData.fixEntities[2].getId(), // Add this one
+    const newFixEntities = [
+      sampleData.fixEntities[1], // Keep this one
+      sampleData.fixEntities[2], // Add this one
     ];
 
-    const result = await Suggestion.setFixEntitiesBySuggestionId(
-      suggestion.getId(),
-      newFixEntityIds,
+    const result = await Suggestion.setFixEntitiesForSuggestion(
+      opportunity,
+      suggestion,
+      newFixEntities,
     );
 
     expect(result).to.be.an('object');
@@ -247,24 +280,30 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     expect(finalFixEntities).to.be.an('array').with.length(2);
 
     const finalFixEntityIds = finalFixEntities.map((f) => f.getId()).sort();
-    expect(finalFixEntityIds).to.deep.equal(newFixEntityIds.sort());
+    const newFixEntityIds = newFixEntities.map((f) => f.getId()).sort();
+    expect(finalFixEntityIds).to.deep.equal(newFixEntityIds);
   });
 
-  it('throws error when suggestionId is not provided', async () => {
+  it('throws error when opportunity is not provided', async () => {
+    const suggestion = sampleData.suggestions[0];
+    const fixEntities = [];
     await expect(
-      Suggestion.setFixEntitiesBySuggestionId(null, []),
-    ).to.be.rejectedWith('Validation failed in SuggestionCollection: suggestionId must be a valid UUID');
+      Suggestion.setFixEntitiesForSuggestion(null, suggestion, fixEntities),
+    ).to.be.rejectedWith('Opportunity parameter is required');
   });
 
   it('gets all suggestions for a fix entity', async () => {
     const fixEntity = sampleData.fixEntities[0];
-    const suggestionIds = [
-      sampleData.suggestions[0].getId(),
-      sampleData.suggestions[1].getId(),
+    const suggestions = [
+      sampleData.suggestions[0],
+      sampleData.suggestions[1],
     ];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
     // First set up the relationships
-    await FixEntity.setSuggestionsByFixEntityId(fixEntity.getId(), suggestionIds);
+    await FixEntity.setSuggestionsForFixEntity(opportunity, fixEntity, suggestions);
 
     // Then retrieve them
     const result = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
@@ -273,7 +312,8 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Verify the suggestions are correct
     const retrievedIds = result.map((s) => s.getId()).sort();
-    expect(retrievedIds).to.deep.equal(suggestionIds.sort());
+    const suggestionIds = suggestions.map((s) => s.getId()).sort();
+    expect(retrievedIds).to.deep.equal(suggestionIds);
 
     // Verify they are proper suggestion objects
     result.forEach((suggestion) => {
@@ -307,7 +347,9 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     ];
 
     // First set up the relationships
-    await Suggestion.setFixEntitiesBySuggestionId(suggestion.getId(), fixEntityIds);
+    const opportunity = { getId: () => 'opp-123' };
+    const fixEntities = fixEntityIds.map((id) => ({ getId: () => id, getCreatedAt: () => '2024-01-01T00:00:00Z' }));
+    await Suggestion.setFixEntitiesForSuggestion(opportunity, suggestion, fixEntities);
 
     // Then retrieve them
     const result = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());
@@ -347,10 +389,14 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
       {
         suggestionId: sampleData.suggestions[0].getId(),
         fixEntityId: sampleData.fixEntities[0].getId(),
+        opportunityId: sampleData.fixEntities[0].getOpportunityId(),
+        fixEntityCreatedAt: sampleData.fixEntities[0].getCreatedAt(),
       },
       {
         suggestionId: sampleData.suggestions[1].getId(),
         fixEntityId: sampleData.fixEntities[1].getId(),
+        opportunityId: sampleData.fixEntities[1].getOpportunityId(),
+        fixEntityCreatedAt: sampleData.fixEntities[1].getCreatedAt(),
       },
     ];
 
@@ -368,11 +414,14 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
   it('gets junction records by suggestion ID', async () => {
     const suggestionId = sampleData.suggestions[0].getId();
+    const fixEntity = sampleData.fixEntities[0];
 
     // Create a junction record first
     await FixEntitySuggestion.create({
       suggestionId,
-      fixEntityId: sampleData.fixEntities[0].getId(),
+      fixEntityId: fixEntity.getId(),
+      opportunityId: fixEntity.getOpportunityId(),
+      fixEntityCreatedAt: fixEntity.getCreatedAt(),
     });
 
     const junctionRecords = await FixEntitySuggestion.allBySuggestionId(suggestionId);
@@ -387,12 +436,15 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
   });
 
   it('gets junction records by fix entity ID', async () => {
-    const fixEntityId = sampleData.fixEntities[0].getId();
+    const fixEntity = sampleData.fixEntities[0];
+    const fixEntityId = fixEntity.getId();
 
     // Create a junction record first
     await FixEntitySuggestion.create({
       suggestionId: sampleData.suggestions[0].getId(),
       fixEntityId,
+      opportunityId: fixEntity.getOpportunityId(),
+      fixEntityCreatedAt: fixEntity.getCreatedAt(),
     });
 
     const junctionRecords = await FixEntitySuggestion.allByFixEntityId(fixEntityId);
@@ -408,16 +460,20 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
   it('handles mixed valid and invalid suggestion IDs gracefully', async () => {
     const fixEntity = sampleData.fixEntities[0];
-    const mixedIds = [
-      sampleData.suggestions[0].getId(), // Valid
-      'invalid-suggestion-id', // Invalid
-      sampleData.suggestions[1].getId(), // Valid
+    const mixedSuggestions = [
+      sampleData.suggestions[0], // Valid
+      { getId: () => 'invalid-suggestion-id' }, // Invalid
+      sampleData.suggestions[1], // Valid
     ];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
     // This should not throw an error, but should handle validation at the junction level
-    const result = await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      mixedIds,
+    const result = await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      mixedSuggestions,
     );
 
     // The behavior depends on validation - some items might be created, others might error
@@ -428,15 +484,19 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
   it('handles duplicate suggestion IDs in the input array', async () => {
     const fixEntity = sampleData.fixEntities[1];
-    const duplicateIds = [
-      sampleData.suggestions[0].getId(),
-      sampleData.suggestions[1].getId(),
-      sampleData.suggestions[0].getId(), // Duplicate
+    const duplicateSuggestions = [
+      sampleData.suggestions[0],
+      sampleData.suggestions[1],
+      sampleData.suggestions[0], // Duplicate
     ];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
-    const result = await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      duplicateIds,
+    const result = await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      duplicateSuggestions,
     );
 
     // Should only create unique relationships
@@ -447,42 +507,51 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
   it('handles setting the same suggestions multiple times (idempotent)', async () => {
     const fixEntity = sampleData.fixEntities[2];
-    const suggestionIds = [
-      sampleData.suggestions[0].getId(),
-      sampleData.suggestions[1].getId(),
+    const suggestions = [
+      sampleData.suggestions[0],
+      sampleData.suggestions[1],
     ];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
     // Set suggestions first time
-    const result1 = await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      suggestionIds,
+    const result1 = await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      suggestions,
     );
 
     expect(result1.createdItems).to.be.an('array').with.length(2);
     expect(result1.removedCount).to.equal(0);
 
     // Set the same suggestions again
-    const result2 = await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      suggestionIds,
+    const result2 = await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      suggestions,
     );
 
     expect(result2.createdItems).to.be.an('array').with.length(0);
     expect(result2.removedCount).to.equal(0);
 
     // Verify final state
-    const suggestions = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
-    expect(suggestions).to.be.an('array').with.length(2);
+    const finalSuggestions = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
+    expect(finalSuggestions).to.be.an('array').with.length(2);
   });
 
   it('maintains consistency when setting relationships from both sides', async () => {
     const fixEntity = sampleData.fixEntities[0];
     const suggestion = sampleData.suggestions[0];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
     // Set relationship from FixEntity side
-    await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      [suggestion.getId()],
+    await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      [suggestion],
     );
 
     // Verify from Suggestion side
@@ -493,9 +562,11 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     expect(fixEntitiesFromSuggestion[0].getId()).to.equal(fixEntity.getId());
 
     // Set additional relationship from Suggestion side
-    await Suggestion.setFixEntitiesBySuggestionId(
-      suggestion.getId(),
-      [fixEntity.getId(), sampleData.fixEntities[1].getId()],
+    const opportunity2 = { getId: () => 'opp-123' };
+    await Suggestion.setFixEntitiesForSuggestion(
+      opportunity2,
+      suggestion,
+      [fixEntity, sampleData.fixEntities[1]],
     );
 
     // Verify from FixEntity side
@@ -517,11 +588,15 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     const fixEntity = sampleData.fixEntities[0];
     const suggestion1 = sampleData.suggestions[0];
     const suggestion2 = sampleData.suggestions[1];
+    const opportunity = {
+      getId: () => fixEntity.getOpportunityId(),
+    };
 
     // Create relationships between fix entity and suggestions
-    await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity.getId(),
-      [suggestion1.getId(), suggestion2.getId()],
+    await FixEntity.setSuggestionsForFixEntity(
+      opportunity,
+      fixEntity,
+      [suggestion1, suggestion2],
     );
 
     // Verify relationships existy
@@ -564,9 +639,11 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     const fixEntity2 = sampleData.fixEntities[2];
 
     // Create relationships between suggestion and fix entities
-    await Suggestion.setFixEntitiesBySuggestionId(
-      suggestion.getId(),
-      [fixEntity1.getId(), fixEntity2.getId()],
+    const opportunity = { getId: () => 'opp-123' };
+    await Suggestion.setFixEntitiesForSuggestion(
+      opportunity,
+      suggestion,
+      [fixEntity1, fixEntity2],
     );
 
     // Verify relationships exist
@@ -608,15 +685,23 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     const fixEntity2 = sampleData.fixEntities[4];
     const suggestion1 = sampleData.suggestions[3];
     const suggestion2 = sampleData.suggestions[4];
+    const opportunity1 = {
+      getId: () => fixEntity1.getOpportunityId(),
+    };
+    const opportunity2 = {
+      getId: () => fixEntity2.getOpportunityId(),
+    };
 
     // Create multiple relationships
-    await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity1.getId(),
-      [suggestion1.getId(), suggestion2.getId()],
+    await FixEntity.setSuggestionsForFixEntity(
+      opportunity1,
+      fixEntity1,
+      [suggestion1, suggestion2],
     );
-    await FixEntity.setSuggestionsByFixEntityId(
-      fixEntity2.getId(),
-      [suggestion1.getId()], // suggestion1 is related to both fix entities
+    await FixEntity.setSuggestionsForFixEntity(
+      opportunity2,
+      fixEntity2,
+      [suggestion1], // suggestion1 is related to both fix entities
     );
 
     // Verify initial state
@@ -686,5 +771,255 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     const suggestionAfter = await Suggestion.findById(suggestion.getId());
     expect(fixEntityAfter).to.be.null;
     expect(suggestionAfter).to.be.null;
+  });
+
+  it('gets junction records by opportunity ID and fix entity created date', async () => {
+    const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e687';
+    const fixEntityCreatedDate = '2024-01-15';
+
+    // Create test data with specific opportunity ID and created date
+    const fixEntity1 = await FixEntity.create({
+      opportunityId,
+      type: 'CONTENT_UPDATE',
+      status: 'PENDING',
+      changeDetails: {
+        description: 'Test fix entity 1',
+        changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
+      },
+    });
+
+    const fixEntity2 = await FixEntity.create({
+      opportunityId,
+      type: 'METADATA_UPDATE',
+      status: 'PENDING',
+      changeDetails: {
+        description: 'Test fix entity 2',
+        changes: [{ field: 'description', oldValue: 'Old Desc', newValue: 'New Desc' }],
+      },
+    });
+
+    const fixEntity3 = await FixEntity.create({
+      opportunityId: '742c49a7-d61f-4c62-9f7c-3207f520ed1e',
+      type: 'CODE_CHANGE',
+      status: 'PENDING',
+      changeDetails: {
+        description: 'Test fix entity 3',
+        changes: [{ field: 'code', oldValue: 'Old Code', newValue: 'New Code' }],
+      },
+    });
+
+    const suggestion1 = await Suggestion.create({
+      opportunityId,
+      title: 'Test Suggestion 1',
+      description: 'Description for Test Suggestion 1',
+      data: { foo: 'bar-1' },
+      type: 'CONTENT_UPDATE',
+      rank: 0,
+      status: 'NEW',
+    });
+
+    const suggestion2 = await Suggestion.create({
+      opportunityId,
+      title: 'Test Suggestion 2',
+      description: 'Description for Test Suggestion 2',
+      data: { foo: 'bar-2' },
+      type: 'METADATA_UPDATE',
+      rank: 1,
+      status: 'NEW',
+    });
+
+    // Create junction records with specific dates
+    await FixEntitySuggestion.create({
+      suggestionId: suggestion1.getId(),
+      fixEntityId: fixEntity1.getId(),
+      opportunityId: fixEntity1.getOpportunityId(),
+      fixEntityCreatedAt: '2024-01-15T10:30:00.000Z',
+    });
+
+    await FixEntitySuggestion.create({
+      suggestionId: suggestion2.getId(),
+      fixEntityId: fixEntity2.getId(),
+      opportunityId: fixEntity2.getOpportunityId(),
+      fixEntityCreatedAt: '2024-01-15T14:45:00.000Z',
+    });
+
+    // Create a junction record with different opportunity ID (should not be returned)
+    await FixEntitySuggestion.create({
+      suggestionId: suggestion1.getId(),
+      fixEntityId: fixEntity3.getId(),
+      opportunityId: fixEntity3.getOpportunityId(),
+      fixEntityCreatedAt: '2024-01-15T16:00:00.000Z',
+    });
+
+    // Test the accessor method
+    const result = await FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(
+      opportunityId,
+      fixEntityCreatedDate,
+    );
+
+    expect(result).to.be.an('array').with.length(2);
+
+    // Verify all returned records have the correct opportunity ID and date
+    result.forEach((record) => {
+      expect(record.getOpportunityId()).to.equal(opportunityId);
+      expect(record.getFixEntityCreatedDate()).to.equal(fixEntityCreatedDate);
+      expect(record.getSuggestionId()).to.be.a('string');
+      expect(record.getFixEntityId()).to.be.a('string');
+    });
+
+    // Verify we got the expected records
+    const returnedFixEntityIds = result.map((r) => r.getFixEntityId()).sort();
+    const expectedFixEntityIds = [fixEntity1.getId(), fixEntity2.getId()].sort();
+    expect(returnedFixEntityIds).to.deep.equal(expectedFixEntityIds);
+  });
+
+  it('returns empty array when no junction records match opportunity ID and date', async () => {
+    const opportunityId = 'aeeb4b8d-e771-47ef-99f4-ea4e349c81e4';
+    const fixEntityCreatedDate = '2024-01-15';
+
+    const result = await FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(
+      opportunityId,
+      fixEntityCreatedDate,
+    );
+
+    expect(result).to.be.an('array').with.length(0);
+  });
+
+  it('throws error when opportunityId is not provided', async () => {
+    await expect(
+      FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(null, '2024-01-15'),
+    ).to.be.rejectedWith('opportunityId is required');
+
+    await expect(
+      FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate('', '2024-01-15'),
+    ).to.be.rejectedWith('opportunityId is required');
+
+    await expect(
+      FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(undefined, '2024-01-15'),
+    ).to.be.rejectedWith('opportunityId is required');
+  });
+
+  it('throws error when fixEntityCreatedDate is not provided', async () => {
+    const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e687';
+
+    await expect(
+      FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(opportunityId, null),
+    ).to.be.rejectedWith('fixEntityCreatedDate is required');
+
+    await expect(
+      FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(opportunityId, ''),
+    ).to.be.rejectedWith('fixEntityCreatedDate is required');
+
+    await expect(
+      FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(opportunityId, undefined),
+    ).to.be.rejectedWith('fixEntityCreatedDate is required');
+  });
+
+  it('handles different date formats correctly', async () => {
+    const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e687';
+    const fixEntityCreatedDate = '2024-01-15';
+
+    // Create fix entity with specific date
+    const fixEntity = await FixEntity.create({
+      opportunityId,
+      type: 'CONTENT_UPDATE',
+      status: 'PENDING',
+      changeDetails: {
+        description: 'Date test fix entity',
+        changes: [{ field: 'title', oldValue: 'Old Title', newValue: 'New Title' }],
+      },
+    });
+
+    const suggestion = await Suggestion.create({
+      opportunityId,
+      title: 'Date Test Suggestion',
+      description: 'Description for Date Test Suggestion',
+      data: { foo: 'bar' },
+      type: 'CONTENT_UPDATE',
+      rank: 0,
+      status: 'NEW',
+    });
+
+    // Create junction record
+    await FixEntitySuggestion.create({
+      suggestionId: suggestion.getId(),
+      fixEntityId: fixEntity.getId(),
+      opportunityId: fixEntity.getOpportunityId(),
+      fixEntityCreatedAt: '2024-01-15T23:59:59.999Z',
+    });
+
+    // Test that the date is correctly extracted (should be 2024-01-15)
+    const result = await FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(
+      opportunityId,
+      fixEntityCreatedDate,
+    );
+
+    expect(result).to.be.an('array').with.length(1);
+    expect(result[0].getFixEntityCreatedDate()).to.equal('2024-01-15');
+  });
+
+  it('supports pagination options', async () => {
+    const opportunityId = 'd27f4e5a-850c-441e-9c22-8e5e08b1e687';
+    const fixEntityCreatedDate = '2024-01-15';
+
+    // Create multiple fix entities and suggestions
+    const fixEntities = [];
+    const suggestions = [];
+
+    // Create all fix entities and suggestions in parallel
+    const createPromises = Array.from({ length: 5 }, async (_, i) => {
+      const fixEntity = await FixEntity.create({
+        opportunityId,
+        type: 'CONTENT_UPDATE',
+        status: 'PENDING',
+        changeDetails: {
+          description: `Pagination test fix entity ${i}`,
+          changes: [{ field: 'title', oldValue: `Old Title ${i}`, newValue: `New Title ${i}` }],
+        },
+      });
+
+      const suggestion = await Suggestion.create({
+        opportunityId,
+        title: `Pagination Test Suggestion ${i}`,
+        description: `Description for Pagination Test Suggestion ${i}`,
+        data: { foo: `bar-${i}` },
+        type: 'CONTENT_UPDATE',
+        rank: i,
+        status: 'NEW',
+      });
+
+      // Create junction record
+      await FixEntitySuggestion.create({
+        suggestionId: suggestion.getId(),
+        fixEntityId: fixEntity.getId(),
+        opportunityId: fixEntity.getOpportunityId(),
+        fixEntityCreatedAt: '2024-01-15T10:00:00.000Z',
+      });
+
+      return { fixEntity, suggestion };
+    });
+
+    const results = await Promise.all(createPromises);
+    results.forEach(({ fixEntity, suggestion }) => {
+      fixEntities.push(fixEntity);
+      suggestions.push(suggestion);
+    });
+
+    // Test with limit
+    const limitedResult = await FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(
+      opportunityId,
+      fixEntityCreatedDate,
+      { limit: 3 },
+    );
+
+    expect(limitedResult).to.be.an('array').with.length(3);
+
+    // Test without limit (should return all)
+    const allResult = await FixEntitySuggestion.allByOpportunityIdAndFixEntityCreatedDate(
+      opportunityId,
+      fixEntityCreatedDate,
+    );
+
+    expect(allResult).to.be.an('array').with.length(5);
   });
 });

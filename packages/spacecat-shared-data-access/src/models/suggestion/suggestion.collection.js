@@ -13,12 +13,18 @@
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
 import Suggestion from './suggestion.model.js';
-import { guardId, guardArray } from '../../util/guards.js';
+import { guardId } from '../../util/guards.js';
 import { resolveUpdates } from '../../util/util.js';
 
 /**
  * SuggestionCollection - A collection class responsible for managing Suggestion entities.
- * Extends the BaseCollection to provide specific methods for interacting with Suggestion records.
+ * Extends the BaseCollection to provide specific methods for interacting with Suggestion records
+ * and their relationships with FixEntities.
+ *
+ * This collection provides methods to:
+ * - Update the status of multiple suggestions in bulk
+ * - Retrieve FixEntities associated with a specific Suggestion
+ * - Set FixEntities for a Suggestion by managing junction table relationships
  *
  * @class SuggestionCollection
  * @extends BaseCollection
@@ -95,19 +101,33 @@ class SuggestionCollection extends BaseCollection {
    * new ones.
    *
    * @async
-   * @param {string} suggestionId - The ID of the Suggestion.
-   * @param {Array<string>} fixEntityIds - An array of fix entity IDs (strings).
+   * @param {Object} opportunity - The opportunity object.
+   * @param {Object} suggestion - The suggestion object.
+   * @param {Array<Object>} fixEntities - An array of fix entity objects.
    * @returns {Promise<{createdItems: Array, errorItems: Array, removedCount: number}>} - A promise
    *   that resolves to an object containing:
    *   - createdItems: Array of created FixEntitySuggestion junction records
    *   - errorItems: Array of items that failed validation
    *   - removedCount: Number of existing relationships that were removed
-   * @throws {DataAccessError} - Throws an error if the suggestionId is not provided or if the
+   * @throws {DataAccessError} - Throws an error if the parameters are not provided or if the
    *   operation fails.
    */
-  async setFixEntitiesBySuggestionId(suggestionId, fixEntityIds) {
-    guardId('suggestionId', suggestionId, 'SuggestionCollection');
-    guardArray('fixEntityIds', fixEntityIds, 'SuggestionCollection');
+  async setFixEntitiesForSuggestion(opportunity, suggestion, fixEntities) {
+    if (!opportunity) {
+      throw new Error('Opportunity parameter is required');
+    }
+
+    if (!suggestion) {
+      throw new Error('Suggestion parameter is required');
+    }
+
+    if (!fixEntities) {
+      throw new Error('FixEntities parameter is required');
+    }
+
+    const suggestionId = suggestion.getId();
+    const opportunityId = opportunity.getId();
+    const fixEntityIds = fixEntities.map((entity) => entity.getId());
 
     try {
       const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
@@ -127,11 +147,15 @@ class SuggestionCollection extends BaseCollection {
           suggestionId,
           fixEntityId,
         }));
-      const createKeys = toCreate.map((fixEntityId) => (
-        {
+      const createKeys = toCreate.map((fixEntityId) => {
+        const fixEntity = fixEntities.find((entity) => entity.getId() === fixEntityId);
+        return {
           suggestionId,
           fixEntityId,
-        }));
+          opportunityId,
+          fixEntityCreatedAt: fixEntity.getCreatedAt(),
+        };
+      });
 
       if (toDelete.length > 0) {
         removePromise = fixEntitySuggestionCollection.removeByIndexKeys(deleteKeys);

@@ -191,10 +191,16 @@ describe('SuggestionCollection', () => {
     });
   });
 
-  describe('setFixEntitiesBySuggestionId', () => {
+  describe('setFixEntitiesForSuggestion', () => {
     it('should set fix entities for a suggestion with delta updates', async () => {
-      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
-      const fixEntities = ['123e4567-e89b-12d3-a456-426614174003', '123e4567-e89b-12d3-a456-426614174004'];
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const fixEntities = [
+        { getId: () => '123e4567-e89b-12d3-a456-426614174003', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+        { getId: () => '123e4567-e89b-12d3-a456-426614174004', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+      ];
+      const opportunity = {
+        getId: () => 'opp-123',
+      };
 
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getFixEntityId: () => '123e4567-e89b-12d3-a456-426614174003' },
@@ -215,7 +221,11 @@ describe('SuggestionCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      const result = await instance.setFixEntitiesBySuggestionId(suggestionId, fixEntities);
+      const result = await instance.setFixEntitiesForSuggestion(
+        opportunity,
+        suggestion,
+        fixEntities,
+      );
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-3' }],
@@ -224,31 +234,67 @@ describe('SuggestionCollection', () => {
       });
 
       expect(mockFixEntitySuggestionCollection.allBySuggestionId)
-        .to.have.been.calledOnceWith(suggestionId);
+        .to.have.been.calledOnceWith(suggestion.getId());
       expect(mockFixEntitySuggestionCollection.removeByIndexKeys).to.have.been.calledOnceWith([{
-        suggestionId,
+        suggestionId: suggestion.getId(),
         fixEntityId: '123e4567-e89b-12d3-a456-426614174005',
       }]);
       expect(mockFixEntitySuggestionCollection.createMany).to.have.been.calledOnceWith([
-        { suggestionId, fixEntityId: '123e4567-e89b-12d3-a456-426614174004' },
+        {
+          suggestionId: suggestion.getId(),
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174004',
+          opportunityId: 'opp-123',
+          fixEntityCreatedAt: '2024-01-01T00:00:00Z',
+        },
       ]);
     });
 
-    it('should throw error when suggestionId is not provided', async () => {
-      await expect(instance.setFixEntitiesBySuggestionId())
-        .to.be.rejectedWith('Validation failed in SuggestionCollection: suggestionId must be a valid UUID');
+    it('should throw error when opportunity is not provided', async () => {
+      await expect(instance.setFixEntitiesForSuggestion())
+        .to.be.rejectedWith('Opportunity parameter is required');
     });
 
-    it('should throw error when fixEntities is not an array', async () => {
-      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
+    it('should throw error when fixEntities is not provided', async () => {
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const opportunity = { getId: () => 'opp-123' };
 
-      await expect(instance.setFixEntitiesBySuggestionId(suggestionId, 'not-an-array'))
-        .to.be.rejectedWith('Validation failed in SuggestionCollection: fixEntityIds must be an array');
+      await expect(instance.setFixEntitiesForSuggestion(opportunity, suggestion, null))
+        .to.be.rejectedWith('FixEntities parameter is required');
+    });
+
+    it('should throw error when suggestion parameter is not provided', async () => {
+      const opportunity = { getId: () => 'opp-123' };
+      const fixEntities = [{ getId: () => '123e4567-e89b-12d3-a456-426614174003' }];
+      await expect(instance.setFixEntitiesForSuggestion(opportunity, null, fixEntities))
+        .to.be.rejectedWith('Suggestion parameter is required');
+    });
+
+    it('should throw error when opportunity is null', async () => {
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const fixEntities = [{ getId: () => '123e4567-e89b-12d3-a456-426614174003' }];
+      await expect(instance.setFixEntitiesForSuggestion(null, suggestion, fixEntities))
+        .to.be.rejectedWith('Opportunity parameter is required');
+    });
+
+    it('should throw error when fixEntities is null', async () => {
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const opportunity = { getId: () => 'opp-123' };
+      await expect(instance.setFixEntitiesForSuggestion(opportunity, suggestion, null))
+        .to.be.rejectedWith('FixEntities parameter is required');
+    });
+
+    it('should throw error when suggestion is null', async () => {
+      const suggestion = null;
+      const fixEntities = [{ getId: () => '123e4567-e89b-12d3-a456-426614174003' }];
+      const opportunity = { getId: () => 'opp-123' };
+      await expect(instance.setFixEntitiesForSuggestion(opportunity, suggestion, fixEntities))
+        .to.be.rejectedWith('Suggestion parameter is required');
     });
 
     it('should handle errors and throw DataAccessError', async () => {
-      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
-      const fixEntities = ['123e4567-e89b-12d3-a456-426614174003'];
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const fixEntities = [{ getId: () => '123e4567-e89b-12d3-a456-426614174003', getCreatedAt: () => '2024-01-01T00:00:00Z' }];
+      const opportunity = { getId: () => 'opp-123' };
       const error = new Error('Database error');
 
       const mockFixEntitySuggestionCollection = {
@@ -260,14 +306,15 @@ describe('SuggestionCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      await expect(instance.setFixEntitiesBySuggestionId(suggestionId, fixEntities))
+      await expect(instance.setFixEntitiesForSuggestion(opportunity, suggestion, fixEntities))
         .to.be.rejectedWith(DataAccessError);
       expect(mockLogger.error).to.have.been.calledWith('Failed to set fix entities for suggestion', error);
     });
 
     it('should log info about the operation results', async () => {
-      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
-      const fixEntities = ['123e4567-e89b-12d3-a456-426614174003'];
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const fixEntities = [{ getId: () => '123e4567-e89b-12d3-a456-426614174003', getCreatedAt: () => '2024-01-01T00:00:00Z' }];
+      const opportunity = { getId: () => 'opp-123' };
 
       const mockFixEntitySuggestionCollection = {
         allBySuggestionId: stub().resolves([]),
@@ -282,16 +329,20 @@ describe('SuggestionCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      await instance.setFixEntitiesBySuggestionId(suggestionId, fixEntities);
+      await instance.setFixEntitiesForSuggestion(opportunity, suggestion, fixEntities);
 
       expect(mockLogger.info).to.have.been.calledWith(
-        `Set fix entities for suggestion ${suggestionId}: removed 0, added 1, failed 0`,
+        `Set fix entities for suggestion ${suggestion.getId()}: removed 0, added 1, failed 0`,
       );
     });
 
     it('should handle remove operation failure gracefully', async () => {
-      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
-      const fixEntities = ['123e4567-e89b-12d3-a456-426614174003', '123e4567-e89b-12d3-a456-426614174004'];
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const fixEntities = [
+        { getId: () => '123e4567-e89b-12d3-a456-426614174003', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+        { getId: () => '123e4567-e89b-12d3-a456-426614174004', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+      ];
+      const opportunity = { getId: () => 'opp-123' };
 
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getFixEntityId: () => '123e4567-e89b-12d3-a456-426614174005' },
@@ -310,7 +361,11 @@ describe('SuggestionCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      const result = await instance.setFixEntitiesBySuggestionId(suggestionId, fixEntities);
+      const result = await instance.setFixEntitiesForSuggestion(
+        opportunity,
+        suggestion,
+        fixEntities,
+      );
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-2' }, { id: 'junction-3' }],
@@ -325,8 +380,12 @@ describe('SuggestionCollection', () => {
     });
 
     it('should handle create operation failure gracefully', async () => {
-      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
-      const fixEntities = ['123e4567-e89b-12d3-a456-426614174003', '123e4567-e89b-12d3-a456-426614174004'];
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const fixEntities = [
+        { getId: () => '123e4567-e89b-12d3-a456-426614174003', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+        { getId: () => '123e4567-e89b-12d3-a456-426614174004', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+      ];
+      const opportunity = { getId: () => 'opp-123' };
 
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getFixEntityId: () => '123e4567-e89b-12d3-a456-426614174005' },
@@ -342,7 +401,11 @@ describe('SuggestionCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      const result = await instance.setFixEntitiesBySuggestionId(suggestionId, fixEntities);
+      const result = await instance.setFixEntitiesForSuggestion(
+        opportunity,
+        suggestion,
+        fixEntities,
+      );
 
       expect(result).to.deep.equal({
         createdItems: [], // Failed operation results in empty array
@@ -357,8 +420,9 @@ describe('SuggestionCollection', () => {
     });
 
     it('should handle empty fix entity array (remove all)', async () => {
-      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
       const fixEntities = [];
+      const opportunity = { getId: () => 'opp-123' };
 
       const existingJunctionRecords = [
         { getId: () => 'junction-1', getFixEntityId: () => '123e4567-e89b-12d3-a456-426614174003' },
@@ -381,7 +445,11 @@ describe('SuggestionCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      const result = await instance.setFixEntitiesBySuggestionId(suggestionId, fixEntities);
+      const result = await instance.setFixEntitiesForSuggestion(
+        opportunity,
+        suggestion,
+        fixEntities,
+      );
 
       expect(result).to.deep.equal({
         createdItems: [],
@@ -390,15 +458,19 @@ describe('SuggestionCollection', () => {
       });
 
       expect(mockFixEntitySuggestionCollection.removeByIndexKeys).to.have.been.calledOnceWith([
-        { suggestionId, fixEntityId: '123e4567-e89b-12d3-a456-426614174003' },
-        { suggestionId, fixEntityId: '123e4567-e89b-12d3-a456-426614174004' },
+        { suggestionId: suggestion.getId(), fixEntityId: '123e4567-e89b-12d3-a456-426614174003' },
+        { suggestionId: suggestion.getId(), fixEntityId: '123e4567-e89b-12d3-a456-426614174004' },
       ]);
       expect(mockFixEntitySuggestionCollection.createMany).to.not.have.been.called;
     });
 
     it('should handle no existing relationships (create all)', async () => {
-      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
-      const fixEntities = ['123e4567-e89b-12d3-a456-426614174003', '123e4567-e89b-12d3-a456-426614174004'];
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const fixEntities = [
+        { getId: () => '123e4567-e89b-12d3-a456-426614174003', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+        { getId: () => '123e4567-e89b-12d3-a456-426614174004', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+      ];
+      const opportunity = { getId: () => 'opp-123' };
 
       const mockFixEntitySuggestionCollection = {
         allBySuggestionId: stub().resolves([]),
@@ -413,7 +485,11 @@ describe('SuggestionCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      const result = await instance.setFixEntitiesBySuggestionId(suggestionId, fixEntities);
+      const result = await instance.setFixEntitiesForSuggestion(
+        opportunity,
+        suggestion,
+        fixEntities,
+      );
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-1' }, { id: 'junction-2' }],
@@ -423,14 +499,29 @@ describe('SuggestionCollection', () => {
 
       expect(mockFixEntitySuggestionCollection.removeByIndexKeys).to.not.have.been.called;
       expect(mockFixEntitySuggestionCollection.createMany).to.have.been.calledOnceWith([
-        { suggestionId, fixEntityId: '123e4567-e89b-12d3-a456-426614174003' },
-        { suggestionId, fixEntityId: '123e4567-e89b-12d3-a456-426614174004' },
+        {
+          suggestionId: suggestion.getId(),
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174003',
+          opportunityId: 'opp-123',
+          fixEntityCreatedAt: '2024-01-01T00:00:00Z',
+        },
+        {
+          suggestionId: suggestion.getId(),
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174004',
+          opportunityId: 'opp-123',
+          fixEntityCreatedAt: '2024-01-01T00:00:00Z',
+        },
       ]);
     });
 
     it('should handle duplicate fix entity IDs in input', async () => {
-      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
-      const fixEntities = ['123e4567-e89b-12d3-a456-426614003', '123e4567-e89b-12d3-a456-426614003', '123e4567-e89b-12d3-a456-426614004'];
+      const suggestion = { getId: () => '123e4567-e89b-12d3-a456-426614174002' };
+      const fixEntities = [
+        { getId: () => '123e4567-e89b-12d3-a456-426614003', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+        { getId: () => '123e4567-e89b-12d3-a456-426614003', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+        { getId: () => '123e4567-e89b-12d3-a456-426614004', getCreatedAt: () => '2024-01-01T00:00:00Z' },
+      ];
+      const opportunity = { getId: () => 'opp-123' };
 
       const mockFixEntitySuggestionCollection = {
         allBySuggestionId: stub().resolves([]),
@@ -445,7 +536,11 @@ describe('SuggestionCollection', () => {
         .withArgs('FixEntitySuggestionCollection')
         .returns(mockFixEntitySuggestionCollection);
 
-      const result = await instance.setFixEntitiesBySuggestionId(suggestionId, fixEntities);
+      const result = await instance.setFixEntitiesForSuggestion(
+        opportunity,
+        suggestion,
+        fixEntities,
+      );
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-1' }, { id: 'junction-2' }],
@@ -455,8 +550,18 @@ describe('SuggestionCollection', () => {
 
       // Should only create unique fix entities
       expect(mockFixEntitySuggestionCollection.createMany).to.have.been.calledOnceWith([
-        { suggestionId, fixEntityId: '123e4567-e89b-12d3-a456-426614003' },
-        { suggestionId, fixEntityId: '123e4567-e89b-12d3-a456-426614004' },
+        {
+          suggestionId: suggestion.getId(),
+          fixEntityId: '123e4567-e89b-12d3-a456-426614003',
+          opportunityId: 'opp-123',
+          fixEntityCreatedAt: '2024-01-01T00:00:00Z',
+        },
+        {
+          suggestionId: suggestion.getId(),
+          fixEntityId: '123e4567-e89b-12d3-a456-426614004',
+          opportunityId: 'opp-123',
+          fixEntityCreatedAt: '2024-01-01T00:00:00Z',
+        },
       ]);
     });
   });

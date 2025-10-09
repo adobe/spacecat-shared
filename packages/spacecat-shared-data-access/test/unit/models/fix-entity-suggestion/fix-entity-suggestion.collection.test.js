@@ -24,6 +24,8 @@ describe('FixEntitySuggestionCollection', () => {
   const mockRecord = {
     suggestionId: 'suggestion-123',
     fixEntityId: 'fix-456',
+    fixEntityCreatedAt: '2024-01-01T00:00:00.000Z',
+    fixEntityCreatedDate: '2024-01-01',
   };
 
   beforeEach(() => {
@@ -37,10 +39,14 @@ describe('FixEntitySuggestionCollection', () => {
 
   describe('allBySuggestionId', () => {
     it('should get all junction records for a suggestion ID', async () => {
-      const suggestionId = 'suggestion-123';
+      const suggestionId = '123e4567-e89b-12d3-a456-426614174000';
       const expectedRecords = [
-        { suggestionId, fixEntityId: 'fix-1' },
-        { suggestionId, fixEntityId: 'fix-2' },
+        {
+          suggestionId, fixEntityId: 'fix-1', fixEntityCreatedAt: '2024-01-01T00:00:00.000Z', fixEntityCreatedDate: '2024-01-01',
+        },
+        {
+          suggestionId, fixEntityId: 'fix-2', fixEntityCreatedAt: '2024-01-02T00:00:00.000Z', fixEntityCreatedDate: '2024-01-02',
+        },
       ];
 
       collection.allByIndexKeys.resolves(expectedRecords);
@@ -53,17 +59,17 @@ describe('FixEntitySuggestionCollection', () => {
 
     it('should throw error when suggestionId is not provided', async () => {
       await expect(collection.allBySuggestionId(null))
-        .to.be.rejectedWith('suggestionId is required');
+        .to.be.rejectedWith('suggestionId must be a valid UUID');
 
       await expect(collection.allBySuggestionId(''))
-        .to.be.rejectedWith('suggestionId is required');
+        .to.be.rejectedWith('suggestionId must be a valid UUID');
 
       await expect(collection.allBySuggestionId(undefined))
-        .to.be.rejectedWith('suggestionId is required');
+        .to.be.rejectedWith('suggestionId must be a valid UUID');
     });
 
     it('should handle empty results', async () => {
-      const suggestionId = 'suggestion-nonexistent';
+      const suggestionId = '123e4567-e89b-12d3-a456-426614174001';
       collection.allByIndexKeys.resolves([]);
 
       const result = await collection.allBySuggestionId(suggestionId);
@@ -72,12 +78,109 @@ describe('FixEntitySuggestionCollection', () => {
     });
   });
 
+  describe('allByOpportunityIdAndFixEntityCreatedDate', () => {
+    it('should get all junction records for an opportunity ID and fix entity created date', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174002';
+      const fixEntityCreatedDate = '2024-01-15';
+      const expectedRecords = [
+        {
+          opportunityId,
+          suggestionId: '123e4567-e89b-12d3-a456-426614174003',
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174004',
+          fixEntityCreatedAt: '2024-01-15T10:30:00.000Z',
+          fixEntityCreatedDate,
+        },
+        {
+          opportunityId,
+          suggestionId: '123e4567-e89b-12d3-a456-426614174005',
+          fixEntityId: '123e4567-e89b-12d3-a456-426614174006',
+          fixEntityCreatedAt: '2024-01-15T14:45:00.000Z',
+          fixEntityCreatedDate,
+        },
+      ];
+
+      collection.allByIndexKeys.resolves(expectedRecords);
+
+      const result = await collection.allByOpportunityIdAndFixEntityCreatedDate(
+        opportunityId,
+        fixEntityCreatedDate,
+      );
+
+      expect(collection.allByIndexKeys).to.have.been.calledOnceWith({
+        opportunityId,
+        fixEntityCreatedDate,
+      });
+      expect(result).to.deep.equal(expectedRecords);
+    });
+
+    it('should throw error when opportunityId is not provided', async () => {
+      await expect(collection.allByOpportunityIdAndFixEntityCreatedDate(null, '2024-01-15'))
+        .to.be.rejectedWith('opportunityId is required');
+
+      await expect(collection.allByOpportunityIdAndFixEntityCreatedDate('', '2024-01-15'))
+        .to.be.rejectedWith('opportunityId is required');
+
+      await expect(collection.allByOpportunityIdAndFixEntityCreatedDate(undefined, '2024-01-15'))
+        .to.be.rejectedWith('opportunityId is required');
+    });
+
+    it('should throw error when fixEntityCreatedDate is not provided', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174007';
+
+      await expect(collection.allByOpportunityIdAndFixEntityCreatedDate(opportunityId, null))
+        .to.be.rejectedWith('fixEntityCreatedDate is required');
+
+      await expect(collection.allByOpportunityIdAndFixEntityCreatedDate(opportunityId, ''))
+        .to.be.rejectedWith('fixEntityCreatedDate is required');
+
+      await expect(collection.allByOpportunityIdAndFixEntityCreatedDate(opportunityId, undefined))
+        .to.be.rejectedWith('fixEntityCreatedDate is required');
+    });
+
+    it('should handle empty results', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174008';
+      const fixEntityCreatedDate = '2024-01-20';
+      collection.allByIndexKeys.resolves([]);
+
+      const result = await collection.allByOpportunityIdAndFixEntityCreatedDate(
+        opportunityId,
+        fixEntityCreatedDate,
+      );
+
+      expect(result).to.be.an('array').that.is.empty;
+    });
+
+    it('should pass options parameter to allByIndexKeys', async () => {
+      const opportunityId = '123e4567-e89b-12d3-a456-426614174009';
+      const fixEntityCreatedDate = '2024-01-15';
+      const options = { limit: 10, cursor: 'some-cursor' };
+      const expectedRecords = [];
+
+      collection.allByIndexKeys.resolves(expectedRecords);
+
+      await collection.allByOpportunityIdAndFixEntityCreatedDate(
+        opportunityId,
+        fixEntityCreatedDate,
+        options,
+      );
+
+      expect(collection.allByIndexKeys).to.have.been.calledOnce;
+      const callArgs = collection.allByIndexKeys.getCall(0).args;
+      expect(callArgs[0]).to.deep.equal({ opportunityId, fixEntityCreatedDate });
+      expect(callArgs[1]).to.include(options);
+    });
+  });
+
   describe('allByFixEntityId', () => {
     it('should get all junction records for a fix entity ID', async () => {
-      const fixEntityId = 'fix-123';
+      const fixEntityId = '123e4567-e89b-12d3-a456-426614174002';
       const expectedRecords = [
-        { suggestionId: 'suggestion-1', fixEntityId },
-        { suggestionId: 'suggestion-2', fixEntityId },
+        {
+          suggestionId: '123e4567-e89b-12d3-a456-426614174003', fixEntityId, fixEntityCreatedAt: '2024-01-01T00:00:00.000Z', fixEntityCreatedDate: '2024-01-01',
+        },
+        {
+          suggestionId: '123e4567-e89b-12d3-a456-426614174004', fixEntityId, fixEntityCreatedAt: '2024-01-02T00:00:00.000Z', fixEntityCreatedDate: '2024-01-02',
+        },
       ];
 
       collection.allByIndexKeys.resolves(expectedRecords);
@@ -100,7 +203,7 @@ describe('FixEntitySuggestionCollection', () => {
     });
 
     it('should handle empty results', async () => {
-      const fixEntityId = 'fix-nonexistent';
+      const fixEntityId = '123e4567-e89b-12d3-a456-426614174005';
       collection.allByIndexKeys.resolves([]);
 
       const result = await collection.allByFixEntityId(fixEntityId);
@@ -165,8 +268,12 @@ describe('FixEntitySuggestionCollection', () => {
 
     it('should support createMany for bulk junction record creation', async () => {
       const junctionRecords = [
-        { suggestionId: 'suggestion-1', fixEntityId: 'fix-1' },
-        { suggestionId: 'suggestion-1', fixEntityId: 'fix-2' },
+        {
+          suggestionId: 'suggestion-1', fixEntityId: 'fix-1', fixEntityCreatedAt: '2024-01-01T00:00:00.000Z', fixEntityCreatedDate: '2024-01-01',
+        },
+        {
+          suggestionId: 'suggestion-1', fixEntityId: 'fix-2', fixEntityCreatedAt: '2024-01-02T00:00:00.000Z', fixEntityCreatedDate: '2024-01-02',
+        },
       ];
 
       const expectedResult = {
@@ -186,8 +293,12 @@ describe('FixEntitySuggestionCollection', () => {
       const ids = ['junction-1', 'junction-2'];
       const expectedResult = {
         data: [
-          { id: 'junction-1', suggestionId: 'suggestion-1', fixEntityId: 'fix-1' },
-          { id: 'junction-2', suggestionId: 'suggestion-1', fixEntityId: 'fix-2' },
+          {
+            id: 'junction-1', suggestionId: 'suggestion-1', fixEntityId: 'fix-1', fixEntityCreatedAt: '2024-01-01T00:00:00.000Z', fixEntityCreatedDate: '2024-01-01',
+          },
+          {
+            id: 'junction-2', suggestionId: 'suggestion-1', fixEntityId: 'fix-2', fixEntityCreatedAt: '2024-01-02T00:00:00.000Z', fixEntityCreatedDate: '2024-01-02',
+          },
         ],
         unprocessed: [],
       };
@@ -215,25 +326,31 @@ describe('FixEntitySuggestionCollection', () => {
       const error = new Error('Database connection failed');
       collection.allByIndexKeys.rejects(error);
 
-      await expect(collection.allBySuggestionId('suggestion-123'))
+      await expect(collection.allBySuggestionId('123e4567-e89b-12d3-a456-426614174006'))
         .to.be.rejectedWith('Database connection failed');
     });
 
-    it('should propagate errors from allByIndexKeys in allByFixEntityId', async () => {
+    it('should propagate errors from allByIndexKeys in allByOpportunityIdAndFixEntityCreatedDate', async () => {
       const error = new Error('Index not found');
       collection.allByIndexKeys.rejects(error);
 
-      await expect(collection.allByFixEntityId('fix-123'))
-        .to.be.rejectedWith('Index not found');
+      await expect(
+        collection.allByOpportunityIdAndFixEntityCreatedDate(
+          '123e4567-e89b-12d3-a456-426614174007',
+          '2024-01-15',
+        ),
+      ).to.be.rejectedWith('Index not found');
     });
   });
 
   describe('performance considerations', () => {
     it('should use efficient index queries for large datasets', async () => {
-      const suggestionId = 'suggestion-with-many-fixes';
+      const suggestionId = '123e4567-e89b-12d3-a456-426614174008';
       const largeResultSet = Array.from({ length: 1000 }, (_, i) => ({
         suggestionId,
-        fixEntityId: `fix-${i}`,
+        fixEntityId: `123e4567-e89b-12d3-a456-426614174${String(i).padStart(3, '0')}`,
+        fixEntityCreatedAt: `2024-01-${String((i % 28) + 1).padStart(2, '0')}T00:00:00.000Z`,
+        fixEntityCreatedDate: `2024-01-${String((i % 28) + 1).padStart(2, '0')}`,
       }));
 
       collection.allByIndexKeys.resolves(largeResultSet);
@@ -245,12 +362,16 @@ describe('FixEntitySuggestionCollection', () => {
     });
 
     it('should handle pagination through allByIndexKeys', async () => {
-      const fixEntityId = 'fix-with-many-suggestions';
+      const fixEntityId = '123e4567-e89b-12d3-a456-426614174009';
 
       // Mock paginated results
       collection.allByIndexKeys.resolves([
-        { suggestionId: 'suggestion-1', fixEntityId },
-        { suggestionId: 'suggestion-2', fixEntityId },
+        {
+          suggestionId: '123e4567-e89b-12d3-a456-426614174010', fixEntityId, fixEntityCreatedAt: '2024-01-01T00:00:00.000Z', fixEntityCreatedDate: '2024-01-01',
+        },
+        {
+          suggestionId: '123e4567-e89b-12d3-a456-426614174011', fixEntityId, fixEntityCreatedAt: '2024-01-02T00:00:00.000Z', fixEntityCreatedDate: '2024-01-02',
+        },
       ]);
 
       const result = await collection.allByFixEntityId(fixEntityId);

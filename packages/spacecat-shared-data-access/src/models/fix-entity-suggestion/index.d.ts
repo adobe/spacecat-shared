@@ -19,9 +19,14 @@ export interface FixEntitySuggestion extends BaseModel {
   setFixEntityId(value: string): this;
   getSuggestionId(): string;
   setSuggestionId(value: string): this;
+  getFixEntityCreatedAt(): string;
+  setFixEntityCreatedAt(value: string): this;
+  getFixEntityCreatedDate(): string;
+  setFixEntityCreatedDate(value: string): this;
 }
 
 export interface FixEntitySuggestionCollection extends BaseCollection<FixEntitySuggestion> {
   allBySuggestionId(suggestionId: string): Promise<FixEntitySuggestion[]>;
   allByFixEntityId(fixEntityId: string): Promise<FixEntitySuggestion[]>;
+  allByOpportunityIdAndFixEntityCreatedDate(opportunityId: string, fixEntityCreatedDate: string): Promise<FixEntitySuggestion[]>;
 }

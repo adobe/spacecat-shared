@@ -29,7 +29,8 @@ describe('Suggestion IT', async () => {
   let sampleData;
   let Suggestion;
 
-  beforeEach(async () => {
+  beforeEach(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -263,13 +264,15 @@ describe('Suggestion IT', async () => {
     ];
 
     // First, set up some fix entities for this suggestion
-    await Suggestion.setFixEntitiesBySuggestionId(suggestion.getId(), fixEntityIds);
+    const opportunity = { getId: () => 'opp-123' };
+    const fixEntities = fixEntityIds.map((id) => ({ getId: () => id, getCreatedAt: () => '2024-01-01T00:00:00Z' }));
+    await Suggestion.setFixEntitiesForSuggestion(opportunity, suggestion, fixEntities);
 
     // Test the single suggestion method
-    const fixEntities = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());
+    const retrievedFixEntities = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());
 
-    expect(fixEntities).to.be.an('array').with.length(2);
-    fixEntities.forEach((fixEntity) => {
+    expect(retrievedFixEntities).to.be.an('array').with.length(2);
+    retrievedFixEntities.forEach((fixEntity) => {
       expect(fixEntity).to.be.an('object');
       expect(fixEntity.getId()).to.be.a('string');
       expect(fixEntity.getOpportunityId()).to.be.a('string');

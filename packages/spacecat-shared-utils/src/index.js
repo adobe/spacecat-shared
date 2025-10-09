@@ -89,6 +89,9 @@ export {
   getWeekInfo,
   getMonthInfo,
   getTemporalCondition,
+  isoCalendarWeek,
+  isoCalendarWeekSunday,
+  isoCalendarWeekMonday,
 } from './calendar-week-helper.js';
 
 export { detectAEMVersion, DELIVERY_TYPES } from './aem.js';

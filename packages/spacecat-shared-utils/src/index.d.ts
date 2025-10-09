@@ -265,6 +265,12 @@ export function retrievePageAuthentication(site: object, context: object): Promi
 
 export function prettifyLogForwardingConfig(payload: object): object;
 
+export function isoCalendarWeek(date: Date): object;
+
+export function isoCalendarWeekSunday(date: Date): Date;
+
+export function isoCalendarWeekMonday(date: Date): Date;
+
 export * as llmoConfig from './llmo-config.js';
 export * as schemas from './schemas.js';
 

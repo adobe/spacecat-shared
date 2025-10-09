@@ -86,6 +86,9 @@ describe('Index Exports', () => {
     'schemas',
     'detectLocale',
     'prettifyLogForwardingConfig',
+    'isoCalendarWeek',
+    'isoCalendarWeekSunday',
+    'isoCalendarWeekMonday',
   ];
 
   it('exports all expected functions', () => {

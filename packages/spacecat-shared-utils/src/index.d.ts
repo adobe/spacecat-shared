@@ -11,6 +11,7 @@
  */
 
 import { Request, RequestOptions, Response } from '@adobe/fetch';
+import type { ISOCalendarWeek } from './calendar-week-helper.js';
 
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
@@ -265,7 +266,7 @@ export function retrievePageAuthentication(site: object, context: object): Promi
 
 export function prettifyLogForwardingConfig(payload: object): object;
 
-export function isoCalendarWeek(date: Date): object;
+export function isoCalendarWeek(date: Date): ISOCalendarWeek;
 
 export function isoCalendarWeekSunday(date: Date): Date;
 

@@ -209,8 +209,8 @@ class SchemaBuilder {
       type: 'number',
       required: true,
       readOnly: true,
-      default: () => Date.now() + ttlInDays * 24 * 60 * 60 * 1000,
-      set: () => Date.now() + ttlInDays * 24 * 60 * 60 * 1000,
+      default: () => Math.floor(Date.now() / 1000) + ttlInDays * 24 * 60 * 60,
+      set: () => Math.floor(Date.now() / 1000) + ttlInDays * 24 * 60 * 60,
     });
 
     return this;

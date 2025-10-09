@@ -85,6 +85,7 @@ describe('Index Exports', () => {
     'llmoConfig',
     'schemas',
     'detectLocale',
+    'prettifyLogForwardingConfig',
   ];
 
   it('exports all expected functions', () => {

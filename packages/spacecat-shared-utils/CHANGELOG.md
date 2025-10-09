@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-utils-v1.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.57.1...@adobe/spacecat-shared-utils-v1.58.0) (2025-10-09)
+
+
+### Features
+
+* introduce ISO calendar calculations ([#1015](https://github.com/adobe/spacecat-shared/issues/1015)) ([885351f](https://github.com/adobe/spacecat-shared/commit/885351f67cae1ea07beea0489c737e6990d93324))
+
+# [@adobe/spacecat-shared-utils-v1.57.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.57.0...@adobe/spacecat-shared-utils-v1.57.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* adds browser export ([#1012](https://github.com/adobe/spacecat-shared/issues/1012)) ([f167eff](https://github.com/adobe/spacecat-shared/commit/f167effd3713077c9a3829ca589324e136740cee))
+
+# [@adobe/spacecat-shared-utils-v1.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.56.0...@adobe/spacecat-shared-utils-v1.57.0) (2025-10-09)
+
+
+### Features
+
+* cdn-logs-infra provisioning response prettifier ([#1011](https://github.com/adobe/spacecat-shared/issues/1011)) ([2e83fbf](https://github.com/adobe/spacecat-shared/commit/2e83fbf4f67d48202cdf33538afcbc0146297161))
+
 # [@adobe/spacecat-shared-utils-v1.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.55.0...@adobe/spacecat-shared-utils-v1.56.0) (2025-10-07)
 
 

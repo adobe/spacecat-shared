@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.57.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.57.0...@adobe/spacecat-shared-utils-v1.57.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* adds browser export ([#1012](https://github.com/adobe/spacecat-shared/issues/1012)) ([f167eff](https://github.com/adobe/spacecat-shared/commit/f167effd3713077c9a3829ca589324e136740cee))
+
 # [@adobe/spacecat-shared-utils-v1.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.56.0...@adobe/spacecat-shared-utils-v1.57.0) (2025-10-09)
 
 

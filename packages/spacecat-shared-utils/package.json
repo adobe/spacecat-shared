@@ -3,6 +3,12 @@
   "version": "1.57.0",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
+  "exports": {
+    ".": {
+      "browser": "./src/browser.js",
+      "default": "./src/index.js"
+    }
+  },
   "engines": {
     "node": ">=22.0.0 <23.0.0",
     "npm": ">=10.9.0 <12.0.0"

@@ -168,7 +168,7 @@ declare function replacePlaceholders(content: string, placeholders: object): str
  * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content.
  */
 declare function getStaticContent(placeholders: object, filename: string):
-    Promise<string | null>;
+  Promise<string | null>;
 
 /**
  * Reads the content of a prompt file asynchronously and replaces any placeholders
@@ -262,6 +262,8 @@ export function tracingFetch(url: string | Request, options?: RequestOptions): P
 export const SPACECAT_USER_AGENT: string;
 
 export function retrievePageAuthentication(site: object, context: object): Promise<string>;
+
+export function prettifyLogForwardingConfig(payload: object): object;
 
 export * as llmoConfig from './llmo-config.js';
 export * as schemas from './schemas.js';

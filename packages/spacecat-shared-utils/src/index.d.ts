@@ -273,3 +273,5 @@ export function isoCalendarWeekMonday(date: Date): Date;
 
 export * as llmoConfig from './llmo-config.js';
 export * as schemas from './schemas.js';
+
+export { type detectLocale } from './locale-detect/index.js';

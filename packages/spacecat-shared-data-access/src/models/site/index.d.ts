@@ -19,6 +19,7 @@ import type {
   LatestAudit,
   Opportunity,
   Organization,
+  Project,
   SiteCandidate,
   SiteEnrollment,
   SiteTopPage,
@@ -214,6 +215,11 @@ export interface Site extends BaseModel {
   getOpportunitiesByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<Opportunity[]>;
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
+  getProject(): Promise<Project>;
+  getProjectId(): string;
+  getIsPrimaryLocale(): boolean;
+  getLanguage(): string;
+  getRegion(): string;
   getSiteCandidates(): Promise<SiteCandidate[]>;
   getSiteEnrollments(): Promise<SiteEnrollment[]>;
   getSiteTopPages(): Promise<SiteTopPage[]>;
@@ -234,18 +240,27 @@ export interface Site extends BaseModel {
   setIsSandbox(isSandbox: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
+  setProjectId(projectId: string): Site;
+  setIsPrimaryLocale(primaryLocale: boolean): Site;
+  setLanguage(language: string): Site;
+  setRegion(region: string): Site;
   toggleLive(): Site;
 }
 
-export interface SiteCollection extends BaseCollection<Organization> {
+export interface SiteCollection extends BaseCollection<Site> {
   allByBaseURL(baseURL: string): Promise<Site[]>;
   allByDeliveryType(deliveryType: string): Promise<Site[]>;
   allByOrganizationId(organizationId: string): Promise<Site[]>;
+  allByProjectId(projectId: string): Promise<Site[]>;
+  allByProjectName(projectName: string): Promise<Site[]>;
+  allByOrganizationIdAndProjectId(organizationId: string, projectId: string): Promise<Site[]>;
+  allByOrganizationIdAndProjectName(organizationId: string, projectName: string): Promise<Site[]>;
   allSitesToAudit(): Promise<string[]>;
   allWithLatestAudit(auditType: string, order?: string, deliveryType?: string): Promise<Site[]>;
   findByBaseURL(baseURL: string): Promise<Site | null>;
   findByDeliveryType(deliveryType: string): Promise<Site | null>;
   findByOrganizationId(organizationId: string): Promise<Site | null>;
+  findByProjectId(projectId: string): Promise<Site | null>;
   findByPreviewURL(previewURL: string): Promise<Site | null>;
   findByExternalOwnerIdAndExternalSiteId(
     externalOwnerId: string, externalSiteId: string

@@ -751,4 +751,101 @@ describe('Site IT', async () => {
       await updatedSite.remove();
     });
   });
+  describe('Project-Site relationship', () => {
+    it('gets sites by project id', async () => {
+      const projectId = sampleData.projects[0].getId();
+      const sites = await Site.allByProjectId(projectId);
+
+      expect(sites).to.be.an('array');
+
+      for (let i = 0; i < sites.length; i += 1) {
+        const site = sites[i];
+        expect(site.getProjectId()).to.equal(projectId);
+      }
+    });
+
+    it('gets sites by project name', async () => {
+      const projectName = sampleData.projects[0].getProjectName();
+      const sites = await Site.allByProjectName(projectName);
+
+      expect(sites).to.be.an('array');
+
+      for (let i = 0; i < sites.length; i += 1) {
+        const site = sites[i];
+        expect(site.getProjectId()).to.equal(sampleData.projects[0].getId());
+      }
+    });
+
+    it('gets sites by organization id and project id', async () => {
+      const organizationId = sampleData.organizations[0].getId();
+      const projectId = sampleData.projects[0].getId();
+      const sites = await Site.allByOrganizationIdAndProjectId(organizationId, projectId);
+
+      expect(sites).to.be.an('array');
+
+      for (let i = 0; i < sites.length; i += 1) {
+        const site = sites[i];
+        expect(site.getProjectId()).to.equal(projectId);
+        expect(site.getOrganizationId()).to.equal(organizationId);
+      }
+    });
+
+    it('gets sites by organization id and project name', async () => {
+      const organizationId = sampleData.organizations[0].getId();
+      const projectName = sampleData.projects[0].getProjectName();
+      const sites = await Site.allByOrganizationIdAndProjectName(organizationId, projectName);
+
+      expect(sites).to.be.an('array');
+
+      for (let i = 0; i < sites.length; i += 1) {
+        const site = sites[i];
+        expect(site.getProjectId()).to.equal(sampleData.projects[0].getId());
+        expect(site.getOrganizationId()).to.equal(organizationId);
+      }
+    });
+  });
+
+  describe('Site localization fields', () => {
+    it('creates a site with localization data', async () => {
+      const siteData = {
+        baseURL: 'https://localized-example.com',
+        name: 'localized-site',
+        organizationId: sampleData.organizations[0].getId(),
+        projectId: sampleData.projects[0].getId(),
+        isPrimaryLocale: false,
+        language: 'en',
+        region: 'US',
+        isLive: true,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(siteData);
+
+      expect(site.getIsPrimaryLocale()).to.equal(false);
+      expect(site.getLanguage()).to.equal('en');
+      expect(site.getRegion()).to.equal('US');
+      expect(site.getProjectId()).to.equal(sampleData.projects[0].getId());
+
+      // Clean up
+      await site.remove();
+    });
+
+    it('updates site localization data', async () => {
+      const site = await Site.findById(sampleData.sites[1].getId());
+
+      site.setIsPrimaryLocale(true);
+      site.setLanguage('fr');
+      site.setRegion('FR');
+      site.setProjectId(sampleData.projects[0].getId());
+
+      await site.save();
+
+      const updatedSite = await Site.findById(site.getId());
+
+      expect(updatedSite.getIsPrimaryLocale()).to.equal(true);
+      expect(updatedSite.getLanguage()).to.equal('fr');
+      expect(updatedSite.getRegion()).to.equal('FR');
+      expect(updatedSite.getProjectId()).to.equal(sampleData.projects[0].getId());
+    });
+  });
 });

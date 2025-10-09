@@ -22,9 +22,23 @@ describe('schemas', () => {
     const topicId = '123e4567-e89b-12d3-a456-426614174001';
 
     const baseConfig = {
-      entities: {
-        [categoryId]: { type: 'category', name: 'Category One', region: 'US' },
-        [topicId]: { type: 'topic', name: 'Topic One' },
+      entities: {},
+      categories: {
+        [categoryId]: { name: 'Category One', region: 'US' },
+      },
+      topics: {
+        [topicId]: {
+          name: 'Topic One',
+          prompts: [
+            {
+              prompt: 'Test prompt',
+              regions: ['US'],
+              origin: 'human',
+              source: 'config',
+            },
+          ],
+          category: categoryId,
+        },
       },
       brands: {
         aliases: [{
@@ -67,19 +81,16 @@ describe('schemas', () => {
       if (result.success) {
         throw new Error('Expected validation to fail');
       }
-      expect(result.error.issues[0].message).equals(`Unknown category entity: ${unknownCategoryId}`);
+      expect(result.error.issues[0].message).equals(`Category ${unknownCategoryId} does not exist`);
     });
 
-    it('fails when competitor references a non-category entity', () => {
+    it('fails when competitor references unknown category', () => {
+      const unknownCategoryId = '22222222-2222-4222-8222-222222222222';
       const config = {
         ...baseConfig,
-        entities: {
-          [categoryId]: { type: 'category', name: 'Category One', region: 'US' },
-          [topicId]: { type: 'topic', name: 'Topic One', region: 'US' }, // Add region to topic so region validation passes
-        },
         competitors: {
           competitors: [{
-            category: topicId,
+            category: unknownCategoryId,
             region: 'US',
             name: 'Competitor One',
             aliases: ['Competitor Alias'],
@@ -93,7 +104,7 @@ describe('schemas', () => {
       if (result.success) {
         throw new Error('Expected validation to fail');
       }
-      expect(result.error.issues[0].message).equals(`Entity ${topicId} referenced as category must have type "category" but was "topic"`);
+      expect(result.error.issues[0].message).equals(`Category ${unknownCategoryId} does not exist`);
     });
 
     it('fails when competitor references unknown entity', () => {
@@ -116,16 +127,30 @@ describe('schemas', () => {
       if (result.success) {
         throw new Error('Expected validation to fail');
       }
-      expect(result.error.issues[0].message).equals(`Unknown category entity: ${unknownCategoryId}`);
+      expect(result.error.issues[0].message).equals(`Category ${unknownCategoryId} does not exist`);
     });
 
     describe('region validation', () => {
       const categoryWithRegionsId = '444e4444-e44b-44d4-a444-444444444444';
 
       const configWithRegions = {
-        entities: {
-          [categoryWithRegionsId]: { type: 'category', name: 'Category With Regions', region: ['us', 'ca'] },
-          [topicId]: { type: 'topic', name: 'Topic One' },
+        entities: {},
+        categories: {
+          [categoryWithRegionsId]: { name: 'Category With Regions', region: ['us', 'ca'] },
+        },
+        topics: {
+          [topicId]: {
+            name: 'Topic One',
+            prompts: [
+              {
+                prompt: 'Test prompt',
+                regions: ['us'],
+                origin: 'human',
+                source: 'config',
+              },
+            ],
+            category: categoryWithRegionsId,
+          },
         },
         brands: { aliases: [] },
         competitors: { competitors: [] },
@@ -248,12 +273,26 @@ describe('schemas', () => {
       });
 
       describe('category with single region', () => {
-        const singleRegionCategoryId = '666e6666-e66b-66d6-a666-666666666666';
+        const singleRegionCategoryId = '666e6666-e66b-46d6-a666-666666666666';
 
         const configWithSingleRegion = {
-          entities: {
-            [singleRegionCategoryId]: { type: 'category', name: 'Single Region Category', region: 'us' },
-            [topicId]: { type: 'topic', name: 'Topic One' },
+          entities: {},
+          categories: {
+            [singleRegionCategoryId]: { name: 'Single Region Category', region: 'us' },
+          },
+          topics: {
+            [topicId]: {
+              name: 'Topic One',
+              prompts: [
+                {
+                  prompt: 'Test prompt',
+                  regions: ['us'],
+                  origin: 'human',
+                  source: 'config',
+                },
+              ],
+              category: singleRegionCategoryId,
+            },
           },
           brands: { aliases: [] },
           competitors: { competitors: [] },
@@ -294,6 +333,385 @@ describe('schemas', () => {
           }
           expect(result.error.issues[0].message).equals('brand alias regions [ca] are not allowed. Category only supports regions: [us]');
         });
+      });
+
+      describe('topic prompts', () => {
+        it('validates when topic prompt regions are subset of category regions', () => {
+          const testTopicId = '777e7777-e77b-77d7-a777-777777777777';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Test prompt 1',
+                    regions: ['us'],
+                    origin: 'human',
+                    source: 'config',
+                  },
+                  {
+                    prompt: 'Test prompt 2',
+                    regions: ['ca', 'us'],
+                    origin: 'ai',
+                    source: 'api',
+                  },
+                ],
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
+
+        it('fails when topic prompt has regions not in category', () => {
+          const testTopicId = '888e8888-e88b-48d8-a888-888888888888';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Test prompt',
+                    regions: ['us', 'mx'], // mx not in category regions
+                    origin: 'human',
+                    source: 'config',
+                  },
+                ],
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+          if (result.success) {
+            throw new Error('Expected validation to fail');
+          }
+          expect(result.error.issues[0].message).equals('topic prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
+        });
+
+        it('validates when topic category is a string name (no region validation)', () => {
+          const testTopicId = '777e7777-e77b-47d7-a777-777777777777';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Test prompt',
+                    regions: ['mx'], // Any regions allowed when category is string
+                    origin: 'human',
+                    source: 'config',
+                  },
+                ],
+                category: 'Test Category Name', // String name, not UUID
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
+
+        it('fails when topic has no prompts', () => {
+          const testTopicId = 'aaae1111-e11b-41d1-a111-111111111111';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [], // Empty prompts array should fail
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+        });
+
+        it('fails when topic has no category', () => {
+          const testTopicId = 'bbbb2222-e22b-42d2-a222-222222222222';
+          const config = {
+            ...configWithRegions,
+            topics: {
+              ...configWithRegions.topics,
+              [testTopicId]: {
+                name: 'Test Topic',
+                prompts: [
+                  {
+                    prompt: 'Test prompt',
+                    regions: ['us'],
+                    origin: 'human',
+                    source: 'config',
+                  },
+                ],
+                // Missing category field
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+        });
+      });
+    });
+
+    describe('deleted', () => {
+      const deletedPromptId1 = 'dddd1111-d11b-41d1-a111-111111111111';
+      const deletedPromptId2 = 'dddd2222-d22b-42d2-a222-222222222222';
+
+      it('validates configuration without deleted (optional field)', () => {
+        const result = llmoConfig.safeParse(baseConfig);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with empty deleted prompts record', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {},
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates configuration without prompts field in deleted', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {},
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with valid deleted prompts', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Deleted prompt one',
+                topic: 'Deleted Topic Name',
+                regions: ['us'],
+                category: 'Deleted Category Name',
+                origin: 'human',
+                source: 'config',
+              },
+              [deletedPromptId2]: {
+                prompt: 'Deleted prompt two',
+                topic: 'Another Deleted Topic',
+                regions: ['ca', 'us'],
+                category: 'Another Deleted Category',
+                origin: 'ai',
+                source: 'api',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('validates with custom origin and source values', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Test Topic',
+                regions: ['us'],
+                category: 'Test Category',
+                origin: 'custom-origin',
+                source: 'custom-source',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails when deleted prompt has empty prompt text', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: '',
+                topic: 'Test Topic',
+                regions: ['us'],
+                category: 'Test Category',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has empty topic', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: '',
+                regions: ['us'],
+                category: 'Test Category',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has empty category', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Test Topic',
+                regions: ['us'],
+                category: '',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has invalid region format', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Test Topic',
+                regions: ['usa'], // Invalid - must be 2 characters
+                category: 'Test Category',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has empty regions array', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Test Topic',
+                regions: [],
+                category: 'Test Category',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt is missing required fields', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                // Missing topic, regions, category, origin, source
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when deleted prompt has invalid UUID key', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              'not-a-uuid': {
+                prompt: 'Test prompt',
+                topic: 'Test Topic',
+                regions: ['us'],
+                category: 'Test Category',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('allows extra properties in deleted (forward compatibility)', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId1]: {
+                prompt: 'Test prompt',
+                topic: 'Test Topic',
+                regions: ['us'],
+                category: 'Test Category',
+                origin: 'human',
+                source: 'config',
+                deletedAt: '2025-01-01T00:00:00Z', // Extra field for future compatibility
+                deletedBy: 'user@example.com', // Extra field
+              },
+            },
+            futureEntityType: {}, // Extra property at deleted level
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
       });
     });
   });

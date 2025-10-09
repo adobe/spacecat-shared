@@ -180,6 +180,7 @@ describe('AuditModel', () => {
       SECURITY_CSP: 'security-csp',
       SECURITY_VULNERABILITIES: 'security-vulnerabilities',
       SECURITY_PERMISSIONS: 'security-permissions',
+      SECURITY_REDUNDANT: 'security-permissions-redundant',
       PAID: 'paid',
       HREFLANG: 'hreflang',
       HEADINGS: 'headings',
@@ -188,11 +189,12 @@ describe('AuditModel', () => {
       READABILITY: 'readability',
       PRERENDER: 'prerender',
       PRODUCT_METATAGS: 'product-metatags',
+      SUMMARIZATION: 'summarization',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(37);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(38);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

@@ -38,14 +38,39 @@ const nonEmptyString = z.string().min(1);
 
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 
-const entity = z.union([
-  z.object({ type: z.literal('category'), name: nonEmptyString, region: z.union([region, z.array(region)]) }),
-  z.object({ type: z.literal('topic'), name: nonEmptyString }),
-  z.object({ type: nonEmptyString }),
-]);
+const prompt = z.object({
+  prompt: nonEmptyString,
+  regions: z.array(region),
+  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
+  source: z.union([z.literal('config'), z.literal('api'), z.string()]),
+});
+
+const entity = z.object({
+  type: nonEmptyString,
+  name: nonEmptyString,
+});
+
+const category = z.object({
+  name: nonEmptyString,
+  region: z.union([region, z.array(region)]),
+});
+
+const topic = z.object({
+  name: nonEmptyString,
+  prompts: z.array(prompt).min(1),
+  category: z.union([z.uuid(), nonEmptyString]),
+});
+
+const deletedPrompt = prompt.extend({
+  topic: nonEmptyString,
+  category: nonEmptyString,
+  regions: z.array(region).min(1),
+});
 
 export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
+  categories: z.record(z.uuid(), category),
+  topics: z.record(z.uuid(), topic),
   brands: z.object({
     aliases: z.array(
       z.object({
@@ -66,60 +91,72 @@ export const llmoConfig = z.object({
       }),
     ),
   }),
+  deleted: z.object({
+    prompts: z.record(z.uuid(), deletedPrompt).optional(),
+  }).optional(),
 }).superRefine((value, ctx) => {
-  const { entities, brands, competitors } = value;
+  const {
+    categories, topics, brands, competitors,
+  } = value;
 
   brands.aliases.forEach((alias, index) => {
-    ensureEntityType(entities, ctx, alias.category, 'category', ['brands', 'aliases', index, 'category'], 'category');
-    ensureRegionCompatibility(entities, ctx, alias.category, alias.region, ['brands', 'aliases', index, 'region'], 'brand alias');
+    ensureCategoryExists(categories, ctx, alias.category, ['brands', 'aliases', index, 'category']);
+    ensureRegionCompatibility(categories, ctx, alias.category, alias.region, ['brands', 'aliases', index, 'region'], 'brand alias');
   });
 
   competitors.competitors.forEach((competitor, index) => {
-    ensureEntityType(entities, ctx, competitor.category, 'category', ['competitors', 'competitors', index, 'category'], 'category');
-    ensureRegionCompatibility(entities, ctx, competitor.category, competitor.region, ['competitors', 'competitors', index, 'region'], 'competitor');
+    ensureCategoryExists(categories, ctx, competitor.category, ['competitors', 'competitors', index, 'category']);
+    ensureRegionCompatibility(categories, ctx, competitor.category, competitor.region, ['competitors', 'competitors', index, 'region'], 'competitor');
+  });
+
+  // Validate topic prompts regions against their category
+  Object.entries(topics).forEach(([topicId, topicEntity]) => {
+    if (topicEntity.prompts && topicEntity.category) {
+      // If category is a UUID, validate against the referenced category entity
+      if (topicEntity.category.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        topicEntity.prompts.forEach((promptItem, promptIndex) => {
+          ensureRegionCompatibility(
+            categories,
+            ctx,
+            topicEntity.category,
+            promptItem.regions,
+            ['topics', topicId, 'prompts', promptIndex, 'regions'],
+            'topic prompt',
+          );
+        });
+      }
+    }
   });
 });
 
 /**
-   * @param {LLMOConfig['entities']} entities
+   * @param {LLMOConfig['categories']} categories
    * @param {z.RefinementCtx} ctx
    * @param {string} id
-   * @param {string} expectedType
    * @param {Array<number | string>} path
-   * @param {string} refLabel
    */
-function ensureEntityType(entities, ctx, id, expectedType, path, refLabel) {
-  const entityValue = entities[id];
-  if (!entityValue) {
+function ensureCategoryExists(categories, ctx, id, path) {
+  if (!categories[id]) {
     ctx.addIssue({
       code: 'custom',
       path,
-      message: `Unknown ${refLabel} entity: ${id}`,
-    });
-    return;
-  }
-
-  if (entityValue.type !== expectedType) {
-    ctx.addIssue({
-      code: 'custom',
-      path,
-      message: `Entity ${id} referenced as ${refLabel} must have type "${expectedType}" but was "${entityValue.type}"`,
+      message: `Category ${id} does not exist`,
     });
   }
 }
 
 /**
- * @param {LLMOConfig['entities']} entities
+ * @param {LLMOConfig['categories']} categories
  * @param {z.RefinementCtx} ctx
  * @param {string} categoryId
  * @param {string | string[]} itemRegion
  * @param {Array<number | string>} path
  * @param {string} itemLabel
  */
-function ensureRegionCompatibility(entities, ctx, categoryId, itemRegion, path, itemLabel) {
-  const categoryEntity = entities[categoryId];
+function ensureRegionCompatibility(categories, ctx, categoryId, itemRegion, path, itemLabel) {
+  const categoryEntity = categories[categoryId];
   if (!categoryEntity) {
-    // Category validation is handled by ensureEntityType
+    // Category validation is handled by ensureCategoryExists
     return;
   }
 

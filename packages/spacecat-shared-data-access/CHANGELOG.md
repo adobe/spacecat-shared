@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.69.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.69.1...@adobe/spacecat-shared-data-access-v2.69.2) (2025-10-09)
+
+
+### Bug Fixes
+
+* add new attribute for product mapping ([#1014](https://github.com/adobe/spacecat-shared/issues/1014)) ([426b649](https://github.com/adobe/spacecat-shared/commit/426b649cb0dcff92a3c67f8e76bbfafd4b377885))
+
+# [@adobe/spacecat-shared-data-access-v2.69.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.69.0...@adobe/spacecat-shared-data-access-v2.69.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* update expires in for scrapeJobs and scrapeUrls to match S3 ([#998](https://github.com/adobe/spacecat-shared/issues/998)) ([289312b](https://github.com/adobe/spacecat-shared/commit/289312bd4fbfe6c48a4c678d153472406f3a7d30))
+
 # [@adobe/spacecat-shared-data-access-v2.69.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.68.1...@adobe/spacecat-shared-data-access-v2.69.0) (2025-10-08)
 
 

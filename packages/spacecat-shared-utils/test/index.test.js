@@ -84,6 +84,7 @@ describe('Index Exports', () => {
     'getPageEditUrl',
     'llmoConfig',
     'schemas',
+    'prettifyLogForwardingConfig',
   ];
 
   it('exports all expected functions', () => {

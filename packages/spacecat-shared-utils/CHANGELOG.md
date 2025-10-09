@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.58.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.58.0...@adobe/spacecat-shared-utils-v1.58.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* adding calendar util functions to interface ([#1016](https://github.com/adobe/spacecat-shared/issues/1016)) ([245ff41](https://github.com/adobe/spacecat-shared/commit/245ff41dd05cf4348cfe81d2b187487744a2ad57))
+
 # [@adobe/spacecat-shared-utils-v1.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.57.1...@adobe/spacecat-shared-utils-v1.58.0) (2025-10-09)
 
 

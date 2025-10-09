@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.69.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.69.0...@adobe/spacecat-shared-data-access-v2.69.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* update expires in for scrapeJobs and scrapeUrls to match S3 ([#998](https://github.com/adobe/spacecat-shared/issues/998)) ([289312b](https://github.com/adobe/spacecat-shared/commit/289312bd4fbfe6c48a4c678d153472406f3a7d30))
+
+# [@adobe/spacecat-shared-data-access-v2.69.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.68.1...@adobe/spacecat-shared-data-access-v2.69.0) (2025-10-08)
+
+
+### Features
+
+* add summarization audit type ([#987](https://github.com/adobe/spacecat-shared/issues/987)) ([a000227](https://github.com/adobe/spacecat-shared/commit/a000227898df9b08e74eb555fc5a32e6f11ce7fd))
+
 # [@adobe/spacecat-shared-data-access-v2.68.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.68.0...@adobe/spacecat-shared-data-access-v2.68.1) (2025-10-07)
 
 

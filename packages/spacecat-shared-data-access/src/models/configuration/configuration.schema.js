@@ -40,6 +40,7 @@ const handlerSchema = Joi.object().pattern(Joi.string(), Joi.object(
         actions: Joi.array().items(Joi.string()),
       },
     )),
+    prodCodes: Joi.array().items(Joi.string()),
   },
 )).unknown(true);
 

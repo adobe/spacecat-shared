@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.59.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.0...@adobe/spacecat-shared-utils-v1.59.1) (2025-10-10)
+
+
+### Bug Fixes
+
+* **calendar-week-helper:** Bring back ISOCalendarWeek type ([#1018](https://github.com/adobe/spacecat-shared/issues/1018)) ([1680974](https://github.com/adobe/spacecat-shared/commit/16809746b817f1076461e83bc8b7d7f5093815fb))
+
 # [@adobe/spacecat-shared-utils-v1.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.58.1...@adobe/spacecat-shared-utils-v1.59.0) (2025-10-09)
 
 

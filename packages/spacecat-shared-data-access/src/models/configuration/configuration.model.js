@@ -15,6 +15,7 @@ import { isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils'
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
 import BaseModel from '../base/base.model.js';
 import { Audit } from '../audit/index.js';
+import { Entitlement } from '../entitlement/index.js';
 
 /**
  * Configuration - A class representing an Configuration entity.
@@ -249,7 +250,12 @@ class Configuration extends BaseModel {
     this.updateHandlerOrgs(type, orgId, false);
   }
 
-  registerAudit(type, enabledByDefault = false, interval = Configuration.JOB_INTERVALS.NEVER) {
+  registerAudit(
+    type,
+    enabledByDefault = false,
+    interval = Configuration.JOB_INTERVALS.NEVER,
+    productCodes = [],
+  ) {
     // Validate audit type
     if (!Object.values(Audit.AUDIT_TYPES).includes(type)) {
       throw new Error(`Audit type ${type} is not a valid audit type in the data model`);
@@ -258,6 +264,14 @@ class Configuration extends BaseModel {
     // Validate job interval
     if (!Object.values(Configuration.JOB_INTERVALS).includes(interval)) {
       throw new Error(`Invalid interval ${interval}`);
+    }
+
+    // Validate product codes
+    if (!isNonEmptyArray(productCodes)) {
+      throw new Error('No product codes provided');
+    }
+    if (!productCodes.every((pc) => Object.values(Entitlement.PRODUCT_CODES).includes(pc))) {
+      throw new Error('Invalid product codes provided');
     }
 
     // Add to handlers if not already registered
@@ -274,6 +288,7 @@ class Configuration extends BaseModel {
           orgs: [],
         },
         dependencies: [],
+        productCodes,
       };
       this.setHandlers(handlers);
     }

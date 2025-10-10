@@ -94,6 +94,11 @@ export const llmoConfig = z.object({
   deleted: z.object({
     prompts: z.record(z.uuid(), deletedPrompt).optional(),
   }).optional(),
+  cdnBucketConfig: z.object({
+    bucketName: z.string().optional(),
+    orgId: z.string().optional(),
+    cdnProvider: z.string(),
+  }).optional(),
 }).superRefine((value, ctx) => {
   const {
     categories, topics, brands, competitors,

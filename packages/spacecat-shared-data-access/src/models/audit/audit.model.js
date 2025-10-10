@@ -53,6 +53,7 @@ class Audit extends BaseModel {
     SECURITY_CSP: 'security-csp',
     SECURITY_VULNERABILITIES: 'security-vulnerabilities',
     SECURITY_PERMISSIONS: 'security-permissions',
+    SECURITY_REDUNDANT: 'security-permissions-redundant',
     PAID: 'paid',
     HREFLANG: 'hreflang',
     HEADINGS: 'headings',

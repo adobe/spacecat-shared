@@ -10,19 +10,15 @@
  * governing permissions and limitations under the License.
  */
 
-import BaseModel from '../base/base.model.js';
-
-/**
- * ScraperUrl - A class representing an ScraperUrl entity.
- * Provides methods to access and manipulate ScraperUrl-specific data.
- *
- * @class ScraperUrl
- * @extends BaseModel
- */
-class ScrapeUrl extends BaseModel {
-  static SCRAPE_URL_EXPIRES_IN_DAYS = 120;
-
-  // add your custom methods or overrides here
+interface LocaleDetectConfig {
+  baseUrl: string;
+  headers?: object;
+  html?: string;
 }
 
-export default ScrapeUrl;
+interface LocaleDetectResponse {
+  language: string;
+  region: string;
+}
+
+export function detectLocale(config: LocaleDetectConfig): Promise<LocaleDetectResponse>;

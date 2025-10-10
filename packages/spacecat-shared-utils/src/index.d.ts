@@ -168,7 +168,7 @@ declare function replacePlaceholders(content: string, placeholders: object): str
  * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content.
  */
 declare function getStaticContent(placeholders: object, filename: string):
-    Promise<string | null>;
+  Promise<string | null>;
 
 /**
  * Reads the content of a prompt file asynchronously and replaces any placeholders
@@ -263,5 +263,15 @@ export const SPACECAT_USER_AGENT: string;
 
 export function retrievePageAuthentication(site: object, context: object): Promise<string>;
 
+export function prettifyLogForwardingConfig(payload: object): object;
+
+export function isoCalendarWeek(date: Date): object;
+
+export function isoCalendarWeekSunday(date: Date): Date;
+
+export function isoCalendarWeekMonday(date: Date): Date;
+
 export * as llmoConfig from './llmo-config.js';
 export * as schemas from './schemas.js';
+
+export { type detectLocale } from './locale-detect/index.js';

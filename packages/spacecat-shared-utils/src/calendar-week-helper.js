@@ -311,6 +311,12 @@ export function isoCalendarWeekSunday(date) {
 }
 
 /**
+ * @typedef {object} ISOCalendarWeek
+ * @property {number} week - The ISO calendar week number (1-53).
+ * @property {number} year - The year of the ISO calendar week.
+ */
+
+/**
  * Calculates the calendar week according to ISO 8601:
  * - Weeks start with Monday and end on Sunday.
  * - Each week's year is the Gregorian year in which the Thursday falls.

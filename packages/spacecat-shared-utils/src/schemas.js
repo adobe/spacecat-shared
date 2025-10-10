@@ -96,7 +96,7 @@ export const llmoConfig = z.object({
   }).optional(),
   cdnBucketConfig: z.object({
     bucketName: z.string().optional(),
-    orgId: z.string().optional(),
+    allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
   }).optional(),
 }).superRefine((value, ctx) => {

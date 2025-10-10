@@ -395,6 +395,117 @@ describe('SiteModel', () => {
     });
   });
 
+  describe('code attribute', () => {
+    it('gets code returns undefined', () => {
+      expect(instance.getCode()).to.be.undefined;
+    });
+
+    it('sets code with valid data', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('sets code with partial data', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().type).to.equal('github');
+      expect(instance.getCode().owner).to.equal('adobe');
+    });
+
+    it('updates existing code data', () => {
+      const initialCode = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(initialCode);
+
+      const updatedCode = {
+        ...initialCode,
+        ref: 'develop',
+        url: 'https://github.com/adobe/spacecat/tree/develop',
+      };
+      instance.setCode(updatedCode);
+      expect(instance.getCode()).to.deep.equal(updatedCode);
+    });
+
+    it('clears code when set to empty object', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      instance.setCode({});
+      expect(instance.getCode()).to.deep.equal({});
+    });
+
+    it('handles code with special characters in owner/repo', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe-inc',
+        repo: 'spacecat-v2.0',
+        ref: 'feature/new-feature',
+        url: 'https://github.com/adobe-inc/spacecat-v2.0',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('handles code with different ref types', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'v1.2.3', // tag
+        url: 'https://github.com/adobe/spacecat/tree/v1.2.3',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().ref).to.equal('v1.2.3');
+    });
+
+    it('handles code with different URL formats', () => {
+      const codeData = {
+        type: 'bitbucket',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://bitbucket.org/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('handles code with gitlab URL format', () => {
+      const codeData = {
+        type: 'gitlab',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://gitlab.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+  });
+
   describe('localization fields', () => {
     describe('primaryLocale', () => {
       it('gets primaryLocale', () => {

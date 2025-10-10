@@ -93,7 +93,8 @@ export async function readConfig(sideId, s3Client, options) {
       res = await s3Client.send(getObjectCommand);
       break; // success
     } catch (e) {
-      const isNotFound = e?.name === 'NoSuchKey' || e?.name === 'NotFound';
+      const isNotFound = e?.name === 'NoSuchKey' || e?.name === 'NotFound' || e?.name === 'NoSuchVersion' || e?.Code === 'NoSuchVersion'
+        || /The specified version does not exist/i.test(e?.message || '');
       if (!isNotFound) throw e;
 
       if (attempt < maxTries) {

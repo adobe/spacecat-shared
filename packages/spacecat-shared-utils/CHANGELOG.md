@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.59.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.1...@adobe/spacecat-shared-utils-v1.59.2) (2025-10-10)
+
+
+### Bug Fixes
+
+* adds help urls to cdn helpers ([#1020](https://github.com/adobe/spacecat-shared/issues/1020)) ([9d20a0a](https://github.com/adobe/spacecat-shared/commit/9d20a0a25ac683aba33fc8def57b624b337b8b08))
+
 # [@adobe/spacecat-shared-utils-v1.59.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.0...@adobe/spacecat-shared-utils-v1.59.1) (2025-10-10)
 
 

@@ -77,6 +77,7 @@ describe('CDN Helper Functions', () => {
           ACL: 'None',
           'Server side encryption': 'None',
           'Maximum bytes': 0,
+          HelpUrl: 'https://www.fastly.com/documentation/guides/integrations/logging-endpoints/log-streaming-amazon-s3/',
         });
       });
 
@@ -135,6 +136,7 @@ describe('CDN Helper Functions', () => {
           'Log interval': '60 seconds',
           'Access key': 'AKIAZ5TC4XVOZ65PV3X2',
           'Secret key': 'somesecret',
+          HelpUrl: 'https://techdocs.akamai.com/datastream2/docs/stream-amazon-s3',
         });
       });
 
@@ -160,6 +162,7 @@ describe('CDN Helper Functions', () => {
             'EdgeTimeToFirstByteMs',
           ],
           'Ownership token': 'Please reach out to Adobe support for obtaining the token once you completed the configuration.',
+          HelpUrl: 'https://developers.cloudflare.com/logs/logpush/logpush-job/enable-destinations/aws-s3/',
         });
       });
 
@@ -185,6 +188,7 @@ describe('CDN Helper Functions', () => {
             'time-to-first-byte',
             'sc-content-type',
           ],
+          HelpUrl: 'https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html#enable-standard-logging-cross-accounts',
         });
       });
 

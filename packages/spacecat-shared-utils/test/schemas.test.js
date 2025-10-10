@@ -738,7 +738,7 @@ describe('schemas', () => {
           ...baseConfig,
           cdnBucketConfig: {
             bucketName: 'test',
-            orgId: 'test',
+            allowedPaths: ['test'],
             cdnProvider: 'test',
           },
         };

@@ -14,7 +14,6 @@ import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
 import Suggestion from './suggestion.model.js';
 import { guardId } from '../../util/guards.js';
-import { resolveUpdates } from '../../util/util.js';
 
 /**
  * SuggestionCollection - A collection class responsible for managing Suggestion entities.
@@ -24,7 +23,6 @@ import { resolveUpdates } from '../../util/util.js';
  * This collection provides methods to:
  * - Update the status of multiple suggestions in bulk
  * - Retrieve FixEntities associated with a specific Suggestion
- * - Set FixEntities for a Suggestion by managing junction table relationships
  *
  * @class SuggestionCollection
  * @extends BaseCollection
@@ -91,105 +89,6 @@ class SuggestionCollection extends BaseCollection {
     } catch (error) {
       this.log.error('Failed to get fix entities for suggestion', error);
       throw new DataAccessError('Failed to get fix entities for suggestion', this, error);
-    }
-  }
-
-  /**
-   * Sets FixEntities for a specific Suggestion by replacing all existing fix entities with new
-   * ones.
-   * This method efficiently only removes relationships that are no longer needed and only adds
-   * new ones.
-   *
-   * @async
-   * @param {Object} opportunity - The opportunity object.
-   * @param {Object} suggestion - The suggestion object.
-   * @param {Array<Object>} fixEntities - An array of fix entity objects.
-   * @returns {Promise<{createdItems: Array, errorItems: Array, removedCount: number}>} - A promise
-   *   that resolves to an object containing:
-   *   - createdItems: Array of created FixEntitySuggestion junction records
-   *   - errorItems: Array of items that failed validation
-   *   - removedCount: Number of existing relationships that were removed
-   * @throws {DataAccessError} - Throws an error if the parameters are not provided or if the
-   *   operation fails.
-   */
-  async setFixEntitiesForSuggestion(opportunity, suggestion, fixEntities) {
-    if (!opportunity) {
-      throw new Error('Opportunity parameter is required');
-    }
-
-    if (!suggestion) {
-      throw new Error('Suggestion parameter is required');
-    }
-
-    if (!fixEntities) {
-      throw new Error('FixEntities parameter is required');
-    }
-
-    const suggestionId = suggestion.getId();
-    const opportunityId = opportunity.getId();
-    const fixEntityIds = fixEntities.map((entity) => entity.getId());
-
-    try {
-      const fixEntitySuggestionCollection = this.entityRegistry.getCollection('FixEntitySuggestionCollection');
-
-      const existingRelationships = await fixEntitySuggestionCollection
-        .allBySuggestionId(suggestionId);
-
-      // Extract existing fix entity IDs from relationship objects
-      const existingFixEntityIds = existingRelationships.map((rel) => rel.getFixEntityId());
-
-      const { toDelete, toCreate } = resolveUpdates(existingFixEntityIds, fixEntityIds);
-
-      let removePromise;
-      let createPromise;
-      const deleteKeys = toDelete.map((fixEntityId) => (
-        {
-          suggestionId,
-          fixEntityId,
-        }));
-      const createKeys = toCreate.map((fixEntityId) => {
-        const fixEntity = fixEntities.find((entity) => entity.getId() === fixEntityId);
-        return {
-          suggestionId,
-          fixEntityId,
-          opportunityId,
-          fixEntityCreatedAt: fixEntity.getCreatedAt(),
-        };
-      });
-
-      if (toDelete.length > 0) {
-        removePromise = fixEntitySuggestionCollection.removeByIndexKeys(deleteKeys);
-      }
-
-      if (toCreate.length > 0) {
-        createPromise = fixEntitySuggestionCollection.createMany(createKeys);
-      }
-
-      const [removeResult, createResult] = await Promise.allSettled([removePromise, createPromise]);
-
-      let removedCount = 0;
-      let createdItems = [];
-      let errorItems = [];
-      if (removeResult.status === 'fulfilled') {
-        removedCount = deleteKeys.length;
-      } else {
-        this.log.error('Remove operation failed:', removeResult.reason);
-      }
-
-      if (createResult.status === 'fulfilled') {
-        createdItems = createResult.value?.createdItems || [];
-        errorItems = createResult.value?.errorItems || [];
-      } else {
-        this.log.error('Create operation failed:', createResult.reason);
-      }
-
-      this.log.info(`Set fix entities for suggestion ${suggestionId}: removed ${removedCount}, `
-        + `added ${createdItems.length}, failed ${errorItems.length}`);
-
-      return { createdItems, errorItems, removedCount };
-    } catch (error) {
-      this.log.error('Failed to set fix entities for suggestion', error);
-      throw new DataAccessError('Failed to set fix entities for suggestion', this, error);
     }
   }
 }

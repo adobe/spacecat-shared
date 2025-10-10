@@ -183,7 +183,6 @@ The module provides the following DAOs:
 ### Suggestion Functions
 - `bulkUpdateStatus` - Updates the status of multiple suggestions in bulk
 - `getFixEntitiesBySuggestionId` - Gets all FixEntities associated with a specific Suggestion
-- `setFixEntitiesForSuggestion` - Sets FixEntities for a Suggestion by managing junction table relationships
 
 ### FixEntitySuggestion Functions
 - `allBySuggestionId` - Gets all junction records associated with a specific Suggestion

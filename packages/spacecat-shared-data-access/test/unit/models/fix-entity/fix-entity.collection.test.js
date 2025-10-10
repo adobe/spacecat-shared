@@ -201,7 +201,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
+        .setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-3' }],
@@ -227,20 +227,21 @@ describe('FixEntityCollection', () => {
       ]);
     });
 
-    it('should throw error when opportunity is not provided', async () => {
+    it('should throw error when opportunityId is not provided', async () => {
       await expect(
         fixEntityCollection.setSuggestionsForFixEntity(null, mockFixEntity, mockSuggestions),
-      ).to.be.rejectedWith(ValidationError, 'opportunity is required');
+      ).to.be.rejectedWith('Validation failed in FixEntityCollection: opportunityId must be a valid UUID');
     });
 
     it('should throw error when fixEntity is not provided', async () => {
       await expect(
-        fixEntityCollection.setSuggestionsForFixEntity(mockOpportunity, null, mockSuggestions),
+        fixEntityCollection
+          .setSuggestionsForFixEntity(mockOpportunity.getId(), null, mockSuggestions),
       ).to.be.rejectedWith(ValidationError, 'fixEntity is required');
     });
 
     it('should throw error when suggestions is not an array', async () => {
-      await expect(fixEntityCollection.setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, 'not-an-array'))
+      await expect(fixEntityCollection.setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, 'not-an-array'))
         .to.be.rejectedWith('Validation failed in FixEntityCollection: suggestions must be an array');
     });
 
@@ -258,7 +259,7 @@ describe('FixEntityCollection', () => {
 
       await expect(
         fixEntityCollection
-          .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions),
+          .setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, mockSuggestions),
       ).to.be.rejectedWith(DataAccessError);
       expect(mockLogger.error).to.have.been.calledWith('Failed to set suggestions for fix entity', error);
     });
@@ -280,7 +281,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       await fixEntityCollection.setSuggestionsForFixEntity(
-        mockOpportunity,
+        mockOpportunity.getId(),
         mockFixEntity,
         singleSuggestion,
       );
@@ -309,7 +310,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
+        .setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-2' }, { id: 'junction-3' }],
@@ -339,7 +340,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
+        .setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [], // Failed operation results in empty array
@@ -369,7 +370,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
+        .setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [],
@@ -413,7 +414,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, emptySuggestions);
+        .setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, emptySuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [],
@@ -443,7 +444,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, mockSuggestions);
+        .setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, mockSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-1' }, { id: 'junction-2' }],
@@ -490,7 +491,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, duplicateSuggestions);
+        .setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, duplicateSuggestions);
 
       expect(result).to.deep.equal({
         createdItems: [{ id: 'junction-1' }, { id: 'junction-2' }],
@@ -536,7 +537,7 @@ describe('FixEntityCollection', () => {
         .returns(mockFixEntitySuggestionCollection);
 
       const result = await fixEntityCollection
-        .setSuggestionsForFixEntity(mockOpportunity, mockFixEntity, singleSuggestion);
+        .setSuggestionsForFixEntity(mockOpportunity.getId(), mockFixEntity, singleSuggestion);
 
       expect(result).to.deep.equal({
         createdItems: [],

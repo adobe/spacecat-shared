@@ -148,7 +148,7 @@ describe('FixEntity IT', async () => {
       getId: () => fixEntity.getOpportunityId(),
     };
 
-    await FixEntity.setSuggestionsForFixEntity(opportunity, fixEntity, suggestionsToSet);
+    await FixEntity.setSuggestionsForFixEntity(opportunity.getId(), fixEntity, suggestionsToSet);
 
     // Test the model method
     const suggestions = await fixEntity.getSuggestions();
@@ -227,10 +227,11 @@ describe('FixEntity IT', async () => {
     const opportunity = { getId: () => opportunityId };
 
     // Associate suggestion1 and suggestion2 with fixEntity1
-    await FixEntity.setSuggestionsForFixEntity(opportunity, fixEntity1, [suggestion1, suggestion2]);
+    await FixEntity
+      .setSuggestionsForFixEntity(opportunity.getId(), fixEntity1, [suggestion1, suggestion2]);
 
     // Associate suggestion3 with fixEntity2
-    await FixEntity.setSuggestionsForFixEntity(opportunity, fixEntity2, [suggestion3]);
+    await FixEntity.setSuggestionsForFixEntity(opportunity.getId(), fixEntity2, [suggestion3]);
 
     // Test the getAllFixesWithSuggestionByCreatedAt method
     const result = await FixEntity.getAllFixesWithSuggestionByCreatedAt(

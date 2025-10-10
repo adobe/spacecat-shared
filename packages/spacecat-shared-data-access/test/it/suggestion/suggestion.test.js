@@ -28,6 +28,7 @@ use(chaiAsPromised);
 describe('Suggestion IT', async () => {
   let sampleData;
   let Suggestion;
+  let FixEntitySuggestion;
 
   beforeEach(async function () {
     this.timeout(10000);
@@ -35,6 +36,7 @@ describe('Suggestion IT', async () => {
 
     const dataAccess = getDataAccess();
     Suggestion = dataAccess.Suggestion;
+    FixEntitySuggestion = dataAccess.FixEntitySuggestion;
   });
 
   it('finds one suggestion by id', async () => {
@@ -263,10 +265,14 @@ describe('Suggestion IT', async () => {
       sampleData.fixEntities[2].getId(),
     ];
 
-    // First, set up some fix entities for this suggestion
-    const opportunity = { getId: () => 'opp-123' };
-    const fixEntities = fixEntityIds.map((id) => ({ getId: () => id, getCreatedAt: () => '2024-01-01T00:00:00Z' }));
-    await Suggestion.setFixEntitiesForSuggestion(opportunity, suggestion, fixEntities);
+    // First, set up some fix entities for this suggestion using direct junction records
+    const junctionData = fixEntityIds.map((fixEntityId, index) => ({
+      suggestionId: suggestion.getId(),
+      fixEntityId,
+      opportunityId: sampleData.fixEntities[index * 2].getOpportunityId(),
+      fixEntityCreatedAt: sampleData.fixEntities[index * 2].getCreatedAt(),
+    }));
+    await FixEntitySuggestion.createMany(junctionData);
 
     // Test the single suggestion method
     const retrievedFixEntities = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());

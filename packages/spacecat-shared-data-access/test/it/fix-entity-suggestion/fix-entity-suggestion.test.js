@@ -59,7 +59,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     };
 
     const result = await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       suggestions,
     );
@@ -87,7 +87,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     };
 
     const result = await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       suggestions,
     );
@@ -116,7 +116,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // First, set initial suggestions
     await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       initialSuggestions,
     );
@@ -129,7 +129,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     ];
 
     const result = await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       newSuggestions,
     );
@@ -156,14 +156,14 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // First add some suggestions
     await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       [sampleData.suggestions[0], sampleData.suggestions[1]],
     );
 
     // Then remove all by setting empty array
     const result = await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       [],
     );
@@ -178,118 +178,11 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     expect(finalSuggestions).to.be.an('array').with.length(0);
   });
 
-  it('throws error when opportunity is not provided', async () => {
+  it('throws error when opportunityId is not provided', async () => {
     const fixEntity = sampleData.fixEntities[0];
     await expect(
       FixEntity.setSuggestionsForFixEntity(null, fixEntity, []),
-    ).to.be.rejectedWith('opportunity is required');
-  });
-
-  it('sets fix entities for a suggestion using fix entity IDs', async () => {
-    const suggestion = sampleData.suggestions[0];
-    const fixEntities = [
-      sampleData.fixEntities[0],
-      sampleData.fixEntities[1],
-    ];
-    const opportunity = {
-      getId: () => 'opp-123',
-    };
-
-    const result = await Suggestion.setFixEntitiesForSuggestion(
-      opportunity,
-      suggestion,
-      fixEntities,
-    );
-
-    expect(result).to.be.an('object');
-    expect(result.createdItems).to.be.an('array').with.length(2);
-    expect(result.errorItems).to.be.an('array').with.length(0);
-    expect(result.removedCount).to.equal(0);
-
-    // Verify the relationships were created
-    result.createdItems.forEach((item, index) => {
-      expect(item.getSuggestionId()).to.equal(suggestion.getId());
-      expect(item.getFixEntityId()).to.equal(fixEntities[index].getId());
-    });
-  });
-
-  it('sets fix entities for a suggestion using fix entity objects', async () => {
-    const suggestion = sampleData.suggestions[1];
-    const fixEntities = [
-      sampleData.fixEntities[0],
-      sampleData.fixEntities[2],
-    ];
-    const opportunity = {
-      getId: () => 'opp-123',
-    };
-
-    const result = await Suggestion.setFixEntitiesForSuggestion(
-      opportunity,
-      suggestion,
-      fixEntities,
-    );
-
-    expect(result).to.be.an('object');
-    expect(result.createdItems).to.be.an('array').with.length(2);
-    expect(result.errorItems).to.be.an('array').with.length(0);
-    expect(result.removedCount).to.equal(0);
-
-    // Verify the relationships were created
-    result.createdItems.forEach((item, index) => {
-      expect(item.getSuggestionId()).to.equal(suggestion.getId());
-      expect(item.getFixEntityId()).to.equal(fixEntities[index].getId());
-    });
-  });
-
-  it('updates fix entities for a suggestion (removes old, adds new)', async () => {
-    const suggestion = sampleData.suggestions[2];
-    const initialFixEntities = [
-      sampleData.fixEntities[0],
-      sampleData.fixEntities[1],
-    ];
-    const opportunity = {
-      getId: () => 'opp-123',
-    };
-
-    // First, set initial fix entities
-    await Suggestion.setFixEntitiesForSuggestion(
-      opportunity,
-      suggestion,
-      initialFixEntities,
-    );
-
-    // Then update with different fix entities
-    const newFixEntities = [
-      sampleData.fixEntities[1], // Keep this one
-      sampleData.fixEntities[2], // Add this one
-    ];
-
-    const result = await Suggestion.setFixEntitiesForSuggestion(
-      opportunity,
-      suggestion,
-      newFixEntities,
-    );
-
-    expect(result).to.be.an('object');
-    expect(result.createdItems).to.be.an('array').with.length(1); // Added 1 new
-    expect(result.errorItems).to.be.an('array').with.length(0);
-    expect(result.removedCount).to.equal(1); // Removed 1 old
-
-    // Verify final state
-    const finalFixEntities = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());
-    expect(finalFixEntities).to.be.an('array').with.length(2);
-
-    const finalFixEntityIds = finalFixEntities.map((f) => f.getId()).sort();
-    const newFixEntityIds = newFixEntities.map((f) => f.getId()).sort();
-    expect(finalFixEntityIds).to.deep.equal(newFixEntityIds);
-  });
-
-  it('throws error when opportunity is not provided', async () => {
-    const suggestion = sampleData.suggestions[0];
-    const fixEntities = [];
-    await expect(
-      Suggestion.setFixEntitiesForSuggestion(null, suggestion, fixEntities),
-    ).to.be.rejectedWith('Opportunity parameter is required');
+    ).to.be.rejectedWith('Validation failed in FixEntityCollection: opportunityId must be a valid UUID');
   });
 
   it('gets all suggestions for a fix entity', async () => {
@@ -303,7 +196,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     };
 
     // First set up the relationships
-    await FixEntity.setSuggestionsForFixEntity(opportunity, fixEntity, suggestions);
+    await FixEntity.setSuggestionsForFixEntity(opportunity.getId(), fixEntity, suggestions);
 
     // Then retrieve them
     const result = await FixEntity.getSuggestionsByFixEntityId(fixEntity.getId());
@@ -346,10 +239,14 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
       sampleData.fixEntities[1].getId(),
     ];
 
-    // First set up the relationships
-    const opportunity = { getId: () => 'opp-123' };
-    const fixEntities = fixEntityIds.map((id) => ({ getId: () => id, getCreatedAt: () => '2024-01-01T00:00:00Z' }));
-    await Suggestion.setFixEntitiesForSuggestion(opportunity, suggestion, fixEntities);
+    // First set up the relationships using direct junction records
+    const junctionData = fixEntityIds.map((fixEntityId, index) => ({
+      suggestionId: suggestion.getId(),
+      fixEntityId,
+      opportunityId: sampleData.fixEntities[index].getOpportunityId(),
+      fixEntityCreatedAt: sampleData.fixEntities[index].getCreatedAt(),
+    }));
+    await FixEntitySuggestion.createMany(junctionData);
 
     // Then retrieve them
     const result = await Suggestion.getFixEntitiesBySuggestionId(suggestion.getId());
@@ -471,7 +368,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // This should not throw an error, but should handle validation at the junction level
     const result = await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       mixedSuggestions,
     );
@@ -494,7 +391,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     };
 
     const result = await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       duplicateSuggestions,
     );
@@ -517,7 +414,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Set suggestions first time
     const result1 = await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       suggestions,
     );
@@ -527,7 +424,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Set the same suggestions again
     const result2 = await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       suggestions,
     );
@@ -549,7 +446,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Set relationship from FixEntity side
     await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       [suggestion],
     );
@@ -561,12 +458,12 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     expect(fixEntitiesFromSuggestion).to.be.an('array').with.length(1);
     expect(fixEntitiesFromSuggestion[0].getId()).to.equal(fixEntity.getId());
 
-    // Set additional relationship from Suggestion side
-    const opportunity2 = { getId: () => 'opp-123' };
-    await Suggestion.setFixEntitiesForSuggestion(
-      opportunity2,
-      suggestion,
-      [fixEntity, sampleData.fixEntities[1]],
+    // Set additional relationship from FixEntity side (using second fix entity)
+    const opportunity2 = { getId: () => sampleData.fixEntities[1].getOpportunityId() };
+    await FixEntity.setSuggestionsForFixEntity(
+      opportunity2.getId(),
+      sampleData.fixEntities[1],
+      [suggestion],
     );
 
     // Verify from FixEntity side
@@ -594,7 +491,7 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Create relationships between fix entity and suggestions
     await FixEntity.setSuggestionsForFixEntity(
-      opportunity,
+      opportunity.getId(),
       fixEntity,
       [suggestion1, suggestion2],
     );
@@ -638,13 +535,22 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
     const fixEntity1 = sampleData.fixEntities[1];
     const fixEntity2 = sampleData.fixEntities[2];
 
-    // Create relationships between suggestion and fix entities
-    const opportunity = { getId: () => 'opp-123' };
-    await Suggestion.setFixEntitiesForSuggestion(
-      opportunity,
-      suggestion,
-      [fixEntity1, fixEntity2],
-    );
+    // Create relationships between suggestion and fix entities using direct junction records
+    const junctionData = [
+      {
+        suggestionId: suggestion.getId(),
+        fixEntityId: fixEntity1.getId(),
+        opportunityId: fixEntity1.getOpportunityId(),
+        fixEntityCreatedAt: fixEntity1.getCreatedAt(),
+      },
+      {
+        suggestionId: suggestion.getId(),
+        fixEntityId: fixEntity2.getId(),
+        opportunityId: fixEntity2.getOpportunityId(),
+        fixEntityCreatedAt: fixEntity2.getCreatedAt(),
+      },
+    ];
+    await FixEntitySuggestion.createMany(junctionData);
 
     // Verify relationships exist
     const firstJunctionRecordBefore = await FixEntitySuggestion.allByIndexKeys({
@@ -694,12 +600,12 @@ describe('FixEntity-Suggestion Many-to-Many Relationship IT', async () => {
 
     // Create multiple relationships
     await FixEntity.setSuggestionsForFixEntity(
-      opportunity1,
+      opportunity1.getId(),
       fixEntity1,
       [suggestion1, suggestion2],
     );
     await FixEntity.setSuggestionsForFixEntity(
-      opportunity2,
+      opportunity2.getId(),
       fixEntity2,
       [suggestion1], // suggestion1 is related to both fix entities
     );

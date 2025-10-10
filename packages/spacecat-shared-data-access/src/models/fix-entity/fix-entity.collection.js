@@ -67,7 +67,7 @@ class FixEntityCollection extends BaseCollection {
    * new ones.
    *
    * @async
-   * @param {Opportunity} opportunity - The Opportunity entity.
+   * @param {string} opportunityId - The ID of the opportunity.
    * @param {FixEntity} fixEntity - The FixEntity entity.
    * @param {Array<Suggestion>} suggestions - An array of Suggestion entities.
    * @returns {Promise<{createdItems: Array, errorItems: Array, removedCount: number}>} - A promise
@@ -78,19 +78,16 @@ class FixEntityCollection extends BaseCollection {
    * @throws {DataAccessError} - Throws an error if the entities are not provided or if the
    *   operation fails.
    */
-  async setSuggestionsForFixEntity(opportunity, fixEntity, suggestions) {
+  async setSuggestionsForFixEntity(opportunityId, fixEntity, suggestions) {
+    guardId('opportunityId', opportunityId, 'FixEntityCollection');
     guardArray('suggestions', suggestions, 'FixEntityCollection', 'any');
 
     // Simple null checks
-    if (!opportunity) {
-      throw new ValidationError('opportunity is required');
-    }
     if (!fixEntity) {
       throw new ValidationError('fixEntity is required');
     }
 
     // Extract IDs and other values from entities
-    const opportunityId = opportunity.getId();
     const fixEntityId = fixEntity.getId();
     const fixEntityCreatedAt = fixEntity.getCreatedAt();
     const suggestionIds = suggestions.map((suggestion) => suggestion.getId());

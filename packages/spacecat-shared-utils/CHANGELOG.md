@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.59.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.3...@adobe/spacecat-shared-utils-v1.59.4) (2025-10-10)
+
+
+### Bug Fixes
+
+* add cdn bucket schema to llmo config ([#1022](https://github.com/adobe/spacecat-shared/issues/1022)) ([fb3ca44](https://github.com/adobe/spacecat-shared/commit/fb3ca44b206689e59dcb860e519b085367bde0a5))
+
 # [@adobe/spacecat-shared-utils-v1.59.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.2...@adobe/spacecat-shared-utils-v1.59.3) (2025-10-10)
 
 

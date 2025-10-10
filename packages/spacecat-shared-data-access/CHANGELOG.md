@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.71.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.70.0...@adobe/spacecat-shared-data-access-v2.71.0) (2025-10-10)
+
+
+### Features
+
+* adding a new code config in Site ([#980](https://github.com/adobe/spacecat-shared/issues/980)) ([67aed42](https://github.com/adobe/spacecat-shared/commit/67aed425c43f2fdb9c7c51053b7ee4a726f545d9))
+
 # [@adobe/spacecat-shared-data-access-v2.70.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.69.2...@adobe/spacecat-shared-data-access-v2.70.0) (2025-10-10)
 
 

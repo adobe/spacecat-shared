@@ -164,6 +164,31 @@ describe('llmo-config utilities', () => {
 
       await expect(readConfig(siteId, s3Client)).rejectedWith(Error);
     });
+
+    it('retries up to 3 times on NotFound when retryOnNotFound is true', async () => {
+      const clock = sinon.useFakeTimers();
+      try {
+        const err = new Error('not ready');
+        err.name = 'NotFound';
+        const body = {
+          transformToString: sinon.stub().resolves(JSON.stringify(validConfig)),
+        };
+        s3Client.send.onCall(0).rejects(err);
+        s3Client.send.onCall(1).rejects(err);
+        s3Client.send.onCall(2).resolves({ Body: body });
+
+        const promise = readConfig(siteId, s3Client, { retryOnNotFound: true });
+
+        await clock.runAllAsync(); // flush all scheduled backoff timers
+
+        const result = await promise;
+
+        expect(result).deep.equals({ config: validConfig, exists: true, version: undefined });
+        expect(s3Client.send.callCount).equals(3);
+      } finally {
+        clock.restore();
+      }
+    });
   });
 
   describe('writeConfig', () => {

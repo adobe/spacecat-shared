@@ -13,6 +13,10 @@
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { llmoConfig } from './schemas.js';
 
+const sleep = (ms) => new Promise((r) => {
+  setTimeout(r, ms);
+});
+
 /**
  * @import { S3Client } from "@aws-sdk/client-s3"
  * @import { LLMOConfig } from "./schemas.js"
@@ -65,28 +69,40 @@ export function defaultConfig() {
  * @param {string} [options.version] Optional version ID of the configuration to read.
  *        Defaults to the latest version.
  * @param {string} [options.s3Bucket] Optional S3 bucket name.
- * @returns {Promise<{config: LLMOConfig, exists: boolean, version?: string}>} The configuration,
- *        a flag indicating if it existed, and the version ID if it exists.
+ * @param {boolean} [options.retryOnNotFound] If true, retry up to 3 times on NotFound/NoSuchKey.
+ * @returns {Promise<{config: LLMOConfig, exists: boolean, version?: string}>}
  * @throws {Error} If reading the configuration fails for reasons other than it not existing.
  */
 export async function readConfig(sideId, s3Client, options) {
   const version = options?.version;
   const s3Bucket = options?.s3Bucket || process.env.S3_BUCKET_NAME;
+  const retryOnNotFound = !!options?.retryOnNotFound;
 
   const getObjectCommand = new GetObjectCommand({
     Bucket: s3Bucket,
     Key: llmoConfigPath(sideId),
     VersionId: version,
   });
+
+  const maxTries = retryOnNotFound ? 4 : 1;
+
   let res;
-  try {
-    res = await s3Client.send(getObjectCommand);
-  } catch (e) {
-    if (e.name === 'NoSuchKey' || e.name === 'NotFound') {
-      // Config does not exist yet. Return empty config.
-      return { config: defaultConfig(), exists: false, version: undefined };
+  for (let attempt = 1; attempt <= maxTries; attempt += 1) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      res = await s3Client.send(getObjectCommand);
+      break; // success
+    } catch (e) {
+      const isNotFound = e?.name === 'NoSuchKey' || e?.name === 'NotFound';
+      if (!isNotFound) throw e;
+
+      if (attempt < maxTries) {
+        // eslint-disable-next-line no-await-in-loop
+        await sleep(2000 * attempt); // tiny linear backoff
+      } else {
+        return { config: defaultConfig(), exists: false, version: undefined };
+      }
     }
-    throw e;
   }
 
   const body = res.Body;

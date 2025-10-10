@@ -24,6 +24,8 @@ export interface FixEntity extends BaseModel {
   getOpportunity(): Promise<Opportunity>;
   getOpportunityId(): string;
   setOpportunityId(value: string): this;
+  getOrigin(): string;
+  setOrigin(value: string): this;
   getPublishedAt(): string;
   setPublishedAt(value: string): this;
   getStatus(): string;

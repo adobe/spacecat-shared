@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.71.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.71.0...@adobe/spacecat-shared-data-access-v2.71.1) (2025-10-13)
+
+
+### Bug Fixes
+
+* add interface for code config ([#1023](https://github.com/adobe/spacecat-shared/issues/1023)) ([74138b9](https://github.com/adobe/spacecat-shared/commit/74138b9adf135b536059a860315d89af67128601))
+
 # [@adobe/spacecat-shared-data-access-v2.71.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.70.0...@adobe/spacecat-shared-data-access-v2.71.0) (2025-10-10)
 
 

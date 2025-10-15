@@ -34,6 +34,15 @@ export interface HlxConfig {
   };
 }
 
+export interface CodeConfig {
+  type: string;
+  owner: string;
+  repo: string;
+  ref: string;
+  installationId?: string;
+  url: string;
+}
+
 export type IMPORT_TYPES = {
   readonly ORGANIC_KEYWORDS: 'organic-keywords';
   readonly ORGANIC_TRAFFIC: 'organic-traffic';
@@ -201,6 +210,7 @@ export interface Site extends BaseModel {
   ): Promise<Experiment[]>;
   getGitHubURL(): string;
   getHlxConfig(): HlxConfig;
+  getCode(): CodeConfig;
   getDeliveryConfig(): object;
   getIsLive(): boolean;
   getIsSandbox(): boolean;
@@ -235,6 +245,7 @@ export interface Site extends BaseModel {
   setAuthoringType(authoringType: string): Site;
   setGitHubURL(gitHubURL: string): Site;
   setHlxConfig(hlxConfig: HlxConfig): Site;
+  setCode(code: CodeConfig): Site;
   setDeliveryConfig(deliveryConfig: object): Site;
   setIsLive(isLive: boolean): Site;
   setIsSandbox(isSandbox: boolean): Site;

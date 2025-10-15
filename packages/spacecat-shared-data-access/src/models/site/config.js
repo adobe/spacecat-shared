@@ -27,6 +27,7 @@ export const IMPORT_TYPES = {
   CWV_WEEKLY: 'cwv-weekly',
   TRAFFIC_ANALYSIS: 'traffic-analysis',
   TOP_FORMS: 'top-forms',
+  CODE: 'code',
   USER_ENGAGEMENT: 'user-engagement',
 };
 

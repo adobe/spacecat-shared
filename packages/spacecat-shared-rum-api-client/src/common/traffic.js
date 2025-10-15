@@ -139,6 +139,29 @@ const not = (truth) => (text) => {
 const notEmpty = (text) => hasText(text);
 
 /*
+ * --------- ENFORCEMENTS ----------------
+ */
+
+const ENFORCEMENTS = [
+  // vendors 'openai', 'claude', and 'perplexity' can only be earned/llm
+  {
+    when: (state) => state.vendor === 'openai' || state.vendor === 'claude' || state.vendor === 'perplexity',
+    enforce: (state) => ({ ...state, type: 'earned', category: 'llm' }),
+  },
+  // if utm_source=chatgpt.com, force earned/llm and vendor=openai
+  {
+    when: (state, ctx) => (ctx.utmSourceRaw || '').toLowerCase() === 'chatgpt.com',
+    enforce: (state) => ({ ...state, type: 'earned', category: 'llm', vendor: 'openai' }),
+  },
+];
+
+function applyEnforcements(initialState, context) {
+  return ENFORCEMENTS
+    .reduce((acc, rule) => (
+      rule.when(acc, context) ? rule.enforce(acc, context) : acc), initialState);
+}
+
+/*
  * --------- RULES ----------------
  */
 
@@ -246,18 +269,29 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
 
   const sanitize = (str) => (str || '').toLowerCase().replace(/[^a-zA-Z0-9]/, '');
 
-  const { type, category } = rules.find((rule) => (
+  const match = rules.find((rule) => (
     rule.referrer(referrerDomain)
     && rule.utmSource(sanitize(utmSource))
     && rule.utmMedium(sanitize(utmMedium))
     && rule.tracking(trackingParams)
   ));
+  const { type, category } = match;
   const vendor = classifyVendor(referrerDomain, utmSource, utmMedium);
 
+  const enforced = applyEnforcements(
+    { type, category, vendor },
+    {
+      utmSourceRaw: utmSource,
+      utmSource: sanitize(utmSource),
+      utmMedium: sanitize(utmMedium),
+      referrerDomain,
+    },
+  );
+
   return {
-    type,
-    category,
-    vendor,
+    type: enforced.type,
+    category: enforced.category,
+    vendor: enforced.vendor,
   };
 }
 

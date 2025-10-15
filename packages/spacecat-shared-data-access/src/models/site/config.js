@@ -305,6 +305,18 @@ export const configSchema = Joi.object({
     ).optional(),
     outputLocation: Joi.string().required(),
   }).optional(),
+  tokowakaConfig: Joi.object({
+    apiKey: Joi.string().required(),
+    cdn: Joi.object({
+      provider: Joi.string().required(),
+      config: Joi.object({
+        client_token: Joi.string().required(),
+        client_secret: Joi.string().required(),
+        access_token: Joi.string().required(),
+        host: Joi.string().required(),
+      }).required(),
+    }).optional(),
+  }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
@@ -410,6 +422,7 @@ export const Config = (data = {}) => {
   };
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
+  self.getTokowakaConfig = () => state?.tokowakaConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -655,6 +668,10 @@ export const Config = (data = {}) => {
 
   self.updateCdnLogsConfig = (cdnLogsConfig) => {
     state.cdnLogsConfig = cdnLogsConfig;
+  };
+
+  self.updateTokowakaConfig = (tokowakaConfig) => {
+    state.tokowakaConfig = tokowakaConfig;
   };
 
   return Object.freeze(self);

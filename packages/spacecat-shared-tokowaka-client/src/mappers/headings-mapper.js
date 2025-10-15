@@ -53,4 +53,25 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
     const hasValue = data?.recommendedAction;
     return !!(hasSelector && hasValue);
   }
+
+  /**
+   * Checks if a heading suggestion can be deployed
+   * Only empty headings are eligible for deployment
+   * @param {Object} suggestion - Suggestion object
+   * @returns {Object} { eligible: boolean, reason?: string }
+   */
+  // eslint-disable-next-line class-methods-use-this
+  canDeploy(suggestion) {
+    const data = suggestion.getData();
+    const checkType = data?.checkType;
+
+    if (checkType !== 'heading-empty') {
+      return {
+        eligible: false,
+        reason: `Only empty headings can be deployed. This suggestion has checkType: ${checkType || 'unknown'}`,
+      };
+    }
+
+    return { eligible: true };
+  }
 }

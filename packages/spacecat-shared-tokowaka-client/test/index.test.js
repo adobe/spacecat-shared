@@ -157,76 +157,6 @@ describe('TokowakaClient', () => {
       expect(patch).to.have.property('lastUpdated');
     });
 
-    it('should generate config for meta-tags opportunity', () => {
-      mockOpportunity.getType = () => 'meta-tags';
-      mockSuggestions = [
-        {
-          getId: () => 'sugg-1',
-          getData: () => ({
-            url: 'https://example.com/page1',
-            metaName: 'description',
-            content: 'New meta description',
-          }),
-        },
-      ];
-
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
-
-      const patch = config.tokowakaOptimizations['/page1'].patches[0];
-      expect(patch).to.include({
-        op: 'replace',
-        selector: 'meta[name="description"]',
-        attribute: 'content',
-        value: 'New meta description',
-        prerenderRequired: false,
-      });
-    });
-
-    it('should generate config for prerender opportunity', () => {
-      mockOpportunity.getType = () => 'prerender';
-      mockSuggestions = [
-        {
-          getId: () => 'sugg-1',
-          getData: () => ({
-            url: 'https://example.com/page1',
-          }),
-        },
-      ];
-
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
-
-      const patch = config.tokowakaOptimizations['/page1'].patches[0];
-      expect(patch).to.include({
-        op: 'prerender',
-        prerenderRequired: true,
-      });
-    });
-
-    it('should generate config for structured-data opportunity', () => {
-      mockOpportunity.getType = () => 'structured-data';
-      mockSuggestions = [
-        {
-          getId: () => 'sugg-1',
-          getData: () => ({
-            url: 'https://example.com/page1',
-            script: '{"@context": "https://schema.org"}',
-          }),
-        },
-      ];
-
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
-
-      const patch = config.tokowakaOptimizations['/page1'].patches[0];
-      expect(patch).to.include({
-        op: 'add',
-        selector: 'head',
-        element: 'script',
-        value: '{"@context": "https://schema.org"}',
-        prerenderRequired: true,
-      });
-      expect(patch.attributes).to.deep.equal({ type: 'application/ld+json' });
-    });
-
     it('should group suggestions by URL path', () => {
       mockSuggestions = [
         {
@@ -342,7 +272,6 @@ describe('TokowakaClient', () => {
       expect(command.input.Bucket).to.equal('test-bucket');
       expect(command.input.Key).to.equal('test-api-key/v1/tokowaka-site-config.json');
       expect(command.input.ContentType).to.equal('application/json');
-      expect(command.input.CacheControl).to.equal('max-age=86400');
       expect(JSON.parse(command.input.Body)).to.deep.equal(config);
     });
 

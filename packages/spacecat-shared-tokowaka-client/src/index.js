@@ -13,7 +13,6 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import MapperRegistry from './mappers/mapper-registry.js';
-import BaseOpportunityMapper from './mappers/base-mapper.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
 
 const HTTP_BAD_REQUEST = 400;
@@ -201,10 +200,10 @@ class TokowakaClient {
   /**
    * Invalidates CDN cache for the Tokowaka config
    * @param {Object} site - Site entity
-   * @param {string} s3Key - S3 key of the uploaded config
+   * @param {string} _ - S3 key of the uploaded config
    * @returns {Promise<Object|null>} - CDN invalidation result or null if skipped
    */
-  async invalidateCdnCache(site, s3Key) {
+  async invalidateCdnCache(site, _) {
     const siteConfig = site.getConfig() || {};
     const { cdn } = siteConfig;
 
@@ -230,9 +229,8 @@ class TokowakaClient {
 
       // Build CDN paths to invalidate
       // The config is accessed via the Tokowaka API key path
-      const baseURL = site.getBaseURL();
       const pathsToInvalidate = [
-        `${baseURL}/${s3Key}`,
+        `/opportunities/${siteConfig.getTokowakaConfig().apiKey}`,
       ];
 
       this.log.debug(`Invalidating CDN cache for ${pathsToInvalidate.length} paths via ${provider}`);
@@ -256,7 +254,7 @@ class TokowakaClient {
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
    * @param {Array} suggestions - Array of suggestion entities
-   * @returns {Promise<Object>} - Deployment result with s3Key
+   * @returns {Promise<Object>} - Deployment result with succeeded/failed suggestions
    */
   async deploySuggestions(site, opportunity, suggestions) {
     // Get site's Tokowaka API key
@@ -269,15 +267,55 @@ class TokowakaClient {
       );
     }
 
-    // Generate configuration
+    const opportunityType = opportunity.getType();
+    const mapper = this.mapperRegistry.getMapper(opportunityType);
+    if (!mapper) {
+      throw this.#createError(
+        `No mapper found for opportunity type: ${opportunityType}. `
+        + `Supported types: ${this.mapperRegistry.getSupportedOpportunityTypes().join(', ')}`,
+        HTTP_NOT_IMPLEMENTED,
+      );
+    }
+
+    // Validate which suggestions can be deployed using mapper's canDeploy method
+    const eligibleSuggestions = [];
+    const ineligibleSuggestions = [];
+
+    suggestions.forEach((suggestion) => {
+      const eligibility = mapper.canDeploy(suggestion);
+      if (eligibility.eligible) {
+        eligibleSuggestions.push(suggestion);
+      } else {
+        ineligibleSuggestions.push({
+          suggestion,
+          reason: eligibility.reason || 'Suggestion cannot be deployed',
+        });
+      }
+    });
+
+    this.log.debug(`Deploying ${eligibleSuggestions.length} eligible suggestions (${ineligibleSuggestions.length} ineligible)`);
+
+    if (eligibleSuggestions.length === 0) {
+      this.log.warn('No eligible suggestions to deploy');
+      return {
+        tokowakaApiKey,
+        s3Key: null,
+        config: null,
+        cdnInvalidation: null,
+        succeededSuggestions: [],
+        failedSuggestions: ineligibleSuggestions,
+      };
+    }
+
+    // Generate configuration with eligible suggestions only
     this.log.info(`Generating Tokowaka config for site ${site.getId()}, opportunity ${opportunity.getId()}`);
-    const config = this.generateConfig(site, opportunity, suggestions);
+    const config = this.generateConfig(site, opportunity, eligibleSuggestions);
 
     // Upload to S3
-    this.log.info(`Uploading Tokowaka config for ${suggestions.length} suggestions`);
+    this.log.info(`Uploading Tokowaka config for ${eligibleSuggestions.length} suggestions`);
     const s3Key = await this.uploadConfig(tokowakaApiKey, config);
 
-    // // Invalidate CDN cache (non-blocking, failures are logged but don't fail deployment)
+    // Invalidate CDN cache (non-blocking, failures are logged but don't fail deployment)
     // const cdnInvalidationResult = await this.invalidateCdnCache(site, s3Key);
 
     return {
@@ -285,13 +323,11 @@ class TokowakaClient {
       s3Key,
       config,
       // cdnInvalidation: cdnInvalidationResult,
+      succeededSuggestions: eligibleSuggestions,
+      failedSuggestions: ineligibleSuggestions,
     };
   }
 }
 
 // Export the client as default and base classes for custom implementations
 export default TokowakaClient;
-export { BaseOpportunityMapper };
-export { default as BaseCdnClient } from './cdn/base-cdn-client.js';
-export { default as AkamaiCdnClient } from './cdn/akamai-cdn-client.js';
-export { default as CdnClientRegistry } from './cdn/cdn-client-registry.js';

@@ -49,9 +49,11 @@ export interface CdnInvalidationResult {
 
 export interface DeploymentResult {
   tokowakaApiKey: string;
-  s3Key: string;
-  config: TokowakaConfig;
+  s3Key: string | null;
+  config: TokowakaConfig | null;
   cdnInvalidation: CdnInvalidationResult | null;
+  succeededSuggestions: Array<any>;
+  failedSuggestions: Array<{ suggestion: any; reason: string }>;
 }
 
 export interface Site {

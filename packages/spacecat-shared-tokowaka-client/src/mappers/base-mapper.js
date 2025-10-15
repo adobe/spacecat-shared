@@ -62,6 +62,17 @@ export default class BaseOpportunityMapper {
   }
 
   /**
+   * Checks if a suggestion can be deployed for this opportunity type
+   * Override this method to add custom deployment eligibility checks
+   * @param {Object} _ - Suggestion object
+   * @returns {Object} - { eligible: boolean, reason?: string }
+   */
+  // eslint-disable-next-line class-methods-use-this, no-unused-vars
+  canDeploy(_) {
+    return { eligible: true };
+  }
+
+  /**
    * Helper method to create base patch structure
    * @protected
    * @param {string} suggestionId - Suggestion ID

@@ -30,7 +30,7 @@ class TokowakaClient {
    */
   static createFrom(context) {
     const { env, log = console, s3Client } = context;
-    const { TOKOWAKA_CONFIG_BUCKET: bucketName } = env;
+    const { TOKOWAKA_SITE_CONFIG_BUCKET: bucketName } = env || { TOKOWAKA_SITE_CONFIG_BUCKET: 'tokowaka-site-config' };
 
     if (context.tokowakaClient) {
       return context.tokowakaClient;

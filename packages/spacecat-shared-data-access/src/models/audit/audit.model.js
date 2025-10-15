@@ -178,7 +178,7 @@ class Audit extends BaseModel {
         urls: stepResult.urls.map((urlObj) => urlObj.url),
         processingType: stepResult.processingType || 'default',
         options: stepResult.options || {},
-        maxScrapeAge: !stepResult.allowCache ? stepResult.maxScrapeAge || 24 : 0,
+        maxScrapeAge: stepResult.allowCache === false ? 0 : stepResult.maxScrapeAge || 24,
         auditData: {
           siteId: stepResult.siteId,
           completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,

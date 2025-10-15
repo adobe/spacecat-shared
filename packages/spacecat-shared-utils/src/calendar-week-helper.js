@@ -241,3 +241,114 @@ export function getLastNumberOfWeeks(number) {
 
   return result;
 }
+
+/**
+ * Checks if the given date is in the last calendar week of the previous year
+ * @param {number} utcMonth - The UTC month as retrieved from date.getUTCMonth()
+ * @param {number} utcDate - The UTC date as retrieved from date.getUTCDate()
+ * @param {number} utcDay - The UTC day of the week as retrieved from date.getUTCDay()
+ * @return {boolean} - if the date is in the previous year's last calendar week.
+ */
+function isInPreviousCalendarYear(utcMonth, utcDate, utcDay) {
+  return (
+    utcMonth === 0 // January
+    && utcDate < 4 // before 4th January
+    && ((utcDay + 6) % 7) > (utcDate + 2) // 1st: Fr, Sa, Su; 2nd: Sa, Su; 3rd: Su
+  );
+}
+
+/**
+ * Calculates the start date of the ISO calendar week for a given date.
+ * This is the date of the Monday at 00:00 of the ISO week that contains the given date.
+ * @param {number} utcFullYear - The UTC month as retrieved from date.getUTCFullYear()
+ * @param {number} utcMonth - The UTC month as retrieved from date.getUTCMonth()
+ * @param {number} utcDate - The UTC date as retrieved from date.getUTCDate()
+ * @returns {Date} - The start date of the ISO calendar week.
+ */
+function isoCalendarWeekStart(utcFullYear, utcMonth, utcDate) {
+  const utcMidnight = Date.UTC(utcFullYear, utcMonth, utcDate);
+  const utcDay = new Date(utcMidnight).getUTCDay();
+
+  // Adjust to Monday
+  return new Date(utcMidnight - ((utcDay + 6) % 7) * MILLIS_IN_DAY);
+}
+
+/**
+ * Checks whether the given date is in the first calendar week of the next year
+ * @param {number} utcMonth - The UTC month as retrieved from date.getUTCMonth()
+ * @param {number} utcDate - The UTC date as retrieved from date.getUTCDate()
+ * @param {number} utcDay - The UTC day of the week as retrieved from date.getUTCDay()
+ * @return {boolean} - if the date is in the next year's calendar week 1.
+ */
+function isInNextCalendarYear(utcMonth, utcDate, utcDay) {
+  return (
+    utcMonth === 11 // December
+    && utcDate > 28 // after 28th December
+    // 29th: Mo, 30th: Mo, Tu, 31st: Mo, Tu, We
+    && (utcDate - 28) > ((utcDay + 6) % 7)
+  );
+}
+
+/**
+ * Calculates the start date of the ISO calendar week for a given date.
+ * This is the date of the Monday at 00:00 of the ISO week that contains the given date.
+ * @param {Date} date - The date to calculate the ISO calendar week start for.
+ * @returns {Date} - The start date of the ISO calendar week.
+ */
+export function isoCalendarWeekMonday(date) {
+  return isoCalendarWeekStart(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+/**
+ * Calculates the end date of the ISO calendar week for a given date.
+ * This is the date of the Sunday at 23:59:59.999 of the ISO week that contains the given date.
+ * @param {Date} date - The date to calculate the ISO calendar week start for.
+ * @returns {Date} - The end date/time of the ISO calendar week.
+ */
+export function isoCalendarWeekSunday(date) {
+  const monday = isoCalendarWeekStart(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  return new Date(+monday + MILLIS_IN_WEEK - 1);
+}
+
+/**
+ * @typedef {object} ISOCalendarWeek
+ * @property {number} week - The ISO calendar week number (1-53).
+ * @property {number} year - The year of the ISO calendar week.
+ */
+
+/**
+ * Calculates the calendar week according to ISO 8601:
+ * - Weeks start with Monday and end on Sunday.
+ * - Each week's year is the Gregorian year in which the Thursday falls.
+ * - It is the first week with a majority (4 or more) of its days in January.
+ * - Its first day is the Monday nearest to 1 January.
+ * - It has 4 January in it.
+ * Hence the earliest possible first week extends
+ * - from Monday 29 December (previous Gregorian year) to Sunday 4 January,
+ * - the latest possible first week extends from Monday 4 January to Sunday 10 January.
+ *
+ * See: https://en.wikipedia.org/wiki/ISO_week_date
+ *
+ * @param {Date} date
+ * @returns {ISOCalendarWeek}
+ */
+export function isoCalendarWeek(date) {
+  const utcDay = date.getUTCDay();
+  const utcDate = date.getUTCDate();
+  const utcMonth = date.getUTCMonth();
+  const utcYear = date.getUTCFullYear();
+
+  if (isInNextCalendarYear(utcMonth, utcDate, utcDay)) {
+    return { week: 1, year: utcYear + 1 };
+  }
+
+  if (isInPreviousCalendarYear(utcMonth, utcDate, utcDay)) {
+    return isoCalendarWeek(isoCalendarWeekStart(utcYear, utcMonth, utcMonth));
+  }
+
+  // same calendar year
+
+  const weekOneStart = isoCalendarWeekStart(utcYear, 0, 4);
+  const weekZeroBased = Math.trunc((+date - +weekOneStart) / MILLIS_IN_WEEK);
+  return { week: weekZeroBased + 1, year: utcYear };
+}

@@ -714,5 +714,38 @@ describe('schemas', () => {
         expect(result.success).true;
       });
     });
+    describe('cdn bucket config', () => {
+      it('validates configuration without cdn bucket config', () => {
+        const result = llmoConfig.safeParse(baseConfig);
+        expect(result.success).true;
+      });
+
+      it('fails configuration without cdnProvider', () => {
+        const config = {
+          ...baseConfig,
+          cdnBucketConfig: {
+            bucketName: 'test',
+            orgId: 'test',
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('validates configuration with cdn bucket config', () => {
+        const config = {
+          ...baseConfig,
+          cdnBucketConfig: {
+            bucketName: 'test',
+            allowedPaths: ['test'],
+            cdnProvider: 'test',
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+    });
   });
 });

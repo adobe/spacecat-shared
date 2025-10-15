@@ -44,6 +44,7 @@ const CDN_TRANSFORMATIONS = {
     ACL: 'None',
     'Server side encryption': 'None',
     'Maximum bytes': 0,
+    HelpUrl: 'https://www.fastly.com/documentation/guides/integrations/logging-endpoints/log-streaming-amazon-s3/',
   }),
   'byocdn-akamai': (payload) => ({
     'Bucket Name': payload.bucketName,
@@ -67,6 +68,7 @@ const CDN_TRANSFORMATIONS = {
     'Log interval': '60 seconds',
     'Access key': payload.accessKey,
     'Secret key': payload.secretKey,
+    HelpUrl: 'https://techdocs.akamai.com/datastream2/docs/stream-amazon-s3',
   }),
   'byocdn-cloudflare': (payload) => ({
     'Bucket Name': payload.bucketName,
@@ -88,6 +90,7 @@ const CDN_TRANSFORMATIONS = {
       'EdgeTimeToFirstByteMs',
     ],
     'Ownership token': 'Please reach out to Adobe support for obtaining the token once you completed the configuration.',
+    HelpUrl: 'https://developers.cloudflare.com/logs/logpush/logpush-job/enable-destinations/aws-s3/',
   }),
   'byocdn-cloudfront': (payload) => ({
     'Bucket Name': payload.bucketName,
@@ -109,6 +112,7 @@ const CDN_TRANSFORMATIONS = {
       'time-to-first-byte',
       'sc-content-type',
     ],
+    HelpUrl: 'https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html#enable-standard-logging-cross-accounts',
   }),
   'ams-cloudfront': (payload) => ({
     'Bucket Name': payload.bucketName,

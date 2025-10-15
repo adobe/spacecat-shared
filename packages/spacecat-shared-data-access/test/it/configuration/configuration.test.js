@@ -118,7 +118,7 @@ describe('Configuration IT', async () => {
 
   it('registers a new audit', async () => {
     const configuration = await Configuration.findLatest();
-    configuration.registerAudit('structured-data', true, 'weekly');
+    configuration.registerAudit('structured-data', true, 'weekly', ['LLMO']);
     await configuration.save();
 
     const updatedConfiguration = await Configuration.findLatest();
@@ -133,6 +133,7 @@ describe('Configuration IT', async () => {
         sites: [],
         orgs: [],
       },
+      productCodes: ['LLMO'],
     });
   });
 

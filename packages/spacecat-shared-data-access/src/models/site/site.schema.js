@@ -76,6 +76,20 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     validate: (value) => isNonEmptyObject(validateConfiguration(value)),
     get: (value) => Config(value),
   })
+  .addAttribute('code', {
+    type: 'any',
+    required: false,
+    default: {},
+    validate: (value) => isObject(value),
+    properties: {
+      type: { type: 'string', required: true },
+      owner: { type: 'string', required: true },
+      repo: { type: 'string', required: true },
+      ref: { type: 'string', required: true },
+      installationId: { type: 'string', required: false },
+      url: { type: 'string', required: true, validate: (value) => isValidUrl(value) },
+    },
+  })
   .addAttribute('deliveryType', {
     type: Object.values(Site.DELIVERY_TYPES),
     default: Site.DEFAULT_DELIVERY_TYPE,

@@ -84,7 +84,11 @@ describe('Index Exports', () => {
     'getPageEditUrl',
     'llmoConfig',
     'schemas',
+    'detectLocale',
     'prettifyLogForwardingConfig',
+    'isoCalendarWeek',
+    'isoCalendarWeekSunday',
+    'isoCalendarWeekMonday',
   ];
 
   it('exports all expected functions', () => {

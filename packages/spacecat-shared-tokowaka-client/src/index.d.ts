@@ -38,10 +38,20 @@ export interface TokowakaConfig {
   tokowakaOptimizations: Record<string, TokowakaUrlOptimization>;
 }
 
+export interface CdnInvalidationResult {
+  status: string;
+  provider?: string;
+  purgeId?: string;
+  estimatedSeconds?: number;
+  paths?: number;
+  message?: string;
+}
+
 export interface DeploymentResult {
   tokowakaApiKey: string;
   s3Key: string;
   config: TokowakaConfig;
+  cdnInvalidation: CdnInvalidationResult | null;
 }
 
 export interface Site {
@@ -99,6 +109,63 @@ export abstract class BaseOpportunityMapper {
   ): Partial<TokawakaPatch>;
 }
 
+/**
+ * Base class for CDN clients
+ * Extend this class to create custom CDN clients for different providers
+ */
+export abstract class BaseCdnClient {
+  constructor(config: Record<string, any>, log: any);
+  
+  /**
+   * Returns the CDN provider name
+   */
+  abstract getProviderName(): string;
+  
+  /**
+   * Validates the CDN configuration
+   */
+  validateConfig(): boolean;
+  
+  /**
+   * Invalidates the CDN cache for the given paths
+   */
+  abstract invalidateCache(paths: string[]): Promise<CdnInvalidationResult>;
+  
+  /**
+   * Checks the status of an invalidation request
+   */
+  getInvalidationStatus(requestId: string): Promise<CdnInvalidationResult>;
+}
+
+/**
+ * Akamai CDN client implementation
+ */
+export class AkamaiCdnClient extends BaseCdnClient {
+  constructor(config: {
+    clientToken: string;
+    clientSecret: string;
+    accessToken: string;
+    baseUrl?: string;
+  }, log: any);
+  
+  getProviderName(): string;
+  validateConfig(): boolean;
+  invalidateCache(paths: string[]): Promise<CdnInvalidationResult>;
+  getInvalidationStatus(purgeId: string): Promise<CdnInvalidationResult>;
+}
+
+/**
+ * Registry for CDN clients
+ */
+export class CdnClientRegistry {
+  constructor(log: any);
+  
+  registerClient(provider: string, ClientClass: typeof BaseCdnClient): void;
+  getClient(provider: string, config: Record<string, any>): BaseCdnClient | null;
+  getSupportedProviders(): string[];
+  isProviderSupported(provider: string): boolean;
+}
+
 export default class TokowakaClient {
   constructor(config: { bucketName: string; s3Client: S3Client }, log: any);
   
@@ -116,6 +183,8 @@ export default class TokowakaClient {
   ): TokowakaConfig;
 
   uploadConfig(apiKey: string, config: TokowakaConfig): Promise<string>;
+  
+  invalidateCdnCache(site: Site, s3Key: string): Promise<CdnInvalidationResult | null>;
 
   deploySuggestions(
     site: Site,

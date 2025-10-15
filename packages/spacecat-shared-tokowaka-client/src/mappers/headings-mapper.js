@@ -35,45 +35,22 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
       return null;
     }
 
-    // Extract heading text - try multiple field names for backward compatibility
-    const value = data?.recommendedAction
-      || data?.value
-      || data?.suggestedText
-      || data?.text
-      || data?.heading;
-
-    // Extract selector - try headingTag first, then explicit selectors
-    const headingTag = data?.headingTag;
-    let selector = data?.selector || data?.cssSelector || data?.xpath;
-
-    // If no explicit selector, construct from headingTag
-    if (!selector && headingTag) {
-      selector = headingTag;
-    }
-
-    if (!selector || !value) {
-      this.log.warn(
-        `Headings suggestion ${suggestion.getId()} missing required fields: `
-        + `selector/headingTag=${selector}, value/recommendedAction=${value}`,
-      );
-      return null;
-    }
+    // Use path if available, otherwise construct from headingTag
+    const selector = data.path || data.headingTag;
 
     return {
       ...this.createBasePatch(suggestion.getId(), opportunityId),
       op: 'replace',
       selector,
-      value,
+      value: data.recommendedAction,
     };
   }
 
   // eslint-disable-next-line class-methods-use-this
   validateSuggestionData(data) {
-    // At minimum, need either headingTag/selector and recommendedAction/value
-    const hasSelector = data?.headingTag || data?.selector
-      || data?.cssSelector || data?.xpath;
-    const hasValue = data?.recommendedAction || data?.value
-      || data?.suggestedText || data?.text || data?.heading;
+    // At minimum, need heading selector (path or headingTag) and recommendedAction/value
+    const hasSelector = data?.path || data?.headingTag;
+    const hasValue = data?.recommendedAction;
     return !!(hasSelector && hasValue);
   }
 }

@@ -14,6 +14,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import MapperRegistry from './mappers/mapper-registry.js';
 import BaseOpportunityMapper from './mappers/base-mapper.js';
+import CdnClientRegistry from './cdn/cdn-client-registry.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -62,8 +63,8 @@ class TokowakaClient {
     this.bucketName = bucketName;
     this.s3Client = s3Client;
 
-    // Initialize mapper registry
     this.mapperRegistry = new MapperRegistry(log);
+    this.cdnClientRegistry = new CdnClientRegistry(log);
   }
 
   #createError(message, status) {
@@ -97,14 +98,13 @@ class TokowakaClient {
     // Group suggestions by URL
     const suggestionsByUrl = suggestions.reduce((acc, suggestion) => {
       const data = suggestion.getData();
-      const url = data?.url || data?.pageUrl || data?.recommendations?.[0]?.pageUrl;
+      const url = data?.url;
 
       if (!url) {
         this.log.warn(`Suggestion ${suggestion.getId()} does not have a URL, skipping`);
         return acc;
       }
 
-      // Extract path from URL
       let urlPath;
       try {
         urlPath = new URL(url).pathname;
@@ -186,7 +186,6 @@ class TokowakaClient {
         Key: s3Key,
         Body: JSON.stringify(config, null, 2),
         ContentType: 'application/json',
-        CacheControl: 'max-age=86400', // 24 hours
       });
 
       await this.s3Client.send(command);
@@ -196,6 +195,59 @@ class TokowakaClient {
     } catch (error) {
       this.log.error(`Failed to upload Tokowaka config to S3: ${error.message}`, error);
       throw this.#createError(`S3 upload failed: ${error.message}`, HTTP_INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  /**
+   * Invalidates CDN cache for the Tokowaka config
+   * @param {Object} site - Site entity
+   * @param {string} s3Key - S3 key of the uploaded config
+   * @returns {Promise<Object|null>} - CDN invalidation result or null if skipped
+   */
+  async invalidateCdnCache(site, s3Key) {
+    const siteConfig = site.getConfig() || {};
+    const { cdn } = siteConfig;
+
+    if (!isNonEmptyObject(cdn)) {
+      this.log.info('No CDN configuration found for site, skipping cache invalidation');
+      return null;
+    }
+
+    const { provider, config: cdnConfig } = cdn;
+
+    if (!hasText(provider) || !cdnConfig) {
+      this.log.warn('CDN provider or config not specified in site config, skipping cache invalidation');
+      return null;
+    }
+
+    try {
+      const cdnClient = this.cdnClientRegistry.getClient(provider, cdnConfig);
+
+      if (!cdnClient) {
+        this.log.warn(`No CDN client available for provider: ${provider}, skipping cache invalidation`);
+        return null;
+      }
+
+      // Build CDN paths to invalidate
+      // The config is accessed via the Tokowaka API key path
+      const baseURL = site.getBaseURL();
+      const pathsToInvalidate = [
+        `${baseURL}/${s3Key}`,
+      ];
+
+      this.log.debug(`Invalidating CDN cache for ${pathsToInvalidate.length} paths via ${provider}`);
+      const result = await cdnClient.invalidateCache(pathsToInvalidate);
+
+      this.log.info(`CDN cache invalidation completed: ${JSON.stringify(result)}`);
+      return result;
+    } catch (error) {
+      // Log error but don't fail the deployment
+      this.log.error(`CDN cache invalidation failed (non-fatal): ${error.message}`, error);
+      return {
+        status: 'error',
+        provider,
+        message: error.message,
+      };
     }
   }
 
@@ -225,14 +277,21 @@ class TokowakaClient {
     this.log.info(`Uploading Tokowaka config for ${suggestions.length} suggestions`);
     const s3Key = await this.uploadConfig(tokowakaApiKey, config);
 
+    // // Invalidate CDN cache (non-blocking, failures are logged but don't fail deployment)
+    // const cdnInvalidationResult = await this.invalidateCdnCache(site, s3Key);
+
     return {
       tokowakaApiKey,
       s3Key,
       config,
+      // cdnInvalidation: cdnInvalidationResult,
     };
   }
 }
 
-// Export the client as default and base mapper for custom implementations
+// Export the client as default and base classes for custom implementations
 export default TokowakaClient;
 export { BaseOpportunityMapper };
+export { default as BaseCdnClient } from './cdn/base-cdn-client.js';
+export { default as AkamaiCdnClient } from './cdn/akamai-cdn-client.js';
+export { default as CdnClientRegistry } from './cdn/cdn-client-registry.js';

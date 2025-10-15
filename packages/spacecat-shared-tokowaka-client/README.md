@@ -127,7 +127,154 @@ interface DeploymentResult {
   tokowakaApiKey: string;
   s3Key: string;
   config: TokowakaConfig;
+  cdnInvalidation: CdnInvalidationResult | null;
 }
+
+interface CdnInvalidationResult {
+  status: string;
+  provider?: string;
+  purgeId?: string;
+  estimatedSeconds?: number;
+  paths?: number;
+  message?: string;
+}
+```
+
+##### `invalidateCdnCache(site, s3Key)`
+
+Invalidates CDN cache for the Tokowaka configuration.
+
+**Parameters:**
+- `site` (Object): Site entity with CDN configuration
+- `s3Key` (string): S3 key of the uploaded configuration
+
+**Returns:** `Promise<CdnInvalidationResult | null>`
+
+This method is called automatically after S3 upload in `deploySuggestions()`. Failures are logged but don't block deployment.
+
+## CDN Cache Invalidation
+
+The Tokowaka client automatically invalidates CDN caches after uploading configurations to ensure fresh content is served immediately. This feature is:
+- ✅ **Automatic**: Triggered after every successful S3 upload
+- ✅ **Non-blocking**: Failures are logged but don't prevent deployment
+- ✅ **Extensible**: Support for multiple CDN providers
+
+### Site Configuration
+
+Configure CDN invalidation in your site config:
+
+```javascript
+{
+  "tokowakaApiKey": "OCtrOiKqOxhg4Er3lzYDJS8FAeEUSriK",
+  "cdn": {
+    "provider": "akamai",
+    "config": {
+      "clientToken": "akab-xxxxx",
+      "clientSecret": "xxxxxx",
+      "accessToken": "akab-xxxxx",
+      "baseUrl": "https://akaa-baseurl-xxx.luna.akamaiapis.net"
+    }
+  }
+}
+```
+
+### Supported CDN Providers
+
+| Provider | Status | Authentication Method |
+|----------|--------|----------------------|
+| **Akamai** | ✅ Supported | EdgeGrid (HMAC-SHA256) |
+| Cloudflare | 🔜 Coming soon | API Token |
+| Fastly | 🔜 Coming soon | API Key |
+| AWS CloudFront | 🔜 Coming soon | AWS IAM |
+
+### Akamai CDN Configuration
+
+```typescript
+{
+  provider: 'akamai',
+  config: {
+    clientToken: string;    // Akamai {OPEN} API client token
+    clientSecret: string;   // Akamai client secret
+    accessToken: string;    // Akamai access token
+    baseUrl?: string;       // Optional: Akamai API base URL
+  }
+}
+```
+
+**Getting Akamai credentials:**
+1. Log in to Akamai Control Center
+2. Navigate to Identity & Access Management
+3. Create API client with CCU (Cache Control Utility) permissions
+4. Copy credentials to site config
+
+### Custom CDN Providers
+
+You can add support for additional CDN providers by creating custom CDN clients:
+
+```javascript
+import { BaseCdnClient } from '@adobe/spacecat-shared-tokowaka-client';
+
+class CustomCdnClient extends BaseCdnClient {
+  getProviderName() {
+    return 'custom-cdn';
+  }
+
+  validateConfig() {
+    return !!(this.config.apiKey && this.config.apiSecret);
+  }
+
+  async invalidateCache(paths) {
+    // Implement CDN-specific cache invalidation
+    const response = await fetch('https://api.custom-cdn.com/purge', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ urls: paths }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Purge failed: ${response.status}`);
+    }
+
+    return {
+      status: 'success',
+      provider: 'custom-cdn',
+      paths: paths.length,
+    };
+  }
+}
+
+// Register the custom CDN client
+const client = TokowakaClient.createFrom(context);
+client.cdnClientRegistry.registerClient('custom-cdn', CustomCdnClient);
+```
+
+### Testing CDN Invalidation
+
+```javascript
+const result = await tokowakaClient.deploySuggestions(site, opportunity, suggestions);
+
+if (result.cdnInvalidation) {
+  console.log('CDN cache invalidated:', result.cdnInvalidation);
+  console.log('Provider:', result.cdnInvalidation.provider);
+  console.log('Purge ID:', result.cdnInvalidation.purgeId);
+} else {
+  console.log('CDN invalidation skipped (no CDN configured)');
+}
+```
+
+### Checking Invalidation Status (Akamai)
+
+```javascript
+import { AkamaiCdnClient } from '@adobe/spacecat-shared-tokowaka-client';
+
+const cdnClient = new AkamaiCdnClient(cdnConfig, log);
+const status = await cdnClient.getInvalidationStatus(purgeId);
+
+console.log('Purge status:', status.status);
+// Status values: 'In-Progress', 'Done', 'Unknown'
 ```
 
 ## Supported Opportunity Types

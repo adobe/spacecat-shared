@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Tokowaka Client for SpaceCat - Edge optimization config management",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0 <23.0.0",
+    "npm": ">=10.9.0 <12.0.0"
+  },
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
@@ -12,8 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adobe/spacecat-shared.git",
-    "directory": "packages/spacecat-shared-tokowaka-client"
+    "url": "https://github.com/adobe/spacecat-shared.git"
   },
   "author": "",
   "license": "Apache-2.0",

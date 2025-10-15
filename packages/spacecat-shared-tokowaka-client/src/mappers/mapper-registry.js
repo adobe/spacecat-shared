@@ -46,7 +46,7 @@ export default class MapperRegistry {
   registerMapper(mapper) {
     const opportunityType = mapper.getOpportunityType();
     if (this.mappers.has(opportunityType)) {
-      this.log.warn(`Mapper for opportunity type "${opportunityType}" is being overridden`);
+      this.log.debug(`Mapper for opportunity type "${opportunityType}" is being overridden`);
     }
     this.mappers.set(opportunityType, mapper);
     this.log.info(`Registered mapper for opportunity type: ${opportunityType}`);

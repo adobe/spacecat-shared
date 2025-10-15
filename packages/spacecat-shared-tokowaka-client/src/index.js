@@ -258,9 +258,10 @@ class TokowakaClient {
    */
   async deploySuggestions(site, opportunity, suggestions) {
     // Get site's Tokowaka API key
-    const { tokowakaApiKey } = site.getConfig() || {};
+    const { tokowakaConfig } = site.getConfig()?.getTokowakaConfig() || {};
+    const { apiKey } = tokowakaConfig || {};
 
-    if (!hasText(tokowakaApiKey)) {
+    if (!hasText(apiKey)) {
       throw this.#createError(
         'Site does not have a Tokowaka API key configured. Please onboard the site to Tokowaka first.',
         HTTP_BAD_REQUEST,
@@ -298,7 +299,7 @@ class TokowakaClient {
     if (eligibleSuggestions.length === 0) {
       this.log.warn('No eligible suggestions to deploy');
       return {
-        tokowakaApiKey,
+        tokowakaApiKey: apiKey,
         s3Key: null,
         config: null,
         cdnInvalidation: null,
@@ -313,13 +314,13 @@ class TokowakaClient {
 
     // Upload to S3
     this.log.info(`Uploading Tokowaka config for ${eligibleSuggestions.length} suggestions`);
-    const s3Key = await this.uploadConfig(tokowakaApiKey, config);
+    const s3Key = await this.uploadConfig(apiKey, config);
 
     // Invalidate CDN cache (non-blocking, failures are logged but don't fail deployment)
     // const cdnInvalidationResult = await this.invalidateCdnCache(site, s3Key);
 
     return {
-      tokowakaApiKey,
+      tokowakaApiKey: apiKey,
       s3Key,
       config,
       // cdnInvalidation: cdnInvalidationResult,

@@ -63,6 +63,7 @@ class Audit extends BaseModel {
     PRERENDER: 'prerender',
     PRODUCT_METATAGS: 'product-metatags',
     SUMMARIZATION: 'summarization',
+    PAGE_TYPE_DETECTION: 'page-type-detection',
   };
 
   static AUDIT_TYPE_PROPERTIES = {
@@ -205,7 +206,7 @@ class Audit extends BaseModel {
 
     if ((
       auditType === Audit.AUDIT_CONFIG.TYPES.LHS_MOBILE
-        || auditType === Audit.AUDIT_CONFIG.TYPES.LHS_DESKTOP
+      || auditType === Audit.AUDIT_CONFIG.TYPES.LHS_DESKTOP
     )
       && !isObject(auditResult.scores)) {
       throw new ValidationError(`Missing scores property for audit type '${auditType}'`);

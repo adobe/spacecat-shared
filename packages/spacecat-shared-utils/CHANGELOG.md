@@ -1,3 +1,94 @@
+# [@adobe/spacecat-shared-utils-v1.59.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.3...@adobe/spacecat-shared-utils-v1.59.4) (2025-10-10)
+
+
+### Bug Fixes
+
+* add cdn bucket schema to llmo config ([#1022](https://github.com/adobe/spacecat-shared/issues/1022)) ([fb3ca44](https://github.com/adobe/spacecat-shared/commit/fb3ca44b206689e59dcb860e519b085367bde0a5))
+
+# [@adobe/spacecat-shared-utils-v1.59.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.2...@adobe/spacecat-shared-utils-v1.59.3) (2025-10-10)
+
+
+### Bug Fixes
+
+* add cdn bucket schema to llmo config ([#1021](https://github.com/adobe/spacecat-shared/issues/1021)) ([2d9f2ab](https://github.com/adobe/spacecat-shared/commit/2d9f2abd8c60050a481aad62095b4f9cd30bb8c5))
+
+# [@adobe/spacecat-shared-utils-v1.59.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.1...@adobe/spacecat-shared-utils-v1.59.2) (2025-10-10)
+
+
+### Bug Fixes
+
+* adds help urls to cdn helpers ([#1020](https://github.com/adobe/spacecat-shared/issues/1020)) ([9d20a0a](https://github.com/adobe/spacecat-shared/commit/9d20a0a25ac683aba33fc8def57b624b337b8b08))
+
+# [@adobe/spacecat-shared-utils-v1.59.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.0...@adobe/spacecat-shared-utils-v1.59.1) (2025-10-10)
+
+
+### Bug Fixes
+
+* **calendar-week-helper:** Bring back ISOCalendarWeek type ([#1018](https://github.com/adobe/spacecat-shared/issues/1018)) ([1680974](https://github.com/adobe/spacecat-shared/commit/16809746b817f1076461e83bc8b7d7f5093815fb))
+
+# [@adobe/spacecat-shared-utils-v1.59.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.58.1...@adobe/spacecat-shared-utils-v1.59.0) (2025-10-09)
+
+
+### Features
+
+* Add locale detection util ([#1006](https://github.com/adobe/spacecat-shared/issues/1006)) ([cb8dcd6](https://github.com/adobe/spacecat-shared/commit/cb8dcd69e85cf673f9c791f8653e164e1e5a06d8))
+
+# [@adobe/spacecat-shared-utils-v1.58.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.58.0...@adobe/spacecat-shared-utils-v1.58.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* adding calendar util functions to interface ([#1016](https://github.com/adobe/spacecat-shared/issues/1016)) ([245ff41](https://github.com/adobe/spacecat-shared/commit/245ff41dd05cf4348cfe81d2b187487744a2ad57))
+
+# [@adobe/spacecat-shared-utils-v1.58.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.57.1...@adobe/spacecat-shared-utils-v1.58.0) (2025-10-09)
+
+
+### Features
+
+* introduce ISO calendar calculations ([#1015](https://github.com/adobe/spacecat-shared/issues/1015)) ([885351f](https://github.com/adobe/spacecat-shared/commit/885351f67cae1ea07beea0489c737e6990d93324))
+
+# [@adobe/spacecat-shared-utils-v1.57.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.57.0...@adobe/spacecat-shared-utils-v1.57.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* adds browser export ([#1012](https://github.com/adobe/spacecat-shared/issues/1012)) ([f167eff](https://github.com/adobe/spacecat-shared/commit/f167effd3713077c9a3829ca589324e136740cee))
+
+# [@adobe/spacecat-shared-utils-v1.57.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.56.0...@adobe/spacecat-shared-utils-v1.57.0) (2025-10-09)
+
+
+### Features
+
+* cdn-logs-infra provisioning response prettifier ([#1011](https://github.com/adobe/spacecat-shared/issues/1011)) ([2e83fbf](https://github.com/adobe/spacecat-shared/commit/2e83fbf4f67d48202cdf33538afcbc0146297161))
+
+# [@adobe/spacecat-shared-utils-v1.56.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.55.0...@adobe/spacecat-shared-utils-v1.56.0) (2025-10-07)
+
+
+### Features
+
+* deletedEntities and prompts ([#1005](https://github.com/adobe/spacecat-shared/issues/1005)) ([c7c0c8f](https://github.com/adobe/spacecat-shared/commit/c7c0c8f635fcde250936579bb42d9942d7b6a1ab))
+
+# [@adobe/spacecat-shared-utils-v1.55.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.54.0...@adobe/spacecat-shared-utils-v1.55.0) (2025-10-03)
+
+
+### Features
+
+* add topics with nested prompts + make categories and prompts top level entities ([#999](https://github.com/adobe/spacecat-shared/issues/999)) ([1b43970](https://github.com/adobe/spacecat-shared/commit/1b43970912478361b2eb4eaf1e7f173e77ad80e9))
+
+# [@adobe/spacecat-shared-utils-v1.54.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.53.0...@adobe/spacecat-shared-utils-v1.54.0) (2025-10-02)
+
+
+### Features
+
+* remove topic from brand alias and make regions mandatory in categories + make regions mandatory for categories ([#997](https://github.com/adobe/spacecat-shared/issues/997)) ([78e609a](https://github.com/adobe/spacecat-shared/commit/78e609a336cb2a2645199d94d4464c4843bd8c4a))
+
+# [@adobe/spacecat-shared-utils-v1.53.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.52.0...@adobe/spacecat-shared-utils-v1.53.0) (2025-10-02)
+
+
+### Features
+
+* Add regions to categories and related validation on dependent entities ([#996](https://github.com/adobe/spacecat-shared/issues/996)) ([60c52e2](https://github.com/adobe/spacecat-shared/commit/60c52e2d9c7e79a67132ae2b26e40e617e8af358))
+
 # [@adobe/spacecat-shared-utils-v1.52.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.51.1...@adobe/spacecat-shared-utils-v1.52.0) (2025-09-29)
 
 

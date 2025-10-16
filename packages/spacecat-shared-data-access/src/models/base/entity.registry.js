@@ -20,12 +20,14 @@ import ConfigurationCollection from '../configuration/configuration.collection.j
 import ExperimentCollection from '../experiment/experiment.collection.js';
 import EntitlementCollection from '../entitlement/entitlement.collection.js';
 import FixEntityCollection from '../fix-entity/fix-entity.collection.js';
+import FixEntitySuggestionCollection from '../fix-entity-suggestion/fix-entity-suggestion.collection.js';
 import ImportJobCollection from '../import-job/import-job.collection.js';
 import ImportUrlCollection from '../import-url/import-url.collection.js';
 import KeyEventCollection from '../key-event/key-event.collection.js';
 import LatestAuditCollection from '../latest-audit/latest-audit.collection.js';
 import OpportunityCollection from '../opportunity/opportunity.collection.js';
 import OrganizationCollection from '../organization/organization.collection.js';
+import ProjectCollection from '../project/project.collection.js';
 import ScrapeJobCollection from '../scrape-job/scrape-job.collection.js';
 import ScrapeUrlCollection from '../scrape-url/scrape-url.collection.js';
 import SiteCandidateCollection from '../site-candidate/site-candidate.collection.js';
@@ -45,6 +47,7 @@ import AuditSchema from '../audit/audit.schema.js';
 import ConfigurationSchema from '../configuration/configuration.schema.js';
 import EntitlementSchema from '../entitlement/entitlement.schema.js';
 import FixEntitySchema from '../fix-entity/fix-entity.schema.js';
+import FixEntitySuggestionSchema from '../fix-entity-suggestion/fix-entity-suggestion.schema.js';
 import ExperimentSchema from '../experiment/experiment.schema.js';
 import ImportJobSchema from '../import-job/import-job.schema.js';
 import ImportUrlSchema from '../import-url/import-url.schema.js';
@@ -52,6 +55,7 @@ import KeyEventSchema from '../key-event/key-event.schema.js';
 import LatestAuditSchema from '../latest-audit/latest-audit.schema.js';
 import OpportunitySchema from '../opportunity/opportunity.schema.js';
 import OrganizationSchema from '../organization/organization.schema.js';
+import ProjectSchema from '../project/project.schema.js';
 import ScrapeJobSchema from '../scrape-job/scrape-job.schema.js';
 import ScrapeUrlSchema from '../scrape-url/scrape-url.schema.js';
 import SiteSchema from '../site/site.schema.js';
@@ -97,18 +101,6 @@ class EntityRegistry {
       const collection = new Collection(this.service, this, schema, this.log);
       this.collections.set(Collection.name, collection);
     });
-
-    this.#logIndexes();
-  }
-
-  #logIndexes() {
-    // reduce collection schema indexes into object
-    const indexes = Object.values(EntityRegistry.entities).reduce((acc, { schema }) => {
-      acc[schema.getEntityName()] = schema.indexes;
-      return acc;
-    }, {});
-
-    this.log.debug('Indexes:', JSON.stringify(indexes, null, 2));
   }
 
   /**
@@ -152,6 +144,7 @@ EntityRegistry.registerEntity(AuditSchema, AuditCollection);
 EntityRegistry.registerEntity(ConfigurationSchema, ConfigurationCollection);
 EntityRegistry.registerEntity(EntitlementSchema, EntitlementCollection);
 EntityRegistry.registerEntity(FixEntitySchema, FixEntityCollection);
+EntityRegistry.registerEntity(FixEntitySuggestionSchema, FixEntitySuggestionCollection);
 EntityRegistry.registerEntity(ExperimentSchema, ExperimentCollection);
 EntityRegistry.registerEntity(ImportJobSchema, ImportJobCollection);
 EntityRegistry.registerEntity(ImportUrlSchema, ImportUrlCollection);
@@ -159,6 +152,7 @@ EntityRegistry.registerEntity(KeyEventSchema, KeyEventCollection);
 EntityRegistry.registerEntity(LatestAuditSchema, LatestAuditCollection);
 EntityRegistry.registerEntity(OpportunitySchema, OpportunityCollection);
 EntityRegistry.registerEntity(OrganizationSchema, OrganizationCollection);
+EntityRegistry.registerEntity(ProjectSchema, ProjectCollection);
 EntityRegistry.registerEntity(ScrapeJobSchema, ScrapeJobCollection);
 EntityRegistry.registerEntity(ScrapeUrlSchema, ScrapeUrlCollection);
 EntityRegistry.registerEntity(SiteSchema, SiteCollection);

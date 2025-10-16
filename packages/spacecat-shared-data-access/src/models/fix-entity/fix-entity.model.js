@@ -33,6 +33,12 @@ class FixEntity extends BaseModel {
     SPACECAT: 'spacecat',
     ASO: 'aso',
   };
+
+  async getSuggestions() {
+    const fixEntityCollection = this.entityRegistry.getCollection('FixEntityCollection');
+    return fixEntityCollection
+      .getSuggestionsByFixEntityId(this.getId());
+  }
 }
 
 export default FixEntity;

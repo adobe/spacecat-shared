@@ -19,6 +19,9 @@ import {
   getWeekInfo,
   getMonthInfo,
   getTemporalCondition,
+  isoCalendarWeek,
+  isoCalendarWeekMonday,
+  isoCalendarWeekSunday,
 } from '../src/calendar-week-helper.js';
 
 describe('Utils - getLastNumberOfWeeks', () => {
@@ -420,5 +423,344 @@ describe('Utils - temporal helpers', () => {
       const c = getTemporalCondition({ month: 8 });
       expect(c).to.equal('(year=2025 AND month=7 AND week=28)');
     });
+  });
+});
+
+describe('ISO calendar week calculation', () => {
+  // 4th Jan
+
+  it('is <CurrentYear> week 1 for 4th January on a Monday (2021)', () => {
+    const date = new Date('2021-01-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2021 });
+  });
+
+  it('is <CurrentYear> week 1 for 4th January on a Tuesday (2022)', () => {
+    const date = new Date('2022-01-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2022 });
+  });
+
+  it('is <CurrentYear> week 1 for 4th January on a Wednesday (2023)', () => {
+    const date = new Date('2023-01-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2023 });
+  });
+
+  it('is <CurrentYear> week 1 for 4th January on a Thursday (2024)', () => {
+    const date = new Date('2024-01-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2024 });
+  });
+
+  it('is <CurrentYear> week 1 for 4th January on a Friday (2019)', () => {
+    const date = new Date('2019-01-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2019 });
+  });
+
+  it('is <CurrentYear> week 1 for 4th January on a Saturday (2020)', () => {
+    const date = new Date('2020-01-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2020 });
+  });
+
+  it('is <CurrentYear> week 1 for 4th January on a Sunday (2015)', () => {
+    const date = new Date('2015-01-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2015 });
+  });
+
+  // 1st Jan
+
+  it('is <CurrentYear> week 1 for 1st January on a Monday (2024)', () => {
+    const date = new Date('2024-01-01T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2024 });
+  });
+
+  it('is <CurrentYear> week 1 for 1st January on a Tuesday (2019)', () => {
+    const date = new Date('2019-01-01T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2019 });
+  });
+
+  it('is <CurrentYear> week 1 for 1st January on a Wednesday (2020)', () => {
+    const date = new Date('2020-01-01T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2020 });
+  });
+
+  it('is <CurrentYear> week 1 for 1st January on a Thursday (2015)', () => {
+    const date = new Date('2015-01-01T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2015 });
+  });
+
+  it('is <CurrentYear - 1> week 53 for 1st January on a Friday (2021)', () => {
+    const date = new Date('2021-01-01T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 53, year: 2020 });
+  });
+
+  it('is <CurrentYear - 1> week 52 for 1st January on a Saturday (2022)', () => {
+    const date = new Date('2022-01-01T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 52, year: 2021 });
+  });
+
+  it('is <CurrentYear - 1> week 53 for 1st January on a Saturday of a year following a leap year (2033)', () => {
+    const date = new Date('2033-01-01T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 53, year: 2032 });
+  });
+
+  it('is <CurrentYear - 1> week 52 for 1st January on a Sunday (2023)', () => {
+    const date = new Date('2023-01-01T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 52, year: 2022 });
+  });
+
+  // 31st Dec
+
+  it('is <CurrentYear + 1> week 1 for 31st December on a Monday (2018)', () => {
+    const date = new Date('2018-12-31T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2019 });
+  });
+
+  it('is <CurrentYear + 1> week 1 for 31st December on a Tuesday (2019)', () => {
+    const date = new Date('2019-12-31T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2020 });
+  });
+
+  it('is <CurrentYear + 1> week 1 for 31st December on a Wednesday (2014)', () => {
+    const date = new Date('2014-12-31T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 1, year: 2015 });
+  });
+
+  it('is <CurrentYear> week 53 for 31st December on a Thursday (2020)', () => {
+    const date = new Date('2020-12-31T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 53, year: 2020 });
+  });
+
+  it('is <CurrentYear> week 52 for 31st December on a Friday (2021)', () => {
+    const date = new Date('2021-12-31T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 52, year: 2021 });
+  });
+
+  it('is <CurrentYear> week 53 for 31st December on a Friday of a leap year (2032)', () => {
+    const date = new Date('2032-12-31T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 53, year: 2032 });
+  });
+
+  it('is <CurrentYear> week 52 for 31st December on a Saturday (2022)', () => {
+    const date = new Date('2022-12-31T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 52, year: 2022 });
+  });
+
+  it('is <CurrentYear> week 52 for 31st December on a Sunday (2023)', () => {
+    const date = new Date('2023-12-31T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 52, year: 2023 });
+  });
+
+  // 4th August
+
+  it('is week 31 for 4th August 2024', () => {
+    const date = new Date('2024-08-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 31, year: 2024 });
+  });
+
+  it('is week 32 for 4th August 2025', () => {
+    const date = new Date('2025-08-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 32, year: 2025 });
+  });
+
+  it('is week 32 for 4th August 2026', () => {
+    const date = new Date('2026-08-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 32, year: 2026 });
+  });
+
+  it('is week 31 for 4th August 2027', () => {
+    const date = new Date('2027-08-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 31, year: 2027 });
+  });
+
+  it('is week 31 for 4th August 2028', () => {
+    const date = new Date('2028-08-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 31, year: 2028 });
+  });
+
+  it('is week 31 for 4th August 2029', () => {
+    const date = new Date('2029-08-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 31, year: 2029 });
+  });
+
+  it('is week 31 for 4th August 2030', () => {
+    const date = new Date('2030-08-04T00:00:00.000Z');
+    expect(isoCalendarWeek(date)).deep.equals({ week: 31, year: 2030 });
+  });
+
+  it('handles leap seconds correctly', () => {
+    // Leap second on 30th June 2015
+    const monday = new Date('2015-09-28T00:00:00.000Z');
+    expect(isoCalendarWeek(monday)).deep.equals({ week: 40, year: 2015 });
+
+    const sunday = new Date('2015-10-04T23:59:59.999Z');
+    expect(isoCalendarWeek(sunday)).deep.equals({ week: 40, year: 2015 });
+  });
+});
+
+describe('ISO calendar monday calculation', () => {
+  // 1st Jan
+
+  it('is the same day for 1st January on a Monday (2024)', () => {
+    const date = new Date('2024-01-01T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2024-01-01T00:00:00.000Z'));
+  });
+
+  it('is 1 day before for 1st January on a Tuesday (2019)', () => {
+    const date = new Date('2019-01-01T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2018-12-31T00:00:00.000Z'));
+  });
+
+  it('is 2 days before for 1st January on a Wednesday (2020)', () => {
+    const date = new Date('2020-01-01T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2019-12-30T00:00:00.000Z'));
+  });
+
+  it('is 3 days before for 1st January on a Thursday (2015)', () => {
+    const date = new Date('2015-01-01T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2014-12-29T00:00:00.000Z'));
+  });
+
+  it('is 4 days before for 1st January on a Friday (2021)', () => {
+    const date = new Date('2021-01-01T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2020-12-28T00:00:00.000Z'));
+  });
+
+  it('is 5 days before for 1st January on a Saturday (2022)', () => {
+    const date = new Date('2022-01-01T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2021-12-27T00:00:00.000Z'));
+  });
+
+  it('is 6 days before for 1st January on a Sunday (2023)', () => {
+    const date = new Date('2023-01-01T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2022-12-26T00:00:00.000Z'));
+  });
+
+  // 4th August
+
+  it('is the same day for 4th August 2025', () => {
+    const date = new Date('2025-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2025-08-04T00:00:00.000Z'));
+  });
+
+  it('is 1 day before for 4th August 2026', () => {
+    const date = new Date('2026-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2026-08-03T00:00:00.000Z'));
+  });
+
+  it('is 2 days before for 4th August 2027', () => {
+    const date = new Date('2027-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2027-08-02T00:00:00.000Z'));
+  });
+
+  it('is 3 days before for 4th August 2022', () => {
+    const date = new Date('2022-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2022-08-01T00:00:00.000Z'));
+  });
+
+  it('is 4 days before for 4th August 2028', () => {
+    const date = new Date('2028-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2028-07-31T00:00:00.000Z'));
+  });
+
+  it('is 5 days before for 4th August 2029', () => {
+    const date = new Date('2029-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2029-07-30T00:00:00.000Z'));
+  });
+
+  it('is 6 days before for 4th August 2030', () => {
+    const date = new Date('2030-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2030-07-29T00:00:00.000Z'));
+  });
+
+  it('handles leap seconds correctly', () => {
+    // Leap second on 30th June 2015
+    const date = new Date('2015-07-01T00:00:00.000Z');
+    expect(isoCalendarWeekMonday(date)).deep.equals(new Date('2015-06-29T00:00:00.000Z'));
+
+    const endOfWeek = new Date('2015-07-05T23:59:59.999Z');
+    expect(isoCalendarWeekMonday(endOfWeek)).deep.equals(new Date('2015-06-29T00:00:00.000Z'));
+  });
+});
+
+describe('ISO calendar Sunday calculation', () => {
+  // 31st December
+
+  it('is 6 days later for 31st December on a Monday (2029)', () => {
+    const date = new Date('2029-12-31T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2030-01-06T23:59:59.999Z'));
+  });
+
+  it('is 5 days after for 31st December on a Tuesday (2019)', () => {
+    const date = new Date('2019-12-31T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2020-01-05T23:59:59.999Z'));
+  });
+
+  it('is 4 days after for 31st December on a Wednesday (2014)', () => {
+    const date = new Date('2014-12-31T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2015-01-04T23:59:59.999Z'));
+  });
+
+  it('is 3 days after for 31st December on a Thursday (2020)', () => {
+    const date = new Date('2020-12-31T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2021-01-03T23:59:59.999Z'));
+  });
+
+  it('is 2 days after for 31st December on a Friday (2021)', () => {
+    const date = new Date('2021-12-31T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2022-01-02T23:59:59.999Z'));
+  });
+
+  it('is 1 days after for 31st December on a Saturday (2022)', () => {
+    const date = new Date('2022-12-31T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2023-01-01T23:59:59.999Z'));
+  });
+
+  it('is the same day for 31st December on a Sunday (2023)', () => {
+    const date = new Date('2023-12-31T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2023-12-31T23:59:59.999Z'));
+  });
+
+  // 4th August
+
+  it('is 6 days later for 4th August 2025', () => {
+    const date = new Date('2025-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2025-08-10T23:59:59.999Z'));
+  });
+
+  it('is 5 days later for 4th August 2026', () => {
+    const date = new Date('2026-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2026-08-09T23:59:59.999Z'));
+  });
+
+  it('is 4 days later for 4th August 2027', () => {
+    const date = new Date('2027-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2027-08-08T23:59:59.999Z'));
+  });
+
+  it('is 3 days later for 4th August 2022', () => {
+    const date = new Date('2022-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2022-08-07T23:59:59.999Z'));
+  });
+
+  it('is 2 days later for 4th August 2028', () => {
+    const date = new Date('2028-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2028-08-06T23:59:59.999Z'));
+  });
+
+  it('is 1 days later for 4th August 2029', () => {
+    const date = new Date('2029-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2029-08-05T23:59:59.999Z'));
+  });
+
+  it('is the same day for 4th August 2030', () => {
+    const date = new Date('2030-08-04T12:34:56.789Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2030-08-04T23:59:59.999Z'));
+  });
+
+  it('handles leap seconds correctly', () => {
+    // Leap second on 30th June 2015
+    const date = new Date('2015-06-30T00:00:00.000Z');
+    expect(isoCalendarWeekSunday(date)).deep.equals(new Date('2015-07-05T23:59:59.999Z'));
+
+    const beginOfWeek = new Date('2015-06-29T00:00:00.000Z');
+    expect(isoCalendarWeekSunday(beginOfWeek)).deep.equals(new Date('2015-07-05T23:59:59.999Z'));
   });
 });

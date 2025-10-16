@@ -11,7 +11,7 @@
  */
 
 import type {
-  BaseCollection, BaseModel, Opportunity, Suggestion,
+  BaseCollection, BaseModel, Opportunity, Suggestion, FixEntitySuggestion,
 } from '../index';
 
 export interface FixEntity extends BaseModel {
@@ -30,8 +30,6 @@ export interface FixEntity extends BaseModel {
   setPublishedAt(value: string): this;
   getStatus(): string;
   setStatus(value: string): this;
-  getSuggestions(): Promise<Suggestion[]>;
-  getSuggestionsByUpdatedAt(updatedAt: string): Promise<Suggestion[]>;
   getType(): string;
 }
 
@@ -40,4 +38,6 @@ export interface FixEntityCollection extends BaseCollection<FixEntity> {
   allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<FixEntity[]>;
   findByOpportunityId(opportunityId: string): Promise<FixEntity | null>;
   findByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<FixEntity | null>;
+  getSuggestionsByFixEntityId(fixEntityId: string): Promise<{data: Array<Suggestion>, unprocessed: Array<string>}>;
+  setSuggestionsForFixEntity(opportunityId: string, fixEntity: FixEntity, suggestions: Array<Suggestion>): Promise<{createdItems: Array<FixEntitySuggestion>, errorItems: Array<FixEntitySuggestion>, removedCount: number}>;
 }

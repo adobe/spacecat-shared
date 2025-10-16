@@ -11,7 +11,7 @@
  */
 
 import type {
-  BaseCollection, BaseModel, Site, Entitlement, OrganizationIdentityProvider, TrialUser,
+  BaseCollection, BaseModel, Site, Project, Entitlement, OrganizationIdentityProvider, TrialUser,
 } from '../index';
 
 export interface Organization extends BaseModel {
@@ -20,6 +20,7 @@ export interface Organization extends BaseModel {
   getImsOrgId(): string;
   getName(): string;
   getSites(): Promise<Site[]>;
+  getProjects(): Promise<Project[]>;
   getEntitlements(): Promise<Entitlement[]>;
   getOrganizationIdentityProviders(): Promise<OrganizationIdentityProvider[]>;
   getTrialUsers(): Promise<TrialUser[]>;

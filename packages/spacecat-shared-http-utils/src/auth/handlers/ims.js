@@ -43,6 +43,12 @@ const ADMIN_GROUP_IDENT = {
     879529884, // IMS admin group for prod
     901092291, // IMS admin group for on call engineers
   ],
+  '42A126776407096B0A495E50': [
+    945801205, // IMS admin group for reference demo org users
+  ],
+  '38931D6666E3ECDA0A495E80': [
+    945802231, // IMS admin group for AEM Showcase org users
+  ],
 };
 const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {

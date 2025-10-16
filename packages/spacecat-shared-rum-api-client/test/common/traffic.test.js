@@ -90,6 +90,7 @@ describe('Traffic classification', () => {
 
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://chatgpt.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: '', utmSource: 'chatgpt.com', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: '', utmSource: 'chatgpt.com', utmMedium: 'paidsearch', tracking: 'paid' });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://openai.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://subdomain.chatgpt.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://subdomain.openai.com/', utmSource: '', utmMedium: '', tracking: null });

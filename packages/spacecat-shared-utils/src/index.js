@@ -89,6 +89,9 @@ export {
   getWeekInfo,
   getMonthInfo,
   getTemporalCondition,
+  isoCalendarWeek,
+  isoCalendarWeekSunday,
+  isoCalendarWeekMonday,
 } from './calendar-week-helper.js';
 
 export { detectAEMVersion, DELIVERY_TYPES } from './aem.js';
@@ -97,3 +100,6 @@ export { determineAEMCSPageId, getPageEditUrl } from './aem-content-api-utils.js
 
 export * as llmoConfig from './llmo-config.js';
 export * as schemas from './schemas.js';
+
+export { detectLocale } from './locale-detect/locale-detect.js';
+export { prettifyLogForwardingConfig } from './cdn-helpers.js';

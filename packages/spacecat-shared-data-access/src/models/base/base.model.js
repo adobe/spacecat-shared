@@ -241,6 +241,12 @@ class BaseModel {
     return this._remove();
   }
 
+  generateCompositeKeys() {
+    return {
+      [this.idName]: this.getId(),
+    };
+  }
+
   /**
    * Internal remove method that removes the current entity from the database and its dependents.
    * This method does not check if the schema allows removal in order to be able to remove
@@ -267,11 +273,9 @@ class BaseModel {
         }
       });
 
-      this.log.debug(`Removing entity ${this.entityName} with ID ${this.getId()} and ${dependents.length} dependents`);
-
       await Promise.all(removePromises);
 
-      await this.entity.remove({ [this.idName]: this.getId() }).go();
+      await this.entity.remove(this.generateCompositeKeys()).go();
 
       this.#invalidateCache();
 
@@ -297,8 +301,6 @@ class BaseModel {
   async save() {
     // todo: validate associations
     try {
-      this.log.debug(`Saving entity ${this.entityName} with ID ${this.getId()}`);
-
       await this.patcher.save();
       this.#invalidateCache();
 

@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.38.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.1...@adobe/spacecat-shared-rum-api-client-v2.38.2) (2025-10-15)
+
+
+### Bug Fixes
+
+* **traffic-attribution:** enforce earned-llm for llm providers ([#1028](https://github.com/adobe/spacecat-shared/issues/1028)) ([550c411](https://github.com/adobe/spacecat-shared/commit/550c411220ffc50a0d8ee6eb954f3e439efc5b0e))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.38.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.0...@adobe/spacecat-shared-rum-api-client-v2.38.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.20.0 ([#1013](https://github.com/adobe/spacecat-shared/issues/1013)) ([1a18158](https://github.com/adobe/spacecat-shared/commit/1a1815832eb6a27dbb9b879626b52d2a86e6d56f)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
+# [@adobe/spacecat-shared-rum-api-client-v2.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.8...@adobe/spacecat-shared-rum-api-client-v2.38.0) (2025-10-07)
+
+
+### Features
+
+* add query for fetching RUM engagement metrics ([#985](https://github.com/adobe/spacecat-shared/issues/985)) ([0eb8881](https://github.com/adobe/spacecat-shared/commit/0eb88818af000076ea663b2e08ab1fb2b1957510))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.37.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.7...@adobe/spacecat-shared-rum-api-client-v2.37.8) (2025-10-07)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/rum-distiller to v1.19.1 ([#1004](https://github.com/adobe/spacecat-shared/issues/1004)) ([23446ad](https://github.com/adobe/spacecat-shared/commit/23446adeb9bfb2484885ac28b080b45bffe2d30c)), closes [#8203](https://github.com/adobe/spacecat-shared/issues/8203)
+
 # [@adobe/spacecat-shared-rum-api-client-v2.37.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.37.6...@adobe/spacecat-shared-rum-api-client-v2.37.7) (2025-09-25)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "2.65.0",
+  "version": "2.71.1",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "engines": {
@@ -12,6 +12,9 @@
   "scripts": {
     "test:it": "mocha --require ./test/it/fixtures.js --spec \"test/it/**/*.test.js\"",
     "test": "c8 mocha --spec \"test/unit/**/*.test.js\"",
+    "test:debug": "mocha --inspect-brk --require ./test/setup-env.js --spec \"test/unit/**/*.test.js\"",
+    "test:debug:config": "mocha --inspect-brk --require ./test/setup-env.js --spec \"test/unit/models/site/config.test.js\"",
+    "test:debug:grep": "mocha --inspect-brk --require ./test/setup-env.js --grep",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules"

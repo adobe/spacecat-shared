@@ -41,11 +41,16 @@ export function llmoConfigPath(siteId) {
 export function defaultConfig() {
   return {
     entities: {},
+    categories: {},
+    topics: {},
     brands: {
       aliases: [],
     },
     competitors: {
       competitors: [],
+    },
+    deleted: {
+      prompts: {},
     },
   };
 }

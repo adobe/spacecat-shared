@@ -367,6 +367,7 @@ class BaseCollection {
    *
    * @async
    * @param {Array<string>} ids - An array of entity IDs to retrieve.
+   * @param {{attributes?: string[]}} [options] - Additional options for the query.
    * @returns {Promise<{data: Array<BaseModel>, unprocessed: Array<string>}>} - A promise that
    *   resolves
    *   to an object containing:
@@ -375,13 +376,20 @@ class BaseCollection {
    * @throws {DataAccessError} - Throws an error if the IDs are not provided or if the batch
    *   operation fails.
    */
-  async batchGetByKeys(keys) {
+  async batchGetByKeys(keys, options = {}) {
     guardArray('keys', keys, this.entityName, 'any');
 
     try {
+      const goOptions = {};
+
+      // Add attributes if specified
+      if (options.attributes !== undefined) {
+        goOptions.attributes = options.attributes;
+      }
+
       const result = await this.entity.get(
         keys,
-      ).go();
+      ).go(goOptions);
 
       // Process found entities
       const data = result.data

@@ -1192,6 +1192,54 @@ describe('BaseCollection', () => {
 
       await expect(baseCollectionInstance.batchGetByKeys(keys)).to.be.rejectedWith(DataAccessError);
     });
+
+    it('should support attributes option', async () => {
+      const keys = [
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+      ];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      const goStub = stub().resolves(mockElectroResult);
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: goStub,
+      });
+
+      const result = await baseCollectionInstance.batchGetByKeys(keys, { attributes: ['mockEntityModelId', 'name'] });
+
+      expect(result.data).to.have.length(1);
+      expect(goStub).to.have.been.calledOnceWith({ attributes: ['mockEntityModelId', 'name'] });
+    });
+
+    it('should work without options (backward compatibility)', async () => {
+      const keys = [
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+      ];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      const goStub = stub().resolves(mockElectroResult);
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: goStub,
+      });
+
+      const result = await baseCollectionInstance.batchGetByKeys(keys);
+
+      expect(result.data).to.have.length(1);
+      expect(goStub).to.have.been.calledOnceWith({});
+    });
   });
 
   describe('removeByIndexKeys', () => {

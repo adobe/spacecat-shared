@@ -68,7 +68,7 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
     if (checkType !== 'heading-empty') {
       return {
         eligible: false,
-        reason: `Only empty headings can be deployed. This suggestion has checkType: ${checkType || 'unknown'}`,
+        reason: `Only empty headings can be deployed. This suggestion has checkType: ${checkType}`,
       };
     }
 

@@ -10,14 +10,15 @@
  * governing permissions and limitations under the License.
  */
 
-import AkamaiCdnClient from './akamai-cdn-client.js';
+import CloudFrontCdnClient from './cloudfront-cdn-client.js';
 
 /**
  * Registry for CDN clients
  * Manages different CDN provider implementations
  */
 export default class CdnClientRegistry {
-  constructor(log) {
+  constructor(env, log) {
+    this.env = env;
     this.log = log;
     this.clients = new Map();
     this.#registerDefaultClients();
@@ -28,7 +29,7 @@ export default class CdnClientRegistry {
    * @private
    */
   #registerDefaultClients() {
-    this.registerClient('akamai', AkamaiCdnClient);
+    this.registerClient('cloudfront', CloudFrontCdnClient);
   }
 
   /**
@@ -46,7 +47,7 @@ export default class CdnClientRegistry {
    * @param {Object} config - CDN configuration
    * @returns {BaseCdnClient|null} CDN client instance or null if not found
    */
-  getClient(provider, config) {
+  getClient(provider) {
     if (!provider) {
       this.log.warn('No CDN provider specified');
       return null;
@@ -60,7 +61,7 @@ export default class CdnClientRegistry {
     }
 
     try {
-      return new ClientClass(config, this.log);
+      return new ClientClass(this.env, this.log);
     } catch (error) {
       this.log.error(`Failed to create CDN client for ${provider}: ${error.message}`, error);
       return null;

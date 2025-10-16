@@ -36,17 +36,30 @@ describe('TokowakaClient', () => {
       info: sinon.stub(),
       warn: sinon.stub(),
       error: sinon.stub(),
+      debug: sinon.stub(),
+    };
+
+    const env = {
+      TOKOWAKA_CDN_PROVIDER: 'cloudfront',
+      TOKOWAKA_CDN_CONFIG: JSON.stringify({
+        cloudfront: {
+          distributionId: 'E123456',
+          region: 'us-east-1',
+        },
+      }),
     };
 
     client = new TokowakaClient(
-      { bucketName: 'test-bucket', s3Client },
+      { bucketName: 'test-bucket', s3Client, env },
       log,
     );
 
     mockSite = {
       getId: () => 'site-123',
       getBaseURL: () => 'https://example.com',
-      getConfig: () => ({ tokowakaApiKey: 'test-api-key-123' }),
+      getConfig: () => ({
+        getTokowakaConfig: () => ({ apiKey: 'test-api-key-123' }),
+      }),
     };
 
     mockOpportunity = {
@@ -89,7 +102,7 @@ describe('TokowakaClient', () => {
 
     it('should throw error if bucketName is missing', () => {
       expect(() => new TokowakaClient({ s3Client }, log))
-        .to.throw('TOKOWAKA_CONFIG_BUCKET is required');
+        .to.throw('TOKOWAKA_SITE_CONFIG_BUCKET is required');
     });
 
     it('should throw error if s3Client is missing', () => {
@@ -101,8 +114,8 @@ describe('TokowakaClient', () => {
   describe('createFrom', () => {
     it('should create client from context', () => {
       const context = {
-        env: { TOKOWAKA_CONFIG_BUCKET: 'test-bucket' },
-        s3Client,
+        env: { TOKOWAKA_SITE_CONFIG_BUCKET: 'test-bucket' },
+        s3: { s3Client },
         log,
       };
 
@@ -118,8 +131,8 @@ describe('TokowakaClient', () => {
         log,
       );
       const context = {
-        env: { TOKOWAKA_CONFIG_BUCKET: 'test-bucket' },
-        s3Client,
+        env: { TOKOWAKA_SITE_CONFIG_BUCKET: 'test-bucket' },
+        s3: { s3Client },
         log,
         tokowakaClient: existingClient,
       };
@@ -127,6 +140,52 @@ describe('TokowakaClient', () => {
       const createdClient = TokowakaClient.createFrom(context);
 
       expect(createdClient).to.equal(existingClient);
+    });
+  });
+
+  describe('getSupportedOpportunityTypes', () => {
+    it('should return list of supported opportunity types', () => {
+      const types = client.getSupportedOpportunityTypes();
+
+      expect(types).to.be.an('array');
+      expect(types).to.include('headings');
+    });
+  });
+
+  describe('registerMapper', () => {
+    it('should register a custom mapper', () => {
+      class CustomMapper {
+        // eslint-disable-next-line class-methods-use-this
+        getOpportunityType() {
+          return 'custom-type';
+        }
+
+        // eslint-disable-next-line class-methods-use-this
+        requiresPrerender() {
+          return false;
+        }
+
+        // eslint-disable-next-line class-methods-use-this
+        suggestionToPatch() {
+          return {};
+        }
+
+        // eslint-disable-next-line class-methods-use-this
+        validateSuggestionData() {
+          return true;
+        }
+
+        // eslint-disable-next-line class-methods-use-this
+        canDeploy() {
+          return { eligible: true };
+        }
+      }
+
+      const customMapper = new CustomMapper();
+      client.registerMapper(customMapper);
+
+      const types = client.getSupportedOpportunityTypes();
+      expect(types).to.include('custom-type');
     });
   });
 
@@ -265,12 +324,12 @@ describe('TokowakaClient', () => {
 
       const s3Key = await client.uploadConfig('test-api-key', config);
 
-      expect(s3Key).to.equal('test-api-key/v1/tokowaka-site-config.json');
+      expect(s3Key).to.equal('opportunities/test-api-key');
       expect(s3Client.send).to.have.been.calledOnce;
 
       const command = s3Client.send.firstCall.args[0];
       expect(command.input.Bucket).to.equal('test-bucket');
-      expect(command.input.Key).to.equal('test-api-key/v1/tokowaka-site-config.json');
+      expect(command.input.Key).to.equal('opportunities/test-api-key');
       expect(command.input.ContentType).to.equal('application/json');
       expect(JSON.parse(command.input.Body)).to.deep.equal(config);
     });
@@ -312,6 +371,15 @@ describe('TokowakaClient', () => {
   });
 
   describe('deploySuggestions', () => {
+    beforeEach(() => {
+      // Stub CDN invalidation for deploy tests
+      sinon.stub(client, 'invalidateCdnCache').resolves({
+        status: 'success',
+        provider: 'cloudfront',
+        invalidationId: 'I123',
+      });
+    });
+
     it('should deploy suggestions successfully', async () => {
       const result = await client.deploySuggestions(
         mockSite,
@@ -320,14 +388,16 @@ describe('TokowakaClient', () => {
       );
 
       expect(result).to.have.property('tokowakaApiKey', 'test-api-key-123');
-      expect(result).to.have.property('s3Key', 'test-api-key-123/v1/tokowaka-site-config.json');
+      expect(result).to.have.property('s3Key', 'opportunities/test-api-key-123');
       expect(result).to.have.property('config');
       expect(result.config.siteId).to.equal('site-123');
       expect(s3Client.send).to.have.been.calledOnce;
     });
 
     it('should throw error if site does not have Tokowaka API key', async () => {
-      mockSite.getConfig = () => ({});
+      mockSite.getConfig = () => ({
+        getTokowakaConfig: () => ({}),
+      });
 
       try {
         await client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions);
@@ -344,6 +414,210 @@ describe('TokowakaClient', () => {
       expect(log.info).to.have.been.calledWith(sinon.match(/Generating Tokowaka config/));
       expect(log.info).to.have.been.calledWith(sinon.match(/Uploading Tokowaka config/));
       expect(log.info).to.have.been.calledWith(sinon.match(/Successfully uploaded/));
+    });
+
+    it('should handle suggestions that are not eligible for deployment', async () => {
+      // Create suggestions with different checkTypes
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            headingTag: 'h1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-missing', // Not eligible
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            headingTag: 'h2',
+            recommendedAction: 'New Subtitle',
+            checkType: 'heading-empty', // Eligible
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].reason).to.include('Only empty headings can be deployed');
+    });
+
+    it('should return early when no eligible suggestions', async () => {
+      // All suggestions are ineligible
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            headingTag: 'h1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-missing',
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.s3Key).to.be.null;
+      expect(result.config).to.be.null;
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(log.warn).to.have.been.calledWith('No eligible suggestions to deploy');
+      expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should throw error for unsupported opportunity type', async () => {
+      mockOpportunity.getType = () => 'unsupported-type';
+
+      try {
+        await client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('No mapper found for opportunity type: unsupported-type');
+        expect(error.message).to.include('Supported types:');
+        expect(error.status).to.equal(501);
+      }
+    });
+
+    it('should handle null tokowakaConfig gracefully', async () => {
+      mockSite.getConfig = () => ({
+        getTokowakaConfig: () => null,
+      });
+
+      try {
+        await client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Tokowaka API key configured');
+      }
+    });
+
+    it('should use default reason when eligibility has no reason', async () => {
+      // Create a mock mapper that returns eligible=false without reason
+      const mockMapper = {
+        canDeploy: sinon.stub().returns({ eligible: false }), // No reason provided
+      };
+      sinon.stub(client.mapperRegistry, 'getMapper').returns(mockMapper);
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.failedSuggestions).to.have.length(2);
+      expect(result.failedSuggestions[0].reason).to.equal('Suggestion cannot be deployed');
+    });
+  });
+
+  describe('invalidateCdnCache', () => {
+    let mockCdnClient;
+
+    beforeEach(() => {
+      mockCdnClient = {
+        invalidateCache: sinon.stub().resolves({
+          status: 'success',
+          provider: 'cloudfront',
+          invalidationId: 'I123',
+        }),
+      };
+
+      sinon.stub(client.cdnClientRegistry, 'getClient').returns(mockCdnClient);
+    });
+
+    it('should invalidate CDN cache successfully', async () => {
+      const result = await client.invalidateCdnCache('test-api-key', 'cloudfront');
+
+      expect(result).to.deep.equal({
+        status: 'success',
+        provider: 'cloudfront',
+        invalidationId: 'I123',
+      });
+
+      expect(mockCdnClient.invalidateCache).to.have.been.calledWith([
+        '/opportunities/test-api-key',
+      ]);
+      expect(log.debug).to.have.been.calledWith(sinon.match(/Invalidating CDN cache/));
+      expect(log.info).to.have.been.calledWith(sinon.match(/CDN cache invalidation completed/));
+    });
+
+    it('should return null if no CDN configuration', async () => {
+      try {
+        await client.invalidateCdnCache('', 'cloudfront');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('Tokowaka API key and provider are required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should return null if CDN config is empty', async () => {
+      try {
+        await client.invalidateCdnCache('test-api-key', '');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('Tokowaka API key and provider are required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should return null if CDN provider is missing', async () => {
+      try {
+        await client.invalidateCdnCache('test-api-key', null);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('Tokowaka API key and provider are required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should return null if CDN config is missing', async () => {
+      try {
+        await client.invalidateCdnCache(null, 'cloudfront');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('Tokowaka API key and provider are required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should return null if no CDN client available', async () => {
+      client.cdnClientRegistry.getClient.returns(null);
+
+      const result = await client.invalidateCdnCache('test-api-key', 'cloudfront');
+
+      expect(result).to.deep.equal({
+        status: 'error',
+        provider: 'cloudfront',
+        message: 'No CDN client available for provider: cloudfront',
+      });
+      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate CDN cache/));
+    });
+
+    it('should return error object if CDN invalidation fails', async () => {
+      mockCdnClient.invalidateCache.rejects(new Error('CDN API error'));
+
+      const result = await client.invalidateCdnCache('test-api-key', 'cloudfront');
+
+      expect(result).to.deep.equal({
+        status: 'error',
+        provider: 'cloudfront',
+        message: 'CDN API error',
+      });
+
+      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate CDN cache/));
     });
   });
 });

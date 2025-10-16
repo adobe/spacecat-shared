@@ -307,15 +307,6 @@ export const configSchema = Joi.object({
   }).optional(),
   tokowakaConfig: Joi.object({
     apiKey: Joi.string().required(),
-    cdn: Joi.object({
-      provider: Joi.string().required(),
-      config: Joi.object({
-        client_token: Joi.string().required(),
-        client_secret: Joi.string().required(),
-        access_token: Joi.string().required(),
-        host: Joi.string().required(),
-      }).required(),
-    }).optional(),
   }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -688,4 +679,5 @@ Config.toDynamoItem = (config) => ({
   brandConfig: config.getBrandConfig(),
   cdnLogsConfig: config.getCdnLogsConfig(),
   llmo: config.getLlmoConfig(),
+  tokowakaConfig: config.getTokowakaConfig(),
 });

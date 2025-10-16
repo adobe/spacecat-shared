@@ -15,9 +15,9 @@
  * Defines the interface that all CDN-specific clients must implement
  */
 export default class BaseCdnClient {
-  constructor(config, log) {
-    this.config = config;
-    this.log = log;
+  constructor(env, log) {
+    this.env = env;
+    this.log = log || console;
   }
 
   /**
@@ -46,16 +46,5 @@ export default class BaseCdnClient {
   // eslint-disable-next-line class-methods-use-this, no-unused-vars
   async invalidateCache(_paths) {
     throw new Error('invalidateCache() must be implemented by subclass');
-  }
-
-  /**
-   * Checks the status of an invalidation request
-   * @param {string} requestId - The invalidation request ID
-   * @returns {Promise<Object>} Status of the invalidation request
-   */
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
-  async getInvalidationStatus(_requestId) {
-    // Optional: Override in subclass if supported
-    return { status: 'unknown', message: 'Status check not supported' };
   }
 }

@@ -58,7 +58,7 @@ export default class BaseOpportunityMapper {
    */
   // eslint-disable-next-line class-methods-use-this, no-unused-vars
   validateSuggestionData(_) {
-    return true; // Override in subclass if needed
+    return false; // Override in subclass if needed
   }
 
   /**

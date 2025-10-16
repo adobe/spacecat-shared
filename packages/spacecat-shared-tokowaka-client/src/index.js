@@ -37,7 +37,11 @@ class TokowakaClient {
     }
 
     // s3ClientWrapper puts s3Client at context.s3.s3Client, so check both locations
-    const client = new TokowakaClient({ bucketName, s3Client: s3?.s3Client }, log);
+    const client = new TokowakaClient({
+      bucketName,
+      s3Client: s3?.s3Client,
+      env,
+    }, log);
     context.tokowakaClient = client;
     return client;
   }
@@ -47,9 +51,10 @@ class TokowakaClient {
    * @param {Object} config - Configuration object
    * @param {string} config.bucketName - S3 bucket name for configs
    * @param {Object} config.s3Client - AWS S3 client
+   * @param {Object} config.env - Environment variables (for CDN credentials)
    * @param {Object} log - Logger instance
    */
-  constructor({ bucketName, s3Client }, log) {
+  constructor({ bucketName, s3Client, env = {} }, log) {
     this.log = log;
 
     if (!hasText(bucketName)) {
@@ -62,9 +67,10 @@ class TokowakaClient {
 
     this.bucketName = bucketName;
     this.s3Client = s3Client;
+    this.env = env;
 
     this.mapperRegistry = new MapperRegistry(log);
-    this.cdnClientRegistry = new CdnClientRegistry(log);
+    this.cdnClientRegistry = new CdnClientRegistry(env, log);
   }
 
   #createError(message, status) {
@@ -200,51 +206,30 @@ class TokowakaClient {
 
   /**
    * Invalidates CDN cache for the Tokowaka config
-   * @param {Object} site - Site entity
-   * @param {string} _ - S3 key of the uploaded config
+   * Currently supports CloudFront only
+   * @param {string} apiKey - Tokowaka API key
+   * @param {string} provider - CDN provider name (default: 'cloudfront')
    * @returns {Promise<Object|null>} - CDN invalidation result or null if skipped
    */
-  async invalidateCdnCache(site, _) {
-    const siteConfig = site.getConfig() || {};
-    const { cdn } = siteConfig;
-
-    if (!isNonEmptyObject(cdn)) {
-      this.log.info('No CDN configuration found for site, skipping cache invalidation');
-      return null;
+  async invalidateCdnCache(apiKey, provider) {
+    if (!hasText(apiKey) || !hasText(provider)) {
+      throw this.#createError('Tokowaka API key and provider are required', HTTP_BAD_REQUEST);
     }
-
-    const { provider, config: cdnConfig } = cdn;
-
-    if (!hasText(provider) || !cdnConfig) {
-      this.log.warn('CDN provider or config not specified in site config, skipping cache invalidation');
-      return null;
-    }
-
     try {
-      const cdnClient = this.cdnClientRegistry.getClient(provider, cdnConfig);
-
-      if (!cdnClient) {
-        this.log.warn(`No CDN client available for provider: ${provider}, skipping cache invalidation`);
-        return null;
-      }
-
-      // Build CDN paths to invalidate
-      // The config is accessed via the Tokowaka API key path
-      const pathsToInvalidate = [
-        `/opportunities/${siteConfig.getTokowakaConfig().apiKey}`,
-      ];
-
+      const pathsToInvalidate = [`/opportunities/${apiKey}`];
       this.log.debug(`Invalidating CDN cache for ${pathsToInvalidate.length} paths via ${provider}`);
+      const cdnClient = this.cdnClientRegistry.getClient(provider);
+      if (!cdnClient) {
+        throw this.#createError(`No CDN client available for provider: ${provider}`, HTTP_NOT_IMPLEMENTED);
+      }
       const result = await cdnClient.invalidateCache(pathsToInvalidate);
-
       this.log.info(`CDN cache invalidation completed: ${JSON.stringify(result)}`);
       return result;
     } catch (error) {
-      // Log error but don't fail the deployment
-      this.log.error(`CDN cache invalidation failed (non-fatal): ${error.message}`, error);
+      this.log.error(`Failed to invalidate CDN cache: ${error.message}`, error);
       return {
         status: 'error',
-        provider,
+        provider: 'cloudfront',
         message: error.message,
       };
     }
@@ -259,8 +244,7 @@ class TokowakaClient {
    */
   async deploySuggestions(site, opportunity, suggestions) {
     // Get site's Tokowaka API key
-    const tokowakaConfig = site.getConfig().getTokowakaConfig() || {};
-    const { apiKey } = tokowakaConfig || {};
+    const { apiKey } = site.getConfig().getTokowakaConfig() || {};
 
     if (!hasText(apiKey)) {
       throw this.#createError(
@@ -318,13 +302,16 @@ class TokowakaClient {
     const s3Key = await this.uploadConfig(apiKey, config);
 
     // Invalidate CDN cache (non-blocking, failures are logged but don't fail deployment)
-    // const cdnInvalidationResult = await this.invalidateCdnCache(site, s3Key);
+    const cdnInvalidationResult = await this.invalidateCdnCache(
+      apiKey,
+      this.env.TOKOWAKA_CDN_PROVIDER,
+    );
 
     return {
       tokowakaApiKey: apiKey,
       s3Key,
       config,
-      // cdnInvalidation: cdnInvalidationResult,
+      cdnInvalidation: cdnInvalidationResult,
       succeededSuggestions: eligibleSuggestions,
       failedSuggestions: ineligibleSuggestions,
     };

@@ -49,6 +49,9 @@ export function defaultConfig() {
     competitors: {
       competitors: [],
     },
+    deleted: {
+      prompts: {},
+    },
   };
 }
 

@@ -115,4 +115,35 @@ describe('Configuration IT', async () => {
       sanitizeIdAndAuditFields('Configuration', expectedConfiguration),
     );
   });
+
+  it('registers a new audit', async () => {
+    const configuration = await Configuration.findLatest();
+    configuration.registerAudit('structured-data', true, 'weekly', ['LLMO']);
+    await configuration.save();
+
+    const updatedConfiguration = await Configuration.findLatest();
+    expect(updatedConfiguration.getHandler('structured-data')).to.deep.equal({
+      enabledByDefault: true,
+      dependencies: [],
+      disabled: {
+        sites: [],
+        orgs: [],
+      },
+      enabled: {
+        sites: [],
+        orgs: [],
+      },
+      productCodes: ['LLMO'],
+    });
+  });
+
+  it('unregisters an audit', async () => {
+    const configuration = await Configuration.findLatest();
+    configuration.unregisterAudit('structured-data');
+    await configuration.save();
+
+    const updatedConfiguration = await Configuration.findLatest();
+    expect(updatedConfiguration.getHandler('structured-data')).to.be.undefined;
+    expect(updatedConfiguration.getJobs().find((job) => job.group === 'audits' && job.type === 'structured-data')).to.be.undefined;
+  });
 });

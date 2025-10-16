@@ -15,7 +15,7 @@ import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import SchemaBuilder from '../base/schema.builder.js';
 import FixEntity from './fix-entity.model.js';
 import FixEntityCollection from './fix-entity.collection.js';
-import { Suggestion } from '../suggestion/index.js';
+import Suggestion from '../suggestion/suggestion.model.js';
 
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
@@ -24,7 +24,7 @@ Indexes Doc: https://electrodb.dev/en/modeling/indexes/
  */
 
 const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
-  .addReference('has_many', 'Suggestion', ['status'])
+  .addReference('has_many', 'FixEntitySuggestion', ['updatedAt'], { removeDependents: true })
   .addReference('belongs_to', 'Opportunity', ['status'])
   .addAttribute('type', {
     type: Object.values(Suggestion.TYPES),

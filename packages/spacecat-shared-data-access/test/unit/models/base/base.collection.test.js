@@ -16,7 +16,7 @@
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { ElectroValidationError } from 'electrodb';
-import { spy, stub } from 'sinon';
+import sinon, { spy, stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import BaseCollection from '../../../../src/models/base/base.collection.js';
@@ -984,6 +984,458 @@ describe('BaseCollection', () => {
           { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
           { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
         ]);
+    });
+  });
+
+  describe('batchGetByKeys', () => {
+    it('should successfully batch get entities by keys', async () => {
+      const keys = [
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByKeys(keys);
+
+      expect(result.data).to.have.length(2);
+      expect(result.data[0].record.mockEntityModelId).to.equal('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(result.data[1].record.mockEntityModelId).to.equal('ef39921f-9a02-41db-b491-02c98987d957');
+      expect(result.unprocessed).to.deep.equal([]);
+
+      expect(mockElectroService.entities.mockEntityModel.get).to.have.been.calledOnceWith(keys);
+    });
+
+    it('should handle partial results with unprocessed items', async () => {
+      const keys = [
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d958' },
+      ];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [{ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d958' }],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByKeys(keys);
+
+      expect(result.data).to.have.length(2);
+      expect(result.data[0].record.mockEntityModelId).to.equal('ef39921f-9a02-41db-b491-02c98987d956');
+      expect(result.data[1].record.mockEntityModelId).to.equal('ef39921f-9a02-41db-b491-02c98987d957');
+      expect(result.unprocessed).to.deep.equal([{ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d958' }]);
+
+      expect(result.data).to.have.length(2);
+      expect(result.unprocessed).to.have.length(1);
+    });
+
+    it('should return empty arrays when no entities found', async () => {
+      const keys = [{ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d999' }];
+
+      const mockElectroResult = {
+        data: [],
+        unprocessed: [{ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d999' }],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByKeys(keys);
+
+      expect(result).to.deep.equal({
+        data: [],
+        unprocessed: [{ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d999' }],
+      });
+    });
+
+    it('should throw error when keys is not provided', async () => {
+      await expect(baseCollectionInstance.batchGetByKeys()).to.be.rejectedWith(DataAccessError);
+    });
+
+    it('should throw error when keys is not an array', async () => {
+      await expect(baseCollectionInstance.batchGetByKeys('not-an-array')).to.be.rejectedWith(DataAccessError);
+    });
+
+    it('should throw error when keys is an empty array', async () => {
+      await expect(baseCollectionInstance.batchGetByKeys([])).to.be.rejectedWith(DataAccessError);
+    });
+
+    it('should throw error when keys contains null values', async () => {
+      await expect(baseCollectionInstance.batchGetByKeys([
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        null,
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ])).to.be.rejectedWith(DataAccessError);
+    });
+
+    it('should throw error when keys contains undefined values', async () => {
+      await expect(baseCollectionInstance.batchGetByKeys([
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        undefined,
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ])).to.be.rejectedWith(DataAccessError);
+    });
+
+    it('should throw error when keys contains empty objects', async () => {
+      await expect(baseCollectionInstance.batchGetByKeys([
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        {},
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ])).to.be.rejectedWith(DataAccessError);
+    });
+
+    it('should throw error when keys contains non-object values', async () => {
+      await expect(baseCollectionInstance.batchGetByKeys([
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        'not-an-object',
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ])).to.be.rejectedWith(DataAccessError);
+    });
+
+    it('should handle database errors and throw DataAccessError', async () => {
+      const keys = [{ mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' }];
+      const error = new Error('Database connection failed');
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().rejects(error),
+      });
+
+      await expect(baseCollectionInstance.batchGetByKeys(keys)).to.be.rejectedWith(DataAccessError);
+      expect(mockLogger.error).to.have.been.calledWith('Failed to batch get by keys [mockEntityModel]', error);
+    });
+
+    it('should handle null records in results', async () => {
+      const keys = [
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByKeys(keys);
+
+      expect(result.data).to.have.length(2);
+      expect(result.unprocessed).to.deep.equal([]);
+    });
+
+    it('should handle large batch sizes', async () => {
+      const keys = Array.from({ length: 100 }, (_, i) => ({
+        mockEntityModelId: `ef39921f-9a02-41db-b491-02c98987d${i.toString().padStart(3, '0')}`,
+      }));
+      const mockRecords = keys
+        .map((key) => ({ ...mockRecord, mockEntityModelId: key.mockEntityModelId }));
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: stub().resolves(mockElectroResult),
+      });
+
+      const result = await baseCollectionInstance.batchGetByKeys(keys);
+
+      expect(result.data).to.have.length(100);
+      expect(result.unprocessed).to.have.length(0);
+      expect(mockElectroService.entities.mockEntityModel.get).to.have.been.calledOnce;
+    });
+
+    it('should handle mixed valid and invalid keys', async () => {
+      const keys = [
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        'not-an-object',
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d957' },
+        null,
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d958' },
+      ];
+
+      await expect(baseCollectionInstance.batchGetByKeys(keys)).to.be.rejectedWith(DataAccessError);
+    });
+
+    it('should log error and throw DataAccessError on validation failure', async () => {
+      const keys = [
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+        { invalidKey: 'invalid-format' },
+      ];
+
+      await expect(baseCollectionInstance.batchGetByKeys(keys)).to.be.rejectedWith(DataAccessError);
+    });
+
+    it('should support attributes option', async () => {
+      const keys = [
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+      ];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      const goStub = stub().resolves(mockElectroResult);
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: goStub,
+      });
+
+      const result = await baseCollectionInstance.batchGetByKeys(keys, { attributes: ['mockEntityModelId', 'name'] });
+
+      expect(result.data).to.have.length(1);
+      expect(goStub).to.have.been.calledOnceWith({ attributes: ['mockEntityModelId', 'name'] });
+    });
+
+    it('should work without options (backward compatibility)', async () => {
+      const keys = [
+        { mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+      ];
+      const mockRecords = [
+        { ...mockRecord, mockEntityModelId: 'ef39921f-9a02-41db-b491-02c98987d956' },
+      ];
+
+      const mockElectroResult = {
+        data: mockRecords,
+        unprocessed: [],
+      };
+
+      const goStub = stub().resolves(mockElectroResult);
+      mockElectroService.entities.mockEntityModel.get.returns({
+        go: goStub,
+      });
+
+      const result = await baseCollectionInstance.batchGetByKeys(keys);
+
+      expect(result.data).to.have.length(1);
+      expect(goStub).to.have.been.calledOnceWith({});
+    });
+  });
+
+  describe('removeByIndexKeys', () => {
+    let mockDeleteQuery;
+
+    beforeEach(() => {
+      mockDeleteQuery = {
+        go: stub().resolves(),
+      };
+      mockElectroService.entities.mockEntityModel.delete = stub().returns(mockDeleteQuery);
+    });
+
+    it('should remove records using array of single key objects', async () => {
+      const keys = [{ someKey: 'test-value' }];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      expect(mockElectroService.entities.mockEntityModel.delete).to.have.been.calledOnceWith(keys);
+      expect(mockDeleteQuery.go).to.have.been.calledOnce;
+      expect(mockLogger.info).to.have.been.calledWith(`Removed ${keys.length} items for [mockEntityModel]`);
+    });
+
+    it('should remove records using array of composite key objects', async () => {
+      const keys = [{ someKey: 'test-value', someOtherKey: 123 }];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      expect(mockElectroService.entities.mockEntityModel.delete).to.have.been.calledOnceWith(keys);
+      expect(mockDeleteQuery.go).to.have.been.calledOnce;
+    });
+
+    it('should remove records using array of multiple key objects', async () => {
+      const keys = [
+        { someKey: 'test-value-1' },
+        { someKey: 'test-value-2' },
+      ];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      expect(mockElectroService.entities.mockEntityModel.delete).to.have.been.calledOnceWith(keys);
+      expect(mockDeleteQuery.go).to.have.been.calledOnce;
+      expect(mockLogger.info).to.have.been.calledWith(`Removed ${keys.length} items for [mockEntityModel]`);
+    });
+
+    it('should invalidate cache after successful removal', async () => {
+      const keys = [{ someKey: 'test-value' }];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      // Cache invalidation happens internally, just verify the method completes successfully
+      expect(mockElectroService.entities.mockEntityModel.delete).to.have.been.calledOnceWith(keys);
+      expect(mockDeleteQuery.go).to.have.been.calledOnce;
+    });
+
+    it('should throw DataAccessError when keys is null', async () => {
+      await expect(baseCollectionInstance.removeByIndexKeys(null))
+        .to.be.rejectedWith(DataAccessError, 'keys must be a non-empty array');
+
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Failed to remove by index keys [mockEntityModel]: keys must be a non-empty array',
+      );
+    });
+
+    it('should throw DataAccessError when keys is undefined', async () => {
+      await expect(baseCollectionInstance.removeByIndexKeys(undefined))
+        .to.be.rejectedWith(DataAccessError, 'keys must be a non-empty array');
+    });
+
+    it('should throw DataAccessError when keys is not an array', async () => {
+      await expect(baseCollectionInstance.removeByIndexKeys({ someKey: 'test-value' }))
+        .to.be.rejectedWith(DataAccessError, 'keys must be a non-empty array');
+    });
+
+    it('should throw DataAccessError when keys is empty array', async () => {
+      await expect(baseCollectionInstance.removeByIndexKeys([]))
+        .to.be.rejectedWith(DataAccessError, 'keys must be a non-empty array');
+    });
+
+    it('should throw DataAccessError when array contains empty objects', async () => {
+      await expect(baseCollectionInstance.removeByIndexKeys([{}]))
+        .to.be.rejectedWith(DataAccessError, 'key must be a non-empty object');
+
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Failed to remove by index keys [mockEntityModel]: key must be a non-empty object',
+      );
+    });
+
+    it('should throw DataAccessError when array contains null values', async () => {
+      await expect(baseCollectionInstance.removeByIndexKeys([null]))
+        .to.be.rejectedWith(DataAccessError, 'key must be a non-empty object');
+    });
+
+    it('should handle database errors gracefully', async () => {
+      const keys = [{ someKey: 'test-value' }];
+      const dbError = new Error('Database connection failed');
+      mockDeleteQuery.go.rejects(dbError);
+
+      await expect(baseCollectionInstance.removeByIndexKeys(keys))
+        .to.be.rejectedWith(DataAccessError, 'Failed to remove by index keys');
+
+      // The error logging uses the format "Base Collection Error [entityName]"
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Base Collection Error [mockEntityModel]',
+        sinon.match.instanceOf(DataAccessError),
+      );
+    });
+
+    it('should handle ElectroValidationError', async () => {
+      const keys = [{ someKey: 'test-value' }];
+      const validationError = new ElectroValidationError('Invalid key format');
+      mockDeleteQuery.go.rejects(validationError);
+
+      await expect(baseCollectionInstance.removeByIndexKeys(keys))
+        .to.be.rejectedWith(DataAccessError, 'Failed to remove by index keys');
+    });
+
+    it('should log successful removal with correct count for array', async () => {
+      const keys = [
+        { someKey: 'test-value-1' },
+        { someKey: 'test-value-2' },
+        { someKey: 'test-value-3' },
+      ];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      expect(mockLogger.info).to.have.been.calledWith(
+        `Removed ${keys.length} items for [mockEntityModel]`,
+      );
+    });
+
+    it('should work with complex composite keys', async () => {
+      const keys = [{
+        partitionKey: 'partition-value',
+        sortKey: 'sort-value',
+        gsiKey: 'gsi-value',
+      }];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      expect(mockElectroService.entities.mockEntityModel.delete).to.have.been.calledOnceWith(keys);
+      expect(mockDeleteQuery.go).to.have.been.calledOnce;
+    });
+
+    it('should handle mixed key types in array', async () => {
+      const keys = [
+        { someKey: 'string-value' },
+        { someOtherKey: 123 },
+        { someKey: 'another-string', someOtherKey: 456 },
+      ];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      expect(mockElectroService.entities.mockEntityModel.delete).to.have.been.calledOnceWith(keys);
+      expect(mockDeleteQuery.go).to.have.been.calledOnce;
+    });
+
+    it('should work with boolean values in keys', async () => {
+      const keys = [{ isActive: true, isDeleted: false }];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      expect(mockElectroService.entities.mockEntityModel.delete).to.have.been.calledOnceWith(keys);
+      expect(mockDeleteQuery.go).to.have.been.calledOnce;
+    });
+
+    it('should work with date values in keys', async () => {
+      const testDate = new Date('2024-01-01T00:00:00Z');
+      const keys = [{ createdAt: testDate }];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      expect(mockElectroService.entities.mockEntityModel.delete).to.have.been.calledOnceWith(keys);
+      expect(mockDeleteQuery.go).to.have.been.calledOnce;
+    });
+
+    it('should preserve key order in deletion call', async () => {
+      const keys = [{
+        firstKey: 'first-value',
+        secondKey: 'second-value',
+        thirdKey: 'third-value',
+      }];
+
+      await baseCollectionInstance.removeByIndexKeys(keys);
+
+      const deleteCall = mockElectroService.entities.mockEntityModel.delete.getCall(0);
+      expect(deleteCall.args[0]).to.deep.equal(keys);
+    });
+
+    it('should validate each key object in the array', async () => {
+      const keys = [
+        { someKey: 'valid-key' },
+        {}, // This should cause an error
+      ];
+
+      await expect(baseCollectionInstance.removeByIndexKeys(keys))
+        .to.be.rejectedWith(DataAccessError, 'key must be a non-empty object');
     });
   });
 });

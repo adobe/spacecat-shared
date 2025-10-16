@@ -29,14 +29,15 @@ class TokowakaClient {
    * @returns {TokowakaClient} - The client instance
    */
   static createFrom(context) {
-    const { env, log = console, s3Client } = context;
-    const { TOKOWAKA_SITE_CONFIG_BUCKET: bucketName } = env || { TOKOWAKA_SITE_CONFIG_BUCKET: 'tokowaka-site-config' };
+    const { env, log = console, s3 } = context;
+    const { TOKOWAKA_SITE_CONFIG_BUCKET: bucketName } = env;
 
     if (context.tokowakaClient) {
       return context.tokowakaClient;
     }
 
-    const client = new TokowakaClient({ bucketName, s3Client }, log);
+    // s3ClientWrapper puts s3Client at context.s3.s3Client, so check both locations
+    const client = new TokowakaClient({ bucketName, s3Client: s3?.s3Client }, log);
     context.tokowakaClient = client;
     return client;
   }
@@ -52,7 +53,7 @@ class TokowakaClient {
     this.log = log;
 
     if (!hasText(bucketName)) {
-      throw this.#createError('TOKOWAKA_CONFIG_BUCKET is required', HTTP_BAD_REQUEST);
+      throw this.#createError('TOKOWAKA_SITE_CONFIG_BUCKET is required', HTTP_BAD_REQUEST);
     }
 
     if (!isNonEmptyObject(s3Client)) {
@@ -177,7 +178,7 @@ class TokowakaClient {
       throw this.#createError('Config object is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Key = `${apiKey}/v1/tokowaka-site-config.json`;
+    const s3Key = `opportunities/${apiKey}-1`;
 
     try {
       const command = new PutObjectCommand({
@@ -258,7 +259,7 @@ class TokowakaClient {
    */
   async deploySuggestions(site, opportunity, suggestions) {
     // Get site's Tokowaka API key
-    const { tokowakaConfig } = site.getConfig()?.getTokowakaConfig() || {};
+    const tokowakaConfig = site.getConfig().getTokowakaConfig() || {};
     const { apiKey } = tokowakaConfig || {};
 
     if (!hasText(apiKey)) {

@@ -15,8 +15,10 @@
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
+import { stub, restore } from 'sinon';
 
 import Suggestion from '../../../../src/models/suggestion/suggestion.model.js';
+import DataAccessError from '../../../../src/errors/data-access.error.js';
 
 import { createElectroMocks } from '../../util.js';
 
@@ -50,6 +52,10 @@ describe('SuggestionCollection', () => {
       model,
       schema,
     } = createElectroMocks(Suggestion, mockRecord));
+  });
+
+  afterEach(() => {
+    restore();
   });
 
   describe('constructor', () => {
@@ -95,6 +101,93 @@ describe('SuggestionCollection', () => {
     it('throws an error if status is not provided', async () => {
       await expect(instance.bulkUpdateStatus([model], 'foo'))
         .to.be.rejectedWith('Invalid status: foo. Must be one of: NEW, APPROVED, IN_PROGRESS, SKIPPED, FIXED, ERROR');
+    });
+  });
+
+  describe('getFixEntitiesBySuggestionId', () => {
+    it('should get fix entities for a suggestion', async () => {
+      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
+      const mockJunctionRecords = [
+        { getFixEntityId: () => '123e4567-e89b-12d3-a456-426614174003' },
+        { getFixEntityId: () => '123e4567-e89b-12d3-a456-426614174004' },
+      ];
+      const mockFixEntities = [
+        { id: '123e4567-e89b-12d3-a456-426614174003', title: 'Fix 1' },
+        { id: '123e4567-e89b-12d3-a456-426614174004', title: 'Fix 2' },
+      ];
+
+      const mockFixEntitySuggestionCollection = {
+        allBySuggestionId: stub().resolves(mockJunctionRecords),
+        removeByIndexKeys: stub().resolves(),
+      };
+
+      const mockFixEntityCollection = {
+        batchGetByKeys: stub().resolves({
+          data: mockFixEntities,
+          unprocessed: [],
+        }),
+        idName: 'fixEntityId',
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntityCollection')
+        .returns(mockFixEntityCollection);
+
+      const result = await instance.getFixEntitiesBySuggestionId(suggestionId);
+
+      expect(result).to.deep.equal(mockFixEntities);
+
+      expect(mockFixEntitySuggestionCollection.allBySuggestionId)
+        .to.have.been.calledOnceWith(suggestionId);
+      expect(mockFixEntityCollection.batchGetByKeys).to.have.been.calledOnceWith([
+        { fixEntityId: '123e4567-e89b-12d3-a456-426614174003' },
+        { fixEntityId: '123e4567-e89b-12d3-a456-426614174004' },
+      ]);
+    });
+
+    it('should return empty arrays when no junction records found', async () => {
+      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
+      const mockFixEntitySuggestionCollection = {
+        allBySuggestionId: stub().resolves([]),
+        removeByIndexKeys: stub().resolves(),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      const result = await instance.getFixEntitiesBySuggestionId(suggestionId);
+
+      expect(result).to.deep.equal([]);
+
+      expect(mockFixEntitySuggestionCollection.allBySuggestionId)
+        .to.have.been.calledOnceWith(suggestionId);
+    });
+
+    it('should throw error when suggestionId is not provided', async () => {
+      await expect(instance.getFixEntitiesBySuggestionId())
+        .to.be.rejectedWith('Validation failed in SuggestionCollection: suggestionId must be a valid UUID');
+    });
+
+    it('should handle errors and throw DataAccessError', async () => {
+      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
+      const error = new Error('Database error');
+
+      const mockFixEntitySuggestionCollection = {
+        allBySuggestionId: stub().rejects(error),
+        removeByIndexKeys: stub().resolves(),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      await expect(instance.getFixEntitiesBySuggestionId(suggestionId))
+        .to.be.rejectedWith(DataAccessError);
+      expect(mockLogger.error).to.have.been.calledWith('Failed to get fix entities for suggestion', error);
     });
   });
 });

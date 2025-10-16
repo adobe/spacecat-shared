@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.72.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.72.0...@adobe/spacecat-shared-data-access-v2.72.1) (2025-10-16)
+
+
+### Bug Fixes
+
+* SITES-35629 adds origin attribute in fix entities ([#991](https://github.com/adobe/spacecat-shared/issues/991)) ([2551444](https://github.com/adobe/spacecat-shared/commit/255144441b246e22f9e84c6b1197ac6da726a742))
+
 # [@adobe/spacecat-shared-data-access-v2.72.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.71.1...@adobe/spacecat-shared-data-access-v2.72.0) (2025-10-16)
 
 

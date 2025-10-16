@@ -178,7 +178,7 @@ class TokowakaClient {
       throw this.#createError('Config object is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Key = `opportunities/${apiKey}-1`;
+    const s3Key = `opportunities/${apiKey}`;
 
     try {
       const command = new PutObjectCommand({

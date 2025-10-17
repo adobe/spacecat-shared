@@ -184,20 +184,20 @@ class TokowakaClient {
       throw this.#createError('Config object is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Key = `opportunities/${apiKey}`;
+    const s3Path = `opportunities/${apiKey}`;
 
     try {
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
-        Key: s3Key,
+        Key: s3Path,
         Body: JSON.stringify(config, null, 2),
         ContentType: 'application/json',
       });
 
       await this.s3Client.send(command);
-      this.log.info(`Successfully uploaded Tokowaka config to s3://${this.bucketName}/${s3Key}`);
+      this.log.info(`Successfully uploaded Tokowaka config to s3://${this.bucketName}/${s3Path}`);
 
-      return s3Key;
+      return s3Path;
     } catch (error) {
       this.log.error(`Failed to upload Tokowaka config to S3: ${error.message}`, error);
       throw this.#createError(`S3 upload failed: ${error.message}`, HTTP_INTERNAL_SERVER_ERROR);

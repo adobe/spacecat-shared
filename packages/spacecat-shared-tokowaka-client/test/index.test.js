@@ -387,10 +387,7 @@ describe('TokowakaClient', () => {
         mockSuggestions,
       );
 
-      expect(result).to.have.property('tokowakaApiKey', 'test-api-key-123');
-      expect(result).to.have.property('s3Key', 'opportunities/test-api-key-123');
-      expect(result).to.have.property('config');
-      expect(result.config.siteId).to.equal('site-123');
+      expect(result).to.have.property('s3Path', 'opportunities/test-api-key-123');
       expect(s3Client.send).to.have.been.calledOnce;
     });
 

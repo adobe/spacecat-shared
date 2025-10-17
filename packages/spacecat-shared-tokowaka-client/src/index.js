@@ -299,7 +299,7 @@ class TokowakaClient {
 
     // Upload to S3
     this.log.info(`Uploading Tokowaka config for ${eligibleSuggestions.length} suggestions`);
-    const s3Key = await this.uploadConfig(apiKey, config);
+    const s3Path = await this.uploadConfig(apiKey, config);
 
     // Invalidate CDN cache (non-blocking, failures are logged but don't fail deployment)
     const cdnInvalidationResult = await this.invalidateCdnCache(
@@ -308,9 +308,7 @@ class TokowakaClient {
     );
 
     return {
-      tokowakaApiKey: apiKey,
-      s3Key,
-      config,
+      s3Path,
       cdnInvalidation: cdnInvalidationResult,
       succeededSuggestions: eligibleSuggestions,
       failedSuggestions: ineligibleSuggestions,

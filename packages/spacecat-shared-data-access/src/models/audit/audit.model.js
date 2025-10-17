@@ -10,7 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
-import { isArray, isObject, isBoolean } from '@adobe/spacecat-shared-utils';
+import {
+  isArray,
+  isObject,
+  isBoolean,
+  isNumber,
+} from '@adobe/spacecat-shared-utils';
 
 import { ValidationError } from '../../errors/index.js';
 import BaseModel from '../base/base.model.js';
@@ -179,7 +184,7 @@ class Audit extends BaseModel {
         urls: stepResult.urls.map((urlObj) => urlObj.url),
         processingType: stepResult.processingType || 'default',
         options: stepResult.options || {},
-        maxScrapeAge: stepResult.maxScrapeAge || 24,
+        maxScrapeAge: isNumber(stepResult.maxScrapeAge) ? stepResult.maxScrapeAge : 24,
         auditData: {
           siteId: stepResult.siteId,
           completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,

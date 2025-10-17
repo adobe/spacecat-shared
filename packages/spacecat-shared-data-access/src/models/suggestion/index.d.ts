@@ -10,15 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import type { BaseCollection, BaseModel, Opportunity } from '../index';
+import type { BaseCollection, BaseModel, Opportunity, FixEntitySuggestion, FixEntity } from '../index';
 
 export interface Suggestion extends BaseModel {
   getData(): object;
   getKpiDeltas(): object;
   getOpportunity(): Promise<Opportunity>;
   getOpportunityId(): string;
-  getFixEntityId(): string;
-  getFixEntity(): Promise<object>;
   getRank(): number;
   getStatus(): string;
   getType(): string;
@@ -31,9 +29,9 @@ export interface Suggestion extends BaseModel {
 
 export interface SuggestionCollection extends BaseCollection<Suggestion> {
   allByOpportunityId(opportunityId: string): Promise<Suggestion[]>;
-  allByFixEntityId(fixEntityId: string): Promise<Suggestion[]>;
   allByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion[]>;
   bulkUpdateStatus(suggestions: Suggestion[], status: string): Promise<Suggestion[]>;
   findByOpportunityId(opportunityId: string): Promise<Suggestion | null>;
   findByOpportunityIdAndStatus(opportunityId: string, status: string): Promise<Suggestion | null>;
+  getFixEntitiesBySuggestionId(suggestionId: string): Promise<{data: Array<FixEntity>, unprocessed: Array<string>}>;
 }

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.38.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.1...@adobe/spacecat-shared-rum-api-client-v2.38.2) (2025-10-15)
+
+
+### Bug Fixes
+
+* **traffic-attribution:** enforce earned-llm for llm providers ([#1028](https://github.com/adobe/spacecat-shared/issues/1028)) ([550c411](https://github.com/adobe/spacecat-shared/commit/550c411220ffc50a0d8ee6eb954f3e439efc5b0e))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.38.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.0...@adobe/spacecat-shared-rum-api-client-v2.38.1) (2025-10-09)
 
 

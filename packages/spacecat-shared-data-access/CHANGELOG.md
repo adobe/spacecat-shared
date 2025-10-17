@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-data-access-v2.73.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.73.0...@adobe/spacecat-shared-data-access-v2.73.1) (2025-10-17)
+
+
+### Bug Fixes
+
+* maxScrapeAge zero handling ([#1024](https://github.com/adobe/spacecat-shared/issues/1024)) ([4aa087b](https://github.com/adobe/spacecat-shared/commit/4aa087b9af57f70f60ca38dc4d843929b7f4cc8f))
+
+# [@adobe/spacecat-shared-data-access-v2.73.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.72.1...@adobe/spacecat-shared-data-access-v2.73.0) (2025-10-17)
+
+
+### Features
+
+* added pageType audit_type ([#1031](https://github.com/adobe/spacecat-shared/issues/1031)) ([ee469fa](https://github.com/adobe/spacecat-shared/commit/ee469fa60cdcfb0f20f44e90625ed49b235bbeb7))
+
+# [@adobe/spacecat-shared-data-access-v2.72.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.72.0...@adobe/spacecat-shared-data-access-v2.72.1) (2025-10-16)
+
+
+### Bug Fixes
+
+* SITES-35629 adds origin attribute in fix entities ([#991](https://github.com/adobe/spacecat-shared/issues/991)) ([2551444](https://github.com/adobe/spacecat-shared/commit/255144441b246e22f9e84c6b1197ac6da726a742))
+
+# [@adobe/spacecat-shared-data-access-v2.72.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.71.1...@adobe/spacecat-shared-data-access-v2.72.0) (2025-10-16)
+
+
+### Features
+
+* Sites 34129 adds many to many relationship between Fix Entity and Suggestions ([#993](https://github.com/adobe/spacecat-shared/issues/993)) ([8739d2b](https://github.com/adobe/spacecat-shared/commit/8739d2b891d5df6ce883ba3b319047531419100e))
+
 # [@adobe/spacecat-shared-data-access-v2.71.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.71.0...@adobe/spacecat-shared-data-access-v2.71.1) (2025-10-13)
 
 

@@ -171,12 +171,12 @@ class TokowakaClient {
 
   /**
    * Uploads Tokowaka configuration to S3
-   * @param {string} apiKey - Tokowaka API key (used as S3 key prefix)
+   * @param {string} siteTokowakaKey - Tokowaka API key (used as S3 key prefix)
    * @param {Object} config - Tokowaka configuration object
    * @returns {Promise<string>} - S3 key of uploaded config
    */
-  async uploadConfig(apiKey, config) {
-    if (!hasText(apiKey)) {
+  async uploadConfig(siteTokowakaKey, config) {
+    if (!hasText(siteTokowakaKey)) {
       throw this.#createError('Tokowaka API key is required', HTTP_BAD_REQUEST);
     }
 
@@ -184,7 +184,7 @@ class TokowakaClient {
       throw this.#createError('Config object is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = `opportunities/${apiKey}`;
+    const s3Path = `opportunities/${siteTokowakaKey}`;
 
     try {
       const command = new PutObjectCommand({

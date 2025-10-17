@@ -467,8 +467,6 @@ describe('TokowakaClient', () => {
         mockSuggestions,
       );
 
-      expect(result.s3Key).to.be.null;
-      expect(result.config).to.be.null;
       expect(result.succeededSuggestions).to.have.length(0);
       expect(result.failedSuggestions).to.have.length(1);
       expect(log.warn).to.have.been.calledWith('No eligible suggestions to deploy');

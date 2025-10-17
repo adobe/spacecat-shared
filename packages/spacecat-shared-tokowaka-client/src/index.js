@@ -244,7 +244,7 @@ class TokowakaClient {
    */
   async deploySuggestions(site, opportunity, suggestions) {
     // Get site's Tokowaka API key
-    const { apiKey } = site.getConfig().getTokowakaConfig() || {};
+    const { apiKey } = site.getConfig()?.getTokowakaConfig() || {};
 
     if (!hasText(apiKey)) {
       throw this.#createError(
@@ -284,10 +284,6 @@ class TokowakaClient {
     if (eligibleSuggestions.length === 0) {
       this.log.warn('No eligible suggestions to deploy');
       return {
-        tokowakaApiKey: apiKey,
-        s3Key: null,
-        config: null,
-        cdnInvalidation: null,
         succeededSuggestions: [],
         failedSuggestions: ineligibleSuggestions,
       };

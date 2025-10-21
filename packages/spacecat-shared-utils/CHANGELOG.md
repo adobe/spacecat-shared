@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.4...@adobe/spacecat-shared-utils-v1.60.0) (2025-10-21)
+
+
+### Features
+
+* add log format json ([#1035](https://github.com/adobe/spacecat-shared/issues/1035)) ([a5f82db](https://github.com/adobe/spacecat-shared/commit/a5f82dbfec42af783345058f63d48e1c2e8093c7))
+
 # [@adobe/spacecat-shared-utils-v1.59.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.3...@adobe/spacecat-shared-utils-v1.59.4) (2025-10-10)
 
 

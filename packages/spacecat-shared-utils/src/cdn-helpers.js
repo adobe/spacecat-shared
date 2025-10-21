@@ -63,6 +63,7 @@ const CDN_TRANSFORMATIONS = {
       'rspContentType',
       'timeToFirstByte',
     ],
+    'Log format': 'JSON',
     'Log file prefix': '{%Y}-{%m}-{%d}T{%H}:{%M}:{%S}.000',
     'Log file suffix': '.log',
     'Log interval': '60 seconds',
@@ -89,6 +90,7 @@ const CDN_TRANSFORMATIONS = {
       'EdgeResponseContentType',
       'EdgeTimeToFirstByteMs',
     ],
+    'Log format': 'JSON',
     'Ownership token': 'Please reach out to Adobe support for obtaining the token once you completed the configuration.',
     HelpUrl: 'https://developers.cloudflare.com/logs/logpush/logpush-job/enable-destinations/aws-s3/',
   }),
@@ -112,6 +114,7 @@ const CDN_TRANSFORMATIONS = {
       'time-to-first-byte',
       'sc-content-type',
     ],
+    'Output file format': 'JSON',
     HelpUrl: 'https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html#enable-standard-logging-cross-accounts',
   }),
   'ams-cloudfront': (payload) => ({
@@ -121,6 +124,7 @@ const CDN_TRANSFORMATIONS = {
     'Delivery Destination Name': payload.deliveryDestinationName,
     'Destination AWS Account ID': '640168421876',
     'Path suffix': '/{yyyy}/{MM}/{dd}/{HH}',
+    'Output file format': 'JSON',
     'Logged Properties': [
       'date',
       'time',

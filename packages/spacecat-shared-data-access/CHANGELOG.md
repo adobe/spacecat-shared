@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.74.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.73.1...@adobe/spacecat-shared-data-access-v2.74.0) (2025-10-22)
+
+
+### Features
+
+* add FAQs audit ([#1036](https://github.com/adobe/spacecat-shared/issues/1036)) ([4ddc4de](https://github.com/adobe/spacecat-shared/commit/4ddc4de24dbfcd2200ed1245df9d9e0c3f87c757))
+
 # [@adobe/spacecat-shared-data-access-v2.73.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.73.0...@adobe/spacecat-shared-data-access-v2.73.1) (2025-10-17)
 
 

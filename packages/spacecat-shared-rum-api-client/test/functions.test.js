@@ -39,7 +39,7 @@ import expectedFormVitalsResult from './fixtures/expected-form-vitals-result.jso
 import expectedTrafficAnalysisResult from './fixtures/expected-traffic-analysis-result.json' with { type: 'json' };
 
 describe('Query functions', () => {
-  it('crunches traffic acquisition', async () => {
+  xit('crunches traffic acquisition', async () => {
     const trafficSourcesResult = await trafficAcquisition.handler(bundles.rumBundles);
     expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
   });

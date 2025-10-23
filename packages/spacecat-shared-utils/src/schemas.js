@@ -53,7 +53,7 @@ const entity = z.object({
 const category = z.object({
   name: nonEmptyString,
   region: z.union([region, z.array(region)]),
-  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).default('human'),
+  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 const topic = z.object({

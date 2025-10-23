@@ -715,7 +715,7 @@ describe('schemas', () => {
       });
     });
     describe('category origin', () => {
-      it('defaults category origin to human when not provided', () => {
+      it('allows category without origin (optional field)', () => {
         const config = {
           ...baseConfig,
           categories: {
@@ -726,7 +726,7 @@ describe('schemas', () => {
         const result = llmoConfig.safeParse(config);
         expect(result.success).true;
         if (result.success) {
-          expect(result.data.categories[categoryId].origin).equals('human');
+          expect(result.data.categories[categoryId].origin).to.be.undefined;
         }
       });
 
@@ -757,6 +757,21 @@ describe('schemas', () => {
         expect(result.success).true;
         if (result.success) {
           expect(result.data.categories[categoryId].origin).equals('ai');
+        }
+      });
+
+      it('accepts custom origin values for forward compatibility', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: { name: 'Category One', region: 'US', origin: 'custom-system' },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].origin).equals('custom-system');
         }
       });
     });

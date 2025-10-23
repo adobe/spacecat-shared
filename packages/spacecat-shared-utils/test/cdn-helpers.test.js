@@ -133,6 +133,7 @@ describe('CDN Helper Functions', () => {
           ],
           'Log file prefix': '{%Y}-{%m}-{%d}T{%H}:{%M}:{%S}.000',
           'Log file suffix': '.log',
+          'Log format': 'JSON',
           'Log interval': '60 seconds',
           'Access key': 'AKIAZ5TC4XVOZ65PV3X2',
           'Secret key': 'somesecret',
@@ -140,7 +141,7 @@ describe('CDN Helper Functions', () => {
         });
       });
 
-      it('should handle byocdn-cloudflare', () => {
+      it('should handle byocdn-cloudflare without ownership token', () => {
         const result = prettifyLogForwardingConfig({ ...mockPayload, logSource: 'byocdn-cloudflare' });
         expect(result).to.deep.equal({
           'Bucket Name': 'cdn-logs-adobe-dev',
@@ -161,9 +162,16 @@ describe('CDN Helper Functions', () => {
             'EdgeResponseContentType',
             'EdgeTimeToFirstByteMs',
           ],
-          'Ownership token': 'Please reach out to Adobe support for obtaining the token once you completed the configuration.',
+          'Log format': 'JSON',
+          'Ownership token': 'The token will be available after the log forwarding configuration has been deployed in Cloudflare. Please refresh this page once you have completed this step.',
           HelpUrl: 'https://developers.cloudflare.com/logs/logpush/logpush-job/enable-destinations/aws-s3/',
         });
+      });
+
+      it('should handle byocdn-cloudflare with ownership token', () => {
+        const payloadWithToken = { ...mockPayload, logSource: 'byocdn-cloudflare', ownershipToken: 'abc123token456' };
+        const result = prettifyLogForwardingConfig(payloadWithToken);
+        expect(result['Ownership token']).to.equal('abc123token456');
       });
 
       it('should handle byocdn-cloudfront', () => {
@@ -174,6 +182,7 @@ describe('CDN Helper Functions', () => {
           'Delivery destination ARN': 'arn:aws:logs:us-east-1:123456789012:delivery-destination:cdn-logs-EXAMPLE123AdobeOrg',
           'Delivery Destination Name': 'cdn-logs-EXAMPLE123AdobeOrg',
           'Destination AWS Account ID': '640168421876',
+          'Output file format': 'JSON',
           'Path suffix': '/{yyyy}/{MM}/{dd}/{HH}',
           'Logged Properties': [
             'date',
@@ -200,6 +209,7 @@ describe('CDN Helper Functions', () => {
           'Delivery destination ARN': 'arn:aws:logs:us-east-1:123456789012:delivery-destination:cdn-logs-EXAMPLE123AdobeOrg',
           'Delivery Destination Name': 'cdn-logs-EXAMPLE123AdobeOrg',
           'Destination AWS Account ID': '640168421876',
+          'Output file format': 'JSON',
           'Path suffix': '/{yyyy}/{MM}/{dd}/{HH}',
           'Logged Properties': [
             'date',

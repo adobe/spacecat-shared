@@ -191,6 +191,7 @@ describe('AuditModel', () => {
       PRODUCT_METATAGS: 'product-metatags',
       SUMMARIZATION: 'summarization',
       PAGE_TYPE_DETECTION: 'page-type-detection',
+      FAQS: 'faqs',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {

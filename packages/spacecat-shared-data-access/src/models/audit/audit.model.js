@@ -69,6 +69,7 @@ class Audit extends BaseModel {
     PRODUCT_METATAGS: 'product-metatags',
     SUMMARIZATION: 'summarization',
     PAGE_TYPE_DETECTION: 'page-type-detection',
+    FAQS: 'faqs',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

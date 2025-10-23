@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.63.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.62.0...@adobe/spacecat-shared-utils-v1.63.0) (2025-10-23)
+
+
+### Features
+
+* cdn-logs-infra: cloudflare ownership token in the UI ([#1041](https://github.com/adobe/spacecat-shared/issues/1041)) ([ac54b74](https://github.com/adobe/spacecat-shared/commit/ac54b7410b627cee2d93b9a4d0b76d23894a11c3))
+
+# [@adobe/spacecat-shared-utils-v1.62.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.61.0...@adobe/spacecat-shared-utils-v1.62.0) (2025-10-23)
+
+
+### Features
+
+* new origin for category ([#1039](https://github.com/adobe/spacecat-shared/issues/1039)) ([f33c0cf](https://github.com/adobe/spacecat-shared/commit/f33c0cfabc6856955dcf9cea33158e04df4ab82a))
+
+# [@adobe/spacecat-shared-utils-v1.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.60.0...@adobe/spacecat-shared-utils-v1.61.0) (2025-10-23)
+
+
+### Features
+
+* SITES-36623 added url extraction for opportunities and suggestions ([#1038](https://github.com/adobe/spacecat-shared/issues/1038)) ([1e16802](https://github.com/adobe/spacecat-shared/commit/1e16802b8189f64cc71c9ecc8d0c100c350408f7))
+
+# [@adobe/spacecat-shared-utils-v1.60.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.4...@adobe/spacecat-shared-utils-v1.60.0) (2025-10-21)
+
+
+### Features
+
+* add log format json ([#1035](https://github.com/adobe/spacecat-shared/issues/1035)) ([a5f82db](https://github.com/adobe/spacecat-shared/commit/a5f82dbfec42af783345058f63d48e1c2e8093c7))
+
 # [@adobe/spacecat-shared-utils-v1.59.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.59.3...@adobe/spacecat-shared-utils-v1.59.4) (2025-10-10)
 
 

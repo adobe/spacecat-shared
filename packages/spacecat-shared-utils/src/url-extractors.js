@@ -16,7 +16,7 @@ import { OPPORTUNITY_TYPES } from './constants.js';
  * Function to extract the URL from a suggestion based on a particular type
  * @param {*} suggestion
  */
-function extractUrlFromSuggestion(opts) {
+function extractUrlsFromSuggestion(opts) {
   const {
     opportunity,
     suggestion,
@@ -131,7 +131,7 @@ function extractUrlFromSuggestion(opts) {
  * Function to extract the URL from an opportunity based on a particular type
  * @param {*} opportunity
  */
-function extractUrlFromOpportunity(opts) {
+function extractUrlsFromOpportunity(opts) {
   const {
     opportunity,
   } = opts;
@@ -178,6 +178,6 @@ function extractUrlFromOpportunity(opts) {
 }
 
 export {
-  extractUrlFromSuggestion,
-  extractUrlFromOpportunity,
+  extractUrlsFromSuggestion,
+  extractUrlsFromOpportunity,
 };

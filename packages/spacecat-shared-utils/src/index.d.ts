@@ -279,7 +279,7 @@ export function isoCalendarWeekMonday(date: Date): Date;
  * @param opts.suggestion - The suggestion object
  * @returns An array of extracted URLs
  */
-export function extractUrlFromSuggestion(opts: {
+export function extractUrlsFromSuggestion(opts: {
   opportunity: any;
   suggestion: any;
 }): string[];
@@ -290,7 +290,7 @@ export function extractUrlFromSuggestion(opts: {
  * @param opts.opportunity - The opportunity object
  * @returns An array of extracted URLs
  */
-export function extractUrlFromOpportunity(opts: {
+export function extractUrlsFromOpportunity(opts: {
   opportunity: any;
 }): string[];
 

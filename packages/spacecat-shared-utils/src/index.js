@@ -69,8 +69,8 @@ export {
 } from './url-helpers.js';
 
 export {
-  extractUrlFromOpportunity,
-  extractUrlFromSuggestion,
+  extractUrlsFromOpportunity,
+  extractUrlsFromSuggestion,
 } from './url-extractors.js';
 
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';

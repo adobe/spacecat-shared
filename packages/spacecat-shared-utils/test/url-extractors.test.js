@@ -14,13 +14,13 @@
 
 import { expect } from 'chai';
 import {
-  extractUrlFromSuggestion,
-  extractUrlFromOpportunity,
+  extractUrlsFromSuggestion,
+  extractUrlsFromOpportunity,
 } from '../src/url-extractors.js';
 import { OPPORTUNITY_TYPES } from '../src/constants.js';
 
 describe('URL Extractors', () => {
-  describe('extractUrlFromSuggestion', () => {
+  describe('extractUrlsFromSuggestion', () => {
     describe('ALT_TEXT type', () => {
       it('extracts URLs from recommendations array', () => {
         const opportunity = {
@@ -35,7 +35,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page1', 'https://example.com/page2']);
       });
 
@@ -47,7 +47,7 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
@@ -61,7 +61,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
@@ -80,7 +80,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page1', 'https://example.com/page2']);
       });
     });
@@ -108,7 +108,7 @@ describe('URL Extractors', () => {
             }),
           };
 
-          const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+          const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
           expect(urls).to.deep.equal(['https://example.com/page']);
         });
 
@@ -120,7 +120,7 @@ describe('URL Extractors', () => {
             getData: () => ({}),
           };
 
-          const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+          const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
           expect(urls).to.deep.equal([]);
         });
       });
@@ -138,7 +138,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page']);
       });
 
@@ -153,7 +153,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
@@ -167,7 +167,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -183,7 +183,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/source']);
       });
 
@@ -195,7 +195,7 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -211,7 +211,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/vulnerable']);
       });
 
@@ -223,7 +223,7 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -242,7 +242,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page1', 'https://example.com/page2']);
       });
 
@@ -254,7 +254,7 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
@@ -272,7 +272,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page1']);
       });
     });
@@ -288,7 +288,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/secure']);
       });
 
@@ -300,7 +300,7 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -318,7 +318,7 @@ describe('URL Extractors', () => {
             }),
           };
 
-          const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+          const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
           expect(urls).to.deep.equal(['https://example.com/broken']);
         });
 
@@ -330,7 +330,7 @@ describe('URL Extractors', () => {
             getData: () => ({}),
           };
 
-          const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+          const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
           expect(urls).to.deep.equal([]);
         });
       });
@@ -347,7 +347,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/sitemap-page']);
       });
 
@@ -359,7 +359,7 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -375,7 +375,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -391,7 +391,7 @@ describe('URL Extractors', () => {
           },
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page']);
       });
     });
@@ -405,7 +405,7 @@ describe('URL Extractors', () => {
           getData: () => null,
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
@@ -419,13 +419,13 @@ describe('URL Extractors', () => {
           },
         };
 
-        const urls = extractUrlFromSuggestion({ opportunity, suggestion });
+        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
   });
 
-  describe('extractUrlFromOpportunity', () => {
+  describe('extractUrlsFromOpportunity', () => {
     describe('HIGH_ORGANIC_LOW_CTR type', () => {
       it('extracts page URL', () => {
         const opportunity = {
@@ -435,7 +435,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromOpportunity({ opportunity });
+        const urls = extractUrlsFromOpportunity({ opportunity });
         expect(urls).to.deep.equal(['https://example.com/page']);
       });
 
@@ -445,7 +445,7 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlFromOpportunity({ opportunity });
+        const urls = extractUrlsFromOpportunity({ opportunity });
         expect(urls).to.deep.equal([]);
       });
 
@@ -457,7 +457,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromOpportunity({ opportunity });
+        const urls = extractUrlsFromOpportunity({ opportunity });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -478,7 +478,7 @@ describe('URL Extractors', () => {
             }),
           };
 
-          const urls = extractUrlFromOpportunity({ opportunity });
+          const urls = extractUrlsFromOpportunity({ opportunity });
           expect(urls).to.deep.equal(['https://example.com/form']);
         });
 
@@ -488,7 +488,7 @@ describe('URL Extractors', () => {
             getData: () => ({}),
           };
 
-          const urls = extractUrlFromOpportunity({ opportunity });
+          const urls = extractUrlsFromOpportunity({ opportunity });
           expect(urls).to.deep.equal([]);
         });
 
@@ -500,7 +500,7 @@ describe('URL Extractors', () => {
             }),
           };
 
-          const urls = extractUrlFromOpportunity({ opportunity });
+          const urls = extractUrlsFromOpportunity({ opportunity });
           expect(urls).to.deep.equal([]);
         });
       });
@@ -515,7 +515,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromOpportunity({ opportunity });
+        const urls = extractUrlsFromOpportunity({ opportunity });
         expect(urls).to.deep.equal(['https://example.com/accessible-form']);
       });
 
@@ -525,7 +525,7 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlFromOpportunity({ opportunity });
+        const urls = extractUrlsFromOpportunity({ opportunity });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -539,7 +539,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlFromOpportunity({ opportunity });
+        const urls = extractUrlsFromOpportunity({ opportunity });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -553,7 +553,7 @@ describe('URL Extractors', () => {
           },
         };
 
-        const urls = extractUrlFromOpportunity({ opportunity });
+        const urls = extractUrlsFromOpportunity({ opportunity });
         expect(urls).to.deep.equal(['https://example.com/page']);
       });
     });
@@ -565,7 +565,7 @@ describe('URL Extractors', () => {
           getData: () => null,
         };
 
-        const urls = extractUrlFromOpportunity({ opportunity });
+        const urls = extractUrlsFromOpportunity({ opportunity });
         expect(urls).to.deep.equal([]);
       });
 
@@ -577,7 +577,7 @@ describe('URL Extractors', () => {
           },
         };
 
-        const urls = extractUrlFromOpportunity({ opportunity });
+        const urls = extractUrlsFromOpportunity({ opportunity });
         expect(urls).to.deep.equal([]);
       });
     });

@@ -272,6 +272,28 @@ export function isoCalendarWeekSunday(date: Date): Date;
 
 export function isoCalendarWeekMonday(date: Date): Date;
 
+/**
+ * Extracts URLs from a suggestion based on the opportunity type.
+ * @param opts - Options object
+ * @param opts.opportunity - The opportunity object
+ * @param opts.suggestion - The suggestion object
+ * @returns An array of extracted URLs
+ */
+export function extractUrlFromSuggestion(opts: {
+  opportunity: any;
+  suggestion: any;
+}): string[];
+
+/**
+ * Extracts URLs from an opportunity based on the opportunity type.
+ * @param opts - Options object
+ * @param opts.opportunity - The opportunity object
+ * @returns An array of extracted URLs
+ */
+export function extractUrlFromOpportunity(opts: {
+  opportunity: any;
+}): string[];
+
 export * as llmoConfig from './llmo-config.js';
 export * as schemas from './schemas.js';
 

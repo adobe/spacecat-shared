@@ -91,7 +91,7 @@ const CDN_TRANSFORMATIONS = {
       'EdgeTimeToFirstByteMs',
     ],
     'Log format': 'JSON',
-    'Ownership token': 'Please reach out to Adobe support for obtaining the token once you completed the configuration.',
+    'Ownership token': payload.ownershipToken || 'The token will be available after the log forwarding configuration has been deployed in Cloudflare. Please refresh this page once you have completed this step.',
     HelpUrl: 'https://developers.cloudflare.com/logs/logpush/logpush-job/enable-destinations/aws-s3/',
   }),
   'byocdn-cloudfront': (payload) => ({

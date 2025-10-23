@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.62.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.61.0...@adobe/spacecat-shared-utils-v1.62.0) (2025-10-23)
+
+
+### Features
+
+* new origin for category ([#1039](https://github.com/adobe/spacecat-shared/issues/1039)) ([f33c0cf](https://github.com/adobe/spacecat-shared/commit/f33c0cfabc6856955dcf9cea33158e04df4ab82a))
+
 # [@adobe/spacecat-shared-utils-v1.61.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.60.0...@adobe/spacecat-shared-utils-v1.61.0) (2025-10-23)
 
 

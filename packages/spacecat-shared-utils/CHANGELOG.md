@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.63.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.62.0...@adobe/spacecat-shared-utils-v1.63.0) (2025-10-23)
+
+
+### Features
+
+* cdn-logs-infra: cloudflare ownership token in the UI ([#1041](https://github.com/adobe/spacecat-shared/issues/1041)) ([ac54b74](https://github.com/adobe/spacecat-shared/commit/ac54b7410b627cee2d93b9a4d0b76d23894a11c3))
+
 # [@adobe/spacecat-shared-utils-v1.62.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.61.0...@adobe/spacecat-shared-utils-v1.62.0) (2025-10-23)
 
 

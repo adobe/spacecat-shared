@@ -714,6 +714,53 @@ describe('schemas', () => {
         expect(result.success).true;
       });
     });
+    describe('category origin', () => {
+      it('allows category without origin (optional field)', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: { name: 'Category One', region: 'US' },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].origin).to.be.undefined;
+        }
+      });
+
+      it('accepts explicit human origin', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: { name: 'Category One', region: 'US', origin: 'human' },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].origin).equals('human');
+        }
+      });
+
+      it('accepts ai origin', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: { name: 'Category One', region: 'US', origin: 'ai' },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].origin).equals('ai');
+        }
+      });
+    });
+
     describe('cdn bucket config', () => {
       it('validates configuration without cdn bucket config', () => {
         const result = llmoConfig.safeParse(baseConfig);

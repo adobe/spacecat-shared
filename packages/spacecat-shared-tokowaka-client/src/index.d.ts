@@ -186,6 +186,16 @@ export default class TokowakaClient {
 
   uploadConfig(apiKey: string, config: TokowakaConfig): Promise<string>;
   
+  /**
+   * Fetches existing Tokowaka configuration from S3
+   */
+  fetchConfig(apiKey: string): Promise<TokowakaConfig | null>;
+  
+  /**
+   * Merges existing configuration with new configuration
+   */
+  mergeConfigs(existingConfig: TokowakaConfig | null, newConfig: TokowakaConfig): TokowakaConfig;
+  
   invalidateCdnCache(site: Site, s3Key: string): Promise<CdnInvalidationResult | null>;
 
   deploySuggestions(

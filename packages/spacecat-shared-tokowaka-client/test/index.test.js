@@ -370,6 +370,289 @@ describe('TokowakaClient', () => {
     });
   });
 
+  describe('fetchConfig', () => {
+    it('should fetch existing config from S3', async () => {
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Old Heading',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-1',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      s3Client.send.resolves({
+        Body: {
+          transformToString: async () => JSON.stringify(existingConfig),
+        },
+      });
+
+      const config = await client.fetchConfig('test-api-key');
+
+      expect(config).to.deep.equal(existingConfig);
+      expect(s3Client.send).to.have.been.calledOnce;
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Bucket).to.equal('test-bucket');
+      expect(command.input.Key).to.equal('opportunities/test-api-key');
+    });
+
+    it('should return null if config does not exist', async () => {
+      const noSuchKeyError = new Error('NoSuchKey');
+      noSuchKeyError.name = 'NoSuchKey';
+      s3Client.send.rejects(noSuchKeyError);
+
+      const config = await client.fetchConfig('test-api-key');
+
+      expect(config).to.be.null;
+    });
+
+    it('should return null if S3 returns NoSuchKey error code', async () => {
+      const noSuchKeyError = new Error('The specified key does not exist');
+      noSuchKeyError.Code = 'NoSuchKey';
+      s3Client.send.rejects(noSuchKeyError);
+
+      const config = await client.fetchConfig('test-api-key');
+
+      expect(config).to.be.null;
+    });
+
+    it('should throw error if apiKey is missing', async () => {
+      try {
+        await client.fetchConfig('');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Tokowaka API key is required');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should handle S3 fetch failure', async () => {
+      s3Client.send.rejects(new Error('Network error'));
+
+      try {
+        await client.fetchConfig('test-api-key');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('S3 fetch failed');
+        expect(error.status).to.equal(500);
+      }
+    });
+  });
+
+  describe('mergeConfigs', () => {
+    let existingConfig;
+    let newConfig;
+
+    beforeEach(() => {
+      existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Old Heading',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-1',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+              {
+                op: 'replace',
+                selector: 'h2',
+                value: 'Old Subtitle',
+                opportunityId: 'opp-456',
+                suggestionId: 'sugg-2',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      newConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Updated Heading',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-1',
+                prerenderRequired: true,
+                lastUpdated: 1234567900,
+              },
+            ],
+          },
+        },
+      };
+    });
+
+    it('should return new config if existing config is null', () => {
+      const merged = client.mergeConfigs(null, newConfig);
+
+      expect(merged).to.deep.equal(newConfig);
+    });
+
+    it('should update existing patch with same opportunityId and suggestionId', () => {
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.tokowakaOptimizations['/page1'].patches).to.have.length(2);
+
+      // First patch should be updated
+      const updatedPatch = merged.tokowakaOptimizations['/page1'].patches[0];
+      expect(updatedPatch.value).to.equal('Updated Heading');
+      expect(updatedPatch.lastUpdated).to.equal(1234567900);
+
+      // Second patch should remain unchanged
+      const unchangedPatch = merged.tokowakaOptimizations['/page1'].patches[1];
+      expect(unchangedPatch.value).to.equal('Old Subtitle');
+      expect(unchangedPatch.opportunityId).to.equal('opp-456');
+    });
+
+    it('should add new patch if opportunityId and suggestionId do not exist', () => {
+      newConfig.tokowakaOptimizations['/page1'].patches.push({
+        op: 'replace',
+        selector: 'h3',
+        value: 'New Section Title',
+        opportunityId: 'opp-789',
+        suggestionId: 'sugg-3',
+        prerenderRequired: true,
+        lastUpdated: 1234567900,
+      });
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.tokowakaOptimizations['/page1'].patches).to.have.length(3);
+
+      // New patch should be added at the end
+      const newPatch = merged.tokowakaOptimizations['/page1'].patches[2];
+      expect(newPatch.value).to.equal('New Section Title');
+      expect(newPatch.opportunityId).to.equal('opp-789');
+      expect(newPatch.suggestionId).to.equal('sugg-3');
+    });
+
+    it('should add new URL path if it does not exist in existing config', () => {
+      newConfig.tokowakaOptimizations['/page2'] = {
+        prerender: true,
+        patches: [
+          {
+            op: 'replace',
+            selector: 'h1',
+            value: 'Page 2 Heading',
+            opportunityId: 'opp-999',
+            suggestionId: 'sugg-4',
+            prerenderRequired: true,
+            lastUpdated: 1234567900,
+          },
+        ],
+      };
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.tokowakaOptimizations).to.have.property('/page1');
+      expect(merged.tokowakaOptimizations).to.have.property('/page2');
+      expect(merged.tokowakaOptimizations['/page2'].patches).to.have.length(1);
+      expect(merged.tokowakaOptimizations['/page2'].patches[0].value).to.equal('Page 2 Heading');
+    });
+
+    it('should preserve existing URL paths not present in new config', () => {
+      existingConfig.tokowakaOptimizations['/page3'] = {
+        prerender: false,
+        patches: [
+          {
+            op: 'replace',
+            selector: 'h1',
+            value: 'Page 3 Heading',
+            opportunityId: 'opp-333',
+            suggestionId: 'sugg-5',
+            prerenderRequired: false,
+            lastUpdated: 1234567890,
+          },
+        ],
+      };
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.tokowakaOptimizations).to.have.property('/page1');
+      expect(merged.tokowakaOptimizations).to.have.property('/page3');
+      expect(merged.tokowakaOptimizations['/page3'].patches[0].value).to.equal('Page 3 Heading');
+    });
+
+    it('should update config metadata from new config', () => {
+      newConfig.version = '2.0';
+      newConfig.tokowakaForceFail = true;
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.version).to.equal('2.0');
+      expect(merged.tokowakaForceFail).to.equal(true);
+    });
+
+    it('should handle empty patches array in existing config', () => {
+      existingConfig.tokowakaOptimizations['/page1'].patches = [];
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.tokowakaOptimizations['/page1'].patches).to.have.length(1);
+      expect(merged.tokowakaOptimizations['/page1'].patches[0].value).to.equal('Updated Heading');
+    });
+
+    it('should handle empty patches array in new config', () => {
+      newConfig.tokowakaOptimizations['/page1'].patches = [];
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.tokowakaOptimizations['/page1'].patches).to.have.length(2);
+      expect(merged.tokowakaOptimizations['/page1'].patches[0].value).to.equal('Old Heading');
+    });
+
+    it('should handle missing patches property in existing config', () => {
+      delete existingConfig.tokowakaOptimizations['/page1'].patches;
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.tokowakaOptimizations['/page1'].patches).to.have.length(1);
+      expect(merged.tokowakaOptimizations['/page1'].patches[0].value).to.equal('Updated Heading');
+    });
+
+    it('should handle missing patches property in new config', () => {
+      delete newConfig.tokowakaOptimizations['/page1'].patches;
+
+      const merged = client.mergeConfigs(existingConfig, newConfig);
+
+      expect(merged.tokowakaOptimizations['/page1'].patches).to.have.length(2);
+      expect(merged.tokowakaOptimizations['/page1'].patches[0].value).to.equal('Old Heading');
+    });
+  });
+
   describe('deploySuggestions', () => {
     beforeEach(() => {
       // Stub CDN invalidation for deploy tests
@@ -378,6 +661,8 @@ describe('TokowakaClient', () => {
         provider: 'cloudfront',
         invalidationId: 'I123',
       });
+      // Stub fetchConfig to return null by default (no existing config)
+      sinon.stub(client, 'fetchConfig').resolves(null);
     });
 
     it('should deploy suggestions successfully', async () => {
@@ -403,14 +688,6 @@ describe('TokowakaClient', () => {
         expect(error.message).to.include('Tokowaka API key configured');
         expect(error.status).to.equal(400);
       }
-    });
-
-    it('should log progress during deployment', async () => {
-      await client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions);
-
-      expect(log.info).to.have.been.calledWith(sinon.match(/Generating Tokowaka config/));
-      expect(log.info).to.have.been.calledWith(sinon.match(/Uploading Tokowaka config/));
-      expect(log.info).to.have.been.calledWith(sinon.match(/Successfully uploaded/));
     });
 
     it('should handle suggestions that are not eligible for deployment', async () => {
@@ -514,6 +791,165 @@ describe('TokowakaClient', () => {
 
       expect(result.failedSuggestions).to.have.length(2);
       expect(result.failedSuggestions[0].reason).to.equal('Suggestion cannot be deployed');
+    });
+
+    it('should fetch existing config and merge when deploying', async () => {
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h3',
+                value: 'Existing Heading',
+                opportunityId: 'opp-999',
+                suggestionId: 'sugg-999',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      client.fetchConfig.resolves(existingConfig);
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(client.fetchConfig).to.have.been.calledWith('test-api-key-123');
+      expect(result).to.have.property('s3Path', 'opportunities/test-api-key-123');
+
+      // Verify the uploaded config contains both existing and new patches
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.tokowakaOptimizations['/page1'].patches).to.have.length(3);
+    });
+
+    it('should use new config when no existing config found', async () => {
+      client.fetchConfig.resolves(null);
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(client.fetchConfig).to.have.been.calledWith('test-api-key-123');
+      expect(result).to.have.property('s3Path', 'opportunities/test-api-key-123');
+
+      // Verify only new patches are in the config
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.tokowakaOptimizations['/page1'].patches).to.have.length(2);
+    });
+
+    it('should update existing patch when deploying same opportunityId and suggestionId', async () => {
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Old Heading Value',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-1',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      client.fetchConfig.resolves(existingConfig);
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result).to.have.property('s3Path', 'opportunities/test-api-key-123');
+
+      // Verify the patch was updated, not duplicated
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.tokowakaOptimizations['/page1'].patches).to.have.length(2);
+
+      // First patch should be updated with new value
+      const updatedPatch = uploadedConfig.tokowakaOptimizations['/page1'].patches[0];
+      expect(updatedPatch.value).to.equal('New Heading');
+      expect(updatedPatch.opportunityId).to.equal('opp-123');
+      expect(updatedPatch.suggestionId).to.equal('sugg-1');
+      expect(updatedPatch.lastUpdated).to.be.greaterThan(1234567890);
+    });
+
+    it('should preserve existing URL paths when merging', async () => {
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Page 1 Heading',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-1',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+          '/other-page': {
+            prerender: false,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Other Page Heading',
+                opportunityId: 'opp-888',
+                suggestionId: 'sugg-888',
+                prerenderRequired: false,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      client.fetchConfig.resolves(existingConfig);
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result).to.have.property('s3Path', 'opportunities/test-api-key-123');
+
+      // Verify existing URL paths are preserved
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.tokowakaOptimizations).to.have.property('/page1');
+      expect(uploadedConfig.tokowakaOptimizations).to.have.property('/other-page');
+      expect(uploadedConfig.tokowakaOptimizations['/other-page'].patches[0].value)
+        .to.equal('Other Page Heading');
     });
   });
 

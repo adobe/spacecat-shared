@@ -68,6 +68,11 @@ export {
   urlMatchesFilter,
 } from './url-helpers.js';
 
+export {
+  extractUrlFromOpportunity,
+  extractUrlFromSuggestion,
+} from './url-extractors.js';
+
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';
 
 export { s3Wrapper } from './s3.js';

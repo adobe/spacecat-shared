@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.65.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.64.0...@adobe/spacecat-shared-utils-v1.65.0) (2025-10-24)
+
+
+### Features
+
+* update schemas to make category and region optional for brand aliases ([#1044](https://github.com/adobe/spacecat-shared/issues/1044)) ([d024402](https://github.com/adobe/spacecat-shared/commit/d02440269d557adfb810312badfbfc8ff74cddf3))
+
 # [@adobe/spacecat-shared-utils-v1.64.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.63.0...@adobe/spacecat-shared-utils-v1.64.0) (2025-10-24)
 
 

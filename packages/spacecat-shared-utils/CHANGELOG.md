@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.64.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.63.0...@adobe/spacecat-shared-utils-v1.64.0) (2025-10-24)
+
+
+### Features
+
+* change tests so I can release to prod yay ([#1043](https://github.com/adobe/spacecat-shared/issues/1043)) ([c478e22](https://github.com/adobe/spacecat-shared/commit/c478e220321ea24a20882a2521cb48c3ad4ffae3))
+
 # [@adobe/spacecat-shared-utils-v1.63.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.62.0...@adobe/spacecat-shared-utils-v1.63.0) (2025-10-23)
 
 

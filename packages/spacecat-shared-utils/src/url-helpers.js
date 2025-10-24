@@ -136,37 +136,51 @@ function getSpacecatRequestHeaders() {
  * Resolve canonical URL for a given URL string by following redirect chain.
  * @param {string} urlString - The URL string to normalize.
  * @param {string} method - HTTP method to use ('HEAD' or 'GET').
+ * @param {object} log - Optional logger object with info/error methods.
  * @returns {Promise<string|null>} A Promise that resolves to the canonical URL or null if failed.
  */
-async function resolveCanonicalUrl(urlString, method = 'HEAD') {
+async function resolveCanonicalUrl(urlString, method = 'HEAD', log = console) {
   const headers = getSpacecatRequestHeaders();
   let resp;
+
+  log.info(`[resolveCanonicalUrl] Attempting to resolve URL: ${urlString} using method: ${method}`);
 
   try {
     resp = await fetch(urlString, { headers, method });
 
+    log.info(`[resolveCanonicalUrl] Fetch completed for ${urlString} - Status: ${resp.status}, OK: ${resp.ok}, Response URL: ${resp.url}`);
+
     if (resp.ok) {
-      return ensureHttps(resp.url);
+      const canonicalUrl = ensureHttps(resp.url);
+      log.info(`[resolveCanonicalUrl] SUCCESS: Resolved ${urlString} to ${canonicalUrl}`);
+      return canonicalUrl;
     }
 
     // Handle redirect chains
     if (urlString !== resp.url) {
-      return resolveCanonicalUrl(resp.url, method);
+      log.info(`[resolveCanonicalUrl] Redirect detected: ${urlString} -> ${resp.url}, following redirect chain`);
+      return resolveCanonicalUrl(resp.url, method, log);
     }
 
     if (method === 'HEAD') {
-      return resolveCanonicalUrl(urlString, 'GET');
+      log.info(`[resolveCanonicalUrl] HEAD request failed with status ${resp.status}, retrying with GET`);
+      return resolveCanonicalUrl(urlString, 'GET', log);
     }
 
     // If the URL is not found and we've tried both HEAD and GET, return null
+    log.info(`[resolveCanonicalUrl] FAILED: Both HEAD and GET failed for ${urlString}. Final status: ${resp.status}. Returning null.`);
     return null;
-  } catch {
+  } catch (error) {
+    log.info(`[resolveCanonicalUrl] Exception caught for ${urlString} with method ${method}: ${error.message}`);
+
     // If HEAD failed with network error and we haven't tried GET yet, retry with GET
     if (method === 'HEAD') {
-      return resolveCanonicalUrl(urlString, 'GET');
+      log.info('[resolveCanonicalUrl] HEAD request threw exception, retrying with GET');
+      return resolveCanonicalUrl(urlString, 'GET', log);
     }
 
     // For all errors (both HTTP status and network), return null
+    log.info(`[resolveCanonicalUrl] FAILED: Exception on GET request for ${urlString}. Error: ${error.message}. Returning null.`);
     return null;
   }
 }

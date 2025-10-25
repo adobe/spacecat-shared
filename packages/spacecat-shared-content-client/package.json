@@ -38,17 +38,17 @@
     "@adobe/spacecat-helix-content-sdk": "1.4.25",
     "@adobe/spacecat-shared-data-access": "2.45.0",
     "@adobe/spacecat-shared-utils": "1.38.0",
-    "@aws-sdk/client-secrets-manager": "3.893.0",
-    "aws-xray-sdk": "3.10.3",
+    "@aws-sdk/client-secrets-manager": "3.917.0",
+    "aws-xray-sdk": "3.11.0",
     "graph-data-structure": "4.5.0"
   },
   "devDependencies": {
-    "chai": "6.0.1",
+    "chai": "6.2.0",
     "chai-as-promised": "8.0.2",
     "esmock": "2.7.3",
     "nock": "14.0.10",
     "sinon": "21.0.0",
     "sinon-chai": "4.0.1",
-    "typescript": "5.9.2"
+    "typescript": "5.9.3"
   }
 }

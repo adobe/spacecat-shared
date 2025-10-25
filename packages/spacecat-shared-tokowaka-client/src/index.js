@@ -257,15 +257,11 @@ class TokowakaClient {
           const existing = patchMap.get(key);
 
           if (existing) {
-            // Update existing patch
             mergedPatches[existing.index] = newPatch;
             updateCount += 1;
-            this.log.debug(`Updated patch for ${key} at ${urlPath}`);
           } else {
-            // Add new patch
             mergedPatches.push(newPatch);
             addCount += 1;
-            this.log.debug(`Added new patch for ${key} at ${urlPath}`);
           }
         });
 

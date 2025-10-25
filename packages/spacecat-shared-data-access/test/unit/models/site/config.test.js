@@ -2312,6 +2312,75 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('Tokowaka Config', () => {
+    it('creates a Config with tokowakaConfig property', () => {
+      const data = {
+        tokowakaConfig: {
+          apiKey: 'test-api-key',
+        },
+      };
+      const config = Config(data);
+      expect(config.getTokowakaConfig()).to.deep.equal(data.tokowakaConfig);
+    });
+
+    it('has undefined tokowakaConfig in default config', () => {
+      const config = Config();
+      expect(config.getTokowakaConfig()).to.be.undefined;
+    });
+
+    it('should return undefined for tokowakaConfig if not provided', () => {
+      const config = Config({});
+      expect(config.getTokowakaConfig()).to.be.undefined;
+    });
+
+    it('should preserve provided data if tokowakaConfig is invalid', () => {
+      const data = {
+        tokowakaConfig: {
+          // missing required apiKey
+        },
+      };
+      const config = Config(data);
+      expect(config.getSlackConfig()).to.be.undefined;
+      expect(config.getHandlers()).to.be.undefined;
+      expect(config.getTokowakaConfig()).to.deep.equal({});
+    });
+
+    it('should be able to update tokowakaConfig', () => {
+      const data = {
+        tokowakaConfig: {
+          apiKey: 'initial-api-key',
+        },
+      };
+      const config = Config({});
+      config.updateTokowakaConfig(data.tokowakaConfig);
+      expect(config.getTokowakaConfig()).to.deep.equal(data.tokowakaConfig);
+    });
+
+    it('should be able to update tokowakaConfig with different apiKey', () => {
+      const config = Config({
+        tokowakaConfig: {
+          apiKey: 'old-api-key',
+        },
+      });
+
+      const newConfig = {
+        apiKey: 'new-api-key',
+      };
+      config.updateTokowakaConfig(newConfig);
+      expect(config.getTokowakaConfig()).to.deep.equal(newConfig);
+    });
+
+    it('includes tokowakaConfig in toDynamoItem conversion', () => {
+      const data = Config({
+        tokowakaConfig: {
+          apiKey: 'test-api-key',
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.tokowakaConfig).to.deep.equal(data.getTokowakaConfig());
+    });
+  });
+
   describe('LLMO Well Known Tags', () => {
     const { extractWellKnownTags } = Config();
 

@@ -12,10 +12,10 @@
 
 import AWSXray from 'aws-xray-sdk';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
-import { ImsPromiseClient } from '@adobe/spacecat-shared-ims-client';
-import { isString } from './functions.js';
-import { resolveCustomerSecretsName } from './helpers.js';
-import { AUTHORING_TYPES, DELIVERY_TYPES } from './aem.js';
+import {
+  AUTHORING_TYPES, DELIVERY_TYPES, isString, resolveCustomerSecretsName,
+} from '@adobe/spacecat-shared-utils';
+import ImsPromiseClient from './clients/ims-promise-client.js';
 
 /**
  * @import {type Site} from "@adobe/spacecat-shared-data-access/src/models/site/index.js"

@@ -264,8 +264,6 @@ export function tracingFetch(url: string | Request, options?: RequestOptions): P
 
 export const SPACECAT_USER_AGENT: string;
 
-export function retrievePageAuthentication(site: object, context: object): Promise<string>;
-
 export function prettifyLogForwardingConfig(payload: object): object;
 
 export function isoCalendarWeek(date: Date): ISOCalendarWeek;

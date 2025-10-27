@@ -66,6 +66,13 @@ const OPPORTUNITY_TYPES = {
   PAID_COOKIE_CONSENT: 'paid-cookie-consent',
 };
 
+/**
+ * Default CPC (Cost Per Click) value in dollars used when Ahrefs organic traffic data
+ * is not available or invalid.
+ */
+const DEFAULT_CPC_VALUE = 1.5;
+
 export {
   OPPORTUNITY_TYPES,
+  DEFAULT_CPC_VALUE,
 };

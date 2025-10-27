@@ -73,9 +73,11 @@ export {
   extractUrlsFromSuggestion,
 } from './url-extractors.js';
 
-export { getStoredMetrics, storeMetrics } from './metrics-store.js';
+export { getStoredMetrics, storeMetrics, calculateCPCValue } from './metrics-store.js';
 
-export { s3Wrapper } from './s3.js';
+export { s3Wrapper, getObjectFromKey } from './s3.js';
+
+export { DEFAULT_CPC_VALUE } from './constants.js';
 
 export { fetch } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';

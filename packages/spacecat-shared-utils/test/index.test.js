@@ -82,6 +82,7 @@ describe('Index Exports', () => {
     'extractUrlsFromSuggestion',
     'detectAEMVersion',
     'determineAEMCSPageId',
+    'AUTHORING_TYPES',
     'DELIVERY_TYPES',
     'getPageEditUrl',
     'llmoConfig',

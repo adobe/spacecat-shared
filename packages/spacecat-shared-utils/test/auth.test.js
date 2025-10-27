@@ -16,9 +16,9 @@ import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import AWSXray from 'aws-xray-sdk';
-import { Site } from '@adobe/spacecat-shared-data-access';
 import { ImsPromiseClient } from '@adobe/spacecat-shared-ims-client';
 import { getAccessToken, retrievePageAuthentication } from '../src/auth.js';
+import { DELIVERY_TYPES } from '../src/aem.js';
 
 use(chaiAsPromised);
 
@@ -91,7 +91,7 @@ describe('auth', () => {
     beforeEach(() => {
       mockSite = {
         getBaseURL: sinon.stub().returns('https://example.com'),
-        getDeliveryType: sinon.stub().returns(Site.DELIVERY_TYPES.AEM_EDGE),
+        getDeliveryType: sinon.stub().returns(DELIVERY_TYPES.AEM_EDGE),
         getAuthoringType: sinon.stub().returns('cs/crosswalk'),
       };
 

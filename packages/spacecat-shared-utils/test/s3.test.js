@@ -15,7 +15,105 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { S3Client } from '@aws-sdk/client-s3';
-import { s3Wrapper } from '../src/s3.js';
+import { s3Wrapper, getObjectFromKey } from '../src/s3.js';
+
+describe('getObjectFromKey', () => {
+  let s3Client;
+  let log;
+
+  beforeEach(() => {
+    s3Client = {
+      send: sinon.stub(),
+    };
+    log = {
+      error: sinon.stub(),
+    };
+  });
+
+  it('should retrieve and parse JSON object from S3', async () => {
+    const mockData = { key: 'value', nested: { data: 123 } };
+    s3Client.send.resolves({
+      ContentType: 'application/json',
+      Body: {
+        transformToString: sinon.stub().resolves(JSON.stringify(mockData)),
+      },
+    });
+
+    const result = await getObjectFromKey(s3Client, 'test-bucket', 'test-key', log);
+
+    expect(result).to.deep.equal(mockData);
+    expect(log.error).to.not.have.been.called;
+  });
+
+  it('should return raw body for non-JSON content', async () => {
+    const textContent = 'plain text content';
+    s3Client.send.resolves({
+      ContentType: 'text/plain',
+      Body: {
+        transformToString: sinon.stub().resolves(textContent),
+      },
+    });
+
+    const result = await getObjectFromKey(s3Client, 'test-bucket', 'test-key', log);
+
+    expect(result).to.equal(textContent);
+    expect(log.error).to.not.have.been.called;
+  });
+
+  it('should return null when S3 object is not found', async () => {
+    const error = new Error('NoSuchKey');
+    error.name = 'NoSuchKey';
+    s3Client.send.rejects(error);
+
+    const result = await getObjectFromKey(s3Client, 'test-bucket', 'test-key', log);
+
+    expect(result).to.be.null;
+    expect(log.error).to.have.been.calledWith('Error while fetching S3 object from bucket test-bucket using key test-key');
+  });
+
+  it('should return null and log error when JSON parsing fails', async () => {
+    s3Client.send.resolves({
+      ContentType: 'application/json',
+      Body: {
+        transformToString: sinon.stub().resolves('invalid json{'),
+      },
+    });
+
+    const result = await getObjectFromKey(s3Client, 'test-bucket', 'test-key', log);
+
+    expect(result).to.be.null;
+    expect(log.error).to.have.been.calledWith('Unable to parse content for key test-key');
+  });
+
+  it('should return null when invalid parameters are provided', async () => {
+    const result1 = await getObjectFromKey(null, 'test-bucket', 'test-key', log);
+    expect(result1).to.be.null;
+    expect(log.error).to.have.been.calledWith('Invalid input parameters in getObjectFromKey: ensure s3Client, bucketName, and key are provided.');
+
+    log.error.resetHistory();
+
+    const result2 = await getObjectFromKey(s3Client, null, 'test-key', log);
+    expect(result2).to.be.null;
+    expect(log.error).to.have.been.calledWith('Invalid input parameters in getObjectFromKey: ensure s3Client, bucketName, and key are provided.');
+
+    log.error.resetHistory();
+
+    const result3 = await getObjectFromKey(s3Client, 'test-bucket', null, log);
+    expect(result3).to.be.null;
+    expect(log.error).to.have.been.calledWith('Invalid input parameters in getObjectFromKey: ensure s3Client, bucketName, and key are provided.');
+  });
+
+  it('should handle S3 errors gracefully', async () => {
+    const error = new Error('AccessDenied');
+    error.name = 'AccessDenied';
+    s3Client.send.rejects(error);
+
+    const result = await getObjectFromKey(s3Client, 'test-bucket', 'test-key', log);
+
+    expect(result).to.be.null;
+    expect(log.error).to.have.been.calledWith('Error while fetching S3 object from bucket test-bucket using key test-key');
+  });
+});
 
 describe('S3 wrapper', () => {
   let fakeContext;

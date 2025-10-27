@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.38.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.3...@adobe/spacecat-shared-rum-api-client-v2.38.4) (2025-10-23)
+
+
+### Bug Fixes
+
+* **traffic-attribution:** handle non standard referrers ([#1040](https://github.com/adobe/spacecat-shared/issues/1040)) ([d0451f5](https://github.com/adobe/spacecat-shared/commit/d0451f58fd1afd46d00652b754924da62c4203d1))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.38.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.2...@adobe/spacecat-shared-rum-api-client-v2.38.3) (2025-10-18)
 
 

@@ -53,6 +53,7 @@ const entity = z.object({
 const category = z.object({
   name: nonEmptyString,
   region: z.union([region, z.array(region)]),
+  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 const topic = z.object({
@@ -75,8 +76,8 @@ export const llmoConfig = z.object({
     aliases: z.array(
       z.object({
         aliases: z.array(nonEmptyString),
-        category: z.uuid(),
-        region: z.union([region, z.array(region)]),
+        category: z.uuid().optional(),
+        region: z.union([region, z.array(region)]).optional(),
       }),
     ),
   }),
@@ -105,8 +106,23 @@ export const llmoConfig = z.object({
   } = value;
 
   brands.aliases.forEach((alias, index) => {
-    ensureCategoryExists(categories, ctx, alias.category, ['brands', 'aliases', index, 'category']);
-    ensureRegionCompatibility(categories, ctx, alias.category, alias.region, ['brands', 'aliases', index, 'region'], 'brand alias');
+    // Ensure category and region are both provided or both omitted
+    if (alias.category && !alias.region) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['brands', 'aliases', index, 'region'],
+        message: 'region is required when category is provided',
+      });
+    } else if (!alias.category && alias.region) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['brands', 'aliases', index, 'category'],
+        message: 'category is required when region is provided',
+      });
+    } else if (alias.category && alias.region) {
+      ensureCategoryExists(categories, ctx, alias.category, ['brands', 'aliases', index, 'category']);
+      ensureRegionCompatibility(categories, ctx, alias.category, alias.region, ['brands', 'aliases', index, 'region'], 'brand alias');
+    }
   });
 
   competitors.competitors.forEach((competitor, index) => {

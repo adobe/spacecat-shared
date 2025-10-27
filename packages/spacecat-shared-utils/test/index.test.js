@@ -78,6 +78,8 @@ describe('Index Exports', () => {
     'getMonthInfo',
     'getTemporalCondition',
     'urlMatchesFilter',
+    'extractUrlsFromOpportunity',
+    'extractUrlsFromSuggestion',
     'detectAEMVersion',
     'determineAEMCSPageId',
     'DELIVERY_TYPES',

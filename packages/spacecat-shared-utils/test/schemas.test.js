@@ -228,6 +228,58 @@ describe('schemas', () => {
           }
           expect(result.error.issues[0].message).equals('brand alias regions [mx] are not allowed. Category only supports regions: [us, ca]');
         });
+
+        it('fails when brand alias has region but no category', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                region: 'us',
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+          if (result.success) {
+            throw new Error('Expected validation to fail');
+          }
+          expect(result.error.issues[0].message).equals('category is required when region is provided');
+        });
+
+        it('fails when brand alias has category but no region', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+                category: categoryWithRegionsId,
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+          if (result.success) {
+            throw new Error('Expected validation to fail');
+          }
+          expect(result.error.issues[0].message).equals('region is required when category is provided');
+        });
+
+        it('validates when brand alias has neither category nor region', () => {
+          const config = {
+            ...configWithRegions,
+            brands: {
+              aliases: [{
+                aliases: ['Brand Alias'],
+              }],
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
       });
 
       describe('competitors', () => {
@@ -714,6 +766,53 @@ describe('schemas', () => {
         expect(result.success).true;
       });
     });
+    describe('category origin', () => {
+      it('allows category without origin (optional field)', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: { name: 'Category One', region: 'US' },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].origin).to.be.undefined;
+        }
+      });
+
+      it('accepts explicit human origin', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: { name: 'Category One', region: 'US', origin: 'human' },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].origin).equals('human');
+        }
+      });
+
+      it('accepts ai origin', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: { name: 'Category One', region: 'US', origin: 'ai' },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].origin).equals('ai');
+        }
+      });
+    });
+
     describe('cdn bucket config', () => {
       it('validates configuration without cdn bucket config', () => {
         const result = llmoConfig.safeParse(baseConfig);

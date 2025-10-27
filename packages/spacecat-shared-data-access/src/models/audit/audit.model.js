@@ -33,6 +33,7 @@ class Audit extends BaseModel {
     CANONICAL: 'canonical',
     REDIRECT_CHAINS: 'redirect-chains',
     BROKEN_BACKLINKS: 'broken-backlinks',
+    BROKEN_CONTENT_FRAGMENT_LINKS: 'broken-content-fragment-links',
     BROKEN_INTERNAL_LINKS: 'broken-internal-links',
     EXPERIMENTATION: 'experimentation',
     CONVERSION: 'conversion',

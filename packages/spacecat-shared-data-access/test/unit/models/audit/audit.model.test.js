@@ -160,6 +160,7 @@ describe('AuditModel', () => {
       CANONICAL: 'canonical',
       REDIRECT_CHAINS: 'redirect-chains',
       BROKEN_BACKLINKS: 'broken-backlinks',
+      BROKEN_CONTENT_FRAGMENT_LINKS: 'broken-content-fragment-links',
       BROKEN_INTERNAL_LINKS: 'broken-internal-links',
       EXPERIMENTATION: 'experimentation',
       CONVERSION: 'conversion',
@@ -186,7 +187,7 @@ describe('AuditModel', () => {
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(31);
+      expect(Object.keys(auditTypes)).to.have.lengthOf(32);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

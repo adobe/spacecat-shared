@@ -66,7 +66,7 @@ function ScrapeJobSupervisor(services, config) {
       status: ScrapeJobModel.ScrapeJobStatus.RUNNING,
       customHeaders,
     };
-    log.info(`Creating a new scrape job. Job data: ${JSON.stringify(jobData)}`);
+    log.debug(`Creating a new scrape job. Job data: ${JSON.stringify(jobData)}`);
     return ScrapeJob.create(jobData);
   }
 
@@ -110,7 +110,7 @@ function ScrapeJobSupervisor(services, config) {
     for (let i = 0; i < urls.length; i += batchSize) {
       batches.push(urls.slice(i, i + batchSize));
     }
-    log.info(`Split ${urls.length} URLs into ${batches.length} batches of size ${batchSize}.`);
+    log.debug(`Split ${urls.length} URLs into ${batches.length} batches of size ${batchSize}.`);
     return batches;
   }
 
@@ -122,7 +122,7 @@ function ScrapeJobSupervisor(services, config) {
    * @param {object} scrapeJob - The scrape job record.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
    * @param {string} maxScrapeAge - The maximum age of the scrape job
-   * @param auditContext
+   * @param {object} auditData - Step-Audit specific data
    */
   // eslint-disable-next-line max-len
   async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders, maxScrapeAge, auditData) {
@@ -139,10 +139,10 @@ function ScrapeJobSupervisor(services, config) {
     // If there are more than 1000 URLs, split them into multiple messages
     if (totalUrlCount > maxUrlsPerMessage) {
       urlBatches = splitUrlsIntoBatches(urls, maxUrlsPerMessage);
-      log.info(`Queuing ${totalUrlCount} URLs for scrape in ${urlBatches.length} messages.`);
+      log.debug(`Queuing ${totalUrlCount} URLs for scrape in ${urlBatches.length} messages.`);
     } else {
       // If there are 1000 or fewer URLs, we can send them all in a single message
-      log.info(`Queuing ${totalUrlCount} URLs for scrape in a single message.`);
+      log.debug(`Queuing ${totalUrlCount} URLs for scrape in a single message.`);
       urlBatches = [urls]; // Wrap in an array to maintain consistent structure
     }
 
@@ -190,7 +190,7 @@ function ScrapeJobSupervisor(services, config) {
       customHeaders,
     );
 
-    log.info(
+    log.info( // debug?
       'New scrape job created:\n'
       + `- baseUrl: ${newScrapeJob.getBaseURL()}\n`
       + `- urlCount: ${urls.length}\n`

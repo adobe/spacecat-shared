@@ -12,13 +12,12 @@
 
 /* eslint-env mocha */
 
-import { isIsoDate } from '@adobe/spacecat-shared-utils';
+import { isIsoDate, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { v4 as uuid, validate as uuidValidate } from 'uuid';
 
 import { ValidationError } from '../../../src/index.js';
 
@@ -38,6 +37,8 @@ describe('Opportunity IT', async () => {
 
   let Opportunity;
   let Suggestion;
+  let FixEntity;
+  let FixEntitySuggestion;
 
   before(async () => {
     sampleData = await seedDatabase();
@@ -54,6 +55,8 @@ describe('Opportunity IT', async () => {
     const dataAccess = getDataAccess({}, mockLogger);
     Opportunity = dataAccess.Opportunity;
     Suggestion = dataAccess.Suggestion;
+    FixEntity = dataAccess.FixEntity;
+    FixEntitySuggestion = dataAccess.FixEntitySuggestion;
   });
 
   afterEach(() => {
@@ -146,7 +149,7 @@ describe('Opportunity IT', async () => {
   it('creates a new opportunity', async () => {
     const data = {
       siteId,
-      auditId: uuid(),
+      auditId: crypto.randomUUID(),
       title: 'New Opportunity',
       description: 'Description',
       runbook: 'https://example.com',
@@ -162,7 +165,7 @@ describe('Opportunity IT', async () => {
 
     expect(opportunity).to.be.an('object');
 
-    expect(uuidValidate(opportunity.getId())).to.be.true;
+    expect(isValidUUID(opportunity.getId())).to.be.true;
     expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
     expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
@@ -191,7 +194,7 @@ describe('Opportunity IT', async () => {
 
     expect(opportunity).to.be.an('object');
 
-    expect(uuidValidate(opportunity.getId())).to.be.true;
+    expect(isValidUUID(opportunity.getId())).to.be.true;
     expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
     expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
@@ -243,6 +246,9 @@ describe('Opportunity IT', async () => {
     expect(stillThere).to.be.an('object');
 
     // make sure the other suggestions are removed
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1000);
+    });
     const remainingSuggestions = await Suggestion.allByOpportunityId(opportunity.getId());
     expect(remainingSuggestions).to.be.an('array').with.length(1);
     expect(remainingSuggestions[0].getId()).to.equal(suggestions[0].getId());
@@ -252,7 +258,7 @@ describe('Opportunity IT', async () => {
     const data = [
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 1',
         description: 'Description',
         runbook: 'https://example.com',
@@ -264,7 +270,7 @@ describe('Opportunity IT', async () => {
       },
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 2',
         description: 'Description',
         runbook: 'https://example.com',
@@ -285,7 +291,7 @@ describe('Opportunity IT', async () => {
     opportunities.createdItems.forEach((opportunity, index) => {
       expect(opportunity).to.be.an('object');
 
-      expect(uuidValidate(opportunity.getId())).to.be.true;
+      expect(isValidUUID(opportunity.getId())).to.be.true;
       expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
       expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
@@ -301,7 +307,7 @@ describe('Opportunity IT', async () => {
     const data = [
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 1',
         description: 'Description',
         runbook: 'https://example.com',
@@ -313,7 +319,7 @@ describe('Opportunity IT', async () => {
       },
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 2',
         description: 'Description',
         runbook: 'https://example.com',
@@ -325,7 +331,7 @@ describe('Opportunity IT', async () => {
       },
       {
         siteId,
-        auditId: uuid(),
+        auditId: crypto.randomUUID(),
         title: 'New Opportunity 3',
         description: 'Description',
         runbook: 'https://example.com',
@@ -364,5 +370,245 @@ describe('Opportunity IT', async () => {
 
     expect(record1).to.eql(data[0]);
     expect(record2).to.eql(data[1]);
+  });
+
+  describe('addFixEntities', () => {
+    it('creates fix entities with valid suggestions', async () => {
+      const opportunity = await Opportunity.findById(sampleData.opportunities[2].getId());
+      const suggestions = await opportunity.getSuggestions();
+
+      expect(suggestions).to.be.an('array').with.length(3);
+
+      const fixEntityData = [
+        {
+          type: 'CODE_CHANGE',
+          changeDetails: {
+            file: 'test1.js',
+            changes: 'some changes',
+          },
+          suggestions: [suggestions[0].getId(), suggestions[1].getId()],
+        },
+        {
+          type: 'CONTENT_UPDATE',
+          changeDetails: {
+            file: 'test2.md',
+            changes: 'content changes',
+          },
+          suggestions: [suggestions[2].getId()],
+        },
+      ];
+
+      const result = await opportunity.addFixEntities(fixEntityData);
+
+      expect(result).to.be.an('object');
+      expect(result.createdItems).to.be.an('array').with.length(2);
+      expect(result.errorItems).to.be.an('array').with.length(0);
+
+      // Verify fix entities were created
+      const fixEntity1 = result.createdItems[0];
+      const fixEntity2 = result.createdItems[1];
+
+      expect(isValidUUID(fixEntity1.getId())).to.be.true;
+      expect(isValidUUID(fixEntity2.getId())).to.be.true;
+      expect(fixEntity1.getType()).to.equal('CODE_CHANGE');
+      expect(fixEntity2.getType()).to.equal('CONTENT_UPDATE');
+      expect(fixEntity1.getStatus()).to.equal('PENDING');
+      expect(fixEntity2.getStatus()).to.equal('PENDING');
+
+      // Verify junction records were created
+      const junctionRecords1 = await FixEntitySuggestion.allByFixEntityId(fixEntity1.getId());
+      const junctionRecords2 = await FixEntitySuggestion.allByFixEntityId(fixEntity2.getId());
+
+      expect(junctionRecords1).to.be.an('array').with.length(2);
+      expect(junctionRecords2).to.be.an('array').with.length(1);
+
+      // Verify the fix entities can be retrieved through their suggestions
+      const suggestionsForFixEntity1 = await FixEntity.getSuggestionsByFixEntityId(
+        fixEntity1.getId(),
+      );
+      expect(suggestionsForFixEntity1).to.be.an('array').with.length(2);
+      expect(suggestionsForFixEntity1.map((s) => s.getId())).to.have.members([
+        suggestions[0].getId(),
+        suggestions[1].getId(),
+      ]);
+    });
+
+    it('handles invalid fixEntities without suggestions property', async () => {
+      const opportunity = await Opportunity.findById(sampleData.opportunities[2].getId());
+
+      const fixEntityData = [
+        {
+          type: 'CODE_CHANGE',
+          changeDetails: {
+            file: 'test.js',
+          },
+          // Missing suggestions property
+        },
+      ];
+
+      const result = await opportunity.addFixEntities(fixEntityData);
+
+      expect(result).to.be.an('object');
+      expect(result.createdItems).to.be.an('array').with.length(0);
+      expect(result.errorItems).to.be.an('array').with.length(1);
+      expect(result.errorItems[0].error.message).to.equal('fixEntity must have a suggestions property');
+    });
+
+    it('handles fixEntities with empty suggestions array', async () => {
+      const opportunity = await Opportunity.findById(sampleData.opportunities[2].getId());
+
+      const fixEntityData = [
+        {
+          type: 'CODE_CHANGE',
+          changeDetails: {
+            file: 'test.js',
+          },
+          suggestions: [],
+        },
+      ];
+
+      const result = await opportunity.addFixEntities(fixEntityData);
+
+      expect(result).to.be.an('object');
+      expect(result.createdItems).to.be.an('array').with.length(0);
+      expect(result.errorItems).to.be.an('array').with.length(1);
+      expect(result.errorItems[0].error.message).to.equal('fixEntity.suggestions cannot be empty');
+    });
+
+    it('handles fixEntities with invalid suggestion IDs', async () => {
+      const opportunity = await Opportunity.findById(sampleData.opportunities[2].getId());
+
+      const fixEntityData = [
+        {
+          type: 'CODE_CHANGE',
+          changeDetails: {
+            file: 'test.js',
+          },
+          suggestions: ['invalid-suggestion-id', 'another-invalid-id'],
+        },
+      ];
+
+      const result = await opportunity.addFixEntities(fixEntityData);
+
+      expect(result).to.be.an('object');
+      expect(result.createdItems).to.be.an('array').with.length(0);
+      expect(result.errorItems).to.be.an('array').with.length(1);
+      expect(result.errorItems[0].error.message).to.include('Invalid suggestion IDs');
+    });
+
+    it('processes mixed valid and invalid fixEntities', async () => {
+      const opportunity = await Opportunity.findById(sampleData.opportunities[2].getId());
+      const suggestions = await opportunity.getSuggestions();
+
+      const fixEntityData = [
+        {
+          type: 'CODE_CHANGE',
+          changeDetails: {
+            file: 'valid.js',
+          },
+          suggestions: [suggestions[0].getId()],
+        },
+        {
+          type: 'CONTENT_UPDATE',
+          changeDetails: {
+            file: 'no-suggestions.md',
+          },
+          // Missing suggestions
+        },
+        {
+          type: 'REDIRECT_UPDATE',
+          changeDetails: {
+            from: '/old',
+            to: '/new',
+          },
+          suggestions: [], // Empty array
+        },
+        {
+          type: 'METADATA_UPDATE',
+          changeDetails: {
+            title: 'Updated Title',
+          },
+          suggestions: ['invalid-id'], // Invalid suggestion ID
+        },
+        {
+          type: 'AI_INSIGHTS',
+          changeDetails: {
+            insights: 'Some insights',
+          },
+          suggestions: [suggestions[1].getId(), suggestions[2].getId()],
+        },
+      ];
+
+      const result = await opportunity.addFixEntities(fixEntityData);
+
+      expect(result).to.be.an('object');
+      expect(result.createdItems).to.be.an('array').with.length(2);
+      expect(result.errorItems).to.be.an('array').with.length(3);
+
+      // Verify the valid ones were created
+      expect(result.createdItems[0].getType()).to.equal('CODE_CHANGE');
+      expect(result.createdItems[1].getType()).to.equal('AI_INSIGHTS');
+
+      // Verify error messages
+      expect(result.errorItems[0].error.message).to.equal('fixEntity must have a suggestions property');
+      expect(result.errorItems[1].error.message).to.equal('fixEntity.suggestions cannot be empty');
+      expect(result.errorItems[2].error.message).to.include('Invalid suggestion IDs');
+    });
+
+    it('handles fixEntity creation errors from validation', async () => {
+      const opportunity = await Opportunity.findById(sampleData.opportunities[2].getId());
+      const suggestions = await opportunity.getSuggestions();
+
+      const fixEntityData = [
+        {
+          type: 'INVALID_TYPE', // Invalid type
+          changeDetails: {
+            file: 'test.js',
+          },
+          suggestions: [suggestions[0].getId()],
+        },
+      ];
+
+      const result = await opportunity.addFixEntities(fixEntityData);
+
+      expect(result).to.be.an('object');
+      expect(result.createdItems).to.be.an('array').with.length(0);
+      expect(result.errorItems).to.be.an('array').with.length(1);
+      expect(result.errorItems[0].error).to.be.an.instanceOf(ValidationError);
+    });
+
+    it('creates fix entities across multiple opportunities', async () => {
+      const opportunity1 = await Opportunity.findById(sampleData.opportunities[2].getId());
+      const opportunity2 = await Opportunity.findById(sampleData.opportunities[1].getId());
+
+      const suggestions1 = await opportunity1.getSuggestions();
+      const suggestions2 = await opportunity2.getSuggestions();
+
+      const fixEntityData1 = [
+        {
+          type: 'CODE_CHANGE',
+          changeDetails: { file: 'test1.js' },
+          suggestions: [suggestions1[0].getId()],
+        },
+      ];
+
+      const fixEntityData2 = [
+        {
+          type: 'CONTENT_UPDATE',
+          changeDetails: { file: 'test2.md' },
+          suggestions: [suggestions2[0].getId()],
+        },
+      ];
+
+      const result1 = await opportunity1.addFixEntities(fixEntityData1);
+      const result2 = await opportunity2.addFixEntities(fixEntityData2);
+
+      expect(result1.createdItems).to.have.length(1);
+      expect(result2.createdItems).to.have.length(1);
+
+      // Verify they belong to different opportunities
+      expect(result1.createdItems[0].getOpportunityId()).to.equal(opportunity1.getId());
+      expect(result2.createdItems[0].getOpportunityId()).to.equal(opportunity2.getId());
+    });
   });
 });

@@ -19,7 +19,9 @@ import type {
   LatestAudit,
   Opportunity,
   Organization,
+  Project,
   SiteCandidate,
+  SiteEnrollment,
   SiteTopPage,
 } from '../index.js';
 
@@ -30,6 +32,15 @@ export interface HlxConfig {
     site: string; // vcs (ie github) repo name
     owner: string; // vcs (ie github) owner (organization)
   };
+}
+
+export interface CodeConfig {
+  type: string;
+  owner: string;
+  repo: string;
+  ref: string;
+  installationId?: string;
+  url: string;
 }
 
 export type IMPORT_TYPES = {
@@ -199,6 +210,7 @@ export interface Site extends BaseModel {
   ): Promise<Experiment[]>;
   getGitHubURL(): string;
   getHlxConfig(): HlxConfig;
+  getCode(): CodeConfig;
   getDeliveryConfig(): object;
   getIsLive(): boolean;
   getIsSandbox(): boolean;
@@ -213,7 +225,13 @@ export interface Site extends BaseModel {
   getOpportunitiesByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<Opportunity[]>;
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
+  getProject(): Promise<Project>;
+  getProjectId(): string;
+  getIsPrimaryLocale(): boolean;
+  getLanguage(): string;
+  getRegion(): string;
   getSiteCandidates(): Promise<SiteCandidate[]>;
+  getSiteEnrollments(): Promise<SiteEnrollment[]>;
   getSiteTopPages(): Promise<SiteTopPage[]>;
   getSiteTopPagesBySource(source: string): Promise<SiteTopPage[]>;
   getSiteTopPagesBySourceAndGeo(source: string, geo: string): Promise<SiteTopPage[]>;
@@ -227,23 +245,33 @@ export interface Site extends BaseModel {
   setAuthoringType(authoringType: string): Site;
   setGitHubURL(gitHubURL: string): Site;
   setHlxConfig(hlxConfig: HlxConfig): Site;
+  setCode(code: CodeConfig): Site;
   setDeliveryConfig(deliveryConfig: object): Site;
   setIsLive(isLive: boolean): Site;
   setIsSandbox(isSandbox: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
+  setProjectId(projectId: string): Site;
+  setIsPrimaryLocale(primaryLocale: boolean): Site;
+  setLanguage(language: string): Site;
+  setRegion(region: string): Site;
   toggleLive(): Site;
 }
 
-export interface SiteCollection extends BaseCollection<Organization> {
+export interface SiteCollection extends BaseCollection<Site> {
   allByBaseURL(baseURL: string): Promise<Site[]>;
   allByDeliveryType(deliveryType: string): Promise<Site[]>;
   allByOrganizationId(organizationId: string): Promise<Site[]>;
+  allByProjectId(projectId: string): Promise<Site[]>;
+  allByProjectName(projectName: string): Promise<Site[]>;
+  allByOrganizationIdAndProjectId(organizationId: string, projectId: string): Promise<Site[]>;
+  allByOrganizationIdAndProjectName(organizationId: string, projectName: string): Promise<Site[]>;
   allSitesToAudit(): Promise<string[]>;
   allWithLatestAudit(auditType: string, order?: string, deliveryType?: string): Promise<Site[]>;
   findByBaseURL(baseURL: string): Promise<Site | null>;
   findByDeliveryType(deliveryType: string): Promise<Site | null>;
   findByOrganizationId(organizationId: string): Promise<Site | null>;
+  findByProjectId(projectId: string): Promise<Site | null>;
   findByPreviewURL(previewURL: string): Promise<Site | null>;
   findByExternalOwnerIdAndExternalSiteId(
     externalOwnerId: string, externalSiteId: string

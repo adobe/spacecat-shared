@@ -88,6 +88,13 @@ describe('AdobeImsHandler', () => {
         AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev),
       },
       imsClient: mockImsClient,
+      pathInfo: {
+        method: 'GET',
+        suffix: '/test',
+        headers: {
+          'x-product': 'test-product',
+        },
+      },
     };
   });
 
@@ -135,7 +142,14 @@ describe('AdobeImsHandler', () => {
     const testContext = {
       log: logStub,
       func: { version: 'ci1234' },
-      pathInfo: { headers: { authorization: `Bearer ${token}` } },
+      pathInfo: {
+        method: 'GET',
+        suffix: '/test',
+        headers: {
+          authorization: `Bearer ${token}`,
+          'x-product': 'test-product',
+        },
+      },
     };
     const result = await handler.checkAuth({}, testContext);
 
@@ -147,7 +161,14 @@ describe('AdobeImsHandler', () => {
     const testContext = {
       log: logStub,
       func: { version: 'ci1234' },
-      pathInfo: { headers: { authorization: `Bearer ${token}` } },
+      pathInfo: {
+        method: 'GET',
+        suffix: '/test',
+        headers: {
+          authorization: `Bearer ${token}`,
+          'x-product': 'test-product',
+        },
+      },
       env: { AUTH_HANDLER_IMS: JSON.stringify(imsIdpConfigDev) },
       imsClient: mockImsClient,
     };
@@ -162,7 +183,14 @@ describe('AdobeImsHandler', () => {
     const testContext = {
       log: logStub,
       func: { version: 'ci1234' },
-      pathInfo: { headers: { authorization: `Bearer ${token}` } },
+      pathInfo: {
+        method: 'GET',
+        suffix: '/test',
+        headers: {
+          authorization: `Bearer ${token}`,
+          'x-product': 'test-product',
+        },
+      },
       env: { AUTH_HANDLER_IMS: 'invalid json' },
       imsClient: mockImsClient,
     };
@@ -173,7 +201,7 @@ describe('AdobeImsHandler', () => {
   describe('token validation', () => {
     it('returns null when created_at is not a number', async () => {
       const token = await createToken({ as: 'ims-na1-stg1', created_at: 'not-a-number', expires_in: 3600 });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       const result = await handler.checkAuth({}, context);
 
@@ -183,7 +211,7 @@ describe('AdobeImsHandler', () => {
 
     it('returns null when expires_in is not a number', async () => {
       const token = await createToken({ as: 'ims-na1-stg1', created_at: Date.now(), expires_in: 'not-a-number' });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       const result = await handler.checkAuth({}, context);
 
@@ -193,7 +221,7 @@ describe('AdobeImsHandler', () => {
 
     it('returns null when created_at is in the future', async () => {
       const token = await createToken({ as: 'ims-na1-stg1', created_at: Date.now() + 1000, expires_in: 3600 });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       const result = await handler.checkAuth({}, context);
 
@@ -203,7 +231,7 @@ describe('AdobeImsHandler', () => {
 
     it('returns null when the token is expired', async () => {
       const token = await createToken({ as: 'ims-na1-stg1', created_at: Date.now(), expires_in: 0 });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       const result = await handler.checkAuth({}, context);
 
@@ -219,7 +247,7 @@ describe('AdobeImsHandler', () => {
         created_at: now,
         expires_in: 3600,
       });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       const result = await handler.checkAuth({}, context);
 
@@ -242,7 +270,7 @@ describe('AdobeImsHandler', () => {
         created_at: Date.now(),
         expires_in: 3600,
       });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       mockImsClient.getImsUserOrganizations.resolves([{
         orgRef: { ident: 'org1' },
@@ -269,7 +297,7 @@ describe('AdobeImsHandler', () => {
         created_at: Date.now(),
         expires_in: 3600,
       });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       // Mock IMS profile response for non-Adobe user
       mockImsClient.getImsUserProfile.resolves({
@@ -291,7 +319,7 @@ describe('AdobeImsHandler', () => {
         created_at: Date.now(),
         expires_in: 3600,
       });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       // Mock IMS profile response for non-Adobe user
       mockImsClient.getImsUserProfile.resolves({
@@ -311,7 +339,7 @@ describe('AdobeImsHandler', () => {
         created_at: Date.now(),
         expires_in: 3600,
       });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       // Mock IMS profile response for non-Adobe user
       mockImsClient.getImsUserProfile.resolves({
@@ -340,7 +368,7 @@ describe('AdobeImsHandler', () => {
         created_at: Date.now(),
         expires_in: 3600,
       });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       // Mock IMS profile response with Adobe email
       mockImsClient.getImsUserProfile.resolves({
@@ -361,7 +389,7 @@ describe('AdobeImsHandler', () => {
         created_at: Date.now(),
         expires_in: 3600,
       });
-      context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
 
       // Mock IMS profile response with Adobe email
       mockImsClient.getImsUserProfile.resolves({

@@ -22,14 +22,20 @@ import scrapeUrls from './scrape-urls.fixture.js';
 import keyEvents from './key-events.fixture.js';
 import opportunities from './opportunities.fixture.js';
 import organizations from './organizations.fixture.js';
+import projects from './projects.fixture.js';
 import siteCandidates from './site-candidates.fixture.js';
 import siteTopForms from './site-top-forms.fixture.js';
 import siteTopPages from './site-top-pages.fixture.js';
 import sites from './sites.fixture.js';
 import suggestions from './suggestions.fixture.js';
 import fixEntities from './fix-entity.fixture.js';
+import fixEntitySuggestions from './fix-entity-suggestions.fixture.js';
 import pageIntents from './page-intents.fixture.js';
 import reports from './reports.fixture.js';
+import entitlements from './entitlements.fixture.js';
+import trialUsers from './trial-users.fixture.js';
+import trialUserActivities from './trial-user-activities.fixture.js';
+import siteEnrollments from './site-enrollments.fixture.js';
 
 export default {
   apiKeys,
@@ -38,11 +44,13 @@ export default {
   configurations,
   experiments,
   fixEntities,
+  fixEntitySuggestions,
   importJobs,
   importUrls,
   keyEvents,
   opportunities,
   organizations,
+  projects,
   siteCandidates,
   siteTopForms,
   siteTopPages,
@@ -52,4 +60,8 @@ export default {
   scrapeUrls,
   pageIntents,
   reports,
+  entitlements,
+  trialUsers,
+  trialUserActivities,
+  siteEnrollments,
 };

@@ -41,6 +41,7 @@ describe('Index Exports', () => {
     'isObject',
     'isString',
     'isValidDate',
+    'isValidEmail',
     'isValidUrl',
     'isValidUUID',
     'isValidIMSOrgId',
@@ -77,6 +78,19 @@ describe('Index Exports', () => {
     'getMonthInfo',
     'getTemporalCondition',
     'urlMatchesFilter',
+    'extractUrlsFromOpportunity',
+    'extractUrlsFromSuggestion',
+    'detectAEMVersion',
+    'determineAEMCSPageId',
+    'DELIVERY_TYPES',
+    'getPageEditUrl',
+    'llmoConfig',
+    'schemas',
+    'detectLocale',
+    'prettifyLogForwardingConfig',
+    'isoCalendarWeek',
+    'isoCalendarWeekSunday',
+    'isoCalendarWeekMonday',
   ];
 
   it('exports all expected functions', () => {

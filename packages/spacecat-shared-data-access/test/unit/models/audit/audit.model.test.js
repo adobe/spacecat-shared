@@ -170,6 +170,7 @@ describe('AuditModel', () => {
       EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
       EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
       META_TAGS: 'meta-tags',
+      LLM_ERROR_PAGES: 'llm-error-pages',
       COSTS: 'costs',
       STRUCTURED_DATA: 'structured-data',
       STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
@@ -178,16 +179,24 @@ describe('AuditModel', () => {
       ALT_TEXT: 'alt-text',
       ACCESSIBILITY: 'accessibility',
       SECURITY_CSP: 'security-csp',
+      SECURITY_VULNERABILITIES: 'security-vulnerabilities',
+      SECURITY_PERMISSIONS: 'security-permissions',
+      SECURITY_REDUNDANT: 'security-permissions-redundant',
       PAID: 'paid',
       HREFLANG: 'hreflang',
+      HEADINGS: 'headings',
       PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
       PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
       READABILITY: 'readability',
+      PRERENDER: 'prerender',
+      PRODUCT_METATAGS: 'product-metatags',
+      SUMMARIZATION: 'summarization',
+      PAGE_TYPE_DETECTION: 'page-type-detection',
+      FAQS: 'faqs',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(32);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {

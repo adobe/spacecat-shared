@@ -129,6 +129,10 @@ describe('Utilities', () => {
     it('Handle plural-like idNames', () => {
       expect(idNameToEntityName('usersId')).to.equal('User');
     });
+
+    it('does not change names containing "Identity"', () => {
+      expect(idNameToEntityName('ABCDIdentityXYZ')).to.equal('ABCDIdentityXYZ');
+    });
   });
 
   describe('incrementVersion', () => {

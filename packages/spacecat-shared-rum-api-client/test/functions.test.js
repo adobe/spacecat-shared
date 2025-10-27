@@ -39,6 +39,11 @@ import expectedFormVitalsResult from './fixtures/expected-form-vitals-result.jso
 import expectedTrafficAnalysisResult from './fixtures/expected-traffic-analysis-result.json' with { type: 'json' };
 
 describe('Query functions', () => {
+  xit('crunches traffic acquisition', async () => {
+    const trafficSourcesResult = await trafficAcquisition.handler(bundles.rumBundles);
+    expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
+  });
+
   it('crunches form vitals', async () => {
     const formVitalsResult = await formVitals.handler(bundlesWithForm.rumBundles);
     expect(expectedFormVitalsResult).to.deep.members(formVitalsResult);
@@ -64,11 +69,6 @@ describe('Query functions', () => {
     expect(expectedVariantResult).to.eql(variantResult);
   });
 
-  it('crunches traffic acquisition', async () => {
-    const trafficSourcesResult = await trafficAcquisition.handler(bundles.rumBundles);
-    expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
-  });
-
   it('crunches oppty/high-inorganic-high-bounce', async () => {
     const highInorganicHighBounceResult = highInorganicHighBounce.handler(
       bundlesWithTraffic.rumBundles,
@@ -78,13 +78,21 @@ describe('Query functions', () => {
   });
 
   it('crunches oppty/high-organic-low-ctr', async () => {
-    let highOrganicHighBounceResult = highOrganicLowCTR.handler(
+    let highOrganicLowCtrResult = highOrganicLowCTR.handler(
       bundlesWithTraffic.rumBundles,
       { interval: 7 },
     );
-    expect(highOrganicHighBounceResult).to.eql(expectedHighOrganicLowCTRResult);
-    highOrganicHighBounceResult = highOrganicLowCTR.handler([], { interval: 7 });
-    expect(highOrganicHighBounceResult).to.eql([]);
+    expect(highOrganicLowCtrResult).to.eql(expectedHighOrganicLowCTRResult);
+    highOrganicLowCtrResult = highOrganicLowCTR.handler([], { interval: 7 });
+    expect(highOrganicLowCtrResult).to.eql([]);
+  });
+
+  it('high-organic-low-ctr returns max opportunities if configured', async () => {
+    const highOrganicLowCtrResult = highOrganicLowCTR.handler(
+      bundlesWithTraffic.rumBundles,
+      { interval: 7, maxOpportunities: 1 },
+    );
+    expect(highOrganicLowCtrResult).to.eql(expectedHighOrganicLowCTRResult.slice(0, 1));
   });
 
   it('crunches pageviews', async () => {

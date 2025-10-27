@@ -90,6 +90,7 @@ describe('Traffic classification', () => {
 
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://chatgpt.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: '', utmSource: 'chatgpt.com', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: '', utmSource: 'chatgpt.com', utmMedium: 'paidsearch', tracking: 'paid' });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://openai.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://subdomain.chatgpt.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'openai' }, { referrer: 'https://subdomain.openai.com/', utmSource: '', utmMedium: '', tracking: null });
@@ -97,6 +98,13 @@ describe('Traffic classification', () => {
     assert({ ...expected, vendor: 'claude' }, { referrer: 'https://claude.ai/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'microsoft' }, { referrer: 'https://copilot.microsoft.com/', utmSource: '', utmMedium: '', tracking: null });
     assert({ ...expected, vendor: 'google' }, { referrer: 'https://gemini.google.com/', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: 'openai.com', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: 'subdomain.chatgpt.com', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'openai' }, { referrer: 'subdomain.openai.com', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'perplexity' }, { referrer: 'www.perplexity.ai', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'claude' }, { referrer: 'claude.ai', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'microsoft' }, { referrer: 'copilot.microsoft.com', utmSource: '', utmMedium: '', tracking: null });
+    assert({ ...expected, vendor: 'google' }, { referrer: 'gemini.google.com', utmSource: '', utmMedium: '', tracking: null });
   });
 
   it('earned search', () => {

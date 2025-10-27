@@ -25,6 +25,9 @@ import rageclick from './functions/opportunities/rageclick.js';
 import highInorganicHighBounceRate from './functions/opportunities/high-inorganic-high-bounce-rate.js';
 import highOrganicLowCtr from './functions/opportunities/high-organic-low-ctr.js';
 import trafficAnalysis from './functions/traffic-analysis.js';
+import optimizationReportMetrics from './functions/reports/optimization/metrics.js';
+import optimizationReportGraph from './functions/reports/optimization/graph.js';
+import userEngagement from './functions/user-engagement.js';
 
 // exported for tests
 export const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
@@ -44,6 +47,9 @@ const HANDLERS = {
   pageviews,
   trafficMetrics,
   'traffic-analysis': trafficAnalysis,
+  'optimization-report-metrics': optimizationReportMetrics,
+  'optimization-report-graph': optimizationReportGraph,
+  'user-engagement': userEngagement,
 };
 
 function sanitize(opts) {
@@ -130,7 +136,7 @@ export default class RUMAPIClient {
         checkpoints,
       }, this.log);
 
-      this.log.info(`Query "${query}" fetched ${bundles.length} bundles`);
+      this.log.debug(`Query "${query}" fetched ${bundles.length} bundles`); // maybe even remove?
       return handler(bundles, opts);
     } catch (e) {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
@@ -164,7 +170,7 @@ export default class RUMAPIClient {
       }, this.log);
 
       const results = {};
-      this.log.info(`Multi query ${JSON.stringify(queries.join(', '))} fetched ${bundles.length} bundles`);
+      this.log.debug(`Multi query ${JSON.stringify(queries.join(', '))} fetched ${bundles.length} bundles`); // maybe even remove?
 
       // Execute each query handler sequentially
       for (const { query, handler } of queryHandlers) {

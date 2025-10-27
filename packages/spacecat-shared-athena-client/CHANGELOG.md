@@ -1,3 +1,45 @@
+# [@adobe/spacecat-shared-athena-client-v1.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.3.5...@adobe/spacecat-shared-athena-client-v1.3.6) (2025-10-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
+# [@adobe/spacecat-shared-athena-client-v1.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.3.4...@adobe/spacecat-shared-athena-client-v1.3.5) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
+# [@adobe/spacecat-shared-athena-client-v1.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.3.3...@adobe/spacecat-shared-athena-client-v1.3.4) (2025-09-20)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#969](https://github.com/adobe/spacecat-shared/issues/969)) ([d722c62](https://github.com/adobe/spacecat-shared/commit/d722c623193fdbf292d96d71236cb4396db7ce3b))
+
+# [@adobe/spacecat-shared-athena-client-v1.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.3.2...@adobe/spacecat-shared-athena-client-v1.3.3) (2025-09-16)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#949](https://github.com/adobe/spacecat-shared/issues/949)) ([c25e099](https://github.com/adobe/spacecat-shared/commit/c25e099d2097b134f606e9a369b831d81143966d))
+
+# [@adobe/spacecat-shared-athena-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.3.1...@adobe/spacecat-shared-athena-client-v1.3.2) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
+# [@adobe/spacecat-shared-athena-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.3.0...@adobe/spacecat-shared-athena-client-v1.3.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
 # [@adobe/spacecat-shared-athena-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.2.5...@adobe/spacecat-shared-athena-client-v1.3.0) (2025-08-20)
 
 

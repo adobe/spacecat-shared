@@ -65,7 +65,7 @@ function sanitizeURL(url) {
     }
     return parsedUrl.toString();
     /* c8 ignore next 4 */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line no-unused-vars
   } catch (e) {
     return url;
   }
@@ -302,11 +302,11 @@ async function fetchBundles(opts, log) {
     const currentCheckpoint = Math.floor(result.length / 50000);
 
     if (currentCheckpoint > lastCheckpoint) {
-      log.info(`Checkpoint: Fetched ${result.length} bundles; resuming...`);
+      log.debug(`Checkpoint: Fetched ${result.length} bundles; resuming...`);
       lastCheckpoint = currentCheckpoint;
     }
   }
-  log.info(`Retrieved all RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
+  log.info(`Retrieved all RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`); // if rum dashboards are no longer in use, remove this
 
   // Add failedUrls to opts object for access by callers
   if (failedUrls.length > 0) {
@@ -363,7 +363,7 @@ function createBundleStream(opts, log) {
         const currentCheckpoint = Math.floor(bundlesCount / 50000);
 
         if (currentCheckpoint > lastCheckpoint) {
-          log.info(`Checkpoint: Fetched ${bundlesCount} bundles; resuming...`);
+          log.debug(`Checkpoint: Fetched ${bundlesCount} bundles; resuming...`);
           lastCheckpoint = currentCheckpoint;
         }
 
@@ -385,7 +385,7 @@ function createBundleStream(opts, log) {
 
       await Promise.all(workers);
 
-      log.info(`Retrieved all RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
+      log.info(`Retrieved all RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`); // if rum dashboards are no longer in use, remove this
 
       // Add failedUrls to opts object for access by callers
       if (failedUrls.length > 0) {

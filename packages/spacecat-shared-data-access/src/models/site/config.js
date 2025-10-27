@@ -27,6 +27,8 @@ export const IMPORT_TYPES = {
   CWV_WEEKLY: 'cwv-weekly',
   TRAFFIC_ANALYSIS: 'traffic-analysis',
   TOP_FORMS: 'top-forms',
+  CODE: 'code',
+  USER_ENGAGEMENT: 'user-engagement',
 };
 
 export const IMPORT_DESTINATIONS = {
@@ -152,6 +154,10 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
   }),
+  [IMPORT_TYPES.USER_ENGAGEMENT]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.USER_ENGAGEMENT).required(),
+    ...IMPORT_BASE_KEYS,
+  }),
 };
 
 export const DEFAULT_IMPORT_CONFIGS = {
@@ -228,6 +234,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['rum'],
     enabled: true,
   },
+  'user-engagement': {
+    type: 'user-engagement',
+    destinations: ['default'],
+    sources: ['rum'],
+    enabled: true,
+  },
 };
 
 export const configSchema = Joi.object({
@@ -276,6 +288,11 @@ export const configSchema = Joi.object({
         type: Joi.string().valid('include', 'exclude').optional(),
       }),
     ).optional(),
+    cdnBucketConfig: Joi.object({
+      bucketName: Joi.string().optional(),
+      orgId: Joi.string().optional(),
+      cdnProvider: Joi.string().optional(),
+    }).optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
@@ -392,6 +409,7 @@ export const Config = (data = {}) => {
     return llmoConfig?.customerIntent || [];
   };
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
+  self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -536,6 +554,11 @@ export const Config = (data = {}) => {
   self.updateLlmoCdnlogsFilter = (cdnlogsFilter) => {
     state.llmo = state.llmo || {};
     state.llmo.cdnlogsFilter = cdnlogsFilter;
+  };
+
+  self.updateLlmoCdnBucketConfig = (cdnBucketConfig) => {
+    state.llmo = state.llmo || {};
+    state.llmo.cdnBucketConfig = cdnBucketConfig;
   };
 
   self.updateImports = (imports) => {

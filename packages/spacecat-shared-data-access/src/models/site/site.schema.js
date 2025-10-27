@@ -42,8 +42,10 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addReference('has_one', 'LatestAudit', ['auditType'], { required: false })
   .addReference('has_many', 'Opportunities')
   .addReference('has_many', 'SiteCandidates')
+  .addReference('has_many', 'SiteEnrollments')
   .addReference('has_many', 'SiteTopForms')
   .addReference('has_many', 'SiteTopPages')
+  .addReference('has_many', 'TrialUserActivities')
   .addReference('has_many', 'PageIntents')
   .addAttribute('baseURL', {
     type: 'string',
@@ -53,12 +55,40 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addAttribute('name', {
     type: 'string',
   })
+  .addAttribute('isPrimaryLocale', {
+    type: 'boolean',
+    required: false,
+  })
+  .addAttribute('language', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || /^[a-z]{2}$/.test(value), // ISO 639-1 format
+  })
+  .addAttribute('region', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || /^[A-Z]{2}$/.test(value), // ISO 3166-1 alpha-2 format
+  })
   .addAttribute('config', {
     type: 'any',
     required: true,
     default: DEFAULT_CONFIG,
     validate: (value) => isNonEmptyObject(validateConfiguration(value)),
     get: (value) => Config(value),
+  })
+  .addAttribute('code', {
+    type: 'any',
+    required: false,
+    default: {},
+    validate: (value) => isObject(value),
+    properties: {
+      type: { type: 'string', required: true },
+      owner: { type: 'string', required: true },
+      repo: { type: 'string', required: true },
+      ref: { type: 'string', required: true },
+      installationId: { type: 'string', required: false },
+      url: { type: 'string', required: true, validate: (value) => isValidUrl(value) },
+    },
   })
   .addAttribute('deliveryType', {
     type: Object.values(Site.DELIVERY_TYPES),
@@ -141,6 +171,15 @@ const schema = new SchemaBuilder(Site, SiteCollection)
   .addIndex(
     { composite: ['externalOwnerId'] },
     { composite: ['externalSiteId'] },
+  )
+  // Using regular index instead of belongs_to reference to control position
+  .addAttribute('projectId', {
+    type: 'string',
+    required: false,
+  })
+  .addIndex(
+    { composite: ['projectId'] },
+    { composite: ['updatedAt'] },
   );
 
 export default schema.build();

@@ -22,7 +22,7 @@ import { ElectroValidationError } from 'electrodb';
 import DataAccessError from '../../errors/data-access.error.js';
 import ValidationError from '../../errors/validation.error.js';
 import { createAccessors } from '../../util/accessor.utils.js';
-import { guardId } from '../../util/guards.js';
+import { guardId, guardArray } from '../../util/guards.js';
 import {
   entityNameToAllPKValue,
   removeElectroProperties,
@@ -183,7 +183,7 @@ class BaseCollection {
    * @async
    * @protected
    */
-  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+  // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreate(item) {
     // no-op
   }
@@ -197,7 +197,7 @@ class BaseCollection {
    * @async
    * @protected
    */
-  // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
+  // eslint-disable-next-line class-methods-use-this,no-unused-vars
   async _onCreateMany({ createdItems, errorItems }) {
     // no-op
   }
@@ -252,9 +252,14 @@ class BaseCollection {
       let result = await query.go(queryOptions);
       let allData = result.data;
 
-      // if the caller requests ALL pages and we're not using limit: 1,
-      // continue to fetch until there is no cursor.
-      if (options.fetchAllPages && options.limit !== 1) {
+      // Smart pagination behavior:
+      // - fetchAllPages: true → Always paginate through all results
+      // - fetchAllPages: false → Only fetch first page
+      // - undefined → Auto-paginate when no limit specified, respect limits otherwise
+      const shouldFetchAllPages = options.fetchAllPages === true
+                                 || (options.fetchAllPages !== false && !options.limit);
+
+      if (shouldFetchAllPages) {
         while (result.cursor) {
           queryOptions.cursor = result.cursor;
           // eslint-disable-next-line no-await-in-loop
@@ -357,6 +362,53 @@ class BaseCollection {
   }
 
   /**
+   * Retrieves multiple entities by their IDs in a single batch operation.
+   * This method is more efficient than calling findById multiple times.
+   *
+   * @async
+   * @param {Array<string>} ids - An array of entity IDs to retrieve.
+   * @param {{attributes?: string[]}} [options] - Additional options for the query.
+   * @returns {Promise<{data: Array<BaseModel>, unprocessed: Array<string>}>} - A promise that
+   *   resolves
+   *   to an object containing:
+   *   - data: Array of found model instances
+   *   - unprocessed: Array of IDs that couldn't be processed (due to throttling, etc.)
+   * @throws {DataAccessError} - Throws an error if the IDs are not provided or if the batch
+   *   operation fails.
+   */
+  async batchGetByKeys(keys, options = {}) {
+    guardArray('keys', keys, this.entityName, 'any');
+
+    try {
+      const goOptions = {};
+
+      // Add attributes if specified
+      if (options.attributes !== undefined) {
+        goOptions.attributes = options.attributes;
+      }
+
+      const result = await this.entity.get(
+        keys,
+      ).go(goOptions);
+
+      // Process found entities
+      const data = result.data
+        .map((record) => this.#createInstance(record))
+        .filter((entity) => entity !== null);
+
+      // Extract unprocessed keys
+      const unprocessed = result.unprocessed
+        ? result.unprocessed.map((item) => item)
+        : [];
+
+      return { data, unprocessed };
+    } catch (error) {
+      this.log.error(`Failed to batch get by keys [${this.entityName}]`, error);
+      throw new DataAccessError('Failed to batch get by keys', this, error);
+    }
+  }
+
+  /**
    * Finds a single entity by index keys.
    * @param {Object} keys - The index keys to use for the query.
    * @param {{index?: string, attributes?: string[]}} [options] - Additional options for the query.
@@ -395,8 +447,6 @@ class BaseCollection {
       const instance = this.#createInstance(record.data);
 
       this.#invalidateCache();
-
-      this.log.info(`Created item for [${this.entityName}]`);
 
       await this.#onCreate(instance);
 
@@ -476,8 +526,6 @@ class BaseCollection {
 
       this.#invalidateCache();
 
-      this.log.info(`Created ${createdItems.length} items for [${this.entityName}]`);
-
       await this.#onCreateMany({ createdItems, errorItems });
 
       return { createdItems, errorItems };
@@ -518,8 +566,6 @@ class BaseCollection {
         this.log.error(`Failed to process all items in batch write for [${this.entityName}]: ${JSON.stringify(response.unprocessed)}`);
       }
 
-      this.log.info(`Updated ${items.length} items for [${this.entityName}]`);
-
       return this.#invalidateCache();
     } catch (error) {
       return this.#logAndThrowError('Failed to save many', error);
@@ -546,11 +592,54 @@ class BaseCollection {
 
       await this.entity.delete(ids.map((id) => ({ [this.idName]: id }))).go();
 
-      this.log.info(`Removed ${ids.length} items for [${this.entityName}]`);
-
       return this.#invalidateCache();
     } catch (error) {
       return this.#logAndThrowError('Failed to remove by IDs', error);
+    }
+  }
+
+  /**
+   * Removes records from the collection using an array of key objects for batch deletion.
+   * This method is particularly useful for junction tables in many-to-many relationships
+   * where you need to remove multiple records based on their composite keys.
+   *
+   * Each key object in the array represents a record to be deleted, identified by its
+   * key attributes (typically partition key + sort key combinations).
+   *
+   * @async
+   * @param {Array<Object>} keys - Array of key objects to match for deletion.
+   *   Each object should contain the key attributes that uniquely identify a record.
+   * @returns {Promise<void>} A promise that resolves when the deletion is complete.
+   *   The method also invalidates the cache after successful deletion.
+   * @throws {DataAccessError} Throws an error if:
+   *   - The keys parameter is not a non-empty array
+   *   - Any key object in the array is empty or invalid
+   *   - The database operation fails
+   *
+   * @since 2.64.1
+   * @memberof BaseCollection
+   */
+  async removeByIndexKeys(keys) {
+    if (!isNonEmptyArray(keys)) {
+      const message = `Failed to remove by index keys [${this.entityName}]: keys must be a non-empty array`;
+      this.log.error(message);
+      throw new DataAccessError(message);
+    }
+
+    keys.forEach((key) => {
+      if (!isNonEmptyObject(key)) {
+        const message = `Failed to remove by index keys [${this.entityName}]: key must be a non-empty object`;
+        this.log.error(message);
+        throw new DataAccessError(message);
+      }
+    });
+
+    try {
+      await this.entity.delete(keys).go();
+      this.log.info(`Removed ${keys.length} items for [${this.entityName}]`);
+      return this.#invalidateCache();
+    } catch (error) {
+      return this.#logAndThrowError('Failed to remove by index keys', error);
     }
   }
 }

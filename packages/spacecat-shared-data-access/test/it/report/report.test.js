@@ -12,9 +12,9 @@
 
 /* eslint-env mocha */
 
+import { isValidUUID } from '@adobe/spacecat-shared-utils';
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { validate as uuidValidate } from 'uuid';
 
 import fixtures from '../../fixtures/index.fixtures.js';
 import { getDataAccess } from '../util/db.js';
@@ -140,7 +140,7 @@ describe('Report IT', async () => {
 
     checkReport(report);
 
-    expect(uuidValidate(report.getId())).to.be.true;
+    expect(isValidUUID(report.getId())).to.be.true;
     expect(report.getSiteId()).to.equal(data.siteId);
     expect(report.getReportType()).to.equal(data.reportType);
     expect(report.getReportPeriod()).to.deep.equal(data.reportPeriod);
@@ -181,7 +181,7 @@ describe('Report IT', async () => {
 
     checkReport(report);
 
-    expect(uuidValidate(report.getId())).to.be.true;
+    expect(isValidUUID(report.getId())).to.be.true;
     expect(report.getSiteId()).to.equal(data.siteId);
     expect(report.getReportType()).to.equal(data.reportType);
     expect(report.getReportPeriod()).to.deep.equal(data.reportPeriod);
@@ -218,7 +218,7 @@ describe('Report IT', async () => {
 
     checkReport(report);
 
-    expect(uuidValidate(report.getId())).to.be.true;
+    expect(isValidUUID(report.getId())).to.be.true;
     expect(report.getSiteId()).to.equal(data.siteId);
     expect(report.getReportType()).to.equal(data.reportType);
     expect(report.getReportPeriod()).to.deep.equal(data.reportPeriod);

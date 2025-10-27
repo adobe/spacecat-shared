@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-http-utils",
-  "version": "1.16.0",
+  "version": "1.17.7",
   "description": "Shared modules of the Spacecat Services - HTTP Utils",
   "type": "module",
   "engines": {
@@ -34,15 +34,15 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.2.2",
+    "@adobe/fetch": "4.2.3",
     "@adobe/spacecat-shared-data-access": "2.45.0",
     "@adobe/spacecat-shared-utils": "1.26.4",
-    "jose": "6.0.12"
+    "jose": "6.1.0"
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "chai": "5.2.1",
-    "chai-as-promised": "8.0.1",
-    "sinon": "20.0.0"
+    "chai": "6.2.0",
+    "chai-as-promised": "8.0.2",
+    "sinon": "21.0.0"
   }
 }

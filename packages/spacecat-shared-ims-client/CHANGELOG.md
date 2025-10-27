@@ -1,3 +1,38 @@
+# [@adobe/spacecat-shared-ims-client-v1.8.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.12...@adobe/spacecat-shared-ims-client-v1.8.13) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
+# [@adobe/spacecat-shared-ims-client-v1.8.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.11...@adobe/spacecat-shared-ims-client-v1.8.12) (2025-09-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.3 ([#963](https://github.com/adobe/spacecat-shared/issues/963)) ([6a433ea](https://github.com/adobe/spacecat-shared/commit/6a433ea495c0a68cb3129a51beed9388af277952))
+
+# [@adobe/spacecat-shared-ims-client-v1.8.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.10...@adobe/spacecat-shared-ims-client-v1.8.11) (2025-09-15)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#962](https://github.com/adobe/spacecat-shared/issues/962)) ([73831d9](https://github.com/adobe/spacecat-shared/commit/73831d9281898c9ea2395d78c569afe6ae942dce))
+
+# [@adobe/spacecat-shared-ims-client-v1.8.10](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.9...@adobe/spacecat-shared-ims-client-v1.8.10) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
+# [@adobe/spacecat-shared-ims-client-v1.8.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.8...@adobe/spacecat-shared-ims-client-v1.8.9) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
 # [@adobe/spacecat-shared-ims-client-v1.8.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.7...@adobe/spacecat-shared-ims-client-v1.8.8) (2025-08-09)
 
 

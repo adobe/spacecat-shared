@@ -34,6 +34,17 @@ export interface QueryOptions {
   limit?: number;
   order?: string;
   attributes?: string[];
+  /** 
+   * Whether to automatically fetch all pages of results. 
+   * - `true`: Always paginate through all results
+   * - `false`: Only fetch first page
+   * - `undefined`: Auto-paginate when no limit specified, respect limits otherwise
+   */
+  fetchAllPages?: boolean;
+}
+
+export interface BatchGetOptions {
+  attributes?: string[];
 }
 
 export interface BaseCollection<T extends BaseModel> {
@@ -42,6 +53,7 @@ export interface BaseCollection<T extends BaseModel> {
   _saveMany(items: T[]): Promise<T[]>;
   all(sortKeys?: object, options?: QueryOptions): Promise<T[]>;
   allByIndexKeys(keys: object, options?: QueryOptions): Promise<T[]>;
+  batchGetByKeys(keys: object[], options?: BatchGetOptions): Promise<{ data: T[]; unprocessed: object[] }>;
   create(item: object): Promise<T>;
   createMany(items: object[], parent?: T): Promise<MultiStatusCreateResult<T>>;
   existsById(id: string): Promise<boolean>;

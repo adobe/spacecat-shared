@@ -11,6 +11,7 @@
  */
 
 import { Request, RequestOptions, Response } from '@adobe/fetch';
+import type { ISOCalendarWeek } from './calendar-week-helper.js';
 
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
@@ -22,6 +23,8 @@ export function isBoolean(value: unknown): boolean;
 export function isInteger(value: unknown): boolean;
 
 export function isValidDate(value: unknown): boolean;
+
+export function isValidEmail(email: string): boolean;
 
 export function isIsoDate(str: string): boolean;
 
@@ -166,7 +169,7 @@ declare function replacePlaceholders(content: string, placeholders: object): str
  * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content.
  */
 declare function getStaticContent(placeholders: object, filename: string):
-    Promise<string | null>;
+  Promise<string | null>;
 
 /**
  * Reads the content of a prompt file asynchronously and replaces any placeholders
@@ -260,3 +263,38 @@ export function tracingFetch(url: string | Request, options?: RequestOptions): P
 export const SPACECAT_USER_AGENT: string;
 
 export function retrievePageAuthentication(site: object, context: object): Promise<string>;
+
+export function prettifyLogForwardingConfig(payload: object): object;
+
+export function isoCalendarWeek(date: Date): ISOCalendarWeek;
+
+export function isoCalendarWeekSunday(date: Date): Date;
+
+export function isoCalendarWeekMonday(date: Date): Date;
+
+/**
+ * Extracts URLs from a suggestion based on the opportunity type.
+ * @param opts - Options object
+ * @param opts.opportunity - The opportunity object
+ * @param opts.suggestion - The suggestion object
+ * @returns An array of extracted URLs
+ */
+export function extractUrlsFromSuggestion(opts: {
+  opportunity: any;
+  suggestion: any;
+}): string[];
+
+/**
+ * Extracts URLs from an opportunity based on the opportunity type.
+ * @param opts - Options object
+ * @param opts.opportunity - The opportunity object
+ * @returns An array of extracted URLs
+ */
+export function extractUrlsFromOpportunity(opts: {
+  opportunity: any;
+}): string[];
+
+export * as llmoConfig from './llmo-config.js';
+export * as schemas from './schemas.js';
+
+export { type detectLocale } from './locale-detect/index.js';

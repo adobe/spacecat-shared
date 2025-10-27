@@ -20,7 +20,7 @@ npm install @adobe/spacecat-shared-data-access
 
 ### SiteCandidates
 - **baseURL** (String): Base URL of the site candidate.
-- **status** (String): Status of the site candidate (PENDING, IGNORED, APPROVED, ERROR)
+- **status** (String): Status of the site candidate (PENDING, IGNORED, APPROVED, ERROR).
 - **createdAt** (String): Timestamp of creation.
 - **updatedAt** (String): Timestamp of the last update.
 - **updatedBy** (String): Slack id of the last person updated the site candidate.
@@ -41,6 +41,81 @@ npm install @adobe/spacecat-shared-data-access
 - **source** (String): Source of the data.
 - **geo** (String): Geo of the top page.
 - **importedAt** (String): Timestamp of the import.
+
+### Organization
+- **id** (String): Unique identifier for an organization.
+- **createdAt** (String): Timestamp of creation.
+- **updatedAt** (String): Timestamp of the last update.
+
+### OrganizationIdentityProvider
+- **id** (String): Unique identifier for the identity provider.
+- **metadata** (Map): Metadata for the identity provider.
+- **provider** (String): Type of identity provider. (IMS, MICROSOFT, GOOGLE)
+- **externalId** (String): External identifier from the provider.
+- **createdAt** (String): Timestamp of creation.
+
+### TrialUser
+- **id** (String): Unique identifier for the trial user.
+- **externalUserId** (String): External user identifier.
+- **status** (String): Status of the trial user. (REGISTERED, VERIFIED, BLOCKED, DELETED)
+- **provider** (String): Type of identity provider. (IMS, MICROSOFT, GOOGLE)
+- **lastSeenAt** (String): Timestamp of last activity.
+- **createdAt** (String): Timestamp of creation.
+- **metadata** (Map): Metadata for the trial user.
+- **updatedAt** (String): Timestamp of the last update.
+
+### TrialUserActivity
+- **id** (String): Unique identifier for the trial user activity.
+- **type** (String): Type of activity performed. (SIGN_UP, SIGN_IN, CREATE_SITE, RUN_AUDIT, PROMPT_RUN, DOWNLOAD)
+- **details** (Map): Details of the activity.
+- **createdAt** (String): Timestamp of creation.
+- **productCode** (String): Product code associated with the activity. (LLMO, ASO, etc.)
+
+### Entitlement
+- **id** (String): Unique identifier for the entitlement.
+- **productCode** (String): Product code for the entitlement. (LLMO, ASO, etc.)
+- **tier** (String): Tier level of the entitlement. (FREE_TRIAL, PAID)
+- **status** (String): Status of the entitlement. (ACTIVE, SUSPENDED, ENDED)
+- **createdAt** (String): Timestamp of creation.
+- **updatedAt** (String): Timestamp of the last update.
+- **quotas** (Map): Quota information for the entitlement.
+
+### SiteEnrollment
+- **id** (String): Unique identifier for the site enrollment.
+- **status** (String): Status of the enrollment. (ACTIVE, SUSPENDED, ENDED)
+- **createdAt** (String): Timestamp of creation.
+
+### FixEntity
+- **fixEntityId** (String): Unique identifier for the fix entity.
+- **opportunityId** (String): ID of the associated opportunity.
+- **createdAt** (String): Timestamp of creation.
+- **updatedAt** (String): Timestamp of the last update.
+- **type** (String): Type of the fix entity (from Suggestion.TYPES).
+- **status** (String): Status of the fix entity (PENDING, DEPLOYED, PUBLISHED, FAILED, ROLLED_BACK).
+- **executedBy** (String): Who executed the fix.
+- **executedAt** (String): When the fix was executed.
+- **publishedAt** (String): When the fix was published.
+- **changeDetails** (Object): Details of the changes made.
+
+### Suggestion
+- **suggestionId** (String): Unique identifier for the suggestion.
+- **opportunityId** (String): ID of the associated opportunity.
+- **createdAt** (String): Timestamp of creation.
+- **updatedAt** (String): Timestamp of the last update.
+- **status** (String): Status of the suggestion (NEW, APPROVED, IN_PROGRESS, SKIPPED, FIXED, ERROR, OUTDATED).
+- **type** (String): Type of the suggestion (CODE_CHANGE, CONTENT_UPDATE, REDIRECT_UPDATE, METADATA_UPDATE, AI_INSIGHTS, CONFIG_UPDATE).
+- **rank** (Number): Rank/priority of the suggestion.
+- **data** (Object): Data payload for the suggestion.
+- **kpiDeltas** (Object): KPI delta information (optional).
+
+### FixEntitySuggestion
+- **suggestionId** (String): ID of the associated suggestion (primary partition key).
+- **fixEntityId** (String): ID of the associated fix entity (primary sort key).
+- **opportunityId** (String): ID of the associated opportunity.
+- **fixEntityCreatedAt** (String): Creation timestamp of the fix entity.
+- **fixEntityCreatedDate** (String): Date portion of fixEntityCreatedAt (auto-generated).
+- **createdAt** (String): Timestamp of creation.
+- **updatedAt** (String): Timestamp of the last update.
 
 ## DynamoDB Data Model
 
@@ -100,6 +175,18 @@ The module provides the following DAOs:
 ### Site Top Pages Functions
 - `getTopPagesForSite`
 - `addSiteTopPage`
+
+### FixEntity Functions
+- `getSuggestionsByFixEntityId` - Gets all suggestions associated with a specific FixEntity
+- `setSuggestionsForFixEntity` - Sets suggestions for a FixEntity by managing junction table relationships
+
+### Suggestion Functions
+- `bulkUpdateStatus` - Updates the status of multiple suggestions in bulk
+- `getFixEntitiesBySuggestionId` - Gets all FixEntities associated with a specific Suggestion
+
+### FixEntitySuggestion Functions
+- `allBySuggestionId` - Gets all junction records associated with a specific Suggestion
+- `allByFixEntityId` - Gets all junction records associated with a specific FixEntity
 
 ## Integrating Data Access in AWS Lambda Functions
 

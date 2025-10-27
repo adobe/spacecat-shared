@@ -53,7 +53,6 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.2.3",
-    "@adobe/spacecat-shared-data-access": "2.45.0",
     "@adobe/spacecat-shared-ims-client": "1.8.3",
     "@aws-sdk/client-s3": "3.917.0",
     "@aws-sdk/client-secrets-manager": "3.917.0",

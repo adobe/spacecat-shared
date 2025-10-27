@@ -13,13 +13,24 @@
 /**
  * Delivery types for AEM deployment
  */
-export const DELIVERY_TYPES = {
+export const DELIVERY_TYPES = /** @type {const} */ ({
   AEM_CS: 'aem_cs',
   AEM_EDGE: 'aem_edge',
   AEM_AMS: 'aem_ams',
   AEM_HEADLESS: 'aem_headless',
   OTHER: 'other',
-};
+});
+
+/**
+ * Authoring types for AEM deployment
+ */
+export const AUTHORING_TYPES = /** @type {const} */ ({
+  CS_CW: 'cs/crosswalk',
+  CS: 'cs',
+  SP: 'sharepoint',
+  GD: 'googledocs',
+  DA: 'documentauthoring',
+});
 
 /**
  * Detects the AEM delivery type from HTML source code

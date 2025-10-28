@@ -74,7 +74,7 @@ const CDN_TRANSFORMATIONS = {
   'byocdn-cloudflare': (payload) => ({
     'Bucket Name': payload.bucketName,
     Region: payload.region,
-    Path: `${payload.allowedPaths?.[0] || ''}{DATE}/`,
+    Path: `${payload.allowedPaths?.[0] || ''}`,
     'Timestamp format': 'RFC3339',
     'Sampling rate': 'All logs',
     'Organize logs into daily subfolders': 'Yes',

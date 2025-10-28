@@ -146,7 +146,7 @@ describe('CDN Helper Functions', () => {
         expect(result).to.deep.equal({
           'Bucket Name': 'cdn-logs-adobe-dev',
           Region: 'us-east-1',
-          Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-fastly/{DATE}/',
+          Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-fastly/',
           'Timestamp format': 'RFC3339',
           'Sampling rate': 'All logs',
           'Organize logs into daily subfolders': 'Yes',
@@ -248,7 +248,7 @@ describe('CDN Helper Functions', () => {
         delete payloadWithEmptyPaths.secretKey;
 
         const result = prettifyLogForwardingConfig(payloadWithEmptyPaths);
-        expect(result.Path).to.equal('{DATE}/');
+        expect(result.Path).to.equal('');
       });
     });
 

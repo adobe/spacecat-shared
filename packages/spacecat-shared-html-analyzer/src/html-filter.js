@@ -52,6 +52,35 @@ const COOKIE_KEYWORDS = new Set([
   'accept all', 'reject all', 'manage preferences',
 ]);
 
+const COOKIE_BANNER_CLASS_SELECTORS = [
+  '.cc-banner', '.cc-grower', '.consent-banner', '.cookie-banner',
+  '.privacy-banner', '.gdpr-banner', '.cookie-consent', '.privacy-consent',
+  '.cookie-notice', '.privacy-notice', '.cookie-policy', '.privacy-policy',
+  '.cookie-bar', '.privacy-bar', '.consent-bar', '.gdpr-bar',
+  '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
+  '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
+  '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay'
+];
+
+const COOKIE_BANNER_ID_SELECTORS = [
+  '#cookie-banner', '#privacy-banner', '#consent-banner', '#gdpr-banner',
+  '#cookie-notice', '#privacy-notice', '#cookie-consent', '#privacy-consent',
+  '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar', '#cookiemgmt',
+  '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
+  '#onetrust-consent-sdk', '#onetrust-banner-sdk',
+];
+
+const COOKIE_BANNER_ARIA_SELECTORS = [
+  '[role="dialog"][aria-label="Consent Banner"]',
+  '[role="dialog"][aria-label*="cookie" i]',
+  '[role="dialog"][aria-label*="privacy" i]',
+  '[role="dialog"][aria-label*="consent" i]',
+  '[role="alertdialog"][aria-label*="cookie" i]',
+  '[role="alertdialog"][aria-label*="privacy" i]',
+  '[aria-describedby*="cookie" i]',
+  '[aria-describedby*="privacy" i]'
+];
+
 /**
  * Validates if an element is likely a cookie banner based on text content
  * Optimized: Set lookup + early exit for common keywords (3x faster)
@@ -73,35 +102,9 @@ function isCookieBannerElement(element) {
  * Uses multiple strategies to identify genuine cookie consent banners
  */
 function removeCookieBanners(element) {
-  const classBasedSelectors = [
-    '.cc-banner', '.cc-grower', '.consent-banner', '.cookie-banner',
-    '.privacy-banner', '.gdpr-banner', '.cookie-consent', '.privacy-consent',
-    '.cookie-notice', '.privacy-notice', '.cookie-policy', '.privacy-policy',
-    '.cookie-bar', '.privacy-bar', '.consent-bar', '.gdpr-bar',
-    '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
-    '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
-    '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
-  ];
-
-  const idBasedSelectors = [
-    '#cookie-banner', '#privacy-banner', '#consent-banner', '#gdpr-banner',
-    '#cookie-notice', '#privacy-notice', '#cookie-consent', '#privacy-consent',
-    '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar',
-    '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
-  ];
-
-  const ariaSelectors = [
-    '[role="dialog"][aria-label*="cookie" i]',
-    '[role="dialog"][aria-label*="privacy" i]',
-    '[role="dialog"][aria-label*="consent" i]',
-    '[role="alertdialog"][aria-label*="cookie" i]',
-    '[role="alertdialog"][aria-label*="privacy" i]',
-    '[aria-describedby*="cookie" i]',
-    '[aria-describedby*="privacy" i]',
-  ];
 
   // Combine all selectors
-  const allSelectors = [...classBasedSelectors, ...idBasedSelectors, ...ariaSelectors];
+  const allSelectors = [...COOKIE_BANNER_CLASS_SELECTORS, ...COOKIE_BANNER_ID_SELECTORS, ...COOKIE_BANNER_ARIA_SELECTORS];
 
   // Apply class/ID/ARIA based detection with text validation
   allSelectors.forEach((selector) => {
@@ -132,35 +135,8 @@ export function filterNavigationAndFooterBrowser(element) {
  * @param {CheerioAPI} $ - Cheerio instance
  */
 function removeCookieBannersCheerio($) {
-  const classBasedSelectors = [
-    '.cc-banner', '.cc-grower', '.consent-banner', '.cookie-banner',
-    '.privacy-banner', '.gdpr-banner', '.cookie-consent', '.privacy-consent',
-    '.cookie-notice', '.privacy-notice', '.cookie-policy', '.privacy-policy',
-    '.cookie-bar', '.privacy-bar', '.consent-bar', '.gdpr-bar',
-    '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
-    '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
-    '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
-  ];
-
-  const idBasedSelectors = [
-    '#cookie-banner', '#privacy-banner', '#consent-banner', '#gdpr-banner',
-    '#cookie-notice', '#privacy-notice', '#cookie-consent', '#privacy-consent',
-    '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar',
-    '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
-  ];
-
-  const ariaSelectors = [
-    '[role="dialog"][aria-label*="cookie" i]',
-    '[role="dialog"][aria-label*="privacy" i]',
-    '[role="dialog"][aria-label*="consent" i]',
-    '[role="alertdialog"][aria-label*="cookie" i]',
-    '[role="alertdialog"][aria-label*="privacy" i]',
-    '[aria-describedby*="cookie" i]',
-    '[aria-describedby*="privacy" i]',
-  ];
-
   // Combine all selectors for efficient removal
-  const allSelectors = [...classBasedSelectors, ...idBasedSelectors, ...ariaSelectors];
+  const allSelectors = [...COOKIE_BANNER_CLASS_SELECTORS, ...COOKIE_BANNER_ID_SELECTORS, ...COOKIE_BANNER_ARIA_SELECTORS];
 
   // Apply class/ID/ARIA based detection with text validation
   allSelectors.forEach((selector) => {
@@ -203,29 +179,68 @@ function filterNavigationAndFooterCheerio($) {
 function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
   const parser = new DOMParser(); // eslint-disable-line no-undef
   const doc = parser.parseFromString(htmlContent, 'text/html');
-
-  // Get the body element, if it doesn't exist, use the entire document
-  const bodyElement = doc.body || doc.documentElement;
-
-  // Always remove script, style, noscript, template elements
-  bodyElement.querySelectorAll('script,style,noscript,template').forEach((n) => n.remove());
-
+  
+  // Process the entire document to capture JSON-LD in both head and body
+  const documentElement = doc.documentElement || doc;
+  
+  // Remove script elements except JSON-LD structured data, also remove style, noscript, template elements
+  documentElement.querySelectorAll('script').forEach((n) => {
+    // Preserve JSON-LD structured data scripts by converting them to code blocks
+    if (n.type === 'application/ld+json') {
+      const jsonContent = n.textContent || n.innerText || '';
+      if (jsonContent.trim()) {
+        try {
+          // Parse and re-stringify JSON to ensure consistent formatting
+          // Handle both single and double quoted JSON
+          let cleanJsonContent = jsonContent.trim();
+          // Try to fix common JSON issues like single quotes
+          const startsValid = cleanJsonContent.startsWith('{') || cleanJsonContent.startsWith('[');
+          const endsValid = cleanJsonContent.endsWith('}') || cleanJsonContent.endsWith(']');
+          
+          if (!startsValid || !endsValid) {
+            throw new Error('Not valid JSON structure');
+          }
+          
+          const parsedJson = JSON.parse(cleanJsonContent);
+          const formattedJson = JSON.stringify(parsedJson, null, 2);
+          
+          // Create a pre/code block to preserve JSON-LD for markdown conversion
+          const codeBlock = document.createElement('pre');
+          const code = document.createElement('code');
+          code.className = 'ld-json';
+          code.textContent = formattedJson;
+          codeBlock.appendChild(code);
+          n.parentNode.insertBefore(codeBlock, n);
+        } catch (e) {
+          // If JSON parsing fails, fall back to original content
+          const codeBlock = document.createElement('pre');
+          const code = document.createElement('code');
+          code.className = 'ld-json';
+          code.textContent = jsonContent.trim();
+          codeBlock.appendChild(code);
+          n.parentNode.insertBefore(codeBlock, n);
+        }
+      }
+    }
+    n.remove();
+  });
+  documentElement.querySelectorAll('style,noscript,template').forEach((n) => n.remove());
+  
   // Remove all media elements (images, videos, audio, etc.) to keep only text
-  bodyElement.querySelectorAll('img,video,audio,picture,svg,canvas,embed,object,iframe')
-    .forEach((n) => n.remove());
-
+  documentElement.querySelectorAll('img,video,audio,picture,svg,canvas,embed,object,iframe').forEach((n) => n.remove());
+  
   // Remove consent banners with intelligent detection
-  removeCookieBanners(bodyElement);
+  removeCookieBanners(documentElement);
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {
-    filterNavigationAndFooterBrowser(bodyElement);
+    filterNavigationAndFooterBrowser(documentElement);
   }
-
+  
   if (returnText) {
-    return (bodyElement && bodyElement.textContent) ? bodyElement.textContent : '';
+    return (documentElement && documentElement.textContent) ? documentElement.textContent : '';
   }
-  return bodyElement.outerHTML;
+  return documentElement.outerHTML;
 }
 
 /**
@@ -245,14 +260,42 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
 
   const $ = cheerio.load(htmlContent);
 
-  // Always remove script, style, noscript, template tags
-  $('script, style, noscript, template').remove();
-
+  // Remove script elements except JSON-LD structured data, also remove style, noscript, template tags
+  $('script').each(function() {
+    // Preserve JSON-LD structured data scripts by converting them to code blocks
+    if ($(this).attr('type') === 'application/ld+json') {
+      const jsonContent = $(this).text().trim();
+      if (jsonContent) {
+        try {
+          // Parse and re-stringify JSON to ensure consistent formatting
+          // Handle both single and double quoted JSON
+          let cleanJsonContent = jsonContent;
+          const startsValid = cleanJsonContent.startsWith('{') || cleanJsonContent.startsWith('[');
+          const endsValid = cleanJsonContent.endsWith('}') || cleanJsonContent.endsWith(']');
+          
+          if (!startsValid || !endsValid) {
+            throw new Error('Not valid JSON structure');
+          }
+          
+          const parsedJson = JSON.parse(cleanJsonContent);
+          const formattedJson = JSON.stringify(parsedJson, null, 2);
+          const codeBlock = `<pre><code class="ld-json">${formattedJson}</code></pre>`;
+          $(this).before(codeBlock);
+        } catch (e) {
+          // If JSON parsing fails, fall back to original content
+          const codeBlock = `<pre><code class="ld-json">${jsonContent}</code></pre>`;
+          $(this).before(codeBlock);
+        }
+      }
+      $(this).remove();
+    } else {
+      $(this).remove();
+    }
+  });
+  $('style, noscript, template').remove();
+  
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   $('img, video, audio, picture, svg, canvas, embed, object, iframe').remove();
-
-  // Remove cookie banners with comprehensive detection
-  removeCookieBannersCheerio($);
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {

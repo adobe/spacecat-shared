@@ -56,10 +56,7 @@ const categoryUrl = z.object({
 }).superRefine((data, ctx) => {
   // Validate URL format only for type 'url'
   if (data.type === 'url') {
-    try {
-      // eslint-disable-next-line no-new
-      new URL(data.value);
-    } catch {
+    if (!URL.canParse(data.value)) {
       ctx.addIssue({
         code: 'custom',
         path: ['value'],

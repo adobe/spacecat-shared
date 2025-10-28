@@ -15,12 +15,14 @@
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import AWSXray from 'aws-xray-sdk';
-import { ImsPromiseClient } from '@adobe/spacecat-shared-ims-client';
+import { DELIVERY_TYPES } from '@adobe/spacecat-shared-utils';
 import { getAccessToken, retrievePageAuthentication } from '../src/auth.js';
-import { DELIVERY_TYPES } from '../src/aem.js';
+import ImsPromiseClient from '../src/clients/ims-promise-client.js';
 
 use(chaiAsPromised);
+use(sinonChai);
 
 describe('auth', () => {
   describe('retrievePageAuthentication', () => {

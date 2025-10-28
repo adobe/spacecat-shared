@@ -99,7 +99,7 @@ export {
   isoCalendarWeekMonday,
 } from './calendar-week-helper.js';
 
-export { detectAEMVersion, DELIVERY_TYPES } from './aem.js';
+export { detectAEMVersion, DELIVERY_TYPES, AUTHORING_TYPES } from './aem.js';
 
 export { determineAEMCSPageId, getPageEditUrl } from './aem-content-api-utils.js';
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.66.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.66.0...@adobe/spacecat-shared-utils-v1.66.1) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
 # [@adobe/spacecat-shared-utils-v1.66.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.65.0...@adobe/spacecat-shared-utils-v1.66.0) (2025-10-28)
 
 

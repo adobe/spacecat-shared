@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-splunk-client-v1.0.25](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.24...@adobe/spacecat-shared-splunk-client-v1.0.25) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-splunk-client-v1.0.24](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.23...@adobe/spacecat-shared-splunk-client-v1.0.24) (2025-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
 # [@adobe/spacecat-shared-splunk-client-v1.0.23](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-splunk-client-v1.0.22...@adobe/spacecat-shared-splunk-client-v1.0.23) (2025-09-16)
 
 

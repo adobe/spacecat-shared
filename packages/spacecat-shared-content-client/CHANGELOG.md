@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-content-client-v1.7.36](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.35...@adobe/spacecat-shared-content-client-v1.7.36) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-content-client-v1.7.35](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.34...@adobe/spacecat-shared-content-client-v1.7.35) (2025-10-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
 # [@adobe/spacecat-shared-content-client-v1.7.34](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.33...@adobe/spacecat-shared-content-client-v1.7.34) (2025-10-23)
 
 

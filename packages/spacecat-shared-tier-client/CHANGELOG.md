@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.1...@adobe/spacecat-shared-tier-client-v1.2.2) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
 # [@adobe/spacecat-shared-tier-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.0...@adobe/spacecat-shared-tier-client-v1.2.1) (2025-10-28)
 
 

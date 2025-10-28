@@ -24,8 +24,8 @@ export default class BaseOpportunityMapper {
    * @abstract
    * @returns {string} - Opportunity type
    */
-  // eslint-disable-next-line class-methods-use-this
   getOpportunityType() {
+    this.log.error('getOpportunityType() must be implemented by subclass');
     throw new Error('getOpportunityType() must be implemented by subclass');
   }
 
@@ -34,8 +34,8 @@ export default class BaseOpportunityMapper {
    * @abstract
    * @returns {boolean} - True if prerendering is required
    */
-  // eslint-disable-next-line class-methods-use-this
   requiresPrerender() {
+    this.log.error('requiresPrerender() must be implemented by subclass');
     throw new Error('requiresPrerender() must be implemented by subclass');
   }
 
@@ -43,48 +43,44 @@ export default class BaseOpportunityMapper {
    * Converts a suggestion to a Tokowaka patch
    * @abstract
    * @param {Object} _ - Suggestion entity with getId() and getData() methods
-   * @param {string} _ - Opportunity ID
+   * @param {string} __ - Opportunity ID
    * @returns {Object|null} - Patch object or null if conversion fails
    */
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   suggestionToPatch(_, __) {
+    this.log.error('suggestionToPatch() must be implemented by subclass');
     throw new Error('suggestionToPatch() must be implemented by subclass');
   }
 
   /**
-   * Validates suggestion data before conversion
-   * @param {Object} _ - Suggestion data
-   * @returns {boolean} - True if valid
-   */
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
-  validateSuggestionData(_) {
-    return false; // Override in subclass if needed
-  }
-
-  /**
    * Checks if a suggestion can be deployed for this opportunity type
-   * Override this method to add custom deployment eligibility checks
+   * This method should validate all eligibility and data requirements
+   * @abstract
    * @param {Object} _ - Suggestion object
    * @returns {Object} - { eligible: boolean, reason?: string }
    */
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   canDeploy(_) {
-    return { eligible: true };
+    this.log.error('canDeploy() must be implemented by subclass');
+    throw new Error('canDeploy() must be implemented by subclass');
   }
 
   /**
    * Helper method to create base patch structure
    * @protected
-   * @param {string} suggestionId - Suggestion ID
+   * @param {Object} suggestion - Suggestion entity with getUpdatedAt() method
    * @param {string} opportunityId - Opportunity ID
    * @returns {Object} - Base patch object
    */
-  createBasePatch(suggestionId, opportunityId) {
+  createBasePatch(suggestion, opportunityId) {
+    const updatedAt = suggestion.getUpdatedAt();
+    const lastUpdated = updatedAt ? new Date(updatedAt).getTime() : Date.now();
+
     return {
       opportunityId,
-      suggestionId,
+      suggestionId: suggestion.getId(),
       prerenderRequired: this.requiresPrerender(),
-      lastUpdated: Date.now(),
+      lastUpdated,
     };
   }
 }

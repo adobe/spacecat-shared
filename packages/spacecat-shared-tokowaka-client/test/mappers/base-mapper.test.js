@@ -11,15 +11,23 @@
  */
 
 /* eslint-env mocha */
+/* eslint-disable max-classes-per-file, class-methods-use-this */
 
 import { expect } from 'chai';
 import BaseOpportunityMapper from '../../src/mappers/base-mapper.js';
 
 describe('BaseOpportunityMapper', () => {
   let mapper;
+  let log;
 
   beforeEach(() => {
-    mapper = new BaseOpportunityMapper();
+    log = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+    };
+    mapper = new BaseOpportunityMapper(log);
   });
 
   describe('abstract methods', () => {
@@ -38,15 +46,65 @@ describe('BaseOpportunityMapper', () => {
         .to.throw('suggestionToPatch() must be implemented by subclass');
     });
 
-    it('validateSuggestionData should return false by default', () => {
-      const result = mapper.validateSuggestionData({});
-      expect(result).to.be.false;
+    it('canDeploy should throw error if not implemented', () => {
+      expect(() => mapper.canDeploy({}))
+        .to.throw('canDeploy() must be implemented by subclass');
+    });
+  });
+
+  describe('createBasePatch', () => {
+    it('should use getUpdatedAt method when available', () => {
+      // Create a concrete subclass for testing
+      class TestMapper extends BaseOpportunityMapper {
+        getOpportunityType() { return 'test'; }
+
+        requiresPrerender() { return true; }
+
+        suggestionToPatch() { return {}; }
+
+        canDeploy() { return { eligible: true }; }
+      }
+
+      const testMapper = new TestMapper();
+      const suggestion = {
+        getId: () => 'test-123',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+      };
+
+      const patch = testMapper.createBasePatch(suggestion, 'opp-456');
+
+      expect(patch.suggestionId).to.equal('test-123');
+      expect(patch.opportunityId).to.equal('opp-456');
+      expect(patch.lastUpdated).to.equal(new Date('2025-01-15T10:00:00.000Z').getTime());
+      expect(patch.prerenderRequired).to.be.true;
     });
 
-    it('canDeploy should return eligible by default', () => {
-      const result = mapper.canDeploy({});
+    it('should use Date.now() when getUpdatedAt returns null', () => {
+      class TestMapper extends BaseOpportunityMapper {
+        getOpportunityType() { return 'test'; }
 
-      expect(result).to.deep.equal({ eligible: true });
+        requiresPrerender() { return true; }
+
+        suggestionToPatch() { return {}; }
+
+        canDeploy() { return { eligible: true }; }
+      }
+
+      const testMapper = new TestMapper();
+      const suggestion = {
+        getId: () => 'test-no-date',
+        getUpdatedAt: () => null, // Returns null
+      };
+
+      const beforeTime = Date.now();
+      const patch = testMapper.createBasePatch(suggestion, 'opp-fallback');
+      const afterTime = Date.now();
+
+      expect(patch.suggestionId).to.equal('test-no-date');
+      expect(patch.opportunityId).to.equal('opp-fallback');
+      expect(patch.lastUpdated).to.be.at.least(beforeTime);
+      expect(patch.lastUpdated).to.be.at.most(afterTime);
+      expect(patch.prerenderRequired).to.be.true;
     });
   });
 });

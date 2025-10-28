@@ -70,20 +70,28 @@ describe('TokowakaClient', () => {
     mockSuggestions = [
       {
         getId: () => 'sugg-1',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
           url: 'https://example.com/page1',
-          headingTag: 'h1',
           recommendedAction: 'New Heading',
           checkType: 'heading-empty',
+          transformRules: {
+            action: 'replace',
+            selector: 'h1',
+          },
         }),
       },
       {
         getId: () => 'sugg-2',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
           url: 'https://example.com/page1',
-          headingTag: 'h2',
           recommendedAction: 'New Subtitle',
           checkType: 'heading-empty',
+          transformRules: {
+            action: 'replace',
+            selector: 'h2',
+          },
         }),
       },
     ];
@@ -220,18 +228,28 @@ describe('TokowakaClient', () => {
       mockSuggestions = [
         {
           getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://example.com/page1',
-            headingTag: 'h1',
             recommendedAction: 'Page 1 Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
           }),
         },
         {
           getId: () => 'sugg-2',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://example.com/page2',
-            headingTag: 'h1',
             recommendedAction: 'Page 2 Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
           }),
         },
       ];
@@ -241,6 +259,40 @@ describe('TokowakaClient', () => {
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(2);
       expect(config.tokowakaOptimizations).to.have.property('/page1');
       expect(config.tokowakaOptimizations).to.have.property('/page2');
+    });
+
+    it('should use overrideBaseURL from fetchConfig when available', () => {
+      // Set up mockSite with overrideBaseURL
+      mockSite.getConfig = () => ({
+        getTokowakaConfig: () => ({
+          apiKey: 'test-api-key-123',
+          cdnProvider: 'cloudfront',
+        }),
+        getFetchConfig: () => ({
+          overrideBaseURL: 'https://override.example.com',
+        }),
+      });
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-override',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: '/relative-path',
+            recommendedAction: 'Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+      ];
+
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+
+      expect(Object.keys(config.tokowakaOptimizations)).to.have.length(1);
+      expect(config.tokowakaOptimizations).to.have.property('/relative-path');
     });
 
     it('should skip suggestions without URL', () => {
@@ -264,10 +316,15 @@ describe('TokowakaClient', () => {
       mockSuggestions = [
         {
           getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
-            url: 'not-a-valid-url',
-            selector: 'h1',
-            value: 'Heading',
+            url: 'http://invalid domain with spaces.com',
+            checkType: 'heading-empty',
+            recommendedAction: 'Heading',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
           }),
         },
       ];
@@ -275,7 +332,7 @@ describe('TokowakaClient', () => {
       const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(0);
-      expect(log.warn).to.have.been.calledWith(sinon.match(/Invalid URL/));
+      expect(log.warn).to.have.been.calledWith(sinon.match(/Failed to extract pathname from URL/));
     });
 
     it('should skip suggestions with missing required fields', () => {
@@ -284,7 +341,7 @@ describe('TokowakaClient', () => {
           getId: () => 'sugg-1',
           getData: () => ({
             url: 'https://example.com/page1',
-            // Missing headingTag and recommendedAction
+            // Missing required fields
           }),
         },
       ];
@@ -292,7 +349,7 @@ describe('TokowakaClient', () => {
       const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(0);
-      expect(log.warn).to.have.been.calledWith(sinon.match(/has invalid data/));
+      expect(log.warn).to.have.been.calledWith(sinon.match(/cannot be deployed/));
     });
 
     it('should handle unsupported opportunity types', () => {
@@ -697,18 +754,21 @@ describe('TokowakaClient', () => {
           getId: () => 'sugg-1',
           getData: () => ({
             url: 'https://example.com/page1',
-            headingTag: 'h1',
             recommendedAction: 'New Heading',
-            checkType: 'heading-missing', // Not eligible
+            checkType: 'heading-missing', // Not eligible (wrong checkType name)
           }),
         },
         {
           getId: () => 'sugg-2',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://example.com/page1',
-            headingTag: 'h2',
             recommendedAction: 'New Subtitle',
             checkType: 'heading-empty', // Eligible
+            transformRules: {
+              action: 'replace',
+              selector: 'h2',
+            },
           }),
         },
       ];
@@ -721,7 +781,7 @@ describe('TokowakaClient', () => {
 
       expect(result.succeededSuggestions).to.have.length(1);
       expect(result.failedSuggestions).to.have.length(1);
-      expect(result.failedSuggestions[0].reason).to.include('Only empty headings can be deployed');
+      expect(result.failedSuggestions[0].reason).to.include('can be deployed');
     });
 
     it('should return early when no eligible suggestions', async () => {
@@ -731,9 +791,8 @@ describe('TokowakaClient', () => {
           getId: () => 'sugg-1',
           getData: () => ({
             url: 'https://example.com/page1',
-            headingTag: 'h1',
             recommendedAction: 'New Heading',
-            checkType: 'heading-missing',
+            checkType: 'heading-missing', // Wrong checkType name, not eligible
           }),
         },
       ];
@@ -747,6 +806,35 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.have.length(0);
       expect(result.failedSuggestions).to.have.length(1);
       expect(log.warn).to.have.been.calledWith('No eligible suggestions to deploy');
+      expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should return early when suggestions pass eligibility but fail during config generation', async () => {
+      // Suggestions pass canDeploy but have no URL (caught in generateConfig)
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            // Missing URL
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(1);
       expect(s3Client.send).to.not.have.been.called;
     });
 

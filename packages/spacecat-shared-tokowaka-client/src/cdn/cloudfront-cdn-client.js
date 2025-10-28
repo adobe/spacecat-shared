@@ -36,11 +36,11 @@ export default class CloudFrontCdnClient extends BaseCdnClient {
 
     this.cdnConfig = parsedConfig.cloudfront;
     this.client = null;
+    this.providerName = 'cloudfront';
   }
 
-  // eslint-disable-next-line class-methods-use-this
   getProviderName() {
-    return 'cloudfront';
+    return this.providerName;
   }
 
   validateConfig() {

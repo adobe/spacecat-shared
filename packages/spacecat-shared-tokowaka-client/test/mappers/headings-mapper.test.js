@@ -17,9 +17,16 @@ import HeadingsMapper from '../../src/mappers/headings-mapper.js';
 
 describe('HeadingsMapper', () => {
   let mapper;
+  let log;
 
   beforeEach(() => {
-    mapper = new HeadingsMapper();
+    log = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+    };
+    mapper = new HeadingsMapper(log);
   });
 
   describe('getOpportunityType', () => {
@@ -37,7 +44,14 @@ describe('HeadingsMapper', () => {
   describe('canDeploy', () => {
     it('should return eligible for heading-empty checkType', () => {
       const suggestion = {
-        getData: () => ({ checkType: 'heading-empty' }),
+        getData: () => ({
+          checkType: 'heading-empty',
+          recommendedAction: 'New Heading',
+          transformRules: {
+            action: 'replace',
+            selector: 'h1',
+          },
+        }),
       };
 
       const result = mapper.canDeploy(suggestion);
@@ -45,17 +59,39 @@ describe('HeadingsMapper', () => {
       expect(result).to.deep.equal({ eligible: true });
     });
 
-    it('should return ineligible for heading-missing checkType', () => {
+    it('should return eligible for heading-missing-h1 checkType', () => {
       const suggestion = {
-        getData: () => ({ checkType: 'heading-missing' }),
+        getData: () => ({
+          checkType: 'heading-missing-h1',
+          recommendedAction: 'New H1',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#header',
+            tag: 'h1',
+          },
+        }),
       };
 
       const result = mapper.canDeploy(suggestion);
 
-      expect(result).to.deep.equal({
-        eligible: false,
-        reason: 'Only empty headings can be deployed. This suggestion has checkType: heading-missing',
-      });
+      expect(result).to.deep.equal({ eligible: true });
+    });
+
+    it('should return eligible for heading-h1-length checkType', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-h1-length',
+          recommendedAction: 'Better H1',
+          transformRules: {
+            action: 'replace',
+            selector: 'h1',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({ eligible: true });
     });
 
     it('should return ineligible for unknown checkType', () => {
@@ -67,7 +103,7 @@ describe('HeadingsMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'Only empty headings can be deployed. This suggestion has checkType: unknown-type',
+        reason: 'Only heading-empty, heading-missing-h1, heading-h1-length can be deployed. This suggestion has checkType: unknown-type',
       });
     });
 
@@ -80,7 +116,7 @@ describe('HeadingsMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'Only empty headings can be deployed. This suggestion has checkType: undefined',
+        reason: 'Only heading-empty, heading-missing-h1, heading-h1-length can be deployed. This suggestion has checkType: undefined',
       });
     });
 
@@ -93,18 +129,122 @@ describe('HeadingsMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'Only empty headings can be deployed. This suggestion has checkType: undefined',
+        reason: 'Only heading-empty, heading-missing-h1, heading-h1-length can be deployed. This suggestion has checkType: undefined',
+      });
+    });
+
+    it('should return ineligible when recommendedAction is missing', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-empty',
+          transformRules: {
+            action: 'replace',
+            selector: 'h1',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'recommendedAction is required',
+      });
+    });
+
+    it('should return ineligible when transformRules.selector is missing', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-empty',
+          recommendedAction: 'New Heading',
+          transformRules: {
+            action: 'replace',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'transformRules.selector is required',
+      });
+    });
+
+    it('should return ineligible for heading-missing-h1 with invalid action', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-missing-h1',
+          recommendedAction: 'New H1',
+          transformRules: {
+            action: 'replace',
+            selector: '#header',
+            tag: 'h1',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'transformRules.action must be insertBefore or insertAfter for heading-missing-h1',
+      });
+    });
+
+    it('should return ineligible for heading-missing-h1 without tag', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-missing-h1',
+          recommendedAction: 'New H1',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#header',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'transformRules.tag is required for heading-missing-h1',
+      });
+    });
+
+    it('should return ineligible for heading-h1-length with invalid action', () => {
+      const suggestion = {
+        getData: () => ({
+          checkType: 'heading-h1-length',
+          recommendedAction: 'New H1',
+          transformRules: {
+            action: 'insertAfter',
+            selector: 'h1',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'transformRules.action must be replace for heading-h1-length',
       });
     });
   });
 
   describe('suggestionToPatch', () => {
-    it('should create patch with headingTag selector', () => {
+    it('should create patch for heading-empty with transformRules', () => {
       const suggestion = {
         getId: () => 'sugg-123',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          headingTag: 'h1',
+          checkType: 'heading-empty',
           recommendedAction: 'New Heading',
+          transformRules: {
+            action: 'replace',
+            selector: 'h1',
+          },
         }),
       };
 
@@ -121,12 +261,17 @@ describe('HeadingsMapper', () => {
       expect(patch.lastUpdated).to.be.a('number');
     });
 
-    it('should create patch with path selector when headingTag is missing', () => {
+    it('should create patch with custom selector', () => {
       const suggestion = {
         getId: () => 'sugg-123',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
         getData: () => ({
-          path: 'body > h1',
+          checkType: 'heading-empty',
           recommendedAction: 'New Heading',
+          transformRules: {
+            action: 'replace',
+            selector: 'body > h1',
+          },
         }),
       };
 
@@ -141,49 +286,143 @@ describe('HeadingsMapper', () => {
         prerenderRequired: true,
       });
     });
-  });
 
-  describe('validateSuggestionData', () => {
-    it('should return true for valid data with headingTag', () => {
-      const data = {
-        headingTag: 'h1',
-        recommendedAction: 'New Heading',
+    it('should create patch for heading-missing-h1 with transformRules', () => {
+      const suggestion = {
+        getId: () => 'sugg-456',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          checkType: 'heading-missing-h1',
+          recommendedAction: 'Exclusive Flight Booking Deals & Partner Discounts.',
+          transformRules: {
+            action: 'insertAfter',
+            selector: '#text-85a9876220 > h2:nth-of-type(1)',
+            tag: 'h1',
+          },
+        }),
       };
 
-      expect(mapper.validateSuggestionData(data)).to.be.true;
+      const patch = mapper.suggestionToPatch(suggestion, 'opp-456');
+
+      expect(patch).to.deep.include({
+        op: 'insertAfter',
+        selector: '#text-85a9876220 > h2:nth-of-type(1)',
+        value: 'Exclusive Flight Booking Deals & Partner Discounts.',
+        tag: 'h1',
+        opportunityId: 'opp-456',
+        suggestionId: 'sugg-456',
+        prerenderRequired: true,
+      });
+      expect(patch.lastUpdated).to.be.a('number');
     });
 
-    it('should return true for valid data with path', () => {
-      const data = {
-        path: 'body > h1',
-        recommendedAction: 'New Heading',
+    it('should create patch for heading-h1-length with transformRules', () => {
+      const suggestion = {
+        getId: () => 'sugg-789',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          checkType: 'heading-h1-length',
+          recommendedAction: 'New H1 Heading',
+          transformRules: {
+            action: 'replace',
+            selector: 'body > h1',
+          },
+        }),
       };
 
-      expect(mapper.validateSuggestionData(data)).to.be.true;
+      const patch = mapper.suggestionToPatch(suggestion, 'opp-789');
+
+      expect(patch).to.deep.include({
+        op: 'replace',
+        selector: 'body > h1',
+        value: 'New H1 Heading',
+        opportunityId: 'opp-789',
+        suggestionId: 'sugg-789',
+        prerenderRequired: true,
+      });
+      expect(patch.lastUpdated).to.be.a('number');
+      expect(patch.tag).to.be.undefined;
     });
 
-    it('should return false if both headingTag and path are missing', () => {
-      const data = {
-        recommendedAction: 'New Heading',
+    it('should return null for heading-missing-h1 without transformRules', () => {
+      const suggestion = {
+        getId: () => 'sugg-999',
+        getData: () => ({
+          checkType: 'heading-missing-h1',
+          recommendedAction: 'New Heading',
+        }),
       };
 
-      expect(mapper.validateSuggestionData(data)).to.be.false;
+      const patch = mapper.suggestionToPatch(suggestion, 'opp-999');
+
+      expect(patch).to.be.null;
     });
 
-    it('should return false if recommendedAction is missing', () => {
-      const data = {
-        headingTag: 'h1',
+    it('should return null for heading-h1-length without selector in transformRules', () => {
+      const suggestion = {
+        getId: () => 'sugg-888',
+        getData: () => ({
+          checkType: 'heading-h1-length',
+          recommendedAction: 'New Heading',
+          transformRules: {
+            action: 'insertAt',
+          },
+        }),
       };
 
-      expect(mapper.validateSuggestionData(data)).to.be.false;
+      const patch = mapper.suggestionToPatch(suggestion, 'opp-888');
+
+      expect(patch).to.be.null;
     });
 
-    it('should return false if data is empty', () => {
-      expect(mapper.validateSuggestionData({})).to.be.false;
+    it('should log warning for heading-missing-h1 with missing transformRules - validation path', () => {
+      let warnLogged = false;
+      const warnLog = {
+        debug: () => {},
+        info: () => {},
+        warn: () => { warnLogged = true; },
+        error: () => {},
+      };
+      const warnMapper = new HeadingsMapper(warnLog);
+
+      const suggestion = {
+        getId: () => 'sugg-warn',
+        getData: () => ({
+          checkType: 'heading-missing-h1',
+          recommendedAction: 'New Heading',
+        }),
+      };
+
+      const patch = warnMapper.suggestionToPatch(suggestion, 'opp-warn');
+
+      expect(patch).to.be.null;
+      expect(warnLogged).to.be.true;
     });
 
-    it('should return false if data is null', () => {
-      expect(mapper.validateSuggestionData(null)).to.be.false;
+    it('should log warning for heading-missing-h1 with invalid transformRules', () => {
+      let warnMessage = '';
+      const warnLog = {
+        debug: () => {},
+        info: () => {},
+        warn: (msg) => { warnMessage = msg; },
+        error: () => {},
+      };
+      const warnMapper = new HeadingsMapper(warnLog);
+
+      const suggestion = {
+        getId: () => 'sugg-defensive',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          checkType: 'heading-missing-h1',
+          recommendedAction: 'New Heading',
+          // Missing transformRules
+        }),
+      };
+
+      const patch = warnMapper.suggestionToPatch(suggestion, 'opp-defensive');
+
+      expect(patch).to.be.null;
+      expect(warnMessage).to.include('cannot be deployed');
     });
   });
 });

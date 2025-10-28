@@ -11,7 +11,7 @@
  */
 
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
 
@@ -89,7 +89,12 @@ class TokowakaClient {
   generateConfig(site, opportunity, suggestions) {
     const opportunityType = opportunity.getType();
     const siteId = site.getId();
-    const baseURL = site.getBaseURL();
+
+    // Get baseURL, respecting overrideBaseURL from fetchConfig if it exists
+    const overrideBaseURL = site.getConfig()?.getFetchConfig?.()?.overrideBaseURL;
+    const baseURL = (overrideBaseURL && isValidUrl(overrideBaseURL))
+      ? overrideBaseURL
+      : site.getBaseURL();
 
     // Get mapper for this opportunity type
     const mapper = this.mapperRegistry.getMapper(opportunityType);
@@ -113,9 +118,9 @@ class TokowakaClient {
 
       let urlPath;
       try {
-        urlPath = new URL(url).pathname;
+        urlPath = new URL(url, baseURL).pathname;
       } catch (e) {
-        this.log.warn(`Invalid URL for suggestion ${suggestion.getId()}: ${url}`);
+        this.log.warn(`Failed to extract pathname from URL for suggestion ${suggestion.getId()}: ${url}`);
         return acc;
       }
 
@@ -405,6 +410,14 @@ class TokowakaClient {
     // Generate configuration with eligible suggestions only
     this.log.debug(`Generating Tokowaka config for site ${site.getId()}, opportunity ${opportunity.getId()}`);
     const newConfig = this.generateConfig(site, opportunity, eligibleSuggestions);
+
+    if (Object.keys(newConfig.tokowakaOptimizations).length === 0) {
+      this.log.warn('');
+      return {
+        succeededSuggestions: [],
+        failedSuggestions: suggestions,
+      };
+    }
 
     // Merge with existing config if it exists
     const config = existingConfig

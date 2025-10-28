@@ -11,6 +11,7 @@
  */
 
 import HeadingsMapper from './headings-mapper.js';
+import ContentSummarizationMapper from './content-summarization-mapper.js';
 
 /**
  * Registry for opportunity mappers
@@ -30,6 +31,7 @@ export default class MapperRegistry {
   #registerDefaultMappers() {
     const defaultMappers = [
       HeadingsMapper,
+      ContentSummarizationMapper,
       // more mappers here
     ];
 

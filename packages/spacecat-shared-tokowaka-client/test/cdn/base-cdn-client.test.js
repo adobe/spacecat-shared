@@ -35,8 +35,9 @@ describe('BaseCdnClient', () => {
         .to.throw('getProviderName() must be implemented by subclass');
     });
 
-    it('validateConfig should return true by default', () => {
-      expect(client.validateConfig()).to.be.true;
+    it('validateConfig should throw error', () => {
+      expect(() => client.validateConfig())
+        .to.throw('validateConfig() must be implemented by subclass');
     });
 
     it('invalidateCache should throw error', async () => {

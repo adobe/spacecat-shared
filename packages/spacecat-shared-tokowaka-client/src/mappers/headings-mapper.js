@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
+import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
 
 /**
@@ -17,46 +19,49 @@ import BaseOpportunityMapper from './base-mapper.js';
  * Handles conversion of heading suggestions to Tokowaka patches
  */
 export default class HeadingsMapper extends BaseOpportunityMapper {
-  // eslint-disable-next-line class-methods-use-this
-  getOpportunityType() {
-    return 'headings';
+  constructor(log) {
+    super(log);
+    this.opportunityType = 'headings';
+    this.prerenderRequired = true;
   }
 
-  // eslint-disable-next-line class-methods-use-this
+  getOpportunityType() {
+    return this.opportunityType;
+  }
+
   requiresPrerender() {
-    return true;
+    return this.prerenderRequired;
   }
 
   suggestionToPatch(suggestion, opportunityId) {
-    const data = suggestion.getData();
-
-    if (!this.validateSuggestionData(data)) {
-      this.log.warn(`Headings suggestion ${suggestion.getId()} has invalid data`);
+    const eligibility = this.canDeploy(suggestion);
+    if (!eligibility.eligible) {
+      this.log.warn(`Headings suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
       return null;
     }
 
-    // Use path if available, otherwise construct from headingTag
-    const selector = data.path || data.headingTag;
+    const data = suggestion.getData();
+    const { checkType, transformRules } = data;
 
-    return {
-      ...this.createBasePatch(suggestion.getId(), opportunityId),
-      op: 'replace',
-      selector,
+    const patch = {
+      ...this.createBasePatch(suggestion, opportunityId),
+      op: transformRules.action,
+      selector: transformRules.selector,
       value: data.recommendedAction,
+      valueFormat: 'text',
+      ...(data.currentValue !== null && { currValue: data.currentValue }),
+      target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
     };
-  }
 
-  // eslint-disable-next-line class-methods-use-this
-  validateSuggestionData(data) {
-    // At minimum, need heading selector (path or headingTag) and recommendedAction/value
-    const hasSelector = data?.path || data?.headingTag;
-    const hasValue = data?.recommendedAction;
-    return !!(hasSelector && hasValue);
+    if (checkType === 'heading-missing-h1' && transformRules.tag) {
+      patch.tag = transformRules.tag;
+    }
+    return patch;
   }
 
   /**
    * Checks if a heading suggestion can be deployed
-   * Only empty headings are eligible for deployment
+   * Supports: heading-empty, heading-missing-h1, heading-h1-length
    * @param {Object} suggestion - Suggestion object
    * @returns {Object} { eligible: boolean, reason?: string }
    */
@@ -65,11 +70,47 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
     const data = suggestion.getData();
     const checkType = data?.checkType;
 
-    if (checkType !== 'heading-empty') {
+    // Check if checkType is eligible
+    const eligibleCheckTypes = ['heading-empty', 'heading-missing-h1', 'heading-h1-length'];
+    if (!eligibleCheckTypes.includes(checkType)) {
       return {
         eligible: false,
-        reason: `Only empty headings can be deployed. This suggestion has checkType: ${checkType}`,
+        reason: `Only ${eligibleCheckTypes.join(', ')} can be deployed. This suggestion has checkType: ${checkType}`,
       };
+    }
+
+    // Validate required fields
+    if (!data?.recommendedAction) {
+      return { eligible: false, reason: 'recommendedAction is required' };
+    }
+
+    if (!hasText(data.transformRules?.selector)) {
+      return { eligible: false, reason: 'transformRules.selector is required' };
+    }
+
+    // Validate based on checkType
+    if (checkType === 'heading-missing-h1') {
+      if (!['insertBefore', 'insertAfter'].includes(data.transformRules?.action)) {
+        return {
+          eligible: false,
+          reason: 'transformRules.action must be insertBefore or insertAfter for heading-missing-h1',
+        };
+      }
+      if (!hasText(data.transformRules?.tag)) {
+        return {
+          eligible: false,
+          reason: 'transformRules.tag is required for heading-missing-h1',
+        };
+      }
+    }
+
+    if (checkType === 'heading-h1-length' || checkType === 'heading-empty') {
+      if (data.transformRules?.action !== 'replace') {
+        return {
+          eligible: false,
+          reason: `transformRules.action must be replace for ${checkType}`,
+        };
+      }
     }
 
     return { eligible: true };

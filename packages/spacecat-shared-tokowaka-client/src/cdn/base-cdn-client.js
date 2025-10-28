@@ -24,8 +24,8 @@ export default class BaseCdnClient {
    * Returns the CDN provider name (e.g., 'akamai', 'cloudflare', 'fastly')
    * @returns {string} The CDN provider name
    */
-  // eslint-disable-next-line class-methods-use-this
   getProviderName() {
+    this.log.error('getProviderName() must be implemented by subclass');
     throw new Error('getProviderName() must be implemented by subclass');
   }
 
@@ -33,18 +33,18 @@ export default class BaseCdnClient {
    * Validates the CDN configuration
    * @returns {boolean} True if configuration is valid
    */
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
   validateConfig() {
-    return true; // Override in subclass if needed
+    this.log.error('validateConfig() must be implemented by subclass');
+    throw new Error('validateConfig() must be implemented by subclass');
   }
 
   /**
    * Invalidates the CDN cache for the given paths
-   * @param {Array<string>} paths - Array of URL paths to invalidate
+   * @param {Array<string>} _ - Array of URL paths to invalidate
    * @returns {Promise<Object>} Result of the invalidation request
    */
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
-  async invalidateCache(_paths) {
+  async invalidateCache(_) {
+    this.log.error('invalidateCache() must be implemented by subclass');
     throw new Error('invalidateCache() must be implemented by subclass');
   }
 }

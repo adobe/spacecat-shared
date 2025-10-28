@@ -86,8 +86,6 @@ export {
   FORMS_AUDIT_INTERVAL,
 } from './formcalc.js';
 
-export { retrievePageAuthentication, getAccessToken } from './auth.js';
-
 export {
   getDateRanges,
   getLastNumberOfWeeks,

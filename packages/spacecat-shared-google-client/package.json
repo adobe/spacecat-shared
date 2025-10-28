@@ -37,7 +37,7 @@
     "@adobe/fetch": "4.2.3",
     "@adobe/helix-universal": "5.2.3",
     "@adobe/spacecat-shared-http-utils": "1.9.4",
-    "@adobe/spacecat-shared-utils": "1.38.0",
+    "@adobe/spacecat-shared-utils": "1.66.0",
     "@aws-sdk/client-secrets-manager": "3.917.0",
     "aws-xray-sdk": "3.11.0",
     "google-auth-library": "10.4.2",

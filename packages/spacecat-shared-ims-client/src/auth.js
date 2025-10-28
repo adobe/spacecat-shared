@@ -13,10 +13,13 @@
 import AWSXray from 'aws-xray-sdk';
 import { GetSecretValueCommand, SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import {
-  DELIVERY_TYPES, isString, resolveCustomerSecretsName,
+  AUTHORING_TYPES, DELIVERY_TYPES, isString, resolveCustomerSecretsName,
 } from '@adobe/spacecat-shared-utils';
-import { Site } from '@adobe/spacecat-shared-data-access';
 import ImsPromiseClient from './clients/ims-promise-client.js';
+
+/**
+ * @import {type Site} from "@adobe/spacecat-shared-data-access/src/models/site/index.js"
+ */
 
 /**
  * Get an access token by exchanging a promise token using IMS Promise Client.
@@ -48,7 +51,7 @@ export async function getAccessToken(context, promiseToken) {
  * @throws {Error} - If secret is not found or token is missing
  */
 export async function retrievePageAuthentication(site, context, authOptions = {}) {
-  const CS_TYPES = [Site.AUTHORING_TYPES.CS, Site.AUTHORING_TYPES.CS_CW];
+  const CS_TYPES = [AUTHORING_TYPES.CS, AUTHORING_TYPES.CS_CW];
   if (site
     && (CS_TYPES.includes(site.getAuthoringType())
       || site.getDeliveryType() === DELIVERY_TYPES.AEM_CS)

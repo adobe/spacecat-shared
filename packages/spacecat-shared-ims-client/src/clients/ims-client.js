@@ -29,14 +29,32 @@ import {
 
 export default class ImsClient extends ImsBaseClient {
   static createFrom(context) {
-    const { log = console } = context;
-    const {
-      IMS_HOST: imsHost,
-      IMS_CLIENT_ID: clientId,
-      IMS_CLIENT_CODE: clientCode,
-      IMS_CLIENT_SECRET: clientSecret,
-      IMS_SCOPE: scope,
-    } = context.env;
+    const { log = console, pathInfo } = context;
+    const imsEnv = pathInfo?.headers?.['x-ims-env'];
+
+    let imsHost;
+    let clientId;
+    let clientCode;
+    let clientSecret;
+    let scope;
+
+    if (hasText(imsEnv) && imsEnv === 'prod') {
+      ({
+        IMS_HOST_PROD: imsHost,
+        IMS_CLIENT_ID_PROD: clientId,
+        IMS_CLIENT_CODE_PROD: clientCode,
+        IMS_CLIENT_SECRET_PROD: clientSecret,
+        IMS_SCOPE_PROD: scope,
+      } = context.env);
+    } else {
+      ({
+        IMS_HOST: imsHost,
+        IMS_CLIENT_ID: clientId,
+        IMS_CLIENT_CODE: clientCode,
+        IMS_CLIENT_SECRET: clientSecret,
+        IMS_SCOPE: scope,
+      } = context.env);
+    }
 
     if (!hasText(imsHost) || !hasText(clientId) || !hasText(clientCode) || !hasText(clientSecret)) {
       throw new Error('Context param must include properties: imsHost, clientId, clientCode, and'

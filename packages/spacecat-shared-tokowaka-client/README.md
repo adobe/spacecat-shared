@@ -78,82 +78,12 @@ The client invalidates CDN cache after uploading configurations. Failures are lo
 ## Supported Opportunity Types
 
 ### Headings
-Optimizes heading elements. Requires `recommendedAction` (new text) and `headingTag` (e.g., "h1", "h2").
 
-**Deployment Eligibility:** Only suggestions with `checkType: 'heading-empty'` can be deployed currently. Other heading types (e.g., `heading-missing`) are filtered out during deployment.
+**Deployment Eligibility:** Only suggestions with `checkType: 'heading-empty'`, `checkType: 'heading-missing-h1'` and `checkType: 'heading-h1-length'` can be deployed currently.
 
-## Extending with Custom Mappers
+### Content Summarization
 
-You can add support for new opportunity types by extending `BaseOpportunityMapper`:
-
-```javascript
-import { BaseOpportunityMapper } from '@adobe/spacecat-shared-tokowaka-client';
-
-class CustomOpportunityMapper extends BaseOpportunityMapper {
-  getOpportunityType() {
-    return 'custom-opportunity';
-  }
-
-  requiresPrerender() {
-    return true;
-  }
-
-  suggestionToPatch(suggestion, opportunityId) {
-    const data = suggestion.getData();
-    if (!this.validateSuggestionData(data)) {
-      return null;
-    }
-    
-    return {
-      ...this.createBasePatch(suggestion.getId(), opportunityId),
-      op: 'replace',
-      selector: data.targetElement,
-      value: data.newValue,
-    };
-  }
-
-  validateSuggestionData(data) {
-    return !!(data?.targetElement && data?.newValue);
-  }
-}
-
-// Register the mapper
-const client = TokowakaClient.createFrom(context);
-client.registerMapper(new CustomOpportunityMapper(context.log));
-```
-
-## Configuration Format
-
-### Tokowaka Config
-
-```typescript
-interface TokowakaConfig {
-  siteId: string;
-  baseURL: string;
-  version: string;
-  tokowakaForceFail: boolean;
-  tokowakaOptimizations: {
-    "prerender": true,
-    [urlPath: string]: {
-      prerender: boolean;
-      patches: TokawakaPatch[];
-    }
-  }
-}
-
-interface TokawakaPatch {
-  op: 'replace' | 'add' | 'prerender';
-  selector?: string;
-  value?: string;
-  attribute?: string;
-  element?: string;
-  attributes?: Record<string, string>;
-  opportunityId: string;
-  suggestionId: string;
-  prerenderRequired: boolean;
-  lastUpdated: number;
-}
-```
+**Deployment Eligibility:**  Currently all suggestions for `summarization` opportunity can be deployed.
 
 ## S3 Storage
 
@@ -165,3 +95,7 @@ s3://{TOKOWAKA_SITE_CONFIG_BUCKET}/opportunities/{tokowakaApiKey}
 **Note:** The configuration is stored as a JSON file containing the complete Tokowaka optimization config for the site.
 
 
+## Reference Material
+
+https://wiki.corp.adobe.com/display/AEMSites/Tokowaka+-+Spacecat+Integration
+https://wiki.corp.adobe.com/display/AEMSites/Tokowaka+Patch+Format

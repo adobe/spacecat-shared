@@ -86,7 +86,8 @@ export {
   FORMS_AUDIT_INTERVAL,
 } from './formcalc.js';
 
-export { retrievePageAuthentication, getAccessToken } from './auth.js';
+// TODO(aurelio) remove when all dependents have been migrated
+export { retrievePageAuthentication, getAccessToken } from '@adobe/spacecat-shared-ims-client';
 
 export {
   getDateRanges,

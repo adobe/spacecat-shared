@@ -13,6 +13,8 @@
 import { Request, RequestOptions, Response } from '@adobe/fetch';
 import type { ISOCalendarWeek } from './calendar-week-helper.js';
 
+export { AUTHORING_TYPES, DELIVERY_TYPES } from './aem.js';
+
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
 
@@ -67,42 +69,42 @@ export function sqsEventAdapter(fn: (message: object, context: object) => Promis
  * @param url - The URL to modify.
  * @returns The URL with 'https://' schema prepended.
  */
-declare function prependSchema(url: string): string;
+export declare function prependSchema(url: string): string;
 
 /**
  * Strips the port number from the end of the URL.
  * @param url - The URL to modify.
  * @returns The URL with the port removed.
  */
-declare function stripPort(url: string): string;
+export declare function stripPort(url: string): string;
 
 /**
  * Strips the trailing dot from the end of the URL.
  * @param url - The URL to modify.
  * @returns The URL with the trailing dot removed.
  */
-declare function stripTrailingDot(url: string): string;
+export declare function stripTrailingDot(url: string): string;
 
 /**
  * Strips the trailing slash from the end of the URL.
  * @param url - The URL to modify.
  * @returns The URL with the trailing slash removed.
  */
-declare function stripTrailingSlash(url: string): string;
+export declare function stripTrailingSlash(url: string): string;
 
 /**
  * Strips 'www.' from the beginning of the URL if present.
  * @param url - The URL to modify.
  * @returns The URL with 'www.' removed.
  */
-declare function stripWWW(url: string): string;
+export declare function stripWWW(url: string): string;
 
 /**
  * Composes a base URL by applying a series of transformations to the given domain.
  * @param domain - The domain to compose the base URL from.
  * @returns The composed base URL.
  */
-declare function composeBaseURL(domain: string): string;
+export declare function composeBaseURL(domain: string): string;
 
 /**
  * Composes an audit URL by applying a series of transformations to the given url.
@@ -110,7 +112,7 @@ declare function composeBaseURL(domain: string): string;
  * @param {string} [userAgent] - Optional user agent to use in the audit URL.
  * @returns a promise that resolves the composed audit URL.
  */
-declare function composeAuditURL(url: string, userAgent?: string): Promise<string>;
+export declare function composeAuditURL(url: string, userAgent?: string): Promise<string>;
 
 /**
  * Resolves the name of the secret based on the function version.
@@ -119,7 +121,7 @@ declare function composeAuditURL(url: string, userAgent?: string): Promise<strin
  * @param {string} defaultPath - The default path for the secret.
  * @returns {string} - The resolved secret name.
  */
-declare function resolveSecretsName(opts: object, ctx: object, defaultPath: string): string;
+export declare function resolveSecretsName(opts: object, ctx: object, defaultPath: string): string;
 
 /**
  * Resolves the name of the customer secrets based on the baseURL.
@@ -127,7 +129,7 @@ declare function resolveSecretsName(opts: object, ctx: object, defaultPath: stri
  * @param {Object} ctx - The context object containing the function version.
  * @returns {string} - The resolved secret name.
  */
-declare function resolveCustomerSecretsName(baseURL: string, ctx: object): string;
+export declare function resolveCustomerSecretsName(baseURL: string, ctx: object): string;
 
 /**
  * Retrieves the RUM domain key for the specified base URL from the customer secrets.
@@ -137,7 +139,7 @@ declare function resolveCustomerSecretsName(baseURL: string, ctx: object): strin
  * @returns {Promise<string>} - A promise that resolves to the RUM domain key.
  * @throws {Error} Throws an error if no domain key is found for the specified base URL.
  */
-declare function getRUMDomainKey(baseURL: string, ctx: object): Promise<string>;
+export declare function getRUMDomainKey(baseURL: string, ctx: object): Promise<string>;
 
 /**
  * Generates a CSV file from the provided JSON data.
@@ -149,7 +151,7 @@ declare function getRUMDomainKey(baseURL: string, ctx: object): Promise<string>;
  * @param {Object[]} data - An array of JSON objects to be converted into CSV format.
  * @returns {Buffer} A Buffer containing the CSV formatted data, encoded in UTF-8.
  */
-declare function generateCSVFile(data: object[]): Buffer;
+export declare function generateCSVFile(data: object[]): Buffer;
 
 /**
  * Replaces placeholders in the prompt content with their corresponding values.
@@ -158,7 +160,7 @@ declare function generateCSVFile(data: object[]): Buffer;
  * @param {Object} placeholders - The placeholders and their values.
  * @returns {string} - The content with placeholders replaced.
  */
-declare function replacePlaceholders(content: string, placeholders: object): string;
+export declare function replacePlaceholders(content: string, placeholders: object): string;
 
 /**
  * Function to support reading static file
@@ -168,7 +170,7 @@ declare function replacePlaceholders(content: string, placeholders: object): str
  * @param {String} filename - The path of the prompt file.
  * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content.
  */
-declare function getStaticContent(placeholders: object, filename: string):
+export declare function getStaticContent(placeholders: object, filename: string):
   Promise<string | null>;
 
 /**
@@ -181,7 +183,7 @@ declare function getStaticContent(placeholders: object, filename: string):
  * @returns {Promise<string|null>} - A promise that resolves to a string with the prompt content,
  * or null if an error occurs.
  */
-declare function getPrompt(placeholders: object, filename: string, log: object):
+export declare function getPrompt(placeholders: object, filename: string, log: object):
   Promise<string | null>;
 
 /**
@@ -194,7 +196,7 @@ declare function getPrompt(placeholders: object, filename: string, log: object):
  * @returns {Promise<string|null>} - A promise that resolves to a string with the query content,
  * or null if an error occurs.
  */
-declare function getQuery(placeholders: object, filename: string, log: object):
+export declare function getQuery(placeholders: object, filename: string, log: object):
   Promise<string | null>;
 
 /**
@@ -202,7 +204,7 @@ declare function getQuery(placeholders: object, filename: string, log: object):
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-form-view-low-form-conversion metrics.
  */
-declare function getHighFormViewsLowConversionMetrics(formVitals: object[]):
+export declare function getHighFormViewsLowConversionMetrics(formVitals: object[]):
   object[];
 
 /**
@@ -210,7 +212,7 @@ declare function getHighFormViewsLowConversionMetrics(formVitals: object[]):
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-page-view-low-form-view metrics.
  */
-declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[]):
+export declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[]):
   object[];
 
 /**
@@ -218,7 +220,7 @@ declare function getHighPageViewsLowFormViewsMetrics(formVitals: object[]):
  * @param {Object[]} formVitals - An array of form vitals.
  * @returns {Object[]} - An array of high-page-view-low-form-ctr metrics.
  */
-declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[]):
+export declare function getHighPageViewsLowFormCtrMetrics(formVitals: object[]):
   object[];
 
 /**

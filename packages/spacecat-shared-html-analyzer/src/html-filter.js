@@ -59,7 +59,7 @@ const COOKIE_BANNER_CLASS_SELECTORS = [
   '.cookie-bar', '.privacy-bar', '.consent-bar', '.gdpr-bar',
   '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
   '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
-  '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay'
+  '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
 ];
 
 const COOKIE_BANNER_ID_SELECTORS = [
@@ -78,7 +78,7 @@ const COOKIE_BANNER_ARIA_SELECTORS = [
   '[role="alertdialog"][aria-label*="cookie" i]',
   '[role="alertdialog"][aria-label*="privacy" i]',
   '[aria-describedby*="cookie" i]',
-  '[aria-describedby*="privacy" i]'
+  '[aria-describedby*="privacy" i]',
 ];
 
 /**
@@ -102,9 +102,12 @@ function isCookieBannerElement(element) {
  * Uses multiple strategies to identify genuine cookie consent banners
  */
 function removeCookieBanners(element) {
-
   // Combine all selectors
-  const allSelectors = [...COOKIE_BANNER_CLASS_SELECTORS, ...COOKIE_BANNER_ID_SELECTORS, ...COOKIE_BANNER_ARIA_SELECTORS];
+  const allSelectors = [
+    ...COOKIE_BANNER_CLASS_SELECTORS,
+    ...COOKIE_BANNER_ID_SELECTORS,
+    ...COOKIE_BANNER_ARIA_SELECTORS,
+  ];
 
   // Apply class/ID/ARIA based detection with text validation
   allSelectors.forEach((selector) => {
@@ -136,7 +139,11 @@ export function filterNavigationAndFooterBrowser(element) {
  */
 function removeCookieBannersCheerio($) {
   // Combine all selectors for efficient removal
-  const allSelectors = [...COOKIE_BANNER_CLASS_SELECTORS, ...COOKIE_BANNER_ID_SELECTORS, ...COOKIE_BANNER_ARIA_SELECTORS];
+  const allSelectors = [
+    ...COOKIE_BANNER_CLASS_SELECTORS,
+    ...COOKIE_BANNER_ID_SELECTORS,
+    ...COOKIE_BANNER_ARIA_SELECTORS,
+  ];
 
   // Apply class/ID/ARIA based detection with text validation
   allSelectors.forEach((selector) => {
@@ -179,11 +186,11 @@ function filterNavigationAndFooterCheerio($) {
 function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
   const parser = new DOMParser(); // eslint-disable-line no-undef
   const doc = parser.parseFromString(htmlContent, 'text/html');
-  
+
   // Process the entire document to capture JSON-LD in both head and body
   const documentElement = doc.documentElement || doc;
-  
-  // Remove script elements except JSON-LD structured data, also remove style, noscript, template elements
+
+  // Remove script elements except JSON-LD, also remove style, noscript, template
   documentElement.querySelectorAll('script').forEach((n) => {
     // Preserve JSON-LD structured data scripts by converting them to code blocks
     if (n.type === 'application/ld+json') {
@@ -192,29 +199,31 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
         try {
           // Parse and re-stringify JSON to ensure consistent formatting
           // Handle both single and double quoted JSON
-          let cleanJsonContent = jsonContent.trim();
+          const cleanJsonContent = jsonContent.trim();
           // Try to fix common JSON issues like single quotes
-          const startsValid = cleanJsonContent.startsWith('{') || cleanJsonContent.startsWith('[');
-          const endsValid = cleanJsonContent.endsWith('}') || cleanJsonContent.endsWith(']');
-          
+          const startsValid = cleanJsonContent.startsWith('{')
+            || cleanJsonContent.startsWith('[');
+          const endsValid = cleanJsonContent.endsWith('}')
+            || cleanJsonContent.endsWith(']');
+
           if (!startsValid || !endsValid) {
             throw new Error('Not valid JSON structure');
           }
-          
+
           const parsedJson = JSON.parse(cleanJsonContent);
           const formattedJson = JSON.stringify(parsedJson, null, 2);
-          
+
           // Create a pre/code block to preserve JSON-LD for markdown conversion
-          const codeBlock = document.createElement('pre');
-          const code = document.createElement('code');
+          const codeBlock = document.createElement('pre'); // eslint-disable-line no-undef
+          const code = document.createElement('code'); // eslint-disable-line no-undef
           code.className = 'ld-json';
           code.textContent = formattedJson;
           codeBlock.appendChild(code);
           n.parentNode.insertBefore(codeBlock, n);
         } catch (e) {
           // If JSON parsing fails, fall back to original content
-          const codeBlock = document.createElement('pre');
-          const code = document.createElement('code');
+          const codeBlock = document.createElement('pre'); // eslint-disable-line no-undef
+          const code = document.createElement('code'); // eslint-disable-line no-undef
           code.className = 'ld-json';
           code.textContent = jsonContent.trim();
           codeBlock.appendChild(code);
@@ -225,10 +234,11 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
     n.remove();
   });
   documentElement.querySelectorAll('style,noscript,template').forEach((n) => n.remove());
-  
+
   // Remove all media elements (images, videos, audio, etc.) to keep only text
-  documentElement.querySelectorAll('img,video,audio,picture,svg,canvas,embed,object,iframe').forEach((n) => n.remove());
-  
+  const mediaSelector = 'img,video,audio,picture,svg,canvas,embed,object,iframe';
+  documentElement.querySelectorAll(mediaSelector).forEach((n) => n.remove());
+
   // Remove consent banners with intelligent detection
   removeCookieBanners(documentElement);
 
@@ -236,7 +246,7 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText) {
   if (ignoreNavFooter) {
     filterNavigationAndFooterBrowser(documentElement);
   }
-  
+
   if (returnText) {
     return (documentElement && documentElement.textContent) ? documentElement.textContent : '';
   }
@@ -260,8 +270,8 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
 
   const $ = cheerio.load(htmlContent);
 
-  // Remove script elements except JSON-LD structured data, also remove style, noscript, template tags
-  $('script').each(function() {
+  // Remove script except JSON-LD structured data, also remove style, noscript, template
+  $('script').each(function processScript() {
     // Preserve JSON-LD structured data scripts by converting them to code blocks
     if ($(this).attr('type') === 'application/ld+json') {
       const jsonContent = $(this).text().trim();
@@ -269,14 +279,16 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
         try {
           // Parse and re-stringify JSON to ensure consistent formatting
           // Handle both single and double quoted JSON
-          let cleanJsonContent = jsonContent;
-          const startsValid = cleanJsonContent.startsWith('{') || cleanJsonContent.startsWith('[');
-          const endsValid = cleanJsonContent.endsWith('}') || cleanJsonContent.endsWith(']');
-          
+          const cleanJsonContent = jsonContent;
+          const startsValid = cleanJsonContent.startsWith('{')
+            || cleanJsonContent.startsWith('[');
+          const endsValid = cleanJsonContent.endsWith('}')
+            || cleanJsonContent.endsWith(']');
+
           if (!startsValid || !endsValid) {
             throw new Error('Not valid JSON structure');
           }
-          
+
           const parsedJson = JSON.parse(cleanJsonContent);
           const formattedJson = JSON.stringify(parsedJson, null, 2);
           const codeBlock = `<pre><code class="ld-json">${formattedJson}</code></pre>`;
@@ -293,7 +305,7 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
     }
   });
   $('style, noscript, template').remove();
-  
+
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   $('img, video, audio, picture, svg, canvas, embed, object, iframe').remove();
 

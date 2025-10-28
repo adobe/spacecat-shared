@@ -297,6 +297,9 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText) {
   // Remove all media elements (images, videos, audio, etc.) to keep only text
   $('img, video, audio, picture, svg, canvas, embed, object, iframe').remove();
 
+  // Remove cookie banners with comprehensive detection
+  removeCookieBannersCheerio($);
+
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {
     filterNavigationAndFooterCheerio($);

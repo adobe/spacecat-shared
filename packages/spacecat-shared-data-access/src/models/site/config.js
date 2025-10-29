@@ -305,6 +305,9 @@ export const configSchema = Joi.object({
     ).optional(),
     outputLocation: Joi.string().required(),
   }).optional(),
+  tokowakaConfig: Joi.object({
+    apiKey: Joi.string().required(),
+  }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
   }).optional(),
@@ -410,6 +413,7 @@ export const Config = (data = {}) => {
   };
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
+  self.getTokowakaConfig = () => state?.tokowakaConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -657,6 +661,10 @@ export const Config = (data = {}) => {
     state.cdnLogsConfig = cdnLogsConfig;
   };
 
+  self.updateTokowakaConfig = (tokowakaConfig) => {
+    state.tokowakaConfig = tokowakaConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -671,4 +679,5 @@ Config.toDynamoItem = (config) => ({
   brandConfig: config.getBrandConfig(),
   cdnLogsConfig: config.getCdnLogsConfig(),
   llmo: config.getLlmoConfig(),
+  tokowakaConfig: config.getTokowakaConfig(),
 });

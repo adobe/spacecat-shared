@@ -26,7 +26,7 @@ class ScrapeUrlCollection extends BaseCollection {
     const pastDateIso = pastDate.toISOString();
     const nowIso = now.toISOString();
 
-    return this.allByUrlAndIsOriginalAndProcessingType(url, true, processingType, {
+    return this.allByIndexKeys({ url, isOriginal: true, processingType }, {
       between: {
         attribute: 'createdAt',
         start: pastDateIso,

@@ -15,12 +15,14 @@
 import { expect, use } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import AWSXray from 'aws-xray-sdk';
-import { Site } from '@adobe/spacecat-shared-data-access';
-import { ImsPromiseClient } from '@adobe/spacecat-shared-ims-client';
+import { DELIVERY_TYPES } from '@adobe/spacecat-shared-utils';
 import { getAccessToken, retrievePageAuthentication } from '../src/auth.js';
+import ImsPromiseClient from '../src/clients/ims-promise-client.js';
 
 use(chaiAsPromised);
+use(sinonChai);
 
 describe('auth', () => {
   describe('retrievePageAuthentication', () => {
@@ -91,7 +93,7 @@ describe('auth', () => {
     beforeEach(() => {
       mockSite = {
         getBaseURL: sinon.stub().returns('https://example.com'),
-        getDeliveryType: sinon.stub().returns(Site.DELIVERY_TYPES.AEM_EDGE),
+        getDeliveryType: sinon.stub().returns(DELIVERY_TYPES.AEM_EDGE),
         getAuthoringType: sinon.stub().returns('cs/crosswalk'),
       };
 

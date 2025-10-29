@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-brand-client-v1.1.26](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.25...@adobe/spacecat-shared-brand-client-v1.1.26) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
 # [@adobe/spacecat-shared-brand-client-v1.1.25](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.24...@adobe/spacecat-shared-brand-client-v1.1.25) (2025-10-25)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.75.0...@adobe/spacecat-shared-data-access-v2.76.0) (2025-10-29)
+
+
+### Features
+
+* add tokowaka client ([#1025](https://github.com/adobe/spacecat-shared/issues/1025)) ([7af58b0](https://github.com/adobe/spacecat-shared/commit/7af58b03ef341c32b35a6614365024af6a636a56))
+
 # [@adobe/spacecat-shared-data-access-v2.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.74.2...@adobe/spacecat-shared-data-access-v2.75.0) (2025-10-29)
 
 

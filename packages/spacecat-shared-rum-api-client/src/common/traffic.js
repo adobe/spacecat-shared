@@ -32,6 +32,7 @@ export function getSecondLevelDomain(url) {
     const uri = new URI(prependSchema(url));
     const tld = uri.tld();
     return uri.hostname().split(`.${tld}`)[0];
+    /* c8 ignore next 4 */
   } catch (error) {
     // future-proof for the cases where url cannot be parsed for some reason
     return url;

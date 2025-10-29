@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.74.2...@adobe/spacecat-shared-data-access-v2.75.0) (2025-10-29)
+
+
+### Features
+
+* scrape url access pattern ([#1059](https://github.com/adobe/spacecat-shared/issues/1059)) ([26facf6](https://github.com/adobe/spacecat-shared/commit/26facf63dfae4908ed88221f16266910205e2473))
+
 # [@adobe/spacecat-shared-data-access-v2.74.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.74.1...@adobe/spacecat-shared-data-access-v2.74.2) (2025-10-28)
 
 

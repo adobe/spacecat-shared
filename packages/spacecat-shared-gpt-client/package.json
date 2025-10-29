@@ -36,8 +36,8 @@
   "dependencies": {
     "@adobe/fetch": "4.2.3",
     "@adobe/helix-universal": "5.2.3",
-    "@adobe/spacecat-shared-ims-client": "1.9.0",
-    "@adobe/spacecat-shared-utils": "1.66.0"
+    "@adobe/spacecat-shared-ims-client": "1.9.1",
+    "@adobe/spacecat-shared-utils": "1.67.0"
   },
   "devDependencies": {
     "chai": "6.2.0",

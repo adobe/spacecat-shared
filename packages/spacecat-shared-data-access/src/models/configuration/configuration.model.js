@@ -250,6 +250,130 @@ class Configuration extends BaseModel {
     this.updateHandlerOrgs(type, orgId, false);
   }
 
+  /**
+   * Updates the queue URLs configuration.
+   *
+   * @param {object} queues - The new queues configuration object
+   * @throws {Error} If queues object is empty or invalid
+   */
+  updateQueues(queues) {
+    if (!isNonEmptyObject(queues)) {
+      throw new Error('Queues configuration cannot be empty');
+    }
+    this.setQueues(queues);
+  }
+
+  /**
+   * Updates a job's properties (interval, group).
+   *
+   * @param {string} type - The job type to update
+   * @param {object} properties - Properties to update (interval, group)
+   * @throws {Error} If job not found or properties are invalid
+   */
+  updateJob(type, properties) {
+    const jobs = this.getJobs();
+    const jobIndex = jobs.findIndex((job) => job.type === type);
+
+    if (jobIndex === -1) {
+      throw new Error(`Job type "${type}" not found in configuration`);
+    }
+
+    if (properties.interval && !Object.values(Configuration.JOB_INTERVALS)
+      .includes(properties.interval)) {
+      throw new Error(`Invalid interval "${properties.interval}". Must be one of: ${Object.values(Configuration.JOB_INTERVALS).join(', ')}`);
+    }
+
+    if (properties.group && !Object.values(Configuration.JOB_GROUPS).includes(properties.group)) {
+      throw new Error(`Invalid group "${properties.group}". Must be one of: ${Object.values(Configuration.JOB_GROUPS).join(', ')}`);
+    }
+
+    jobs[jobIndex] = { ...jobs[jobIndex], ...properties };
+    this.setJobs(jobs);
+  }
+
+  /**
+   * Updates a handler's properties.
+   *
+   * @param {string} type - The handler type to update
+   * @param {object} properties - Properties to update
+   * @throws {Error} If handler not found or properties are invalid
+   */
+  updateHandlerProperties(type, properties) {
+    const handlers = this.getHandlers();
+    if (!handlers[type]) {
+      throw new Error(`Handler "${type}" not found in configuration`);
+    }
+
+    if (properties.productCodes !== undefined) {
+      if (!isNonEmptyArray(properties.productCodes)) {
+        throw new Error('productCodes must be a non-empty array');
+      }
+      const validProductCodes = Object.values(Entitlement.PRODUCT_CODES);
+      if (!properties.productCodes.every((pc) => validProductCodes.includes(pc))) {
+        throw new Error('Invalid product codes provided');
+      }
+    }
+
+    if (properties.dependencies !== undefined) {
+      if (isNonEmptyArray(properties.dependencies)) {
+        for (const dep of properties.dependencies) {
+          if (!handlers[dep.handler]) {
+            throw new Error(`Dependency handler "${dep.handler}" does not exist in configuration`);
+          }
+        }
+      }
+    }
+
+    if (properties.movingAvgThreshold !== undefined && properties.movingAvgThreshold < 1) {
+      throw new Error('movingAvgThreshold must be greater than or equal to 1');
+    }
+
+    if (properties.percentageChangeThreshold !== undefined && properties
+      .percentageChangeThreshold < 1) {
+      throw new Error('percentageChangeThreshold must be greater than or equal to 1');
+    }
+
+    handlers[type] = { ...handlers[type], ...properties };
+    this.setHandlers(handlers);
+  }
+
+  /**
+   * Updates the entire configuration or specific sections (handlers, jobs, queues).
+   * This is a flexible update method that allows updating one or more sections at once.
+   *
+   * @param {object} data - Configuration data to update
+   * @param {object} [data.handlers] - Handlers configuration
+   * @param {Array} [data.jobs] - Jobs configuration
+   * @param {object} [data.queues] - Queues configuration
+   * @throws {Error} If validation fails
+   */
+  updateConfiguration(data) {
+    if (!isNonEmptyObject(data)) {
+      throw new Error('Configuration data cannot be empty');
+    }
+
+    if (data.handlers !== undefined) {
+      if (!isNonEmptyObject(data.handlers)) {
+        throw new Error('Handlers must be a non-empty object if provided');
+      }
+      this.setHandlers(data.handlers);
+    }
+
+    if (data.jobs !== undefined) {
+      if (!Array.isArray(data.jobs)) {
+        throw new Error('Jobs must be an array if provided');
+      }
+      this.setJobs(data.jobs);
+    }
+
+    if (data.queues !== undefined) {
+      if (!isNonEmptyObject(data.queues)) {
+        throw new Error('Queues must be a non-empty object if provided');
+      }
+      this.setQueues(data.queues);
+    }
+  }
+
   registerAudit(
     type,
     enabledByDefault = false,

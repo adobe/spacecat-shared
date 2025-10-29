@@ -173,6 +173,16 @@ describe('ConfigurationModel', () => {
       delete instance.record.jobs;
       expect(instance.getDisabledAuditsForSite(site)).to.deep.equal([]);
     });
+
+    it('returns empty array for enabled audits when handlers is null', () => {
+      delete instance.record.handlers;
+      expect(instance.getEnabledAuditsForSite(site)).to.deep.equal([]);
+    });
+
+    it('returns empty array for enabled audits when jobs is null', () => {
+      delete instance.record.jobs;
+      expect(instance.getEnabledAuditsForSite(site)).to.deep.equal([]);
+    });
   });
 
   describe('manage handlers', () => {
@@ -183,6 +193,27 @@ describe('ConfigurationModel', () => {
 
       instance.addHandler('new-handler', handlerData);
       expect(instance.getHandler('new-handler')).to.deep.equal(handlerData);
+    });
+
+    it('adds a new handler when handlers object is null', () => {
+      delete instance.record.handlers;
+
+      const handlerData = {
+        enabledByDefault: true,
+      };
+
+      instance.addHandler('first-handler', handlerData);
+      expect(instance.getHandler('first-handler')).to.deep.equal(handlerData);
+    });
+
+    it('checks if handler is enabled for site when disabled.orgs is missing', () => {
+      instance.addHandler('test-missing-orgs', {
+        enabledByDefault: true,
+        disabled: { sites: [] },
+      });
+
+      const isEnabled = instance.isHandlerEnabledForSite('test-missing-orgs', site);
+      expect(isEnabled).to.be.true;
     });
 
     it('updates handler orgs for a handler disabled by default with enabled', () => {
@@ -280,6 +311,101 @@ describe('ConfigurationModel', () => {
       expect(instance.getHandler('organic-keywords').enabled.orgs).to.not.include(org.getId());
     });
 
+    it('disables a handler for a site when not enabled (early return)', () => {
+      const handler = instance.getHandler('organic-keywords');
+      const initialState = JSON.parse(JSON.stringify(handler));
+
+      instance.disableHandlerForSite('organic-keywords', site);
+
+      expect(instance.getHandler('organic-keywords')).to.deep.equal(initialState);
+    });
+
+    it('disables a handler for an organization when not enabled (early return)', () => {
+      const handler = instance.getHandler('organic-keywords');
+      const initialState = JSON.parse(JSON.stringify(handler));
+
+      instance.disableHandlerForOrg('organic-keywords', org);
+
+      expect(instance.getHandler('organic-keywords')).to.deep.equal(initialState);
+    });
+
+    it('disables a handler enabled by default when disabled array does not exist', () => {
+      instance.addHandler('test-handler-enabled', {
+        enabledByDefault: true,
+      });
+
+      instance.disableHandlerForSite('test-handler-enabled', site);
+
+      expect(instance.getHandler('test-handler-enabled').disabled.sites).to.include(site.getId());
+    });
+
+    it('enables a handler not enabled by default when enabled array does not exist', () => {
+      instance.addHandler('test-handler-not-enabled', {
+        enabledByDefault: false,
+      });
+
+      instance.enableHandlerForSite('test-handler-not-enabled', site);
+
+      expect(instance.getHandler('test-handler-not-enabled').enabled.sites).to.include(site.getId());
+    });
+
+    it('enables a handler enabled by default that was previously disabled', () => {
+      instance.disableHandlerForSite('404', site);
+      expect(instance.getHandler('404').disabled.sites).to.include(site.getId());
+
+      instance.enableHandlerForSite('404', site);
+      expect(instance.getHandler('404').disabled.sites).to.not.include(site.getId());
+    });
+
+    it('handles handler with disabled object missing sites array', () => {
+      instance.addHandler('test-handler-partial-disabled', {
+        enabledByDefault: true,
+        disabled: { orgs: [] },
+      });
+
+      instance.disableHandlerForSite('test-handler-partial-disabled', site);
+
+      expect(instance.getHandler('test-handler-partial-disabled').disabled.sites).to.include(site.getId());
+    });
+
+    it('handles handler with enabled object missing sites array', () => {
+      instance.addHandler('test-handler-partial-enabled', {
+        enabledByDefault: false,
+        enabled: { orgs: [] },
+      });
+
+      instance.enableHandlerForSite('test-handler-partial-enabled', site);
+
+      expect(instance.getHandler('test-handler-partial-enabled').enabled.sites).to.include(site.getId());
+    });
+
+    it('handles handler with disabled object missing orgs array when checking if enabled', () => {
+      instance.addHandler('test-handler-no-orgs', {
+        enabledByDefault: true,
+        disabled: { sites: [] },
+      });
+
+      const isEnabled = instance.isHandlerEnabledForOrg('test-handler-no-orgs', org);
+      expect(isEnabled).to.be.true;
+    });
+
+    it('returns early when trying to enable a non-existent handler', () => {
+      const handlers = instance.getHandlers();
+      const initialHandlers = JSON.parse(JSON.stringify(handlers));
+
+      instance.enableHandlerForSite('non-existent-handler', site);
+
+      expect(instance.getHandlers()).to.deep.equal(initialHandlers);
+    });
+
+    it('disables a handler not enabled by default when enabled array exists', () => {
+      instance.enableHandlerForSite('organic-keywords', site);
+      expect(instance.getHandler('organic-keywords').enabled.sites).to.include(site.getId());
+
+      instance.disableHandlerForSite('organic-keywords', site);
+      expect(instance.getHandler('organic-keywords').enabled.sites).to.not.include(site.getId());
+    });
+
     it('registers a new audit', () => {
       const auditType = 'structured-data';
       instance.registerAudit(auditType, true, 'weekly', ['ASO']);
@@ -328,6 +454,236 @@ describe('ConfigurationModel', () => {
 
     it('throws error when unregistering an invalid audit type', () => {
       expect(() => instance.unregisterAudit('invalid-audit-type')).to.throw(Error, 'Audit type invalid-audit-type is not a valid audit type in the data model');
+    });
+  });
+
+  describe('updateQueues', () => {
+    it('updates queues successfully', () => {
+      const newQueues = {
+        audits: 'sqs://new-audit-queue',
+        imports: 'sqs://new-import-queue',
+        reports: 'sqs://new-report-queue',
+        scrapes: 'sqs://new-scrape-queue',
+      };
+
+      instance.updateQueues(newQueues);
+
+      expect(instance.getQueues()).to.deep.equal(newQueues);
+    });
+
+    it('throws error when queues is not provided', () => {
+      expect(() => instance.updateQueues(null)).to.throw(Error, 'Queues configuration cannot be empty');
+    });
+
+    it('throws error when queues is empty object', () => {
+      expect(() => instance.updateQueues({})).to.throw(Error, 'Queues configuration cannot be empty');
+    });
+  });
+
+  describe('updateJob', () => {
+    it('updates job interval successfully', () => {
+      instance.updateJob('404', { interval: 'weekly' });
+
+      const job = instance.getJobs().find((j) => j.type === '404');
+      expect(job.interval).to.equal('weekly');
+    });
+
+    it('updates job group successfully', () => {
+      instance.updateJob('404', { group: 'audits' });
+
+      const job = instance.getJobs().find((j) => j.type === '404');
+      expect(job.group).to.equal('audits');
+    });
+
+    it('updates both interval and group successfully', () => {
+      instance.updateJob('404', { interval: 'monthly', group: 'audits' });
+
+      const job = instance.getJobs().find((j) => j.type === '404');
+      expect(job.interval).to.equal('monthly');
+      expect(job.group).to.equal('audits');
+    });
+
+    it('throws error when job type not found', () => {
+      expect(() => instance.updateJob('non-existent-job', { interval: 'daily' })).to.throw(Error, 'Job type "non-existent-job" not found in configuration');
+    });
+
+    it('throws error when invalid interval provided', () => {
+      expect(() => instance.updateJob('404', { interval: 'invalid-interval' })).to.throw(Error, 'Invalid interval "invalid-interval"');
+    });
+
+    it('throws error when invalid group provided', () => {
+      expect(() => instance.updateJob('404', { group: 'invalid-group' })).to.throw(Error, 'Invalid group "invalid-group"');
+    });
+  });
+
+  describe('updateHandlerProperties', () => {
+    it('updates handler enabledByDefault successfully', () => {
+      instance.updateHandlerProperties('404', { enabledByDefault: false });
+
+      const handler = instance.getHandler('404');
+      expect(handler.enabledByDefault).to.be.false;
+    });
+
+    it('updates handler productCodes successfully', () => {
+      const newProductCodes = ['ASO', 'LLMO'];
+      instance.updateHandlerProperties('404', { productCodes: newProductCodes });
+
+      const handler = instance.getHandler('404');
+      expect(handler.productCodes).to.deep.equal(newProductCodes);
+    });
+
+    it('updates handler dependencies successfully', () => {
+      const newDependencies = [{ handler: 'cwv', actions: ['test'] }];
+      instance.updateHandlerProperties('404', { dependencies: newDependencies });
+
+      const handler = instance.getHandler('404');
+      expect(handler.dependencies).to.deep.equal(newDependencies);
+    });
+
+    it('updates handler movingAvgThreshold successfully', () => {
+      instance.updateHandlerProperties('404', { movingAvgThreshold: 5 });
+
+      const handler = instance.getHandler('404');
+      expect(handler.movingAvgThreshold).to.equal(5);
+    });
+
+    it('updates handler percentageChangeThreshold successfully', () => {
+      instance.updateHandlerProperties('404', { percentageChangeThreshold: 10 });
+
+      const handler = instance.getHandler('404');
+      expect(handler.percentageChangeThreshold).to.equal(10);
+    });
+
+    it('updates multiple handler properties at once', () => {
+      instance.updateHandlerProperties('404', {
+        enabledByDefault: false,
+        productCodes: ['ASO'],
+        movingAvgThreshold: 7,
+      });
+
+      const handler = instance.getHandler('404');
+      expect(handler.enabledByDefault).to.be.false;
+      expect(handler.productCodes).to.deep.equal(['ASO']);
+      expect(handler.movingAvgThreshold).to.equal(7);
+    });
+
+    it('throws error when handler not found', () => {
+      expect(() => instance.updateHandlerProperties('non-existent', { enabledByDefault: true })).to.throw(Error, 'Handler "non-existent" not found in configuration');
+    });
+
+    it('throws error when productCodes is empty array', () => {
+      expect(() => instance.updateHandlerProperties('404', { productCodes: [] })).to.throw(Error, 'productCodes must be a non-empty array');
+    });
+
+    it('throws error when productCodes is not an array', () => {
+      expect(() => instance.updateHandlerProperties('404', { productCodes: 'invalid' })).to.throw(Error, 'productCodes must be a non-empty array');
+    });
+
+    it('throws error when invalid product code provided', () => {
+      expect(() => instance.updateHandlerProperties('404', { productCodes: ['INVALID_CODE'] })).to.throw(Error, 'Invalid product codes provided');
+    });
+
+    it('throws error when dependency handler does not exist', () => {
+      expect(() => instance.updateHandlerProperties('404', {
+        dependencies: [{ handler: 'non-existent-handler', actions: ['test'] }],
+      })).to.throw(Error, 'Dependency handler "non-existent-handler" does not exist in configuration');
+    });
+
+    it('throws error when movingAvgThreshold is less than 1', () => {
+      expect(() => instance.updateHandlerProperties('404', { movingAvgThreshold: 0 })).to.throw(Error, 'movingAvgThreshold must be greater than or equal to 1');
+    });
+
+    it('throws error when percentageChangeThreshold is less than 1', () => {
+      expect(() => instance.updateHandlerProperties('404', { percentageChangeThreshold: 0 })).to.throw(Error, 'percentageChangeThreshold must be greater than or equal to 1');
+    });
+  });
+
+  describe('updateConfiguration', () => {
+    it('updates handlers section successfully', () => {
+      const newHandlers = {
+        404: {
+          enabledByDefault: true,
+          enabled: { sites: [], orgs: [] },
+          disabled: { sites: [], orgs: [] },
+          dependencies: [],
+          productCodes: ['SPACECAT_CORE'],
+        },
+      };
+
+      instance.updateConfiguration({ handlers: newHandlers });
+
+      expect(instance.getHandlers()).to.deep.equal(newHandlers);
+    });
+
+    it('updates jobs section successfully', () => {
+      const newJobs = [
+        { group: 'audits', type: 'cwv', interval: 'weekly' },
+        { group: 'audits', type: '404', interval: 'daily' },
+      ];
+
+      instance.updateConfiguration({ jobs: newJobs });
+
+      expect(instance.getJobs()).to.deep.equal(newJobs);
+    });
+
+    it('updates queues section successfully', () => {
+      const newQueues = {
+        audits: 'sqs://new-audit-queue',
+        imports: 'sqs://new-import-queue',
+      };
+
+      instance.updateConfiguration({ queues: newQueues });
+
+      expect(instance.getQueues()).to.deep.equal(newQueues);
+    });
+
+    it('updates multiple sections at once', () => {
+      const newHandlers = {
+        cwv: {
+          enabledByDefault: true,
+          productCodes: ['SPACECAT_CORE'],
+        },
+      };
+      const newJobs = [{ group: 'audits', type: 'cwv', interval: 'daily' }];
+      const newQueues = { audits: 'sqs://audit-queue' };
+
+      instance.updateConfiguration({
+        handlers: newHandlers,
+        jobs: newJobs,
+        queues: newQueues,
+      });
+
+      expect(instance.getHandlers()).to.deep.equal(newHandlers);
+      expect(instance.getJobs()).to.deep.equal(newJobs);
+      expect(instance.getQueues()).to.deep.equal(newQueues);
+    });
+
+    it('throws error when data is not provided', () => {
+      expect(() => instance.updateConfiguration(null)).to.throw(Error, 'Configuration data cannot be empty');
+    });
+
+    it('throws error when data is empty object', () => {
+      expect(() => instance.updateConfiguration({})).to.throw(Error, 'Configuration data cannot be empty');
+    });
+
+    it('throws error when handlers is not an object', () => {
+      expect(() => instance.updateConfiguration({ handlers: 'invalid' })).to.throw(Error, 'Handlers must be a non-empty object if provided');
+    });
+
+    it('throws error when handlers is empty object', () => {
+      expect(() => instance.updateConfiguration({ handlers: {} })).to.throw(Error, 'Handlers must be a non-empty object if provided');
+    });
+
+    it('throws error when jobs is not an array', () => {
+      expect(() => instance.updateConfiguration({ jobs: 'invalid' })).to.throw(Error, 'Jobs must be an array if provided');
+    });
+
+    it('throws error when queues is not an object', () => {
+      expect(() => instance.updateConfiguration({ queues: 'invalid' })).to.throw(Error, 'Queues must be a non-empty object if provided');
+    });
+
+    it('throws error when queues is empty object', () => {
+      expect(() => instance.updateConfiguration({ queues: {} })).to.throw(Error, 'Queues must be a non-empty object if provided');
     });
   });
 

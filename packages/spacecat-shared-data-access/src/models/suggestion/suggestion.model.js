@@ -29,6 +29,7 @@ class Suggestion extends BaseModel {
     FIXED: 'FIXED',
     ERROR: 'ERROR',
     OUTDATED: 'OUTDATED',
+    NOT_VALIDATED: 'NOT_VALIDATED',
   };
 
   static TYPES = {

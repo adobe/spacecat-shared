@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-html-analyzer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Analyze HTML content visibility for AI crawlers and citations - compare static HTML vs fully rendered content",
   "type": "module",
   "engines": {
@@ -41,7 +41,7 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
-    "chai": "6.0.1",
+    "chai": "6.2.0",
     "chai-as-promised": "8.0.2",
     "rollup": "^4.52.2",
     "sinon": "21.0.0",

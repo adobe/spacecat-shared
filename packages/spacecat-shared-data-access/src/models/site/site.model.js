@@ -15,6 +15,7 @@ import {
   hasText,
   isValidUrl,
   DELIVERY_TYPES,
+  AUTHORING_TYPES,
 } from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
 
@@ -71,15 +72,9 @@ export const getAuthoringType = (hostname, authoringTypes) => {
 class Site extends BaseModel {
   static DELIVERY_TYPES = DELIVERY_TYPES;
 
-  static DEFAULT_DELIVERY_TYPE = Site.DELIVERY_TYPES.AEM_EDGE;
+  static DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
 
-  static AUTHORING_TYPES = {
-    CS_CW: 'cs/crosswalk',
-    CS: 'cs',
-    SP: 'sharepoint',
-    GD: 'googledocs',
-    DA: 'documentauthoring',
-  };
+  static AUTHORING_TYPES = AUTHORING_TYPES;
 
   async toggleLive() {
     const newIsLive = !this.getIsLive();

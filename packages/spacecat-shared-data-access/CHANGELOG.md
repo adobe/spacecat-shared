@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-data-access-v2.74.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.74.1...@adobe/spacecat-shared-data-access-v2.74.2) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-data-access-v2.74.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.74.0...@adobe/spacecat-shared-data-access-v2.74.1) (2025-10-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
 # [@adobe/spacecat-shared-data-access-v2.74.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.73.1...@adobe/spacecat-shared-data-access-v2.74.0) (2025-10-22)
 
 

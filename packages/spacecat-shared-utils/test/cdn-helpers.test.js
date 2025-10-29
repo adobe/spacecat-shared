@@ -163,15 +163,15 @@ describe('CDN Helper Functions', () => {
             'EdgeTimeToFirstByteMs',
           ],
           'Log format': 'JSON',
-          'Ownership token': 'The token will be available after the log forwarding configuration has been deployed in Cloudflare. Please refresh this page once you have completed this step.',
+          'Ownership token': 'token-available-after-deployment',
           HelpUrl: 'https://developers.cloudflare.com/logs/logpush/logpush-job/enable-destinations/aws-s3/',
         });
       });
 
       it('should handle byocdn-cloudflare with ownership token', () => {
-        const payloadWithToken = { ...mockPayload, logSource: 'byocdn-cloudflare', ownershipToken: 'abc123token456' };
+        const payloadWithToken = { ...mockPayload, logSource: 'byocdn-cloudflare', ownershipToken: 'abc123token4567' };
         const result = prettifyLogForwardingConfig(payloadWithToken);
-        expect(result['Ownership token']).to.equal('abc123token456');
+        expect(result['Ownership token']).to.equal('abc123token4567');
       });
 
       it('should handle byocdn-cloudfront', () => {

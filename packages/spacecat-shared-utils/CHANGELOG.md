@@ -1,3 +1,36 @@
+# [@adobe/spacecat-shared-utils-v1.66.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.66.0...@adobe/spacecat-shared-utils-v1.66.1) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-utils-v1.66.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.65.0...@adobe/spacecat-shared-utils-v1.66.0) (2025-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
+
+### Features
+
+* start breaking dependency cycles in `shared` ([#1052](https://github.com/adobe/spacecat-shared/issues/1052)) ([a9ed9e1](https://github.com/adobe/spacecat-shared/commit/a9ed9e1f86bf4049b40bff15122e8f34849e87d7))
+
+# [@adobe/spacecat-shared-utils-v1.65.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.64.0...@adobe/spacecat-shared-utils-v1.65.0) (2025-10-24)
+
+
+### Features
+
+* update schemas to make category and region optional for brand aliases ([#1044](https://github.com/adobe/spacecat-shared/issues/1044)) ([d024402](https://github.com/adobe/spacecat-shared/commit/d02440269d557adfb810312badfbfc8ff74cddf3))
+
+# [@adobe/spacecat-shared-utils-v1.64.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.63.0...@adobe/spacecat-shared-utils-v1.64.0) (2025-10-24)
+
+
+### Features
+
+* change tests so I can release to prod yay ([#1043](https://github.com/adobe/spacecat-shared/issues/1043)) ([c478e22](https://github.com/adobe/spacecat-shared/commit/c478e220321ea24a20882a2521cb48c3ad4ffae3))
+
 # [@adobe/spacecat-shared-utils-v1.63.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.62.0...@adobe/spacecat-shared-utils-v1.63.0) (2025-10-23)
 
 

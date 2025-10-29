@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-html-analyzer-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.1...@adobe/spacecat-shared-html-analyzer-v1.0.2) (2025-10-29)
+
+
+### Bug Fixes
+
+* json-ld inclusion, cc banner updates ([#1054](https://github.com/adobe/spacecat-shared/issues/1054)) ([9f993fe](https://github.com/adobe/spacecat-shared/commit/9f993fe3531334d6819112aa535465dcfd4ccfb1))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.0.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.0...@adobe/spacecat-shared-html-analyzer-v1.0.1) (2025-10-25)
 
 

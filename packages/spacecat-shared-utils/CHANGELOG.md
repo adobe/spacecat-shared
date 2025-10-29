@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.68.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.67.0...@adobe/spacecat-shared-utils-v1.68.0) (2025-10-29)
+
+
+### Features
+
+* add optional urls to categories | LLMO-845 ([#1055](https://github.com/adobe/spacecat-shared/issues/1055)) ([5d4d63e](https://github.com/adobe/spacecat-shared/commit/5d4d63e95e9d688c5334a0db66af419cc1aad858))
+
+# [@adobe/spacecat-shared-utils-v1.67.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.66.1...@adobe/spacecat-shared-utils-v1.67.0) (2025-10-29)
+
+
+### Features
+
+* added a11y-assistive type to extractor ([#1067](https://github.com/adobe/spacecat-shared/issues/1067)) ([79d0326](https://github.com/adobe/spacecat-shared/commit/79d0326fef06341d6243f3979659ccc904f59d14))
+
 # [@adobe/spacecat-shared-utils-v1.66.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.66.0...@adobe/spacecat-shared-utils-v1.66.1) (2025-10-28)
 
 

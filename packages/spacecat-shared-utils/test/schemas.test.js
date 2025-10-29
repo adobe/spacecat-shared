@@ -813,6 +813,140 @@ describe('schemas', () => {
       });
     });
 
+    describe('category urls', () => {
+      it('validates category without urls (optional field)', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: { name: 'Category One', region: 'US' },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].urls).to.be.undefined;
+        }
+      });
+
+      it('validates category with valid URL type', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'https://example.com', type: 'url' },
+                { value: 'https://another-example.com/path', type: 'url' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].urls).to.have.length(2);
+          expect(result.data.categories[categoryId].urls[0].value).equals('https://example.com');
+          expect(result.data.categories[categoryId].urls[0].type).equals('url');
+        }
+      });
+
+      it('fails when URL type has invalid URL format', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'not-a-valid-url', type: 'url' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+        if (!result.success) {
+          expect(result.error.issues[0].message).equals('Invalid URL format');
+        }
+      });
+
+      it('validates prefix type with non-URL format (no validation for prefix)', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'some-prefix-string', type: 'prefix' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails when url object has empty value', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: '', type: 'url' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when url object has invalid type', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'https://example.com', type: 'invalid-type' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when url object is missing required fields', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'https://example.com' }, // missing type
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+    });
+
     describe('cdn bucket config', () => {
       it('validates configuration without cdn bucket config', () => {
         const result = llmoConfig.safeParse(baseConfig);

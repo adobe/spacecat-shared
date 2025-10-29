@@ -39,11 +39,6 @@ import expectedFormVitalsResult from './fixtures/expected-form-vitals-result.jso
 import expectedTrafficAnalysisResult from './fixtures/expected-traffic-analysis-result.json' with { type: 'json' };
 
 describe('Query functions', () => {
-  xit('crunches traffic acquisition', async () => {
-    const trafficSourcesResult = await trafficAcquisition.handler(bundles.rumBundles);
-    expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
-  });
-
   it('crunches form vitals', async () => {
     const formVitalsResult = await formVitals.handler(bundlesWithForm.rumBundles);
     expect(expectedFormVitalsResult).to.deep.members(formVitalsResult);
@@ -67,6 +62,11 @@ describe('Query functions', () => {
   it('crunches variant data', async () => {
     const variantResult = variant.handler(bundlesForVariant.rumBundles);
     expect(expectedVariantResult).to.eql(variantResult);
+  });
+
+  it('crunches traffic acquisition', async () => {
+    const trafficSourcesResult = await trafficAcquisition.handler(bundles.rumBundles);
+    expect(expectedTrafficSourcesResult).to.eql(trafficSourcesResult);
   });
 
   it('crunches oppty/high-inorganic-high-bounce', async () => {

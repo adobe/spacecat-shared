@@ -58,13 +58,11 @@ export default class CloudFrontCdnClient extends BaseCdnClient {
    * @private
    */
   #initializeClient() {
-    /* c8 ignore start */
     if (!this.client) {
       this.client = new CloudFrontClient({
         region: this.cdnConfig.region,
       });
     }
-    /* c8 ignore stop */
   }
 
   /**
@@ -105,13 +103,14 @@ export default class CloudFrontCdnClient extends BaseCdnClient {
       },
     });
 
-    try {
-      this.log.debug(`Initiating CloudFront cache invalidation for ${JSON.stringify(formattedPaths)} paths`);
+    this.log.debug(`Initiating CloudFront cache invalidation for ${JSON.stringify(formattedPaths)} paths`);
+    const startTime = Date.now();
 
+    try {
       const response = await this.client.send(command);
       const invalidation = response.Invalidation;
 
-      this.log.info(`CloudFront cache invalidation initiated: ${invalidation.Id}`);
+      this.log.info(`CloudFront cache invalidation initiated: ${invalidation.Id} (took ${Date.now() - startTime}ms)`);
 
       return {
         status: 'success',
@@ -122,7 +121,7 @@ export default class CloudFrontCdnClient extends BaseCdnClient {
         paths: formattedPaths.length,
       };
     } catch (error) {
-      this.log.error(`Failed to invalidate CloudFront cache: ${error.message}`, error);
+      this.log.error(`Failed to invalidate CloudFront cache after ${Date.now() - startTime}ms: ${error.message}`, error);
       throw error;
     }
   }

@@ -15,6 +15,8 @@
 import { expect, use } from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import { mockClient } from 'aws-sdk-client-mock';
+import { CloudFrontClient, CreateInvalidationCommand } from '@aws-sdk/client-cloudfront';
 import CloudFrontCdnClient from '../../src/cdn/cloudfront-cdn-client.js';
 
 use(sinonChai);
@@ -22,7 +24,7 @@ use(sinonChai);
 describe('CloudFrontCdnClient', () => {
   let client;
   let log;
-  let mockCloudFrontClient;
+  let cloudFrontMock;
 
   beforeEach(() => {
     log = {
@@ -32,12 +34,13 @@ describe('CloudFrontCdnClient', () => {
       debug: sinon.stub(),
     };
 
-    mockCloudFrontClient = {
-      send: sinon.stub(),
-    };
+    // Mock the CloudFront SDK client
+    cloudFrontMock = mockClient(CloudFrontClient);
   });
 
   afterEach(() => {
+    // Reset all mocks
+    cloudFrontMock.reset();
     sinon.restore();
   });
 
@@ -142,8 +145,6 @@ describe('CloudFrontCdnClient', () => {
         }),
       };
       client = new CloudFrontCdnClient(env, log);
-      // Mock the internal client
-      client.client = mockCloudFrontClient;
     });
 
     it('should invalidate cache successfully', async () => {
@@ -154,7 +155,7 @@ describe('CloudFrontCdnClient', () => {
           CreateTime: new Date('2025-01-15T10:30:00.000Z'),
         },
       };
-      mockCloudFrontClient.send.resolves(mockResponse);
+      cloudFrontMock.on(CreateInvalidationCommand).resolves(mockResponse);
 
       const paths = ['/path1', '/path2'];
       const result = await client.invalidateCache(paths);
@@ -168,9 +169,9 @@ describe('CloudFrontCdnClient', () => {
         paths: 2,
       });
 
-      expect(mockCloudFrontClient.send).to.have.been.calledOnce;
       expect(log.debug).to.have.been.calledWith(sinon.match(/Initiating CloudFront cache invalidation/));
       expect(log.info).to.have.been.calledWith(sinon.match(/CloudFront cache invalidation initiated/));
+      expect(log.info).to.have.been.calledWith(sinon.match(/took \d+ms/));
     });
 
     it('should format paths to start with /', async () => {
@@ -181,13 +182,14 @@ describe('CloudFrontCdnClient', () => {
           CreateTime: new Date(),
         },
       };
-      mockCloudFrontClient.send.resolves(mockResponse);
+      cloudFrontMock.on(CreateInvalidationCommand).resolves(mockResponse);
 
       const paths = ['path1', '/path2', 'path3'];
       await client.invalidateCache(paths);
 
-      const command = mockCloudFrontClient.send.firstCall.args[0];
-      expect(command.input.InvalidationBatch.Paths.Items).to.deep.equal([
+      const calls = cloudFrontMock.commandCalls(CreateInvalidationCommand);
+      expect(calls).to.have.length(1);
+      expect(calls[0].args[0].input.InvalidationBatch.Paths.Items).to.deep.equal([
         '/path1',
         '/path2',
         '/path3',
@@ -213,7 +215,10 @@ describe('CloudFrontCdnClient', () => {
         message: 'No paths to invalidate',
       });
       expect(log.warn).to.have.been.calledWith('No paths provided for cache invalidation');
-      expect(mockCloudFrontClient.send).to.not.have.been.called;
+
+      // Verify no CloudFront commands were sent
+      const calls = cloudFrontMock.commandCalls(CreateInvalidationCommand);
+      expect(calls).to.have.length(0);
     });
 
     it('should return skipped result if paths is not an array', async () => {
@@ -227,14 +232,14 @@ describe('CloudFrontCdnClient', () => {
     });
 
     it('should throw error on CloudFront API failure', async () => {
-      mockCloudFrontClient.send.rejects(new Error('CloudFront API error'));
+      cloudFrontMock.on(CreateInvalidationCommand).rejects(new Error('CloudFront API error'));
 
       try {
         await client.invalidateCache(['/path1']);
         expect.fail('Should have thrown error');
       } catch (error) {
         expect(error.message).to.include('CloudFront API error');
-        expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate CloudFront cache/));
+        expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate CloudFront cache after \d+ms/));
       }
     });
   });
@@ -257,9 +262,8 @@ describe('CloudFrontCdnClient', () => {
       // Client should be null initially
       expect(client.client).to.be.null;
 
-      // Mock CloudFront client for this test
-      client.client = mockCloudFrontClient;
-      mockCloudFrontClient.send.resolves({
+      // Mock successful invalidation
+      cloudFrontMock.on(CreateInvalidationCommand).resolves({
         Invalidation: {
           Id: 'I123',
           Status: 'InProgress',
@@ -269,8 +273,9 @@ describe('CloudFrontCdnClient', () => {
 
       await client.invalidateCache(['/test']);
 
-      // Verify it was called
-      expect(mockCloudFrontClient.send).to.have.been.called;
+      // Verify the command was called
+      const calls = cloudFrontMock.commandCalls(CreateInvalidationCommand);
+      expect(calls).to.have.length(1);
     });
 
     it('should initialize client without credentials (Lambda role)', async () => {
@@ -287,9 +292,8 @@ describe('CloudFrontCdnClient', () => {
       // Client should be null initially
       expect(client.client).to.be.null;
 
-      // Mock for test
-      client.client = mockCloudFrontClient;
-      mockCloudFrontClient.send.resolves({
+      // Mock successful invalidation
+      cloudFrontMock.on(CreateInvalidationCommand).resolves({
         Invalidation: {
           Id: 'I123',
           Status: 'InProgress',
@@ -299,7 +303,9 @@ describe('CloudFrontCdnClient', () => {
 
       await client.invalidateCache(['/test']);
 
-      expect(mockCloudFrontClient.send).to.have.been.called;
+      // Verify the command was called
+      const calls = cloudFrontMock.commandCalls(CreateInvalidationCommand);
+      expect(calls).to.have.length(1);
     });
 
     it('should lazy-initialize CloudFront client on first use', () => {

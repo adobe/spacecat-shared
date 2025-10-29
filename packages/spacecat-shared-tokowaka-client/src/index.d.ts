@@ -13,17 +13,24 @@
 import { S3Client } from '@aws-sdk/client-s3';
 
 export interface TokawakaPatch {
-  op: 'replace' | 'add' | 'prerender';
-  selector?: string;
-  value?: string;
-  attribute?: string;
-  element?: string;
-  attributes?: Record<string, string>;
+  op: 'replace' | 'insertAfter' | 'insertBefore' | 'appendChild';
+  selector: string;
+  value: string | object;
+  valueFormat: 'text' | 'hast';
+  tag?: string;
+  currValue?: string;
+  target: 'ai-bots' | 'bots' | 'all';
   opportunityId: string;
   suggestionId: string;
   prerenderRequired: boolean;
   lastUpdated: number;
 }
+
+export const TARGET_USER_AGENTS_CATEGORIES: {
+  AI_BOTS: 'ai-bots';
+  BOTS: 'bots';
+  ALL: 'all';
+};
 
 export interface TokowakaUrlOptimization {
   prerender: boolean;
@@ -48,18 +55,26 @@ export interface CdnInvalidationResult {
 }
 
 export interface DeploymentResult {
-  tokowakaApiKey: string;
-  s3Key: string | null;
-  config: TokowakaConfig | null;
+  s3Path: string;
   cdnInvalidation: CdnInvalidationResult | null;
   succeededSuggestions: Array<any>;
   failedSuggestions: Array<{ suggestion: any; reason: string }>;
 }
 
+export interface SiteConfig {
+  getTokowakaConfig(): {
+    apiKey: string;
+    cdnProvider?: string;
+  };
+  getFetchConfig?(): {
+    overrideBaseURL?: string;
+  };
+}
+
 export interface Site {
   getId(): string;
   getBaseURL(): string;
-  getConfig(): Record<string, any>;
+  getConfig(): SiteConfig;
 }
 
 export interface Opportunity {
@@ -70,6 +85,7 @@ export interface Opportunity {
 export interface Suggestion {
   getId(): string;
   getData(): Record<string, any>;
+  getUpdatedAt(): string;
 }
 
 /**
@@ -77,6 +93,8 @@ export interface Suggestion {
  * Extend this class to create custom mappers for new opportunity types
  */
 export abstract class BaseOpportunityMapper {
+  protected log: any;
+  
   constructor(log: any);
   
   /**
@@ -98,17 +116,63 @@ export abstract class BaseOpportunityMapper {
   ): TokawakaPatch | null;
   
   /**
-   * Validates suggestion data before conversion
+   * Checks if a suggestion can be deployed for this opportunity type
+   * This method should validate all eligibility and data requirements
    */
-  validateSuggestionData(data: Record<string, any>): boolean;
+  abstract canDeploy(suggestion: Suggestion): {
+    eligible: boolean;
+    reason?: string;
+  };
   
   /**
    * Helper method to create base patch structure
    */
   protected createBasePatch(
-    suggestionId: string,
+    suggestion: Suggestion,
     opportunityId: string
   ): Partial<TokawakaPatch>;
+}
+
+/**
+ * Headings opportunity mapper
+ * Handles conversion of heading suggestions (heading-empty, heading-missing-h1, heading-h1-length) to Tokowaka patches
+ */
+export class HeadingsMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+}
+
+/**
+ * Content summarization opportunity mapper
+ * Handles conversion of content summarization suggestions to Tokowaka patches with HAST format
+ */
+export class ContentSummarizationMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+  
+  /**
+   * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
+   */
+  markdownToHast(markdown: string): object;
+}
+
+/**
+ * Registry for opportunity mappers
+ */
+export class MapperRegistry {
+  constructor(log: any);
+  
+  registerMapper(MapperClass: typeof BaseOpportunityMapper): void;
+  getMapper(opportunityType: string): BaseOpportunityMapper | null;
+  getSupportedOpportunityTypes(): string[];
 }
 
 /**
@@ -116,7 +180,10 @@ export abstract class BaseOpportunityMapper {
  * Extend this class to create custom CDN clients for different providers
  */
 export abstract class BaseCdnClient {
-  constructor(config: Record<string, any>, log: any);
+  protected env: any;
+  protected log: any;
+  
+  constructor(env: any, log: any);
   
   /**
    * Returns the CDN provider name
@@ -126,34 +193,25 @@ export abstract class BaseCdnClient {
   /**
    * Validates the CDN configuration
    */
-  validateConfig(): boolean;
+  abstract validateConfig(): boolean;
   
   /**
    * Invalidates the CDN cache for the given paths
    */
   abstract invalidateCache(paths: string[]): Promise<CdnInvalidationResult>;
-  
-  /**
-   * Checks the status of an invalidation request
-   */
-  getInvalidationStatus(requestId: string): Promise<CdnInvalidationResult>;
 }
 
 /**
- * Akamai CDN client implementation
+ * CloudFront CDN client implementation
  */
-export class AkamaiCdnClient extends BaseCdnClient {
-  constructor(config: {
-    clientToken: string;
-    clientSecret: string;
-    accessToken: string;
-    baseUrl?: string;
+export class CloudFrontCdnClient extends BaseCdnClient {
+  constructor(env: {
+    TOKOWAKA_CDN_CONFIG: string; // JSON string with cloudfront config
   }, log: any);
   
   getProviderName(): string;
   validateConfig(): boolean;
   invalidateCache(paths: string[]): Promise<CdnInvalidationResult>;
-  getInvalidationStatus(purgeId: string): Promise<CdnInvalidationResult>;
 }
 
 /**
@@ -168,13 +226,24 @@ export class CdnClientRegistry {
   isProviderSupported(provider: string): boolean;
 }
 
+/**
+ * Main Tokowaka Client for managing edge optimization configurations
+ */
 export default class TokowakaClient {
-  constructor(config: { bucketName: string; s3Client: S3Client }, log: any);
+  constructor(config: {
+    bucketName: string;
+    s3Client: S3Client;
+    env?: Record<string, any>;
+  }, log: any);
   
   static createFrom(context: {
-    env: { TOKOWAKA_CONFIG_BUCKET: string };
+    env: {
+      TOKOWAKA_SITE_CONFIG_BUCKET: string;
+      TOKOWAKA_CDN_PROVIDER?: string;
+      TOKOWAKA_CDN_CONFIG?: string;
+    };
     log?: any;
-    s3Client: S3Client;
+    s3: { s3Client: S3Client };
     tokowakaClient?: TokowakaClient;
   }): TokowakaClient;
 
@@ -194,9 +263,12 @@ export default class TokowakaClient {
   /**
    * Merges existing configuration with new configuration
    */
-  mergeConfigs(existingConfig: TokowakaConfig | null, newConfig: TokowakaConfig): TokowakaConfig;
+  mergeConfigs(existingConfig: TokowakaConfig, newConfig: TokowakaConfig): TokowakaConfig;
   
-  invalidateCdnCache(site: Site, s3Key: string): Promise<CdnInvalidationResult | null>;
+  /**
+   * Invalidates CDN cache
+   */
+  invalidateCdnCache(apiKey: string, cdnProvider?: string): Promise<CdnInvalidationResult | null>;
 
   deploySuggestions(
     site: Site,

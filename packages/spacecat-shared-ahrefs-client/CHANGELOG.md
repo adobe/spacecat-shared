@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.9.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.11...@adobe/spacecat-shared-ahrefs-client-v1.9.12) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.9.11](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.10...@adobe/spacecat-shared-ahrefs-client-v1.9.11) (2025-10-25)
 
 

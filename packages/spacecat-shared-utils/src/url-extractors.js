@@ -41,6 +41,7 @@ function extractUrlsFromSuggestion(opts) {
           }
         }
         break;
+      case OPPORTUNITY_TYPES.A11Y_ASSISTIVE:
       case OPPORTUNITY_TYPES.ACCESSIBILITY:
       case OPPORTUNITY_TYPES.COLOR_CONTRAST:
       case OPPORTUNITY_TYPES.STRUCTURED_DATA:

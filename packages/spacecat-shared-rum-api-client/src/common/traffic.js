@@ -11,7 +11,7 @@
  */
 /* eslint-disable object-curly-newline */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, prependSchema } from '@adobe/spacecat-shared-utils';
 import URI from 'urijs';
 
 /**
@@ -26,9 +26,16 @@ import URI from 'urijs';
  */
 export function getSecondLevelDomain(url) {
   if (!hasText(url)) return url;
-  const uri = new URI(url);
-  const tld = uri.tld();
-  return uri.hostname().split(`.${tld}`)[0];
+  if (url === '(direct)') return '';
+
+  try {
+    const uri = new URI(prependSchema(url));
+    const tld = uri.tld();
+    return uri.hostname().split(`.${tld}`)[0];
+  } catch (error) {
+    // future-proof for the cases where url cannot be parsed for some reason
+    return url;
+  }
 }
 
 /*

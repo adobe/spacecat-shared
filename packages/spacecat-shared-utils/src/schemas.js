@@ -50,10 +50,27 @@ const entity = z.object({
   name: nonEmptyString,
 });
 
+const categoryUrl = z.object({
+  value: nonEmptyString,
+  type: z.union([z.literal('prefix'), z.literal('url')]),
+}).superRefine((data, ctx) => {
+  // Validate URL format only for type 'url'
+  if (data.type === 'url') {
+    if (!URL.canParse(data.value)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['value'],
+        message: 'Invalid URL format',
+      });
+    }
+  }
+});
+
 const category = z.object({
   name: nonEmptyString,
   region: z.union([region, z.array(region)]),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
+  urls: z.array(categoryUrl).optional(),
 });
 
 const topic = z.object({

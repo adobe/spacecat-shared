@@ -26,7 +26,8 @@ export default class ImsPromiseClient extends ImsBaseClient {
   };
 
   static createFrom(context, type) {
-    const { log = console } = context;
+    const { log = console, pathInfo } = context;
+    const imsEnv = pathInfo?.headers?.['x-ims-env'];
 
     let imsHost;
     let clientId;
@@ -34,7 +35,28 @@ export default class ImsPromiseClient extends ImsBaseClient {
     let promiseDefinitionId;
     const encryption = {};
 
-    if (type === ImsPromiseClient.CLIENT_TYPE.EMITTER) {
+    if (hasText(imsEnv) && imsEnv === 'prod') {
+      if (type === ImsPromiseClient.CLIENT_TYPE.EMITTER) {
+        ({
+          IMS_HOST_PROD: imsHost,
+          IMS_PROMISE_EMITTER_CLIENT_ID_PROD: clientId,
+          IMS_PROMISE_EMITTER_CLIENT_SECRET_PROD: clientSecret,
+          IMS_PROMISE_EMITTER_DEFINITION_ID_PROD: promiseDefinitionId,
+          AUTOFIX_CRYPT_SECRET_PROD: encryption.secret,
+          AUTOFIX_CRYPT_SALT_PROD: encryption.salt,
+        } = context.env);
+      } else if (type === ImsPromiseClient.CLIENT_TYPE.CONSUMER) {
+        ({
+          IMS_HOST_PROD: imsHost,
+          IMS_PROMISE_CONSUMER_CLIENT_ID_PROD: clientId,
+          IMS_PROMISE_CONSUMER_CLIENT_SECRET_PROD: clientSecret,
+          AUTOFIX_CRYPT_SECRET_PROD: encryption.secret,
+          AUTOFIX_CRYPT_SALT_PROD: encryption.salt,
+        } = context.env);
+      } else {
+        throw new Error('Unknown IMS promise client type.');
+      }
+    } else if (type === ImsPromiseClient.CLIENT_TYPE.EMITTER) {
       ({
         IMS_HOST: imsHost,
         IMS_PROMISE_EMITTER_CLIENT_ID: clientId,

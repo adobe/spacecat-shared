@@ -340,7 +340,7 @@ class TokowakaClient {
       this.log.info(`CDN cache invalidation completed: ${JSON.stringify(result)}`);
       return result;
     } catch (error) {
-      this.log.error(`Failed to invalidate CDN cache: ${error.message}`, error);
+      this.log.error(`Failed to invalidate Tokowaka CDN cache: ${error.message}`, error);
       return {
         status: 'error',
         provider: 'cloudfront',
@@ -412,7 +412,7 @@ class TokowakaClient {
     const newConfig = this.generateConfig(site, opportunity, eligibleSuggestions);
 
     if (Object.keys(newConfig.tokowakaOptimizations).length === 0) {
-      this.log.warn('');
+      this.log.warn('No eligible suggestions to deploy');
       return {
         succeededSuggestions: [],
         failedSuggestions: suggestions,

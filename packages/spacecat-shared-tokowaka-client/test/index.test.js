@@ -1122,7 +1122,7 @@ describe('TokowakaClient', () => {
         provider: 'cloudfront',
         message: 'No CDN client available for provider: cloudfront',
       });
-      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate CDN cache/));
+      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate Tokowaka CDN cache/));
     });
 
     it('should return error object if CDN invalidation fails', async () => {
@@ -1136,7 +1136,7 @@ describe('TokowakaClient', () => {
         message: 'CDN API error',
       });
 
-      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate CDN cache/));
+      expect(log.error).to.have.been.calledWith(sinon.match(/Failed to invalidate Tokowaka CDN cache/));
     });
   });
 });

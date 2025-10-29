@@ -66,12 +66,12 @@ describe('ScrapeUrlCollection', () => {
   });
 
   describe('allRecentByUrlAndProcessingType', () => {
-    let mockAllByUrlAndIsOriginalAndProcessingType;
+    let mockAllByIndexKeys;
     let clock;
 
     beforeEach(() => {
-      mockAllByUrlAndIsOriginalAndProcessingType = stub();
-      instance.allByUrlAndIsOriginalAndProcessingType = mockAllByUrlAndIsOriginalAndProcessingType;
+      mockAllByIndexKeys = stub();
+      instance.allByIndexKeys = mockAllByIndexKeys;
 
       // Mock current time to 2024-01-15T12:00:00.000Z for consistent testing
       clock = useFakeTimers(new Date('2024-01-15T12:00:00.000Z'));
@@ -81,26 +81,25 @@ describe('ScrapeUrlCollection', () => {
       clock.restore();
     });
 
-    it('calls allByUrlAndIsOriginalAndProcessingType with correct parameters and default maxAge', async () => {
+    it('calls allByIndexKeys with correct parameters and default maxAge', async () => {
       const url = 'https://example.com';
       const processingType = 'DEFAULT';
       const mockResult = [{ scrapeUrlId: 'su12345' }];
 
-      mockAllByUrlAndIsOriginalAndProcessingType.resolves(mockResult);
+      mockAllByIndexKeys.resolves(mockResult);
 
       const result = await instance.allRecentByUrlAndProcessingType(url, processingType);
 
       expect(result).to.deep.equal(mockResult);
-      expect(mockAllByUrlAndIsOriginalAndProcessingType).to.have.been.calledOnce;
+      expect(mockAllByIndexKeys).to.have.been.calledOnce;
 
-      const [calledUrl,
-        calledIsOriginal,
-        calledProcessingType,
-        calledOptions] = mockAllByUrlAndIsOriginalAndProcessingType.getCall(0).args;
+      const [calledKeys, calledOptions] = mockAllByIndexKeys.getCall(0).args;
 
-      expect(calledUrl).to.equal(url);
-      expect(calledIsOriginal).to.be.true;
-      expect(calledProcessingType).to.equal(processingType);
+      expect(calledKeys).to.deep.equal({
+        url,
+        isOriginal: true,
+        processingType,
+      });
       expect(calledOptions).to.have.property('between');
       expect(calledOptions.between).to.have.property('attribute', 'createdAt');
       expect(calledOptions.between).to.have.property('start');
@@ -112,11 +111,11 @@ describe('ScrapeUrlCollection', () => {
       const processingType = 'DEFAULT';
       const mockResult = [];
 
-      mockAllByUrlAndIsOriginalAndProcessingType.resolves(mockResult);
+      mockAllByIndexKeys.resolves(mockResult);
 
       await instance.allRecentByUrlAndProcessingType(url, processingType);
 
-      const calledOptions = mockAllByUrlAndIsOriginalAndProcessingType.getCall(0).args[3];
+      const calledOptions = mockAllByIndexKeys.getCall(0).args[1];
 
       // 168 hours = 7 days before 2024-01-15T12:00:00.000Z should be 2024-01-08T12:00:00.000Z
       expect(calledOptions.between.start).to.equal('2024-01-08T12:00:00.000Z');
@@ -128,11 +127,11 @@ describe('ScrapeUrlCollection', () => {
       const maxAgeInHours = 24; // 1 day
       const mockResult = [];
 
-      mockAllByUrlAndIsOriginalAndProcessingType.resolves(mockResult);
+      mockAllByIndexKeys.resolves(mockResult);
 
       await instance.allRecentByUrlAndProcessingType(url, processingType, maxAgeInHours);
 
-      const calledOptions = mockAllByUrlAndIsOriginalAndProcessingType.getCall(0).args[3];
+      const calledOptions = mockAllByIndexKeys.getCall(0).args[1];
 
       // 24 hours before 2024-01-15T12:00:00.000Z should be 2024-01-14T12:00:00.000Z
       expect(calledOptions.between.start).to.equal('2024-01-14T12:00:00.000Z');
@@ -144,11 +143,11 @@ describe('ScrapeUrlCollection', () => {
       const maxAgeInHours = 0;
       const mockResult = [];
 
-      mockAllByUrlAndIsOriginalAndProcessingType.resolves(mockResult);
+      mockAllByIndexKeys.resolves(mockResult);
 
       await instance.allRecentByUrlAndProcessingType(url, processingType, maxAgeInHours);
 
-      const calledOptions = mockAllByUrlAndIsOriginalAndProcessingType.getCall(0).args[3];
+      const calledOptions = mockAllByIndexKeys.getCall(0).args[1];
 
       // 0 hours should give the same time
       expect(calledOptions.between.start).to.equal('2024-01-15T12:00:00.000Z');
@@ -161,11 +160,11 @@ describe('ScrapeUrlCollection', () => {
       const maxAgeInHours = 0.5; // 30 minutes
       const mockResult = [];
 
-      mockAllByUrlAndIsOriginalAndProcessingType.resolves(mockResult);
+      mockAllByIndexKeys.resolves(mockResult);
 
       await instance.allRecentByUrlAndProcessingType(url, processingType, maxAgeInHours);
 
-      const calledOptions = mockAllByUrlAndIsOriginalAndProcessingType.getCall(0).args[3];
+      const calledOptions = mockAllByIndexKeys.getCall(0).args[1];
 
       // 0.5 hours before 2024-01-15T12:00:00.000Z should be 2024-01-15T11:30:00.000Z
       expect(calledOptions.between.start).to.equal('2024-01-15T11:30:00.000Z');
@@ -176,12 +175,12 @@ describe('ScrapeUrlCollection', () => {
       const processingType = 'CUSTOM';
       const mockResult = [];
 
-      mockAllByUrlAndIsOriginalAndProcessingType.resolves(mockResult);
+      mockAllByIndexKeys.resolves(mockResult);
 
       await instance.allRecentByUrlAndProcessingType(url, processingType);
 
-      const [, calledIsOriginal] = mockAllByUrlAndIsOriginalAndProcessingType.getCall(0).args;
-      expect(calledIsOriginal).to.be.true;
+      const [calledKeys] = mockAllByIndexKeys.getCall(0).args;
+      expect(calledKeys.isOriginal).to.be.true;
     });
 
     it('passes through different processing types', async () => {
@@ -189,15 +188,15 @@ describe('ScrapeUrlCollection', () => {
       const processingType = 'CUSTOM_TYPE';
       const mockResult = [];
 
-      mockAllByUrlAndIsOriginalAndProcessingType.resolves(mockResult);
+      mockAllByIndexKeys.resolves(mockResult);
 
       await instance.allRecentByUrlAndProcessingType(url, processingType);
 
-      const [, , calledProcessingType] = mockAllByUrlAndIsOriginalAndProcessingType.getCall(0).args;
-      expect(calledProcessingType).to.equal('CUSTOM_TYPE');
+      const [calledKeys] = mockAllByIndexKeys.getCall(0).args;
+      expect(calledKeys.processingType).to.equal('CUSTOM_TYPE');
     });
 
-    it('returns the result from allByUrlAndIsOriginalAndProcessingType', async () => {
+    it('returns the result from allByIndexKeys', async () => {
       const url = 'https://example.com';
       const processingType = 'DEFAULT';
       const expectedResult = [
@@ -205,19 +204,19 @@ describe('ScrapeUrlCollection', () => {
         { scrapeUrlId: 'su2', url: 'https://example.com/2' },
       ];
 
-      mockAllByUrlAndIsOriginalAndProcessingType.resolves(expectedResult);
+      mockAllByIndexKeys.resolves(expectedResult);
 
       const result = await instance.allRecentByUrlAndProcessingType(url, processingType);
 
       expect(result).to.deep.equal(expectedResult);
     });
 
-    it('propagates errors from allByUrlAndIsOriginalAndProcessingType', async () => {
+    it('propagates errors from allByIndexKeys', async () => {
       const url = 'https://example.com';
       const processingType = 'DEFAULT';
       const error = new Error('Database error');
 
-      mockAllByUrlAndIsOriginalAndProcessingType.rejects(error);
+      mockAllByIndexKeys.rejects(error);
 
       await expect(instance.allRecentByUrlAndProcessingType(url, processingType))
         .to.be.rejectedWith('Database error');

@@ -9,6 +9,9 @@
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "c8 mocha",
     "lint": "eslint .",

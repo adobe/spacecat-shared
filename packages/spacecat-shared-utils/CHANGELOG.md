@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.69.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.0...@adobe/spacecat-shared-utils-v1.69.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* remove duplicate origins in LLMO schema ([#1076](https://github.com/adobe/spacecat-shared/issues/1076)) ([616888a](https://github.com/adobe/spacecat-shared/commit/616888a81d870188a02e2c3c4a36a25fc6af9e1a))
+
 # [@adobe/spacecat-shared-utils-v1.69.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.68.0...@adobe/spacecat-shared-utils-v1.69.0) (2025-10-30)
 
 

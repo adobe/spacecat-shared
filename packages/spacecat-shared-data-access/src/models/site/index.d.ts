@@ -214,6 +214,7 @@ export interface Site extends BaseModel {
   getDeliveryConfig(): object;
   getIsLive(): boolean;
   getIsSandbox(): boolean;
+  getRequiresValidation(): boolean;
   getIsLiveToggledAt(): string;
   getKeyEvents(): Promise<KeyEvent[]>
   getKeyEventsByTimestamp(timestamp: string): Promise<KeyEvent[]>
@@ -249,6 +250,7 @@ export interface Site extends BaseModel {
   setDeliveryConfig(deliveryConfig: object): Site;
   setIsLive(isLive: boolean): Site;
   setIsSandbox(isSandbox: boolean): Site;
+  setRequiresValidation(requiresValidation: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
   setProjectId(projectId: string): Site;

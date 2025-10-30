@@ -718,6 +718,64 @@ describe('Site IT', async () => {
       // Clean up
       await site.remove();
     });
+  });
+
+  describe('Site Validation Configuration', () => {
+    it('creates a site with default requiresValidation value (false)', async () => {
+      const newSiteData = {
+        baseURL: 'https://default-validation-example.com',
+        gitHubURL: 'https://github.com/some-org/default-validation-test-repo',
+        name: 'default-validation-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+
+      expect(site.getRequiresValidation()).to.be.false;
+
+      // Clean up
+      await site.remove();
+    });
+
+    it('creates a site with requiresValidation set to true', async () => {
+      const newSiteData = {
+        baseURL: 'https://validation-example.com',
+        gitHubURL: 'https://github.com/some-org/validation-test-repo',
+        name: 'validation-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        requiresValidation: true,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+
+      expect(site.getRequiresValidation()).to.be.true;
+
+      // Clean up
+      await site.remove();
+    });
+
+    it('creates a site with requiresValidation set to false explicitly', async () => {
+      const newSiteData = {
+        baseURL: 'https://non-validation-example.com',
+        gitHubURL: 'https://github.com/some-org/non-validation-test-repo',
+        name: 'non-validation-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        requiresValidation: false,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
+
+      const site = await Site.create(newSiteData);
+
+      expect(site.getRequiresValidation()).to.be.false;
+
+      // Clean up
+      await site.remove();
+    });
 
     it('updates isSandbox value from false to true', async () => {
       // Create a site with isSandbox false

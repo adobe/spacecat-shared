@@ -338,13 +338,14 @@ class Configuration extends BaseModel {
   }
 
   /**
-   * Updates the entire configuration or specific sections (handlers, jobs, queues).
+   * Updates the configuration by merging changes into existing sections.
    * This is a flexible update method that allows updating one or more sections at once.
+   * Changes are merged, not replaced - existing data is preserved.
    *
    * @param {object} data - Configuration data to update
-   * @param {object} [data.handlers] - Handlers configuration
-   * @param {Array} [data.jobs] - Jobs configuration
-   * @param {object} [data.queues] - Queues configuration
+   * @param {object} [data.handlers] - Handlers to merge (adds new, updates existing)
+   * @param {Array} [data.jobs] - Jobs to merge (updates matching jobs by type)
+   * @param {object} [data.queues] - Queues to merge (updates specific queue URLs)
    * @throws {Error} If validation fails
    */
   updateConfiguration(data) {
@@ -352,25 +353,60 @@ class Configuration extends BaseModel {
       throw new Error('Configuration data cannot be empty');
     }
 
+    // Merge handlers - add new handlers or update existing ones
     if (data.handlers !== undefined) {
       if (!isNonEmptyObject(data.handlers)) {
         throw new Error('Handlers must be a non-empty object if provided');
       }
-      this.setHandlers(data.handlers);
+      const existingHandlers = this.getHandlers() || {};
+      const mergedHandlers = { ...existingHandlers };
+
+      // Merge each handler from the update into existing handlers
+      Object.keys(data.handlers).forEach((handlerType) => {
+        mergedHandlers[handlerType] = {
+          ...existingHandlers[handlerType],
+          ...data.handlers[handlerType],
+        };
+      });
+
+      this.setHandlers(mergedHandlers);
     }
 
+    // Merge jobs - update existing jobs or add new ones
     if (data.jobs !== undefined) {
       if (!Array.isArray(data.jobs)) {
         throw new Error('Jobs must be an array if provided');
       }
-      this.setJobs(data.jobs);
+      const existingJobs = this.getJobs() || [];
+      const mergedJobs = [...existingJobs];
+
+      // For each job in the update, find and update or add it
+      data.jobs.forEach((newJob) => {
+        const existingIndex = mergedJobs.findIndex(
+          (job) => job.type === newJob.type && job.group === newJob.group,
+        );
+
+        if (existingIndex !== -1) {
+          // Update existing job
+          mergedJobs[existingIndex] = { ...mergedJobs[existingIndex], ...newJob };
+        } else {
+          // Add new job
+          mergedJobs.push(newJob);
+        }
+      });
+
+      this.setJobs(mergedJobs);
     }
 
+    // Merge queues - update specific queue URLs
     if (data.queues !== undefined) {
       if (!isNonEmptyObject(data.queues)) {
         throw new Error('Queues must be a non-empty object if provided');
       }
-      this.setQueues(data.queues);
+      const existingQueues = this.getQueues() || {};
+      const mergedQueues = { ...existingQueues, ...data.queues };
+
+      this.setQueues(mergedQueues);
     }
   }
 

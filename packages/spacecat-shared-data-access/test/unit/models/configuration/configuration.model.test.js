@@ -599,63 +599,116 @@ describe('ConfigurationModel', () => {
   });
 
   describe('updateConfiguration', () => {
-    it('updates handlers section successfully', () => {
-      const newHandlers = {
-        404: {
+    it('merges handlers - adds new handler while keeping existing ones', () => {
+      const newHandler = {
+        'new-test-handler': {
           enabledByDefault: true,
-          enabled: { sites: [], orgs: [] },
-          disabled: { sites: [], orgs: [] },
-          dependencies: [],
-          productCodes: ['SPACECAT_CORE'],
+          productCodes: ['ASO'],
         },
       };
 
-      instance.updateConfiguration({ handlers: newHandlers });
+      instance.updateConfiguration({ handlers: newHandler });
 
-      expect(instance.getHandlers()).to.deep.equal(newHandlers);
+      const updatedHandlers = instance.getHandlers();
+      // Existing handlers should still be there
+      expect(updatedHandlers['404']).to.exist;
+      expect(updatedHandlers.cwv).to.exist;
+      // New handler should be added
+      expect(updatedHandlers['new-test-handler']).to.deep.equal(newHandler['new-test-handler']);
     });
 
-    it('updates jobs section successfully', () => {
-      const newJobs = [
-        { group: 'audits', type: 'cwv', interval: 'weekly' },
-        { group: 'audits', type: '404', interval: 'daily' },
-      ];
-
-      instance.updateConfiguration({ jobs: newJobs });
-
-      expect(instance.getJobs()).to.deep.equal(newJobs);
-    });
-
-    it('updates queues section successfully', () => {
-      const newQueues = {
-        audits: 'sqs://new-audit-queue',
-        imports: 'sqs://new-import-queue',
-      };
-
-      instance.updateConfiguration({ queues: newQueues });
-
-      expect(instance.getQueues()).to.deep.equal(newQueues);
-    });
-
-    it('updates multiple sections at once', () => {
-      const newHandlers = {
-        cwv: {
-          enabledByDefault: true,
-          productCodes: ['SPACECAT_CORE'],
-        },
-      };
-      const newJobs = [{ group: 'audits', type: 'cwv', interval: 'daily' }];
-      const newQueues = { audits: 'sqs://audit-queue' };
+    it('merges handlers - updates existing handler properties', () => {
+      const existingCwv = instance.getHandler('cwv');
 
       instance.updateConfiguration({
-        handlers: newHandlers,
-        jobs: newJobs,
-        queues: newQueues,
+        handlers: {
+          cwv: {
+            movingAvgThreshold: 20,
+          },
+        },
       });
 
-      expect(instance.getHandlers()).to.deep.equal(newHandlers);
-      expect(instance.getJobs()).to.deep.equal(newJobs);
-      expect(instance.getQueues()).to.deep.equal(newQueues);
+      const updatedCwv = instance.getHandler('cwv');
+      // Old properties should be preserved
+      expect(updatedCwv.enabledByDefault).to.equal(existingCwv.enabledByDefault);
+      expect(updatedCwv.productCodes).to.deep.equal(existingCwv.productCodes);
+      // New property should be added
+      expect(updatedCwv.movingAvgThreshold).to.equal(20);
+    });
+
+    it('merges jobs - updates existing job interval', () => {
+      instance.updateConfiguration({
+        jobs: [{ group: 'audits', type: 'cwv', interval: 'weekly' }],
+      });
+
+      const updatedJobs = instance.getJobs();
+      const updatedCwvJob = updatedJobs.find((j) => j.type === 'cwv');
+
+      // Job should be updated
+      expect(updatedCwvJob.interval).to.equal('weekly');
+      // Other jobs should still exist
+      expect(updatedJobs.length).to.be.greaterThan(1);
+      expect(updatedJobs.find((j) => j.type === '404')).to.exist;
+    });
+
+    it('merges jobs - adds new job while keeping existing ones', () => {
+      const existingJobs = instance.getJobs();
+
+      instance.updateConfiguration({
+        jobs: [{ group: 'audits', type: 'new-test-job', interval: 'monthly' }],
+      });
+
+      const updatedJobs = instance.getJobs();
+
+      // All existing jobs should still be there
+      expect(updatedJobs.length).to.equal(existingJobs.length + 1);
+      // New job should be added
+      expect(updatedJobs.find((j) => j.type === 'new-test-job')).to.deep.equal({
+        group: 'audits',
+        type: 'new-test-job',
+        interval: 'monthly',
+      });
+    });
+
+    it('merges queues - updates specific queue URLs while keeping others', () => {
+      const existingQueues = instance.getQueues();
+
+      instance.updateConfiguration({
+        queues: {
+          audits: 'sqs://new-audit-queue',
+        },
+      });
+
+      const updatedQueues = instance.getQueues();
+
+      // Updated queue should have new URL
+      expect(updatedQueues.audits).to.equal('sqs://new-audit-queue');
+      // Other queues should remain unchanged
+      expect(updatedQueues.imports).to.equal(existingQueues.imports);
+      expect(updatedQueues.reports).to.equal(existingQueues.reports);
+    });
+
+    it('merges multiple sections at once', () => {
+      instance.updateConfiguration({
+        handlers: {
+          cwv: { movingAvgThreshold: 15 },
+        },
+        jobs: [{ group: 'audits', type: 'cwv', interval: 'daily' }],
+        queues: { audits: 'sqs://audit-queue' },
+      });
+
+      const updatedHandlers = instance.getHandlers();
+      const updatedJobs = instance.getJobs();
+      const updatedQueues = instance.getQueues();
+
+      // Handlers should be merged
+      expect(updatedHandlers['404']).to.exist; // Existing handler preserved
+      expect(updatedHandlers.cwv.movingAvgThreshold).to.equal(15); // Updated
+      // Jobs should be merged
+      expect(updatedJobs.find((j) => j.type === '404')).to.exist; // Existing job preserved
+      expect(updatedJobs.find((j) => j.type === 'cwv').interval).to.equal('daily'); // Updated
+      // Queues should be merged
+      expect(updatedQueues.audits).to.equal('sqs://audit-queue'); // Updated
     });
 
     it('throws error when data is not provided', () => {

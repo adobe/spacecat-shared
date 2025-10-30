@@ -402,9 +402,7 @@ export default class ContentClient {
 
     const response = await document.updateMetadata(mergedMetadata);
     if (response?.status !== 200) {
-      this.log.debug(`Failed to update metadata for path ${path}: ${response.statusText}`);
-      this.log.debug(`Response: ${JSON.stringify(response)}`);
-      throw new Error(`Failed to update metadata for path ${path}`);
+      throw new Error(`Failed to update metadata for path ${path}: ${response.statusText}`);
     }
 
     this.#logDuration('updatePageMetadata', startTime);

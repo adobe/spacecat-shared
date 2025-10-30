@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.76.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.76.0...@adobe/spacecat-shared-data-access-v2.76.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* **data-access:** include invocationId in audit schema ([#1075](https://github.com/adobe/spacecat-shared/issues/1075)) ([a7aecb2](https://github.com/adobe/spacecat-shared/commit/a7aecb211482e379ec77c20efbe672988071c660))
+
 # [@adobe/spacecat-shared-data-access-v2.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.75.0...@adobe/spacecat-shared-data-access-v2.76.0) (2025-10-29)
 
 

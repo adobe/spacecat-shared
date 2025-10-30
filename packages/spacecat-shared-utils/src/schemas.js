@@ -43,6 +43,7 @@ const prompt = z.object({
   regions: z.array(region),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
   source: z.union([z.literal('config'), z.literal('api'), z.string()]),
+  status: z.union([z.literal('completed'), z.literal('processing'), z.string()]).optional(),
 });
 
 const entity = z.object({
@@ -77,12 +78,14 @@ const topic = z.object({
   name: nonEmptyString,
   prompts: z.array(prompt).min(1),
   category: z.union([z.uuid(), nonEmptyString]),
+  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 const deletedPrompt = prompt.extend({
   topic: nonEmptyString,
   category: nonEmptyString,
   regions: z.array(region).min(1),
+  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 export const llmoConfig = z.object({

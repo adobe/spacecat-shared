@@ -84,7 +84,6 @@ const topic = z.object({
 const deletedPrompt = prompt.extend({
   topic: nonEmptyString,
   category: nonEmptyString,
-  regions: z.array(region).min(1),
 });
 
 export const llmoConfig = z.object({

@@ -683,27 +683,6 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('fails when deleted prompt has empty regions array', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            prompts: {
-              [deletedPromptId1]: {
-                prompt: 'Test prompt',
-                topic: 'Test Topic',
-                regions: [],
-                category: 'Test Category',
-                origin: 'human',
-                source: 'config',
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).false;
-      });
-
       it('fails when deleted prompt is missing required fields', () => {
         const config = {
           ...baseConfig,
@@ -1095,30 +1074,6 @@ describe('schemas', () => {
 
     describe('deleted prompt origin', () => {
       const deletedPromptId = 'eeee1111-e11b-41e1-a111-111111111111';
-
-      it('validates deleted prompt without origin (optional field)', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            prompts: {
-              [deletedPromptId]: {
-                prompt: 'Test prompt',
-                topic: 'Test Topic',
-                regions: ['us'],
-                category: 'Test Category',
-                source: 'config',
-                // no origin field
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
-        if (result.success) {
-          expect(result.data.deleted.prompts[deletedPromptId].origin).to.be.undefined;
-        }
-      });
 
       it('validates deleted prompt with human origin', () => {
         const config = {

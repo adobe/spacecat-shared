@@ -56,5 +56,22 @@ export default defineConfig([
       'no-console': 'off',
       'func-names': 'off',
     }
+  },
+  {
+    ...source,
+    files: ['packages/spacecat-shared-schemas/src/**/*.js'],
+    rules: {
+      'no-restricted-exports': [ 'error', {
+        // no default exports, for python compatibility
+        restrictDefaultExports: {
+          direct: true,
+          named: true,
+          defaultFrom: true,
+          namedFrom: true,
+          namespaceFrom: true,
+        },
+      }],
+      'sort-keys': ['error', 'asc', { 'natural': true }],
+    },
   }
 ]);

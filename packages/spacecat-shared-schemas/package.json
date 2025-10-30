@@ -1,0 +1,43 @@
+{
+  "name": "@adobe/spacecat-shared-schemas",
+  "version": "1.0.0",
+  "description": "Shared Schemas for RPC Messages and more",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0 <23.0.0",
+    "npm": ">=10.9.0 <12.0.0"
+  },
+  "exports": {
+    "./mystique/*": "./src/mystique/*",
+    "./spacecat/*": "./src/spacecat/*",
+    "./types/*": "./src/types/*"
+  },
+  "types": "src/index.d.ts",
+  "scripts": {
+    "test": "c8 mocha",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "clean": "rm -rf package-lock.json node_modules"
+  },
+  "mocha": {
+    "reporter": "mocha-multi-reporters",
+    "reporter-options": "configFile=.mocha-multi.json",
+    "spec": "test/**/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adobe/spacecat-shared.git"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/adobe/spacecat-shared/issues"
+  },
+  "homepage": "https://github.com/adobe/spacecat-shared#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "zod": "4.1.12"
+  }
+}

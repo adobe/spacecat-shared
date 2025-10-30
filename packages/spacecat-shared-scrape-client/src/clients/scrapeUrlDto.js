@@ -19,7 +19,7 @@ export const ScrapeUrlDto = {
      */
   toJSON: (scrapeUrl) => ({
     id: scrapeUrl.getId(),
-    URL: scrapeUrl.getUrl(),
+    url: scrapeUrl.getUrl(),
     processingType: scrapeUrl.getProcessingType(),
     options: scrapeUrl.getOptions(),
     status: scrapeUrl.getStatus(),

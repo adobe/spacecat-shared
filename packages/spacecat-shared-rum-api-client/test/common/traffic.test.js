@@ -143,6 +143,7 @@ describe('Traffic classification', () => {
     const expected = { type: 'owned', category: 'direct', vendor: '' };
 
     assert(expected, { referrer: '', utmSource: '', utmMedium: '', tracking: null });
+    assert(expected, { referrer: '(direct)', utmSource: '', utmMedium: '', tracking: null });
   });
 
   it('owned internal', () => {

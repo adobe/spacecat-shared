@@ -21,6 +21,7 @@ import { ScrapeJob, ScrapeUrl } from '@adobe/spacecat-shared-data-access';
 import ScrapeJobSchema from '@adobe/spacecat-shared-data-access/src/models/scrape-job/scrape-job.schema.js';
 import ScrapeUrlSchema from '@adobe/spacecat-shared-data-access/src/models/scrape-url/scrape-url.schema.js';
 import { ScrapeClient } from '../src/index.js';
+import { ScrapeUrlDto } from '../src/clients/scrapeUrlDto.js';
 
 use(sinonChai);
 use(chaiAsPromised);
@@ -163,6 +164,7 @@ describe('ScrapeJobController tests', () => {
       },
       ScrapeUrl: {
         allByScrapeJobId: sandbox.stub().resolves([]),
+        allRecentByUrlAndProcessingType: sandbox.stub().resolves([]),
         create: (data) => createScrapeUrl(data),
       },
     };
@@ -830,6 +832,98 @@ describe('ScrapeJobController tests', () => {
       };
       expect(() => ScrapeClient.createFrom(context)).to.throw('Invalid services: dataAccess is required');
     });
+
+    describe('getScrapeUrlsByProcessingType', () => {
+      let testScrapeJobController;
+
+      beforeEach(() => {
+        // Create a fresh controller for each test
+        testScrapeJobController = ScrapeClient.createFrom(baseContext);
+      });
+
+      it('should throw error for invalid URL in supervisor', async () => {
+        try {
+          // Access the supervisor directly to test its error handling
+          await testScrapeJobController.scrapeSupervisor.getScrapeUrlsByProcessingType('invalid-url', 'default', 168);
+          assert.fail('Expected error to be thrown');
+        } catch (err) {
+          expect(err.message).to.equal('invalid-url must be a valid URL');
+        }
+      });
+
+      it('should return successful result when data is found', async () => {
+        const mockScrapeUrls = [{
+          getId: () => 'url-id-1',
+          getUrl: () => 'https://example.com/test',
+          getProcessingType: () => 'default',
+          getOptions: () => ({}),
+          getStatus: () => 'COMPLETE',
+          getPath: () => 'path/to/result',
+          getScrapeJobId: () => 'job-id',
+          getCreatedAt: () => new Date(),
+        }];
+
+        // Create a new context with the specific mock for this test
+        const testContext = {
+          ...baseContext,
+          dataAccess: {
+            ...mockDataAccess,
+            ScrapeUrl: {
+              ...mockDataAccess.ScrapeUrl,
+              allRecentByUrlAndProcessingType: sandbox.stub().resolves(mockScrapeUrls),
+            },
+          },
+        };
+        testScrapeJobController = ScrapeClient.createFrom(testContext);
+
+        const result = await testScrapeJobController.scrapeSupervisor.getScrapeUrlsByProcessingType('https://example.com/test', 'default', 168);
+        expect(result).to.deep.equal(mockScrapeUrls);
+      });
+
+      it('should return null when "Not found" error occurs in supervisor', async () => {
+        // Create a new context with the specific mock for this test
+        const testContext = {
+          ...baseContext,
+          dataAccess: {
+            ...mockDataAccess,
+            ScrapeUrl: {
+              ...mockDataAccess.ScrapeUrl,
+              allRecentByUrlAndProcessingType: sandbox.stub().callsFake(() => {
+                throw new Error('Item Not found in database');
+              }),
+            },
+          },
+        };
+        testScrapeJobController = ScrapeClient.createFrom(testContext);
+
+        const result = await testScrapeJobController.scrapeSupervisor.getScrapeUrlsByProcessingType('https://example.com/test', 'default', 168);
+        expect(result).to.be.null;
+      });
+
+      it('should re-throw non-"Not found" errors in supervisor', async () => {
+        // Create a new context with the specific mock for this test
+        const testContext = {
+          ...baseContext,
+          dataAccess: {
+            ...mockDataAccess,
+            ScrapeUrl: {
+              ...mockDataAccess.ScrapeUrl,
+              allRecentByUrlAndProcessingType: sandbox.stub().callsFake(() => {
+                throw new Error('Database connection failed');
+              }),
+            },
+          },
+        };
+        testScrapeJobController = ScrapeClient.createFrom(testContext);
+
+        try {
+          await testScrapeJobController.scrapeSupervisor.getScrapeUrlsByProcessingType('https://example.com/test', 'default', 168);
+          assert.fail('Expected error to be thrown');
+        } catch (err) {
+          expect(err.message).to.equal('Database connection failed');
+        }
+      });
+    });
   });
 
   describe('getScrapeResultPaths', () => {
@@ -1052,6 +1146,187 @@ describe('ScrapeJobController tests', () => {
       expect(jobs.length).to.equal(2);
       expect(jobs[0].baseURL).to.equal('https://www.example.com');
       expect(jobs[1].baseURL).to.equal('https://www.example.com');
+    });
+  });
+
+  describe('getScrapeUrlsByProcessingType', () => {
+    it('should return scrape URLs for valid URL and processing type', async () => {
+      const mockScrapeUrls = [
+        {
+          getId: () => 'url-id-1',
+          getUrl: () => 'https://example.com/page1',
+          getProcessingType: () => 'default',
+          getOptions: () => ({ enableJavascript: true }),
+          getStatus: () => 'COMPLETE',
+          getPath: () => 'path/to/result1',
+          getScrapeJobId: () => 'job-id-1',
+          getCreatedAt: () => new Date('2024-01-01T00:00:00.000Z'),
+        },
+        {
+          getId: () => 'url-id-2',
+          getUrl: () => 'https://example.com/page2',
+          getProcessingType: () => 'default',
+          getOptions: () => ({ enableJavascript: false }),
+          getStatus: () => 'COMPLETE',
+          getPath: () => 'path/to/result2',
+          getScrapeJobId: () => 'job-id-2',
+          getCreatedAt: () => new Date('2024-01-02T00:00:00.000Z'),
+        },
+      ];
+
+      // eslint-disable-next-line max-len
+      baseContext.dataAccess.ScrapeUrl.allRecentByUrlAndProcessingType = sandbox.stub().resolves(mockScrapeUrls);
+      scrapeJobController = ScrapeClient.createFrom(baseContext);
+
+      const result = await scrapeJobController.getScrapeUrlsByProcessingType('https://example.com/page1', 'default', 168);
+
+      expect(result).to.be.an.instanceOf(Array);
+      expect(result.length).to.equal(2);
+      expect(result[0]).to.deep.equal({
+        id: 'url-id-1',
+        URL: 'https://example.com/page1',
+        processingType: 'default',
+        options: { enableJavascript: true },
+        status: 'COMPLETE',
+        path: 'path/to/result1',
+        scrapeJobId: 'job-id-1',
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      });
+    });
+
+    it('should return null when no scrape URLs are found', async () => {
+      // eslint-disable-next-line max-len
+      baseContext.dataAccess.ScrapeUrl.allRecentByUrlAndProcessingType = sandbox.stub().resolves([]);
+      scrapeJobController = ScrapeClient.createFrom(baseContext);
+
+      const result = await scrapeJobController.getScrapeUrlsByProcessingType('https://example.com/nonexistent', 'default');
+
+      expect(result).to.be.null;
+    });
+
+    it('should handle URL decoding correctly', async () => {
+      const encodedUrl = encodeURIComponent('https://example.com/page with spaces');
+      const mockScrapeUrls = [{
+        getId: () => 'url-id-1',
+        getUrl: () => 'https://example.com/page with spaces',
+        getProcessingType: () => 'default',
+        getOptions: () => ({}),
+        getStatus: () => 'COMPLETE',
+        getPath: () => 'path/to/result',
+        getScrapeJobId: () => 'job-id',
+        getCreatedAt: () => new Date(),
+      }];
+
+      // eslint-disable-next-line max-len
+      baseContext.dataAccess.ScrapeUrl.allRecentByUrlAndProcessingType = sandbox.stub().resolves(mockScrapeUrls);
+      scrapeJobController = ScrapeClient.createFrom(baseContext);
+
+      const result = await scrapeJobController.getScrapeUrlsByProcessingType(encodedUrl, 'default');
+
+      expect(result).to.be.an.instanceOf(Array);
+      expect(result.length).to.equal(1);
+    });
+
+    it('should throw error for invalid URL', async () => {
+      try {
+        await scrapeJobController.getScrapeUrlsByProcessingType('invalid-url', 'default');
+        assert.fail('Expected error to be thrown');
+      } catch (err) {
+        expect(err.message).to.include('Failed to fetch scrape URL by URL: invalid-url and processing type: default');
+        expect(err.message).to.include('must be a valid URL');
+      }
+    });
+
+    it('should handle errors from data access layer gracefully', async () => {
+      baseContext.dataAccess.ScrapeUrl.allRecentByUrlAndProcessingType = sandbox.stub().rejects(new Error('Database error'));
+      scrapeJobController = ScrapeClient.createFrom(baseContext);
+
+      try {
+        await scrapeJobController.getScrapeUrlsByProcessingType('https://example.com/test', 'default');
+        assert.fail('Expected error to be thrown');
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch scrape URL by URL: https://example.com/test and processing type: default, Database error');
+      }
+    });
+
+    it('should use default maxScrapeAge when not provided', async () => {
+      const mockScrapeUrls = [{
+        getId: () => 'url-id-1',
+        getUrl: () => 'https://example.com/test',
+        getProcessingType: () => 'default',
+        getOptions: () => ({}),
+        getStatus: () => 'COMPLETE',
+        getPath: () => 'path/to/result',
+        getScrapeJobId: () => 'job-id',
+        getCreatedAt: () => new Date(),
+      }];
+
+      // eslint-disable-next-line max-len
+      baseContext.dataAccess.ScrapeUrl.allRecentByUrlAndProcessingType = sandbox.stub().resolves(mockScrapeUrls);
+      scrapeJobController = ScrapeClient.createFrom(baseContext);
+
+      await scrapeJobController.getScrapeUrlsByProcessingType('https://example.com/test', 'default');
+
+      // eslint-disable-next-line max-len
+      expect(baseContext.dataAccess.ScrapeUrl.allRecentByUrlAndProcessingType).to.have.been.calledWith(
+        'https://example.com/test',
+        'default',
+        168,
+      );
+    });
+  });
+
+  describe('ScrapeUrlDto', () => {
+    it('should convert a scrape URL object to JSON format', () => {
+      const mockScrapeUrl = {
+        getId: () => 'test-id-123',
+        getUrl: () => 'https://example.com/test-page',
+        getProcessingType: () => 'default',
+        getOptions: () => ({ enableJavascript: true }),
+        getStatus: () => 'COMPLETE',
+        getPath: () => 'path/to/scraped/content',
+        getScrapeJobId: () => 'job-id-456',
+        getCreatedAt: () => new Date('2024-01-01T00:00:00.000Z'),
+      };
+
+      const result = ScrapeUrlDto.toJSON(mockScrapeUrl);
+
+      expect(result).to.deep.equal({
+        id: 'test-id-123',
+        URL: 'https://example.com/test-page',
+        processingType: 'default',
+        options: { enableJavascript: true },
+        status: 'COMPLETE',
+        path: 'path/to/scraped/content',
+        scrapeJobId: 'job-id-456',
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      });
+    });
+
+    it('should handle null/undefined values in scrape URL object', () => {
+      const mockScrapeUrl = {
+        getId: () => null,
+        getUrl: () => 'https://example.com/test',
+        getProcessingType: () => undefined,
+        getOptions: () => null,
+        getStatus: () => 'PENDING',
+        getPath: () => undefined,
+        getScrapeJobId: () => 'job-id',
+        getCreatedAt: () => null,
+      };
+
+      const result = ScrapeUrlDto.toJSON(mockScrapeUrl);
+
+      expect(result).to.deep.equal({
+        id: null,
+        URL: 'https://example.com/test',
+        processingType: undefined,
+        options: null,
+        status: 'PENDING',
+        path: undefined,
+        scrapeJobId: 'job-id',
+        createdAt: null,
+      });
     });
   });
 });

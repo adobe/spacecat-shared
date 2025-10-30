@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-google-client-v1.4.53](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.52...@adobe/spacecat-shared-google-client-v1.4.53) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
 # [@adobe/spacecat-shared-google-client-v1.4.52](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-google-client-v1.4.51...@adobe/spacecat-shared-google-client-v1.4.52) (2025-10-25)
 
 

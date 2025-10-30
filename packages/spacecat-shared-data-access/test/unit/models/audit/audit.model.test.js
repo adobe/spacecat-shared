@@ -189,6 +189,7 @@ describe('AuditModel', () => {
       READABILITY: 'readability',
       PRERENDER: 'prerender',
       PRODUCT_METATAGS: 'product-metatags',
+      PRODUCT_METATAGS_AUTO_SUGGEST: 'product-metatags-auto-suggest',
       SUMMARIZATION: 'summarization',
       PAGE_TYPE_DETECTION: 'page-type-detection',
       FAQS: 'faqs',

@@ -62,7 +62,6 @@ const schema = new SchemaBuilder(Audit, AuditCollection)
   .addAttribute('invocationId', {
     type: 'string',
     required: false,
-    default: false,
   })
   .addAttribute('auditedAt', {
     type: 'string',

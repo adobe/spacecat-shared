@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.69.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.68.0...@adobe/spacecat-shared-utils-v1.69.0) (2025-10-30)
+
+
+### Features
+
+* update llmo schemas to store origin and status ([#1074](https://github.com/adobe/spacecat-shared/issues/1074)) ([a0a983c](https://github.com/adobe/spacecat-shared/commit/a0a983cc9f39c508498c0909336483c589e56068))
+
 # [@adobe/spacecat-shared-utils-v1.68.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.67.0...@adobe/spacecat-shared-utils-v1.68.0) (2025-10-29)
 
 

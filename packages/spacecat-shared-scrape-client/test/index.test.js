@@ -1184,7 +1184,7 @@ describe('ScrapeJobController tests', () => {
       expect(result.length).to.equal(2);
       expect(result[0]).to.deep.equal({
         id: 'url-id-1',
-        URL: 'https://example.com/page1',
+        url: 'https://example.com/page1',
         processingType: 'default',
         options: { enableJavascript: true },
         status: 'COMPLETE',

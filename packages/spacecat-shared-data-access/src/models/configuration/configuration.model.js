@@ -251,16 +251,19 @@ class Configuration extends BaseModel {
   }
 
   /**
-   * Updates the queue URLs configuration.
+   * Updates the queue URLs configuration by merging with existing queues.
+   * Only the specified queue URLs will be updated; others remain unchanged.
    *
-   * @param {object} queues - The new queues configuration object
+   * @param {object} queues - Queue URLs to update (merged with existing)
    * @throws {Error} If queues object is empty or invalid
    */
   updateQueues(queues) {
     if (!isNonEmptyObject(queues)) {
       throw new Error('Queues configuration cannot be empty');
     }
-    this.setQueues(queues);
+    const existingQueues = this.getQueues() || {};
+    const mergedQueues = { ...existingQueues, ...queues };
+    this.setQueues(mergedQueues);
   }
 
   /**

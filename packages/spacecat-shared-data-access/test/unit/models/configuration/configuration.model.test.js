@@ -458,7 +458,40 @@ describe('ConfigurationModel', () => {
   });
 
   describe('updateQueues', () => {
-    it('updates queues successfully', () => {
+    it('merges single queue URL while keeping others', () => {
+      const existingQueues = instance.getQueues();
+
+      instance.updateQueues({
+        audits: 'sqs://new-audit-queue',
+      });
+
+      const updatedQueues = instance.getQueues();
+      // Updated queue should have new URL
+      expect(updatedQueues.audits).to.equal('sqs://new-audit-queue');
+      // Other queues should remain unchanged
+      expect(updatedQueues.imports).to.equal(existingQueues.imports);
+      expect(updatedQueues.reports).to.equal(existingQueues.reports);
+      expect(updatedQueues.scrapes).to.equal(existingQueues.scrapes);
+    });
+
+    it('merges multiple queue URLs while keeping others', () => {
+      const existingQueues = instance.getQueues();
+
+      instance.updateQueues({
+        audits: 'sqs://new-audit-queue',
+        imports: 'sqs://new-import-queue',
+      });
+
+      const updatedQueues = instance.getQueues();
+      // Updated queues should have new URLs
+      expect(updatedQueues.audits).to.equal('sqs://new-audit-queue');
+      expect(updatedQueues.imports).to.equal('sqs://new-import-queue');
+      // Other queues should remain unchanged
+      expect(updatedQueues.reports).to.equal(existingQueues.reports);
+      expect(updatedQueues.scrapes).to.equal(existingQueues.scrapes);
+    });
+
+    it('updates all queues successfully', () => {
       const newQueues = {
         audits: 'sqs://new-audit-queue',
         imports: 'sqs://new-import-queue',
@@ -469,6 +502,21 @@ describe('ConfigurationModel', () => {
       instance.updateQueues(newQueues);
 
       expect(instance.getQueues()).to.deep.equal(newQueues);
+    });
+
+    it('adds new queue type while keeping existing ones', () => {
+      const existingQueues = instance.getQueues();
+
+      instance.updateQueues({
+        newQueueType: 'sqs://new-queue-type',
+      });
+
+      const updatedQueues = instance.getQueues();
+      // New queue should be added
+      expect(updatedQueues.newQueueType).to.equal('sqs://new-queue-type');
+      // Existing queues should remain unchanged
+      expect(updatedQueues.audits).to.equal(existingQueues.audits);
+      expect(updatedQueues.imports).to.equal(existingQueues.imports);
     });
 
     it('throws error when queues is not provided', () => {

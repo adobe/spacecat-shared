@@ -146,27 +146,64 @@ const not = (truth) => (text) => {
 
 const notEmpty = (text) => hasText(text);
 
-/*
- * --------- ENFORCEMENTS ----------------
- */
-
-const ENFORCEMENTS = [
-  // vendors 'openai', 'claude', and 'perplexity' can only be earned/llm
-  {
-    when: (state) => state.vendor === 'openai' || state.vendor === 'claude' || state.vendor === 'perplexity',
-    enforce: (state) => ({ ...state, type: 'earned', category: 'llm' }),
-  },
-  // if utm_source=chatgpt.com, force earned/llm and vendor=openai
-  {
-    when: (state, ctx) => (ctx.utmSourceRaw || '').toLowerCase() === 'chatgpt.com',
-    enforce: (state) => ({ ...state, type: 'earned', category: 'llm', vendor: 'openai' }),
-  },
+// overrides
+const OVERRIDES = [
+  { when: (ctx) => (ctx.utmSource || '').toLowerCase() === 'chatgpt.com', set: { type: 'earned', category: 'llm', vendor: 'openai' } },
 ];
 
-function applyEnforcements(initialState, context) {
-  return ENFORCEMENTS
-    .reduce((acc, rule) => (
-      rule.when(acc, context) ? rule.enforce(acc, context) : acc), initialState);
+function applyOverrides(classification, context) {
+  const override = OVERRIDES.find((rule) => rule.when(context));
+  return override ? { ...classification, ...override.set } : classification;
+}
+
+// allowed known vendors per category
+const ALLOWED_VENDORS = {
+  earned: {
+    llm: ['openai', 'claude', 'perplexity', 'microsoft', 'google'],
+    search: ['google', 'bing', 'yahoo', 'yandex', 'baidu', 'duckduckgo', 'brave', 'ecosia', 'aol'],
+    social: ['facebook', 'instagram', 'x', 'linkedin', 'reddit', 'tiktok', 'pinterest', 'snapchat'],
+    video: ['youtube', 'vimeo', 'twitch', 'dailymotion'],
+    referral: null, // any vendor allowed
+  },
+  paid: {
+    search: ['google', 'bing', 'yahoo', 'yandex', 'baidu', 'microsoft'],
+    social: ['facebook', 'instagram', 'x', 'linkedin', 'tiktok', 'pinterest', 'snapchat', 'reddit'],
+    video: ['youtube', 'vimeo', 'twitch', 'dailymotion'],
+    display: ['google', 'microsoft', 'criteo', 'taboola', 'outbrain', 'teads', 'amazon'],
+    affiliate: null, // any vendor allowed
+    uncategorized: null, // any vendor allowed
+  },
+  owned: {
+    direct: ['direct'],
+    internal: null, // any vendor allowed
+    email: ['marketo', 'eloqua', 'substack'],
+    sms: null, // any vendor allowed
+    qr: null, // any vendor allowed
+    push: null, // any vendor allowed
+    uncategorized: null, // any vendor allowed
+  },
+};
+
+/**
+ * Validates if a vendor is allowed for the given type/category combination.
+ * @param {string} type - Traffic type (earned, paid, owned)
+ * @param {string} category - Traffic category (llm, search, social, etc.)
+ * @param {string} vendor - Vendor name to validate
+ * @returns {string} The vendor if allowed, empty string otherwise
+ */
+function validateVendor(type, category, vendor) {
+  if (!vendor) return '';
+
+  const allowedVendors = ALLOWED_VENDORS[type]?.[category];
+
+  // null means any vendor is allowed
+  if (allowedVendors === null) return vendor;
+
+  // undefined means this type/category combination is not defined - allow any vendor
+  if (allowedVendors === undefined) return vendor;
+
+  // Check if vendor is in the allowed list
+  return allowedVendors.includes(vendor) ? vendor : '';
 }
 
 /*
@@ -283,23 +320,25 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
     && rule.utmMedium(sanitize(utmMedium))
     && rule.tracking(trackingParams)
   ));
-  const { type, category } = match;
-  const vendor = classifyVendor(referrerDomain, utmSource, utmMedium);
+  let { type, category } = match;
+  let vendor = classifyVendor(referrerDomain, utmSource, utmMedium);
 
-  const enforced = applyEnforcements(
+  // apply overrides
+  const overridden = applyOverrides(
     { type, category, vendor },
-    {
-      utmSourceRaw: utmSource,
-      utmSource: sanitize(utmSource),
-      utmMedium: sanitize(utmMedium),
-      referrerDomain,
-    },
+    { utmSource, utmMedium, referrerDomain },
   );
+  type = overridden.type;
+  category = overridden.category;
+  vendor = overridden.vendor;
+
+  // validate vendor against allowed vendors for this type/category
+  const validatedVendor = validateVendor(type, category, vendor);
 
   return {
-    type: enforced.type,
-    category: enforced.category,
-    vendor: enforced.vendor,
+    type,
+    category,
+    vendor: validatedVendor,
   };
 }
 

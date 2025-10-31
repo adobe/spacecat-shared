@@ -57,11 +57,11 @@ const loadConfig = (context) => {
     const imsEnv = pathInfo?.headers?.['x-ims-env'];
     if (hasText(imsEnv) && imsEnv === 'prod') {
       const config = JSON.parse(context.env.AUTH_HANDLER_IMS_PROD);
-      context.log.debug(`Loaded config name: ${config.name}`);
+      context.log.info(`Loaded config name for prod: ${config.name}`);
       return config;
     } else {
       const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
-      context.log.debug(`Loaded config name: ${config.name}`);
+      context.log.info(`Loaded config name for dev: ${config.name}`);
       return config;
     }
   } catch (e) {
@@ -177,10 +177,15 @@ export default class AdobeImsHandler extends AbstractHandler {
 
     try {
       const config = loadConfig(context);
+      this.log(`Loaded config name: ${config.name} going for validate token`, 'info');
       const payload = await this.#validateToken(token, config);
+      this.log('Validated token, going for get ImsUserProfile', 'info');
       const imsProfile = await context.imsClient.getImsUserProfile(token);
+      this.log('Got ImsUserProfile, going for get ImsUserOrganizations', 'info');
       const organizations = await context.imsClient.getImsUserOrganizations(token);
+      this.log('Got ImsUserOrganizations, going for isUserASOAdmin', 'info');
       const isAdmin = isUserASOAdmin(organizations);
+      this.log(`isUserASOAdmin: ${isAdmin}`, 'info');
       const scopes = [];
       if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {
         scopes.push({ name: 'admin' });
@@ -201,7 +206,7 @@ export default class AdobeImsHandler extends AbstractHandler {
         .withProfile(profile)
         .withScopes(scopes);
     } catch (e) {
-      this.log(`Failed to validate token: ${e.message}`, 'debug');
+      this.log(`Failed to validate token: ${e.message}`, 'info');
     }
 
     return null;

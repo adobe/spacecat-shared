@@ -123,10 +123,6 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     type: 'boolean',
     default: false,
   })
-  .addAttribute('requiresValidation', {
-    type: 'boolean',
-    default: false,
-  })
   .addAttribute('isLive', {
     type: 'boolean',
     required: true,

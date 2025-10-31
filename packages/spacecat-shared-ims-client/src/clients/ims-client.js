@@ -39,6 +39,7 @@ export default class ImsClient extends ImsBaseClient {
     let scope;
 
     if (hasText(imsEnv) && imsEnv === 'prod') {
+      log.info('Creating ImsClient for prod');
       ({
         IMS_HOST_PROD: imsHost,
         IMS_CLIENT_ID_PROD: clientId,
@@ -47,6 +48,7 @@ export default class ImsClient extends ImsBaseClient {
         IMS_SCOPE_PROD: scope,
       } = context.env);
     } else {
+      log.info('Creating ImsClient for dev');
       ({
         IMS_HOST: imsHost,
         IMS_CLIENT_ID: clientId,

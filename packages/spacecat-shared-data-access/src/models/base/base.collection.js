@@ -237,6 +237,7 @@ class BaseCollection {
         order: options.order || 'desc',
         ...options.limit && { limit: options.limit },
         ...options.attributes && { attributes: options.attributes },
+        ...options.cursor && { cursor: options.cursor },
       };
 
       let query = index(keys);

@@ -250,6 +250,169 @@ class Configuration extends BaseModel {
     this.updateHandlerOrgs(type, orgId, false);
   }
 
+  /**
+   * Updates the queue URLs configuration by merging with existing queues.
+   * Only the specified queue URLs will be updated; others remain unchanged.
+   *
+   * @param {object} queues - Queue URLs to update (merged with existing)
+   * @throws {Error} If queues object is empty or invalid
+   */
+  updateQueues(queues) {
+    if (!isNonEmptyObject(queues)) {
+      throw new Error('Queues configuration cannot be empty');
+    }
+    const existingQueues = this.getQueues() || {};
+    const mergedQueues = { ...existingQueues, ...queues };
+    this.setQueues(mergedQueues);
+  }
+
+  /**
+   * Updates a job's properties (interval, group).
+   *
+   * @param {string} type - The job type to update
+   * @param {object} properties - Properties to update (interval, group)
+   * @throws {Error} If job not found or properties are invalid
+   */
+  updateJob(type, properties) {
+    const jobs = this.getJobs();
+    const jobIndex = jobs.findIndex((job) => job.type === type);
+
+    if (jobIndex === -1) {
+      throw new Error(`Job type "${type}" not found in configuration`);
+    }
+
+    if (properties.interval && !Object.values(Configuration.JOB_INTERVALS)
+      .includes(properties.interval)) {
+      throw new Error(`Invalid interval "${properties.interval}". Must be one of: ${Object.values(Configuration.JOB_INTERVALS).join(', ')}`);
+    }
+
+    if (properties.group && !Object.values(Configuration.JOB_GROUPS).includes(properties.group)) {
+      throw new Error(`Invalid group "${properties.group}". Must be one of: ${Object.values(Configuration.JOB_GROUPS).join(', ')}`);
+    }
+
+    jobs[jobIndex] = { ...jobs[jobIndex], ...properties };
+    this.setJobs(jobs);
+  }
+
+  /**
+   * Updates a handler's properties.
+   *
+   * @param {string} type - The handler type to update
+   * @param {object} properties - Properties to update
+   * @throws {Error} If handler not found or properties are invalid
+   */
+  updateHandlerProperties(type, properties) {
+    const handlers = this.getHandlers();
+    if (!handlers[type]) {
+      throw new Error(`Handler "${type}" not found in configuration`);
+    }
+
+    if (properties.productCodes !== undefined) {
+      if (!isNonEmptyArray(properties.productCodes)) {
+        throw new Error('productCodes must be a non-empty array');
+      }
+      const validProductCodes = Object.values(Entitlement.PRODUCT_CODES);
+      if (!properties.productCodes.every((pc) => validProductCodes.includes(pc))) {
+        throw new Error('Invalid product codes provided');
+      }
+    }
+
+    if (properties.dependencies !== undefined) {
+      if (isNonEmptyArray(properties.dependencies)) {
+        for (const dep of properties.dependencies) {
+          if (!handlers[dep.handler]) {
+            throw new Error(`Dependency handler "${dep.handler}" does not exist in configuration`);
+          }
+        }
+      }
+    }
+
+    if (properties.movingAvgThreshold !== undefined && properties.movingAvgThreshold < 1) {
+      throw new Error('movingAvgThreshold must be greater than or equal to 1');
+    }
+
+    if (properties.percentageChangeThreshold !== undefined && properties
+      .percentageChangeThreshold < 1) {
+      throw new Error('percentageChangeThreshold must be greater than or equal to 1');
+    }
+
+    handlers[type] = { ...handlers[type], ...properties };
+    this.setHandlers(handlers);
+  }
+
+  /**
+   * Updates the configuration by merging changes into existing sections.
+   * This is a flexible update method that allows updating one or more sections at once.
+   * Changes are merged, not replaced - existing data is preserved.
+   *
+   * @param {object} data - Configuration data to update
+   * @param {object} [data.handlers] - Handlers to merge (adds new, updates existing)
+   * @param {Array} [data.jobs] - Jobs to merge (updates matching jobs by type)
+   * @param {object} [data.queues] - Queues to merge (updates specific queue URLs)
+   * @throws {Error} If validation fails
+   */
+  updateConfiguration(data) {
+    if (!isNonEmptyObject(data)) {
+      throw new Error('Configuration data cannot be empty');
+    }
+
+    // Merge handlers - add new handlers or update existing ones
+    if (data.handlers !== undefined) {
+      if (!isNonEmptyObject(data.handlers)) {
+        throw new Error('Handlers must be a non-empty object if provided');
+      }
+      const existingHandlers = this.getHandlers() || {};
+      const mergedHandlers = { ...existingHandlers };
+
+      // Merge each handler from the update into existing handlers
+      Object.keys(data.handlers).forEach((handlerType) => {
+        mergedHandlers[handlerType] = {
+          ...existingHandlers[handlerType],
+          ...data.handlers[handlerType],
+        };
+      });
+
+      this.setHandlers(mergedHandlers);
+    }
+
+    // Merge jobs - update existing jobs or add new ones
+    if (data.jobs !== undefined) {
+      if (!Array.isArray(data.jobs)) {
+        throw new Error('Jobs must be an array if provided');
+      }
+      const existingJobs = this.getJobs() || [];
+      const mergedJobs = [...existingJobs];
+
+      // For each job in the update, find and update or add it
+      data.jobs.forEach((newJob) => {
+        const existingIndex = mergedJobs.findIndex(
+          (job) => job.type === newJob.type && job.group === newJob.group,
+        );
+
+        if (existingIndex !== -1) {
+          // Update existing job
+          mergedJobs[existingIndex] = { ...mergedJobs[existingIndex], ...newJob };
+        } else {
+          // Add new job
+          mergedJobs.push(newJob);
+        }
+      });
+
+      this.setJobs(mergedJobs);
+    }
+
+    // Merge queues - update specific queue URLs
+    if (data.queues !== undefined) {
+      if (!isNonEmptyObject(data.queues)) {
+        throw new Error('Queues must be a non-empty object if provided');
+      }
+      const existingQueues = this.getQueues() || {};
+      const mergedQueues = { ...existingQueues, ...data.queues };
+
+      this.setQueues(mergedQueues);
+    }
+  }
+
   registerAudit(
     type,
     enabledByDefault = false,

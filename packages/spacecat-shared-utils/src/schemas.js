@@ -78,13 +78,11 @@ const topic = z.object({
   name: nonEmptyString,
   prompts: z.array(prompt).min(1),
   category: z.union([z.uuid(), nonEmptyString]),
-  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 const deletedPrompt = prompt.extend({
   topic: nonEmptyString,
   category: nonEmptyString,
-  topicOrigin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 export const llmoConfig = z.object({

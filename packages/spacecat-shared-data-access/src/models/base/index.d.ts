@@ -38,10 +38,16 @@ export interface QueryOptions {
   /**
    * Whether to automatically fetch all pages of results.
    * - `true`: Always paginate through all results
-   * - `false`: Only fetch first page (returns { data, cursor })
+   * - `false`: Only fetch first page
    * - `undefined`: Auto-paginate when no limit specified, respect limits otherwise
    */
   fetchAllPages?: boolean;
+  /**
+   * Whether to return cursor information for manual pagination.
+   * - `true`: Returns { data, cursor } for paginated results
+   * - `false` or `undefined`: Returns data array directly (default)
+   */
+  returnCursor?: boolean;
 }
 
 export interface PaginatedResult<T> {

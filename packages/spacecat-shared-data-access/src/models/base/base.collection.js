@@ -268,10 +268,8 @@ class BaseCollection {
         }
       }
 
-      // When pagination is active (fetchAllPages: false or cursor provided),
-      // return both data and cursor
-      const shouldReturnCursor = options.fetchAllPages === false
-                               || (options.cursor !== undefined && options.limit);
+      // Return cursor when explicitly requested via returnCursor option
+      const shouldReturnCursor = options.returnCursor === true;
 
       if (options.limit === 1) {
         return allData.length ? this.#createInstance(allData[0]) : null;

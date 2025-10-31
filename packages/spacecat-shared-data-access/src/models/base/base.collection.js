@@ -268,10 +268,18 @@ class BaseCollection {
         }
       }
 
+      // When pagination is active (fetchAllPages: false or cursor provided),
+      // return both data and cursor
+      const shouldReturnCursor = options.fetchAllPages === false
+                               || (options.cursor !== undefined && options.limit);
+
       if (options.limit === 1) {
         return allData.length ? this.#createInstance(allData[0]) : null;
       } else {
-        return this.#createInstances(allData);
+        const instances = this.#createInstances(allData);
+        return shouldReturnCursor
+          ? { data: instances, cursor: result.cursor || null }
+          : instances;
       }
     } catch (error) {
       return this.#logAndThrowError('Failed to query', error);

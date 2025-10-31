@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-data-access-v2.76.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.76.0...@adobe/spacecat-shared-data-access-v2.76.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* **data-access:** include invocationId in audit schema ([#1075](https://github.com/adobe/spacecat-shared/issues/1075)) ([a7aecb2](https://github.com/adobe/spacecat-shared/commit/a7aecb211482e379ec77c20efbe672988071c660))
+
+# [@adobe/spacecat-shared-data-access-v2.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.75.0...@adobe/spacecat-shared-data-access-v2.76.0) (2025-10-29)
+
+
+### Features
+
+* add tokowaka client ([#1025](https://github.com/adobe/spacecat-shared/issues/1025)) ([7af58b0](https://github.com/adobe/spacecat-shared/commit/7af58b03ef341c32b35a6614365024af6a636a56))
+
+# [@adobe/spacecat-shared-data-access-v2.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.74.2...@adobe/spacecat-shared-data-access-v2.75.0) (2025-10-29)
+
+
+### Features
+
+* scrape url access pattern ([#1059](https://github.com/adobe/spacecat-shared/issues/1059)) ([26facf6](https://github.com/adobe/spacecat-shared/commit/26facf63dfae4908ed88221f16266910205e2473))
+
 # [@adobe/spacecat-shared-data-access-v2.74.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.74.1...@adobe/spacecat-shared-data-access-v2.74.2) (2025-10-28)
 
 

@@ -87,6 +87,7 @@ describe('URL Extractors', () => {
 
     describe('URL-based types (ACCESSIBILITY, COLOR_CONTRAST, etc.)', () => {
       const urlBasedTypes = [
+        OPPORTUNITY_TYPES.A11Y_ASSISTIVE,
         OPPORTUNITY_TYPES.ACCESSIBILITY,
         OPPORTUNITY_TYPES.COLOR_CONTRAST,
         OPPORTUNITY_TYPES.STRUCTURED_DATA,

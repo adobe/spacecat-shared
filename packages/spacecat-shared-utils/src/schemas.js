@@ -43,6 +43,7 @@ const prompt = z.object({
   regions: z.array(region),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
   source: z.union([z.literal('config'), z.literal('api'), z.string()]),
+  status: z.union([z.literal('completed'), z.literal('processing'), z.string()]).optional(),
 });
 
 const entity = z.object({
@@ -50,22 +51,40 @@ const entity = z.object({
   name: nonEmptyString,
 });
 
+const categoryUrl = z.object({
+  value: nonEmptyString,
+  type: z.union([z.literal('prefix'), z.literal('url')]),
+}).superRefine((data, ctx) => {
+  // Validate URL format only for type 'url'
+  if (data.type === 'url') {
+    if (!URL.canParse(data.value)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['value'],
+        message: 'Invalid URL format',
+      });
+    }
+  }
+});
+
 const category = z.object({
   name: nonEmptyString,
   region: z.union([region, z.array(region)]),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
+  urls: z.array(categoryUrl).optional(),
 });
 
 const topic = z.object({
   name: nonEmptyString,
   prompts: z.array(prompt).min(1),
   category: z.union([z.uuid(), nonEmptyString]),
+  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 const deletedPrompt = prompt.extend({
   topic: nonEmptyString,
   category: nonEmptyString,
-  regions: z.array(region).min(1),
+  topicOrigin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 export const llmoConfig = z.object({

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.69.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.1...@adobe/spacecat-shared-utils-v1.69.2) (2025-10-31)
+
+
+### Bug Fixes
+
+* remove topic origin ([#1080](https://github.com/adobe/spacecat-shared/issues/1080)) ([69c0dd6](https://github.com/adobe/spacecat-shared/commit/69c0dd6ab50c520a3fd776db69a951a13ace9f1d))
+
 # [@adobe/spacecat-shared-utils-v1.69.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.0...@adobe/spacecat-shared-utils-v1.69.1) (2025-10-30)
 
 

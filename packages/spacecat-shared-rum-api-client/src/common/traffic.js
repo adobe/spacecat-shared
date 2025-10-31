@@ -161,22 +161,22 @@ const ALLOWED_VENDORS = {
   earned: {
     llm: ['openai', 'claude', 'perplexity', 'microsoft', 'google'],
     search: ['google', 'bing', 'yahoo', 'yandex', 'baidu', 'duckduckgo', 'brave', 'ecosia', 'aol'],
-    social: ['facebook', 'instagram', 'x', 'linkedin', 'reddit', 'tiktok', 'pinterest', 'snapchat'],
-    video: ['youtube', 'vimeo', 'twitch', 'dailymotion'],
+    social: null, // any vendor allowed
+    video: ['youtube', 'vimeo', 'twitch', 'tiktok', 'dailymotion'],
     referral: null, // any vendor allowed
   },
   paid: {
     search: ['google', 'bing', 'yahoo', 'yandex', 'baidu', 'microsoft'],
-    social: ['facebook', 'instagram', 'x', 'linkedin', 'tiktok', 'pinterest', 'snapchat', 'reddit'],
+    social: null, // any vendor allowed
     video: ['youtube', 'vimeo', 'twitch', 'dailymotion'],
-    display: ['google', 'microsoft', 'criteo', 'taboola', 'outbrain', 'teads', 'amazon'],
+    display: null, // any vendor allowed
     affiliate: null, // any vendor allowed
     uncategorized: null, // any vendor allowed
   },
   owned: {
     direct: ['direct'],
     internal: null, // any vendor allowed
-    email: ['marketo', 'eloqua', 'substack'],
+    email: null, // any vendor allowed
     sms: null, // any vendor allowed
     qr: null, // any vendor allowed
     push: null, // any vendor allowed
@@ -196,11 +196,8 @@ function validateVendor(type, category, vendor) {
 
   const allowedVendors = ALLOWED_VENDORS[type]?.[category];
 
-  // null means any vendor is allowed
-  if (allowedVendors === null) return vendor;
-
-  // undefined means this type/category combination is not defined - allow any vendor
-  if (allowedVendors === undefined) return vendor;
+  // null/undefined means any vendor is allowed
+  if (!allowedVendors) return vendor;
 
   // Check if vendor is in the allowed list
   return allowedVendors.includes(vendor) ? vendor : '';

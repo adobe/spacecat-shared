@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.38.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.7...@adobe/spacecat-shared-rum-api-client-v2.38.8) (2025-10-31)
+
+
+### Bug Fixes
+
+* **traffic-attribution:** limit vendors per source ([#1079](https://github.com/adobe/spacecat-shared/issues/1079)) ([9165913](https://github.com/adobe/spacecat-shared/commit/9165913f379a00df409fe86961ba5df1f5a2a840))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.38.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.6...@adobe/spacecat-shared-rum-api-client-v2.38.7) (2025-10-29)
 
 

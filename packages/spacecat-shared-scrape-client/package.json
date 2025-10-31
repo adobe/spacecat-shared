@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-scrape-client",
-  "version": "2.1.5",
+  "version": "2.1.7",
   "description": "Shared modules of the Spacecat Services - Scrape Client",
   "type": "module",
   "engines": {
@@ -37,14 +37,14 @@
   "dependencies": {
     "@adobe/helix-universal": "5.2.3",
     "@adobe/spacecat-shared-data-access": "2.45.0",
-    "@adobe/spacecat-shared-utils": "1.31.0"
+    "@adobe/spacecat-shared-utils": "1.66.0"
   },
   "devDependencies": {
-    "chai": "6.0.1",
+    "chai": "6.2.0",
     "chai-as-promised": "8.0.2",
     "nock": "14.0.10",
     "sinon": "21.0.0",
     "sinon-chai": "4.0.1",
-    "typescript": "5.9.2"
+    "typescript": "5.9.3"
   }
 }

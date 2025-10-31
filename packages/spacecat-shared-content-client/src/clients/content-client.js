@@ -311,10 +311,12 @@ export default class ContentClient {
     return docPath;
   }
 
-  async #getHelixResourceStatus(path) {
+  async #getHelixResourceStatus(path, includeEditUrl = false) {
     const { rso } = this.site.getHlxConfig();
-    // https://www.aem.live/docs/admin.html#tag/status
-    const adminEndpointUrl = `https://admin.hlx.page/status/${rso.owner}/${rso.site}/${rso.ref}/${path.replace(/^\/+/, '')}`;
+    // https://www.aem.live/docs/admin.html#tag/status,
+    let adminEndpointUrl = `https://admin.hlx.page/status/${rso.owner}/${rso.site}/${rso.ref}/${path.replace(/^\/+/, '')}`;
+    // ?editUrl=auto for URL of the edit (authoring) document
+    adminEndpointUrl = includeEditUrl ? `${adminEndpointUrl}?editUrl=auto` : adminEndpointUrl;
     const response = await fetch(adminEndpointUrl, {
       headers: {
         Authorization: `token ${this.config.helixAdminToken}`,
@@ -347,6 +349,15 @@ export default class ContentClient {
       liveURL: helixResourceStatus?.live?.url,
       previewURL: helixResourceStatus?.preview?.url,
     };
+  }
+
+  /**
+   * @param {string} path
+   * @returns {Promise<string>}
+   */
+  async getEditURL(path) {
+    const helixResourceStatus = await this.#getHelixResourceStatus(path, true);
+    return helixResourceStatus?.edit?.url;
   }
 
   async getPageMetadata(path) {
@@ -391,7 +402,7 @@ export default class ContentClient {
 
     const response = await document.updateMetadata(mergedMetadata);
     if (response?.status !== 200) {
-      throw new Error(`Failed to update metadata for path ${path}`);
+      throw new Error(`Failed to update metadata for path ${path}: ${response.statusText}`);
     }
 
     this.#logDuration('updatePageMetadata', startTime);

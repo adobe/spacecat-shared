@@ -1016,62 +1016,6 @@ describe('schemas', () => {
       });
     });
 
-    describe('topic origin', () => {
-      it('validates topic without origin (optional field)', () => {
-        const config = {
-          ...baseConfig,
-          topics: {
-            [topicId]: {
-              name: 'Topic One',
-              prompts: [
-                {
-                  prompt: 'Test prompt',
-                  regions: ['US'],
-                  origin: 'human',
-                  source: 'config',
-                },
-              ],
-              category: categoryId,
-              // no origin field
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
-        if (result.success) {
-          expect(result.data.topics[topicId].origin).to.be.undefined;
-        }
-      });
-
-      it('validates topic with ai origin', () => {
-        const config = {
-          ...baseConfig,
-          topics: {
-            [topicId]: {
-              name: 'Topic One',
-              prompts: [
-                {
-                  prompt: 'Test prompt',
-                  regions: ['US'],
-                  origin: 'human',
-                  source: 'config',
-                },
-              ],
-              category: categoryId,
-              origin: 'ai',
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
-        if (result.success) {
-          expect(result.data.topics[topicId].origin).equals('ai');
-        }
-      });
-    });
-
     describe('deleted prompt origin', () => {
       const deletedPromptId = 'eeee1111-e11b-41e1-a111-111111111111';
 

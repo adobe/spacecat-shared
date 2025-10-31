@@ -53,9 +53,17 @@ const ADMIN_GROUP_IDENT = {
 const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {
-    const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
-    context.log.debug(`Loaded config name: ${config.name}`);
-    return config;
+    const { pathInfo } = context;
+    const imsEnv = pathInfo?.headers?.['x-ims-env'];
+    if (hasText(imsEnv) && imsEnv === 'prod') {
+      const config = JSON.parse(context.env.AUTH_HANDLER_IMS_PROD);
+      context.log.debug(`Loaded config name: ${config.name}`);
+      return config;
+    } else {
+      const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
+      context.log.debug(`Loaded config name: ${config.name}`);
+      return config;
+    }
   } catch (e) {
     context.log.error(`Failed to load config from context: ${e.message}`);
     throw Error('Failed to load config from context');

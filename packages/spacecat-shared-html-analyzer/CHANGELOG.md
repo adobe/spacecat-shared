@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-html-analyzer-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.3...@adobe/spacecat-shared-html-analyzer-v1.0.4) (2025-11-03)
+
+
+### Bug Fixes
+
+* adding wordCountBefore & wordCountAfter ([#1084](https://github.com/adobe/spacecat-shared/issues/1084)) ([d3ae176](https://github.com/adobe/spacecat-shared/commit/d3ae1769e9a8548da3396027897e55d479afec2f))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.2...@adobe/spacecat-shared-html-analyzer-v1.0.3) (2025-10-29)
 
 

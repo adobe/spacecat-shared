@@ -10,15 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import { createUrl } from '@adobe/fetch';
+import { createUrl, timeoutSignal } from '@adobe/fetch';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import {
   hasText, isNonEmptyObject,
   isValidUrl,
-  tracingFetch,
 } from '@adobe/spacecat-shared-utils';
 
-import { sanitizeHeaders } from '../utils.js';
+import { fetch as httpFetch, sanitizeHeaders } from '../utils.js';
 
 export default class GenvarClient {
   static createFrom(context) {
@@ -91,12 +90,13 @@ export default class GenvarClient {
     let response;
     let responseJsonObj;
     const startTime = process.hrtime.bigint();
+    const signal = timeoutSignal(15000);
     try {
-      response = await tracingFetch(url, {
+      response = await httpFetch(url, {
         method: 'POST',
         headers,
         body,
-        timeout: 30000,
+        signal,
       });
       this.#logDuration('Genvar Job submit took ms: ', startTime);
       if (!response.ok) {
@@ -105,9 +105,11 @@ export default class GenvarClient {
       }
       responseJsonObj = await response.json();
     } catch (err) {
-      this.#logDuration('Genvar Job submit took ms: ', startTime);
+      this.#logDuration('Genvar Job submit failed. Time taken: ', startTime);
       this.log.error(`Genvar Job submit failed with error: ${err.message}`);
       throw err;
+    } finally {
+      signal.clear();
     }
     return responseJsonObj;
   }
@@ -130,13 +132,14 @@ export default class GenvarClient {
       this.log.debug(`[Genvar API Call] URL: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
       let response;
+      const signal = timeoutSignal(15000);
       try {
-        response = await tracingFetch(
+        response = await httpFetch(
           createUrl(url),
           {
             method: 'GET',
             headers,
-            timeout: 15000,
+            signal,
           },
         );
         if (!response.ok) {
@@ -146,6 +149,8 @@ export default class GenvarClient {
       } catch (err) {
         this.log.error(`Genvar Job poll failed with error: ${err.message}`);
         throw err;
+      } finally {
+        signal.clear();
       }
     } while (jobStatusResponse.status === 'running');
 

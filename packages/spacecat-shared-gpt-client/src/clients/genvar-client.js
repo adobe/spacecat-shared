@@ -90,8 +90,8 @@ export default class GenvarClient {
 
     let response;
     let responseJsonObj;
+    const startTime = process.hrtime.bigint();
     try {
-      const startTime = process.hrtime.bigint();
       response = await tracingFetch(url, {
         method: 'POST',
         headers,
@@ -105,6 +105,7 @@ export default class GenvarClient {
       }
       responseJsonObj = await response.json();
     } catch (err) {
+      this.#logDuration('Genvar Job submit took ms: ', startTime);
       this.log.error(`Genvar Job submit failed with error: ${err.message}`);
       throw err;
     }

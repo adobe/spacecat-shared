@@ -91,11 +91,14 @@ export default class GenvarClient {
     let response;
     let responseJsonObj;
     try {
+      const startTime = process.hrtime.bigint();
       response = await tracingFetch(url, {
         method: 'POST',
         headers,
         body,
+        timeout: 15000,
       });
+      this.#logDuration('Genvar Job submit took ms: ', startTime);
       if (!response.ok) {
         const errorMessage = await response.text();
         throw new Error(`Job submission failed with status code ${response.status} and error: ${errorMessage}`);
@@ -132,6 +135,7 @@ export default class GenvarClient {
           {
             method: 'GET',
             headers,
+            timeout: 15000,
           },
         );
         if (!response.ok) {

@@ -96,7 +96,7 @@ export default class GenvarClient {
         method: 'POST',
         headers,
         body,
-        timeout: 15000,
+        timeout: 30000,
       });
       this.#logDuration('Genvar Job submit took ms: ', startTime);
       if (!response.ok) {

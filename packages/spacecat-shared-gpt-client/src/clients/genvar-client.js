@@ -18,7 +18,7 @@ import {
   tracingFetch,
 } from '@adobe/spacecat-shared-utils';
 
-import { fetch as httpFetch, sanitizeHeaders } from '../utils.js';
+import { sanitizeHeaders } from '../utils.js';
 
 export default class GenvarClient {
   static createFrom(context) {
@@ -92,10 +92,11 @@ export default class GenvarClient {
     let responseJsonObj;
     const startTime = process.hrtime.bigint();
     try {
-      response = await httpFetch(url, {
+      response = await tracingFetch(url, {
         method: 'POST',
         headers,
         body,
+        timeout: 30000,
       });
       this.#logDuration('Genvar Job submit took ms: ', startTime);
       if (!response.ok) {

@@ -429,20 +429,97 @@ describe('ConfigurationModel', () => {
       });
     });
 
-    it('throws error when registering an invalid audit type', () => {
-      expect(() => instance.registerAudit('invalid-audit-type', true, 'weekly')).to.throw(Error, 'Audit type invalid-audit-type is not a valid audit type in the data model');
+    it('throws error when registering an empty audit type', () => {
+      expect(() => instance.registerAudit('', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must be a non-empty string');
+    });
+
+    it('throws error when registering a null audit type', () => {
+      expect(() => instance.registerAudit(null, true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must be a non-empty string');
+    });
+
+    it('throws error when audit name exceeds 37 characters', () => {
+      const longAuditType = 'this-is-a-very-long-audit-name-that-exceeds-37-characters';
+      expect(() => instance.registerAudit(longAuditType, true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type must not exceed 37 characters');
+    });
+
+    it('throws error when audit name contains invalid characters', () => {
+      expect(() => instance.registerAudit('invalid@audit!', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+    });
+
+    it('throws error when audit name contains spaces', () => {
+      expect(() => instance.registerAudit('invalid audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+    });
+
+    it('throws error when audit name contains underscores', () => {
+      expect(() => instance.registerAudit('invalid_audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+    });
+
+    it('throws error when audit name contains uppercase letters', () => {
+      expect(() => instance.registerAudit('MyAudit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+    });
+
+    it('throws error when audit name contains mixed case letters', () => {
+      expect(() => instance.registerAudit('my-Custom-Audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+    });
+
+    it('throws error when audit name starts with uppercase letter', () => {
+      expect(() => instance.registerAudit('Custom-audit', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type can only contain lowercase letters, numbers, and hyphens');
+    });
+
+    it('throws error when registering an already registered audit', () => {
+      expect(() => instance.registerAudit('404', true, 'weekly', ['ASO'])).to.throw(Error, 'Audit type "404" is already registered');
+    });
+
+    it('allows registering any valid audit type as string', () => {
+      const auditType = 'my-custom-audit-123';
+      instance.registerAudit(auditType, true, 'weekly', ['ASO']);
+      expect(instance.getHandler(auditType)).to.deep.equal({
+        enabledByDefault: true,
+        dependencies: [],
+        disabled: {
+          sites: [],
+          orgs: [],
+        },
+        enabled: {
+          sites: [],
+          orgs: [],
+        },
+        productCodes: ['ASO'],
+      });
+      expect(instance.getJobs().find((job) => job.group === 'audits' && job.type === auditType)).to.deep.equal({
+        group: 'audits',
+        type: 'my-custom-audit-123',
+        interval: 'weekly',
+      });
+    });
+
+    it('registers audit when handlers is null', () => {
+      // Stub getHandlers to return null on first call
+      const getHandlersStub = stub(instance, 'getHandlers');
+      getHandlersStub.onFirstCall().returns(null);
+      getHandlersStub.callThrough(); // Let subsequent calls work normally
+
+      const auditType = 'first-audit';
+      instance.registerAudit(auditType, true, 'daily', ['ASO']);
+
+      const handler = instance.getHandler(auditType);
+      expect(handler).to.exist;
+      expect(handler.enabledByDefault).to.be.true;
+      expect(handler.productCodes).to.deep.equal(['ASO']);
+
+      getHandlersStub.restore();
     });
 
     it('throws error when registering an invalid job interval', () => {
-      expect(() => instance.registerAudit('lhs-mobile', true, 'invalid-interval')).to.throw(Error, 'Invalid interval invalid-interval');
+      expect(() => instance.registerAudit('new-test-audit', true, 'invalid-interval', ['ASO'])).to.throw(Error, 'Invalid interval invalid-interval');
     });
 
     it('throws error when registering an invalid product code', () => {
-      expect(() => instance.registerAudit('lhs-mobile', true, 'weekly', ['invalid'])).to.throw(Error, 'Invalid product codes provided');
+      expect(() => instance.registerAudit('new-test-audit-2', true, 'weekly', ['invalid'])).to.throw(Error, 'Invalid product codes provided');
     });
 
     it('throws error when registering an empty product code', () => {
-      expect(() => instance.registerAudit('lhs-mobile', true, 'weekly', [])).to.throw(Error, 'No product codes provided');
+      expect(() => instance.registerAudit('new-test-audit-3', true, 'weekly', [])).to.throw(Error, 'No product codes provided');
     });
 
     it('unregisters an audit', () => {
@@ -452,8 +529,16 @@ describe('ConfigurationModel', () => {
       expect(instance.getJobs().find((job) => job.group === 'audits' && job.type === auditType)).to.be.undefined;
     });
 
-    it('throws error when unregistering an invalid audit type', () => {
-      expect(() => instance.unregisterAudit('invalid-audit-type')).to.throw(Error, 'Audit type invalid-audit-type is not a valid audit type in the data model');
+    it('throws error when unregistering an empty audit type', () => {
+      expect(() => instance.unregisterAudit('')).to.throw(Error, 'Audit type must be a non-empty string');
+    });
+
+    it('throws error when unregistering a null audit type', () => {
+      expect(() => instance.unregisterAudit(null)).to.throw(Error, 'Audit type must be a non-empty string');
+    });
+
+    it('throws error when unregistering a non-existent audit', () => {
+      expect(() => instance.unregisterAudit('non-existent-audit')).to.throw(Error, 'Audit type "non-existent-audit" is not registered');
     });
   });
 
@@ -757,6 +842,71 @@ describe('ConfigurationModel', () => {
       expect(updatedJobs.find((j) => j.type === 'cwv').interval).to.equal('daily'); // Updated
       // Queues should be merged
       expect(updatedQueues.audits).to.equal('sqs://audit-queue'); // Updated
+    });
+
+    it('handles null handlers gracefully when merging', () => {
+      // Stub getHandlers to return null initially
+      const getHandlersStub = stub(instance, 'getHandlers');
+      getHandlersStub.onFirstCall().returns(null);
+      getHandlersStub.callThrough(); // Let subsequent calls work normally
+
+      // Should be able to add handlers even when existing is null
+      instance.updateConfiguration({
+        handlers: {
+          'new-handler': {
+            enabledByDefault: true,
+            productCodes: ['ASO'],
+          },
+        },
+      });
+
+      const handlers = instance.getHandlers();
+      expect(handlers['new-handler']).to.exist;
+      expect(handlers['new-handler'].enabledByDefault).to.be.true;
+
+      getHandlersStub.restore();
+    });
+
+    it('handles null jobs gracefully when merging', () => {
+      // Stub getJobs to return null initially
+      const getJobsStub = stub(instance, 'getJobs');
+      getJobsStub.onFirstCall().returns(null);
+      getJobsStub.callThrough(); // Let subsequent calls work normally
+
+      // Should be able to add jobs even when existing is null
+      instance.updateConfiguration({
+        jobs: [{
+          type: 'new-job',
+          group: 'audits',
+          interval: 'daily',
+        }],
+      });
+
+      const jobs = instance.getJobs();
+      expect(jobs).to.be.an('array');
+      expect(jobs.find((j) => j.type === 'new-job')).to.exist;
+
+      getJobsStub.restore();
+    });
+
+    it('handles null queues gracefully when merging', () => {
+      // Stub getQueues to return null initially
+      const getQueuesStub = stub(instance, 'getQueues');
+      getQueuesStub.onFirstCall().returns(null);
+      getQueuesStub.callThrough(); // Let subsequent calls work normally
+
+      // Should be able to add queues even when existing is null
+      instance.updateConfiguration({
+        queues: {
+          audits: 'sqs://new-queue',
+        },
+      });
+
+      const queues = instance.getQueues();
+      expect(queues).to.be.an('object');
+      expect(queues.audits).to.equal('sqs://new-queue');
+
+      getQueuesStub.restore();
     });
 
     it('throws error when data is not provided', () => {

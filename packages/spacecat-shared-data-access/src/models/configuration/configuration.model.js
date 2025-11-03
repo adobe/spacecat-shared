@@ -14,7 +14,6 @@ import { isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils'
 
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
 import BaseModel from '../base/base.model.js';
-import { Audit } from '../audit/index.js';
 import { Entitlement } from '../entitlement/index.js';
 
 /**
@@ -419,9 +418,24 @@ class Configuration extends BaseModel {
     interval = Configuration.JOB_INTERVALS.NEVER,
     productCodes = [],
   ) {
-    // Validate audit type
-    if (!Object.values(Audit.AUDIT_TYPES).includes(type)) {
-      throw new Error(`Audit type ${type} is not a valid audit type in the data model`);
+    // Validate audit type is provided and is a non-empty string
+    if (!type || typeof type !== 'string' || type.trim() === '') {
+      throw new Error('Audit type must be a non-empty string');
+    }
+
+    // Validate audit type format: max 37 characters, only lowercase letters, numbers, and hyphens
+    const auditNameRegex = /^[a-z0-9-]+$/;
+    if (type.length > 37) {
+      throw new Error('Audit type must not exceed 37 characters');
+    }
+    if (!auditNameRegex.test(type)) {
+      throw new Error('Audit type can only contain lowercase letters, numbers, and hyphens');
+    }
+
+    // Check if audit already exists (uniqueness check)
+    const handlers = this.getHandlers();
+    if (handlers && handlers[type]) {
+      throw new Error(`Audit type "${type}" is already registered`);
     }
 
     // Validate job interval
@@ -437,24 +451,22 @@ class Configuration extends BaseModel {
       throw new Error('Invalid product codes provided');
     }
 
-    // Add to handlers if not already registered
-    const handlers = this.getHandlers();
-    if (!handlers[type]) {
-      handlers[type] = {
-        enabledByDefault,
-        enabled: {
-          sites: [],
-          orgs: [],
-        },
-        disabled: {
-          sites: [],
-          orgs: [],
-        },
-        dependencies: [],
-        productCodes,
-      };
-      this.setHandlers(handlers);
-    }
+    // Add to handlers
+    const updatedHandlers = handlers || {};
+    updatedHandlers[type] = {
+      enabledByDefault,
+      enabled: {
+        sites: [],
+        orgs: [],
+      },
+      disabled: {
+        sites: [],
+        orgs: [],
+      },
+      dependencies: [],
+      productCodes,
+    };
+    this.setHandlers(updatedHandlers);
 
     // Add to jobs if not already registered
     const jobs = this.getJobs();
@@ -470,17 +482,20 @@ class Configuration extends BaseModel {
   }
 
   unregisterAudit(type) {
-    // Validate audit type
-    if (!Object.values(Audit.AUDIT_TYPES).includes(type)) {
-      throw new Error(`Audit type ${type} is not a valid audit type in the data model`);
+    // Validate audit type is provided and is a non-empty string
+    if (!type || typeof type !== 'string' || type.trim() === '') {
+      throw new Error('Audit type must be a non-empty string');
+    }
+
+    // Check if audit exists before unregistering
+    const handlers = this.getHandlers();
+    if (!handlers || !handlers[type]) {
+      throw new Error(`Audit type "${type}" is not registered`);
     }
 
     // Remove from handlers
-    const handlers = this.getHandlers();
-    if (handlers[type]) {
-      delete handlers[type];
-      this.setHandlers(handlers);
-    }
+    delete handlers[type];
+    this.setHandlers(handlers);
 
     // Remove from jobs
     const jobs = this.getJobs();

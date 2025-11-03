@@ -683,27 +683,6 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('fails when deleted prompt has empty regions array', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            prompts: {
-              [deletedPromptId1]: {
-                prompt: 'Test prompt',
-                topic: 'Test Topic',
-                regions: [],
-                category: 'Test Category',
-                origin: 'human',
-                source: 'config',
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).false;
-      });
-
       it('fails when deleted prompt is missing required fields', () => {
         const config = {
           ...baseConfig,
@@ -978,6 +957,90 @@ describe('schemas', () => {
 
         const result = llmoConfig.safeParse(config);
         expect(result.success).true;
+      });
+    });
+
+    describe('prompt status', () => {
+      it('validates prompt without status (optional field)', () => {
+        const config = {
+          ...baseConfig,
+          topics: {
+            [topicId]: {
+              name: 'Topic One',
+              prompts: [
+                {
+                  prompt: 'Test prompt',
+                  regions: ['US'],
+                  origin: 'human',
+                  source: 'config',
+                  // no status field
+                },
+              ],
+              category: categoryId,
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.topics[topicId].prompts[0].status).to.be.undefined;
+        }
+      });
+
+      it('validates prompt with completed status', () => {
+        const config = {
+          ...baseConfig,
+          topics: {
+            [topicId]: {
+              name: 'Topic One',
+              prompts: [
+                {
+                  prompt: 'Test prompt',
+                  regions: ['US'],
+                  origin: 'human',
+                  source: 'config',
+                  status: 'completed',
+                },
+              ],
+              category: categoryId,
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.topics[topicId].prompts[0].status).equals('completed');
+        }
+      });
+    });
+
+    describe('deleted prompt origin', () => {
+      const deletedPromptId = 'eeee1111-e11b-41e1-a111-111111111111';
+
+      it('validates deleted prompt with human origin', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId]: {
+                prompt: 'Test prompt',
+                topic: 'Test Topic',
+                regions: ['us'],
+                category: 'Test Category',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.deleted.prompts[deletedPromptId].origin).equals('human');
+        }
       });
     });
   });

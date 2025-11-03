@@ -165,6 +165,24 @@ export class ContentSummarizationMapper extends BaseOpportunityMapper {
 }
 
 /**
+ * FAQ opportunity mapper
+ * Handles conversion of FAQ suggestions to Tokowaka patches with HAST format
+ */
+export class FaqMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
+  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+  
+  /**
+   * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
+   */
+  markdownToHast(markdown: string): object;
+}
+
+/**
  * Registry for opportunity mappers
  */
 export class MapperRegistry {

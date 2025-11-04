@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.69.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.2...@adobe/spacecat-shared-utils-v1.69.3) (2025-11-01)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1081](https://github.com/adobe/spacecat-shared/issues/1081)) ([4476494](https://github.com/adobe/spacecat-shared/commit/44764944350f9344d0ca5e2af5a2161cc7470899))
+
+# [@adobe/spacecat-shared-utils-v1.69.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.1...@adobe/spacecat-shared-utils-v1.69.2) (2025-10-31)
+
+
+### Bug Fixes
+
+* remove topic origin ([#1080](https://github.com/adobe/spacecat-shared/issues/1080)) ([69c0dd6](https://github.com/adobe/spacecat-shared/commit/69c0dd6ab50c520a3fd776db69a951a13ace9f1d))
+
+# [@adobe/spacecat-shared-utils-v1.69.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.0...@adobe/spacecat-shared-utils-v1.69.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* remove duplicate origins in LLMO schema ([#1076](https://github.com/adobe/spacecat-shared/issues/1076)) ([616888a](https://github.com/adobe/spacecat-shared/commit/616888a81d870188a02e2c3c4a36a25fc6af9e1a))
+
+# [@adobe/spacecat-shared-utils-v1.69.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.68.0...@adobe/spacecat-shared-utils-v1.69.0) (2025-10-30)
+
+
+### Features
+
+* update llmo schemas to store origin and status ([#1074](https://github.com/adobe/spacecat-shared/issues/1074)) ([a0a983c](https://github.com/adobe/spacecat-shared/commit/a0a983cc9f39c508498c0909336483c589e56068))
+
 # [@adobe/spacecat-shared-utils-v1.68.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.67.0...@adobe/spacecat-shared-utils-v1.68.0) (2025-10-29)
 
 

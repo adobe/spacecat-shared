@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-scrape-client-v2.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.2.0...@adobe/spacecat-shared-scrape-client-v2.2.1) (2025-10-30)
+
+
+### Bug Fixes
+
+* **scrapeClient:** fix a typo in scrapeUrlDto ([#1073](https://github.com/adobe/spacecat-shared/issues/1073)) ([3dbb653](https://github.com/adobe/spacecat-shared/commit/3dbb6530615042ae71d12d5e87588e75b8033455))
+
 # [@adobe/spacecat-shared-scrape-client-v2.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.1.7...@adobe/spacecat-shared-scrape-client-v2.2.0) (2025-10-29)
 
 

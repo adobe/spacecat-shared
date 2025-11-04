@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-content-client",
-  "version": "1.7.36",
+  "version": "1.7.38",
   "description": "Shared modules of the Spacecat Services - Content Client",
   "type": "module",
   "engines": {
@@ -35,10 +35,10 @@
   },
   "dependencies": {
     "@adobe/helix-universal": "5.2.3",
-    "@adobe/spacecat-helix-content-sdk": "1.4.25",
+    "@adobe/spacecat-helix-content-sdk": "1.4.26",
     "@adobe/spacecat-shared-data-access": "2.45.0",
     "@adobe/spacecat-shared-utils": "1.66.0",
-    "@aws-sdk/client-secrets-manager": "3.917.0",
+    "@aws-sdk/client-secrets-manager": "3.922.0",
     "aws-xray-sdk": "3.11.0",
     "graph-data-structure": "4.5.0"
   },

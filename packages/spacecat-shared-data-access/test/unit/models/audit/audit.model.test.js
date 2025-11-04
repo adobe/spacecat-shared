@@ -39,6 +39,7 @@ describe('AuditModel', () => {
       isLive: true,
       isError: false,
       siteId: 'site12345',
+      invocationId: 'someInvocation12345',
     };
 
     ({
@@ -101,6 +102,12 @@ describe('AuditModel', () => {
   describe('siteId', () => {
     it('gets siteId', () => {
       expect(instance.getSiteId()).to.equal('site12345');
+    });
+  });
+
+  describe('invocationId', () => {
+    it('gets invocationId', () => {
+      expect(instance.getInvocationId()).to.equal('someInvocation12345');
     });
   });
 

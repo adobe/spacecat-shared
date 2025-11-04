@@ -355,7 +355,6 @@ class Configuration extends BaseModel {
       throw new Error('Configuration data cannot be empty');
     }
 
-    // Merge handlers - add new handlers or update existing ones
     if (data.handlers !== undefined) {
       if (!isNonEmptyObject(data.handlers)) {
         throw new Error('Handlers must be a non-empty object if provided');
@@ -363,7 +362,6 @@ class Configuration extends BaseModel {
       const existingHandlers = this.getHandlers() || {};
       const mergedHandlers = { ...existingHandlers };
 
-      // Merge each handler from the update into existing handlers
       Object.keys(data.handlers).forEach((handlerType) => {
         mergedHandlers[handlerType] = {
           ...existingHandlers[handlerType],
@@ -374,7 +372,6 @@ class Configuration extends BaseModel {
       this.setHandlers(mergedHandlers);
     }
 
-    // Merge jobs - update existing jobs or add new ones
     if (data.jobs !== undefined) {
       if (!Array.isArray(data.jobs)) {
         throw new Error('Jobs must be an array if provided');
@@ -382,17 +379,14 @@ class Configuration extends BaseModel {
       const existingJobs = this.getJobs() || [];
       const mergedJobs = [...existingJobs];
 
-      // For each job in the update, find and update or add it
       data.jobs.forEach((newJob) => {
         const existingIndex = mergedJobs.findIndex(
           (job) => job.type === newJob.type && job.group === newJob.group,
         );
 
         if (existingIndex !== -1) {
-          // Update existing job
           mergedJobs[existingIndex] = { ...mergedJobs[existingIndex], ...newJob };
         } else {
-          // Add new job
           mergedJobs.push(newJob);
         }
       });
@@ -400,7 +394,6 @@ class Configuration extends BaseModel {
       this.setJobs(mergedJobs);
     }
 
-    // Merge queues - update specific queue URLs
     if (data.queues !== undefined) {
       if (!isNonEmptyObject(data.queues)) {
         throw new Error('Queues must be a non-empty object if provided');
@@ -418,12 +411,10 @@ class Configuration extends BaseModel {
     interval = Configuration.JOB_INTERVALS.NEVER,
     productCodes = [],
   ) {
-    // Validate audit type is provided and is a non-empty string
     if (!type || typeof type !== 'string' || type.trim() === '') {
       throw new Error('Audit type must be a non-empty string');
     }
 
-    // Validate audit type format: max 37 characters, only lowercase letters, numbers, and hyphens
     const auditNameRegex = /^[a-z0-9-]+$/;
     if (type.length > 37) {
       throw new Error('Audit type must not exceed 37 characters');
@@ -432,18 +423,15 @@ class Configuration extends BaseModel {
       throw new Error('Audit type can only contain lowercase letters, numbers, and hyphens');
     }
 
-    // Check if audit already exists (uniqueness check)
     const handlers = this.getHandlers();
     if (handlers && handlers[type]) {
       throw new Error(`Audit type "${type}" is already registered`);
     }
 
-    // Validate job interval
     if (!Object.values(Configuration.JOB_INTERVALS).includes(interval)) {
       throw new Error(`Invalid interval ${interval}`);
     }
 
-    // Validate product codes
     if (!isNonEmptyArray(productCodes)) {
       throw new Error('No product codes provided');
     }
@@ -451,7 +439,6 @@ class Configuration extends BaseModel {
       throw new Error('Invalid product codes provided');
     }
 
-    // Add to handlers
     const updatedHandlers = handlers || {};
     updatedHandlers[type] = {
       enabledByDefault,
@@ -468,7 +455,6 @@ class Configuration extends BaseModel {
     };
     this.setHandlers(updatedHandlers);
 
-    // Add to jobs if not already registered
     const jobs = this.getJobs();
     const exists = jobs.find((job) => job.group === 'audits' && job.type === type);
     if (!exists) {
@@ -482,22 +468,18 @@ class Configuration extends BaseModel {
   }
 
   unregisterAudit(type) {
-    // Validate audit type is provided and is a non-empty string
     if (!type || typeof type !== 'string' || type.trim() === '') {
       throw new Error('Audit type must be a non-empty string');
     }
 
-    // Check if audit exists before unregistering
     const handlers = this.getHandlers();
     if (!handlers || !handlers[type]) {
       throw new Error(`Audit type "${type}" is not registered`);
     }
 
-    // Remove from handlers
     delete handlers[type];
     this.setHandlers(handlers);
 
-    // Remove from jobs
     const jobs = this.getJobs();
     const jobIndex = jobs.findIndex((job) => job.group === 'audits' && job.type === type);
     if (jobIndex !== -1) {

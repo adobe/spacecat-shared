@@ -494,10 +494,9 @@ describe('ConfigurationModel', () => {
     });
 
     it('registers audit when handlers is null', () => {
-      // Stub getHandlers to return null on first call
       const getHandlersStub = stub(instance, 'getHandlers');
       getHandlersStub.onFirstCall().returns(null);
-      getHandlersStub.callThrough(); // Let subsequent calls work normally
+      getHandlersStub.callThrough();
 
       const auditType = 'first-audit';
       instance.registerAudit(auditType, true, 'daily', ['ASO']);
@@ -551,9 +550,7 @@ describe('ConfigurationModel', () => {
       });
 
       const updatedQueues = instance.getQueues();
-      // Updated queue should have new URL
       expect(updatedQueues.audits).to.equal('sqs://new-audit-queue');
-      // Other queues should remain unchanged
       expect(updatedQueues.imports).to.equal(existingQueues.imports);
       expect(updatedQueues.reports).to.equal(existingQueues.reports);
       expect(updatedQueues.scrapes).to.equal(existingQueues.scrapes);
@@ -568,10 +565,8 @@ describe('ConfigurationModel', () => {
       });
 
       const updatedQueues = instance.getQueues();
-      // Updated queues should have new URLs
       expect(updatedQueues.audits).to.equal('sqs://new-audit-queue');
       expect(updatedQueues.imports).to.equal('sqs://new-import-queue');
-      // Other queues should remain unchanged
       expect(updatedQueues.reports).to.equal(existingQueues.reports);
       expect(updatedQueues.scrapes).to.equal(existingQueues.scrapes);
     });
@@ -597,9 +592,7 @@ describe('ConfigurationModel', () => {
       });
 
       const updatedQueues = instance.getQueues();
-      // New queue should be added
       expect(updatedQueues.newQueueType).to.equal('sqs://new-queue-type');
-      // Existing queues should remain unchanged
       expect(updatedQueues.audits).to.equal(existingQueues.audits);
       expect(updatedQueues.imports).to.equal(existingQueues.imports);
     });
@@ -743,10 +736,8 @@ describe('ConfigurationModel', () => {
       instance.updateConfiguration({ handlers: newHandler });
 
       const updatedHandlers = instance.getHandlers();
-      // Existing handlers should still be there
       expect(updatedHandlers['404']).to.exist;
       expect(updatedHandlers.cwv).to.exist;
-      // New handler should be added
       expect(updatedHandlers['new-test-handler']).to.deep.equal(newHandler['new-test-handler']);
     });
 
@@ -762,10 +753,8 @@ describe('ConfigurationModel', () => {
       });
 
       const updatedCwv = instance.getHandler('cwv');
-      // Old properties should be preserved
       expect(updatedCwv.enabledByDefault).to.equal(existingCwv.enabledByDefault);
       expect(updatedCwv.productCodes).to.deep.equal(existingCwv.productCodes);
-      // New property should be added
       expect(updatedCwv.movingAvgThreshold).to.equal(20);
     });
 
@@ -777,9 +766,7 @@ describe('ConfigurationModel', () => {
       const updatedJobs = instance.getJobs();
       const updatedCwvJob = updatedJobs.find((j) => j.type === 'cwv');
 
-      // Job should be updated
       expect(updatedCwvJob.interval).to.equal('weekly');
-      // Other jobs should still exist
       expect(updatedJobs.length).to.be.greaterThan(1);
       expect(updatedJobs.find((j) => j.type === '404')).to.exist;
     });
@@ -793,9 +780,7 @@ describe('ConfigurationModel', () => {
 
       const updatedJobs = instance.getJobs();
 
-      // All existing jobs should still be there
       expect(updatedJobs.length).to.equal(existingJobs.length + 1);
-      // New job should be added
       expect(updatedJobs.find((j) => j.type === 'new-test-job')).to.deep.equal({
         group: 'audits',
         type: 'new-test-job',
@@ -814,9 +799,7 @@ describe('ConfigurationModel', () => {
 
       const updatedQueues = instance.getQueues();
 
-      // Updated queue should have new URL
       expect(updatedQueues.audits).to.equal('sqs://new-audit-queue');
-      // Other queues should remain unchanged
       expect(updatedQueues.imports).to.equal(existingQueues.imports);
       expect(updatedQueues.reports).to.equal(existingQueues.reports);
     });
@@ -834,23 +817,18 @@ describe('ConfigurationModel', () => {
       const updatedJobs = instance.getJobs();
       const updatedQueues = instance.getQueues();
 
-      // Handlers should be merged
-      expect(updatedHandlers['404']).to.exist; // Existing handler preserved
-      expect(updatedHandlers.cwv.movingAvgThreshold).to.equal(15); // Updated
-      // Jobs should be merged
-      expect(updatedJobs.find((j) => j.type === '404')).to.exist; // Existing job preserved
-      expect(updatedJobs.find((j) => j.type === 'cwv').interval).to.equal('daily'); // Updated
-      // Queues should be merged
-      expect(updatedQueues.audits).to.equal('sqs://audit-queue'); // Updated
+      expect(updatedHandlers['404']).to.exist;
+      expect(updatedHandlers.cwv.movingAvgThreshold).to.equal(15);
+      expect(updatedJobs.find((j) => j.type === '404')).to.exist;
+      expect(updatedJobs.find((j) => j.type === 'cwv').interval).to.equal('daily');
+      expect(updatedQueues.audits).to.equal('sqs://audit-queue');
     });
 
     it('handles null handlers gracefully when merging', () => {
-      // Stub getHandlers to return null initially
       const getHandlersStub = stub(instance, 'getHandlers');
       getHandlersStub.onFirstCall().returns(null);
-      getHandlersStub.callThrough(); // Let subsequent calls work normally
+      getHandlersStub.callThrough();
 
-      // Should be able to add handlers even when existing is null
       instance.updateConfiguration({
         handlers: {
           'new-handler': {
@@ -868,12 +846,10 @@ describe('ConfigurationModel', () => {
     });
 
     it('handles null jobs gracefully when merging', () => {
-      // Stub getJobs to return null initially
       const getJobsStub = stub(instance, 'getJobs');
       getJobsStub.onFirstCall().returns(null);
-      getJobsStub.callThrough(); // Let subsequent calls work normally
+      getJobsStub.callThrough();
 
-      // Should be able to add jobs even when existing is null
       instance.updateConfiguration({
         jobs: [{
           type: 'new-job',
@@ -890,12 +866,10 @@ describe('ConfigurationModel', () => {
     });
 
     it('handles null queues gracefully when merging', () => {
-      // Stub getQueues to return null initially
       const getQueuesStub = stub(instance, 'getQueues');
       getQueuesStub.onFirstCall().returns(null);
-      getQueuesStub.callThrough(); // Let subsequent calls work normally
+      getQueuesStub.callThrough();
 
-      // Should be able to add queues even when existing is null
       instance.updateConfiguration({
         queues: {
           audits: 'sqs://new-queue',

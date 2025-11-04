@@ -27,6 +27,7 @@ export const DELIVERY_TYPES = /** @type {const} */ ({
 export const AUTHORING_TYPES = /** @type {const} */ ({
   CS_CW: 'cs/crosswalk',
   CS: 'cs',
+  HEADLESS: 'ue/headless',
   SP: 'sharepoint',
   GD: 'googledocs',
   DA: 'documentauthoring',

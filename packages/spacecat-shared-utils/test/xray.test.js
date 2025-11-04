@@ -15,7 +15,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import AWSXray from 'aws-xray-sdk';
-import { instrumentAWSClient } from '../src/index.js';
+import { instrumentAWSClient, getTraceId } from '../src/index.js';
 
 describe('instrumentClient', () => {
   let captureStub;
@@ -50,5 +50,76 @@ describe('instrumentClient', () => {
 
     expect(captureStub.called).to.be.false;
     expect(result).to.equal(client);
+  });
+});
+
+describe('getTraceId', () => {
+  let getSegmentStub;
+
+  beforeEach(() => {
+    getSegmentStub = sinon.stub(AWSXray, 'getSegment');
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    delete process.env.AWS_EXECUTION_ENV;
+  });
+
+  it('should return null when not in AWS Lambda environment', () => {
+    delete process.env.AWS_EXECUTION_ENV;
+
+    const result = getTraceId();
+
+    expect(result).to.be.null;
+    expect(getSegmentStub.called).to.be.false;
+  });
+
+  it('should return null when segment is not available', () => {
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs18.x';
+    getSegmentStub.returns(null);
+
+    const result = getTraceId();
+
+    expect(result).to.be.null;
+    expect(getSegmentStub.calledOnce).to.be.true;
+  });
+
+  it('should return trace ID from segment', () => {
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs18.x';
+    const mockSegment = {
+      trace_id: '1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e',
+    };
+    getSegmentStub.returns(mockSegment);
+
+    const result = getTraceId();
+
+    expect(result).to.equal('1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e');
+  });
+
+  it('should return trace ID from root segment when segment has nested structure', () => {
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs18.x';
+    const mockRootSegment = {
+      trace_id: '1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e',
+    };
+    const mockSegment = {
+      segment: mockRootSegment,
+    };
+    getSegmentStub.returns(mockSegment);
+
+    const result = getTraceId();
+
+    expect(result).to.equal('1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e');
+  });
+
+  it('should return null when segment exists but has no trace_id', () => {
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs18.x';
+    const mockSegment = {
+      id: 'some-segment-id',
+    };
+    getSegmentStub.returns(mockSegment);
+
+    const result = getTraceId();
+
+    expect(result).to.be.undefined;
   });
 });

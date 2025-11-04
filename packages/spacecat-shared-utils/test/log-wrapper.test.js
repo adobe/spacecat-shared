@@ -14,7 +14,10 @@
 
 import sinon from 'sinon';
 import { expect } from 'chai';
-import { logWrapper } from '../src/index.js';
+import esmock from 'esmock';
+
+let logWrapper;
+let getTraceIdStub;
 
 const message = {
   processingType: 'import',
@@ -41,8 +44,19 @@ const mockFnFromSqs = sinon.spy();
 let mockContext;
 
 describe('logWrapper tests', () => {
+  before(async () => {
+    getTraceIdStub = sinon.stub().returns(null);
+    
+    logWrapper = await esmock('../src/log-wrapper.js', {
+      '../src/xray.js': {
+        getTraceId: getTraceIdStub,
+      },
+    }).then((module) => module.logWrapper);
+  });
+
   beforeEach(() => {
     sinon.resetHistory();
+    getTraceIdStub.returns(null); // Default to no trace ID
     mockContext = {
       // Simulate an SQS event
       invocation: {
@@ -66,7 +80,7 @@ describe('logWrapper tests', () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    sinon.resetHistory();
   });
 
   it('should call the original function with the provided message and context, and update the context with contextualLog object', async () => {
@@ -133,5 +147,63 @@ describe('logWrapper tests', () => {
       const logArgs = mockContext.log[level].getCall(0).args[0];
       expect(logArgs).to.not.contain('[jobId=');
     });
+  });
+
+  logLevels.forEach((level) => {
+    it(`should call ${level} log method with traceId when available`, async () => {
+      getTraceIdStub.returns('1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e');
+      const wrappedFn = logWrapper(mockFnFromSqs);
+
+      await wrappedFn(message, mockContext);
+
+      // Log something to test the wrapper
+      mockContext.contextualLog[level](`${level} log`);
+
+      // Verify that the traceId is included in the log statement
+      const logArgs = mockContext.log[level].getCall(0).args[0];
+      expect(logArgs).to.contain('[traceId=1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e]');
+    });
+  });
+
+  logLevels.forEach((level) => {
+    it(`should call ${level} log method with both jobId and traceId when both are available`, async () => {
+      getTraceIdStub.returns('1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e');
+      const wrappedFn = logWrapper(mockFnFromSqs);
+
+      await wrappedFn(message, mockContext);
+
+      // Log something to test the wrapper
+      mockContext.contextualLog[level](`${level} log`);
+
+      // Verify that both jobId and traceId are included in the log statement
+      const logArgs = mockContext.log[level].getCall(0).args[0];
+      expect(logArgs).to.contain(`[jobId=${message.jobId}]`);
+      expect(logArgs).to.contain('[traceId=1-5e8e8e8e-5e8e8e8e5e8e8e8e5e8e8e8e]');
+    });
+  });
+
+  it('should not include traceId when getTraceId returns null', async () => {
+    getTraceIdStub.returns(null);
+    const wrappedFn = logWrapper(mockFnFromSqs);
+
+    await wrappedFn(message, mockContext);
+
+    // Log something to test the wrapper
+    mockContext.contextualLog.info('info log');
+
+    // Verify that the traceId is not included in the log statement
+    const logArgs = mockContext.log.info.getCall(0).args[0];
+    expect(logArgs).to.not.contain('[traceId=');
+    expect(logArgs).to.contain(`[jobId=${message.jobId}]`);
+  });
+
+  it('should assign context.log to context.contextualLog when neither jobId nor traceId are available', async () => {
+    getTraceIdStub.returns(null);
+    const wrappedFn = logWrapper(mockFnFromSqs);
+
+    await wrappedFn({}, mockContext);
+
+    expect(mockContext).to.have.property('contextualLog');
+    expect(mockContext.contextualLog).to.equal(mockContext.log);
   });
 });

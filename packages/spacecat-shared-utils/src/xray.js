@@ -16,3 +16,24 @@ import { isAWSLambda } from './runtimes.js';
 export function instrumentAWSClient(client) {
   return isAWSLambda() ? AWSXray.captureAWSv3Client(client) : client;
 }
+
+/**
+ * Extracts the trace ID from the current AWS X-Ray segment.
+ * This function is designed to work in AWS Lambda environments where X-Ray tracing is enabled.
+ *
+ * @returns {string|null} The trace ID if available, or null if not in AWS Lambda or no segment found
+ */
+export function getTraceId() {
+  if (!isAWSLambda()) {
+    return null;
+  }
+
+  const segment = AWSXray.getSegment();
+  if (!segment) {
+    return null;
+  }
+
+  // Get the root trace ID
+  const effectiveSegment = segment.segment || segment;
+  return effectiveSegment.trace_id;
+}

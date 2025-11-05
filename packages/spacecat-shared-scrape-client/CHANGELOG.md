@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-scrape-client-v2.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.2.2...@adobe/spacecat-shared-scrape-client-v2.3.0) (2025-11-05)
+
+
+### Features
+
+* **scrapeClient:** change baseUrl composing to match sites ([#1089](https://github.com/adobe/spacecat-shared/issues/1089)) ([0ffe0af](https://github.com/adobe/spacecat-shared/commit/0ffe0af0c0ca7fc2fe537d0fb735743c0079a9c4))
+
 # [@adobe/spacecat-shared-scrape-client-v2.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.2.1...@adobe/spacecat-shared-scrape-client-v2.2.2) (2025-11-04)
 
 

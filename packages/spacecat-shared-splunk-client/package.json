@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-splunk-client",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "description": "Shared modules of the Spacecat Services - Splunk Client",
   "type": "module",
   "engines": {
@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@adobe/fetch": "4.2.3",
-    "@adobe/helix-universal": "5.2.3",
+    "@adobe/helix-universal": "5.3.0",
     "@adobe/spacecat-shared-utils": "1.66.0",
     "xml-js": "1.6.11"
   },

@@ -294,6 +294,8 @@ describe('SQS', () => {
     });
 
     it('should extract traceId from SQS message and store in context', async () => {
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs18.x';
+
       const ctx = {
         log: console,
         invocation: {
@@ -317,9 +319,12 @@ describe('SQS', () => {
       await handler({}, ctx);
 
       expect(testHandler.calledOnce).to.be.true;
+      delete process.env.AWS_EXECUTION_ENV;
     });
 
     it('should not set context.traceId when message has no traceId', async () => {
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs18.x';
+
       const ctx = {
         log: console,
         invocation: {
@@ -343,6 +348,7 @@ describe('SQS', () => {
       await handler({}, ctx);
 
       expect(testHandler.calledOnce).to.be.true;
+      delete process.env.AWS_EXECUTION_ENV;
     });
   });
 });

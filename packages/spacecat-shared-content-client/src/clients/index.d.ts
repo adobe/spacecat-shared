@@ -169,6 +169,28 @@ export class ContentClient {
        Promise<{ liveURL: string | undefined, previewURL: string | undefined }>;
 
   /**
+   * Retrieves the edit URL for a given content path from the AEM admin API.
+   * The edit URL represents the URL of the document source for the given content path
+   *
+   * The path should stem from a page's URL and is relative to the site's root.
+   * Example: "/path/to/page" (from the full URL: "https://www.example.com/path/to/page").
+   *
+   * @param {string} path The content path to get the edit URL for.
+   *
+   * @returns {Promise<string | undefined>} A promise that resolves to the edit URL
+   * string if found, or undefined if not available.
+   * @throws {Error} If the Helix admin API request fails or returns an error response.
+   *
+   * @example
+   * ```typescript
+   * const client = await ContentClient.createFrom(context, site);
+   * const editURL = await client.getEditURL('/content/page');
+   * console.log(editURL); // e.g., 'https://adobe.sharepoint.com/sites/Projects/_layouts/15/Doc.aspx?sourcedoc=%7xxxxxx-xxxx-xxxx-xxxx-xxxxxx%7D&file=page.docx&action=default'
+   *
+   */
+  getEditURL(path: string): Promise<string | undefined>;
+
+  /**
    * Retrieves all links from a document at the specified path.
    * This method extracts links from the document content, including both internal
    * and external links, anchors, email links, and other href attributes.

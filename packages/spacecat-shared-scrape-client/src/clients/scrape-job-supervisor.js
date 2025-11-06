@@ -11,7 +11,7 @@
  */
 
 import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
-import { isValidUrl, isValidUUID } from '@adobe/spacecat-shared-utils';
+import { isValidUrl, isValidUUID, composeBaseURL } from '@adobe/spacecat-shared-utils';
 
 /**
  * Scrape Supervisor provides functionality to start and manage scrape jobs.
@@ -37,12 +37,6 @@ function ScrapeJobSupervisor(services, config) {
     maxUrlsPerMessage,
   } = config;
 
-  function determineBaseURL(urls) {
-    // Initially, we will just use the domain of the first URL
-    const url = new URL(urls[0]);
-    return `${url.protocol}//${url.hostname}`;
-  }
-
   /**
    * Create a new scrape job by claiming one of the free scrape queues, persisting the scrape job
    * metadata, and setting the job status to 'RUNNING'.
@@ -59,7 +53,7 @@ function ScrapeJobSupervisor(services, config) {
     customHeaders = null,
   ) {
     const jobData = {
-      baseURL: determineBaseURL(urls),
+      baseURL: composeBaseURL(urls[0]),
       processingType,
       options,
       urlCount: urls.length,

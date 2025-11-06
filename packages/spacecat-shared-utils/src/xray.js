@@ -37,3 +37,27 @@ export function getTraceId() {
   const effectiveSegment = segment.segment || segment;
   return effectiveSegment.trace_id;
 }
+
+/**
+ * Adds the x-trace-id header to a headers object if a trace ID is available.
+ * Checks for traceId from:
+ * 1. Explicit context.traceId (from incoming HTTP request or SQS message)
+ * 2. AWS X-Ray segment (current Lambda execution)
+ *
+ * @param {object} headers - The headers object to augment
+ * @param {object} context - The context object that may contain traceId
+ * @returns {object} The headers object with x-trace-id added if available
+ */
+export function addTraceIdHeader(headers = {}, context = {}) {
+  // Priority: 1) context.traceId (propagated from incoming request), 2) X-Ray traceId
+  const traceId = context.traceId || getTraceId();
+  
+  if (traceId) {
+    return {
+      ...headers,
+      'x-trace-id': traceId,
+    };
+  }
+  
+  return headers;
+}

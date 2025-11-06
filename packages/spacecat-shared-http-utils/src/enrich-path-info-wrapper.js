@@ -13,14 +13,23 @@
 export function enrichPathInfo(fn) { // export for testing
   return async (request, context) => {
     const [, route] = context?.pathInfo?.suffix?.split(/\/+/) || [];
+    const headers = request.headers.plain();
+    
     context.pathInfo = {
       ...context.pathInfo,
       ...{
         method: request.method.toUpperCase(),
-        headers: request.headers.plain(),
+        headers,
         route,
       },
     };
+    
+    // Extract and store traceId from x-trace-id header if present
+    const traceIdHeader = headers['x-trace-id'];
+    if (traceIdHeader) {
+      context.traceId = traceIdHeader;
+    }
+    
     return fn(request, context);
   };
 }

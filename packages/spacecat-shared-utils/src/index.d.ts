@@ -87,6 +87,14 @@ export function instrumentAWSClient<T>(client: T): T;
 export function getTraceId(): string | null;
 
 /**
+ * Adds the x-trace-id header to a headers object if a trace ID is available.
+ * @param headers - The headers object to augment
+ * @param context - The context object that may contain traceId
+ * @returns The headers object with x-trace-id added if available
+ */
+export function addTraceIdHeader(headers?: Record<string, string>, context?: object): Record<string, string>;
+
+/**
  * Prepends 'https://' schema to the URL if it's not already present.
  * @param url - The URL to modify.
  * @returns The URL with 'https://' schema prepended.

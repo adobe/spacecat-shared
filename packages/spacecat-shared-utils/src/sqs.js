@@ -12,7 +12,7 @@
 
 import { Response } from '@adobe/fetch';
 import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
-import { instrumentAWSClient } from './xray.js';
+import { instrumentAWSClient, getTraceId } from './xray.js';
 
 import { hasText, isNonEmptyArray } from './functions.js';
 import { isAWSLambda } from './runtimes.js';
@@ -46,8 +46,11 @@ class SQS {
 
   /**
    * Send a message to an SQS queue. For FIFO queues, messageGroupId is required.
+   * Automatically includes traceId in the message payload if available from:
+   * 1. The message itself (if explicitly set by caller, e.g. from context.traceId)
+   * 2. AWS X-Ray segment (current Lambda execution trace)
    * @param {string} queueUrl - The URL of the SQS queue.
-   * @param {object} message - The message body to send.
+   * @param {object} message - The message body to send. Can include traceId for propagation.
    * @param {string} messageGroupId - (Optional) The message group ID for FIFO queues.
    * @return {Promise<void>}
    */
@@ -56,6 +59,15 @@ class SQS {
       ...message,
       timestamp: new Date().toISOString(),
     };
+
+    // Add traceId to message payload if not already present
+    // Priority: 1) Explicit traceId in message (from context), 2) X-Ray traceId
+    if (!body.traceId) {
+      const traceId = getTraceId();
+      if (traceId) {
+        body.traceId = traceId;
+      }
+    }
 
     const params = {
       MessageBody: JSON.stringify(body),
@@ -71,7 +83,7 @@ class SQS {
 
     try {
       const data = await this.sqsClient.send(msgCommand);
-      this.log.debug(`Success, message sent. MessageID:  ${data.MessageId}`);
+      this.log.debug(`Success, message sent. MessageID: ${data.MessageId}${body.traceId ? `, TraceID: ${body.traceId}` : ''}`);
     } catch (e) {
       const { type, code, message: msg } = e;
       this.log.error(`Message sent failed. Type: ${type}, Code: ${code}, Message: ${msg}`);
@@ -95,6 +107,7 @@ export function sqsWrapper(fn) {
 /**
  * Wrapper to turn an SQS record into a function param
  * Inspired by https://github.com/adobe/helix-admin/blob/main/src/index.js#L108-L133
+ * Extracts traceId from the message payload if present and stores it in context for propagation.
  *
  * @param {UniversalAction} fn
  * @returns {function(object, UniversalContext): Promise<Response>}
@@ -124,7 +137,12 @@ export function sqsEventAdapter(fn) {
 
     try {
       message = JSON.parse(record.body);
-      log.debug(`Received message with id: ${record.messageId}`);
+      log.debug(`Received message with id: ${record.messageId}${message.traceId ? `, traceId: ${message.traceId}` : ''}`);
+      
+      // Store traceId in context if present in the message for downstream propagation
+      if (message.traceId) {
+        context.traceId = message.traceId;
+      }
     } catch (e) {
       log.warn('Function was not invoked properly, message body is not a valid JSON', e);
       return badRequest('Event does not contain a valid message body');

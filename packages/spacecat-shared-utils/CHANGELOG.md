@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.69.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.3...@adobe/spacecat-shared-utils-v1.69.4) (2025-11-06)
+
+
+### Bug Fixes
+
+* cloudflare date issue ([#1098](https://github.com/adobe/spacecat-shared/issues/1098)) ([09a2c62](https://github.com/adobe/spacecat-shared/commit/09a2c620d1ac070572825cdbf0579739364e384d))
+
 # [@adobe/spacecat-shared-utils-v1.69.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.2...@adobe/spacecat-shared-utils-v1.69.3) (2025-11-01)
 
 

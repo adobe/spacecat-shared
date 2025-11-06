@@ -68,7 +68,7 @@ const COOKIE_BANNER_ID_SELECTORS = [
   '#cookie-notice', '#privacy-notice', '#cookie-consent', '#privacy-consent',
   '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar', '#cookiemgmt',
   '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
-  '#onetrust-consent-sdk', '#onetrust-banner-sdk', '#cassie-widget',
+  '#onetrust-consent-sdk', '#onetrust-banner-sdk',
 ];
 
 const COOKIE_BANNER_ARIA_SELECTORS = [

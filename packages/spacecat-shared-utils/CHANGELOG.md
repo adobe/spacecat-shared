@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.70.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.4...@adobe/spacecat-shared-utils-v1.70.0) (2025-11-06)
+
+
+### Features
+
+* LLMO-846 byocdn-imperva support in llmo ([#1085](https://github.com/adobe/spacecat-shared/issues/1085)) ([7548812](https://github.com/adobe/spacecat-shared/commit/7548812ca83b856392fc624cc1fd5ea1bf48658c))
+
 # [@adobe/spacecat-shared-utils-v1.69.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.3...@adobe/spacecat-shared-utils-v1.69.4) (2025-11-06)
 
 

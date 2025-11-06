@@ -37,6 +37,7 @@ class Configuration extends BaseModel {
     EVERY_HOUR: 'every-hour',
     DAILY: 'daily',
     WEEKLY: 'weekly',
+    EARLY_MONDAY: 'early-monday',
     EVERY_SATURDAY: 'every-saturday',
     EVERY_SUNDAY: 'every-sunday',
     FORTNIGHTLY: 'fortnightly',

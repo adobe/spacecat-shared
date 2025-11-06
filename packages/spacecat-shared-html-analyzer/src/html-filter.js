@@ -60,6 +60,7 @@ const COOKIE_BANNER_CLASS_SELECTORS = [
   '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
   '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
   '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
+  '[class*="syrenis-cookie"]',
 ];
 
 const COOKIE_BANNER_ID_SELECTORS = [
@@ -67,7 +68,7 @@ const COOKIE_BANNER_ID_SELECTORS = [
   '#cookie-notice', '#privacy-notice', '#cookie-consent', '#privacy-consent',
   '#cookie-bar', '#privacy-bar', '#consent-bar', '#gdpr-bar', '#cookiemgmt',
   '#cookie-popup', '#privacy-popup', '#consent-popup', '#gdpr-popup',
-  '#onetrust-consent-sdk', '#onetrust-banner-sdk',
+  '#onetrust-consent-sdk', '#onetrust-banner-sdk', '#cassie-widget',
 ];
 
 const COOKIE_BANNER_ARIA_SELECTORS = [

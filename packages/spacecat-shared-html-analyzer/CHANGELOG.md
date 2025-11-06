@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-html-analyzer-v1.0.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.4...@adobe/spacecat-shared-html-analyzer-v1.0.5) (2025-11-06)
+
+
+### Bug Fixes
+
+* html-analyser updating cookie selector ([#1096](https://github.com/adobe/spacecat-shared/issues/1096)) ([f1e0f49](https://github.com/adobe/spacecat-shared/commit/f1e0f49a9ade3fd2f4299515283d684f7c388835))
+
 # [@adobe/spacecat-shared-html-analyzer-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.0.3...@adobe/spacecat-shared-html-analyzer-v1.0.4) (2025-11-03)
 
 

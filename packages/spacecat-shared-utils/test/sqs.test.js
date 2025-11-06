@@ -102,7 +102,7 @@ describe('SQS', () => {
         await ctx.sqs.sendMessage(queueUrl, message);
       }).with(sqsWrapper)({}, context);
 
-      expect(logSpy).to.have.been.calledWith(`Success, message sent. MessageID:  ${messageId}`);
+      expect(logSpy).to.have.been.calledWith(`Success, message sent. MessageID: ${messageId}`);
     });
   });
 
@@ -279,6 +279,70 @@ describe('SQS', () => {
         'QueueUrl',
       ]);
       expect(firstSendArg.input.MessageGroupId).to.be.undefined;
+    });
+
+    it('should include traceId in message when explicitly provided', async () => {
+      const action = wrap(async (req, ctx) => {
+        await ctx.sqs.sendMessage('queue-url', { key: 'value', traceId: '1-explicit-traceid' });
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      const messageBody = JSON.parse(firstSendArg.input.MessageBody);
+      expect(messageBody.traceId).to.equal('1-explicit-traceid');
+    });
+
+    it('should extract traceId from SQS message and store in context', async () => {
+      const ctx = {
+        log: console,
+        invocation: {
+          event: {
+            Records: [
+              {
+                body: JSON.stringify({ id: '1234567890', traceId: '1-sqs-traceid' }),
+                messageId: 'abcd',
+              },
+            ],
+          },
+        },
+      };
+
+      const testHandler = sandbox.spy(async (message, context) => {
+        expect(context.traceId).to.equal('1-sqs-traceid');
+        return new Response('ok');
+      });
+
+      const handler = sqsEventAdapter(testHandler);
+      await handler({}, ctx);
+
+      expect(testHandler.calledOnce).to.be.true;
+    });
+
+    it('should not set context.traceId when message has no traceId', async () => {
+      const ctx = {
+        log: console,
+        invocation: {
+          event: {
+            Records: [
+              {
+                body: JSON.stringify({ id: '1234567890' }),
+                messageId: 'abcd',
+              },
+            ],
+          },
+        },
+      };
+
+      const testHandler = sandbox.spy(async (message, context) => {
+        expect(context.traceId).to.be.undefined;
+        return new Response('ok');
+      });
+
+      const handler = sqsEventAdapter(testHandler);
+      await handler({}, ctx);
+
+      expect(testHandler.calledOnce).to.be.true;
     });
   });
 });

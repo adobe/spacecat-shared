@@ -148,4 +148,3 @@ describe('enrichPathInfo', () => {
     expect(mockContext.pathInfo.route).to.equal('api');
   });
 });
-

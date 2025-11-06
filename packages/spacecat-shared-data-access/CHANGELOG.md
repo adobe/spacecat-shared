@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.78.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.77.1...@adobe/spacecat-shared-data-access-v2.78.0) (2025-11-06)
+
+
+### Features
+
+* **data-access:** add early-monday interval ([#1099](https://github.com/adobe/spacecat-shared/issues/1099)) ([3c7cc87](https://github.com/adobe/spacecat-shared/commit/3c7cc87b89c2bf06c9b5322ca20c26863cac14ac))
+
 # [@adobe/spacecat-shared-data-access-v2.77.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.77.0...@adobe/spacecat-shared-data-access-v2.77.1) (2025-11-01)
 
 

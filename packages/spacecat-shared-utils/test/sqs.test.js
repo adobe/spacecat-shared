@@ -310,8 +310,8 @@ describe('SQS', () => {
         },
       };
 
-      const testHandler = sandbox.spy(async (message, context) => {
-        expect(context.traceId).to.equal('1-sqs-traceid');
+      const testHandler = sandbox.spy(async (message, handlerContext) => {
+        expect(handlerContext.traceId).to.equal('1-sqs-traceid');
         return new Response('ok');
       });
 
@@ -339,8 +339,8 @@ describe('SQS', () => {
         },
       };
 
-      const testHandler = sandbox.spy(async (message, context) => {
-        expect(context.traceId).to.be.undefined;
+      const testHandler = sandbox.spy(async (message, handlerContext) => {
+        expect(handlerContext.traceId).to.be.undefined;
         return new Response('ok');
       });
 

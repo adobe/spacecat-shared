@@ -46,7 +46,7 @@ let mockContext;
 describe('logWrapper tests', () => {
   before(async () => {
     getTraceIdStub = sinon.stub().returns(null);
-    
+
     logWrapper = await esmock('../src/log-wrapper.js', {
       '../src/xray.js': {
         getTraceId: getTraceIdStub,

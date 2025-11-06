@@ -138,7 +138,7 @@ export function sqsEventAdapter(fn) {
     try {
       message = JSON.parse(record.body);
       log.debug(`Received message with id: ${record.messageId}${message.traceId ? `, traceId: ${message.traceId}` : ''}`);
-      
+
       // Store traceId in context if present in the message for downstream propagation
       if (message.traceId) {
         context.traceId = message.traceId;

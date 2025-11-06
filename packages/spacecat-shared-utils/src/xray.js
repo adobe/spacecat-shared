@@ -21,7 +21,7 @@ export function instrumentAWSClient(client) {
  * Extracts the trace ID from the current AWS X-Ray segment.
  * This function is designed to work in AWS Lambda environments where X-Ray tracing is enabled.
  *
- * @returns {string|null} The trace ID if available, or null if not in AWS Lambda or no segment found
+ * @returns {string|null} The trace ID if available, or null if not in Lambda or no segment
  */
 export function getTraceId() {
   if (!isAWSLambda()) {
@@ -51,13 +51,13 @@ export function getTraceId() {
 export function addTraceIdHeader(headers = {}, context = {}) {
   // Priority: 1) context.traceId (propagated from incoming request), 2) X-Ray traceId
   const traceId = context.traceId || getTraceId();
-  
+
   if (traceId) {
     return {
       ...headers,
       'x-trace-id': traceId,
     };
   }
-  
+
   return headers;
 }

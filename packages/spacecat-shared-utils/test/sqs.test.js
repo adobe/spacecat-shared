@@ -20,6 +20,7 @@ import sinonChai from 'sinon-chai';
 import chaiAsPromised from 'chai-as-promised';
 import nock from 'nock';
 import crypto from 'crypto';
+import AWSXray from 'aws-xray-sdk';
 import { sqsEventAdapter, sqsWrapper } from '../src/sqs.js';
 
 use(sinonChai);
@@ -291,6 +292,26 @@ describe('SQS', () => {
       const firstSendArg = sendStub.getCall(0).args[0];
       const messageBody = JSON.parse(firstSendArg.input.MessageBody);
       expect(messageBody.traceId).to.equal('1-explicit-traceid');
+    });
+
+    it('should automatically add traceId from X-Ray when not explicitly provided', async () => {
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs18.x';
+      const getSegmentStub = sandbox.stub(AWSXray, 'getSegment').returns({
+        trace_id: '1-xray-auto-traceid',
+      });
+
+      const action = wrap(async (req, ctx) => {
+        await ctx.sqs.sendMessage('queue-url', { key: 'value' });
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      const messageBody = JSON.parse(firstSendArg.input.MessageBody);
+      expect(messageBody.traceId).to.equal('1-xray-auto-traceid');
+
+      getSegmentStub.restore();
+      delete process.env.AWS_EXECUTION_ENV;
     });
 
     it('should extract traceId from SQS message and store in context', async () => {

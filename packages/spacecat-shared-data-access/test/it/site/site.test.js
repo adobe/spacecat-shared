@@ -718,137 +718,134 @@ describe('Site IT', async () => {
       // Clean up
       await site.remove();
     });
-  });
 
-  // requiresValidation attribute removed; validation is entitlement-driven via TierClient
+    it('updates isSandbox value from false to true', async () => {
+      // Create a site with isSandbox false
+      const newSiteData = {
+        baseURL: 'https://update-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/update-sandbox-test-repo',
+        name: 'update-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isSandbox: false,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
 
-  it('updates isSandbox value from false to true', async () => {
-    // Create a site with isSandbox false
-    const newSiteData = {
-      baseURL: 'https://update-sandbox-example.com',
-      gitHubURL: 'https://github.com/some-org/update-sandbox-test-repo',
-      name: 'update-sandbox-test-site',
-      organizationId: sampleData.organizations[0].getId(),
-      isLive: true,
-      isSandbox: false,
-      isLiveToggledAt: '2024-12-06T08:35:24.125Z',
-    };
+      const site = await Site.create(newSiteData);
+      expect(site.getIsSandbox()).to.be.false;
 
-    const site = await Site.create(newSiteData);
-    expect(site.getIsSandbox()).to.be.false;
+      // Update isSandbox to true
+      site.setIsSandbox(true);
+      await site.save();
 
-    // Update isSandbox to true
-    site.setIsSandbox(true);
-    await site.save();
+      // Fetch the updated site and verify the change
+      const updatedSite = await Site.findById(site.getId());
+      expect(updatedSite.getIsSandbox()).to.be.true;
 
-    // Fetch the updated site and verify the change
-    const updatedSite = await Site.findById(site.getId());
-    expect(updatedSite.getIsSandbox()).to.be.true;
+      // Clean up
+      await updatedSite.remove();
+    });
 
-    // Clean up
-    await updatedSite.remove();
-  });
+    it('updates isSandbox value from true to false', async () => {
+      // Create a site with isSandbox true
+      const newSiteData = {
+        baseURL: 'https://toggle-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/toggle-sandbox-test-repo',
+        name: 'toggle-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isSandbox: true,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
 
-  it('updates isSandbox value from true to false', async () => {
-    // Create a site with isSandbox true
-    const newSiteData = {
-      baseURL: 'https://toggle-sandbox-example.com',
-      gitHubURL: 'https://github.com/some-org/toggle-sandbox-test-repo',
-      name: 'toggle-sandbox-test-site',
-      organizationId: sampleData.organizations[0].getId(),
-      isLive: true,
-      isSandbox: true,
-      isLiveToggledAt: '2024-12-06T08:35:24.125Z',
-    };
+      const site = await Site.create(newSiteData);
+      expect(site.getIsSandbox()).to.be.true;
 
-    const site = await Site.create(newSiteData);
-    expect(site.getIsSandbox()).to.be.true;
+      // Update isSandbox to false
+      site.setIsSandbox(false);
+      await site.save();
 
-    // Update isSandbox to false
-    site.setIsSandbox(false);
-    await site.save();
+      // Fetch the updated site and verify the change
+      const updatedSite = await Site.findById(site.getId());
+      expect(updatedSite.getIsSandbox()).to.be.false;
 
-    // Fetch the updated site and verify the change
-    const updatedSite = await Site.findById(site.getId());
-    expect(updatedSite.getIsSandbox()).to.be.false;
+      // Clean up
+      await updatedSite.remove();
+    });
 
-    // Clean up
-    await updatedSite.remove();
-  });
+    it('verifies isSandbox getter and setter methods work correctly', async () => {
+      const newSiteData = {
+        baseURL: 'https://getter-setter-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/getter-setter-sandbox-test-repo',
+        name: 'getter-setter-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
 
-  it('verifies isSandbox getter and setter methods work correctly', async () => {
-    const newSiteData = {
-      baseURL: 'https://getter-setter-sandbox-example.com',
-      gitHubURL: 'https://github.com/some-org/getter-setter-sandbox-test-repo',
-      name: 'getter-setter-sandbox-test-site',
-      organizationId: sampleData.organizations[0].getId(),
-      isLive: true,
-      isSandbox: false,
-      isLiveToggledAt: '2024-12-06T08:35:24.125Z',
-    };
+      const site = await Site.create(newSiteData);
 
-    const site = await Site.create(newSiteData);
-    expect(site.getIsSandbox()).to.be.false;
+      // Test default value
+      expect(site.getIsSandbox()).to.be.false;
 
-    site.setIsSandbox(true);
-    await site.save();
+      // Test setter returns the site object for chaining
+      const returnedSite = site.setIsSandbox(true);
+      expect(returnedSite).to.equal(site);
+      expect(site.getIsSandbox()).to.be.true;
 
-    const updatedSite = await Site.findById(site.getId());
-    expect(updatedSite.getIsSandbox()).to.be.true;
+      // Test setting back to false
+      site.setIsSandbox(false);
+      expect(site.getIsSandbox()).to.be.false;
 
-    site.setIsSandbox(false);
-    await site.save();
+      // Clean up
+      await site.remove();
+    });
 
-    const finalSite = await Site.findById(site.getId());
-    expect(finalSite.getIsSandbox()).to.be.false;
-
-    await finalSite.remove();
-  });
-
-  it('handles isSandbox in combination with other site properties', async () => {
-    const newSiteData = {
-      baseURL: 'https://combined-sandbox-example.com',
-      gitHubURL: 'https://github.com/some-org/combined-sandbox-test-repo',
-      name: 'combined-sandbox-test-site',
-      organizationId: sampleData.organizations[0].getId(),
-      isLive: true,
-      isSandbox: true,
-      deliveryType: 'aem_edge',
-      authoringType: 'cs',
-      hlxConfig: {
-        rso: {
-          ref: 'main',
-          site: 'test-site',
-          owner: 'test-owner',
+    it('handles isSandbox in combination with other site properties', async () => {
+      const newSiteData = {
+        baseURL: 'https://combined-sandbox-example.com',
+        gitHubURL: 'https://github.com/some-org/combined-sandbox-test-repo',
+        name: 'combined-sandbox-test-site',
+        organizationId: sampleData.organizations[0].getId(),
+        isLive: true,
+        isSandbox: true,
+        deliveryType: 'aem_edge',
+        authoringType: 'cs',
+        hlxConfig: {
+          rso: {
+            ref: 'main',
+            site: 'test-site',
+            owner: 'test-owner',
+          },
         },
-      },
-      isLiveToggledAt: '2024-12-06T08:35:24.125Z',
-    };
+        isLiveToggledAt: '2024-12-06T08:35:24.125Z',
+      };
 
-    const site = await Site.create(newSiteData);
+      const site = await Site.create(newSiteData);
 
-    // Verify all properties including isSandbox
-    expect(site.getIsSandbox()).to.be.true;
-    expect(site.getIsLive()).to.be.true;
-    expect(site.getDeliveryType()).to.equal('aem_edge');
-    expect(site.getAuthoringType()).to.equal('cs');
-    expect(site.getBaseURL()).to.equal('https://combined-sandbox-example.com');
+      // Verify all properties including isSandbox
+      expect(site.getIsSandbox()).to.be.true;
+      expect(site.getIsLive()).to.be.true;
+      expect(site.getDeliveryType()).to.equal('aem_edge');
+      expect(site.getAuthoringType()).to.equal('cs');
+      expect(site.getBaseURL()).to.equal('https://combined-sandbox-example.com');
 
-    // Update multiple properties including isSandbox
-    site.setIsSandbox(false);
-    site.setIsLive(false);
-    site.setDeliveryType('aem_cs');
+      // Update multiple properties including isSandbox
+      site.setIsSandbox(false);
+      site.setIsLive(false);
+      site.setDeliveryType('aem_cs');
 
-    await site.save();
+      await site.save();
 
-    // Verify updates were saved correctly
-    const updatedSite = await Site.findById(site.getId());
-    expect(updatedSite.getIsSandbox()).to.be.false;
-    expect(updatedSite.getIsLive()).to.be.false;
-    expect(updatedSite.getDeliveryType()).to.equal('aem_cs');
+      // Verify updates were saved correctly
+      const updatedSite = await Site.findById(site.getId());
+      expect(updatedSite.getIsSandbox()).to.be.false;
+      expect(updatedSite.getIsLive()).to.be.false;
+      expect(updatedSite.getDeliveryType()).to.equal('aem_cs');
 
-    // Clean up
-    await updatedSite.remove();
+      // Clean up
+      await updatedSite.remove();
+    });
   });
   describe('Project-Site relationship', () => {
     it('gets sites by project id', async () => {

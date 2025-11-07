@@ -1,0 +1,10 @@
+<testsuite name="Mocha Tests" tests="8" failures="0" errors="0" skipped="0" timestamp="Fri, 07 Nov 2025 09:29:20 GMT" time="0.096">
+<testcase classname="HTML Visibility Analyzer analyzeTextComparison" name="should analyze content differences" file="/Users/cwisse/Projects/spacecat-shared/packages/spacecat-shared-html-analyzer/test/index.test.js" time="0.086"/>
+<testcase classname="HTML Visibility Analyzer analyzeTextComparison" name="should handle identical content" file="/Users/cwisse/Projects/spacecat-shared/packages/spacecat-shared-html-analyzer/test/index.test.js" time="0.001"/>
+<testcase classname="HTML Visibility Analyzer analyzeTextComparison" name="should handle empty content" file="/Users/cwisse/Projects/spacecat-shared/packages/spacecat-shared-html-analyzer/test/index.test.js" time="0.001"/>
+<testcase classname="HTML Visibility Analyzer calculateStats" name="should provide basic comparison statistics" file="/Users/cwisse/Projects/spacecat-shared/packages/spacecat-shared-html-analyzer/test/index.test.js" time="0.001"/>
+<testcase classname="HTML Visibility Analyzer calculateBothScenarioStats" name="should provide statistics for both scenarios" file="/Users/cwisse/Projects/spacecat-shared/packages/spacecat-shared-html-analyzer/test/index.test.js" time="0.002"/>
+<testcase classname="HTML Visibility Analyzer stripTagsToText" name="should extract text content from HTML" file="/Users/cwisse/Projects/spacecat-shared/packages/spacecat-shared-html-analyzer/test/index.test.js" time="0.001"/>
+<testcase classname="HTML Visibility Analyzer stripTagsToText" name="should remove navigation elements when ignoreNavFooter is true" file="/Users/cwisse/Projects/spacecat-shared/packages/spacecat-shared-html-analyzer/test/index.test.js" time="0.001"/>
+<testcase classname="HTML Visibility Analyzer stripTagsToText" name="should keep navigation elements when ignoreNavFooter is false" file="/Users/cwisse/Projects/spacecat-shared/packages/spacecat-shared-html-analyzer/test/index.test.js" time="0.001"/>
+</testsuite>

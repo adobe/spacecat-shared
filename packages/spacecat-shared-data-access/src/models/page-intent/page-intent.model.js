@@ -28,6 +28,11 @@ class PageIntent extends BaseModel {
     COMMERCIAL: 'COMMERCIAL',
   };
 
+  static ANALYSIS_STATUS = {
+    SUCCESS: 'SUCCESS',
+    FAILED: 'FAILED',
+  };
+
   // add any custom methods or overrides here
 }
 

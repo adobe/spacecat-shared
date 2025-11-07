@@ -107,4 +107,76 @@ describe('PageIntent IT', async () => {
     expect(pi.getTopic()).to.equal(updates.topic);
     expect(pi.getUpdatedBy()).to.equal(updates.updatedBy);
   });
+
+  it('creates a page intent with successful analysis tracking', async () => {
+    const data = {
+      url: 'https://www.example.com/success-page',
+      siteId: '1c86ba81-f3cc-48d8-8b06-1f9ac958e72d',
+      pageIntent: 'COMMERCIAL',
+      topic: 'success-topic',
+      analysisStatus: 'SUCCESS',
+      analysisAttempts: 1,
+      lastAnalysisAt: '2025-11-07T12:00:00.000Z',
+    };
+    const pi = await PageIntent.create(data);
+
+    checkPageIntent(pi);
+
+    expect(pi.getAnalysisStatus()).to.equal('SUCCESS');
+    expect(pi.getAnalysisAttempts()).to.equal(1);
+    expect(pi.getLastAnalysisAt()).to.equal('2025-11-07T12:00:00.000Z');
+    expect(pi.getAnalysisError()).to.be.undefined;
+  });
+
+  it('creates a page intent with failed analysis tracking', async () => {
+    const data = {
+      url: 'https://www.example.com/failed-page',
+      siteId: '1c86ba81-f3cc-48d8-8b06-1f9ac958e72d',
+      pageIntent: 'INFORMATIONAL',
+      topic: 'failed-topic',
+      analysisStatus: 'FAILED',
+      analysisAttempts: 3,
+      lastAnalysisAt: '2025-11-07T13:00:00.000Z',
+      analysisError: {
+        code: 'TIMEOUT',
+        message: 'Analysis timed out after 30 seconds',
+        details: {
+          attemptedAt: '2025-11-07T13:00:00.000Z',
+          timeoutMs: 30000,
+        },
+      },
+    };
+    const pi = await PageIntent.create(data);
+
+    checkPageIntent(pi);
+
+    expect(pi.getAnalysisStatus()).to.equal('FAILED');
+    expect(pi.getAnalysisAttempts()).to.equal(3);
+    expect(pi.getLastAnalysisAt()).to.equal('2025-11-07T13:00:00.000Z');
+    expect(pi.getAnalysisError()).to.deep.equal(data.analysisError);
+  });
+
+  it('updates analysis tracking fields', async () => {
+    const sample = sampleData.pageIntents[2];
+    const pi = await PageIntent.findByUrl(sample.getUrl());
+
+    pi.setAnalysisStatus('FAILED');
+    pi.setAnalysisAttempts(2);
+    pi.setLastAnalysisAt('2025-11-07T14:00:00.000Z');
+    pi.setAnalysisError({
+      code: 'INVALID_FORMAT',
+      message: 'Response format was invalid',
+      details: { rawResponse: 'bad data' },
+    });
+
+    await pi.save();
+
+    expect(pi.getAnalysisStatus()).to.equal('FAILED');
+    expect(pi.getAnalysisAttempts()).to.equal(2);
+    expect(pi.getLastAnalysisAt()).to.equal('2025-11-07T14:00:00.000Z');
+    expect(pi.getAnalysisError()).to.deep.include({
+      code: 'INVALID_FORMAT',
+      message: 'Response format was invalid',
+    });
+  });
 });

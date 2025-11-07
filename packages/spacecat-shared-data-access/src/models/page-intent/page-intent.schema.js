@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import {
+  isValidUrl, isObject, isInteger, isIsoDate,
+} from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import PageIntent from './page-intent.model.js';
@@ -49,6 +51,33 @@ const schema = new SchemaBuilder(PageIntent, PageIntentCollection)
   .addAttribute('updatedBy', {
     type: 'string',
     default: PageIntent.DEFAULT_UPDATED_BY,
+  })
+
+  // analysis tracking fields
+  .addAttribute('analysisStatus', {
+    type: Object.values(PageIntent.ANALYSIS_STATUS),
+    required: false,
+  })
+  .addAttribute('analysisAttempts', {
+    type: 'number',
+    required: false,
+    default: 0,
+    validate: (value) => !value || isInteger(value),
+  })
+  .addAttribute('lastAnalysisAt', {
+    type: 'string',
+    required: false,
+    validate: (value) => !value || isIsoDate(value),
+  })
+  .addAttribute('analysisError', {
+    type: 'map',
+    required: false,
+    properties: {
+      code: { type: 'string' },
+      message: { type: 'string' },
+      details: { type: 'any' },
+    },
+    validate: (value) => !value || (isObject(value) && value.code && value.message),
   })
 
   // allow fetching the single record by its URL

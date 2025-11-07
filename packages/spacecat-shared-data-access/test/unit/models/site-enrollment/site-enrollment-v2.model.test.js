@@ -93,4 +93,94 @@ describe('SiteEnrollmentV2Model', () => {
       expect(compositeKeys.siteId).to.equal('5d6d4439-6659-46c2-b646-92d110fa5a52');
     });
   });
+
+  describe('remove', () => {
+    let mockEntityRegistry;
+    let mockLogger;
+    let mockEntity;
+    let mockSchema;
+
+    beforeEach(() => {
+      mockEntity = {
+        remove: stub().returns({ go: stub().resolves() }),
+      };
+
+      mockLogger = {
+        info: stub(),
+        warn: stub(),
+        error: stub(),
+      };
+
+      mockEntityRegistry = {
+        getCollection: stub(),
+      };
+
+      mockSchema = {
+        allowsRemove: stub().returns(true),
+        getReferencesByType: stub().returns([]),
+      };
+
+      instance.entity = mockEntity;
+      instance.log = mockLogger;
+      instance.entityRegistry = mockEntityRegistry;
+      instance.schema = mockSchema;
+    });
+
+    it('removes both V2 and original SiteEnrollment', async () => {
+      const mockOriginalEnrollment = {
+        getId: stub().returns('mock-id'),
+        getEntitlementId: stub().returns('3fe5ca60-4850-431c-97b3-f88a80f07e9b'),
+      };
+
+      const mockSiteEnrollmentCollection = {
+        allBySiteId: stub().resolves([mockOriginalEnrollment]),
+        removeByIds: stub().resolves(),
+      };
+
+      mockEntityRegistry.getCollection.returns(mockSiteEnrollmentCollection);
+
+      await instance.remove();
+
+      expect(mockEntity.remove).to.have.been.called;
+      expect(mockEntityRegistry.getCollection).to.have.been.calledWith('SiteEnrollmentCollection');
+      expect(mockSiteEnrollmentCollection.allBySiteId).to.have.been.calledWith('5d6d4439-6659-46c2-b646-92d110fa5a52');
+      expect(mockSiteEnrollmentCollection.removeByIds).to.have.been.calledWith(['mock-id']);
+      expect(mockLogger.info).to.have.been.called;
+    });
+
+    it('continues successfully even if original SiteEnrollment removal fails', async () => {
+      const mockSiteEnrollmentCollection = {
+        allBySiteId: stub().rejects(new Error('Database error')),
+      };
+
+      mockEntityRegistry.getCollection.returns(mockSiteEnrollmentCollection);
+
+      // Should not throw, V2 removal succeeds even if original fails
+      await expect(instance.remove()).to.be.fulfilled;
+      expect(mockEntity.remove).to.have.been.called;
+      expect(mockLogger.error).to.have.been.called;
+    });
+
+    it('logs warning when original SiteEnrollment not found', async () => {
+      const mockSiteEnrollmentCollection = {
+        allBySiteId: stub().resolves([]), // No matching enrollment
+        removeByIds: stub().resolves(),
+      };
+
+      mockEntityRegistry.getCollection.returns(mockSiteEnrollmentCollection);
+
+      await instance.remove();
+
+      expect(mockLogger.warn).to.have.been.called;
+    });
+
+    it('continues successfully even if getCollection fails', async () => {
+      mockEntityRegistry.getCollection.throws(new Error('Registry error'));
+
+      // Should not throw, V2 removal succeeds even if getting collection fails
+      await expect(instance.remove()).to.be.fulfilled;
+      expect(mockEntity.remove).to.have.been.called;
+      expect(mockLogger.error).to.have.been.called;
+    });
+  });
 });

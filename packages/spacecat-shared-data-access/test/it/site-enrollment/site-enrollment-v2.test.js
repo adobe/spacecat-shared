@@ -246,4 +246,48 @@ describe('SiteEnrollmentV2 IT', async () => {
     });
     expect(notFound).to.be.null;
   });
+
+  it('V2 removeByIndexKeys should also remove original SiteEnrollment', async () => {
+    const data = {
+      entitlementId: sampleData.entitlements[0].getId(),
+      siteId: sampleData.sites[0].getId(),
+      updatedBy: 'system',
+    };
+
+    // Create V2 enrollment (which also creates original)
+    const v2Enrollment = await SiteEnrollmentV2.create(data);
+
+    // Verify both enrollments exist
+    const v2Found = await SiteEnrollmentV2.findByIndexKeys({
+      entitlementId: data.entitlementId,
+      siteId: data.siteId,
+    });
+    expect(v2Found).to.exist;
+
+    const originalEnrollments = await SiteEnrollment.allBySiteId(data.siteId);
+    const originalFound = originalEnrollments.find(
+      (e) => e.getEntitlementId() === data.entitlementId,
+    );
+    expect(originalFound).to.exist;
+
+    // Remove using V2 removeByIndexKeys
+    await SiteEnrollmentV2.removeByIndexKeys([{
+      entitlementId: v2Enrollment.getEntitlementId(),
+      siteId: v2Enrollment.getSiteId(),
+    }]);
+
+    // Verify V2 enrollment is removed
+    const v2NotFound = await SiteEnrollmentV2.findByIndexKeys({
+      entitlementId: data.entitlementId,
+      siteId: data.siteId,
+    });
+    expect(v2NotFound).to.be.null;
+
+    // Verify original enrollment is also removed
+    const originalEnrollmentsAfter = await SiteEnrollment.allBySiteId(data.siteId);
+    const originalNotFound = originalEnrollmentsAfter.find(
+      (e) => e.getEntitlementId() === data.entitlementId,
+    );
+    expect(originalNotFound).to.be.undefined;
+  });
 });

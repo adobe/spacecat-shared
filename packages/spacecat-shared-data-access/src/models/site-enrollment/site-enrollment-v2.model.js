@@ -28,6 +28,46 @@ class SiteEnrollmentV2 extends BaseModel {
       siteId: this.getSiteId(),
     };
   }
+
+  /**
+   * Removes the V2 enrollment and also removes the corresponding original SiteEnrollment
+   * for backwards compatibility.
+   *
+   * @async
+   * @returns {Promise<BaseModel>} - A promise that resolves to the current instance.
+   * @throws {DataAccessError} - Throws an error if the schema does not allow removal
+   * or if the removal operation fails.
+   */
+  async remove() {
+    // Remove the V2 enrollment first
+    await super.remove();
+
+    try {
+      // Also remove the original SiteEnrollment for backwards compatibility
+      const SiteEnrollmentCollection = this.entityRegistry.getCollection('SiteEnrollmentCollection');
+      const siteId = this.getSiteId();
+      const entitlementId = this.getEntitlementId();
+
+      // Query by siteId and filter by entitlementId
+      const enrollments = await SiteEnrollmentCollection.allBySiteId(siteId);
+      const matchingEnrollment = enrollments.find(
+        (e) => e.getEntitlementId() === entitlementId,
+      );
+
+      if (matchingEnrollment) {
+        await SiteEnrollmentCollection.removeByIds([matchingEnrollment.getId()]);
+        this.log.info(`Removed original SiteEnrollment for siteId: ${siteId}, entitlementId: ${entitlementId}`);
+      } else {
+        this.log.warn(`Original SiteEnrollment not found for siteId: ${siteId}, entitlementId: ${entitlementId}`);
+      }
+    } catch (error) {
+      this.log.error(`Failed to remove original SiteEnrollment: ${error.message}`, error);
+      // We don't throw here to avoid breaking the V2 removal
+      // The V2 record has been removed successfully
+    }
+
+    return this;
+  }
 }
 
 export default SiteEnrollmentV2;

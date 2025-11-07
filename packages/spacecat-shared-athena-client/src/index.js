@@ -264,3 +264,5 @@ export {
 } from './traffic-analysis/queries.js';
 export { TrafficDataResponseDto } from './traffic-analysis/traffic-data-base-response.js';
 export { TrafficDataWithCWVDto } from './traffic-analysis/traffic-data-with-cwv.js';
+
+export { getPTASummaryQuery, PTASummaryResponseDto } from './pta2/queries.js';

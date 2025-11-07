@@ -10,9 +10,24 @@
  * governing permissions and limitations under the License.
  */
 
-export { default as SiteEnrollment } from './site-enrollment.model.js';
-export { default as SiteEnrollmentCollection } from './site-enrollment.collection.js';
-export { default as SiteEnrollmentSchema } from './site-enrollment.schema.js';
-export { default as SiteEnrollmentV2 } from './site-enrollment-v2.model.js';
-export { default as SiteEnrollmentV2Collection } from './site-enrollment-v2.collection.js';
-export { default as SiteEnrollmentV2Schema } from './site-enrollment-v2.schema.js';
+import BaseModel from '../base/base.model.js';
+
+/**
+ * SiteEnrollmentV2 - A class representing a SiteEnrollmentV2 entity.
+ * Version 2 uses entitlementId as partition key and siteId as sort key.
+ * Provides methods to access and manipulate SiteEnrollment-specific data.
+ *
+ * @class SiteEnrollmentV2
+ * @extends BaseModel
+ */
+class SiteEnrollmentV2 extends BaseModel {
+  // add your custom methods or overrides here
+  generateCompositeKeys() {
+    return {
+      entitlementId: this.getEntitlementId(),
+      siteId: this.getSiteId(),
+    };
+  }
+}
+
+export default SiteEnrollmentV2;

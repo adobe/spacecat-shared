@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.78.0...@adobe/spacecat-shared-data-access-v2.79.0) (2025-11-07)
+
+
+### Features
+
+* PTA2 Summary query ([#1102](https://github.com/adobe/spacecat-shared/issues/1102)) ([06e902a](https://github.com/adobe/spacecat-shared/commit/06e902a5487c2fc2e79a3f15d7acf1072900fab4))
+
 # [@adobe/spacecat-shared-data-access-v2.78.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.77.1...@adobe/spacecat-shared-data-access-v2.78.0) (2025-11-06)
 
 

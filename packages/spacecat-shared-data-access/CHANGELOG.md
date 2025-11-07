@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.80.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.79.0...@adobe/spacecat-shared-data-access-v2.80.0) (2025-11-07)
+
+
+### Features
+
+* **data-access:** add twenty-past interval ([#1104](https://github.com/adobe/spacecat-shared/issues/1104)) ([4f1e7d7](https://github.com/adobe/spacecat-shared/commit/4f1e7d70e7ac1df884c7648be4202057d3a27a5f))
+
 # [@adobe/spacecat-shared-data-access-v2.79.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.78.0...@adobe/spacecat-shared-data-access-v2.79.0) (2025-11-07)
 
 

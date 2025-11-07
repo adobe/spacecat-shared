@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.3.8...@adobe/spacecat-shared-athena-client-v1.4.0) (2025-11-07)
+
+
+### Features
+
+* PTA2 Summary query ([#1102](https://github.com/adobe/spacecat-shared/issues/1102)) ([06e902a](https://github.com/adobe/spacecat-shared/commit/06e902a5487c2fc2e79a3f15d7acf1072900fab4))
+
 # [@adobe/spacecat-shared-athena-client-v1.3.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.3.7...@adobe/spacecat-shared-athena-client-v1.3.8) (2025-11-01)
 
 

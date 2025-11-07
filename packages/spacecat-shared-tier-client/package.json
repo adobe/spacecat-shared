@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@adobe/spacecat-shared-utils": "1.66.0",
-    "@adobe/spacecat-shared-data-access": "^2.61.3"
+    "@adobe/spacecat-shared-data-access": "https://gitpkg.now.sh/adobe/spacecat-shared/packages/spacecat-shared-data-access?LLMO-967"
   },
   "devDependencies": {
     "c8": "10.1.3",

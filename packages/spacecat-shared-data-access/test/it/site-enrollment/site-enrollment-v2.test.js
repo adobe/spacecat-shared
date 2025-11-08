@@ -247,47 +247,50 @@ describe('SiteEnrollmentV2 IT', async () => {
     expect(notFound).to.be.null;
   });
 
-  it('V2 removeByIndexKeys should also remove original SiteEnrollment', async () => {
+  it('V2 remove should also remove the original SiteEnrollment', async () => {
     const data = {
       entitlementId: sampleData.entitlements[0].getId(),
-      siteId: sampleData.sites[0].getId(),
+      siteId: sampleData.sites[3].getId(),
       updatedBy: 'system',
     };
 
-    // Create V2 enrollment (which also creates original)
     const v2Enrollment = await SiteEnrollmentV2.create(data);
 
-    // Verify both enrollments exist
+    // Verify V2 enrollment exists
     const v2Found = await SiteEnrollmentV2.findByIndexKeys({
-      entitlementId: data.entitlementId,
-      siteId: data.siteId,
+      entitlementId: v2Enrollment.getEntitlementId(),
+      siteId: v2Enrollment.getSiteId(),
     });
     expect(v2Found).to.exist;
 
-    const originalEnrollments = await SiteEnrollment.allBySiteId(data.siteId);
-    const originalFound = originalEnrollments.find(
+    // Verify original SiteEnrollment was created
+    const originalEnrollmentsBefore = await SiteEnrollment.allBySiteId(data.siteId);
+    const matchingBefore = originalEnrollmentsBefore.find(
       (e) => e.getEntitlementId() === data.entitlementId,
     );
-    expect(originalFound).to.exist;
+    expect(matchingBefore).to.exist;
+    const originalEnrollmentId = matchingBefore.getId();
 
-    // Remove using V2 removeByIndexKeys
-    await SiteEnrollmentV2.removeByIndexKeys([{
+    // Remove the V2 enrollment
+    await v2Enrollment.remove();
+
+    // Verify V2 enrollment was removed
+    const v2NotFound = await SiteEnrollmentV2.findByIndexKeys({
       entitlementId: v2Enrollment.getEntitlementId(),
       siteId: v2Enrollment.getSiteId(),
-    }]);
-
-    // Verify V2 enrollment is removed
-    const v2NotFound = await SiteEnrollmentV2.findByIndexKeys({
-      entitlementId: data.entitlementId,
-      siteId: data.siteId,
     });
     expect(v2NotFound).to.be.null;
 
-    // Verify original enrollment is also removed
+    // Verify original SiteEnrollment was also removed
     const originalEnrollmentsAfter = await SiteEnrollment.allBySiteId(data.siteId);
-    const originalNotFound = originalEnrollmentsAfter.find(
+    const matchingAfter = originalEnrollmentsAfter.find(
       (e) => e.getEntitlementId() === data.entitlementId,
     );
-    expect(originalNotFound).to.be.undefined;
+    console.log('matchingAfter', matchingAfter);
+    expect(matchingAfter).to.not.exist;
+
+    // Also verify it cannot be retrieved by its UUID ID
+    const originalNotFoundById = await SiteEnrollment.findById(originalEnrollmentId);
+    expect(originalNotFoundById).to.be.null;
   });
 });

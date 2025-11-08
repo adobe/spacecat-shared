@@ -39,31 +39,30 @@ class SiteEnrollmentV2 extends BaseModel {
    * or if the removal operation fails.
    */
   async remove() {
-    // Remove the V2 enrollment first
-    await super.remove();
+    // Remove the original SiteEnrollment first for backwards compatibility
+    const SiteEnrollmentCollection = this.entityRegistry.getCollection('SiteEnrollmentCollection');
+    const siteId = this.getSiteId();
+    const entitlementId = this.getEntitlementId();
+
+    // Query by siteId and filter by entitlementId
+    const enrollments = await SiteEnrollmentCollection.allBySiteId(siteId);
+    const matchingEnrollment = enrollments.find(
+      (e) => e.getEntitlementId() === entitlementId,
+    );
+
+    if (matchingEnrollment) {
+      await SiteEnrollmentCollection.removeByIds([matchingEnrollment.getId()]);
+      this.log.info(`Removed original SiteEnrollment for siteId: ${siteId}, entitlementId: ${entitlementId}`);
+    } else {
+      this.log.warn(`Original SiteEnrollment not found for siteId: ${siteId}, entitlementId: ${entitlementId}`);
+    }
 
     try {
-      // Also remove the original SiteEnrollment for backwards compatibility
-      const SiteEnrollmentCollection = this.entityRegistry.getCollection('SiteEnrollmentCollection');
-      const siteId = this.getSiteId();
-      const entitlementId = this.getEntitlementId();
-
-      // Query by siteId and filter by entitlementId
-      const enrollments = await SiteEnrollmentCollection.allBySiteId(siteId);
-      const matchingEnrollment = enrollments.find(
-        (e) => e.getEntitlementId() === entitlementId,
-      );
-
-      if (matchingEnrollment) {
-        await SiteEnrollmentCollection.removeByIds([matchingEnrollment.getId()]);
-        this.log.info(`Removed original SiteEnrollment for siteId: ${siteId}, entitlementId: ${entitlementId}`);
-      } else {
-        this.log.warn(`Original SiteEnrollment not found for siteId: ${siteId}, entitlementId: ${entitlementId}`);
-      }
+      // Remove the V2 enrollment after the original
+      await super.remove();
     } catch (error) {
-      this.log.error(`Failed to remove original SiteEnrollment: ${error.message}`, error);
-      // We don't throw here to avoid breaking the V2 removal
-      // The V2 record has been removed successfully
+      this.log.error(`Failed to remove V2 SiteEnrollment: ${error.message}`, error);
+      // We don't throw here to avoid breaking after original removal succeeded
     }
 
     return this;

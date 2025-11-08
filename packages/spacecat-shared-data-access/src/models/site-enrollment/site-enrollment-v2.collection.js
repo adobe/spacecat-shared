@@ -35,23 +35,23 @@ class SiteEnrollmentV2Collection extends BaseCollection {
    * @throws {DataAccessError} - Throws an error if the creation process fails.
    */
   async create(item, options = {}) {
-    // Create the V2 enrollment
-    const v2Enrollment = await super.create(item, options);
+    // Create the original SiteEnrollment first for backwards compatibility
+    const SiteEnrollmentCollection = this.entityRegistry.getCollection('SiteEnrollmentCollection');
+    await SiteEnrollmentCollection.create({
+      siteId: item.siteId,
+      entitlementId: item.entitlementId,
+    }, options);
 
+    this.log.info(`Created original SiteEnrollment for siteId: ${item.siteId}, entitlementId: ${item.entitlementId}`);
+
+    let v2Enrollment;
     try {
-      // Also create the original SiteEnrollment for backwards compatibility
-      const SiteEnrollmentCollection = this.entityRegistry.getCollection('SiteEnrollmentCollection');
-      await SiteEnrollmentCollection.create({
-        siteId: item.siteId,
-        entitlementId: item.entitlementId,
-        updatedBy: item.updatedBy || 'system',
-      }, options);
-
-      this.log.info(`Created both V2 and original SiteEnrollment for siteId: ${item.siteId}, entitlementId: ${item.entitlementId}`);
+      // Create the V2 enrollment after the original
+      v2Enrollment = await super.create(item, options);
+      this.log.info(`Created V2 SiteEnrollment for siteId: ${item.siteId}, entitlementId: ${item.entitlementId}`);
     } catch (error) {
-      this.log.error(`Failed to create original SiteEnrollment for V2 enrollment: ${error.message}`, error);
-      // We don't throw here to avoid breaking the V2 creation
-      // The V2 record has been created successfully
+      this.log.error(`Failed to create V2 SiteEnrollment: ${error.message}`, error);
+      // We don't throw here to avoid breaking after original creation succeeded
     }
 
     return v2Enrollment;

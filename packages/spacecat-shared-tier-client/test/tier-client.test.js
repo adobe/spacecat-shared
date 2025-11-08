@@ -68,10 +68,8 @@ describe('TierClient', () => {
       findById: sandbox.stub(),
       create: sandbox.stub(),
     },
-    SiteEnrollment: {
-      allBySiteId: sandbox.stub(),
-    },
     SiteEnrollmentV2: {
+      findByIndexKeys: sandbox.stub(),
       create: sandbox.stub(),
     },
     Organization: {
@@ -239,17 +237,21 @@ describe('TierClient', () => {
 
     it('should return only entitlement when site enrollment is missing', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+      mockDataAccess.SiteEnrollmentV2.findByIndexKeys.resolves(null);
 
       const result = await tierClient.checkValidEntitlement();
 
       expect(result).to.deep.equal({ entitlement: mockEntitlement });
-      expect(mockDataAccess.SiteEnrollment.allBySiteId).to.have.been.calledWith(siteId);
+      expect(mockDataAccess.SiteEnrollmentV2.findByIndexKeys)
+        .to.have.been.calledWith({
+          entitlementId: mockEntitlement.getId(),
+          siteId,
+        });
     });
 
     it('should return both entitlement and site enrollment when both exist', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+      mockDataAccess.SiteEnrollmentV2.findByIndexKeys.resolves(mockSiteEnrollment);
 
       const result = await tierClient.checkValidEntitlement();
 
@@ -282,8 +284,8 @@ describe('TierClient', () => {
       expect(result).to.deep.equal({ entitlement: mockEntitlement });
       expect(mockDataAccess.Entitlement.findByOrganizationIdAndProductCode)
         .to.have.been.calledWith(orgId, productCode);
-      // SiteEnrollment.allBySiteId should not be called when site is null
-      expect(mockDataAccess.SiteEnrollment.allBySiteId).to.not.have.been.called;
+      // SiteEnrollmentV2.findByIndexKeys should not be called when site is null
+      expect(mockDataAccess.SiteEnrollmentV2.findByIndexKeys).to.not.have.been.called;
     });
   });
 
@@ -295,7 +297,7 @@ describe('TierClient', () => {
 
     it('should return existing entitlement and site enrollment when both exist', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+      mockDataAccess.SiteEnrollmentV2.findByIndexKeys.resolves(mockSiteEnrollment);
 
       const result = await tierClient.createEntitlement('FREE_TRIAL');
 
@@ -309,7 +311,7 @@ describe('TierClient', () => {
 
     it('should create site enrollment when only entitlement exists', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+      mockDataAccess.SiteEnrollmentV2.findByIndexKeys.resolves(null);
       mockDataAccess.SiteEnrollmentV2.create.resolves(mockSiteEnrollment);
 
       const result = await tierClient.createEntitlement('FREE_TRIAL');
@@ -410,7 +412,7 @@ describe('TierClient', () => {
 
       mockDataAccess.Entitlement
         .findByOrganizationIdAndProductCode.resolves(mockEntitlementWithDifferentTier);
-      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+      mockDataAccess.SiteEnrollmentV2.findByIndexKeys.resolves(mockSiteEnrollment);
 
       const result = await tierClient.createEntitlement('FREE_TRIAL');
 
@@ -471,14 +473,8 @@ describe('TierClient', () => {
     });
 
     it('should handle multiple site enrollments with different entitlements', async () => {
-      const otherSiteEnrollment = {
-        getId: () => 'other-enrollment-123',
-        getSiteId: () => siteId,
-        getEntitlementId: () => 'other-entitlement-123',
-      };
-
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.allBySiteId.resolves([otherSiteEnrollment]);
+      mockDataAccess.SiteEnrollmentV2.findByIndexKeys.resolves(null);
 
       const result = await tierClient.checkValidEntitlement();
 
@@ -494,7 +490,7 @@ describe('TierClient', () => {
       };
 
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollmentWithRemove]);
+      mockDataAccess.SiteEnrollmentV2.findByIndexKeys.resolves(mockSiteEnrollmentWithRemove);
 
       await tierClient.revokeSiteEnrollment();
 
@@ -503,7 +499,7 @@ describe('TierClient', () => {
 
     it('should throw error when site enrollment does not exist', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+      mockDataAccess.SiteEnrollmentV2.findByIndexKeys.resolves(null);
 
       await expect(tierClient.revokeSiteEnrollment()).to.be.rejectedWith('Site enrollment not found');
     });
@@ -521,7 +517,7 @@ describe('TierClient', () => {
       };
 
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollmentWithRemove]);
+      mockDataAccess.SiteEnrollmentV2.findByIndexKeys.resolves(mockSiteEnrollmentWithRemove);
 
       await expect(tierClient.revokeSiteEnrollment()).to.be.rejectedWith('Database error');
     });

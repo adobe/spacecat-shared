@@ -114,10 +114,10 @@ class TierClient {
       // Only check for site enrollment if site is provided
       if (this.site) {
         const siteId = this.site.getId();
-        const siteEnrollments = await this.SiteEnrollment.allBySiteId(siteId);
-        const validSiteEnrollment = siteEnrollments.find(
-          (se) => se.getEntitlementId() === entitlement.getId(),
-        );
+        const validSiteEnrollment = await this.SiteEnrollmentV2.findByIndexKeys({
+          entitlementId: entitlement.getId(),
+          siteId,
+        });
 
         if (!validSiteEnrollment) {
           return { entitlement };

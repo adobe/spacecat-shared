@@ -75,6 +75,7 @@ class TierClient {
 
     const {
       Entitlement: EntitlementCollection,
+      SiteEnrollment: SiteEnrollmentCollection,
       SiteEnrollmentV2: SiteEnrollmentV2Collection,
       Organization: OrganizationCollection,
       Site: SiteCollection,
@@ -91,6 +92,7 @@ class TierClient {
 
     // Store dataAccess properties directly
     this.Entitlement = EntitlementCollection;
+    this.SiteEnrollment = SiteEnrollmentCollection;
     this.SiteEnrollmentV2 = SiteEnrollmentV2Collection;
     this.Organization = OrganizationCollection;
     this.Site = SiteCollection;
@@ -112,10 +114,10 @@ class TierClient {
       // Only check for site enrollment if site is provided
       if (this.site) {
         const siteId = this.site.getId();
-        const validSiteEnrollment = await this.SiteEnrollmentV2.findByIndexKeys({
-          entitlementId: entitlement.getId(),
-          siteId,
-        });
+        const siteEnrollments = await this.SiteEnrollment.allBySiteId(siteId);
+        const validSiteEnrollment = siteEnrollments.find(
+          (se) => se.getEntitlementId() === entitlement.getId(),
+        );
 
         if (!validSiteEnrollment) {
           return { entitlement };

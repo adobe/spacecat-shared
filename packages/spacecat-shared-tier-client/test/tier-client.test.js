@@ -70,6 +70,8 @@ describe('TierClient', () => {
     },
     SiteEnrollment: {
       allBySiteId: sandbox.stub(),
+    },
+    SiteEnrollmentV2: {
       create: sandbox.stub(),
     },
     Organization: {
@@ -302,13 +304,13 @@ describe('TierClient', () => {
         siteEnrollment: mockSiteEnrollment,
       });
       expect(mockDataAccess.Entitlement.create).to.not.have.been.called;
-      expect(mockDataAccess.SiteEnrollment.create).to.not.have.been.called;
+      expect(mockDataAccess.SiteEnrollmentV2.create).to.not.have.been.called;
     });
 
     it('should create site enrollment when only entitlement exists', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
       mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
-      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+      mockDataAccess.SiteEnrollmentV2.create.resolves(mockSiteEnrollment);
 
       const result = await tierClient.createEntitlement('FREE_TRIAL');
 
@@ -317,7 +319,7 @@ describe('TierClient', () => {
         siteEnrollment: mockSiteEnrollment,
       });
       expect(mockDataAccess.Entitlement.create).to.not.have.been.called;
-      expect(mockDataAccess.SiteEnrollment.create).to.have.been.calledWith({
+      expect(mockDataAccess.SiteEnrollmentV2.create).to.have.been.calledWith({
         siteId,
         entitlementId: mockEntitlement.getId(),
       });
@@ -326,7 +328,7 @@ describe('TierClient', () => {
     it('should create everything when nothing exists', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
       mockDataAccess.Entitlement.create.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+      mockDataAccess.SiteEnrollmentV2.create.resolves(mockSiteEnrollment);
 
       const result = await tierClient.createEntitlement('FREE_TRIAL');
 
@@ -340,7 +342,7 @@ describe('TierClient', () => {
         tier: 'FREE_TRIAL',
         quotas: { llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 },
       });
-      expect(mockDataAccess.SiteEnrollment.create).to.have.been.calledWith({
+      expect(mockDataAccess.SiteEnrollmentV2.create).to.have.been.calledWith({
         siteId,
         entitlementId: mockEntitlement.getId(),
       });
@@ -375,7 +377,7 @@ describe('TierClient', () => {
         tier: 'FREE_TRIAL',
         quotas: { llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 },
       });
-      expect(mockDataAccess.SiteEnrollment.create).to.not.have.been.called;
+      expect(mockDataAccess.SiteEnrollmentV2.create).to.not.have.been.called;
     });
 
     it('should return existing entitlement when site is not provided and entitlement exists', async () => {
@@ -395,7 +397,7 @@ describe('TierClient', () => {
         entitlement: mockEntitlement,
       });
       expect(mockDataAccess.Entitlement.create).to.not.have.been.called;
-      expect(mockDataAccess.SiteEnrollment.create).to.not.have.been.called;
+      expect(mockDataAccess.SiteEnrollmentV2.create).to.not.have.been.called;
     });
 
     it('should update tier when entitlement exists with different tier', async () => {
@@ -458,7 +460,7 @@ describe('TierClient', () => {
       mockDataAccess.Site.findById.resolves(mockSite);
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
       mockDataAccess.Entitlement.create.resolves(mockEntitlement);
-      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+      mockDataAccess.SiteEnrollmentV2.create.resolves(mockSiteEnrollment);
 
       const result = await clientWithoutAuth.createEntitlement('FREE_TRIAL');
 

@@ -177,7 +177,6 @@ export class FaqMapper extends BaseOpportunityMapper {
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
   suggestionsToPatches(
     urlPath: string,
-    baseURL: string,
     suggestions: Suggestion[],
     opportunityId: string,
     allOpportunitySuggestions: Suggestion[] | null

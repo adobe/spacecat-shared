@@ -13,58 +13,9 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { getPatchKey, mergePatches } from '../../src/utils/patch-utils.js';
+import { mergePatches } from '../../src/utils/patch-utils.js';
 
 describe('Patch Utils', () => {
-  describe('getPatchKey', () => {
-    it('should return opportunityId:suggestionId for individual patches (hasSinglePatchPerUrl=false)', () => {
-      const patch = {
-        opportunityId: 'opp-headings',
-        suggestionIds: ['sugg-456'],
-      };
-
-      const key = getPatchKey(patch, false);
-      expect(key).to.equal('opp-headings:sugg-456');
-    });
-
-    it('should return opportunityId for combined patches (hasSinglePatchPerUrl=true) with one suggestion', () => {
-      const patch = {
-        opportunityId: 'opp-faq',
-        suggestionIds: ['sugg-456'],
-      };
-
-      const key = getPatchKey(patch, true);
-      expect(key).to.equal('opp-faq');
-    });
-
-    it('should return opportunityId for combined patches (hasSinglePatchPerUrl=true) with multiple suggestions', () => {
-      const patch = {
-        opportunityId: 'opp-faq',
-        suggestionIds: ['sugg-456', 'sugg-789'],
-      };
-
-      const key = getPatchKey(patch, true);
-      expect(key).to.equal('opp-faq');
-    });
-
-    it('should throw error when suggestionIds is missing', () => {
-      const patch = {
-        opportunityId: 'opp-123',
-      };
-
-      expect(() => getPatchKey(patch, false)).to.throw('Patch must have suggestionIds array with at least one element');
-    });
-
-    it('should throw error when suggestionIds is empty array', () => {
-      const patch = {
-        opportunityId: 'opp-123',
-        suggestionIds: [],
-      };
-
-      expect(() => getPatchKey(patch, false)).to.throw('Patch must have suggestionIds array with at least one element');
-    });
-  });
-
   describe('mergePatches', () => {
     it('should merge individual patches with same key (hasSinglePatchPerUrl=false)', () => {
       const existingPatches = [
@@ -204,6 +155,50 @@ describe('Patch Utils', () => {
       expect(result.patches[0]).to.deep.equal(existingPatches[0]);
       expect(result.updateCount).to.equal(0);
       expect(result.addCount).to.equal(0);
+    });
+
+    it('should throw error when patch has missing suggestionIds', () => {
+      const existingPatches = [];
+      const newPatches = [
+        {
+          op: 'appendChild',
+          opportunityId: 'opp-123',
+          value: 'value',
+        },
+      ];
+
+      expect(() => mergePatches(existingPatches, newPatches, false))
+        .to.throw('Patch must have suggestionIds array with at least one element');
+    });
+
+    it('should throw error when patch has empty suggestionIds array', () => {
+      const existingPatches = [];
+      const newPatches = [
+        {
+          op: 'appendChild',
+          opportunityId: 'opp-123',
+          suggestionIds: [],
+          value: 'value',
+        },
+      ];
+
+      expect(() => mergePatches(existingPatches, newPatches, false))
+        .to.throw('Patch must have suggestionIds array with at least one element');
+    });
+
+    it('should throw error when existing patch has invalid suggestionIds', () => {
+      const existingPatches = [
+        {
+          op: 'appendChild',
+          opportunityId: 'opp-123',
+          suggestionIds: [],
+          value: 'value',
+        },
+      ];
+      const newPatches = [];
+
+      expect(() => mergePatches(existingPatches, newPatches, false))
+        .to.throw('Patch must have suggestionIds array with at least one element');
     });
   });
 });

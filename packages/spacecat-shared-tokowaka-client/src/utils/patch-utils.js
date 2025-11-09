@@ -12,19 +12,13 @@
 
 /**
  * Generates a unique key for a patch based on its structure
- *
  * Two types of patches:
  * 1. Single patch per URL (FAQ): All suggestions for same URL merge into one patch
  *    → Key: opportunityId
  * 2. Individual patches (Headings, Content): One patch per suggestion
  *    → Key: opportunityId:suggestionId
- *
- * @param {Object} patch - Patch object with suggestionIds array
- * @param {boolean} hasSinglePatchPerUrl - Whether mapper combines suggestions
- *   into single patch per URL
- * @returns {string} - Unique key for the patch
  */
-export function getPatchKey(patch, hasSinglePatchPerUrl = false) {
+function getPatchKey(patch, hasSinglePatchPerUrl = false) {
   if (!Array.isArray(patch.suggestionIds) || patch.suggestionIds.length === 0) {
     throw new Error('Patch must have suggestionIds array with at least one element');
   }

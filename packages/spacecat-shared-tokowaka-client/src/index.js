@@ -11,9 +11,13 @@
  */
 
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { hasText, isNonEmptyObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
+import { mergePatches } from './utils/patch-utils.js';
+import { getTokowakaConfigS3Path } from './utils/s3-utils.js';
+import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
+import { getEffectiveBaseURL } from './utils/site-utils.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -83,20 +87,16 @@ class TokowakaClient {
    * Generates Tokowaka site configuration from suggestions
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
-   * @param {Array} suggestions - Array of suggestion entities
+   * @param {Array} suggestionsToDeploy - Array of suggestion entities to deploy
+   * @param {Array} allOpportunitySuggestions - Optional: All suggestions for the opportunity
+   *        (allows mappers like FAQ to include previously deployed suggestions)
    * @returns {Object} - Tokowaka configuration object
    */
-  generateConfig(site, opportunity, suggestions) {
+  generateConfig(site, opportunity, suggestionsToDeploy, allOpportunitySuggestions = null) {
     const opportunityType = opportunity.getType();
     const siteId = site.getId();
+    const baseURL = getEffectiveBaseURL(site);
 
-    // Get baseURL, respecting overrideBaseURL from fetchConfig if it exists
-    const overrideBaseURL = site.getConfig()?.getFetchConfig?.()?.overrideBaseURL;
-    const baseURL = (overrideBaseURL && isValidUrl(overrideBaseURL))
-      ? overrideBaseURL
-      : site.getBaseURL();
-
-    // Get mapper for this opportunity type
     const mapper = this.mapperRegistry.getMapper(opportunityType);
     if (!mapper) {
       throw this.#createError(
@@ -107,38 +107,27 @@ class TokowakaClient {
     }
 
     // Group suggestions by URL
-    const suggestionsByUrl = suggestions.reduce((acc, suggestion) => {
-      const data = suggestion.getData();
-      const url = data?.url;
-
-      if (!url) {
-        this.log.warn(`Suggestion ${suggestion.getId()} does not have a URL, skipping`);
-        return acc;
-      }
-
-      let urlPath;
-      try {
-        urlPath = new URL(url, baseURL).pathname;
-      } catch (e) {
-        this.log.warn(`Failed to extract pathname from URL for suggestion ${suggestion.getId()}: ${url}`);
-        return acc;
-      }
-
-      if (!acc[urlPath]) {
-        acc[urlPath] = [];
-      }
-      acc[urlPath].push(suggestion);
-      return acc;
-    }, {});
+    const suggestionsByUrl = groupSuggestionsByUrlPath(suggestionsToDeploy, baseURL, this.log);
 
     // Generate patches for each URL using the mapper
     const tokowakaOptimizations = {};
 
     Object.entries(suggestionsByUrl).forEach(([urlPath, urlSuggestions]) => {
-      const patches = urlSuggestions.map((suggestion) => {
-        const patch = mapper.suggestionToPatch(suggestion, opportunity.getId());
-        return patch;
-      }).filter((patch) => patch !== null);
+      let patches = [];
+      // Use suggestionsToPatches if available (allows mappers to combine multiple suggestions)
+      if (mapper.suggestionsToPatches) {
+        patches = mapper.suggestionsToPatches(
+          urlPath,
+          baseURL,
+          urlSuggestions,
+          opportunity.getId(),
+          allOpportunitySuggestions,
+        );
+      } else {
+        patches = urlSuggestions.map((suggestion) => mapper
+          .suggestionToPatch(suggestion, opportunity.getId()))
+          .filter((patch) => patch !== null);
+      }
 
       if (patches.length > 0) {
         tokowakaOptimizations[urlPath] = {
@@ -183,7 +172,7 @@ class TokowakaClient {
       throw this.#createError('Tokowaka API key is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = `opportunities/${siteTokowakaKey}`;
+    const s3Path = getTokowakaConfigS3Path(siteTokowakaKey);
 
     try {
       const command = new GetObjectCommand({
@@ -212,14 +201,19 @@ class TokowakaClient {
 
   /**
    * Merges existing configuration with new configuration
-   * For each URL path, checks if opportunityId+suggestionId combination exists:
+   * For each URL path, checks patch key:
+   * - Multi-suggestion patches (suggestionIds array with length > 1):
+   *   identified by opportunityId only
+   * - Single-suggestion patches: identified by opportunityId+suggestionId
    * - If exists: updates the patch
    * - If not exists: adds new patch to the array
    * @param {Object} existingConfig - Existing configuration from S3
    * @param {Object} newConfig - New configuration generated from suggestions
+   * @param {boolean} hasSinglePatchPerUrl - Whether mapper combines
+   *   suggestions into single patch per URL
    * @returns {Object} - Merged configuration
    */
-  mergeConfigs(existingConfig, newConfig) {
+  mergeConfigs(existingConfig, newConfig, hasSinglePatchPerUrl = false) {
     if (!existingConfig) {
       return newConfig;
     }
@@ -245,30 +239,11 @@ class TokowakaClient {
         const existingPatches = existingOptimization.patches || [];
         const newPatches = newOptimization.patches || [];
 
-        // Create a map of existing patches by opportunityId+suggestionId
-        const patchMap = new Map();
-        existingPatches.forEach((patch, index) => {
-          const key = `${patch.opportunityId}:${patch.suggestionId}`;
-          patchMap.set(key, { patch, index });
-        });
-
-        // Process new patches
-        const mergedPatches = [...existingPatches];
-        let updateCount = 0;
-        let addCount = 0;
-
-        newPatches.forEach((newPatch) => {
-          const key = `${newPatch.opportunityId}:${newPatch.suggestionId}`;
-          const existing = patchMap.get(key);
-
-          if (existing) {
-            mergedPatches[existing.index] = newPatch;
-            updateCount += 1;
-          } else {
-            mergedPatches.push(newPatch);
-            addCount += 1;
-          }
-        });
+        const { patches: mergedPatches, updateCount, addCount } = mergePatches(
+          existingPatches,
+          newPatches,
+          hasSinglePatchPerUrl,
+        );
 
         mergedConfig.tokowakaOptimizations[urlPath] = {
           ...existingOptimization,
@@ -298,7 +273,7 @@ class TokowakaClient {
       throw this.#createError('Config object is required', HTTP_BAD_REQUEST);
     }
 
-    const s3Path = `opportunities/${siteTokowakaKey}`;
+    const s3Path = getTokowakaConfigS3Path(siteTokowakaKey);
 
     try {
       const command = new PutObjectCommand({
@@ -330,7 +305,7 @@ class TokowakaClient {
       throw this.#createError('Tokowaka API key and provider are required', HTTP_BAD_REQUEST);
     }
     try {
-      const pathsToInvalidate = [`/opportunities/${apiKey}`];
+      const pathsToInvalidate = [`/${getTokowakaConfigS3Path(apiKey)}`];
       this.log.debug(`Invalidating CDN cache for ${pathsToInvalidate.length} paths via ${provider}`);
       const cdnClient = this.cdnClientRegistry.getClient(provider);
       if (!cdnClient) {
@@ -353,10 +328,12 @@ class TokowakaClient {
    * Deploys suggestions to Tokowaka by generating config and uploading to S3
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
-   * @param {Array} suggestions - Array of suggestion entities
+   * @param {Array} suggestions - Array of suggestion entities to deploy
+   * @param {Array} allOpportunitySuggestions - Optional: All suggestions for the opportunity
+   *        (needed for FAQ to rebuild with previously deployed suggestions)
    * @returns {Promise<Object>} - Deployment result with succeeded/failed suggestions
    */
-  async deploySuggestions(site, opportunity, suggestions) {
+  async deploySuggestions(site, opportunity, suggestions, allOpportunitySuggestions = null) {
     // Get site's Tokowaka API key
     const { apiKey } = site.getConfig()?.getTokowakaConfig() || {};
 
@@ -378,22 +355,15 @@ class TokowakaClient {
     }
 
     // Validate which suggestions can be deployed using mapper's canDeploy method
-    const eligibleSuggestions = [];
-    const ineligibleSuggestions = [];
+    const {
+      eligible: eligibleSuggestions,
+      ineligible: ineligibleSuggestions,
+    } = filterEligibleSuggestions(suggestions, mapper);
 
-    suggestions.forEach((suggestion) => {
-      const eligibility = mapper.canDeploy(suggestion);
-      if (eligibility.eligible) {
-        eligibleSuggestions.push(suggestion);
-      } else {
-        ineligibleSuggestions.push({
-          suggestion,
-          reason: eligibility.reason || 'Suggestion cannot be deployed',
-        });
-      }
-    });
-
-    this.log.debug(`Deploying ${eligibleSuggestions.length} eligible suggestions (${ineligibleSuggestions.length} ineligible)`);
+    this.log.debug(
+      `Deploying ${eligibleSuggestions.length} eligible suggestions `
+      + `(${ineligibleSuggestions.length} ineligible)`,
+    );
 
     if (eligibleSuggestions.length === 0) {
       this.log.warn('No eligible suggestions to deploy');
@@ -403,13 +373,14 @@ class TokowakaClient {
       };
     }
 
-    // Fetch existing configuration from S3
-    this.log.debug(`Fetching existing Tokowaka config for site ${site.getId()}`);
-    const existingConfig = await this.fetchConfig(apiKey);
-
     // Generate configuration with eligible suggestions only
     this.log.debug(`Generating Tokowaka config for site ${site.getId()}, opportunity ${opportunity.getId()}`);
-    const newConfig = this.generateConfig(site, opportunity, eligibleSuggestions);
+    const newConfig = this.generateConfig(
+      site,
+      opportunity,
+      eligibleSuggestions,
+      allOpportunitySuggestions,
+    );
 
     if (Object.keys(newConfig.tokowakaOptimizations).length === 0) {
       this.log.warn('No eligible suggestions to deploy');
@@ -419,10 +390,12 @@ class TokowakaClient {
       };
     }
 
-    // Merge with existing config if it exists
-    const config = existingConfig
-      ? this.mergeConfigs(existingConfig, newConfig)
-      : newConfig;
+    // Fetch existing configuration from S3
+    this.log.debug(`Fetching existing Tokowaka config for site ${site.getId()}`);
+    const existingConfig = await this.fetchConfig(apiKey);
+
+    // Merge with existing config
+    const config = this.mergeConfigs(existingConfig, newConfig, mapper.hasSinglePatchPerUrl());
 
     // Upload to S3
     this.log.info(`Uploading Tokowaka config for ${eligibleSuggestions.length} suggestions`);

@@ -73,7 +73,7 @@ describe('BaseOpportunityMapper', () => {
 
       const patch = testMapper.createBasePatch(suggestion, 'opp-456');
 
-      expect(patch.suggestionId).to.equal('test-123');
+      expect(patch.suggestionIds).to.deep.equal(['test-123']);
       expect(patch.opportunityId).to.equal('opp-456');
       expect(patch.lastUpdated).to.equal(new Date('2025-01-15T10:00:00.000Z').getTime());
       expect(patch.prerenderRequired).to.be.true;
@@ -100,7 +100,7 @@ describe('BaseOpportunityMapper', () => {
       const patch = testMapper.createBasePatch(suggestion, 'opp-fallback');
       const afterTime = Date.now();
 
-      expect(patch.suggestionId).to.equal('test-no-date');
+      expect(patch.suggestionIds).to.deep.equal(['test-no-date']);
       expect(patch.opportunityId).to.equal('opp-fallback');
       expect(patch.lastUpdated).to.be.at.least(beforeTime);
       expect(patch.lastUpdated).to.be.at.most(afterTime);

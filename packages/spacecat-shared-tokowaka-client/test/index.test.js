@@ -199,7 +199,7 @@ describe('TokowakaClient', () => {
 
   describe('generateConfig', () => {
     it('should generate config for headings opportunity', () => {
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(config).to.deep.include({
         siteId: 'site-123',
@@ -218,9 +218,72 @@ describe('TokowakaClient', () => {
         selector: 'h1',
         value: 'New Heading',
         opportunityId: 'opp-123',
-        suggestionId: 'sugg-1',
         prerenderRequired: true,
       });
+      expect(patch.suggestionIds).to.deep.equal(['sugg-1']);
+      expect(patch).to.have.property('lastUpdated');
+    });
+
+    it('should generate config for FAQ opportunity', () => {
+      mockOpportunity = {
+        getId: () => 'opp-faq-123',
+        getType: () => 'faq',
+      };
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-faq-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            item: {
+              question: 'Question 1?',
+              answer: 'Answer 1.',
+            },
+            transformRules: {
+              action: 'appendChild',
+              selector: 'main',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-faq-2',
+          getUpdatedAt: () => '2025-01-15T11:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            item: {
+              question: 'Question 2?',
+              answer: 'Answer 2.',
+            },
+            transformRules: {
+              action: 'appendChild',
+              selector: 'main',
+            },
+          }),
+        },
+      ];
+
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
+
+      expect(config).to.deep.include({
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+      });
+
+      expect(config.tokowakaOptimizations).to.have.property('/page1');
+      expect(config.tokowakaOptimizations['/page1'].prerender).to.be.true;
+      expect(config.tokowakaOptimizations['/page1'].patches).to.have.length(1);
+
+      const patch = config.tokowakaOptimizations['/page1'].patches[0];
+      expect(patch).to.include({
+        op: 'appendChild',
+        selector: 'main',
+        opportunityId: 'opp-faq-123',
+        prerenderRequired: true,
+      });
+      expect(patch.suggestionIds).to.deep.equal(['sugg-faq-1', 'sugg-faq-2']);
       expect(patch).to.have.property('lastUpdated');
     });
 
@@ -254,7 +317,7 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(2);
       expect(config.tokowakaOptimizations).to.have.property('/page1');
@@ -289,7 +352,7 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(1);
       expect(config.tokowakaOptimizations).to.have.property('/relative-path');
@@ -306,7 +369,7 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(0);
       expect(log.warn).to.have.been.calledWith(sinon.match(/does not have a URL/));
@@ -329,7 +392,7 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(0);
       expect(log.warn).to.have.been.calledWith(sinon.match(/Failed to extract pathname from URL/));
@@ -363,9 +426,22 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      expect(() => client.generateConfig(mockSite, mockOpportunity, mockSuggestions))
+      expect(() => client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null))
         .to.throw(/No mapper found for opportunity type: unsupported-type/)
         .with.property('status', 501);
+    });
+
+    it('should generate config without allOpportunitySuggestions', () => {
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
+
+      expect(config).to.deep.include({
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+      });
+
+      expect(config.tokowakaOptimizations).to.have.property('/page1');
     });
   });
 
@@ -443,7 +519,7 @@ describe('TokowakaClient', () => {
                 selector: 'h1',
                 value: 'Old Heading',
                 opportunityId: 'opp-123',
-                suggestionId: 'sugg-1',
+                suggestionIds: ['sugg-1'],
                 prerenderRequired: true,
                 lastUpdated: 1234567890,
               },
@@ -530,7 +606,7 @@ describe('TokowakaClient', () => {
                 selector: 'h1',
                 value: 'Old Heading',
                 opportunityId: 'opp-123',
-                suggestionId: 'sugg-1',
+                suggestionIds: ['sugg-1'],
                 prerenderRequired: true,
                 lastUpdated: 1234567890,
               },
@@ -539,7 +615,7 @@ describe('TokowakaClient', () => {
                 selector: 'h2',
                 value: 'Old Subtitle',
                 opportunityId: 'opp-456',
-                suggestionId: 'sugg-2',
+                suggestionIds: ['sugg-2'],
                 prerenderRequired: true,
                 lastUpdated: 1234567890,
               },
@@ -562,7 +638,7 @@ describe('TokowakaClient', () => {
                 selector: 'h1',
                 value: 'Updated Heading',
                 opportunityId: 'opp-123',
-                suggestionId: 'sugg-1',
+                suggestionIds: ['sugg-1'],
                 prerenderRequired: true,
                 lastUpdated: 1234567900,
               },
@@ -600,7 +676,7 @@ describe('TokowakaClient', () => {
         selector: 'h3',
         value: 'New Section Title',
         opportunityId: 'opp-789',
-        suggestionId: 'sugg-3',
+        suggestionIds: ['sugg-3'],
         prerenderRequired: true,
         lastUpdated: 1234567900,
       });
@@ -613,7 +689,7 @@ describe('TokowakaClient', () => {
       const newPatch = merged.tokowakaOptimizations['/page1'].patches[2];
       expect(newPatch.value).to.equal('New Section Title');
       expect(newPatch.opportunityId).to.equal('opp-789');
-      expect(newPatch.suggestionId).to.equal('sugg-3');
+      expect(newPatch.suggestionIds).to.deep.equal(['sugg-3']);
     });
 
     it('should add new URL path if it does not exist in existing config', () => {
@@ -625,7 +701,7 @@ describe('TokowakaClient', () => {
             selector: 'h1',
             value: 'Page 2 Heading',
             opportunityId: 'opp-999',
-            suggestionId: 'sugg-4',
+            suggestionIds: ['sugg-4'],
             prerenderRequired: true,
             lastUpdated: 1234567900,
           },
@@ -649,7 +725,7 @@ describe('TokowakaClient', () => {
             selector: 'h1',
             value: 'Page 3 Heading',
             opportunityId: 'opp-333',
-            suggestionId: 'sugg-5',
+            suggestionIds: ['sugg-5'],
             prerenderRequired: false,
             lastUpdated: 1234567890,
           },
@@ -896,7 +972,7 @@ describe('TokowakaClient', () => {
                 selector: 'h3',
                 value: 'Existing Heading',
                 opportunityId: 'opp-999',
-                suggestionId: 'sugg-999',
+                suggestionIds: ['sugg-999'],
                 prerenderRequired: true,
                 lastUpdated: 1234567890,
               },
@@ -953,7 +1029,7 @@ describe('TokowakaClient', () => {
                 selector: 'h1',
                 value: 'Old Heading Value',
                 opportunityId: 'opp-123',
-                suggestionId: 'sugg-1',
+                suggestionIds: ['sugg-1'],
                 prerenderRequired: true,
                 lastUpdated: 1234567890,
               },
@@ -980,7 +1056,7 @@ describe('TokowakaClient', () => {
       const updatedPatch = uploadedConfig.tokowakaOptimizations['/page1'].patches[0];
       expect(updatedPatch.value).to.equal('New Heading');
       expect(updatedPatch.opportunityId).to.equal('opp-123');
-      expect(updatedPatch.suggestionId).to.equal('sugg-1');
+      expect(updatedPatch.suggestionIds).to.deep.equal(['sugg-1']);
       expect(updatedPatch.lastUpdated).to.be.greaterThan(1234567890);
     });
 
@@ -999,7 +1075,7 @@ describe('TokowakaClient', () => {
                 selector: 'h1',
                 value: 'Page 1 Heading',
                 opportunityId: 'opp-123',
-                suggestionId: 'sugg-1',
+                suggestionIds: ['sugg-1'],
                 prerenderRequired: true,
                 lastUpdated: 1234567890,
               },
@@ -1013,7 +1089,7 @@ describe('TokowakaClient', () => {
                 selector: 'h1',
                 value: 'Other Page Heading',
                 opportunityId: 'opp-888',
-                suggestionId: 'sugg-888',
+                suggestionIds: ['sugg-888'],
                 prerenderRequired: false,
                 lastUpdated: 1234567890,
               },

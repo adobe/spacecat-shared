@@ -255,7 +255,7 @@ describe('HeadingsMapper', () => {
         selector: 'h1',
         value: 'New Heading',
         opportunityId: 'opp-123',
-        suggestionId: 'sugg-123',
+        suggestionIds: ['sugg-123'],
         prerenderRequired: true,
       });
       expect(patch.lastUpdated).to.be.a('number');
@@ -282,7 +282,7 @@ describe('HeadingsMapper', () => {
         selector: 'body > h1',
         value: 'New Heading',
         opportunityId: 'opp-123',
-        suggestionId: 'sugg-123',
+        suggestionIds: ['sugg-123'],
         prerenderRequired: true,
       });
     });
@@ -310,7 +310,7 @@ describe('HeadingsMapper', () => {
         value: 'Exclusive Flight Booking Deals & Partner Discounts.',
         tag: 'h1',
         opportunityId: 'opp-456',
-        suggestionId: 'sugg-456',
+        suggestionIds: ['sugg-456'],
         prerenderRequired: true,
       });
       expect(patch.lastUpdated).to.be.a('number');
@@ -337,7 +337,7 @@ describe('HeadingsMapper', () => {
         selector: 'body > h1',
         value: 'New H1 Heading',
         opportunityId: 'opp-789',
-        suggestionId: 'sugg-789',
+        suggestionIds: ['sugg-789'],
         prerenderRequired: true,
       });
       expect(patch.lastUpdated).to.be.a('number');

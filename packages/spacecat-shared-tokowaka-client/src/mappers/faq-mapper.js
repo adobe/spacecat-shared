@@ -12,14 +12,14 @@
 
 import { toHast } from 'mdast-util-to-hast';
 import { fromMarkdown } from 'mdast-util-from-markdown';
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
 
 /**
- * Mapper for FAQ opportunity
- * Handles conversion of FAQ suggestions to Tokowaka patches
- */
+* Mapper for FAQ opportunity
+* Handles conversion of FAQ suggestions to Tokowaka patches
+*/
 export default class FaqMapper extends BaseOpportunityMapper {
   constructor(log) {
     super(log);
@@ -37,56 +37,201 @@ export default class FaqMapper extends BaseOpportunityMapper {
   }
 
   /**
-   * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
-   * @param {string} markdown - Markdown text
-   * @returns {Object} - HAST object
+   * FAQ mapper combines all suggestions into a single patch per URL
+   * @returns {boolean} - Always true for FAQ
    */
+  // eslint-disable-next-line class-methods-use-this
+  hasSinglePatchPerUrl() {
+    return true;
+  }
+
+  /**
+  * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
+  * @param {string} markdown - Markdown text
+  * @returns {Object} - HAST object
+  */
   // eslint-disable-next-line class-methods-use-this
   markdownToHast(markdown) {
     const mdast = fromMarkdown(markdown);
     return toHast(mdast);
   }
 
-  suggestionToPatch(suggestion, opportunityId) {
-    const eligibility = this.canDeploy(suggestion);
-    if (!eligibility.eligible) {
-      this.log.warn(`FAQ suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
-      return null;
+  /**
+  * Builds FAQ markdown from multiple suggestions
+  * @param {Array} suggestions - Array of suggestion entities
+  * @param {string} headingText - Heading text to use (e.g., "FAQs")
+  * @returns {string} - Combined markdown text
+  * @private
+  */
+  buildFaqMarkdown(suggestions, headingText) {
+    const lines = [];
+
+    // Add heading only once at the start
+    if (hasText(headingText)) {
+      lines.push(`## ${headingText}`);
+      lines.push('');
     }
 
-    const data = suggestion.getData();
-    const { text, transformRules } = data;
+    // Add each FAQ item
+    suggestions.forEach((suggestion) => {
+      const data = suggestion.getData();
+      const { item } = data;
+
+      if (item?.question && item?.answer) {
+        lines.push(`### ${item.question}`);
+        lines.push('');
+        lines.push(item.answer);
+        lines.push('');
+      }
+    });
+    this.log.debug(`FAQ markdown: ${lines.join('\n')}`);
+    return lines.join('\n');
+  }
+
+  /**
+  * Gets all deployed suggestions for a specific URL from all opportunity suggestions
+  * @param {string} urlPath - URL path to filter by
+  * @param {string} baseURL - Site base URL
+  * @param {Array} allOpportunitySuggestions - All suggestions for the opportunity
+  * @param {Array} excludeSuggestionIds - Suggestion IDs to exclude
+  * @returns {Array} - Array of deployed suggestions for this URL path
+  * @private
+  */
+  getDeployedSuggestionsForUrl(
+    urlPath,
+    baseURL,
+    allOpportunitySuggestions,
+    excludeSuggestionIds = [],
+  ) {
+    if (!Array.isArray(allOpportunitySuggestions)) {
+      return [];
+    }
+
+    return allOpportunitySuggestions.filter((suggestion) => {
+      const suggestionId = suggestion.getId();
+      const suggestionData = suggestion.getData();
+
+      if (excludeSuggestionIds.includes(suggestionId)) {
+        return false;
+      }
+
+      try {
+        const suggestionUrlPath = new URL(suggestionData.url, baseURL).pathname;
+        if (suggestionUrlPath !== urlPath) {
+          return false;
+        }
+      } catch (error) {
+        return false;
+      }
+
+      return suggestionData?.tokowakaDeployed && this.canDeploy(suggestion).eligible === true;
+    });
+  }
+
+  /**
+  * Override to combine multiple FAQ suggestions for a URL into a single patch
+  * Rebuilds complete FAQ section including previously deployed suggestions
+  * @param {Array} suggestions - Array of suggestion entities for the same URL (to be deployed)
+  * @param {string} opportunityId - Opportunity ID
+  * @param {Array} allOpportunitySuggestions - All suggestions for the opportunity (optional)
+  * @param {string} baseURL - Site base URL (optional)
+  * @param {string} urlPath - URL path for current suggestions (optional)
+  * @returns {Array} - Array with single patch object (or empty if all suggestions fail)
+  */
+  suggestionsToPatches(
+    urlPath,
+    baseURL,
+    suggestions,
+    opportunityId,
+    allOpportunitySuggestions,
+  ) {
+    if (!suggestions || suggestions.length === 0) {
+      return [];
+    }
+
+    // Filter eligible suggestions
+    const eligibleSuggestions = suggestions.filter((suggestion) => {
+      const eligibility = this.canDeploy(suggestion);
+      if (!eligibility.eligible) {
+        this.log.warn(`FAQ suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
+        return false;
+      }
+      return true;
+    });
+
+    if (eligibleSuggestions.length === 0) {
+      this.log.warn('No eligible FAQ suggestions to deploy');
+      return [];
+    }
+
+    // Get URL and transformRules from first suggestion
+    // (all should have same URL and transformRules)
+    const firstSuggestion = eligibleSuggestions[0];
+    const firstData = firstSuggestion.getData();
+    const { url, headingText = 'FAQs', transformRules } = firstData;
+
+    // Start with eligible suggestions (new ones to deploy)
+    let allSuggestionsForUrl = [...eligibleSuggestions];
+
+    // If we have all opportunity suggestions, add previously deployed ones
+    // excluding the ones to be deployed
+    if (Array.isArray(allOpportunitySuggestions)) {
+      const deployedSuggestions = this.getDeployedSuggestionsForUrl(
+        urlPath,
+        baseURL,
+        allOpportunitySuggestions,
+        [...eligibleSuggestions.map((s) => s.getId())],
+      );
+
+      if (deployedSuggestions.length > 0) {
+        this.log.debug(`Found ${deployedSuggestions.length} previously deployed FAQ suggestions for ${url}`);
+        // Add deployed suggestions BEFORE the new ones
+        allSuggestionsForUrl = [...deployedSuggestions, ...eligibleSuggestions];
+      }
+    }
+
+    // Build combined markdown from all suggestions (deployed + new)
+    const combinedMarkdown = this.buildFaqMarkdown(allSuggestionsForUrl, headingText);
 
     // Convert markdown to HAST
     let hastValue;
     try {
-      hastValue = this.markdownToHast(text);
+      hastValue = this.markdownToHast(combinedMarkdown);
     } catch (error) {
-      this.log.error(`Failed to convert markdown to HAST for suggestion ${suggestion.getId()}: ${error.message}`);
-      return null;
+      this.log.error(`Failed to convert FAQ markdown to HAST: ${error.message}`);
+      return [];
     }
 
-    return {
-      ...this.createBasePatch(suggestion, opportunityId),
+    // Create a single patch with combined suggestionIds as array
+    const suggestionIds = allSuggestionsForUrl.map((s) => s.getId());
+    const lastUpdated = Math.min(...allSuggestionsForUrl.map((s) => {
+      const updatedAt = s.getUpdatedAt();
+      return updatedAt ? new Date(updatedAt).getTime() : Date.now();
+    }));
+
+    return [{
+      opportunityId,
+      suggestionIds,
+      prerenderRequired: this.requiresPrerender(),
+      lastUpdated,
       op: transformRules.action,
       selector: transformRules.selector,
       value: hastValue,
       valueFormat: 'hast',
       target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
-    };
+    }];
   }
 
   /**
-   * Checks if a FAQ suggestion can be deployed
-   * @param {Object} suggestion - Suggestion object
-   * @returns {Object} { eligible: boolean, reason?: string }
-   */
+  * Checks if a FAQ suggestion can be deployed
+  * @param {Object} suggestion - Suggestion object
+  * @returns {Object} { eligible: boolean, reason?: string }
+  */
   canDeploy(suggestion) {
     const data = suggestion.getData();
 
-    // Validate required fields
-    if (!data?.text) {
-      return { eligible: false, reason: 'text is required' };
+    if (!data?.item?.question || !data?.item?.answer) {
+      return { eligible: false, reason: 'item.question and item.answer are required' };
     }
 
     if (!data.transformRules) {
@@ -101,6 +246,16 @@ export default class FaqMapper extends BaseOpportunityMapper {
       return { eligible: false, reason: 'transformRules.action must be insertAfter, insertBefore, or appendChild' };
     }
 
+    if (!isValidUrl(data.url)) {
+      return { eligible: false, reason: `url ${data.url} is not a valid URL` };
+    }
+
     return { eligible: true };
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  suggestionToPatch(suggestion, opportunityId) {
+    this.log.error('suggestionToPatch is not implemented for FAQ mapper');
+    throw new Error('suggestionToPatch is not implemented for FAQ mapper');
   }
 }

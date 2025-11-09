@@ -118,7 +118,6 @@ class TokowakaClient {
       if (mapper.suggestionsToPatches) {
         patches = mapper.suggestionsToPatches(
           urlPath,
-          baseURL,
           urlSuggestions,
           opportunity.getId(),
           allOpportunitySuggestions,

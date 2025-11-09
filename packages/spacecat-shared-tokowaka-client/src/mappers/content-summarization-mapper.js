@@ -10,11 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { toHast } from 'mdast-util-to-hast';
-import { fromMarkdown } from 'mdast-util-from-markdown';
 import { hasText } from '@adobe/spacecat-shared-utils';
 import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
+import { markdownToHast } from '../utils/markdown-utils.js';
 
 /**
  * Mapper for content opportunity
@@ -36,17 +35,6 @@ export default class ContentSummarizationMapper extends BaseOpportunityMapper {
     return this.prerenderRequired;
   }
 
-  /**
-   * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
-   * @param {string} markdown - Markdown text
-   * @returns {Object} - HAST object
-   */
-  // eslint-disable-next-line class-methods-use-this
-  markdownToHast(markdown) {
-    const mdast = fromMarkdown(markdown);
-    return toHast(mdast);
-  }
-
   suggestionToPatch(suggestion, opportunityId) {
     const eligibility = this.canDeploy(suggestion);
     if (!eligibility.eligible) {
@@ -60,7 +48,7 @@ export default class ContentSummarizationMapper extends BaseOpportunityMapper {
     // Convert markdown to HAST
     let hastValue;
     try {
-      hastValue = this.markdownToHast(summarizationText);
+      hastValue = markdownToHast(summarizationText);
     } catch (error) {
       this.log.error(`Failed to convert markdown to HAST for suggestion ${suggestion.getId()}: ${error.message}`);
       return null;

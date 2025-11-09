@@ -13,7 +13,6 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import sinon from 'sinon';
 import ContentMapper from '../../src/mappers/content-summarization-mapper.js';
 
 describe('ContentMapper', () => {
@@ -329,13 +328,11 @@ describe('ContentMapper', () => {
 
       const errorMapper = new ContentMapper(errorLog);
 
-      // Stub the markdownToHast method to throw an error
-      const stub = sinon.stub(errorMapper, 'markdownToHast').throws(new Error('Markdown parsing failed'));
-
+      // Pass an object instead of string to trigger natural error in markdown parser
       const suggestion = {
         getId: () => 'sugg-error',
         getData: () => ({
-          summarizationText: 'Some content',
+          summarizationText: { invalid: 'object' }, // This will cause markdown parser to fail
           transformRules: {
             action: 'insertAfter',
             selector: '#selector',
@@ -347,9 +344,6 @@ describe('ContentMapper', () => {
 
       expect(patch).to.be.null;
       expect(errorMessage).to.include('Failed to convert markdown to HAST');
-      expect(errorMessage).to.include('Markdown parsing failed');
-
-      stub.restore();
     });
   });
 });

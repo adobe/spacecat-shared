@@ -10,11 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
-import { toHast } from 'mdast-util-to-hast';
-import { fromMarkdown } from 'mdast-util-from-markdown';
 import { hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { TARGET_USER_AGENTS_CATEGORIES } from '../constants.js';
 import BaseOpportunityMapper from './base-mapper.js';
+import { markdownToHast } from '../utils/markdown-utils.js';
 
 /**
 * Mapper for FAQ opportunity
@@ -43,17 +42,6 @@ export default class FaqMapper extends BaseOpportunityMapper {
   // eslint-disable-next-line class-methods-use-this
   hasSinglePatchPerUrl() {
     return true;
-  }
-
-  /**
-  * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
-  * @param {string} markdown - Markdown text
-  * @returns {Object} - HAST object
-  */
-  // eslint-disable-next-line class-methods-use-this
-  markdownToHast(markdown) {
-    const mdast = fromMarkdown(markdown);
-    return toHast(mdast);
   }
 
   /**
@@ -91,7 +79,6 @@ export default class FaqMapper extends BaseOpportunityMapper {
   /**
   * Gets all deployed suggestions for a specific URL from all opportunity suggestions
   * @param {string} urlPath - URL path to filter by
-  * @param {string} baseURL - Site base URL
   * @param {Array} allOpportunitySuggestions - All suggestions for the opportunity
   * @param {Array} excludeSuggestionIds - Suggestion IDs to exclude
   * @returns {Array} - Array of deployed suggestions for this URL path
@@ -99,7 +86,6 @@ export default class FaqMapper extends BaseOpportunityMapper {
   */
   getDeployedSuggestionsForUrl(
     urlPath,
-    baseURL,
     allOpportunitySuggestions,
     excludeSuggestionIds = [],
   ) {
@@ -116,7 +102,7 @@ export default class FaqMapper extends BaseOpportunityMapper {
       }
 
       try {
-        const suggestionUrlPath = new URL(suggestionData.url, baseURL).pathname;
+        const suggestionUrlPath = new URL(suggestionData.url).pathname;
         if (suggestionUrlPath !== urlPath) {
           return false;
         }
@@ -134,13 +120,11 @@ export default class FaqMapper extends BaseOpportunityMapper {
   * @param {Array} suggestions - Array of suggestion entities for the same URL (to be deployed)
   * @param {string} opportunityId - Opportunity ID
   * @param {Array} allOpportunitySuggestions - All suggestions for the opportunity (optional)
-  * @param {string} baseURL - Site base URL (optional)
   * @param {string} urlPath - URL path for current suggestions (optional)
   * @returns {Array} - Array with single patch object (or empty if all suggestions fail)
   */
   suggestionsToPatches(
     urlPath,
-    baseURL,
     suggestions,
     opportunityId,
     allOpportunitySuggestions,
@@ -178,7 +162,6 @@ export default class FaqMapper extends BaseOpportunityMapper {
     if (Array.isArray(allOpportunitySuggestions)) {
       const deployedSuggestions = this.getDeployedSuggestionsForUrl(
         urlPath,
-        baseURL,
         allOpportunitySuggestions,
         [...eligibleSuggestions.map((s) => s.getId())],
       );
@@ -196,7 +179,7 @@ export default class FaqMapper extends BaseOpportunityMapper {
     // Convert markdown to HAST
     let hastValue;
     try {
-      hastValue = this.markdownToHast(combinedMarkdown);
+      hastValue = markdownToHast(combinedMarkdown);
     } catch (error) {
       this.log.error(`Failed to convert FAQ markdown to HAST: ${error.message}`);
       return [];
@@ -255,7 +238,7 @@ export default class FaqMapper extends BaseOpportunityMapper {
 
   // eslint-disable-next-line no-unused-vars
   suggestionToPatch(suggestion, opportunityId) {
-    this.log.error('suggestionToPatch is not implemented for FAQ mapper');
-    throw new Error('suggestionToPatch is not implemented for FAQ mapper');
+    this.log.error('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
+    throw new Error('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
   }
 }

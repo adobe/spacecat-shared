@@ -13,7 +13,6 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import sinon from 'sinon';
 import FaqMapper from '../../src/mappers/faq-mapper.js';
 
 describe('FaqMapper', () => {
@@ -233,7 +232,7 @@ describe('FaqMapper', () => {
         }),
       };
 
-      expect(() => mapper.suggestionToPatch(suggestion, 'opp-123')).to.throw('suggestionToPatch is not implemented for FAQ mapper');
+      expect(() => mapper.suggestionToPatch(suggestion, 'opp-123')).to.throw('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
     });
 
     it('should create patch with HAST value from markdown', () => {
@@ -253,7 +252,7 @@ describe('FaqMapper', () => {
         }),
       };
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', [suggestion], 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-faq-123', null);
       const patch = patches[0];
 
       expect(patch).to.exist;
@@ -294,7 +293,7 @@ describe('FaqMapper', () => {
         }),
       };
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', [suggestion1], 'opp-faq-complex', null);
+      const patches = mapper.suggestionsToPatches('/page', [suggestion1], 'opp-faq-complex', null);
       const patch = patches[0];
 
       expect(patch).to.exist;
@@ -331,7 +330,7 @@ describe('FaqMapper', () => {
         }),
       };
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', [suggestion], 'opp-faq-bold', null);
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-faq-bold', null);
       const patch = patches[0];
 
       expect(patch).to.exist;
@@ -360,7 +359,7 @@ describe('FaqMapper', () => {
         }),
       };
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', [suggestion], 'opp-invalid', null);
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-invalid', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(0);
@@ -381,7 +380,7 @@ describe('FaqMapper', () => {
         }),
       };
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', [suggestion], 'opp-invalid-2', null);
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-invalid-2', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(0);
@@ -398,8 +397,10 @@ describe('FaqMapper', () => {
 
       const errorMapper = new FaqMapper(errorLog);
 
-      // Stub the markdownToHast method to throw an error
-      const stub = sinon.stub(errorMapper, 'markdownToHast').throws(new Error('Markdown parsing failed'));
+      // Use a headingText that will cause markdown parsing to fail when combined
+      // by overriding buildFaqMarkdown to return null
+      const originalBuildFaqMarkdown = errorMapper.buildFaqMarkdown;
+      errorMapper.buildFaqMarkdown = () => null; // This will cause markdown parser to fail
 
       const suggestion = {
         getId: () => 'sugg-error',
@@ -417,14 +418,14 @@ describe('FaqMapper', () => {
         }),
       };
 
-      const patches = errorMapper.suggestionsToPatches('/page', 'https://www.example.com', [suggestion], 'opp-error', null);
+      const patches = errorMapper.suggestionsToPatches('/page', [suggestion], 'opp-error', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(0);
       expect(errorMessage).to.include('Failed to convert FAQ markdown to HAST');
-      expect(errorMessage).to.include('Markdown parsing failed');
 
-      stub.restore();
+      // Restore original method
+      errorMapper.buildFaqMarkdown = originalBuildFaqMarkdown;
     });
 
     it('should handle real-world FAQ example from user', () => {
@@ -456,7 +457,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         }),
       };
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', [suggestion], 'opp-faq-real', null);
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-faq-real', null);
       const patch = patches[0];
 
       expect(patch).to.exist;
@@ -618,7 +619,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(1);
@@ -658,7 +659,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(1);
@@ -697,7 +698,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches.length).to.equal(1);
       expect(patches[0].suggestionIds).to.deep.equal(['sugg-faq-1']);
@@ -717,14 +718,14 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(0);
     });
 
     it('should return empty array for empty suggestions', () => {
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', [], 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', [], 'opp-faq-123', null);
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(0);
     });
@@ -766,7 +767,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', allOpportunitySuggestions);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', allOpportunitySuggestions);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(1);
@@ -808,7 +809,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
       const expectedTimestamp = new Date('2025-01-15T10:00:00.000Z').getTime(); // Earliest
 
       expect(patches[0].lastUpdated).to.equal(expectedTimestamp);
@@ -834,7 +835,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       ];
 
       const beforeTime = Date.now();
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
       const afterTime = Date.now();
 
       expect(patches[0].lastUpdated).to.be.at.least(beforeTime);
@@ -866,7 +867,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         }),
       };
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', [suggestion], 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(1);
@@ -899,7 +900,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(1);
@@ -924,7 +925,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(1);
@@ -950,7 +951,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       ];
 
       // Should handle error gracefully and still create patch
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(1);
@@ -975,7 +976,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = mapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-123', null);
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(1);
@@ -992,8 +993,9 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
 
       const errorMapper = new FaqMapper(errorLog);
 
-      // Stub the markdownToHast method to throw an error
-      const stub = sinon.stub(errorMapper, 'markdownToHast').throws(new Error('HAST conversion failed'));
+      // Override buildFaqMarkdown to return null which will cause markdown parser to fail
+      const originalBuildFaqMarkdown = errorMapper.buildFaqMarkdown;
+      errorMapper.buildFaqMarkdown = () => null;
 
       const suggestions = [
         {
@@ -1013,14 +1015,14 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
       ];
 
-      const patches = errorMapper.suggestionsToPatches('/page', 'https://www.example.com', suggestions, 'opp-faq-error', null);
+      const patches = errorMapper.suggestionsToPatches('/page', suggestions, 'opp-faq-error', null);
 
       expect(patches).to.be.an('array');
       expect(patches.length).to.equal(0);
       expect(errorMessage).to.include('Failed to convert FAQ markdown to HAST');
-      expect(errorMessage).to.include('HAST conversion failed');
 
-      stub.restore();
+      // Restore original method
+      errorMapper.buildFaqMarkdown = originalBuildFaqMarkdown;
     });
   });
 
@@ -1099,11 +1101,10 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const allOpportunitySuggestions = [deployedSuggestion, newSuggestion];
 
       const patches = mapper.suggestionsToPatches(
+        '/page',
         [newSuggestion], // Only deploying new suggestion
         'opp-faq-123',
         allOpportunitySuggestions,
-        'https://www.example.com',
-        '/page',
       );
 
       expect(patches).to.be.an('array');
@@ -1172,7 +1173,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
 
       const patches = mapper.suggestionsToPatches(
         '/page',
-        'https://www.example.com',
         [newSuggestion],
         'opp-faq-123',
         allOpportunitySuggestions,
@@ -1204,7 +1204,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
 
       const patches = mapper.suggestionsToPatches(
         '/page',
-        'https://www.example.com',
         [newSuggestion],
         'opp-faq-123',
         null, // No all suggestions
@@ -1236,7 +1235,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       // Pass a string instead of an array
       const patches = mapper.suggestionsToPatches(
         '/page',
-        'https://www.example.com',
         [newSuggestion],
         'opp-faq-123',
         'not-an-array',

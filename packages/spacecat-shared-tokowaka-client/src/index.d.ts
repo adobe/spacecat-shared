@@ -173,13 +173,15 @@ export class FaqMapper extends BaseOpportunityMapper {
   
   getOpportunityType(): string;
   requiresPrerender(): boolean;
-  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  hasSinglePatchPerUrl(): boolean;
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
-  
-  /**
-   * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
-   */
-  markdownToHast(markdown: string): object;
+  suggestionsToPatches(
+    urlPath: string,
+    baseURL: string,
+    suggestions: Suggestion[],
+    opportunityId: string,
+    allOpportunitySuggestions: Suggestion[] | null
+  ): TokawakaPatch[];
 }
 
 /**

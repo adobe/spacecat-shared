@@ -21,7 +21,7 @@ export interface TokawakaPatch {
   currValue?: string;
   target: 'ai-bots' | 'bots' | 'all';
   opportunityId: string;
-  suggestionId: string;
+  suggestionIds: string[];
   prerenderRequired: boolean;
   lastUpdated: number;
 }
@@ -108,6 +108,12 @@ export abstract class BaseOpportunityMapper {
   abstract requiresPrerender(): boolean;
   
   /**
+   * Indicates whether this mapper produces a single combined patch per URL
+   * @returns True if patches should be combined into one per URL, false for one patch per suggestion
+   */
+  hasSinglePatchPerUrl(): boolean;
+  
+  /**
    * Converts a suggestion to a Tokowaka patch
    */
   abstract suggestionToPatch(
@@ -157,16 +163,11 @@ export class ContentSummarizationMapper extends BaseOpportunityMapper {
   requiresPrerender(): boolean;
   suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
-  
-  /**
-   * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
-   */
-  markdownToHast(markdown: string): object;
 }
 
 /**
  * FAQ opportunity mapper
- * Handles conversion of FAQ suggestions to Tokowaka patches with HAST format
+ * Handles conversion of FAQ suggestions to Tokowaka patches
  */
 export class FaqMapper extends BaseOpportunityMapper {
   constructor(log: any);
@@ -282,7 +283,11 @@ export default class TokowakaClient {
   /**
    * Merges existing configuration with new configuration
    */
-  mergeConfigs(existingConfig: TokowakaConfig, newConfig: TokowakaConfig): TokowakaConfig;
+  mergeConfigs(
+    existingConfig: TokowakaConfig,
+    newConfig: TokowakaConfig,
+    hasSinglePatchPerUrl?: boolean
+  ): TokowakaConfig;
   
   /**
    * Invalidates CDN cache

@@ -25,6 +25,7 @@ export default class FaqMapper extends BaseOpportunityMapper {
     this.opportunityType = 'faq';
     this.prerenderRequired = true;
     this.validActions = ['insertAfter', 'insertBefore', 'appendChild'];
+    this.hasSinglePatchPerURL = true;
   }
 
   getOpportunityType() {
@@ -39,9 +40,8 @@ export default class FaqMapper extends BaseOpportunityMapper {
    * FAQ mapper combines all suggestions into a single patch per URL
    * @returns {boolean} - Always true for FAQ
    */
-  // eslint-disable-next-line class-methods-use-this
   hasSinglePatchPerUrl() {
-    return true;
+    return this.hasSinglePatchPerURL;
   }
 
   /**
@@ -206,6 +206,18 @@ export default class FaqMapper extends BaseOpportunityMapper {
   }
 
   /**
+   * Not supported in FAQ mapper. Added for compatibility with base class.
+   * FAQ suggestions must be processed together to combine into a single
+   * patch per URL. Use suggestionsToPatches instead.
+   * @throws {Error} Always throws - use suggestionsToPatches instead
+   * @see suggestionsToPatches
+   */
+  suggestionToPatch() {
+    this.log.error('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
+    throw new Error('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
+  }
+
+  /**
   * Checks if a FAQ suggestion can be deployed
   * @param {Object} suggestion - Suggestion object
   * @returns {Object} { eligible: boolean, reason?: string }
@@ -234,11 +246,5 @@ export default class FaqMapper extends BaseOpportunityMapper {
     }
 
     return { eligible: true };
-  }
-
-  // eslint-disable-next-line no-unused-vars
-  suggestionToPatch(suggestion, opportunityId) {
-    this.log.error('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
-    throw new Error('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
   }
 }

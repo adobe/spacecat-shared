@@ -22,11 +22,7 @@ export * from '../errors/index.js';
 export * from '../models/index.js';
 export * from '../util/index.js';
 
-// Singleton default DynamoDB client (lazily initialized)
-// Reused across all Lambda invocations in the same execution environment
 let defaultDynamoDBClient;
-
-const instrumentedClientCache = new WeakMap();
 const documentClientCache = new WeakMap();
 
 const createRawClient = (client = undefined) => {
@@ -37,21 +33,15 @@ const createRawClient = (client = undefined) => {
     return defaultDynamoDBClient;
   })();
 
-  let instrumentedClient = instrumentedClientCache.get(rawClient);
-  if (!instrumentedClient) {
-    instrumentedClient = instrumentAWSClient(rawClient);
-    instrumentedClientCache.set(rawClient, instrumentedClient);
-  }
-
-  let documentClient = documentClientCache.get(instrumentedClient);
+  let documentClient = documentClientCache.get(rawClient);
   if (!documentClient) {
-    documentClient = DynamoDBDocument.from(instrumentedClient, {
+    documentClient = DynamoDBDocument.from(instrumentAWSClient(rawClient), {
       marshallOptions: {
         convertEmptyValues: true,
         removeUndefinedValues: true,
       },
     });
-    documentClientCache.set(instrumentedClient, documentClient);
+    documentClientCache.set(rawClient, documentClient);
   }
 
   return documentClient;

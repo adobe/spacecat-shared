@@ -22,14 +22,39 @@ export * from '../errors/index.js';
 export * from '../models/index.js';
 export * from '../util/index.js';
 
+// Singleton default DynamoDB client (lazily initialized)
+// Reused across all Lambda invocations in the same execution environment
+let defaultDynamoDBClient;
+
+const instrumentedClientCache = new WeakMap();
+const documentClientCache = new WeakMap();
+
 const createRawClient = (client = undefined) => {
-  const dbClient = instrumentAWSClient(client || new DynamoDB());
-  return DynamoDBDocument.from(dbClient, {
-    marshallOptions: {
-      convertEmptyValues: true,
-      removeUndefinedValues: true,
-    },
-  });
+  const rawClient = client || (() => {
+    if (!defaultDynamoDBClient) {
+      defaultDynamoDBClient = new DynamoDB();
+    }
+    return defaultDynamoDBClient;
+  })();
+
+  let instrumentedClient = instrumentedClientCache.get(rawClient);
+  if (!instrumentedClient) {
+    instrumentedClient = instrumentAWSClient(rawClient);
+    instrumentedClientCache.set(rawClient, instrumentedClient);
+  }
+
+  let documentClient = documentClientCache.get(instrumentedClient);
+  if (!documentClient) {
+    documentClient = DynamoDBDocument.from(instrumentedClient, {
+      marshallOptions: {
+        convertEmptyValues: true,
+        removeUndefinedValues: true,
+      },
+    });
+    documentClientCache.set(instrumentedClient, documentClient);
+  }
+
+  return documentClient;
 };
 
 const createElectroService = (client, config, log) => {

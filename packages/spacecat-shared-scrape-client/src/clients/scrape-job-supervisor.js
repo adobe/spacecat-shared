@@ -53,7 +53,7 @@ function ScrapeJobSupervisor(services, config) {
     customHeaders = null,
   ) {
     const jobData = {
-      baseURL: composeBaseURL(urls[0]),
+      baseURL: composeBaseURL(new URL(urls[0]).host),
       processingType,
       options,
       urlCount: urls.length,

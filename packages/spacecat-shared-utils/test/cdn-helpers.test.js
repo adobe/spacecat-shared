@@ -224,6 +224,28 @@ describe('CDN Helper Functions', () => {
             'time-to-first-byte',
             'sc-content-type',
           ],
+          HelpUrl: 'https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html#enable-standard-logging-cross-accounts',
+        });
+      });
+
+      it('should handle byocdn-imperva', () => {
+        const impervaPayload = {
+          ...mockPayload,
+          logSource: 'byocdn-imperva',
+          allowedPaths: ['9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-imperva/'],
+        };
+        const result = prettifyLogForwardingConfig(impervaPayload);
+        expect(result).to.deep.equal({
+          'Log integration mode': 'Push mode',
+          'Delivery method': 'Amazon S3 ARN',
+          'Bucket Name': 'cdn-logs-adobe-dev',
+          Region: 'us-east-1',
+          Path: '9E1005A551ED61CA0A490D45@AdobeOrg/raw/byocdn-imperva/',
+          'Log types': 'Cloud WAF',
+          'Log level': 'Access logs',
+          Format: 'W3C',
+          'Compress logs': 'Yes',
+          HelpUrl: 'https://docs-cybersec.thalesgroup.com/bundle/cloud-application-security/page/siem-log-configuration.htm',
         });
       });
 
@@ -371,6 +393,14 @@ describe('CDN Helper Functions', () => {
 
       it('should not require accessKey/secretKey for byocdn-cloudflare', () => {
         const payloadWithoutCredentials = { ...mockPayload, logSource: 'byocdn-cloudflare' };
+        delete payloadWithoutCredentials.accessKey;
+        delete payloadWithoutCredentials.secretKey;
+        // Should not throw error
+        expect(() => prettifyLogForwardingConfig(payloadWithoutCredentials)).to.not.throw();
+      });
+
+      it('should not require accessKey/secretKey for byocdn-imperva', () => {
+        const payloadWithoutCredentials = { ...mockPayload, logSource: 'byocdn-imperva' };
         delete payloadWithoutCredentials.accessKey;
         delete payloadWithoutCredentials.secretKey;
         // Should not throw error

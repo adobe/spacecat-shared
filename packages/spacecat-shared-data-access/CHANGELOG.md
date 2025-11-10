@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.80.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.80.1...@adobe/spacecat-shared-data-access-v2.80.2) (2025-11-10)
+
+
+### Bug Fixes
+
+* **dynamo-db:** prevent connection storms in Lambda by caching client instances ([#1110](https://github.com/adobe/spacecat-shared/issues/1110)) ([f854100](https://github.com/adobe/spacecat-shared/commit/f85410088a2290dbab8d8956c16137e99e47147b))
+
 # [@adobe/spacecat-shared-data-access-v2.80.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.80.0...@adobe/spacecat-shared-data-access-v2.80.1) (2025-11-08)
 
 

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.4.1...@adobe/spacecat-shared-athena-client-v1.5.0) (2025-11-10)
+
+
+### Features
+
+* added trend info to PTAv2 query ([#1109](https://github.com/adobe/spacecat-shared/issues/1109)) ([051a12a](https://github.com/adobe/spacecat-shared/commit/051a12a20fd10641b1e80dd31a3102a72c931bf9))
+
 # [@adobe/spacecat-shared-athena-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.4.0...@adobe/spacecat-shared-athena-client-v1.4.1) (2025-11-08)
 
 

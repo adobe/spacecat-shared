@@ -57,6 +57,7 @@ class Audit extends BaseModel {
     ACCESSIBILITY: 'accessibility',
     SECURITY_CSP: 'security-csp',
     SECURITY_VULNERABILITIES: 'security-vulnerabilities',
+    SECURITY_VULNERABILITIES_AUTO_FIX: 'security-vulnerabilities-auto-fix',
     SECURITY_PERMISSIONS: 'security-permissions',
     SECURITY_REDUNDANT: 'security-permissions-redundant',
     PAID: 'paid',

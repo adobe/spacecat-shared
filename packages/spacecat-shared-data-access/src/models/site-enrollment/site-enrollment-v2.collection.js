@@ -40,18 +40,19 @@ class SiteEnrollmentV2Collection extends BaseCollection {
     await SiteEnrollmentCollection.create({
       siteId: item.siteId,
       entitlementId: item.entitlementId,
+      updatedBy: item.updatedBy || 'system',
     }, options);
 
     this.log.info(`Created original SiteEnrollment for siteId: ${item.siteId}, entitlementId: ${item.entitlementId}`);
 
+    // Create the V2 enrollment after the original
     let v2Enrollment;
     try {
-      // Create the V2 enrollment after the original
       v2Enrollment = await super.create(item, options);
       this.log.info(`Created V2 SiteEnrollment for siteId: ${item.siteId}, entitlementId: ${item.entitlementId}`);
     } catch (error) {
       this.log.error(`Failed to create V2 SiteEnrollment: ${error.message}`, error);
-      // We don't throw here to avoid breaking after original creation succeeded
+      // We don't throw here - original creation succeeded, which is what matters
     }
 
     return v2Enrollment;

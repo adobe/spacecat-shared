@@ -75,7 +75,7 @@ class TierClient {
 
     const {
       Entitlement: EntitlementCollection,
-      SiteEnrollmentV2: SiteEnrollmentV2Collection,
+      SiteEnrollment: SiteEnrollmentCollection,
       Organization: OrganizationCollection,
       Site: SiteCollection,
     } = dataAccess;
@@ -91,7 +91,7 @@ class TierClient {
 
     // Store dataAccess properties directly
     this.Entitlement = EntitlementCollection;
-    this.SiteEnrollmentV2 = SiteEnrollmentV2Collection;
+    this.SiteEnrollment = SiteEnrollmentCollection;
     this.Organization = OrganizationCollection;
     this.Site = SiteCollection;
   }
@@ -112,10 +112,10 @@ class TierClient {
       // Only check for site enrollment if site is provided
       if (this.site) {
         const siteId = this.site.getId();
-        const validSiteEnrollment = await this.SiteEnrollmentV2.findByIndexKeys({
-          entitlementId: entitlement.getId(),
-          siteId,
-        });
+        const siteEnrollments = await this.SiteEnrollment.allBySiteId(siteId);
+        const validSiteEnrollment = siteEnrollments.find(
+          (se) => se.getEntitlementId() === entitlement.getId(),
+        );
 
         if (!validSiteEnrollment) {
           return { entitlement };
@@ -162,7 +162,7 @@ class TierClient {
         // If site provided but no site enrollment, create it
         if (this.site && !existing.siteEnrollment) {
           const siteId = this.site.getId();
-          const siteEnrollment = await this.SiteEnrollmentV2.create({
+          const siteEnrollment = await this.SiteEnrollment.create({
             siteId,
             entitlementId: existing.entitlement.getId(),
           });
@@ -193,7 +193,7 @@ class TierClient {
 
       // Create site enrollment
       const siteId = this.site.getId();
-      const siteEnrollment = await this.SiteEnrollmentV2.create({
+      const siteEnrollment = await this.SiteEnrollment.create({
         siteId,
         entitlementId: entitlement.getId(),
       });

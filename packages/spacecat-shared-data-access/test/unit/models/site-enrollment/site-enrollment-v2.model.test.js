@@ -148,20 +148,19 @@ describe('SiteEnrollmentV2Model', () => {
       expect(mockLogger.info).to.have.been.called;
     });
 
-    it('continues successfully even if original SiteEnrollment removal fails', async () => {
+    it('throws error if original SiteEnrollment removal fails', async () => {
       const mockSiteEnrollmentCollection = {
         allBySiteId: stub().rejects(new Error('Database error')),
       };
 
       mockEntityRegistry.getCollection.returns(mockSiteEnrollmentCollection);
 
-      // Should not throw, V2 removal succeeds even if original fails
-      await expect(instance.remove()).to.be.fulfilled;
-      expect(mockEntity.remove).to.have.been.called;
-      expect(mockLogger.error).to.have.been.called;
+      // Should throw, original removal is critical
+      await expect(instance.remove()).to.be.rejectedWith('Database error');
+      expect(mockEntity.remove).to.not.have.been.called;
     });
 
-    it('logs warning when original SiteEnrollment not found', async () => {
+    it('throws error when original SiteEnrollment not found', async () => {
       const mockSiteEnrollmentCollection = {
         allBySiteId: stub().resolves([]), // No matching enrollment
         removeByIds: stub().resolves(),
@@ -169,18 +168,45 @@ describe('SiteEnrollmentV2Model', () => {
 
       mockEntityRegistry.getCollection.returns(mockSiteEnrollmentCollection);
 
-      await instance.remove();
-
-      expect(mockLogger.warn).to.have.been.called;
+      await expect(instance.remove()).to.be.rejectedWith('Original SiteEnrollment not found');
+      expect(mockEntity.remove).to.not.have.been.called;
     });
 
-    it('continues successfully even if getCollection fails', async () => {
+    it('throws error if getCollection fails', async () => {
       mockEntityRegistry.getCollection.throws(new Error('Registry error'));
 
-      // Should not throw, V2 removal succeeds even if getting collection fails
-      await expect(instance.remove()).to.be.fulfilled;
-      expect(mockEntity.remove).to.have.been.called;
+      // Should throw, original removal is critical
+      await expect(instance.remove()).to.be.rejectedWith('Registry error');
+      expect(mockEntity.remove).to.not.have.been.called;
+    });
+
+    it('continues successfully even if V2 removal fails', async () => {
+      const mockOriginalEnrollment = {
+        getId: stub().returns('mock-id'),
+        getEntitlementId: stub().returns('3fe5ca60-4850-431c-97b3-f88a80f07e9b'),
+      };
+
+      const mockSiteEnrollmentCollection = {
+        allBySiteId: stub().resolves([mockOriginalEnrollment]),
+        removeByIds: stub().resolves(),
+      };
+
+      mockEntityRegistry.getCollection.returns(mockSiteEnrollmentCollection);
+
+      // Mock super.remove to throw an error
+      mockEntity.remove.returns({ go: stub().rejects(new Error('V2 removal error')) });
+
+      // Should not throw, original removal succeeded
+      const result = await instance.remove();
+
+      expect(result).to.equal(instance);
+      // Check that error was logged (may be called multiple times by base class and our code)
       expect(mockLogger.error).to.have.been.called;
+      // Verify the error message contains our custom message
+      const errorCalls = mockLogger.error.getCalls();
+      const hasOurError = errorCalls.some((call) => call.args[0] && call.args[0].includes('Failed to remove V2 SiteEnrollment'));
+      expect(hasOurError).to.be.true;
+      expect(mockSiteEnrollmentCollection.removeByIds).to.have.been.called;
     });
   });
 });

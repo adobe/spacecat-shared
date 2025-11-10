@@ -54,7 +54,7 @@ class SiteEnrollmentV2 extends BaseModel {
       await SiteEnrollmentCollection.removeByIds([matchingEnrollment.getId()]);
       this.log.info(`Removed original SiteEnrollment for siteId: ${siteId}, entitlementId: ${entitlementId}`);
     } else {
-      this.log.warn(`Original SiteEnrollment not found for siteId: ${siteId}, entitlementId: ${entitlementId}`);
+      throw new Error(`Original SiteEnrollment not found for siteId: ${siteId}, entitlementId: ${entitlementId}`);
     }
 
     try {

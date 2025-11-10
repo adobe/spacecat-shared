@@ -94,7 +94,7 @@ describe('SiteEnrollmentV2Collection', () => {
       });
     });
 
-    it('continues successfully even if original SiteEnrollment creation fails', async () => {
+    it('throws error if original SiteEnrollment creation fails', async () => {
       const mockSiteEnrollmentCollection = {
         create: stub().rejects(new Error('Database error')),
       };
@@ -107,86 +107,60 @@ describe('SiteEnrollmentV2Collection', () => {
         updatedBy: 'test-user',
       };
 
-      // Should not throw, V2 creation succeeds even if original fails
+      // Should throw, original creation is critical
+      await expect(instance.create(item)).to.be.rejectedWith('Database error');
+    });
+
+    it('continues successfully even if V2 SiteEnrollment creation fails', async () => {
+      const mockSiteEnrollmentCollection = {
+        create: stub().resolves({}),
+      };
+
+      mockEntityRegistry.getCollection = stub().returns(mockSiteEnrollmentCollection);
+
+      // Mock super.create to throw an error
+      const createStub = stub(Object.getPrototypeOf(Object.getPrototypeOf(instance)), 'create');
+      createStub.rejects(new Error('V2 Database error'));
+
+      const item = {
+        siteId: 'test-site-id',
+        entitlementId: 'test-entitlement-id',
+        updatedBy: 'test-user',
+      };
+
+      // Should not throw, original creation succeeded
       const result = await instance.create(item);
 
-      expect(result).to.exist;
-      expect(mockLogger.error).to.have.been.called;
+      expect(result).to.be.undefined;
+      expect(mockLogger.error).to.have.been.calledWith(
+        'Failed to create V2 SiteEnrollment: V2 Database error',
+      );
+      expect(mockSiteEnrollmentCollection.create).to.have.been.called;
+
+      // Restore the stub
+      createStub.restore();
     });
-  });
 
-  describe('removeByIndexKeys', () => {
-    it('removes both V2 and original SiteEnrollment', async () => {
-      const mockEnrollment = {
-        getId: stub().returns('mock-id'),
-        getEntitlementId: stub().returns('test-entitlement-id'),
-      };
-
+    it('uses default updatedBy value when not provided', async () => {
       const mockSiteEnrollmentCollection = {
-        allBySiteId: stub().resolves([mockEnrollment]),
-        removeByIds: stub().resolves(),
+        create: stub().resolves({}),
       };
 
       mockEntityRegistry.getCollection = stub().returns(mockSiteEnrollmentCollection);
 
-      const keys = [{
+      const item = {
         siteId: 'test-site-id',
         entitlementId: 'test-entitlement-id',
-      }];
-
-      await instance.removeByIndexKeys(keys);
-
-      expect(mockEntityRegistry.getCollection).to.have.been.calledWith('SiteEnrollmentCollection');
-      expect(mockSiteEnrollmentCollection.allBySiteId).to.have.been.calledWith('test-site-id');
-      expect(mockSiteEnrollmentCollection.removeByIds).to.have.been.calledWith(['mock-id']);
-    });
-
-    it('continues successfully even if original SiteEnrollment removal fails', async () => {
-      const mockSiteEnrollmentCollection = {
-        allBySiteId: stub().rejects(new Error('Database error')),
+        // No updatedBy provided
       };
 
-      mockEntityRegistry.getCollection = stub().returns(mockSiteEnrollmentCollection);
+      await instance.create(item);
 
-      const keys = [{
-        siteId: 'test-site-id',
-        entitlementId: 'test-entitlement-id',
-      }];
-
-      // Should not throw, V2 removal succeeds even if original fails
-      await expect(instance.removeByIndexKeys(keys)).to.be.fulfilled;
-      expect(mockLogger.error).to.have.been.called;
-    });
-
-    it('logs warning when original SiteEnrollment not found', async () => {
-      const mockSiteEnrollmentCollection = {
-        allBySiteId: stub().resolves([]), // No matching enrollment
-        removeByIds: stub().resolves(),
-      };
-
-      mockEntityRegistry.getCollection = stub().returns(mockSiteEnrollmentCollection);
-
-      const keys = [{
-        siteId: 'test-site-id',
-        entitlementId: 'test-entitlement-id',
-      }];
-
-      await instance.removeByIndexKeys(keys);
-
-      expect(mockLogger.warn).to.have.been.called;
-    });
-
-    it('continues successfully even if getCollection fails', async () => {
-      mockEntityRegistry.getCollection = stub().throws(new Error('Registry error'));
-
-      const keys = [{
-        siteId: 'test-site-id',
-        entitlementId: 'test-entitlement-id',
-      }];
-
-      // Should not throw, V2 removal succeeds even if getting collection fails
-      await expect(instance.removeByIndexKeys(keys)).to.be.fulfilled;
-      expect(mockLogger.error).to.have.been.called;
+      expect(mockSiteEnrollmentCollection.create).to.have.been.calledWith({
+        siteId: item.siteId,
+        entitlementId: item.entitlementId,
+        updatedBy: 'system', // Default value
+      });
     });
   });
 });

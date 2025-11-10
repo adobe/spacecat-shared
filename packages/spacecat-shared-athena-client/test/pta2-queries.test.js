@@ -13,7 +13,13 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { getPTASummaryQuery, PTASummaryResponseDto } from '../src/pta2/queries.js';
+import {
+  getPTASummaryQuery,
+  getPTASummaryWithTrendQuery,
+  getPreviousPeriod,
+  PTASummaryResponseDto,
+  PTASummaryWithTrendResponseDto,
+} from '../src/pta2/queries.js';
 
 describe('PTA2 Queries', () => {
   describe('getPTASummaryQuery', () => {
@@ -328,6 +334,40 @@ describe('PTA2 Queries', () => {
     });
   });
 
+  describe('getPreviousPeriod', () => {
+    it('should calculate previous week within same year', () => {
+      const result = getPreviousPeriod({ week: 45, year: 2024 });
+      expect(result).to.deep.equal({ week: 44, year: 2024 });
+    });
+
+    it('should calculate previous week at year boundary', () => {
+      const result = getPreviousPeriod({ week: 1, year: 2024 });
+      expect(result).to.deep.equal({ week: 52, year: 2023 });
+    });
+
+    it('should calculate previous month within same year', () => {
+      const result = getPreviousPeriod({ month: 6, year: 2024 });
+      expect(result).to.deep.equal({ month: 5, year: 2024 });
+    });
+
+    it('should calculate previous month at year boundary', () => {
+      const result = getPreviousPeriod({ month: 1, year: 2024 });
+      expect(result).to.deep.equal({ month: 12, year: 2023 });
+    });
+
+    it('should throw error when neither week nor month is provided', () => {
+      expect(() => getPreviousPeriod({ year: 2024 })).to.throw(
+        'Either week or month must be provided',
+      );
+    });
+
+    it('should prioritize week when both are provided', () => {
+      // Week should be checked first
+      const result = getPreviousPeriod({ week: 10, month: 5, year: 2024 });
+      expect(result).to.deep.equal({ week: 9, year: 2024 });
+    });
+  });
+
   describe('PTASummaryResponseDto', () => {
     describe('toJSON', () => {
       it('should convert PTA summary data to JSON format', () => {
@@ -349,6 +389,392 @@ describe('PTA2 Queries', () => {
           engagement_rate: 0.75,
           bounce_rate: 0.25,
         });
+      });
+    });
+  });
+
+  describe('getPTASummaryWithTrendQuery', () => {
+    it('should generate PTA summary query with trend data for week-based period', () => {
+      const params = {
+        siteId: 'test-site-123',
+        tableName: 'pta_data_table',
+        week: 45,
+        year: 2024,
+      };
+
+      const result = getPTASummaryWithTrendQuery(params);
+
+      expect(result).to.be.a('string');
+      expect(result.length).to.be.greaterThan(0);
+
+      // Verify table name is included
+      expect(result).to.include('FROM pta_data_table');
+
+      // Verify siteId is included in WHERE clause
+      expect(result).to.include("siteid = 'test-site-123'");
+
+      // Verify current period temporal condition
+      expect(result).to.include('year=2024');
+      expect(result).to.include('week=45');
+
+      // Verify previous period temporal condition (week 44)
+      expect(result).to.include('week=44');
+
+      // Verify traffic type filter
+      expect(result).to.include("trf_type = 'paid'");
+
+      // Verify period column and UNION ALL
+      expect(result).to.include('period');
+      expect(result).to.include('UNION ALL');
+      expect(result).to.include("'current' as period");
+      expect(result).to.include("'previous' as period");
+
+      // Verify GROUP BY period
+      expect(result).to.include('GROUP BY period');
+    });
+
+    it('should generate PTA summary query with trend data for month-based period', () => {
+      const params = {
+        siteId: 'site-456',
+        tableName: 'my_table',
+        year: 2025,
+        month: 3,
+      };
+
+      const result = getPTASummaryWithTrendQuery(params);
+
+      // Verify current period (March 2025)
+      expect(result).to.include('year=2025');
+      expect(result).to.include('month=3');
+
+      // Verify previous period (February 2025)
+      expect(result).to.include('month=2');
+    });
+
+    it('should handle year boundary for week-based periods', () => {
+      const params = {
+        siteId: 'boundary-test',
+        tableName: 'boundary_table',
+        week: 1,
+        year: 2024,
+      };
+
+      const result = getPTASummaryWithTrendQuery(params);
+
+      // Current period should be week 1 of 2024
+      expect(result).to.include('year=2024');
+      expect(result).to.include('week=1');
+
+      // Previous period should be week 52 of 2023
+      expect(result).to.include('year=2023');
+      expect(result).to.include('week=52');
+    });
+
+    it('should handle year boundary for month-based periods', () => {
+      const params = {
+        siteId: 'month-boundary-test',
+        tableName: 'month_boundary_table',
+        month: 1,
+        year: 2024,
+      };
+
+      const result = getPTASummaryWithTrendQuery(params);
+
+      // Current period should be January 2024
+      expect(result).to.include('year=2024');
+      expect(result).to.include('month=1');
+
+      // Previous period should be December 2023
+      expect(result).to.include('year=2023');
+      expect(result).to.include('month=12');
+    });
+
+    it('should include all required aggregations in both periods', () => {
+      const params = {
+        siteId: 'agg-test',
+        tableName: 'agg_table',
+        year: 2025,
+        month: 6,
+      };
+
+      const result = getPTASummaryWithTrendQuery(params);
+
+      // Verify all aggregation columns
+      expect(result).to.include('total_pageviews');
+      expect(result).to.include('total_clicks');
+      expect(result).to.include('total_engaged');
+      expect(result).to.include('total_rows');
+      expect(result).to.include('click_rate');
+      expect(result).to.include('engagement_rate');
+      expect(result).to.include('bounce_rate');
+
+      // Verify aggregation functions
+      expect(result).to.include('SUM(pageviews)');
+      expect(result).to.include('SUM(clicked)');
+      expect(result).to.include('SUM(engaged)');
+      expect(result).to.include('COUNT(*)');
+    });
+
+    it('should throw error when missing required parameters', () => {
+      expect(() => getPTASummaryWithTrendQuery({
+        tableName: 'test_table',
+        year: 2024,
+        month: 10,
+      })).to.throw('Missing required parameters: siteId, or tableName');
+
+      expect(() => getPTASummaryWithTrendQuery({
+        siteId: 'test-site',
+        tableName: 'test_table',
+      })).to.throw('Missing required parameters: week, month or year');
+    });
+
+    it('should maintain proper SQL structure with subquery', () => {
+      const params = {
+        siteId: 'structure-test',
+        tableName: 'structure_table',
+        year: 2024,
+        month: 8,
+      };
+
+      const result = getPTASummaryWithTrendQuery(params);
+
+      // Verify SELECT with period column
+      expect(result).to.match(/SELECT\s+period,/);
+
+      // Verify subquery structure
+      expect(result).to.match(/FROM\s+\(/);
+      expect(result).to.match(/\)\s+GROUP BY period/);
+
+      // Verify UNION ALL structure
+      expect(result).to.match(/WHERE[\s\S]*UNION ALL[\s\S]*WHERE/);
+    });
+  });
+
+  describe('PTASummaryWithTrendResponseDto', () => {
+    describe('toJSON', () => {
+      it('should convert trend data with both periods to JSON format', () => {
+        const data = [
+          {
+            period: 'current',
+            total_pageviews: 10000,
+            total_clicks: 500,
+            total_engaged: 750,
+            total_rows: 1000,
+            click_rate: 0.5,
+            engagement_rate: 0.75,
+            bounce_rate: 0.25,
+          },
+          {
+            period: 'previous',
+            total_pageviews: 8000,
+            total_clicks: 400,
+            total_engaged: 600,
+            total_rows: 800,
+            click_rate: 0.5,
+            engagement_rate: 0.75,
+            bounce_rate: 0.25,
+          },
+        ];
+
+        const result = PTASummaryWithTrendResponseDto.toJSON(data);
+
+        // Check current period metrics at top level
+        expect(result.pageviews).to.equal(10000);
+        expect(result.click_rate).to.equal(0.5);
+        expect(result.engagement_rate).to.equal(0.75);
+        expect(result.bounce_rate).to.equal(0.25);
+
+        // Check trends
+        expect(result).to.have.property('trends');
+
+        // Pageviews increased by 25%: (10000 - 8000) / 8000 * 100 = 25
+        expect(result.trends.pageviews).to.equal(25);
+
+        // Rates stayed the same, so trend is 0%
+        expect(result.trends.click_rate).to.equal(0);
+        expect(result.trends.engagement_rate).to.equal(0);
+        expect(result.trends.bounce_rate).to.equal(0);
+      });
+
+      it('should calculate positive and negative trends correctly', () => {
+        const data = [
+          {
+            period: 'current',
+            total_pageviews: 12000,
+            total_clicks: 600,
+            total_engaged: 900,
+            total_rows: 1200,
+            click_rate: 0.6,
+            engagement_rate: 0.8,
+            bounce_rate: 0.2,
+          },
+          {
+            period: 'previous',
+            total_pageviews: 10000,
+            total_clicks: 500,
+            total_engaged: 750,
+            total_rows: 1000,
+            click_rate: 0.5,
+            engagement_rate: 0.75,
+            bounce_rate: 0.25,
+          },
+        ];
+
+        const result = PTASummaryWithTrendResponseDto.toJSON(data);
+
+        // Check current period metrics
+        expect(result.pageviews).to.equal(12000);
+        expect(result.click_rate).to.equal(0.6);
+        expect(result.engagement_rate).to.equal(0.8);
+        expect(result.bounce_rate).to.equal(0.2);
+
+        // Pageviews: (12000 - 10000) / 10000 * 100 = 20%
+        expect(result.trends.pageviews).to.be.closeTo(20, 0.01);
+
+        // Click rate: (0.6 - 0.5) / 0.5 * 100 = 20%
+        expect(result.trends.click_rate).to.be.closeTo(20, 0.01);
+
+        // Engagement rate: (0.8 - 0.75) / 0.75 * 100 ≈ 6.67%
+        expect(result.trends.engagement_rate).to.be.closeTo(6.67, 0.01);
+
+        // Bounce rate: (0.2 - 0.25) / 0.25 * 100 = -20%
+        expect(result.trends.bounce_rate).to.be.closeTo(-20, 0.01);
+      });
+
+      it('should handle only current period data', () => {
+        const data = [
+          {
+            period: 'current',
+            total_pageviews: 10000,
+            total_clicks: 500,
+            total_engaged: 750,
+            total_rows: 1000,
+            click_rate: 0.5,
+            engagement_rate: 0.75,
+            bounce_rate: 0.25,
+          },
+        ];
+
+        const result = PTASummaryWithTrendResponseDto.toJSON(data);
+
+        // Check current period metrics
+        expect(result.pageviews).to.equal(10000);
+        expect(result.click_rate).to.equal(0.5);
+        expect(result.engagement_rate).to.equal(0.75);
+        expect(result.bounce_rate).to.equal(0.25);
+
+        // No trends when no previous data
+        expect(result.trends).to.be.null;
+      });
+
+      it('should handle zero values in previous period', () => {
+        const data = [
+          {
+            period: 'current',
+            total_pageviews: 10000,
+            total_clicks: 500,
+            total_engaged: 750,
+            total_rows: 1000,
+            click_rate: 0.5,
+            engagement_rate: 0.75,
+            bounce_rate: 0.25,
+          },
+          {
+            period: 'previous',
+            total_pageviews: 0,
+            total_clicks: 0,
+            total_engaged: 0,
+            total_rows: 0,
+            click_rate: 0,
+            engagement_rate: 0,
+            bounce_rate: 0,
+          },
+        ];
+
+        const result = PTASummaryWithTrendResponseDto.toJSON(data);
+
+        // Check current period metrics
+        expect(result.pageviews).to.equal(10000);
+        expect(result.click_rate).to.equal(0.5);
+
+        // Trends should be null when previous values are 0 (to avoid infinity)
+        expect(result.trends.pageviews).to.be.null;
+        expect(result.trends.click_rate).to.be.null;
+        expect(result.trends.engagement_rate).to.be.null;
+        expect(result.trends.bounce_rate).to.be.null;
+      });
+
+      it('should throw error when data is not an array', () => {
+        expect(() => PTASummaryWithTrendResponseDto.toJSON({})).to.throw(
+          'Expected an array with at least one period',
+        );
+
+        expect(() => PTASummaryWithTrendResponseDto.toJSON(null)).to.throw(
+          'Expected an array with at least one period',
+        );
+
+        expect(() => PTASummaryWithTrendResponseDto.toJSON(undefined)).to.throw(
+          'Expected an array with at least one period',
+        );
+      });
+
+      it('should throw error when data array is empty', () => {
+        expect(() => PTASummaryWithTrendResponseDto.toJSON([])).to.throw(
+          'Expected an array with at least one period',
+        );
+      });
+
+      it('should throw error when current period is missing', () => {
+        const data = [
+          {
+            period: 'previous',
+            total_pageviews: 8000,
+            total_clicks: 400,
+            total_engaged: 600,
+            total_rows: 800,
+            click_rate: 0.5,
+            engagement_rate: 0.75,
+            bounce_rate: 0.25,
+          },
+        ];
+
+        expect(() => PTASummaryWithTrendResponseDto.toJSON(data)).to.throw(
+          'Current period data not found',
+        );
+      });
+
+      it('should handle periods in reverse order', () => {
+        const data = [
+          {
+            period: 'previous',
+            total_pageviews: 8000,
+            total_clicks: 400,
+            total_engaged: 600,
+            total_rows: 800,
+            click_rate: 0.4,
+            engagement_rate: 0.6,
+            bounce_rate: 0.4,
+          },
+          {
+            period: 'current',
+            total_pageviews: 10000,
+            total_clicks: 500,
+            total_engaged: 750,
+            total_rows: 1000,
+            click_rate: 0.5,
+            engagement_rate: 0.75,
+            bounce_rate: 0.25,
+          },
+        ];
+
+        const result = PTASummaryWithTrendResponseDto.toJSON(data);
+
+        // Check current period metrics
+        expect(result.pageviews).to.equal(10000);
+        expect(result.click_rate).to.equal(0.5);
+
+        // Check trends
+        expect(result.trends.pageviews).to.equal(25);
       });
     });
   });

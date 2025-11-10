@@ -10,8 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import { v4 as uuidv4 } from 'uuid';
-
 import { getRandomDecimal, getRandomInt, randomDate } from './util.js';
 
 function generateRandomAudit(siteId, auditType) {
@@ -19,7 +17,7 @@ function generateRandomAudit(siteId, auditType) {
   const auditedAt = randomDate(new Date(2020, 0, 1), new Date()).toISOString();
   const expiresAt = new Date(auditedAt);
   expiresAt.setDate(expiresAt.getDate() + 30);
-  const fullAuditRef = `s3://audit-results/${uuidv4()}.json`;
+  const fullAuditRef = `s3://audit-results/${crypto.randomUUID()}.json`;
 
   if (auditType === 'lhs-mobile') {
     auditResult = {

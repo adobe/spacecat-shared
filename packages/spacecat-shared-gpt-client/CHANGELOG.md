@@ -1,3 +1,108 @@
+# [@adobe/spacecat-shared-gpt-client-v1.6.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.8...@adobe/spacecat-shared-gpt-client-v1.6.9) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.7...@adobe/spacecat-shared-gpt-client-v1.6.8) (2025-11-04)
+
+
+### Bug Fixes
+
+* make genvar call using http fetch ([#1086](https://github.com/adobe/spacecat-shared/issues/1086)) ([fe5844f](https://github.com/adobe/spacecat-shared/commit/fe5844fd97c9fc06a71b9d2c3404183c6bebd6fe))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.6...@adobe/spacecat-shared-gpt-client-v1.6.7) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.5...@adobe/spacecat-shared-gpt-client-v1.6.6) (2025-10-25)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.4...@adobe/spacecat-shared-gpt-client-v1.6.5) (2025-09-25)
+
+
+### Bug Fixes
+
+* remove unnecessary logs to reduce Coralogix usage ([#947](https://github.com/adobe/spacecat-shared/issues/947)) ([c93fa4f](https://github.com/adobe/spacecat-shared/commit/c93fa4f69238106caa0f8150df029e4535c99e39))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.3...@adobe/spacecat-shared-gpt-client-v1.6.4) (2025-09-16)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.2.3 ([#963](https://github.com/adobe/spacecat-shared/issues/963)) ([6a433ea](https://github.com/adobe/spacecat-shared/commit/6a433ea495c0a68cb3129a51beed9388af277952))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.2...@adobe/spacecat-shared-gpt-client-v1.6.3) (2025-09-15)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#962](https://github.com/adobe/spacecat-shared/issues/962)) ([73831d9](https://github.com/adobe/spacecat-shared/commit/73831d9281898c9ea2395d78c569afe6ae942dce))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.1...@adobe/spacecat-shared-gpt-client-v1.6.2) (2025-09-09)
+
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#795](https://github.com/adobe/spacecat-shared/issues/795)) ([b020e88](https://github.com/adobe/spacecat-shared/commit/b020e884bfcad48667da87ad9caee7a3669e43d0))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.0...@adobe/spacecat-shared-gpt-client-v1.6.1) (2025-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#920](https://github.com/adobe/spacecat-shared/issues/920)) ([1a6b1e1](https://github.com/adobe/spacecat-shared/commit/1a6b1e1ac9531a41c86406ada4bd4ab903307fdc))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.21...@adobe/spacecat-shared-gpt-client-v1.6.0) (2025-09-03)
+
+
+### Features
+
+* **gpt-client:** add optional system prompt to Azure OpenAI client ([#945](https://github.com/adobe/spacecat-shared/issues/945)) ([90f93e5](https://github.com/adobe/spacecat-shared/commit/90f93e5074ad0fd2df464f01b30edc4fe98b94cc))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.21](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.20...@adobe/spacecat-shared-gpt-client-v1.5.21) (2025-08-25)
+
+
+### Bug Fixes
+
+* adding azure openai api client ([#931](https://github.com/adobe/spacecat-shared/issues/931)) ([3ed0204](https://github.com/adobe/spacecat-shared/commit/3ed020423a506f0a9f4abdc84b5afc64aa58a649))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.20](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.19...@adobe/spacecat-shared-gpt-client-v1.5.20) (2025-08-09)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#899](https://github.com/adobe/spacecat-shared/issues/899)) ([c2cc342](https://github.com/adobe/spacecat-shared/commit/c2cc3422a0a4a3f8d1a2724847da456bf801ff59))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.19](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.18...@adobe/spacecat-shared-gpt-client-v1.5.19) (2025-08-04)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#888](https://github.com/adobe/spacecat-shared/issues/888)) ([45ccd67](https://github.com/adobe/spacecat-shared/commit/45ccd679577031d01771aa642ac0c2e33b22af6f))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.18](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.17...@adobe/spacecat-shared-gpt-client-v1.5.18) (2025-07-27)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#878](https://github.com/adobe/spacecat-shared/issues/878)) ([b049828](https://github.com/adobe/spacecat-shared/commit/b04982839c0ff5e4de4ab0e37508c5eb5272a679))
+
+# [@adobe/spacecat-shared-gpt-client-v1.5.17](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.16...@adobe/spacecat-shared-gpt-client-v1.5.17) (2025-07-19)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#859](https://github.com/adobe/spacecat-shared/issues/859)) ([7ca9099](https://github.com/adobe/spacecat-shared/commit/7ca90994d61d07f71e580301365447b94ad07a52))
+
 # [@adobe/spacecat-shared-gpt-client-v1.5.16](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.5.15...@adobe/spacecat-shared-gpt-client-v1.5.16) (2025-07-12)
 
 

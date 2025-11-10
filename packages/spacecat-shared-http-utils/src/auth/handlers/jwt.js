@@ -72,7 +72,9 @@ export default class JwtHandler extends AbstractHandler {
       const scopes = payload.is_admin ? [{ name: 'admin' }] : [];
 
       scopes.push(...payload.tenants.map(
-        (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
+        (tenant) => ({
+          name: 'user', domains: [tenant.id], subScopes: tenant?.subServices || [], entitlement: tenant?.entitlement || {},
+        }),
       ));
 
       return new AuthInfo()
@@ -81,7 +83,7 @@ export default class JwtHandler extends AbstractHandler {
         .withProfile(payload)
         .withScopes(scopes);
     } catch (e) {
-      this.log(`Failed to validate token: ${e.message}`, 'error');
+      this.log(`Failed to validate token: ${e.message}`, 'debug');
     }
 
     return null;

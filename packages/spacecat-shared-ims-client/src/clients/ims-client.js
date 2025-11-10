@@ -237,11 +237,11 @@ export default class ImsClient extends ImsBaseClient {
     const orgDetails = await this.#getImsOrgDetails(imsOrgId);
     const orgName = orgDetails?.orgName;
 
-    this.log.debug(`IMS Org ID ${imsOrgId} has tenantId: ${tenantId}, name: "${orgName}"`);
+    this.log.debug(`IMS Org ID ${imsOrgId} has tenantId: ${tenantId}, name: "${orgName}"`); // remove?
 
     // Fetch a list of all users in the Administrators group
     const admins = await this.#getUsersInAdminGroup(imsOrgId, orgDetails?.groups);
-    this.log.debug(`IMS Org ID ${imsOrgId} has ${admins.length} known admin users.`);
+    this.log.debug(`IMS Org ID ${imsOrgId} has ${admins.length} known admin users.`); // remove?
 
     return {
       imsOrgId,

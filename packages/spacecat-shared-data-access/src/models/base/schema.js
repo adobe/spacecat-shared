@@ -170,7 +170,9 @@ class Schema {
         const allKeys = [...(pk?.facets || []), ...(sk?.facets || [])];
 
         // check if all keys in the index are in the sort keys
-        return subKeyNames.every((key) => allKeys.includes(key));
+        const pkKeys = Array.isArray(pk?.facets) ? pk.facets : [];
+        return pkKeys.every((key) => subKeyNames.includes(key))
+          && subKeyNames.every((key) => allKeys.includes(key));
       });
 
       if (isNonEmptyObject(index)) {
@@ -315,7 +317,7 @@ class Schema {
    * @throws {SchemaError} - Throws an error if the entity is not a BaseModel or BaseCollection.
    * @return {Object[]}
    */
-  toAccessorConfigs(entity, log = console) {
+  toAccessorConfigs(entity) {
     if (!(entity instanceof BaseModel) && !(entity instanceof BaseCollection)) {
       throw new SchemaError(this, 'Entity must extend BaseModel or BaseCollection');
     }
@@ -323,7 +325,7 @@ class Schema {
     const indexAccessors = this.getIndexAccessors();
     const accessorConfigs = [];
 
-    indexAccessors.forEach(({ indexName, keySets }) => {
+    indexAccessors.forEach(({ keySets }) => {
       // generate a method for each prefix of the keySets array
       // for example, if keySets = ['opportunityId', 'status'], we create:
       //   allByOpportunityId(...)
@@ -345,8 +347,6 @@ class Schema {
           name: keyNamesToMethodName(subset, 'findBy'),
           requiredKeys: subset,
         });
-
-        log.debug(`Created accessors for index [${indexName}] with keys [${subset.join(', ')}]`);
       });
     });
 

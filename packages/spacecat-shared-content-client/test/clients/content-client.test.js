@@ -312,10 +312,10 @@ describe('ContentClient', () => {
       const metadata = await client.getPageMetadata(path);
 
       expect(metadata).to.deep.equal(sampleMetadata);
-      expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
       expect(documentSdk.getMetadata.calledOnce).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('gets page metadata and logs duration for OneDrive', async () => {
@@ -324,10 +324,10 @@ describe('ContentClient', () => {
       const metadata = await client.getPageMetadata(path);
 
       expect(metadata).to.deep.equal(sampleMetadata);
-      expect(log.info.calledOnceWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting page metadata for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
       expect(documentSdk.getMetadata.calledOnce).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('throws an error if path is invalid', async () => {
@@ -381,8 +381,8 @@ describe('ContentClient', () => {
       expect(updatedMetadata).to.deep.equal(expectedMetadata);
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
       expect(documentSdk.updateMetadata.calledOnceWith(expectedMetadata)).to.be.true;
-      expect(log.info.calledOnce).to.be.true;
-      expect(log.info.firstCall.args[0]).to.equal(`Updating page metadata for test-site and path ${path}`);
+      expect(log.debug).to.have.been.calledWith(`Updating page metadata for test-site and path ${path}`);
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('throws an error if metadata is not a Map', async () => {
@@ -478,9 +478,9 @@ describe('ContentClient', () => {
       const redirects = await client.getRedirects();
 
       expect(redirects).to.deep.equal(expectedRedirects);
-      expect(log.info.calledOnceWith('Getting redirects for test-site')).to.be.true;
+      expect(log.debug.calledWith('Getting redirects for test-site')).to.be.true;
       expect(redirectsSdk.get.calledOnce).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('returns an empty array when there are no redirects', async () => {
@@ -896,9 +896,9 @@ describe('ContentClient', () => {
       const links = await client.getDocumentLinks(path);
 
       expect(links).to.deep.equal(sampleLinks);
-      expect(log.info.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('should get document links and log duration for OneDrive', async () => {
@@ -908,9 +908,9 @@ describe('ContentClient', () => {
       const links = await client.getDocumentLinks(path);
 
       expect(links).to.deep.equal(sampleLinks);
-      expect(log.info.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path.docx')).to.be.true;
-      expect(log.debug.calledTwice).to.be.true;
+      expect(log.debug.calledThrice).to.be.true;
     });
 
     it('should return empty array when document has no links', async () => {
@@ -920,7 +920,7 @@ describe('ContentClient', () => {
       const links = await client.getDocumentLinks(path);
 
       expect(links).to.be.an('array').that.is.empty;
-      expect(log.info.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
+      expect(log.debug.calledWith(`Getting document links for test-site and path ${path}`)).to.be.true;
       expect(client.rawClient.getDocument.calledOnceWith('/test-path')).to.be.true;
     });
 
@@ -964,6 +964,196 @@ describe('ContentClient', () => {
 
       expect(links).to.deep.equal(sampleLinks);
       expect(client.rawClient.getDocument.calledOnceWith(longPath)).to.be.true;
+    });
+  });
+
+  describe('getEditURL', () => {
+    let client;
+
+    function getHlxConfig() {
+      return {
+        ...hlxConfigGoogle,
+        rso: {
+          owner: 'owner',
+          site: 'repo',
+          ref: 'main',
+        },
+      };
+    }
+
+    const helixAdminToken = 'test-token';
+    /** @type {SecretsManagerClient} */
+    let secretsManagerClient;
+    let sendStub;
+
+    beforeEach(async () => {
+      secretsManagerClient = new SecretsManagerClient();
+      sendStub = sinon.stub(secretsManagerClient, 'send');
+      sendStub.resolves({ SecretString: JSON.stringify({ helix_admin_token: helixAdminToken }) });
+
+      client = await ContentClient.createFrom(
+        context,
+        { ...siteConfigGoogleDrive, getHlxConfig },
+        secretsManagerClient,
+      );
+    });
+
+    it('should return the edit URL on success', async () => {
+      const path = '/example/path';
+      const mockResponse = {
+        edit: { url: 'https://drive.google.com/document/d/abc123/edit' },
+      };
+
+      nock('https://admin.hlx.page', {
+        reqheaders: {
+          authorization: `token ${helixAdminToken}`,
+        },
+      })
+        .get('/status/owner/repo/main/example/path?editUrl=auto')
+        .reply(200, mockResponse);
+
+      expect(sendStub).to.have.been.calledWithMatch(
+        {
+          input: {
+            SecretId: resolveCustomerSecretsName(baseUrl, context),
+          },
+        },
+      );
+      const result = await client.getEditURL(path);
+
+      expect(result).to.equal('https://drive.google.com/document/d/abc123/edit');
+    });
+
+    it('should handle undefined edit URL in response', async () => {
+      const path = '/example-path';
+      const mockResponse = {
+        edit: null,
+      };
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path?editUrl=auto')
+        .reply(200, mockResponse);
+
+      const result = await client.getEditURL(path);
+
+      expect(result).to.be.undefined;
+    });
+
+    it('should handle empty response object', async () => {
+      const path = '/example-path';
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path?editUrl=auto')
+        .reply(200, {});
+
+      const result = await client.getEditURL(path);
+
+      expect(result).to.be.undefined;
+    });
+
+    it('should remove leading slashes from path in API call', async () => {
+      const path = '///multiple/leading/slashes';
+      const mockResponse = {
+        edit: { url: 'https://sharepoint.com/document/edit' },
+      };
+
+      const scope = nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/multiple/leading/slashes?editUrl=auto')
+        .reply(200, mockResponse);
+
+      await client.getEditURL(path);
+
+      expect(scope.isDone()).to.be.true;
+    });
+
+    it('should include editUrl=auto query parameter', async () => {
+      const path = '/test-path';
+      const mockResponse = {
+        edit: { url: 'https://onedrive.com/document/edit' },
+      };
+
+      const scope = nock('https://admin.hlx.page')
+        .get((uri) => uri.includes('editUrl=auto'))
+        .reply(200, mockResponse);
+
+      await client.getEditURL(path);
+
+      expect(scope.isDone()).to.be.true;
+    });
+
+    it('should throw an error on HTTP failure', async () => {
+      const path = '/example-path';
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path?editUrl=auto')
+        .reply(404, { message: 'Not Found' });
+
+      try {
+        await client.getEditURL(path);
+        expect.fail('Should have thrown an error');
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch document path for /example-path: {"message":"Not Found"}');
+      }
+    });
+
+    it('should throw an error on network failure', async () => {
+      const path = '/example-path';
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path?editUrl=auto')
+        .replyWithError('Network error');
+
+      try {
+        await client.getEditURL(path);
+        expect.fail('Should have thrown an error');
+      } catch (err) {
+        expect(err.message).to.include('Network error');
+      }
+    });
+
+    it('should handle OneDrive edit URLs', async () => {
+      const path = '/onedrive-document';
+      const mockResponse = {
+        edit: { url: 'https://adobe.sharepoint.com/:w:/r/sites/test/_layouts/15/Doc.aspx?sourcedoc=123' },
+      };
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/onedrive-document?editUrl=auto')
+        .reply(200, mockResponse);
+
+      const result = await client.getEditURL(path);
+
+      expect(result).to.equal('https://adobe.sharepoint.com/:w:/r/sites/test/_layouts/15/Doc.aspx?sourcedoc=123');
+    });
+
+    it('should handle Google Drive edit URLs', async () => {
+      const path = '/gdrive-document';
+      const mockResponse = {
+        edit: { url: 'https://docs.google.com/document/d/1abc_DEF-xyz/edit' },
+      };
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/gdrive-document?editUrl=auto')
+        .reply(200, mockResponse);
+
+      const result = await client.getEditURL(path);
+
+      expect(result).to.equal('https://docs.google.com/document/d/1abc_DEF-xyz/edit');
+    });
+
+    it('should handle paths ending with /', async () => {
+      const path = '/example-path/';
+      const mockResponse = {
+        edit: { url: 'https://drive.google.com/document/d/test/edit' },
+      };
+
+      nock('https://admin.hlx.page')
+        .get('/status/owner/repo/main/example-path/?editUrl=auto')
+        .reply(200, mockResponse);
+
+      const result = await client.getEditURL(path);
+
+      expect(result).to.equal('https://drive.google.com/document/d/test/edit');
     });
   });
 

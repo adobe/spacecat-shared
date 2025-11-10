@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isValidUrl } from '@adobe/spacecat-shared-utils';
+import { isObject, isString, isValidUrl } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import ScrapeUrl from './scrape-url.model.js';
@@ -45,6 +45,23 @@ const schema = new SchemaBuilder(ScrapeUrl, ScrapeUrlCollection)
     type: 'string',
     required: true,
     validate: (value) => isValidUrl(value),
-  });
+  })
+  .addAttribute('processingType', {
+    type: 'string',
+    required: true,
+    validate: (value) => isString(value),
+  })
+  .addAttribute('options', {
+    type: 'any',
+    validate: (value) => !value || isObject(value),
+  })
+  .addAttribute('isOriginal', {
+    type: 'boolean',
+    default: true,
+  })
+  .addIndex(
+    { composite: ['url'] },
+    { composite: ['isOriginal', 'processingType', 'createdAt'] },
+  );
 
 export default schema.build();

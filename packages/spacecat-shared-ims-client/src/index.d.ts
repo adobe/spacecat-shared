@@ -11,8 +11,13 @@
  */
 
 import type { ImsClient, ImsPromiseClient } from './clients';
+import { type Site } from "@adobe/spacecat-shared-data-access/src/models/site/index.js";
 
 export {
   ImsClient,
   ImsPromiseClient,
 };
+
+export declare function getAccessToken(context: object, promiseToken: string): Promise<object>;
+
+export declare function retrievePageAuthentication(site: Site, context: object, authOptions: object = {}): Promise<string>;

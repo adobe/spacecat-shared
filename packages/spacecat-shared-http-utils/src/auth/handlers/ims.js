@@ -43,12 +43,18 @@ const ADMIN_GROUP_IDENT = {
     879529884, // IMS admin group for prod
     901092291, // IMS admin group for on call engineers
   ],
+  '42A126776407096B0A495E50': [
+    945801205, // IMS admin group for reference demo org users
+  ],
+  '38931D6666E3ECDA0A495E80': [
+    945802231, // IMS admin group for AEM Showcase org users
+  ],
 };
 const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {
     const config = JSON.parse(context.env.AUTH_HANDLER_IMS);
-    context.log.info(`Loaded config name: ${config.name}`);
+    context.log.debug(`Loaded config name: ${config.name}`);
     return config;
   } catch (e) {
     context.log.error(`Failed to load config from context: ${e.message}`);
@@ -60,6 +66,9 @@ const transformProfile = (payload) => {
   const profile = { ...payload };
 
   profile.email = payload.user_id;
+  profile.trial_email = payload.email;
+  profile.first_name = payload.first_name;
+  profile.last_name = payload.last_name;
   IGNORED_PROFILE_PROPS.forEach((prop) => delete profile[prop]);
 
   return profile;
@@ -142,6 +151,11 @@ export default class AdobeImsHandler extends AbstractHandler {
   }
 
   async checkAuth(request, context) {
+    // Log to trace usage of IMS handler
+    const { pathInfo } = context;
+    const { method, suffix } = pathInfo;
+    const route = `${method.toUpperCase()} ${suffix}`;
+    this.log(`Checking authentication with IMS for product ${pathInfo.headers['x-product']} at route ${route}`, 'debug');
     const token = getBearerToken(context);
     if (!hasText(token)) {
       this.log('No bearer token provided', 'debug');
@@ -168,6 +182,9 @@ export default class AdobeImsHandler extends AbstractHandler {
           (tenant) => ({ name: 'user', domains: [tenant.id], subScopes: tenant.subServices }),
         ));
       }
+      payload.email = imsProfile.email;
+      payload.first_name = imsProfile.first_name;
+      payload.last_name = imsProfile.last_name;
       const profile = transformProfile(payload);
 
       return new AuthInfo()
@@ -176,7 +193,7 @@ export default class AdobeImsHandler extends AbstractHandler {
         .withProfile(profile)
         .withScopes(scopes);
     } catch (e) {
-      this.log(`Failed to validate token: ${e.message}`, 'error');
+      this.log(`Failed to validate token: ${e.message}`, 'debug');
     }
 
     return null;

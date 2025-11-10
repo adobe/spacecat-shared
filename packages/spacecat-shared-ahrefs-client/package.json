@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-ahrefs-client",
-  "version": "1.9.1",
+  "version": "1.9.13",
   "description": "Shared modules of the Spacecat Services - Ahrefs Client",
   "type": "module",
   "engines": {
@@ -34,16 +34,16 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.2.2",
-    "@adobe/helix-universal": "5.2.2",
-    "@adobe/spacecat-shared-utils": "1.26.4"
+    "@adobe/fetch": "4.2.3",
+    "@adobe/helix-universal": "5.3.0",
+    "@adobe/spacecat-shared-utils": "1.66.0"
   },
   "devDependencies": {
-    "chai": "5.2.1",
-    "chai-as-promised": "8.0.1",
-    "nock": "14.0.5",
-    "sinon": "20.0.0",
-    "sinon-chai": "4.0.0",
-    "typescript": "5.8.3"
+    "chai": "6.2.0",
+    "chai-as-promised": "8.0.2",
+    "nock": "14.0.10",
+    "sinon": "21.0.0",
+    "sinon-chai": "4.0.1",
+    "typescript": "5.9.3"
   }
 }

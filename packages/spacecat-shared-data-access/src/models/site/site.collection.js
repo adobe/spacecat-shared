@@ -88,9 +88,8 @@ class SiteCollection extends BaseCollection {
           throw new DataAccessError(`Invalid Helix preview URL: ${previewURL}`, this);
         }
         const [host] = hostname.split('.');
-        const [ref, site, owner] = host.split('--');
-        const externalOwnerId = `${ref}#${owner}`;
-        return this.findByExternalOwnerIdAndExternalSiteId(externalOwnerId, site);
+        const [, site, owner] = host.split('--');
+        return this.findByExternalOwnerIdAndExternalSiteId(owner, site);
       }
       case Site.AUTHORING_TYPES.CS_CW:
       case Site.AUTHORING_TYPES.CS: {
@@ -102,6 +101,72 @@ class SiteCollection extends BaseCollection {
       default:
         throw new DataAccessError(`Unsupported preview URL: ${previewURL}`, this);
     }
+  }
+
+  async allByProjectName(projectName) {
+    if (!hasText(projectName)) {
+      throw new DataAccessError('projectName is required', this);
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const project = await projectCollection.findByProjectName(projectName);
+
+    if (!project) {
+      return [];
+    }
+    return this.allByProjectId(project.getId());
+  }
+
+  async allByOrganizationIdAndProjectId(organizationId, projectId) {
+    if (!hasText(organizationId)) {
+      throw new DataAccessError('organizationId is required', this);
+    }
+    if (!hasText(projectId)) {
+      throw new DataAccessError('projectId is required', this);
+    }
+
+    const organizationCollection = this.entityRegistry.getCollection('OrganizationCollection');
+    const organization = await organizationCollection.findById(organizationId);
+
+    if (!organization) {
+      return [];
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const projects = await projectCollection.allByOrganizationId(organizationId);
+    const project = projects.find((p) => p.getId() === projectId);
+
+    if (!project) {
+      return [];
+    }
+
+    return this.allByProjectId(projectId);
+  }
+
+  async allByOrganizationIdAndProjectName(organizationId, projectName) {
+    if (!hasText(organizationId)) {
+      throw new DataAccessError('organizationId is required', this);
+    }
+    if (!hasText(projectName)) {
+      throw new DataAccessError('projectName is required', this);
+    }
+
+    const organizationCollection = this.entityRegistry.getCollection('OrganizationCollection');
+    const organization = await organizationCollection.findById(organizationId);
+
+    if (!organization) {
+      return [];
+    }
+
+    const projectCollection = this.entityRegistry.getCollection('ProjectCollection');
+    const projects = await projectCollection.allByOrganizationId(organizationId);
+    const project = projects.find((p) => p.getProjectName() === projectName);
+
+    if (!project) {
+      return [];
+    }
+
+    return this.allByProjectId(project.getId());
   }
 }
 

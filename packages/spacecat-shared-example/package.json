@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-example",
-  "version": "1.2.28",
+  "version": "1.2.31",
   "description": "Shared modules of the Spacecat Services - example",
   "type": "module",
   "engines": {
@@ -33,9 +33,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/fetch": "4.2.2",
+    "@adobe/fetch": "4.2.3",
     "@adobe/helix-shared-wrap": "2.0.2",
-    "@adobe/helix-universal": "5.2.2",
+    "@adobe/helix-universal": "5.3.0",
     "aws4": "1.13.2"
   },
   "devDependencies": {}

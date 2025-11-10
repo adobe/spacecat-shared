@@ -39,6 +39,7 @@ describe('AuditModel', () => {
       isLive: true,
       isError: false,
       siteId: 'site12345',
+      invocationId: 'someInvocation12345',
     };
 
     ({
@@ -104,6 +105,12 @@ describe('AuditModel', () => {
     });
   });
 
+  describe('invocationId', () => {
+    it('gets invocationId', () => {
+      expect(instance.getInvocationId()).to.equal('someInvocation12345');
+    });
+  });
+
   describe('getScores', () => {
     it('returns the scores from the audit result', () => {
       mockRecord.auditResult = { scores: { foo: 'bar' } };
@@ -158,6 +165,7 @@ describe('AuditModel', () => {
       404: '404',
       SITEMAP: 'sitemap',
       CANONICAL: 'canonical',
+      REDIRECT_CHAINS: 'redirect-chains',
       BROKEN_BACKLINKS: 'broken-backlinks',
       BROKEN_INTERNAL_LINKS: 'broken-internal-links',
       EXPERIMENTATION: 'experimentation',
@@ -168,6 +176,7 @@ describe('AuditModel', () => {
       EXPERIMENTATION_ESS_MONTHLY: 'experimentation-ess-monthly',
       EXPERIMENTATION_OPPORTUNITIES: 'experimentation-opportunities',
       META_TAGS: 'meta-tags',
+      LLM_ERROR_PAGES: 'llm-error-pages',
       COSTS: 'costs',
       STRUCTURED_DATA: 'structured-data',
       STRUCTURED_DATA_AUTO_SUGGEST: 'structured-data-auto-suggest',
@@ -176,12 +185,25 @@ describe('AuditModel', () => {
       ALT_TEXT: 'alt-text',
       ACCESSIBILITY: 'accessibility',
       SECURITY_CSP: 'security-csp',
+      SECURITY_VULNERABILITIES: 'security-vulnerabilities',
+      SECURITY_PERMISSIONS: 'security-permissions',
+      SECURITY_REDUNDANT: 'security-permissions-redundant',
       PAID: 'paid',
+      HREFLANG: 'hreflang',
+      HEADINGS: 'headings',
+      PAID_TRAFFIC_ANALYSIS_WEEKLY: 'paid-traffic-analysis-weekly',
+      PAID_TRAFFIC_ANALYSIS_MONTHLY: 'paid-traffic-analysis-monthly',
+      READABILITY: 'readability',
+      PRERENDER: 'prerender',
+      PRODUCT_METATAGS: 'product-metatags',
+      PRODUCT_METATAGS_AUTO_SUGGEST: 'product-metatags-auto-suggest',
+      SUMMARIZATION: 'summarization',
+      PAGE_TYPE_DETECTION: 'page-type-detection',
+      FAQS: 'faqs',
     };
 
     it('should have all audit types present in AUDIT_TYPES', () => {
       expect(auditTypes).to.eql(expectedAuditTypes);
-      expect(Object.keys(auditTypes)).to.have.lengthOf(26);
     });
 
     it('should not have unexpected audit types in AUDIT_TYPES', () => {
@@ -200,10 +222,11 @@ describe('AuditModel', () => {
       const expectedAuditStepDestinations = {
         CONTENT_SCRAPER: 'content-scraper',
         IMPORT_WORKER: 'import-worker',
+        SCRAPE_CLIENT: 'scrape-client',
       };
 
       expect(auditStepDestinations).to.eql(expectedAuditStepDestinations);
-      expect(Object.keys(auditStepDestinations)).to.have.lengthOf(2);
+      expect(Object.keys(auditStepDestinations)).to.have.lengthOf(3);
     });
 
     it('does not have unexpected audit step destinations in AUDIT_STEP_DESTINATIONS', () => {
@@ -223,6 +246,9 @@ describe('AuditModel', () => {
           queueUrl: process.env.IMPORT_WORKER_QUEUE_URL,
           formatPayload: sinon.match.func,
         },
+        [auditStepDestinations.SCRAPE_CLIENT]: {
+          formatPayload: sinon.match.func,
+        },
       };
 
       sinon.assert.match(auditStepDestinationConfigs, expectedAuditStepDestinationConfigs);
@@ -239,6 +265,7 @@ describe('AuditModel', () => {
       const stepResult = {
         type: 'someType',
         siteId: 'someSiteId',
+        endDate: '2025-08-12T15:46:00.000Z',
         urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
       };
       const auditContext = { some: 'context' };
@@ -249,6 +276,8 @@ describe('AuditModel', () => {
         type: 'someType',
         siteId: 'someSiteId',
         pageUrl: undefined,
+        startDate: undefined,
+        endDate: '2025-08-12T15:46:00.000Z',
         urlConfigs: [{ url: 'someUrl', geo: 'someGeo' }],
         allowCache: true,
         auditContext: { some: 'context' },
@@ -279,6 +308,34 @@ describe('AuditModel', () => {
         allowCache: true,
         options: {},
         auditContext: { some: 'context' },
+      });
+    });
+    it('formats scrape client payload correctly', () => {
+      const stepResult = {
+        urls: [{ url: 'someUrl' }],
+        siteId: 'someSiteId',
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+      };
+      const context = {
+        env: {
+          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+        },
+      };
+      const auditContext = { some: 'context' };
+      const formattedPayload = auditStepDestinationConfigs[auditStepDestinations.SCRAPE_CLIENT]
+        .formatPayload(stepResult, auditContext, context);
+
+      expect(formattedPayload).to.deep.equal({
+        urls: ['someUrl'],
+        options: { someOption: 'someValue' },
+        processingType: 'someProcessingType',
+        maxScrapeAge: 24,
+        auditData: {
+          siteId: 'someSiteId',
+          completionQueueUrl: 'audit-jobs-queue-url',
+          auditContext: { some: 'context' },
+        },
       });
     });
   });

@@ -10,37 +10,4 @@
  * governing permissions and limitations under the License.
  */
 
-module.exports = {
-  root: true,
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 2020,
-    sourceType: 'module',
-  },
-  extends: [
-    '@adobe/helix',
-    'plugin:@typescript-eslint/recommended',
-  ],
-  plugins: [
-    'import',
-    '@typescript-eslint',
-  ],
-  overrides: [
-    {
-      files: ['*.ts'],
-      rules: {},
-    },
-    {
-      files: ['*.js', '*.cjs'],
-      rules: {},
-    },
-    {
-      files: ['packages/**/test/**/*.js'],
-      rules: {
-        '@typescript-eslint/no-unused-expressions': 'off',
-        'no-console': 'off',
-        'func-names': 'off',
-      },
-    },
-  ],
-};
+export { prettifyLogForwardingConfig } from './cdn-helpers.js';

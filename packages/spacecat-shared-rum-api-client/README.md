@@ -335,7 +335,13 @@ Calculates the amount of inorganic traffic and the bounce rate for each page. Id
 
 ### high-organic-low-ctr (Experimentation Opportunity)
 
-Calculates the amount of non-inorganic (earned and owned) traffic and the click-through rate for each page and vendor. Identifies pages with high non-inorganic traffic and low click-through rates, which can be targeted for future experimentation opportunities. An example payload is provided below:
+Calculates the amount of non-inorganic (earned and owned) traffic and the click-through rate for each page and vendor. Identifies pages with high non-inorganic traffic and low click-through rates, which can be targeted for future experimentation opportunities. 
+
+#### options supported
+- **maxOpportunities** - No. of maximum opportunities to return, defaults to 10
+
+
+An example payload is provided below:
 
 ```json
 [
@@ -427,6 +433,28 @@ An example response:
     "pageview": {
       "desktop:windows": 100
     }
+  }
+]
+```
+
+### User engagement
+
+Calculates user engagement metrics for all pages from RUM data. A page view is considered engaged if there has been at least some user interaction (click events) or significant content has been viewed (4 or more viewmedia or viewblock events).
+Ref. - https://github.com/adobe/rum-distiller/blob/22f8b3caa6d700f4d1cbe29a94b7da34b9d50764/series.js#L89
+
+An example response:
+
+```json
+[
+  {
+    "url": "https://www.example.com/home",
+    "totalTraffic": 5000,
+    "engagementPercentage": 50
+  },
+  {
+    "url": "https://www.example.com/about",
+    "totalTraffic": 2000,
+    "engagementPercentage": 40
   }
 ]
 ```

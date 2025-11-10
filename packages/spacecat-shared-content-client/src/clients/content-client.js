@@ -179,7 +179,7 @@ const removeDuplicatedRedirects = (currentRedirects, newRedirects, log) => {
       redirectsSet.add(strRedirectRule);
       newRedirectsClean.push(redirectRule);
     } else {
-      log.info(`Duplicate redirect rule detected: ${strRedirectRule}`);
+      log.debug(`Duplicate redirect rule detected: ${strRedirectRule}`);
     }
   });
   return newRedirectsClean;
@@ -195,7 +195,7 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
   newRedirects.forEach((r) => {
     redirectsGraph.addEdge(r.from, r.to);
     if (hasCycle(redirectsGraph)) {
-      log.info(`Redirect loop detected: ${r.from} -> ${r.to}`);
+      log.debug(`Redirect loop detected: ${r.from} -> ${r.to}`);
       redirectsGraph.removeEdge(r.from, r.to);
     } else {
       noCycleRedirects.push(r);
@@ -311,10 +311,12 @@ export default class ContentClient {
     return docPath;
   }
 
-  async #getHelixResourceStatus(path) {
+  async #getHelixResourceStatus(path, includeEditUrl = false) {
     const { rso } = this.site.getHlxConfig();
-    // https://www.aem.live/docs/admin.html#tag/status
-    const adminEndpointUrl = `https://admin.hlx.page/status/${rso.owner}/${rso.site}/${rso.ref}/${path.replace(/^\/+/, '')}`;
+    // https://www.aem.live/docs/admin.html#tag/status,
+    let adminEndpointUrl = `https://admin.hlx.page/status/${rso.owner}/${rso.site}/${rso.ref}/${path.replace(/^\/+/, '')}`;
+    // ?editUrl=auto for URL of the edit (authoring) document
+    adminEndpointUrl = includeEditUrl ? `${adminEndpointUrl}?editUrl=auto` : adminEndpointUrl;
     const response = await fetch(adminEndpointUrl, {
       headers: {
         Authorization: `token ${this.config.helixAdminToken}`,
@@ -349,6 +351,15 @@ export default class ContentClient {
     };
   }
 
+  /**
+   * @param {string} path
+   * @returns {Promise<string>}
+   */
+  async getEditURL(path) {
+    const helixResourceStatus = await this.#getHelixResourceStatus(path, true);
+    return helixResourceStatus?.edit?.url;
+  }
+
   async getPageMetadata(path) {
     const startTime = process.hrtime.bigint();
 
@@ -356,7 +367,7 @@ export default class ContentClient {
 
     await this.#initClient();
 
-    this.log.info(`Getting page metadata for ${this.site.getId()} and path ${path}`);
+    this.log.debug(`Getting page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
     const document = await this.rawClient.getDocument(docPath);
@@ -376,7 +387,7 @@ export default class ContentClient {
 
     await this.#initClient();
 
-    this.log.info(`Updating page metadata for ${this.site.getId()} and path ${path}`);
+    this.log.debug(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
     const document = await this.rawClient.getDocument(docPath);
@@ -391,7 +402,7 @@ export default class ContentClient {
 
     const response = await document.updateMetadata(mergedMetadata);
     if (response?.status !== 200) {
-      throw new Error(`Failed to update metadata for path ${path}`);
+      throw new Error(`Failed to update metadata for path ${path}: ${response.statusText}`);
     }
 
     this.#logDuration('updatePageMetadata', startTime);
@@ -403,7 +414,7 @@ export default class ContentClient {
     const startTime = process.hrtime.bigint();
     await this.#initClient();
 
-    this.log.info(`Getting redirects for ${this.site.getId()}`);
+    this.log.debug(`Getting redirects for ${this.site.getId()}`);
 
     const redirectsFile = await this.rawClient.getRedirects();
     const redirects = await redirectsFile.get();
@@ -419,19 +430,19 @@ export default class ContentClient {
 
     await this.#initClient();
 
-    this.log.info(`Updating redirects for ${this.site.getId()}`);
+    this.log.debug(`Updating redirects for ${this.site.getId()}`);
 
     const redirectsFile = await this.rawClient.getRedirects();
     const currentRedirects = await redirectsFile.get();
     // validate combination of existing and new redirects
     const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects, this.log);
     if (cleanNewRedirects.length === 0) {
-      this.log.info('No valid redirects to update');
+      this.log.debug('No valid redirects to update');
       return;
     }
     const noCycleRedirects = removeRedirectLoops(currentRedirects, cleanNewRedirects, this.log);
     if (noCycleRedirects.length === 0) {
-      this.log.info('No valid redirects to update');
+      this.log.debug('No valid redirects to update');
       return;
     }
 
@@ -448,7 +459,7 @@ export default class ContentClient {
 
     await this.#initClient();
 
-    this.log.info(`Getting document links for ${this.site.getId()} and path ${path}`);
+    this.log.debug(`Getting document links for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
     const document = await this.rawClient.getDocument(docPath);
@@ -467,12 +478,12 @@ export default class ContentClient {
 
     await this.#initClient();
 
-    this.log.info(`Updating page link for ${this.site.getId()} and path ${path}`);
+    this.log.debug(`Updating page link for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
     const document = await this.rawClient.getDocument(docPath);
 
-    this.log.info('Updating link from', brokenLink.from, 'to', brokenLink.to);
+    this.log.debug('Updating link from', brokenLink.from, 'to', brokenLink.to);
     const response = await document.updateLink(brokenLink.from, brokenLink.to);
 
     if (response.status !== 200) {
@@ -489,12 +500,12 @@ export default class ContentClient {
     validateImageAltText(imageAltText);
     await this.#initClient();
 
-    this.log.info(`Updating image alt text for ${this.site.getId()} and path ${path}`);
+    this.log.debug(`Updating image alt text for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    this.log.info(`Doc path: ${docPath}`);
+    this.log.debug(`Doc path: ${docPath}`);
     const document = await this.rawClient.getDocument(docPath);
-    this.log.info(`Document: ${document}`);
+    this.log.debug(`Document: ${document}`);
     const response = await document.updateImageAltText(imageAltText);
     if (response?.status !== 200) {
       throw new Error(`Failed to update image alt text for path ${path}`);

@@ -14,7 +14,7 @@ import trafficAcquisition from '../traffic-acquisition.js';
 import { getCTRByUrlAndVendor, getSiteAvgCTR } from '../../common/aggregateFns.js';
 
 const VENDORS_TO_CONSIDER = 5;
-const MAX_OPPORTUNITIES = 10;
+const DEFAULT_MAX_OPPORTUNITIES = 10;
 
 const MAIN_TYPES = ['paid', 'earned', 'owned'];
 
@@ -133,13 +133,13 @@ function sortPagesByEarnedAndOverallTraffic(pages) {
   return percentiles.sort((a, b) => b.percentileScore - a.percentileScore);
 }
 
-function handler(bundles) {
+function handler(bundles, opts) {
   const trafficByUrl = trafficAcquisition.handler(bundles);
   const ctrByUrlAndVendor = getCTRByUrlAndVendor(bundles);
   const siteAvgCTR = getSiteAvgCTR(bundles);
   const pagesSortedByEarnedAndOverallTraffic = sortPagesByEarnedAndOverallTraffic(
     trafficByUrl,
-  ).slice(0, MAX_OPPORTUNITIES);
+  ).slice(0, opts?.maxOpportunities || DEFAULT_MAX_OPPORTUNITIES);
 
   return pagesSortedByEarnedAndOverallTraffic.map((traffic) => ({
     ...traffic,

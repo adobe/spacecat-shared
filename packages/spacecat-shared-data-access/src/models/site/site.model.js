@@ -10,7 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { composeAuditURL, hasText, isValidUrl } from '@adobe/spacecat-shared-utils';
+import {
+  composeAuditURL,
+  hasText,
+  isValidUrl,
+  DELIVERY_TYPES,
+  AUTHORING_TYPES,
+} from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
 
 const HLX_HOST = /\.(?:aem|hlx)\.(?:page|live)$/i;
@@ -24,10 +30,10 @@ export const computeExternalIds = (attrs, authoringTypes) => {
 
   if (hlxConfig && (authoringType === authoringTypes.DA)) {
     const rso = hlxConfig.rso ?? {};
-    const { ref, owner, site } = rso;
+    const { owner, site } = rso;
 
     return {
-      externalOwnerId: ref && owner ? `${ref}#${owner}` : undefined,
+      externalOwnerId: owner || undefined,
       externalSiteId: site || undefined,
     };
   }
@@ -64,22 +70,11 @@ export const getAuthoringType = (hostname, authoringTypes) => {
  * @extends BaseModel
  */
 class Site extends BaseModel {
-  static DELIVERY_TYPES = {
-    AEM_CS: 'aem_cs',
-    AEM_EDGE: 'aem_edge',
-    AEM_AMS: 'aem_ams',
-    OTHER: 'other',
-  };
+  static DELIVERY_TYPES = DELIVERY_TYPES;
 
-  static DEFAULT_DELIVERY_TYPE = Site.DELIVERY_TYPES.AEM_EDGE;
+  static DEFAULT_DELIVERY_TYPE = DELIVERY_TYPES.AEM_EDGE;
 
-  static AUTHORING_TYPES = {
-    CS_CW: 'cs/crosswalk',
-    CS: 'cs',
-    SP: 'sharepoint',
-    GD: 'googledocs',
-    DA: 'documentauthoring',
-  };
+  static AUTHORING_TYPES = AUTHORING_TYPES;
 
   async toggleLive() {
     const newIsLive = !this.getIsLive();

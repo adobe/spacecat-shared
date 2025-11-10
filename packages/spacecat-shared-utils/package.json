@@ -1,8 +1,14 @@
 {
   "name": "@adobe/spacecat-shared-utils",
-  "version": "1.42.3",
+  "version": "1.70.1",
   "description": "Shared modules of the Spacecat Services - utils",
   "type": "module",
+  "exports": {
+    ".": {
+      "browser": "./src/browser.js",
+      "default": "./src/index.js"
+    }
+  },
   "engines": {
     "node": ">=22.0.0 <23.0.0",
     "npm": ">=10.9.0 <12.0.0"
@@ -12,13 +18,14 @@
   "scripts": {
     "test": "c8 mocha",
     "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "clean": "rm -rf package-lock.json node_modules"
   },
   "mocha": {
     "require": "test/setup-env.js",
     "reporter": "mocha-multi-reporters",
     "reporter-options": "configFile=.mocha-multi.json",
-    "spec": "test/*.test.js"
+    "spec": "test/**/*.test.js"
   },
   "repository": {
     "type": "git",
@@ -35,23 +42,27 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "chai": "5.2.1",
-    "chai-as-promised": "8.0.1",
-    "esmock": "2.7.1",
+    "@types/validator": "^13.15.2",
+    "chai": "6.2.0",
+    "chai-as-promised": "8.0.2",
+    "esmock": "2.7.3",
     "husky": "9.1.7",
-    "nock": "14.0.5",
-    "sinon": "20.0.0",
-    "sinon-chai": "4.0.0"
+    "nock": "14.0.10",
+    "sinon": "21.0.0",
+    "sinon-chai": "4.0.1"
   },
   "dependencies": {
-    "@adobe/fetch": "4.2.2",
-    "@adobe/spacecat-shared-data-access": "2.31.0",
-    "@adobe/spacecat-shared-ims-client": "1.8.3",
-    "@aws-sdk/client-s3": "3.844.0",
-    "@aws-sdk/client-secrets-manager": "3.844.0",
-    "@aws-sdk/client-sqs": "3.844.0",
+    "@adobe/fetch": "4.2.3",
+    "@aws-sdk/client-s3": "3.927.0",
+    "@aws-sdk/client-sqs": "3.927.0",
     "@json2csv/plainjs": "7.0.6",
-    "aws-xray-sdk": "3.10.3",
-    "uuid": "11.1.0"
+    "aws-xray-sdk": "3.11.0",
+    "cheerio": "1.1.2",
+    "date-fns": "4.1.0",
+    "franc-min": "6.2.0",
+    "iso-639-3": "3.0.1",
+    "validator": "^13.15.15",
+    "world-countries": "5.1.0",
+    "zod": "^4.1.11"
   }
 }

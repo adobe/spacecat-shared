@@ -11,7 +11,7 @@
  */
 /* eslint-disable object-curly-newline */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, prependSchema } from '@adobe/spacecat-shared-utils';
 import URI from 'urijs';
 
 /**
@@ -26,10 +26,17 @@ import URI from 'urijs';
  */
 export function getSecondLevelDomain(url) {
   if (!hasText(url)) return url;
-  const uri = new URI(url);
-  const domain = uri.domain();
-  const tld = uri.tld();
-  return domain.split(`.${tld}`)[0];
+  if (url === '(direct)') return '';
+
+  try {
+    const uri = new URI(prependSchema(url));
+    const tld = uri.tld();
+    return uri.hostname().split(`.${tld}`)[0];
+    /* c8 ignore next 4 */
+  } catch (error) {
+    // future-proof for the cases where url cannot be parsed for some reason
+    return url;
+  }
 }
 
 /*
@@ -39,9 +46,10 @@ export function getSecondLevelDomain(url) {
 // Referrer related
 const referrers = {
   search: /google|yahoo|bing|yandex|baidu|duckduckgo|brave|ecosia|aol|startpage|ask/,
-  social: /^\b(x)\b|(.*(facebook|tiktok|snapchat|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
+  social: /^\b((www\.)?x)\b|(.*(facebook|tiktok|snapchat|twitter|pinterest|reddit|linkedin|threads|quora|discord|tumblr|mastodon|bluesky|instagram).*)$/,
   ad: /googlesyndication|2mdn|doubleclick|syndicatedsearch/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
+  llm: /\b(chatgpt|openai)\b|perplexity|claude|gemini\.google|copilot\.microsoft/,
 };
 
 const mediums = {
@@ -66,6 +74,7 @@ const sources = {
   display: /optumib2b|jun|googleads|dv360|dv36|microsoft|flipboard|programmatic|yext|gdn|banner|newsshowcase/,
   affiliate: /brandreward|yieldkit|fashionistatop|partner|linkbux|stylesblog|linkinbio|affiliate/,
   email: /sfmc|email/,
+  llm: /chatgpt/,
 };
 
 /**
@@ -74,7 +83,7 @@ const sources = {
  * Using full word match for social media shorts like ig, fb, x
  */
 const vendorClassifications = [
-  { regex: /google|googleads|google-ads|google_search|google_deman|adwords|dv360|gdn|doubleclick|dbm|gmb/i, result: 'google' },
+  { regex: /google|googleads|google-ads|google_search|google_deman|adwords|dv360|gdn|doubleclick|dbm|gmb|gemini/i, result: 'google' },
   { regex: /instagram|\b(ig)\b/i, result: 'instagram' },
   { regex: /facebook|\b(fb)\b|meta/i, result: 'facebook' },
   { regex: /bing/i, result: 'bing' },
@@ -83,7 +92,7 @@ const vendorClassifications = [
   { regex: /linkedin/i, result: 'linkedin' },
   { regex: /twitter|^\b(x)\b/i, result: 'x' },
   { regex: /snapchat/i, result: 'snapchat' },
-  { regex: /microsoft/i, result: 'microsoft' },
+  { regex: /microsoft|copilot/i, result: 'microsoft' },
   { regex: /pinterest/i, result: 'pinterest' },
   { regex: /reddit/i, result: 'reddit' },
   { regex: /spotify/i, result: 'spotify' },
@@ -102,6 +111,9 @@ const vendorClassifications = [
   { regex: /amazon|ctv/i, result: 'amazon' },
   { regex: /dailymotion/i, result: 'dailymotion' },
   { regex: /twitch/i, result: 'twitch' },
+  { regex: /\b(chatgpt|openai)\b/i, result: 'openai' },
+  { regex: /perplexity/i, result: 'perplexity' },
+  { regex: /claude/i, result: 'claude' },
   { regex: /direct/i, result: 'direct' },
 ];
 
@@ -133,6 +145,63 @@ const not = (truth) => (text) => {
 };
 
 const notEmpty = (text) => hasText(text);
+
+// overrides
+const OVERRIDES = [
+  { when: (ctx) => (ctx.utmSource || '').toLowerCase() === 'chatgpt.com', set: { type: 'earned', category: 'llm', vendor: 'openai' } },
+];
+
+function applyOverrides(classification, context) {
+  const override = OVERRIDES.find((rule) => rule.when(context));
+  return override ? { ...classification, ...override.set } : classification;
+}
+
+// allowed known vendors per category
+const ALLOWED_VENDORS = {
+  earned: {
+    llm: ['openai', 'claude', 'perplexity', 'microsoft', 'google'],
+    search: ['google', 'bing', 'yahoo', 'yandex', 'baidu', 'duckduckgo', 'brave', 'ecosia', 'aol'],
+    social: null, // any vendor allowed
+    video: ['youtube', 'vimeo', 'twitch', 'tiktok', 'dailymotion'],
+    referral: null, // any vendor allowed
+  },
+  paid: {
+    search: ['google', 'bing', 'yahoo', 'yandex', 'baidu', 'microsoft'],
+    social: null, // any vendor allowed
+    video: ['youtube', 'vimeo', 'twitch', 'dailymotion'],
+    display: null, // any vendor allowed
+    affiliate: null, // any vendor allowed
+    uncategorized: null, // any vendor allowed
+  },
+  owned: {
+    direct: ['direct'],
+    internal: null, // any vendor allowed
+    email: null, // any vendor allowed
+    sms: null, // any vendor allowed
+    qr: null, // any vendor allowed
+    push: null, // any vendor allowed
+    uncategorized: null, // any vendor allowed
+  },
+};
+
+/**
+ * Validates if a vendor is allowed for the given type/category combination.
+ * @param {string} type - Traffic type (earned, paid, owned)
+ * @param {string} category - Traffic category (llm, search, social, etc.)
+ * @param {string} vendor - Vendor name to validate
+ * @returns {string} The vendor if allowed, empty string otherwise
+ */
+function validateVendor(type, category, vendor) {
+  if (!vendor) return '';
+
+  const allowedVendors = ALLOWED_VENDORS[type]?.[category];
+
+  // null/undefined means any vendor is allowed
+  if (!allowedVendors) return vendor;
+
+  // Check if vendor is in the allowed list
+  return allowedVendors.includes(vendor) ? vendor : '';
+}
 
 /*
  * --------- RULES ----------------
@@ -176,6 +245,8 @@ const RULES = (domain) => ([
   { type: 'paid', category: 'uncategorized', referrer: not(domain), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
 
   // EARNED
+  { type: 'earned', category: 'llm', referrer: anyOf(referrers.llm), utmSource: any, utmMedium: any, tracking: none },
+  { type: 'earned', category: 'llm', referrer: any, utmSource: anyOf(sources.llm), utmMedium: any, tracking: none },
   { type: 'earned', category: 'search', referrer: anyOf(referrers.search), utmSource: none, utmMedium: none, tracking: none },
   { type: 'earned', category: 'search', referrer: anyOf(referrers.search), utmSource: any, utmMedium: not(mediums.paidall), tracking: not(paidTrackingParams) },
   { type: 'earned', category: 'search', referrer: anyOf(referrers.search), utmSource: any, utmMedium: anyOf(mediums.organic), tracking: none },
@@ -240,18 +311,31 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
 
   const sanitize = (str) => (str || '').toLowerCase().replace(/[^a-zA-Z0-9]/, '');
 
-  const { type, category } = rules.find((rule) => (
+  const match = rules.find((rule) => (
     rule.referrer(referrerDomain)
     && rule.utmSource(sanitize(utmSource))
     && rule.utmMedium(sanitize(utmMedium))
     && rule.tracking(trackingParams)
   ));
-  const vendor = classifyVendor(referrerDomain, utmSource, utmMedium);
+  let { type, category } = match;
+  let vendor = classifyVendor(referrerDomain, utmSource, utmMedium);
+
+  // apply overrides
+  const overridden = applyOverrides(
+    { type, category, vendor },
+    { utmSource, utmMedium, referrerDomain },
+  );
+  type = overridden.type;
+  category = overridden.category;
+  vendor = overridden.vendor;
+
+  // validate vendor against allowed vendors for this type/category
+  const validatedVendor = validateVendor(type, category, vendor);
 
   return {
     type,
     category,
-    vendor,
+    vendor: validatedVendor,
   };
 }
 

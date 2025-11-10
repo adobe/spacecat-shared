@@ -26,6 +26,7 @@ export {
   isObject,
   isString,
   isValidDate,
+  isValidEmail,
   isValidUrl,
   isValidUUID,
   isValidIMSOrgId,
@@ -61,7 +62,16 @@ export {
   stripTrailingDot,
   stripTrailingSlash,
   stripWWW,
+  resolveCanonicalUrl,
+  getSpacecatRequestHeaders,
+  ensureHttps,
+  urlMatchesFilter,
 } from './url-helpers.js';
+
+export {
+  extractUrlsFromOpportunity,
+  extractUrlsFromSuggestion,
+} from './url-extractors.js';
 
 export { getStoredMetrics, storeMetrics } from './metrics-store.js';
 
@@ -76,4 +86,23 @@ export {
   FORMS_AUDIT_INTERVAL,
 } from './formcalc.js';
 
-export { retrievePageAuthentication, getAccessToken } from './auth.js';
+export {
+  getDateRanges,
+  getLastNumberOfWeeks,
+  getWeekInfo,
+  getMonthInfo,
+  getTemporalCondition,
+  isoCalendarWeek,
+  isoCalendarWeekSunday,
+  isoCalendarWeekMonday,
+} from './calendar-week-helper.js';
+
+export { detectAEMVersion, DELIVERY_TYPES, AUTHORING_TYPES } from './aem.js';
+
+export { determineAEMCSPageId, getPageEditUrl } from './aem-content-api-utils.js';
+
+export * as llmoConfig from './llmo-config.js';
+export * as schemas from './schemas.js';
+
+export { detectLocale } from './locale-detect/locale-detect.js';
+export { prettifyLogForwardingConfig } from './cdn-helpers.js';

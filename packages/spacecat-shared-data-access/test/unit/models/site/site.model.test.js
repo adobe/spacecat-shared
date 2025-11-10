@@ -60,7 +60,7 @@ describe('SiteModel', () => {
       const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
-        externalOwnerId: 'main#adobe',
+        externalOwnerId: 'adobe',
         externalSiteId: 'example-site',
       });
     });
@@ -94,7 +94,7 @@ describe('SiteModel', () => {
       const result = computeExternalIds(attrs, Site.AUTHORING_TYPES);
 
       expect(result).to.deep.equal({
-        externalOwnerId: 'main#adobe',
+        externalOwnerId: 'adobe',
         externalSiteId: undefined,
       });
     });
@@ -359,6 +359,196 @@ describe('SiteModel', () => {
       const finalURL = await instance.resolveFinalURL();
 
       expect(finalURL).to.equal(instance.getBaseURL().replace(/^https?:\/\//, ''));
+    });
+  });
+
+  describe('pageTypes attribute', () => {
+    it('accepts a valid array of pageTypes', () => {
+      const validPageTypes = [
+        { name: 'Home', pattern: '^/$' },
+        { name: 'Blog', pattern: '^/blog/.*' },
+      ];
+      instance.setPageTypes(validPageTypes);
+      expect(instance.record.pageTypes).to.deep.equal(validPageTypes);
+    });
+
+    it('throws if set to undefined', () => {
+      expect(() => instance.setpageTypes(undefined)).to.throw();
+    });
+
+    it('throws if set to a non-array', () => {
+      expect(() => instance.setpageTypes('not-an-array')).to.throw();
+      expect(() => instance.setpageTypes(123)).to.throw();
+      expect(() => instance.setpageTypes({})).to.throw();
+    });
+
+    it('accepts an empty array', () => {
+      instance.setPageTypes([]);
+      expect(instance.record.pageTypes).to.deep.equal([]);
+    });
+
+    it('throws if items are missing name or pattern', () => {
+      const missingName = [{ pattern: '^/foo$' }];
+      const missingPattern = [{ name: 'Foo' }];
+      expect(() => instance.setpageTypes(missingName)).to.throw();
+      expect(() => instance.setpageTypes(missingPattern)).to.throw();
+    });
+  });
+
+  describe('code attribute', () => {
+    it('gets code returns undefined', () => {
+      expect(instance.getCode()).to.be.undefined;
+    });
+
+    it('sets code with valid data', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('sets code with partial data', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().type).to.equal('github');
+      expect(instance.getCode().owner).to.equal('adobe');
+    });
+
+    it('updates existing code data', () => {
+      const initialCode = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(initialCode);
+
+      const updatedCode = {
+        ...initialCode,
+        ref: 'develop',
+        url: 'https://github.com/adobe/spacecat/tree/develop',
+      };
+      instance.setCode(updatedCode);
+      expect(instance.getCode()).to.deep.equal(updatedCode);
+    });
+
+    it('clears code when set to empty object', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://github.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      instance.setCode({});
+      expect(instance.getCode()).to.deep.equal({});
+    });
+
+    it('handles code with special characters in owner/repo', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe-inc',
+        repo: 'spacecat-v2.0',
+        ref: 'feature/new-feature',
+        url: 'https://github.com/adobe-inc/spacecat-v2.0',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('handles code with different ref types', () => {
+      const codeData = {
+        type: 'github',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'v1.2.3', // tag
+        url: 'https://github.com/adobe/spacecat/tree/v1.2.3',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode().ref).to.equal('v1.2.3');
+    });
+
+    it('handles code with different URL formats', () => {
+      const codeData = {
+        type: 'bitbucket',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://bitbucket.org/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+
+    it('handles code with gitlab URL format', () => {
+      const codeData = {
+        type: 'gitlab',
+        owner: 'adobe',
+        repo: 'spacecat',
+        ref: 'main',
+        url: 'https://gitlab.com/adobe/spacecat',
+      };
+      instance.setCode(codeData);
+      expect(instance.getCode()).to.deep.equal(codeData);
+    });
+  });
+
+  describe('localization fields', () => {
+    describe('primaryLocale', () => {
+      it('gets primaryLocale', () => {
+        expect(instance.getIsPrimaryLocale()).to.equal(undefined);
+      });
+
+      it('sets primaryLocale', () => {
+        instance.setIsPrimaryLocale(false);
+        expect(instance.getIsPrimaryLocale()).to.equal(false);
+      });
+    });
+
+    describe('language', () => {
+      it('gets language', () => {
+        expect(instance.getLanguage()).to.equal(undefined);
+      });
+
+      it('sets language (ISO 639-1)', () => {
+        instance.setLanguage('en');
+        expect(instance.getLanguage()).to.equal('en');
+      });
+    });
+
+    describe('region', () => {
+      it('gets region', () => {
+        expect(instance.getRegion()).to.equal(undefined);
+      });
+
+      it('sets region', () => {
+        instance.setRegion('US');
+        expect(instance.getRegion()).to.equal('US');
+      });
+    });
+
+    describe('projectId', () => {
+      it('gets projectId', () => {
+        expect(instance.getProjectId()).to.equal('f47ac10b-58cc-4372-a567-0e02b2c3d479');
+      });
+
+      it('sets projectId', () => {
+        instance.setProjectId('1e9c6f94-f226-41f3-9005-4bb766765ac2');
+        expect(instance.getProjectId()).to.equal('1e9c6f94-f226-41f3-9005-4bb766765ac2');
+      });
     });
   });
 });

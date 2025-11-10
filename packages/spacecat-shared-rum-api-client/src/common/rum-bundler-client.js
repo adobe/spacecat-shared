@@ -65,7 +65,7 @@ function sanitizeURL(url) {
     }
     return parsedUrl.toString();
     /* c8 ignore next 4 */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line no-unused-vars
   } catch (e) {
     return url;
   }
@@ -207,6 +207,45 @@ async function mergeBundlesWithSameId(bundles) {
 }
 /* c8 ignore end */
 
+function validateDateRange(startTime, endTime) {
+  // Validate startTime and endTime if provided
+  if (startTime && endTime) {
+    const start = parseDate(startTime);
+    const end = parseDate(endTime);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new Error('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z") or simple date format (e.g., "2024-01-01")');
+    }
+
+    if (start >= end) {
+      throw new Error('startTime must be before endTime');
+    }
+  }
+}
+
+function generateURLs(domain, granularity, domainkey, startTime, endTime, interval) {
+  if (startTime && endTime) {
+    validateDateRange(startTime, endTime);
+    // Use custom date range
+    return generateUrlsForDateRange(startTime, endTime, domain, granularity, domainkey);
+  }
+
+  // Use existing interval-based logic
+  const multiplier = granularity.toUpperCase() === GRANULARITY.HOURLY ? ONE_HOUR : ONE_DAY;
+  const range = granularity.toUpperCase() === GRANULARITY.HOURLY
+    ? interval * HOURS_IN_DAY
+    : interval + 1;
+
+  const currentDate = new Date();
+  const urls = [];
+
+  for (let i = 0; i < range; i += 1) {
+    const date = new Date(currentDate.getTime() - i * multiplier);
+    urls.push(constructUrl(domain, date, granularity, domainkey));
+  }
+  return urls;
+}
+
 async function fetchBundles(opts, log) {
   const {
     domain,
@@ -223,44 +262,12 @@ async function fetchBundles(opts, log) {
     throw new Error('Missing required parameters');
   }
 
-  // Validate startTime and endTime if provided
-  if (startTime && endTime) {
-    const start = parseDate(startTime);
-    const end = parseDate(endTime);
-
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      throw new Error('Invalid startTime or endTime format. Use ISO 8601 format (e.g., "2024-01-01T00:00:00Z") or simple date format (e.g., "2024-01-01")');
-    }
-
-    if (start >= end) {
-      throw new Error('startTime must be before endTime');
-    }
-  }
-
-  let urls = [];
-
-  if (startTime && endTime) {
-    // Use custom date range
-    urls = generateUrlsForDateRange(startTime, endTime, domain, granularity, domainkey);
-  } else {
-    // Use existing interval-based logic
-    const multiplier = granularity.toUpperCase() === GRANULARITY.HOURLY ? ONE_HOUR : ONE_DAY;
-    const range = granularity.toUpperCase() === GRANULARITY.HOURLY
-      ? interval * HOURS_IN_DAY
-      : interval + 1;
-
-    const currentDate = new Date();
-
-    for (let i = 0; i < range; i += 1) {
-      const date = new Date(currentDate.getTime() - i * multiplier);
-      urls.push(constructUrl(domain, date, granularity, domainkey));
-    }
-  }
-
+  const urls = generateURLs(domain, granularity, domainkey, startTime, endTime, interval);
   const chunks = getUrlChunks(urls, CHUNK_SIZE);
 
   let totalTransferSize = 0;
   const failedUrls = [];
+  let lastCheckpoint = 0;
 
   const result = [];
   for (const chunk of chunks) {
@@ -291,8 +298,15 @@ async function fetchBundles(opts, log) {
         .map(filterEvents(checkpoints))
         .forEach((bundle) => result.push(bundle));
     });
+
+    const currentCheckpoint = Math.floor(result.length / 50000);
+
+    if (currentCheckpoint > lastCheckpoint) {
+      log.debug(`Checkpoint: Fetched ${result.length} bundles; resuming...`);
+      lastCheckpoint = currentCheckpoint;
+    }
   }
-  log.info(`Retrieved RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`);
+  log.info(`Retrieved all RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`); // if rum dashboards are no longer in use, remove this
 
   // Add failedUrls to opts object for access by callers
   if (failedUrls.length > 0) {
@@ -303,6 +317,88 @@ async function fetchBundles(opts, log) {
   return mergeBundlesWithSameId(result);
 }
 
+function createBundleStream(opts, log) {
+  const {
+    domain,
+    domainkey,
+    interval = 7,
+    granularity = GRANULARITY.DAILY,
+    checkpoints = [],
+    filterBotTraffic = true,
+    startTime,
+    endTime,
+    handler,
+  } = opts;
+
+  if (!hasText(domain) || !hasText(domainkey)) {
+    throw new Error('Missing required parameters');
+  }
+
+  const urls = generateURLs(domain, granularity, domainkey, startTime, endTime, interval);
+
+  return new ReadableStream({
+    async start(controller) {
+      const failedUrls = [];
+      let totalTransferSize = 0;
+      let bundlesCount = 0;
+      let lastCheckpoint = 0;
+
+      async function streamBundle(url) {
+        const response = await fetch(url);
+        totalTransferSize += parseInt(response.headers.get('content-length'), 10);
+
+        if (!response.ok) {
+          log.warn(`Failed to fetch URL: ${sanitizeURL(url)} - status: ${response.status}`);
+          failedUrls.push(url);
+          return;
+        }
+
+        const bundles = await response.json();
+
+        const filtered = bundles?.rumBundles?.filter(
+          (bundle) => !filterBotTraffic || !isBotTraffic(bundle),
+        ).map(filterEvents(checkpoints));
+
+        bundlesCount += filtered.length;
+        const currentCheckpoint = Math.floor(bundlesCount / 50000);
+
+        if (currentCheckpoint > lastCheckpoint) {
+          log.debug(`Checkpoint: Fetched ${bundlesCount} bundles; resuming...`);
+          lastCheckpoint = currentCheckpoint;
+        }
+
+        const crunchedBundle = handler(filtered || []);
+        controller.enqueue(crunchedBundle);
+      }
+
+      async function worker() {
+        while (urls.length > 0) {
+          const url = urls.shift();
+          // eslint-disable-next-line no-await-in-loop
+          await streamBundle(url);
+        }
+      }
+
+      const workers = Array(CHUNK_SIZE)
+        .fill()
+        .map(() => worker());
+
+      await Promise.all(workers);
+
+      log.info(`Retrieved all RUM bundles. Total transfer size (in KB): ${(totalTransferSize / 1024).toFixed(2)}`); // if rum dashboards are no longer in use, remove this
+
+      // Add failedUrls to opts object for access by callers
+      if (failedUrls.length > 0) {
+        // eslint-disable-next-line no-param-reassign
+        opts.failedUrls = failedUrls;
+      }
+
+      controller.close();
+    },
+  });
+}
+
 export {
   fetchBundles,
+  createBundleStream,
 };

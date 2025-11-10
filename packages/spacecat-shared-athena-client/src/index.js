@@ -192,7 +192,7 @@ export class AWSAthenaClient {
       maxPollAttempts = this.maxPollAttempts,
     } = opts;
 
-    this.log.info(`[Athena Client] Executing: ${description}`);
+    this.log.debug(`[Athena Client] Executing: ${description}`);
 
     const queryExecutionId = await this.#startQueryWithRetry(
       sql,
@@ -251,7 +251,18 @@ export class AWSAthenaClient {
     }
     /* c8 ignore stop */
 
-    this.log.info(`[Athena Client] Fetched ${totalRows} total rows across ${pageCount} pages`);
+    this.log.debug(`[Athena Client] Fetched ${totalRows} total rows across ${pageCount} pages`);
     return allResults;
   }
 }
+
+export {
+  getTrafficAnalysisQuery,
+  getTrafficAnalysisQueryPlaceholders,
+  buildPageTypeCase,
+  getTrafficAnalysisQueryPlaceholdersFilled,
+} from './traffic-analysis/queries.js';
+export { TrafficDataResponseDto } from './traffic-analysis/traffic-data-base-response.js';
+export { TrafficDataWithCWVDto } from './traffic-analysis/traffic-data-with-cwv.js';
+
+export { getPTASummaryQuery, PTASummaryResponseDto } from './pta2/queries.js';

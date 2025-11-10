@@ -15,8 +15,10 @@
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
+import { stub, restore } from 'sinon';
 
 import Suggestion from '../../../../src/models/suggestion/suggestion.model.js';
+import DataAccessError from '../../../../src/errors/data-access.error.js';
 
 import { createElectroMocks } from '../../util.js';
 
@@ -52,6 +54,10 @@ describe('SuggestionCollection', () => {
     } = createElectroMocks(Suggestion, mockRecord));
   });
 
+  afterEach(() => {
+    restore();
+  });
+
   describe('constructor', () => {
     it('initializes the SuggestionCollection instance correctly', () => {
       expect(instance).to.be.an('object');
@@ -72,15 +78,19 @@ describe('SuggestionCollection', () => {
       await instance.bulkUpdateStatus(mockSuggestions, mockStatus);
 
       expect(mockElectroService.entities.suggestion.put.calledOnce).to.be.true;
-      expect(mockElectroService.entities.suggestion.put.firstCall.args[0]).to.deep.equal([{
-        suggestionId: 's12345',
-        opportunityId: 'op67890',
-        data: {
-          title: 'Test Suggestion',
-          description: 'This is a test suggestion.',
-        },
-        status: 'NEW',
-      }]);
+      const putCallArgs = mockElectroService.entities.suggestion.put.firstCall.args[0];
+      expect(putCallArgs).to.be.an('array').with.length(1);
+      expect(putCallArgs[0]).to.have.property('suggestionId', 's12345');
+      expect(putCallArgs[0]).to.have.property('opportunityId', 'op67890');
+      expect(putCallArgs[0]).to.have.property('status', 'NEW');
+      expect(putCallArgs[0]).to.have.property('updatedAt').that.is.a('string');
+      expect(putCallArgs[0].data).to.deep.equal({
+        title: 'Test Suggestion',
+        description: 'This is a test suggestion.',
+      });
+
+      // Note: updatedAt is updated in the database but not in the local model instances
+      // The _saveMany method updates the database records but doesn't modify the model instances
     });
 
     it('throws an error if suggestions is not an array', async () => {
@@ -91,6 +101,93 @@ describe('SuggestionCollection', () => {
     it('throws an error if status is not provided', async () => {
       await expect(instance.bulkUpdateStatus([model], 'foo'))
         .to.be.rejectedWith('Invalid status: foo. Must be one of: NEW, APPROVED, IN_PROGRESS, SKIPPED, FIXED, ERROR');
+    });
+  });
+
+  describe('getFixEntitiesBySuggestionId', () => {
+    it('should get fix entities for a suggestion', async () => {
+      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
+      const mockJunctionRecords = [
+        { getFixEntityId: () => '123e4567-e89b-12d3-a456-426614174003' },
+        { getFixEntityId: () => '123e4567-e89b-12d3-a456-426614174004' },
+      ];
+      const mockFixEntities = [
+        { id: '123e4567-e89b-12d3-a456-426614174003', title: 'Fix 1' },
+        { id: '123e4567-e89b-12d3-a456-426614174004', title: 'Fix 2' },
+      ];
+
+      const mockFixEntitySuggestionCollection = {
+        allBySuggestionId: stub().resolves(mockJunctionRecords),
+        removeByIndexKeys: stub().resolves(),
+      };
+
+      const mockFixEntityCollection = {
+        batchGetByKeys: stub().resolves({
+          data: mockFixEntities,
+          unprocessed: [],
+        }),
+        idName: 'fixEntityId',
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntityCollection')
+        .returns(mockFixEntityCollection);
+
+      const result = await instance.getFixEntitiesBySuggestionId(suggestionId);
+
+      expect(result).to.deep.equal(mockFixEntities);
+
+      expect(mockFixEntitySuggestionCollection.allBySuggestionId)
+        .to.have.been.calledOnceWith(suggestionId);
+      expect(mockFixEntityCollection.batchGetByKeys).to.have.been.calledOnceWith([
+        { fixEntityId: '123e4567-e89b-12d3-a456-426614174003' },
+        { fixEntityId: '123e4567-e89b-12d3-a456-426614174004' },
+      ]);
+    });
+
+    it('should return empty arrays when no junction records found', async () => {
+      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
+      const mockFixEntitySuggestionCollection = {
+        allBySuggestionId: stub().resolves([]),
+        removeByIndexKeys: stub().resolves(),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      const result = await instance.getFixEntitiesBySuggestionId(suggestionId);
+
+      expect(result).to.deep.equal([]);
+
+      expect(mockFixEntitySuggestionCollection.allBySuggestionId)
+        .to.have.been.calledOnceWith(suggestionId);
+    });
+
+    it('should throw error when suggestionId is not provided', async () => {
+      await expect(instance.getFixEntitiesBySuggestionId())
+        .to.be.rejectedWith('Validation failed in SuggestionCollection: suggestionId must be a valid UUID');
+    });
+
+    it('should handle errors and throw DataAccessError', async () => {
+      const suggestionId = '123e4567-e89b-12d3-a456-426614174002';
+      const error = new Error('Database error');
+
+      const mockFixEntitySuggestionCollection = {
+        allBySuggestionId: stub().rejects(error),
+        removeByIndexKeys: stub().resolves(),
+      };
+
+      mockEntityRegistry.getCollection
+        .withArgs('FixEntitySuggestionCollection')
+        .returns(mockFixEntitySuggestionCollection);
+
+      await expect(instance.getFixEntitiesBySuggestionId(suggestionId))
+        .to.be.rejectedWith(DataAccessError);
+      expect(mockLogger.error).to.have.been.calledWith('Failed to get fix entities for suggestion', error);
     });
   });
 });

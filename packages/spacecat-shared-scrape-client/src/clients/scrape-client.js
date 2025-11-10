@@ -11,12 +11,12 @@
  */
 
 import {
-  isIsoDate, isObject, isValidUrl, isNonEmptyArray, hasText,
-  isValidUUID,
+  hasText, isIsoDate, isNonEmptyArray, isObject, isValidUrl, isValidUUID,
 } from '@adobe/spacecat-shared-utils';
 import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
 import { ScrapeJobDto } from './scrapeJobDto.js';
 import ScrapeJobSupervisor from './scrape-job-supervisor.js';
+import { ScrapeUrlDto } from './scrapeUrlDto.js';
 
 export default class ScrapeClient {
   config = null;
@@ -32,6 +32,59 @@ export default class ScrapeClient {
   static validateIsoDates(startDate, endDate) {
     if (!isIsoDate(startDate) || !isIsoDate(endDate)) {
       throw new Error('Invalid request: startDate and endDate must be in ISO 8601 format');
+    }
+  }
+
+  static validateScrapeConfiguration(scrapeJobConfiguration) {
+    if (!isObject(scrapeJobConfiguration)) {
+      throw new Error('Invalid scrape configuration: configuration must be an object');
+    }
+
+    // Validate scrapeWorkerQueue
+    if (!hasText(scrapeJobConfiguration.scrapeWorkerQueue)) {
+      throw new Error('Invalid scrape configuration: scrapeWorkerQueue must be a non-empty string');
+    }
+
+    if (!isValidUrl(scrapeJobConfiguration.scrapeWorkerQueue)) {
+      throw new Error('Invalid scrape configuration: scrapeWorkerQueue must be a valid URL');
+    }
+
+    // Validate s3Bucket
+    if (!hasText(scrapeJobConfiguration.s3Bucket)) {
+      throw new Error('Invalid scrape configuration: s3Bucket must be a non-empty string');
+    }
+
+    // Validate options
+    if (scrapeJobConfiguration.options !== undefined) {
+      if (!isObject(scrapeJobConfiguration.options)) {
+        throw new Error('Invalid scrape configuration: options must be an object');
+      }
+
+      const { options } = scrapeJobConfiguration;
+
+      if (options.enableJavascript !== undefined && typeof options.enableJavascript !== 'boolean') {
+        throw new Error('Invalid scrape configuration: options.enableJavascript must be a boolean');
+      }
+
+      if (options.hideConsentBanners !== undefined && typeof options.hideConsentBanners !== 'boolean') {
+        throw new Error('Invalid scrape configuration: options.hideConsentBanners must be a boolean');
+      }
+    }
+
+    // Validate maxUrlsPerJob
+    if (scrapeJobConfiguration.maxUrlsPerJob !== undefined) {
+      if (!Number.isInteger(scrapeJobConfiguration.maxUrlsPerJob)
+          || scrapeJobConfiguration.maxUrlsPerJob <= 0) {
+        throw new Error('Invalid scrape configuration: maxUrlsPerJob must be a positive integer');
+      }
+    }
+
+    // Validate maxUrlsPerMessage
+    if (scrapeJobConfiguration.maxUrlsPerMessage !== undefined) {
+      if (!Number.isInteger(scrapeJobConfiguration.maxUrlsPerMessage)
+          || scrapeJobConfiguration.maxUrlsPerMessage <= 0) {
+        throw new Error('Invalid scrape configuration: maxUrlsPerMessage must be a positive integer');
+      }
     }
   }
 
@@ -104,8 +157,10 @@ export default class ScrapeClient {
     let scrapeConfiguration = {};
     try {
       scrapeConfiguration = JSON.parse(this.config.env.SCRAPE_JOB_CONFIGURATION);
+      ScrapeClient.validateScrapeConfiguration(scrapeConfiguration);
     } catch (error) {
-      this.config.log.error(`Failed to parse scrape job configuration: ${error.message}`);
+      this.config.log.error(`Failed to parse or validate scrape job configuration: ${error.message}`);
+      throw new Error(`Invalid scrape job configuration: ${error.message}`);
     }
     this.scrapeConfiguration = scrapeConfiguration;
 
@@ -118,6 +173,8 @@ export default class ScrapeClient {
   /**
    * Create and start a new scrape job.
    * @param {object} data - json data for scrape job
+   * @param {number} data.maxScrapeAge - (optional) max age of scrapes in hours
+   * default is 24, 0 to force rescrape
    * @returns {Promise<Response>} newly created job object
    */
   async createScrapeJob(data) {
@@ -125,10 +182,15 @@ export default class ScrapeClient {
       this.validateRequestData(data);
 
       const {
-        urls, options, customHeaders, processingType = ScrapeJobModel.ScrapeProcessingType.DEFAULT,
+        urls,
+        options,
+        customHeaders,
+        processingType = ScrapeJobModel.ScrapeProcessingType.DEFAULT,
+        maxScrapeAge = 24,
+        auditData = {},
       } = data;
 
-      this.config.log.info(`Creating a new scrape job with ${urls.length} URLs.`);
+      this.config.log.debug(`Creating a new scrape job with ${urls.length} URLs.`);
 
       // Merge the scrape configuration options with the request options allowing the user options
       // to override the defaults
@@ -142,6 +204,8 @@ export default class ScrapeClient {
         processingType,
         mergedOptions,
         customHeaders,
+        maxScrapeAge,
+        auditData,
       );
       return ScrapeJobDto.toJSON(job);
     } catch (error) {
@@ -222,6 +286,29 @@ export default class ScrapeClient {
   }
 
   /**
+    * Get the result paths of a scrape job
+    * @param {string} jobId - The ID of the job to fetch.
+    * @return {Promise<Map<string, string>>} A map of URLs to their corresponding result paths.
+   */
+  async getScrapeResultPaths(jobId) {
+    try {
+      const job = await this.scrapeSupervisor.getScrapeJob(jobId);
+      if (!job) {
+        return null;
+      }
+      const { ScrapeUrl } = this.config.dataAccess;
+      const scrapeUrls = await ScrapeUrl.allByScrapeJobId(job.getId());
+      return scrapeUrls
+        .filter((url) => url.getStatus() === ScrapeJobModel.ScrapeUrlStatus.COMPLETE)
+        .reduce((map, url) => map.set(url.getUrl(), url.getPath()), new Map());
+    } catch (error) {
+      const msgError = `Failed to fetch the scrape job result: ${error.message}`;
+      this.config.log.error(msgError);
+      throw new Error(msgError);
+    }
+  }
+
+  /**
    * Get all scrape jobs by baseURL and processing type
    * @param {string} baseURL - The baseURL of the jobs to fetch.
    * @param {string} processingType - (optional) The processing type of the jobs to fetch.
@@ -253,6 +340,32 @@ export default class ScrapeClient {
     } catch (error) {
       const procType = processingType ? ` and processing type: ${processingType}` : '';
       const msgError = `Failed to fetch scrape jobs by baseURL: ${decodedBaseURL}${procType}, ${error.message}`;
+      this.config.log.error(msgError);
+      throw new Error(msgError);
+    }
+  }
+
+  async getScrapeUrlsByProcessingType(url, processingType, maxScrapeAge = 168) {
+    let decodedUrl;
+    try {
+      decodedUrl = decodeURIComponent(url);
+      if (!isValidUrl(decodedUrl)) {
+        throw new Error(`Invalid request: ${decodedUrl} must be a valid URL`);
+      }
+
+      const scrapeUrls = await this.scrapeSupervisor.getScrapeUrlsByProcessingType(
+        decodedUrl,
+        processingType,
+        maxScrapeAge,
+      );
+
+      if (!isNonEmptyArray(scrapeUrls)) {
+        return null;
+      }
+
+      return scrapeUrls.map((scrapeUrl) => ScrapeUrlDto.toJSON(scrapeUrl));
+    } catch (error) {
+      const msgError = `Failed to fetch scrape URL by URL: ${decodedUrl} and processing type: ${processingType}, ${error.message}`;
       this.config.log.error(msgError);
       throw new Error(msgError);
     }

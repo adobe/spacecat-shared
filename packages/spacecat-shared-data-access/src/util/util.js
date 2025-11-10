@@ -12,6 +12,7 @@
 
 import { hasText, isInteger } from '@adobe/spacecat-shared-utils';
 import pluralize from 'pluralize';
+import { guardArray } from './guards.js';
 
 const capitalize = (str) => (hasText(str) ? str[0].toUpperCase() + str.slice(1) : '');
 
@@ -36,7 +37,14 @@ const referenceToBaseMethodName = (reference) => {
 
 const entityNameToAllPKValue = (entityName) => `ALL_${pluralize.plural(entityName.toUpperCase())}`;
 
-const idNameToEntityName = (idName) => capitalize(pluralize.singular(idName.replace('Id', '')));
+const idNameToEntityName = (idName) => {
+  let result = idName;
+  if (idName.endsWith('Id')) {
+    result = result.replace('Id', '');
+  }
+
+  return capitalize(pluralize.singular(result));
+};
 
 const isPositiveInteger = (value) => isInteger(value) && value > 0;
 
@@ -66,14 +74,14 @@ const removeElectroProperties = (record) => { /* eslint-disable no-underscore-da
 };
 
 const sanitizeTimestamps = (data) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   const { createdAt, updatedAt, ...rest } = data;
   return rest;
 };
 
 const sanitizeIdAndAuditFields = (entityName, data) => {
   const idName = entityNameToIdName(entityName);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   const { [idName]: _, ...rest } = data;
   return sanitizeTimestamps(rest);
 };
@@ -85,6 +93,19 @@ const zeroPad = (num, length) => {
   return str.length >= length
     ? str
     : '0'.repeat(length - str.length) + str;
+};
+
+const resolveUpdates = (existingItems, newItems) => {
+  guardArray('existingItems', existingItems, 'resolveUpdates');
+  guardArray('newItems', newItems, 'resolveUpdates');
+
+  // Deduplicate new items
+  const dedupedNew = [...new Set(newItems)];
+
+  const toDelete = existingItems.filter((item) => !dedupedNew.includes(item));
+  const toCreate = dedupedNew.filter((item) => !existingItems.includes(item));
+
+  return { toDelete, toCreate };
 };
 
 export {
@@ -106,4 +127,5 @@ export {
   sanitizeIdAndAuditFields,
   sanitizeTimestamps,
   zeroPad,
+  resolveUpdates,
 };

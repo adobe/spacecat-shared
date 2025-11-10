@@ -11,7 +11,7 @@
  */
 
 import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
-import { isValidUUID } from '@adobe/spacecat-shared-utils';
+import { isValidUrl, isValidUUID, composeBaseURL } from '@adobe/spacecat-shared-utils';
 
 /**
  * Scrape Supervisor provides functionality to start and manage scrape jobs.
@@ -30,50 +30,17 @@ function ScrapeJobSupervisor(services, config) {
     dataAccess, sqs, log,
   } = services;
 
-  const { ScrapeJob } = dataAccess;
+  const { ScrapeJob, ScrapeUrl } = dataAccess;
 
   const {
-    queues = [], // Array of scrape queues
     scrapeWorkerQueue, // URL of the scrape worker queue
+    maxUrlsPerMessage,
   } = config;
-
-  /**
-   * Get the queue with the least number of messages.
-   */
-  async function getAvailableScrapeQueue() {
-    const countMessages = async (queue) => {
-      const count = await sqs.getQueueMessageCount(queue);
-      return { queue, count };
-    };
-
-    const arrProm = queues.map(
-      (queue) => countMessages(queue),
-    );
-    const queueMessageCounts = await Promise.all(arrProm);
-
-    if (queueMessageCounts.length === 0) {
-      return null;
-    }
-
-    // get the queue with the lowest number of messages
-    const queueWithLeastMessages = queueMessageCounts.reduce(
-      (min, current) => (min.count < current.count ? min : current),
-    );
-    log.info(`Queue with least messages: ${queueWithLeastMessages.queue}`);
-    return queueWithLeastMessages.queue;
-  }
-
-  function determineBaseURL(urls) {
-    // Initially, we will just use the domain of the first URL
-    const url = new URL(urls[0]);
-    return `${url.protocol}//${url.hostname}`;
-  }
 
   /**
    * Create a new scrape job by claiming one of the free scrape queues, persisting the scrape job
    * metadata, and setting the job status to 'RUNNING'.
    * @param {Array<string>} urls - The list of URLs to scrape.
-   * @param {string} scrapeQueueId - Name of the queue to use for this scrape job.
    * @param {string} processingType - The scrape handler to be used for the scrape job.
    * @param {object} options - Client provided options for the scrape job.
    * @param {object} customHeaders - Custom headers to be sent with each request.
@@ -81,21 +48,19 @@ function ScrapeJobSupervisor(services, config) {
    */
   async function createNewScrapeJob(
     urls,
-    scrapeQueueId,
     processingType,
     options,
     customHeaders = null,
   ) {
     const jobData = {
-      baseURL: determineBaseURL(urls),
-      scrapeQueueId,
+      baseURL: composeBaseURL(new URL(urls[0]).host),
       processingType,
       options,
       urlCount: urls.length,
       status: ScrapeJobModel.ScrapeJobStatus.RUNNING,
       customHeaders,
     };
-    log.info(`Creating a new scrape job. Job data: ${JSON.stringify(jobData)}`);
+    log.debug(`Creating a new scrape job. Job data: ${JSON.stringify(jobData)}`);
     return ScrapeJob.create(jobData);
   }
 
@@ -129,38 +94,79 @@ function ScrapeJobSupervisor(services, config) {
   }
 
   /**
-   * Queue all URLs as a single message for processing by another function. This will enable
-   * the controller to respond with a new job ID ASAP, while the individual URLs are queued up
-   * asynchronously.
+   * Split an array of URLs into batches of a specified size.
+   * @param urls
+   * @param batchSize
+   * @returns {*[]}
+   */
+  function splitUrlsIntoBatches(urls, batchSize = 1000) {
+    const batches = [];
+    for (let i = 0; i < urls.length; i += batchSize) {
+      batches.push(urls.slice(i, i + batchSize));
+    }
+    log.debug(`Split ${urls.length} URLs into ${batches.length} batches of size ${batchSize}.`);
+    return batches;
+  }
+
+  /**
+   * Queue all URLs for processing by another function. Splits URL-Arrays > 1000 into multiple
+   * messages. This will enable the controller to respond with a new job ID ASAP, while the
+   * individual URLs are queued up asynchronously.
    * @param {Array<string>} urls - Array of URL records to queue.
    * @param {object} scrapeJob - The scrape job record.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
+   * @param {string} maxScrapeAge - The maximum age of the scrape job
+   * @param {object} auditData - Step-Audit specific data
    */
-  async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders) {
+  // eslint-disable-next-line max-len
+  async function queueUrlsForScrapeWorker(urls, scrapeJob, customHeaders, maxScrapeAge, auditData) {
     log.info(`Starting a new scrape job of baseUrl: ${scrapeJob.getBaseURL()} with ${urls.length}`
-      + ` URLs. This new job has claimed: ${scrapeJob.getScrapeQueueId()} `
+      + ' URLs.'
       + `(jobId: ${scrapeJob.getId()})`);
 
     const options = scrapeJob.getOptions();
     const processingType = scrapeJob.getProcessingType();
+    const totalUrlCount = urls.length;
+    const baseUrl = scrapeJob.getBaseURL();
+    let urlBatches = [];
 
-    // Send a single message containing all URLs and the new job ID
-    const message = {
-      processingType,
-      jobId: scrapeJob.getId(),
-      urls,
-      customHeaders,
-      options,
-    };
+    // If there are more than 1000 URLs, split them into multiple messages
+    if (totalUrlCount > maxUrlsPerMessage) {
+      urlBatches = splitUrlsIntoBatches(urls, maxUrlsPerMessage);
+      log.debug(`Queuing ${totalUrlCount} URLs for scrape in ${urlBatches.length} messages.`);
+    } else {
+      // If there are 1000 or fewer URLs, we can send them all in a single message
+      log.debug(`Queuing ${totalUrlCount} URLs for scrape in a single message.`);
+      urlBatches = [urls]; // Wrap in an array to maintain consistent structure
+    }
 
-    await sqs.sendMessage(scrapeWorkerQueue, message);
+    for (const [index, batch] of urlBatches.entries()) {
+      // Calculate the offset for numbering the URLs in the batch
+      const offset = index * maxUrlsPerMessage;
+      const message = {
+        processingType,
+        jobId: scrapeJob.getId(),
+        batch,
+        batchOffset: offset,
+        customHeaders,
+        options,
+        maxScrapeAge,
+        auditData,
+      };
+
+      // eslint-disable-next-line no-await-in-loop
+      await sqs.sendMessage(scrapeWorkerQueue, message, baseUrl);
+    }
   }
 
   /**
    * Starts a new scrape job.
    * @param {Array<string>} urls - The URLs to scrape.
+   * @param {string} processingType - The type of processing to perform.
    * @param {object} options - Optional configuration params for the scrape job.
    * @param {object} customHeaders - Optional custom headers to be sent with each request.
+   * @param {number} maxScrapeAge - The maximum age of the scrape job
+   * @param auditContext
    * @returns {Promise<ScrapeJob>} newly created job object
    */
   async function startNewJob(
@@ -168,36 +174,28 @@ function ScrapeJobSupervisor(services, config) {
     processingType,
     options,
     customHeaders,
+    maxScrapeAge,
+    auditContext,
   ) {
-    // Determine if there is a free scrape queue
-    const scrapeQueueId = await getAvailableScrapeQueue();
-
-    if (scrapeQueueId === null) {
-      throw new Error('Service Unavailable: No scrape queue available');
-    }
-
-    // If a queue is available, create the scrape-job record in dataAccess:
     const newScrapeJob = await createNewScrapeJob(
       urls,
-      scrapeQueueId,
       processingType,
       options,
       customHeaders,
     );
 
-    log.info(
+    log.info( // debug?
       'New scrape job created:\n'
       + `- baseUrl: ${newScrapeJob.getBaseURL()}\n`
       + `- urlCount: ${urls.length}\n`
       + `- jobId: ${newScrapeJob.getId()}\n`
-      + `- scrapeQueueId: ${scrapeQueueId}\n`
       + `- customHeaders: ${JSON.stringify(customHeaders)}\n`
       + `- options: ${JSON.stringify(options)}`,
     );
 
     // Queue all URLs for scrape as a single message. This enables the controller to respond with
     // a job ID ASAP, while the individual URLs are queued up asynchronously by another function.
-    await queueUrlsForScrapeWorker(urls, newScrapeJob, customHeaders);
+    await queueUrlsForScrapeWorker(urls, newScrapeJob, customHeaders, maxScrapeAge, auditContext);
 
     return newScrapeJob;
   }
@@ -223,12 +221,27 @@ function ScrapeJobSupervisor(services, config) {
     }
   }
 
+  async function getScrapeUrlsByProcessingType(url, processingType, maxScrapeAge) {
+    if (!isValidUrl(url)) {
+      throw new Error(`${url} must be a valid URL`);
+    }
+    try {
+      return ScrapeUrl.allRecentByUrlAndProcessingType(url, processingType, maxScrapeAge);
+    } catch (error) {
+      if (error.message.includes('Not found')) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   return {
     startNewJob,
     getScrapeJob,
     getScrapeJobsByDateRange,
     getScrapeJobsByBaseURL,
     getScrapeJobsByBaseURLAndProcessingType,
+    getScrapeUrlsByProcessingType,
   };
 }
 

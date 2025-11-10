@@ -80,15 +80,176 @@ describe('OpportunityModel', () => {
 
   describe('addFixEntities', () => {
     it('adds related fix entities to the opportunity', async () => {
+      const mockFixEntity = {
+        getId: stub().returns('fix-entity-1'),
+        getCreatedAt: stub().returns('2024-01-01T00:00:00Z'),
+      };
+      const mockSuggestion = {
+        getId: stub().returns('suggestion-1'),
+      };
       const mockFixEntityCollection = {
-        createMany: stub().returns(Promise.resolve({ id: 'fix-entity-1' })),
+        createMany: stub().returns(Promise.resolve({
+          createdItems: [mockFixEntity],
+          errorItems: [],
+        })),
+      };
+      const mockSuggestionCollection = {
+        batchGetByKeys: stub().returns(Promise.resolve({
+          data: [mockSuggestion],
+          errors: [],
+        })),
+        idName: 'suggestionId',
+      };
+      const mockFixEntitySuggestionCollection = {
+        createMany: stub().returns(Promise.resolve({
+          createdItems: [],
+          errorItems: [],
+        })),
       };
       mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(mockFixEntityCollection);
+      mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(mockSuggestionCollection);
+      mockEntityRegistry.getCollection.withArgs('FixEntitySuggestionCollection').returns(mockFixEntitySuggestionCollection);
 
-      const fixEntity = await instance.addFixEntities([{ text: 'Fix entity text' }]);
-      expect(fixEntity).to.deep.equal({ id: 'fix-entity-1' });
+      const result = await instance.addFixEntities([{
+        type: 'CODE_CHANGE',
+        changeDetails: { file: 'test.js' },
+        suggestions: ['suggestion-1'],
+      }]);
+      expect(result.createdItems).to.have.lengthOf(1);
+      expect(result.createdItems[0]).to.equal(mockFixEntity);
+      expect(result.errorItems).to.have.lengthOf(0);
       expect(mockEntityRegistry.getCollection.calledWith('FixEntityCollection')).to.be.true;
-      expect(mockFixEntityCollection.createMany.calledOnceWith([{ text: 'Fix entity text', opportunityId: 'op12345' }])).to.be.true;
+      expect(mockFixEntityCollection.createMany.calledOnce).to.be.true;
+      expect(mockFixEntitySuggestionCollection.createMany.calledOnce).to.be.true;
+    });
+
+    it('adds invalid fixEntity to errorItems when fixEntity does not have suggestions', async () => {
+      const result = await instance.addFixEntities([{ text: 'Fix entity text' }]);
+      expect(result.createdItems).to.have.lengthOf(0);
+      expect(result.errorItems).to.have.lengthOf(1);
+      expect(result.errorItems[0].error.message).to.equal('fixEntity must have a suggestions property');
+    });
+
+    it('adds invalid fixEntity to errorItems when suggestions is not an array', async () => {
+      const result = await instance.addFixEntities([{
+        text: 'Fix entity text',
+        suggestions: 'not-an-array',
+      }]);
+      expect(result.createdItems).to.have.lengthOf(0);
+      expect(result.errorItems).to.have.lengthOf(1);
+      expect(result.errorItems[0].error.message).to.equal('fixEntity.suggestions must be an array');
+    });
+
+    it('adds invalid fixEntity to errorItems when suggestions array is empty', async () => {
+      const result = await instance.addFixEntities([{
+        text: 'Fix entity text',
+        suggestions: [],
+      }]);
+      expect(result.createdItems).to.have.lengthOf(0);
+      expect(result.errorItems).to.have.lengthOf(1);
+      expect(result.errorItems[0].error.message).to.equal('fixEntity.suggestions cannot be empty');
+    });
+
+    it('adds invalid fixEntity to errorItems when suggestion IDs do not exist', async () => {
+      const mockSuggestionCollection = {
+        batchGetByKeys: stub().returns(Promise.resolve({
+          data: [],
+          errors: [],
+        })),
+        idName: 'suggestionId',
+      };
+      mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(mockSuggestionCollection);
+
+      const result = await instance.addFixEntities([{
+        type: 'CODE_CHANGE',
+        changeDetails: { file: 'test.js' },
+        suggestions: ['invalid-suggestion-id'],
+      }]);
+      expect(result.createdItems).to.have.lengthOf(0);
+      expect(result.errorItems).to.have.lengthOf(1);
+      expect(result.errorItems[0].error.message).to.include('Invalid suggestion IDs');
+    });
+
+    it('handles errors when creating fix entity fails', async () => {
+      const mockSuggestion = {
+        getId: stub().returns('suggestion-1'),
+      };
+      const mockFixEntityCollection = {
+        createMany: stub().returns(Promise.resolve({
+          createdItems: [],
+          errorItems: [{
+            item: { type: 'CODE_CHANGE', changeDetails: { file: 'test.js' }, opportunityId: 'op12345' },
+            error: new Error('Creation failed'),
+          }],
+        })),
+      };
+      const mockSuggestionCollection = {
+        batchGetByKeys: stub().returns(Promise.resolve({
+          data: [mockSuggestion],
+          errors: [],
+        })),
+        idName: 'suggestionId',
+      };
+      mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(mockFixEntityCollection);
+      mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(mockSuggestionCollection);
+
+      const result = await instance.addFixEntities([{
+        type: 'CODE_CHANGE',
+        changeDetails: { file: 'test.js' },
+        suggestions: ['suggestion-1'],
+      }]);
+      expect(result.createdItems).to.have.lengthOf(0);
+      expect(result.errorItems).to.have.lengthOf(1);
+      expect(result.errorItems[0].error.message).to.equal('Creation failed');
+    });
+
+    it('processes multiple fixEntities and categorizes them correctly', async () => {
+      const mockFixEntity = {
+        getId: stub().returns('fix-entity-1'),
+        getCreatedAt: stub().returns('2024-01-01T00:00:00Z'),
+      };
+      const mockSuggestion = {
+        getId: stub().returns('suggestion-1'),
+      };
+      const mockFixEntityCollection = {
+        createMany: stub().returns(Promise.resolve({
+          createdItems: [mockFixEntity],
+          errorItems: [],
+        })),
+      };
+      const mockSuggestionCollection = {
+        batchGetByKeys: stub().returns(Promise.resolve({
+          data: [mockSuggestion],
+          errors: [],
+        })),
+        idName: 'suggestionId',
+      };
+      const mockFixEntitySuggestionCollection = {
+        createMany: stub().returns(Promise.resolve({
+          createdItems: [],
+          errorItems: [],
+        })),
+      };
+      mockEntityRegistry.getCollection.withArgs('FixEntityCollection').returns(mockFixEntityCollection);
+      mockEntityRegistry.getCollection.withArgs('SuggestionCollection').returns(mockSuggestionCollection);
+      mockEntityRegistry.getCollection.withArgs('FixEntitySuggestionCollection').returns(mockFixEntitySuggestionCollection);
+
+      const result = await instance.addFixEntities([
+        {
+          type: 'CODE_CHANGE',
+          changeDetails: { file: 'test.js' },
+          suggestions: ['suggestion-1'],
+        },
+        {
+          text: 'Invalid - no suggestions',
+        },
+        {
+          text: 'Invalid - empty suggestions',
+          suggestions: [],
+        },
+      ]);
+      expect(result.createdItems).to.have.lengthOf(1);
+      expect(result.errorItems).to.have.lengthOf(2);
     });
   });
 

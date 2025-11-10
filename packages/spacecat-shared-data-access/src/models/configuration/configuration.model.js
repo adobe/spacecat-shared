@@ -14,6 +14,8 @@ import { isNonEmptyObject, isNonEmptyArray } from '@adobe/spacecat-shared-utils'
 
 import { sanitizeIdAndAuditFields } from '../../util/util.js';
 import BaseModel from '../base/base.model.js';
+import { Audit } from '../audit/index.js';
+import { Entitlement } from '../entitlement/index.js';
 
 /**
  * Configuration - A class representing an Configuration entity.
@@ -31,9 +33,12 @@ class Configuration extends BaseModel {
   };
 
   static JOB_INTERVALS = {
+    NEVER: 'never', // allows to enable imports without scheduling them.
     EVERY_HOUR: 'every-hour',
+    TWENTY_PAST: 'twenty-past',
     DAILY: 'daily',
     WEEKLY: 'weekly',
+    EARLY_MONDAY: 'early-monday',
     EVERY_SATURDAY: 'every-saturday',
     EVERY_SUNDAY: 'every-sunday',
     FORTNIGHTLY: 'fortnightly',
@@ -245,6 +250,84 @@ class Configuration extends BaseModel {
     if (!this.isHandlerEnabledForOrg(type, org)) return;
 
     this.updateHandlerOrgs(type, orgId, false);
+  }
+
+  registerAudit(
+    type,
+    enabledByDefault = false,
+    interval = Configuration.JOB_INTERVALS.NEVER,
+    productCodes = [],
+  ) {
+    // Validate audit type
+    if (!Object.values(Audit.AUDIT_TYPES).includes(type)) {
+      throw new Error(`Audit type ${type} is not a valid audit type in the data model`);
+    }
+
+    // Validate job interval
+    if (!Object.values(Configuration.JOB_INTERVALS).includes(interval)) {
+      throw new Error(`Invalid interval ${interval}`);
+    }
+
+    // Validate product codes
+    if (!isNonEmptyArray(productCodes)) {
+      throw new Error('No product codes provided');
+    }
+    if (!productCodes.every((pc) => Object.values(Entitlement.PRODUCT_CODES).includes(pc))) {
+      throw new Error('Invalid product codes provided');
+    }
+
+    // Add to handlers if not already registered
+    const handlers = this.getHandlers();
+    if (!handlers[type]) {
+      handlers[type] = {
+        enabledByDefault,
+        enabled: {
+          sites: [],
+          orgs: [],
+        },
+        disabled: {
+          sites: [],
+          orgs: [],
+        },
+        dependencies: [],
+        productCodes,
+      };
+      this.setHandlers(handlers);
+    }
+
+    // Add to jobs if not already registered
+    const jobs = this.getJobs();
+    const exists = jobs.find((job) => job.group === 'audits' && job.type === type);
+    if (!exists) {
+      jobs.push({
+        group: 'audits',
+        type,
+        interval,
+      });
+      this.setJobs(jobs);
+    }
+  }
+
+  unregisterAudit(type) {
+    // Validate audit type
+    if (!Object.values(Audit.AUDIT_TYPES).includes(type)) {
+      throw new Error(`Audit type ${type} is not a valid audit type in the data model`);
+    }
+
+    // Remove from handlers
+    const handlers = this.getHandlers();
+    if (handlers[type]) {
+      delete handlers[type];
+      this.setHandlers(handlers);
+    }
+
+    // Remove from jobs
+    const jobs = this.getJobs();
+    const jobIndex = jobs.findIndex((job) => job.group === 'audits' && job.type === type);
+    if (jobIndex !== -1) {
+      jobs.splice(jobIndex, 1);
+      this.setJobs(jobs);
+    }
   }
 
   async save() {

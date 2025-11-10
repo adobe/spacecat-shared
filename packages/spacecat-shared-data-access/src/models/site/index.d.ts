@@ -19,9 +19,11 @@ import type {
   LatestAudit,
   Opportunity,
   Organization,
+  Project,
   SiteCandidate,
+  SiteEnrollment,
   SiteTopPage,
-} from '../index';
+} from '../index.js';
 
 export interface HlxConfig {
   hlxVersion: number; // helix (AEM Edge Delivery) major version
@@ -32,10 +34,20 @@ export interface HlxConfig {
   };
 }
 
+export interface CodeConfig {
+  type: string;
+  owner: string;
+  repo: string;
+  ref: string;
+  installationId?: string;
+  url: string;
+}
+
 export type IMPORT_TYPES = {
   readonly ORGANIC_KEYWORDS: 'organic-keywords';
   readonly ORGANIC_TRAFFIC: 'organic-traffic';
   readonly TOP_PAGES: 'top-pages';
+  readonly TOP_FORMS: 'top-forms';
 };
 
 export type IMPORT_DESTINATIONS = {
@@ -47,7 +59,7 @@ export type IMPORT_SOURCES = {
   readonly GSC: 'google';
 };
 
-export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages';
+export type ImportType = 'organic-keywords' | 'organic-traffic' | 'top-pages' | 'top-forms';
 export type ImportDestination = 'default';
 export type ImportSource = 'ahrefs' | 'google';
 
@@ -59,6 +71,30 @@ export interface ImportConfig {
   pageUrl?: string;
   geo?: string;
   limit?: number;
+}
+
+export type WellKnownLmmoTag = 'market' | 'product' | 'topic';
+export type LmmoTag = `${WellKnownLmmoTag}:${string}` | string;
+
+export interface LlmoQuestion {
+  key: string;
+  question: string;
+  source?: string;
+  volume?: string;
+  importTime?: string;
+  keyword?: string;
+  url?: string;
+  tags?: LmmoTag[];
+}
+
+export interface LlmoUrlPattern {
+  urlPattern: string;
+  tags?: LmmoTag[];
+}
+
+export interface LlmoCustomerIntent {
+  key: string;
+  value: string;
 }
 
 export interface SiteConfig {
@@ -97,7 +133,18 @@ export interface SiteConfig {
       headers?: Record<string, string>;
       overrideBaseURL?: string;
     };
+    llmo?: {
+      dataFolder: string;
+      brand: string;
+      questions?: {
+        Human?: Array<LlmoQuestion>;
+        AI?: Array<LlmoQuestion>;
+      };
+      urlPatterns?: Array<LlmoUrlPattern>;
+      customerIntent?: Array<LlmoCustomerIntent>;
+    };
   };
+  extractWellKnownTags(tags: Array<string>): Partial<Record<WellKnownLmmoTag, string>>;
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
   getImports(): ImportConfig[];
   getImportConfig(type: ImportType): ImportConfig | undefined;
@@ -116,6 +163,34 @@ export interface SiteConfig {
   getLatestMetrics(type: string):
     { pageViewsChange: number; ctrChange: number; projectedTrafficValue: number } | undefined;
   getFetchConfig(): { headers?: Record<string, string>, overrideBaseURL?: string } | undefined;
+  getLlmoConfig(): {
+    dataFolder: string;
+    brand: string;
+    questions?: { Human?: Array<LlmoQuestion>; AI?: Array<LlmoQuestion> };
+    urlPatterns?: Array<LlmoUrlPattern>;
+    customerIntent?: Array<LlmoCustomerIntent>;
+  } | undefined;
+  updateLlmoConfig(dataFolder: string, brand: string, questions?: {
+    Human?: Array<LlmoQuestion>;
+    AI?: Array<LlmoQuestion>;
+  }, urlPatterns?: Array<LlmoUrlPattern>): void;
+  updateLlmoDataFolder(dataFolder: string): void;
+  updateLlmoBrand(brand: string): void;
+  getLlmoDataFolder(): string | undefined;
+  getLlmoBrand(): string | undefined;
+  getLlmoHumanQuestions(): LlmoQuestion[] | undefined;
+  getLlmoAIQuestions(): LlmoQuestion[] | undefined;
+  getLlmoUrlPatterns(): Array<LlmoUrlPattern> | undefined;
+  addLlmoHumanQuestions(questions: LlmoQuestion[]): void;
+  addLlmoAIQuestions(questions: LlmoQuestion[]): void;
+  removeLlmoQuestion(key: string): void;
+  updateLlmoQuestion(key: string, questionUpdate: Partial<LlmoQuestion>): void;
+  addLlmoUrlPatterns(urlPatterns: Array<LlmoUrlPattern>): void;
+  removeLlmoUrlPattern(urlPattern: string): void;
+  getLlmoCustomerIntent(): Array<LlmoCustomerIntent>;
+  addLlmoCustomerIntent(customerIntentItems: Array<LlmoCustomerIntent>): void;
+  removeLlmoCustomerIntent(intentKey: string): void;
+  updateLlmoCustomerIntent(intentKey: string, updateData: Partial<LlmoCustomerIntent>): void;
 }
 
 export interface Site extends BaseModel {
@@ -135,6 +210,7 @@ export interface Site extends BaseModel {
   ): Promise<Experiment[]>;
   getGitHubURL(): string;
   getHlxConfig(): HlxConfig;
+  getCode(): CodeConfig;
   getDeliveryConfig(): object;
   getIsLive(): boolean;
   getIsSandbox(): boolean;
@@ -149,7 +225,13 @@ export interface Site extends BaseModel {
   getOpportunitiesByStatusAndUpdatedAt(status: string, updatedAt: string): Promise<Opportunity[]>;
   getOrganization(): Promise<Organization>;
   getOrganizationId(): string;
+  getProject(): Promise<Project>;
+  getProjectId(): string;
+  getIsPrimaryLocale(): boolean;
+  getLanguage(): string;
+  getRegion(): string;
   getSiteCandidates(): Promise<SiteCandidate[]>;
+  getSiteEnrollments(): Promise<SiteEnrollment[]>;
   getSiteTopPages(): Promise<SiteTopPage[]>;
   getSiteTopPagesBySource(source: string): Promise<SiteTopPage[]>;
   getSiteTopPagesBySourceAndGeo(source: string, geo: string): Promise<SiteTopPage[]>;
@@ -163,23 +245,33 @@ export interface Site extends BaseModel {
   setAuthoringType(authoringType: string): Site;
   setGitHubURL(gitHubURL: string): Site;
   setHlxConfig(hlxConfig: HlxConfig): Site;
+  setCode(code: CodeConfig): Site;
   setDeliveryConfig(deliveryConfig: object): Site;
   setIsLive(isLive: boolean): Site;
   setIsSandbox(isSandbox: boolean): Site;
   setIsLiveToggledAt(isLiveToggledAt: string): Site;
   setOrganizationId(organizationId: string): Site;
+  setProjectId(projectId: string): Site;
+  setIsPrimaryLocale(primaryLocale: boolean): Site;
+  setLanguage(language: string): Site;
+  setRegion(region: string): Site;
   toggleLive(): Site;
 }
 
-export interface SiteCollection extends BaseCollection<Organization> {
+export interface SiteCollection extends BaseCollection<Site> {
   allByBaseURL(baseURL: string): Promise<Site[]>;
   allByDeliveryType(deliveryType: string): Promise<Site[]>;
   allByOrganizationId(organizationId: string): Promise<Site[]>;
+  allByProjectId(projectId: string): Promise<Site[]>;
+  allByProjectName(projectName: string): Promise<Site[]>;
+  allByOrganizationIdAndProjectId(organizationId: string, projectId: string): Promise<Site[]>;
+  allByOrganizationIdAndProjectName(organizationId: string, projectName: string): Promise<Site[]>;
   allSitesToAudit(): Promise<string[]>;
   allWithLatestAudit(auditType: string, order?: string, deliveryType?: string): Promise<Site[]>;
   findByBaseURL(baseURL: string): Promise<Site | null>;
   findByDeliveryType(deliveryType: string): Promise<Site | null>;
   findByOrganizationId(organizationId: string): Promise<Site | null>;
+  findByProjectId(projectId: string): Promise<Site | null>;
   findByPreviewURL(previewURL: string): Promise<Site | null>;
   findByExternalOwnerIdAndExternalSiteId(
     externalOwnerId: string, externalSiteId: string

@@ -11,7 +11,7 @@
  */
 
 import { Response } from '@adobe/fetch';
-import { gzipSync } from 'zlib';
+import { brotliCompressSync, gzipSync, constants as zlibConstants } from 'zlib';
 
 import LegacyApiKeyHandler from './auth/handlers/legacy-api-key.js';
 import AdobeImsHandler from './auth/handlers/ims.js';
@@ -64,6 +64,7 @@ export function createResponse(body, status = 200, headers = {}) {
   const contentType = getHeader(headers, HEADER_CONTENT_TYPE);
   const contentEncoding = getHeader(headers, HEADER_CONTENT_ENCODING);
   const wantsGzip = contentEncoding?.toLowerCase() === 'gzip';
+  const wantsBrotli = contentEncoding?.toLowerCase() === 'br';
 
   // default to application/json if content-type not set
   if (!contentType) {
@@ -72,10 +73,22 @@ export function createResponse(body, status = 200, headers = {}) {
 
   const finalContentType = getHeader(headers, HEADER_CONTENT_TYPE);
 
-  // if content-type is JSON, serialize and optionally gzip
+  // if content-type is JSON, serialize and optionally compress
   if (finalContentType?.toLowerCase().includes(CONTENT_TYPE_JSON)) {
     const jsonBody = body === '' ? '' : JSON.stringify(body);
-    responseBody = wantsGzip ? gzipSync(Buffer.from(jsonBody)) : jsonBody;
+
+    if (wantsGzip) {
+      responseBody = gzipSync(Buffer.from(jsonBody));
+    } else if (wantsBrotli) {
+      responseBody = brotliCompressSync(Buffer.from(jsonBody), {
+        params: {
+          // the default quality is too complex for the lambda and can lead to 503s
+          [zlibConstants.BROTLI_PARAM_QUALITY]: 4,
+        },
+      });
+    } else {
+      responseBody = jsonBody;
+    }
   }
 
   return new Response(responseBody, {

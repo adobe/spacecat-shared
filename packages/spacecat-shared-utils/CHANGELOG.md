@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-utils-v1.70.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.70.0...@adobe/spacecat-shared-utils-v1.70.1) (2025-11-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1107](https://github.com/adobe/spacecat-shared/issues/1107)) ([f4cdb50](https://github.com/adobe/spacecat-shared/commit/f4cdb50f96d18dd92de81055f2b58310a68c0cac))
+
+# [@adobe/spacecat-shared-utils-v1.70.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.4...@adobe/spacecat-shared-utils-v1.70.0) (2025-11-06)
+
+
+### Features
+
+* LLMO-846 byocdn-imperva support in llmo ([#1085](https://github.com/adobe/spacecat-shared/issues/1085)) ([7548812](https://github.com/adobe/spacecat-shared/commit/7548812ca83b856392fc624cc1fd5ea1bf48658c))
+
+# [@adobe/spacecat-shared-utils-v1.69.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.3...@adobe/spacecat-shared-utils-v1.69.4) (2025-11-06)
+
+
+### Bug Fixes
+
+* cloudflare date issue ([#1098](https://github.com/adobe/spacecat-shared/issues/1098)) ([09a2c62](https://github.com/adobe/spacecat-shared/commit/09a2c620d1ac070572825cdbf0579739364e384d))
+
 # [@adobe/spacecat-shared-utils-v1.69.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.2...@adobe/spacecat-shared-utils-v1.69.3) (2025-11-01)
 
 

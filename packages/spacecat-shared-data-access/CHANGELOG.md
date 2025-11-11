@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.81.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.80.2...@adobe/spacecat-shared-data-access-v2.81.0) (2025-11-11)
+
+
+### Features
+
+* **COMOPT-880:** add PRODUCT_METATAGS_AUTO_FIX audit type ([#1112](https://github.com/adobe/spacecat-shared/issues/1112)) ([b4e61db](https://github.com/adobe/spacecat-shared/commit/b4e61dbfa9b0d7c18a30d9ac025cfaa05c7d5bc0))
+
 # [@adobe/spacecat-shared-data-access-v2.80.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.80.1...@adobe/spacecat-shared-data-access-v2.80.2) (2025-11-10)
 
 

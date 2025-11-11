@@ -10,13 +10,43 @@
  * governing permissions and limitations under the License.
  */
 
+import { context } from '@adobe/fetch';
 import { OPPORTUNITY_TYPES } from './constants.js';
+
+const { fetch } = context();
+
+/**
+ * Helper function to follow redirects and return the final URL
+ * @param {string} url - The URL to follow
+ * @returns {Promise<string>} - The final URL after following redirects
+ */
+async function getFinalRedirectUrl(url) {
+  try {
+    const response = await fetch(url, {
+      method: 'HEAD',
+      redirect: 'follow',
+    });
+    return response.url;
+  } catch (error) {
+    // If HEAD fails, try GET
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        redirect: 'follow',
+      });
+      return response.url;
+    } catch (getError) {
+      // If both fail, return the original URL
+      return url;
+    }
+  }
+}
 
 /**
  * Function to extract the URL from a suggestion based on a particular type
  * @param {*} suggestion
  */
-function extractUrlsFromSuggestion(opts) {
+async function extractUrlsFromSuggestion(opts) {
   const {
     opportunity,
     suggestion,
@@ -107,7 +137,8 @@ function extractUrlsFromSuggestion(opts) {
         {
           const url = data?.url_to;
           if (url && typeof url === 'string') {
-            urls.push(url);
+            const finalUrl = await getFinalRedirectUrl(url);
+            urls.push(finalUrl);
           }
         }
         break;

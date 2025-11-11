@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.72.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.71.0...@adobe/spacecat-shared-utils-v1.72.0) (2025-11-11)
+
+
+### Features
+
+* added interface correct definition ([#1114](https://github.com/adobe/spacecat-shared/issues/1114)) ([e377dab](https://github.com/adobe/spacecat-shared/commit/e377dabc263200e6c393ebf40c65e8c41fb134cb))
+
+# [@adobe/spacecat-shared-utils-v1.71.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.70.1...@adobe/spacecat-shared-utils-v1.71.0) (2025-11-11)
+
+
+### Features
+
+* added redirected url in broken-backlink ([#1111](https://github.com/adobe/spacecat-shared/issues/1111)) ([d0e1bd6](https://github.com/adobe/spacecat-shared/commit/d0e1bd619f8d2fe33807f58a23e54eac49b83708))
+
 # [@adobe/spacecat-shared-utils-v1.70.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.70.0...@adobe/spacecat-shared-utils-v1.70.1) (2025-11-08)
 
 

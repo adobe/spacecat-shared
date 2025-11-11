@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.5.0...@adobe/spacecat-shared-athena-client-v1.6.0) (2025-11-11)
+
+
+### Features
+
+* added device to PTR Results structure ([#1116](https://github.com/adobe/spacecat-shared/issues/1116)) ([f80fc3f](https://github.com/adobe/spacecat-shared/commit/f80fc3ff63d5b979927116cfd3fb759160bbd09f))
+
 # [@adobe/spacecat-shared-athena-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.4.1...@adobe/spacecat-shared-athena-client-v1.5.0) (2025-11-10)
 
 

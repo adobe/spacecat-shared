@@ -277,12 +277,12 @@ export function isoCalendarWeekMonday(date: Date): Date;
  * @param opts - Options object
  * @param opts.opportunity - The opportunity object
  * @param opts.suggestion - The suggestion object
- * @returns An array of extracted URLs
+ * @returns A promise that resolves to an array of extracted URLs
  */
 export function extractUrlsFromSuggestion(opts: {
   opportunity: any;
   suggestion: any;
-}): string[];
+}): Promise<string[]>;
 
 /**
  * Extracts URLs from an opportunity based on the opportunity type.

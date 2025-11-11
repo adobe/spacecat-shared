@@ -23,6 +23,7 @@ export const IMS_VALIDATE_TOKEN_ENDPOINT = '/ims/validate_token/v1';
 export const IMS_PROFILE_ENDPOINT = '/ims/profile/v1';
 export const IMS_INVALIDATE_TOKEN_ENDPOINT = '/ims/invalidate_token/v2';
 export const IMS_ADMIN_PROFILE_ENDPOINT = '/ims/admin_profile/v3';
+export const IMS_ACCOUNT_CLUSTER_ENDPOINT = '/ims/account_cluster/v2';
 /**
  * Creates and populates a FormData object from key-value pairs.
  * @param {Object} fields - Object containing key-value pairs to append to FormData.

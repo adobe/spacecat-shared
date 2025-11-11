@@ -13,16 +13,38 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import {
-  extractUrlsFromSuggestion,
-  extractUrlsFromOpportunity,
-} from '../src/url-extractors.js';
+import sinon from 'sinon';
+import esmock from 'esmock';
 import { OPPORTUNITY_TYPES } from '../src/constants.js';
 
 describe('URL Extractors', () => {
+  let extractUrlsFromSuggestion;
+  let extractUrlsFromOpportunity;
+  let fetchStub;
+
+  before(async () => {
+    const mockFetch = sinon.stub();
+    fetchStub = mockFetch;
+
+    const mockContext = {
+      context: () => ({ fetch: mockFetch }),
+    };
+
+    const urlExtractors = await esmock('../src/url-extractors.js', {
+      '@adobe/fetch': mockContext,
+    });
+
+    extractUrlsFromSuggestion = urlExtractors.extractUrlsFromSuggestion;
+    extractUrlsFromOpportunity = urlExtractors.extractUrlsFromOpportunity;
+  });
+
+  afterEach(() => {
+    fetchStub.reset();
+  });
+
   describe('extractUrlsFromSuggestion', () => {
     describe('ALT_TEXT type', () => {
-      it('extracts URLs from recommendations array', () => {
+      it('extracts URLs from recommendations array', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.ALT_TEXT,
         };
@@ -35,11 +57,11 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page1', 'https://example.com/page2']);
       });
 
-      it('handles missing recommendations', () => {
+      it('handles missing recommendations', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.ALT_TEXT,
         };
@@ -47,11 +69,11 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
-      it('handles non-array recommendations', () => {
+      it('handles non-array recommendations', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.ALT_TEXT,
         };
@@ -61,11 +83,11 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
-      it('filters out non-string pageUrls', () => {
+      it('filters out non-string pageUrls', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.ALT_TEXT,
         };
@@ -80,7 +102,7 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page1', 'https://example.com/page2']);
       });
     });
@@ -99,7 +121,7 @@ describe('URL Extractors', () => {
       ];
 
       urlBasedTypes.forEach((type) => {
-        it(`extracts URL for ${type} type`, () => {
+        it(`extracts URL for ${type} type`, async () => {
           const opportunity = {
             getType: () => type,
           };
@@ -109,11 +131,11 @@ describe('URL Extractors', () => {
             }),
           };
 
-          const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+          const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
           expect(urls).to.deep.equal(['https://example.com/page']);
         });
 
-        it(`handles missing URL for ${type} type`, () => {
+        it(`handles missing URL for ${type} type`, async () => {
           const opportunity = {
             getType: () => type,
           };
@@ -121,14 +143,14 @@ describe('URL Extractors', () => {
             getData: () => ({}),
           };
 
-          const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+          const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
           expect(urls).to.deep.equal([]);
         });
       });
     });
 
     describe('CWV type', () => {
-      it('extracts URL when type is "url"', () => {
+      it('extracts URL when type is "url"', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.CWV,
         };
@@ -139,11 +161,11 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page']);
       });
 
-      it('does not extract URL when type is not "url"', () => {
+      it('does not extract URL when type is not "url"', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.CWV,
         };
@@ -154,11 +176,11 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
-      it('handles missing URL', () => {
+      it('handles missing URL', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.CWV,
         };
@@ -168,13 +190,13 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
 
     describe('REDIRECT_CHAINS type', () => {
-      it('extracts sourceUrl', () => {
+      it('extracts sourceUrl', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.REDIRECT_CHAINS,
         };
@@ -184,11 +206,11 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/source']);
       });
 
-      it('handles missing sourceUrl', () => {
+      it('handles missing sourceUrl', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.REDIRECT_CHAINS,
         };
@@ -196,13 +218,13 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
 
     describe('SECURITY_XSS type', () => {
-      it('extracts link', () => {
+      it('extracts link', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.SECURITY_XSS,
         };
@@ -212,11 +234,11 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/vulnerable']);
       });
 
-      it('handles missing link', () => {
+      it('handles missing link', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.SECURITY_XSS,
         };
@@ -224,13 +246,13 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
 
     describe('SECURITY_CSP type', () => {
-      it('extracts URLs from findings array', () => {
+      it('extracts URLs from findings array', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.SECURITY_CSP,
         };
@@ -243,11 +265,11 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page1', 'https://example.com/page2']);
       });
 
-      it('handles missing findings', () => {
+      it('handles missing findings', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.SECURITY_CSP,
         };
@@ -255,11 +277,11 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
-      it('filters out non-string URLs', () => {
+      it('filters out non-string URLs', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.SECURITY_CSP,
         };
@@ -273,13 +295,13 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page1']);
       });
     });
 
     describe('SECURITY_PERMISSIONS type', () => {
-      it('extracts path', () => {
+      it('extracts path', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.SECURITY_PERMISSIONS,
         };
@@ -289,11 +311,11 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/secure']);
       });
 
-      it('handles missing path', () => {
+      it('handles missing path', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.SECURITY_PERMISSIONS,
         };
@@ -301,7 +323,7 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
@@ -309,7 +331,11 @@ describe('URL Extractors', () => {
     describe('BROKEN_BACKLINKS and BROKEN_INTERNAL_LINKS types', () => {
       [OPPORTUNITY_TYPES.BROKEN_BACKLINKS,
         OPPORTUNITY_TYPES.BROKEN_INTERNAL_LINKS].forEach((type) => {
-        it(`extracts url_to for ${type} type`, () => {
+        it(`follows redirects and returns final URL for ${type} type`, async () => {
+          fetchStub.resolves({
+            url: 'https://example.com/final-destination',
+          });
+
           const opportunity = {
             getType: () => type,
           };
@@ -319,11 +345,53 @@ describe('URL Extractors', () => {
             }),
           };
 
-          const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
-          expect(urls).to.deep.equal(['https://example.com/broken']);
+          const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
+          expect(urls).to.deep.equal(['https://example.com/final-destination']);
+          expect(fetchStub.calledOnce).to.be.true;
+          expect(fetchStub.firstCall.args[0]).to.equal('https://example.com/broken');
+          expect(fetchStub.firstCall.args[1].method).to.equal('HEAD');
+          expect(fetchStub.firstCall.args[1].redirect).to.equal('follow');
         });
 
-        it(`handles missing url_to for ${type} type`, () => {
+        it(`falls back to GET request if HEAD fails for ${type} type`, async () => {
+          fetchStub.onFirstCall().rejects(new Error('HEAD failed'));
+          fetchStub.onSecondCall().resolves({
+            url: 'https://example.com/final-destination',
+          });
+
+          const opportunity = {
+            getType: () => type,
+          };
+          const suggestion = {
+            getData: () => ({
+              url_to: 'https://example.com/broken',
+            }),
+          };
+
+          const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
+          expect(urls).to.deep.equal(['https://example.com/final-destination']);
+          expect(fetchStub.calledTwice).to.be.true;
+          expect(fetchStub.secondCall.args[1].method).to.equal('GET');
+        });
+
+        it(`returns original URL if both HEAD and GET fail for ${type} type`, async () => {
+          fetchStub.rejects(new Error('Both requests failed'));
+
+          const opportunity = {
+            getType: () => type,
+          };
+          const suggestion = {
+            getData: () => ({
+              url_to: 'https://example.com/broken',
+            }),
+          };
+
+          const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
+          expect(urls).to.deep.equal(['https://example.com/broken']);
+          expect(fetchStub.calledTwice).to.be.true;
+        });
+
+        it(`handles missing url_to for ${type} type`, async () => {
           const opportunity = {
             getType: () => type,
           };
@@ -331,14 +399,15 @@ describe('URL Extractors', () => {
             getData: () => ({}),
           };
 
-          const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+          const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
           expect(urls).to.deep.equal([]);
+          expect(fetchStub.called).to.be.false;
         });
       });
     });
 
     describe('SITEMAP type', () => {
-      it('extracts pageUrl', () => {
+      it('extracts pageUrl', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.SITEMAP,
         };
@@ -348,11 +417,11 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/sitemap-page']);
       });
 
-      it('handles missing pageUrl', () => {
+      it('handles missing pageUrl', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.SITEMAP,
         };
@@ -360,13 +429,13 @@ describe('URL Extractors', () => {
           getData: () => ({}),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
 
     describe('Unknown type', () => {
-      it('returns empty array for unknown type', () => {
+      it('returns empty array for unknown type', async () => {
         const opportunity = {
           getType: () => 'unknown-type',
         };
@@ -376,13 +445,13 @@ describe('URL Extractors', () => {
           }),
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });
 
     describe('Suggestion with data property instead of getData method', () => {
-      it('handles suggestion with direct data property', () => {
+      it('handles suggestion with direct data property', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.ACCESSIBILITY,
         };
@@ -392,13 +461,13 @@ describe('URL Extractors', () => {
           },
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal(['https://example.com/page']);
       });
     });
 
     describe('Error handling', () => {
-      it('handles malformed data gracefully', () => {
+      it('handles malformed data gracefully', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.ACCESSIBILITY,
         };
@@ -406,11 +475,11 @@ describe('URL Extractors', () => {
           getData: () => null,
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
 
-      it('handles error when getData throws exception', () => {
+      it('handles error when getData throws exception', async () => {
         const opportunity = {
           getType: () => OPPORTUNITY_TYPES.ACCESSIBILITY,
         };
@@ -420,7 +489,7 @@ describe('URL Extractors', () => {
           },
         };
 
-        const urls = extractUrlsFromSuggestion({ opportunity, suggestion });
+        const urls = await extractUrlsFromSuggestion({ opportunity, suggestion });
         expect(urls).to.deep.equal([]);
       });
     });

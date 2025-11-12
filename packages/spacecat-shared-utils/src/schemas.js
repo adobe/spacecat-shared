@@ -118,9 +118,6 @@ export const llmoConfig = z.object({
     allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
   }).optional(),
-  tokowakaConfig: z.object({
-    apiKey: z.string(),
-  }).optional(),
 }).superRefine((value, ctx) => {
   const {
     categories, topics, brands, competitors,
@@ -152,6 +149,24 @@ export const llmoConfig = z.object({
   });
 
   // Validate topic prompts regions against their category
+  validateTopicPromptRegions(categories, ctx, topics, 'topics');
+
+  // Validate ai_topics prompts regions against their category
+  if (value.ai_topics) {
+    validateTopicPromptRegions(categories, ctx, value.ai_topics, 'ai_topics');
+  }
+});
+
+/**
+ * @param {LLMOConfig['categories']} categories
+ * @param {z.RefinementCtx} ctx
+ * @param {Record<string, z.infer<typeof topic>>} topics
+ * @param {string} topicsKey - The key name in the path (e.g., 'topics' or 'ai_topics')
+ */
+function validateTopicPromptRegions(categories, ctx, topics, topicsKey) {
+  // Convert 'topics' to 'topic' for error messages, but keep 'ai_topics' as is
+  const itemLabel = topicsKey === 'topics' ? 'topic' : topicsKey;
+
   Object.entries(topics).forEach(([topicId, topicEntity]) => {
     if (topicEntity.prompts && topicEntity.category) {
       // If category is a UUID, validate against the referenced category entity
@@ -162,35 +177,14 @@ export const llmoConfig = z.object({
             ctx,
             topicEntity.category,
             promptItem.regions,
-            ['topics', topicId, 'prompts', promptIndex, 'regions'],
-            'topic prompt',
+            [topicsKey, topicId, 'prompts', promptIndex, 'regions'],
+            `${itemLabel} prompt`,
           );
         });
       }
     }
   });
-
-  // Validate ai_topics prompts regions against their category (same validation as topics)
-  if (value.ai_topics) {
-    Object.entries(value.ai_topics).forEach(([topicId, topicEntity]) => {
-      if (topicEntity.prompts && topicEntity.category) {
-        // If category is a UUID, validate against the referenced category entity
-        if (topicEntity.category.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-          topicEntity.prompts.forEach((promptItem, promptIndex) => {
-            ensureRegionCompatibility(
-              categories,
-              ctx,
-              topicEntity.category,
-              promptItem.regions,
-              ['ai_topics', topicId, 'prompts', promptIndex, 'regions'],
-              'ai_topics prompt',
-            );
-          });
-        }
-      }
-    });
-  }
-});
+}
 
 /**
    * @param {LLMOConfig['categories']} categories

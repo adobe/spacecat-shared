@@ -152,8 +152,6 @@ export default class AhrefsAPIClient {
       target: url,
       limit: getLimit(limit, 2000),
       mode: 'subdomains',
-      protocol: 'both',
-      volume_mode: 'average',
       output: 'json',
       where: JSON.stringify(filter),
     };

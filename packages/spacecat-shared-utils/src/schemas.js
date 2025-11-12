@@ -89,6 +89,7 @@ export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
   categories: z.record(z.uuid(), category),
   topics: z.record(z.uuid(), topic),
+  ai_topics: z.record(z.uuid(), topic).optional(),
   brands: z.object({
     aliases: z.array(
       z.object({
@@ -116,6 +117,9 @@ export const llmoConfig = z.object({
     bucketName: z.string().optional(),
     allowedPaths: z.array(z.string()).optional(),
     cdnProvider: z.string(),
+  }).optional(),
+  tokowakaConfig: z.object({
+    apiKey: z.string(),
   }).optional(),
 }).superRefine((value, ctx) => {
   const {
@@ -165,6 +169,27 @@ export const llmoConfig = z.object({
       }
     }
   });
+
+  // Validate ai_topics prompts regions against their category (same validation as topics)
+  if (value.ai_topics) {
+    Object.entries(value.ai_topics).forEach(([topicId, topicEntity]) => {
+      if (topicEntity.prompts && topicEntity.category) {
+        // If category is a UUID, validate against the referenced category entity
+        if (topicEntity.category.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          topicEntity.prompts.forEach((promptItem, promptIndex) => {
+            ensureRegionCompatibility(
+              categories,
+              ctx,
+              topicEntity.category,
+              promptItem.regions,
+              ['ai_topics', topicId, 'prompts', promptIndex, 'regions'],
+              'ai_topics prompt',
+            );
+          });
+        }
+      }
+    });
+  }
 });
 
 /**

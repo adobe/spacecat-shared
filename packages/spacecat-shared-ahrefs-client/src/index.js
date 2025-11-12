@@ -151,7 +151,9 @@ export default class AhrefsAPIClient {
       date: new Date().toISOString().split('T')[0],
       target: url,
       limit: getLimit(limit, 2000),
-      mode: 'prefix',
+      mode: 'subdomains',
+      protocol: 'both',
+      volume_mode: 'average',
       output: 'json',
       where: JSON.stringify(filter),
     };

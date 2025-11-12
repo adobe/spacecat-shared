@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.3...@adobe/spacecat-shared-ims-client-v1.10.0) (2025-11-12)
+
+
+### Features
+
+* ims account cluster function ([#1115](https://github.com/adobe/spacecat-shared/issues/1115)) ([003aad3](https://github.com/adobe/spacecat-shared/commit/003aad3167f165085d6fc2e43822498b7ef0ae0e))
+
 # [@adobe/spacecat-shared-ims-client-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.2...@adobe/spacecat-shared-ims-client-v1.9.3) (2025-11-11)
 
 

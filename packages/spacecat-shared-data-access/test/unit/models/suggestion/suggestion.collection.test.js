@@ -100,7 +100,7 @@ describe('SuggestionCollection', () => {
 
     it('throws an error if status is not provided', async () => {
       await expect(instance.bulkUpdateStatus([model], 'foo'))
-        .to.be.rejectedWith('Invalid status: foo. Must be one of: NEW, APPROVED, IN_PROGRESS, SKIPPED, FIXED, ERROR, OUTDATED, NOT_VALIDATED');
+        .to.be.rejectedWith('Invalid status: foo. Must be one of: NEW, APPROVED, IN_PROGRESS, SKIPPED, FIXED, ERROR, OUTDATED, PENDING_VALIDATION');
     });
   });
 

@@ -34,7 +34,7 @@ describe('SuggestionModel', () => {
       expect(Suggestion.STATUSES.FIXED).to.equal('FIXED');
       expect(Suggestion.STATUSES.ERROR).to.equal('ERROR');
       expect(Suggestion.STATUSES.OUTDATED).to.equal('OUTDATED');
-      expect(Suggestion.STATUSES.NOT_VALIDATED).to.equal('NOT_VALIDATED');
+      expect(Suggestion.STATUSES.PENDING_VALIDATION).to.equal('PENDING_VALIDATION');
     });
   });
 
@@ -105,9 +105,9 @@ describe('SuggestionModel', () => {
       expect(instance.record.status).to.equal('OUTDATED');
     });
 
-    it('sets the status of the suggestion to NOT_VALIDATED', () => {
-      instance.setStatus('NOT_VALIDATED');
-      expect(instance.record.status).to.equal('NOT_VALIDATED');
+    it('sets the status of the suggestion to PENDING_VALIDATION', () => {
+      instance.setStatus('PENDING_VALIDATION');
+      expect(instance.record.status).to.equal('PENDING_VALIDATION');
     });
   });
 

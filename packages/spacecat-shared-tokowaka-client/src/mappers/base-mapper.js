@@ -66,15 +66,6 @@ export default class BaseOpportunityMapper {
   }
 
   /**
-   * Indicates whether this mapper produces a single combined patch per URL
-   * @returns {boolean} - True if patches should be combined into one per URL
-   */
-  hasSinglePatchPerUrl() {
-    this.log.debug('hasSinglePatchPerUrl() not implemented by subclass, returning false');
-    return false; // Default: one patch per suggestion
-  }
-
-  /**
    * Helper method to create base patch structure
    * @protected
    * @param {Object} suggestion - Suggestion entity with getUpdatedAt() method
@@ -87,7 +78,7 @@ export default class BaseOpportunityMapper {
 
     return {
       opportunityId,
-      suggestionIds: [suggestion.getId()],
+      suggestionId: suggestion.getId(),
       prerenderRequired: this.requiresPrerender(),
       lastUpdated,
     };

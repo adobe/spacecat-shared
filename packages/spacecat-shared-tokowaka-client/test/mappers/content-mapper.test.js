@@ -162,7 +162,7 @@ describe('ContentMapper', () => {
       expect(patch.selector).to.equal('#text-85a9876220 > h1:nth-of-type(1)');
       expect(patch.valueFormat).to.equal('hast');
       expect(patch.opportunityId).to.equal('opp-content-123');
-      expect(patch.suggestionIds).to.deep.equal(['sugg-content-123']);
+      expect(patch.suggestionId).to.equal('sugg-content-123');
       expect(patch.prerenderRequired).to.be.true;
       expect(patch.lastUpdated).to.be.a('number');
 

@@ -41,12 +41,6 @@ describe('FaqMapper', () => {
     });
   });
 
-  describe('hasSinglePatchPerUrl', () => {
-    it('should return true (FAQ combines all suggestions)', () => {
-      expect(mapper.hasSinglePatchPerUrl()).to.be.true;
-    });
-  });
-
   describe('canDeploy', () => {
     it('should return eligible for valid FAQ suggestion', () => {
       const suggestion = {
@@ -219,6 +213,49 @@ describe('FaqMapper', () => {
       expect(result.eligible).to.be.false;
       expect(result.reason).to.include('not a valid URL');
     });
+
+    it('should return ineligible when shouldOptimize is false', () => {
+      const suggestion = {
+        getData: () => ({
+          item: {
+            question: 'Question?',
+            answer: 'Answer.',
+          },
+          url: 'https://www.example.com/page',
+          shouldOptimize: false,
+          transformRules: {
+            action: 'appendChild',
+            selector: 'main',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+      expect(result).to.deep.equal({
+        eligible: false,
+        reason: 'shouldOptimize flag is false',
+      });
+    });
+
+    it('should return eligible when shouldOptimize is true', () => {
+      const suggestion = {
+        getData: () => ({
+          item: {
+            question: 'Question?',
+            answer: 'Answer.',
+          },
+          url: 'https://www.example.com/page',
+          shouldOptimize: true,
+          transformRules: {
+            action: 'appendChild',
+            selector: 'main',
+          },
+        }),
+      };
+
+      const result = mapper.canDeploy(suggestion);
+      expect(result).to.deep.equal({ eligible: true });
+    });
   });
 
   describe('suggestionToPatch', () => {
@@ -245,6 +282,7 @@ describe('FaqMapper', () => {
             answer: 'Yes, because of **better value**.',
           },
           url: 'https://www.example.com/page',
+          headingText: 'FAQs',
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -253,22 +291,36 @@ describe('FaqMapper', () => {
       };
 
       const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-faq-123', null);
-      const patch = patches[0];
 
-      expect(patch).to.exist;
-      expect(patch.op).to.equal('appendChild');
-      expect(patch.selector).to.equal('main');
-      expect(patch.valueFormat).to.equal('hast');
-      expect(patch.opportunityId).to.equal('opp-faq-123');
-      expect(patch.suggestionIds).to.deep.equal(['sugg-faq-123']);
-      expect(patch.prerenderRequired).to.be.true;
-      expect(patch.lastUpdated).to.be.a('number');
+      // Should create 2 patches: heading + FAQ
+      expect(patches).to.be.an('array');
+      expect(patches.length).to.equal(2);
 
-      // Verify HAST structure
-      expect(patch.value).to.be.an('object');
-      expect(patch.value.type).to.equal('root');
-      expect(patch.value.children).to.be.an('array');
-      expect(patch.value.children.length).to.be.greaterThan(0);
+      // First patch: heading (no suggestionId)
+      const headingPatch = patches[0];
+      expect(headingPatch.opportunityId).to.equal('opp-faq-123');
+      expect(headingPatch.suggestionId).to.be.undefined;
+      expect(headingPatch.op).to.equal('appendChild');
+      expect(headingPatch.selector).to.equal('main');
+      expect(headingPatch.value.tagName).to.equal('h2');
+      expect(headingPatch.value.children[0].value).to.equal('FAQs');
+
+      // Second patch: FAQ item
+      const faqPatch = patches[1];
+      expect(faqPatch.opportunityId).to.equal('opp-faq-123');
+      expect(faqPatch.suggestionId).to.equal('sugg-faq-123');
+      expect(faqPatch.op).to.equal('appendChild');
+      expect(faqPatch.selector).to.equal('main');
+      expect(faqPatch.valueFormat).to.equal('hast');
+      expect(faqPatch.prerenderRequired).to.be.true;
+      expect(faqPatch.lastUpdated).to.be.a('number');
+
+      // Verify FAQ HAST structure: <div><h3>question</h3>answer</div>
+      expect(faqPatch.value).to.be.an('object');
+      expect(faqPatch.value.type).to.equal('element');
+      expect(faqPatch.value.tagName).to.equal('div');
+      expect(faqPatch.value.children).to.be.an('array');
+      expect(faqPatch.value.children[0].tagName).to.equal('h3');
     });
 
     it('should convert FAQ markdown with headings and lists to HAST', () => {
@@ -294,23 +346,26 @@ describe('FaqMapper', () => {
       };
 
       const patches = mapper.suggestionsToPatches('/page', [suggestion1], 'opp-faq-complex', null);
-      const patch = patches[0];
 
-      expect(patch).to.exist;
-      expect(patch.value.type).to.equal('root');
-      expect(patch.value.children).to.be.an('array');
-      expect(patch.value.children.length).to.be.greaterThan(2);
+      expect(patches.length).to.equal(2); // heading + FAQ
 
-      // Should have h2, h3, paragraphs, and ordered list
-      const hasH2 = patch.value.children.some((child) => child.type === 'element' && child.tagName === 'h2');
-      const hasH3 = patch.value.children.some((child) => child.type === 'element' && child.tagName === 'h3');
-      const hasP = patch.value.children.some((child) => child.type === 'element' && child.tagName === 'p');
-      const hasOl = patch.value.children.some((child) => child.type === 'element' && child.tagName === 'ol');
+      // Check heading patch
+      expect(patches[0].value.tagName).to.equal('h2');
 
-      expect(hasH2).to.be.true;
-      expect(hasH3).to.be.true;
-      expect(hasP).to.be.true;
-      expect(hasOl).to.be.true;
+      // Check FAQ patch
+      const faqPatch = patches[1];
+      expect(faqPatch).to.exist;
+      expect(faqPatch.value.type).to.equal('element');
+      expect(faqPatch.value.tagName).to.equal('div');
+      expect(faqPatch.value.children).to.be.an('array');
+
+      // Verify structure: div > [h3, ...answer content]
+      const h3 = faqPatch.value.children[0];
+      expect(h3.tagName).to.equal('h3');
+      expect(h3.children[0].value).to.equal('Is Bulk better than myprotein?');
+
+      // The rest should be answer content (paragraph, list, etc.)
+      expect(faqPatch.value.children.length).to.be.greaterThan(1);
     });
 
     it('should handle markdown with bold text', () => {
@@ -323,6 +378,7 @@ describe('FaqMapper', () => {
             answer: 'This is **bold** text.',
           },
           url: 'https://www.example.com/page',
+          headingText: 'FAQs',
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -331,14 +387,20 @@ describe('FaqMapper', () => {
       };
 
       const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-faq-bold', null);
-      const patch = patches[0];
 
-      expect(patch).to.exist;
-      expect(patch.value.type).to.equal('root');
-      expect(patch.value.children).to.be.an('array');
+      expect(patches.length).to.equal(2); // heading + FAQ
 
-      // Find the paragraph
-      const paragraph = patch.value.children.find((child) => child.type === 'element' && child.tagName === 'p');
+      // Check FAQ patch (second one)
+      const faqPatch = patches[1];
+      expect(faqPatch).to.exist;
+      expect(faqPatch.value.type).to.equal('element');
+      expect(faqPatch.value.tagName).to.equal('div');
+
+      // Structure: div > [h3, ...answer]
+      expect(faqPatch.value.children[0].tagName).to.equal('h3');
+
+      // Find the paragraph in the answer
+      const paragraph = faqPatch.value.children.find((child) => child.type === 'element' && child.tagName === 'p');
       expect(paragraph).to.exist;
       expect(paragraph.children).to.be.an('array');
 
@@ -387,20 +449,21 @@ describe('FaqMapper', () => {
     });
 
     it('should handle markdown parsing errors gracefully', () => {
-      let errorMessage = '';
+      let errorCount = 0;
       const errorLog = {
         debug: () => {},
         info: () => {},
         warn: () => {},
-        error: (msg) => { errorMessage = msg; },
+        error: () => { errorCount += 1; },
       };
 
       const errorMapper = new FaqMapper(errorLog);
 
-      // Use a headingText that will cause markdown parsing to fail when combined
-      // by overriding buildFaqMarkdown to return null
-      const originalBuildFaqMarkdown = errorMapper.buildFaqMarkdown;
-      errorMapper.buildFaqMarkdown = () => null; // This will cause markdown parser to fail
+      // Override buildFaqItemHast to throw an error
+      const originalBuildFaqItemHast = errorMapper.buildFaqItemHast;
+      errorMapper.buildFaqItemHast = () => {
+        throw new Error('Markdown parsing failed');
+      };
 
       const suggestion = {
         getId: () => 'sugg-error',
@@ -411,6 +474,7 @@ describe('FaqMapper', () => {
             answer: 'Answer.',
           },
           url: 'https://www.example.com/page',
+          headingText: 'FAQs',
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -420,12 +484,14 @@ describe('FaqMapper', () => {
 
       const patches = errorMapper.suggestionsToPatches('/page', [suggestion], 'opp-error', null);
 
+      // Should only create heading patch, FAQ item should fail gracefully
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(0);
-      expect(errorMessage).to.include('Failed to convert FAQ markdown to HAST');
+      expect(patches.length).to.equal(1); // Only heading
+      expect(patches[0].value.tagName).to.equal('h2'); // Heading patch
+      expect(errorCount).to.be.greaterThan(0);
 
       // Restore original method
-      errorMapper.buildFaqMarkdown = originalBuildFaqMarkdown;
+      errorMapper.buildFaqItemHast = originalBuildFaqItemHast;
     });
 
     it('should handle real-world FAQ example from user', () => {
@@ -458,132 +524,29 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       };
 
       const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-faq-real', null);
-      const patch = patches[0];
 
-      expect(patch).to.exist;
-      expect(patch.op).to.equal('appendChild');
-      expect(patch.selector).to.equal('main');
-      expect(patch.valueFormat).to.equal('hast');
-      expect(patch.value.type).to.equal('root');
-      expect(patch.value.children).to.be.an('array');
-      expect(patch.value.children.length).to.be.greaterThan(5);
+      expect(patches.length).to.equal(2); // heading + FAQ
 
-      // Should have heading, paragraphs, and ordered list
-      const hasH2 = patch.value.children.some((child) => child.type === 'element' && child.tagName === 'h2');
-      const hasH3 = patch.value.children.some((child) => child.type === 'element' && child.tagName === 'h3');
-      const hasP = patch.value.children.some((child) => child.type === 'element' && child.tagName === 'p');
-      const hasOl = patch.value.children.some((child) => child.type === 'element' && child.tagName === 'ol');
+      // Check heading patch
+      expect(patches[0].value.tagName).to.equal('h2');
 
-      expect(hasH2).to.be.true;
-      expect(hasH3).to.be.true;
-      expect(hasP).to.be.true;
-      expect(hasOl).to.be.true;
-    });
-  });
+      // Check FAQ patch
+      const faqPatch = patches[1];
+      expect(faqPatch).to.exist;
+      expect(faqPatch.op).to.equal('appendChild');
+      expect(faqPatch.selector).to.equal('main');
+      expect(faqPatch.valueFormat).to.equal('hast');
+      expect(faqPatch.value.type).to.equal('element');
+      expect(faqPatch.value.tagName).to.equal('div');
+      expect(faqPatch.value.children).to.be.an('array');
 
-  describe('buildFaqMarkdown', () => {
-    it('should build markdown from multiple FAQ suggestions', () => {
-      const suggestions = [
-        {
-          getData: () => ({
-            item: {
-              question: 'What is the return policy?',
-              answer: 'You can return items within 30 days of purchase.',
-            },
-          }),
-        },
-        {
-          getData: () => ({
-            item: {
-              question: 'Do you offer international shipping?',
-              answer: 'Yes, we ship to over 100 countries worldwide.',
-            },
-          }),
-        },
-      ];
-
-      const markdown = mapper.buildFaqMarkdown(suggestions, 'FAQs');
-
-      expect(markdown).to.include('## FAQs');
-      expect(markdown).to.include('### What is the return policy?');
-      expect(markdown).to.include('You can return items within 30 days of purchase.');
-      expect(markdown).to.include('### Do you offer international shipping?');
-      expect(markdown).to.include('Yes, we ship to over 100 countries worldwide.');
-    });
-
-    it('should handle headingText parameter', () => {
-      const suggestions = [
-        {
-          getData: () => ({
-            item: {
-              question: 'Test question?',
-              answer: 'Test answer.',
-            },
-          }),
-        },
-      ];
-
-      const markdown = mapper.buildFaqMarkdown(suggestions, 'Frequently Asked Questions');
-      expect(markdown).to.include('## Frequently Asked Questions');
-    });
-
-    it('should skip suggestions without item.question or item.answer', () => {
-      const suggestions = [
-        {
-          getData: () => ({
-            item: {
-              question: 'Valid question?',
-              answer: 'Valid answer.',
-            },
-          }),
-        },
-        {
-          getData: () => ({
-            item: {
-              question: 'Invalid - no answer',
-            },
-          }),
-        },
-        {
-          getData: () => ({
-            item: {},
-          }),
-        },
-      ];
-
-      const markdown = mapper.buildFaqMarkdown(suggestions, 'FAQs');
-
-      expect(markdown).to.include('### Valid question?');
-      expect(markdown).to.include('Valid answer.');
-      expect(markdown).not.to.include('Invalid - no answer');
-    });
-
-    it('should work without headingText', () => {
-      const suggestions = [
-        {
-          getData: () => ({
-            item: {
-              question: 'Test?',
-              answer: 'Yes.',
-            },
-          }),
-        },
-      ];
-
-      const markdown = mapper.buildFaqMarkdown(suggestions, '');
-      expect(markdown).to.include('### Test?');
-      expect(markdown).to.include('Yes.');
-      // Should start with h3, not h2
-      expect(markdown.trim().startsWith('###')).to.be.true;
-      // The split lines should not contain any that start with "## " (h2)
-      const lines = markdown.split('\n');
-      const hasH2 = lines.some((line) => line.startsWith('## '));
-      expect(hasH2).to.be.false;
+      // Verify structure: div > [h3, ...answer content]
+      expect(faqPatch.value.children[0].tagName).to.equal('h3');
     });
   });
 
   describe('suggestionsToPatches', () => {
-    it('should combine multiple FAQ suggestions into a single patch', () => {
+    it('should create individual patches for multiple FAQ suggestions', () => {
       const suggestions = [
         {
           getId: () => 'sugg-faq-1',
@@ -622,21 +585,37 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
+      expect(patches.length).to.equal(3); // heading + 2 FAQs
 
-      const patch = patches[0];
-      expect(patch.opportunityId).to.equal('opp-faq-123');
-      expect(patch.suggestionIds).to.deep.equal(['sugg-faq-1', 'sugg-faq-2']);
-      expect(patch.op).to.equal('appendChild');
-      expect(patch.selector).to.equal('main');
-      expect(patch.valueFormat).to.equal('hast');
-      expect(patch.prerenderRequired).to.be.true;
-      expect(patch.lastUpdated).to.be.a('number');
+      // First patch: heading (no suggestionId)
+      const headingPatch = patches[0];
+      expect(headingPatch.opportunityId).to.equal('opp-faq-123');
+      expect(headingPatch.suggestionId).to.be.undefined;
+      expect(headingPatch.op).to.equal('appendChild');
+      expect(headingPatch.selector).to.equal('main');
+      expect(headingPatch.value.tagName).to.equal('h2');
+
+      // Second patch: first FAQ
+      const firstFaqPatch = patches[1];
+      expect(firstFaqPatch.opportunityId).to.equal('opp-faq-123');
+      expect(firstFaqPatch.suggestionId).to.equal('sugg-faq-1');
+      expect(firstFaqPatch.op).to.equal('appendChild');
+      expect(firstFaqPatch.selector).to.equal('main');
+      expect(firstFaqPatch.value.tagName).to.equal('div');
+
+      // Third patch: second FAQ
+      const secondFaqPatch = patches[2];
+      expect(secondFaqPatch.opportunityId).to.equal('opp-faq-123');
+      expect(secondFaqPatch.suggestionId).to.equal('sugg-faq-2');
+      expect(secondFaqPatch.op).to.equal('appendChild');
+      expect(secondFaqPatch.selector).to.equal('main');
+      expect(secondFaqPatch.value.tagName).to.equal('div');
 
       // Verify HAST contains both questions
-      const hastString = JSON.stringify(patch.value);
-      expect(hastString).to.include('What is your return policy?');
-      expect(hastString).to.include('Do you ship internationally?');
+      const hastString1 = JSON.stringify(firstFaqPatch.value);
+      const hastString2 = JSON.stringify(secondFaqPatch.value);
+      expect(hastString1).to.include('What is your return policy?');
+      expect(hastString2).to.include('Do you ship internationally?');
     });
 
     it('should handle single FAQ suggestion', () => {
@@ -662,8 +641,9 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
-      expect(patches[0].suggestionIds).to.deep.equal(['sugg-faq-1']);
+      expect(patches.length).to.equal(2); // heading + 1 FAQ
+      expect(patches[0].suggestionId).to.be.undefined; // heading
+      expect(patches[1].suggestionId).to.equal('sugg-faq-1'); // FAQ
     });
 
     it('should filter out ineligible suggestions', () => {
@@ -700,8 +680,9 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
 
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
-      expect(patches.length).to.equal(1);
-      expect(patches[0].suggestionIds).to.deep.equal(['sugg-faq-1']);
+      expect(patches.length).to.equal(2); // heading + 1 valid FAQ
+      expect(patches[0].suggestionId).to.be.undefined; // heading
+      expect(patches[1].suggestionId).to.equal('sugg-faq-1'); // FAQ
     });
 
     it('should return empty array when all suggestions are ineligible', () => {
@@ -737,6 +718,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://www.example.com/page',
+            headingText: 'FAQs',
             item: {
               question: 'Q?',
               answer: 'A.',
@@ -770,18 +752,19 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', allOpportunitySuggestions);
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
-      // Should only include the new suggestion, deployed one filtered out due to invalid URL
-      expect(patches[0].suggestionIds).to.deep.equal(['sugg-faq-new']);
+      expect(patches.length).to.equal(2); // heading + FAQ
+      expect(patches[0].suggestionId).to.be.undefined; // heading
+      expect(patches[1].suggestionId).to.equal('sugg-faq-new'); // FAQ
     });
 
-    it('should use earliest updatedAt timestamp', () => {
+    it('should use correct updatedAt timestamp for each patch', () => {
       const suggestions = [
         {
           getId: () => 'sugg-faq-1',
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://www.example.com/page',
+            headingText: 'FAQs',
             item: {
               question: 'Q1?',
               answer: 'A1',
@@ -794,9 +777,10 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         },
         {
           getId: () => 'sugg-faq-2',
-          getUpdatedAt: () => '2025-01-15T12:00:00.000Z', // Latest (but we use earliest)
+          getUpdatedAt: () => '2025-01-15T12:00:00.000Z',
           getData: () => ({
             url: 'https://www.example.com/page',
+            headingText: 'FAQs',
             item: {
               question: 'Q2?',
               answer: 'A2',
@@ -810,9 +794,16 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       ];
 
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
-      const expectedTimestamp = new Date('2025-01-15T10:00:00.000Z').getTime(); // Earliest
 
-      expect(patches[0].lastUpdated).to.equal(expectedTimestamp);
+      const expectedTimestamp1 = new Date('2025-01-15T10:00:00.000Z').getTime();
+      const expectedTimestamp2 = new Date('2025-01-15T12:00:00.000Z').getTime();
+
+      expect(patches.length).to.equal(3); // heading + 2 FAQs
+      // Heading uses Date.now(), so just check it exists
+      expect(patches[0].lastUpdated).to.be.a('number');
+      // FAQ patches use suggestion timestamps
+      expect(patches[1].lastUpdated).to.equal(expectedTimestamp1);
+      expect(patches[2].lastUpdated).to.equal(expectedTimestamp2);
     });
 
     it('should use Date.now() when getUpdatedAt returns null', () => {
@@ -822,6 +813,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getUpdatedAt: () => null, // No updatedAt
           getData: () => ({
             url: 'https://www.example.com/page',
+            headingText: 'FAQs',
             item: {
               question: 'Q1?',
               answer: 'A1',
@@ -838,8 +830,12 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
       const afterTime = Date.now();
 
+      expect(patches.length).to.equal(2); // heading + FAQ
+      // Both heading and FAQ should use Date.now()
       expect(patches[0].lastUpdated).to.be.at.least(beforeTime);
       expect(patches[0].lastUpdated).to.be.at.most(afterTime);
+      expect(patches[1].lastUpdated).to.be.at.least(beforeTime);
+      expect(patches[1].lastUpdated).to.be.at.most(afterTime);
     });
 
     it('should handle real-world FAQ structure from user example', () => {
@@ -870,14 +866,18 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
+      expect(patches.length).to.equal(2); // heading + FAQ
 
-      const patch = patches[0];
-      expect(patch.op).to.equal('appendChild');
-      expect(patch.selector).to.equal('main');
-      expect(patch.valueFormat).to.equal('hast');
+      // Check heading
+      expect(patches[0].value.tagName).to.equal('h2');
 
-      const hastString = JSON.stringify(patch.value);
+      // Check FAQ
+      const faqPatch = patches[1];
+      expect(faqPatch.op).to.equal('appendChild');
+      expect(faqPatch.selector).to.equal('main');
+      expect(faqPatch.valueFormat).to.equal('hast');
+
+      const hastString = JSON.stringify(faqPatch.value);
       expect(hastString).to.include('Comment modifier un PDF');
     });
 
@@ -888,6 +888,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://www.example.com/page',
+            headingText: 'FAQs',
             item: {
               question: 'New question?',
               answer: 'New answer.',
@@ -903,7 +904,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
+      expect(patches.length).to.equal(2); // heading + FAQ
     });
 
     it('should handle existing config with no existing patches for URL', () => {
@@ -913,6 +914,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://www.example.com/page',
+            headingText: 'FAQs',
             item: {
               question: 'New question?',
               answer: 'New answer.',
@@ -928,7 +930,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
+      expect(patches.length).to.equal(2); // heading + FAQ
     });
 
     it('should handle error when checking existing config', () => {
@@ -938,6 +940,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://www.example.com/page',
+            headingText: 'FAQs',
             item: {
               question: 'New question?',
               answer: 'New answer.',
@@ -954,7 +957,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
+      expect(patches.length).to.equal(2); // heading + FAQ
     });
 
     it('should handle null URL when checking existing config', () => {
@@ -964,6 +967,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://www.example.com/page',
+            headingText: 'FAQs',
             item: {
               question: 'New question?',
               answer: 'New answer.',
@@ -979,23 +983,25 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-123', null);
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
+      expect(patches.length).to.equal(2); // heading + FAQ
     });
 
     it('should handle markdown to HAST conversion errors in suggestionsToPatches', () => {
-      let errorMessage = '';
+      let errorCount = 0;
       const errorLog = {
         debug: () => {},
         info: () => {},
         warn: () => {},
-        error: (msg) => { errorMessage = msg; },
+        error: () => { errorCount += 1; },
       };
 
       const errorMapper = new FaqMapper(errorLog);
 
-      // Override buildFaqMarkdown to return null which will cause markdown parser to fail
-      const originalBuildFaqMarkdown = errorMapper.buildFaqMarkdown;
-      errorMapper.buildFaqMarkdown = () => null;
+      // Override buildFaqItemHast to throw an error
+      const originalBuildFaqItemHast = errorMapper.buildFaqItemHast;
+      errorMapper.buildFaqItemHast = () => {
+        throw new Error('Markdown parsing failed');
+      };
 
       const suggestions = [
         {
@@ -1003,6 +1009,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
           getData: () => ({
             url: 'https://www.example.com/page',
+            headingText: 'FAQs',
             item: {
               question: 'Question?',
               answer: 'Answer.',
@@ -1018,11 +1025,48 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const patches = errorMapper.suggestionsToPatches('/page', suggestions, 'opp-faq-error', null);
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(0);
-      expect(errorMessage).to.include('Failed to convert FAQ markdown to HAST');
+      expect(patches.length).to.equal(1); // Only heading, FAQ item fails
+      expect(patches[0].value.tagName).to.equal('h2'); // Heading patch
+      expect(errorCount).to.be.greaterThan(0);
 
       // Restore original method
-      errorMapper.buildFaqMarkdown = originalBuildFaqMarkdown;
+      errorMapper.buildFaqItemHast = originalBuildFaqItemHast;
+    });
+
+    it('should handle existing config with urlOptimizations but no patches', () => {
+      const suggestion = {
+        getId: () => 'sugg-faq-1',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          url: 'https://www.example.com/page',
+          headingText: 'FAQs',
+          item: {
+            question: 'Question?',
+            answer: 'Answer.',
+          },
+          transformRules: {
+            action: 'appendChild',
+            selector: 'main',
+          },
+        }),
+      };
+
+      // Config with urlOptimizations but no patches array
+      const existingConfig = {
+        tokowakaOptimizations: {
+          '/page': {
+            prerender: true,
+            // No patches array
+          },
+        },
+      };
+
+      const patches = mapper.suggestionsToPatches('/page', [suggestion], 'opp-faq-123', existingConfig);
+
+      expect(patches).to.be.an('array');
+      expect(patches.length).to.equal(2); // heading + FAQ (both created)
+      expect(patches[0].value.tagName).to.equal('h2'); // Heading
+      expect(patches[1].value.tagName).to.equal('div'); // FAQ
     });
   });
 
@@ -1063,24 +1107,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
   });
 
   describe('tokowakaDeployed filtering', () => {
-    it('should include previously deployed suggestions when rebuilding FAQ', () => {
-      const deployedSuggestion = {
-        getId: () => 'sugg-deployed-1',
-        getUpdatedAt: () => '2025-01-10T10:00:00.000Z',
-        getData: () => ({
-          url: 'https://www.example.com/page',
-          item: {
-            question: 'Already deployed question?',
-            answer: 'Already deployed answer.',
-          },
-          tokowakaDeployed: 1704884400000, // Timestamp
-          transformRules: {
-            action: 'appendChild',
-            selector: 'main',
-          },
-        }),
-      };
-
+    it('should skip heading when FAQ already deployed for URL', () => {
       const newSuggestion = {
         getId: () => 'sugg-new-1',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
@@ -1098,203 +1125,140 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         }),
       };
 
-      const allOpportunitySuggestions = [deployedSuggestion, newSuggestion];
-
-      const patches = mapper.suggestionsToPatches(
-        '/page',
-        [newSuggestion], // Only deploying new suggestion
-        'opp-faq-123',
-        allOpportunitySuggestions,
-      );
-
-      expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
-      expect(patches[0].suggestionIds).to.deep.equal(['sugg-deployed-1', 'sugg-new-1']);
-
-      // Verify markdown includes both questions
-      const hastString = JSON.stringify(patches[0].value);
-      expect(hastString).to.include('Already deployed question');
-      expect(hastString).to.include('New question');
-    });
-
-    it('should filter deployed suggestions by URL', () => {
-      const deployedSuggestion1 = {
-        getId: () => 'sugg-deployed-1',
-        getUpdatedAt: () => '2025-01-10T10:00:00.000Z',
-        getData: () => ({
-          url: 'https://www.example.com/page',
-          item: {
-            question: 'Page question?',
-            answer: 'Page answer.',
+      // Mock existingConfig with heading already present
+      const existingConfig = {
+        tokowakaOptimizations: {
+          '/page': {
+            patches: [
+              {
+                opportunityId: 'opp-faq-123',
+                // No suggestionId = heading patch
+                op: 'appendChild',
+                selector: 'main',
+                value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'FAQs' }] },
+              },
+            ],
           },
-          tokowakaDeployed: 1704884400000,
-          transformRules: {
-            action: 'appendChild',
-            selector: 'main',
-          },
-        }),
-      };
-
-      const deployedSuggestion2 = {
-        getId: () => 'sugg-deployed-2',
-        getUpdatedAt: () => '2025-01-10T10:00:00.000Z',
-        getData: () => ({
-          url: 'https://www.example.com/other-page',
-          item: {
-            question: 'Other page question?',
-            answer: 'Other page answer.',
-          },
-          tokowakaDeployed: 1704884400000,
-          transformRules: {
-            action: 'appendChild',
-            selector: 'main',
-          },
-        }),
-      };
-
-      const newSuggestion = {
-        getId: () => 'sugg-new-1',
-        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
-        getData: () => ({
-          url: 'https://www.example.com/page',
-          headingText: 'FAQs',
-          item: {
-            question: 'New question?',
-            answer: 'New answer.',
-          },
-          transformRules: {
-            action: 'appendChild',
-            selector: 'main',
-          },
-        }),
-      };
-
-      const allOpportunitySuggestions = [deployedSuggestion1, deployedSuggestion2, newSuggestion];
-
-      const patches = mapper.suggestionsToPatches(
-        '/page',
-        [newSuggestion],
-        'opp-faq-123',
-        allOpportunitySuggestions,
-      );
-
-      expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
-      // Should only include deployed-1 (same URL) and new-1, not deployed-2 (different URL)
-      expect(patches[0].suggestionIds).to.deep.equal(['sugg-deployed-1', 'sugg-new-1']);
-    });
-
-    it('should work without allOpportunitySuggestions parameter', () => {
-      const newSuggestion = {
-        getId: () => 'sugg-new-1',
-        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
-        getData: () => ({
-          url: 'https://www.example.com/page',
-          headingText: 'FAQs',
-          item: {
-            question: 'New question?',
-            answer: 'New answer.',
-          },
-          transformRules: {
-            action: 'appendChild',
-            selector: 'main',
-          },
-        }),
-      };
-
-      const patches = mapper.suggestionsToPatches(
-        '/page',
-        [newSuggestion],
-        'opp-faq-123',
-        null, // No all suggestions
-      );
-
-      expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
-      expect(patches[0].suggestionIds).to.deep.equal(['sugg-new-1']);
-    });
-
-    it('should handle non-array allOpportunitySuggestions', () => {
-      const newSuggestion = {
-        getId: () => 'sugg-new-1',
-        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
-        getData: () => ({
-          url: 'https://www.example.com/page',
-          headingText: 'FAQs',
-          item: {
-            question: 'New question?',
-            answer: 'New answer.',
-          },
-          transformRules: {
-            action: 'appendChild',
-            selector: 'main',
-          },
-        }),
-      };
-
-      // Pass a string instead of an array
-      const patches = mapper.suggestionsToPatches(
-        '/page',
-        [newSuggestion],
-        'opp-faq-123',
-        'not-an-array',
-      );
-
-      expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1);
-      expect(patches[0].suggestionIds).to.deep.equal(['sugg-new-1']);
-    });
-  });
-
-  describe('getDeployedSuggestionsForUrl (private method)', () => {
-    it('should return empty array when allOpportunitySuggestions is not an array', () => {
-      // Test the defensive check in the private method
-      const result = mapper.getDeployedSuggestionsForUrl(
-        '/page',
-        'https://www.example.com',
-        'not-an-array', // Not an array
-        [],
-      );
-
-      expect(result).to.be.an('array');
-      expect(result.length).to.equal(0);
-    });
-
-    it('should filter suggestions with invalid URLs', () => {
-      // Create a getData that throws when accessing url property
-      const deployedSuggestion = {
-        getId: () => 'sugg-deployed-1',
-        getData: () => {
-          const data = {
-            item: {
-              question: 'Q?',
-              answer: 'A.',
-            },
-            tokowakaDeployed: 1704884400000,
-            transformRules: {
-              action: 'appendChild',
-              selector: 'main',
-            },
-          };
-          // Define url as a getter that throws
-          Object.defineProperty(data, 'url', {
-            get: () => {
-              throw new Error('URL access error');
-            },
-          });
-          return data;
         },
       };
 
-      const result = mapper.getDeployedSuggestionsForUrl(
+      const patches = mapper.suggestionsToPatches(
         '/page',
-        'https://www.example.com',
-        [deployedSuggestion],
-        [],
+        [newSuggestion],
+        'opp-faq-123',
+        existingConfig,
       );
 
-      expect(result).to.be.an('array');
-      expect(result.length).to.equal(0); // Filtered out due to URL error
+      expect(patches).to.be.an('array');
+      expect(patches.length).to.equal(1); // Only FAQ, no heading
+      expect(patches[0].suggestionId).to.equal('sugg-new-1');
+      expect(patches[0].value.tagName).to.equal('div'); // FAQ div
+      expect(patches[0].selector).to.equal('main');
+      expect(patches[0].op).to.equal('appendChild');
+    });
+
+    it('should create heading when no patches exist for URL', () => {
+      const newSuggestion = {
+        getId: () => 'sugg-new-1',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          url: 'https://www.example.com/page',
+          headingText: 'FAQs',
+          item: {
+            question: 'New question?',
+            answer: 'New answer.',
+          },
+          transformRules: {
+            action: 'appendChild',
+            selector: 'main',
+          },
+        }),
+      };
+
+      // Empty config - no patches
+      const existingConfig = null;
+
+      const patches = mapper.suggestionsToPatches(
+        '/page',
+        [newSuggestion],
+        'opp-faq-123',
+        existingConfig,
+      );
+
+      expect(patches).to.be.an('array');
+      expect(patches.length).to.equal(2); // heading + FAQ
+
+      // First should be heading
+      expect(patches[0].suggestionId).to.be.undefined;
+      expect(patches[0].value.tagName).to.equal('h2');
+
+      // Second should be FAQ
+      expect(patches[1].suggestionId).to.equal('sugg-new-1');
+      expect(patches[1].value.tagName).to.equal('div');
+      expect(patches[1].selector).to.equal('main');
+    });
+
+    it('should work without existing config parameter', () => {
+      const newSuggestion = {
+        getId: () => 'sugg-new-1',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          url: 'https://www.example.com/page',
+          headingText: 'FAQs',
+          item: {
+            question: 'New question?',
+            answer: 'New answer.',
+          },
+          transformRules: {
+            action: 'appendChild',
+            selector: 'main',
+          },
+        }),
+      };
+
+      const patches = mapper.suggestionsToPatches(
+        '/page',
+        [newSuggestion],
+        'opp-faq-123',
+        null, // No existing config
+      );
+
+      expect(patches).to.be.an('array');
+      expect(patches.length).to.equal(2); // heading + FAQ
+      expect(patches[0].suggestionId).to.be.undefined; // heading
+      expect(patches[1].suggestionId).to.equal('sugg-new-1'); // FAQ
+    });
+
+    it('should handle invalid existing config', () => {
+      const newSuggestion = {
+        getId: () => 'sugg-new-1',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          url: 'https://www.example.com/page',
+          headingText: 'FAQs',
+          item: {
+            question: 'New question?',
+            answer: 'New answer.',
+          },
+          transformRules: {
+            action: 'appendChild',
+            selector: 'main',
+          },
+        }),
+      };
+
+      // Pass invalid config
+      const patches = mapper.suggestionsToPatches(
+        '/page',
+        [newSuggestion],
+        'opp-faq-123',
+        'not-valid-config',
+      );
+
+      expect(patches).to.be.an('array');
+      expect(patches.length).to.equal(2); // heading + FAQ
+      expect(patches[0].suggestionId).to.be.undefined; // heading
+      expect(patches[1].suggestionId).to.equal('sugg-new-1'); // FAQ
     });
   });
 });

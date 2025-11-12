@@ -12,25 +12,20 @@
 
 /**
  * Generates a unique key for a patch based on its structure
- * Two types of patches:
- * 1. Single patch per URL (FAQ): All suggestions for same URL merge into one patch
- *    → Key: opportunityId
- * 2. Individual patches (Headings, Content): One patch per suggestion
+ * Individual patches (one suggestion per patch):
  *    → Key: opportunityId:suggestionId
+ * Patches with no suggestionId:
+ *    → Key: opportunityId
  */
-function getPatchKey(patch, hasSinglePatchPerUrl = false) {
-  if (!Array.isArray(patch.suggestionIds) || patch.suggestionIds.length === 0) {
-    throw new Error('Patch must have suggestionIds array with at least one element');
-  }
-
-  // Single patch per URL: use only opportunityId as key
-  if (hasSinglePatchPerUrl) {
-    return patch.opportunityId;
+function getPatchKey(patch) {
+  // Heading patch (no suggestionId): use special key
+  if (!patch.suggestionId) {
+    return `${patch.opportunityId}`;
   }
 
   // Individual patches include suggestionId in key
   // This ensures each suggestion gets its own separate patch
-  return `${patch.opportunityId}:${patch.suggestionIds[0]}`;
+  return `${patch.opportunityId}:${patch.suggestionId}`;
 }
 
 /**
@@ -39,15 +34,13 @@ function getPatchKey(patch, hasSinglePatchPerUrl = false) {
  * - If a patch with a new key is found, it's added
  * @param {Array} existingPatches - Array of existing patches
  * @param {Array} newPatches - Array of new patches to merge
- * @param {boolean} hasSinglePatchPerUrl - Whether mapper combines suggestions
- *   into single patch per URL
  * @returns {Object} - { patches: Array, updateCount: number, addCount: number }
  */
-export function mergePatches(existingPatches, newPatches, hasSinglePatchPerUrl = false) {
+export function mergePatches(existingPatches, newPatches) {
   // Create a map of existing patches by their key
   const patchMap = new Map();
   existingPatches.forEach((patch, index) => {
-    const key = getPatchKey(patch, hasSinglePatchPerUrl);
+    const key = getPatchKey(patch);
     patchMap.set(key, { patch, index });
   });
 
@@ -57,7 +50,7 @@ export function mergePatches(existingPatches, newPatches, hasSinglePatchPerUrl =
   let addCount = 0;
 
   newPatches.forEach((newPatch) => {
-    const key = getPatchKey(newPatch, hasSinglePatchPerUrl);
+    const key = getPatchKey(newPatch);
     const existing = patchMap.get(key);
 
     if (existing) {

@@ -108,12 +108,6 @@ export abstract class BaseOpportunityMapper {
   abstract requiresPrerender(): boolean;
   
   /**
-   * Indicates whether this mapper produces a single combined patch per URL
-   * @returns True if patches should be combined into one per URL, false for one patch per suggestion
-   */
-  hasSinglePatchPerUrl(): boolean;
-  
-  /**
    * Converts a suggestion to a Tokowaka patch
    */
   abstract suggestionToPatch(
@@ -174,7 +168,6 @@ export class FaqMapper extends BaseOpportunityMapper {
   
   getOpportunityType(): string;
   requiresPrerender(): boolean;
-  hasSinglePatchPerUrl(): boolean;
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
   suggestionsToPatches(
     urlPath: string,
@@ -285,8 +278,7 @@ export default class TokowakaClient {
    */
   mergeConfigs(
     existingConfig: TokowakaConfig,
-    newConfig: TokowakaConfig,
-    hasSinglePatchPerUrl?: boolean
+    newConfig: TokowakaConfig
   ): TokowakaConfig;
   
   /**

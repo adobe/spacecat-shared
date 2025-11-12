@@ -17,12 +17,12 @@ import { mergePatches } from '../../src/utils/patch-utils.js';
 
 describe('Patch Utils', () => {
   describe('mergePatches', () => {
-    it('should merge individual patches with same key (hasSinglePatchPerUrl=false)', () => {
+    it('should merge individual patches with same key', () => {
       const existingPatches = [
         {
           op: 'replace',
           opportunityId: 'opp-headings',
-          suggestionIds: ['sugg-123'],
+          suggestionId: 'sugg-123',
           value: 'old-value',
         },
       ];
@@ -31,25 +31,25 @@ describe('Patch Utils', () => {
         {
           op: 'replace',
           opportunityId: 'opp-headings',
-          suggestionIds: ['sugg-123'],
+          suggestionId: 'sugg-123',
           value: 'new-value',
         },
       ];
 
       const result = mergePatches(existingPatches, newPatches, false);
       expect(result.patches).to.have.lengthOf(1);
-      expect(result.patches[0].suggestionIds).to.deep.equal(['sugg-123']);
+      expect(result.patches[0].suggestionId).to.equal('sugg-123');
       expect(result.patches[0].value).to.equal('new-value');
       expect(result.updateCount).to.equal(1);
       expect(result.addCount).to.equal(0);
     });
 
-    it('should keep individual patches with different keys (hasSinglePatchPerUrl=false)', () => {
+    it('should keep individual patches with different keys', () => {
       const existingPatches = [
         {
           op: 'replace',
           opportunityId: 'opp-headings',
-          suggestionIds: ['sugg-1'],
+          suggestionId: 'sugg-1',
           value: 'value-1',
         },
       ];
@@ -58,7 +58,7 @@ describe('Patch Utils', () => {
         {
           op: 'replace',
           opportunityId: 'opp-headings',
-          suggestionIds: ['sugg-2'],
+          suggestionId: 'sugg-2',
           value: 'value-2',
         },
       ];
@@ -69,66 +69,12 @@ describe('Patch Utils', () => {
       expect(result.addCount).to.equal(1);
     });
 
-    it('should merge combined patches (hasSinglePatchPerUrl=true)', () => {
-      const existingPatches = [
-        {
-          op: 'appendChild',
-          opportunityId: 'opp-faq',
-          suggestionIds: ['sugg-1', 'sugg-2'],
-          value: 'old-faq-value',
-        },
-      ];
-
-      const newPatches = [
-        {
-          op: 'appendChild',
-          opportunityId: 'opp-faq',
-          suggestionIds: ['sugg-3', 'sugg-4'],
-          value: 'new-faq-value',
-        },
-      ];
-
-      const result = mergePatches(existingPatches, newPatches, true);
-      expect(result.patches).to.have.lengthOf(1);
-      expect(result.patches[0].suggestionIds).to.deep.equal(['sugg-3', 'sugg-4']);
-      expect(result.patches[0].value).to.equal('new-faq-value');
-      expect(result.updateCount).to.equal(1);
-      expect(result.addCount).to.equal(0);
-    });
-
-    it('should merge FAQ patch even when only one suggestionId (hasSinglePatchPerUrl=true)', () => {
-      const existingPatches = [
-        {
-          op: 'appendChild',
-          opportunityId: 'opp-faq',
-          suggestionIds: ['sugg-1'],
-          value: 'old-faq',
-        },
-      ];
-
-      const newPatches = [
-        {
-          op: 'appendChild',
-          opportunityId: 'opp-faq',
-          suggestionIds: ['sugg-2'],
-          value: 'new-faq',
-        },
-      ];
-
-      const result = mergePatches(existingPatches, newPatches, true);
-      expect(result.patches).to.have.lengthOf(1);
-      expect(result.patches[0].suggestionIds).to.deep.equal(['sugg-2']);
-      expect(result.patches[0].value).to.equal('new-faq');
-      expect(result.updateCount).to.equal(1);
-      expect(result.addCount).to.equal(0);
-    });
-
     it('should handle empty existing patches', () => {
       const newPatches = [
         {
           op: 'appendChild',
           opportunityId: 'opp-123',
-          suggestionIds: ['sugg-new'],
+          suggestionId: 'sugg-new',
           value: 'new-value',
         },
       ];
@@ -145,7 +91,7 @@ describe('Patch Utils', () => {
         {
           op: 'appendChild',
           opportunityId: 'opp-123',
-          suggestionIds: ['sugg-old'],
+          suggestionId: 'sugg-old',
           value: 'old-value',
         },
       ];
@@ -157,48 +103,46 @@ describe('Patch Utils', () => {
       expect(result.addCount).to.equal(0);
     });
 
-    it('should throw error when patch has missing suggestionIds', () => {
+    it('should handle patch without suggestionId (heading patch)', () => {
       const existingPatches = [];
       const newPatches = [
         {
           op: 'appendChild',
           opportunityId: 'opp-123',
-          value: 'value',
+          value: { type: 'element', tagName: 'h2' },
+          // No suggestionId - this is a heading patch
         },
       ];
 
-      expect(() => mergePatches(existingPatches, newPatches, false))
-        .to.throw('Patch must have suggestionIds array with at least one element');
+      const result = mergePatches(existingPatches, newPatches, false);
+
+      expect(result.patches).to.have.lengthOf(1);
+      expect(result.addCount).to.equal(1);
     });
 
-    it('should throw error when patch has empty suggestionIds array', () => {
-      const existingPatches = [];
-      const newPatches = [
-        {
-          op: 'appendChild',
-          opportunityId: 'opp-123',
-          suggestionIds: [],
-          value: 'value',
-        },
-      ];
-
-      expect(() => mergePatches(existingPatches, newPatches, false))
-        .to.throw('Patch must have suggestionIds array with at least one element');
-    });
-
-    it('should throw error when existing patch has invalid suggestionIds', () => {
+    it('should merge heading patches with same opportunityId', () => {
       const existingPatches = [
         {
           op: 'appendChild',
           opportunityId: 'opp-123',
-          suggestionIds: [],
-          value: 'value',
+          value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'Old' }] },
+          // No suggestionId
         },
       ];
-      const newPatches = [];
+      const newPatches = [
+        {
+          op: 'appendChild',
+          opportunityId: 'opp-123',
+          value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'New' }] },
+          // No suggestionId
+        },
+      ];
 
-      expect(() => mergePatches(existingPatches, newPatches, false))
-        .to.throw('Patch must have suggestionIds array with at least one element');
+      const result = mergePatches(existingPatches, newPatches, false);
+
+      expect(result.patches).to.have.lengthOf(1);
+      expect(result.updateCount).to.equal(1);
+      expect(result.patches[0].value.children[0].value).to.equal('New');
     });
   });
 });

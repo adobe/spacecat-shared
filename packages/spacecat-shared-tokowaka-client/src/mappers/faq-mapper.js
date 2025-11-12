@@ -209,8 +209,8 @@ export default class FaqMapper extends BaseOpportunityMapper {
     const data = suggestion.getData();
 
     // Check shouldOptimize flag first
-    if (data?.shouldOptimize === false) {
-      return { eligible: false, reason: 'shouldOptimize flag is false' };
+    if (data?.shouldOptimize !== true) {
+      return { eligible: false, reason: 'shouldOptimize flag is not true' };
     }
 
     if (!data?.item?.question || !data?.item?.answer) {

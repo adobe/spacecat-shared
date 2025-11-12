@@ -237,6 +237,7 @@ describe('TokowakaClient', () => {
           getData: () => ({
             url: 'https://example.com/page1',
             headingText: 'FAQs',
+            shouldOptimize: true,
             item: {
               question: 'Question 1?',
               answer: 'Answer 1.',
@@ -253,6 +254,7 @@ describe('TokowakaClient', () => {
           getData: () => ({
             url: 'https://example.com/page1',
             headingText: 'FAQs',
+            shouldOptimize: true,
             item: {
               question: 'Question 2?',
               answer: 'Answer 2.',

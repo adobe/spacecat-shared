@@ -113,7 +113,7 @@ class TokowakaClient {
 
     Object.entries(suggestionsByUrl).forEach(([urlPath, urlSuggestions]) => {
       let patches = [];
-      // Use suggestionsToPatches if available (allows mappers to combine multiple suggestions)
+      // Use suggestionsToPatches if available
       if (mapper.suggestionsToPatches) {
         patches = mapper.suggestionsToPatches(
           urlPath,

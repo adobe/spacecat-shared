@@ -21,7 +21,7 @@ export interface TokawakaPatch {
   currValue?: string;
   target: 'ai-bots' | 'bots' | 'all';
   opportunityId: string;
-  suggestionIds: string[];
+  suggestionId?: string;
   prerenderRequired: boolean;
   lastUpdated: number;
 }
@@ -169,11 +169,17 @@ export class FaqMapper extends BaseOpportunityMapper {
   getOpportunityType(): string;
   requiresPrerender(): boolean;
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+  
+  /**
+   * Creates patches for FAQ suggestions
+   * First patch is heading (h2) if it doesn't exist, then individual FAQ divs
+   * @throws {Error} if suggestionToPatch is called directly
+   */
   suggestionsToPatches(
     urlPath: string,
     suggestions: Suggestion[],
     opportunityId: string,
-    allOpportunitySuggestions: Suggestion[] | null
+    existingConfig: TokowakaConfig | null
   ): TokawakaPatch[];
 }
 
@@ -276,10 +282,7 @@ export default class TokowakaClient {
   /**
    * Merges existing configuration with new configuration
    */
-  mergeConfigs(
-    existingConfig: TokowakaConfig,
-    newConfig: TokowakaConfig
-  ): TokowakaConfig;
+  mergeConfigs(existingConfig: TokowakaConfig, newConfig: TokowakaConfig): TokowakaConfig;
   
   /**
    * Invalidates CDN cache

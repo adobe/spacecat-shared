@@ -50,7 +50,6 @@ describe('FaqMapper', () => {
             answer: 'Yes, it is.',
           },
           url: 'https://www.example.com/page',
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -66,7 +65,6 @@ describe('FaqMapper', () => {
     it('should return ineligible when item.question/answer is missing', () => {
       const suggestion = {
         getData: () => ({
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -85,7 +83,6 @@ describe('FaqMapper', () => {
     it('should return ineligible when transformRules are missing', () => {
       const suggestion = {
         getData: () => ({
-          shouldOptimize: true,
           item: {
             question: 'Is this valid?',
             answer: 'Yes, it is.',
@@ -104,7 +101,6 @@ describe('FaqMapper', () => {
     it('should return ineligible when transformRules action is invalid', () => {
       const suggestion = {
         getData: () => ({
-          shouldOptimize: true,
           item: {
             question: 'Question?',
             answer: 'Answer.',
@@ -127,7 +123,6 @@ describe('FaqMapper', () => {
     it('should return ineligible when transformRules selector is missing', () => {
       const suggestion = {
         getData: () => ({
-          shouldOptimize: true,
           item: {
             question: 'Question?',
             answer: 'Answer.',
@@ -155,7 +150,7 @@ describe('FaqMapper', () => {
 
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'shouldOptimize flag is not true',
+        reason: 'item.question and item.answer are required',
       });
     });
 
@@ -167,7 +162,6 @@ describe('FaqMapper', () => {
             answer: 'Answer.',
           },
           url: 'https://www.example.com/page',
-          shouldOptimize: true,
           transformRules: {
             action: 'insertAfter',
             selector: 'main',
@@ -188,7 +182,6 @@ describe('FaqMapper', () => {
             answer: 'Answer.',
           },
           url: 'https://www.example.com/page',
-          shouldOptimize: true,
           transformRules: {
             action: 'insertBefore',
             selector: 'main',
@@ -209,7 +202,6 @@ describe('FaqMapper', () => {
             answer: 'Answer.',
           },
           url: 'not-a-valid-url',
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -241,7 +233,7 @@ describe('FaqMapper', () => {
       const result = mapper.canDeploy(suggestion);
       expect(result).to.deep.equal({
         eligible: false,
-        reason: 'shouldOptimize flag is not true',
+        reason: 'shouldOptimize flag is false',
       });
     });
 
@@ -291,7 +283,6 @@ describe('FaqMapper', () => {
           },
           url: 'https://www.example.com/page',
           headingText: 'FAQs',
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -347,7 +338,6 @@ describe('FaqMapper', () => {
           },
           url: 'https://www.example.com/page',
           headingText: 'FAQs',
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -389,7 +379,6 @@ describe('FaqMapper', () => {
           },
           url: 'https://www.example.com/page',
           headingText: 'FAQs',
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -486,7 +475,6 @@ describe('FaqMapper', () => {
           },
           url: 'https://www.example.com/page',
           headingText: 'FAQs',
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -527,7 +515,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
             answer: answer1,
           },
           headingText: 'FAQs',
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -567,7 +554,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'What is your return policy?',
               answer: 'You can return items within 30 days.',
@@ -584,7 +570,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'Do you ship internationally?',
               answer: 'Yes, we ship to over 100 countries.',
@@ -641,7 +626,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'What is your return policy?',
               answer: 'You can return items within 30 days.',
@@ -670,7 +654,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'Valid question?',
               answer: 'Valid answer.',
@@ -686,7 +669,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getUpdatedAt: () => '2025-01-15T11:00:00.000Z',
           getData: () => ({
             url: 'https://www.example.com/page',
-            shouldOptimize: true,
             // Missing item - should be filtered out
             transformRules: {
               action: 'appendChild',
@@ -737,7 +719,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'Q?',
               answer: 'A.',
@@ -784,7 +765,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'Q1?',
               answer: 'A1',
@@ -801,7 +781,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'Q2?',
               answer: 'A2',
@@ -835,7 +814,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'Q1?',
               answer: 'A1',
@@ -911,7 +889,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'New question?',
               answer: 'New answer.',
@@ -938,7 +915,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'New question?',
               answer: 'New answer.',
@@ -965,7 +941,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'New question?',
               answer: 'New answer.',
@@ -993,7 +968,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'New question?',
               answer: 'New answer.',
@@ -1036,7 +1010,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
           getData: () => ({
             url: 'https://www.example.com/page',
             headingText: 'FAQs',
-            shouldOptimize: true,
             item: {
               question: 'Question?',
               answer: 'Answer.',
@@ -1067,7 +1040,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         getData: () => ({
           url: 'https://www.example.com/page',
           headingText: 'FAQs',
-          shouldOptimize: true,
           item: {
             question: 'Question?',
             answer: 'Answer.',
@@ -1107,7 +1079,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
             answer: 'Yes, it is.',
           },
           url: 'https://www.example.com/page',
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -1122,7 +1093,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
     it('should reject when item.question/answer is missing', () => {
       const suggestion = {
         getData: () => ({
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -1144,7 +1114,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         getData: () => ({
           url: 'https://www.example.com/page',
           headingText: 'FAQs',
-          shouldOptimize: true,
           item: {
             question: 'New question?',
             answer: 'New answer.',
@@ -1199,7 +1168,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
             question: 'New question?',
             answer: 'New answer.',
           },
-          shouldOptimize: true,
           transformRules: {
             action: 'appendChild',
             selector: 'main',
@@ -1237,7 +1205,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         getData: () => ({
           url: 'https://www.example.com/page',
           headingText: 'FAQs',
-          shouldOptimize: true,
           item: {
             question: 'New question?',
             answer: 'New answer.',
@@ -1269,7 +1236,6 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
         getData: () => ({
           url: 'https://www.example.com/page',
           headingText: 'FAQs',
-          shouldOptimize: true,
           item: {
             question: 'New question?',
             answer: 'New answer.',

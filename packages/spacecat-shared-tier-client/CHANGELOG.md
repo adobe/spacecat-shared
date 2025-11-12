@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.2.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.2...@adobe/spacecat-shared-tier-client-v1.2.3) (2025-11-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1107](https://github.com/adobe/spacecat-shared/issues/1107)) ([f4cdb50](https://github.com/adobe/spacecat-shared/commit/f4cdb50f96d18dd92de81055f2b58310a68c0cac))
+
 # [@adobe/spacecat-shared-tier-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.1...@adobe/spacecat-shared-tier-client-v1.2.2) (2025-10-28)
 
 

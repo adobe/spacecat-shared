@@ -524,4 +524,66 @@ describe('ImsClient', () => {
       expect(nock.isDone()).to.be.true;
     });
   });
+
+  describe('getAccountCluster', () => {
+    let client;
+    const testAccessToken = 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjEyMzQ1IiwidHlwZSI6ImFjY2Vzc190b2tlbiIsImNsaWVudF9pZCI6ImV4YW1wbGVfYXBwIiwidXNlcl9pZCI6Ijk4NzY1NDc4OTBBQkNERUYxMjM0NTY3OEBhYmNkZWYxMjM0NTY3ODkuZSIsImFzIjoiaW1zLW5hMSIsImFhX2lkIjoiMTIzNDU2Nzg5MEFCQ0RFRjEyMzQ1Njc4QGFkb2JlLmNvbSIsImNyZWF0ZWRfYXQiOiIxNzEwMjQ3MDAwMDAwIn0.MRDpxgxSHDj4DmA182hPnjMAnKkly-VUJ_bXpQ-J8EQ';
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+    });
+
+    it('throws error when accessToken is not provided', async () => {
+      await expect(client.getAccountCluster('')).to.be.rejectedWith('accessToken param is required.');
+    });
+
+    it('throws error when accessToken is null', async () => {
+      await expect(client.getAccountCluster(null)).to.be.rejectedWith('accessToken param is required.');
+    });
+
+    it('successfully fetches account cluster data', async () => {
+      const mockAccountCluster = {
+        accountCluster: 'example-cluster',
+        accountId: '1234567890ABCDEF12345678',
+        clusterName: 'Example Cluster',
+      };
+
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/account_cluster/v2')
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(200, mockAccountCluster);
+
+      const result = await client.getAccountCluster(testAccessToken);
+      expect(result).to.deep.equal(mockAccountCluster);
+    });
+
+    it('throws error when account cluster request fails', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/account_cluster/v2')
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(500, {
+          error: 'server_error',
+          error_description: 'Internal server error',
+        });
+
+      await expect(client.getAccountCluster(testAccessToken))
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 500');
+    });
+
+    it('throws error when account cluster request returns 404', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/account_cluster/v2')
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(404, {
+          error: 'not_found',
+          error_description: 'Account cluster not found',
+        });
+
+      await expect(client.getAccountCluster(testAccessToken))
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 404');
+    });
+  });
 });

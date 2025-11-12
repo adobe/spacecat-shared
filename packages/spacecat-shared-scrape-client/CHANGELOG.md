@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-scrape-client-v2.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.3.0...@adobe/spacecat-shared-scrape-client-v2.3.1) (2025-11-07)
+
+
+### Bug Fixes
+
+* **ScrapeClient:** change baseUrl composing ([#1101](https://github.com/adobe/spacecat-shared/issues/1101)) ([1347bf3](https://github.com/adobe/spacecat-shared/commit/1347bf3e65b04f0ac24701e64eb360a85b7cb4e2))
+
 # [@adobe/spacecat-shared-scrape-client-v2.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.2.2...@adobe/spacecat-shared-scrape-client-v2.3.0) (2025-11-05)
 
 

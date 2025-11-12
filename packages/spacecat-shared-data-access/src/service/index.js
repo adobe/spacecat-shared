@@ -22,14 +22,29 @@ export * from '../errors/index.js';
 export * from '../models/index.js';
 export * from '../util/index.js';
 
+let defaultDynamoDBClient;
+const documentClientCache = new WeakMap();
+
 const createRawClient = (client = undefined) => {
-  const dbClient = instrumentAWSClient(client || new DynamoDB());
-  return DynamoDBDocument.from(dbClient, {
-    marshallOptions: {
-      convertEmptyValues: true,
-      removeUndefinedValues: true,
-    },
-  });
+  const rawClient = client || (() => {
+    if (!defaultDynamoDBClient) {
+      defaultDynamoDBClient = new DynamoDB();
+    }
+    return defaultDynamoDBClient;
+  })();
+
+  let documentClient = documentClientCache.get(rawClient);
+  if (!documentClient) {
+    documentClient = DynamoDBDocument.from(instrumentAWSClient(rawClient), {
+      marshallOptions: {
+        convertEmptyValues: true,
+        removeUndefinedValues: true,
+      },
+    });
+    documentClientCache.set(rawClient, documentClient);
+  }
+
+  return documentClient;
 };
 
 const createElectroService = (client, config, log) => {

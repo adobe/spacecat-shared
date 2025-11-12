@@ -26,6 +26,7 @@ import {
   IMS_TOKEN_ENDPOINT_V3,
   IMS_VALIDATE_TOKEN_ENDPOINT,
   IMS_ADMIN_PROFILE_ENDPOINT,
+  IMS_ACCOUNT_CLUSTER_ENDPOINT,
 } from '../utils.js';
 
 export default class ImsClient extends ImsBaseClient {
@@ -372,5 +373,30 @@ export default class ImsClient extends ImsBaseClient {
     }
 
     return response.json();
+  }
+
+  /**
+   * Fetches the account cluster data from IMS
+   * @param {string} accessToken - A valid IMS user access token
+   * @returns {Promise<Object>} The account cluster data
+   * @throws {Error} If the request fails
+   */
+  async getAccountCluster(accessToken) {
+    if (!hasText(accessToken)) {
+      throw new Error('accessToken param is required.');
+    }
+
+    const accountClusterResponse = await this.imsApiCall(
+      IMS_ACCOUNT_CLUSTER_ENDPOINT,
+      { client_id: this.config.clientId },
+      null,
+      { accessToken },
+    );
+
+    if (!accountClusterResponse.ok) {
+      throw new Error(`IMS getAccountCluster request failed with status: ${accountClusterResponse.status}`);
+    }
+
+    return accountClusterResponse.json();
   }
 }

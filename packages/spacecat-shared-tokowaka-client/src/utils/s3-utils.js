@@ -13,8 +13,12 @@
 /**
  * Generates S3 path for Tokowaka configuration
  * @param {string} apiKey - Tokowaka API key
+ * @param {boolean} isPreview - Whether this is a preview path
  * @returns {string} - S3 path
  */
-export function getTokowakaConfigS3Path(apiKey) {
+export function getTokowakaConfigS3Path(apiKey, isPreview = false) {
+  if (isPreview) {
+    return `preview/opportunities/${apiKey}`;
+  }
   return `opportunities/${apiKey}`;
 }

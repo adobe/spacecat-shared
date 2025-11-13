@@ -212,8 +212,6 @@ function isValidUrl(urlString) {
 
     const urlObj = new URL(url);
 
-    if (urlObj.pathname !== '/' || urlObj.search || urlObj.hash || urlObj.port) return false;
-
     // ensure the hostname is a valid registrable domain and not an ip
     const domain = parse(urlObj.hostname, { allowPrivateDomains: true });
     if (!domain.domain || domain.isIp) return false;

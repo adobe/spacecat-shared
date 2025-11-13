@@ -5,7 +5,7 @@
   ],
   "check-coverage": true,
   "lines": 100,
-  "branches": 75,
+  "branches": 97,
   "statements": 100,
   "all": true,
   "include": [

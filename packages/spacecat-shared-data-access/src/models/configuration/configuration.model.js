@@ -43,6 +43,11 @@ class Configuration extends BaseModel {
     FORTNIGHTLY_SUNDAY: 'fortnightly-sunday',
     MONTHLY: 'monthly',
   };
+
+  static AUDIT_NAME_REGEX = /^[a-z0-9-]+$/;
+
+  static AUDIT_NAME_MAX_LENGTH = 37;
+
   // add your custom methods or overrides here
 
   getHandler(type) {
@@ -316,12 +321,10 @@ class Configuration extends BaseModel {
       }
     }
 
-    if (properties.dependencies !== undefined) {
-      if (isNonEmptyArray(properties.dependencies)) {
-        for (const dep of properties.dependencies) {
-          if (!handlers[dep.handler]) {
-            throw new Error(`Dependency handler "${dep.handler}" does not exist in configuration`);
-          }
+    if (isNonEmptyArray(properties.dependencies)) {
+      for (const dep of properties.dependencies) {
+        if (!handlers[dep.handler]) {
+          throw new Error(`Dependency handler "${dep.handler}" does not exist in configuration`);
         }
       }
     }
@@ -373,8 +376,8 @@ class Configuration extends BaseModel {
     }
 
     if (data.jobs !== undefined) {
-      if (!Array.isArray(data.jobs)) {
-        throw new Error('Jobs must be an array if provided');
+      if (!isNonEmptyArray(data.jobs)) {
+        throw new Error('Jobs must be a non-empty array if provided');
       }
       const existingJobs = this.getJobs() || [];
       const mergedJobs = [...existingJobs];
@@ -415,11 +418,10 @@ class Configuration extends BaseModel {
       throw new Error('Audit type must be a non-empty string');
     }
 
-    const auditNameRegex = /^[a-z0-9-]+$/;
-    if (type.length > 37) {
-      throw new Error('Audit type must not exceed 37 characters');
+    if (type.length > Configuration.AUDIT_NAME_MAX_LENGTH) {
+      throw new Error(`Audit type must not exceed ${Configuration.AUDIT_NAME_MAX_LENGTH} characters`);
     }
-    if (!auditNameRegex.test(type)) {
+    if (!Configuration.AUDIT_NAME_REGEX.test(type)) {
       throw new Error('Audit type can only contain lowercase letters, numbers, and hyphens');
     }
 

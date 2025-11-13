@@ -900,7 +900,7 @@ describe('ConfigurationModel', () => {
     });
 
     it('throws error when jobs is not an array', () => {
-      expect(() => instance.updateConfiguration({ jobs: 'invalid' })).to.throw(Error, 'Jobs must be an array if provided');
+      expect(() => instance.updateConfiguration({ jobs: 'invalid' })).to.throw(Error, 'Jobs must be a non-empty array if provided');
     });
 
     it('throws error when queues is not an object', () => {

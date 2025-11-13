@@ -42,7 +42,7 @@ describe('BaseOpportunityMapper', () => {
     });
 
     it('suggestionsToPatches should throw error', () => {
-      expect(() => mapper.suggestionsToPatches('/path', [], 'opp-123'))
+      expect(() => mapper.suggestionsToPatches('/path', [], 'opp-123', null))
         .to.throw('suggestionsToPatches() must be implemented by subclass');
     });
 
@@ -65,9 +65,10 @@ describe('BaseOpportunityMapper', () => {
         canDeploy() { return { eligible: true }; }
       }
 
-      const testMapper = new TestMapper();
+      const testMapper = new TestMapper(log);
       const suggestion = {
         getId: () => 'test-123',
+        getData: () => ({}),
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
       };
 
@@ -90,9 +91,10 @@ describe('BaseOpportunityMapper', () => {
         canDeploy() { return { eligible: true }; }
       }
 
-      const testMapper = new TestMapper();
+      const testMapper = new TestMapper(log);
       const suggestion = {
         getId: () => 'test-no-date',
+        getData: () => ({}),
         getUpdatedAt: () => null, // Returns null
       };
 
@@ -105,6 +107,104 @@ describe('BaseOpportunityMapper', () => {
       expect(patch.lastUpdated).to.be.at.least(beforeTime);
       expect(patch.lastUpdated).to.be.at.most(afterTime);
       expect(patch.prerenderRequired).to.be.true;
+    });
+
+    it('should prioritize scrapedAt from getData()', () => {
+      class TestMapper extends BaseOpportunityMapper {
+        getOpportunityType() { return 'test'; }
+
+        requiresPrerender() { return true; }
+
+        suggestionsToPatches() { return []; }
+
+        canDeploy() { return { eligible: true }; }
+      }
+
+      const testMapper = new TestMapper(log);
+      const scrapedTime = '2025-01-20T15:30:00.000Z';
+      const suggestion = {
+        getId: () => 'test-scraped',
+        getData: () => ({ scrapedAt: scrapedTime }),
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+      };
+
+      const patch = testMapper.createBasePatch(suggestion, 'opp-scraped');
+
+      expect(patch.lastUpdated).to.equal(new Date(scrapedTime).getTime());
+    });
+
+    it('should use transformRules.scrapedAt when scrapedAt is not available', () => {
+      class TestMapper extends BaseOpportunityMapper {
+        getOpportunityType() { return 'test'; }
+
+        requiresPrerender() { return true; }
+
+        suggestionsToPatches() { return []; }
+
+        canDeploy() { return { eligible: true }; }
+      }
+
+      const testMapper = new TestMapper(log);
+      const transformScrapedTime = '2025-01-18T12:00:00.000Z';
+      const suggestion = {
+        getId: () => 'test-transform',
+        getData: () => ({ transformRules: { scrapedAt: transformScrapedTime } }),
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+      };
+
+      const patch = testMapper.createBasePatch(suggestion, 'opp-transform');
+
+      expect(patch.lastUpdated).to.equal(new Date(transformScrapedTime).getTime());
+    });
+
+    it('should handle invalid date strings by using Date.now()', () => {
+      class TestMapper extends BaseOpportunityMapper {
+        getOpportunityType() { return 'test'; }
+
+        requiresPrerender() { return true; }
+
+        suggestionsToPatches() { return []; }
+
+        canDeploy() { return { eligible: true }; }
+      }
+
+      const testMapper = new TestMapper(log);
+      const suggestion = {
+        getId: () => 'test-invalid',
+        getData: () => ({}),
+        getUpdatedAt: () => 'invalid-date-string',
+      };
+
+      const beforeTime = Date.now();
+      const patch = testMapper.createBasePatch(suggestion, 'opp-invalid');
+      const afterTime = Date.now();
+
+      // Should fallback to Date.now() for invalid dates
+      expect(patch.lastUpdated).to.be.at.least(beforeTime);
+      expect(patch.lastUpdated).to.be.at.most(afterTime);
+    });
+
+    it('should handle missing getData() gracefully', () => {
+      class TestMapper extends BaseOpportunityMapper {
+        getOpportunityType() { return 'test'; }
+
+        requiresPrerender() { return true; }
+
+        suggestionsToPatches() { return []; }
+
+        canDeploy() { return { eligible: true }; }
+      }
+
+      const testMapper = new TestMapper(log);
+      const suggestion = {
+        getId: () => 'test-no-data',
+        getData: () => null,
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+      };
+
+      const patch = testMapper.createBasePatch(suggestion, 'opp-no-data');
+
+      expect(patch.lastUpdated).to.equal(new Date('2025-01-15T10:00:00.000Z').getTime());
     });
   });
 });

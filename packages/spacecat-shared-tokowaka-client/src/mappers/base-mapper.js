@@ -75,8 +75,17 @@ export default class BaseOpportunityMapper {
    * @returns {Object} - Base patch object
    */
   createBasePatch(suggestion, opportunityId) {
-    const updatedAt = suggestion.getUpdatedAt();
-    const lastUpdated = updatedAt ? new Date(updatedAt).getTime() : Date.now();
+    const data = suggestion.getData();
+    const updatedAt = data?.scrapedAt
+      || data?.transformRules?.scrapedAt
+      || suggestion.getUpdatedAt();
+
+    // Parse timestamp, fallback to Date.now() if invalid
+    let lastUpdated = Date.now();
+    if (updatedAt) {
+      const parsed = new Date(updatedAt).getTime();
+      lastUpdated = Number.isNaN(parsed) ? Date.now() : parsed;
+    }
 
     return {
       opportunityId,

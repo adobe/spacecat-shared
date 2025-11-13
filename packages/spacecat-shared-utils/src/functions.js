@@ -11,6 +11,7 @@
  */
 
 import isEmail from 'validator/lib/isEmail.js';
+import { parse } from 'tldts';
 
 // Precompile regular expressions
 const REGEX_ISO_DATE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/;
@@ -185,14 +186,46 @@ function isIsoTimeOffsetsDate(str) {
 
 /**
  * Validates whether the given string is a valid URL with http or https protocol.
+ * Validates that the URL is clean: no explicit ports, hash fragments, or query parameters.
+ * Paths are allowed for flexibility with other URL fields.
  *
  * @param {string} urlString - The string to validate.
  * @returns {boolean} True if the given string validates successfully.
  */
 function isValidUrl(urlString) {
   try {
-    const url = new URL(urlString);
-    return url.protocol === 'http:' || url.protocol === 'https:';
+    let url = urlString.trim().toLowerCase();
+
+    // reject control characters (LF, CR etc)
+    if ([...url].some((c) => {
+      const code = c.charCodeAt(0);
+      return code < 32 || code === 127;
+    })) return false;
+
+    // only allow https
+    if (!/^https:\/\//i.test(url)) {
+      url = `https://${url}`;
+    }
+
+    const hostInput = url.slice('https://'.length);
+    if (/[/\\?#:]/.test(hostInput)) return false;
+
+    const urlObj = new URL(url);
+
+    if (urlObj.pathname !== '/' || urlObj.search || urlObj.hash || urlObj.port) return false;
+
+    // ensure the hostname is a valid registrable domain and not an ip
+    const domain = parse(urlObj.hostname, { allowPrivateDomains: true });
+    if (!domain.domain || domain.isIp) return false;
+    if (!domain.isIcann && !domain.isPrivate) return false;
+
+    // validate each label for length and allowed characters
+    for (const label of urlObj.hostname.split('.')) {
+      if (label.length === 0 || label.length > 63) return false;
+      if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label)) return false;
+    }
+
+    return true;
   } catch {
     return false;
   }

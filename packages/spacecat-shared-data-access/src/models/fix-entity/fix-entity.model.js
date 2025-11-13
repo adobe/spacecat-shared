@@ -32,6 +32,7 @@ class FixEntity extends BaseModel {
   static ORIGINS = {
     SPACECAT: 'spacecat',
     ASO: 'aso',
+    REPORTING: 'reporting',
   };
 
   async getSuggestions() {

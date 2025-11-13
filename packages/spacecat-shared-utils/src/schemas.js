@@ -149,7 +149,7 @@ export const llmoConfig = z.object({
   });
 
   // Validate topic prompts regions against their category
-  validateTopicPromptRegions(categories, ctx, topics, 'topics');
+  validateTopicPromptRegions(categories, ctx, topics);
 
   // Validate ai_topics prompts regions against their category
   if (value.ai_topics) {

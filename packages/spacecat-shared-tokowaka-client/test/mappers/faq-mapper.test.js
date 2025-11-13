@@ -805,9 +805,9 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       const expectedTimestamp2 = new Date('2025-01-15T12:00:00.000Z').getTime();
 
       expect(patches.length).to.equal(3); // heading + 2 FAQs
-      // Heading uses Date.now(), so just check it exists
-      expect(patches[0].lastUpdated).to.be.a('number');
-      // FAQ patches use suggestion timestamps
+      // Heading uses the most recent timestamp from suggestions (12:00:00)
+      expect(patches[0].lastUpdated).to.equal(expectedTimestamp2);
+      // FAQ patches use their respective suggestion timestamps
       expect(patches[1].lastUpdated).to.equal(expectedTimestamp1);
       expect(patches[2].lastUpdated).to.equal(expectedTimestamp2);
     });
@@ -839,6 +839,39 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
 
       expect(patches.length).to.equal(2); // heading + FAQ
       // Both heading and FAQ should use Date.now()
+      expect(patches[0].lastUpdated).to.be.at.least(beforeTime);
+      expect(patches[0].lastUpdated).to.be.at.most(afterTime);
+      expect(patches[1].lastUpdated).to.be.at.least(beforeTime);
+      expect(patches[1].lastUpdated).to.be.at.most(afterTime);
+    });
+
+    it('should handle invalid date strings by using Date.now()', () => {
+      const suggestions = [
+        {
+          getId: () => 'sugg-faq-invalid',
+          getUpdatedAt: () => 'invalid-date-string', // Invalid date
+          getData: () => ({
+            url: 'https://www.example.com/page',
+            headingText: 'FAQs',
+            shouldOptimize: true,
+            item: {
+              question: 'Q1?',
+              answer: 'A1',
+            },
+            transformRules: {
+              action: 'appendChild',
+              selector: 'main',
+            },
+          }),
+        },
+      ];
+
+      const beforeTime = Date.now();
+      const patches = mapper.suggestionsToPatches('/page', suggestions, 'opp-faq-invalid', null);
+      const afterTime = Date.now();
+
+      expect(patches.length).to.equal(2); // heading + FAQ
+      // Both heading and FAQ should fallback to Date.now() for invalid dates
       expect(patches[0].lastUpdated).to.be.at.least(beforeTime);
       expect(patches[0].lastUpdated).to.be.at.most(afterTime);
       expect(patches[1].lastUpdated).to.be.at.least(beforeTime);
@@ -1122,7 +1155,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
   });
 
   describe('tokowakaDeployed filtering', () => {
-    it('should skip heading when FAQ already deployed for URL', () => {
+    it('should always create heading patch even when FAQ already deployed for URL', () => {
       const newSuggestion = {
         getId: () => 'sugg-new-1',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
@@ -1148,6 +1181,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
             patches: [
               {
                 opportunityId: 'opp-faq-123',
+                lastUpdated: new Date('2025-01-01T00:00:00.000Z').getTime(),
                 // No suggestionId = heading patch
                 op: 'appendChild',
                 selector: 'main',
@@ -1166,11 +1200,18 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       );
 
       expect(patches).to.be.an('array');
-      expect(patches.length).to.equal(1); // Only FAQ, no heading
-      expect(patches[0].suggestionId).to.equal('sugg-new-1');
-      expect(patches[0].value.tagName).to.equal('div'); // FAQ div
-      expect(patches[0].selector).to.equal('main');
-      expect(patches[0].op).to.equal('appendChild');
+      expect(patches.length).to.equal(2); // Heading + FAQ (always create heading)
+
+      // First patch: heading with updated timestamp
+      expect(patches[0].suggestionId).to.be.undefined;
+      expect(patches[0].value.tagName).to.equal('h2');
+      expect(patches[0].lastUpdated).to.equal(new Date('2025-01-15T10:00:00.000Z').getTime());
+
+      // Second patch: FAQ
+      expect(patches[1].suggestionId).to.equal('sugg-new-1');
+      expect(patches[1].value.tagName).to.equal('div');
+      expect(patches[1].selector).to.equal('main');
+      expect(patches[1].op).to.equal('appendChild');
     });
 
     it('should create heading when no patches exist for URL', () => {

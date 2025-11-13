@@ -45,11 +45,10 @@ export default class BaseOpportunityMapper {
    * @param {string} _ - URL path for the suggestions
    * @param {Array} __ - Array of suggestion entities for the same URL
    * @param {string} ___ - Opportunity ID
-   * @param {Object} ____- Existing Tokowaka config
    * @returns {Array} - Array of Tokowaka patch objects
    */
   // eslint-disable-next-line no-unused-vars
-  suggestionsToPatches(_, __, ___, ____) {
+  suggestionsToPatches(_, __, ___) {
     this.log.error('suggestionsToPatches() must be implemented by subclass');
     throw new Error('suggestionsToPatches() must be implemented by subclass');
   }

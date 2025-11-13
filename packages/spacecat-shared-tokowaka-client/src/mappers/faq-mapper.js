@@ -68,44 +68,17 @@ export default class FaqMapper extends BaseOpportunityMapper {
   }
 
   /**
-  * Checks if heading patch exists for this opportunity in existing config
-  * @param {string} urlPath - URL path to check
-  * @param {string} opportunityId - Opportunity ID
-  * @param {Object} existingConfig - Existing Tokowaka config
-  * @returns {boolean} - True if heading patch exists
-  * @private
-  */
-  // eslint-disable-next-line class-methods-use-this
-  hasHeadingPatch(urlPath, opportunityId, existingConfig) {
-    if (!existingConfig?.tokowakaOptimizations) {
-      return false;
-    }
-
-    const urlOptimizations = existingConfig.tokowakaOptimizations[urlPath];
-    if (!urlOptimizations?.patches) {
-      return false;
-    }
-
-    // Check if heading patch exists (no suggestionId, matches opportunityId)
-    return urlOptimizations.patches.some(
-      (patch) => patch.opportunityId === opportunityId && !patch.suggestionId,
-    );
-  }
-
-  /**
   * Creates individual patches for FAQ suggestions
-  * First patch is heading (h2) if it doesn't exist, then individual FAQ divs
+  * Always creates heading (h2) patch with latest timestamp, then individual FAQ divs
   * @param {string} urlPath - URL path for current suggestions
   * @param {Array} suggestions - Array of suggestion entities for the same URL (to be deployed)
   * @param {string} opportunityId - Opportunity ID
-  * @param {Object} existingConfig - Existing Tokowaka config (to check for heading)
   * @returns {Array} - Array of patch objects
   */
   suggestionsToPatches(
     urlPath,
     suggestions,
     opportunityId,
-    existingConfig,
   ) {
     if (!urlPath || !Array.isArray(suggestions) || suggestions.length === 0) {
       this.log.error('Invalid parameters for FAQ mapper.suggestionsToPatches');
@@ -134,46 +107,51 @@ export default class FaqMapper extends BaseOpportunityMapper {
     const firstData = firstSuggestion.getData();
     const { headingText = 'FAQs', transformRules } = firstData;
 
-    // Check if heading patch already exists
-    const headingExists = this.hasHeadingPatch(urlPath, opportunityId, existingConfig);
+    // Calculate the most recent lastUpdated from all eligible suggestions
+    // The heading patch should have the same timestamp as the newest FAQ
+    const maxLastUpdated = Math.max(...eligibleSuggestions.map((suggestion) => {
+      const data = suggestion.getData();
+      const updatedAt = data?.scrapedAt
+        || data?.transformRules?.scrapedAt
+        || suggestion.getUpdatedAt();
 
-    // Create heading patch if it doesn't exist
-    if (!headingExists) {
-      this.log.debug(`Creating heading patch for ${urlPath}`);
+      if (updatedAt) {
+        const parsed = new Date(updatedAt).getTime();
+        return Number.isNaN(parsed) ? Date.now() : parsed;
+      }
+      return Date.now();
+    }));
 
-      const headingHast = {
-        type: 'element',
-        tagName: 'h2',
-        properties: {},
-        children: [{ type: 'text', value: headingText }],
-      };
+    // Always create/update heading patch with latest timestamp
+    // mergePatches will replace existing heading if it already exists
+    this.log.debug(`Creating/updating heading patch for ${urlPath}`);
 
-      patches.push({
-        opportunityId,
-        // No suggestionId for FAQ heading patch
-        prerenderRequired: this.requiresPrerender(),
-        lastUpdated: Date.now(),
-        op: transformRules.action,
-        selector: transformRules.selector,
-        value: headingHast,
-        valueFormat: 'hast',
-        target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
-      });
-    }
+    const headingHast = {
+      type: 'element',
+      tagName: 'h2',
+      properties: {},
+      children: [{ type: 'text', value: headingText }],
+    };
+
+    patches.push({
+      opportunityId,
+      // No suggestionId for FAQ heading patch
+      prerenderRequired: this.requiresPrerender(),
+      lastUpdated: maxLastUpdated,
+      op: transformRules.action,
+      selector: transformRules.selector,
+      value: headingHast,
+      valueFormat: 'hast',
+      target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
+    });
 
     // Create individual FAQ patches
     eligibleSuggestions.forEach((suggestion) => {
       try {
         const faqItemHast = this.buildFaqItemHast(suggestion);
 
-        const updatedAt = suggestion.getUpdatedAt();
-        const lastUpdated = updatedAt ? new Date(updatedAt).getTime() : Date.now();
-
         patches.push({
-          opportunityId,
-          suggestionId: suggestion.getId(),
-          prerenderRequired: this.requiresPrerender(),
-          lastUpdated,
+          ...this.createBasePatch(suggestion, opportunityId),
           op: transformRules.action,
           selector: transformRules.selector,
           value: faqItemHast,

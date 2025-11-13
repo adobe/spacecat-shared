@@ -88,10 +88,9 @@ class TokowakaClient {
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
    * @param {Array} suggestionsToDeploy - Array of suggestion entities to deploy
-   * @param {Object} existingConfig - Optional: Existing Tokowaka configuration
    * @returns {Object} - Tokowaka configuration object
    */
-  generateConfig(site, opportunity, suggestionsToDeploy, existingConfig = null) {
+  generateConfig(site, opportunity, suggestionsToDeploy) {
     const opportunityType = opportunity.getType();
     const siteId = site.getId();
     const baseURL = getEffectiveBaseURL(site);
@@ -116,7 +115,6 @@ class TokowakaClient {
         urlPath,
         urlSuggestions,
         opportunity.getId(),
-        existingConfig,
       );
 
       if (patches.length > 0) {
@@ -367,7 +365,6 @@ class TokowakaClient {
       site,
       opportunity,
       eligibleSuggestions,
-      existingConfig,
     );
 
     if (Object.keys(newConfig.tokowakaOptimizations).length === 0) {

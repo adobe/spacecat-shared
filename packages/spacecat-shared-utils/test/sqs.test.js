@@ -371,5 +371,34 @@ describe('SQS', () => {
       expect(testHandler.calledOnce).to.be.true;
       delete process.env.AWS_EXECUTION_ENV;
     });
+
+    it('should not include traceId when explicitly set to null (Jobs Dispatcher opt-out)', async () => {
+      process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs18.x';
+      const getSegmentStub = sandbox.stub(AWSXray, 'getSegment').returns({
+        trace_id: '1-xray-dispatcher-traceid',
+      });
+
+      const action = wrap(async (req, ctx) => {
+        // Jobs Dispatcher explicitly opts out of trace propagation
+        await ctx.sqs.sendMessage('queue-url', {
+          type: 'audit',
+          siteId: 'site-001',
+          traceId: null, // Explicit opt-out
+        });
+      }).with(sqsWrapper);
+
+      await action({}, context);
+
+      const firstSendArg = sendStub.getCall(0).args[0];
+      const messageBody = JSON.parse(firstSendArg.input.MessageBody);
+
+      // traceId should NOT be in the message
+      expect(messageBody).to.not.have.property('traceId');
+      expect(messageBody.type).to.equal('audit');
+      expect(messageBody.siteId).to.equal('site-001');
+
+      getSegmentStub.restore();
+      delete process.env.AWS_EXECUTION_ENV;
+    });
   });
 });

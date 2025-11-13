@@ -49,8 +49,13 @@ class SQS {
    * Automatically includes traceId in the message payload if available from:
    * 1. The message itself (if explicitly set by caller, e.g. from context.traceId)
    * 2. AWS X-Ray segment (current Lambda execution trace)
+   * 
+   * Special handling for Jobs Dispatcher and similar scenarios:
+   * - Set traceId to null to opt-out of trace propagation (each worker gets its own trace)
+   * 
    * @param {string} queueUrl - The URL of the SQS queue.
-   * @param {object} message - The message body to send. Can include traceId for propagation.
+   * @param {object} message - The message body to send. 
+   *   Can include traceId for propagation or set to null to opt-out.
    * @param {string} messageGroupId - (Optional) The message group ID for FIFO queues.
    * @return {Promise<void>}
    */
@@ -60,14 +65,22 @@ class SQS {
       timestamp: new Date().toISOString(),
     };
 
-    // Add traceId to message payload if not already present
-    // Priority: 1) Explicit traceId in message (from context), 2) X-Ray traceId
-    if (!body.traceId) {
+    // Handle traceId based on explicit setting or auto-generation
+    // Three cases:
+    // 1. Property not in message → auto-add X-Ray traceId
+    // 2. Property set to null → explicit opt-out (e.g., Jobs Dispatcher)
+    // 3. Property has a value → use that value
+    if (!('traceId' in message)) {
+      // Case 1: No traceId property - auto-add X-Ray trace
       const traceId = getTraceId();
       if (traceId) {
         body.traceId = traceId;
       }
+    } else if (message.traceId === null) {
+      // Case 2: Explicitly null - opt-out of trace propagation
+      delete body.traceId;
     }
+    // Case 3: Has a value - already in body from spread, keep it
 
     const params = {
       MessageBody: JSON.stringify(body),

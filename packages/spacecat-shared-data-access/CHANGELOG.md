@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.82.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.81.0...@adobe/spacecat-shared-data-access-v2.82.0) (2025-11-13)
+
+
+### Features
+
+* add ahref-paid-import ([#1120](https://github.com/adobe/spacecat-shared/issues/1120)) ([3818671](https://github.com/adobe/spacecat-shared/commit/381867174c60d157c2b5cd9fe68dc6f6a30fb71b))
+
 # [@adobe/spacecat-shared-data-access-v2.81.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.80.2...@adobe/spacecat-shared-data-access-v2.81.0) (2025-11-11)
 
 

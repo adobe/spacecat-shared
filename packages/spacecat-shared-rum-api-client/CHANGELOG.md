@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.38.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.8...@adobe/spacecat-shared-rum-api-client-v2.38.9) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.38.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.7...@adobe/spacecat-shared-rum-api-client-v2.38.8) (2025-10-31)
+
+
+### Bug Fixes
+
+* **traffic-attribution:** limit vendors per source ([#1079](https://github.com/adobe/spacecat-shared/issues/1079)) ([9165913](https://github.com/adobe/spacecat-shared/commit/9165913f379a00df409fe86961ba5df1f5a2a840))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.38.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.6...@adobe/spacecat-shared-rum-api-client-v2.38.7) (2025-10-29)
 
 

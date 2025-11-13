@@ -12,6 +12,21 @@
 
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
+import { readFileSync } from 'fs';
+
+// Read package.json version
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+
+// Simple plugin to inject package version
+const injectVersion = () => ({
+  name: 'inject-version',
+  transform(code, id) {
+    if (id.endsWith('browser-entry.js')) {
+      return code.replace('__PACKAGE_VERSION__', pkg.version);
+    }
+    return null;
+  },
+});
 
 export default {
   input: 'src/browser-entry.js', // Special browser entry point
@@ -35,6 +50,7 @@ export default {
     },
   ],
   plugins: [
+    injectVersion(), // Inject package version
     nodeResolve({
       browser: true, // Use browser field in package.json
       preferBuiltins: false, // Don't include Node.js built-ins

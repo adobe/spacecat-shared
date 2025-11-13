@@ -15,6 +15,7 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 import ImsBaseClient from './ims-base-client.js';
 import {
   emailAddressIsAllowed,
+  extractGuidAndAuthSource,
   extractIdAndAuthSource,
   getGroupMembersEndpoint,
   getImsOrgsApiPath,
@@ -25,6 +26,7 @@ import {
   IMS_TOKEN_ENDPOINT_V3,
   IMS_VALIDATE_TOKEN_ENDPOINT,
   IMS_ADMIN_PROFILE_ENDPOINT,
+  IMS_ACCOUNT_CLUSTER_ENDPOINT,
 } from '../utils.js';
 
 export default class ImsClient extends ImsBaseClient {
@@ -349,26 +351,52 @@ export default class ImsClient extends ImsBaseClient {
       throw new Error('imsId param is required.');
     }
 
-    const { guid, authSource } = extractIdAndAuthSource(imsId);
-
+    const { guid, authSource } = extractGuidAndAuthSource(imsId);
     const serviceToken = await this.getServiceAccessToken();
 
-    const adminProfileResponse = await this.imsApiCall(
-      IMS_ADMIN_PROFILE_ENDPOINT,
-      {},
+    const formBody = `guid=${guid}&client_id=${this.config.clientId}&auth_src=${authSource}`;
+
+    const response = await fetch(
+      `https://${this.config.imsHost}${IMS_ADMIN_PROFILE_ENDPOINT}`,
       {
-        guid,
-        client_id: this.config.clientId,
-        bearer_token: serviceToken.access_token,
-        auth_src: authSource,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Bearer ${serviceToken.access_token}`,
+        },
+        body: formBody,
       },
-      { noContentType: true },
     );
 
-    if (!adminProfileResponse.ok) {
-      throw new Error(`IMS getAdminProfile request failed with status: ${adminProfileResponse.status}`);
+    if (!response.ok) {
+      throw new Error(`IMS getAdminProfile request failed with status: ${response.status}`);
     }
 
-    return adminProfileResponse.json();
+    return response.json();
+  }
+
+  /**
+   * Fetches the account cluster data from IMS
+   * @param {string} accessToken - A valid IMS user access token
+   * @returns {Promise<Object>} The account cluster data
+   * @throws {Error} If the request fails
+   */
+  async getAccountCluster(accessToken) {
+    if (!hasText(accessToken)) {
+      throw new Error('accessToken param is required.');
+    }
+
+    const accountClusterResponse = await this.imsApiCall(
+      IMS_ACCOUNT_CLUSTER_ENDPOINT,
+      { client_id: this.config.clientId },
+      null,
+      { accessToken },
+    );
+
+    if (!accountClusterResponse.ok) {
+      throw new Error(`IMS getAccountCluster request failed with status: ${accountClusterResponse.status}`);
+    }
+
+    return accountClusterResponse.json();
   }
 }

@@ -116,6 +116,80 @@ describe('AhrefsAPIClient', () => {
     },
   };
 
+  const paidPagesResponse = {
+    pages: [
+      {
+        url: 'https://example.com/page1',
+        top_keyword: 'keyword1',
+        top_keyword_best_position_title: 'Page 1 Title',
+        top_keyword_country: 'US',
+        top_keyword_volume: 1000,
+        sum_traffic: 500,
+        value: 12345,
+      },
+      {
+        url: 'https://example.com/page2',
+        top_keyword: 'keyword2',
+        top_keyword_best_position_title: 'Page 2 Title',
+        top_keyword_country: 'US',
+        top_keyword_volume: 2000,
+        sum_traffic: 800,
+        value: 23456,
+      },
+    ],
+  };
+
+  const metricsResponse = {
+    metrics: {
+      org_keywords: 21277,
+      paid_keywords: 721,
+      org_keywords_1_3: 3291,
+      org_traffic: 518546,
+      org_cost: 15856429,
+      paid_traffic: 5125,
+      paid_cost: 394641,
+      paid_pages: 73,
+    },
+  };
+
+  const metricsByCountryResponse = {
+    metrics: [
+      {
+        country: 'US',
+        org_keywords: 10000,
+        paid_keywords: 500,
+        org_keywords_1_3: 2000,
+        org_traffic: 300000,
+        org_cost: 8000000,
+        paid_traffic: 3000,
+        paid_cost: 200000,
+        paid_pages: 50,
+      },
+      {
+        country: 'GB',
+        org_keywords: 5000,
+        paid_keywords: 200,
+        org_keywords_1_3: 1000,
+        org_traffic: 150000,
+        org_cost: 4000000,
+        paid_traffic: 1500,
+        paid_cost: 100000,
+        paid_pages: 20,
+      },
+      {
+        country: 'FR',
+        org_keywords: 0,
+        paid_keywords: 0,
+        org_keywords_1_3: 0,
+        org_traffic: 0,
+        org_cost: 0,
+        paid_traffic: 0,
+        paid_cost: 0,
+        paid_pages: 0,
+      },
+    ],
+  };
+
   before('setup', function () {
     this.clock = sandbox.useFakeTimers({
       now: new Date(mockDate).getTime(),
@@ -526,6 +600,182 @@ describe('AhrefsAPIClient', () => {
         country: 'us', keywordFilter: [], limit: 200, mode: 'invalid-mode',
       });
       await expect(result).to.be.rejectedWith('Invalid mode: invalid-mode');
+    });
+  });
+
+  describe('getPaidPages', () => {
+    it('sends API request with appropriate endpoint and default params', async () => {
+      const target = 'test-site.com';
+      const date = mockDate.split('T')[0];
+
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/paid-pages')
+        .query({
+          target,
+          date,
+          select: [
+            'url',
+            'top_keyword',
+            'top_keyword_best_position_title',
+            'top_keyword_country',
+            'top_keyword_volume',
+            'sum_traffic',
+            'value',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          limit: 200,
+          output: 'json',
+        })
+        .reply(200, paidPagesResponse);
+
+      const result = await client.getPaidPages(target);
+      expect(result).to.deep.equal({
+        result: paidPagesResponse,
+        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${date}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=200&output=json`,
+      });
+    });
+
+    it('sends API request with custom date and limit', async () => {
+      const target = 'test-site.com';
+      const customDate = '2025-11-10';
+      const customLimit = 500;
+
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/paid-pages')
+        .query({
+          target,
+          date: customDate,
+          select: [
+            'url',
+            'top_keyword',
+            'top_keyword_best_position_title',
+            'top_keyword_country',
+            'top_keyword_volume',
+            'sum_traffic',
+            'value',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          limit: customLimit,
+          output: 'json',
+        })
+        .reply(200, paidPagesResponse);
+
+      const result = await client.getPaidPages(target, customDate, customLimit);
+      expect(result).to.deep.equal({
+        result: paidPagesResponse,
+        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${customDate}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=${customLimit}&output=json`,
+      });
+    });
+
+    it('respects upper limit of 1000', async () => {
+      const target = 'test-site.com';
+      const date = mockDate.split('T')[0];
+
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/paid-pages')
+        .query({
+          target,
+          date,
+          select: [
+            'url',
+            'top_keyword',
+            'top_keyword_best_position_title',
+            'top_keyword_country',
+            'top_keyword_volume',
+            'sum_traffic',
+            'value',
+          ].join(','),
+          order_by: 'sum_traffic:desc',
+          limit: 1000,
+          output: 'json',
+        })
+        .reply(200, paidPagesResponse);
+
+      const result = await client.getPaidPages(target, date, 5000);
+      expect(result).to.deep.equal({
+        result: paidPagesResponse,
+        fullAuditRef: `https://example.com/site-explorer/paid-pages?target=${target}&date=${date}&select=url%2Ctop_keyword%2Ctop_keyword_best_position_title%2Ctop_keyword_country%2Ctop_keyword_volume%2Csum_traffic%2Cvalue&order_by=sum_traffic%3Adesc&limit=1000&output=json`,
+      });
+    });
+  });
+
+  describe('getMetrics', () => {
+    it('sends API request with appropriate endpoint and default date', async () => {
+      const target = 'test-site.com';
+      const date = mockDate.split('T')[0];
+
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/metrics')
+        .query({
+          target,
+          date,
+        })
+        .reply(200, metricsResponse);
+
+      const result = await client.getMetrics(target);
+      expect(result).to.deep.equal({
+        result: metricsResponse,
+        fullAuditRef: `https://example.com/site-explorer/metrics?target=${target}&date=${date}`,
+      });
+    });
+
+    it('sends API request with custom date', async () => {
+      const target = 'test-site.com';
+      const customDate = '2025-11-10';
+
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/metrics')
+        .query({
+          target,
+          date: customDate,
+        })
+        .reply(200, metricsResponse);
+
+      const result = await client.getMetrics(target, customDate);
+      expect(result).to.deep.equal({
+        result: metricsResponse,
+        fullAuditRef: `https://example.com/site-explorer/metrics?target=${target}&date=${customDate}`,
+      });
+    });
+  });
+
+  describe('getMetricsByCountry', () => {
+    it('sends API request with appropriate endpoint and filters out zero metrics', async () => {
+      const target = 'test-site.com';
+      const date = mockDate.split('T')[0];
+
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/metrics-by-country')
+        .query({
+          target,
+          date,
+        })
+        .reply(200, metricsByCountryResponse);
+
+      const result = await client.getMetricsByCountry(target);
+
+      // Should filter out the FR entry with all zeros
+      expect(result.result.metrics).to.have.lengthOf(2);
+      expect(result.result.metrics[0].country).to.equal('US');
+      expect(result.result.metrics[1].country).to.equal('GB');
+      expect(result.fullAuditRef).to.equal(`https://example.com/site-explorer/metrics-by-country?target=${target}&date=${date}`);
+    });
+
+    it('sends API request with custom date', async () => {
+      const target = 'test-site.com';
+      const customDate = '2025-11-10';
+
+      nock(config.apiBaseUrl)
+        .get('/site-explorer/metrics-by-country')
+        .query({
+          target,
+          date: customDate,
+        })
+        .reply(200, metricsByCountryResponse);
+
+      const result = await client.getMetricsByCountry(target, customDate);
+      expect(result.result.metrics).to.have.lengthOf(2);
+      expect(result.fullAuditRef).to.equal(`https://example.com/site-explorer/metrics-by-country?target=${target}&date=${customDate}`);
     });
   });
 

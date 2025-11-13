@@ -74,7 +74,7 @@ const CDN_TRANSFORMATIONS = {
   'byocdn-cloudflare': (payload) => ({
     'Bucket Name': payload.bucketName,
     Region: payload.region,
-    Path: `${payload.allowedPaths?.[0] || ''}{DATE}/`,
+    Path: `${payload.allowedPaths?.[0] || ''}`,
     'Timestamp format': 'RFC3339',
     'Sampling rate': 'All logs',
     'Organize logs into daily subfolders': 'Yes',
@@ -138,6 +138,19 @@ const CDN_TRANSFORMATIONS = {
       'time-to-first-byte',
       'sc-content-type',
     ],
+    HelpUrl: 'https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/standard-logging.html#enable-standard-logging-cross-accounts',
+  }),
+  'byocdn-imperva': (payload) => ({
+    'Log integration mode': 'Push mode',
+    'Delivery method': 'Amazon S3 ARN',
+    'Bucket Name': payload.bucketName,
+    Region: payload.region,
+    Path: payload.allowedPaths?.[0] || '',
+    'Log types': 'Cloud WAF',
+    'Log level': 'Access logs',
+    Format: 'W3C',
+    'Compress logs': 'Yes',
+    HelpUrl: 'https://docs-cybersec.thalesgroup.com/bundle/cloud-application-security/page/siem-log-configuration.htm',
   }),
 };
 
@@ -151,7 +164,7 @@ const CDN_TRANSFORMATIONS = {
  *
  * @param {Object} payload - The result from CDN-Logs-Infrastructure-Provisioning API
  * @param {string} payload.logSource - The CDN type ('byocdn-fastly' | 'byocdn-akamai'
- *   | 'byocdn-cloudflare' | 'byocdn-cloudfront' | 'ams-cloudfront')
+ *   | 'byocdn-cloudflare' | 'byocdn-cloudfront' | 'ams-cloudfront' | 'byocdn-imperva')
  * @returns {Object} - The prepared log forwarding configuration parameters
  * @throws {Error} - If logSource is not supported or missing
  */

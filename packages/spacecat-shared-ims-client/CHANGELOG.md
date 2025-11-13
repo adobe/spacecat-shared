@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-ims-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.3...@adobe/spacecat-shared-ims-client-v1.10.0) (2025-11-12)
+
+
+### Features
+
+* ims account cluster function ([#1115](https://github.com/adobe/spacecat-shared/issues/1115)) ([003aad3](https://github.com/adobe/spacecat-shared/commit/003aad3167f165085d6fc2e43822498b7ef0ae0e))
+
+# [@adobe/spacecat-shared-ims-client-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.2...@adobe/spacecat-shared-ims-client-v1.9.3) (2025-11-11)
+
+
+### Bug Fixes
+
+* triggering release for ims client ([#1113](https://github.com/adobe/spacecat-shared/issues/1113)) ([ef5e418](https://github.com/adobe/spacecat-shared/commit/ef5e418363861017c3f3313b211c14eba549c64c))
+
+# [@adobe/spacecat-shared-ims-client-v1.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.1...@adobe/spacecat-shared-ims-client-v1.9.2) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
 # [@adobe/spacecat-shared-ims-client-v1.9.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.0...@adobe/spacecat-shared-ims-client-v1.9.1) (2025-10-28)
 
 

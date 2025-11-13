@@ -39,6 +39,7 @@ describe('AuditModel', () => {
       isLive: true,
       isError: false,
       siteId: 'site12345',
+      invocationId: 'someInvocation12345',
     };
 
     ({
@@ -101,6 +102,12 @@ describe('AuditModel', () => {
   describe('siteId', () => {
     it('gets siteId', () => {
       expect(instance.getSiteId()).to.equal('site12345');
+    });
+  });
+
+  describe('invocationId', () => {
+    it('gets invocationId', () => {
+      expect(instance.getInvocationId()).to.equal('someInvocation12345');
     });
   });
 
@@ -190,6 +197,7 @@ describe('AuditModel', () => {
       PRERENDER: 'prerender',
       PRODUCT_METATAGS: 'product-metatags',
       PRODUCT_METATAGS_AUTO_SUGGEST: 'product-metatags-auto-suggest',
+      PRODUCT_METATAGS_AUTO_FIX: 'product-metatags-auto-fix',
       SUMMARIZATION: 'summarization',
       PAGE_TYPE_DETECTION: 'page-type-detection',
       FAQS: 'faqs',

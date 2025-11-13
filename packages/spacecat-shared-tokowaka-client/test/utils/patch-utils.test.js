@@ -36,7 +36,7 @@ describe('Patch Utils', () => {
         },
       ];
 
-      const result = mergePatches(existingPatches, newPatches, false);
+      const result = mergePatches(existingPatches, newPatches);
       expect(result.patches).to.have.lengthOf(1);
       expect(result.patches[0].suggestionId).to.equal('sugg-123');
       expect(result.patches[0].value).to.equal('new-value');
@@ -63,7 +63,7 @@ describe('Patch Utils', () => {
         },
       ];
 
-      const result = mergePatches(existingPatches, newPatches, false);
+      const result = mergePatches(existingPatches, newPatches);
       expect(result.patches).to.have.lengthOf(2);
       expect(result.updateCount).to.equal(0);
       expect(result.addCount).to.equal(1);
@@ -79,7 +79,7 @@ describe('Patch Utils', () => {
         },
       ];
 
-      const result = mergePatches([], newPatches, false);
+      const result = mergePatches([], newPatches);
       expect(result.patches).to.have.lengthOf(1);
       expect(result.patches[0]).to.deep.equal(newPatches[0]);
       expect(result.updateCount).to.equal(0);
@@ -96,7 +96,7 @@ describe('Patch Utils', () => {
         },
       ];
 
-      const result = mergePatches(existingPatches, [], false);
+      const result = mergePatches(existingPatches, []);
       expect(result.patches).to.have.lengthOf(1);
       expect(result.patches[0]).to.deep.equal(existingPatches[0]);
       expect(result.updateCount).to.equal(0);
@@ -114,7 +114,7 @@ describe('Patch Utils', () => {
         },
       ];
 
-      const result = mergePatches(existingPatches, newPatches, false);
+      const result = mergePatches(existingPatches, newPatches);
 
       expect(result.patches).to.have.lengthOf(1);
       expect(result.addCount).to.equal(1);
@@ -138,7 +138,7 @@ describe('Patch Utils', () => {
         },
       ];
 
-      const result = mergePatches(existingPatches, newPatches, false);
+      const result = mergePatches(existingPatches, newPatches);
 
       expect(result.patches).to.have.lengthOf(1);
       expect(result.updateCount).to.equal(1);

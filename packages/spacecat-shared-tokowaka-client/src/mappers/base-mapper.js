@@ -40,16 +40,18 @@ export default class BaseOpportunityMapper {
   }
 
   /**
-   * Converts a suggestion to a Tokowaka patch
+   * Converts suggestions to Tokowaka patches
    * @abstract
-   * @param {Object} _ - Suggestion entity with getId() and getData() methods
-   * @param {string} __ - Opportunity ID
-   * @returns {Object|null} - Patch object or null if conversion fails
+   * @param {string} _ - URL path for the suggestions
+   * @param {Array} __ - Array of suggestion entities for the same URL
+   * @param {string} ___ - Opportunity ID
+   * @param {Object} ____- Existing Tokowaka config
+   * @returns {Array} - Array of Tokowaka patch objects
    */
   // eslint-disable-next-line no-unused-vars
-  suggestionToPatch(_, __) {
-    this.log.error('suggestionToPatch() must be implemented by subclass');
-    throw new Error('suggestionToPatch() must be implemented by subclass');
+  suggestionsToPatches(_, __, ___, ____) {
+    this.log.error('suggestionsToPatches() must be implemented by subclass');
+    throw new Error('suggestionsToPatches() must be implemented by subclass');
   }
 
   /**

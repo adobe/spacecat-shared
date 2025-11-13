@@ -41,9 +41,9 @@ describe('BaseOpportunityMapper', () => {
         .to.throw('requiresPrerender() must be implemented by subclass');
     });
 
-    it('suggestionToPatch should throw error', () => {
-      expect(() => mapper.suggestionToPatch({}, 'opp-123'))
-        .to.throw('suggestionToPatch() must be implemented by subclass');
+    it('suggestionsToPatches should throw error', () => {
+      expect(() => mapper.suggestionsToPatches('/path', [], 'opp-123'))
+        .to.throw('suggestionsToPatches() must be implemented by subclass');
     });
 
     it('canDeploy should throw error if not implemented', () => {
@@ -60,7 +60,7 @@ describe('BaseOpportunityMapper', () => {
 
         requiresPrerender() { return true; }
 
-        suggestionToPatch() { return {}; }
+        suggestionsToPatches() { return []; }
 
         canDeploy() { return { eligible: true }; }
       }
@@ -85,7 +85,7 @@ describe('BaseOpportunityMapper', () => {
 
         requiresPrerender() { return true; }
 
-        suggestionToPatch() { return {}; }
+        suggestionsToPatches() { return []; }
 
         canDeploy() { return { eligible: true }; }
       }

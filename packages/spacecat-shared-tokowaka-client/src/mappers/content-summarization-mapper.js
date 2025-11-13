@@ -35,33 +35,48 @@ export default class ContentSummarizationMapper extends BaseOpportunityMapper {
     return this.prerenderRequired;
   }
 
-  suggestionToPatch(suggestion, opportunityId) {
-    const eligibility = this.canDeploy(suggestion);
-    if (!eligibility.eligible) {
-      this.log.warn(`Content-Summarization suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
-      return null;
-    }
+  /**
+   * Converts suggestions to Tokowaka patches
+   * @param {string} urlPath - URL path for the suggestions
+   * @param {Array} suggestions - Array of suggestion entities for the same URL
+   * @param {string} opportunityId - Opportunity ID
+   * @returns {Array} - Array of Tokowaka patch objects
+   */
+  suggestionsToPatches(urlPath, suggestions, opportunityId) {
+    const patches = [];
 
-    const data = suggestion.getData();
-    const { summarizationText, transformRules } = data;
+    suggestions.forEach((suggestion) => {
+      const eligibility = this.canDeploy(suggestion);
+      if (!eligibility.eligible) {
+        this.log.warn(`Content-Summarization suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
+        return;
+      }
 
-    // Convert markdown to HAST
-    let hastValue;
-    try {
-      hastValue = markdownToHast(summarizationText);
-    } catch (error) {
-      this.log.error(`Failed to convert markdown to HAST for suggestion ${suggestion.getId()}: ${error.message}`);
-      return null;
-    }
+      const data = suggestion.getData();
+      const { summarizationText, transformRules } = data;
 
-    return {
-      ...this.createBasePatch(suggestion, opportunityId),
-      op: transformRules.action,
-      selector: transformRules.selector,
-      value: hastValue,
-      valueFormat: 'hast',
-      target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
-    };
+      // Convert markdown to HAST
+      let hastValue;
+      try {
+        hastValue = markdownToHast(summarizationText);
+      } catch (error) {
+        this.log.error(`Failed to convert markdown to HAST for suggestion ${suggestion.getId()}: ${error.message}`);
+        return;
+      }
+
+      const patch = {
+        ...this.createBasePatch(suggestion, opportunityId),
+        op: transformRules.action,
+        selector: transformRules.selector,
+        value: hastValue,
+        valueFormat: 'hast',
+        target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
+      };
+
+      patches.push(patch);
+    });
+
+    return patches;
   }
 
   /**

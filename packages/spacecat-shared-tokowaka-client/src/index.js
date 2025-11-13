@@ -112,20 +112,12 @@ class TokowakaClient {
     const tokowakaOptimizations = {};
 
     Object.entries(suggestionsByUrl).forEach(([urlPath, urlSuggestions]) => {
-      let patches = [];
-      // Use suggestionsToPatches if available
-      if (mapper.suggestionsToPatches) {
-        patches = mapper.suggestionsToPatches(
-          urlPath,
-          urlSuggestions,
-          opportunity.getId(),
-          existingConfig,
-        );
-      } else {
-        patches = urlSuggestions.map((suggestion) => mapper
-          .suggestionToPatch(suggestion, opportunity.getId()))
-          .filter((patch) => patch !== null);
-      }
+      const patches = mapper.suggestionsToPatches(
+        urlPath,
+        urlSuggestions,
+        opportunity.getId(),
+        existingConfig,
+      );
 
       if (patches.length > 0) {
         tokowakaOptimizations[urlPath] = {

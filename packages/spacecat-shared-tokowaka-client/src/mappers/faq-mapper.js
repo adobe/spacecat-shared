@@ -189,18 +189,6 @@ export default class FaqMapper extends BaseOpportunityMapper {
   }
 
   /**
-  * Not supported in FAQ mapper. Added for compatibility with base class.
-  * FAQ suggestions must be processed together to determine if they are
-  * the first FAQ for a URL. Use suggestionsToPatches instead.
-  * @throws {Error} Always throws - use suggestionsToPatches instead
-  * @see suggestionsToPatches
-  */
-  suggestionToPatch() {
-    this.log.error('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
-    throw new Error('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
-  }
-
-  /**
   * Checks if a FAQ suggestion can be deployed
   * @param {Object} suggestion - Suggestion object
   * @returns {Object} { eligible: boolean, reason?: string }

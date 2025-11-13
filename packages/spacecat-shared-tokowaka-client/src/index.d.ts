@@ -108,12 +108,14 @@ export abstract class BaseOpportunityMapper {
   abstract requiresPrerender(): boolean;
   
   /**
-   * Converts a suggestion to a Tokowaka patch
+   * Converts suggestions to Tokowaka patches
    */
-  abstract suggestionToPatch(
-    suggestion: Suggestion,
-    opportunityId: string
-  ): TokawakaPatch | null;
+  abstract suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string,
+    existingConfig: TokowakaConfig | null
+  ): TokawakaPatch[];
   
   /**
    * Checks if a suggestion can be deployed for this opportunity type
@@ -142,7 +144,11 @@ export class HeadingsMapper extends BaseOpportunityMapper {
   
   getOpportunityType(): string;
   requiresPrerender(): boolean;
-  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
 }
 
@@ -155,7 +161,11 @@ export class ContentSummarizationMapper extends BaseOpportunityMapper {
   
   getOpportunityType(): string;
   requiresPrerender(): boolean;
-  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
 }
 

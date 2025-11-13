@@ -266,20 +266,7 @@ describe('FaqMapper', () => {
     });
   });
 
-  describe('suggestionToPatch', () => {
-    it('should throw error when called directly', () => {
-      const suggestion = {
-        getId: () => 'sugg-test',
-        getData: () => ({
-          item: { question: 'Q?', answer: 'A.' },
-          url: 'https://example.com',
-          transformRules: { action: 'appendChild', selector: 'main' },
-        }),
-      };
-
-      expect(() => mapper.suggestionToPatch(suggestion, 'opp-123')).to.throw('FAQ mapper does not support suggestionToPatch, use suggestionsToPatches instead');
-    });
-
+  describe('suggestionsToPatches', () => {
     it('should create patch with HAST value from markdown', () => {
       const suggestion = {
         getId: () => 'sugg-faq-123',
@@ -556,9 +543,7 @@ Overall, Bulk positions itself as a better choice for sports nutrition through i
       // Verify structure: div > [h3, ...answer content]
       expect(faqPatch.value.children[0].tagName).to.equal('h3');
     });
-  });
 
-  describe('suggestionsToPatches', () => {
     it('should create individual patches for multiple FAQ suggestions', () => {
       const suggestions = [
         {

@@ -233,7 +233,7 @@ describe('HeadingsMapper', () => {
     });
   });
 
-  describe('suggestionToPatch', () => {
+  describe('suggestionsToPatches', () => {
     it('should create patch for heading-empty with transformRules', () => {
       const suggestion = {
         getId: () => 'sugg-123',
@@ -248,7 +248,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-123');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-123');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.deep.include({
         op: 'replace',
@@ -275,7 +277,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-123');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-123');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.deep.include({
         op: 'replace',
@@ -302,7 +306,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-456');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-456');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.deep.include({
         op: 'insertAfter',
@@ -330,7 +336,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-789');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-789');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.deep.include({
         op: 'replace',
@@ -344,7 +352,7 @@ describe('HeadingsMapper', () => {
       expect(patch.tag).to.be.undefined;
     });
 
-    it('should return null for heading-missing-h1 without transformRules', () => {
+    it('should return empty array for heading-missing-h1 without transformRules', () => {
       const suggestion = {
         getId: () => 'sugg-999',
         getData: () => ({
@@ -353,12 +361,12 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-999');
-
-      expect(patch).to.be.null;
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-999');
+      expect(patches.length).to.equal(0);
+      expect(patches.length).to.equal(0);
     });
 
-    it('should return null for heading-h1-length without selector in transformRules', () => {
+    it('should return empty array for heading-h1-length without selector in transformRules', () => {
       const suggestion = {
         getId: () => 'sugg-888',
         getData: () => ({
@@ -370,9 +378,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-888');
-
-      expect(patch).to.be.null;
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-888');
+      expect(patches.length).to.equal(0);
+      expect(patches.length).to.equal(0);
     });
 
     it('should log warning for heading-missing-h1 with missing transformRules - validation path', () => {
@@ -393,9 +401,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = warnMapper.suggestionToPatch(suggestion, 'opp-warn');
+      const patches = warnMapper.suggestionsToPatches('/path', [suggestion], 'opp-warn');
 
-      expect(patch).to.be.null;
+      expect(patches.length).to.equal(0);
       expect(warnLogged).to.be.true;
     });
 
@@ -419,9 +427,9 @@ describe('HeadingsMapper', () => {
         }),
       };
 
-      const patch = warnMapper.suggestionToPatch(suggestion, 'opp-defensive');
+      const patches = warnMapper.suggestionsToPatches('/path', [suggestion], 'opp-defensive');
 
-      expect(patch).to.be.null;
+      expect(patches.length).to.equal(0);
       expect(warnMessage).to.include('cannot be deployed');
     });
   });

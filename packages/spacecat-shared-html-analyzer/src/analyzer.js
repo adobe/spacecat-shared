@@ -74,7 +74,9 @@ export async function calculateStats(originalHTML, currentHTML, ignoreNavFooter 
   // Calculate word counts using consistent tokenization
   const originalTokens = tokenize(originalText, 'word');
   const currentTokens = tokenize(currentText, 'word');
-  const wordDiff = Math.abs(currentTokens.length - originalTokens.length);
+  const wordCountBefore = originalTokens.length;
+  const wordCountAfter = currentTokens.length;
+  const wordDiff = Math.abs(wordCountAfter - wordCountBefore);
 
   // Calculate content increase ratio (how many times content increased)
   let contentIncreaseRatio;
@@ -89,6 +91,8 @@ export async function calculateStats(originalHTML, currentHTML, ignoreNavFooter 
     ? Math.min(100, (originalTokens.length / currentTokens.length) * 100) : 100;
 
   return {
+    wordCountBefore,
+    wordCountAfter,
     wordDiff,
     contentIncreaseRatio: Math.round(contentIncreaseRatio * 100) / 100, // Round to 1 decimal place
     citationReadability: Math.round(citationReadability),
@@ -109,6 +113,8 @@ export async function calculateBothScenarioStats(originalHTML, currentHTML) {
   const statsNotIgnored = await calculateStats(originalHTML, currentHTML, false);
   return {
     withNavFooterIgnored: {
+      wordCountBefore: statsIgnored.wordCountBefore,
+      wordCountAfter: statsIgnored.wordCountAfter,
       wordDiff: statsIgnored.wordDiff,
       contentIncreaseRatio: statsIgnored.contentIncreaseRatio,
       citationReadability: statsIgnored.citationReadability,
@@ -116,6 +122,8 @@ export async function calculateBothScenarioStats(originalHTML, currentHTML) {
       missingWords: statsIgnored.wordDiff,
     },
     withoutNavFooterIgnored: {
+      wordCountBefore: statsNotIgnored.wordCountBefore,
+      wordCountAfter: statsNotIgnored.wordCountAfter,
       wordDiff: statsNotIgnored.wordDiff,
       contentIncreaseRatio: statsNotIgnored.contentIncreaseRatio,
       citationReadability: statsNotIgnored.citationReadability,

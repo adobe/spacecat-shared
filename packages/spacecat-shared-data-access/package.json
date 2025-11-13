@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "2.74.1",
+  "version": "2.81.0",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "engines": {
@@ -38,9 +38,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.49.0",
-    "@aws-sdk/client-dynamodb": "3.917.0",
-    "@aws-sdk/lib-dynamodb": "3.917.0",
+    "@adobe/spacecat-shared-utils": "1.66.0",
+    "@aws-sdk/client-dynamodb": "3.927.0",
+    "@aws-sdk/lib-dynamodb": "3.927.0",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.11.0",
     "electrodb": "3.5.0",

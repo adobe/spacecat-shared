@@ -11,7 +11,7 @@
  */
 /* eslint-env mocha */
 import { expect } from 'chai';
-import { gunzip } from 'zlib';
+import { brotliDecompress, gunzip } from 'zlib';
 import { promisify } from 'util';
 
 import {
@@ -30,6 +30,7 @@ import {
 } from '../src/index.js';
 
 const gunzipAsync = promisify(gunzip);
+const brotliDecompressAsync = promisify(brotliDecompress);
 
 async function testMethod(response, expectedCode, expectedBody) {
   expect(response.status).to.equal(expectedCode);
@@ -72,6 +73,26 @@ describe('HTTP Response Functions', () => {
 
     const compressed = Buffer.from(await response.arrayBuffer());
     const decompressed = await gunzipAsync(compressed);
+    const parsed = JSON.parse(decompressed.toString());
+
+    expect(parsed).to.deep.equal(body);
+  });
+
+  it('createResponse should brotli compress JSON when content-encoding is set to br', async () => {
+    const body = { message: 'hello', data: 'test brotli compression' };
+    const headers = {
+      'content-type': 'application/json',
+      'content-encoding': 'br',
+    };
+
+    const response = await createResponse(body, 200, headers);
+
+    expect(response.status).to.equal(200);
+    expect(response.headers.get('content-type')).to.equal('application/json');
+    expect(response.headers.get('content-encoding')).to.equal('br');
+
+    const compressed = Buffer.from(await response.arrayBuffer());
+    const decompressed = await brotliDecompressAsync(compressed);
     const parsed = JSON.parse(decompressed.toString());
 
     expect(parsed).to.deep.equal(body);

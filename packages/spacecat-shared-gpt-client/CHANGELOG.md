@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-gpt-client-v1.6.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.8...@adobe/spacecat-shared-gpt-client-v1.6.9) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.7...@adobe/spacecat-shared-gpt-client-v1.6.8) (2025-11-04)
+
+
+### Bug Fixes
+
+* make genvar call using http fetch ([#1086](https://github.com/adobe/spacecat-shared/issues/1086)) ([fe5844f](https://github.com/adobe/spacecat-shared/commit/fe5844fd97c9fc06a71b9d2c3404183c6bebd6fe))
+
+# [@adobe/spacecat-shared-gpt-client-v1.6.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.6...@adobe/spacecat-shared-gpt-client-v1.6.7) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
 # [@adobe/spacecat-shared-gpt-client-v1.6.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.5...@adobe/spacecat-shared-gpt-client-v1.6.6) (2025-10-25)
 
 

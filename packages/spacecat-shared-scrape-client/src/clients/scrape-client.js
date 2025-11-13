@@ -16,6 +16,7 @@ import {
 import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
 import { ScrapeJobDto } from './scrapeJobDto.js';
 import ScrapeJobSupervisor from './scrape-job-supervisor.js';
+import { ScrapeUrlDto } from './scrapeUrlDto.js';
 
 export default class ScrapeClient {
   config = null;
@@ -339,6 +340,32 @@ export default class ScrapeClient {
     } catch (error) {
       const procType = processingType ? ` and processing type: ${processingType}` : '';
       const msgError = `Failed to fetch scrape jobs by baseURL: ${decodedBaseURL}${procType}, ${error.message}`;
+      this.config.log.error(msgError);
+      throw new Error(msgError);
+    }
+  }
+
+  async getScrapeUrlsByProcessingType(url, processingType, maxScrapeAge = 168) {
+    let decodedUrl;
+    try {
+      decodedUrl = decodeURIComponent(url);
+      if (!isValidUrl(decodedUrl)) {
+        throw new Error(`Invalid request: ${decodedUrl} must be a valid URL`);
+      }
+
+      const scrapeUrls = await this.scrapeSupervisor.getScrapeUrlsByProcessingType(
+        decodedUrl,
+        processingType,
+        maxScrapeAge,
+      );
+
+      if (!isNonEmptyArray(scrapeUrls)) {
+        return null;
+      }
+
+      return scrapeUrls.map((scrapeUrl) => ScrapeUrlDto.toJSON(scrapeUrl));
+    } catch (error) {
+      const msgError = `Failed to fetch scrape URL by URL: ${decodedUrl} and processing type: ${processingType}, ${error.message}`;
       this.config.log.error(msgError);
       throw new Error(msgError);
     }

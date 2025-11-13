@@ -11,7 +11,7 @@
  */
 
 import { ScrapeJob as ScrapeJobModel } from '@adobe/spacecat-shared-data-access';
-import { isValidUUID } from '@adobe/spacecat-shared-utils';
+import { isValidUrl, isValidUUID, composeBaseURL } from '@adobe/spacecat-shared-utils';
 
 /**
  * Scrape Supervisor provides functionality to start and manage scrape jobs.
@@ -30,18 +30,12 @@ function ScrapeJobSupervisor(services, config) {
     dataAccess, sqs, log,
   } = services;
 
-  const { ScrapeJob } = dataAccess;
+  const { ScrapeJob, ScrapeUrl } = dataAccess;
 
   const {
     scrapeWorkerQueue, // URL of the scrape worker queue
     maxUrlsPerMessage,
   } = config;
-
-  function determineBaseURL(urls) {
-    // Initially, we will just use the domain of the first URL
-    const url = new URL(urls[0]);
-    return `${url.protocol}//${url.hostname}`;
-  }
 
   /**
    * Create a new scrape job by claiming one of the free scrape queues, persisting the scrape job
@@ -59,7 +53,7 @@ function ScrapeJobSupervisor(services, config) {
     customHeaders = null,
   ) {
     const jobData = {
-      baseURL: determineBaseURL(urls),
+      baseURL: composeBaseURL(new URL(urls[0]).host),
       processingType,
       options,
       urlCount: urls.length,
@@ -227,12 +221,27 @@ function ScrapeJobSupervisor(services, config) {
     }
   }
 
+  async function getScrapeUrlsByProcessingType(url, processingType, maxScrapeAge) {
+    if (!isValidUrl(url)) {
+      throw new Error(`${url} must be a valid URL`);
+    }
+    try {
+      return ScrapeUrl.allRecentByUrlAndProcessingType(url, processingType, maxScrapeAge);
+    } catch (error) {
+      if (error.message.includes('Not found')) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   return {
     startNewJob,
     getScrapeJob,
     getScrapeJobsByDateRange,
     getScrapeJobsByBaseURL,
     getScrapeJobsByBaseURLAndProcessingType,
+    getScrapeUrlsByProcessingType,
   };
 }
 

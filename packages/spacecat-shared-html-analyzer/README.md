@@ -120,7 +120,7 @@ Generate a minified bundle for Chrome extensions:
 npm run build:chrome
 ```
 
-This creates `dist/html-analyzer.min.js` that can be included directly in Chrome extension manifest files. The bundle exposes `HTMLAnalyzer` and `HTMLComparisonUtils` globally.
+This creates `dist/html-analyzer.min.js` that can be included directly in Chrome extension manifest files. The bundle exposes `HTMLAnalyzer` globally.
 
 ## Version Information
 

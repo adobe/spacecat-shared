@@ -683,27 +683,6 @@ describe('schemas', () => {
         expect(result.success).false;
       });
 
-      it('fails when deleted prompt has empty regions array', () => {
-        const config = {
-          ...baseConfig,
-          deleted: {
-            prompts: {
-              [deletedPromptId1]: {
-                prompt: 'Test prompt',
-                topic: 'Test Topic',
-                regions: [],
-                category: 'Test Category',
-                origin: 'human',
-                source: 'config',
-              },
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).false;
-      });
-
       it('fails when deleted prompt is missing required fields', () => {
         const config = {
           ...baseConfig,
@@ -813,6 +792,140 @@ describe('schemas', () => {
       });
     });
 
+    describe('category urls', () => {
+      it('validates category without urls (optional field)', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: { name: 'Category One', region: 'US' },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].urls).to.be.undefined;
+        }
+      });
+
+      it('validates category with valid URL type', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'https://example.com', type: 'url' },
+                { value: 'https://another-example.com/path', type: 'url' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.categories[categoryId].urls).to.have.length(2);
+          expect(result.data.categories[categoryId].urls[0].value).equals('https://example.com');
+          expect(result.data.categories[categoryId].urls[0].type).equals('url');
+        }
+      });
+
+      it('fails when URL type has invalid URL format', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'not-a-valid-url', type: 'url' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+        if (!result.success) {
+          expect(result.error.issues[0].message).equals('Invalid URL format');
+        }
+      });
+
+      it('validates prefix type with non-URL format (no validation for prefix)', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'some-prefix-string', type: 'prefix' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails when url object has empty value', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: '', type: 'url' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when url object has invalid type', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'https://example.com', type: 'invalid-type' },
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails when url object is missing required fields', () => {
+        const config = {
+          ...baseConfig,
+          categories: {
+            [categoryId]: {
+              name: 'Category One',
+              region: 'US',
+              urls: [
+                { value: 'https://example.com' }, // missing type
+              ],
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+    });
+
     describe('cdn bucket config', () => {
       it('validates configuration without cdn bucket config', () => {
         const result = llmoConfig.safeParse(baseConfig);
@@ -844,6 +957,90 @@ describe('schemas', () => {
 
         const result = llmoConfig.safeParse(config);
         expect(result.success).true;
+      });
+    });
+
+    describe('prompt status', () => {
+      it('validates prompt without status (optional field)', () => {
+        const config = {
+          ...baseConfig,
+          topics: {
+            [topicId]: {
+              name: 'Topic One',
+              prompts: [
+                {
+                  prompt: 'Test prompt',
+                  regions: ['US'],
+                  origin: 'human',
+                  source: 'config',
+                  // no status field
+                },
+              ],
+              category: categoryId,
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.topics[topicId].prompts[0].status).to.be.undefined;
+        }
+      });
+
+      it('validates prompt with completed status', () => {
+        const config = {
+          ...baseConfig,
+          topics: {
+            [topicId]: {
+              name: 'Topic One',
+              prompts: [
+                {
+                  prompt: 'Test prompt',
+                  regions: ['US'],
+                  origin: 'human',
+                  source: 'config',
+                  status: 'completed',
+                },
+              ],
+              category: categoryId,
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.topics[topicId].prompts[0].status).equals('completed');
+        }
+      });
+    });
+
+    describe('deleted prompt origin', () => {
+      const deletedPromptId = 'eeee1111-e11b-41e1-a111-111111111111';
+
+      it('validates deleted prompt with human origin', () => {
+        const config = {
+          ...baseConfig,
+          deleted: {
+            prompts: {
+              [deletedPromptId]: {
+                prompt: 'Test prompt',
+                topic: 'Test Topic',
+                regions: ['us'],
+                category: 'Test Category',
+                origin: 'human',
+                source: 'config',
+              },
+            },
+          },
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+        if (result.success) {
+          expect(result.data.deleted.prompts[deletedPromptId].origin).equals('human');
+        }
       });
     });
   });

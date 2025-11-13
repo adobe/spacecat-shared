@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.72.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.72.0...@adobe/spacecat-shared-utils-v1.72.1) (2025-11-13)
+
+
+### Bug Fixes
+
+* **spacecat-shared-data-access/src/models/site/config.js:** add suppo… ([#1118](https://github.com/adobe/spacecat-shared/issues/1118)) ([7123b3c](https://github.com/adobe/spacecat-shared/commit/7123b3c30abb80ba3f2de040417ea3d86660bcc5))
+
 # [@adobe/spacecat-shared-utils-v1.72.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.71.0...@adobe/spacecat-shared-utils-v1.72.0) (2025-11-11)
 
 

@@ -22,6 +22,7 @@ export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS_QUESTIONS: 'organic-keywords-questions',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
+  AHREF_PAID_PAGES: 'ahref-paid-pages',
   ALL_TRAFFIC: 'all-traffic',
   CWV_DAILY: 'cwv-daily',
   CWV_WEEKLY: 'cwv-weekly',
@@ -134,6 +135,13 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
   }),
+  [IMPORT_TYPES.AHREF_PAID_PAGES]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.AHREF_PAID_PAGES).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(2000)
+      .optional(),
+  }),
   [IMPORT_TYPES.CWV_DAILY]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.CWV_DAILY).required(),
     ...IMPORT_BASE_KEYS,
@@ -209,6 +217,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     sources: ['ahrefs'],
     enabled: true,
     geo: 'global',
+  },
+  'ahref-paid-pages': {
+    type: 'ahref-paid-pages',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
   },
   'cwv-daily': {
     type: 'cwv-daily',

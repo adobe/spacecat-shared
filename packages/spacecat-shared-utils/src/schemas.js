@@ -163,9 +163,12 @@ export const llmoConfig = z.object({
  * @param {Record<string, z.infer<typeof topic>>} topics
  * @param {string} topicsKey - The key name in the path (e.g., 'topics' or 'ai_topics')
  */
-function validateTopicPromptRegions(categories, ctx, topics, topicsKey) {
-  // Convert 'topics' to 'topic' for error messages, but keep 'ai_topics' as is
-  const itemLabel = topicsKey === 'topics' ? 'topic' : topicsKey;
+function validateTopicPromptRegions(
+  categories, 
+  ctx, 
+  topics = 'topics', 
+  topicsKey = 'topic',
+) {
 
   Object.entries(topics).forEach(([topicId, topicEntity]) => {
     if (topicEntity.prompts && topicEntity.category) {

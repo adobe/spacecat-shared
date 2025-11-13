@@ -708,16 +708,16 @@ describe('FixEntityCollection', () => {
       expect(FixEntity.STATUSES.ROLLED_BACK).to.equal('ROLLED_BACK');
     });
 
-    it('ORIGINS enum has exactly 2 values', () => {
+    it('ORIGINS enum has exactly 3 values', () => {
       const originValues = Object.values(FixEntity.ORIGINS);
-      expect(originValues).to.have.lengthOf(2);
-      expect(originValues).to.include.members(['spacecat', 'aso']);
+      expect(originValues).to.have.lengthOf(3);
+      expect(originValues).to.include.members(['spacecat', 'aso', 'reporting']);
     });
 
     it('ORIGINS enum keys match expected format', () => {
       const originKeys = Object.keys(FixEntity.ORIGINS);
-      expect(originKeys).to.have.lengthOf(2);
-      expect(originKeys).to.include.members(['SPACECAT', 'ASO']);
+      expect(originKeys).to.have.lengthOf(3);
+      expect(originKeys).to.include.members(['SPACECAT', 'ASO', 'REPORTING']);
     });
   });
 });

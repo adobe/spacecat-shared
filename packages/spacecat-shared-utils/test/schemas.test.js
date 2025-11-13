@@ -445,7 +445,7 @@ describe('schemas', () => {
           if (result.success) {
             throw new Error('Expected validation to fail');
           }
-          expect(result.error.issues[0].message).equals('topic prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
+          expect(result.error.issues[0].message).equals('topics prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
         });
 
         it('validates when topic category is a string name (no region validation)', () => {
@@ -517,12 +517,12 @@ describe('schemas', () => {
         });
       });
 
-      describe('ai_topics prompts', () => {
-        it('validates when ai_topics prompt regions are subset of category regions', () => {
+      describe('aiTopics prompts', () => {
+        it('validates when aiTopics prompt regions are subset of category regions', () => {
           const aiTopicId = '999e9999-e99b-49d9-a999-999999999999';
           const config = {
             ...configWithRegions,
-            ai_topics: {
+            aiTopics: {
               [aiTopicId]: {
                 name: 'AI Test Topic',
                 prompts: [
@@ -548,11 +548,11 @@ describe('schemas', () => {
           expect(result.success).true;
         });
 
-        it('fails when ai_topics prompt has regions not in category', () => {
+        it('fails when aiTopics prompt has regions not in category', () => {
           const aiTopicId = 'aaaa0000-ea0b-40d0-a000-000000000000';
           const config = {
             ...configWithRegions,
-            ai_topics: {
+            aiTopics: {
               [aiTopicId]: {
                 name: 'AI Test Topic',
                 prompts: [
@@ -573,14 +573,14 @@ describe('schemas', () => {
           if (result.success) {
             throw new Error('Expected validation to fail');
           }
-          expect(result.error.issues[0].message).equals('ai_topics prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
+          expect(result.error.issues[0].message).equals('aiTopics prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
         });
 
-        it('validates when ai_topics category is a string name (no region validation)', () => {
+        it('validates when aiTopics category is a string name (no region validation)', () => {
           const aiTopicId = 'bbbb1111-eb1b-41d1-a111-111111111111';
           const config = {
             ...configWithRegions,
-            ai_topics: {
+            aiTopics: {
               [aiTopicId]: {
                 name: 'AI Test Topic',
                 prompts: [
@@ -600,11 +600,11 @@ describe('schemas', () => {
           expect(result.success).true;
         });
 
-        it('validates configuration without ai_topics (optional field)', () => {
+        it('validates configuration without aiTopics (optional field)', () => {
           const result = llmoConfig.safeParse(configWithRegions);
           expect(result.success).true;
           if (result.success) {
-            expect(result.data.ai_topics).to.be.undefined;
+            expect(result.data.aiTopics).to.be.undefined;
           }
         });
       });

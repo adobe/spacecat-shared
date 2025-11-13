@@ -89,7 +89,7 @@ export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
   categories: z.record(z.uuid(), category),
   topics: z.record(z.uuid(), topic),
-  ai_topics: z.record(z.uuid(), topic).optional(),
+  aiTopics: z.record(z.uuid(), topic).optional(),
   brands: z.object({
     aliases: z.array(
       z.object({
@@ -149,11 +149,11 @@ export const llmoConfig = z.object({
   });
 
   // Validate topic prompts regions against their category
-  validateTopicPromptRegions(categories, ctx, topics);
+  validateTopicPromptRegions(categories, ctx, topics, 'topics');
 
-  // Validate ai_topics prompts regions against their category
-  if (value.ai_topics) {
-    validateTopicPromptRegions(categories, ctx, value.ai_topics, 'ai_topics');
+  // Validate aiTopics prompts regions against their category
+  if (value.aiTopics) {
+    validateTopicPromptRegions(categories, ctx, value.aiTopics, 'aiTopics');
   }
 });
 
@@ -161,15 +161,9 @@ export const llmoConfig = z.object({
  * @param {LLMOConfig['categories']} categories
  * @param {z.RefinementCtx} ctx
  * @param {Record<string, z.infer<typeof topic>>} topics
- * @param {string} topicsKey - The key name in the path (e.g., 'topics' or 'ai_topics')
+ * @param {string} topicsKey - The key name in the path (e.g., 'topics' or 'aiTopics')
  */
-function validateTopicPromptRegions(
-  categories, 
-  ctx, 
-  topics = 'topics', 
-  topicsKey = 'topic',
-) {
-
+function validateTopicPromptRegions(categories, ctx, topics, topicsKey) {
   Object.entries(topics).forEach(([topicId, topicEntity]) => {
     if (topicEntity.prompts && topicEntity.category) {
       // If category is a UUID, validate against the referenced category entity
@@ -181,7 +175,7 @@ function validateTopicPromptRegions(
             topicEntity.category,
             promptItem.regions,
             [topicsKey, topicId, 'prompts', promptIndex, 'regions'],
-            `${itemLabel} prompt`,
+            `${topicsKey} prompt`,
           );
         });
       }

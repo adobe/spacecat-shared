@@ -111,3 +111,4 @@ npm run clean
 - **Repository**: [GitHub](https://github.com/adobe/spacecat-shared.git)
 - **Issue Tracking**: [GitHub Issues](https://github.com/adobe/spacecat-shared/issues)
 - **License**: Apache-2.0
+  

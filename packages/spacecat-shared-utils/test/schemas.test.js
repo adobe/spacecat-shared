@@ -445,7 +445,7 @@ describe('schemas', () => {
           if (result.success) {
             throw new Error('Expected validation to fail');
           }
-          expect(result.error.issues[0].message).equals('topic prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
+          expect(result.error.issues[0].message).equals('topics prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
         });
 
         it('validates when topic category is a string name (no region validation)', () => {
@@ -514,6 +514,98 @@ describe('schemas', () => {
 
           const result = llmoConfig.safeParse(config);
           expect(result.success).false;
+        });
+      });
+
+      describe('aiTopics prompts', () => {
+        it('validates when aiTopics prompt regions are subset of category regions', () => {
+          const aiTopicId = '999e9999-e99b-49d9-a999-999999999999';
+          const config = {
+            ...configWithRegions,
+            aiTopics: {
+              [aiTopicId]: {
+                name: 'AI Test Topic',
+                prompts: [
+                  {
+                    prompt: 'AI Test prompt 1',
+                    regions: ['us'],
+                    origin: 'ai',
+                    source: 'flow',
+                  },
+                  {
+                    prompt: 'AI Test prompt 2',
+                    regions: ['ca', 'us'],
+                    origin: 'ai',
+                    source: 'flow',
+                  },
+                ],
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
+
+        it('fails when aiTopics prompt has regions not in category', () => {
+          const aiTopicId = 'aaaa0000-ea0b-40d0-a000-000000000000';
+          const config = {
+            ...configWithRegions,
+            aiTopics: {
+              [aiTopicId]: {
+                name: 'AI Test Topic',
+                prompts: [
+                  {
+                    prompt: 'AI Test prompt',
+                    regions: ['us', 'mx'], // mx not in category regions
+                    origin: 'ai',
+                    source: 'flow',
+                  },
+                ],
+                category: categoryWithRegionsId,
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).false;
+          if (result.success) {
+            throw new Error('Expected validation to fail');
+          }
+          expect(result.error.issues[0].message).equals('aiTopics prompt regions [mx] are not allowed. Category only supports regions: [us, ca]');
+        });
+
+        it('validates when aiTopics category is a string name (no region validation)', () => {
+          const aiTopicId = 'bbbb1111-eb1b-41d1-a111-111111111111';
+          const config = {
+            ...configWithRegions,
+            aiTopics: {
+              [aiTopicId]: {
+                name: 'AI Test Topic',
+                prompts: [
+                  {
+                    prompt: 'AI Test prompt',
+                    regions: ['mx'], // Any regions allowed when category is string
+                    origin: 'ai',
+                    source: 'flow',
+                  },
+                ],
+                category: 'AI Test Category Name', // String name, not UUID
+              },
+            },
+          };
+
+          const result = llmoConfig.safeParse(config);
+          expect(result.success).true;
+        });
+
+        it('validates configuration without aiTopics (optional field)', () => {
+          const result = llmoConfig.safeParse(configWithRegions);
+          expect(result.success).true;
+          if (result.success) {
+            expect(result.data.aiTopics).to.be.undefined;
+          }
         });
       });
     });
@@ -1012,62 +1104,6 @@ describe('schemas', () => {
         expect(result.success).true;
         if (result.success) {
           expect(result.data.topics[topicId].prompts[0].status).equals('completed');
-        }
-      });
-    });
-
-    describe('topic origin', () => {
-      it('validates topic without origin (optional field)', () => {
-        const config = {
-          ...baseConfig,
-          topics: {
-            [topicId]: {
-              name: 'Topic One',
-              prompts: [
-                {
-                  prompt: 'Test prompt',
-                  regions: ['US'],
-                  origin: 'human',
-                  source: 'config',
-                },
-              ],
-              category: categoryId,
-              // no origin field
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
-        if (result.success) {
-          expect(result.data.topics[topicId].origin).to.be.undefined;
-        }
-      });
-
-      it('validates topic with ai origin', () => {
-        const config = {
-          ...baseConfig,
-          topics: {
-            [topicId]: {
-              name: 'Topic One',
-              prompts: [
-                {
-                  prompt: 'Test prompt',
-                  regions: ['US'],
-                  origin: 'human',
-                  source: 'config',
-                },
-              ],
-              category: categoryId,
-              origin: 'ai',
-            },
-          },
-        };
-
-        const result = llmoConfig.safeParse(config);
-        expect(result.success).true;
-        if (result.success) {
-          expect(result.data.topics[topicId].origin).equals('ai');
         }
       });
     });

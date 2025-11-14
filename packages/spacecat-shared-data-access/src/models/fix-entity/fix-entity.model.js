@@ -29,9 +29,12 @@ class FixEntity extends BaseModel {
     ROLLED_BACK: 'ROLLED_BACK', // the fix has been rolled_back
   };
 
+  // reporting is a new origin which is used
+  // to denote the fix entities created by the reporting team
   static ORIGINS = {
     SPACECAT: 'spacecat',
     ASO: 'aso',
+    REPORTING: 'reporting',
   };
 
   async getSuggestions() {

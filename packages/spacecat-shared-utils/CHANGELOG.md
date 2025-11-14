@@ -1,3 +1,59 @@
+# [@adobe/spacecat-shared-utils-v1.72.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.72.0...@adobe/spacecat-shared-utils-v1.72.1) (2025-11-13)
+
+
+### Bug Fixes
+
+* **spacecat-shared-data-access/src/models/site/config.js:** add suppo… ([#1118](https://github.com/adobe/spacecat-shared/issues/1118)) ([7123b3c](https://github.com/adobe/spacecat-shared/commit/7123b3c30abb80ba3f2de040417ea3d86660bcc5))
+
+# [@adobe/spacecat-shared-utils-v1.72.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.71.0...@adobe/spacecat-shared-utils-v1.72.0) (2025-11-11)
+
+
+### Features
+
+* added interface correct definition ([#1114](https://github.com/adobe/spacecat-shared/issues/1114)) ([e377dab](https://github.com/adobe/spacecat-shared/commit/e377dabc263200e6c393ebf40c65e8c41fb134cb))
+
+# [@adobe/spacecat-shared-utils-v1.71.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.70.1...@adobe/spacecat-shared-utils-v1.71.0) (2025-11-11)
+
+
+### Features
+
+* added redirected url in broken-backlink ([#1111](https://github.com/adobe/spacecat-shared/issues/1111)) ([d0e1bd6](https://github.com/adobe/spacecat-shared/commit/d0e1bd619f8d2fe33807f58a23e54eac49b83708))
+
+# [@adobe/spacecat-shared-utils-v1.70.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.70.0...@adobe/spacecat-shared-utils-v1.70.1) (2025-11-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1107](https://github.com/adobe/spacecat-shared/issues/1107)) ([f4cdb50](https://github.com/adobe/spacecat-shared/commit/f4cdb50f96d18dd92de81055f2b58310a68c0cac))
+
+# [@adobe/spacecat-shared-utils-v1.70.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.4...@adobe/spacecat-shared-utils-v1.70.0) (2025-11-06)
+
+
+### Features
+
+* LLMO-846 byocdn-imperva support in llmo ([#1085](https://github.com/adobe/spacecat-shared/issues/1085)) ([7548812](https://github.com/adobe/spacecat-shared/commit/7548812ca83b856392fc624cc1fd5ea1bf48658c))
+
+# [@adobe/spacecat-shared-utils-v1.69.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.3...@adobe/spacecat-shared-utils-v1.69.4) (2025-11-06)
+
+
+### Bug Fixes
+
+* cloudflare date issue ([#1098](https://github.com/adobe/spacecat-shared/issues/1098)) ([09a2c62](https://github.com/adobe/spacecat-shared/commit/09a2c620d1ac070572825cdbf0579739364e384d))
+
+# [@adobe/spacecat-shared-utils-v1.69.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.2...@adobe/spacecat-shared-utils-v1.69.3) (2025-11-01)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1081](https://github.com/adobe/spacecat-shared/issues/1081)) ([4476494](https://github.com/adobe/spacecat-shared/commit/44764944350f9344d0ca5e2af5a2161cc7470899))
+
+# [@adobe/spacecat-shared-utils-v1.69.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.1...@adobe/spacecat-shared-utils-v1.69.2) (2025-10-31)
+
+
+### Bug Fixes
+
+* remove topic origin ([#1080](https://github.com/adobe/spacecat-shared/issues/1080)) ([69c0dd6](https://github.com/adobe/spacecat-shared/commit/69c0dd6ab50c520a3fd776db69a951a13ace9f1d))
+
 # [@adobe/spacecat-shared-utils-v1.69.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.69.0...@adobe/spacecat-shared-utils-v1.69.1) (2025-10-30)
 
 

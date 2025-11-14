@@ -84,4 +84,29 @@ export default class AhrefsAPIClient {
       excludeBranded?: boolean,
     }):
       Promise<{ result: object, fullAuditRef: string }>;
+
+  /**
+   * Asynchronous method to get paid pages for a URL.
+   * @param url - The target URL
+   * @param date - Optional date in YYYY-MM-DD format, defaults to today
+   * @param limit - Maximum number of results to return (max: 1000)
+   */
+  getPaidPages(url: string, date?: string, limit?: number):
+      Promise<{ result: object, fullAuditRef: string }>;
+
+  /**
+   * Asynchronous method to get metrics for a URL.
+   * @param url - The target URL
+   * @param date - Optional date in YYYY-MM-DD format, defaults to today
+   */
+  getMetrics(url: string, date?: string):
+      Promise<{ result: object, fullAuditRef: string }>;
+
+  /**
+   * Asynchronous method to get metrics by country for a URL.
+   * @param url - The target URL
+   * @param date - Optional date in YYYY-MM-DD format, defaults to today
+   */
+  getMetricsByCountry(url: string, date?: string):
+      Promise<{ result: object, fullAuditRef: string }>;
 }

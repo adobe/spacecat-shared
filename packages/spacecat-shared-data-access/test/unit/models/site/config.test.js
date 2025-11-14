@@ -24,6 +24,90 @@ describe('Config Tests', () => {
     registerLogger(null);
   });
 
+  describe('Brand Profile', () => {
+    it('creates a Config with brandProfile (generic top-level content)', () => {
+      const data = {
+        brandProfile: {
+          discovery: { pages_analyzed: 150 },
+          clustering: { voice_clusters: [] },
+          competitive_context: { industry: 'software' },
+          main_profile: { id: 'main', communication_style: 'Specific style' },
+          sub_brands: [],
+          confidence_score: 0.9,
+          pages_considered: 150,
+          diversity_assessment: 'Diverse content sample',
+        },
+      };
+      const config = Config(data);
+      expect(config.getBrandProfile()).to.deep.equal(data.brandProfile);
+    });
+
+    it('updateBrandProfile sets version, updatedAt, contentHash and persists content', () => {
+      const config = Config();
+      expect(config.getBrandProfile()).to.be.undefined;
+
+      const payload = {
+        discovery: { pages_analyzed: 10 },
+        main_profile: { id: 'main', communication_style: 'Detailed' },
+      };
+      config.updateBrandProfile(payload);
+
+      const bp = config.getBrandProfile();
+      expect(bp).to.exist;
+      expect(bp.version).to.equal(1);
+      expect(typeof bp.updatedAt).to.equal('string');
+      expect(Date.parse(bp.updatedAt)).to.be.a('number');
+      expect(bp.contentHash).to.be.a('string').that.is.not.empty;
+      expect(bp.discovery).to.deep.equal({ pages_analyzed: 10 });
+      expect(bp.main_profile).to.deep.equal({ id: 'main', communication_style: 'Detailed' });
+    });
+
+    it('does not bump version when meaningful content is unchanged', () => {
+      const config = Config();
+      const first = {
+        competitive_context: { industry: 'software' },
+      };
+      config.updateBrandProfile(first);
+      const afterFirst = config.getBrandProfile();
+      expect(afterFirst.version).to.equal(1);
+
+      // Provide same content but with functional fields altered in input (which should be ignored)
+      const second = {
+        ...first,
+        version: 999,
+        updatedAt: '2020-01-01T00:00:00.000Z',
+        contentHash: 'bogus',
+      };
+      config.updateBrandProfile(second);
+      const afterSecond = config.getBrandProfile();
+      expect(afterSecond.version).to.equal(1); // unchanged
+      expect(afterSecond.contentHash).to.equal(afterFirst.contentHash);
+    });
+
+    it('bumps version when meaningful content changes', () => {
+      const config = Config();
+      config.updateBrandProfile({ main_profile: { id: 'main', communication_style: 'A' } });
+      const afterFirst = config.getBrandProfile();
+      expect(afterFirst.version).to.equal(1);
+
+      // Change meaningful field
+      config.updateBrandProfile({ main_profile: { id: 'main', communication_style: 'B' } });
+      const afterSecond = config.getBrandProfile();
+      expect(afterSecond.version).to.equal(2);
+      expect(afterSecond.contentHash).to.not.equal(afterFirst.contentHash);
+    });
+
+    it('includes brandProfile in toDynamoItem conversion', () => {
+      const config = Config();
+      config.updateBrandProfile({
+        discovery: { pages_analyzed: 3 },
+        main_profile: { id: 'main', communication_style: 'C' },
+      });
+      const item = Config.toDynamoItem(config);
+      expect(item.brandProfile).to.deep.equal(config.getBrandProfile());
+    });
+  });
+
   describe('Config Creation', () => {
     it('creates an Config with defaults when no data is provided', () => {
       const config = Config();
@@ -1081,7 +1165,7 @@ describe('Config Tests', () => {
         .to.throw().and.satisfy((error) => {
           expect(error.message).to.include('Configuration validation error');
           expect(error.cause.details[0].context.message)
-            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]');
+            .to.equal('"imports[0].type" must be [llmo-prompts-ahrefs]. "imports[0].destinations[0]" must be [default]. "imports[0].type" must be [organic-keywords-nonbranded]. "imports[0].type" must be [organic-keywords-ai-overview]. "imports[0].type" must be [organic-keywords-feature-snippets]. "imports[0].type" must be [organic-keywords-questions]. "imports[0].type" must be [organic-traffic]. "imports[0].type" must be [all-traffic]. "imports[0].type" must be [top-pages]. "imports[0].type" must be [ahref-paid-pages]. "imports[0].type" must be [cwv-daily]. "imports[0].type" must be [cwv-weekly]. "imports[0].type" must be [traffic-analysis]. "imports[0].type" must be [top-forms]. "imports[0].type" must be [user-engagement]');
           expect(error.cause.details[0].context.details)
             .to.eql([
               {
@@ -1170,6 +1254,16 @@ describe('Config Tests', () => {
                 type: 'any.only',
                 context: {
                   valids: ['top-pages'],
+                  label: 'imports[0].type',
+                  value: 'organic-keywords',
+                  key: 'type',
+                },
+              }, {
+                message: '"imports[0].type" must be [ahref-paid-pages]',
+                path: ['imports', 0, 'type'],
+                type: 'any.only',
+                context: {
+                  valids: ['ahref-paid-pages'],
                   label: 'imports[0].type',
                   value: 'organic-keywords',
                   key: 'type',

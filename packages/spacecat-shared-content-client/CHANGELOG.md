@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-content-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.0...@adobe/spacecat-shared-content-client-v1.8.1) (2025-11-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1107](https://github.com/adobe/spacecat-shared/issues/1107)) ([f4cdb50](https://github.com/adobe/spacecat-shared/commit/f4cdb50f96d18dd92de81055f2b58310a68c0cac))
+
+# [@adobe/spacecat-shared-content-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.39...@adobe/spacecat-shared-content-client-v1.8.0) (2025-11-04)
+
+
+### Features
+
+* adding getEditURL support for content client ([#1047](https://github.com/adobe/spacecat-shared/issues/1047)) ([ca91f51](https://github.com/adobe/spacecat-shared/commit/ca91f512d3bf074d3fc88a6705f01f4a7661d6bc))
+
+# [@adobe/spacecat-shared-content-client-v1.7.39](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.38...@adobe/spacecat-shared-content-client-v1.7.39) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
+# [@adobe/spacecat-shared-content-client-v1.7.38](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.37...@adobe/spacecat-shared-content-client-v1.7.38) (2025-11-01)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1081](https://github.com/adobe/spacecat-shared/issues/1081)) ([4476494](https://github.com/adobe/spacecat-shared/commit/44764944350f9344d0ca5e2af5a2161cc7470899))
+
 # [@adobe/spacecat-shared-content-client-v1.7.37](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.36...@adobe/spacecat-shared-content-client-v1.7.37) (2025-10-31)
 
 

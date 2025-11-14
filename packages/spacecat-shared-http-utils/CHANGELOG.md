@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-http-utils-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.9...@adobe/spacecat-shared-http-utils-v1.18.0) (2025-11-06)
+
+
+### Features
+
+* allow brotli compression for json responses ([#1095](https://github.com/adobe/spacecat-shared/issues/1095)) ([b81f349](https://github.com/adobe/spacecat-shared/commit/b81f3497d7a64dd1b2a888f98971f7913e3ff1db))
+
 # [@adobe/spacecat-shared-http-utils-v1.17.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.8...@adobe/spacecat-shared-http-utils-v1.17.9) (2025-10-28)
 
 

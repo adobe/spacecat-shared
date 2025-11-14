@@ -199,7 +199,7 @@ describe('TokowakaClient', () => {
 
   describe('generateConfig', () => {
     it('should generate config for headings opportunity', () => {
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(config).to.deep.include({
         siteId: 'site-123',
@@ -218,10 +218,103 @@ describe('TokowakaClient', () => {
         selector: 'h1',
         value: 'New Heading',
         opportunityId: 'opp-123',
-        suggestionId: 'sugg-1',
         prerenderRequired: true,
       });
+      expect(patch.suggestionId).to.equal('sugg-1');
       expect(patch).to.have.property('lastUpdated');
+    });
+
+    it('should generate config for FAQ opportunity', () => {
+      mockOpportunity = {
+        getId: () => 'opp-faq-123',
+        getType: () => 'faq',
+      };
+
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-faq-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            headingText: 'FAQs',
+            shouldOptimize: true,
+            item: {
+              question: 'Question 1?',
+              answer: 'Answer 1.',
+            },
+            transformRules: {
+              action: 'appendChild',
+              selector: 'main',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-faq-2',
+          getUpdatedAt: () => '2025-01-15T11:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            headingText: 'FAQs',
+            shouldOptimize: true,
+            item: {
+              question: 'Question 2?',
+              answer: 'Answer 2.',
+            },
+            transformRules: {
+              action: 'appendChild',
+              selector: 'main',
+            },
+          }),
+        },
+      ];
+
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
+
+      expect(config).to.deep.include({
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+      });
+
+      expect(config.tokowakaOptimizations).to.have.property('/page1');
+      expect(config.tokowakaOptimizations['/page1'].prerender).to.be.true;
+      expect(config.tokowakaOptimizations['/page1'].patches).to.have.length(3); // heading + 2 FAQs
+
+      // First patch: heading (no suggestionId)
+      const headingPatch = config.tokowakaOptimizations['/page1'].patches[0];
+      expect(headingPatch).to.include({
+        op: 'appendChild',
+        selector: 'main',
+        opportunityId: 'opp-faq-123',
+        prerenderRequired: true,
+      });
+      expect(headingPatch.suggestionId).to.be.undefined;
+      expect(headingPatch).to.have.property('lastUpdated');
+      expect(headingPatch.value.tagName).to.equal('h2');
+
+      // Second patch: first FAQ
+      const firstFaqPatch = config.tokowakaOptimizations['/page1'].patches[1];
+      expect(firstFaqPatch).to.include({
+        op: 'appendChild',
+        selector: 'main',
+        opportunityId: 'opp-faq-123',
+        prerenderRequired: true,
+      });
+      expect(firstFaqPatch.suggestionId).to.equal('sugg-faq-1');
+      expect(firstFaqPatch).to.have.property('lastUpdated');
+      expect(firstFaqPatch.value.tagName).to.equal('div');
+
+      // Third patch: second FAQ
+      const secondFaqPatch = config.tokowakaOptimizations['/page1'].patches[2];
+      expect(secondFaqPatch).to.include({
+        op: 'appendChild',
+        selector: 'main',
+        opportunityId: 'opp-faq-123',
+        prerenderRequired: true,
+      });
+      expect(secondFaqPatch.suggestionId).to.equal('sugg-faq-2');
+      expect(secondFaqPatch).to.have.property('lastUpdated');
+      expect(secondFaqPatch.value.tagName).to.equal('div');
     });
 
     it('should group suggestions by URL path', () => {
@@ -254,7 +347,7 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(2);
       expect(config.tokowakaOptimizations).to.have.property('/page1');
@@ -289,7 +382,7 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(1);
       expect(config.tokowakaOptimizations).to.have.property('/relative-path');
@@ -306,7 +399,7 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(0);
       expect(log.warn).to.have.been.calledWith(sinon.match(/does not have a URL/));
@@ -329,7 +422,7 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions);
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
 
       expect(Object.keys(config.tokowakaOptimizations)).to.have.length(0);
       expect(log.warn).to.have.been.calledWith(sinon.match(/Failed to extract pathname from URL/));
@@ -363,9 +456,22 @@ describe('TokowakaClient', () => {
         },
       ];
 
-      expect(() => client.generateConfig(mockSite, mockOpportunity, mockSuggestions))
+      expect(() => client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null))
         .to.throw(/No mapper found for opportunity type: unsupported-type/)
         .with.property('status', 501);
+    });
+
+    it('should generate config without allOpportunitySuggestions', () => {
+      const config = client.generateConfig(mockSite, mockOpportunity, mockSuggestions, null);
+
+      expect(config).to.deep.include({
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+      });
+
+      expect(config.tokowakaOptimizations).to.have.property('/page1');
     });
   });
 

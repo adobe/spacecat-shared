@@ -125,12 +125,16 @@ interface TextComparison {
 }
 
 interface BasicStats {
+  wordCountBefore: number;
+  wordCountAfter: number;
   wordDiff: number;
   contentIncreaseRatio: number;
   citationReadability: number;
 }
 
 interface ScenarioStats {
+  wordCountBefore: number;
+  wordCountAfter: number;
   wordDiff: number;
   contentIncreaseRatio: number;
   citationReadability: number;

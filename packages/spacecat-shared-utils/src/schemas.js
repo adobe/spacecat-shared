@@ -78,19 +78,18 @@ const topic = z.object({
   name: nonEmptyString,
   prompts: z.array(prompt).min(1),
   category: z.union([z.uuid(), nonEmptyString]),
-  origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 const deletedPrompt = prompt.extend({
   topic: nonEmptyString,
   category: nonEmptyString,
-  topicOrigin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
 });
 
 export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
   categories: z.record(z.uuid(), category),
   topics: z.record(z.uuid(), topic),
+  aiTopics: z.record(z.uuid(), topic).optional(),
   brands: z.object({
     aliases: z.array(
       z.object({
@@ -150,6 +149,21 @@ export const llmoConfig = z.object({
   });
 
   // Validate topic prompts regions against their category
+  validateTopicPromptRegions(categories, ctx, topics, 'topics');
+
+  // Validate aiTopics prompts regions against their category
+  if (value.aiTopics) {
+    validateTopicPromptRegions(categories, ctx, value.aiTopics, 'aiTopics');
+  }
+});
+
+/**
+ * @param {LLMOConfig['categories']} categories
+ * @param {z.RefinementCtx} ctx
+ * @param {Record<string, z.infer<typeof topic>>} topics
+ * @param {string} topicsKey - The key name in the path (e.g., 'topics' or 'aiTopics')
+ */
+function validateTopicPromptRegions(categories, ctx, topics, topicsKey) {
   Object.entries(topics).forEach(([topicId, topicEntity]) => {
     if (topicEntity.prompts && topicEntity.category) {
       // If category is a UUID, validate against the referenced category entity
@@ -160,14 +174,14 @@ export const llmoConfig = z.object({
             ctx,
             topicEntity.category,
             promptItem.regions,
-            ['topics', topicId, 'prompts', promptIndex, 'regions'],
-            'topic prompt',
+            [topicsKey, topicId, 'prompts', promptIndex, 'regions'],
+            `${topicsKey} prompt`,
           );
         });
       }
     }
   });
-});
+}
 
 /**
    * @param {LLMOConfig['categories']} categories

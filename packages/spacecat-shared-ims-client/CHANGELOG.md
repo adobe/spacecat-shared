@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.10.1...@adobe/spacecat-shared-ims-client-v1.11.0) (2025-11-14)
+
+
+### Features
+
+* introduce AMS promise token ([#1123](https://github.com/adobe/spacecat-shared/issues/1123)) ([324688e](https://github.com/adobe/spacecat-shared/commit/324688ef9b92dcc1cbbefe7549540091065f304e))
+
 # [@adobe/spacecat-shared-ims-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.10.0...@adobe/spacecat-shared-ims-client-v1.10.1) (2025-11-14)
 
 

@@ -10,7 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import crypto from 'crypto';
 import Joi from 'joi';
+
 import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
@@ -269,6 +272,21 @@ export const configSchema = Joi.object({
     brandId: Joi.string().required(),
     userId: Joi.string().required(),
   }).optional(),
+  brandProfile: Joi.object({
+    // functional metadata
+    version: Joi.number().integer().min(0),
+    updatedAt: Joi.string().isoDate(),
+    contentHash: Joi.string(),
+    // generic top-level content containers (non-strict)
+    discovery: Joi.any(),
+    clustering: Joi.any(),
+    competitive_context: Joi.any(),
+    main_profile: Joi.any(),
+    sub_brands: Joi.any(),
+    confidence_score: Joi.any(),
+    pages_considered: Joi.any(),
+    diversity_assessment: Joi.any(),
+  }).unknown(true).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
@@ -414,6 +432,7 @@ export const Config = (data = {}) => {
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
+  self.getBrandProfile = () => state?.brandProfile;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
   self.getLlmoConfig = () => state?.llmo;
   self.getLlmoDataFolder = () => state?.llmo?.dataFolder;
@@ -630,6 +649,48 @@ export const Config = (data = {}) => {
     state.brandConfig = brandConfig;
   };
 
+  /**
+   * Updates the top-level brandProfile with versioning and content hashing.
+   * Version is incremented only if the meaningful content changes.
+   * @param {object} newProfile
+   */
+  self.updateBrandProfile = (newProfile = {}) => {
+    const prior = state.brandProfile || {};
+    // compute hash over all content except functional fields
+    const stripFunctional = (p) => {
+      if (!isNonEmptyObject(p)) return {};
+      const {
+        /* eslint-disable no-unused-vars */
+        version, updatedAt, contentHash, ...rest
+      } = p;
+      return rest;
+    };
+    const meaningful = stripFunctional(newProfile);
+    const contentHash = crypto.createHash('sha256')
+      .update(JSON.stringify(meaningful))
+      .digest('hex');
+
+    if (prior?.contentHash === contentHash) {
+      state.brandProfile = {
+        ...prior,
+        ...newProfile,
+        contentHash: prior.contentHash,
+        version: prior.version,
+        updatedAt: prior.updatedAt,
+      };
+      return;
+    }
+
+    const version = (prior?.version || 0) + 1;
+    state.brandProfile = {
+      ...prior,
+      ...meaningful,
+      version,
+      contentHash,
+      updatedAt: new Date().toISOString(),
+    };
+  };
+
   self.enableImport = (type, config = {}) => {
     if (!IMPORT_TYPE_SCHEMAS[type]) {
       throw new Error(`Unknown import type: ${type}`);
@@ -691,6 +752,7 @@ Config.toDynamoItem = (config) => ({
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
+  brandProfile: config.getBrandProfile(),
   cdnLogsConfig: config.getCdnLogsConfig(),
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),

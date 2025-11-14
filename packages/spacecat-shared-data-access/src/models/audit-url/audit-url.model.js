@@ -11,6 +11,7 @@
  */
 
 import BaseModel from '../base/base.model.js';
+import { PLATFORM_TYPES } from './audit-url.schema.js';
 
 /**
  * AuditUrl - A class representing an AuditUrl entity.
@@ -21,6 +22,7 @@ import BaseModel from '../base/base.model.js';
  */
 class AuditUrl extends BaseModel {
   static DEFAULT_SOURCE = 'manual';
+  static PLATFORM_TYPES = PLATFORM_TYPES;
 
   /**
    * Checks if this URL is enabled for a specific audit type.
@@ -75,6 +77,25 @@ class AuditUrl extends BaseModel {
   isManualSource() {
     const source = this.getSource ? this.getSource() : this.source;
     return source === AuditUrl.DEFAULT_SOURCE;
+  }
+
+  /**
+   * Checks if this URL represents an offsite platform (not the primary site).
+   * @returns {boolean} True if this is an offsite platform URL.
+   */
+  isOffsitePlatform() {
+    const platformType = this.getPlatformType ? this.getPlatformType() : this.platformType;
+    return platformType && platformType !== PLATFORM_TYPES.PRIMARY_SITE;
+  }
+
+  /**
+   * Checks if this URL is of a specific platform type.
+   * @param {string} type - The platform type to check.
+   * @returns {boolean} True if the URL matches the specified platform type.
+   */
+  isPlatformType(type) {
+    const platformType = this.getPlatformType ? this.getPlatformType() : this.platformType;
+    return platformType === type;
   }
 }
 

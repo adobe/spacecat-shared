@@ -185,4 +185,99 @@ describe('AuditUrlModel', () => {
       expect(instance.isAuditEnabled('accessibility')).to.be.false;
     });
   });
+
+  describe('PLATFORM_TYPES', () => {
+    it('exposes PLATFORM_TYPES as a static property', () => {
+      expect(AuditUrl.PLATFORM_TYPES).to.be.an('object');
+      expect(AuditUrl.PLATFORM_TYPES.PRIMARY_SITE).to.equal('primary-site');
+      expect(AuditUrl.PLATFORM_TYPES.WIKIPEDIA).to.equal('wikipedia');
+      expect(AuditUrl.PLATFORM_TYPES.YOUTUBE_CHANNEL).to.equal('youtube-channel');
+    });
+  });
+
+  describe('isOffsitePlatform', () => {
+    it('returns false for primary-site platform type', () => {
+      instance.record.platformType = 'primary-site';
+      expect(instance.isOffsitePlatform()).to.be.false;
+    });
+
+    it('returns true for youtube-channel platform type', () => {
+      instance.record.platformType = 'youtube-channel';
+      expect(instance.isOffsitePlatform()).to.be.true;
+    });
+
+    it('returns true for wikipedia platform type', () => {
+      instance.record.platformType = 'wikipedia';
+      expect(instance.isOffsitePlatform()).to.be.true;
+    });
+
+    it('returns true for reddit-community platform type', () => {
+      instance.record.platformType = 'reddit-community';
+      expect(instance.isOffsitePlatform()).to.be.true;
+    });
+
+    it('returns false when platformType is undefined', () => {
+      delete instance.record.platformType;
+      expect(instance.isOffsitePlatform()).to.be.false;
+    });
+
+    it('returns false when platformType is null', () => {
+      instance.record.platformType = null;
+      expect(instance.isOffsitePlatform()).to.be.false;
+    });
+
+    it('works with getPlatformType getter', () => {
+      instance.getPlatformType = () => 'facebook-page';
+      expect(instance.isOffsitePlatform()).to.be.true;
+    });
+  });
+
+  describe('isPlatformType', () => {
+    it('returns true when platform type matches', () => {
+      instance.record.platformType = 'youtube-channel';
+      expect(instance.isPlatformType('youtube-channel')).to.be.true;
+    });
+
+    it('returns false when platform type does not match', () => {
+      instance.record.platformType = 'youtube-channel';
+      expect(instance.isPlatformType('wikipedia')).to.be.false;
+    });
+
+    it('returns false when platformType is undefined', () => {
+      delete instance.record.platformType;
+      expect(instance.isPlatformType('youtube-channel')).to.be.false;
+    });
+
+    it('returns false when platformType is null', () => {
+      instance.record.platformType = null;
+      expect(instance.isPlatformType('youtube-channel')).to.be.false;
+    });
+
+    it('works with getPlatformType getter', () => {
+      instance.getPlatformType = () => 'twitter-profile';
+      expect(instance.isPlatformType('twitter-profile')).to.be.true;
+      expect(instance.isPlatformType('linkedin-company')).to.be.false;
+    });
+
+    it('handles all platform types correctly', () => {
+      const platformTypes = [
+        'primary-site',
+        'wikipedia',
+        'youtube-channel',
+        'reddit-community',
+        'facebook-page',
+        'twitter-profile',
+        'linkedin-company',
+        'instagram-account',
+        'tiktok-account',
+        'github-org',
+        'medium-publication',
+      ];
+
+      platformTypes.forEach((type) => {
+        instance.record.platformType = type;
+        expect(instance.isPlatformType(type)).to.be.true;
+      });
+    });
+  });
 });

@@ -244,6 +244,82 @@ class AuditUrlCollection extends BaseCollection {
       await this.removeByIds(idsToRemove);
     }
   }
+
+  /**
+   * Gets all audit URLs for a site filtered by platform type with sorting support.
+   * @param {string} siteId - The site ID.
+   * @param {string} platformType - The platform type to filter by.
+   * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
+   * @returns {Promise<{items: AuditUrl[], cursor?: string}>} Paginated and sorted results.
+   */
+  async allBySiteIdAndPlatform(siteId, platformType, options = {}) {
+    if (!hasText(siteId) || !hasText(platformType)) {
+      throw new Error('Both siteId and platformType are required');
+    }
+
+    const { sortBy, sortOrder, ...queryOptions } = options;
+
+    // Use the GSI to query by siteId and platformType
+    const result = await this.queryItems(
+      { siteId, platformType },
+      queryOptions,
+      'gsi2', // The third GSI we created
+    );
+
+    // Handle both array and paginated result formats
+    const items = Array.isArray(result) ? result : (result.items || []);
+
+    // Apply sorting if requested
+    const sortedItems = sortBy
+      ? AuditUrlCollection.sortAuditUrls(items, sortBy, sortOrder) : items;
+
+    // Return in the same format as received
+    if (Array.isArray(result)) {
+      return sortedItems;
+    }
+
+    return {
+      items: sortedItems,
+      cursor: result.cursor,
+    };
+  }
+
+  /**
+   * Gets all offsite platform URLs for a site (excludes primary-site URLs).
+   * @param {string} siteId - The site ID.
+   * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
+   * @returns {Promise<{items: AuditUrl[], cursor?: string}>} Paginated and sorted offsite URLs.
+   */
+  async allOffsiteUrls(siteId, options = {}) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    const { sortBy, sortOrder, ...queryOptions } = options;
+
+    // Get all URLs for the site
+    const result = await this.allBySiteId(siteId, queryOptions);
+
+    // Handle both array and paginated result formats
+    const items = Array.isArray(result) ? result : (result.items || []);
+
+    // Filter to only offsite platform URLs
+    const offsiteItems = items.filter((url) => url.isOffsitePlatform && url.isOffsitePlatform());
+
+    // Apply sorting if requested
+    const sortedItems = sortBy
+      ? AuditUrlCollection.sortAuditUrls(offsiteItems, sortBy, sortOrder) : offsiteItems;
+
+    // Return in the same format as received
+    if (Array.isArray(result)) {
+      return sortedItems;
+    }
+
+    return {
+      items: sortedItems,
+      cursor: result.cursor,
+    };
+  }
 }
 
 export default AuditUrlCollection;

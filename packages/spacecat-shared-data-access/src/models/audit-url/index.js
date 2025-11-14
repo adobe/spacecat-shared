@@ -12,8 +12,10 @@
 
 import AuditUrl from './audit-url.model.js';
 import AuditUrlCollection from './audit-url.collection.js';
+import { PLATFORM_TYPES } from './audit-url.schema.js';
 
 export {
   AuditUrl,
   AuditUrlCollection,
+  PLATFORM_TYPES,
 };

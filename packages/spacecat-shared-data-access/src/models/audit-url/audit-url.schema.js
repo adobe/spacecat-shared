@@ -21,6 +21,23 @@ import SchemaBuilder from '../base/schema.builder.js';
 import AuditUrl from './audit-url.model.js';
 import AuditUrlCollection from './audit-url.collection.js';
 
+// Valid platform types for URL classification
+export const PLATFORM_TYPES = {
+  PRIMARY_SITE: 'primary-site',
+  WIKIPEDIA: 'wikipedia',
+  YOUTUBE_CHANNEL: 'youtube-channel',
+  REDDIT_COMMUNITY: 'reddit-community',
+  FACEBOOK_PAGE: 'facebook-page',
+  TWITTER_PROFILE: 'twitter-profile',
+  LINKEDIN_COMPANY: 'linkedin-company',
+  INSTAGRAM_ACCOUNT: 'instagram-account',
+  TIKTOK_ACCOUNT: 'tiktok-account',
+  GITHUB_ORG: 'github-org',
+  MEDIUM_PUBLICATION: 'medium-publication',
+};
+
+const VALID_PLATFORM_TYPES = Object.values(PLATFORM_TYPES);
+
 /*
 Schema Doc: https://electrodb.dev/en/modeling/schema/
 Attribute Doc: https://electrodb.dev/en/modeling/attributes/
@@ -67,6 +84,13 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     required: false,
     default: null,
   })
+  .addAttribute('platformType', {
+    type: 'string',
+    required: false,
+    default: PLATFORM_TYPES.PRIMARY_SITE,
+    set: (value) => value?.toLowerCase(),
+    validate: (value) => !value || VALID_PLATFORM_TYPES.includes(value),
+  })
   .addAttribute('createdAt', {
     type: 'string',
     required: true,
@@ -100,6 +124,11 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
   .addIndex(
     { composite: ['siteId'] },
     { composite: ['source'] },
+  )
+  // Add a third GSI for querying by siteId and platformType
+  .addIndex(
+    { composite: ['siteId'] },
+    { composite: ['platformType'] },
   );
 
 export default schema.build();

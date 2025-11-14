@@ -38,6 +38,17 @@ export const ORGANIC_KEYWORDS_FIELDS = /** @type {const} */ ([
   'serp_features',
 ]);
 
+export const METRICS_BY_COUNTRY_FILTER_FIELDS = /** @type {const} */ ([
+  'org_keywords',
+  'paid_keywords',
+  'org_keywords_1_3',
+  'org_traffic',
+  'org_cost',
+  'paid_traffic',
+  'paid_cost',
+  'paid_pages',
+]);
+
 export default class AhrefsAPIClient {
   static createFrom(context) {
     const { AHREFS_API_BASE_URL: apiBaseUrl, AHREFS_API_KEY: apiKey } = context.env;
@@ -257,6 +268,139 @@ export default class AhrefsAPIClient {
     }
 
     return this.sendRequest('/site-explorer/organic-keywords', queryParams);
+  }
+
+  /**
+   * Retrieves pages with paid search traffic for a given URL.
+   *
+   * @param {string} url - The target URL to analyze
+   * @param {string} [date] - The date for the analysis in YYYY-MM-DD format.
+   *                          Defaults to today's date.
+   * @param {number} [limit=200] - Maximum number of results to return (max: 1000)
+   * @returns {Promise<{result: Object, fullAuditRef: string}>} Response object containing:
+   *   - result.pages: Array of paid page objects with properties:
+   *     - url: The page URL
+   *     - top_keyword: The keyword that brings the most paid traffic to a page.
+   *     - top_keyword_best_position_title: The title displayed for the page in its top
+   *       keyword's SERP.
+   *     - top_keyword_country: The country in which a page ranks for its top keyword
+   *     - top_keyword_volume: An estimation of the average monthly number of
+   *                           searches for the top keyword over the latest month
+   *     - sum_traffic: An estimation of the monthly paid search traffic that a page gets from
+   *       all the keywords that it ranks for.
+   *     - value: The estimated cost of a page's monthly paid search traffic, in USD cents.
+   *   - fullAuditRef: Full URL of the API request for reference
+   * @example
+   * const result = await client.getPaidPages('example.com', '2025-11-10', 50);
+   * console.log(result.result.pages); // Array of paid pages
+   */
+  async getPaidPages(url, date = new Date().toISOString().split('T')[0], limit = 200) {
+    const queryParams = {
+      target: url,
+      date,
+      select: [
+        'url',
+        'top_keyword',
+        'top_keyword_best_position_title',
+        'top_keyword_country',
+        'top_keyword_volume',
+        'sum_traffic',
+        'value',
+      ].join(','),
+      order_by: 'sum_traffic:desc',
+      limit: getLimit(limit, 1000),
+      output: 'json',
+    };
+
+    return this.sendRequest('/site-explorer/paid-pages', queryParams);
+  }
+
+  /**
+   * Retrieves overall metrics for a given target URL.
+   *
+   * @param {string} url - The target URL to analyze
+   * @param {string} [date] - The date for the analysis in YYYY-MM-DD format.
+   *                          Defaults to today's date.
+   * @returns {Promise<{result: Object, fullAuditRef: string}>} Response object containing:
+   *   - result.metrics: Object with overall metrics:
+   *     - org_keywords: The total number of keywords that your target ranks for in the top 100
+   *       organic search results.
+   *     - paid_keywords: The total number of keywords that your target ranks for in paid
+   *       search results.
+   *     - org_keywords_1_3: The total number of keywords that your target ranks for in the
+   *       top 3 organic search results.
+   *     - org_traffic: The estimated number of monthly visitors that your target gets from
+   *       organic search.
+   *     - org_cost: The estimated value of your target's monthly organic search traffic,
+   *       in USD cents.
+   *     - paid_traffic: The estimated number of monthly visitors that your target gets from
+   *       paid search.
+   *     - paid_cost: The estimated cost of your target's monthly paid search traffic,
+   *       in USD cents.
+   *     - paid_pages: The total number of pages from a target ranking in paid search results.
+   *   - fullAuditRef: Full URL of the API request for reference
+   * @example
+   * const result = await client.getMetrics('example.com', '2025-11-10');
+   * console.log(result.result.metrics.org_traffic); // Organic traffic value
+   */
+  async getMetrics(url, date = new Date().toISOString().split('T')[0]) {
+    const queryParams = {
+      target: url,
+      date,
+    };
+
+    return this.sendRequest('/site-explorer/metrics', queryParams);
+  }
+
+  /**
+   * Retrieves metrics broken down by country for a given target URL.
+   * Automatically filters out countries where both organic and paid traffic are zero.
+   *
+   * @param {string} url - The target URL to analyze
+   * @param {string} [date] - The date for the analysis in YYYY-MM-DD format.
+   *                          Defaults to today's date.
+   * @returns {Promise<{result: Object, fullAuditRef: string}>} Response object containing:
+   *   - result.metrics: Array of metric objects, each containing:
+   *     - country: Two-letter country code (e.g., "US", "IN")
+   *     - org_keywords: The total number of keywords that your target ranks for in the
+   *       top 100 organic search results in this country.
+   *     - paid_keywords: The total number of keywords that your target ranks for in paid
+   *       search results in this country.
+   *     - org_keywords_1_3: The total number of keywords that your target ranks for in the
+   *       top 3 organic search results in this country.
+   *     - org_traffic: The estimated number of monthly visitors that your target gets from
+   *       organic search in this country.
+   *     - org_cost: The estimated value of your target's monthly organic search traffic
+   *       from this country, in USD cents.
+   *     - paid_traffic: The estimated number of monthly visitors that your target gets from
+   *       paid search in this country.
+   *     - paid_cost: The estimated cost of your target's monthly paid search traffic from
+   *       this country, in USD cents.
+   *     - paid_pages: The total number of pages from a target ranking in paid search
+   *       results in this country.
+   *   - fullAuditRef: Full URL of the API request for reference
+   * @example
+   * const result = await client.getMetricsByCountry('example.com', '2025-11-10');
+   * console.log(result.result.metrics); // Array of metrics by country (excluding zeros)
+   */
+  async getMetricsByCountry(url, date = new Date().toISOString().split('T')[0]) {
+    const queryParams = {
+      target: url,
+      date,
+    };
+
+    const response = await this.sendRequest('/site-explorer/metrics-by-country', queryParams);
+
+    // Filter out countries where all metric values are 0 or null
+    if (response.result?.metrics) {
+      response.result.metrics = response.result.metrics
+        .filter((metric) => METRICS_BY_COUNTRY_FILTER_FIELDS.some((field) => {
+          const value = metric[field];
+          return value !== null && value !== 0;
+        }));
+    }
+
+    return response;
   }
 
   async getLimitsAndUsage() {

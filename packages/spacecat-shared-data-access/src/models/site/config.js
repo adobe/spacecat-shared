@@ -10,7 +10,10 @@
  * governing permissions and limitations under the License.
  */
 
+import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import crypto from 'crypto';
 import Joi from 'joi';
+
 import { getLogger } from '../../util/logger-registry.js';
 
 export const IMPORT_TYPES = {
@@ -22,6 +25,7 @@ export const IMPORT_TYPES = {
   ORGANIC_KEYWORDS_QUESTIONS: 'organic-keywords-questions',
   ORGANIC_TRAFFIC: 'organic-traffic',
   TOP_PAGES: 'top-pages',
+  AHREF_PAID_PAGES: 'ahref-paid-pages',
   ALL_TRAFFIC: 'all-traffic',
   CWV_DAILY: 'cwv-daily',
   CWV_WEEKLY: 'cwv-weekly',
@@ -134,6 +138,13 @@ export const IMPORT_TYPE_SCHEMAS = {
     limit: Joi.number().integer().min(1).max(2000)
       .optional(),
   }),
+  [IMPORT_TYPES.AHREF_PAID_PAGES]: Joi.object({
+    type: Joi.string().valid(IMPORT_TYPES.AHREF_PAID_PAGES).required(),
+    ...IMPORT_BASE_KEYS,
+    geo: Joi.string().optional(),
+    limit: Joi.number().integer().min(1).max(2000)
+      .optional(),
+  }),
   [IMPORT_TYPES.CWV_DAILY]: Joi.object({
     type: Joi.string().valid(IMPORT_TYPES.CWV_DAILY).required(),
     ...IMPORT_BASE_KEYS,
@@ -210,6 +221,12 @@ export const DEFAULT_IMPORT_CONFIGS = {
     enabled: true,
     geo: 'global',
   },
+  'ahref-paid-pages': {
+    type: 'ahref-paid-pages',
+    destinations: ['default'],
+    sources: ['ahrefs'],
+    enabled: true,
+  },
   'cwv-daily': {
     type: 'cwv-daily',
     destinations: ['default'],
@@ -255,6 +272,21 @@ export const configSchema = Joi.object({
     brandId: Joi.string().required(),
     userId: Joi.string().required(),
   }).optional(),
+  brandProfile: Joi.object({
+    // functional metadata
+    version: Joi.number().integer().min(0),
+    updatedAt: Joi.string().isoDate(),
+    contentHash: Joi.string(),
+    // generic top-level content containers (non-strict)
+    discovery: Joi.any(),
+    clustering: Joi.any(),
+    competitive_context: Joi.any(),
+    main_profile: Joi.any(),
+    sub_brands: Joi.any(),
+    confidence_score: Joi.any(),
+    pages_considered: Joi.any(),
+    diversity_assessment: Joi.any(),
+  }).unknown(true).optional(),
   fetchConfig: Joi.object({
     headers: Joi.object().pattern(Joi.string(), Joi.string()),
     overrideBaseURL: Joi.string().uri().optional(),
@@ -304,6 +336,9 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
     outputLocation: Joi.string().required(),
+  }).optional(),
+  tokowakaConfig: Joi.object({
+    apiKey: Joi.string().required(),
   }).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -397,6 +432,7 @@ export const Config = (data = {}) => {
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
+  self.getBrandProfile = () => state?.brandProfile;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
   self.getLlmoConfig = () => state?.llmo;
   self.getLlmoDataFolder = () => state?.llmo?.dataFolder;
@@ -410,6 +446,7 @@ export const Config = (data = {}) => {
   };
   self.getLlmoCdnlogsFilter = () => state?.llmo?.cdnlogsFilter;
   self.getLlmoCdnBucketConfig = () => state?.llmo?.cdnBucketConfig;
+  self.getTokowakaConfig = () => state?.tokowakaConfig;
 
   self.updateSlackConfig = (channel, workspace, invitedUserCount) => {
     state.slack = {
@@ -612,6 +649,48 @@ export const Config = (data = {}) => {
     state.brandConfig = brandConfig;
   };
 
+  /**
+   * Updates the top-level brandProfile with versioning and content hashing.
+   * Version is incremented only if the meaningful content changes.
+   * @param {object} newProfile
+   */
+  self.updateBrandProfile = (newProfile = {}) => {
+    const prior = state.brandProfile || {};
+    // compute hash over all content except functional fields
+    const stripFunctional = (p) => {
+      if (!isNonEmptyObject(p)) return {};
+      const {
+        /* eslint-disable no-unused-vars */
+        version, updatedAt, contentHash, ...rest
+      } = p;
+      return rest;
+    };
+    const meaningful = stripFunctional(newProfile);
+    const contentHash = crypto.createHash('sha256')
+      .update(JSON.stringify(meaningful))
+      .digest('hex');
+
+    if (prior?.contentHash === contentHash) {
+      state.brandProfile = {
+        ...prior,
+        ...newProfile,
+        contentHash: prior.contentHash,
+        version: prior.version,
+        updatedAt: prior.updatedAt,
+      };
+      return;
+    }
+
+    const version = (prior?.version || 0) + 1;
+    state.brandProfile = {
+      ...prior,
+      ...meaningful,
+      version,
+      contentHash,
+      updatedAt: new Date().toISOString(),
+    };
+  };
+
   self.enableImport = (type, config = {}) => {
     if (!IMPORT_TYPE_SCHEMAS[type]) {
       throw new Error(`Unknown import type: ${type}`);
@@ -657,6 +736,10 @@ export const Config = (data = {}) => {
     state.cdnLogsConfig = cdnLogsConfig;
   };
 
+  self.updateTokowakaConfig = (tokowakaConfig) => {
+    state.tokowakaConfig = tokowakaConfig;
+  };
+
   return Object.freeze(self);
 };
 
@@ -669,6 +752,8 @@ Config.toDynamoItem = (config) => ({
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
+  brandProfile: config.getBrandProfile(),
   cdnLogsConfig: config.getCdnLogsConfig(),
   llmo: config.getLlmoConfig(),
+  tokowakaConfig: config.getTokowakaConfig(),
 });

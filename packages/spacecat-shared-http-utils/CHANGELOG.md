@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-http-utils-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.9...@adobe/spacecat-shared-http-utils-v1.18.0) (2025-11-06)
+
+
+### Features
+
+* allow brotli compression for json responses ([#1095](https://github.com/adobe/spacecat-shared/issues/1095)) ([b81f349](https://github.com/adobe/spacecat-shared/commit/b81f3497d7a64dd1b2a888f98971f7913e3ff1db))
+
+# [@adobe/spacecat-shared-http-utils-v1.17.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.8...@adobe/spacecat-shared-http-utils-v1.17.9) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-http-utils-v1.17.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.7...@adobe/spacecat-shared-http-utils-v1.17.8) (2025-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
 # [@adobe/spacecat-shared-http-utils-v1.17.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.17.6...@adobe/spacecat-shared-http-utils-v1.17.7) (2025-10-15)
 
 

@@ -43,6 +43,7 @@ const prompt = z.object({
   regions: z.array(region),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),
   source: z.union([z.literal('config'), z.literal('api'), z.string()]),
+  status: z.union([z.literal('completed'), z.literal('processing'), z.string()]).optional(),
 });
 
 const entity = z.object({
@@ -50,10 +51,27 @@ const entity = z.object({
   name: nonEmptyString,
 });
 
+const categoryUrl = z.object({
+  value: nonEmptyString,
+  type: z.union([z.literal('prefix'), z.literal('url')]),
+}).superRefine((data, ctx) => {
+  // Validate URL format only for type 'url'
+  if (data.type === 'url') {
+    if (!URL.canParse(data.value)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['value'],
+        message: 'Invalid URL format',
+      });
+    }
+  }
+});
+
 const category = z.object({
   name: nonEmptyString,
   region: z.union([region, z.array(region)]),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]).optional(),
+  urls: z.array(categoryUrl).optional(),
 });
 
 const topic = z.object({
@@ -65,13 +83,13 @@ const topic = z.object({
 const deletedPrompt = prompt.extend({
   topic: nonEmptyString,
   category: nonEmptyString,
-  regions: z.array(region).min(1),
 });
 
 export const llmoConfig = z.object({
   entities: z.record(z.uuid(), entity),
   categories: z.record(z.uuid(), category),
   topics: z.record(z.uuid(), topic),
+  aiTopics: z.record(z.uuid(), topic).optional(),
   brands: z.object({
     aliases: z.array(
       z.object({
@@ -131,6 +149,21 @@ export const llmoConfig = z.object({
   });
 
   // Validate topic prompts regions against their category
+  validateTopicPromptRegions(categories, ctx, topics, 'topics');
+
+  // Validate aiTopics prompts regions against their category
+  if (value.aiTopics) {
+    validateTopicPromptRegions(categories, ctx, value.aiTopics, 'aiTopics');
+  }
+});
+
+/**
+ * @param {LLMOConfig['categories']} categories
+ * @param {z.RefinementCtx} ctx
+ * @param {Record<string, z.infer<typeof topic>>} topics
+ * @param {string} topicsKey - The key name in the path (e.g., 'topics' or 'aiTopics')
+ */
+function validateTopicPromptRegions(categories, ctx, topics, topicsKey) {
   Object.entries(topics).forEach(([topicId, topicEntity]) => {
     if (topicEntity.prompts && topicEntity.category) {
       // If category is a UUID, validate against the referenced category entity
@@ -141,14 +174,14 @@ export const llmoConfig = z.object({
             ctx,
             topicEntity.category,
             promptItem.regions,
-            ['topics', topicId, 'prompts', promptIndex, 'regions'],
-            'topic prompt',
+            [topicsKey, topicId, 'prompts', promptIndex, 'regions'],
+            `${topicsKey} prompt`,
           );
         });
       }
     }
   });
-});
+}
 
 /**
    * @param {LLMOConfig['categories']} categories

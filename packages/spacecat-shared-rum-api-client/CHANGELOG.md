@@ -1,3 +1,43 @@
+# [@adobe/spacecat-shared-rum-api-client-v2.38.9](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.8...@adobe/spacecat-shared-rum-api-client-v2.38.9) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.38.8](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.7...@adobe/spacecat-shared-rum-api-client-v2.38.8) (2025-10-31)
+
+
+### Bug Fixes
+
+* **traffic-attribution:** limit vendors per source ([#1079](https://github.com/adobe/spacecat-shared/issues/1079)) ([9165913](https://github.com/adobe/spacecat-shared/commit/9165913f379a00df409fe86961ba5df1f5a2a840))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.38.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.6...@adobe/spacecat-shared-rum-api-client-v2.38.7) (2025-10-29)
+
+
+### Bug Fixes
+
+* **traffic-attribution:** handle direct referrers from rum-distiller ([#1061](https://github.com/adobe/spacecat-shared/issues/1061)) ([99b1262](https://github.com/adobe/spacecat-shared/commit/99b1262638c978579770f63715ed1dd5090bffa4))
+
+
+### Reverts
+
+* Revert "fix(traffic-attribution): handle non standard referrers ([#1040](https://github.com/adobe/spacecat-shared/issues/1040))" ([3686145](https://github.com/adobe/spacecat-shared/commit/3686145d16b0cc39d0da88c0bd2ca10dc249f93c))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.38.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.5...@adobe/spacecat-shared-rum-api-client-v2.38.6) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-rum-api-client-v2.38.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.4...@adobe/spacecat-shared-rum-api-client-v2.38.5) (2025-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
 # [@adobe/spacecat-shared-rum-api-client-v2.38.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.38.3...@adobe/spacecat-shared-rum-api-client-v2.38.4) (2025-10-23)
 
 

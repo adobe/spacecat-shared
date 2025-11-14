@@ -86,8 +86,6 @@ export {
   FORMS_AUDIT_INTERVAL,
 } from './formcalc.js';
 
-export { retrievePageAuthentication, getAccessToken } from './auth.js';
-
 export {
   getDateRanges,
   getLastNumberOfWeeks,
@@ -99,7 +97,7 @@ export {
   isoCalendarWeekMonday,
 } from './calendar-week-helper.js';
 
-export { detectAEMVersion, DELIVERY_TYPES } from './aem.js';
+export { detectAEMVersion, DELIVERY_TYPES, AUTHORING_TYPES } from './aem.js';
 
 export { determineAEMCSPageId, getPageEditUrl } from './aem-content-api-utils.js';
 

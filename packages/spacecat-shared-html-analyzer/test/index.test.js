@@ -52,10 +52,14 @@ describe('HTML Visibility Analyzer', () => {
     it('should provide basic comparison statistics', async () => {
       const result = await calculateStats(simpleHtml, richHtml);
 
+      expect(result).to.have.property('wordCountBefore');
+      expect(result).to.have.property('wordCountAfter');
       expect(result).to.have.property('wordDiff');
       expect(result).to.have.property('contentIncreaseRatio');
       expect(result).to.have.property('citationReadability');
 
+      expect(result.wordCountBefore).to.be.a('number');
+      expect(result.wordCountAfter).to.be.a('number');
       expect(result.wordDiff).to.be.a('number');
       expect(result.contentIncreaseRatio).to.be.a('number');
       expect(result.citationReadability).to.be.a('number');
@@ -68,7 +72,16 @@ describe('HTML Visibility Analyzer', () => {
 
       expect(result).to.have.property('withNavFooterIgnored');
       expect(result).to.have.property('withoutNavFooterIgnored');
+
+      // Verify withNavFooterIgnored has all required properties
+      expect(result.withNavFooterIgnored).to.have.property('wordCountBefore');
+      expect(result.withNavFooterIgnored).to.have.property('wordCountAfter');
       expect(result.withNavFooterIgnored).to.have.property('contentGain');
+      expect(result.withNavFooterIgnored).to.have.property('missingWords');
+
+      // Verify withoutNavFooterIgnored has all required properties
+      expect(result.withoutNavFooterIgnored).to.have.property('wordCountBefore');
+      expect(result.withoutNavFooterIgnored).to.have.property('wordCountAfter');
       expect(result.withoutNavFooterIgnored).to.have.property('missingWords');
     });
   });

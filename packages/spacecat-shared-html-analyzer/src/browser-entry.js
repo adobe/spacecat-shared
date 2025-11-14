@@ -66,8 +66,8 @@ const HTMLAnalyzer = {
   formatNumberToK,
   isBrowser,
 
-  // Version info
-  version: '1.0.0',
+  // Version info (replaced during build from package.json)
+  version: '__PACKAGE_VERSION__',
   buildFor: 'chrome-extension',
 };
 

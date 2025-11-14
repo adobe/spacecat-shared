@@ -24,6 +24,20 @@ chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('SuggestionModel', () => {
+  describe('STATUSES', () => {
+    it('has STATUSES enum', () => {
+      expect(Suggestion.STATUSES).to.be.an('object');
+      expect(Suggestion.STATUSES.NEW).to.equal('NEW');
+      expect(Suggestion.STATUSES.APPROVED).to.equal('APPROVED');
+      expect(Suggestion.STATUSES.IN_PROGRESS).to.equal('IN_PROGRESS');
+      expect(Suggestion.STATUSES.SKIPPED).to.equal('SKIPPED');
+      expect(Suggestion.STATUSES.FIXED).to.equal('FIXED');
+      expect(Suggestion.STATUSES.ERROR).to.equal('ERROR');
+      expect(Suggestion.STATUSES.OUTDATED).to.equal('OUTDATED');
+      expect(Suggestion.STATUSES.PENDING_VALIDATION).to.equal('PENDING_VALIDATION');
+    });
+  });
+
   let instance;
 
   let mockElectroService;
@@ -89,6 +103,11 @@ describe('SuggestionModel', () => {
     it('sets the status of the suggestion to OUTDATED', () => {
       instance.setStatus('OUTDATED');
       expect(instance.record.status).to.equal('OUTDATED');
+    });
+
+    it('sets the status of the suggestion to PENDING_VALIDATION', () => {
+      instance.setStatus('PENDING_VALIDATION');
+      expect(instance.record.status).to.equal('PENDING_VALIDATION');
     });
   });
 

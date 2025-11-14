@@ -15,7 +15,6 @@
 import {
   isIsoDate,
   isValidUrl,
-  isValidUUID,
 } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
@@ -58,6 +57,16 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
     required: true,
     default: [],
   })
+  .addAttribute('rank', {
+    type: 'number',
+    required: false,
+    default: null,
+  })
+  .addAttribute('traffic', {
+    type: 'number',
+    required: false,
+    default: null,
+  })
   .addAttribute('createdAt', {
     type: 'string',
     required: true,
@@ -94,4 +103,3 @@ const schema = new SchemaBuilder(AuditUrl, AuditUrlCollection)
   );
 
 export default schema.build();
-

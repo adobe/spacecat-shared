@@ -23,6 +23,72 @@ import BaseCollection from '../base/base.collection.js';
  */
 class AuditUrlCollection extends BaseCollection {
   /**
+   * Sorts audit URLs by a specified field.
+   * @param {Array} auditUrls - Array of AuditUrl objects to sort.
+   * @param {string} sortBy - Field to sort by ('rank', 'traffic', 'url', 'createdAt', 'updatedAt').
+   * @param {string} sortOrder - Sort order ('asc' or 'desc'). Default: 'asc'.
+   * @returns {Array} Sorted array of AuditUrl objects.
+   * @private
+   */
+  static sortAuditUrls(auditUrls, sortBy = 'rank', sortOrder = 'asc') {
+    if (!auditUrls || auditUrls.length === 0) {
+      return auditUrls;
+    }
+
+    const sorted = [...auditUrls].sort((a, b) => {
+      let aValue;
+      let bValue;
+
+      // Get values using getter methods if available
+      switch (sortBy) {
+        case 'rank':
+          aValue = a.getRank ? a.getRank() : a.rank;
+          bValue = b.getRank ? b.getRank() : b.rank;
+          break;
+        case 'traffic':
+          aValue = a.getTraffic ? a.getTraffic() : a.traffic;
+          bValue = b.getTraffic ? b.getTraffic() : b.traffic;
+          break;
+        case 'url':
+          aValue = a.getUrl ? a.getUrl() : a.url;
+          bValue = b.getUrl ? b.getUrl() : b.url;
+          break;
+        case 'createdAt':
+          aValue = a.getCreatedAt ? a.getCreatedAt() : a.createdAt;
+          bValue = b.getCreatedAt ? b.getCreatedAt() : b.createdAt;
+          break;
+        case 'updatedAt':
+          aValue = a.getUpdatedAt ? a.getUpdatedAt() : a.updatedAt;
+          bValue = b.getUpdatedAt ? b.getUpdatedAt() : b.updatedAt;
+          break;
+        default:
+          return 0;
+      }
+
+      // Handle null/undefined values (push to end)
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
+
+      // Compare values
+      let comparison = 0;
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        comparison = aValue.localeCompare(bValue);
+      } else if (aValue < bValue) {
+        comparison = -1;
+      } else if (aValue > bValue) {
+        comparison = 1;
+      } else {
+        comparison = 0;
+      }
+
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+
+    return sorted;
+  }
+
+  /**
    * Finds an audit URL by site ID and URL.
    * This is a convenience method for looking up a specific URL.
    *
@@ -45,7 +111,7 @@ class AuditUrlCollection extends BaseCollection {
    *
    * @param {string} siteId - The site ID.
    * @param {string} auditType - The audit type to filter by.
-   * @param {object} [options={}] - Query options (limit, cursor).
+   * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
    * @returns {Promise<{items: AuditUrl[], cursor?: string}>} Paginated results.
    */
   async allBySiteIdAndAuditType(siteId, auditType, options = {}) {
@@ -53,13 +119,89 @@ class AuditUrlCollection extends BaseCollection {
       throw new Error('Both siteId and auditType are required');
     }
 
+    const { sortBy, sortOrder, ...queryOptions } = options;
+
     // Get all URLs for the site
-    const allUrls = await this.allBySiteId(siteId, options);
+    const allUrls = await this.allBySiteId(siteId, queryOptions);
 
     // Filter by audit type
-    const filtered = allUrls.filter((auditUrl) => auditUrl.isAuditEnabled(auditType));
+    let filtered = allUrls.filter((auditUrl) => auditUrl.isAuditEnabled(auditType));
+
+    // Apply sorting if requested
+    if (sortBy) {
+      filtered = AuditUrlCollection.sortAuditUrls(filtered, sortBy, sortOrder);
+    }
 
     return filtered;
+  }
+
+  /**
+   * Gets all audit URLs for a site with sorting support.
+   * @param {string} siteId - The site ID.
+   * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
+   * @returns {Promise<{items: AuditUrl[], cursor?: string}>} Paginated and sorted results.
+   */
+  async allBySiteIdSorted(siteId, options = {}) {
+    if (!hasText(siteId)) {
+      throw new Error('SiteId is required');
+    }
+
+    const { sortBy, sortOrder, ...queryOptions } = options;
+
+    // Get all URLs for the site
+    const result = await this.allBySiteId(siteId, queryOptions);
+
+    // Handle both array and paginated result formats
+    const items = Array.isArray(result) ? result : (result.items || []);
+
+    // Apply sorting if requested
+    const sortedItems = sortBy
+      ? AuditUrlCollection.sortAuditUrls(items, sortBy, sortOrder) : items;
+
+    // Return in the same format as received
+    if (Array.isArray(result)) {
+      return sortedItems;
+    }
+
+    return {
+      items: sortedItems,
+      cursor: result.cursor,
+    };
+  }
+
+  /**
+   * Gets all audit URLs for a site by source with sorting support.
+   * @param {string} siteId - The site ID.
+   * @param {string} source - The source to filter by.
+   * @param {object} [options={}] - Query options (limit, cursor, sortBy, sortOrder).
+   * @returns {Promise<{items: AuditUrl[], cursor?: string}>} Paginated and sorted results.
+   */
+  async allBySiteIdAndSourceSorted(siteId, source, options = {}) {
+    if (!hasText(siteId) || !hasText(source)) {
+      throw new Error('Both siteId and source are required');
+    }
+
+    const { sortBy, sortOrder, ...queryOptions } = options;
+
+    // Get all URLs for the site and source
+    const result = await this.allBySiteIdAndSource(siteId, source, queryOptions);
+
+    // Handle both array and paginated result formats
+    const items = Array.isArray(result) ? result : (result.items || []);
+
+    // Apply sorting if requested
+    const sortedItems = sortBy
+      ? AuditUrlCollection.sortAuditUrls(items, sortBy, sortOrder) : items;
+
+    // Return in the same format as received
+    if (Array.isArray(result)) {
+      return sortedItems;
+    }
+
+    return {
+      items: sortedItems,
+      cursor: result.cursor,
+    };
   }
 
   /**
@@ -105,4 +247,3 @@ class AuditUrlCollection extends BaseCollection {
 }
 
 export default AuditUrlCollection;
-

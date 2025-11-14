@@ -16,12 +16,16 @@ export interface AuditUrl extends BaseModel {
   getAudits(): string[];
   getCreatedAt(): string;
   getCreatedBy(): string;
+  getRank(): number | null;
+  getTraffic(): number | null;
   getSite(): Promise<Site>;
   getSiteId(): string;
   getSource(): string;
   getUrl(): string;
   setAudits(audits: string[]): AuditUrl;
   setCreatedBy(createdBy: string): AuditUrl;
+  setRank(rank: number | null): AuditUrl;
+  setTraffic(traffic: number | null): AuditUrl;
   setSiteId(siteId: string): AuditUrl;
   setSource(source: string): AuditUrl;
   setUrl(url: string): AuditUrl;
@@ -36,11 +40,13 @@ export interface AuditUrlCollection extends BaseCollection<AuditUrl> {
   allBySiteIdAndSource(siteId: string, source: string): Promise<AuditUrl[]>;
   allBySiteIdAndSourceAndUrl(siteId: string, source: string, url: string): Promise<AuditUrl[]>;
   allBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl[]>;
+  allBySiteIdSorted(siteId: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
+  allBySiteIdAndSourceSorted(siteId: string, source: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<{ items: AuditUrl[]; cursor?: string }>;
   findBySiteId(siteId: string): Promise<AuditUrl | null>;
   findBySiteIdAndSource(siteId: string, source: string): Promise<AuditUrl | null>;
   findBySiteIdAndSourceAndUrl(siteId: string, source: string, url: string): Promise<AuditUrl | null>;
   findBySiteIdAndUrl(siteId: string, url: string): Promise<AuditUrl | null>;
-  allBySiteIdAndAuditType(siteId: string, auditType: string, options?: object): Promise<AuditUrl[]>;
+  allBySiteIdAndAuditType(siteId: string, auditType: string, options?: { limit?: number; cursor?: string; sortBy?: string; sortOrder?: string }): Promise<AuditUrl[]>;
   removeForSiteId(siteId: string): Promise<void>;
   removeForSiteIdAndSource(siteId: string, source: string): Promise<void>;
 }

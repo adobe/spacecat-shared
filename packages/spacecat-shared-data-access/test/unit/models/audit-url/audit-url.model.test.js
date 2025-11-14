@@ -167,7 +167,7 @@ describe('AuditUrlModel', () => {
       const plainObj = Object.create(AuditUrl.prototype);
       plainObj.source = 'manual';
       expect(plainObj.isManualSource()).to.be.true;
-      
+
       plainObj.source = 'sitemap';
       expect(plainObj.isManualSource()).to.be.false;
     });
@@ -186,4 +186,3 @@ describe('AuditUrlModel', () => {
     });
   });
 });
-

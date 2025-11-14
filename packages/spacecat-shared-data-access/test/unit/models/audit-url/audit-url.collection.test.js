@@ -18,6 +18,7 @@ import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import AuditUrl from '../../../../src/models/audit-url/audit-url.model.js';
+import AuditUrlCollection from '../../../../src/models/audit-url/audit-url.collection.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -72,18 +73,18 @@ describe('AuditUrlCollection', () => {
 
     it('returns the audit URL when found', async () => {
       instance.allBySiteIdAndUrl = stub().resolves([model]);
-      
+
       const result = await instance.findBySiteIdAndUrl('site123', 'https://example.com/page');
-      
+
       expect(result).to.equal(model);
       expect(instance.allBySiteIdAndUrl).to.have.been.calledOnceWith('site123', 'https://example.com/page');
     });
 
     it('returns null when audit URL is not found', async () => {
       instance.allBySiteIdAndUrl = stub().resolves([]);
-      
+
       const result = await instance.findBySiteIdAndUrl('site123', 'https://example.com/page');
-      
+
       expect(result).to.be.null;
     });
   });
@@ -111,9 +112,9 @@ describe('AuditUrlCollection', () => {
       mockModel3.isAuditEnabled = (type) => mockModel3.audits.includes(type);
 
       instance.allBySiteId = stub().resolves([mockModel1, mockModel2, mockModel3]);
-      
+
       const result = await instance.allBySiteIdAndAuditType('site123', 'accessibility');
-      
+
       expect(result).to.be.an('array');
       expect(result).to.have.length(2);
       expect(result).to.include(mockModel1);
@@ -127,9 +128,9 @@ describe('AuditUrlCollection', () => {
       mockModel.isAuditEnabled = (type) => mockModel.audits.includes(type);
 
       instance.allBySiteId = stub().resolves([mockModel]);
-      
+
       const result = await instance.allBySiteIdAndAuditType('site123', 'accessibility');
-      
+
       expect(result).to.be.an('array');
       expect(result).to.have.length(0);
     });
@@ -137,9 +138,9 @@ describe('AuditUrlCollection', () => {
     it('passes pagination options to allBySiteId', async () => {
       instance.allBySiteId = stub().resolves([]);
       const options = { limit: 50, cursor: 'abc123' };
-      
+
       await instance.allBySiteIdAndAuditType('site123', 'accessibility', options);
-      
+
       expect(instance.allBySiteId).to.have.been.calledOnceWith('site123', options);
     });
   });
@@ -201,5 +202,222 @@ describe('AuditUrlCollection', () => {
       expect(mockElectroService.entities.auditUrl.delete).to.not.have.been.called;
     });
   });
-});
 
+  describe('sortAuditUrls', () => {
+    it('returns empty array when input is empty', () => {
+      const result = AuditUrlCollection.sortAuditUrls([]);
+      expect(result).to.deep.equal([]);
+    });
+
+    it('returns null when input is null', () => {
+      const result = AuditUrlCollection.sortAuditUrls(null);
+      expect(result).to.be.null;
+    });
+
+    it('sorts by rank in ascending order', () => {
+      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
+      const url2 = { getRank: () => 3, getUrl: () => 'url2' };
+      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'rank', 'asc');
+
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url3);
+      expect(result[2]).to.equal(url2);
+    });
+
+    it('sorts by rank in descending order', () => {
+      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
+      const url2 = { getRank: () => 3, getUrl: () => 'url2' };
+      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url1, url3, url2], 'rank', 'desc');
+
+      expect(result[0]).to.equal(url2);
+      expect(result[1]).to.equal(url3);
+      expect(result[2]).to.equal(url1);
+    });
+
+    it('sorts by traffic in ascending order', () => {
+      const url1 = { getTraffic: () => 100, getUrl: () => 'url1' };
+      const url2 = { getTraffic: () => 300, getUrl: () => 'url2' };
+      const url3 = { getTraffic: () => 200, getUrl: () => 'url3' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'traffic', 'asc');
+
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url3);
+      expect(result[2]).to.equal(url2);
+    });
+
+    it('sorts by url alphabetically', () => {
+      const url1 = { getUrl: () => 'https://a.com' };
+      const url2 = { getUrl: () => 'https://c.com' };
+      const url3 = { getUrl: () => 'https://b.com' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'url', 'asc');
+
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url3);
+      expect(result[2]).to.equal(url2);
+    });
+
+    it('handles null values by pushing them to the end', () => {
+      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
+      const url2 = { getRank: () => null, getUrl: () => 'url2' };
+      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'rank', 'asc');
+
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url3);
+      expect(result[2]).to.equal(url2);
+    });
+
+    it('handles objects without getter methods', () => {
+      const url1 = { rank: 1, url: 'url1' };
+      const url2 = { rank: 3, url: 'url2' };
+      const url3 = { rank: 2, url: 'url3' };
+
+      const result = AuditUrlCollection.sortAuditUrls([url2, url1, url3], 'rank', 'asc');
+
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url3);
+      expect(result[2]).to.equal(url2);
+    });
+  });
+
+  describe('allBySiteIdSorted', () => {
+    it('throws an error if siteId is not provided', async () => {
+      await expect(instance.allBySiteIdSorted()).to.be.rejectedWith('SiteId is required');
+    });
+
+    it('returns sorted URLs when sortBy is provided', async () => {
+      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
+      const url2 = { getRank: () => 3, getUrl: () => 'url2' };
+      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
+
+      instance.allBySiteId = stub().resolves({ items: [url2, url1, url3], cursor: 'cursor123' });
+
+      const result = await instance.allBySiteIdSorted('site-123', { sortBy: 'rank', sortOrder: 'asc' });
+
+      expect(result.items).to.be.an('array').with.lengthOf(3);
+      expect(result.items[0]).to.equal(url1);
+      expect(result.items[1]).to.equal(url3);
+      expect(result.items[2]).to.equal(url2);
+      expect(result.cursor).to.equal('cursor123');
+    });
+
+    it('returns unsorted URLs when sortBy is not provided', async () => {
+      const url1 = { getUrl: () => 'url1' };
+      const url2 = { getUrl: () => 'url2' };
+
+      instance.allBySiteId = stub().resolves({ items: [url2, url1] });
+
+      const result = await instance.allBySiteIdSorted('site-123', {});
+
+      expect(result.items).to.deep.equal([url2, url1]);
+    });
+
+    it('handles array result format', async () => {
+      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
+      const url2 = { getRank: () => 2, getUrl: () => 'url2' };
+
+      instance.allBySiteId = stub().resolves([url2, url1]);
+
+      const result = await instance.allBySiteIdSorted('site-123', { sortBy: 'rank', sortOrder: 'asc' });
+
+      expect(result).to.be.an('array').with.lengthOf(2);
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url2);
+    });
+
+    it('passes query options to allBySiteId', async () => {
+      instance.allBySiteId = stub().resolves({ items: [] });
+
+      await instance.allBySiteIdSorted('site-123', { limit: 10, cursor: 'abc', sortBy: 'rank' });
+
+      expect(instance.allBySiteId).to.have.been.calledOnceWith('site-123', { limit: 10, cursor: 'abc' });
+    });
+  });
+
+  describe('allBySiteIdAndSourceSorted', () => {
+    it('throws an error if siteId is not provided', async () => {
+      await expect(instance.allBySiteIdAndSourceSorted()).to.be.rejectedWith('Both siteId and source are required');
+    });
+
+    it('throws an error if source is not provided', async () => {
+      await expect(instance.allBySiteIdAndSourceSorted('site-123')).to.be.rejectedWith('Both siteId and source are required');
+    });
+
+    it('returns sorted URLs when sortBy is provided', async () => {
+      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
+      const url2 = { getRank: () => 3, getUrl: () => 'url2' };
+      const url3 = { getRank: () => 2, getUrl: () => 'url3' };
+
+      instance.allBySiteIdAndSource = stub().resolves({ items: [url2, url1, url3], cursor: 'cursor123' });
+
+      const result = await instance.allBySiteIdAndSourceSorted('site-123', 'manual', { sortBy: 'rank', sortOrder: 'asc' });
+
+      expect(result.items).to.be.an('array').with.lengthOf(3);
+      expect(result.items[0]).to.equal(url1);
+      expect(result.items[1]).to.equal(url3);
+      expect(result.items[2]).to.equal(url2);
+      expect(result.cursor).to.equal('cursor123');
+    });
+
+    it('returns unsorted URLs when sortBy is not provided', async () => {
+      const url1 = { getUrl: () => 'url1' };
+      const url2 = { getUrl: () => 'url2' };
+
+      instance.allBySiteIdAndSource = stub().resolves({ items: [url2, url1] });
+
+      const result = await instance.allBySiteIdAndSourceSorted('site-123', 'sitemap', {});
+
+      expect(result.items).to.deep.equal([url2, url1]);
+    });
+
+    it('handles array result format', async () => {
+      const url1 = { getRank: () => 1, getUrl: () => 'url1' };
+      const url2 = { getRank: () => 2, getUrl: () => 'url2' };
+
+      instance.allBySiteIdAndSource = stub().resolves([url2, url1]);
+
+      const result = await instance.allBySiteIdAndSourceSorted('site-123', 'manual', { sortBy: 'rank', sortOrder: 'asc' });
+
+      expect(result).to.be.an('array').with.lengthOf(2);
+      expect(result[0]).to.equal(url1);
+      expect(result[1]).to.equal(url2);
+    });
+
+    it('passes query options to allBySiteIdAndSource', async () => {
+      instance.allBySiteIdAndSource = stub().resolves({ items: [] });
+
+      await instance.allBySiteIdAndSourceSorted('site-123', 'manual', { limit: 10, cursor: 'abc', sortBy: 'rank' });
+
+      expect(instance.allBySiteIdAndSource).to.have.been.calledOnceWith('site-123', 'manual', { limit: 10, cursor: 'abc' });
+    });
+  });
+
+  describe('allBySiteIdAndAuditType with sorting', () => {
+    it('applies sorting when sortBy is provided', async () => {
+      const mockModel1 = Object.create(AuditUrl.prototype);
+      mockModel1.audits = ['accessibility'];
+      mockModel1.isAuditEnabled = (type) => mockModel1.audits.includes(type);
+      mockModel1.getRank = () => 2;
+
+      const mockModel2 = Object.create(AuditUrl.prototype);
+      mockModel2.audits = ['accessibility'];
+      mockModel2.isAuditEnabled = (type) => mockModel2.audits.includes(type);
+      mockModel2.getRank = () => 1;
+
+      instance.allBySiteId = stub().resolves([mockModel1, mockModel2]);
+
+      const result = await instance.allBySiteIdAndAuditType('site123', 'accessibility', { sortBy: 'rank', sortOrder: 'asc' });
+
+      expect(result).to.be.an('array').with.lengthOf(2);
+      expect(result[0]).to.equal(mockModel2);
+      expect(result[1]).to.equal(mockModel1);
+    });
+  });
+});

@@ -79,4 +79,3 @@ class AuditUrl extends BaseModel {
 }
 
 export default AuditUrl;
-

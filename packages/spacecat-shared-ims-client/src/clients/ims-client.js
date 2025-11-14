@@ -15,7 +15,6 @@ import { hasText } from '@adobe/spacecat-shared-utils';
 import ImsBaseClient from './ims-base-client.js';
 import {
   emailAddressIsAllowed,
-  extractGuidAndAuthSource,
   extractIdAndAuthSource,
   getGroupMembersEndpoint,
   getImsOrgsApiPath,
@@ -109,7 +108,7 @@ export default class ImsClient extends ImsBaseClient {
   }
 
   async #getUsersByImsGroupId(imsOrgId, groupId) {
-    // This endpoint is paginated, but the default page limit is 50 entries — more than enough
+    // This endpoint is paginated, but the default page limit is 50 entries ? more than enough
     // for our use case
     const groupResponse = await this.imsApiCall(
       getGroupMembersEndpoint(imsOrgId, groupId),
@@ -351,28 +350,27 @@ export default class ImsClient extends ImsBaseClient {
       throw new Error('imsId param is required.');
     }
 
-    const { guid, authSource } = extractGuidAndAuthSource(imsId);
+    const { guid, authSource } = extractIdAndAuthSource(imsId);
+
     const serviceToken = await this.getServiceAccessToken();
 
-    const formBody = `guid=${guid}&client_id=${this.config.clientId}&auth_src=${authSource}`;
-
-    const response = await fetch(
-      `https://${this.config.imsHost}${IMS_ADMIN_PROFILE_ENDPOINT}`,
+    const adminProfileResponse = await this.imsApiCall(
+      IMS_ADMIN_PROFILE_ENDPOINT,
+      {},
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Bearer ${serviceToken.access_token}`,
-        },
-        body: formBody,
+        guid,
+        client_id: this.config.clientId,
+        bearer_token: serviceToken.access_token,
+        auth_src: authSource,
       },
+      { noContentType: true },
     );
 
-    if (!response.ok) {
-      throw new Error(`IMS getAdminProfile request failed with status: ${response.status}`);
+    if (!adminProfileResponse.ok) {
+      throw new Error(`IMS getAdminProfile request failed with status: ${adminProfileResponse.status}`);
     }
 
-    return response.json();
+    return adminProfileResponse.json();
   }
 
   /**
@@ -394,7 +392,18 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!accountClusterResponse.ok) {
-      throw new Error(`IMS getAccountCluster request failed with status: ${accountClusterResponse.status}`);
+      let errorMessage = `IMS getAccountCluster request failed with status: ${accountClusterResponse.status}`;
+      try {
+        const errorBody = await accountClusterResponse.json();
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error}`;
+        } else if (hasText(errorBody.message)) {
+          errorMessage += ` - ${errorBody.message}`;
+        }
+      } catch (e) {
+        // Response body is not JSON or cannot be parsed, ignore
+      }
+      throw new Error(errorMessage);
     }
 
     return accountClusterResponse.json();

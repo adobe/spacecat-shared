@@ -109,7 +109,7 @@ export default class ImsClient extends ImsBaseClient {
   }
 
   async #getUsersByImsGroupId(imsOrgId, groupId) {
-    // This endpoint is paginated, but the default page limit is 50 entries — more than enough
+    // This endpoint is paginated, but the default page limit is 50 entries - more than enough
     // for our use case
     const groupResponse = await this.imsApiCall(
       getGroupMembersEndpoint(imsOrgId, groupId),
@@ -383,7 +383,7 @@ export default class ImsClient extends ImsBaseClient {
    */
   async getAccountCluster(accessToken) {
     if (!hasText(accessToken)) {
-      throw new Error('accessToken param is required.');
+      throw new Error('IMS getAccountCluster: accessToken param is required.');
     }
 
     const accountClusterResponse = await this.imsApiCall(
@@ -394,7 +394,18 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!accountClusterResponse.ok) {
-      throw new Error(`IMS getAccountCluster request failed with status: ${accountClusterResponse.status}`);
+      let errorMessage = `IMS getAccountCluster request failed with status: ${accountClusterResponse.status}`;
+      try {
+        const errorBody = await accountClusterResponse.json();
+        if (hasText(errorBody.error)) {
+          errorMessage += ` - ${errorBody.error}`;
+        } else if (hasText(errorBody.message)) {
+          errorMessage += ` - ${errorBody.message}`;
+        }
+      } catch (e) {
+        // Response body is not JSON or cannot be parsed, ignore
+      }
+      throw new Error(errorMessage);
     }
 
     return accountClusterResponse.json();

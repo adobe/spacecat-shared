@@ -154,7 +154,7 @@ describe('ImsClient', () => {
 
     it('should handle IMS service token request v3', async () => {
       nock(`https://${DUMMY_HOST}`)
-      // Mock the token request, with a 500 server error response
+        // Mock the token request, with a 500 server error response
         .post('/ims/token/v3')
         .query(true)
         .reply(200, {
@@ -186,7 +186,7 @@ describe('ImsClient', () => {
 
     it('should handle IMS service token v3 request failures', async () => {
       nock(`https://${DUMMY_HOST}`)
-      // Mock the token request, with a 500 server error response
+        // Mock the token request, with a 500 server error response
         .post('/ims/token/v3')
         .query(true)
         .reply(500);
@@ -584,6 +584,83 @@ describe('ImsClient', () => {
 
       await expect(client.getAccountCluster(testAccessToken))
         .to.be.rejectedWith('IMS getAccountCluster request failed with status: 404');
+    });
+
+    it('includes error message from response body when error field is present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/account_cluster/v2')
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(400, {
+          error: 'invalid_request',
+          error_description: 'Invalid access token provided',
+        });
+
+      await expect(client.getAccountCluster(testAccessToken))
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 400 - invalid_request');
+    });
+
+    it('includes error message from response body when message field is present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/account_cluster/v2')
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(403, {
+          message: 'Access denied: insufficient permissions',
+        });
+
+      await expect(client.getAccountCluster(testAccessToken))
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 403 - Access denied: insufficient permissions');
+    });
+
+    it('prefers error field over message field when both are present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/account_cluster/v2')
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(401, {
+          error: 'unauthorized',
+          message: 'This should be ignored',
+        });
+
+      await expect(client.getAccountCluster(testAccessToken))
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 401 - unauthorized');
+    });
+
+    it('handles non-JSON error response gracefully', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/account_cluster/v2')
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(500, 'Internal Server Error');
+
+      await expect(client.getAccountCluster(testAccessToken))
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 500');
+    });
+
+    it('handles empty error response body gracefully', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/account_cluster/v2')
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(503, {});
+
+      await expect(client.getAccountCluster(testAccessToken))
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 503');
+    });
+
+    it('handles error response with no error or message fields', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .get('/ims/account_cluster/v2')
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .matchHeader('Authorization', (val) => val === `Bearer ${testAccessToken}`)
+        .reply(429, {
+          retryAfter: 60,
+          code: 'rate_limit_exceeded',
+        });
+
+      await expect(client.getAccountCluster(testAccessToken))
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 429');
     });
   });
 });

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-ims-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.10.0...@adobe/spacecat-shared-ims-client-v1.10.1) (2025-11-14)
+
+
+### Bug Fixes
+
+* improves accountCluster logging ([#1126](https://github.com/adobe/spacecat-shared/issues/1126)) ([a3bf2be](https://github.com/adobe/spacecat-shared/commit/a3bf2be49d5c3e99bef249be292c335a7179c272))
+
 # [@adobe/spacecat-shared-ims-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.3...@adobe/spacecat-shared-ims-client-v1.10.0) (2025-11-12)
 
 

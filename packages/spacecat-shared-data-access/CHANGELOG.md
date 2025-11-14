@@ -1,3 +1,11 @@
+# [@adobe/spacecat-shared-data-access-v2.83.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.82.0...@adobe/spacecat-shared-data-access-v2.83.0) (2025-11-14)
+
+
+### Features
+
+* Add top-level brandProfile to Site Config with versioning and hash; tests and fixtures ([#1125](https://github.com/adobe/spacecat-shared/issues/1125)) ([6dcd3f8](https://github.com/adobe/spacecat-shared/commit/6dcd3f848d0dcc7303a9778ee86fc334166e2b68))
+* added a new type reporting for fix entity ([#1121](https://github.com/adobe/spacecat-shared/issues/1121)) ([47f44b8](https://github.com/adobe/spacecat-shared/commit/47f44b81f073bdf1801746fb9e348a661f3a3fc5))
+
 # [@adobe/spacecat-shared-data-access-v2.82.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.81.0...@adobe/spacecat-shared-data-access-v2.82.0) (2025-11-13)
 
 

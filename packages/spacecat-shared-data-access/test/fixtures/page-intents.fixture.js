@@ -17,6 +17,9 @@ const pageIntents = [
     url: 'https://example0.com/page0',
     pageIntent: 'INFORMATIONAL',
     topic: 'firefly',
+    analysisStatus: 'SUCCESS',
+    analysisAttempts: 1,
+    lastAnalysisAt: '2025-11-07T10:00:00.000Z',
   },
   {
     pageIntentId: 'e61a9beb-d3ec-4d53-8652-1b6b43127b3e',
@@ -24,6 +27,17 @@ const pageIntents = [
     url: 'https://example1.com/page1',
     pageIntent: 'NAVIGATIONAL',
     topic: 'photoshop',
+    analysisStatus: 'FAILED',
+    analysisAttempts: 3,
+    lastAnalysisAt: '2025-11-07T11:30:00.000Z',
+    analysisError: {
+      code: 'INVALID_RESPONSE',
+      message: 'AI model returned invalid page intent format',
+      details: {
+        rawResponse: 'UNKNOWN_INTENT',
+        attemptedAt: '2025-11-07T11:30:00.000Z',
+      },
+    },
   },
   {
     pageIntentId: '36fc2fe4-6fd4-45dd-8cf3-2f1aedf778e3',

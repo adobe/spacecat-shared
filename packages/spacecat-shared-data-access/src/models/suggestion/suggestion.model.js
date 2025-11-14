@@ -41,7 +41,7 @@ class Suggestion extends BaseModel {
     CONFIG_UPDATE: 'CONFIG_UPDATE',
   };
 
-  // add your customized methods here
+  // add your customized method here
 }
 
 export default Suggestion;

@@ -59,7 +59,7 @@ describe('SuggestionCollection', () => {
   });
 
   describe('constructor', () => {
-    it('initialize the SuggestionCollection instance correctly', () => {
+    it('initializes the SuggestionCollection instance correctly', () => {
       expect(instance).to.be.an('object');
       expect(instance.electroService).to.equal(mockElectroService);
       expect(instance.entityRegistry).to.equal(mockEntityRegistry);

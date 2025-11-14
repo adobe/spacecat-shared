@@ -77,6 +77,7 @@ describe('Configuration IT', async () => {
 
     const data = {
       enabledByDefault: true,
+      productCodes: ['ASO'],
       enabled: {
         sites: ['site1'],
         orgs: ['org1'],

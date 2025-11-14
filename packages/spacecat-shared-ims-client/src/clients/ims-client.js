@@ -109,7 +109,7 @@ export default class ImsClient extends ImsBaseClient {
   }
 
   async #getUsersByImsGroupId(imsOrgId, groupId) {
-    // This endpoint is paginated, but the default page limit is 50 entries ? more than enough
+    // This endpoint is paginated, but the default page limit is 50 entries - more than enough
     // for our use case
     const groupResponse = await this.imsApiCall(
       getGroupMembersEndpoint(imsOrgId, groupId),

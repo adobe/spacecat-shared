@@ -569,7 +569,7 @@ describe('ImsClient', () => {
         });
 
       await expect(client.getAccountCluster(testAccessToken))
-        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 500');
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 500 - server_error');
     });
 
     it('throws error when account cluster request returns 404', async () => {
@@ -583,7 +583,7 @@ describe('ImsClient', () => {
         });
 
       await expect(client.getAccountCluster(testAccessToken))
-        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 404');
+        .to.be.rejectedWith('IMS getAccountCluster request failed with status: 404 - not_found');
     });
 
     it('includes error message from response body when error field is present', async () => {

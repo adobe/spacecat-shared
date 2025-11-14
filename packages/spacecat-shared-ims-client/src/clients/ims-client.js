@@ -394,7 +394,7 @@ export default class ImsClient extends ImsBaseClient {
     );
 
     if (!accountClusterResponse.ok) {
-      let errorMessage = `IMS getAccountCluster: request failed with status: ${accountClusterResponse.status}`;
+      let errorMessage = `IMS getAccountCluster request failed with status: ${accountClusterResponse.status}`;
       try {
         const errorBody = await accountClusterResponse.json();
         if (hasText(errorBody.error)) {

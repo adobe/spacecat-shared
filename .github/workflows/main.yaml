@@ -10,6 +10,7 @@ on: [push]
 env:
   CI_BUILD_NUM: ${{ github.run_id }}
   CI_BRANCH: ${{ github.ref_name }}
+  NODE_OPTIONS: --max-old-space-size=4096
 
 jobs:
   test:

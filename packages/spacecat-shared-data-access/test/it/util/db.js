@@ -75,7 +75,15 @@ const getDynamoClients = (config = {}) => {
   return { dbClient, docClient };
 };
 
-export const getDataAccess = (config, logger = console) => {
+// Minimal logger that doesn't output debug messages to prevent memory issues
+const minimalLogger = {
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+  debug: () => {}, // Disable debug to prevent massive ElectroDB logs
+};
+
+export const getDataAccess = (config, logger = minimalLogger) => {
   const { dbClient } = getDynamoClients(config);
   return createDataAccess(TEST_DA_CONFIG, logger, dbClient);
 };

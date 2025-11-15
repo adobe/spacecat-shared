@@ -35,11 +35,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@aws-sdk/client-athena": "3.927.0",
+    "@aws-sdk/client-athena": "3.932.0",
     "@adobe/spacecat-shared-utils": "1.66.0"
   },
   "devDependencies": {
-    "chai": "6.2.0",
+    "chai": "6.2.1",
     "chai-as-promised": "8.0.2",
     "sinon": "21.0.0",
     "sinon-chai": "4.0.1",

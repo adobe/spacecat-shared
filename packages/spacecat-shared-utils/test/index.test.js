@@ -67,6 +67,8 @@ describe('Index Exports', () => {
     'SPACECAT_USER_AGENT',
     'isAWSLambda',
     'instrumentAWSClient',
+    'getTraceId',
+    'addTraceIdHeader',
     'getDateRanges',
     'getLastNumberOfWeeks',
     'resolveCanonicalUrl',

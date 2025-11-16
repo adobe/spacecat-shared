@@ -87,12 +87,20 @@ class Audit extends BaseModel {
   /**
    * The destinations for the audit steps. Used with AuditBuilder to determine the destination
    * an audit step should trigger.
-   * @type {{CONTENT_SCRAPER: string, IMPORT_WORKER: string}}
+   * @type {{
+   * CONTENT_SCRAPER: string,
+   * IMPORT_WORKER: string,
+   * SCRAPE_CLIENT: string,
+   * MYSTIQUE: string,
+   * GEO_BRAND_PRESENCE_CATEGORIZATION: string,
+   * GEO_BRAND_PRESENCE_DETECTION: string,
+   * }}
    */
   static AUDIT_STEP_DESTINATIONS = {
     CONTENT_SCRAPER: 'content-scraper',
     IMPORT_WORKER: 'import-worker',
     SCRAPE_CLIENT: 'scrape-client',
+    MYSTIQUE: 'mystique',
   };
 
   /**
@@ -108,8 +116,13 @@ class Audit extends BaseModel {
    *     formatPayload: function
    *   },
    *   [Audit.AUDIT_STEP_DESTINATIONS.SCRAPE_CLIENT]: {
-   *   formatPayload: function
-   * }}}
+   *     formatPayload: function
+   *   },
+   *   [Audit.AUDIT_STEP_DESTINATIONS.MYSTIQUE]: {
+   *     getQueueUrl: function,
+   *     formatPayload: function
+   *   }
+   * }}
    */
   static AUDIT_STEP_DESTINATION_CONFIGS = {
     [Audit.AUDIT_STEP_DESTINATIONS.IMPORT_WORKER]: {
@@ -190,10 +203,69 @@ class Audit extends BaseModel {
         maxScrapeAge: isNumber(stepResult.maxScrapeAge) ? stepResult.maxScrapeAge : 24,
         auditData: {
           siteId: stepResult.siteId,
-          completionQueueUrl: stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
+          completionQueueUrl:
+            stepResult.completionQueueUrl || context.env?.AUDIT_JOBS_QUEUE_URL,
           auditContext,
         },
       }),
+    },
+    [Audit.AUDIT_STEP_DESTINATIONS.MYSTIQUE]: {
+      getQueueUrl: (context) => context.env?.QUEUE_SPACECAT_TO_MYSTIQUE,
+      /**
+       * Formats the payload for the Mystique queue.
+       * @param {object} stepResult - The result of the audit step.
+       * @param {string} stepResult.type - The message type for Mystique
+       * (e.g., 'categorize:geo-brand-presence').
+       * @param {string} stepResult.siteId - The site ID.
+       * @param {string} stepResult.url - The base URL or data URL.
+       * @param {string} stepResult.auditId - The audit ID.
+       * @param {string} stepResult.deliveryType - The site delivery type.
+       * @param {object} stepResult.calendarWeek - The calendar week context { week, year }.
+       * @param {string} [stepResult.configVersion] - The LLMO config version (optional).
+       * @param {string} [stepResult.date] - The date for daily cadence (optional).
+       * @param {object} stepResult.data - Additional data payload for Mystique.
+       * @param {object} auditContext - The audit context.
+       * @param {object} auditContext.next - The next audit step to run.
+       * @param {string} auditContext.auditId - The audit ID.
+       * @param {string} auditContext.auditType - The audit type.
+       * @param {string} auditContext.fullAuditRef - The full audit reference.
+       *
+       * @returns {object} - The formatted payload.
+       */
+      formatPayload: (stepResult, auditContext) => {
+        const payload = {
+          type: stepResult.type,
+          siteId: stepResult.siteId,
+          url: stepResult.url,
+          auditId: stepResult.auditId,
+          deliveryType: stepResult.deliveryType,
+          time: new Date().toISOString(),
+          week: stepResult.calendarWeek.week,
+          year: stepResult.calendarWeek.year,
+          data: stepResult.data || {},
+          auditContext,
+        };
+
+        // Add optional fields
+        if (stepResult.configVersion) {
+          payload.data.configVersion = stepResult.configVersion;
+          payload.data.config_version = stepResult.configVersion;
+        }
+
+        if (stepResult.date) {
+          payload.data.date = stepResult.date;
+        }
+
+        if (stepResult.source) {
+          payload.source = stepResult.source;
+        }
+
+        if (stepResult.initiator) {
+          payload.initiator = stepResult.initiator;
+        }
+
+        return payload;
+      },
     },
   };
 
@@ -214,7 +286,7 @@ class Audit extends BaseModel {
 
     if ((
       auditType === Audit.AUDIT_CONFIG.TYPES.LHS_MOBILE
-        || auditType === Audit.AUDIT_CONFIG.TYPES.LHS_DESKTOP
+      || auditType === Audit.AUDIT_CONFIG.TYPES.LHS_DESKTOP
     )
       && !isObject(auditResult.scores)) {
       throw new ValidationError(`Missing scores property for audit type '${auditType}'`);

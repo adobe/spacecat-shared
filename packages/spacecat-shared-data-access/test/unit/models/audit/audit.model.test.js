@@ -293,7 +293,7 @@ describe('AuditModel', () => {
       };
       const context = {
         env: {
-          AUDIT_JOBS_QUEUE_URL: 'audit-jobs-queue-url',
+          AUDIT_JOBS_QUEUE_URL: 'https://sqs.us-east-1.amazonaws.com/123456789012/audit-jobs-queue',
         },
       };
       const auditContext = { some: 'context' };
@@ -304,7 +304,7 @@ describe('AuditModel', () => {
         urls: [{ url: 'someUrl' }],
         jobId: 'someSiteId',
         processingType: 'someProcessingType',
-        completionQueueUrl: 'audit-jobs-queue-url',
+        completionQueueUrl: 'https://sqs.us-east-1.amazonaws.com/123456789012/audit-jobs-queue',
         skipMessage: false,
         allowCache: true,
         options: {},

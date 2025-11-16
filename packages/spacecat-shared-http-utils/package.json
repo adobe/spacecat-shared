@@ -37,7 +37,7 @@
     "@adobe/fetch": "4.2.3",
     "@adobe/spacecat-shared-data-access": "2.45.0",
     "@adobe/spacecat-shared-utils": "1.66.0",
-    "jose": "6.1.1"
+    "jose": "6.1.2"
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",

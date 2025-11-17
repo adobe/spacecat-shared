@@ -77,6 +77,8 @@ export { getStoredMetrics, storeMetrics } from './metrics-store.js';
 
 export { s3Wrapper } from './s3.js';
 
+export { OPPORTUNITY_TYPES } from './constants.js';
+
 export { fetch } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';
 export {

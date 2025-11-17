@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.84.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.83.2...@adobe/spacecat-shared-data-access-v2.84.0) (2025-11-17)
+
+
+### Features
+
+* add daily 1am interval ([#1137](https://github.com/adobe/spacecat-shared/issues/1137)) ([ac313e0](https://github.com/adobe/spacecat-shared/commit/ac313e070180a2b1165fdc9759896b339e520895))
+
 # [@adobe/spacecat-shared-data-access-v2.83.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.83.1...@adobe/spacecat-shared-data-access-v2.83.2) (2025-11-15)
 
 

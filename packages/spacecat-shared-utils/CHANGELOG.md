@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.74.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.73.1...@adobe/spacecat-shared-utils-v1.74.0) (2025-11-17)
+
+
+### Features
+
+* export OPPORTUNITY_TYPES constant ([#1134](https://github.com/adobe/spacecat-shared/issues/1134)) ([31ec102](https://github.com/adobe/spacecat-shared/commit/31ec102786e62bc280bf942f30c0d52e6f8ee9f1))
+
 # [@adobe/spacecat-shared-utils-v1.73.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.73.0...@adobe/spacecat-shared-utils-v1.73.1) (2025-11-15)
 
 

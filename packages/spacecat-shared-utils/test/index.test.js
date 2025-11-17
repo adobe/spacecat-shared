@@ -82,6 +82,7 @@ describe('Index Exports', () => {
     'determineAEMCSPageId',
     'AUTHORING_TYPES',
     'DELIVERY_TYPES',
+    'OPPORTUNITY_TYPES',
     'getPageEditUrl',
     'llmoConfig',
     'schemas',

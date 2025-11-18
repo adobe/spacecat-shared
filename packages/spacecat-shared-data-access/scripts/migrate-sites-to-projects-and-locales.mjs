@@ -1,36 +1,51 @@
 #!/usr/bin/env node
 /*
- * Migrate Sites to Projects and set locales.
+ * Copyright 2024 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/*
+ * CLI to migrate Sites to Projects and set locales.
  *
  * Behavior:
- * - Process ALL sites unless filtered by --orgId/--projectId/--domain/--siteId
- * - Project key = (organizationId + registrable domain)
- * - If site.projectId exists → skip
- * - Otherwise find-or-create Project, set site.projectId
- * - If site.language/region are unset → detect via locale-detect (network by default)
- *   - Fallback to en/US
- * - Writes directly to DynamoDB table specified by env DYNAMO_TABLE_NAME_DATA (default spacecat-services-data)
- * - Concurrency default: 10 (configurable via --concurrency)
- * - Reporting with --report emits CSV and JSON under ./reports/
+ * - Process ALL sites unless filtered by --orgId/--projectId/--domain/--siteId.
+ * - Project key = (organizationId + registrable domain).
+ * - If site.projectId exists → skip.
+ * - Otherwise find-or-create Project, then set site.projectId.
+ * - If site.language/region are unset → detect via locale-detect (network by default),
+ *   with fallback to en/US.
+ * - Writes to the DynamoDB table in env DYNAMO_TABLE_NAME_DATA
+ *   (default: spacecat-services-data).
+ * - Concurrency default: 10 (configurable via --concurrency).
+ * - Reporting with --report emits CSV and JSON under ./reports/.
  *
  * Required env:
- * - AWS_REGION (e.g., us-east-1)
- * - AWS credentials via default chain (env or shared profile)
+ * - AWS_REGION (e.g., us-east-1).
+ * - AWS credentials via default chain (env or shared profile).
  */
+
+/* eslint-disable no-console */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  createDataAccess,
-} from '../src/service/index.js';
-
-import {
   detectLocale,
   hasText,
   isNonEmptyArray,
 } from '@adobe/spacecat-shared-utils';
+
+import {
+  createDataAccess,
+} from '../src/service/index.js';
 
 // -----------------------------
 // Small CLI arg parser
@@ -56,11 +71,22 @@ function parseArgs(argv) {
     else if (a === '--report') args.report = true;
     else if (a === '--yes' || a === '--force' || a === '-y') args.yes = true;
     else if (a === '--no-network') args.noNetwork = true;
-    else if (a.startsWith('--orgId=')) args.orgId = a.split('=')[1];
-    else if (a.startsWith('--projectId=')) args.projectId = a.split('=')[1];
-    else if (a.startsWith('--domain=')) args.domain = a.split('=')[1];
-    else if (a.startsWith('--siteId=')) args.siteId = a.split('=')[1];
-    else if (a.startsWith('--concurrency=')) args.concurrency = parseInt(a.split('=')[1], 10);
+    else if (a.startsWith('--orgId=')) {
+      const [, value] = a.split('=');
+      args.orgId = value;
+    } else if (a.startsWith('--projectId=')) {
+      const [, value] = a.split('=');
+      args.projectId = value;
+    } else if (a.startsWith('--domain=')) {
+      const [, value] = a.split('=');
+      args.domain = value;
+    } else if (a.startsWith('--siteId=')) {
+      const [, value] = a.split('=');
+      args.siteId = value;
+    } else if (a.startsWith('--concurrency=')) {
+      const [, value] = a.split('=');
+      args.concurrency = parseInt(value, 10);
+    }
   }
 
   if (!args.apply && !args.dryRun) {
@@ -147,26 +173,31 @@ function csvRow(fields) {
 
 // Simple concurrency limiter
 async function mapWithConcurrency(items, limit, mapper) {
-  const results = [];
-  let inFlight = 0;
-  let idx = 0;
-  return new Promise((resolve, reject) => {
-    const next = () => {
-      if (idx >= items.length && inFlight === 0) {
-        resolve(results);
-        return;
+  const results = new Array(items.length);
+  const workers = [];
+  let currentIndex = 0;
+
+  const worker = async () => {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      if (currentIndex >= items.length) {
+        break;
       }
-      while (inFlight < limit && idx < items.length) {
-        const currentIndex = idx++;
-        inFlight += 1;
-        Promise.resolve(mapper(items[currentIndex], currentIndex))
-          .then((r) => { results[currentIndex] = r; })
-          .catch(reject)
-          .finally(() => { inFlight -= 1; next(); });
-      }
-    };
-    next();
-  });
+      const index = currentIndex;
+      currentIndex += 1;
+      // eslint-disable-next-line no-await-in-loop
+      const result = await mapper(items[index], index);
+      results[index] = result;
+    }
+  };
+
+  const workerCount = Math.min(limit, items.length);
+  for (let i = 0; i < workerCount; i += 1) {
+    workers.push(worker());
+  }
+
+  await Promise.all(workers);
+  return results;
 }
 
 // -----------------------------
@@ -182,7 +213,11 @@ async function main() {
     DYNAMO_TABLE_NAME_DATA: process.env.DYNAMO_TABLE_NAME_DATA || 'spacecat-services-data',
   };
 
-  console.log(`[start] table=${env.DYNAMO_TABLE_NAME_DATA} apply=${apply} dryRun=${dryRun} report=${report} concurrency=${concurrency} noNetwork=${noNetwork}`);
+  console.log(
+    `[start] table=${env.DYNAMO_TABLE_NAME_DATA} apply=${apply} `
+    + `dryRun=${dryRun} report=${report} concurrency=${concurrency} `
+    + `noNetwork=${noNetwork}`,
+  );
 
   const dataAccess = createDataAccess(
     {
@@ -213,20 +248,28 @@ async function main() {
       } else {
         // Fallback: fetch all and filter (should rarely happen)
         const allSites = await SiteCollection.all();
-        sites = allSites.filter((s) => s.getOrganizationId && s.getOrganizationId() === orgId);
+        sites = allSites.filter(
+          (site) => site.getOrganizationId && site.getOrganizationId() === orgId,
+        );
       }
     } catch {
       const allSites = await SiteCollection.all();
-      sites = allSites.filter((s) => s.getOrganizationId && s.getOrganizationId() === orgId);
+      sites = allSites.filter(
+        (site) => site.getOrganizationId && site.getOrganizationId() === orgId,
+      );
     }
     if (hasText(domain)) {
       const dLower = domain.toLowerCase();
-      sites = sites.filter((s) => (toRegistrableDomain(s.getBaseURL()) || '').toLowerCase() === dLower);
+      sites = sites.filter(
+        (site) => (toRegistrableDomain(site.getBaseURL()) || '').toLowerCase() === dLower,
+      );
     }
   } else if (hasText(domain)) {
     const allSites = await SiteCollection.all();
     const dLower = domain.toLowerCase();
-    sites = allSites.filter((s) => (toRegistrableDomain(s.getBaseURL()) || '').toLowerCase() === dLower);
+    sites = allSites.filter(
+      (site) => (toRegistrableDomain(site.getBaseURL()) || '').toLowerCase() === dLower,
+    );
   } else {
     sites = await SiteCollection.all();
   }
@@ -253,15 +296,21 @@ async function main() {
         } else {
           // Fallback: load all, then filter in-memory
           const allProjects = await ProjectCollection.all();
-          orgProjects = allProjects.filter((p) => p.getOrganizationId && p.getOrganizationId() === org);
+          orgProjects = allProjects.filter(
+            (project) => project.getOrganizationId && project.getOrganizationId() === org,
+          );
         }
       } catch {
         const allProjects = await ProjectCollection.all();
-        orgProjects = allProjects.filter((p) => p.getOrganizationId && p.getOrganizationId() === org);
+        orgProjects = allProjects.filter(
+          (project) => project.getOrganizationId && project.getOrganizationId() === org,
+        );
       }
       projectsCacheByOrg.set(org, orgProjects);
     }
-    let project = orgProjects.find((p) => p.getProjectName && p.getProjectName() === projName);
+    let project = orgProjects.find(
+      (candidate) => candidate.getProjectName && candidate.getProjectName() === projName,
+    );
     if (!project && apply) {
       project = await ProjectCollection.create({
         organizationId: org,
@@ -342,17 +391,23 @@ async function main() {
   };
 
   if (apply && !yes) {
-    console.log(`About to process ${sites.length} site(s). Use --yes to proceed or run with --dry-run first.`);
+    console.log(
+      `About to process ${sites.length} site(s). `
+      + 'Use --yes to proceed or run with --dry-run first.',
+    );
     return;
   }
 
-  await mapWithConcurrency(sites, Number.isFinite(concurrency) && concurrency > 0 ? concurrency : 10, processOne);
+  const effectiveConcurrency = Number.isFinite(concurrency) && concurrency > 0
+    ? concurrency
+    : 10;
+  await mapWithConcurrency(sites, effectiveConcurrency, processOne);
 
   // Reporting
   if (report) {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const outDir = path.resolve(__dirname, '../../../reports');
+    const filename = fileURLToPath(import.meta.url);
+    const dirname = path.dirname(filename);
+    const outDir = path.resolve(dirname, '../../../reports');
     ensureDir(outDir);
 
     const stamp = nowStamp();
@@ -397,15 +452,18 @@ async function main() {
     console.log(`[report] ${jsonPath}`);
   }
 
-  const updated = changes.filter((c) => c.action === 'updated').length;
-  const planned = changes.filter((c) => c.action === 'planned').length;
-  const skipped = changes.filter((c) => c.action?.startsWith('skipped')).length;
-  console.log(`[done] sites=${sites.length} updated=${updated} planned=${planned} skipped=${skipped}`);
+  const updated = changes.filter((change) => change.action === 'updated').length;
+  const planned = changes.filter((change) => change.action === 'planned').length;
+  const skipped = changes.filter(
+    (change) => change.action && change.action.startsWith('skipped'),
+  ).length;
+  console.log(
+    `[done] sites=${sites.length} `
+    + `updated=${updated} planned=${planned} skipped=${skipped}`,
+  );
 }
 
 main().catch((e) => {
   console.error('[fatal]', e);
   process.exit(1);
 });
-
-

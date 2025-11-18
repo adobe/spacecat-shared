@@ -47,7 +47,6 @@ import {
   createDataAccess,
 } from '../src/service/index.js';
 
-
 function parseArgs(argv) {
   const args = {
     orgId: undefined,
@@ -215,12 +214,10 @@ async function main() {
     console,
   );
 
-
   const {
     Project: ProjectCollection,
     Site: SiteCollection,
   } = dataAccess;
-
 
   let sites = [];
 

@@ -46,16 +46,18 @@ export const Granularity = {
  * Generic key builder that concatenates non-empty values with pipe separator
  * @param {...string} parts - Variable number of key parts to concatenate
  * @returns {string} Concatenated key
+ * @private - exported for testing purposes
  */
-function buildKey(...parts) {
+export function buildKey(...parts) {
   return parts.filter((part) => part != null && part !== '').join('|');
 }
 
 /**
  * Builds aggregation key for INDIVIDUAL granularity
  * Key format: url|type|selector|source
+ * @private - exported for testing purposes
  */
-function buildIndividualKey({
+export function buildIndividualKey({
   url, issueType, targetSelector, source,
 }) {
   return buildKey(url, issueType, targetSelector, source);
@@ -159,12 +161,14 @@ export function buildAggregationKey(issueType, url, targetSelector, source) {
   const granularity = getGranularityForIssueType(issueType);
   const keyBuilder = GRANULARITY_KEY_BUILDERS[granularity];
 
+  /* c8 ignore start - defensive code, all granularities have builders */
   if (!keyBuilder) {
     // Fallback to INDIVIDUAL if builder not found
     return buildIndividualKey({
       url, issueType, targetSelector, source,
     });
   }
+  /* c8 ignore stop */
 
   return keyBuilder({
     url, issueType, targetSelector, source,

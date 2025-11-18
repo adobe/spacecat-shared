@@ -113,6 +113,8 @@ export {
   buildAggregationKey,
   buildAggregationKeyFromSuggestion,
   buildSuggestionKey,
+  buildIndividualKey,
+  buildKey,
   getGranularityForIssueType,
   Granularity,
   GRANULARITY_KEY_BUILDERS,

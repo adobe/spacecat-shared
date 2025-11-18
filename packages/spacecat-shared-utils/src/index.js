@@ -108,3 +108,15 @@ export * as schemas from './schemas.js';
 
 export { detectLocale } from './locale-detect/locale-detect.js';
 export { prettifyLogForwardingConfig } from './cdn-helpers.js';
+
+export {
+  buildAggregationKey,
+  buildAggregationKeyFromSuggestion,
+  buildSuggestionKey,
+  buildIndividualKey,
+  buildKey,
+  getGranularityForIssueType,
+  Granularity,
+  GRANULARITY_KEY_BUILDERS,
+  ISSUE_GRANULARITY_MAP,
+} from './aggregation/aggregation-strategies.js';

@@ -179,7 +179,8 @@ export function buildAggregationKey(issueType, url, targetSelector, source) {
  * @param {string} suggestionData.url - Page URL
  * @param {Array} suggestionData.issues - Array of issues
  * @param {string} suggestionData.source - Optional source
- * @returns {string|null} The aggregation key based on the issue type's granularity, or null if no issues
+ * @returns {string|null} The aggregation key based on the issue type's granularity,
+ *   or null if no issues
  */
 export function buildAggregationKeyFromSuggestion(suggestionData) {
   // Handle null, undefined, or non-object inputs
@@ -200,7 +201,6 @@ export function buildAggregationKeyFromSuggestion(suggestionData) {
 
   const issueType = firstIssue.type;
   const htmlWithIssue = firstIssue.htmlWithIssues?.[0];
-  
   // Support both snake_case and camelCase for backwards compatibility
   const targetSelector = htmlWithIssue?.target_selector || htmlWithIssue?.targetSelector || '';
 

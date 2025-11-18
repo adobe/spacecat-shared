@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2025 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -28,7 +28,7 @@
  *
  * Required env:
  * - AWS_REGION (e.g., us-east-1).
- * - AWS credentials via default chain (env or shared profile).
+ * - AWS credentials via default chain (env).
  */
 
 /* eslint-disable no-console */
@@ -47,9 +47,7 @@ import {
   createDataAccess,
 } from '../src/service/index.js';
 
-// -----------------------------
-// Small CLI arg parser
-// -----------------------------
+
 function parseArgs(argv) {
   const args = {
     orgId: undefined,
@@ -90,7 +88,6 @@ function parseArgs(argv) {
   }
 
   if (!args.apply && !args.dryRun) {
-    // default to dry-run unless apply explicitly set
     args.dryRun = true;
   }
 
@@ -117,15 +114,10 @@ function toRegistrableDomain(baseURL) {
     const { hostname } = parsedBaseURL;
     const parts = hostname.split('.');
 
-    // If hostname has only 1–2 parts, just use it as-is
     if (parts.length <= 2) {
       return hostname;
     }
 
-    // Reference semantics (see onboarding helper):
-    // - Consider the first two labels as potential subdomains
-    // - If a label is 2–3 characters long, drop it
-    //   (e.g. www.adobe.com → adobe.com, fr.adobe.com → adobe.com)
     for (let i = 0; i < Math.min(parts.length, 2); i += 1) {
       const part = parts[i];
       if (part.length === 2 || part.length === 3) {
@@ -133,7 +125,6 @@ function toRegistrableDomain(baseURL) {
       }
     }
 
-    // Join remaining parts back to form the project/domain key
     return parts.filter(Boolean).join('.');
   } catch {
     return undefined;
@@ -144,7 +135,6 @@ async function detectSiteLocale(site, { noNetwork }) {
   const baseUrl = site.getBaseURL();
   try {
     if (noNetwork) {
-      // Avoid network by supplying empty HTML and headers
       const res = await detectLocale({ baseUrl, html: '<html></html>', headers: {} });
       return {
         language: res.language || 'en',
@@ -171,7 +161,6 @@ function csvRow(fields) {
   return fields.map(escape).join(',');
 }
 
-// Simple concurrency limiter
 async function mapWithConcurrency(items, limit, mapper) {
   const results = new Array(items.length);
   const workers = [];
@@ -226,14 +215,13 @@ async function main() {
     console,
   );
 
-  // EntityRegistry exposes collections keyed by entity name (e.g. "Site", "Project")
-  // We alias them here for clarity.
+
   const {
     Project: ProjectCollection,
     Site: SiteCollection,
   } = dataAccess;
 
-  // Resolve target sites
+
   let sites = [];
 
   if (hasText(siteId)) {
@@ -246,7 +234,6 @@ async function main() {
       if (SiteCollection.allByOrganizationId) {
         sites = await SiteCollection.allByOrganizationId(orgId);
       } else {
-        // Fallback: fetch all and filter (should rarely happen)
         const allSites = await SiteCollection.all();
         sites = allSites.filter(
           (site) => site.getOrganizationId && site.getOrganizationId() === orgId,
@@ -294,7 +281,6 @@ async function main() {
         if (ProjectCollection.allByOrganizationId) {
           orgProjects = await ProjectCollection.allByOrganizationId(org);
         } else {
-          // Fallback: load all, then filter in-memory
           const allProjects = await ProjectCollection.all();
           orgProjects = allProjects.filter(
             (project) => project.getOrganizationId && project.getOrganizationId() === org,
@@ -316,7 +302,6 @@ async function main() {
         organizationId: org,
         projectName: projName,
       });
-      // refresh cache
       orgProjects.push(project);
     }
     return project;

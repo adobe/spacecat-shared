@@ -19,46 +19,46 @@ import { getDataAccess } from '../util/db.js';
 
 use(chaiAsPromised);
 
-function checkPageReadability(pr) {
-  expect(pr).to.be.an('object');
-  expect(pr.getUrl()).to.be.a('string');
-  expect(pr.getSiteId()).to.be.a('string');
-  expect(pr.getCreatedAt()).to.be.a('string');
-  expect(pr.getUpdatedAt()).to.be.a('string');
+function checkPageCitability(pc) {
+  expect(pc).to.be.an('object');
+  expect(pc.getUrl()).to.be.a('string');
+  expect(pc.getSiteId()).to.be.a('string');
+  expect(pc.getCreatedAt()).to.be.a('string');
+  expect(pc.getUpdatedAt()).to.be.a('string');
 
   // Optional numeric fields - can be number or undefined
-  const citabilityScore = pr.getCitabilityScore();
+  const citabilityScore = pc.getCitabilityScore();
   if (citabilityScore !== undefined) {
     expect(citabilityScore).to.be.a('number');
   }
 
-  const contentRatio = pr.getContentRatio();
+  const contentRatio = pc.getContentRatio();
   if (contentRatio !== undefined) {
     expect(contentRatio).to.be.a('number');
   }
 
-  const wordDifference = pr.getWordDifference();
+  const wordDifference = pc.getWordDifference();
   if (wordDifference !== undefined) {
     expect(wordDifference).to.be.a('number');
   }
 
-  const botWords = pr.getBotWords();
+  const botWords = pc.getBotWords();
   if (botWords !== undefined) {
     expect(botWords).to.be.a('number');
   }
 
-  const normalWords = pr.getNormalWords();
+  const normalWords = pc.getNormalWords();
   if (normalWords !== undefined) {
     expect(normalWords).to.be.a('number');
   }
 }
 
-describe('PageReadability IT', async () => {
-  let PageReadability;
+describe('PageCitability IT', async () => {
+  let PageCitability;
 
   before(async () => {
     const dataAccess = getDataAccess();
-    PageReadability = dataAccess.PageReadability;
+    PageCitability = dataAccess.PageCitability;
   });
 
   it('adds a new page readability record', async () => {
@@ -71,17 +71,17 @@ describe('PageReadability IT', async () => {
       botWords: 500,
       normalWords: 650,
     };
-    const pr = await PageReadability.create(data);
+    const pc = await PageCitability.create(data);
 
-    checkPageReadability(pr);
+    checkPageCitability(pc);
 
-    expect(pr.getUrl()).to.equal(data.url);
-    expect(pr.getSiteId()).to.equal(data.siteId);
-    expect(pr.getCitabilityScore()).to.equal(data.citabilityScore);
-    expect(pr.getContentRatio()).to.equal(data.contentRatio);
-    expect(pr.getWordDifference()).to.equal(data.wordDifference);
-    expect(pr.getBotWords()).to.equal(data.botWords);
-    expect(pr.getNormalWords()).to.equal(data.normalWords);
+    expect(pc.getUrl()).to.equal(data.url);
+    expect(pc.getSiteId()).to.equal(data.siteId);
+    expect(pc.getCitabilityScore()).to.equal(data.citabilityScore);
+    expect(pc.getContentRatio()).to.equal(data.contentRatio);
+    expect(pc.getWordDifference()).to.equal(data.wordDifference);
+    expect(pc.getBotWords()).to.equal(data.botWords);
+    expect(pc.getNormalWords()).to.equal(data.normalWords);
   });
 
   it('finds page readability by URL', async () => {
@@ -96,16 +96,16 @@ describe('PageReadability IT', async () => {
       normalWords: 500,
     };
 
-    await PageReadability.create(data);
-    const pr = await PageReadability.findByUrl(testUrl);
+    await PageCitability.create(data);
+    const pc = await PageCitability.findByUrl(testUrl);
 
-    checkPageReadability(pr);
-    expect(pr.getUrl()).to.equal(testUrl);
+    checkPageCitability(pc);
+    expect(pc.getUrl()).to.equal(testUrl);
   });
 
   it('returns null when page readability is not found by URL', async () => {
-    const pr = await PageReadability.findByUrl('https://no-such-page.example.com');
-    expect(pr).to.be.null;
+    const pc = await PageCitability.findByUrl('https://no-such-page.example.com');
+    expect(pc).to.be.null;
   });
 
   it('updates a page readability record', async () => {
@@ -120,8 +120,8 @@ describe('PageReadability IT', async () => {
       normalWords: 350,
     };
 
-    await PageReadability.create(data);
-    const pr = await PageReadability.findByUrl(testUrl);
+    await PageCitability.create(data);
+    const pc = await PageCitability.findByUrl(testUrl);
 
     const updates = {
       citabilityScore: 0.90,
@@ -132,23 +132,23 @@ describe('PageReadability IT', async () => {
       updatedBy: 'test-user',
     };
 
-    pr.setCitabilityScore(updates.citabilityScore);
-    pr.setContentRatio(updates.contentRatio);
-    pr.setWordDifference(updates.wordDifference);
-    pr.setBotWords(updates.botWords);
-    pr.setNormalWords(updates.normalWords);
-    pr.setUpdatedBy(updates.updatedBy);
+    pc.setCitabilityScore(updates.citabilityScore);
+    pc.setContentRatio(updates.contentRatio);
+    pc.setWordDifference(updates.wordDifference);
+    pc.setBotWords(updates.botWords);
+    pc.setNormalWords(updates.normalWords);
+    pc.setUpdatedBy(updates.updatedBy);
 
-    await pr.save();
+    await pc.save();
 
-    checkPageReadability(pr);
+    checkPageCitability(pc);
 
-    expect(pr.getCitabilityScore()).to.equal(updates.citabilityScore);
-    expect(pr.getContentRatio()).to.equal(updates.contentRatio);
-    expect(pr.getWordDifference()).to.equal(updates.wordDifference);
-    expect(pr.getBotWords()).to.equal(updates.botWords);
-    expect(pr.getNormalWords()).to.equal(updates.normalWords);
-    expect(pr.getUpdatedBy()).to.equal(updates.updatedBy);
+    expect(pc.getCitabilityScore()).to.equal(updates.citabilityScore);
+    expect(pc.getContentRatio()).to.equal(updates.contentRatio);
+    expect(pc.getWordDifference()).to.equal(updates.wordDifference);
+    expect(pc.getBotWords()).to.equal(updates.botWords);
+    expect(pc.getNormalWords()).to.equal(updates.normalWords);
+    expect(pc.getUpdatedBy()).to.equal(updates.updatedBy);
   });
 
   it('handles missing stats gracefully', async () => {
@@ -162,14 +162,14 @@ describe('PageReadability IT', async () => {
       // normalWords intentionally missing
     };
 
-    const pr = await PageReadability.create(data);
+    const pc = await PageCitability.create(data);
 
-    checkPageReadability(pr);
+    checkPageCitability(pc);
 
-    expect(pr.getCitabilityScore()).to.equal(0.75);
-    expect(pr.getContentRatio()).to.be.undefined;
-    expect(pr.getWordDifference()).to.be.undefined;
-    expect(pr.getBotWords()).to.equal(300);
-    expect(pr.getNormalWords()).to.be.undefined;
+    expect(pc.getCitabilityScore()).to.equal(0.75);
+    expect(pc.getContentRatio()).to.be.undefined;
+    expect(pc.getWordDifference()).to.be.undefined;
+    expect(pc.getBotWords()).to.equal(300);
+    expect(pc.getNormalWords()).to.be.undefined;
   });
 });

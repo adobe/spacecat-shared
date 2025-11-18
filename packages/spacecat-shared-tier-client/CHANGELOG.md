@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.2.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.4...@adobe/spacecat-shared-tier-client-v1.2.5) (2025-11-18)
+
+
+### Bug Fixes
+
+* adds getAllEnrollment and getFirstEnrolllment for tier client ([#1138](https://github.com/adobe/spacecat-shared/issues/1138)) ([ee8a834](https://github.com/adobe/spacecat-shared/commit/ee8a83414f49887009cad228bdba7d6c7376fe8d))
+
 # [@adobe/spacecat-shared-tier-client-v1.2.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.3...@adobe/spacecat-shared-tier-client-v1.2.4) (2025-11-15)
 
 

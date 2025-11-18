@@ -28,6 +28,7 @@ import trafficAnalysis from './functions/traffic-analysis.js';
 import optimizationReportMetrics from './functions/reports/optimization/metrics.js';
 import optimizationReportGraph from './functions/reports/optimization/graph.js';
 import userEngagement from './functions/user-engagement.js';
+import siteMetrics from './functions/site-metrics.js';
 
 // exported for tests
 export const RUM_BUNDLER_API_HOST = 'https://bundles.aem.page';
@@ -50,6 +51,7 @@ const HANDLERS = {
   'optimization-report-metrics': optimizationReportMetrics,
   'optimization-report-graph': optimizationReportGraph,
   'user-engagement': userEngagement,
+  'site-metrics': siteMetrics,
 };
 
 function sanitize(opts) {

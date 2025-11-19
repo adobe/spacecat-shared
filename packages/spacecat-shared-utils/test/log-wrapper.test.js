@@ -234,5 +234,4 @@ describe('logWrapper tests', () => {
     // context.log should remain unchanged
     expect(mockContext.log).to.equal(originalLog);
   });
-
 });

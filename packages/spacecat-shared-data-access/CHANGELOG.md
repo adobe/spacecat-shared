@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.86.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.85.1...@adobe/spacecat-shared-data-access-v2.86.0) (2025-11-19)
+
+
+### Features
+
+* add configuration management APIs ([#1063](https://github.com/adobe/spacecat-shared/issues/1063)) ([d6988a9](https://github.com/adobe/spacecat-shared/commit/d6988a94ad79016c238f3f4d9426c328b52c3131))
+
 # [@adobe/spacecat-shared-data-access-v2.85.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.85.0...@adobe/spacecat-shared-data-access-v2.85.1) (2025-11-18)
 
 

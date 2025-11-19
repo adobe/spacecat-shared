@@ -40,7 +40,7 @@ function handler(bundles, opts = {}) {
     log.info(`[site-metrics] Bundle dates: ${uniqueDates.join(', ')}`);
 
     // Log sample of first few bundle IDs
-    const sampleBundles = bundles.slice(0, 5).map((b) => ({
+    const sampleBundles = bundles.slice(0, 1).map((b) => ({
       id: b.id,
       url: b.url,
       time: b.time,

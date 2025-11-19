@@ -55,7 +55,7 @@ const referrers = {
 const mediums = {
   paidall: /^\bpp\b|(.*(cp[acmuv]|ppc|paid).*)$/, // matches 'pp', *cp[acmuv]*, *ppc*, *paid*
   paidsearch: /google|paidsearch|sea|sem|maps/,
-  paidsocial: /paidsocial|socialpaid|fbig|facebook|gnews|instagram|line|linkedin|metasearch/,
+  paidsocial: /^\b(ps)\b|paidsocial|socialpaid|fbig|facebook|gnews|instagram|line|linkedin|metasearch/,
   organic: /organic/,
   socialall: /^\b(soc)\b|(.*(social).*)$/,
   display: /display|banner|poster|placement|image|dcm|businesslistings/,
@@ -68,7 +68,7 @@ const mediums = {
 };
 
 const sources = {
-  social: /^\b(ig|fb|x|soc)\b|(.*(meta|tiktok|facebook|snapchat|twitter|igshopping|instagram|linkedin|reddit).*)$/,
+  social: /^\b(ig|fb|x|soc|ln)\b|(.*(meta|tiktok|facebook|snapchat|twitter|igshopping|instagram|linkedin|reddit).*)$/,
   search: /^\b(goo)\b|(.*(sea|google|yahoo|bing|yandex|baidu|duckduckgo|brave|ecosia|aol|startpage|ask).*)$/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
   display: /optumib2b|jun|googleads|dv360|dv36|microsoft|flipboard|programmatic|yext|gdn|banner|newsshowcase/,

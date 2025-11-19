@@ -66,8 +66,16 @@ function handler(bundles, opts = {}) {
   const totalEngagedSessions = dataChunks?.totals?.engagement?.sum ?? 0;
 
   // Calculate P75 LCP (75th percentile) - Core Web Vitals standard
-  const p75LCP = dataChunks?.totals?.lcp?.percentile?.(75) ?? null;
-  const lcpCount = dataChunks?.totals?.lcp?.count ?? 0;
+  const lcpMetrics = dataChunks?.totals?.lcp;
+  const p75LCP = lcpMetrics?.percentile?.(75) ?? null;
+  const lcpCount = lcpMetrics?.count ?? 0;
+
+  if (log) {
+    log.info(`[site-metrics] LCP Metrics Debug - count: ${lcpCount}, mean: ${lcpMetrics?.mean}, p75: ${p75LCP}, values length: ${lcpMetrics?.values?.length}`);
+    if (lcpMetrics?.values) {
+      log.info(`[site-metrics] First 5 LCP values: ${JSON.stringify(lcpMetrics.values.slice(0, 5))}`);
+    }
+  }
 
   if (log) {
     log.info(`[site-metrics] Results - Pageviews: ${totalPageviews}, LCP P75: ${p75LCP}, LCP Count: ${lcpCount}, Engaged: ${totalEngagedSessions}`);

@@ -15,6 +15,8 @@ import type { ISOCalendarWeek } from './calendar-week-helper.js';
 
 export { AUTHORING_TYPES, DELIVERY_TYPES } from './aem.js';
 
+export { OPPORTUNITY_TYPES } from './constants.js';
+
 /** UTILITY FUNCTIONS */
 export function arrayEquals<T>(a: T[], b: T[]): boolean;
 

@@ -33,30 +33,44 @@ export default class HeadingsMapper extends BaseOpportunityMapper {
     return this.prerenderRequired;
   }
 
-  suggestionToPatch(suggestion, opportunityId) {
-    const eligibility = this.canDeploy(suggestion);
-    if (!eligibility.eligible) {
-      this.log.warn(`Headings suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
-      return null;
-    }
+  /**
+   * Converts suggestions to Tokowaka patches
+   * @param {string} urlPath - URL path for the suggestions
+   * @param {Array} suggestions - Array of suggestion entities for the same URL
+   * @param {string} opportunityId - Opportunity ID
+   * @returns {Array} - Array of Tokowaka patch objects
+   */
+  suggestionsToPatches(urlPath, suggestions, opportunityId) {
+    const patches = [];
 
-    const data = suggestion.getData();
-    const { checkType, transformRules } = data;
+    suggestions.forEach((suggestion) => {
+      const eligibility = this.canDeploy(suggestion);
+      if (!eligibility.eligible) {
+        this.log.warn(`Headings suggestion ${suggestion.getId()} cannot be deployed: ${eligibility.reason}`);
+        return;
+      }
 
-    const patch = {
-      ...this.createBasePatch(suggestion, opportunityId),
-      op: transformRules.action,
-      selector: transformRules.selector,
-      value: data.recommendedAction,
-      valueFormat: 'text',
-      ...(data.currentValue !== null && { currValue: data.currentValue }),
-      target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
-    };
+      const data = suggestion.getData();
+      const { checkType, transformRules } = data;
 
-    if (checkType === 'heading-missing-h1' && transformRules.tag) {
-      patch.tag = transformRules.tag;
-    }
-    return patch;
+      const patch = {
+        ...this.createBasePatch(suggestion, opportunityId),
+        op: transformRules.action,
+        selector: transformRules.selector,
+        value: data.recommendedAction,
+        valueFormat: 'text',
+        ...(data.currentValue !== null && { currValue: data.currentValue }),
+        target: TARGET_USER_AGENTS_CATEGORIES.AI_BOTS,
+      };
+
+      if (checkType === 'heading-missing-h1' && transformRules.tag) {
+        patch.tag = transformRules.tag;
+      }
+
+      patches.push(patch);
+    });
+
+    return patches;
   }
 
   /**

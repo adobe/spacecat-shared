@@ -12,6 +12,7 @@
 
 import HeadingsMapper from './headings-mapper.js';
 import ContentSummarizationMapper from './content-summarization-mapper.js';
+import FaqMapper from './faq-mapper.js';
 
 /**
  * Registry for opportunity mappers
@@ -32,6 +33,7 @@ export default class MapperRegistry {
     const defaultMappers = [
       HeadingsMapper,
       ContentSummarizationMapper,
+      FaqMapper,
       // more mappers here
     ];
 

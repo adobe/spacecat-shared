@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.74.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.73.1...@adobe/spacecat-shared-utils-v1.74.0) (2025-11-17)
+
+
+### Features
+
+* export OPPORTUNITY_TYPES constant ([#1134](https://github.com/adobe/spacecat-shared/issues/1134)) ([31ec102](https://github.com/adobe/spacecat-shared/commit/31ec102786e62bc280bf942f30c0d52e6f8ee9f1))
+
+# [@adobe/spacecat-shared-utils-v1.73.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.73.0...@adobe/spacecat-shared-utils-v1.73.1) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-utils-v1.73.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.72.1...@adobe/spacecat-shared-utils-v1.73.0) (2025-11-14)
+
+
+### Features
+
+* introduce AMS promise token ([#1123](https://github.com/adobe/spacecat-shared/issues/1123)) ([324688e](https://github.com/adobe/spacecat-shared/commit/324688ef9b92dcc1cbbefe7549540091065f304e))
+
+# [@adobe/spacecat-shared-utils-v1.72.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.72.0...@adobe/spacecat-shared-utils-v1.72.1) (2025-11-13)
+
+
+### Bug Fixes
+
+* **spacecat-shared-data-access/src/models/site/config.js:** add suppo… ([#1118](https://github.com/adobe/spacecat-shared/issues/1118)) ([7123b3c](https://github.com/adobe/spacecat-shared/commit/7123b3c30abb80ba3f2de040417ea3d86660bcc5))
+
 # [@adobe/spacecat-shared-utils-v1.72.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.71.0...@adobe/spacecat-shared-utils-v1.72.0) (2025-11-11)
 
 

@@ -77,6 +77,8 @@ export { getStoredMetrics, storeMetrics } from './metrics-store.js';
 
 export { s3Wrapper } from './s3.js';
 
+export { OPPORTUNITY_TYPES } from './constants.js';
+
 export { fetch } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';
 export {
@@ -106,3 +108,15 @@ export * as schemas from './schemas.js';
 
 export { detectLocale } from './locale-detect/locale-detect.js';
 export { prettifyLogForwardingConfig } from './cdn-helpers.js';
+
+export {
+  buildAggregationKey,
+  buildAggregationKeyFromSuggestion,
+  buildSuggestionKey,
+  buildIndividualKey,
+  buildKey,
+  getGranularityForIssueType,
+  Granularity,
+  GRANULARITY_KEY_BUILDERS,
+  ISSUE_GRANULARITY_MAP,
+} from './aggregation/aggregation-strategies.js';

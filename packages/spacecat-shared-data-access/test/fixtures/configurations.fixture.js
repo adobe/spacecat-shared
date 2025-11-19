@@ -53,18 +53,22 @@ const configurations = [
     handlers: {
       404: {
         enabledByDefault: true,
+        productCodes: ['ASO'],
       },
       'rum-ingest': {
         enabledByDefault: false,
+        productCodes: ['ASO'],
         enabled: {
           sites: ['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe'],
         },
       },
       'organic-keywords': {
         enabledByDefault: false,
+        productCodes: ['ASO'],
       },
       cwv: {
         enabledByDefault: true,
+        productCodes: ['ASO'],
         disabled: {
           sites: [
             '5d6d4439-6659-46c2-b646-92d110fa5a52',
@@ -83,6 +87,7 @@ const configurations = [
       },
       sitemap: {
         enabledByDefault: true,
+        productCodes: ['ASO'],
         enabled: {
           sites: [],
           orgs: [],
@@ -94,6 +99,7 @@ const configurations = [
       },
       'lhs-mobile': {
         enabledByDefault: false,
+        productCodes: ['ASO'],
         enabled: {
           sites: ['c6f41da6-3a7e-4a59-8b8d-2da742ac2dbe'],
           orgs: ['757ceb98-05c8-4e07-bb23-bc722115b2b0'],

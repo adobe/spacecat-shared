@@ -21,7 +21,7 @@ export interface TokawakaPatch {
   currValue?: string;
   target: 'ai-bots' | 'bots' | 'all';
   opportunityId: string;
-  suggestionId: string;
+  suggestionId?: string;
   prerenderRequired: boolean;
   lastUpdated: number;
 }
@@ -108,12 +108,14 @@ export abstract class BaseOpportunityMapper {
   abstract requiresPrerender(): boolean;
   
   /**
-   * Converts a suggestion to a Tokowaka patch
+   * Converts suggestions to Tokowaka patches
    */
-  abstract suggestionToPatch(
-    suggestion: Suggestion,
-    opportunityId: string
-  ): TokawakaPatch | null;
+  abstract suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string,
+    existingConfig: TokowakaConfig | null
+  ): TokawakaPatch[];
   
   /**
    * Checks if a suggestion can be deployed for this opportunity type
@@ -142,7 +144,11 @@ export class HeadingsMapper extends BaseOpportunityMapper {
   
   getOpportunityType(): string;
   requiresPrerender(): boolean;
-  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
 }
 
@@ -155,13 +161,36 @@ export class ContentSummarizationMapper extends BaseOpportunityMapper {
   
   getOpportunityType(): string;
   requiresPrerender(): boolean;
-  suggestionToPatch(suggestion: Suggestion, opportunityId: string): TokawakaPatch | null;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string
+  ): TokawakaPatch[];
+  canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
+}
+
+/**
+ * FAQ opportunity mapper
+ * Handles conversion of FAQ suggestions to Tokowaka patches
+ */
+export class FaqMapper extends BaseOpportunityMapper {
+  constructor(log: any);
+  
+  getOpportunityType(): string;
+  requiresPrerender(): boolean;
   canDeploy(suggestion: Suggestion): { eligible: boolean; reason?: string };
   
   /**
-   * Converts markdown text to HAST (Hypertext Abstract Syntax Tree) format
+   * Creates patches for FAQ suggestions
+   * First patch is heading (h2) if it doesn't exist, then individual FAQ divs
+   * @throws {Error} if suggestionToPatch is called directly
    */
-  markdownToHast(markdown: string): object;
+  suggestionsToPatches(
+    urlPath: string,
+    suggestions: Suggestion[],
+    opportunityId: string,
+    existingConfig: TokowakaConfig | null
+  ): TokawakaPatch[];
 }
 
 /**

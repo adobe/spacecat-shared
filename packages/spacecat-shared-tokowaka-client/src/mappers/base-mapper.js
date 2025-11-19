@@ -40,16 +40,17 @@ export default class BaseOpportunityMapper {
   }
 
   /**
-   * Converts a suggestion to a Tokowaka patch
+   * Converts suggestions to Tokowaka patches
    * @abstract
-   * @param {Object} _ - Suggestion entity with getId() and getData() methods
-   * @param {string} __ - Opportunity ID
-   * @returns {Object|null} - Patch object or null if conversion fails
+   * @param {string} _ - URL path for the suggestions
+   * @param {Array} __ - Array of suggestion entities for the same URL
+   * @param {string} ___ - Opportunity ID
+   * @returns {Array} - Array of Tokowaka patch objects
    */
   // eslint-disable-next-line no-unused-vars
-  suggestionToPatch(_, __) {
-    this.log.error('suggestionToPatch() must be implemented by subclass');
-    throw new Error('suggestionToPatch() must be implemented by subclass');
+  suggestionsToPatches(_, __, ___) {
+    this.log.error('suggestionsToPatches() must be implemented by subclass');
+    throw new Error('suggestionsToPatches() must be implemented by subclass');
   }
 
   /**
@@ -73,8 +74,17 @@ export default class BaseOpportunityMapper {
    * @returns {Object} - Base patch object
    */
   createBasePatch(suggestion, opportunityId) {
-    const updatedAt = suggestion.getUpdatedAt();
-    const lastUpdated = updatedAt ? new Date(updatedAt).getTime() : Date.now();
+    const data = suggestion.getData();
+    const updatedAt = data?.scrapedAt
+      || data?.transformRules?.scrapedAt
+      || suggestion.getUpdatedAt();
+
+    // Parse timestamp, fallback to Date.now() if invalid
+    let lastUpdated = Date.now();
+    if (updatedAt) {
+      const parsed = new Date(updatedAt).getTime();
+      lastUpdated = Number.isNaN(parsed) ? Date.now() : parsed;
+    }
 
     return {
       opportunityId,

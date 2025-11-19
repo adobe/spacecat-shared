@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.10.0...@adobe/spacecat-shared-ahrefs-client-v1.10.1) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-ahrefs-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.13...@adobe/spacecat-shared-ahrefs-client-v1.10.0) (2025-11-13)
+
+
+### Features
+
+* (ahref) add endpoints with paid data ([#1119](https://github.com/adobe/spacecat-shared/issues/1119)) ([cc2abb0](https://github.com/adobe/spacecat-shared/commit/cc2abb058a5686fffb1040a2243452160330b086))
+
 # [@adobe/spacecat-shared-ahrefs-client-v1.9.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ahrefs-client-v1.9.12...@adobe/spacecat-shared-ahrefs-client-v1.9.13) (2025-11-04)
 
 

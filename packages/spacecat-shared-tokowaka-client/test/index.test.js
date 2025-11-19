@@ -104,7 +104,7 @@ describe('TokowakaClient', () => {
   describe('constructor', () => {
     it('should create an instance with valid config', () => {
       expect(client).to.be.instanceOf(TokowakaClient);
-      expect(client.bucketName).to.equal('test-bucket');
+      expect(client.deployBucketName).to.equal('test-bucket');
       expect(client.s3Client).to.equal(s3Client);
     });
 

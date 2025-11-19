@@ -556,15 +556,19 @@ class TokowakaClient {
       };
     }
 
-    // Generate configuration with eligible suggestions only (NO MERGING for preview)
+    // Fetch existing deployed configuration from production S3
+    this.log.debug(`Fetching existing deployed Tokowaka config for site ${site.getId()}`);
+    const existingConfig = await this.fetchConfig(apiKey, false);
+
+    // Generate configuration with eligible preview suggestions
     this.log.debug(`Generating preview Tokowaka config for site ${site.getId()}, opportunity ${opportunity.getId()}`);
-    const config = this.generateConfig(
+    const newConfig = this.generateConfig(
       site,
       opportunity,
       eligibleSuggestions,
     );
 
-    if (Object.keys(config.tokowakaOptimizations).length === 0) {
+    if (Object.keys(newConfig.tokowakaOptimizations).length === 0) {
       this.log.warn('No eligible suggestions to preview');
       return {
         config: null,
@@ -573,8 +577,45 @@ class TokowakaClient {
       };
     }
 
+    // Get the preview URL from the first suggestion
+    const previewUrl = eligibleSuggestions[0].getData()?.url;
+
+    // Merge with existing deployed config to include already-deployed patches for this URL
+    let config = newConfig;
+    if (existingConfig && previewUrl) {
+      // Extract the URL path from the preview URL
+      const urlPath = new URL(previewUrl).pathname;
+
+      // Check if there are already deployed patches for this URL
+      const existingUrlOptimization = existingConfig.tokowakaOptimizations?.[urlPath];
+
+      if (existingUrlOptimization && existingUrlOptimization.patches?.length > 0) {
+        this.log.info(
+          `Found ${existingUrlOptimization.patches.length} deployed patches for ${urlPath}, `
+          + 'merging with preview suggestions',
+        );
+
+        // Create a filtered existing config with only the URL being previewed
+        const filteredExistingConfig = {
+          ...existingConfig,
+          tokowakaOptimizations: {
+            [urlPath]: existingUrlOptimization,
+          },
+        };
+
+        // Merge the existing deployed patches with new preview suggestions
+        config = this.mergeConfigs(filteredExistingConfig, newConfig);
+
+        this.log.debug(
+          `Preview config now has ${config.tokowakaOptimizations[urlPath].patches.length} total patches`,
+        );
+      } else {
+        this.log.info(`No deployed patches found for ${urlPath}, using only preview suggestions`);
+      }
+    }
+
     // Upload to preview S3 path (replaces any existing preview config)
-    this.log.info(`Uploading preview Tokowaka config for ${eligibleSuggestions.length} suggestions`);
+    this.log.info(`Uploading preview Tokowaka config with ${eligibleSuggestions.length} new suggestions`);
     const s3Path = await this.uploadConfig(apiKey, config, true);
 
     // Invalidate CDN cache for preview path
@@ -584,39 +625,34 @@ class TokowakaClient {
       true,
     );
 
-    // Fetch HTML content for preview (from the first suggestion's URL)
+    // Fetch HTML content for preview
     let originalHtml = null;
     let optimizedHtml = null;
-    let previewUrl = null;
 
-    if (eligibleSuggestions.length > 0) {
-      previewUrl = eligibleSuggestions[0].getData()?.url;
+    if (previewUrl) {
+      // Get forwarded host from site config
+      const tokowakaConfig = site.getConfig()?.getTokowakaConfig();
+      const forwardedHost = tokowakaConfig?.forwardedHost
+        || getEffectiveBaseURL(site);
 
-      if (previewUrl) {
-        // Get forwarded host from site config
-        const tokowakaConfig = site.getConfig()?.getTokowakaConfig();
-        const forwardedHost = tokowakaConfig?.forwardedHost
-          || getEffectiveBaseURL(site);
+      try {
+        this.log.info(`Fetching HTML for preview URL: ${previewUrl}`);
 
-        try {
-          this.log.info(`Fetching HTML for preview URL: ${previewUrl}`);
+        // Fetch original HTML first
+        this.log.info('Step 1: Fetching original HTML');
+        originalHtml = await this.fetchHtml(previewUrl, apiKey, forwardedHost, false);
+        this.log.info('Original HTML fetch completed');
 
-          // Fetch original HTML first
-          this.log.info('Step 1: Fetching original HTML');
-          originalHtml = await this.fetchHtml(previewUrl, apiKey, forwardedHost, false);
-          this.log.info('Original HTML fetch completed');
+        // Then fetch optimized HTML
+        this.log.info('Step 2: Fetching optimized HTML');
+        optimizedHtml = await this.fetchHtml(previewUrl, apiKey, forwardedHost, true);
+        this.log.info('Optimized HTML fetch completed');
 
-          // Then fetch optimized HTML
-          this.log.info('Step 2: Fetching optimized HTML');
-          optimizedHtml = await this.fetchHtml(previewUrl, apiKey, forwardedHost, true);
-          this.log.info('Optimized HTML fetch completed');
-
-          this.log.info('Successfully fetched both original and optimized HTML for preview');
-        } catch (error) {
-          this.log.error(`Failed to fetch HTML for preview: ${error.message}`);
-          // Don't fail the entire preview if HTML fetch fails
-          // Return null values and let the caller handle it
-        }
+        this.log.info('Successfully fetched both original and optimized HTML for preview');
+      } catch (error) {
+        this.log.error(`Failed to fetch HTML for preview: ${error.message}`);
+        // Don't fail the entire preview if HTML fetch fails
+        // Return null values and let the caller handle it
       }
     }
 

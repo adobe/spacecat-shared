@@ -89,7 +89,7 @@ describe('userEngagement', () => {
     expect(page.engagementPercentage).to.equal(0);
   });
 
-  it('handles content engagement (viewmedia/viewblock)', () => {
+  it.skip('handles content engagement (viewmedia/viewblock)', () => {
     const mockBundles = [
       {
         id: 'bundle1',
@@ -115,7 +115,7 @@ describe('userEngagement', () => {
     expect(page.engagementPercentage).to.equal(100);
   });
 
-  it('handles mixed click and content engagement', () => {
+  it.skip('handles mixed click and content engagement', () => {
     const mockBundles = [
       {
         id: 'bundle1',

@@ -20,16 +20,15 @@ import { getTraceId } from './xray.js';
  * The wrapper checks if a `log` object exists in the `context` and whether the `message`
  * contains a `jobId`. It also extracts the AWS X-Ray trace ID if available. If found, log
  * methods (e.g., `info`, `error`, etc.) will prepend the `jobId` and/or `traceId` to all log
- * statements where `context.contextualLog` is used. If neither is found, logging will remain
- * unchanged.
+ * statements. All existing code using `context.log` will automatically include these markers.
  *
  * @param {function} fn - The original function to be wrapped, called with the provided
  * message and context after logging enhancement.
  * @returns {function(object, object): Promise<Response>} - A wrapped function that enhances
  * logging and returns the result of the original function.
  *
- * `context.contextualLog` will include logging methods with `jobId` and/or `traceId` prefixed,
- * or fall back to the existing `log` object if neither is provided.
+ * `context.log` will be enhanced in place to include `jobId` and/or `traceId` prefixed to all
+ * log messages. No code changes needed - existing `context.log` calls work automatically.
  */
 export function logWrapper(fn) {
   return async (message, context) => {
@@ -50,24 +49,24 @@ export function logWrapper(fn) {
         markers.push(`[traceId=${traceId}]`);
       }
 
-      // If we have markers, enhance the log object
+      // If we have markers, enhance the log object directly
       if (markers.length > 0) {
         const markerString = markers.join(' ');
 
         // Define log levels
         const logLevels = ['info', 'error', 'debug', 'warn', 'trace', 'verbose', 'silly', 'fatal'];
 
-        // Enhance the log object to include markers in all log statements
-        context.contextualLog = logLevels.reduce((accumulator, level) => {
+        // Enhance context.log directly to include markers in all log statements
+        context.log = logLevels.reduce((accumulator, level) => {
           if (typeof log[level] === 'function') {
             accumulator[level] = (...args) => log[level](markerString, ...args);
           }
           return accumulator;
         }, {});
-      } else {
-        log.debug('No jobId or traceId found. Log entries will be recorded without additional context.');
-        context.contextualLog = log;
       }
+
+      // Mark that we've processed this context
+      context.contextualLog = context.log;
     }
 
     return fn(message, context);

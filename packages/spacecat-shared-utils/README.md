@@ -52,7 +52,7 @@ The `logWrapper` enhances your Lambda function logs by automatically prepending 
 ### Features
 - Automatically extracts AWS X-Ray trace ID
 - Includes jobId from message when available  
-- Creates `context.contextualLog` with enhanced logging methods
+- Enhances `context.log` directly - **no code changes needed**
 - Works seamlessly with existing log levels (info, error, debug, warn, trace, etc.)
 
 ### Usage
@@ -61,10 +61,10 @@ The `logWrapper` enhances your Lambda function logs by automatically prepending 
 import { logWrapper, sqsEventAdapter } from '@adobe/spacecat-shared-utils';
 
 async function run(message, context) {
-  const { contextualLog } = context;
+  const { log } = context;
   
-  // Use contextualLog instead of log for enhanced logging
-  contextualLog.info('Processing started'); 
+  // Use context.log as usual - trace IDs are added automatically
+  log.info('Processing started'); 
   // Output: [jobId=xxx] [traceId=1-xxx-xxx] Processing started
 }
 
@@ -77,9 +77,7 @@ export const main = wrap(run)
   .with(helixStatus);
 ```
 
-**Important:** Use `context.contextualLog` instead of `context.log` in your functions to get trace ID and job ID in your logs.
-
-For detailed integration instructions, see [LOG_WRAPPER_INTEGRATION_GUIDE.md](../../LOG_WRAPPER_INTEGRATION_GUIDE.md).
+**Note:** The `logWrapper` enhances `context.log` directly. All existing code using `context.log` will automatically include trace IDs and job IDs in logs without any code changes.
 
 ## SQS Event Adapter
 

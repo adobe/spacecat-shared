@@ -1,3 +1,24 @@
+# [@adobe/spacecat-shared-ims-client-v1.11.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.0...@adobe/spacecat-shared-ims-client-v1.11.1) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-ims-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.10.1...@adobe/spacecat-shared-ims-client-v1.11.0) (2025-11-14)
+
+
+### Features
+
+* introduce AMS promise token ([#1123](https://github.com/adobe/spacecat-shared/issues/1123)) ([324688e](https://github.com/adobe/spacecat-shared/commit/324688ef9b92dcc1cbbefe7549540091065f304e))
+
+# [@adobe/spacecat-shared-ims-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.10.0...@adobe/spacecat-shared-ims-client-v1.10.1) (2025-11-14)
+
+
+### Bug Fixes
+
+* improves accountCluster logging ([#1126](https://github.com/adobe/spacecat-shared/issues/1126)) ([a3bf2be](https://github.com/adobe/spacecat-shared/commit/a3bf2be49d5c3e99bef249be292c335a7179c272))
+
 # [@adobe/spacecat-shared-ims-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.3...@adobe/spacecat-shared-ims-client-v1.10.0) (2025-11-12)
 
 

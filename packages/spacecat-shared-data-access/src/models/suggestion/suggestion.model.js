@@ -29,6 +29,7 @@ class Suggestion extends BaseModel {
     FIXED: 'FIXED',
     ERROR: 'ERROR',
     OUTDATED: 'OUTDATED',
+    PENDING_VALIDATION: 'PENDING_VALIDATION',
   };
 
   static TYPES = {
@@ -40,7 +41,7 @@ class Suggestion extends BaseModel {
     CONFIG_UPDATE: 'CONFIG_UPDATE',
   };
 
-  // add your customized methods here
+  // add your customized method  here
 }
 
 export default Suggestion;

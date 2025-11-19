@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.0.3...@adobe/spacecat-shared-tokowaka-client-v1.0.4) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-tokowaka-client-v1.0.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.0.2...@adobe/spacecat-shared-tokowaka-client-v1.0.3) (2025-11-13)
+
+
+### Bug Fixes
+
+* add faq mapper for edge deploy API ([#1083](https://github.com/adobe/spacecat-shared/issues/1083)) ([4c7ff9d](https://github.com/adobe/spacecat-shared/commit/4c7ff9db3312e76fa8965a2d53a699528975f414))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.0.1...@adobe/spacecat-shared-tokowaka-client-v1.0.2) (2025-11-08)
 
 

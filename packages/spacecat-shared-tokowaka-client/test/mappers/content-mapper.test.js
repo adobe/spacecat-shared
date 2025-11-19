@@ -13,7 +13,6 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import sinon from 'sinon';
 import ContentMapper from '../../src/mappers/content-summarization-mapper.js';
 
 describe('ContentMapper', () => {
@@ -142,7 +141,7 @@ describe('ContentMapper', () => {
     });
   });
 
-  describe('suggestionToPatch', () => {
+  describe('suggestionsToPatches', () => {
     it('should create patch with HAST value from markdown', () => {
       const suggestion = {
         getId: () => 'sugg-content-123',
@@ -156,7 +155,9 @@ describe('ContentMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-content-123');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-content-123');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.exist;
       expect(patch.op).to.equal('insertAfter');
@@ -187,7 +188,9 @@ describe('ContentMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-bold');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-bold');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.exist;
       expect(patch.value.type).to.equal('root');
@@ -216,7 +219,9 @@ describe('ContentMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-heading');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-heading');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.exist;
       expect(patch.value.children).to.be.an('array');
@@ -241,7 +246,9 @@ describe('ContentMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-list');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-list');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.exist;
 
@@ -250,7 +257,7 @@ describe('ContentMapper', () => {
       expect(hasList).to.be.true;
     });
 
-    it('should return null when summarizationText is missing', () => {
+    it('should return empty array when summarizationText is missing', () => {
       const suggestion = {
         getId: () => 'sugg-invalid',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
@@ -262,12 +269,11 @@ describe('ContentMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-invalid');
-
-      expect(patch).to.be.null;
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-invalid');
+      expect(patches.length).to.equal(0);
     });
 
-    it('should return null when transformRules are incomplete', () => {
+    it('should return empty array when transformRules are incomplete', () => {
       const suggestion = {
         getId: () => 'sugg-invalid-2',
         getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
@@ -279,9 +285,8 @@ describe('ContentMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-invalid-2');
-
-      expect(patch).to.be.null;
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-invalid-2');
+      expect(patches.length).to.equal(0);
     });
 
     it('should handle complex markdown with multiple elements', () => {
@@ -305,7 +310,9 @@ describe('ContentMapper', () => {
         }),
       };
 
-      const patch = mapper.suggestionToPatch(suggestion, 'opp-complex');
+      const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-complex');
+      expect(patches.length).to.equal(1);
+      const patch = patches[0];
 
       expect(patch).to.exist;
       expect(patch.value.children).to.be.an('array');
@@ -329,13 +336,11 @@ describe('ContentMapper', () => {
 
       const errorMapper = new ContentMapper(errorLog);
 
-      // Stub the markdownToHast method to throw an error
-      const stub = sinon.stub(errorMapper, 'markdownToHast').throws(new Error('Markdown parsing failed'));
-
+      // Pass an object instead of string to trigger natural error in markdown parser
       const suggestion = {
         getId: () => 'sugg-error',
         getData: () => ({
-          summarizationText: 'Some content',
+          summarizationText: { invalid: 'object' }, // This will cause markdown parser to fail
           transformRules: {
             action: 'insertAfter',
             selector: '#selector',
@@ -343,13 +348,10 @@ describe('ContentMapper', () => {
         }),
       };
 
-      const patch = errorMapper.suggestionToPatch(suggestion, 'opp-error');
+      const patches = errorMapper.suggestionsToPatches('/path', [suggestion], 'opp-error');
 
-      expect(patch).to.be.null;
+      expect(patches.length).to.equal(0);
       expect(errorMessage).to.include('Failed to convert markdown to HAST');
-      expect(errorMessage).to.include('Markdown parsing failed');
-
-      stub.restore();
     });
   });
 });

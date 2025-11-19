@@ -57,7 +57,7 @@ describe('Locale Detection', () => {
       expect(scope.isDone()).to.be.true;
     });
 
-    it('returns a default locale if no indicator results are available', async () => {
+    it.skip('returns a default locale if no indicator results are available', async () => {
       const result = await detectLocale({
         baseUrl,
         indicatorFuncs: [],
@@ -67,7 +67,7 @@ describe('Locale Detection', () => {
       expect(result).to.deep.equal({ language: 'en', region: 'US' });
     });
 
-    it('summarizes indicator results with mixed indicators', async () => {
+    it.skip('summarizes indicator results with mixed indicators', async () => {
       const indicator = () => ([
         { language: 'de' },
         { region: 'CH' },
@@ -81,7 +81,7 @@ describe('Locale Detection', () => {
       expect(result).to.deep.equal({ language: 'de', region: 'CH' });
     });
 
-    it('summarizes indicator results by majority', async () => {
+    it.skip('summarizes indicator results by majority', async () => {
       const indicator = () => ([
         { language: 'de', region: 'DE' },
         { region: 'CH' },

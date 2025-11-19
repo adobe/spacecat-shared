@@ -95,5 +95,5 @@ function handler(bundles, opts = {}) {
 
 export default {
   handler,
-  checkpoints: [],
+  checkpoints: ['cwv-lcp', 'click', 'viewmedia', 'viewblock'],
 };

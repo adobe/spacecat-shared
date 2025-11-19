@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-ims-client",
-  "version": "1.11.2",
+  "version": "1.11.3",
   "description": "Shared modules of the Spacecat Services - IMS Client",
   "type": "module",
   "engines": {
@@ -38,7 +38,7 @@
     "@adobe/fetch": "4.2.3",
     "@adobe/helix-universal": "5.3.0",
     "@adobe/spacecat-shared-data-access": "2.87.0",
-    "@adobe/spacecat-shared-utils": "1.66.0",
+    "@adobe/spacecat-shared-utils": "1.75.0",
     "@aws-sdk/client-secrets-manager": "^3.726.1",
     "aws-xray-sdk": "^3.10.2"
   },

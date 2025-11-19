@@ -14,7 +14,12 @@ export const evaluateEngagement = (bundle) => {
   const clickEngagement = bundle.events.filter((evt) => evt.checkpoint === 'click').length > 0
     ? bundle.weight
     : 0;
-  return clickEngagement;
+  const contentEngagement = bundle.events
+    .filter((evt) => evt.checkpoint === 'viewmedia' || evt.checkpoint === 'viewblock')
+    .length > 3
+    ? bundle.weight
+    : 0;
+  return clickEngagement || contentEngagement;
 };
 
 /**

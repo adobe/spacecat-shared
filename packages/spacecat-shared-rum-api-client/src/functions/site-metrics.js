@@ -16,19 +16,46 @@ import { evaluateEngagement } from './user-engagement.js';
 
 /**
  * Handler to aggregate site-wide metrics from RUM bundles.
- * Calculates pageviews, weighted average LCP, and user engagement.
+ * Calculates pageviews, P75 LCP, and user engagement.
  *
  * @param {Array} bundles - RUM bundles to process
+ * @param {Object} opts - Options object
+ * @param {Object} opts.log - Logger instance
  * @returns {Object} Aggregated metrics including pageviews, siteSpeed (LCP), and avgEngagement
  */
-function handler(bundles) {
+function handler(bundles, opts = {}) {
+  const { log } = opts;
+
+  if (log) {
+    log.info(`[site-metrics] Processing ${bundles.length} bundles`);
+
+    // Log unique dates and hours being processed
+    const bundleDates = bundles.map((b) => {
+      if (b.time) {
+        return b.time.split('T')[0]; // Extract date part
+      }
+      return 'unknown';
+    });
+    const uniqueDates = [...new Set(bundleDates)].sort();
+    log.info(`[site-metrics] Bundle dates: ${uniqueDates.join(', ')}`);
+
+    // Log sample of first few bundle IDs
+    const sampleBundles = bundles.slice(0, 5).map((b) => ({
+      id: b.id,
+      url: b.url,
+      time: b.time,
+      weight: b.weight,
+    }));
+    log.info(`[site-metrics] Sample bundles: ${JSON.stringify(sampleBundles)}`);
+  }
+
   const dataChunks = new DataChunks();
   loadBundles(bundles, dataChunks);
 
   // Add series for pageviews
   dataChunks.addSeries('pageviews', series.pageViews);
 
-  // Add series for LCP (weighted average)
+  // Add series for LCP (P75 percentile)
   dataChunks.addSeries('lcp', series.lcp);
 
   // Add series for engagement using evaluateEngagement
@@ -36,21 +63,25 @@ function handler(bundles) {
 
   // Extract totals
   const totalPageviews = dataChunks?.totals?.pageviews?.weight ?? 0;
-  const lcpSum = dataChunks?.totals?.lcp?.sum ?? 0;
-  const lcpCount = dataChunks?.totals?.lcp?.count ?? 0;
+  const lcpMetrics = dataChunks?.totals?.lcp;
   const totalEngagedSessions = dataChunks?.totals?.engagement?.sum ?? 0;
 
-  // Calculate weighted average LCP
-  const avgLCP = lcpCount > 0 ? lcpSum / lcpCount : null;
+  // Calculate P75 LCP (75th percentile) - Core Web Vitals standard
+  const p75LCP = lcpMetrics?.percentile ? lcpMetrics.percentile(75) : null;
+  const lcpCount = lcpMetrics?.count ?? 0;
 
-  // Calculate engagement rate (users who clicked OR viewed 3+ content items)
+  if (log) {
+    log.info(`[site-metrics] Results - Pageviews: ${totalPageviews}, LCP P75: ${p75LCP}, LCP Count: ${lcpCount}, Engaged: ${totalEngagedSessions}`);
+  }
+
+  // Calculate engagement rate (users who clicked OR viewed 4+ content items)
   const avgEngagement = totalPageviews > 0
     ? (totalEngagedSessions / totalPageviews) * 100
     : null;
 
   return {
     pageviews: totalPageviews,
-    siteSpeed: avgLCP, // LCP in milliseconds
+    siteSpeed: p75LCP, // P75 LCP in milliseconds (Core Web Vitals standard)
     avgEngagement, // Engagement rate as percentage
   };
 }

@@ -161,9 +161,8 @@ export function buildAggregationKey(issueType, url, targetSelector, source) {
   const granularity = getGranularityForIssueType(issueType);
   const keyBuilder = GRANULARITY_KEY_BUILDERS[granularity];
 
-  /* c8 ignore start - defensive code, all granularities have builders */
+  /* c8 ignore start - defensive code */
   if (!keyBuilder) {
-    // Fallback to INDIVIDUAL if builder not found
     return buildIndividualKey({
       url, issueType, targetSelector, source,
     });

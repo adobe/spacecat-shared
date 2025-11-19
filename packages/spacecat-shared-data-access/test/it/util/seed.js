@@ -35,6 +35,7 @@ const resetDatabase = async () => {
     TEST_DA_CONFIG.tableNameSiteTopPages,
     TEST_DA_CONFIG.tableNameSites,
     TEST_DA_CONFIG.tableNamePageIntents,
+    TEST_DA_CONFIG.tableNamePageCitabilities,
   ]);
   await createTablesFromSchema(dbClient);
 };

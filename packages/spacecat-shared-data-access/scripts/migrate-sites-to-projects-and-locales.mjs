@@ -160,34 +160,6 @@ function csvRow(fields) {
   return fields.map(escape).join(',');
 }
 
-async function mapWithConcurrency(items, limit, mapper) {
-  const results = new Array(items.length);
-  const workers = [];
-  let currentIndex = 0;
-
-  const worker = async () => {
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      if (currentIndex >= items.length) {
-        break;
-      }
-      const index = currentIndex;
-      currentIndex += 1;
-      // eslint-disable-next-line no-await-in-loop
-      const result = await mapper(items[index], index);
-      results[index] = result;
-    }
-  };
-
-  const workerCount = Math.min(limit, items.length);
-  for (let i = 0; i < workerCount; i += 1) {
-    workers.push(worker());
-  }
-
-  await Promise.all(workers);
-  return results;
-}
-
 // -----------------------------
 // Main
 // -----------------------------
@@ -227,21 +199,7 @@ async function main() {
   } else if (hasText(projectId)) {
     sites = await SiteCollection.allByProjectId(projectId);
   } else if (hasText(orgId)) {
-    try {
-      if (SiteCollection.allByOrganizationId) {
-        sites = await SiteCollection.allByOrganizationId(orgId);
-      } else {
-        const allSites = await SiteCollection.all();
-        sites = allSites.filter(
-          (site) => site.getOrganizationId && site.getOrganizationId() === orgId,
-        );
-      }
-    } catch {
-      const allSites = await SiteCollection.all();
-      sites = allSites.filter(
-        (site) => site.getOrganizationId && site.getOrganizationId() === orgId,
-      );
-    }
+    sites = await SiteCollection.allByOrganizationId(orgId);
     if (hasText(domain)) {
       const dLower = domain.toLowerCase();
       sites = sites.filter(
@@ -274,21 +232,7 @@ async function main() {
     }
     let orgProjects = projectsCacheByOrg.get(org);
     if (!orgProjects) {
-      try {
-        if (ProjectCollection.allByOrganizationId) {
-          orgProjects = await ProjectCollection.allByOrganizationId(org);
-        } else {
-          const allProjects = await ProjectCollection.all();
-          orgProjects = allProjects.filter(
-            (project) => project.getOrganizationId && project.getOrganizationId() === org,
-          );
-        }
-      } catch {
-        const allProjects = await ProjectCollection.all();
-        orgProjects = allProjects.filter(
-          (project) => project.getOrganizationId && project.getOrganizationId() === org,
-        );
-      }
+      orgProjects = await ProjectCollection.allByOrganizationId(org);
       projectsCacheByOrg.set(org, orgProjects);
     }
     let project = orgProjects.find(
@@ -356,19 +300,25 @@ async function main() {
     }
 
     // Apply updates (idempotent: only set fields that are unset)
+    let hasChanges = false;
     if (projectIdNew && !before.projectId && site.setProjectId) {
       site.setProjectId(projectIdNew);
+      hasChanges = true;
     }
     if (!before.language && site.setLanguage) {
       site.setLanguage(langNew);
+      hasChanges = true;
     }
     if (!before.region && site.setRegion) {
       site.setRegion(regionNew);
+      hasChanges = true;
     }
-    if (site.setUpdatedBy) {
+    if (hasChanges && site.setUpdatedBy) {
       site.setUpdatedBy('system');
     }
-    await site.save();
+    if (hasChanges) {
+      await site.save();
+    }
     return { action: 'updated' };
   };
 
@@ -380,10 +330,11 @@ async function main() {
     return;
   }
 
-  const effectiveConcurrency = Number.isFinite(concurrency) && concurrency > 0
-    ? concurrency
-    : 10;
-  await mapWithConcurrency(sites, effectiveConcurrency, processOne);
+  // eslint-disable-next-line no-restricted-syntax
+  for (const site of sites) {
+    // eslint-disable-next-line no-await-in-loop
+    await processOne(site);
+  }
 
   // Reporting
   if (report) {

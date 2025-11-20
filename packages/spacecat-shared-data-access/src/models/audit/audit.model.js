@@ -76,6 +76,7 @@ class Audit extends BaseModel {
     CDN_LOGS_REPORT: 'cdn-logs-report',
     LLMO_REFERRAL_TRAFFIC: 'llmo-referral-traffic',
     PAGE_INTENT: 'page-intent',
+    NO_CTA_ABOVE_THE_FOLD: 'no-cta-above-the-fold',
   };
 
   static AUDIT_TYPE_PROPERTIES = {

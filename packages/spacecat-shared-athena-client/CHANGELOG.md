@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.7.1...@adobe/spacecat-shared-athena-client-v1.7.2) (2025-11-20)
+
+
+### Bug Fixes
+
+* athena query - remove dimension check ([#1160](https://github.com/adobe/spacecat-shared/issues/1160)) ([e845b6e](https://github.com/adobe/spacecat-shared/commit/e845b6ee92957a5f7b0c2495aef34e66a266a871))
+
 # [@adobe/spacecat-shared-athena-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.7.0...@adobe/spacecat-shared-athena-client-v1.7.1) (2025-11-20)
 
 

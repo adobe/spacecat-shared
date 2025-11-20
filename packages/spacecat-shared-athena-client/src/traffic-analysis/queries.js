@@ -105,6 +105,11 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
     throw new Error('Missing dimension to group by');
   }
 
+  if (numTemporalSeries > 1 && week) {
+    dimensions.push('week');
+  } else if (numTemporalSeries > 1 && month) {
+    dimensions.push('month');
+  }
   const dimensionColumns = dimensions.join(', ');
   const dimensionColumnsPrefixed = dimensions.map((col) => `a.${col}`).join(', ');
 

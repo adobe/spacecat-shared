@@ -14,7 +14,7 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { stub } from 'sinon';
+import sinon, { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import Configuration from '../../../../src/models/configuration/configuration.model.js';
@@ -115,6 +115,250 @@ describe('ConfigurationCollection', () => {
 
       expect(result).to.deep.equal(mockResult);
       expect(instance.findByAll).to.have.been.calledWithExactly({}, { order: 'desc' });
+    });
+  });
+
+  describe('version cleanup', () => {
+    describe('create with version limit enforcement', () => {
+      it('does not trigger cleanup when version count is within limit', async () => {
+        const latestConfiguration = {
+          getId: () => 's12345',
+          getVersion: () => 450,
+        };
+
+        instance.findLatest = stub().resolves(latestConfiguration);
+        instance.all = stub().resolves(new Array(451).fill(null).map((_, i) => ({
+          getId: () => `config-${i}`,
+          getVersion: () => 451 - i,
+        })));
+        instance.removeByIds = stub().resolves();
+
+        const result = await instance.create(mockRecord);
+
+        expect(result).to.be.an('object');
+        expect(result.getId()).to.equal(mockRecord.configurationId);
+
+        // Wait a bit for async cleanup to potentially run
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100);
+        });
+
+        // all should be called for cleanup check
+        expect(instance.all).to.have.been.called;
+        // removeByIds should NOT be called (within limit)
+        expect(instance.removeByIds).to.not.have.been.called;
+      });
+
+      it('triggers cleanup when version count is exactly 500', async () => {
+        const latestConfiguration = {
+          getId: () => 's12345',
+          getVersion: () => 499,
+        };
+
+        instance.findLatest = stub().resolves(latestConfiguration);
+        instance.all = stub().resolves(new Array(500).fill(null).map((_, i) => ({
+          getId: () => `config-${500 - i}`,
+          getVersion: () => 500 - i,
+        })));
+        instance.removeByIds = stub().resolves();
+
+        await instance.create(mockRecord);
+
+        // Wait for async cleanup
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100);
+        });
+
+        expect(instance.all).to.have.been.called;
+        // Should not delete anything (exactly at limit)
+        expect(instance.removeByIds).to.not.have.been.called;
+      });
+
+      it('triggers cleanup and deletes 1 version when count is 501', async () => {
+        const latestConfiguration = {
+          getId: () => 's12345',
+          getVersion: () => 500,
+        };
+
+        const mockConfigs = new Array(501).fill(null).map((_, i) => ({
+          getId: () => `config-${501 - i}`,
+          getVersion: () => 501 - i,
+        }));
+
+        instance.findLatest = stub().resolves(latestConfiguration);
+        instance.all = stub().resolves(mockConfigs);
+        instance.removeByIds = stub().resolves();
+
+        await instance.create(mockRecord);
+
+        // Wait for async cleanup
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100);
+        });
+
+        expect(instance.all).to.have.been.called;
+        expect(instance.removeByIds).to.have.been.calledOnce;
+        expect(instance.removeByIds).to.have.been.calledWith(['config-1']);
+      });
+
+      it('triggers cleanup and deletes multiple versions in batches', async () => {
+        const latestConfiguration = {
+          getId: () => 's12345',
+          getVersion: () => 549,
+        };
+
+        // Create 550 mock configurations
+        const mockConfigs = new Array(550).fill(null).map((_, i) => ({
+          getId: () => `config-${550 - i}`,
+          getVersion: () => 550 - i,
+        }));
+
+        instance.findLatest = stub().resolves(latestConfiguration);
+        instance.all = stub().resolves(mockConfigs);
+        instance.removeByIds = stub().resolves();
+
+        await instance.create(mockRecord);
+
+        // Wait for async cleanup
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100);
+        });
+
+        expect(instance.all).to.have.been.called;
+        // Should delete 50 versions (550 - 500 = 50)
+        // 50 versions / 25 batch size = 2 batches
+        expect(instance.removeByIds).to.have.been.calledTwice;
+
+        // First batch: 25 items
+        const firstBatchCall = instance.removeByIds.getCall(0);
+        expect(firstBatchCall.args[0]).to.have.lengthOf(25);
+
+        // Second batch: 25 items
+        const secondBatchCall = instance.removeByIds.getCall(1);
+        expect(secondBatchCall.args[0]).to.have.lengthOf(25);
+      });
+
+      it('handles large cleanup (delete 100 versions in 4 batches)', async () => {
+        const latestConfiguration = {
+          getId: () => 's12345',
+          getVersion: () => 599,
+        };
+
+        // Create 600 mock configurations
+        const mockConfigs = new Array(600).fill(null).map((_, i) => ({
+          getId: () => `config-${600 - i}`,
+          getVersion: () => 600 - i,
+        }));
+
+        instance.findLatest = stub().resolves(latestConfiguration);
+        instance.all = stub().resolves(mockConfigs);
+        instance.removeByIds = stub().resolves();
+
+        await instance.create(mockRecord);
+
+        // Wait for async cleanup
+        await new Promise((resolve) => {
+          setTimeout(resolve, 150);
+        });
+
+        expect(instance.all).to.have.been.called;
+        // Should delete 100 versions (600 - 500 = 100)
+        // 100 versions / 25 batch size = 4 batches
+        expect(instance.removeByIds).to.have.callCount(4);
+      });
+
+      it('does not fail create operation if cleanup fails', async () => {
+        const latestConfiguration = {
+          getId: () => 's12345',
+          getVersion: () => 500,
+        };
+
+        const mockConfigs = new Array(501).fill(null).map((_, i) => ({
+          getId: () => `config-${501 - i}`,
+          getVersion: () => 501 - i,
+        }));
+
+        instance.findLatest = stub().resolves(latestConfiguration);
+        instance.all = stub().resolves(mockConfigs);
+        instance.removeByIds = stub().rejects(new Error('DynamoDB error'));
+
+        // Create should succeed even if cleanup fails
+        const result = await instance.create(mockRecord);
+
+        expect(result).to.be.an('object');
+        expect(result.getId()).to.equal(mockRecord.configurationId);
+
+        // Wait for async cleanup to fail
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100);
+        });
+
+        expect(mockLogger.error).to.have.been.called;
+      });
+
+      it('handles all failure gracefully', async () => {
+        const latestConfiguration = {
+          getId: () => 's12345',
+          getVersion: () => 500,
+        };
+
+        instance.findLatest = stub().resolves(latestConfiguration);
+        instance.all = stub().rejects(new Error('Query failed'));
+
+        // Create should succeed even if cleanup query fails
+        const result = await instance.create(mockRecord);
+
+        expect(result).to.be.an('object');
+        expect(result.getId()).to.equal(mockRecord.configurationId);
+
+        // Wait for async cleanup to fail
+        await new Promise((resolve) => {
+          setTimeout(resolve, 100);
+        });
+
+        expect(mockLogger.error).to.have.been.called;
+      });
+
+      it('handles errors in cleanup error handler (outer catch)', async () => {
+        const latestConfiguration = {
+          getId: () => 's12345',
+          getVersion: () => 500,
+        };
+
+        instance.findLatest = stub().resolves(latestConfiguration);
+        instance.all = stub().rejects(new Error('Query failed'));
+
+        // Make the logger.error inside #enforceVersionLimit throw
+        // This will cause the method to reject, triggering the outer catch
+        let errorCallCount = 0;
+        mockLogger.error = stub().callsFake(() => {
+          errorCallCount += 1;
+          if (errorCallCount === 1) {
+            // First call is inside #enforceVersionLimit (line 78)
+            // Throw to make the method reject
+            throw new Error('Logger error');
+          }
+          // Second call would be the outer catch (line 40) - let it succeed
+        });
+
+        // Create should succeed even if cleanup's error handler fails
+        const result = await instance.create(mockRecord);
+
+        expect(result).to.be.an('object');
+        expect(result.getId()).to.equal(mockRecord.configurationId);
+
+        // Wait for async cleanup to fail
+        await new Promise((resolve) => {
+          setTimeout(resolve, 150);
+        });
+
+        // Verify both error handlers were called
+        expect(mockLogger.error).to.have.been.calledTwice;
+        expect(mockLogger.error.secondCall).to.have.been.calledWith(
+          'Failed to enforce configuration version limit',
+          sinon.match.instanceOf(Error),
+        );
+      });
     });
   });
 });

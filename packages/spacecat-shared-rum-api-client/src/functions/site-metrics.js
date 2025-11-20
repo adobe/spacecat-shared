@@ -46,8 +46,6 @@ function handler(bundles, opts = {}) {
     if (bundlesWithTime.length > 0) {
       const firstBundle = bundlesWithTime[0];
       const lastBundle = bundlesWithTime[bundlesWithTime.length - 1];
-      log.info(`[site-metrics] First bundle time (nearest to startTime): ${firstBundle.time}`);
-      log.info(`[site-metrics] Last bundle time (nearest to endTime): ${lastBundle.time}`);
       log.info(`[site-metrics] Actual data range: ${firstBundle.time} to ${lastBundle.time}`);
     }
 

@@ -91,6 +91,7 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
   trfTypes = null,
   temporalCondition = null,
   pageViewThreshold = 1000,
+  numTemporalSeries = 1,
 }) {
   if (!siteId || !tableName) {
     throw new Error('Missing required parameters: siteId, or tableName');
@@ -109,7 +110,12 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
 
   let tempCondition = null;
   if (!temporalCondition) {
-    tempCondition = getTemporalCondition({ week, month, year });
+    tempCondition = getTemporalCondition({
+      week,
+      month,
+      year,
+      numSeries: numTemporalSeries,
+    });
   }
 
   let pageTypeCase = 'NULL as page_type';

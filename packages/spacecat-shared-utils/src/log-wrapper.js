@@ -59,7 +59,14 @@ export function logWrapper(fn) {
         // Enhance context.log directly to include markers in all log statements
         context.log = logLevels.reduce((accumulator, level) => {
           if (typeof log[level] === 'function') {
-            accumulator[level] = (...args) => log[level](markerString, ...args);
+            accumulator[level] = (...args) => {
+              // If first argument is a string (format string), prepend the marker to it
+              if (args.length > 0 && typeof args[0] === 'string') {
+                const enhancedArgs = [`${markerString} ${args[0]}`, ...args.slice(1)];
+                return log[level](...enhancedArgs);
+              }
+              return log[level](...args);
+            };
           }
           return accumulator;
         }, {});

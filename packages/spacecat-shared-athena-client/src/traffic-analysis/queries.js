@@ -84,7 +84,7 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
   month,
   year,
   siteId,
-  dimensions,
+  dimensions = [],
   tableName,
   pageTypes = null,
   pageTypeMatchColumn = 'path',

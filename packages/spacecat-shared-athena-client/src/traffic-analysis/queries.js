@@ -101,10 +101,6 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
     throw new Error('Missing required parameters: week, month or year');
   }
 
-  if (!Array.isArray(dimensions) || dimensions.length === 0) {
-    throw new Error('Missing dimension to group by');
-  }
-
   if (numTemporalSeries > 1 && week) {
     dimensions.push('week');
   } else if (numTemporalSeries > 1 && month) {

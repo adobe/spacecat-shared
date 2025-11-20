@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-export const evaluateEngagement = (bundle) => {
+const evaluateEngagement = (bundle) => {
   const clickEngagement = bundle.events.filter((evt) => evt.checkpoint === 'click').length > 0
     ? bundle.weight
     : 0;

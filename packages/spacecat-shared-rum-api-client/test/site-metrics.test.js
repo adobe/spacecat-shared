@@ -15,7 +15,7 @@ import { expect } from 'chai';
 import siteMetrics from '../src/functions/site-metrics.js';
 
 describe('siteMetrics', () => {
-  it.skip('calculates site-wide metrics correctly', () => {
+  it('calculates site-wide metrics correctly', () => {
     const mockBundles = [
       {
         id: 'bundle1',
@@ -52,10 +52,10 @@ describe('siteMetrics', () => {
     expect(result).to.be.an('object');
     expect(result.pageviews).to.equal(350);
     // P75 LCP calculated from distribution
-    expect(result.siteSpeed).to.be.a('number');
-    expect(result.siteSpeed).to.be.greaterThan(0);
-    // Engagement: (100 + 50) / 350 * 100 = 42.86%
-    expect(result.avgEngagement).to.be.closeTo(42.86, 0.01);
+    expect(result.lcp).to.be.a('number');
+    expect(result.lcp).to.be.greaterThan(0);
+    // Engagement count: 100 + 50 = 150
+    expect(result.engagementCount).to.equal(150);
   });
 
   it('handles empty bundles array', () => {
@@ -63,8 +63,8 @@ describe('siteMetrics', () => {
 
     expect(result).to.be.an('object');
     expect(result.pageviews).to.equal(0);
-    expect(result.siteSpeed).to.be.null;
-    expect(result.avgEngagement).to.be.null;
+    expect(result.lcp).to.be.null;
+    expect(result.engagementCount).to.equal(0);
   });
 
   it('handles bundles with no LCP data', () => {
@@ -83,8 +83,8 @@ describe('siteMetrics', () => {
 
     expect(result).to.be.an('object');
     expect(result.pageviews).to.equal(100);
-    expect(result.siteSpeed).to.be.null;
-    expect(result.avgEngagement).to.equal(100);
+    expect(result.lcp).to.be.null;
+    expect(result.engagementCount).to.equal(100);
   });
 
   it('handles bundles with no engagement', () => {
@@ -112,12 +112,12 @@ describe('siteMetrics', () => {
     expect(result).to.be.an('object');
     expect(result.pageviews).to.equal(150);
     // P75 LCP calculated from distribution
-    expect(result.siteSpeed).to.be.a('number');
-    expect(result.siteSpeed).to.be.greaterThan(0);
-    expect(result.avgEngagement).to.equal(0);
+    expect(result.lcp).to.be.a('number');
+    expect(result.lcp).to.be.greaterThan(0);
+    expect(result.engagementCount).to.equal(0);
   });
 
-  it.skip('calculates engagement with click events', () => {
+  it('calculates engagement with click events', () => {
     const mockBundles = [
       {
         id: 'bundle1',
@@ -141,11 +141,10 @@ describe('siteMetrics', () => {
 
     expect(result).to.be.an('object');
     expect(result.pageviews).to.equal(150);
-    // Engagement: 100 / 150 * 100 = 66.67%
-    expect(result.avgEngagement).to.be.closeTo(66.67, 0.01);
+    expect(result.engagementCount).to.equal(100);
   });
 
-  it.skip('calculates engagement with content views (4+ viewmedia/viewblock)', () => {
+  it('calculates engagement with content views (4+ viewmedia/viewblock)', () => {
     const mockBundles = [
       {
         id: 'bundle1',
@@ -175,11 +174,11 @@ describe('siteMetrics', () => {
 
     expect(result).to.be.an('object');
     expect(result.pageviews).to.equal(150);
-    // Engagement: 100 / 150 * 100 = 66.67% (only bundle1 has 4+ content views)
-    expect(result.avgEngagement).to.be.closeTo(66.67, 0.01);
+    // Only bundle1 has 4+ content views, so engagementCount = 100
+    expect(result.engagementCount).to.equal(100);
   });
 
-  it.skip('calculates engagement with both clicks and content views', () => {
+  it('calculates engagement with both clicks and content views', () => {
     const mockBundles = [
       {
         id: 'bundle1',
@@ -215,8 +214,8 @@ describe('siteMetrics', () => {
 
     expect(result).to.be.an('object');
     expect(result.pageviews).to.equal(350);
-    // Engagement: (100 + 50) / 350 * 100 = 42.86%
-    expect(result.avgEngagement).to.be.closeTo(42.86, 0.01);
+    // Engagement count: 100 + 50 = 150
+    expect(result.engagementCount).to.equal(150);
   });
 
   it('handles bundles with only partial LCP data', () => {
@@ -245,12 +244,12 @@ describe('siteMetrics', () => {
     expect(result).to.be.an('object');
     expect(result.pageviews).to.equal(150);
     // Only bundle1 has LCP data, P75 will be based on that single value
-    expect(result.siteSpeed).to.be.a('number');
-    expect(result.siteSpeed).to.be.greaterThan(0);
-    expect(result.avgEngagement).to.equal(100);
+    expect(result.lcp).to.be.a('number');
+    expect(result.lcp).to.be.greaterThan(0);
+    expect(result.engagementCount).to.equal(150);
   });
 
-  it.skip('returns engagementCount along with other metrics', () => {
+  it('returns engagementCount along with other metrics', () => {
     const mockBundles = [
       {
         id: 'bundle1',
@@ -280,10 +279,7 @@ describe('siteMetrics', () => {
     expect(result).to.be.an('object');
     expect(result.pageviews).to.equal(350);
     expect(result.engagementCount).to.equal(150); // 100 + 50
-    expect(result.avgEngagement).to.be.closeTo(42.86, 0.01); // (150/350) * 100
-    expect(result.conversions).to.equal(150); // 100 + 50 (both have clicks)
-    expect(result.conversionRate).to.be.closeTo(42.86, 0.01); // (150/350) * 100
-    expect(result.siteSpeed).to.be.a('number');
+    expect(result.lcp).to.be.a('number');
   });
 
   it('has correct checkpoints', () => {

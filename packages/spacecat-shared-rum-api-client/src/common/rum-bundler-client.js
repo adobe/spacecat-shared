@@ -264,12 +264,6 @@ async function fetchBundles(opts, log) {
 
   const urls = generateURLs(domain, granularity, domainkey, startTime, endTime, interval);
 
-  if (log) {
-    log.info(`[rum-bundler-client] Fetching bundles for domain: ${domain}, granularity: ${granularity}`);
-    log.info(`[rum-bundler-client] Total URLs to fetch: ${urls.length}`);
-    log.info(`[rum-bundler-client] Sample URLs: ${JSON.stringify(urls)}`);
-  }
-
   const chunks = getUrlChunks(urls, CHUNK_SIZE);
 
   let totalTransferSize = 0;

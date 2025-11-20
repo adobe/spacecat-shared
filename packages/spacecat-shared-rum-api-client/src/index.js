@@ -139,7 +139,7 @@ export default class RUMAPIClient {
       }, this.log);
 
       this.log.debug(`Query "${query}" fetched ${bundles.length} bundles`); // maybe even remove?
-      return handler(bundles, { ...opts, log: this.log });
+      return handler(bundles, opts);
     } catch (e) {
       throw new Error(`Query '${query}' failed. Opts: ${JSON.stringify(sanitize(opts))}. Reason: ${e.message}`);
     }
@@ -177,7 +177,7 @@ export default class RUMAPIClient {
       // Execute each query handler sequentially
       for (const { query, handler } of queryHandlers) {
         // eslint-disable-next-line no-await-in-loop
-        results[query] = await handler(bundles, { ...opts, log: this.log });
+        results[query] = await handler(bundles, opts);
       }
 
       return results;

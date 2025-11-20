@@ -250,6 +250,40 @@ describe('siteMetrics', () => {
     expect(result.avgEngagement).to.equal(100);
   });
 
+  it('returns engagementCount along with other metrics', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        cwvLCP: 2500,
+        events: [{ checkpoint: 'click', timeDelta: 2000 }],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page2',
+        weight: 50,
+        cwvLCP: 3000,
+        events: [{ checkpoint: 'click', timeDelta: 1500 }],
+      },
+      {
+        id: 'bundle3',
+        url: 'https://example.com/page3',
+        weight: 200,
+        cwvLCP: 2000,
+        events: [],
+      },
+    ];
+
+    const result = siteMetrics.handler(mockBundles);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(350);
+    expect(result.engagementCount).to.equal(150); // 100 + 50
+    expect(result.avgEngagement).to.be.closeTo(42.86, 0.01); // (150/350) * 100
+    expect(result.siteSpeed).to.be.a('number');
+  });
+
   it.skip('has correct checkpoints', () => {
     expect(siteMetrics.checkpoints).to.deep.equal(['cwv-lcp', 'click', 'viewmedia', 'viewblock']);
   });

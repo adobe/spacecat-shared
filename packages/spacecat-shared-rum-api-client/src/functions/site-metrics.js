@@ -90,6 +90,7 @@ function handler(bundles, opts = {}) {
     pageviews: totalPageviews,
     siteSpeed: p75LCP, // P75 LCP in milliseconds (Core Web Vitals standard)
     avgEngagement, // Engagement rate as percentage
+    engagementCount: totalEngagedSessions, // Total number of engaged sessions
   };
 }
 

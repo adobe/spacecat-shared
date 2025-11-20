@@ -52,7 +52,6 @@ raw AS (
         month,
         path,
         ${pageTypeCase},
-        ${pageTypeCase},
         trf_type,
         trf_channel,
         trf_platform,
@@ -68,7 +67,6 @@ raw AS (
         engaged,
         latest_scroll,
         CASE WHEN latest_scroll >= 10000 THEN 1 ELSE 0 END AS engaged_scroll,
-        CASE WHEN latest_scroll >= 10000 THEN 1 ELSE 0 END AS engaged_scroll,
         lcp,
         cls,
         inp
@@ -80,7 +78,6 @@ raw AS (
 ),
 agg AS (
     SELECT
-        week,
         ${dimensionColumns},
         COUNT(*)                          AS row_count,
         CAST(SUM(pageviews) AS BIGINT)   AS pageviews,
@@ -92,13 +89,12 @@ agg AS (
         approx_percentile(cls, 0.70)     AS p70_cls,
         approx_percentile(inp, 0.70)     AS p70_inp
     FROM raw
-    GROUP BY week, ${groupBy}
+    GROUP BY ${groupBy}
 ),
 grand_total AS (
     SELECT CAST(SUM(pageviews) AS BIGINT) AS total_pv FROM agg
 )
 SELECT
-    a.week,
     ${dimensionColumnsPrefixed},
     a.pageviews,
     CAST(a.pageviews AS DOUBLE) / NULLIF(t.total_pv, 0)         AS pct_pageviews,

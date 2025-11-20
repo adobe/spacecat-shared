@@ -14,7 +14,7 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { fetchHtmlWithWarmup } from '../../src/utils/html-utils.js';
+import { fetchHtmlWithWarmup } from '../../src/utils/custom-html-utils.js';
 
 describe('HTML Utils', () => {
   describe('fetchHtmlWithWarmup', () => {
@@ -104,6 +104,9 @@ describe('HTML Utils', () => {
         ok: true,
         status: 200,
         statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
         text: async () => '<html>Test HTML</html>',
       });
 
@@ -126,6 +129,9 @@ describe('HTML Utils', () => {
         ok: true,
         status: 200,
         statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
         text: async () => '<html>Optimized HTML</html>',
       });
 
@@ -155,6 +161,9 @@ describe('HTML Utils', () => {
         ok: true,
         status: 200,
         statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
         text: async () => 'warmup',
       });
       // Actual call returns 404
@@ -162,6 +171,9 @@ describe('HTML Utils', () => {
         ok: false,
         status: 404,
         statusText: 'Not Found',
+        headers: {
+          get: () => null,
+        },
       });
 
       try {
@@ -177,7 +189,7 @@ describe('HTML Utils', () => {
         expect.fail('Should have thrown error');
       } catch (error) {
         expect(error.message).to.include('Failed to fetch original HTML');
-        expect(error.message).to.include('HTTP 404: Not Found');
+        expect(error.message).to.include('0 retries');
       }
     });
 
@@ -250,6 +262,9 @@ describe('HTML Utils', () => {
         ok: true,
         status: 200,
         statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
         text: async () => 'warmup',
       });
 
@@ -270,6 +285,150 @@ describe('HTML Utils', () => {
         // Should throw the lastError from the loop
         expect(error).to.exist;
       }
+    });
+
+    it('should stop retrying when x-tokowaka-cache header is found', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call - no cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => '<html>No cache</html>',
+      });
+      // Second actual call - cache header found
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Cached HTML</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Cached HTML</html>');
+      // Should stop after finding cache header (warmup + 2 attempts)
+      expect(fetchStub.callCount).to.equal(3);
+    });
+
+    it('should throw error when cache header not found after max retries', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // All actual calls succeed but no cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => '<html>No cache 1</html>',
+      });
+      fetchStub.onCall(2).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => '<html>No cache 2</html>',
+      });
+      fetchStub.onCall(3).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => '<html>No cache 3</html>',
+      });
+
+      try {
+        await fetchHtmlWithWarmup(
+          'https://example.com/page',
+          'api-key',
+          'host',
+          'https://edge.example.com',
+          log,
+          false,
+          { warmupDelayMs: 0, maxRetries: 2, retryDelayMs: 0 },
+        );
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to fetch original HTML');
+        expect(error.message).to.include('Cache header (x-tokowaka-cache) not found after 2 retries');
+      }
+
+      // Should have tried 3 times (initial + 2 retries) plus warmup
+      expect(fetchStub.callCount).to.equal(4);
+    });
+
+    it('should return immediately on first attempt if cache header is present', async () => {
+      // Warmup succeeds
+      fetchStub.onCall(0).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      // First actual call has cache header
+      fetchStub.onCall(1).resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Cached HTML</html>',
+      });
+
+      const html = await fetchHtmlWithWarmup(
+        'https://example.com/page',
+        'api-key',
+        'host',
+        'https://edge.example.com',
+        log,
+        false,
+        { warmupDelayMs: 0, maxRetries: 3, retryDelayMs: 0 },
+      );
+
+      expect(html).to.equal('<html>Cached HTML</html>');
+      // Should not retry if cache header found on first attempt
+      expect(fetchStub.callCount).to.equal(2); // warmup + 1 actual
     });
   });
 });

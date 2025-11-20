@@ -25,17 +25,16 @@ function sleep(ms) {
 
 /**
  * Makes an HTTP request with retry logic
+ * Retries until max retries are exhausted or x-tokowaka-cache header is present
  * @param {string} url - URL to fetch
  * @param {Object} options - Fetch options
  * @param {number} maxRetries - Maximum number of retries
  * @param {number} retryDelayMs - Delay between retries in milliseconds
  * @param {Object} log - Logger instance
- * @param {string} context - Context for logging (e.g., "optimized" or "original")
+ * @param {string} fetchType - Context for logging (e.g., "optimized" or "original")
  * @returns {Promise<Response>} - Fetch response
  */
 async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetchType) {
-  let lastError;
-
   for (let attempt = 1; attempt <= maxRetries + 1; attempt += 1) {
     try {
       if (attempt > 1) {
@@ -51,9 +50,26 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return response;
+      // Check for x-tokowaka-cache header - if present, stop retrying
+      const cacheHeader = response.headers.get('x-tokowaka-cache');
+      if (cacheHeader) {
+        log.debug(`Cache header found (x-tokowaka-cache: ${cacheHeader}), stopping retry logic`);
+        return response;
+      }
+
+      // If no cache header and we haven't exhausted retries, continue
+      if (attempt < maxRetries + 1) {
+        log.debug(`No cache header found on attempt ${attempt}, will retry...`);
+        // Wait before retrying
+        log.debug(`Waiting ${retryDelayMs}ms before retry...`);
+        // eslint-disable-next-line no-await-in-loop
+        await sleep(retryDelayMs);
+      } else {
+        // Last attempt without cache header - throw error
+        log.error(`Max retries (${maxRetries}) exhausted without cache header`);
+        throw new Error(`Cache header (x-tokowaka-cache) not found after ${maxRetries} retries`);
+      }
     } catch (error) {
-      lastError = error;
       log.warn(`Attempt ${attempt} failed for ${fetchType} HTML, error: ${error.message}`);
 
       // If this was the last attempt, throw the error
@@ -67,8 +83,7 @@ async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetch
       await sleep(retryDelayMs);
     }
   }
-
-  throw lastError;
+  throw new Error(`Failed to fetch ${fetchType} HTML after ${maxRetries} retries`);
 }
 
 /**
@@ -115,8 +130,8 @@ export async function fetchHtmlWithWarmup(
 
   // Default options
   const {
-    warmupDelayMs = 3000,
-    maxRetries = 2,
+    warmupDelayMs = 2000,
+    maxRetries = 3,
     retryDelayMs = 1000,
   } = options;
 

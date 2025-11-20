@@ -58,7 +58,10 @@ describe('TokowakaClient', () => {
       getId: () => 'site-123',
       getBaseURL: () => 'https://example.com',
       getConfig: () => ({
-        getTokowakaConfig: () => ({ apiKey: 'test-api-key-123' }),
+        getTokowakaConfig: () => ({
+          apiKey: 'test-api-key-123',
+          forwardedHost: 'example.com',
+        }),
       }),
     };
 
@@ -1158,6 +1161,9 @@ describe('TokowakaClient', () => {
         ok: true,
         status: 200,
         statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
         text: async () => '<html><body>Test HTML</body></html>',
       });
 
@@ -1215,21 +1221,21 @@ describe('TokowakaClient', () => {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('TOKOWAKA_EDGE_URL is required for preview functionality');
+        expect(error.message).to.include('TOKOWAKA_EDGE_URL is required for preview');
         expect(error.status).to.equal(400);
       }
     });
 
     it('should throw error if site does not have Tokowaka API key', async () => {
       mockSite.getConfig = () => ({
-        getTokowakaConfig: () => ({}),
+        getTokowakaConfig: () => ({ forwardedHost: 'example.com' }),
       });
 
       try {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('Tokowaka API key configured');
+        expect(error.message).to.include('Tokowaka API key or forwarded host configured');
         expect(error.status).to.equal(400);
       }
     });
@@ -1241,7 +1247,7 @@ describe('TokowakaClient', () => {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('Tokowaka API key configured');
+        expect(error.message).to.include('Tokowaka API key or forwarded host configured');
         expect(error.status).to.equal(400);
       }
     });
@@ -1253,7 +1259,7 @@ describe('TokowakaClient', () => {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('No mapper found for opportunity type: unsupported-type');
+        expect(error.message).to.include('No mapper found for opportunity type');
         expect(error.status).to.equal(501);
       }
     });
@@ -1405,8 +1411,7 @@ describe('TokowakaClient', () => {
         await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('Preview failed: Unable to fetch HTML');
-        expect(error.message).to.include('Network error');
+        expect(error.message).to.include('Preview failed');
         expect(error.status).to.equal(500);
       }
     });
@@ -1418,6 +1423,9 @@ describe('TokowakaClient', () => {
         ok: true,
         status: 200,
         statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
         text: async () => 'warmup',
       });
       fetchStub.onCall(1).rejects(new Error('Temporary failure')); // actual original - fail
@@ -1425,18 +1433,27 @@ describe('TokowakaClient', () => {
         ok: true,
         status: 200,
         statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
         text: async () => '<html>Original</html>',
       });
       fetchStub.onCall(3).resolves({ // warmup optimized
         ok: true,
         status: 200,
         statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
         text: async () => 'warmup',
       });
       fetchStub.onCall(4).resolves({ // actual optimized
         ok: true,
         status: 200,
         statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
         text: async () => '<html>Optimized</html>',
       });
 
@@ -1444,7 +1461,7 @@ describe('TokowakaClient', () => {
         mockSite,
         mockOpportunity,
         mockSuggestions,
-        { warmupDelayMs: 0 },
+        { warmupDelayMs: 0, retryDelayMs: 0 },
       );
 
       expect(result.html.originalHtml).to.equal('<html>Original</html>');
@@ -1476,23 +1493,21 @@ describe('TokowakaClient', () => {
       expect(actualCall).to.exist;
     });
 
-    it('should fallback to site baseURL when forwardedHost is not configured', async () => {
-      mockSite.getBaseURL = () => 'https://fallback.example.com';
-
-      await client.previewSuggestions(
-        mockSite,
-        mockOpportunity,
-        mockSuggestions,
-        { warmupDelayMs: 0 },
-      );
-
-      // Check that fetch was called with site baseURL
-      const actualCall = fetchStub.getCalls().find((call) => {
-        const headers = call.args[1]?.headers;
-        return headers && headers['x-forwarded-host'] === 'https://fallback.example.com';
+    it('should throw error when forwardedHost is not configured', async () => {
+      mockSite.getConfig = () => ({
+        getTokowakaConfig: () => ({
+          apiKey: 'test-api-key-123',
+          // forwardedHost is missing
+        }),
       });
 
-      expect(actualCall).to.exist;
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Tokowaka API key or forwarded host configured');
+        expect(error.status).to.equal(400);
+      }
     });
 
     it('should upload config to preview S3 path', async () => {

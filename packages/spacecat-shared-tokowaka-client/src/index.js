@@ -18,7 +18,7 @@ import { mergePatches } from './utils/patch-utils.js';
 import { getTokowakaConfigS3Path } from './utils/s3-utils.js';
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
-import { fetchHtmlWithWarmup } from './utils/html-utils.js';
+import { fetchHtmlWithWarmup } from './utils/custom-html-utils.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -418,11 +418,12 @@ class TokowakaClient {
    */
   async previewSuggestions(site, opportunity, suggestions, options = {}) {
     // Get site's Tokowaka API key
-    const { apiKey } = site.getConfig()?.getTokowakaConfig() || {};
+    const { apiKey, forwardedHost } = site.getConfig()?.getTokowakaConfig() || {};
 
-    if (!hasText(apiKey)) {
+    if (!hasText(apiKey) || !hasText(forwardedHost)) {
       throw this.#createError(
-        'Site does not have a Tokowaka API key configured. Please onboard the site to Tokowaka first.',
+        'Site does not have a Tokowaka API key or forwarded host configured. '
+        + 'Please onboard the site to Tokowaka first.',
         HTTP_BAD_REQUEST,
       );
     }
@@ -540,11 +541,6 @@ class TokowakaClient {
     let optimizedHtml = null;
 
     if (previewUrl) {
-      // Get forwarded host from site config
-      const tokowakaConfig = site.getConfig()?.getTokowakaConfig();
-      const forwardedHost = tokowakaConfig?.forwardedHost
-        || site.getBaseURL();
-
       try {
         // Fetch original HTML
         originalHtml = await fetchHtmlWithWarmup(

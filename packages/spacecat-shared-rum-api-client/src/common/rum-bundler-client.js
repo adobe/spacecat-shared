@@ -263,7 +263,6 @@ async function fetchBundles(opts, log) {
   }
 
   const urls = generateURLs(domain, granularity, domainkey, startTime, endTime, interval);
-
   const chunks = getUrlChunks(urls, CHUNK_SIZE);
 
   let totalTransferSize = 0;

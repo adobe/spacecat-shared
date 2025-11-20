@@ -34,7 +34,6 @@ class ConfigurationCollection extends BaseCollection {
 
     const newConfig = await super.create(sanitizedData);
 
-    // Enforce version limit asynchronously (fire-and-forget)
     setImmediate(() => {
       this.#enforceVersionLimit().catch((error) => {
         this.log.error('Failed to enforce configuration version limit', error);
@@ -48,10 +47,8 @@ class ConfigurationCollection extends BaseCollection {
     const { MAX_VERSIONS, BATCH_SIZE } = ConfigurationCollection;
 
     try {
-      // Get all configuration versions, sorted newest first
       const allConfigs = await this.all({}, { order: 'desc' });
 
-      // If within limit, nothing to do
       if (allConfigs.length <= MAX_VERSIONS) {
         this.log.debug(`Configuration version count within limit: ${allConfigs.length}/${MAX_VERSIONS}`);
         return;
@@ -77,7 +74,6 @@ class ConfigurationCollection extends BaseCollection {
       this.log.info(`Configuration version limit enforced successfully. Deleted ${deleteCount} versions. Remaining: ${MAX_VERSIONS}`);
     } catch (error) {
       this.log.error('Configuration version limit enforcement failed', error);
-      // Don't throw - we don't want to fail the main operation
     }
   }
 

@@ -75,8 +75,7 @@ function handler(bundles, opts = {}) {
   dataChunks.addSeries('engagement', series.engagement);
 
   // Add series for conversions (default: bundles with click events)
-  const conversionSpec = { checkpoint: ['click'] };
-  dataChunks.addSeries('conversions', (bundle) => (dataChunks.hasConversion(bundle, conversionSpec)
+  dataChunks.addSeries('conversions', (bundle) => (bundle.events?.some((e) => e.checkpoint === 'click')
     ? bundle.weight
     : 0));
 

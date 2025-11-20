@@ -37,9 +37,7 @@ function sleep(ms) {
 async function fetchWithRetry(url, options, maxRetries, retryDelayMs, log, fetchType) {
   for (let attempt = 1; attempt <= maxRetries + 1; attempt += 1) {
     try {
-      if (attempt > 1) {
-        log.debug(`Retry attempt ${attempt - 1}/${maxRetries} for ${fetchType} HTML`);
-      }
+      log.debug(`Retry attempt ${attempt}/${maxRetries} for ${fetchType} HTML`);
 
       // eslint-disable-next-line no-await-in-loop
       const response = await fetch(url, options);

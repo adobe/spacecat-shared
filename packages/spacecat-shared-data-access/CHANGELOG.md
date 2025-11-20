@@ -1,3 +1,60 @@
+# [@adobe/spacecat-shared-data-access-v2.87.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.86.0...@adobe/spacecat-shared-data-access-v2.87.0) (2025-11-19)
+
+
+### Features
+
+* add page citability ([#1140](https://github.com/adobe/spacecat-shared/issues/1140)) ([e4dfcdc](https://github.com/adobe/spacecat-shared/commit/e4dfcdccf44ad4a303c3b68b0655e00b25f3da3c))
+
+# [@adobe/spacecat-shared-data-access-v2.86.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.85.1...@adobe/spacecat-shared-data-access-v2.86.0) (2025-11-19)
+
+
+### Features
+
+* add configuration management APIs ([#1063](https://github.com/adobe/spacecat-shared/issues/1063)) ([d6988a9](https://github.com/adobe/spacecat-shared/commit/d6988a94ad79016c238f3f4d9426c328b52c3131))
+
+# [@adobe/spacecat-shared-data-access-v2.85.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.85.0...@adobe/spacecat-shared-data-access-v2.85.1) (2025-11-18)
+
+
+### Bug Fixes
+
+* **deps:** update shared utils in data access ([#1145](https://github.com/adobe/spacecat-shared/issues/1145)) ([5e38e70](https://github.com/adobe/spacecat-shared/commit/5e38e7032cf1e95a363c6fab67d67065a50ea7a0))
+
+# [@adobe/spacecat-shared-data-access-v2.85.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.84.0...@adobe/spacecat-shared-data-access-v2.85.0) (2025-11-18)
+
+
+### Features
+
+* **data-access:** add new handlers to audit model ([#1141](https://github.com/adobe/spacecat-shared/issues/1141)) ([73e531b](https://github.com/adobe/spacecat-shared/commit/73e531b28773378defbef0f905f3db8e846cacc1))
+
+# [@adobe/spacecat-shared-data-access-v2.84.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.83.2...@adobe/spacecat-shared-data-access-v2.84.0) (2025-11-17)
+
+
+### Features
+
+* add daily 1am interval ([#1137](https://github.com/adobe/spacecat-shared/issues/1137)) ([ac313e0](https://github.com/adobe/spacecat-shared/commit/ac313e070180a2b1165fdc9759896b339e520895))
+
+# [@adobe/spacecat-shared-data-access-v2.83.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.83.1...@adobe/spacecat-shared-data-access-v2.83.2) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-data-access-v2.83.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.83.0...@adobe/spacecat-shared-data-access-v2.83.1) (2025-11-14)
+
+
+### Bug Fixes
+
+* Add a dummy code ([#1128](https://github.com/adobe/spacecat-shared/issues/1128)) ([7d8a6d8](https://github.com/adobe/spacecat-shared/commit/7d8a6d829303f2710dd7363d05a511a7ddfbb0d0))
+
+# [@adobe/spacecat-shared-data-access-v2.83.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.82.0...@adobe/spacecat-shared-data-access-v2.83.0) (2025-11-14)
+
+
+### Features
+
+* Add top-level brandProfile to Site Config with versioning and hash; tests and fixtures ([#1125](https://github.com/adobe/spacecat-shared/issues/1125)) ([6dcd3f8](https://github.com/adobe/spacecat-shared/commit/6dcd3f848d0dcc7303a9778ee86fc334166e2b68))
+* added a new type reporting for fix entity ([#1121](https://github.com/adobe/spacecat-shared/issues/1121)) ([47f44b8](https://github.com/adobe/spacecat-shared/commit/47f44b81f073bdf1801746fb9e348a661f3a3fc5))
+
 # [@adobe/spacecat-shared-data-access-v2.82.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.81.0...@adobe/spacecat-shared-data-access-v2.82.0) (2025-11-13)
 
 

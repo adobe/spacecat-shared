@@ -12,7 +12,6 @@
 
 import { DataChunks, series } from '@adobe/rum-distiller';
 import { loadBundles } from '../utils.js';
-import { evaluateEngagement } from './user-engagement.js';
 
 /**
  * Handler to aggregate site-wide metrics from RUM bundles.
@@ -59,10 +58,10 @@ function handler(bundles, opts = {}) {
   dataChunks.addSeries('lcp', series.lcp);
 
   // Add series for engagement using evaluateEngagement
-  dataChunks.addSeries('engagement', evaluateEngagement);
+  dataChunks.addSeries('engagement', series.engagement);
 
   // Extract totals
-  const totalPageviews = dataChunks?.totals?.pageviews?.weight ?? 0;
+  const totalPageviews = dataChunks?.totals?.pageviews?.sum ?? 0;
   const totalEngagedSessions = dataChunks?.totals?.engagement?.sum ?? 0;
 
   // Calculate P75 LCP (75th percentile) - Core Web Vitals standard

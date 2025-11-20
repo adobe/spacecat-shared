@@ -12,6 +12,7 @@
 
 import { DataChunks, series } from '@adobe/rum-distiller';
 import { loadBundles } from '../utils.js';
+import { evaluateEngagement } from './user-engagement.js';
 
 /**
  * Handler to aggregate site-wide metrics from RUM bundles.
@@ -57,8 +58,8 @@ function handler(bundles, opts = {}) {
   // Add series for LCP (P75 percentile)
   dataChunks.addSeries('lcp', series.lcp);
 
-  // Add series for engagement using evaluateEngagement
-  dataChunks.addSeries('engagement', series.engagement);
+  // Add series for engagement using our custom evaluateEngagement
+  dataChunks.addSeries('engagement', evaluateEngagement);
 
   // Extract totals
   const totalPageviews = dataChunks?.totals?.pageviews?.sum ?? 0;
@@ -80,7 +81,7 @@ function handler(bundles, opts = {}) {
     log.info(`[site-metrics] Results - Pageviews: ${totalPageviews}, LCP P75: ${p75LCP}, LCP Count: ${lcpCount}, Engaged: ${totalEngagedSessions}`);
   }
 
-  // Calculate engagement rate (users who clicked OR viewed 4+ content items)
+  // Calculate engagement rate (users who clicked)
   const avgEngagement = totalPageviews > 0
     ? (totalEngagedSessions / totalPageviews) * 100
     : null;

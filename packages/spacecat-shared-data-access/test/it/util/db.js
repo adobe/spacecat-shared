@@ -51,6 +51,7 @@ export const TEST_DA_CONFIG = {
   tableNameSiteTopPages: 'spacecat-services-site-top-pages',
   tableNameSites: 'spacecat-services-sites',
   tableNamePageIntents: 'spacecat-services-page-intents',
+  tableNamePageCitabilities: 'spacecat-services-page-citabilities',
   tableNameSpacecatData: 'spacecat-data',
 };
 

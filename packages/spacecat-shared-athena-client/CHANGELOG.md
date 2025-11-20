@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.6.1...@adobe/spacecat-shared-athena-client-v1.7.0) (2025-11-20)
+
+
+### Features
+
+* athena multi week queries ([#1157](https://github.com/adobe/spacecat-shared/issues/1157)) ([8a4f54b](https://github.com/adobe/spacecat-shared/commit/8a4f54b9cff7248eae1b7ea772f09a2d7e64579f))
+
 # [@adobe/spacecat-shared-athena-client-v1.6.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.6.0...@adobe/spacecat-shared-athena-client-v1.6.1) (2025-11-15)
 
 

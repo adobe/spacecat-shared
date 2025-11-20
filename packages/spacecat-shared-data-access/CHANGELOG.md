@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.87.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.86.0...@adobe/spacecat-shared-data-access-v2.87.0) (2025-11-19)
+
+
+### Features
+
+* add page citability ([#1140](https://github.com/adobe/spacecat-shared/issues/1140)) ([e4dfcdc](https://github.com/adobe/spacecat-shared/commit/e4dfcdccf44ad4a303c3b68b0655e00b25f3da3c))
+
 # [@adobe/spacecat-shared-data-access-v2.86.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.85.1...@adobe/spacecat-shared-data-access-v2.86.0) (2025-11-19)
 
 

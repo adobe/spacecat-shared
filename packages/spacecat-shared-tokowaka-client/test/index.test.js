@@ -1222,7 +1222,7 @@ describe('TokowakaClient', () => {
         expect.fail('Should have thrown error');
       } catch (error) {
         expect(error.message).to.include('TOKOWAKA_EDGE_URL is required for preview');
-        expect(error.status).to.equal(400);
+        expect(error.status).to.equal(500);
       }
     });
 

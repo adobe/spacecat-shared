@@ -443,7 +443,7 @@ class TokowakaClient {
     if (!hasText(tokowakaEdgeUrl)) {
       throw this.#createError(
         'TOKOWAKA_EDGE_URL is required for preview functionality',
-        HTTP_BAD_REQUEST,
+        HTTP_INTERNAL_SERVER_ERROR,
       );
     }
 

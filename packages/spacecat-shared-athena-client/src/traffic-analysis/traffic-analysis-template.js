@@ -49,6 +49,7 @@ WITH min_totals AS (
 raw AS (
     SELECT
         week,
+        month,
         path,
         ${pageTypeCase},
         trf_type,
@@ -77,7 +78,6 @@ raw AS (
 ),
 agg AS (
     SELECT
-        week,
         ${dimensionColumns},
         COUNT(*)                          AS row_count,
         CAST(SUM(pageviews) AS BIGINT)   AS pageviews,
@@ -89,13 +89,12 @@ agg AS (
         approx_percentile(cls, 0.70)     AS p70_cls,
         approx_percentile(inp, 0.70)     AS p70_inp
     FROM raw
-    GROUP BY week, ${groupBy}
+    GROUP BY ${groupBy}
 ),
 grand_total AS (
     SELECT CAST(SUM(pageviews) AS BIGINT) AS total_pv FROM agg
 )
 SELECT
-    a.week,
     ${dimensionColumnsPrefixed},
     a.pageviews,
     CAST(a.pageviews AS DOUBLE) / NULLIF(t.total_pv, 0)         AS pct_pageviews,

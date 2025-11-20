@@ -2,6 +2,8 @@
 
 This repository contains a collection of shared utility functions used across various SpaceCat projects. These utilities provide a range of checks and validations, from basic data type validation to more complex checks like ISO date strings and URL validation.
 
+> **v1.76.0**: Added trace ID propagation support for distributed tracing across SpaceCat services.
+
 ## Installation
 
 To install the SpaceCat Shared Utilities, you can use npm:

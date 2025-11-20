@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.74.0...@adobe/spacecat-shared-utils-v1.75.0) (2025-11-19)
+
+
+### Features
+
+* add aggregation key to get Oppty SC API ([#1148](https://github.com/adobe/spacecat-shared/issues/1148)) ([07bf485](https://github.com/adobe/spacecat-shared/commit/07bf485a5534a066899abf9488ef71301d8cb3e1))
+
 # [@adobe/spacecat-shared-utils-v1.74.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.73.1...@adobe/spacecat-shared-utils-v1.74.0) (2025-11-17)
 
 

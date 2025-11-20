@@ -142,10 +142,7 @@ class TokowakaClient {
     };
 
     try {
-      // First call - warmup (ignore response)
-      this.log.info(`Making warmup call for ${isOptimized ? 'optimized' : 'original'} HTML`);
-      this.log.info(`Warmup request URL: ${fullUrl}`);
-      this.log.info(`Warmup request headers: ${JSON.stringify(headers)}`);
+      this.log.debug(`Making warmup call for ${isOptimized ? 'optimized' : 'original'} HTML with URL: ${fullUrl}`);
 
       const warmupResponse = await fetch(fullUrl, {
         method: 'GET',
@@ -158,12 +155,10 @@ class TokowakaClient {
       this.log.info('Warmup call completed, waiting 3 seconds...');
 
       // Wait 3 seconds
-      await TokowakaClient.#sleep(2000);
+      await TokowakaClient.#sleep(3000);
 
       // Second call - actual request
-      this.log.info(`Making actual call for ${isOptimized ? 'optimized' : 'original'} HTML`);
-      this.log.info(`Actual request URL: ${fullUrl}`);
-      this.log.info(`Actual request headers: ${JSON.stringify(headers)}`);
+      this.log.debug(`Making actual call for ${isOptimized ? 'optimized' : 'original'} HTML with URL: ${fullUrl}`);
 
       const response = await fetch(fullUrl, {
         method: 'GET',

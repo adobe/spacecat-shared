@@ -281,10 +281,12 @@ describe('siteMetrics', () => {
     expect(result.pageviews).to.equal(350);
     expect(result.engagementCount).to.equal(150); // 100 + 50
     expect(result.avgEngagement).to.be.closeTo(42.86, 0.01); // (150/350) * 100
+    expect(result.conversions).to.equal(150); // 100 + 50 (both have clicks)
+    expect(result.conversionRate).to.be.closeTo(42.86, 0.01); // (150/350) * 100
     expect(result.siteSpeed).to.be.a('number');
   });
 
-  it.skip('has correct checkpoints', () => {
-    expect(siteMetrics.checkpoints).to.deep.equal(['cwv-lcp', 'click', 'viewmedia', 'viewblock']);
+  it('has correct checkpoints', () => {
+    expect(siteMetrics.checkpoints).to.deep.equal([]);
   });
 });

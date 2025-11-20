@@ -12,16 +12,21 @@
 
 import { DataChunks, series } from '@adobe/rum-distiller';
 import { loadBundles } from '../utils.js';
-import { evaluateEngagement } from './user-engagement.js';
 
 /**
  * Handler to aggregate site-wide metrics from RUM bundles.
- * Calculates pageviews, P75 LCP, and user engagement.
+ * Calculates pageviews, P75 LCP, user engagement, and conversions.
  *
  * @param {Array} bundles - RUM bundles to process
  * @param {Object} opts - Options object
  * @param {Object} opts.log - Logger instance
- * @returns {Object} Aggregated metrics including pageviews, siteSpeed (LCP), and avgEngagement
+ * @returns {Object} Aggregated metrics including:
+ *   - pageviews: Total page views count
+ *   - siteSpeed: P75 LCP in milliseconds
+ *   - avgEngagement: Engagement rate as percentage
+ *   - engagementCount: Total engaged sessions count
+ *   - conversions: Total conversions count (bundles with click events)
+ *   - conversionRate: Conversion rate as percentage
  */
 function handler(bundles, opts = {}) {
   const { log } = opts;
@@ -29,24 +34,31 @@ function handler(bundles, opts = {}) {
   if (log) {
     log.info(`[site-metrics] Processing ${bundles.length} bundles`);
 
-    // Log unique dates and hours being processed
-    const bundleDates = bundles.map((b) => {
-      if (b.time) {
-        return b.time.split('T')[0]; // Extract date part
-      }
-      return 'unknown';
-    });
+    // Log unique dates being processed
+    const bundleDates = bundles.map((b) => (b.time ? b.time.split('T')[0] : 'unknown'));
     const uniqueDates = [...new Set(bundleDates)].sort();
     log.info(`[site-metrics] Bundle dates: ${uniqueDates.join(', ')}`);
 
-    // Log sample of first few bundle IDs
-    const sampleBundles = bundles.slice(0, 1).map((b) => ({
-      id: b.id,
-      url: b.url,
-      time: b.time,
-      weight: b.weight,
-    }));
-    log.info(`[site-metrics] Sample bundles: ${JSON.stringify(sampleBundles)}`);
+    // Log first and last bundle timestamps (actual data range)
+    const bundlesWithTime = bundles
+      .filter((b) => b.time)
+      .sort((a, b) => new Date(a.time) - new Date(b.time));
+    if (bundlesWithTime.length > 0) {
+      const firstBundle = bundlesWithTime[0];
+      const lastBundle = bundlesWithTime[bundlesWithTime.length - 1];
+      log.info(`[site-metrics] First bundle time (nearest to startTime): ${firstBundle.time}`);
+      log.info(`[site-metrics] Last bundle time (nearest to endTime): ${lastBundle.time}`);
+      log.info(`[site-metrics] Actual data range: ${firstBundle.time} to ${lastBundle.time}`);
+    }
+
+    // Log unique URLs from bundles
+    const uniqueUrls = [...new Set(bundles.map((b) => b.url))];
+    log.info(`[site-metrics] Unique bundle URLs (${uniqueUrls.length}): ${JSON.stringify(uniqueUrls.slice(0, 10))}${uniqueUrls.length > 10 ? '...' : ''}`);
+
+    // Log bundle weights summary
+    const totalWeight = bundles.reduce((sum, b) => sum + (b.weight || 0), 0);
+    const avgWeight = totalWeight / bundles.length;
+    log.info(`[site-metrics] Bundle weights - total: ${totalWeight}, avg: ${avgWeight.toFixed(2)}, bundles: ${bundles.length}`);
   }
 
   const dataChunks = new DataChunks();
@@ -59,11 +71,18 @@ function handler(bundles, opts = {}) {
   dataChunks.addSeries('lcp', series.lcp);
 
   // Add series for engagement using our custom evaluateEngagement
-  dataChunks.addSeries('engagement', evaluateEngagement);
+  dataChunks.addSeries('engagement', series.engagement);
+
+  // Add series for conversions (default: bundles with click events)
+  const conversionSpec = { checkpoint: ['click'] };
+  dataChunks.addSeries('conversions', (bundle) => (dataChunks.hasConversion(bundle, conversionSpec)
+    ? bundle.weight
+    : 0));
 
   // Extract totals
   const totalPageviews = dataChunks?.totals?.pageviews?.sum ?? 0;
   const totalEngagedSessions = dataChunks?.totals?.engagement?.sum ?? 0;
+  const totalConversions = dataChunks?.totals?.conversions?.sum ?? 0;
 
   // Calculate P75 LCP (75th percentile) - Core Web Vitals standard
   const lcpMetrics = dataChunks?.totals?.lcp;
@@ -72,13 +91,10 @@ function handler(bundles, opts = {}) {
 
   if (log) {
     log.info(`[site-metrics] LCP Metrics Debug - count: ${lcpCount}, mean: ${lcpMetrics?.mean}, p75: ${p75LCP}, values length: ${lcpMetrics?.values?.length}`);
-    if (lcpMetrics?.values) {
-      log.info(`[site-metrics] First 5 LCP values: ${JSON.stringify(lcpMetrics.values.slice(0, 5))}`);
-    }
   }
 
   if (log) {
-    log.info(`[site-metrics] Results - Pageviews: ${totalPageviews}, LCP P75: ${p75LCP}, LCP Count: ${lcpCount}, Engaged: ${totalEngagedSessions}`);
+    log.info(`[site-metrics] Results - Pageviews: ${totalPageviews}, LCP P75: ${p75LCP}, LCP Count: ${lcpCount}, Engaged: ${totalEngagedSessions}, Conversions: ${totalConversions}`);
   }
 
   // Calculate engagement rate (users who clicked)
@@ -86,11 +102,18 @@ function handler(bundles, opts = {}) {
     ? (totalEngagedSessions / totalPageviews) * 100
     : null;
 
+  // Calculate conversion rate
+  const conversionRate = totalPageviews > 0
+    ? (totalConversions / totalPageviews) * 100
+    : null;
+
   return {
     pageviews: totalPageviews,
     siteSpeed: p75LCP, // P75 LCP in milliseconds (Core Web Vitals standard)
     avgEngagement, // Engagement rate as percentage
-    engagementCount: totalEngagedSessions, // Total number of engaged sessions
+    engagementCount: totalEngagedSessions, // Total engaged sessions count
+    conversions: totalConversions, // Total conversions count
+    conversionRate, // Conversion rate as percentage
   };
 }
 

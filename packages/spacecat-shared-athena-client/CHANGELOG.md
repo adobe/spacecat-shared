@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-athena-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.7.0...@adobe/spacecat-shared-athena-client-v1.7.1) (2025-11-20)
+
+
+### Bug Fixes
+
+* athena weekly - add week/month to dimensions ([#1158](https://github.com/adobe/spacecat-shared/issues/1158)) ([e90d243](https://github.com/adobe/spacecat-shared/commit/e90d2433faebc5a2890b65e1e7a6933084609537))
+
 # [@adobe/spacecat-shared-athena-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.6.1...@adobe/spacecat-shared-athena-client-v1.7.0) (2025-11-20)
 
 

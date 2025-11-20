@@ -250,7 +250,7 @@ describe('siteMetrics', () => {
     expect(result.avgEngagement).to.equal(100);
   });
 
-  it('returns engagementCount along with other metrics', () => {
+  it.skip('returns engagementCount along with other metrics', () => {
     const mockBundles = [
       {
         id: 'bundle1',

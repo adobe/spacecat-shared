@@ -53,7 +53,7 @@ function handler(bundles, opts = {}) {
 
     // Log unique URLs from bundles
     const uniqueUrls = [...new Set(bundles.map((b) => b.url))];
-    log.info(`[site-metrics] Unique bundle URLs (${uniqueUrls.length}): ${JSON.stringify(uniqueUrls.slice(0, 10))}${uniqueUrls.length > 10 ? '...' : ''}`);
+    log.info(`[site-metrics] Total unique bundle URLs: ${uniqueUrls.length}`);
 
     // Log bundle weights summary
     const totalWeight = bundles.reduce((sum, b) => sum + (b.weight || 0), 0);

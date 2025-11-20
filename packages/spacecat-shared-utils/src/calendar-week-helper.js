@@ -215,13 +215,7 @@ export function getTemporalCondition({
     if (!hasWeek && !hasMonth) {
       throw new Error('Missing required parameters: week or month');
     }
-    // return SQL condition similar to
-    // ((year=2025 AND month=7 AND week=28) OR
-    // (year=2025 AND month=7 AND week=29) OR ... OR (year=2025 AND month=7 AND week=34))
-    // the input week/month is the start, the rest of the weeks/months are week-1,
-    // week-2 (up to numSeries) resp. month-1, month-2 (up to numSeries)
-    // properly handle if week or month becomes <1,
-    // to ensure the year also transitions to previous year
+
     const conditions = [];
     for (let i = 0; i < numSeries; i += 1) {
       if (hasWeek) {

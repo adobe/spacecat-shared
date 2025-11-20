@@ -912,6 +912,149 @@ describe('ConfigurationModel', () => {
     });
   });
 
+  describe('sandbox audit configuration', () => {
+    beforeEach(() => {
+      // Add sandbox audit config to the test configuration
+      instance.state = {
+        version: 1,
+        queues: { test: 'test' },
+        jobs: [],
+        handlers: {},
+      };
+      // Set sandboxAudits using the proper attribute setter
+      instance.setSandboxAudits({
+        cwv: {
+          cooldownHours: '5',
+        },
+        'alt-text': {},
+      });
+    });
+
+    it('checks if audit is enabled for sandbox', () => {
+      expect(instance.isAuditEnabledForSandbox('cwv')).to.be.true;
+      expect(instance.isAuditEnabledForSandbox('alt-text')).to.be.true;
+      expect(instance.isAuditEnabledForSandbox('non-existent')).to.be.false;
+    });
+
+    it('gets sandbox audit config', () => {
+      expect(instance.getSandboxAuditConfig('cwv')).to.deep.equal({ cooldownHours: '5' });
+      expect(instance.getSandboxAuditConfig('alt-text')).to.deep.equal({});
+      expect(instance.getSandboxAuditConfig('non-existent')).to.be.null;
+    });
+
+    it('gets all enabled sandbox audits', () => {
+      expect(instance.getEnabledSandboxAudits()).to.deep.equal(['cwv', 'alt-text']);
+    });
+
+    it('adds new sandbox audit config', () => {
+      instance.updateSandboxAuditConfig('new-audit', { cooldownHours: '5' });
+      expect(instance.getSandboxAuditConfig('new-audit')).to.deep.equal({ cooldownHours: '5' });
+    });
+
+    it('updates existing sandbox audit config', () => {
+      instance.updateSandboxAuditConfig('cwv', { cooldownHours: '10', enabled: false });
+      expect(instance.getSandboxAuditConfig('cwv')).to.deep.equal({ cooldownHours: '10', enabled: false });
+    });
+
+    it('returns empty array when no sandbox audits configured', () => {
+      instance.setSandboxAudits(null);
+      expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
+    });
+
+    it('handles updating non-existent sandbox config', () => {
+      instance.setSandboxAudits(null);
+      instance.updateSandboxAuditConfig('new-audit', { cooldownHours: '5' });
+      expect(instance.getSandboxAuditConfig('new-audit')).to.deep.equal({ cooldownHours: '5' });
+    });
+
+    it('handles getSandboxAuditConfig when sandboxAudits is null', () => {
+      instance.setSandboxAudits(null);
+      expect(instance.getSandboxAuditConfig('any-audit')).to.be.null;
+    });
+
+    it('handles getSandboxAuditConfig when sandboxAudits is undefined', () => {
+      instance.setSandboxAudits(undefined);
+      expect(instance.getSandboxAuditConfig('any-audit')).to.be.null;
+    });
+
+    it('handles getSandboxAuditConfig when sandboxAudits is null', () => {
+      instance.setSandboxAudits(null);
+      expect(instance.getSandboxAuditConfig('any-audit')).to.be.null;
+    });
+
+    it('handles getEnabledSandboxAudits when sandboxAudits is null', () => {
+      instance.setSandboxAudits(null);
+      expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
+    });
+
+    it('handles getEnabledSandboxAudits when sandboxAudits is undefined', () => {
+      instance.setSandboxAudits(undefined);
+      expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
+    });
+
+    it('handles getEnabledSandboxAudits when sandboxAudits is empty', () => {
+      instance.setSandboxAudits({});
+      expect(instance.getEnabledSandboxAudits()).to.deep.equal([]);
+    });
+
+    it('handles isAuditEnabledForSandbox when sandboxAudits is null', () => {
+      instance.setSandboxAudits(null);
+      expect(instance.isAuditEnabledForSandbox('any-audit')).to.be.false;
+    });
+
+    it('handles isAuditEnabledForSandbox when sandboxAudits is undefined', () => {
+      instance.setSandboxAudits(undefined);
+      expect(instance.isAuditEnabledForSandbox('any-audit')).to.be.false;
+    });
+
+    it('handles isAuditEnabledForSandbox when sandboxAudits is empty', () => {
+      instance.setSandboxAudits({});
+      expect(instance.isAuditEnabledForSandbox('any-audit')).to.be.false;
+    });
+
+    it('checks if configuration has sandbox audits', () => {
+      // Should return true when sandbox audits are configured
+      expect(instance.hasSandboxAudits()).to.be.true;
+
+      // Should return false when sandbox audits are null
+      instance.setSandboxAudits(null);
+      expect(instance.hasSandboxAudits()).to.be.false;
+
+      // Should return false when sandbox audits are undefined
+      instance.setSandboxAudits(undefined);
+      expect(instance.hasSandboxAudits()).to.be.false;
+
+      // Should return false when sandboxAudits is empty
+      instance.setSandboxAudits({});
+      expect(instance.hasSandboxAudits()).to.be.false;
+
+      // Should return false when sandboxAudits is null
+      instance.setSandboxAudits(null);
+      expect(instance.hasSandboxAudits()).to.be.false;
+
+      // Should return true when sandboxAudits has content
+      instance.setSandboxAudits({ cwv: {} });
+      expect(instance.hasSandboxAudits()).to.be.true;
+    });
+  });
+
+  describe('Handler Management', () => {
+    it('handles disableHandlerForSite when handler is not enabled', () => {
+      const mockSite = {
+        getId: () => 'site2',
+        getOrganizationId: () => 'org2',
+      };
+      // Should not throw error when trying to disable non-enabled handler
+      expect(() => instance.disableHandlerForSite('cwv', mockSite)).to.not.throw();
+    });
+
+    it('handles disableHandlerForOrg when handler is not enabled', () => {
+      const mockOrg = { getId: () => 'org2' };
+      // Should not throw error when trying to disable non-enabled handler
+      expect(() => instance.disableHandlerForOrg('cwv', mockOrg)).to.not.throw();
+    });
+  });
+
   describe('save', () => {
     it('saves the configuration', async () => {
       instance.collection = {

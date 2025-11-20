@@ -856,6 +856,7 @@ describe('DTO Tests', () => {
   describe('TrafficDataResponseDto', () => {
     it('should convert traffic data to JSON format', () => {
       const inputData = {
+        week: 12,
         trf_type: 'organic',
         trf_channel: 'search',
         trf_platform: 'google',
@@ -876,6 +877,7 @@ describe('DTO Tests', () => {
       const result = TrafficDataResponseDto.toJSON(inputData);
 
       expect(result).to.deep.equal({
+        week: 12,
         type: 'organic',
         channel: 'search',
         platform: 'google',

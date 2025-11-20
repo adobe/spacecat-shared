@@ -234,4 +234,51 @@ describe('logWrapper tests', () => {
     // context.log should remain unchanged
     expect(mockContext.log).to.equal(originalLog);
   });
+
+  // Test format string interpolation
+  logLevels.forEach((level) => {
+    it(`should properly handle format strings with placeholders in ${level} log`, async () => {
+      getTraceIdStub.returns('1-abc-def');
+      const originalLog = mockContext.log;
+      const wrappedFn = logWrapper(mockFnFromSqs);
+
+      await wrappedFn(message, mockContext);
+
+      // Log with format string placeholders
+      mockContext.log[level]('Found %d items for site %s', 42, 'example.com');
+
+      // Verify that the enhanced log was called with the correct format string and args
+      expect(originalLog[level].calledOnce).to.be.true;
+      const callArgs = originalLog[level].getCall(0).args;
+
+      // First arg should be the format string with markers prepended
+      expect(callArgs[0]).to.include('[jobId=');
+      expect(callArgs[0]).to.include('[traceId=1-abc-def]');
+      expect(callArgs[0]).to.include('Found %d items for site %s');
+
+      // Subsequent args should be the format string arguments
+      expect(callArgs[1]).to.equal(42);
+      expect(callArgs[2]).to.equal('example.com');
+    });
+  });
+
+  // Test non-string first argument (covers else branch)
+  logLevels.forEach((level) => {
+    it(`should pass through non-string arguments in ${level} log`, async () => {
+      getTraceIdStub.returns('1-abc-def');
+      const originalLog = mockContext.log;
+      const wrappedFn = logWrapper(mockFnFromSqs);
+
+      await wrappedFn(message, mockContext);
+
+      // Log with non-string first argument (e.g., object or number)
+      const errorObject = new Error('Test error');
+      mockContext.log[level](errorObject);
+
+      // Verify that the original log was called with the error object as-is
+      expect(originalLog[level].calledOnce).to.be.true;
+      const callArgs = originalLog[level].getCall(0).args;
+      expect(callArgs[0]).to.equal(errorObject);
+    });
+  });
 });

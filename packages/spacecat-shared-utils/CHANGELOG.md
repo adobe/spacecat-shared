@@ -1,3 +1,17 @@
+# [@adobe/spacecat-shared-utils-v1.77.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.77.0...@adobe/spacecat-shared-utils-v1.77.1) (2025-11-20)
+
+
+### Bug Fixes
+
+* **utils:** correct logWrapper format string handling ([#1156](https://github.com/adobe/spacecat-shared/issues/1156)) ([dabe38c](https://github.com/adobe/spacecat-shared/commit/dabe38c258b2a221c6733165657e856d978e5636))
+
+# [@adobe/spacecat-shared-utils-v1.77.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.76.0...@adobe/spacecat-shared-utils-v1.77.0) (2025-11-20)
+
+
+### Features
+
+* utils function getTemporalCondition extended ([#1155](https://github.com/adobe/spacecat-shared/issues/1155)) ([aad2d1c](https://github.com/adobe/spacecat-shared/commit/aad2d1c7229e98c7e45f07a541c81c1d4cf7c0c4))
+
 # [@adobe/spacecat-shared-utils-v1.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.75.0...@adobe/spacecat-shared-utils-v1.76.0) (2025-11-20)
 
 

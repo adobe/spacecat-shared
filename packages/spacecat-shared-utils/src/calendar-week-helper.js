@@ -202,9 +202,48 @@ export function getMonthInfo(inputMonth = null, inputYear = null) {
 }
 
 // --- Public: Main decision function ---
-export function getTemporalCondition({ week, month, year } = {}) {
+export function getTemporalCondition({
+  week,
+  month,
+  year,
+  numSeries = 1,
+} = {}) {
   const hasWeek = Number.isInteger(week) && Number.isInteger(year);
   const hasMonth = Number.isInteger(month) && Number.isInteger(year);
+
+  if (numSeries > 1) {
+    if (!hasWeek && !hasMonth) {
+      throw new Error('Missing required parameters: week or month');
+    }
+    // return SQL condition similar to
+    // ((year=2025 AND month=7 AND week=28) OR
+    // (year=2025 AND month=7 AND week=29) OR ... OR (year=2025 AND month=7 AND week=34))
+    // the input week/month is the start, the rest of the weeks/months are week-1,
+    // week-2 (up to numSeries) resp. month-1, month-2 (up to numSeries)
+    // properly handle if week or month becomes <1,
+    // to ensure the year also transitions to previous year
+    const conditions = [];
+    for (let i = 0; i < numSeries; i += 1) {
+      if (hasWeek) {
+        let currentWeek = week - i;
+        let currentYear = year;
+        if (currentWeek < 1) {
+          currentWeek = has53CalendarWeeks(currentYear) ? 53 : 52;
+          currentYear -= 1;
+        }
+        conditions.push(getWeekInfo(currentWeek, currentYear).temporalCondition);
+      } else if (hasMonth) {
+        let currentMonth = month - i;
+        let currentYear = year;
+        if (currentMonth < 1) {
+          currentMonth = 12;
+          currentYear -= 1;
+        }
+        conditions.push(getMonthInfo(currentMonth, currentYear).temporalCondition);
+      }
+    }
+    return conditions.join(' OR ');
+  }
 
   if (hasWeek && isValidWeek(week, year)) {
     return getWeekInfo(week, year).temporalCondition;

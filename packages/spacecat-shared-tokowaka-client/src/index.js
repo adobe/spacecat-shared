@@ -18,6 +18,7 @@ import { mergePatches } from './utils/patch-utils.js';
 import { getTokowakaConfigS3Path } from './utils/s3-utils.js';
 import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
+import { fetchHtmlWithWarmup } from './utils/html-utils.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
@@ -83,107 +84,6 @@ class TokowakaClient {
 
     this.mapperRegistry = new MapperRegistry(log);
     this.cdnClientRegistry = new CdnClientRegistry(env, log);
-  }
-
-  /**
-   * Helper function to wait for a specified duration
-   * @param {number} ms - Milliseconds to wait
-   * @returns {Promise<void>}
-   */
-  static #sleep(ms) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }
-
-  /**
-   * Fetches HTML content from Tokowaka edge with warmup call
-   * Makes an initial warmup call, waits 3 seconds, then makes the actual call
-   * @param {string} url - Full URL to fetch
-   * @param {string} apiKey - Tokowaka API key
-   * @param {string} forwardedHost - Host to forward in x-forwarded-host header
-   * @param {boolean} isOptimized - Whether to fetch optimized HTML (with preview param)
-   * @returns {Promise<string>} - HTML content
-   */
-  async fetchHtml(url, apiKey, forwardedHost, isOptimized = false) {
-    if (!hasText(url)) {
-      throw this.#createError('URL is required for fetching HTML', HTTP_BAD_REQUEST);
-    }
-
-    if (!hasText(apiKey)) {
-      throw this.#createError('Tokowaka API key is required for fetching HTML', HTTP_BAD_REQUEST);
-    }
-
-    if (!hasText(forwardedHost)) {
-      throw this.#createError('Forwarded host is required for fetching HTML', HTTP_BAD_REQUEST);
-    }
-
-    const tokowakaEdgeUrl = this.env.TOKOWAKA_EDGE_URL;
-    if (!hasText(tokowakaEdgeUrl)) {
-      throw this.#createError('TOKOWAKA_EDGE_URL is not configured', HTTP_BAD_REQUEST);
-    }
-
-    // Parse the URL to extract path and construct full URL
-    const urlObj = new URL(url);
-    const urlPath = urlObj.pathname + urlObj.search;
-
-    // Add tokowakaPreview param for optimized HTML
-    let fullUrl = `${tokowakaEdgeUrl}${urlPath}`;
-    if (isOptimized) {
-      // Add tokowakaPreview param, handling existing query params
-      const separator = urlPath.includes('?') ? '&' : '?';
-      fullUrl = `${fullUrl}${separator}tokowakaPreview=true`;
-    }
-
-    const headers = {
-      'x-forwarded-host': forwardedHost,
-      'x-tokowaka-api-key': apiKey,
-      'x-tokowaka-url': urlPath,
-    };
-
-    try {
-      // First call - warmup (ignore response)
-      this.log.info(`Making warmup call for ${isOptimized ? 'optimized' : 'original'} HTML`);
-      this.log.info(`Warmup request URL: ${fullUrl}`);
-      this.log.info(`Warmup request headers: ${JSON.stringify(headers)}`);
-
-      const warmupResponse = await fetch(fullUrl, {
-        method: 'GET',
-        headers,
-      });
-
-      this.log.info(`Warmup response status: ${warmupResponse.status} ${warmupResponse.statusText}`);
-      // Consume the response body to free up the connection
-      await warmupResponse.text();
-      this.log.info('Warmup call completed, waiting 3 seconds...');
-
-      // Wait 3 seconds
-      await TokowakaClient.#sleep(2000);
-
-      // Second call - actual request
-      this.log.info(`Making actual call for ${isOptimized ? 'optimized' : 'original'} HTML`);
-      this.log.info(`Actual request URL: ${fullUrl}`);
-      this.log.info(`Actual request headers: ${JSON.stringify(headers)}`);
-
-      const response = await fetch(fullUrl, {
-        method: 'GET',
-        headers,
-      });
-
-      this.log.info(`Actual response status: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const html = await response.text();
-      this.log.info(`Successfully fetched ${isOptimized ? 'optimized' : 'original'} HTML (${html.length} bytes)`);
-      return html;
-    } catch (error) {
-      const errorMsg = `Failed to fetch ${isOptimized ? 'optimized' : 'original'} HTML: ${error.message}`;
-      this.log.error(errorMsg);
-      throw this.#createError(errorMsg, HTTP_INTERNAL_SERVER_ERROR);
-    }
   }
 
   #createError(message, status) {
@@ -513,9 +413,10 @@ class TokowakaClient {
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
    * @param {Array} suggestions - Array of suggestion entities to preview
+   * @param {Object} options - Optional configuration for HTML fetching
    * @returns {Promise<Object>} - Preview result with config and succeeded/failed suggestions
    */
-  async previewSuggestions(site, opportunity, suggestions) {
+  async previewSuggestions(site, opportunity, suggestions, options = {}) {
     // Get site's Tokowaka API key
     const { apiKey } = site.getConfig()?.getTokowakaConfig() || {};
 
@@ -533,6 +434,15 @@ class TokowakaClient {
         `No mapper found for opportunity type: ${opportunityType}. `
         + `Supported types: ${this.mapperRegistry.getSupportedOpportunityTypes().join(', ')}`,
         HTTP_NOT_IMPLEMENTED,
+      );
+    }
+
+    // TOKOWAKA_EDGE_URL is mandatory for preview
+    const tokowakaEdgeUrl = this.env.TOKOWAKA_EDGE_URL;
+    if (!hasText(tokowakaEdgeUrl)) {
+      throw this.#createError(
+        'TOKOWAKA_EDGE_URL is required for preview functionality',
+        HTTP_BAD_REQUEST,
       );
     }
 
@@ -633,26 +543,36 @@ class TokowakaClient {
       // Get forwarded host from site config
       const tokowakaConfig = site.getConfig()?.getTokowakaConfig();
       const forwardedHost = tokowakaConfig?.forwardedHost
-        || getEffectiveBaseURL(site);
+        || site.getBaseURL();
 
       try {
-        this.log.info(`Fetching HTML for preview URL: ${previewUrl}`);
-
-        // Fetch original HTML first
-        this.log.info('Step 1: Fetching original HTML');
-        originalHtml = await this.fetchHtml(previewUrl, apiKey, forwardedHost, false);
-        this.log.info('Original HTML fetch completed');
-
+        // Fetch original HTML
+        originalHtml = await fetchHtmlWithWarmup(
+          previewUrl,
+          apiKey,
+          forwardedHost,
+          tokowakaEdgeUrl,
+          this.log,
+          false,
+          options,
+        );
         // Then fetch optimized HTML
-        this.log.info('Step 2: Fetching optimized HTML');
-        optimizedHtml = await this.fetchHtml(previewUrl, apiKey, forwardedHost, true);
-        this.log.info('Optimized HTML fetch completed');
-
+        optimizedHtml = await fetchHtmlWithWarmup(
+          previewUrl,
+          apiKey,
+          forwardedHost,
+          tokowakaEdgeUrl,
+          this.log,
+          true,
+          options,
+        );
         this.log.info('Successfully fetched both original and optimized HTML for preview');
       } catch (error) {
         this.log.error(`Failed to fetch HTML for preview: ${error.message}`);
-        // Don't fail the entire preview if HTML fetch fails
-        // Return null values and let the caller handle it
+        throw this.#createError(
+          `Preview failed: Unable to fetch HTML - ${error.message}`,
+          HTTP_INTERNAL_SERVER_ERROR,
+        );
       }
     }
 

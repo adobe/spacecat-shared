@@ -4,7 +4,7 @@
   "description": "Shared modules of the Spacecat Services - Google Client",
   "type": "module",
   "engines": {
-    "node": ">=22.0.0 <23.0.0",
+    "node": ">=22.0.0 <25.0.0",
     "npm": ">=10.9.0 <12.0.0"
   },
   "main": "src/index.js",
@@ -41,7 +41,7 @@
     "@aws-sdk/client-secrets-manager": "3.932.0",
     "aws-xray-sdk": "3.11.0",
     "google-auth-library": "10.5.0",
-    "googleapis": "164.1.0"
+    "googleapis": "166.0.0"
   },
   "devDependencies": {
     "chai": "6.2.1",

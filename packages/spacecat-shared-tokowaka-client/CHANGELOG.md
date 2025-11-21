@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.0.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.0.4...@adobe/spacecat-shared-tokowaka-client-v1.0.5) (2025-11-21)
+
+
+### Bug Fixes
+
+* edge preview feature for Tokowaka ([#1124](https://github.com/adobe/spacecat-shared/issues/1124)) ([cd2a06f](https://github.com/adobe/spacecat-shared/commit/cd2a06f62e3ca9e8c2b87e1810d420a06a002526))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.0.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.0.3...@adobe/spacecat-shared-tokowaka-client-v1.0.4) (2025-11-15)
 
 

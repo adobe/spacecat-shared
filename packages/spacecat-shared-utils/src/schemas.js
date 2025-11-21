@@ -96,6 +96,7 @@ export const llmoConfig = z.object({
         aliases: z.array(nonEmptyString),
         category: z.uuid().optional(),
         region: z.union([region, z.array(region)]).optional(),
+        aliasMode: z.union([z.literal('extend'), z.literal('replace')]).optional(),
       }),
     ),
   }),

@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.5...@adobe/spacecat-shared-tier-client-v1.3.0) (2025-11-21)
+
+
+### Features
+
+* added async export for tier-client ([#1136](https://github.com/adobe/spacecat-shared/issues/1136)) ([4098f39](https://github.com/adobe/spacecat-shared/commit/4098f394cb526d514e502d9c389168480a0987df))
+
 # [@adobe/spacecat-shared-tier-client-v1.2.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.4...@adobe/spacecat-shared-tier-client-v1.2.5) (2025-11-18)
 
 

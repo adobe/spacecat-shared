@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.78.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.77.1...@adobe/spacecat-shared-utils-v1.78.0) (2025-11-21)
+
+
+### Features
+
+* add aliasMode to llmoConfig schema LLMO-1095 ([#1151](https://github.com/adobe/spacecat-shared/issues/1151)) ([04a1075](https://github.com/adobe/spacecat-shared/commit/04a10753ce4806dea49015dde022747613db535a))
+
 # [@adobe/spacecat-shared-utils-v1.77.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.77.0...@adobe/spacecat-shared-utils-v1.77.1) (2025-11-20)
 
 

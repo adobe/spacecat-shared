@@ -27,8 +27,8 @@ class Suggestion extends BaseModel {
     IN_PROGRESS: 'IN_PROGRESS',
     SKIPPED: 'SKIPPED',
     FIXED: 'FIXED',
-    ERROR: 'ERROR',
     OUTDATED: 'OUTDATED',
+    ERROR: 'ERROR',
     PENDING_VALIDATION: 'PENDING_VALIDATION',
   };
 

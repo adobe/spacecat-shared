@@ -84,7 +84,7 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
   month,
   year,
   siteId,
-  dimensions,
+  dimensions = [],
   tableName,
   pageTypes = null,
   pageTypeMatchColumn = 'path',
@@ -99,10 +99,6 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
 
   if (!temporalCondition && ((!week && !month) || !year)) {
     throw new Error('Missing required parameters: week, month or year');
-  }
-
-  if (!Array.isArray(dimensions) || dimensions.length === 0) {
-    throw new Error('Missing dimension to group by');
   }
 
   if (numTemporalSeries > 1 && week) {

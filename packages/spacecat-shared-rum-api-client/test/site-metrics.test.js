@@ -1,0 +1,288 @@
+/*
+ * Copyright 2024 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+/* eslint-env mocha */
+
+import { expect } from 'chai';
+import siteMetrics from '../src/functions/site-metrics.js';
+
+describe('siteMetrics', () => {
+  it('calculates site-wide metrics correctly', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        cwvLCP: 2500,
+        events: [
+          { checkpoint: 'click', timeDelta: 2000 },
+        ],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page2',
+        weight: 50,
+        cwvLCP: 3000,
+        events: [
+          { checkpoint: 'viewmedia', timeDelta: 1000 },
+          { checkpoint: 'viewmedia', timeDelta: 2000 },
+          { checkpoint: 'viewmedia', timeDelta: 3000 },
+          { checkpoint: 'viewblock', timeDelta: 4000 },
+        ],
+      },
+      {
+        id: 'bundle3',
+        url: 'https://example.com/page3',
+        weight: 200,
+        cwvLCP: 2000,
+        events: [],
+      },
+    ];
+
+    const result = siteMetrics.handler(mockBundles);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(350);
+    // P75 LCP calculated from distribution
+    expect(result.lcp).to.be.a('number');
+    expect(result.lcp).to.be.greaterThan(0);
+    // Engagement count: 100 + 50 = 150
+    expect(result.engagementCount).to.equal(150);
+  });
+
+  it('handles empty bundles array', () => {
+    const result = siteMetrics.handler([]);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(0);
+    expect(result.lcp).to.be.null;
+    expect(result.engagementCount).to.equal(0);
+  });
+
+  it('handles bundles with no LCP data', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        events: [
+          { checkpoint: 'click', timeDelta: 2000 },
+        ],
+      },
+    ];
+
+    const result = siteMetrics.handler(mockBundles);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(100);
+    expect(result.lcp).to.be.null;
+    expect(result.engagementCount).to.equal(100);
+  });
+
+  it('handles bundles with no engagement', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        cwvLCP: 2500,
+        events: [],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page2',
+        weight: 50,
+        cwvLCP: 3000,
+        events: [
+          { checkpoint: 'viewmedia', timeDelta: 1000 },
+        ],
+      },
+    ];
+
+    const result = siteMetrics.handler(mockBundles);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(150);
+    // P75 LCP calculated from distribution
+    expect(result.lcp).to.be.a('number');
+    expect(result.lcp).to.be.greaterThan(0);
+    expect(result.engagementCount).to.equal(0);
+  });
+
+  it('calculates engagement with click events', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        cwvLCP: 2500,
+        events: [
+          { checkpoint: 'click', timeDelta: 2000 },
+        ],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page2',
+        weight: 50,
+        cwvLCP: 3000,
+        events: [],
+      },
+    ];
+
+    const result = siteMetrics.handler(mockBundles);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(150);
+    expect(result.engagementCount).to.equal(100);
+  });
+
+  it('calculates engagement with content views (4+ viewmedia/viewblock)', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        cwvLCP: 2500,
+        events: [
+          { checkpoint: 'viewmedia', timeDelta: 1000 },
+          { checkpoint: 'viewmedia', timeDelta: 2000 },
+          { checkpoint: 'viewmedia', timeDelta: 3000 },
+          { checkpoint: 'viewblock', timeDelta: 4000 },
+        ],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page2',
+        weight: 50,
+        cwvLCP: 3000,
+        events: [
+          { checkpoint: 'viewmedia', timeDelta: 1000 },
+          { checkpoint: 'viewmedia', timeDelta: 2000 },
+        ],
+      },
+    ];
+
+    const result = siteMetrics.handler(mockBundles);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(150);
+    // Only bundle1 has 4+ content views, so engagementCount = 100
+    expect(result.engagementCount).to.equal(100);
+  });
+
+  it('calculates engagement with both clicks and content views', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        cwvLCP: 2500,
+        events: [
+          { checkpoint: 'click', timeDelta: 2000 },
+        ],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page2',
+        weight: 50,
+        cwvLCP: 3000,
+        events: [
+          { checkpoint: 'viewmedia', timeDelta: 1000 },
+          { checkpoint: 'viewmedia', timeDelta: 2000 },
+          { checkpoint: 'viewmedia', timeDelta: 3000 },
+          { checkpoint: 'viewblock', timeDelta: 4000 },
+        ],
+      },
+      {
+        id: 'bundle3',
+        url: 'https://example.com/page3',
+        weight: 200,
+        cwvLCP: 2000,
+        events: [],
+      },
+    ];
+
+    const result = siteMetrics.handler(mockBundles);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(350);
+    // Engagement count: 100 + 50 = 150
+    expect(result.engagementCount).to.equal(150);
+  });
+
+  it('handles bundles with only partial LCP data', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        cwvLCP: 2500,
+        events: [
+          { checkpoint: 'click', timeDelta: 2000 },
+        ],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page2',
+        weight: 50,
+        events: [
+          { checkpoint: 'click', timeDelta: 3000 },
+        ],
+      },
+    ];
+
+    const result = siteMetrics.handler(mockBundles);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(150);
+    // Only bundle1 has LCP data, P75 will be based on that single value
+    expect(result.lcp).to.be.a('number');
+    expect(result.lcp).to.be.greaterThan(0);
+    expect(result.engagementCount).to.equal(150);
+  });
+
+  it('returns engagementCount along with other metrics', () => {
+    const mockBundles = [
+      {
+        id: 'bundle1',
+        url: 'https://example.com/page1',
+        weight: 100,
+        cwvLCP: 2500,
+        events: [{ checkpoint: 'click', timeDelta: 2000 }],
+      },
+      {
+        id: 'bundle2',
+        url: 'https://example.com/page2',
+        weight: 50,
+        cwvLCP: 3000,
+        events: [{ checkpoint: 'click', timeDelta: 1500 }],
+      },
+      {
+        id: 'bundle3',
+        url: 'https://example.com/page3',
+        weight: 200,
+        cwvLCP: 2000,
+        events: [],
+      },
+    ];
+
+    const result = siteMetrics.handler(mockBundles);
+
+    expect(result).to.be.an('object');
+    expect(result.pageviews).to.equal(350);
+    expect(result.engagementCount).to.equal(150); // 100 + 50
+    expect(result.lcp).to.be.a('number');
+  });
+
+  it('has correct checkpoints', () => {
+    expect(siteMetrics.checkpoints).to.deep.equal([]);
+  });
+});

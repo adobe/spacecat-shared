@@ -67,6 +67,8 @@ describe('Index Exports', () => {
     'SPACECAT_USER_AGENT',
     'isAWSLambda',
     'instrumentAWSClient',
+    'getTraceId',
+    'addTraceIdHeader',
     'getDateRanges',
     'getLastNumberOfWeeks',
     'resolveCanonicalUrl',
@@ -91,6 +93,15 @@ describe('Index Exports', () => {
     'isoCalendarWeek',
     'isoCalendarWeekSunday',
     'isoCalendarWeekMonday',
+    'buildAggregationKey',
+    'buildAggregationKeyFromSuggestion',
+    'buildSuggestionKey',
+    'buildIndividualKey',
+    'buildKey',
+    'getGranularityForIssueType',
+    'Granularity',
+    'GRANULARITY_KEY_BUILDERS',
+    'ISSUE_GRANULARITY_MAP',
   ];
 
   it('exports all expected functions', () => {

@@ -12,8 +12,10 @@
 
 import Configuration from './configuration.model.js';
 import ConfigurationCollection from './configuration.collection.js';
+import { checkConfiguration } from './configuration.schema.js';
 
 export {
   Configuration,
   ConfigurationCollection,
+  checkConfiguration,
 };

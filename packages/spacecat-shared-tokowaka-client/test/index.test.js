@@ -58,7 +58,10 @@ describe('TokowakaClient', () => {
       getId: () => 'site-123',
       getBaseURL: () => 'https://example.com',
       getConfig: () => ({
-        getTokowakaConfig: () => ({ apiKey: 'test-api-key-123' }),
+        getTokowakaConfig: () => ({
+          apiKey: 'test-api-key-123',
+          forwardedHost: 'example.com',
+        }),
       }),
     };
 
@@ -104,7 +107,7 @@ describe('TokowakaClient', () => {
   describe('constructor', () => {
     it('should create an instance with valid config', () => {
       expect(client).to.be.instanceOf(TokowakaClient);
-      expect(client.bucketName).to.equal('test-bucket');
+      expect(client.deployBucketName).to.equal('test-bucket');
       expect(client.s3Client).to.equal(s3Client);
     });
 
@@ -1144,6 +1147,397 @@ describe('TokowakaClient', () => {
       expect(uploadedConfig.tokowakaOptimizations).to.have.property('/other-page');
       expect(uploadedConfig.tokowakaOptimizations['/other-page'].patches[0].value)
         .to.equal('Other Page Heading');
+    });
+  });
+
+  describe('previewSuggestions', () => {
+    let fetchStub;
+
+    beforeEach(() => {
+      // Stub global fetch for HTML fetching
+      fetchStub = sinon.stub(global, 'fetch');
+      // Mock fetch responses for HTML fetching (warmup + actual for both original and optimized)
+      fetchStub.resolves({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html><body>Test HTML</body></html>',
+      });
+
+      // Stub CDN invalidation for preview tests
+      sinon.stub(client, 'invalidateCdnCache').resolves({
+        status: 'success',
+        provider: 'cloudfront',
+        invalidationId: 'I123',
+      });
+
+      // Stub fetchConfig to return null by default (no existing config)
+      sinon.stub(client, 'fetchConfig').resolves(null);
+
+      // Add TOKOWAKA_EDGE_URL to env
+      client.env.TOKOWAKA_EDGE_URL = 'https://edge-dev.tokowaka.now';
+      client.previewBucketName = 'test-preview-bucket';
+    });
+
+    afterEach(() => {
+      // fetchStub will be restored by global afterEach sinon.restore()
+      // Just clean up env changes
+      delete client.env.TOKOWAKA_EDGE_URL;
+    });
+
+    it('should preview suggestions successfully with HTML', async () => {
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result).to.have.property('s3Path', 'preview/opportunities/test-api-key-123');
+      expect(result).to.have.property('succeededSuggestions');
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result).to.have.property('failedSuggestions');
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result).to.have.property('html');
+      expect(result.html).to.have.property('url', 'https://example.com/page1');
+      expect(result.html).to.have.property('originalHtml');
+      expect(result.html).to.have.property('optimizedHtml');
+      expect(result.html.originalHtml).to.equal('<html><body>Test HTML</body></html>');
+      expect(result.html.optimizedHtml).to.equal('<html><body>Test HTML</body></html>');
+
+      // Verify fetch was called for HTML fetching
+      // (4 times: warmup + actual for original and optimized)
+      expect(fetchStub.callCount).to.equal(4);
+      expect(s3Client.send).to.have.been.calledOnce;
+    });
+
+    it('should throw error if TOKOWAKA_EDGE_URL is not configured', async () => {
+      delete client.env.TOKOWAKA_EDGE_URL;
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('TOKOWAKA_EDGE_URL is required for preview');
+        expect(error.status).to.equal(500);
+      }
+    });
+
+    it('should throw error if site does not have Tokowaka API key', async () => {
+      mockSite.getConfig = () => ({
+        getTokowakaConfig: () => ({ forwardedHost: 'example.com' }),
+      });
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Tokowaka API key or forwarded host configured');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error if site getConfig returns null', async () => {
+      mockSite.getConfig = () => null;
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Tokowaka API key or forwarded host configured');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error for unsupported opportunity type', async () => {
+      mockOpportunity.getType = () => 'unsupported-type';
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('No mapper found for opportunity type');
+        expect(error.status).to.equal(501);
+      }
+    });
+
+    it('should handle ineligible suggestions', async () => {
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-missing', // Not eligible
+          }),
+        },
+      ];
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.config).to.be.null;
+    });
+
+    it('should return early when generateConfig produces empty optimizations', async () => {
+      // Use suggestions that pass eligibility but fail during config generation
+      mockSuggestions = [
+        {
+          getId: () => 'sugg-no-url',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            // Missing URL - will be skipped in generateConfig
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+      ];
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.config).to.be.null;
+      expect(log.warn).to.have.been.calledWith('No eligible suggestions to preview');
+    });
+
+    it('should merge with existing deployed patches for the same URL', async () => {
+      // Setup existing config with deployed patches
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'title',
+                value: 'Deployed Title',
+                opportunityId: 'opp-456',
+                suggestionId: 'sugg-deployed',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      client.fetchConfig.resolves(existingConfig);
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+
+      // Verify config was uploaded with merged patches
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.tokowakaOptimizations['/page1'].patches).to.have.length(3);
+
+      // Should have existing deployed patch + 2 new preview patches
+      const deployedPatch = uploadedConfig.tokowakaOptimizations['/page1'].patches
+        .find((p) => p.suggestionId === 'sugg-deployed');
+      expect(deployedPatch).to.exist;
+      expect(deployedPatch.value).to.equal('Deployed Title');
+    });
+
+    it('should handle existing config with no patches for preview URL', async () => {
+      // Setup existing config with patches for a different URL
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/other-page': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'title',
+                value: 'Other Page Title',
+                opportunityId: 'opp-999',
+                suggestionId: 'sugg-other',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      client.fetchConfig.resolves(existingConfig);
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(log.info).to.have.been.calledWith(sinon.match(/No deployed patches found/));
+    });
+
+    it('should throw error when HTML fetch fails', async () => {
+      // Mock fetch to fail
+      fetchStub.rejects(new Error('Network error'));
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Preview failed');
+        expect(error.status).to.equal(500);
+      }
+    });
+
+    it('should retry HTML fetch on failure', async () => {
+      // First 2 calls fail (warmup succeeds, first actual call fails)
+      // Then succeed on retry
+      fetchStub.onCall(0).resolves({ // warmup original
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      fetchStub.onCall(1).rejects(new Error('Temporary failure')); // actual original - fail
+      fetchStub.onCall(2).resolves({ // retry original - success
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Original</html>',
+      });
+      fetchStub.onCall(3).resolves({ // warmup optimized
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: () => null,
+        },
+        text: async () => 'warmup',
+      });
+      fetchStub.onCall(4).resolves({ // actual optimized
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (name) => (name === 'x-tokowaka-cache' ? 'HIT' : null),
+        },
+        text: async () => '<html>Optimized</html>',
+      });
+
+      const result = await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0, retryDelayMs: 0 },
+      );
+
+      expect(result.html.originalHtml).to.equal('<html>Original</html>');
+      expect(result.html.optimizedHtml).to.equal('<html>Optimized</html>');
+      expect(fetchStub.callCount).to.be.at.least(5);
+    });
+
+    it('should use forwardedHost from site config', async () => {
+      mockSite.getConfig = () => ({
+        getTokowakaConfig: () => ({
+          apiKey: 'test-api-key-123',
+          forwardedHost: 'custom.example.com',
+        }),
+      });
+
+      await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      // Check that fetch was called with correct headers
+      const actualCall = fetchStub.getCalls().find((call) => {
+        const headers = call.args[1]?.headers;
+        return headers && headers['x-forwarded-host'] === 'custom.example.com';
+      });
+
+      expect(actualCall).to.exist;
+    });
+
+    it('should throw error when forwardedHost is not configured', async () => {
+      mockSite.getConfig = () => ({
+        getTokowakaConfig: () => ({
+          apiKey: 'test-api-key-123',
+          // forwardedHost is missing
+        }),
+      });
+
+      try {
+        await client.previewSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Tokowaka API key or forwarded host configured');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should upload config to preview S3 path', async () => {
+      await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(s3Client.send).to.have.been.calledOnce;
+
+      const putCommand = s3Client.send.firstCall.args[0];
+      expect(putCommand.input.Bucket).to.equal('test-preview-bucket');
+      expect(putCommand.input.Key).to.equal('preview/opportunities/test-api-key-123');
+    });
+
+    it('should invalidate CDN cache for preview path', async () => {
+      await client.previewSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { warmupDelayMs: 0 },
+      );
+
+      expect(client.invalidateCdnCache).to.have.been.calledWith(
+        'test-api-key-123',
+        'cloudfront',
+        true,
+      );
     });
   });
 

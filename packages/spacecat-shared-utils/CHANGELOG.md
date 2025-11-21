@@ -1,3 +1,31 @@
+# [@adobe/spacecat-shared-utils-v1.77.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.77.0...@adobe/spacecat-shared-utils-v1.77.1) (2025-11-20)
+
+
+### Bug Fixes
+
+* **utils:** correct logWrapper format string handling ([#1156](https://github.com/adobe/spacecat-shared/issues/1156)) ([dabe38c](https://github.com/adobe/spacecat-shared/commit/dabe38c258b2a221c6733165657e856d978e5636))
+
+# [@adobe/spacecat-shared-utils-v1.77.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.76.0...@adobe/spacecat-shared-utils-v1.77.0) (2025-11-20)
+
+
+### Features
+
+* utils function getTemporalCondition extended ([#1155](https://github.com/adobe/spacecat-shared/issues/1155)) ([aad2d1c](https://github.com/adobe/spacecat-shared/commit/aad2d1c7229e98c7e45f07a541c81c1d4cf7c0c4))
+
+# [@adobe/spacecat-shared-utils-v1.76.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.75.0...@adobe/spacecat-shared-utils-v1.76.0) (2025-11-20)
+
+
+### Features
+
+* **utils,http-utils:** trigger release for trace ID propagation ([#1154](https://github.com/adobe/spacecat-shared/issues/1154)) ([fb48149](https://github.com/adobe/spacecat-shared/commit/fb481497725e49dab18812b4ba1ba7186e35a8f9)), closes [#1152](https://github.com/adobe/spacecat-shared/issues/1152) [#1152](https://github.com/adobe/spacecat-shared/issues/1152) [#1097](https://github.com/adobe/spacecat-shared/issues/1097) [#1097](https://github.com/adobe/spacecat-shared/issues/1097) [#1097](https://github.com/adobe/spacecat-shared/issues/1097) [#1152](https://github.com/adobe/spacecat-shared/issues/1152) [adobe/spacecat-audit-worker#1520](https://github.com/adobe/spacecat-audit-worker/issues/1520)
+
+# [@adobe/spacecat-shared-utils-v1.75.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.74.0...@adobe/spacecat-shared-utils-v1.75.0) (2025-11-19)
+
+
+### Features
+
+* add aggregation key to get Oppty SC API ([#1148](https://github.com/adobe/spacecat-shared/issues/1148)) ([07bf485](https://github.com/adobe/spacecat-shared/commit/07bf485a5534a066899abf9488ef71301d8cb3e1))
+
 # [@adobe/spacecat-shared-utils-v1.74.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.73.1...@adobe/spacecat-shared-utils-v1.74.0) (2025-11-17)
 
 

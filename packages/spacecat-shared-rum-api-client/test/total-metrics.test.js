@@ -17,10 +17,9 @@ import bundlesForUrls from './fixtures/bundles.json' with { type: 'json' };
 describe('Total Metrics Queries', () => {
   it('crunches CWV data', async () => {
     const result = totalMetrics.handler(bundlesForUrls.rumBundles);
-    expect(result).to.deep.equal({
-      totalCTR: 0.2027468663384768,
-      totalClicks: 4901,
-      totalPageViews: 24173,
-    });
+    expect(result).to.have.property('totalCTR', 0.2027468663384768);
+    expect(result).to.have.property('totalClicks', 4901);
+    expect(result).to.have.property('totalPageViews', 24173);
+    expect(result).to.have.property('totalLCP');
   });
 });

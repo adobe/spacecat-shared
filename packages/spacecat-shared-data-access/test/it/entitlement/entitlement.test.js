@@ -154,7 +154,7 @@ describe('Entitlement IT', async () => {
     expect(notFound).to.be.null;
   });
 
-  it.only('removes an entitlement and its dependent site enrollments', async () => {
+  it('removes an entitlement and its dependent site enrollments', async () => {
     const dataAccess = getDataAccess();
     const { SiteEnrollment } = dataAccess;
 

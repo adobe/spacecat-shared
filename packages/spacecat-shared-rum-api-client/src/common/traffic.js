@@ -68,7 +68,7 @@ const mediums = {
 };
 
 const sources = {
-  social: /^\b(ig|fb|x|soc)\b|(.*(meta|tiktok|facebook|snapchat|twitter|igshopping|instagram|linkedin|reddit).*)$/,
+  social: /^\b(ig|fb|x|soc|ln)\b|(.*(meta|tiktok|facebook|snapchat|twitter|igshopping|instagram|linkedin|reddit).*)$/,
   search: /^\b(goo)\b|(.*(sea|google|yahoo|bing|yandex|baidu|duckduckgo|brave|ecosia|aol|startpage|ask).*)$/,
   video: /youtube|vimeo|twitch|dailymotion|wistia/,
   display: /optumib2b|jun|googleads|dv360|dv36|microsoft|flipboard|programmatic|yext|gdn|banner|newsshowcase/,
@@ -214,6 +214,7 @@ const RULES = (domain) => ([
   { type: 'paid', category: 'search', referrer: anyOf(referrers.search), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
   { type: 'paid', category: 'search', referrer: anyOf(referrers.ad), utmSource: any, utmMedium: anyOf(mediums.paidsearch), tracking: any },
   { type: 'paid', category: 'search', referrer: none, utmSource: anyOf(sources.search), utmMedium: anyOf(mediums.paidsearch), tracking: any },
+  { type: 'paid', category: 'search', referrer: none, utmSource: anyOf(sources.search), utmMedium: none, tracking: anyOf(paidTrackingParams) },
 
   { type: 'paid', category: 'social', referrer: anyOf(referrers.social), utmSource: any, utmMedium: anyOf(mediums.paidsocial), tracking: none },
   { type: 'paid', category: 'social', referrer: anyOf(referrers.social), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
@@ -222,6 +223,7 @@ const RULES = (domain) => ([
   { type: 'paid', category: 'social', referrer: none, utmSource: anyOf(sources.social), utmMedium: anyOf(mediums.paidall), tracking: any },
   { type: 'paid', category: 'social', referrer: anyOf(referrers.social), utmSource: notEmpty, utmMedium: notEmpty, tracking: any },
   { type: 'paid', category: 'social', referrer: none, utmSource: anyOf(sources.social), utmMedium: anyOf(mediums.socialall), tracking: any },
+  { type: 'paid', category: 'social', referrer: none, utmSource: anyOf(sources.social), utmMedium: any, tracking: anyOf(paidTrackingParams) },
 
   { type: 'paid', category: 'video', referrer: anyOf(referrers.video), utmSource: any, utmMedium: anyOf(mediums.paidall), tracking: any },
   { type: 'paid', category: 'video', referrer: anyOf(referrers.video), utmSource: any, utmMedium: any, tracking: anyOf(paidTrackingParams) },
@@ -277,6 +279,8 @@ export function extractTrafficHints(bundle) {
   const utmSource = findEvent('utm', 'utm_source').target || '';
   const utmMedium = findEvent('utm', 'utm_medium').target || '';
   const tracking = findEvent('paid').checkpoint || findEvent('email').checkpoint || '';
+  const trackingSource = findEvent('paid').source || findEvent('email').source || '';
+  const trackingTarget = findEvent('paid').target || findEvent('email').target || '';
 
   return {
     url: bundle.url,
@@ -285,6 +289,8 @@ export function extractTrafficHints(bundle) {
     utmSource,
     utmMedium,
     tracking,
+    trackingSource,
+    trackingTarget,
   };
 }
 
@@ -293,17 +299,18 @@ export function extractTrafficHints(bundle) {
  * For example: facebook instead of www.facebook.com
  * @param {*} referrer
  */
-export function classifyVendor(referrer, utmSource, utmMedium) {
+export function classifyVendor(referrer, utmSource, utmMedium, trackingSource) {
   const result = vendorClassifications.find(({ regex }) => {
     if (regex.test(referrer)) return true;
     if (regex.test(utmSource)) return true;
     if (regex.test(utmMedium)) return true;
+    if (regex.test(trackingSource)) return true;
     return false;
   });
   return result ? result.result : '';
 }
 
-export function classifyTrafficSource(url, referrer, utmSource, utmMedium, trackingParams) {
+export function classifyTrafficSource(url, referrer, utmSource, utmMedium, trackingEvent) {
   const secondLevelDomain = getSecondLevelDomain(url);
   const rules = RULES(secondLevelDomain);
 
@@ -315,7 +322,7 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
     rule.referrer(referrerDomain)
     && rule.utmSource(sanitize(utmSource))
     && rule.utmMedium(sanitize(utmMedium))
-    && rule.tracking(trackingParams)
+    && rule.tracking(trackingEvent)
   ));
   let { type, category } = match;
   let vendor = classifyVendor(referrerDomain, utmSource, utmMedium);
@@ -347,11 +354,24 @@ export function classifyTraffic(bundle) {
     utmSource,
     utmMedium,
     tracking,
+    trackingSource,
+    trackingTarget,
   } = extractTrafficHints(bundle);
+
+  let source = utmSource;
+
+  // When there are no explicit UTM parameters, fall back to tracking source
+  // as the classification source. This lets "paid + google (tracking_source)"
+  // behave like "paid + google (utm_source)" without mutating actual UTMs.
+  if (!source && !utmMedium && trackingSource) {
+    source = trackingSource;
+  }
 
   return {
     url,
     weight,
-    ...classifyTrafficSource(url, referrer, utmSource, utmMedium, tracking),
+    trackingSource,
+    trackingTarget,
+    ...classifyTrafficSource(url, referrer, source, utmMedium, tracking),
   };
 }

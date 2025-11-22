@@ -24,7 +24,7 @@ const schema = new SchemaBuilder(Entitlement, EntitlementCollection)
   // Reference to Organization (many-to-one relationship)
   .addReference('belongs_to', 'Organization')
   // Reference to SiteEnrollments (one-to-many relationship)
-  .addReference('has_many', 'SiteEnrollments')
+  .addReference('has_many', 'SiteEnrollments', [], { removeDependents: true })
   .addReference('has_many', 'TrialUserActivities')
   .addAttribute('productCode', {
     type: Object.values(Entitlement.PRODUCT_CODES),

@@ -60,4 +60,26 @@ describe('EntitlementCollection', () => {
       expect(model).to.be.an('object');
     });
   });
+
+  describe('schema references', () => {
+    it('has SiteEnrollments reference with removeDependents set to true', () => {
+      const siteEnrollmentsRef = schema.references.find(
+        (ref) => ref.getTarget() === 'SiteEnrollments',
+      );
+
+      expect(siteEnrollmentsRef).to.exist;
+      expect(siteEnrollmentsRef.getType()).to.equal('has_many');
+      expect(siteEnrollmentsRef.isRemoveDependents()).to.be.true;
+    });
+
+    it('has TrialUserActivities reference with removeDependents set to false', () => {
+      const trialUserActivitiesRef = schema.references.find(
+        (ref) => ref.getTarget() === 'TrialUserActivities',
+      );
+
+      expect(trialUserActivitiesRef).to.exist;
+      expect(trialUserActivitiesRef.getType()).to.equal('has_many');
+      expect(trialUserActivitiesRef.isRemoveDependents()).to.be.false;
+    });
+  });
 });

@@ -25,7 +25,8 @@ describe('Entitlement IT', async () => {
   let sampleData;
   let Entitlement;
 
-  before(async () => {
+  before(async function () {
+    this.timeout(10000);
     sampleData = await seedDatabase();
 
     const dataAccess = getDataAccess();
@@ -151,5 +152,26 @@ describe('Entitlement IT', async () => {
 
     const notFound = await Entitlement.findById(sampleData.entitlements[0].getId());
     expect(notFound).to.be.null;
+  });
+
+  it.only('removes an entitlement and its dependent site enrollments', async () => {
+    const dataAccess = getDataAccess();
+    const { SiteEnrollment } = dataAccess;
+
+    const entitlement = await Entitlement.findById(sampleData.entitlements[1].getId());
+    const siteEnrollments = await entitlement.getSiteEnrollments();
+
+    expect(siteEnrollments).to.be.an('array').with.length.greaterThan(0);
+
+    await entitlement.remove();
+
+    const notFound = await Entitlement.findById(sampleData.entitlements[1].getId());
+    expect(notFound).to.be.null;
+
+    // verify that dependent site enrollments are removed as well
+    await Promise.all(siteEnrollments.map(async (siteEnrollment) => {
+      const notFoundEnrollment = await SiteEnrollment.findById(siteEnrollment.getId());
+      expect(notFoundEnrollment).to.be.null;
+    }));
   });
 });

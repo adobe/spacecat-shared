@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@adobe/helix-universal": "5.3.0",
-    "@adobe/spacecat-helix-content-sdk": "1.4.26",
+    "@adobe/spacecat-helix-content-sdk": "1.4.27",
     "@adobe/spacecat-shared-data-access": "2.45.0",
     "@adobe/spacecat-shared-utils": "1.66.0",
     "@aws-sdk/client-secrets-manager": "3.936.0",

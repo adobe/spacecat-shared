@@ -106,6 +106,8 @@ async function handler(bundles) {
       trf_type: trafficData.type,
       trf_channel: trafficData.category,
       trf_platform: trafficData.vendor || null,
+      tracking_source: trafficData.trackingSource || null,
+      tracking_target: trafficData.trackingTarget || null,
       device: bundle.userAgent.split(':')[0],
       utm_source: getUTM(bundle, 'source'),
       utm_medium: getUTM(bundle, 'medium'),

@@ -1,3 +1,22 @@
+# [@adobe/spacecat-shared-data-access-v2.88.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.0...@adobe/spacecat-shared-data-access-v2.88.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* remove enrollments when entitlment are removed ([#1161](https://github.com/adobe/spacecat-shared/issues/1161)) ([b82e6c4](https://github.com/adobe/spacecat-shared/commit/b82e6c4c259543bd0d3e3a3ad2d3e2702956d85c))
+
+# [@adobe/spacecat-shared-data-access-v2.88.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.87.1...@adobe/spacecat-shared-data-access-v2.88.0) (2025-11-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1162](https://github.com/adobe/spacecat-shared/issues/1162)) ([f0152c5](https://github.com/adobe/spacecat-shared/commit/f0152c5ecddb75b6b3c6e2f0d756d5fb04171dd3))
+
+
+### Features
+
+* add no-cta-above-the-fold audit ([#1159](https://github.com/adobe/spacecat-shared/issues/1159)) ([83b9a7d](https://github.com/adobe/spacecat-shared/commit/83b9a7dd0cac0979518dbf935f582df92acc0a47))
+
 # [@adobe/spacecat-shared-data-access-v2.87.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.87.0...@adobe/spacecat-shared-data-access-v2.87.1) (2025-11-21)
 
 
@@ -2812,18 +2831,14 @@
 
 * github org ([02f86c3](https://github.com/adobe/spacecat-shared/commit/02f86c351b2b1ab99ce5aca7fd5e6af2246c0efd))
 
-<<<<<<< Updated upstream
-# [@adobe/spacecat-shared-data-access-v1.6.0](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.2...@adobe/spacecat-shared-data-access-v1.6.0) (2024-01-12)
+# [@adobe/spacecat-shared-data-access-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.2...@adobe/spacecat-shared-data-access-v1.6.0) (2024-01-12)
 
 
 ### Features
 
-* site delivery type ([#77](https://github.com/adobe-rnd/spacecat-shared/issues/77)) ([005bc38](https://github.com/adobe-rnd/spacecat-shared/commit/005bc388ed6ab0f82c8b0f562d4c1f4c0d1e2894))
+* site delivery type ([#77](https://github.com/adobe/spacecat-shared/issues/77)) ([005bc38](https://github.com/adobe/spacecat-shared/commit/005bc388ed6ab0f82c8b0f562d4c1f4c0d1e2894))
 
-# [@adobe/spacecat-shared-data-access-v1.5.2](https://github.com/adobe-rnd/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.1...@adobe/spacecat-shared-data-access-v1.5.2) (2023-12-30)
-=======
 # [@adobe/spacecat-shared-data-access-v1.5.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v1.5.1...@adobe/spacecat-shared-data-access-v1.5.2) (2023-12-30)
->>>>>>> Stashed changes
 
 
 ### Bug Fixes

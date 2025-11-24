@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-brand-client-v1.1.30](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.29...@adobe/spacecat-shared-brand-client-v1.1.30) (2025-11-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1162](https://github.com/adobe/spacecat-shared/issues/1162)) ([f0152c5](https://github.com/adobe/spacecat-shared/commit/f0152c5ecddb75b6b3c6e2f0d756d5fb04171dd3))
+
 # [@adobe/spacecat-shared-brand-client-v1.1.29](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.1.28...@adobe/spacecat-shared-brand-client-v1.1.29) (2025-11-15)
 
 

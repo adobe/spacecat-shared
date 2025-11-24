@@ -59,6 +59,9 @@ class TierClient {
     }
     const organizationId = await site.getOrganizationId();
     const organization = await context.dataAccess.Organization.findById(organizationId);
+    if (!organization) {
+      throw new Error(`[TierClient] Organization not found for organizationId: ${organizationId}`);
+    }
     return new TierClient(context, organization, site, productCode);
   }
 

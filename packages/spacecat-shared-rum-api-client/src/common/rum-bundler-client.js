@@ -244,13 +244,6 @@ function generateURLs(domain, granularity, domainkey, startTime, endTime, interv
     const date = new Date(currentDate.getTime() - i * multiplier);
     urls.push(constructUrl(domain, date, granularity, domainkey));
   }
-
-  // Log the date range for interval-based logic
-  if (urls.length > 0) {
-    const oldestDate = new Date(currentDate.getTime() - (range - 1) * multiplier);
-    log?.info(`Switch dates being considered for total traffic: interval=${interval} days, from=${oldestDate.toISOString()} to=${currentDate.toISOString()}`);
-  }
-
   return urls;
 }
 

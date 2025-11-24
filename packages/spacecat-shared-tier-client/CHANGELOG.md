@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.0...@adobe/spacecat-shared-tier-client-v1.3.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* error message on org not found ([#1165](https://github.com/adobe/spacecat-shared/issues/1165)) ([c1a7702](https://github.com/adobe/spacecat-shared/commit/c1a77026a485b4ce483b9ce806bcf6e722064807))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.2.5...@adobe/spacecat-shared-tier-client-v1.3.0) (2025-11-21)
 
 

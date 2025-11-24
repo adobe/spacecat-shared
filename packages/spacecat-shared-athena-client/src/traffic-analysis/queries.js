@@ -84,13 +84,14 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
   month,
   year,
   siteId,
-  dimensions,
+  dimensions = [],
   tableName,
   pageTypes = null,
   pageTypeMatchColumn = 'path',
   trfTypes = null,
   temporalCondition = null,
   pageViewThreshold = 1000,
+  numTemporalSeries = 1,
 }) {
   if (!siteId || !tableName) {
     throw new Error('Missing required parameters: siteId, or tableName');
@@ -100,16 +101,22 @@ export function getTrafficAnalysisQueryPlaceholdersFilled({
     throw new Error('Missing required parameters: week, month or year');
   }
 
-  if (!Array.isArray(dimensions) || dimensions.length === 0) {
-    throw new Error('Missing dimension to group by');
+  if (numTemporalSeries > 1 && week) {
+    dimensions.push('week');
+  } else if (numTemporalSeries > 1 && month) {
+    dimensions.push('month');
   }
-
   const dimensionColumns = dimensions.join(', ');
   const dimensionColumnsPrefixed = dimensions.map((col) => `a.${col}`).join(', ');
 
   let tempCondition = null;
   if (!temporalCondition) {
-    tempCondition = getTemporalCondition({ week, month, year });
+    tempCondition = getTemporalCondition({
+      week,
+      month,
+      year,
+      numSeries: numTemporalSeries,
+    });
   }
 
   let pageTypeCase = 'NULL as page_type';

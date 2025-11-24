@@ -363,7 +363,6 @@ describe('HeadingsMapper', () => {
 
       const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-999');
       expect(patches.length).to.equal(0);
-      expect(patches.length).to.equal(0);
     });
 
     it('should return empty array for heading-h1-length without selector in transformRules', () => {
@@ -379,7 +378,6 @@ describe('HeadingsMapper', () => {
       };
 
       const patches = mapper.suggestionsToPatches('/path', [suggestion], 'opp-888');
-      expect(patches.length).to.equal(0);
       expect(patches.length).to.equal(0);
     });
 

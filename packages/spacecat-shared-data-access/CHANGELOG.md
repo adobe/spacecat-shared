@@ -1,3 +1,29 @@
+# [@adobe/spacecat-shared-data-access-v2.88.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.0...@adobe/spacecat-shared-data-access-v2.88.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* remove enrollments when entitlment are removed ([#1161](https://github.com/adobe/spacecat-shared/issues/1161)) ([b82e6c4](https://github.com/adobe/spacecat-shared/commit/b82e6c4c259543bd0d3e3a3ad2d3e2702956d85c))
+
+# [@adobe/spacecat-shared-data-access-v2.88.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.87.1...@adobe/spacecat-shared-data-access-v2.88.0) (2025-11-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1162](https://github.com/adobe/spacecat-shared/issues/1162)) ([f0152c5](https://github.com/adobe/spacecat-shared/commit/f0152c5ecddb75b6b3c6e2f0d756d5fb04171dd3))
+
+
+### Features
+
+* add no-cta-above-the-fold audit ([#1159](https://github.com/adobe/spacecat-shared/issues/1159)) ([83b9a7d](https://github.com/adobe/spacecat-shared/commit/83b9a7dd0cac0979518dbf935f582df92acc0a47))
+
+# [@adobe/spacecat-shared-data-access-v2.87.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.87.0...@adobe/spacecat-shared-data-access-v2.87.1) (2025-11-21)
+
+
+### Bug Fixes
+
+* edge preview feature for Tokowaka ([#1124](https://github.com/adobe/spacecat-shared/issues/1124)) ([cd2a06f](https://github.com/adobe/spacecat-shared/commit/cd2a06f62e3ca9e8c2b87e1810d420a06a002526))
+
 # [@adobe/spacecat-shared-data-access-v2.87.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.86.0...@adobe/spacecat-shared-data-access-v2.87.0) (2025-11-19)
 
 

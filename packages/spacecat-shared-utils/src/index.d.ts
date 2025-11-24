@@ -67,6 +67,36 @@ export function sqsEventAdapter(fn: (message: object, context: object) => Promis
   (request: object, context: object) => Promise<Response>;
 
 /**
+ * A higher-order function that wraps a given function and enhances logging by appending
+ * a `jobId` and `traceId` to log messages when available.
+ * @param fn - The original function to be wrapped
+ * @returns A wrapped function that enhances logging
+ */
+export function logWrapper(fn: (message: object, context: object) => Promise<Response>):
+  (message: object, context: object) => Promise<Response>;
+
+/**
+ * Instruments an AWS SDK v3 client with X-Ray tracing when running in AWS Lambda.
+ * @param client - The AWS SDK v3 client to instrument
+ * @returns The instrumented client (or original client if not in Lambda)
+ */
+export function instrumentAWSClient<T>(client: T): T;
+
+/**
+ * Extracts the trace ID from the current AWS X-Ray segment.
+ * @returns The trace ID if available, or null if not in AWS Lambda or no segment found
+ */
+export function getTraceId(): string | null;
+
+/**
+ * Adds the x-trace-id header to a headers object if a trace ID is available.
+ * @param headers - The headers object to augment
+ * @param context - The context object that may contain traceId
+ * @returns The headers object with x-trace-id added if available
+ */
+export function addTraceIdHeader(headers?: Record<string, string>, context?: object): Record<string, string>;
+
+/**
  * Prepends 'https://' schema to the URL if it's not already present.
  * @param url - The URL to modify.
  * @returns The URL with 'https://' schema prepended.

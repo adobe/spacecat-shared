@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.88.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.0...@adobe/spacecat-shared-data-access-v2.88.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* remove enrollments when entitlment are removed ([#1161](https://github.com/adobe/spacecat-shared/issues/1161)) ([b82e6c4](https://github.com/adobe/spacecat-shared/commit/b82e6c4c259543bd0d3e3a3ad2d3e2702956d85c))
+
 # [@adobe/spacecat-shared-data-access-v2.88.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.87.1...@adobe/spacecat-shared-data-access-v2.88.0) (2025-11-22)
 
 

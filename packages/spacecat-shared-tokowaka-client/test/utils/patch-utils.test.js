@@ -13,7 +13,7 @@
 /* eslint-env mocha */
 
 import { expect } from 'chai';
-import { mergePatches } from '../../src/utils/patch-utils.js';
+import { mergePatches, removePatchesBySuggestionIds } from '../../src/utils/patch-utils.js';
 
 describe('Patch Utils', () => {
   describe('mergePatches', () => {
@@ -143,6 +143,298 @@ describe('Patch Utils', () => {
       expect(result.patches).to.have.lengthOf(1);
       expect(result.updateCount).to.equal(1);
       expect(result.patches[0].value.children[0].value).to.equal('New');
+    });
+  });
+
+  describe('removePatchesBySuggestionIds', () => {
+    it('should remove patches with matching suggestion IDs', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-1',
+                suggestionId: 'sugg-1',
+                op: 'replace',
+                value: 'value-1',
+              },
+              {
+                opportunityId: 'opp-1',
+                suggestionId: 'sugg-2',
+                op: 'replace',
+                value: 'value-2',
+              },
+            ],
+          },
+          '/page2': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-1',
+                suggestionId: 'sugg-3',
+                op: 'replace',
+                value: 'value-3',
+              },
+            ],
+          },
+        },
+      };
+
+      const result = removePatchesBySuggestionIds(config, ['sugg-1', 'sugg-3']);
+
+      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
+      expect(result.tokowakaOptimizations['/page1'].patches[0].suggestionId).to.equal('sugg-2');
+      expect(result.tokowakaOptimizations['/page2']).to.be.undefined; // URL removed because no patches left
+      expect(result.removedCount).to.equal(2);
+    });
+
+    it('should remove URL paths with no remaining patches', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-1',
+                suggestionId: 'sugg-1',
+                op: 'replace',
+                value: 'value-1',
+              },
+            ],
+          },
+        },
+      };
+
+      const result = removePatchesBySuggestionIds(config, ['sugg-1']);
+
+      expect(result.tokowakaOptimizations).to.deep.equal({});
+      expect(result.removedCount).to.equal(1);
+    });
+
+    it('should handle empty suggestion IDs array', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-1',
+                suggestionId: 'sugg-1',
+                op: 'replace',
+                value: 'value-1',
+              },
+            ],
+          },
+        },
+      };
+
+      const result = removePatchesBySuggestionIds(config, []);
+
+      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
+      expect(result.removedCount).to.equal(0);
+    });
+
+    it('should handle non-matching suggestion IDs', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-1',
+                suggestionId: 'sugg-1',
+                op: 'replace',
+                value: 'value-1',
+              },
+            ],
+          },
+        },
+      };
+
+      const result = removePatchesBySuggestionIds(config, ['sugg-999']);
+
+      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
+      expect(result.removedCount).to.equal(0);
+    });
+
+    it('should handle null/undefined config gracefully', () => {
+      const result1 = removePatchesBySuggestionIds(null, ['sugg-1']);
+      expect(result1).to.be.null;
+
+      const result2 = removePatchesBySuggestionIds(undefined, ['sugg-1']);
+      expect(result2).to.be.undefined;
+    });
+
+    it('should preserve patches without suggestionId (heading patches)', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-1',
+                // No suggestionId - heading patch
+                op: 'replace',
+                value: 'heading-value',
+              },
+              {
+                opportunityId: 'opp-1',
+                suggestionId: 'sugg-1',
+                op: 'replace',
+                value: 'value-1',
+              },
+            ],
+          },
+        },
+      };
+
+      const result = removePatchesBySuggestionIds(config, ['sugg-1']);
+
+      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
+      expect(result.tokowakaOptimizations['/page1'].patches[0]).to.not.have.property('suggestionId');
+      expect(result.removedCount).to.equal(1);
+    });
+
+    it('should remove patches by additional patch keys', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-faq',
+                // No suggestionId - FAQ heading patch
+                op: 'appendChild',
+                value: 'FAQs',
+              },
+              {
+                opportunityId: 'opp-faq',
+                suggestionId: 'sugg-1',
+                op: 'appendChild',
+                value: 'FAQ item 1',
+              },
+              {
+                opportunityId: 'opp-faq',
+                suggestionId: 'sugg-2',
+                op: 'appendChild',
+                value: 'FAQ item 2',
+              },
+            ],
+          },
+        },
+      };
+
+      // Remove all FAQ suggestions and the heading patch (identified by opportunityId only)
+      const result = removePatchesBySuggestionIds(
+        config,
+        ['sugg-1', 'sugg-2'],
+        ['/page1:opp-faq'], // Additional patch key for FAQ heading
+      );
+
+      expect(result.tokowakaOptimizations).to.deep.equal({});
+      expect(result.removedCount).to.equal(3);
+    });
+
+    it('should remove patches by additional patch keys while keeping other suggestions', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-faq',
+                // No suggestionId - FAQ heading patch
+                op: 'appendChild',
+                value: 'FAQs',
+              },
+              {
+                opportunityId: 'opp-faq',
+                suggestionId: 'sugg-1',
+                op: 'appendChild',
+                value: 'FAQ item 1',
+              },
+              {
+                opportunityId: 'opp-faq',
+                suggestionId: 'sugg-2',
+                op: 'appendChild',
+                value: 'FAQ item 2',
+              },
+            ],
+          },
+        },
+      };
+
+      // Remove only one FAQ suggestion, keep the heading
+      const result = removePatchesBySuggestionIds(config, ['sugg-1'], []);
+
+      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(2);
+      expect(result.removedCount).to.equal(1);
+    });
+
+    it('should handle both suggestionIds and additional patch keys together', () => {
+      const config = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-headings',
+                suggestionId: 'sugg-h1',
+                op: 'replace',
+                value: 'Heading 1',
+              },
+              {
+                opportunityId: 'opp-faq',
+                // FAQ heading patch
+                op: 'appendChild',
+                value: 'FAQs',
+              },
+              {
+                opportunityId: 'opp-faq',
+                suggestionId: 'sugg-f1',
+                op: 'appendChild',
+                value: 'FAQ 1',
+              },
+            ],
+          },
+        },
+      };
+
+      // Remove FAQ suggestion and heading, keep heading patch
+      const result = removePatchesBySuggestionIds(
+        config,
+        ['sugg-f1'],
+        ['/page1:opp-faq'], // Remove FAQ heading
+      );
+
+      expect(result.tokowakaOptimizations['/page1'].patches).to.have.lengthOf(1);
+      expect(result.tokowakaOptimizations['/page1'].patches[0].suggestionId).to.equal('sugg-h1');
+      expect(result.removedCount).to.equal(2);
     });
   });
 });

@@ -408,6 +408,112 @@ class TokowakaClient {
   }
 
   /**
+   * Rolls back deployed suggestions by removing their patches from the configuration
+   * @param {Object} site - Site entity
+   * @param {Object} opportunity - Opportunity entity
+   * @param {Array} suggestions - Array of suggestion entities to rollback
+   * @returns {Promise<Object>} - Rollback result with succeeded/failed suggestions
+   */
+  async rollbackSuggestions(site, opportunity, suggestions) {
+    // Get site's Tokowaka API key
+    const { apiKey } = site.getConfig()?.getTokowakaConfig() || {};
+
+    if (!hasText(apiKey)) {
+      throw this.#createError(
+        'Site does not have a Tokowaka API key configured. Please onboard the site to Tokowaka first.',
+        HTTP_BAD_REQUEST,
+      );
+    }
+
+    const opportunityType = opportunity.getType();
+    const mapper = this.mapperRegistry.getMapper(opportunityType);
+    if (!mapper) {
+      throw this.#createError(
+        `No mapper found for opportunity type: ${opportunityType}. `
+        + `Supported types: ${this.mapperRegistry.getSupportedOpportunityTypes().join(', ')}`,
+        HTTP_NOT_IMPLEMENTED,
+      );
+    }
+
+    // Validate which suggestions can be rolled back
+    // For rollback, we use the same canDeploy check to ensure data integrity
+    const {
+      eligible: eligibleSuggestions,
+      ineligible: ineligibleSuggestions,
+    } = filterEligibleSuggestions(suggestions, mapper);
+
+    this.log.debug(
+      `Rolling back ${eligibleSuggestions.length} eligible suggestions `
+      + `(${ineligibleSuggestions.length} ineligible)`,
+    );
+
+    if (eligibleSuggestions.length === 0) {
+      this.log.warn('No eligible suggestions to rollback');
+      return {
+        succeededSuggestions: [],
+        failedSuggestions: ineligibleSuggestions,
+      };
+    }
+
+    // Fetch existing configuration from S3
+    this.log.debug(`Fetching existing Tokowaka config for site ${site.getId()}`);
+    const existingConfig = await this.fetchConfig(apiKey);
+
+    if (!existingConfig || !existingConfig.tokowakaOptimizations) {
+      this.log.warn('No existing configuration found to rollback from');
+      return {
+        succeededSuggestions: [],
+        failedSuggestions: eligibleSuggestions.map((suggestion) => ({
+          suggestion,
+          reason: 'No existing configuration found',
+        })),
+      };
+    }
+
+    // Extract suggestion IDs to remove
+    const suggestionIdsToRemove = eligibleSuggestions.map((s) => s.getId());
+    const updatedConfig = mapper.rollbackPatches(
+      existingConfig,
+      suggestionIdsToRemove,
+      opportunity.getId(),
+    );
+
+    if (updatedConfig.removedCount === 0) {
+      this.log.warn('No patches found matching the provided suggestion IDs');
+      return {
+        succeededSuggestions: [],
+        failedSuggestions: eligibleSuggestions.map((suggestion) => ({
+          suggestion,
+          reason: 'No patches found for this suggestion in the current configuration',
+        })),
+      };
+    }
+
+    this.log.info(`Removed ${updatedConfig.removedCount} patches from configuration`);
+
+    // Remove the removedCount property before uploading
+    const { removedCount, ...configToUpload } = updatedConfig;
+
+    // Upload updated config to S3
+    this.log.info(`Uploading updated Tokowaka config after rolling back ${eligibleSuggestions.length} suggestions`);
+    const s3Path = await this.uploadConfig(apiKey, configToUpload);
+
+    // Invalidate CDN cache (non-blocking, failures are logged but don't fail rollback)
+    const cdnInvalidationResult = await this.invalidateCdnCache(
+      apiKey,
+      this.env.TOKOWAKA_CDN_PROVIDER,
+    );
+
+    return {
+      s3Path,
+      cdnInvalidation: cdnInvalidationResult,
+      succeededSuggestions: eligibleSuggestions,
+      failedSuggestions: ineligibleSuggestions,
+      removedPatchesCount: removedCount,
+    };
+  }
+
+  /**
    * Previews suggestions by generating config and uploading to preview path
    * Unlike deploySuggestions, this does NOT merge with existing config
    * @param {Object} site - Site entity

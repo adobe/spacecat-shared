@@ -84,12 +84,12 @@ const sources = {
  */
 const vendorClassifications = [
   { regex: /google|googleads|google-ads|google_search|google_deman|adwords|dv360|gdn|doubleclick|dbm|gmb|gemini/i, result: 'google' },
-  { regex: /instagram|\b(ig)\b/i, result: 'instagram' },
+  { regex: /instagram|\b(ig)\b|\b(Insta)\b/i, result: 'instagram' },
   { regex: /facebook|\b(fb)\b|meta/i, result: 'facebook' },
   { regex: /bing/i, result: 'bing' },
   { regex: /tiktok/i, result: 'tiktok' },
   { regex: /youtube|yt/i, result: 'youtube' },
-  { regex: /linkedin/i, result: 'linkedin' },
+  { regex: /linkedin|\b(ln)\b/i, result: 'linkedin' },
   { regex: /twitter|^\b(x)\b/i, result: 'x' },
   { regex: /snapchat/i, result: 'snapchat' },
   { regex: /microsoft|copilot/i, result: 'microsoft' },
@@ -299,12 +299,11 @@ export function extractTrafficHints(bundle) {
  * For example: facebook instead of www.facebook.com
  * @param {*} referrer
  */
-export function classifyVendor(referrer, utmSource, utmMedium, trackingSource) {
+export function classifyVendor(referrer, utmSource, utmMedium) {
   const result = vendorClassifications.find(({ regex }) => {
     if (regex.test(referrer)) return true;
     if (regex.test(utmSource)) return true;
     if (regex.test(utmMedium)) return true;
-    if (regex.test(trackingSource)) return true;
     return false;
   });
   return result ? result.result : '';

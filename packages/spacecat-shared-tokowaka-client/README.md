@@ -110,25 +110,6 @@ s3://{TOKOWAKA_SITE_CONFIG_BUCKET}/opportunities/{tokowakaApiKey}
 
 **Note:** The configuration is stored as a JSON file containing the complete Tokowaka optimization config for the site.
 
-
-## Extending Rollback Behavior
-
-To customize rollback logic for a new opportunity type, override the `rollbackPatches()` method in your mapper:
-
-```javascript
-class CustomMapper extends BaseOpportunityMapper {
-  rollbackPatches(config, suggestionIds, opportunityId) {
-    // Custom rollback logic here
-    // Example: Remove additional resources, cleanup shared state, etc.
-    
-    // Call base implementation or use custom logic
-    return removePatchesBySuggestionIds(config, suggestionIds, additionalPatchKeys);
-  }
-}
-```
-
-The default implementation in `BaseOpportunityMapper` simply removes patches by suggestion IDs. Override this method if your opportunity type needs special cleanup (like FAQ's heading removal).
-
 ## Reference Material
 
 https://wiki.corp.adobe.com/display/AEMSites/Tokowaka+-+Spacecat+Integration

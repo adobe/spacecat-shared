@@ -288,6 +288,19 @@ class TierClient {
       throw error;
     }
   }
+
+  /**
+   * Revokes entitlement for the current organization.
+   * @returns {Promise<object>} HTTP response object.
+   */
+  async revokeEntitlement() {
+    const existing = await this.checkValidEntitlement();
+    if (existing.entitlement) {
+      await existing.entitlement.remove();
+    } else {
+      throw new Error('Entitlement not found');
+    }
+  }
 }
 
 export default TierClient;

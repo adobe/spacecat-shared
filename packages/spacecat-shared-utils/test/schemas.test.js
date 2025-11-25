@@ -1128,6 +1128,43 @@ describe('schemas', () => {
       });
     });
 
+    describe('globalRegion', () => {
+      it('validates configuration without globalRegion (optional field)', () => {
+        const result = llmoConfig.safeParse(baseConfig);
+        expect(result.success).true;
+      });
+
+      it('validates configuration with valid globalRegion', () => {
+        const config = {
+          ...baseConfig,
+          globalRegion: ['US', 'GB', 'DE'],
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).true;
+      });
+
+      it('fails configuration with invalid globalRegion (wrong length)', () => {
+        const config = {
+          ...baseConfig,
+          globalRegion: ['USA', 'UK'],
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+
+      it('fails configuration with invalid globalRegion (wrong format)', () => {
+        const config = {
+          ...baseConfig,
+          globalRegion: ['U1', '2B'],
+        };
+
+        const result = llmoConfig.safeParse(config);
+        expect(result.success).false;
+      });
+    });
+
     describe('prompt status', () => {
       it('validates prompt without status (optional field)', () => {
         const config = {

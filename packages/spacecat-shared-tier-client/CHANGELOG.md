@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tier-client-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.1...@adobe/spacecat-shared-tier-client-v1.3.2) (2025-11-25)
+
+
+### Bug Fixes
+
+* add lib for revoke entitlement ([#1169](https://github.com/adobe/spacecat-shared/issues/1169)) ([d0f2e67](https://github.com/adobe/spacecat-shared/commit/d0f2e67332e52ee23ece5310d484a43bd42146a4))
+
 # [@adobe/spacecat-shared-tier-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.3.0...@adobe/spacecat-shared-tier-client-v1.3.1) (2025-11-24)
 
 

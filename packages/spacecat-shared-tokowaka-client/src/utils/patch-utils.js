@@ -17,7 +17,7 @@
  * Patches with no suggestionId:
  *    → Key: opportunityId
  */
-function getPatchKey(patch) {
+export function getPatchKey(patch) {
   // Heading patch (no suggestionId): use special key
   if (!patch.suggestionId) {
     return `${patch.opportunityId}`;
@@ -63,4 +63,54 @@ export function mergePatches(existingPatches, newPatches) {
   });
 
   return { patches: mergedPatches, updateCount, addCount };
+}
+
+/**
+ * Removes patches matching the given suggestion IDs from a config
+ * @param {Object} config - Tokowaka configuration object
+ * @param {Array<string>} suggestionIds - Array of suggestion IDs to remove
+ * @param {Array<string>} additionalPatchKeys - Optional array of additional patch keys to remove
+ * @returns {Object} - Updated configuration with patches removed
+ */
+export function removePatchesBySuggestionIds(config, suggestionIds, additionalPatchKeys = []) {
+  if (!config || !config.tokowakaOptimizations) {
+    return config;
+  }
+
+  const suggestionIdSet = new Set(suggestionIds);
+  const patchKeysToRemove = new Set(additionalPatchKeys);
+  const updatedOptimizations = {};
+  let removedCount = 0;
+
+  // Iterate through each URL path and filter out patches matching suggestionIds or patch keys
+  Object.entries(config.tokowakaOptimizations).forEach(([urlPath, optimization]) => {
+    const { patches = [] } = optimization;
+
+    // Filter out patches with matching suggestionIds or patch keys
+    const filteredPatches = patches.filter((patch) => {
+      const shouldRemoveBySuggestionId = suggestionIdSet.has(patch.suggestionId);
+      const patchKey = `${urlPath}:${getPatchKey(patch)}`;
+      const shouldRemoveByPatchKey = patchKeysToRemove.has(patchKey);
+
+      if (shouldRemoveBySuggestionId || shouldRemoveByPatchKey) {
+        removedCount += 1;
+        return false;
+      }
+      return true;
+    });
+
+    // Only keep URL paths that still have patches
+    if (filteredPatches.length > 0) {
+      updatedOptimizations[urlPath] = {
+        ...optimization,
+        patches: filteredPatches,
+      };
+    }
+  });
+
+  return {
+    ...config,
+    tokowakaOptimizations: updatedOptimizations,
+    removedCount,
+  };
 }

@@ -1150,6 +1150,494 @@ describe('TokowakaClient', () => {
     });
   });
 
+  describe('rollbackSuggestions', () => {
+    beforeEach(() => {
+      // Stub CDN invalidation for rollback tests
+      sinon.stub(client, 'invalidateCdnCache').resolves({
+        status: 'success',
+        provider: 'cloudfront',
+        invalidationId: 'I123',
+      });
+    });
+
+    it('should rollback suggestions successfully', async () => {
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Heading 1',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-1',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+              {
+                op: 'replace',
+                selector: 'h2',
+                value: 'Heading 2',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-2',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+              {
+                op: 'replace',
+                selector: 'h3',
+                value: 'Heading 3',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-3',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions, // Only sugg-1 and sugg-2
+      );
+
+      expect(result).to.have.property('s3Path', 'opportunities/test-api-key-123');
+      expect(result.succeededSuggestions).to.have.length(2);
+      expect(result.failedSuggestions).to.have.length(0);
+      expect(result.removedPatchesCount).to.equal(2);
+
+      // Verify uploaded config has sugg-3 but not sugg-1 and sugg-2
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.tokowakaOptimizations['/page1'].patches).to.have.length(1);
+      expect(uploadedConfig.tokowakaOptimizations['/page1'].patches[0].suggestionId).to.equal('sugg-3');
+    });
+
+    it('should throw error if site does not have Tokowaka API key', async () => {
+      mockSite.getConfig = () => ({
+        getTokowakaConfig: () => ({}),
+      });
+
+      try {
+        await client.rollbackSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Tokowaka API key configured');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should throw error if site getConfig returns null', async () => {
+      mockSite.getConfig = () => null;
+
+      try {
+        await client.rollbackSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Tokowaka API key configured');
+        expect(error.status).to.equal(400);
+      }
+    });
+
+    it('should handle no existing config gracefully', async () => {
+      sinon.stub(client, 'fetchConfig').resolves(null);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(2);
+      expect(result.failedSuggestions[0].reason).to.include('No existing configuration found');
+      expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should handle empty existing config optimizations', async () => {
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {},
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(2);
+      expect(result.failedSuggestions[0].reason).to.include('No patches found');
+      expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should handle suggestions not found in config', async () => {
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Heading',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-999', // Different suggestion ID
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(2);
+      expect(result.failedSuggestions[0].reason).to.include('No patches found');
+      expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should return early when all suggestions are ineligible', async () => {
+      // Create suggestions where ALL are ineligible
+      const allIneligibleSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-missing', // Not eligible
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-invalid', // Not eligible
+          }),
+        },
+      ];
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        allIneligibleSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.have.length(2);
+      expect(result.failedSuggestions[0].reason).to.include('can be deployed');
+      expect(result.failedSuggestions[1].reason).to.include('can be deployed');
+      expect(s3Client.send).to.not.have.been.called;
+    });
+
+    it('should handle ineligible suggestions during rollback', async () => {
+      // Create suggestions where one is ineligible
+      const mixedSuggestions = [
+        {
+          getId: () => 'sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-empty',
+            transformRules: {
+              action: 'replace',
+              selector: 'h1',
+            },
+          }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getData: () => ({
+            url: 'https://example.com/page1',
+            recommendedAction: 'New Heading',
+            checkType: 'heading-missing', // Not eligible
+          }),
+        },
+      ];
+
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Heading 1',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-1',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        mixedSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.failedSuggestions).to.have.length(1);
+      expect(result.failedSuggestions[0].reason).to.include('can be deployed');
+    });
+
+    it('should remove URL path when all patches are rolled back', async () => {
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Heading 1',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-1',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+          '/page2': {
+            prerender: true,
+            patches: [
+              {
+                op: 'replace',
+                selector: 'h1',
+                value: 'Heading 2',
+                opportunityId: 'opp-123',
+                suggestionId: 'sugg-999',
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        [mockSuggestions[0]], // Only roll back sugg-1
+      );
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.removedPatchesCount).to.equal(1);
+
+      // Verify uploaded config doesn't have /page1 anymore
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.tokowakaOptimizations).to.not.have.property('/page1');
+      expect(uploadedConfig.tokowakaOptimizations).to.have.property('/page2');
+    });
+
+    it('should throw error for unsupported opportunity type', async () => {
+      mockOpportunity.getType = () => 'unsupported-type';
+
+      try {
+        await client.rollbackSuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('No mapper found for opportunity type: unsupported-type');
+        expect(error.status).to.equal(501);
+      }
+    });
+
+    it('should remove FAQ heading patch when rolling back last FAQ suggestion', async () => {
+      // Change opportunity to FAQ type
+      mockOpportunity.getType = () => 'faq';
+
+      // Create FAQ suggestion
+      const faqSuggestion = {
+        getId: () => 'faq-sugg-1',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          url: 'https://example.com/page1',
+          shouldOptimize: true,
+          item: {
+            question: 'What is this?',
+            answer: 'This is a FAQ',
+          },
+          transformRules: {
+            action: 'appendChild',
+            selector: 'body',
+          },
+        }),
+      };
+
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-123',
+                // FAQ heading patch (no suggestionId)
+                op: 'appendChild',
+                selector: 'body',
+                value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'FAQs' }] },
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+              {
+                opportunityId: 'opp-123',
+                suggestionId: 'faq-sugg-1',
+                op: 'appendChild',
+                selector: 'body',
+                value: { type: 'element', tagName: 'div' },
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        [faqSuggestion],
+      );
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.removedPatchesCount).to.equal(2); // FAQ item + heading
+
+      // Verify uploaded config has no patches for /page1 (both FAQ and heading removed)
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.tokowakaOptimizations).to.not.have.property('/page1');
+    });
+
+    it('should keep FAQ heading patch when rolling back some but not all FAQ suggestions', async () => {
+      // Change opportunity to FAQ type
+      mockOpportunity.getType = () => 'faq';
+
+      // Create FAQ suggestions
+      const faqSuggestion1 = {
+        getId: () => 'faq-sugg-1',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => ({
+          url: 'https://example.com/page1',
+          shouldOptimize: true,
+          item: {
+            question: 'What is this?',
+            answer: 'This is FAQ 1',
+          },
+          transformRules: {
+            action: 'appendChild',
+            selector: 'body',
+          },
+        }),
+      };
+
+      const existingConfig = {
+        siteId: 'site-123',
+        baseURL: 'https://example.com',
+        version: '1.0',
+        tokowakaForceFail: false,
+        tokowakaOptimizations: {
+          '/page1': {
+            prerender: true,
+            patches: [
+              {
+                opportunityId: 'opp-123',
+                // FAQ heading patch (no suggestionId)
+                op: 'appendChild',
+                selector: 'body',
+                value: { type: 'element', tagName: 'h2', children: [{ type: 'text', value: 'FAQs' }] },
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+              {
+                opportunityId: 'opp-123',
+                suggestionId: 'faq-sugg-1',
+                op: 'appendChild',
+                selector: 'body',
+                value: { type: 'element', tagName: 'div' },
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+              {
+                opportunityId: 'opp-123',
+                suggestionId: 'faq-sugg-2',
+                op: 'appendChild',
+                selector: 'body',
+                value: { type: 'element', tagName: 'div' },
+                prerenderRequired: true,
+                lastUpdated: 1234567890,
+              },
+            ],
+          },
+        },
+      };
+
+      sinon.stub(client, 'fetchConfig').resolves(existingConfig);
+
+      const result = await client.rollbackSuggestions(
+        mockSite,
+        mockOpportunity,
+        [faqSuggestion1], // Only rolling back one of two FAQs
+      );
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.removedPatchesCount).to.equal(1); // Only FAQ item removed
+
+      // Verify uploaded config still has heading and faq-sugg-2
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.tokowakaOptimizations['/page1'].patches).to.have.length(2);
+      expect(uploadedConfig.tokowakaOptimizations['/page1'].patches[0]).to.not.have.property('suggestionId'); // Heading
+      expect(uploadedConfig.tokowakaOptimizations['/page1'].patches[1].suggestionId).to.equal('faq-sugg-2');
+    });
+  });
+
   describe('previewSuggestions', () => {
     let fetchStub;
 

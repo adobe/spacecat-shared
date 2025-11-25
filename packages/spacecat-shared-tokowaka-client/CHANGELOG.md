@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-tokowaka-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.0.6...@adobe/spacecat-shared-tokowaka-client-v1.1.0) (2025-11-25)
+
+
+### Features
+
+* edge rollback feature for tokowaka ([#1167](https://github.com/adobe/spacecat-shared/issues/1167)) ([b47fd05](https://github.com/adobe/spacecat-shared/commit/b47fd0518ae1fe220914bfd88810383a306775fd))
+
 # [@adobe/spacecat-shared-tokowaka-client-v1.0.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.0.5...@adobe/spacecat-shared-tokowaka-client-v1.0.6) (2025-11-22)
 
 

@@ -22,6 +22,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ConfigurationCollection extends BaseCollection {
+  static COLLECTION_NAME = 'ConfigurationCollection';
+
   async create(data) {
     const latestConfiguration = await this.findLatest();
     const version = latestConfiguration ? incrementVersion(latestConfiguration.getVersion()) : 1;

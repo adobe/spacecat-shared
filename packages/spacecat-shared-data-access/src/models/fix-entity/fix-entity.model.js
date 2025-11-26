@@ -19,6 +19,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class FixEntity extends BaseModel {
+  static ENTITY_NAME = 'FixEntity';
+
   static DEFAULT_UPDATED_BY = 'spacecat';
 
   static STATUSES = {

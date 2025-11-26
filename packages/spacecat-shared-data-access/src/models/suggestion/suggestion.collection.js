@@ -28,6 +28,8 @@ import { guardId } from '../../util/guards.js';
  * @extends BaseCollection
  */
 class SuggestionCollection extends BaseCollection {
+  static COLLECTION_NAME = 'SuggestionCollection';
+
   /**
    * Updates the status of multiple given suggestions. The given status must conform
    * to the status enum defined in the Suggestion schema.

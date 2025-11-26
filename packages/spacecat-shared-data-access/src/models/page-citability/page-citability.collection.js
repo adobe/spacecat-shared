@@ -19,6 +19,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class PageCitabilityCollection extends BaseCollection {
+  static COLLECTION_NAME = 'PageCitabilityCollection';
+
   // add custom collection-level methods here, if needed
 }
 

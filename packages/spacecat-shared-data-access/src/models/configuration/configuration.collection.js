@@ -24,8 +24,6 @@ import BaseCollection from '../base/base.collection.js';
 class ConfigurationCollection extends BaseCollection {
   static MAX_VERSIONS = 500;
 
-  static BATCH_SIZE = 25;
-
   async create(data) {
     const latestConfiguration = await this.findLatest();
     const version = latestConfiguration ? incrementVersion(latestConfiguration.getVersion()) : 1;
@@ -44,34 +42,18 @@ class ConfigurationCollection extends BaseCollection {
   }
 
   async #enforceVersionLimit() {
-    const { MAX_VERSIONS, BATCH_SIZE } = ConfigurationCollection;
+    const { MAX_VERSIONS } = ConfigurationCollection;
 
     try {
       const allConfigs = await this.all({}, { order: 'desc' });
 
       if (allConfigs.length <= MAX_VERSIONS) {
-        this.log.debug(`Configuration version count within limit: ${allConfigs.length}/${MAX_VERSIONS}`);
         return;
       }
 
-      // Calculate versions to delete (keep newest 500, delete the rest)
       const versionsToDelete = allConfigs.slice(MAX_VERSIONS);
-      const deleteCount = versionsToDelete.length;
-
-      this.log.info(`Enforcing configuration version limit: deleting ${deleteCount} old versions (current: ${allConfigs.length}, target: ${MAX_VERSIONS})`);
-
-      // Delete in batches (DynamoDB batch write limit is 25)
-      for (let i = 0; i < versionsToDelete.length; i += BATCH_SIZE) {
-        const batch = versionsToDelete.slice(i, i + BATCH_SIZE);
-        const ids = batch.map((config) => config.getId());
-
-        // eslint-disable-next-line no-await-in-loop
-        await this.removeByIds(ids);
-
-        this.log.debug(`Deleted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(deleteCount / BATCH_SIZE)}: ${ids.length} versions`);
-      }
-
-      this.log.info(`Configuration version limit enforced successfully. Deleted ${deleteCount} versions. Remaining: ${MAX_VERSIONS}`);
+      const ids = versionsToDelete.map((config) => config.getId());
+      await this.removeByIds(ids);
     } catch (error) {
       this.log.error('Configuration version limit enforcement failed', error);
     }

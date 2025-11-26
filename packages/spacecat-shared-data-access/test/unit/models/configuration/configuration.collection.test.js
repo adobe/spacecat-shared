@@ -195,15 +195,15 @@ describe('ConfigurationCollection', () => {
         expect(instance.removeByIds).to.have.been.calledWith(['config-1']);
       });
 
-      it('triggers cleanup and deletes multiple versions in batches', async () => {
+      it('triggers cleanup and deletes 2 versions when count is 502', async () => {
         const latestConfiguration = {
           getId: () => 's12345',
-          getVersion: () => 549,
+          getVersion: () => 501,
         };
 
-        const mockConfigs = new Array(550).fill(null).map((_, i) => ({
-          getId: () => `config-${550 - i}`,
-          getVersion: () => 550 - i,
+        const mockConfigs = new Array(502).fill(null).map((_, i) => ({
+          getId: () => `config-${502 - i}`,
+          getVersion: () => 502 - i,
         }));
 
         instance.findLatest = stub().resolves(latestConfiguration);
@@ -217,38 +217,9 @@ describe('ConfigurationCollection', () => {
         });
 
         expect(instance.all).to.have.been.called;
-        expect(instance.removeByIds).to.have.been.calledTwice;
-
-        const firstBatchCall = instance.removeByIds.getCall(0);
-        expect(firstBatchCall.args[0]).to.have.lengthOf(25);
-
-        const secondBatchCall = instance.removeByIds.getCall(1);
-        expect(secondBatchCall.args[0]).to.have.lengthOf(25);
-      });
-
-      it('handles large cleanup (delete 100 versions in 4 batches)', async () => {
-        const latestConfiguration = {
-          getId: () => 's12345',
-          getVersion: () => 599,
-        };
-
-        const mockConfigs = new Array(600).fill(null).map((_, i) => ({
-          getId: () => `config-${600 - i}`,
-          getVersion: () => 600 - i,
-        }));
-
-        instance.findLatest = stub().resolves(latestConfiguration);
-        instance.all = stub().resolves(mockConfigs);
-        instance.removeByIds = stub().resolves();
-
-        await instance.create(mockRecord);
-
-        await new Promise((resolve) => {
-          setTimeout(resolve, 150);
-        });
-
-        expect(instance.all).to.have.been.called;
-        expect(instance.removeByIds).to.have.callCount(4);
+        expect(instance.removeByIds).to.have.been.calledOnce;
+        const actualIds = instance.removeByIds.getCall(0).args[0];
+        expect(actualIds.sort()).to.deep.equal(['config-1', 'config-2'].sort());
       });
 
       it('does not fail create operation if cleanup fails', async () => {

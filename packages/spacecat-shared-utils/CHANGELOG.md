@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-utils-v1.81.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.80.0...@adobe/spacecat-shared-utils-v1.81.0) (2025-11-26)
+
+
+### Features
+
+* add id to prompt in llmo config ([#1172](https://github.com/adobe/spacecat-shared/issues/1172)) ([c5a77dc](https://github.com/adobe/spacecat-shared/commit/c5a77dcaa6cf5f473882d2ba96ee7637961b452b))
+
 # [@adobe/spacecat-shared-utils-v1.80.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.79.0...@adobe/spacecat-shared-utils-v1.80.0) (2025-11-26)
 
 

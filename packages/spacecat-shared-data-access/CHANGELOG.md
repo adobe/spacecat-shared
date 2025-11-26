@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.88.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.2...@adobe/spacecat-shared-data-access-v2.88.3) (2025-11-26)
+
+
+### Bug Fixes
+
+* Bundler-Agnostic Explicit COLLECTION_NAME ([#1174](https://github.com/adobe/spacecat-shared/issues/1174)) ([d08b4b8](https://github.com/adobe/spacecat-shared/commit/d08b4b82521da524dd37e64fa85258451dc4a3fa)), closes [#1173](https://github.com/adobe/spacecat-shared/issues/1173) [#1173](https://github.com/adobe/spacecat-shared/issues/1173) [#1173](https://github.com/adobe/spacecat-shared/issues/1173) [#1173](https://github.com/adobe/spacecat-shared/issues/1173)
+
 # [@adobe/spacecat-shared-data-access-v2.88.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.1...@adobe/spacecat-shared-data-access-v2.88.2) (2025-11-26)
 
 

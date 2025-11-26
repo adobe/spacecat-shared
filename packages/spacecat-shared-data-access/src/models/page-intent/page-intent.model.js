@@ -19,6 +19,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class PageIntent extends BaseModel {
+  static ENTITY_NAME = 'PageIntent';
+
   static DEFAULT_UPDATED_BY = 'spacecat';
 
   static PAGE_INTENTS = {

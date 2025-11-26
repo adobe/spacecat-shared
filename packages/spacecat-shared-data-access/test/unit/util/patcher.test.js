@@ -26,7 +26,9 @@ import BaseCollection from '../../../src/models/base/base.collection.js';
 
 chaiUse(chaiAsPromised);
 
-const MockModel = class MockEntityModel extends BaseModel {};
+const MockModel = class MockEntityModel extends BaseModel {
+  static ENTITY_NAME = 'MockEntityModel';
+};
 const MockCollection = class MockEntityCollection extends BaseCollection {};
 
 describe('Patcher', () => {

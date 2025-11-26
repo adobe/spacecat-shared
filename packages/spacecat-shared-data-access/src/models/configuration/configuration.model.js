@@ -24,6 +24,8 @@ import { Entitlement } from '../entitlement/index.js';
  * @extends BaseModel
  */
 class Configuration extends BaseModel {
+  static ENTITY_NAME = 'Configuration';
+
   static JOB_GROUPS = {
     AUDITS: 'audits',
     IMPORTS: 'imports',

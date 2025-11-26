@@ -25,7 +25,9 @@ chaiUse(chaiAsPromised);
 chaiUse(sinonChai);
 
 describe('EntityRegistry', () => {
-  const MockModel = class MockModel extends BaseModel {};
+  const MockModel = class MockModel extends BaseModel {
+    static ENTITY_NAME = 'MockModel';
+  };
   const MockCollection = class MockCollection extends BaseCollection {};
   const MockSchema = new Schema(
     MockModel,

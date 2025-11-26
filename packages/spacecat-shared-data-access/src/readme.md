@@ -20,6 +20,8 @@ A *Model* is a class representing a single instance of an entity. It provides:
 
 Models extend `BaseModel`, which handles most of the common logic.
 
+**Required:** All model classes must define a `static ENTITY_NAME` property to ensure bundler-agnostic operation.
+
 ### Collections
 A *Collection* operates on sets of entities. While `Model` focuses on individual records, `Collection` is for batch and query-level operations:
 
@@ -39,6 +41,21 @@ The `SchemaBuilder` is a fluent API to define an entity’s schema:
 The `SchemaBuilder` enforces naming conventions and sets defaults, reducing repetitive configuration.
 
 **Note on Indexes:** Add indexes thoughtfully. Every extra index adds cost and complexity. Only create indexes for well-understood, frequently-needed query patterns.
+
+### Entity Naming (ENTITY_NAME)
+
+All model classes **must** define a static `ENTITY_NAME` property:
+
+```js
+class User extends BaseModel {
+  static ENTITY_NAME = 'User';
+  // ...
+}
+```
+
+This requirement ensures entity names remain consistent regardless of build tool transformations. Modern JavaScript bundlers (webpack, esbuild) may mangle class names during the build process (e.g., `Configuration` → `_Configuration`), which would break ElectroDB's key generation. By explicitly declaring the entity name, the framework operates correctly in all bundling scenarios.
+
+The `SchemaBuilder` validates that `ENTITY_NAME` is defined and will throw a descriptive error if it's missing.
 
 ### Entity Registry
 The `EntityRegistry` aggregates all entities, their schemas, and their collections. It ensures consistent lookup and retrieval of any registered entity’s collection. When you add a new entity, you must register it with the `EntityRegistry` so the rest of the application can discover it.
@@ -348,20 +365,22 @@ Create `user.model.js`:
 ```js
 import BaseModel from '../base/base.model.js';
 
-class UserModel extends BaseModel {
+class User extends BaseModel {
+  static ENTITY_NAME = 'User';
+
   // Additional domain logic methods can be added here if needed.
 }
 
-export default UserModel;
+export default User;
 ```
+
+**Important:** Every model class **must** define a `static ENTITY_NAME` property. This ensures the entity name is explicit and not affected by bundler transformations (like class name mangling in webpack/esbuild). The `SchemaBuilder` will throw an error if this property is missing.
 
 ### 3. Implement the Collection
 Create `user.collection.js`:
 
 ```js
 import BaseCollection from '../base/base.collection.js';
-import UserModel from './user.model.js';
-import userSchema from './user.schema.js';
 
 class UserCollection extends BaseCollection {
   // Additional domain logic collection methods can be added here if needed.

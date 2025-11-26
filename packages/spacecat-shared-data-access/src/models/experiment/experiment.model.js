@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class Experiment extends BaseModel {
+  static ENTITY_NAME = 'Experiment';
+
   static DEFAULT_UPDATED_BY = 'spacecat';
 
   // add your custom methods or overrides here

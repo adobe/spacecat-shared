@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ReportCollection extends BaseCollection {
+  static COLLECTION_NAME = 'ReportCollection';
+
   async create(item) {
     const report = await super.create(item, { upsert: true });
 

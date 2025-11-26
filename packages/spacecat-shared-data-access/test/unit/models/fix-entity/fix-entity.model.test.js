@@ -58,6 +58,68 @@ describe('FixEntityModel', () => {
     });
   });
 
+  describe('static properties', () => {
+    describe('DEFAULT_UPDATED_BY', () => {
+      it('should have the correct default value', () => {
+        expect(FixEntity.DEFAULT_UPDATED_BY).to.equal('spacecat');
+      });
+    });
+
+    describe('STATUSES', () => {
+      it('should define all status constants', () => {
+        expect(FixEntity.STATUSES).to.deep.equal({
+          PENDING: 'PENDING',
+          DEPLOYED: 'DEPLOYED',
+          PUBLISHED: 'PUBLISHED',
+          FAILED: 'FAILED',
+          ROLLED_BACK: 'ROLLED_BACK',
+        });
+      });
+
+      it('should have PENDING status', () => {
+        expect(FixEntity.STATUSES.PENDING).to.equal('PENDING');
+      });
+
+      it('should have DEPLOYED status', () => {
+        expect(FixEntity.STATUSES.DEPLOYED).to.equal('DEPLOYED');
+      });
+
+      it('should have PUBLISHED status', () => {
+        expect(FixEntity.STATUSES.PUBLISHED).to.equal('PUBLISHED');
+      });
+
+      it('should have FAILED status', () => {
+        expect(FixEntity.STATUSES.FAILED).to.equal('FAILED');
+      });
+
+      it('should have ROLLED_BACK status', () => {
+        expect(FixEntity.STATUSES.ROLLED_BACK).to.equal('ROLLED_BACK');
+      });
+    });
+
+    describe('ORIGINS', () => {
+      it('should define all origin constants', () => {
+        expect(FixEntity.ORIGINS).to.deep.equal({
+          SPACECAT: 'spacecat',
+          ASO: 'aso',
+          REPORTING: 'reporting',
+        });
+      });
+
+      it('should have SPACECAT origin', () => {
+        expect(FixEntity.ORIGINS.SPACECAT).to.equal('spacecat');
+      });
+
+      it('should have ASO origin', () => {
+        expect(FixEntity.ORIGINS.ASO).to.equal('aso');
+      });
+
+      it('should have REPORTING origin', () => {
+        expect(FixEntity.ORIGINS.REPORTING).to.equal('reporting');
+      });
+    });
+  });
+
   describe('getSuggestions', () => {
     it('should get suggestions for the fix entity', async () => {
       const mockSuggestions = [

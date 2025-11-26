@@ -20,6 +20,7 @@ export interface ScrapeUrl extends BaseModel {
   getReason(): string,
   getStatus(): string,
   getUrl(): string,
+  getProcessingType(): string,
   getIsOriginal(): boolean,
   setFile(file: string): void,
   setScrapeJobId(ScrapeJobId: string): void,
@@ -27,12 +28,15 @@ export interface ScrapeUrl extends BaseModel {
   setReason(reason: string): void,
   setStatus(status: string): void,
   setUrl(url: string): void,
+  setProcessingType(processingType: string): void,
   setIsOriginal(isOriginal: boolean): void,
 }
 
 export interface ScrapeUrlCollection extends BaseCollection<ScrapeUrl> {
   allByScrapeJobId(ScrapeJobId: string): Promise<ScrapeUrl[]>;
   allByScrapeUrlsByJobIdAndStatus(ScrapeJobId: string, status: string): Promise<ScrapeUrl[]>;
+  allByUrlAndIsOriginalAndProcessingType(url: string, isOriginal: boolean, processingType: string): Promise<ScrapeUrl[]>;
+  allRecentByUrlAndProcessingType(url: string, processingType: string, maxAgeInHours?: number): Promise<ScrapeUrl[]>;
   findByScrapeJobId(ScrapeJobId: string): Promise<ScrapeUrl | null>;
   findByScrapeJobIdAndUrl(ScrapeJobId: string, url: string): Promise<ScrapeUrl | null>;
 }

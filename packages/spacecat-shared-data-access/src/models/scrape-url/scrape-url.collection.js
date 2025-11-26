@@ -20,7 +20,22 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class ScrapeUrlCollection extends BaseCollection {
-  // add custom methods here
+  static COLLECTION_NAME = 'ScrapeUrlCollection';
+
+  async allRecentByUrlAndProcessingType(url, processingType, maxAgeInHours = 168) {
+    const now = new Date();
+    const pastDate = new Date(now.getTime() - maxAgeInHours * 60 * 60 * 1000);
+    const pastDateIso = pastDate.toISOString();
+    const nowIso = now.toISOString();
+
+    return this.allByIndexKeys({ url, isOriginal: true, processingType }, {
+      between: {
+        attribute: 'createdAt',
+        start: pastDateIso,
+        end: nowIso,
+      },
+    });
+  }
 }
 
 export default ScrapeUrlCollection;

@@ -48,6 +48,14 @@ function isValidParent(parent, child) {
  */
 class BaseCollection {
   /**
+   * The collection name for this collection. Must be overridden by subclasses.
+   * This ensures the collection name is explicit and not dependent on class names
+   * which can be mangled by bundlers.
+   * @type {string}
+   */
+  static COLLECTION_NAME = undefined;
+
+  /**
    * Constructs an instance of BaseCollection.
    * @constructor
    * @param {Object} electroService - The ElectroDB service used for managing entities.
@@ -237,6 +245,7 @@ class BaseCollection {
         order: options.order || 'desc',
         ...options.limit && { limit: options.limit },
         ...options.attributes && { attributes: options.attributes },
+        ...options.cursor && { cursor: options.cursor },
       };
 
       let query = index(keys);
@@ -268,10 +277,16 @@ class BaseCollection {
         }
       }
 
+      // Return cursor when explicitly requested via returnCursor option
+      const shouldReturnCursor = options.returnCursor === true;
+
       if (options.limit === 1) {
         return allData.length ? this.#createInstance(allData[0]) : null;
       } else {
-        return this.#createInstances(allData);
+        const instances = this.#createInstances(allData);
+        return shouldReturnCursor
+          ? { data: instances, cursor: result.cursor || null }
+          : instances;
       }
     } catch (error) {
       return this.#logAndThrowError('Failed to query', error);

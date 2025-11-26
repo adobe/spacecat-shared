@@ -17,6 +17,7 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { getDataAccess } from '../util/db.js';
 import { seedDatabase } from '../util/seed.js';
+import { ScrapeJob } from '../../../src/index.js';
 
 use(chaiAsPromised);
 
@@ -45,6 +46,8 @@ describe('ScrapeUrl IT', async () => {
       scrapeJobId: sampleScrapeJob.getId(),
       url: 'https://example-some.com/cars',
       status: 'RUNNING',
+      processingType: ScrapeJob.ScrapeProcessingType.DEFAULT,
+
     };
 
     const scrapeUrl = await ScrapeUrl.create(data);

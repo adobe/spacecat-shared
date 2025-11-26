@@ -20,6 +20,8 @@ import BaseModel from '../base/base.model.js';
  * @extends BaseModel
  */
 class SiteEnrollment extends BaseModel {
+  static ENTITY_NAME = 'SiteEnrollment';
+
   // add your custom methods or overrides here
 }
 

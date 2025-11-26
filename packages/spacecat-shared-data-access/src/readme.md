@@ -20,6 +20,8 @@ A *Model* is a class representing a single instance of an entity. It provides:
 
 Models extend `BaseModel`, which handles most of the common logic.
 
+**Required:** All model classes must define a `static ENTITY_NAME` property to ensure bundler-agnostic operation.
+
 ### Collections
 A *Collection* operates on sets of entities. While `Model` focuses on individual records, `Collection` is for batch and query-level operations:
 
@@ -28,6 +30,8 @@ A *Collection* operates on sets of entities. While `Model` focuses on individual
 - Automatic generation of `allBy...` and `findBy...` convenience methods based on defined indexes.
 
 Collections extend `BaseCollection`, which generates query methods at runtime based on your schema definitions.
+
+**Required:** All collection classes must define a `static COLLECTION_NAME` property to ensure bundler-agnostic operation.
 
 ### Schema Builder
 The `SchemaBuilder` is a fluent API to define an entity’s schema:
@@ -39,6 +43,26 @@ The `SchemaBuilder` is a fluent API to define an entity’s schema:
 The `SchemaBuilder` enforces naming conventions and sets defaults, reducing repetitive configuration.
 
 **Note on Indexes:** Add indexes thoughtfully. Every extra index adds cost and complexity. Only create indexes for well-understood, frequently-needed query patterns.
+
+### Entity and Collection Naming
+
+All model and collection classes **must** define explicit static name properties:
+
+```js
+class User extends BaseModel {
+  static ENTITY_NAME = 'User';
+  // ...
+}
+
+class UserCollection extends BaseCollection {
+  static COLLECTION_NAME = 'UserCollection';
+  // ...
+}
+```
+
+This requirement ensures names remain consistent regardless of build tool transformations. Modern JavaScript bundlers (webpack, esbuild) may mangle class names during the build process (e.g., `Configuration` → `_Configuration`), which would break ElectroDB's key generation and internal lookups. By explicitly declaring both entity and collection names, the framework operates correctly in all bundling scenarios.
+
+The `SchemaBuilder` validates that both `ENTITY_NAME` and `COLLECTION_NAME` are defined and will throw descriptive errors if either is missing.
 
 ### Entity Registry
 The `EntityRegistry` aggregates all entities, their schemas, and their collections. It ensures consistent lookup and retrieval of any registered entity’s collection. When you add a new entity, you must register it with the `EntityRegistry` so the rest of the application can discover it.
@@ -88,7 +112,7 @@ const single = await Suggestion.findByOpportunityIdAndStatus('op-12345', 'OPEN')
 - `get...()`: Getters for entity attributes.
 - `set...()`: Setters for entity attributes.
 
-Additionally, `BaseModel` generates methods to fetch referenced entities. 
+Additionally, `BaseModel` generates methods to fetch referenced entities.
 For example, if `User` belongs to `Organization`, `BaseModel` will create:
 
 - `getOrganization()`: Fetch the referenced `Organization` entity.
@@ -114,6 +138,206 @@ await user.save();
 // Fetch referenced entity
 const org = await user.getOrganization();
 console.log(org.getName());
+```
+
+## Pagination Support
+
+All `allBy...` methods automatically support pagination through an optional `options` parameter. Pagination is built into `BaseCollection` and available for every entity without additional configuration.
+
+### Query Options
+
+Every `allBy...` method accepts an optional `options` object with the following parameters:
+
+```typescript
+interface QueryOptions {
+  // Pagination control
+  limit?: number;              // Limit results per page
+  cursor?: string;             // Cursor from previous page
+  returnCursor?: boolean;      // Return {data, cursor} instead of array
+  fetchAllPages?: boolean;     // true: fetch all pages, false: single page only
+
+  // Query control
+  order?: 'asc' | 'desc';      // Sort order (default: 'desc')
+  attributes?: string[];        // Which fields to return
+
+  // Range queries
+  between?: {
+    attribute: string;
+    start: string | number;
+    end: string | number;
+  };
+}
+```
+
+### Pagination Behavior
+
+By default, `allBy...` methods **automatically fetch all pages** of results. You can control this behavior:
+
+- **Default (no options):** Fetches all pages automatically
+- **`fetchAllPages: true`:** Explicitly fetch all pages
+- **`fetchAllPages: false`:** Fetch only the first page
+- **`limit` without `fetchAllPages`:** Fetch only the first page (limited results)
+
+### Usage Examples
+
+#### Fetch All Results (Default)
+```js
+// Automatically fetches all pages
+const suggestions = await Suggestion.allByOpportunityId('op-12345');
+// Returns: Suggestion[] (all matching results)
+```
+
+#### Manual Pagination with Cursor
+```js
+// Fetch first page
+const firstPage = await Suggestion.allByOpportunityIdAndStatus(
+  'op-12345',
+  'NEW',
+  { limit: 50, returnCursor: true }
+);
+// Returns: { data: Suggestion[], cursor: string | null }
+
+console.log(`Found ${firstPage.data.length} suggestions`);
+
+// Fetch next page if cursor exists
+if (firstPage.cursor) {
+  const secondPage = await Suggestion.allByOpportunityIdAndStatus(
+    'op-12345',
+    'NEW',
+    { limit: 50, cursor: firstPage.cursor, returnCursor: true }
+  );
+}
+```
+
+#### Limit Results (Single Page)
+```js
+// Get only first 20 results (stops after first page)
+const limitedResults = await Suggestion.allByOpportunityId(
+  'op-12345',
+  { limit: 20, fetchAllPages: false }
+);
+// Returns: Suggestion[] (max 20 items)
+```
+
+#### Filter by Attributes
+```js
+// Fetch only specific fields
+const suggestions = await Suggestion.allByOpportunityId(
+  'op-12345',
+  { attributes: ['suggestionId', 'status', 'rank'] }
+);
+```
+
+### Exposing Pagination in TypeScript
+
+Pagination is implemented in `BaseCollection` but must be exposed in your entity's TypeScript definitions to provide IntelliSense support for consumers.
+
+#### Required Steps
+
+**1. Import Required Types**
+
+In your entity's `index.d.ts`, add these imports:
+
+```typescript
+import type {
+  BaseCollection,
+  BaseModel,
+  QueryOptions,      // For options parameter
+  PaginatedResult,   // For return type
+  // ... other imports
+} from '../index';
+```
+
+**2. Update Method Signatures**
+
+For each `allBy...` method, add the `options` parameter and update the return type:
+
+```typescript
+export interface MyEntityCollection extends BaseCollection<MyEntity> {
+  // Before: allByParentId(parentId: string): Promise<MyEntity[]>;
+
+  // After:
+  allByParentId(
+    parentId: string,
+    options?: QueryOptions
+  ): Promise<MyEntity[] | PaginatedResult<MyEntity>>;
+
+  allByParentIdAndStatus(
+    parentId: string,
+    status: string,
+    options?: QueryOptions
+  ): Promise<MyEntity[] | PaginatedResult<MyEntity>>;
+}
+```
+
+**3. Update `findBy...` Methods (Optional)**
+
+For `findBy...` methods, add the `options` parameter (keeps single-item return type):
+
+```typescript
+export interface MyEntityCollection extends BaseCollection<MyEntity> {
+  findByParentId(
+    parentId: string,
+    options?: QueryOptions
+  ): Promise<MyEntity | null>;
+}
+```
+
+#### Complete Example
+
+```typescript
+import type {
+  BaseCollection, BaseModel, QueryOptions, PaginatedResult,
+} from '../index';
+
+export interface Suggestion extends BaseModel {
+  getStatus(): string;
+  setStatus(status: string): Suggestion;
+  // ... other methods
+}
+
+export interface SuggestionCollection extends BaseCollection<Suggestion> {
+  // With pagination support
+  allByOpportunityId(
+    opportunityId: string,
+    options?: QueryOptions
+  ): Promise<Suggestion[] | PaginatedResult<Suggestion>>;
+
+  allByOpportunityIdAndStatus(
+    opportunityId: string,
+    status: string,
+    options?: QueryOptions
+  ): Promise<Suggestion[] | PaginatedResult<Suggestion>>;
+
+  findByOpportunityId(
+    opportunityId: string,
+    options?: QueryOptions
+  ): Promise<Suggestion | null>;
+}
+```
+
+### Type-Safe Result Handling
+
+TypeScript will correctly infer the return type based on usage:
+
+```typescript
+// Returns Suggestion[]
+const all = await Suggestion.allByOpportunityId('op-12345');
+
+// Returns { data: Suggestion[], cursor: string | null }
+const page = await Suggestion.allByOpportunityId(
+  'op-12345',
+  { limit: 50, returnCursor: true }
+);
+
+// Type guard for handling both cases
+if (Array.isArray(result)) {
+  // result is Suggestion[]
+  console.log(result.length);
+} else {
+  // result is PaginatedResult<Suggestion>
+  console.log(result.data.length, result.cursor);
+}
 ```
 
 ## Step-by-Step: Adding a New Entity
@@ -148,22 +372,26 @@ Create `user.model.js`:
 ```js
 import BaseModel from '../base/base.model.js';
 
-class UserModel extends BaseModel {
+class User extends BaseModel {
+  static ENTITY_NAME = 'User';
+
   // Additional domain logic methods can be added here if needed.
 }
 
-export default UserModel;
+export default User;
 ```
+
+**Important:** Every model class **must** define a `static ENTITY_NAME` property. This ensures the entity name is explicit and not affected by bundler transformations (like class name mangling in webpack/esbuild). The `SchemaBuilder` will throw an error if this property is missing.
 
 ### 3. Implement the Collection
 Create `user.collection.js`:
 
 ```js
 import BaseCollection from '../base/base.collection.js';
-import UserModel from './user.model.js';
-import userSchema from './user.schema.js';
 
 class UserCollection extends BaseCollection {
+  static COLLECTION_NAME = 'UserCollection';
+
   // Additional domain logic collection methods can be added here if needed.
   async findByEmail(email) {
     return this.findByIndexKeys({ email });
@@ -172,6 +400,8 @@ class UserCollection extends BaseCollection {
 
 export default UserCollection;
 ```
+
+**Important:** Every collection class **must** define a `static COLLECTION_NAME` property for the same bundler-related reasons as `ENTITY_NAME`.
 
 ### 4. Register the Entity
 In `entity.registry.js` (or equivalent):

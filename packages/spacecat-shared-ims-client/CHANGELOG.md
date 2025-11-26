@@ -1,3 +1,78 @@
+# [@adobe/spacecat-shared-ims-client-v1.11.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.2...@adobe/spacecat-shared-ims-client-v1.11.3) (2025-11-19)
+
+
+### Bug Fixes
+
+* **deps:** update shared utils in ims client ([#1150](https://github.com/adobe/spacecat-shared/issues/1150)) ([05da6a6](https://github.com/adobe/spacecat-shared/commit/05da6a697927fda39ba1cee99bcd9141de9cf2e1))
+
+# [@adobe/spacecat-shared-ims-client-v1.11.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.1...@adobe/spacecat-shared-ims-client-v1.11.2) (2025-11-19)
+
+
+### Bug Fixes
+
+* **deps:** update data access in ims client ([#1149](https://github.com/adobe/spacecat-shared/issues/1149)) ([b3faa9d](https://github.com/adobe/spacecat-shared/commit/b3faa9d45e7d3226a916532880c2b613d526ef9e))
+
+# [@adobe/spacecat-shared-ims-client-v1.11.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.11.0...@adobe/spacecat-shared-ims-client-v1.11.1) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-ims-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.10.1...@adobe/spacecat-shared-ims-client-v1.11.0) (2025-11-14)
+
+
+### Features
+
+* introduce AMS promise token ([#1123](https://github.com/adobe/spacecat-shared/issues/1123)) ([324688e](https://github.com/adobe/spacecat-shared/commit/324688ef9b92dcc1cbbefe7549540091065f304e))
+
+# [@adobe/spacecat-shared-ims-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.10.0...@adobe/spacecat-shared-ims-client-v1.10.1) (2025-11-14)
+
+
+### Bug Fixes
+
+* improves accountCluster logging ([#1126](https://github.com/adobe/spacecat-shared/issues/1126)) ([a3bf2be](https://github.com/adobe/spacecat-shared/commit/a3bf2be49d5c3e99bef249be292c335a7179c272))
+
+# [@adobe/spacecat-shared-ims-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.3...@adobe/spacecat-shared-ims-client-v1.10.0) (2025-11-12)
+
+
+### Features
+
+* ims account cluster function ([#1115](https://github.com/adobe/spacecat-shared/issues/1115)) ([003aad3](https://github.com/adobe/spacecat-shared/commit/003aad3167f165085d6fc2e43822498b7ef0ae0e))
+
+# [@adobe/spacecat-shared-ims-client-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.2...@adobe/spacecat-shared-ims-client-v1.9.3) (2025-11-11)
+
+
+### Bug Fixes
+
+* triggering release for ims client ([#1113](https://github.com/adobe/spacecat-shared/issues/1113)) ([ef5e418](https://github.com/adobe/spacecat-shared/commit/ef5e418363861017c3f3313b211c14eba549c64c))
+
+# [@adobe/spacecat-shared-ims-client-v1.9.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.1...@adobe/spacecat-shared-ims-client-v1.9.2) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
+# [@adobe/spacecat-shared-ims-client-v1.9.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.9.0...@adobe/spacecat-shared-ims-client-v1.9.1) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
+# [@adobe/spacecat-shared-ims-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.13...@adobe/spacecat-shared-ims-client-v1.9.0) (2025-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1046](https://github.com/adobe/spacecat-shared/issues/1046)) ([bb6e118](https://github.com/adobe/spacecat-shared/commit/bb6e11886b323f73624fcb9e3c2b14d318aa00c9))
+
+
+### Features
+
+* start breaking dependency cycles in `shared` ([#1052](https://github.com/adobe/spacecat-shared/issues/1052)) ([a9ed9e1](https://github.com/adobe/spacecat-shared/commit/a9ed9e1f86bf4049b40bff15122e8f34849e87d7))
+
 # [@adobe/spacecat-shared-ims-client-v1.8.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.8.12...@adobe/spacecat-shared-ims-client-v1.8.13) (2025-09-25)
 
 

@@ -1,3 +1,66 @@
+# [@adobe/spacecat-shared-content-client-v1.8.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.3...@adobe/spacecat-shared-content-client-v1.8.4) (2025-11-24)
+
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1094](https://github.com/adobe/spacecat-shared/issues/1094)) ([8a2c2c3](https://github.com/adobe/spacecat-shared/commit/8a2c2c32733d20827a39f5f6e813cc7c295963f8))
+
+# [@adobe/spacecat-shared-content-client-v1.8.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.2...@adobe/spacecat-shared-content-client-v1.8.3) (2025-11-22)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1162](https://github.com/adobe/spacecat-shared/issues/1162)) ([f0152c5](https://github.com/adobe/spacecat-shared/commit/f0152c5ecddb75b6b3c6e2f0d756d5fb04171dd3))
+
+# [@adobe/spacecat-shared-content-client-v1.8.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.1...@adobe/spacecat-shared-content-client-v1.8.2) (2025-11-15)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1131](https://github.com/adobe/spacecat-shared/issues/1131)) ([d4a3f4a](https://github.com/adobe/spacecat-shared/commit/d4a3f4a653e59e9bdde7926ea8f1a2f9b68739ff))
+
+# [@adobe/spacecat-shared-content-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.8.0...@adobe/spacecat-shared-content-client-v1.8.1) (2025-11-08)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1107](https://github.com/adobe/spacecat-shared/issues/1107)) ([f4cdb50](https://github.com/adobe/spacecat-shared/commit/f4cdb50f96d18dd92de81055f2b58310a68c0cac))
+
+# [@adobe/spacecat-shared-content-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.39...@adobe/spacecat-shared-content-client-v1.8.0) (2025-11-04)
+
+
+### Features
+
+* adding getEditURL support for content client ([#1047](https://github.com/adobe/spacecat-shared/issues/1047)) ([ca91f51](https://github.com/adobe/spacecat-shared/commit/ca91f512d3bf074d3fc88a6705f01f4a7661d6bc))
+
+# [@adobe/spacecat-shared-content-client-v1.7.39](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.38...@adobe/spacecat-shared-content-client-v1.7.39) (2025-11-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/helix-universal to v5.3.0 ([#1091](https://github.com/adobe/spacecat-shared/issues/1091)) ([13cbc72](https://github.com/adobe/spacecat-shared/commit/13cbc721f67c066948337faa6c6a4ea5b0c5ec9a))
+
+# [@adobe/spacecat-shared-content-client-v1.7.38](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.37...@adobe/spacecat-shared-content-client-v1.7.38) (2025-11-01)
+
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1081](https://github.com/adobe/spacecat-shared/issues/1081)) ([4476494](https://github.com/adobe/spacecat-shared/commit/44764944350f9344d0ca5e2af5a2161cc7470899))
+
+# [@adobe/spacecat-shared-content-client-v1.7.37](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.36...@adobe/spacecat-shared-content-client-v1.7.37) (2025-10-31)
+
+
+### Bug Fixes
+
+* **deps:** update dependency @adobe/spacecat-helix-content-sdk to v1.4.26 ([#1072](https://github.com/adobe/spacecat-shared/issues/1072)) ([5d231b1](https://github.com/adobe/spacecat-shared/commit/5d231b1a14840ee4fa1c0f5f8bd665036953999c))
+
+# [@adobe/spacecat-shared-content-client-v1.7.36](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.35...@adobe/spacecat-shared-content-client-v1.7.36) (2025-10-28)
+
+
+### Bug Fixes
+
+* remove cyclic deps in shared ([#1053](https://github.com/adobe/spacecat-shared/issues/1053)) ([acbbc93](https://github.com/adobe/spacecat-shared/commit/acbbc93f8c961fdef55edb5e7947958456538586))
+
 # [@adobe/spacecat-shared-content-client-v1.7.35](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.7.34...@adobe/spacecat-shared-content-client-v1.7.35) (2025-10-25)
 
 

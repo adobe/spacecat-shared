@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-data-access-v2.88.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.1...@adobe/spacecat-shared-data-access-v2.88.2) (2025-11-26)
+
+
+### Bug Fixes
+
+* Make Entity Naming Bundler-Agnostic with Explicit ENTITY_NAME ([#1173](https://github.com/adobe/spacecat-shared/issues/1173)) ([c6cb69c](https://github.com/adobe/spacecat-shared/commit/c6cb69c6114db686f911afafe8d477b4556d9d49))
+
 # [@adobe/spacecat-shared-data-access-v2.88.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v2.88.0...@adobe/spacecat-shared-data-access-v2.88.1) (2025-11-24)
 
 

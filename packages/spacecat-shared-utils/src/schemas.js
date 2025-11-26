@@ -39,6 +39,7 @@ const nonEmptyString = z.string().min(1);
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 
 const prompt = z.object({
+  id: z.uuid().optional(),
   prompt: nonEmptyString,
   regions: z.array(region),
   origin: z.union([z.literal('human'), z.literal('ai'), z.string()]),

@@ -20,6 +20,8 @@ import BaseCollection from '../base/base.collection.js';
  * @extends BaseCollection
  */
 class KeyEventCollection extends BaseCollection {
+  static COLLECTION_NAME = 'KeyEventCollection';
+
   // add custom methods here
 }
 

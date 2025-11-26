@@ -116,7 +116,7 @@ class Schema {
   }
 
   getCollectionName() {
-    return this.collectionClass.name;
+    return this.collectionClass.COLLECTION_NAME;
   }
 
   getEntityName() {
@@ -257,7 +257,7 @@ class Schema {
   }
 
   getModelName() {
-    return this.modelClass.name;
+    return this.modelClass.ENTITY_NAME;
   }
 
   /**

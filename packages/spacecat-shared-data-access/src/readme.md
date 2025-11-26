@@ -31,6 +31,8 @@ A *Collection* operates on sets of entities. While `Model` focuses on individual
 
 Collections extend `BaseCollection`, which generates query methods at runtime based on your schema definitions.
 
+**Required:** All collection classes must define a `static COLLECTION_NAME` property to ensure bundler-agnostic operation.
+
 ### Schema Builder
 The `SchemaBuilder` is a fluent API to define an entity’s schema:
 
@@ -42,20 +44,25 @@ The `SchemaBuilder` enforces naming conventions and sets defaults, reducing repe
 
 **Note on Indexes:** Add indexes thoughtfully. Every extra index adds cost and complexity. Only create indexes for well-understood, frequently-needed query patterns.
 
-### Entity Naming (ENTITY_NAME)
+### Entity and Collection Naming
 
-All model classes **must** define a static `ENTITY_NAME` property:
+All model and collection classes **must** define explicit static name properties:
 
 ```js
 class User extends BaseModel {
   static ENTITY_NAME = 'User';
   // ...
 }
+
+class UserCollection extends BaseCollection {
+  static COLLECTION_NAME = 'UserCollection';
+  // ...
+}
 ```
 
-This requirement ensures entity names remain consistent regardless of build tool transformations. Modern JavaScript bundlers (webpack, esbuild) may mangle class names during the build process (e.g., `Configuration` → `_Configuration`), which would break ElectroDB's key generation. By explicitly declaring the entity name, the framework operates correctly in all bundling scenarios.
+This requirement ensures names remain consistent regardless of build tool transformations. Modern JavaScript bundlers (webpack, esbuild) may mangle class names during the build process (e.g., `Configuration` → `_Configuration`), which would break ElectroDB's key generation and internal lookups. By explicitly declaring both entity and collection names, the framework operates correctly in all bundling scenarios.
 
-The `SchemaBuilder` validates that `ENTITY_NAME` is defined and will throw a descriptive error if it's missing.
+The `SchemaBuilder` validates that both `ENTITY_NAME` and `COLLECTION_NAME` are defined and will throw descriptive errors if either is missing.
 
 ### Entity Registry
 The `EntityRegistry` aggregates all entities, their schemas, and their collections. It ensures consistent lookup and retrieval of any registered entity’s collection. When you add a new entity, you must register it with the `EntityRegistry` so the rest of the application can discover it.
@@ -383,6 +390,8 @@ Create `user.collection.js`:
 import BaseCollection from '../base/base.collection.js';
 
 class UserCollection extends BaseCollection {
+  static COLLECTION_NAME = 'UserCollection';
+
   // Additional domain logic collection methods can be added here if needed.
   async findByEmail(email) {
     return this.findByIndexKeys({ email });
@@ -391,6 +400,8 @@ class UserCollection extends BaseCollection {
 
 export default UserCollection;
 ```
+
+**Important:** Every collection class **must** define a `static COLLECTION_NAME` property for the same bundler-related reasons as `ENTITY_NAME`.
 
 ### 4. Register the Entity
 In `entity.registry.js` (or equivalent):

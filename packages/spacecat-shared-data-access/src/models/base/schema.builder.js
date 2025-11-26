@@ -115,6 +115,10 @@ class SchemaBuilder {
       throw new SchemaBuilderError(this, `Model class ${modelClass.name} must define a static ENTITY_NAME property.`);
     }
 
+    if (!hasText(collectionClass.COLLECTION_NAME)) {
+      throw new SchemaBuilderError(this, `Collection class ${collectionClass.name} must define a static COLLECTION_NAME property.`);
+    }
+
     this.modelClass = modelClass;
     this.collectionClass = collectionClass;
     this.schemaVersion = schemaVersion;
